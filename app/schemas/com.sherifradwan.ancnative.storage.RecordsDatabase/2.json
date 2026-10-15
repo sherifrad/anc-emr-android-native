@@ -1,0 +1,591 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "c4edca75329b4f425389fadfd5f77b42",
+    "entities": [
+      {
+        "tableName": "patients",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `case_id` TEXT NOT NULL, `display_name` TEXT NOT NULL, `date_of_birth` TEXT, `phone` TEXT, `created_at` TEXT, `patient_status` TEXT, `archived_at` TEXT, `archived_reason` TEXT, `risk_level` TEXT, `age_text` TEXT, `address_text` TEXT, `blood_group_text` TEXT, `medical_history` TEXT, `surgical_history` TEXT, `family_history` TEXT, `allergy_history` TEXT, `gravida` INTEGER, `parity` INTEGER, `abortion` INTEGER, `obstetric_notes` TEXT, `revision` INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "caseId",
+            "columnName": "case_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "displayName",
+            "columnName": "display_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dateOfBirth",
+            "columnName": "date_of_birth",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "phone",
+            "columnName": "phone",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "patient_status",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "archivedAt",
+            "columnName": "archived_at",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "archivedReason",
+            "columnName": "archived_reason",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "riskLevel",
+            "columnName": "risk_level",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "ageText",
+            "columnName": "age_text",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "addressText",
+            "columnName": "address_text",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "bloodGroupText",
+            "columnName": "blood_group_text",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "medicalHistory",
+            "columnName": "medical_history",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "surgicalHistory",
+            "columnName": "surgical_history",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "familyHistory",
+            "columnName": "family_history",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "allergyHistory",
+            "columnName": "allergy_history",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "gravida",
+            "columnName": "gravida",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "parity",
+            "columnName": "parity",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "abortion",
+            "columnName": "abortion",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "obstetricNotes",
+            "columnName": "obstetric_notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "revision",
+            "columnName": "revision",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "1"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_patients_case_id",
+            "unique": true,
+            "columnNames": [
+              "case_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_patients_case_id` ON `${TABLE_NAME}` (`case_id`)"
+          }
+        ]
+      },
+      {
+        "tableName": "visits",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `patient_id` TEXT NOT NULL, `recorded_date` TEXT NOT NULL, `blood_pressure` TEXT, `weight` TEXT, `findings` TEXT, `notes` TEXT, `revision` INTEGER NOT NULL, `is_synthetic_edit` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`patient_id`) REFERENCES `patients`(`id`) ON UPDATE RESTRICT ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "patientId",
+            "columnName": "patient_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "date",
+            "columnName": "recorded_date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bloodPressure",
+            "columnName": "blood_pressure",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "weight",
+            "columnName": "weight",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "findings",
+            "columnName": "findings",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "revision",
+            "columnName": "revision",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSyntheticEdit",
+            "columnName": "is_synthetic_edit",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_visits_patient_id",
+            "unique": false,
+            "columnNames": [
+              "patient_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_visits_patient_id` ON `${TABLE_NAME}` (`patient_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "patients",
+            "onDelete": "RESTRICT",
+            "onUpdate": "RESTRICT",
+            "columns": [
+              "patient_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "vault_metadata",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`vault_uuid` TEXT NOT NULL, `schema_version` INTEGER NOT NULL, `is_synthetic` INTEGER NOT NULL, `initialized` INTEGER NOT NULL, PRIMARY KEY(`vault_uuid`))",
+        "fields": [
+          {
+            "fieldPath": "vaultUuid",
+            "columnName": "vault_uuid",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "schemaVersion",
+            "columnName": "schema_version",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSynthetic",
+            "columnName": "is_synthetic",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "initialized",
+            "columnName": "initialized",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "vault_uuid"
+          ]
+        }
+      },
+      {
+        "tableName": "save_receipts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`operation_uuid` TEXT NOT NULL, `patient_id` TEXT NOT NULL, `visit_id` TEXT NOT NULL, `committed_revision` INTEGER NOT NULL, `fingerprint` TEXT NOT NULL, PRIMARY KEY(`operation_uuid`), FOREIGN KEY(`patient_id`) REFERENCES `patients`(`id`) ON UPDATE RESTRICT ON DELETE RESTRICT , FOREIGN KEY(`visit_id`) REFERENCES `visits`(`id`) ON UPDATE RESTRICT ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "operationUuid",
+            "columnName": "operation_uuid",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "patientId",
+            "columnName": "patient_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "visitId",
+            "columnName": "visit_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "committedRevision",
+            "columnName": "committed_revision",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fingerprint",
+            "columnName": "fingerprint",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "operation_uuid"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_save_receipts_patient_id",
+            "unique": false,
+            "columnNames": [
+              "patient_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_save_receipts_patient_id` ON `${TABLE_NAME}` (`patient_id`)"
+          },
+          {
+            "name": "index_save_receipts_visit_id",
+            "unique": false,
+            "columnNames": [
+              "visit_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_save_receipts_visit_id` ON `${TABLE_NAME}` (`visit_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "patients",
+            "onDelete": "RESTRICT",
+            "onUpdate": "RESTRICT",
+            "columns": [
+              "patient_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "visits",
+            "onDelete": "RESTRICT",
+            "onUpdate": "RESTRICT",
+            "columns": [
+              "visit_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "previous_pregnancies",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `patient_id` TEXT NOT NULL, `model_version` INTEGER NOT NULL, `date_text` TEXT, `outcome_text` TEXT, `pregnancy_type` TEXT, `other_details` TEXT, `place_and_doctor` TEXT, `delivery_by` TEXT, `outcome` TEXT, `birth_method` TEXT, `loss_management` TEXT, `termination_method` TEXT, `provenance_kind` TEXT NOT NULL, `clinician_id` TEXT NOT NULL, `recorded_at` TEXT NOT NULL, `updated_at` TEXT NOT NULL, `revision` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`patient_id`) REFERENCES `patients`(`id`) ON UPDATE RESTRICT ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "patientId",
+            "columnName": "patient_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modelVersion",
+            "columnName": "model_version",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dateText",
+            "columnName": "date_text",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "outcomeText",
+            "columnName": "outcome_text",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "pregnancyType",
+            "columnName": "pregnancy_type",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "otherDetails",
+            "columnName": "other_details",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "placeAndDoctor",
+            "columnName": "place_and_doctor",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "deliveryBy",
+            "columnName": "delivery_by",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "outcome",
+            "columnName": "outcome",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "birthMethod",
+            "columnName": "birth_method",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lossManagement",
+            "columnName": "loss_management",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "terminationMethod",
+            "columnName": "termination_method",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "provenanceKind",
+            "columnName": "provenance_kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "clinicianId",
+            "columnName": "clinician_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recordedAt",
+            "columnName": "recorded_at",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "revision",
+            "columnName": "revision",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_previous_pregnancies_patient_id",
+            "unique": false,
+            "columnNames": [
+              "patient_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_previous_pregnancies_patient_id` ON `${TABLE_NAME}` (`patient_id`)"
+          },
+          {
+            "name": "index_previous_pregnancies_patient_id_updated_at",
+            "unique": false,
+            "columnNames": [
+              "patient_id",
+              "updated_at"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_previous_pregnancies_patient_id_updated_at` ON `${TABLE_NAME}` (`patient_id`, `updated_at`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "patients",
+            "onDelete": "RESTRICT",
+            "onUpdate": "RESTRICT",
+            "columns": [
+              "patient_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "patient_command_receipts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`operation_uuid` TEXT NOT NULL, `patient_id` TEXT NOT NULL, `record_kind` TEXT NOT NULL, `record_id` TEXT NOT NULL, `committed_revision` INTEGER NOT NULL, `committed_patient_revision` INTEGER NOT NULL, `fingerprint` TEXT NOT NULL, PRIMARY KEY(`operation_uuid`), FOREIGN KEY(`patient_id`) REFERENCES `patients`(`id`) ON UPDATE RESTRICT ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "operationUuid",
+            "columnName": "operation_uuid",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "patientId",
+            "columnName": "patient_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recordKind",
+            "columnName": "record_kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recordId",
+            "columnName": "record_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "committedRevision",
+            "columnName": "committed_revision",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "committedPatientRevision",
+            "columnName": "committed_patient_revision",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fingerprint",
+            "columnName": "fingerprint",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "operation_uuid"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_patient_command_receipts_patient_id",
+            "unique": false,
+            "columnNames": [
+              "patient_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_patient_command_receipts_patient_id` ON `${TABLE_NAME}` (`patient_id`)"
+          },
+          {
+            "name": "index_patient_command_receipts_record_kind_record_id",
+            "unique": false,
+            "columnNames": [
+              "record_kind",
+              "record_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_patient_command_receipts_record_kind_record_id` ON `${TABLE_NAME}` (`record_kind`, `record_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "patients",
+            "onDelete": "RESTRICT",
+            "onUpdate": "RESTRICT",
+            "columns": [
+              "patient_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c4edca75329b4f425389fadfd5f77b42')"
+    ]
+  }
+}
