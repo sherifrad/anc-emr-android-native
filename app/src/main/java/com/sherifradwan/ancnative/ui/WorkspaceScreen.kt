@@ -366,7 +366,7 @@ private fun WorkspaceTopBar(
             ) {
                 Icon(
                     imageVector = Icons.Default.Warning,
-                    contentDescription = "التنبيهات الإكلينيكية",
+                    contentDescription = "Clinical Attention & Alerts",
                     tint = if (patient.clinicalAttention.isNullOrBlank()) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(24.dp),
                 )
@@ -377,7 +377,7 @@ private fun WorkspaceTopBar(
             ) {
                 Icon(
                     imageVector = Icons.Default.Print,
-                    contentDescription = "طباعة ملف المريضة (صفحتين)",
+                    contentDescription = "Print 2-Page Clinical Report",
                     tint = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier.size(24.dp),
                 )
@@ -1348,7 +1348,7 @@ private fun DeliveryPlanningCard(
                 ) {
                     Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("تعديل الخطة والرسوم")
+                    Text("Edit Delivery Plan")
                 }
             }
             Text(
@@ -1368,21 +1368,21 @@ private fun DeliveryPlanningCard(
 
             // Financial Agreement & Delivery Fee Section
             Text(
-                text = "الاتفاق المالي وتكلفة الولادة (Delivery Fee & Agreement)",
+                text = "Delivery Fee & Financial Agreement",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
             )
             val feeInfo = patient.obstetricNotes?.lineSequence()
-                ?.firstOrNull { it.contains("سعر", ignoreCase = true) || it.contains("تكلفة", ignoreCase = true) || it.contains("رسوم", ignoreCase = true) || it.contains("fee", ignoreCase = true) || it.contains("agreement", ignoreCase = true) }
+                ?.firstOrNull { it.contains("fee", ignoreCase = true) || it.contains("agreement", ignoreCase = true) || it.contains("cost", ignoreCase = true) }
 
             FactRow(
-                label = "تكلفة ورسوم الولادة المتفق عليها",
-                value = feeInfo ?: "يتم تحديدها في العيادة حسب المستشفى ونوع الولادة (طبيعية / قيصرية)",
+                label = "Agreed Delivery Fee & Hospital",
+                value = feeInfo ?: "To be agreed at clinic based on hospital and delivery mode (NVD / CS)",
             )
             FactRow(
-                label = "خطة وتفاصيل الولادة",
-                value = patient.obstetricNotes?.takeIf { it.isNotBlank() } ?: "لم تدون ملاحظات إضافية بعد",
+                label = "Delivery Plan & Clinical Notes",
+                value = patient.obstetricNotes?.takeIf { it.isNotBlank() } ?: "No additional notes recorded yet",
             )
         }
     }
@@ -1557,7 +1557,7 @@ private fun ClinicalAttentionBanner(
                         )
                     } else {
                         Text(
-                            text = "${items.size} تنبيهات إكلينيكية مسجلة",
+                            text = "${items.size} clinical alerts recorded",
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Bold,
                             color = contentColor,
@@ -1575,14 +1575,14 @@ private fun ClinicalAttentionBanner(
                     ) {
                         Icon(
                             Icons.Default.Edit,
-                            contentDescription = "تعديل التنبيهات الإكلينيكية",
+                            contentDescription = "Edit Clinical Alerts",
                             tint = contentColor,
                             modifier = Modifier.size(16.dp),
                         )
                     }
                     Icon(
                         imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = if (isExpanded) "طي" else "توسيع",
+                        contentDescription = if (isExpanded) "Collapse" else "Expand",
                         tint = contentColor,
                         modifier = Modifier.size(20.dp),
                     )
@@ -1638,7 +1638,7 @@ private fun ClinicalAttentionDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "التنبيهات الإكلينيكية (Clinical Attention)",
+                text = "Clinical Attention & Alerts",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
             )
@@ -1649,7 +1649,7 @@ private fun ClinicalAttentionDialog(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Text(
-                    text = "حدد مستوى التنبيه، واكتب الملاحظات (ملاحظة في كل سطر):",
+                    text = "Select alert severity, and enter clinical notes (one per line):",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.tertiary,
                 )
@@ -1661,19 +1661,19 @@ private fun ClinicalAttentionDialog(
                     FilterChip(
                         selected = selectedLevel == ClinicalAttentionLevel.CRITICAL,
                         onClick = { selectedLevel = ClinicalAttentionLevel.CRITICAL },
-                        label = { Text("حرجة [CRITICAL]") },
+                        label = { Text("CRITICAL") },
                         modifier = Modifier.weight(1f),
                     )
                     FilterChip(
                         selected = selectedLevel == ClinicalAttentionLevel.ALERT,
                         onClick = { selectedLevel = ClinicalAttentionLevel.ALERT },
-                        label = { Text("تنبيه [ALERT]") },
+                        label = { Text("ALERT") },
                         modifier = Modifier.weight(1f),
                     )
                     FilterChip(
                         selected = selectedLevel == ClinicalAttentionLevel.NOTE,
                         onClick = { selectedLevel = ClinicalAttentionLevel.NOTE },
-                        label = { Text("ملاحظة [NOTE]") },
+                        label = { Text("NOTE") },
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -1681,8 +1681,8 @@ private fun ClinicalAttentionDialog(
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it },
-                    label = { Text("نص التنبيهات (سطر لكل تنبيه)") },
-                    placeholder = { Text("مثال:\n• Mild anemia at 34w (Hb 10.6 g/dL)\n• Non-compliant with Calcium") },
+                    label = { Text("Alerts narrative (one item per line)") },
+                    placeholder = { Text("Example:\n• Mild anemia at 34w (Hb 10.6 g/dL)\n• Non-compliant with Calcium") },
                     minLines = 4,
                     maxLines = 8,
                     modifier = Modifier.fillMaxWidth(),
@@ -1736,13 +1736,13 @@ private fun AttachmentsSectionCard(
             ) {
                 Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("إضافة مرفق", maxLines = 1, softWrap = false)
+                Text("Add Attachment", maxLines = 1, softWrap = false)
             }
         }
 
         if (totalCount == 0) {
             Text(
-                text = "لا توجد مرفقات أو صور محفوظة",
+                text = "No saved attachments or clinical images",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -1754,7 +1754,7 @@ private fun AttachmentsSectionCard(
             }
 
             Text(
-                text = "$totalCount ملف محفوظ (${AttachmentSyncManager.formatFileSize(totalBytes)})",
+                text = "$totalCount saved files (${AttachmentSyncManager.formatFileSize(totalBytes)})",
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.tertiary,
@@ -1768,33 +1768,33 @@ private fun AttachmentsSectionCard(
                 FilterChip(
                     selected = selectedFilter == "ALL",
                     onClick = { selectedFilter = "ALL" },
-                    label = { Text("الكل ($totalCount)") },
+                    label = { Text("All ($totalCount)") },
                 )
                 FilterChip(
                     selected = selectedFilter == AttachmentCategories.ULTRASOUND,
                     onClick = { selectedFilter = AttachmentCategories.ULTRASOUND },
-                    label = { Text("سونار (${patient.attachments.count { it.category == AttachmentCategories.ULTRASOUND }})") },
+                    label = { Text("Ultrasound (${patient.attachments.count { it.category == AttachmentCategories.ULTRASOUND }})") },
                 )
                 FilterChip(
                     selected = selectedFilter == AttachmentCategories.LAB,
                     onClick = { selectedFilter = AttachmentCategories.LAB },
-                    label = { Text("تحاليل (${patient.attachments.count { it.category == AttachmentCategories.LAB }})") },
+                    label = { Text("Labs (${patient.attachments.count { it.category == AttachmentCategories.LAB }})") },
                 )
                 FilterChip(
                     selected = selectedFilter == AttachmentCategories.PRESCRIPTION,
                     onClick = { selectedFilter = AttachmentCategories.PRESCRIPTION },
-                    label = { Text("روشتات (${patient.attachments.count { it.category == AttachmentCategories.PRESCRIPTION }})") },
+                    label = { Text("Prescriptions (${patient.attachments.count { it.category == AttachmentCategories.PRESCRIPTION }})") },
                 )
                 FilterChip(
                     selected = selectedFilter == AttachmentCategories.CLINICAL_PHOTO,
                     onClick = { selectedFilter = AttachmentCategories.CLINICAL_PHOTO },
-                    label = { Text("صور سريرية (${patient.attachments.count { it.category == AttachmentCategories.CLINICAL_PHOTO }})") },
+                    label = { Text("Clinical Photos (${patient.attachments.count { it.category == AttachmentCategories.CLINICAL_PHOTO }})") },
                 )
             }
 
             if (filteredAttachments.isEmpty()) {
                 Text(
-                    text = "لا توجد مرفقات في هذا التصنيف المحدد",
+                    text = "No attachments in this selected category",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -1892,7 +1892,7 @@ private fun AttachmentsSectionCard(
                                             modifier = Modifier.size(12.dp),
                                         )
                                         Text(
-                                            text = "محفوظ ومؤمّن · ${attachment.capturedAt.take(10)}",
+                                            text = "Encrypted & Verified · ${attachment.capturedAt.take(10)}",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.tertiary,
                                         )
@@ -1912,7 +1912,7 @@ private fun AttachmentsSectionCard(
         if (scansWithPhotos.isNotEmpty()) {
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
             Text(
-                text = "فحوصات السونار السابقة الملحقة:",
+                text = "Previous Linked Ultrasound Scan Photos:",
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -1920,7 +1920,7 @@ private fun AttachmentsSectionCard(
             scansWithPhotos.forEach { scan ->
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = "سونار تاريخ: ${scan.date} (${scan.gestationalAgeWeeks?.let { "${it}w" } ?: "فحص نسائي"}) - ${scan.imageUris.size} صور",
+                        text = "Scan date: ${scan.date} (${scan.gestationalAgeWeeks?.let { "${it}w" } ?: "Gynecological"}) - ${scan.imageUris.size} photos",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.tertiary,
                     )
@@ -1943,7 +1943,7 @@ private fun AttachmentsSectionCard(
                                 ) {
                                     Text("📷", style = MaterialTheme.typography.bodySmall)
                                     Text(
-                                        text = "صورة ${idx + 1}",
+                                        text = "Photo ${idx + 1}",
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.SemiBold,
                                     )

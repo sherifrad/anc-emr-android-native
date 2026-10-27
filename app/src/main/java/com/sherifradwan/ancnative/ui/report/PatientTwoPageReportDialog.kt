@@ -104,7 +104,7 @@ fun PatientTwoPageReportDialog(
                             }
                             Column {
                                 Text(
-                                    text = "ملف المريضة المعتمد",
+                                    text = "Clinical Medical Record",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White,
@@ -131,14 +131,14 @@ fun PatientTwoPageReportDialog(
                                     val summary = ClinicalSummaryGenerator.generateTextSummary(patient)
                                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                                         type = "text/plain"
-                                        putExtra(Intent.EXTRA_SUBJECT, "الملف الطبي - ${patient.displayName}")
+                                        putExtra(Intent.EXTRA_SUBJECT, "Clinical Record - ${patient.displayName}")
                                         putExtra(Intent.EXTRA_TEXT, summary)
                                     }
-                                    context.startActivity(Intent.createChooser(shareIntent, "مشاركة الملف الطبي"))
+                                    context.startActivity(Intent.createChooser(shareIntent, "Share Clinical Record"))
                                 },
                                 modifier = Modifier.minimumTouchTarget().testTag("shareReportButton"),
                             ) {
-                                Icon(Icons.Default.Share, contentDescription = "مشاركة", tint = Color.White)
+                                Icon(Icons.Default.Share, contentDescription = "Share", tint = Color.White)
                             }
 
                             // Print / Export PDF button
@@ -162,12 +162,12 @@ fun PatientTwoPageReportDialog(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Print,
-                                    contentDescription = "طباعة",
+                                    contentDescription = "Print PDF",
                                     modifier = Modifier.size(20.dp),
                                 )
                                 Spacer(Modifier.width(4.dp))
                                 Text(
-                                    text = "طباعة PDF",
+                                    text = "Print PDF",
                                     maxLines = 1,
                                     softWrap = false,
                                     style = MaterialTheme.typography.labelLarge,

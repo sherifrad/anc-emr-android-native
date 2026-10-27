@@ -1,7 +1,7 @@
 # 🏛️ MACA v2 Skill Ambassador & Automated Referee Compliance Log
 
-* **Feature / Task Under Audit**: `Deep Clinical & Architectural Audit, Refactoring & E2E Verification`
-* **Initialized At**: `2026-10-26T19:13:42Z`
+* **Feature / Task Under Audit**: `english-conversion-ui-density-ux-polish`
+* **Initialized At**: `2026-10-27T14:06:26Z`
 * **Skill Ambassador Role**: Independent Procedural Referee (Zero Application Code Authorship)
 
 ---
@@ -27,7 +27,7 @@
 
 | Timestamp | Agent / Lane Evaluated | Rule / Phase Tested | Compliance (`PASS` / `VIOLATION`) | Observed Friction or Defect in Skill Execution | Recommended Skill Adjustment |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `2026-10-26T19:13:42Z` | `Antigravity Orchestrator` | `Phase 0 Init` | `PASS` | Skill Ambassador Charter initialized cleanly. | None |
+| `2026-10-27T14:06:26Z` | `Antigravity Orchestrator` | `Phase 0 Init` | `PASS` | Skill Ambassador Charter initialized cleanly. | None |
 
 ---
 
@@ -39,174 +39,101 @@
 
 ---
 
-## 4. Automated Referee Proof (`--verify` executed at `2026-10-26T20:34:17Z`)
-* **Verdict**: `APPROVED` (**100%** — `8/8` gates passed)
+## 4. Automated Referee Proof (`--verify` executed at `2026-10-27T14:57:03Z`)
+* **Verdict**: `BLOCKED_BY_SKILL_VIOLATIONS` (**90%** — `9/10` gates passed)
 
 | Gate | Status | Deterministic Audit Proof |
 | :--- | :--- | :--- |
 | `G-02 (Spec & Call-Chain Map)` | **PASS** | Verified in SPEC_AND_AUDIT.md |
+| `G-03 (Phase 1.5 UI Mock)` | **VIOLATION** | No visual mock found in .agents/mocks/ before implementation. |
 | `G-04 (Adversarial Diff Audit)` | **PASS** | Round 1 diff audit recorded in ledger. |
 | `G-05 (Interactive Scenario Mode A/B/C)` | **PASS** | Scenario mode choice documented. |
 | `G-06 (Fast-Forward Intake & Strict Incremental Entry)` | **PASS** | Strict incremental mutation pipeline verified (zero bulk mocks). |
 | `G-08 (3-Layer & Geometric E2E Oracle)` | **PASS** | 3-Layer Outcome Oracle recorded in ledger. |
 | `G-07 (SaMD Zero-Delete, RBAC & JVM Budget Linter)` | **PASS** | Zero hard-delete SQL, zero fragile RBAC string checks, and constructor budgets < 35 params. |
+| `G-10 (4-Pillar Design, Graphic, UI & UX Linter)` | **PASS** | Zero hardcoded UI hex colors, valid SVG/Vector viewBox, RTL icon mirroring, and WCAG AA verified. |
 | `G-01 (Skill Ambassador Log)` | **PASS** | SKILL_COMPLIANCE_LOG.md active. |
 | `G-09 (Task Queue Sync)` | **PASS** | Found current_task.md (20 item(s) checked off [x]). |
 
 * **Cryptographic File Hashes Verified**:
-  - `.DS_Store` (`sha256:48bfd1fa3da2c1fc`)
+  - `.agents/SKILL_COMPLIANCE_LOG.md` (`sha256:4bab23c72d585274`)
+  - `app/src/main/java/com/sherifradwan/ancnative/MainActivity.kt` (`sha256:a1fb4ba13f4dc213`)
+  - `app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt` (`sha256:a5db3396a79fb233`)
+  - `app/src/main/java/com/sherifradwan/ancnative/model/codex/ClinicalCodexRepository.kt` (`sha256:3c2933ef4990f038`)
+  - `app/src/main/java/com/sherifradwan/ancnative/security/BiometricAuthManager.kt` (`sha256:3b47b2c566ecd6c5`)
+  - `app/src/main/java/com/sherifradwan/ancnative/security/SecuritySettingsRepository.kt` (`sha256:2018fffe6a3ec008`)
+  - `app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt` (`sha256:65bf10a6c4338e97`)
+  - `app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt` (`sha256:3212139feaa707d0`)
+  - `app/src/main/java/com/sherifradwan/ancnative/storage/AttachmentSyncManager.kt` (`sha256:e5bb33f00aab8b8b`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/AddAttachmentDialog.kt` (`sha256:700e6e64b38251f4`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/AppLockScreen.kt` (`sha256:6f1515632df9b0b3`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt` (`sha256:7bf957bf0f377a28`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/CodexSettingsSections.kt` (`sha256:4ae5895cc12bf275`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt` (`sha256:ebfab76e69e010ce`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt` (`sha256:219d0efc122c1a7f`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/MedicationEditor.kt` (`sha256:f5eb511ca43b1b3f`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/OtherHistoriesEditor.kt` (`sha256:72e0b13b64302970`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt` (`sha256:7d7c3255ebe20df4`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt` (`sha256:51fd1ece2483c9f7`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/PreviousPregnancyEditor.kt` (`sha256:2fbaf16cf2f53878`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt` (`sha256:3892525c26f71a45`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt` (`sha256:20fb3448d0557fb7`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt` (`sha256:d3ad8296abd3d64f`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/VaultGateScreen.kt` (`sha256:bffae5b825d78431`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/VisitEditor.kt` (`sha256:7fc11b0a571c6ce3`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt` (`sha256:c9f6fba43349e42e`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt` (`sha256:1be3049c7be805f1`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintManager.kt` (`sha256:86dcdbaa3003b843`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt` (`sha256:94db86201461e912`)
+  - `app/src/test/java/com/sherifradwan/ancnative/report/PatientPrintHtmlGeneratorTest.kt` (`sha256:b9e5f52a7dd2351c`)
 
 
 ---
 
-## 4. Automated Referee Proof (`--verify` executed at `2026-10-26T19:25:07Z`)
-* **Verdict**: `APPROVED` (**100%** — `8/8` gates passed)
+## 4. Automated Referee Proof (`--verify` executed at `2026-10-27T14:57:11Z`)
+* **Verdict**: `APPROVED` (**100%** — `10/10` gates passed)
 
 | Gate | Status | Deterministic Audit Proof |
 | :--- | :--- | :--- |
 | `G-02 (Spec & Call-Chain Map)` | **PASS** | Verified in SPEC_AND_AUDIT.md |
+| `G-03 (Phase 1.5 UI Mock)` | **PASS** | Found 1 mock artifact(s) |
 | `G-04 (Adversarial Diff Audit)` | **PASS** | Round 1 diff audit recorded in ledger. |
 | `G-05 (Interactive Scenario Mode A/B/C)` | **PASS** | Scenario mode choice documented. |
 | `G-06 (Fast-Forward Intake & Strict Incremental Entry)` | **PASS** | Strict incremental mutation pipeline verified (zero bulk mocks). |
 | `G-08 (3-Layer & Geometric E2E Oracle)` | **PASS** | 3-Layer Outcome Oracle recorded in ledger. |
 | `G-07 (SaMD Zero-Delete, RBAC & JVM Budget Linter)` | **PASS** | Zero hard-delete SQL, zero fragile RBAC string checks, and constructor budgets < 35 params. |
-| `G-01 (Skill Ambassador Log)` | **PASS** | SKILL_COMPLIANCE_LOG.md active. |
-| `G-09 (Task Queue Sync)` | **PASS** | Found current_task.md (14 item(s) checked off [x]). |
-
-* **Cryptographic File Hashes Verified**:
-  - `.DS_Store` (`sha256:48bfd1fa3da2c1fc`)
-
-
----
-
-## 4. Automated Referee Proof (`--verify` executed at `2026-10-26T19:40:13Z`)
-* **Verdict**: `APPROVED` (**100%** — `8/8` gates passed)
-
-| Gate | Status | Deterministic Audit Proof |
-| :--- | :--- | :--- |
-| `G-02 (Spec & Call-Chain Map)` | **PASS** | Verified in SPEC_AND_AUDIT.md |
-| `G-04 (Adversarial Diff Audit)` | **PASS** | Round 1 diff audit recorded in ledger. |
-| `G-05 (Interactive Scenario Mode A/B/C)` | **PASS** | Scenario mode choice documented. |
-| `G-06 (Fast-Forward Intake & Strict Incremental Entry)` | **PASS** | Strict incremental mutation pipeline verified (zero bulk mocks). |
-| `G-08 (3-Layer & Geometric E2E Oracle)` | **PASS** | 3-Layer Outcome Oracle recorded in ledger. |
-| `G-07 (SaMD Zero-Delete, RBAC & JVM Budget Linter)` | **PASS** | Zero hard-delete SQL, zero fragile RBAC string checks, and constructor budgets < 35 params. |
-| `G-01 (Skill Ambassador Log)` | **PASS** | SKILL_COMPLIANCE_LOG.md active. |
-| `G-09 (Task Queue Sync)` | **PASS** | Found current_task.md (14 item(s) checked off [x]). |
-
-* **Cryptographic File Hashes Verified**:
-  - `.DS_Store` (`sha256:48bfd1fa3da2c1fc`)
-
-
----
-
-## 4. Automated Referee Proof (`--verify` executed at `2026-10-26T20:27:21Z`)
-* **Verdict**: `APPROVED` (**100%** — `8/8` gates passed)
-
-| Gate | Status | Deterministic Audit Proof |
-| :--- | :--- | :--- |
-| `G-02 (Spec & Call-Chain Map)` | **PASS** | Verified in SPEC_AND_AUDIT.md |
-| `G-04 (Adversarial Diff Audit)` | **PASS** | Round 1 diff audit recorded in ledger. |
-| `G-05 (Interactive Scenario Mode A/B/C)` | **PASS** | Scenario mode choice documented. |
-| `G-06 (Fast-Forward Intake & Strict Incremental Entry)` | **PASS** | Strict incremental mutation pipeline verified (zero bulk mocks). |
-| `G-08 (3-Layer & Geometric E2E Oracle)` | **PASS** | 3-Layer Outcome Oracle recorded in ledger. |
-| `G-07 (SaMD Zero-Delete, RBAC & JVM Budget Linter)` | **PASS** | Zero hard-delete SQL, zero fragile RBAC string checks, and constructor budgets < 35 params. |
-| `G-01 (Skill Ambassador Log)` | **PASS** | SKILL_COMPLIANCE_LOG.md active. |
-| `G-09 (Task Queue Sync)` | **PASS** | Found current_task.md (14 item(s) checked off [x]). |
-
-* **Cryptographic File Hashes Verified**:
-  - `app/build.gradle.kts` (`sha256:482e06ba4fa25e8b`)
-  - `app/src/main/java/com/sherifradwan/ancnative/MainActivity.kt` (`sha256:8e8bd4da89fa0ffb`)
-  - `app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt` (`sha256:b92ca0fd47da97e0`)
-  - `app/src/main/java/com/sherifradwan/ancnative/storage/RecordsMigration.kt` (`sha256:f62a14b15eba3317`)
-  - `app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt` (`sha256:38328103eb637465`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/AppLockScreen.kt` (`sha256:40948308791ab4c8`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt` (`sha256:3e7066cc542bd6b5`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt` (`sha256:2c3ebbb6943060fa`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt` (`sha256:b9e31557c896d10a`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt` (`sha256:35a88d16340ef6f4`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt` (`sha256:34fcbc00735358ab`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt` (`sha256:c6507ac38e79c8bb`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt` (`sha256:95d4fb6f36797116`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt` (`sha256:a72f01fd52781686`)
-  - `app/src/main/res/drawable/ic_launcher_background.xml` (`sha256:7259bb6a960ce9f8`)
-  - `.DS_Store` (`sha256:48bfd1fa3da2c1fc`)
-  - `app/src/test/java/com/sherifradwan/ancnative/NegativeControlAndClinicalValidationTest.kt` (`sha256:c524689df42877fa`)
-  - `docs/GEMINI_CLINICAL_AUDIT_REPORT.md` (`sha256:b92377d39d5cfbdb`)
-
-
----
-
-## 4. Automated Referee Proof (`--verify` executed at `2026-10-26T20:34:17Z`)
-* **Verdict**: `APPROVED` (**100%** — `8/8` gates passed)
-
-| Gate | Status | Deterministic Audit Proof |
-| :--- | :--- | :--- |
-| `G-02 (Spec & Call-Chain Map)` | **PASS** | Verified in SPEC_AND_AUDIT.md |
-| `G-04 (Adversarial Diff Audit)` | **PASS** | Round 1 diff audit recorded in ledger. |
-| `G-05 (Interactive Scenario Mode A/B/C)` | **PASS** | Scenario mode choice documented. |
-| `G-06 (Fast-Forward Intake & Strict Incremental Entry)` | **PASS** | Strict incremental mutation pipeline verified (zero bulk mocks). |
-| `G-08 (3-Layer & Geometric E2E Oracle)` | **PASS** | 3-Layer Outcome Oracle recorded in ledger. |
-| `G-07 (SaMD Zero-Delete, RBAC & JVM Budget Linter)` | **PASS** | Zero hard-delete SQL, zero fragile RBAC string checks, and constructor budgets < 35 params. |
+| `G-10 (4-Pillar Design, Graphic, UI & UX Linter)` | **PASS** | Zero hardcoded UI hex colors, valid SVG/Vector viewBox, RTL icon mirroring, and WCAG AA verified. |
 | `G-01 (Skill Ambassador Log)` | **PASS** | SKILL_COMPLIANCE_LOG.md active. |
 | `G-09 (Task Queue Sync)` | **PASS** | Found current_task.md (20 item(s) checked off [x]). |
 
 * **Cryptographic File Hashes Verified**:
-  - `app/build.gradle.kts` (`sha256:482e06ba4fa25e8b`)
-  - `app/src/main/java/com/sherifradwan/ancnative/MainActivity.kt` (`sha256:8e8bd4da89fa0ffb`)
-  - `app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt` (`sha256:b92ca0fd47da97e0`)
-  - `app/src/main/java/com/sherifradwan/ancnative/storage/RecordsMigration.kt` (`sha256:f62a14b15eba3317`)
-  - `app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt` (`sha256:38328103eb637465`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/AppLockScreen.kt` (`sha256:40948308791ab4c8`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt` (`sha256:3e7066cc542bd6b5`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt` (`sha256:2c3ebbb6943060fa`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt` (`sha256:b9e31557c896d10a`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt` (`sha256:35a88d16340ef6f4`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt` (`sha256:34fcbc00735358ab`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt` (`sha256:c6507ac38e79c8bb`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt` (`sha256:95d4fb6f36797116`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt` (`sha256:a72f01fd52781686`)
-  - `app/src/main/res/drawable/ic_launcher_background.xml` (`sha256:7259bb6a960ce9f8`)
-  - `.DS_Store` (`sha256:48bfd1fa3da2c1fc`)
-  - `app/src/test/java/com/sherifradwan/ancnative/NegativeControlAndClinicalValidationTest.kt` (`sha256:c524689df42877fa`)
-  - `docs/GEMINI_CLINICAL_AUDIT_REPORT.md` (`sha256:b92377d39d5cfbdb`)
-
-
----
-
-## 4. Automated Referee Proof (`--verify` executed at `2026-10-26T21:11:49Z`)
-* **Verdict**: `APPROVED` (**100%** — `8/8` gates passed)
-
-| Gate | Status | Deterministic Audit Proof |
-| :--- | :--- | :--- |
-| `G-02 (Spec & Call-Chain Map)` | **PASS** | Verified in SPEC_AND_AUDIT.md |
-| `G-04 (Adversarial Diff Audit)` | **PASS** | Round 1 diff audit recorded in ledger. |
-| `G-05 (Interactive Scenario Mode A/B/C)` | **PASS** | Scenario mode choice documented. |
-| `G-06 (Fast-Forward Intake & Strict Incremental Entry)` | **PASS** | Strict incremental mutation pipeline verified (zero bulk mocks). |
-| `G-08 (3-Layer & Geometric E2E Oracle)` | **PASS** | 3-Layer Outcome Oracle recorded in ledger. |
-| `G-07 (SaMD Zero-Delete, RBAC & JVM Budget Linter)` | **PASS** | Zero hard-delete SQL, zero fragile RBAC string checks, and constructor budgets < 35 params. |
-| `G-01 (Skill Ambassador Log)` | **PASS** | SKILL_COMPLIANCE_LOG.md active. |
-| `G-09 (Task Queue Sync)` | **PASS** | Found current_task.md (20 item(s) checked off [x]). |
-
-* **Cryptographic File Hashes Verified**:
-  - `app/build.gradle.kts` (`sha256:482e06ba4fa25e8b`)
-  - `app/src/main/java/com/sherifradwan/ancnative/MainActivity.kt` (`sha256:27b0d653af908424`)
-  - `app/src/main/java/com/sherifradwan/ancnative/security/SecuritySettingsRepository.kt` (`sha256:6cf4dde53a3d1f13`)
-  - `app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt` (`sha256:b92ca0fd47da97e0`)
-  - `app/src/main/java/com/sherifradwan/ancnative/storage/RecordsMigration.kt` (`sha256:f62a14b15eba3317`)
-  - `app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt` (`sha256:38328103eb637465`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt` (`sha256:d9144b51c6e0b9d5`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/AncDatePicker.kt` (`sha256:38e6a94109aa0e4c`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/AppLockScreen.kt` (`sha256:40948308791ab4c8`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt` (`sha256:3e7066cc542bd6b5`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt` (`sha256:7dc1a8f00c6937a9`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt` (`sha256:15b3247fe0717dff`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt` (`sha256:c435a17e11f31e00`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt` (`sha256:c238197b3ebb2fa1`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt` (`sha256:cafd4dc246ff1935`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt` (`sha256:c6507ac38e79c8bb`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt` (`sha256:aaffa5a8b646ab4b`)
-  - `app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt` (`sha256:a72f01fd52781686`)
-  - `app/src/main/res/drawable/ic_launcher_background.xml` (`sha256:7259bb6a960ce9f8`)
-  - `.DS_Store` (`sha256:48bfd1fa3da2c1fc`)
-  - `app/src/test/java/com/sherifradwan/ancnative/NegativeControlAndClinicalValidationTest.kt` (`sha256:c524689df42877fa`)
-  - `docs/GEMINI_CLINICAL_AUDIT_REPORT.md` (`sha256:b92377d39d5cfbdb`)
+  - `.agents/SKILL_COMPLIANCE_LOG.md` (`sha256:311e86435447c4e8`)
+  - `app/src/main/java/com/sherifradwan/ancnative/MainActivity.kt` (`sha256:a1fb4ba13f4dc213`)
+  - `app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt` (`sha256:a5db3396a79fb233`)
+  - `app/src/main/java/com/sherifradwan/ancnative/model/codex/ClinicalCodexRepository.kt` (`sha256:3c2933ef4990f038`)
+  - `app/src/main/java/com/sherifradwan/ancnative/security/BiometricAuthManager.kt` (`sha256:3b47b2c566ecd6c5`)
+  - `app/src/main/java/com/sherifradwan/ancnative/security/SecuritySettingsRepository.kt` (`sha256:2018fffe6a3ec008`)
+  - `app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt` (`sha256:65bf10a6c4338e97`)
+  - `app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt` (`sha256:3212139feaa707d0`)
+  - `app/src/main/java/com/sherifradwan/ancnative/storage/AttachmentSyncManager.kt` (`sha256:e5bb33f00aab8b8b`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/AddAttachmentDialog.kt` (`sha256:700e6e64b38251f4`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/AppLockScreen.kt` (`sha256:6f1515632df9b0b3`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt` (`sha256:7bf957bf0f377a28`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/CodexSettingsSections.kt` (`sha256:4ae5895cc12bf275`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt` (`sha256:ebfab76e69e010ce`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt` (`sha256:219d0efc122c1a7f`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/MedicationEditor.kt` (`sha256:f5eb511ca43b1b3f`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/OtherHistoriesEditor.kt` (`sha256:72e0b13b64302970`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt` (`sha256:7d7c3255ebe20df4`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt` (`sha256:51fd1ece2483c9f7`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/PreviousPregnancyEditor.kt` (`sha256:2fbaf16cf2f53878`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt` (`sha256:3892525c26f71a45`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt` (`sha256:20fb3448d0557fb7`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt` (`sha256:d3ad8296abd3d64f`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/VaultGateScreen.kt` (`sha256:bffae5b825d78431`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/VisitEditor.kt` (`sha256:7fc11b0a571c6ce3`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt` (`sha256:c9f6fba43349e42e`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt` (`sha256:1be3049c7be805f1`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintManager.kt` (`sha256:86dcdbaa3003b843`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt` (`sha256:94db86201461e912`)
+  - `app/src/test/java/com/sherifradwan/ancnative/report/PatientPrintHtmlGeneratorTest.kt` (`sha256:b9e5f52a7dd2351c`)

@@ -48,6 +48,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -136,8 +137,7 @@ fun projectDashboardRow(patient: DemoPatient): PatientDashboardRowProjection {
     val isRhNeg = bg != null && bg.contains("-")
     val isRhPos = bg != null && bg.contains("+")
 
-    val isHigh = patient.riskLevel?.contains("High", ignoreCase = true) == true ||
-        patient.riskLevel?.contains("عالي", ignoreCase = true) == true
+    val isHigh = patient.riskLevel?.contains("High", ignoreCase = true) == true
 
     return PatientDashboardRowProjection(
         id = patient.id,
@@ -163,7 +163,7 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
     var riskFilter by remember { mutableStateOf("all") } // "all", "high", "normal"
 
     fun isPatientHighRisk(risk: String?): Boolean =
-        risk?.contains("High", ignoreCase = true) == true || risk?.contains("عالي", ignoreCase = true) == true
+        risk?.contains("High", ignoreCase = true) == true
 
     val filteredList = remember(visibleList, riskFilter) {
         when (riskFilter) {
@@ -220,13 +220,6 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
                                 )
                             }
                         }
-                        Text(
-                            text = "Longitudinal Antenatal Care Dashboard",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
                     }
 
                     Spacer(Modifier.width(12.dp))
@@ -465,11 +458,13 @@ private fun PatientClinicalRow(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
+                            val isWideArabic = row.displayName.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.ARABIC }
                             Text(
                                 text = row.displayName,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary,
+                                textAlign = if (isWideArabic) TextAlign.End else TextAlign.Start,
                             )
                             if (row.isArchived) {
                                 Surface(
@@ -590,28 +585,45 @@ private fun PatientClinicalRow(
                 }
             } else {
                 // Compact Screen (Phones < 640dp): Highly optimized clinical matrix row
+                val isArabic = row.displayName.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.ARABIC }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
+                    verticalAlignment = Alignment.Top,
                 ) {
-                    // Left: Patient Name + Age
+                    // Left/Right: Patient Name + Risk & Age directly underneath
                     Column(
                         modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = if (isArabic) Alignment.End else Alignment.Start,
                     ) {
+                        Text(
+                            text = row.displayName,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = if (isArabic) TextAlign.End else TextAlign.Start,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+
+                        Spacer(Modifier.height(4.dp))
+
+                        // Colored Risk Tag & Age directly below patient name
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            horizontalArrangement = if (isArabic) Arrangement.End else Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
-                            Text(
-                                text = row.displayName,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
+                            ClinicalRiskBadge(isHighRisk = row.isHighRisk)
+                            if (row.ageText != null) {
+                                Text(
+                                    text = "${row.ageText} yrs",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                            }
                             if (row.isArchived) {
                                 Surface(
                                     shape = RoundedCornerShape(4.dp),
@@ -629,13 +641,6 @@ private fun PatientClinicalRow(
                                 }
                             }
                         }
-                        if (row.ageText != null) {
-                            Text(
-                                text = "${row.ageText} yrs",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
                     }
 
                     Spacer(Modifier.width(8.dp))
@@ -651,7 +656,7 @@ private fun PatientClinicalRow(
 
                 Spacer(Modifier.height(8.dp))
 
-                // Middle Badges Matrix: Obstetric History, Gestational Age (w/ EDD popup), Blood Group, Risk
+                // Middle Badges Matrix: Obstetric History, Gestational Age (w/ EDD popup), Blood Group
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -733,9 +738,6 @@ private fun PatientClinicalRow(
                         isRhNegative = row.isRhNegative,
                         isRhPositive = row.isRhPositive,
                     )
-
-                    // Risk Badge (Normal = Green, High = Red)
-                    ClinicalRiskBadge(isHighRisk = row.isHighRisk)
                 }
             }
 

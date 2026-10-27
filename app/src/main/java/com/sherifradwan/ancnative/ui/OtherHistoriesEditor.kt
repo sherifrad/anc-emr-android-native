@@ -49,7 +49,7 @@ fun OtherHistoriesEditor(
 
     EditorPage(
         title = stringResource(R.string.edit_other_histories),
-        subtitle = "${patient.displayName} · السوابق المرضية والجراحية والحساسية",
+        subtitle = "${patient.displayName} · Medical, Surgical, Family & Allergy Histories",
         tag = "otherHistoriesEditor",
     ) {
         EditorErrorCard(state, draft.errors)
@@ -233,7 +233,7 @@ fun OtherHistoriesEditor(
             )
             Spacer(Modifier.width(6.dp))
             Text(
-                text = "السوابق المرضية والجراحية مشفرة محلياً (AES-256 GCM) · Local Vault Security",
+                text = "Medical and surgical histories encrypted locally (AES-256 GCM) · Local Vault Security",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

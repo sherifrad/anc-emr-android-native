@@ -102,13 +102,13 @@ fun LabCodexSettingsSection(
         ) {
             Column(modifier = Modifier.weight(1f, fill = false)) {
                 Text(
-                    text = "دليل الفحوصات والتحاليل الطبية",
+                    text = "Laboratory Codex Directory",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                 )
                 Text(
-                    text = "${items.size} فحصاً · ${categoryGroups.size} باقات/مجموعات سريرية",
+                    text = "${items.size} tests · ${categoryGroups.size} clinical panels",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -122,7 +122,7 @@ fun LabCodexSettingsSection(
                     ) {
                         Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("إضافة فحص", maxLines = 1, softWrap = false)
+                        Text("Add Test", maxLines = 1, softWrap = false)
                     }
                 } else {
                     Button(
@@ -131,7 +131,7 @@ fun LabCodexSettingsSection(
                     ) {
                         Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("إنشاء باقة/مجموعة", maxLines = 1, softWrap = false)
+                        Text("Create Panel", maxLines = 1, softWrap = false)
                     }
                 }
             }
@@ -145,13 +145,13 @@ fun LabCodexSettingsSection(
             FilterChip(
                 selected = currentSubView == LabCodexSubView.INDIVIDUAL_TESTS,
                 onClick = { currentSubView = LabCodexSubView.INDIVIDUAL_TESTS },
-                label = { Text("الفحوصات الفردية (${items.size})") },
+                label = { Text("Individual Tests (${items.size})") },
                 modifier = Modifier.testTag("labIndividualTestsTab"),
             )
             FilterChip(
                 selected = currentSubView == LabCodexSubView.CATEGORY_GROUPS,
                 onClick = { currentSubView = LabCodexSubView.CATEGORY_GROUPS },
-                label = { Text("مجموعات وباقات التحاليل (${categoryGroups.size})") },
+                label = { Text("Panels & Profiles (${categoryGroups.size})") },
                 modifier = Modifier.testTag("labCategoryGroupsTab"),
             )
         }
@@ -162,8 +162,8 @@ fun LabCodexSettingsSection(
             onValueChange = { searchQuery = it },
             placeholder = {
                 Text(
-                    if (currentSubView == LabCodexSubView.INDIVIDUAL_TESTS) "بحث في الفحوصات أو التصنيفات..."
-                    else "بحث في مجموعات وباقات التحاليل..."
+                    if (currentSubView == LabCodexSubView.INDIVIDUAL_TESTS) "Search tests or categories..."
+                    else "Search diagnostic panels..."
                 )
             },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
@@ -184,8 +184,8 @@ fun LabCodexSettingsSection(
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
-                            text = if (searchQuery.isNotBlank()) "لا توجد نتائج تطابق: $searchQuery"
-                            else "دليل التحاليل فارغ حالياً.",
+                            text = if (searchQuery.isNotBlank()) "No matching results for: $searchQuery"
+                            else "Lab Codex directory is currently empty.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -252,7 +252,7 @@ fun LabCodexSettingsSection(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Delete,
-                                        contentDescription = "حذف الفحص",
+                                        contentDescription = "Delete Test",
                                         tint = MaterialTheme.colorScheme.error,
                                         modifier = Modifier.size(20.dp),
                                     )
@@ -275,8 +275,8 @@ fun LabCodexSettingsSection(
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
-                            text = if (searchQuery.isNotBlank()) "لا توجد مجموعات تطابق: $searchQuery"
-                            else "لا توجد باقات أو مجموعات مسجلة.",
+                            text = if (searchQuery.isNotBlank()) "No groups matching: $searchQuery"
+                            else "No registered panels or profiles.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -318,7 +318,7 @@ fun LabCodexSettingsSection(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Delete,
-                                            contentDescription = "حذف المجموعة",
+                                            contentDescription = "Delete Panel",
                                             tint = MaterialTheme.colorScheme.error,
                                             modifier = Modifier.size(20.dp),
                                         )
@@ -327,7 +327,7 @@ fun LabCodexSettingsSection(
 
                                 // Tests included in this category group
                                 Text(
-                                    text = "الفحوصات المتضمنة (${group.testNames.size}):",
+                                    text = "Included Tests (${group.testNames.size}):",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.primary,
@@ -364,7 +364,7 @@ fun LabCodexSettingsSection(
         ) {
             Icon(Icons.Default.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(4.dp))
-            Text("استعادة التحاليل والباقات الافتراضية للعيادة")
+            Text("Reset Clinic Lab Codex to Defaults")
         }
     }
 
@@ -395,8 +395,8 @@ fun LabCodexSettingsSection(
     if (itemToDelete != null) {
         AlertDialog(
             onDismissRequest = { itemToDelete = null },
-            title = { Text("تأكيد حذف الفحص من الدليل") },
-            text = { Text("هل أنت متأكد من حذف فحص '${itemToDelete?.testName}' نهائياً من دليل التحاليل العام للعيادة؟") },
+            title = { Text("Confirm Delete Test") },
+            text = { Text("Are you sure you want to permanently delete '${itemToDelete?.testName}' from clinic lab directory?") },
             confirmButton = {
                 Button(
                     onClick = {
@@ -404,12 +404,12 @@ fun LabCodexSettingsSection(
                         itemToDelete = null
                     },
                 ) {
-                    Text("حذف")
+                    Text("Delete")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { itemToDelete = null }) {
-                    Text("إلغاء")
+                    Text("Cancel")
                 }
             },
         )
@@ -419,8 +419,8 @@ fun LabCodexSettingsSection(
     if (groupToDelete != null) {
         AlertDialog(
             onDismissRequest = { groupToDelete = null },
-            title = { Text("تأكيد حذف مجموعة التحاليل") },
-            text = { Text("هل أنت متأكد من حذف باقة '${groupToDelete?.name}' نهائياً من دليل التحاليل للعيادة؟") },
+            title = { Text("Confirm Delete Diagnostic Panel") },
+            text = { Text("Are you sure you want to permanently delete panel '${groupToDelete?.name}' from clinic directory?") },
             confirmButton = {
                 Button(
                     onClick = {
@@ -428,12 +428,12 @@ fun LabCodexSettingsSection(
                         groupToDelete = null
                     },
                 ) {
-                    Text("حذف")
+                    Text("Delete")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { groupToDelete = null }) {
-                    Text("إلغاء")
+                    Text("Cancel")
                 }
             },
         )
@@ -443,8 +443,8 @@ fun LabCodexSettingsSection(
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
-            title = { Text("استعادة الفحوصات والباقات الافتراضية") },
-            text = { Text("سيؤدي هذا إلى إعادة ضبط دليل التحاليل ومجموعات التحاليل إلى القوائم الطبية القياسية الشائعة في عيادة الحوامل.") },
+            title = { Text("Reset to Default Lab Codex") },
+            text = { Text("This will restore the clinic lab catalog and panels back to standard antenatal clinical care defaults.") },
             confirmButton = {
                 Button(
                     onClick = {
@@ -453,12 +453,12 @@ fun LabCodexSettingsSection(
                         showResetDialog = false
                     },
                 ) {
-                    Text("استعادة")
+                    Text("Reset")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showResetDialog = false }) {
-                    Text("إلغاء")
+                    Text("Cancel")
                 }
             },
         )
@@ -479,20 +479,20 @@ private fun AddLabTestDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("إضافة فحص مختبري جديد للدليل") },
+        title = { Text("Add New Lab Test to Codex") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(
                     value = testName,
                     onValueChange = { testName = it },
-                    label = { Text("اسم الفحص (مطلوب)") },
-                    placeholder = { Text("مثال: Complete Blood Count أو TSH") },
+                    label = { Text("Test Name (Required)") },
+                    placeholder = { Text("e.g. Complete Blood Count or TSH") },
                     modifier = Modifier.fillMaxWidth().testTag("addLabNameField"),
                     singleLine = true,
                 )
 
                 Text(
-                    text = "تصنيف الفحص:",
+                    text = "Category:",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -516,7 +516,7 @@ private fun AddLabTestDialog(
                     OutlinedTextField(
                         value = unit,
                         onValueChange = { unit = it },
-                        label = { Text("الوحدة") },
+                        label = { Text("Unit") },
                         placeholder = { Text("g/dL") },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
@@ -524,7 +524,7 @@ private fun AddLabTestDialog(
                     OutlinedTextField(
                         value = referenceRange,
                         onValueChange = { referenceRange = it },
-                        label = { Text("النطاق الطبيعي") },
+                        label = { Text("Reference Range") },
                         placeholder = { Text("11.0 - 15.0") },
                         modifier = Modifier.weight(1.5f),
                         singleLine = true,
@@ -534,8 +534,8 @@ private fun AddLabTestDialog(
                 OutlinedTextField(
                     value = defaultResult,
                     onValueChange = { defaultResult = it },
-                    label = { Text("نتيجة افتراضية / ملاحظة (اختياري)") },
-                    placeholder = { Text("مثال: Negative أو Nil") },
+                    label = { Text("Default Result / Value (Optional)") },
+                    placeholder = { Text("e.g. Negative or Nil") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
@@ -554,7 +554,7 @@ private fun AddLabTestDialog(
             Button(
                 onClick = {
                     if (testName.trim().isBlank()) {
-                        errorMessage = "يرجى إدخال اسم الفحص الطبي!"
+                        errorMessage = "Please enter test name!"
                     } else {
                         onSave(
                             LabCodexItem(
@@ -570,12 +570,12 @@ private fun AddLabTestDialog(
                 },
                 modifier = Modifier.testTag("saveLabCodexConfirmBtn"),
             ) {
-                Text("حفظ في الدليل")
+                Text("Save to Codex")
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("إلغاء")
+                Text("Cancel")
             }
         },
     )
@@ -600,7 +600,7 @@ private fun AddLabCategoryGroupDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("إنشاء باقة / مجموعة تحاليل جديدة") },
+        title = { Text("Create New Diagnostic Panel") },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -609,8 +609,8 @@ private fun AddLabCategoryGroupDialog(
                 OutlinedTextField(
                     value = groupName,
                     onValueChange = { groupName = it },
-                    label = { Text("اسم الباقة / المجموعة (مطلوب)") },
-                    placeholder = { Text("مثال: فحوصات متابعة الضغط أو مسح السكري") },
+                    label = { Text("Panel Name (Required)") },
+                    placeholder = { Text("e.g. Hypertension Follow-up or Diabetes Screening") },
                     modifier = Modifier.fillMaxWidth().testTag("addLabGroupNameField"),
                     singleLine = true,
                 )
@@ -618,14 +618,14 @@ private fun AddLabCategoryGroupDialog(
                 OutlinedTextField(
                     value = groupDescription,
                     onValueChange = { groupDescription = it },
-                    label = { Text("الوصف أو دواعي الطلب (اختياري)") },
-                    placeholder = { Text("مثال: باقة تحاليل تُطلب في الأسبوع 28") },
+                    label = { Text("Description / Indication (Optional)") },
+                    placeholder = { Text("e.g. Panel requested at 28 weeks gestation") },
                     modifier = Modifier.fillMaxWidth().testTag("addLabGroupDescField"),
                     singleLine = true,
                 )
 
                 Text(
-                    text = "اختر الفحوصات المتضمنة في الباقة (${selectedTests.value.size} محدد):",
+                    text = "Select Tests to Include (${selectedTests.value.size} selected):",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary,
@@ -634,7 +634,7 @@ private fun AddLabCategoryGroupDialog(
                 OutlinedTextField(
                     value = testSearch,
                     onValueChange = { testSearch = it },
-                    placeholder = { Text("بحث في الفحوصات المتاحة...") },
+                    placeholder = { Text("Search available tests...") },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(16.dp)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
@@ -679,9 +679,9 @@ private fun AddLabCategoryGroupDialog(
             Button(
                 onClick = {
                     if (groupName.trim().isBlank()) {
-                        errorMessage = "يرجى إدخال اسم المجموعة أو الباقة!"
+                        errorMessage = "Please enter panel name!"
                     } else if (selectedTests.value.isEmpty()) {
-                        errorMessage = "يرجى اختيار فحص واحد على الأقل للمجموعة!"
+                        errorMessage = "Please select at least one test!"
                     } else {
                         onSave(
                             LabCategoryGroup(
@@ -695,12 +695,12 @@ private fun AddLabCategoryGroupDialog(
                 },
                 modifier = Modifier.testTag("saveLabGroupConfirmBtn"),
             ) {
-                Text("حفظ الباقة")
+                Text("Save Panel")
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("إلغاء")
+                Text("Cancel")
             }
         },
     )
@@ -738,13 +738,13 @@ fun MedicationCodexSettingsSection(
         ) {
             Column(modifier = Modifier.weight(1f, fill = false)) {
                 Text(
-                    text = "دليل الأدوية والبروتوكولات العلاجية",
+                    text = "Medication Codex & Protocols",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                 )
                 Text(
-                    text = "${items.size} دواء مسجلاً · متاح لخطط جميع المريضات",
+                    text = "${items.size} registered medications · available for all patient plans",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -757,7 +757,7 @@ fun MedicationCodexSettingsSection(
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("إضافة دواء", maxLines = 1, softWrap = false)
+                    Text("Add Medication", maxLines = 1, softWrap = false)
                 }
             }
         }
@@ -766,7 +766,7 @@ fun MedicationCodexSettingsSection(
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
-            placeholder = { Text("بحث في الأدوية أو الجرعات...") },
+            placeholder = { Text("Search medications or dosages...") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth().testTag("searchMedCodexField"),
@@ -784,8 +784,8 @@ fun MedicationCodexSettingsSection(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
-                        text = if (searchQuery.isNotBlank()) "لا توجد نتائج تطابق: $searchQuery"
-                        else "دليل الأدوية فارغ حالياً.",
+                        text = if (searchQuery.isNotBlank()) "No matching results for: $searchQuery"
+                        else "Medication Codex directory is currently empty.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -846,7 +846,7 @@ fun MedicationCodexSettingsSection(
                                             color = MaterialTheme.colorScheme.tertiaryContainer,
                                         ) {
                                             Text(
-                                                text = "وقائي للحمل",
+                                                text = "Prophylactic",
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onTertiaryContainer,
                                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
@@ -870,7 +870,7 @@ fun MedicationCodexSettingsSection(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
-                                    contentDescription = "حذف الدواء",
+                                    contentDescription = "Delete Medication",
                                     tint = MaterialTheme.colorScheme.error,
                                     modifier = Modifier.size(20.dp),
                                 )
@@ -888,7 +888,7 @@ fun MedicationCodexSettingsSection(
         ) {
             Icon(Icons.Default.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(4.dp))
-            Text("استعادة الأدوية الافتراضية للعيادة")
+            Text("Reset Clinic Medication Codex to Defaults")
         }
     }
 
@@ -907,8 +907,8 @@ fun MedicationCodexSettingsSection(
     if (itemToDelete != null) {
         AlertDialog(
             onDismissRequest = { itemToDelete = null },
-            title = { Text("تأكيد حذف الدواء من الدليل") },
-            text = { Text("هل أنت متأكد من حذف دواء '${itemToDelete?.displayLabel}' نهائياً من دليل الأدوية العام للعيادة؟") },
+            title = { Text("Confirm Delete Medication") },
+            text = { Text("Are you sure you want to permanently delete '${itemToDelete?.displayLabel}' from clinic medication directory?") },
             confirmButton = {
                 Button(
                     onClick = {
@@ -916,12 +916,12 @@ fun MedicationCodexSettingsSection(
                         itemToDelete = null
                     },
                 ) {
-                    Text("حذف")
+                    Text("Delete")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { itemToDelete = null }) {
-                    Text("إلغاء")
+                    Text("Cancel")
                 }
             },
         )
@@ -931,8 +931,8 @@ fun MedicationCodexSettingsSection(
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
-            title = { Text("استعادة الأدوية الافتراضية") },
-            text = { Text("سيؤدي هذا إلى إعادة ضبط دليل الأدوية إلى قائمة الأدوية القياسية الموصى بها في رعاية الأمومة.") },
+            title = { Text("Reset to Default Medication Codex") },
+            text = { Text("This will restore the medication catalog to standard clinical maternal care guidelines.") },
             confirmButton = {
                 Button(
                     onClick = {
@@ -940,12 +940,12 @@ fun MedicationCodexSettingsSection(
                         showResetDialog = false
                     },
                 ) {
-                    Text("استعادة")
+                    Text("Reset")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showResetDialog = false }) {
-                    Text("إلغاء")
+                    Text("Cancel")
                 }
             },
         )
@@ -969,7 +969,7 @@ private fun AddMedicationDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("إضافة دواء جديد للدليل") },
+        title = { Text("Add New Medication to Codex") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(
@@ -979,15 +979,15 @@ private fun AddMedicationDialog(
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
-                        label = { Text("اسم الدواء (مطلوب)") },
-                        placeholder = { Text("مثال: Folic Acid") },
+                        label = { Text("Medication Name (Required)") },
+                        placeholder = { Text("e.g. Folic Acid") },
                         modifier = Modifier.weight(1.5f).testTag("addMedNameField"),
                         singleLine = true,
                     )
                     OutlinedTextField(
                         value = dosage,
                         onValueChange = { dosage = it },
-                        label = { Text("الجرعة") },
+                        label = { Text("Dosage") },
                         placeholder = { Text("5 mg") },
                         modifier = Modifier.weight(1f).testTag("addMedDosageField"),
                         singleLine = true,
@@ -995,7 +995,7 @@ private fun AddMedicationDialog(
                 }
 
                 Text(
-                    text = "طريق الإعطاء:",
+                    text = "Administration Route:",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -1013,7 +1013,7 @@ private fun AddMedicationDialog(
                 }
 
                 Text(
-                    text = "التكرار اليومي:",
+                    text = "Frequency:",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -1036,7 +1036,7 @@ private fun AddMedicationDialog(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
-                        text = "علاج وقائي للحمل (Prophylactic)",
+                        text = "Pregnancy Prophylactic",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Switch(
@@ -1048,8 +1048,8 @@ private fun AddMedicationDialog(
                 OutlinedTextField(
                     value = instructions,
                     onValueChange = { instructions = it },
-                    label = { Text("تعليمات الاستخدام أو دواعي الاستعمال") },
-                    placeholder = { Text("مثال: للوقاية من تشوهات الأنبوب العصبي") },
+                    label = { Text("Instructions / Clinical Indication") },
+                    placeholder = { Text("e.g. For neural tube defect prevention") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
@@ -1068,7 +1068,7 @@ private fun AddMedicationDialog(
             Button(
                 onClick = {
                     if (name.trim().isBlank()) {
-                        errorMessage = "يرجى إدخال اسم الدواء!"
+                        errorMessage = "Please enter medication name!"
                     } else {
                         onSave(
                             MedicationCodexItem(
@@ -1085,12 +1085,12 @@ private fun AddMedicationDialog(
                 },
                 modifier = Modifier.testTag("saveMedCodexConfirmBtn"),
             ) {
-                Text("حفظ في الدليل")
+                Text("Save to Codex")
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("إلغاء")
+                Text("Cancel")
             }
         },
     )

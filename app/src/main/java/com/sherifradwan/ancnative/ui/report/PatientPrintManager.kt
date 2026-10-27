@@ -29,7 +29,7 @@ object PatientPrintManager {
         webView.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
-                val jobName = "ملف_المريضة_${patient.displayName}_${patient.caseId}"
+                val jobName = "Patient_Report_${patient.displayName.replace(' ', '_')}_${patient.caseId}"
                 val printAdapter = webView.createPrintDocumentAdapter(jobName)
                 val printAttributes = PrintAttributes.Builder()
                     .setMediaSize(PrintAttributes.MediaSize.ISO_A4)

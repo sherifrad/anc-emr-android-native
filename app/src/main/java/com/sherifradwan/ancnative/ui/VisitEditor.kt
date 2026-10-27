@@ -65,7 +65,7 @@ fun VisitEditor(
 
     EditorPage(
         title = if (draft.visitId == null) stringResource(R.string.add_visit) else stringResource(R.string.edit_visit),
-        subtitle = "${patient.displayName} · تسجيل ومتابعة الزيارة الدورية",
+        subtitle = "${patient.displayName} · Routine Antenatal Visit & Vitals",
         tag = "visitEditor",
     ) {
         if (DraftError.STALE_REVISION in draft.errors) {
@@ -119,7 +119,7 @@ fun VisitEditor(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "1. توقيت الزيارة وعمر الحمل · Visit Timing & GA",
+                    text = "1. Visit Timing & Gestational Age",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -181,7 +181,7 @@ fun VisitEditor(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "2. العلامات الحيوية والفحص السريري · Vitals & Examination",
+                    text = "2. Vitals & Physical Examination",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -285,7 +285,7 @@ fun VisitEditor(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "3. الفحوصات المرتبطة والملاحظات · Linked Scans & Notes",
+                    text = "3. Linked Scans & Clinical Notes",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -388,7 +388,7 @@ fun VisitEditor(
             )
             Spacer(Modifier.width(6.dp))
             Text(
-                text = "سجلات الزيارات مشفرة ومحمية محلياً (AES-256 GCM) · Hardware Vault Security",
+                text = "Visit records and examinations encrypted locally (AES-256 GCM) · Hardware Vault Security",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

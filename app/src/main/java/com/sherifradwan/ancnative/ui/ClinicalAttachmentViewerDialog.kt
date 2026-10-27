@@ -166,7 +166,7 @@ fun ClinicalAttachmentViewerDialog(
                         ) {
                             Icon(
                                 Icons.Default.Delete,
-                                contentDescription = "حذف المرفق",
+                                contentDescription = "Delete Attachment",
                                 tint = MaterialTheme.colorScheme.error,
                             )
                         }
@@ -176,7 +176,7 @@ fun ClinicalAttachmentViewerDialog(
                         ) {
                             Icon(
                                 Icons.Default.Close,
-                                contentDescription = "إغلاق",
+                                contentDescription = "Close",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
@@ -212,7 +212,7 @@ fun ClinicalAttachmentViewerDialog(
                                 modifier = Modifier.size(48.dp),
                             )
                             Text(
-                                text = "جاري تحميل الصورة المشفرة...",
+                                text = "Loading encrypted image...",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color.LightGray,
                             )
@@ -246,7 +246,7 @@ fun ClinicalAttachmentViewerDialog(
                                     modifier = Modifier.size(16.dp),
                                 )
                                 Text(
-                                    text = if (isIntegrityVerified) "نزاهة رقمية مؤكدة · SHA-256" else "تخزين طبي محمي",
+                                    text = if (isIntegrityVerified) "Verified Digital Integrity · SHA-256" else "Protected Medical Vault",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = if (isIntegrityVerified) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
@@ -268,7 +268,7 @@ fun ClinicalAttachmentViewerDialog(
                         )
 
                         Text(
-                            text = "تاريخ الحفظ: ${attachment.capturedAt}",
+                            text = "Saved At: ${attachment.capturedAt}",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -281,10 +281,10 @@ fun ClinicalAttachmentViewerDialog(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("تأكيد حذف المرفق الطبي") },
+            title = { Text("Confirm Delete Attachment") },
             text = {
                 Text(
-                    "هل أنت متأكد من حذف هذا المرفق (${attachment.title ?: attachment.fileName}) نهائياً من سجل المريضة ${patient.displayName}؟",
+                    "Are you sure you want to permanently delete this attachment (${attachment.title ?: attachment.fileName}) from patient ${patient.displayName}'s record?",
                 )
             },
             confirmButton = {
@@ -296,12 +296,12 @@ fun ClinicalAttachmentViewerDialog(
                     },
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
                 ) {
-                    Text("نعم، حذف نهائي")
+                    Text("Yes, Delete Permanently")
                 }
             },
             dismissButton = {
                 OutlinedButton(onClick = { showDeleteConfirm = false }) {
-                    Text("إلغاء")
+                    Text("Cancel")
                 }
             },
         )

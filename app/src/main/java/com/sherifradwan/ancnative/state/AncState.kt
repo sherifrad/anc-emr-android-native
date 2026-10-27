@@ -66,6 +66,7 @@ enum class PatientDraftField {
     ABORTION,
     OBSTETRIC_NOTES,
     CLINICAL_ATTENTION,
+    LMP_DATE,
 }
 enum class HistoriesDraftField { MEDICAL, SURGICAL, FAMILY, ALLERGY }
 enum class PregnancyDraftField {
@@ -203,6 +204,7 @@ data class PatientDraftValues(
     val abortion: String = "",
     val obstetricNotes: String = "",
     val clinicalAttention: String = "",
+    val lmpDate: String = "",
 )
 
 data class PatientDraft(
@@ -897,6 +899,7 @@ object AncReducer {
             PatientDraftField.ABORTION -> draft.values.copy(abortion = event.value)
             PatientDraftField.OBSTETRIC_NOTES -> draft.values.copy(obstetricNotes = event.value)
             PatientDraftField.CLINICAL_ATTENTION -> draft.values.copy(clinicalAttention = event.value)
+            PatientDraftField.LMP_DATE -> draft.values.copy(lmpDate = event.value)
         }
         return state.copy(patientDraft = draft.copy(values = values, errors = emptySet()), savePhase = SavePhase.IDLE, saveError = null)
     }
@@ -1122,6 +1125,7 @@ object AncReducer {
         abortion = abortion?.toString().orEmpty(),
         obstetricNotes = obstetricNotes.orEmpty(),
         clinicalAttention = clinicalAttention.orEmpty(),
+        lmpDate = dating?.lmpDate.orEmpty(),
     )
 
     private fun DemoPreviousPregnancy.toDraftValues() = PreviousPregnancyDraftValues(

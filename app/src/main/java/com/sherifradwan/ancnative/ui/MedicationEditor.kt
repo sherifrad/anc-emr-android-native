@@ -78,7 +78,7 @@ fun MedicationEditor(
 
     EditorPage(
         title = stringResource(R.string.medication_editor),
-        subtitle = "${patient.displayName} · إدارة وتدوين الوصفات الدوائية للحمل",
+        subtitle = "${patient.displayName} · Pregnancy Medication Management & Prescription",
         tag = "medicationEditor",
     ) {
         ClinicalEditorErrorCard(state, draft.errors)
@@ -101,7 +101,7 @@ fun MedicationEditor(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "1. بيانات الدواء والجرعة وتاريخ البدء · Medication & Presets",
+                    text = "1. Medication Details, Dosage & Timing",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -142,7 +142,7 @@ fun MedicationEditor(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                text = "دواء جديد: حفظ في دليل الأدوية للمرضى؟",
+                                text = "New medication: Save to Clinic Medication Codex?",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                             )
@@ -167,7 +167,7 @@ fun MedicationEditor(
                                     modifier = Modifier.size(16.dp),
                                 )
                                 Spacer(Modifier.width(4.dp))
-                                Text("حفظ في الدليل")
+                                Text("Save to Codex")
                             }
                         }
                     }
@@ -291,7 +291,7 @@ fun MedicationEditor(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "2. مسار الإعطاء والخيارات المتقدمة · Administration & Adherence",
+                    text = "2. Administration Route & Adherence Options",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -435,7 +435,7 @@ fun MedicationEditor(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "3. الآثار الجانبية والملاحظات السريرية · Adverse Effects & Notes",
+                    text = "3. Adverse Effects & Clinical Notes",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -477,7 +477,7 @@ fun MedicationEditor(
             )
             Spacer(Modifier.width(6.dp))
             Text(
-                text = "سجلات الأدوية والوصفات مشفرة محلياً (AES-256 GCM) · Local Vault Security",
+                text = "Medication and prescription records encrypted locally (AES-256 GCM) · Local Vault Security",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

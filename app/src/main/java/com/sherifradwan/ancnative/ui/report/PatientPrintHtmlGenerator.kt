@@ -33,13 +33,13 @@ object PatientPrintHtmlGenerator {
         asOfDate: LocalDate = LocalDate.now(),
     ): String {
         val logoBase64 = getLogoBase64(context)
-        val clinicNameAr = settings?.clinicName ?: "دكتور شريف رضوان كلينيك"
+        val clinicNameAr = settings?.clinicName ?: "Dr. Sherif Radwan Clinic"
         val clinicNameEn = "Dr. Sherif Radwan Clinic"
-        val clinicSpecialty = "رعاية الأمومة وطب الجنين"
-        val doctorOfficialTitle = "أخصائي النساء والتوليد وجراحة المناظير وعلاج العقم"
+        val clinicSpecialty = "Maternal-Fetal Medicine & Advanced Obstetrics"
+        val doctorOfficialTitle = "Consultant of Obstetrics, Gynecology & Laparoscopy"
         val printDateStr = asOfDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
         val gaResult = patient.dating?.calculateGestationalAgeResult(asOfDate)
-        val currentGaFormatted = gaResult?.formatted ?: "غير محدد"
+        val currentGaFormatted = gaResult?.formatted ?: "Unspecified"
 
         // Format Obstetric summary
         val g = patient.gravida ?: "-"
@@ -62,7 +62,7 @@ object PatientPrintHtmlGenerator {
         }
 
         val riskLevel = patient.riskLevel ?: "Low Risk"
-        val isHighRisk = riskLevel.contains("High", ignoreCase = true) || riskLevel.contains("عالي", ignoreCase = true)
+        val isHighRisk = riskLevel.contains("High", ignoreCase = true)
         val isRhNegative = patient.bloodGroupText?.contains("-") == true
 
         // Collect ultrasound images if any
@@ -71,7 +71,7 @@ object PatientPrintHtmlGenerator {
                 mapOf(
                     "uri" to uri,
                     "date" to s.date,
-                    "label" to "صورة سونار ${sIdx + 1}.${iIdx + 1} - ${s.date} (${s.impression ?: "فحص نمو الجنين"})",
+                    "label" to "Ultrasound Scan ${sIdx + 1}.${iIdx + 1} - ${s.date} (${s.impression ?: "Fetal Growth Surveillance"})",
                 )
             }
         }
@@ -80,7 +80,7 @@ object PatientPrintHtmlGenerator {
         // Visits table rows (Centered text, No SFH, No FHR, Spacious and comfortable)
         val sortedVisits = patient.visits.sortedBy { it.date }
         val visitsRowsHtml = if (sortedVisits.isEmpty()) {
-            """<tr><td colspan="6" class="text-center empty-cell">لم يتم تسجيل أي زيارات سريرية بعد</td></tr>"""
+            """<tr><td colspan="6" class="text-center empty-cell">No clinical visits recorded yet</td></tr>"""
         } else {
             sortedVisits.take(12).mapIndexed { idx, v ->
                 val vGa = try {
@@ -95,17 +95,17 @@ object PatientPrintHtmlGenerator {
                     <td class="text-center date-cell">${v.date}</td>
                     <td class="text-center font-bold text-teal">${vGa}</td>
                     <td class="text-center font-bold text-navy">${v.bloodPressure ?: "-"}</td>
-                    <td class="text-center">${v.weight?.let { "$it كجم" } ?: "-"}</td>
-                    <td class="text-center notes-cell">${v.findings ?: v.notes ?: "سير الحمل طبيعي ومستقر وفق الخطة الإكلينيكية"}</td>
+                    <td class="text-center">${v.weight?.let { "$it kg" } ?: "-"}</td>
+                    <td class="text-center notes-cell">${v.findings ?: v.notes ?: "Antenatal course progressing favorably"}</td>
                 </tr>
                 """.trimIndent()
             }.joinToString("\n")
         }
 
-        // Ultrasound Scans rows (Centered, وزن الجنين (كجم), الملاحظات الطبية, image badge if photos exist)
+        // Ultrasound Scans rows (Centered, EFW (g), Clinical Notes, image badge if photos exist)
         val sortedScans = patient.ultrasoundScans.sortedBy { it.date }
         val scansRowsHtml = if (sortedScans.isEmpty()) {
-            """<tr><td colspan="7" class="text-center empty-cell">لم يتم تسجيل أي فحوصات سونار بعد</td></tr>"""
+            """<tr><td colspan="7" class="text-center empty-cell">No ultrasound scans recorded yet</td></tr>"""
         } else {
             sortedScans.take(7).map { s ->
                 val scanGaStr = when {
@@ -121,7 +121,7 @@ object PatientPrintHtmlGenerator {
                 ).joinToString(" · ").ifBlank { "-" }
 
                 val photoIndicator = if (s.imageUris.isNotEmpty()) {
-                    """<div class="photo-badge">📷 ${s.imageUris.size} صورة سونار مرفقة</div>"""
+                    """<div class="photo-badge">📷 ${s.imageUris.size} scan photos attached</div>"""
                 } else {
                     ""
                 }
@@ -129,10 +129,10 @@ object PatientPrintHtmlGenerator {
                 val notesText = s.impression ?: biometry
 
                 val efwStr = s.estimatedFetalWeight?.let { weight ->
-                    if (weight.contains("g", ignoreCase = true) || weight.contains("جم") || weight.contains("kg", ignoreCase = true)) {
+                    if (weight.contains("g", ignoreCase = true) || weight.contains("kg", ignoreCase = true)) {
                         weight
                     } else {
-                        "$weight جم"
+                        "$weight g"
                     }
                 } ?: "-"
 
@@ -156,11 +156,11 @@ object PatientPrintHtmlGenerator {
         // Labs rows (Centered, NO status column, Abnormal result displayed in RED)
         val sortedLabs = patient.labInvestigations.sortedByDescending { it.date }
         val labsRowsHtml = if (sortedLabs.isEmpty()) {
-            """<tr><td colspan="4" class="text-center empty-cell">لم يتم تسجيل نتائج تحاليل بعد</td></tr>"""
+            """<tr><td colspan="4" class="text-center empty-cell">No laboratory test results recorded yet</td></tr>"""
         } else {
             sortedLabs.take(10).map { l ->
                 val resultHtml = if (l.isAbnormal) {
-                    """<span class="val-abnormal">${l.result} ${l.unit ?: ""} (غير طبيعي)</span>"""
+                    """<span class="val-abnormal">${l.result} ${l.unit ?: ""} (Abnormal)</span>"""
                 } else {
                     """<span class="font-bold text-navy">${l.result} ${l.unit ?: ""}</span>"""
                 }
@@ -178,13 +178,13 @@ object PatientPrintHtmlGenerator {
         // Medications rows (Centered)
         val activeMeds = patient.medications.take(8)
         val medsRowsHtml = if (activeMeds.isEmpty()) {
-            """<tr><td colspan="5" class="text-center empty-cell">لا توجد أدوية أو مكملات مسجلة حالياً</td></tr>"""
+            """<tr><td colspan="5" class="text-center empty-cell">No active medications or supplements recorded</td></tr>"""
         } else {
             activeMeds.map { m ->
                 val typeBadge = if (m.isProphylaxis) {
-                    """<span class="badge badge-teal">وقائي (Prophylaxis)</span>"""
+                    """<span class="badge badge-teal">Prophylaxis</span>"""
                 } else {
-                    """<span class="badge badge-navy">علاجي (Rx)</span>"""
+                    """<span class="badge badge-navy">Rx</span>"""
                 }
                 """
                 <tr>
@@ -192,7 +192,7 @@ object PatientPrintHtmlGenerator {
                     <td class="text-center font-bold">${m.dosage} (${m.route})</td>
                     <td class="text-center">${m.frequency}</td>
                     <td class="text-center">${typeBadge}</td>
-                    <td class="text-center notes-cell text-muted">${m.notes ?: "مستمر بانتظام وفق الوصفة"}</td>
+                    <td class="text-center notes-cell text-muted">${m.notes ?: "Ongoing as prescribed"}</td>
                 </tr>
                 """.trimIndent()
             }.joinToString("\n")
@@ -200,32 +200,31 @@ object PatientPrintHtmlGenerator {
 
         // Previous Pregnancies (Centered)
         val prevPregRows = if (patient.previousPregnancies.isEmpty()) {
-            """<p class="text-muted text-center text-small" style="padding: 6px;">لا يوجد تاريخ لحمول أو ولادات سابقة مسجلة (بكرية أو غير مسجل).</p>"""
+            """<p class="text-muted text-center text-small" style="padding: 6px;">No previous pregnancies or deliveries recorded (Primigravida / N/A).</p>"""
         } else {
             """
             <table class="clinical-table mini-table">
                 <thead>
                     <tr>
-                        <th style="width: 14%; text-align: center;">السنة / التاريخ</th>
-                        <th style="width: 26%; text-align: center;">نوع الحمل وطريقة الولادة</th>
-                        <th style="width: 25%; text-align: center;">النتيجة والحالة</th>
-                        <th style="width: 35%; text-align: center;">المستشفى والملاحظات السريرية</th>
+                        <th style="width: 14%; text-align: center;">Year / Date</th>
+                        <th style="width: 26%; text-align: center;">Type & Delivery Mode</th>
+                        <th style="width: 25%; text-align: center;">Outcome & Status</th>
+                        <th style="width: 35%; text-align: center;">Hospital & Clinical Notes</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${patient.previousPregnancies.map { pp ->
                         val outcomeLabel = when (pp.outcome) {
-                            "Stillbirth" -> pp.outcomeText ?: "وفاة جنينية داخل الرحم (Stillbirth/IUFD)"
-                            "EarlyPregnancyLoss" -> pp.outcomeText ?: "إجهاض مبكر (Miscarriage)"
-                            "TerminationOfPregnancy" -> pp.outcomeText ?: "إنهاء حمل علاجي (Termination)"
-                            "LiveBirth" -> pp.outcomeText ?: "مولود حي مكتمل (Live Birth)"
+                            "Stillbirth" -> pp.outcomeText ?: "Stillbirth / IUFD"
+                            "EarlyPregnancyLoss" -> pp.outcomeText ?: "Miscarriage"
+                            "TerminationOfPregnancy" -> pp.outcomeText ?: "Therapeutic Termination"
+                            "LiveBirth" -> pp.outcomeText ?: "Live Birth"
                             else -> pp.outcomeText ?: pp.outcome ?: "-"
                         }
                         val isLoss = pp.outcome in setOf("Stillbirth", "EarlyPregnancyLoss", "TerminationOfPregnancy") ||
-                            (pp.outcomeText?.contains("وفاة", ignoreCase = true) == true) ||
-                            (pp.outcomeText?.contains("إجهاض", ignoreCase = true) == true) ||
                             (pp.outcomeText?.contains("IUFD", ignoreCase = true) == true) ||
-                            (pp.outcomeText?.contains("Stillbirth", ignoreCase = true) == true)
+                            (pp.outcomeText?.contains("Stillbirth", ignoreCase = true) == true) ||
+                            (pp.outcomeText?.contains("Miscarriage", ignoreCase = true) == true)
                         val outcomeBadge = if (isLoss) {
                             """<span class="badge" style="background:#fee2e2;color:#991b1b;border:1px solid #f87171;font-weight:bold;padding:2px 6px;border-radius:4px;">$outcomeLabel</span>"""
                         } else {
@@ -237,7 +236,7 @@ object PatientPrintHtmlGenerator {
                             <td class="text-center date-cell">${pp.dateText ?: "-"}</td>
                             <td class="text-center font-bold">${methodText}</td>
                             <td class="text-center">${outcomeBadge}</td>
-                            <td class="text-center">${pp.placeAndDoctor ?: pp.otherDetails ?: "بدون مضاعفات"}</td>
+                            <td class="text-center">${pp.placeAndDoctor ?: pp.otherDetails ?: "Uncomplicated"}</td>
                         </tr>
                         """.trimIndent()
                     }.joinToString("\n")}
@@ -259,7 +258,7 @@ object PatientPrintHtmlGenerator {
         }
 
         // Age string format
-        val ageFormatted = if (!patient.ageText.isNullOrBlank()) "${patient.ageText} سنة" else "-"
+        val ageFormatted = if (!patient.ageText.isNullOrBlank()) "${patient.ageText} yrs" else "-"
 
         // Appendix Page 3 HTML (if attached photos exist)
         val page3Html = if (attachedUltrasoundImages.isNotEmpty()) {
@@ -274,30 +273,29 @@ object PatientPrintHtmlGenerator {
                         <div class="clinic-brand">
                             $logoImgTag
                             <div class="clinic-title-box">
-                                <h1>$clinicNameAr</h1>
-                                <h2>$clinicNameEn</h2>
+                                <h1>$clinicNameEn</h1>
                                 <p>$clinicSpecialty</p>
                             </div>
                         </div>
                         <div class="header-meta uniform-meta">
-                            <div class="doc-badge">ملحق الصور المرفقة</div>
-                            <div class="meta-row"><span class="k">المريضة:</span> <span class="v">${patient.displayName}</span></div>
-                            <div class="meta-row"><span class="k">كود الحالة:</span> <span class="v">${patient.caseId}</span></div>
-                            <div class="meta-row"><span class="k">تاريخ الطباعة:</span> <span class="v">$printDateStr</span></div>
-                            <div class="meta-row"><span class="k">الصفحة:</span> <span class="v">3 من $totalPages</span></div>
+                            <div class="doc-badge">IMAGING ATTACHMENTS</div>
+                            <div class="meta-row"><span class="k">Patient:</span> <span class="v">${patient.displayName}</span></div>
+                            <div class="meta-row"><span class="k">Case ID:</span> <span class="v">${patient.caseId}</span></div>
+                            <div class="meta-row"><span class="k">Print Date:</span> <span class="v">$printDateStr</span></div>
+                            <div class="meta-row"><span class="k">Page:</span> <span class="v">3 of $totalPages</span></div>
                         </div>
                     </header>
 
                     <div class="section-box" style="flex-grow: 1;">
                         <div class="section-title">
-                            <span>ملحق صور وفحوصات السونار والوثائق المرفقة</span>
-                            <span class="en-sub">CLINICAL IMAGING & ULTRASOUND ATTACHMENTS</span>
+                            <span>Clinical Imaging & Ultrasound Scans</span>
+                            <span class="en-sub">ULTRASOUND ATTACHMENTS</span>
                         </div>
                         <div class="photos-grid">
                             ${attachedUltrasoundImages.map { photo ->
                                 """
                                 <div class="photo-card">
-                                    <div class="photo-preview-placeholder">📷 [صورة سونار أصلية محفوظة بالنظام]</div>
+                                    <div class="photo-preview-placeholder">📷 [Original Ultrasound Scan Stored in Secure System]</div>
                                     <div class="photo-caption">${photo["label"]}</div>
                                 </div>
                                 """.trimIndent()
@@ -307,8 +305,8 @@ object PatientPrintHtmlGenerator {
                 </div>
 
                 <footer class="page-footer">
-                    <span>$clinicNameAr · $doctorOfficialTitle · هاتف وحجز: 0100000000</span>
-                    <span>صفحة 3 من $totalPages · نهاية الملحق</span>
+                    <span>$clinicNameEn · $doctorOfficialTitle · Contact: +20 100 000 0000</span>
+                    <span>Page 3 of $totalPages · End of Appendix</span>
                 </footer>
             </div>
             """.trimIndent()
@@ -318,11 +316,11 @@ object PatientPrintHtmlGenerator {
 
         return """
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ملف المريضة - ${patient.displayName} - $clinicNameAr</title>
+    <title>Clinical Record - ${patient.displayName} - $clinicNameEn</title>
     <style>
         :root {
             --navy-primary: #0D1B3D;
@@ -348,12 +346,12 @@ object PatientPrintHtmlGenerator {
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Cairo", "Noto Sans Arabic", sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background-color: #E2E8F0;
             color: var(--text-main);
             font-size: 10.5pt;
             line-height: 1.4;
-            direction: rtl;
+            direction: ltr;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
@@ -935,17 +933,17 @@ object PatientPrintHtmlGenerator {
                 <div class="clinic-brand">
                     $logoImgTag
                     <div class="clinic-title-box">
-                        <h1>$clinicNameAr</h1>
-                        <h2>$clinicNameEn</h2>
-                        <p>$clinicSpecialty</p>
+                        <h1>$clinicNameEn</h1>
+                        <h2>$clinicSpecialty</h2>
+                        <p>$doctorOfficialTitle</p>
                     </div>
                 </div>
                 <div class="header-meta uniform-meta">
                     <div class="doc-badge">CLINICAL RECORD</div>
-                    <div class="meta-row"><span class="k">النوع:</span> <span class="v">ملف معتمد</span></div>
-                    <div class="meta-row"><span class="k">كود الحالة:</span> <span class="v">${patient.caseId}</span></div>
-                    <div class="meta-row"><span class="k">تاريخ الطباعة:</span> <span class="v">$printDateStr</span></div>
-                    <div class="meta-row"><span class="k">الصفحة:</span> <span class="v">1 من $totalPages</span></div>
+                    <div class="meta-row"><span class="k">Type:</span> <span class="v">Certified Record</span></div>
+                    <div class="meta-row"><span class="k">Patient ID:</span> <span class="v">${patient.caseId}</span></div>
+                    <div class="meta-row"><span class="k">Print Date:</span> <span class="v">$printDateStr</span></div>
+                    <div class="meta-row"><span class="k">Page:</span> <span class="v">1 of $totalPages</span></div>
                 </div>
             </header>
 
@@ -953,23 +951,23 @@ object PatientPrintHtmlGenerator {
             <section class="patient-card">
                 <div class="pt-name-box">
                     <h3>${patient.displayName}</h3>
-                    <div class="pt-code">كود المريضة: ${patient.caseId}</div>
-                    <div class="pt-phone">هاتف: ${patient.phone ?: "غير مسجل"}</div>
+                    <div class="pt-code">Patient ID: ${patient.caseId}</div>
+                    <div class="pt-phone">Phone: ${patient.phone ?: "Unspecified"}</div>
                 </div>
                 <div class="data-point">
-                    <span class="data-label">العمر</span>
+                    <span class="data-label">Age</span>
                     <span class="data-value">$ageFormatted</span>
                 </div>
                 <div class="data-point">
-                    <span class="data-label">فصيلة الدم</span>
+                    <span class="data-label">Blood Group</span>
                     <span class="data-value ${if (isRhNegative) "text-rose" else "text-navy"}">
                         ${patient.bloodGroupText ?: "-"}
-                        ${if (isRhNegative) """<span class="badge badge-danger">Rh- سلبي</span>""" else ""}
+                        ${if (isRhNegative) """<span class="badge badge-danger">Rh- Negative</span>""" else ""}
                     </span>
                 </div>
                 <div class="data-point" style="align-items: flex-end;">
-                    <span class="data-label">مستوى الخطورة الإكلينيكية</span>
-                    ${if (isHighRisk) """<span class="badge badge-danger">عالي الخطورة</span>""" else """<span class="badge badge-success">طبيعي</span>"""}
+                    <span class="data-label">Clinical Risk Level</span>
+                    ${if (isHighRisk) """<span class="badge badge-danger">High Risk</span>""" else """<span class="badge badge-success">Normal Risk</span>"""}
                 </div>
             </section>
 
@@ -978,79 +976,79 @@ object PatientPrintHtmlGenerator {
                 <!-- Pregnancy Dating (PREGNANCY DATING without Matrix) -->
                 <div class="section-box">
                     <div class="section-title">
-                        <span>تحديد موعد وعمر الحمل</span>
+                        <span>Pregnancy Dating</span>
                         <span class="en-sub">PREGNANCY DATING</span>
                     </div>
                     <div class="dating-matrix">
                         <div class="matrix-item">
-                            <div class="label">آخر دورة (LMP)</div>
+                            <div class="label">LMP Date</div>
                             <div class="val">${patient.dating?.lmpDate ?: "-"}</div>
                         </div>
                         <div class="matrix-item">
-                            <div class="label">موعد السونار</div>
+                            <div class="label">Ultrasound EDD</div>
                             <div class="val">${patient.dating?.ultrasoundEdd ?: "-"}</div>
                         </div>
                         <div class="matrix-item">
-                            <div class="label">الموعد المعتمد (EDD)</div>
+                            <div class="label">Agreed EDD</div>
                             <div class="val text-rose">${patient.dating?.agreedEdd ?: "-"}</div>
                         </div>
                     </div>
                     <div class="ga-highlight">
-                        عمر الحمل الحالي (GA): $currentGaFormatted
+                        Current Gestational Age (GA): $currentGaFormatted
                     </div>
                 </div>
 
-                <!-- Obstetric Summary & History (Arabic on right, English on left) -->
+                <!-- Obstetric Summary & History -->
                 <div class="section-box">
                     <div class="section-title">
-                        <span>الملخص النسائي والتاريخ المرضي</span>
+                        <span>Obstetric & Medical History</span>
                         <span class="en-sub">OBSTETRIC & MEDICAL HISTORY</span>
                     </div>
                     <div class="history-list">
                         <div class="history-row">
-                            <span class="k">الصيغة الولادية (GPA):</span>
+                            <span class="k">GPA Formula:</span>
                             <span class="v text-navy">G$g P$p + A$a (${pastDeliverySummary})</span>
                         </div>
                         <div class="history-row">
-                            <span class="k">الحساسية الدوائية (Allergies):</span>
+                            <span class="k">Drug Allergies:</span>
                             <span class="v ${if (!patient.allergyHistory.isNullOrBlank()) "text-rose font-bold" else ""}">${patient.allergyHistory ?: "NKDA"}</span>
                         </div>
                         <div class="history-row">
-                            <span class="k">الأمراض المزمنة (Medical):</span>
+                            <span class="k">Medical History:</span>
                             <span class="v">${patient.medicalHistory ?: "None"}</span>
                         </div>
                         <div class="history-row">
-                            <span class="k">العمليات السابقة (Surgical):</span>
+                            <span class="k">Surgical History:</span>
                             <span class="v">${patient.surgicalHistory ?: "None"}</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- مرات الحمل والولادات السابقة (Centered cells) -->
+            <!-- Previous Pregnancies & Outcomes -->
             <div class="section-box">
                 <div class="section-title">
-                    <span>مرات الحمل والولادات السابقة</span>
+                    <span>Previous Pregnancies & Obstetric Outcomes</span>
                     <span class="en-sub">PREVIOUS PREGNANCIES & OUTCOMES</span>
                 </div>
                 $prevPregRows
             </div>
 
-            <!-- زيارات متابعة الحمل (Centered, No SFH, No FHR, Spacious & Comfortable) -->
+            <!-- Antenatal Care Visits Log -->
             <div class="section-box" style="flex-grow: 1;">
                 <div class="section-title">
-                    <span>زيارات متابعة الحمل</span>
+                    <span>Antenatal Care Visits Log</span>
                     <span class="en-sub">ANTENATAL CARE VISITS LOG</span>
                 </div>
                 <table class="clinical-table">
                     <thead>
                         <tr>
                             <th style="width: 5%;">#</th>
-                            <th style="width: 15%;">التاريخ</th>
-                            <th style="width: 15%;">عمر الحمل (GA)</th>
-                            <th style="width: 14%;">ضغط الدم (BP)</th>
-                            <th style="width: 14%;">الوزن</th>
-                            <th style="width: 37%;">الفحص السريري والتوصيات والملاحظات</th>
+                            <th style="width: 15%;">Date</th>
+                            <th style="width: 15%;">Gestational Age (GA)</th>
+                            <th style="width: 14%;">Blood Pressure (BP)</th>
+                            <th style="width: 14%;">Weight</th>
+                            <th style="width: 37%;">Clinical Findings & Observations</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1063,8 +1061,8 @@ object PatientPrintHtmlGenerator {
 
         <!-- Page 1 Footer -->
         <footer class="page-footer">
-            <span>ملف طبي سرّي ومعتمد · صادر إلكترونياً من $clinicNameAr · $doctorOfficialTitle</span>
-            <span>صفحة 1 من $totalPages</span>
+            <span>Confidential Medical Record · Certified electronically by $clinicNameEn · $doctorOfficialTitle</span>
+            <span>Page 1 of $totalPages</span>
         </footer>
     </div>
 
@@ -1080,34 +1078,34 @@ object PatientPrintHtmlGenerator {
                 <div class="clinic-brand">
                     $logoImgTag
                     <div class="clinic-title-box">
-                        <h1>$clinicNameAr</h1>
-                        <h2>الفحوصات التشخيصية، السونار، التحاليل وخطة الولادة</h2>
+                        <h1>$clinicNameEn</h1>
+                        <h2>Diagnostic Surveillance, Ultrasound, Labs & Delivery Plan</h2>
                     </div>
                 </div>
                 <div class="header-meta uniform-meta">
-                    <div class="doc-badge" style="background: var(--rose-accent);">الصفحة 2 من $totalPages</div>
-                    <div class="meta-row"><span class="k">المريضة:</span> <span class="v">${patient.displayName}</span></div>
-                    <div class="meta-row"><span class="k">كود الحالة:</span> <span class="v">${patient.caseId}</span></div>
-                    <div class="meta-row"><span class="k">تاريخ الطباعة:</span> <span class="v">$printDateStr</span></div>
+                    <div class="doc-badge" style="background: var(--rose-accent);">Page 2 of $totalPages</div>
+                    <div class="meta-row"><span class="k">Patient:</span> <span class="v">${patient.displayName}</span></div>
+                    <div class="meta-row"><span class="k">Patient ID:</span> <span class="v">${patient.caseId}</span></div>
+                    <div class="meta-row"><span class="k">Print Date:</span> <span class="v">$printDateStr</span></div>
                 </div>
             </header>
 
-            <!-- سجل قياسات السونار وتطور نمو الجنين (Centered, وزن الجنين (كجم), الملاحظات الطبية) -->
+            <!-- Ultrasound Biometry & Surveillance -->
             <div class="section-box">
                 <div class="section-title">
-                    <span>سجل قياسات السونار وتطور نمو الجنين</span>
+                    <span>Ultrasound Biometry & Fetal Surveillance</span>
                     <span class="en-sub">ULTRASOUND BIOMETRY & SURVEILLANCE</span>
                 </div>
                 <table class="clinical-table">
                     <thead>
                         <tr>
-                            <th style="width: 12%;">التاريخ</th>
-                            <th style="width: 12%;">عمر الحمل</th>
-                            <th style="width: 13%;">المجيء والوضع</th>
-                            <th style="width: 14%;">المشيمة</th>
-                            <th style="width: 14%;">السائل الأمنيوسي</th>
-                            <th style="width: 14%;">وزن الجنين (جم / EFW)</th>
-                            <th style="width: 21%;">الملاحظات الطبية</th>
+                            <th style="width: 12%;">Date</th>
+                            <th style="width: 12%;">Gestational Age</th>
+                            <th style="width: 13%;">Presentation</th>
+                            <th style="width: 14%;">Placenta</th>
+                            <th style="width: 14%;">Amniotic Fluid</th>
+                            <th style="width: 14%;">EFW (g)</th>
+                            <th style="width: 21%;">Clinical Notes</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1116,19 +1114,19 @@ object PatientPrintHtmlGenerator {
                 </table>
             </div>
 
-            <!-- الفحوصات والتحاليل (Centered, No status column, Abnormal in RED) -->
+            <!-- Laboratory Investigations -->
             <div class="section-box">
                 <div class="section-title">
-                    <span>الفحوصات والتحاليل</span>
+                    <span>Laboratory Investigations</span>
                     <span class="en-sub">LABORATORY INVESTIGATIONS</span>
                 </div>
                 <table class="clinical-table">
                     <thead>
                         <tr>
-                            <th style="width: 16%;">التاريخ</th>
-                            <th style="width: 36%;">اسم الفحص والتحليل</th>
-                            <th style="width: 26%;">النتيجة والوحدة</th>
-                            <th style="width: 22%;">المعدل الطبيعي المرجعي</th>
+                            <th style="width: 16%;">Date</th>
+                            <th style="width: 36%;">Investigation / Test Name</th>
+                            <th style="width: 26%;">Result & Unit</th>
+                            <th style="width: 22%;">Reference Range</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1137,20 +1135,20 @@ object PatientPrintHtmlGenerator {
                 </table>
             </div>
 
-            <!-- الأدوية والمكملات المعتمدة خلال الحمل (Centered) -->
+            <!-- Active Medications & Prophylaxis -->
             <div class="section-box">
                 <div class="section-title">
-                    <span>الأدوية والمكملات المعتمدة خلال الحمل</span>
+                    <span>Active Medications & Prophylaxis</span>
                     <span class="en-sub">ACTIVE MEDICATIONS & PROPHYLAXIS</span>
                 </div>
                 <table class="clinical-table">
                     <thead>
                         <tr>
-                            <th style="width: 28%;">اسم العلاج</th>
-                            <th style="width: 20%;">الجرعة والطريق</th>
-                            <th style="width: 18%;">التكرار</th>
-                            <th style="width: 16%;">النوع</th>
-                            <th style="width: 18%;">ملاحظات الطبيب</th>
+                            <th style="width: 28%;">Medication</th>
+                            <th style="width: 20%;">Dosage & Route</th>
+                            <th style="width: 18%;">Frequency</th>
+                            <th style="width: 16%;">Type</th>
+                            <th style="width: 18%;">Notes</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1159,39 +1157,39 @@ object PatientPrintHtmlGenerator {
                 </table>
             </div>
 
-            <!-- خطة الولادة والتوصيات وتوقيع الطبيب (Title: أخصائي د. شريف رضوان) -->
+            <!-- Delivery Management Plan & Attestation -->
             <div class="section-box" style="margin-top: auto;">
                 <div class="section-title">
-                    <span>خطة الولادة والتوصيات</span>
+                    <span>Delivery Management Plan & Attestation</span>
                     <span class="en-sub">DELIVERY MANAGEMENT PLAN & CONSULTANT ATTESTATION</span>
                 </div>
                 <div class="attestation-grid">
                     <div class="plan-box">
                         <div class="history-list">
                             <div class="history-row">
-                                <span class="k">طريقة الولادة المخطط لها:</span>
-                                <span class="v text-rose font-bold">ولادة قيصرية مجدولة (Elective CS) / ولادة طبيعية</span>
+                                <span class="k">Planned Delivery Mode:</span>
+                                <span class="v text-rose font-bold">Elective Cesarean Section (CS) / Spontaneous Vaginal Delivery (SVD)</span>
                             </div>
                             <div class="history-row">
-                                <span class="k">الموعد المستهدف للولادة:</span>
-                                <span class="v text-navy font-bold">${patient.dating?.agreedEdd ?: "عند بلوغ الأسبوع 39"}</span>
+                                <span class="k">Target Delivery Timing:</span>
+                                <span class="v text-navy font-bold">${patient.dating?.agreedEdd ?: "At 39 completed weeks"}</span>
                             </div>
                             <div class="history-row">
-                                <span class="k">احتياطات المستشفى وبنك الدم:</span>
-                                <span class="v font-bold">${if (isRhNegative) "تحضير حقنة Anti-D + فصيلة دم مطابقة" else "إجراءات روتينية معملية"}</span>
+                                <span class="k">Hospital & Blood Bank Precautions:</span>
+                                <span class="v font-bold">${if (isRhNegative) "Anti-D Prophylaxis + Matched Packed RBCs Cross-match" else "Routine Obstetric Hospital Protocol"}</span>
                             </div>
                             <div class="history-row">
-                                <span class="k">التوصيات الخاصة:</span>
-                                <span class="v">متابعة حركة الجنين دورياً ومراجعة الطوارئ فوراً عند أي نزف أو آلام مستمرة.</span>
+                                <span class="k">Special Recommendations:</span>
+                                <span class="v">Regular fetal kick counts; immediate hospital evaluation for bleeding, ruptured membranes, or severe pain.</span>
                             </div>
                         </div>
                     </div>
 
                     <div class="signature-box">
                         <div>
-                            <div class="doc-name">دكتور شريف رضوان</div>
+                            <div class="doc-name">Dr. Sherif Radwan</div>
                             <div class="doc-title">$doctorOfficialTitle</div>
-                            <div class="stamp-placeholder">ختم وتوقيع الطبيب المعالج</div>
+                            <div class="stamp-placeholder">Official Stamp & Signature</div>
                         </div>
                         <div style="font-size: 7pt; color: #64748B; margin-top: 12px;">
                             Official Stamp & Signature
@@ -1204,8 +1202,8 @@ object PatientPrintHtmlGenerator {
 
         <!-- Page 2 Footer -->
         <footer class="page-footer">
-            <span>$clinicNameAr · $doctorOfficialTitle · هاتف وحجز: 0100000000 · رعاية طبية متكاملة</span>
-            <span>صفحة 2 من $totalPages</span>
+            <span>$clinicNameEn · $doctorOfficialTitle · Contact: +20 100 000 0000 · Integrated Antenatal Care</span>
+            <span>Page 2 of $totalPages</span>
         </footer>
     </div>
 

@@ -50,7 +50,7 @@ fun PreviousPregnancyEditor(
         } else {
             stringResource(R.string.correct_previous_pregnancy)
         },
-        subtitle = "${patient.displayName} · تسجيل وتوثيق تفاصيل الأحمال السابقة",
+        subtitle = "${patient.displayName} · Previous Pregnancy History & Outcomes",
         tag = "previousPregnancyEditor",
     ) {
         EditorErrorCard(state, draft.errors)
@@ -68,7 +68,7 @@ fun PreviousPregnancyEditor(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "1. توقيت الحمل والنوع ومكان الولادة · Timing & Location",
+                    text = "1. Pregnancy Timing, Type & Location",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -131,7 +131,7 @@ fun PreviousPregnancyEditor(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "2. طريقة الولادة والنتيجة السريرية · Delivery Mode & Outcome",
+                    text = "2. Delivery Mode & Clinical Outcome",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -203,7 +203,7 @@ fun PreviousPregnancyEditor(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "3. التوثيق السريري والتدقيق · Clinician & Audit",
+                    text = "3. Clinician Documentation & Audit",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -244,7 +244,7 @@ fun PreviousPregnancyEditor(
             )
             Spacer(Modifier.width(6.dp))
             Text(
-                text = "سجلات الأحمال السابقة مشفرة وموقعة برمجياً · Tamper-Evident Local Storage",
+                text = "Previous pregnancy records encrypted and digitally signed · Tamper-Evident Local Storage",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

@@ -79,7 +79,7 @@ fun VaultGateScreen(
             )
 
             Text(
-                text = "رعاية الأمومة وطب الجنين · Maternal-Fetal Medicine",
+                text = "Maternal-Fetal Medicine & Obstetrics",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,

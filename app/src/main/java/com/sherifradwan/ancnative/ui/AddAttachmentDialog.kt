@@ -139,7 +139,7 @@ fun AddAttachmentDialog(
                 ) {
                     Column {
                         Text(
-                            text = "إضافة مرفق طبي جديد",
+                            text = "Add Clinical Attachment",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -152,13 +152,13 @@ fun AddAttachmentDialog(
                         )
                     }
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "إلغاء")
+                        Icon(Icons.Default.Close, contentDescription = "Cancel")
                     }
                 }
 
                 // Category Selection Chips
                 Text(
-                    text = "نوع المرفق الطبي:",
+                    text = "Attachment Type:",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -167,11 +167,11 @@ fun AddAttachmentDialog(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     val categories = listOf(
-                        AttachmentCategories.ULTRASOUND to "سونار",
-                        AttachmentCategories.LAB to "تحاليل",
-                        AttachmentCategories.PRESCRIPTION to "روشتة / تقرير",
-                        AttachmentCategories.CLINICAL_PHOTO to "صورة سريرية",
-                        AttachmentCategories.OTHER to "أخرى",
+                        AttachmentCategories.ULTRASOUND to "Ultrasound",
+                        AttachmentCategories.LAB to "Labs",
+                        AttachmentCategories.PRESCRIPTION to "Prescription / Report",
+                        AttachmentCategories.CLINICAL_PHOTO to "Clinical Photo",
+                        AttachmentCategories.OTHER to "Other",
                     )
                     categories.forEach { (cat, label) ->
                         FilterChip(
@@ -186,8 +186,8 @@ fun AddAttachmentDialog(
                 OutlinedTextField(
                     value = titleText,
                     onValueChange = { titleText = it },
-                    label = { Text("عنوان أو ملاحظات الفحص (اختياري)") },
-                    placeholder = { Text("مثال: سونار 32w أو تحليل صورة دم كاملة") },
+                    label = { Text("Title or Notes (Optional)") },
+                    placeholder = { Text("Example: 32w Scan or CBC Blood Report") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
@@ -223,13 +223,13 @@ fun AddAttachmentDialog(
                                 )
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Text(
-                                    text = "التقاط بالكاميرا",
+                                    text = "Take Photo",
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 )
                                 Text(
-                                    text = "تصوير فحص أو تقرير",
+                                    text = "Capture scan or document",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
                                 )
@@ -265,13 +265,13 @@ fun AddAttachmentDialog(
                                 )
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Text(
-                                    text = "اختيار من المعرض",
+                                    text = "Choose from Gallery",
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary,
                                 )
                                 Text(
-                                    text = "ملف أو صورة سابقة",
+                                    text = "Existing file or photo",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -316,7 +316,7 @@ fun AddAttachmentDialog(
                                 modifier = Modifier.clickable { launchCamera() },
                             ) {
                                 Text(
-                                    text = "📷 إعادة تصوير",
+                                    text = "📷 Retake",
                                     color = Color.White,
                                     style = MaterialTheme.typography.labelSmall,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -332,7 +332,7 @@ fun AddAttachmentDialog(
                                 },
                             ) {
                                 Text(
-                                    text = "🖼️ من المعرض",
+                                    text = "🖼️ Gallery",
                                     color = Color.White,
                                     style = MaterialTheme.typography.labelSmall,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -349,7 +349,7 @@ fun AddAttachmentDialog(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     OutlinedButton(onClick = onDismiss) {
-                        Text("إلغاء")
+                        Text("Cancel")
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
@@ -361,7 +361,7 @@ fun AddAttachmentDialog(
                         enabled = selectedUri != null,
                         modifier = Modifier.testTag("saveAttachmentConfirmBtn"),
                     ) {
-                        Text("حفظ المرفق في سجل المريضة")
+                        Text("Save to Patient Record")
                     }
                 }
             }

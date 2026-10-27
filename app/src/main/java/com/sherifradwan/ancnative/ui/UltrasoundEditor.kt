@@ -113,7 +113,7 @@ fun UltrasoundEditor(
 
     EditorPage(
         title = stringResource(R.string.ultrasound_editor),
-        subtitle = "${patient.displayName} · فحص الموجات الصوتية والقياسات الجنينية",
+        subtitle = "${patient.displayName} · Ultrasound Examination & Fetal Biometry",
         tag = "ultrasoundEditor",
     ) {
         ClinicalEditorErrorCard(state, draft.errors)
@@ -131,7 +131,7 @@ fun UltrasoundEditor(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "1. توقيت الفحص وعمر الحمل · Scan Timing & GA",
+                    text = "1. Scan Timing & Gestational Age",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -300,47 +300,64 @@ fun UltrasoundEditor(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "2. تقييم الجنين والمشيمة والسائل السلوي · Fetus & Placenta",
+                    text = "2. Fetus, Placenta & Amniotic Fluid",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                 )
 
-                ChoiceGroup(
-                    label = stringResource(R.string.fetal_number),
-                    selected = draft.values.fetalNumber,
-                    choices = ClinicalVocabulary.fetalNumbers.toList(),
-                    enabled = enabled,
-                    tagPrefix = "fetalNumberChoice",
-                    onSelected = { onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.FETAL_NUMBER, it)) },
-                )
+                // 2-Column Space-Efficient Layout for Fetus & Placenta
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        ChoiceGroup(
+                            label = stringResource(R.string.fetal_number),
+                            selected = draft.values.fetalNumber,
+                            choices = ClinicalVocabulary.fetalNumbers.toList(),
+                            enabled = enabled,
+                            tagPrefix = "fetalNumberChoice",
+                            onSelected = { onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.FETAL_NUMBER, it)) },
+                        )
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        ChoiceGroup(
+                            label = stringResource(R.string.fetal_presentation),
+                            selected = draft.values.presentation,
+                            choices = ClinicalVocabulary.fetalPresentations.toList(),
+                            enabled = enabled,
+                            tagPrefix = "presentationChoice",
+                            onSelected = { onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.PRESENTATION, it)) },
+                        )
+                    }
+                }
 
-                ChoiceGroup(
-                    label = stringResource(R.string.fetal_presentation),
-                    selected = draft.values.presentation,
-                    choices = ClinicalVocabulary.fetalPresentations.toList(),
-                    enabled = enabled,
-                    tagPrefix = "presentationChoice",
-                    onSelected = { onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.PRESENTATION, it)) },
-                )
-
-                ChoiceGroup(
-                    label = stringResource(R.string.placental_site),
-                    selected = draft.values.placentalSite,
-                    choices = ClinicalVocabulary.placentalSites.toList(),
-                    enabled = enabled,
-                    tagPrefix = "placentaChoice",
-                    onSelected = { onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.PLACENTAL_SITE, it)) },
-                )
-
-                ChoiceGroup(
-                    label = stringResource(R.string.amniotic_fluid),
-                    selected = draft.values.amnioticFluid,
-                    choices = ClinicalVocabulary.amnioticFluids.toList(),
-                    enabled = enabled,
-                    tagPrefix = "liquorChoice",
-                    onSelected = { onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.AMNIOTIC_FLUID, it)) },
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        ChoiceGroup(
+                            label = stringResource(R.string.placental_site),
+                            selected = draft.values.placentalSite,
+                            choices = ClinicalVocabulary.placentalSites.toList(),
+                            enabled = enabled,
+                            tagPrefix = "placentaChoice",
+                            onSelected = { onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.PLACENTAL_SITE, it)) },
+                        )
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        ChoiceGroup(
+                            label = stringResource(R.string.amniotic_fluid),
+                            selected = draft.values.amnioticFluid,
+                            choices = ClinicalVocabulary.amnioticFluids.toList(),
+                            enabled = enabled,
+                            tagPrefix = "liquorChoice",
+                            onSelected = { onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.AMNIOTIC_FLUID, it)) },
+                        )
+                    }
+                }
             }
         }
 
@@ -371,7 +388,7 @@ fun UltrasoundEditor(
                 ) {
                     Column {
                         Text(
-                            text = "3. القياسات الحيوية للجنين · Fetal Biometry",
+                            text = "3. Fetal Biometry",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
@@ -386,7 +403,7 @@ fun UltrasoundEditor(
                         onClick = { biometryExpanded = !biometryExpanded },
                         modifier = Modifier.minimumTouchTarget().testTag("toggleBiometry"),
                     ) {
-                        Text(if (biometryExpanded) "▲ طي" else "▼ فتح القياسات")
+                        Text(if (biometryExpanded) "▲ Collapse" else "▼ Expand Biometry")
                     }
                 }
                 if (biometryExpanded) {
@@ -488,7 +505,7 @@ fun UltrasoundEditor(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "4. الصور التلفزيونية والتشخيص السريري · Photos & Impression",
+                    text = "4. Scan Photos & Clinical Impression",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -559,7 +576,7 @@ fun UltrasoundEditor(
                             ) {
                                 Icon(Icons.Default.PhotoCamera, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("التقاط بالكاميرا", maxLines = 1, softWrap = false)
+                                Text("Take Photo", maxLines = 1, softWrap = false)
                             }
 
                             OutlinedButton(
@@ -573,7 +590,7 @@ fun UltrasoundEditor(
                             ) {
                                 Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("من المعرض", maxLines = 1, softWrap = false)
+                                Text("Choose Image", maxLines = 1, softWrap = false)
                             }
                         }
                     }
@@ -612,7 +629,7 @@ fun UltrasoundEditor(
             )
             Spacer(Modifier.width(6.dp))
             Text(
-                text = "سجلات السونار والصور مشفرة محلياً (AES-256 GCM) · Local Vault Security",
+                text = "Ultrasound records and scans encrypted locally (AES-256 GCM) · Hardware Vault Security",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

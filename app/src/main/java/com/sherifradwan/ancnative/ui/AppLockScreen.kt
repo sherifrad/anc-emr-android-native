@@ -101,7 +101,7 @@ fun AppLockScreen(
                     securityRepo.unlockApp()
                     onUnlockSuccess()
                 } else {
-                    errorMessage = "رمز المرور غير صحيح. يرجى المحاولة مرة أخرى."
+                    errorMessage = "Incorrect PIN passcode. Please try again."
                     enteredPin = ""
                 }
             }
@@ -125,12 +125,12 @@ fun AppLockScreen(
                         securityRepo.unlockApp()
                         onUnlockSuccess()
                     } else {
-                        errorMessage = "تعذر التحقق من البصمة. استخدم رمز الـ PIN."
+                        errorMessage = "Fingerprint verification failed. Use your PIN."
                     }
                 },
             )
         } else {
-            errorMessage = "البصمة غير متوفرة في هذا الجهاز."
+            errorMessage = "Fingerprint not available on this device."
         }
     }
 
@@ -186,7 +186,7 @@ fun AppLockScreen(
             Spacer(Modifier.height(20.dp))
 
             Text(
-                text = "أدخل رمز المرور (PIN)",
+                text = "Enter Security PIN",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -300,7 +300,7 @@ fun AppLockScreen(
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 Icons.Default.Fingerprint,
-                                contentDescription = "بصمة الإصبع",
+                                contentDescription = "Fingerprint",
                                 tint = if (isBiometricSupported && settingsState.isBiometricEnabled) {
                                     MaterialTheme.colorScheme.onPrimaryContainer
                                 } else {
@@ -328,7 +328,7 @@ fun AppLockScreen(
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 Icons.AutoMirrored.Filled.Backspace,
-                                contentDescription = "حذف",
+                                contentDescription = "Backspace",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(22.dp),
                             )
@@ -353,7 +353,7 @@ fun AppLockScreen(
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = "فتح بواسطة بصمة الإصبع",
+                        text = "Unlock with Fingerprint",
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary,
                     )

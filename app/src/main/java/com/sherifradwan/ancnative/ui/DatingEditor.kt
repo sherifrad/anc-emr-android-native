@@ -71,7 +71,7 @@ fun DatingEditor(
 
     EditorPage(
         title = stringResource(R.string.dating_editor),
-        subtitle = "${patient.displayName} · تحديد عمر الحمل والموعد المتوقع للولادة",
+        subtitle = "${patient.displayName} · Gestational Age & Estimated Due Date",
         tag = "datingEditor",
     ) {
         ClinicalEditorErrorCard(state, draft.errors)
@@ -89,7 +89,7 @@ fun DatingEditor(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "1. المعايير الأساسية لتحديد الموعد · Baseline Dates",
+                    text = "1. Baseline Dating Parameters",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -141,7 +141,7 @@ fun DatingEditor(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "2. طريقة التأريخ وحساب عمر الحمل · Dating Method & Calculation",
+                    text = "2. Dating Method & GA Calculation",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -276,7 +276,7 @@ fun DatingEditor(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "3. الملاحظات والقرارات السريرية · Clinical Notes",
+                    text = "3. Clinical Notes & Observations",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -307,7 +307,7 @@ fun DatingEditor(
             )
             Spacer(Modifier.width(6.dp))
             Text(
-                text = "بيانات عمر الحمل والمواعيد مشفرة محلياً (AES-256 GCM) · Local Vault Security",
+                text = "Gestational age and dating records encrypted locally (AES-256 GCM) · Local Vault Security",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

@@ -11,11 +11,11 @@ object AttachmentCategories {
     const val OTHER = "OTHER"
 
     fun localizedName(category: String): String = when (category) {
-        ULTRASOUND -> "فحص سونار"
-        LAB -> "تحليل مختبري"
-        PRESCRIPTION -> "روشتة / تقرير استشاري"
-        CLINICAL_PHOTO -> "صورة سريرية"
-        else -> "مرفق طبي عام"
+        ULTRASOUND -> "Ultrasound Scan"
+        LAB -> "Laboratory Investigation"
+        PRESCRIPTION -> "Prescription / Report"
+        CLINICAL_PHOTO -> "Clinical Photo"
+        else -> "General Medical Attachment"
     }
 }
 
@@ -26,10 +26,10 @@ object AttachmentSyncStatus {
     const val SYNC_ERROR = "SYNC_ERROR"
 
     fun localizedStatus(status: String): String = when (status) {
-        LOCAL_ONLY -> "محفوظ محلياً ومؤمّن"
-        PENDING_SYNC -> "بانتظار المزامنة السحابية"
-        SYNCED_CLOUD -> "متزامن مع السحابة الطبية"
-        SYNC_ERROR -> "خطأ في المزامنة السحابية"
+        LOCAL_ONLY -> "Locally Encrypted & Secured"
+        PENDING_SYNC -> "Pending Cloud Sync"
+        SYNCED_CLOUD -> "Synced with Clinical Cloud"
+        SYNC_ERROR -> "Cloud Sync Error"
         else -> status
     }
 }

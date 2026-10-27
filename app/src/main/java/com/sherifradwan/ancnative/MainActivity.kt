@@ -14,10 +14,21 @@ import com.sherifradwan.ancnative.state.AncViewModel
 import com.sherifradwan.ancnative.storage.VaultState
 import com.sherifradwan.ancnative.ui.AncApp
 import com.sherifradwan.ancnative.ui.AncTheme
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     private lateinit var viewModel: AncViewModel
     private val securityRepo by lazy { SecuritySettingsRepository.getInstance(this) }
+
+    override fun attachBaseContext(newBase: android.content.Context) {
+        val locale = Locale.ENGLISH
+        Locale.setDefault(locale)
+        val config = android.content.res.Configuration(newBase.resources.configuration)
+        config.setLocale(locale)
+        config.setLayoutDirection(locale)
+        val context = newBase.createConfigurationContext(config)
+        super.attachBaseContext(context)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

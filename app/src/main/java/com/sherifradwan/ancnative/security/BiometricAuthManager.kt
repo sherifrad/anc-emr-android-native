@@ -18,8 +18,8 @@ object BiometricAuthManager {
 
     fun promptBiometric(
         activity: Activity,
-        title: String = "عيادة صحة المرأة · التحقق من البصمة",
-        subtitle: String = "المس مستشعر البصمة لفتح التطبيق",
+        title: String = "Women's Health Clinic · Biometric Authentication",
+        subtitle: String = "Touch the fingerprint sensor to unlock the application",
         onResult: (Boolean) -> Unit,
     ): CancellationSignal? {
         if (!isBiometricAvailable(activity)) {
@@ -32,7 +32,7 @@ object BiometricAuthManager {
             val prompt = BiometricPrompt.Builder(activity)
                 .setTitle(title)
                 .setSubtitle(subtitle)
-                .setNegativeButton("إلغاء واستخدام الرمز", activity.mainExecutor) { _, _ ->
+                .setNegativeButton("Cancel & Use PIN", activity.mainExecutor) { _, _ ->
                     onResult(false)
                 }
                 .setAllowedAuthenticators(

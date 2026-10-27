@@ -48,6 +48,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -313,25 +314,31 @@ private fun ProfileHeroIdentityCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                val isArabic = patient.displayName.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.ARABIC }
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = if (isArabic) Alignment.End else Alignment.Start,
+                ) {
                     Text(
                         text = patient.displayName,
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.semantics { heading() },
+                        textAlign = if (isArabic) TextAlign.End else TextAlign.Start,
+                        modifier = Modifier.fillMaxWidth().semantics { heading() },
                     )
                     if (patient.ageText != null) {
                         Text(
                             text = "${patient.ageText} yrs",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = if (isArabic) TextAlign.End else TextAlign.Start,
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
                 }
 
-                val isHighRisk = patient.riskLevel?.contains("High", ignoreCase = true) == true ||
-                    patient.riskLevel?.contains("عالي", ignoreCase = true) == true
+                val isHighRisk = patient.riskLevel?.contains("High", ignoreCase = true) == true
                 if (isHighRisk) {
                     Surface(
                         shape = RoundedCornerShape(8.dp),
@@ -386,7 +393,7 @@ private fun ProfileHeroIdentityCard(
             val miscarriageCount = patient.previousPregnancies.count {
                 it.outcome == "EarlyPregnancyLoss" ||
                     it.outcomeText?.contains("Miscarriage", ignoreCase = true) == true ||
-                    it.outcomeText?.contains("إجهاض", ignoreCase = true) == true
+                    it.outcomeText?.contains("Loss", ignoreCase = true) == true
             }
 
             val prevSummary = when {
@@ -556,7 +563,7 @@ private fun ProfileHeroIdentityCard(
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = "مساحة العمل",
+                        text = "Workspace",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -579,12 +586,12 @@ private fun ProfileHeroIdentityCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Print,
-                        contentDescription = "طباعة تقرير المريضة",
+                        contentDescription = "Print Patient Report",
                         modifier = Modifier.size(18.dp),
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = "طباعة",
+                        text = "Print PDF",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,

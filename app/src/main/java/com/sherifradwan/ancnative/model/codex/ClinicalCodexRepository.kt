@@ -345,8 +345,8 @@ class ClinicalCodexRepository private constructor(context: Context) :
         fun defaultLabCategoryGroups(): List<LabCategoryGroup> = listOf(
             LabCategoryGroup(
                 id = "group_first_trimester",
-                name = "فحوصات الثلث الأول الروتينية (First Trimester Booking)",
-                description = "الفحوصات الأساسية الإلزامية في أول زيارة حمل",
+                name = "First Trimester Routine Booking",
+                description = "Mandatory baseline tests at initial antenatal intake",
                 testNames = listOf(
                     "Complete Blood Count (CBC)",
                     "Blood Grouping & Rh Factor",
@@ -361,8 +361,8 @@ class ClinicalCodexRepository private constructor(context: Context) :
             ),
             LabCategoryGroup(
                 id = "group_preeclampsia",
-                name = "فحوصات ما قبل تسمم الحمل (Preeclampsia Workup)",
-                description = "تقييم وظائف الكلى والكبد والصفائح الدموية",
+                name = "Preeclampsia Workup",
+                description = "Renal and liver function evaluation and platelet surveillance",
                 testNames = listOf(
                     "Complete Blood Count (CBC)",
                     "Serum Creatinine",
@@ -375,8 +375,8 @@ class ClinicalCodexRepository private constructor(context: Context) :
             ),
             LabCategoryGroup(
                 id = "group_gdm",
-                name = "مسح سكري الحمل (GDM Screening 24-28 W)",
-                description = "فحص تحمل الجلوكوز وتحليل البول الأسبوع 24-28",
+                name = "GDM Screening (24-28 W)",
+                description = "Oral glucose tolerance test and urinalysis at 24-28 weeks",
                 testNames = listOf(
                     "Fasting Blood Sugar (FBS)",
                     "Oral Glucose Tolerance Test (OGTT 75g)",
@@ -386,8 +386,8 @@ class ClinicalCodexRepository private constructor(context: Context) :
             ),
             LabCategoryGroup(
                 id = "group_anemia",
-                name = "متابعة فقر الدم ومخزون الحديد (Anemia Workup)",
-                description = "صورة دم كاملة ومخزون الفيريتين",
+                name = "Anemia Workup & Iron Stores",
+                description = "Complete blood count and serum ferritin evaluation",
                 testNames = listOf(
                     "Complete Blood Count (CBC)",
                     "Serum Ferritin",
@@ -396,8 +396,8 @@ class ClinicalCodexRepository private constructor(context: Context) :
             ),
             LabCategoryGroup(
                 id = "group_torch",
-                name = "مسح العدوى الفيروسية (Serology Panel)",
-                description = "مسح الأجسام المضادة للفيروسات والزهري",
+                name = "Infection & Serology Screening",
+                description = "Maternal viral serology and syphilis antibody screening",
                 testNames = listOf(
                     "Hepatitis B Surface Antigen (HBsAg)",
                     "HIV 1 & 2 Antibody",

@@ -70,14 +70,14 @@ fun LabEditor(
 
     EditorPage(
         title = stringResource(R.string.lab_editor),
-        subtitle = "${patient.displayName} · تسجيل نتائج الفحوصات والتحاليل المخبرية",
+        subtitle = "${patient.displayName} · Laboratory Investigations & Diagnostic Results",
         tag = "labEditor",
     ) {
         ClinicalEditorErrorCard(state, draft.errors)
 
         val isChainedHeader = route.isNew && (draft.values.date.isNotBlank() || !draft.values.labName.isNullOrBlank())
 
-        // CARD 1: LABORATORY & DATE (بيانات المعمل وتاريخ الفحص)
+        // CARD 1: LABORATORY & DATE
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -95,7 +95,7 @@ fun LabEditor(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "1. بيانات المعمل وتاريخ الفحص · Lab & Date",
+                        text = "1. Laboratory Details & Date",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
@@ -180,7 +180,7 @@ fun LabEditor(
         val codexGroups by codexRepo.labCategoryGroups.collectAsState()
         var selectedGroupName by remember { mutableStateOf<String?>(null) }
 
-        // CARD 2: LAB PANELS & TEST SELECTION (باقات التحاليل واختيار الفحص)
+        // CARD 2: LAB PANELS & TEST SELECTION
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -193,7 +193,7 @@ fun LabEditor(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "2. باقات التحاليل واختيار الفحص · Lab Panels & Selection",
+                    text = "2. Investigation Panels & Test Selection",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -203,7 +203,7 @@ fun LabEditor(
                 if (codexGroups.isNotEmpty()) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                         Text(
-                            text = "📦 باقات ومجموعات التحاليل (Panels):",
+                            text = "📦 Diagnostic Panels:",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary,
@@ -216,7 +216,7 @@ fun LabEditor(
                             androidx.compose.material3.FilterChip(
                                 selected = selectedGroupName == null,
                                 onClick = { selectedGroupName = null },
-                                label = { Text("جميع التحاليل (${codexLabItems.size})") },
+                                label = { Text("All Tests (${codexLabItems.size})") },
                                 modifier = Modifier.testTag("allLabTestsChip"),
                             )
                             codexGroups.forEach { grp ->
@@ -243,7 +243,7 @@ fun LabEditor(
                 }
 
                 QuickPresetChips(
-                    title = if (selectedGroupName != null) "فحوصات باقة: $selectedGroupName" else stringResource(R.string.common_tests),
+                    title = if (selectedGroupName != null) "Panel Tests: $selectedGroupName" else stringResource(R.string.common_tests),
                     items = displayedItems.map { it.testName },
                     enabled = enabled,
                     onSelect = { selectedName ->
@@ -274,7 +274,7 @@ fun LabEditor(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                text = "تحليل جديد: حفظ في دليل التحاليل للمرضى؟",
+                                text = "New Test: Save to Clinic Lab Codex?",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                             )
@@ -295,7 +295,7 @@ fun LabEditor(
                             ) {
                                 Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(4.dp))
-                                Text("حفظ في الدليل")
+                                Text("Save to Codex")
                             }
                         }
                     }
@@ -325,7 +325,7 @@ fun LabEditor(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "3. النتيجة والمدى المرجعي · Result & Reference",
+                    text = "3. Result, Units & Reference Range",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -463,7 +463,7 @@ fun LabEditor(
             )
             Spacer(Modifier.width(6.dp))
             Text(
-                text = "نتائج وسجلات التحاليل مشفرة محلياً (AES-256 GCM) · Local Vault Security",
+                text = "Lab records and reports encrypted locally (AES-256 GCM) · Local Vault Security",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

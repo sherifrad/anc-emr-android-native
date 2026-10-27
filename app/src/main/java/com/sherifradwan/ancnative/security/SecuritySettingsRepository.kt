@@ -8,17 +8,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import java.security.MessageDigest
 
 enum class AutoLockTimeout(val displayNameAr: String, val displayNameEn: String, val durationMs: Long) {
-    IMMEDIATELY("فوراً عند مغادرة التطبيق", "Immediately on exit", 0L),
-    ONE_MINUTE("بعد دقيقة واحدة", "After 1 minute", 60_000L),
-    FIVE_MINUTES("بعد 5 دقائق", "After 5 minutes", 300_000L),
-    FIFTEEN_MINUTES("بعد 15 دقيقة", "After 15 minutes", 900_000L),
-    NEVER("لا يقفل أبداً (إيقاف القفل)", "Never (Lock Disabled)", Long.MAX_VALUE),
+    IMMEDIATELY("Immediately on exit", "Immediately on exit", 0L),
+    ONE_MINUTE("After 1 minute", "After 1 minute", 60_000L),
+    FIVE_MINUTES("After 5 minutes", "After 5 minutes", 300_000L),
+    FIFTEEN_MINUTES("After 15 minutes", "After 15 minutes", 900_000L),
+    NEVER("Never (Lock Disabled)", "Never (Lock Disabled)", Long.MAX_VALUE),
 }
 
 enum class AppThemeMode(val displayNameAr: String, val displayNameEn: String) {
-    SYSTEM("تلقائي (حسب النظام)", "System Default"),
-    LIGHT("فاتح (نهاري عيادة)", "Light Mode"),
-    DARK("داكن (فحص سونار)", "Dark Mode"),
+    SYSTEM("System Default", "System Default"),
+    LIGHT("Light Mode", "Light Mode"),
+    DARK("Dark Mode", "Dark Mode"),
 }
 
 data class SecuritySettingsState(
@@ -28,7 +28,7 @@ data class SecuritySettingsState(
     val isAppLocked: Boolean = false,
     val lastUnlockedAt: Long = 0L,
     val clinicName: String = "Dr. Sherif Radwan Clinic",
-    val clinicSubtitle: String = "رعاية الأمومة وطب الجنين · Maternal-Fetal Medicine",
+    val clinicSubtitle: String = "Maternal-Fetal Medicine & Obstetrics",
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
 )
 
@@ -56,8 +56,9 @@ class SecuritySettingsRepository private constructor(context: Context) {
             .getOrDefault(AutoLockTimeout.NEVER)
         val isPinSet = prefs.contains(KEY_PIN_HASH)
         val rawClinicName = prefs.getString(KEY_CLINIC_NAME, "Dr. Sherif Radwan Clinic") ?: "Dr. Sherif Radwan Clinic"
-        val clinicName = if (rawClinicName == "دكتور شريف رضوان كلينك") "Dr. Sherif Radwan Clinic" else rawClinicName
-        val clinicSub = prefs.getString(KEY_CLINIC_SUBTITLE, "رعاية الأمومة وطب الجنين · Maternal-Fetal Medicine") ?: "رعاية الأمومة وطب الجنين · Maternal-Fetal Medicine"
+        val clinicName = if (rawClinicName.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.ARABIC }) "Dr. Sherif Radwan Clinic" else rawClinicName
+        val rawClinicSub = prefs.getString(KEY_CLINIC_SUBTITLE, "Maternal-Fetal Medicine & Obstetrics") ?: "Maternal-Fetal Medicine & Obstetrics"
+        val clinicSub = if (rawClinicSub.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.ARABIC }) "Maternal-Fetal Medicine & Obstetrics" else rawClinicSub
         val themeName = prefs.getString(KEY_THEME_MODE, AppThemeMode.SYSTEM.name)
         val themeMode = runCatching { AppThemeMode.valueOf(themeName ?: AppThemeMode.SYSTEM.name) }.getOrDefault(AppThemeMode.SYSTEM)
 
@@ -131,8 +132,8 @@ class SecuritySettingsRepository private constructor(context: Context) {
     }
 
     fun updateClinicBranding(name: String, subtitle: String) {
-        val safeName = name.trim().ifEmpty { "دكتور شريف رضوان كلينك" }
-        val safeSub = subtitle.trim().ifEmpty { "Dr. Sherif Radwan Clinic · رعاية الأمومة وطب الجنين" }
+        val safeName = name.trim().ifEmpty { "Dr. Sherif Radwan Clinic" }
+        val safeSub = subtitle.trim().ifEmpty { "Dr. Sherif Radwan Clinic · Maternal-Fetal Medicine & Obstetrics" }
         prefs.edit()
             .putString(KEY_CLINIC_NAME, safeName)
             .putString(KEY_CLINIC_SUBTITLE, safeSub)

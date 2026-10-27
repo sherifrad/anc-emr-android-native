@@ -118,7 +118,7 @@ fun SecuritySettingsDialog(
                 pendingRestoreBytes = bytes
                 showRestorePassphraseDialog = true
             } else {
-                backupStatusMessage = "تعذر قراءة ملف النسخة الاحتياطية المختار!"
+                backupStatusMessage = "Unable to read selected backup file!"
                 isBackupError = true
             }
         }
@@ -173,7 +173,7 @@ fun SecuritySettingsDialog(
                         }
                         Column {
                             Text(
-                                text = "إعدادات العيادة والنظام",
+                                text = "Clinic & System Settings",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface,
@@ -207,7 +207,7 @@ fun SecuritySettingsDialog(
                         onClick = { selectedTab = SettingsTab.SECURITY },
                         text = {
                             Text(
-                                "الأمان والعيادة",
+                                "Security & Clinic",
                                 fontWeight = if (selectedTab == SettingsTab.SECURITY) FontWeight.Bold else FontWeight.Normal,
                                 color = if (selectedTab == SettingsTab.SECURITY) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -218,7 +218,7 @@ fun SecuritySettingsDialog(
                         onClick = { selectedTab = SettingsTab.LAB_CODEX },
                         text = {
                             Text(
-                                "دليل التحاليل",
+                                "Lab Codex",
                                 fontWeight = if (selectedTab == SettingsTab.LAB_CODEX) FontWeight.Bold else FontWeight.Normal,
                                 color = if (selectedTab == SettingsTab.LAB_CODEX) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -229,7 +229,7 @@ fun SecuritySettingsDialog(
                         onClick = { selectedTab = SettingsTab.MED_CODEX },
                         text = {
                             Text(
-                                "دليل الأدوية",
+                                "Med Codex",
                                 fontWeight = if (selectedTab == SettingsTab.MED_CODEX) FontWeight.Bold else FontWeight.Normal,
                                 color = if (selectedTab == SettingsTab.MED_CODEX) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -260,7 +260,7 @@ fun SecuritySettingsDialog(
                             ) {
                                 Icon(Icons.Default.BrightnessAuto, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                 Text(
-                                    text = "المظهر ونمط العرض (App Theme)",
+                                    text = "App Theme & Appearance",
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary,
@@ -268,7 +268,7 @@ fun SecuritySettingsDialog(
                             }
 
                             Text(
-                                text = "اختر نمط الألوان المناسب لبيئة العمل (عيادة مضيئة أو غرفة موجات فوق صوتية معتمة):",
+                                text = "Choose color scheme for your clinical environment (Bright Clinic or Dimmed Ultrasound Suite):",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -297,15 +297,10 @@ fun SecuritySettingsDialog(
                                     Spacer(Modifier.width(8.dp))
                                     Column {
                                         Text(
-                                            text = mode.displayNameAr,
+                                            text = mode.displayNameEn,
                                             style = MaterialTheme.typography.bodyMedium,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                             color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                        )
-                                        Text(
-                                            text = mode.displayNameEn,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         )
                                     }
                                 }
@@ -329,7 +324,7 @@ fun SecuritySettingsDialog(
                         ) {
                             Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                             Text(
-                                text = "هوية العيادة والشعار (Clinic Branding)",
+                                text = "Clinic Branding & Visual Identity",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary,
@@ -358,13 +353,13 @@ fun SecuritySettingsDialog(
                             }
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "شعار العيادة المعتمد (الرمز الدائري)",
+                                    text = "Clinic Official Emblem",
                                     style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
                                 Text(
-                                    text = "متطابق مع أيقونة التطبيق وشاشة البداية (Splash Screen) بالخلفية العاجية #FBF8F5 دون أي اقتصاص للأطراف.",
+                                    text = "Consistent with application icon and splash screen with ivory background #FBF8F5 without clipping.",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -374,7 +369,7 @@ fun SecuritySettingsDialog(
                         OutlinedTextField(
                             value = editedClinicName,
                             onValueChange = { editedClinicName = it },
-                            label = { Text("اسم العيادة (الهيدر والشريط العلوي)") },
+                            label = { Text("Clinic Name (Header & Top Bar)") },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth().testTag("clinicNameField"),
                         )
@@ -382,7 +377,7 @@ fun SecuritySettingsDialog(
                         OutlinedTextField(
                             value = editedClinicSubtitle,
                             onValueChange = { editedClinicSubtitle = it },
-                            label = { Text("الوصف أو التخصص (العنوان الفرعي)") },
+                            label = { Text("Specialty or Description (Subtitle)") },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth().testTag("clinicSubtitleField"),
                         )
@@ -405,11 +400,11 @@ fun SecuritySettingsDialog(
                                 onClick = {
                                     securityRepo.updateClinicBranding(editedClinicName, editedClinicSubtitle)
                                     settingsState = securityRepo.settings.value
-                                    brandingSavedMessage = "تم حفظ وتطبيق هوية العيادة بنجاح!"
+                                    brandingSavedMessage = "Clinic branding saved and applied successfully!"
                                 },
                                 modifier = Modifier.testTag("saveBrandingButton"),
                             ) {
-                                Text("حفظ هوية العيادة")
+                                Text("Save Clinic Branding")
                             }
                         }
                     }
@@ -431,7 +426,7 @@ fun SecuritySettingsDialog(
                         ) {
                             Icon(Icons.Default.Password, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                             Text(
-                                text = "رمز المرور (PIN - 6 أرقام)",
+                                text = "PIN Passcode (6 Digits)",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary,
@@ -439,7 +434,7 @@ fun SecuritySettingsDialog(
                         }
 
                         Text(
-                            text = "رمز الحماية مكون من 6 أرقام لمنع الدخول غير المصرح به للملفات الطبية.",
+                            text = "6-digit security PIN to prevent unauthorized access to clinical patient records.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -450,7 +445,7 @@ fun SecuritySettingsDialog(
                                 .fillMaxWidth()
                                 .testTag("changePinButton"),
                         ) {
-                            Text("تغيير رمز المرور المكون من 6 أرقام", fontWeight = FontWeight.SemiBold)
+                            Text("Change 6-Digit PIN", fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -478,13 +473,13 @@ fun SecuritySettingsDialog(
                                 Icon(Icons.Default.Fingerprint, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                 Column {
                                     Text(
-                                        text = "فتح التطبيق بالبصمة",
+                                        text = "Biometric Fingerprint Unlock",
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSurface,
                                     )
                                     Text(
-                                        text = if (isBiometricAvailable) "بصمة الإصبع مدعومة وجاهزة" else "البصمة غير متوفرة في النظام",
+                                        text = if (isBiometricAvailable) "Fingerprint supported and ready" else "Fingerprint not available on device",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = if (isBiometricAvailable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                                     )
@@ -503,7 +498,7 @@ fun SecuritySettingsDialog(
                         }
 
                         Text(
-                            text = "عند تفعيل البصمة، يمكنك فتح التطبيق بلمسة واحدة مباشرة دون الحاجة لكتابة رمز المرور في كل مرة.",
+                            text = "When enabled, you can unlock the application instantly with a single touch without typing your PIN each time.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -514,7 +509,7 @@ fun SecuritySettingsDialog(
                                     BiometricAuthManager.promptBiometric(
                                         activity = activity,
                                         onResult = { ok ->
-                                            biometricFeedbackMessage = if (ok) "تم التحقق من البصمة بنجاح! جاهزة للاستخدام." else "فشل التحقق من البصمة."
+                                            biometricFeedbackMessage = if (ok) "Fingerprint verified successfully! Ready for use." else "Fingerprint verification failed."
                                         },
                                     )
                                 },
@@ -522,7 +517,7 @@ fun SecuritySettingsDialog(
                                     .fillMaxWidth()
                                     .testTag("testBiometricButton"),
                             ) {
-                                Text("اختبار قراءة البصمة الآن")
+                                Text("Test Fingerprint Now")
                             }
                         }
 
@@ -553,7 +548,7 @@ fun SecuritySettingsDialog(
                         ) {
                             Icon(Icons.Default.LockClock, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                             Text(
-                                text = "القفل التلقائي للشاشة",
+                                text = "Auto-Lock Timeout",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary,
@@ -561,7 +556,7 @@ fun SecuritySettingsDialog(
                         }
 
                         Text(
-                            text = "تحديد المهلة الزمنية قبل قفل التطبيق تلقائياً عند تركه في الخلفية:",
+                            text = "Set inactivity duration before the app automatically locks in the background:",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -590,15 +585,10 @@ fun SecuritySettingsDialog(
                                 Spacer(Modifier.width(8.dp))
                                 Column {
                                     Text(
-                                        text = timeout.displayNameAr,
+                                        text = timeout.displayNameEn,
                                         style = MaterialTheme.typography.bodyMedium,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                    )
-                                    Text(
-                                        text = timeout.displayNameEn,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
                             }
@@ -622,7 +612,7 @@ fun SecuritySettingsDialog(
                             ) {
                                 Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                 Text(
-                                    text = "النسخ الاحتياطي المشفر للخزنة (Encrypted Vault)",
+                                    text = "Encrypted Vault Backup & Restore",
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary,
@@ -630,7 +620,7 @@ fun SecuritySettingsDialog(
                             }
 
                             Text(
-                                text = "تشفير قياسي مؤسسي (AES-256 GCM مع PBKDF2 بـ 65,536 تكرار). يمكنك تصدير ملفات مشفرة ونقلها أو استعادتها بأمان تام مع ضمان عدم فقد أي بيانات (Zero Data Loss).",
+                                text = "Enterprise AES-256 GCM encryption with PBKDF2 (65,536 iterations). Safely export and restore all records with guaranteed Zero Data Loss.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -654,7 +644,7 @@ fun SecuritySettingsDialog(
                                 ) {
                                     Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(4.dp))
-                                    Text("تصدير مشفر", maxLines = 1)
+                                    Text("Export Backup", maxLines = 1)
                                 }
 
                                 OutlinedButton(
@@ -665,7 +655,7 @@ fun SecuritySettingsDialog(
                                 ) {
                                     Icon(Icons.Default.Security, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(4.dp))
-                                    Text("استعادة مشفرة", maxLines = 1)
+                                    Text("Restore Backup", maxLines = 1)
                                 }
                             }
                         }
@@ -683,7 +673,7 @@ fun SecuritySettingsDialog(
                     ) {
                         Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("قفل التطبيق الآن (Lock App Now)", fontWeight = FontWeight.Bold)
+                        Text("Lock App Now", fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -724,15 +714,15 @@ fun SecuritySettingsDialog(
                                 putExtra(Intent.EXTRA_STREAM, contentUri)
                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             }
-                            context.startActivity(Intent.createChooser(shareIntent, "حفظ أو مشاركة النسخة المشفرة"))
-                            backupStatusMessage = "تم إنشاء وتصدير النسخة الاحتياطية المشفرة بنجاح (${backupBytes.size} بايت)!"
+                            context.startActivity(Intent.createChooser(shareIntent, "Save or Share Encrypted Backup"))
+                            backupStatusMessage = "Encrypted backup created and exported successfully (${backupBytes.size} bytes)!"
                             isBackupError = false
                         } catch (e: Exception) {
-                            backupStatusMessage = "تم إنشاء النسخة ولكن تعذر فتح المشاركة: ${e.message}"
+                            backupStatusMessage = "Backup created but unable to open share sheet: ${e.message}"
                             isBackupError = true
                         }
                     } else {
-                        backupStatusMessage = "فشل إنشاء النسخة الاحتياطية!"
+                        backupStatusMessage = "Failed to generate backup!"
                         isBackupError = true
                     }
                 }
@@ -754,15 +744,15 @@ fun SecuritySettingsDialog(
                 onRestoreBackup(bytes, passphrase) { result ->
                     when (result) {
                         is BackupInspectionResult.Valid -> {
-                            backupStatusMessage = "تم استعادة الخزنة بنجاح (${result.patientCount} مريضة)! جميع السجلات متطابقة بنسبة 100% دون أي فقد في البيانات."
+                            backupStatusMessage = "Vault restored successfully (${result.patientCount} patients)! All records 100% verified with Zero Data Loss."
                             isBackupError = false
                         }
                         is BackupInspectionResult.InvalidPassphraseOrCorrupted -> {
-                            backupStatusMessage = "فشل فك التشفير: كلمة المرور غير صحيحة أو الملف تالف!"
+                            backupStatusMessage = "Decryption failed: Incorrect passphrase or corrupted backup file!"
                             isBackupError = true
                         }
                         is BackupInspectionResult.Error -> {
-                            backupStatusMessage = "خطأ أثناء الاستعادة: ${result.reason}"
+                            backupStatusMessage = "Error during restore: ${result.reason}"
                             isBackupError = true
                         }
                     }
@@ -785,12 +775,12 @@ private fun ChangePinDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("تعيين رمز PIN جديد (6 أرقام)", fontWeight = FontWeight.Bold)
+            Text("Set New 6-Digit PIN", fontWeight = FontWeight.Bold)
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
-                    text = "اختر 6 أرقام تود استخدامها لقفل وفتح التطبيق، وسيتم حفظ الرمز وتفعيله مباشرة دون الحاجة لأي رمز سابق.",
+                    text = "Enter 6 digits to lock and unlock the application. The new PIN will be active immediately.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -798,7 +788,7 @@ private fun ChangePinDialog(
                 OutlinedTextField(
                     value = newPin,
                     onValueChange = { if (it.length <= 6 && it.all { c -> c.isDigit() }) newPin = it },
-                    label = { Text("رمز PIN الجديد (6 أرقام)") },
+                    label = { Text("New 6-Digit PIN") },
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     singleLine = true,
@@ -808,7 +798,7 @@ private fun ChangePinDialog(
                 OutlinedTextField(
                     value = confirmPin,
                     onValueChange = { if (it.length <= 6 && it.all { c -> c.isDigit() }) confirmPin = it },
-                    label = { Text("تأكيد رمز PIN الجديد") },
+                    label = { Text("Confirm New PIN") },
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     singleLine = true,
@@ -829,9 +819,9 @@ private fun ChangePinDialog(
             Button(
                 onClick = {
                     if (newPin.length != 6) {
-                        errorMessage = "يجب أن يتكون رمز المرور من 6 أرقام!"
+                        errorMessage = "PIN must be exactly 6 digits!"
                     } else if (newPin != confirmPin) {
-                        errorMessage = "رمز المرور الجديد وتأكيده غير متطابقين!"
+                        errorMessage = "New PIN and confirmation do not match!"
                     } else {
                         securityRepo.updatePin(newPin)
                         onSuccess()
@@ -839,12 +829,12 @@ private fun ChangePinDialog(
                 },
                 modifier = Modifier.testTag("saveNewPinButton"),
             ) {
-                Text("حفظ رمز PIN الجديد")
+                Text("Save New PIN")
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("إلغاء")
+                Text("Cancel")
             }
         },
     )
@@ -862,12 +852,12 @@ private fun ExportBackupDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("تصدير نسخة احتياطية مشفرة", fontWeight = FontWeight.Bold)
+            Text("Export Encrypted Backup", fontWeight = FontWeight.Bold)
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
-                    text = "أدخل كلمة مرور قوية لتشفير ملف النسخة الاحتياطية (AES-256 GCM). ستحتاج لهذه الكلمة عند استعادة السجلات.",
+                    text = "Enter a strong passphrase to encrypt the backup file (AES-256 GCM). You will need this passphrase to restore the vault.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -875,7 +865,7 @@ private fun ExportBackupDialog(
                 OutlinedTextField(
                     value = passphrase,
                     onValueChange = { passphrase = it },
-                    label = { Text("كلمة مرور النسخة المشفرة") },
+                    label = { Text("Backup Passphrase") },
                     visualTransformation = PasswordVisualTransformation(),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth().testTag("backupPassphraseField"),
@@ -884,7 +874,7 @@ private fun ExportBackupDialog(
                 OutlinedTextField(
                     value = confirmPassphrase,
                     onValueChange = { confirmPassphrase = it },
-                    label = { Text("تأكيد كلمة المرور") },
+                    label = { Text("Confirm Passphrase") },
                     visualTransformation = PasswordVisualTransformation(),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth().testTag("confirmBackupPassphraseField"),
@@ -904,21 +894,21 @@ private fun ExportBackupDialog(
             Button(
                 onClick = {
                     if (passphrase.length < 6) {
-                        errorMessage = "يجب أن لا تقل كلمة المرور عن 6 أحرف/أرقام!"
+                        errorMessage = "Passphrase must be at least 6 characters!"
                     } else if (passphrase != confirmPassphrase) {
-                        errorMessage = "كلمة المرور وتأكيدها غير متطابقين!"
+                        errorMessage = "Passphrase and confirmation do not match!"
                     } else {
                         onConfirm(passphrase.toCharArray())
                     }
                 },
                 modifier = Modifier.testTag("confirmExportBackupButton"),
             ) {
-                Text("تصدير وتشفير")
+                Text("Export & Encrypt")
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("إلغاء")
+                Text("Cancel")
             }
         },
     )
@@ -935,12 +925,12 @@ private fun RestorePassphraseDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("استعادة الخزنة المشفرة", fontWeight = FontWeight.Bold)
+            Text("Restore Encrypted Vault", fontWeight = FontWeight.Bold)
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
-                    text = "أدخل كلمة المرور الخاصة بهذا الملف المشفر لفك تشفيره واستعادة جميع سجلات المرضى والزيارات والسونار.",
+                    text = "Enter the passphrase for this encrypted file to restore all patients, visits, ultrasounds, and clinical records.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -948,7 +938,7 @@ private fun RestorePassphraseDialog(
                 OutlinedTextField(
                     value = passphrase,
                     onValueChange = { passphrase = it },
-                    label = { Text("كلمة المرور لفك التشفير") },
+                    label = { Text("Passphrase for Decryption") },
                     visualTransformation = PasswordVisualTransformation(),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth().testTag("restorePassphraseField"),
@@ -968,19 +958,19 @@ private fun RestorePassphraseDialog(
             Button(
                 onClick = {
                     if (passphrase.isEmpty()) {
-                        errorMessage = "يرجى إدخال كلمة المرور!"
+                        errorMessage = "Please enter the passphrase!"
                     } else {
                         onConfirm(passphrase.toCharArray())
                     }
                 },
                 modifier = Modifier.testTag("confirmRestoreBackupButton"),
             ) {
-                Text("فك التشفير واستعادة")
+                Text("Decrypt & Restore")
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("إلغاء")
+                Text("Cancel")
             }
         },
     )

@@ -36,6 +36,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -75,7 +76,7 @@ fun PatientEditor(
 
     EditorPage(
         title = if (route.isNew) stringResource(R.string.register_patient) else stringResource(R.string.edit_patient),
-        subtitle = "سجل المريضة والبيانات الديموغرافية والسريرية · Demographic & Clinical Profile",
+        subtitle = "Demographic & Clinical Profile",
         tag = "patientEditor",
     ) {
         EditorErrorCard(state, draft.errors)
@@ -93,7 +94,7 @@ fun PatientEditor(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "1. بيانات الهوية والتواصل · Demographics",
+                    text = "1. Demographics & Intake Details",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -162,6 +163,56 @@ fun PatientEditor(
                         modifier = Modifier.weight(1f),
                     )
                 }
+
+                // Last Menstrual Period (LMP) with live EDD & GA preview
+                ClinicalDateField(
+                    value = draft.values.lmpDate,
+                    onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.LMP_DATE, it)) },
+                    label = "Last Menstrual Period (LMP)",
+                    tag = "patientLmpDate",
+                    enabled = enabled,
+                    showTodayButton = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                val trimmedLmp = draft.values.lmpDate.trim()
+                if (trimmedLmp.isNotBlank()) {
+                    val calculatedEdd = try {
+                        java.time.LocalDate.parse(trimmedLmp).plusDays(280).toString()
+                    } catch (_: Exception) { null }
+                    val currentGa = try {
+                        val parsed = java.time.LocalDate.parse(trimmedLmp)
+                        val days = java.time.temporal.ChronoUnit.DAYS.between(parsed, java.time.LocalDate.now())
+                        if (days in 0..300) "${days / 7}w ${days % 7}d" else null
+                    } catch (_: Exception) { null }
+                    if (calculatedEdd != null) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = "Estimated Due Date: $calculatedEdd",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                )
+                                if (currentGa != null) {
+                                    Text(
+                                        text = "Current GA: $currentGa",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -178,7 +229,7 @@ fun PatientEditor(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "2. الصيغة الولادية وتاريخ الحمول · Obstetric History (GPA)",
+                    text = "2. Obstetric History (Gravida, Parity, Abortion)",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -191,7 +242,7 @@ fun PatientEditor(
                     EditorField(
                         value = draft.values.gravida,
                         onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.GRAVIDA, it)) },
-                        label = "G (مرات الحمل)",
+                        label = "Gravida (G)",
                         tag = "patientGravida",
                         enabled = enabled,
                         singleLine = true,
@@ -202,7 +253,7 @@ fun PatientEditor(
                     EditorField(
                         value = draft.values.parity,
                         onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.PARITY, it)) },
-                        label = "P (الولادات)",
+                        label = "Parity (P)",
                         tag = "patientParity",
                         enabled = enabled,
                         singleLine = true,
@@ -213,7 +264,7 @@ fun PatientEditor(
                     EditorField(
                         value = draft.values.abortion,
                         onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.ABORTION, it)) },
-                        label = "A (الإجهاض)",
+                        label = "Abortion (A)",
                         tag = "patientAbortion",
                         enabled = enabled,
                         singleLine = true,
@@ -240,7 +291,7 @@ fun PatientEditor(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
-                                    text = "سجل الحمول والولادات السابقة (${existingPatient.previousPregnancies.size})",
+                                    text = "Previous Pregnancies & Deliveries (${existingPatient.previousPregnancies.size})",
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary,
@@ -258,19 +309,19 @@ fun PatientEditor(
                                     },
                                     modifier = Modifier.minimumTouchTarget(),
                                 ) {
-                                    Text("+ إضافة حمل سابق")
+                                    Text("+ Add Delivery")
                                 }
                             }
                             if (existingPatient.previousPregnancies.isEmpty()) {
                                 Text(
-                                    text = "لم يتم تسجيل ولادات سابقة (بكرية)",
+                                    text = "No prior pregnancies recorded (Primigravida)",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             } else {
                                 existingPatient.previousPregnancies.forEach { pp ->
                                     Text(
-                                        text = "• ${pp.dateText ?: "سابق"} : ${pp.birthMethod ?: pp.outcomeText ?: "ولادة"} (${pp.outcome ?: "مولود حي"})",
+                                        text = "• ${pp.dateText ?: "Past"} : ${pp.birthMethod ?: pp.outcomeText ?: "Delivery"} (${pp.outcome ?: "Live birth"})",
                                         style = MaterialTheme.typography.bodySmall,
                                         fontWeight = FontWeight.SemiBold,
                                     )
@@ -303,7 +354,7 @@ fun PatientEditor(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "3. المخاطر والتقييم السريري · Clinical Risk & Blood Group",
+                    text = "3. Clinical Risk & Blood Group",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -336,7 +387,7 @@ fun PatientEditor(
                 EditorField(
                     value = draft.values.clinicalAttention,
                     onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.CLINICAL_ATTENTION, it)) },
-                    label = "تنبيهات إكلينيكية هامة (Clinical Attention / Alerts) - سطر لكل تنبيه",
+                    label = "Clinical Attention & High-Risk Alerts (One alert per line)",
                     tag = "patientClinicalAttention",
                     enabled = enabled,
                 )
@@ -357,7 +408,7 @@ fun PatientEditor(
             )
             Spacer(Modifier.width(6.dp))
             Text(
-                text = "سجلات مشفرة محلياً (AES-256 GCM) · Local Hardware Vault Security",
+                text = "Locally Encrypted (AES-256 GCM) · Hardware Vault Security",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -518,7 +569,7 @@ internal fun ClinicalDropdownField(
 
     Box(modifier = modifier) {
         OutlinedTextField(
-            value = if (selectedValue.isBlank()) "غير محدد" else selectedValue,
+            value = if (selectedValue.isBlank()) "Not specified" else selectedValue,
             onValueChange = {},
             readOnly = true,
             label = { Text(label) },
@@ -541,7 +592,7 @@ internal fun ClinicalDropdownField(
             onDismissRequest = { expanded = false },
         ) {
             DropdownMenuItem(
-                text = { Text("غير محدد (فارغ)") },
+                text = { Text("Not specified (Empty)") },
                 onClick = {
                     onSelect("")
                     expanded = false
