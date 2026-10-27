@@ -58,6 +58,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
@@ -418,15 +419,27 @@ private fun PatientClinicalRow(
 ) {
     var showEddPopup by remember { mutableStateOf(false) }
 
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+
     val rowBgColor = if (row.isHighRisk) {
-        MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.22f)
+        if (isDark) {
+            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.40f)
+        } else {
+            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.22f)
+        }
     } else {
         MaterialTheme.colorScheme.surface
     }
     val rowBorder = if (row.isHighRisk) {
-        BorderStroke(1.5.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.6f))
+        BorderStroke(
+            1.5.dp,
+            if (isDark) MaterialTheme.colorScheme.error.copy(alpha = 0.85f) else MaterialTheme.colorScheme.error.copy(alpha = 0.6f),
+        )
     } else {
-        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        BorderStroke(
+            1.dp,
+            if (isDark) MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.8f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+        )
     }
 
     Card(
@@ -436,7 +449,7 @@ private fun PatientClinicalRow(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = rowBgColor),
         border = rowBorder,
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 2.5.dp else 1.dp),
     ) {
         Column(
             modifier = Modifier
@@ -482,11 +495,8 @@ private fun PatientClinicalRow(
                             }
                         }
                         if (row.ageText != null) {
-                            Text(
-                                text = "${row.ageText} yrs",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                            Spacer(Modifier.height(4.dp))
+                            PatientAgeBadge(ageText = row.ageText)
                         }
                     }
 
@@ -606,7 +616,7 @@ private fun PatientClinicalRow(
                         modifier = Modifier.fillMaxWidth(),
                     )
 
-                    // 2. Risk Tag with Age beside it (Age NOT in a color tag!)
+                    // 2. Risk Tag with Age beside it inside a colored box
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = rowArrangement,
@@ -615,12 +625,7 @@ private fun PatientClinicalRow(
                         ClinicalRiskBadge(isHighRisk = row.isHighRisk)
                         if (row.ageText != null) {
                             Spacer(Modifier.width(6.dp))
-                            Text(
-                                text = "• ${row.ageText} yrs",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = FontWeight.Medium,
-                            )
+                            PatientAgeBadge(ageText = row.ageText)
                         }
                         if (row.isArchived) {
                             Spacer(Modifier.width(6.dp))
@@ -652,14 +657,14 @@ private fun PatientClinicalRow(
                         // Tag A: Obstetric GPA & Past Deliveries (Soft Lavender/Purple tag)
                         Surface(
                             shape = RoundedCornerShape(6.dp),
-                            color = TagObstetricBg,
-                            border = BorderStroke(1.dp, TagObstetricBorder),
+                            color = if (isDark) TagObstetricDarkBg else TagObstetricBg,
+                            border = BorderStroke(1.dp, if (isDark) TagObstetricDarkBorder else TagObstetricBorder),
                         ) {
                             Text(
                                 text = row.obstetricSummary,
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.SemiBold,
-                                color = TagObstetricText,
+                                color = if (isDark) TagObstetricDarkText else TagObstetricText,
                                 modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
                             )
                         }
@@ -668,8 +673,8 @@ private fun PatientClinicalRow(
                         Box {
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
-                                color = TagGestationalAgeBg,
-                                border = BorderStroke(1.dp, TagGestationalAgeBorder),
+                                color = if (isDark) TagGestationalAgeDarkBg else TagGestationalAgeBg,
+                                border = BorderStroke(1.dp, if (isDark) TagGestationalAgeDarkBorder else TagGestationalAgeBorder),
                                 modifier = Modifier.clickable { showEddPopup = true },
                             ) {
                                 Row(
@@ -680,14 +685,14 @@ private fun PatientClinicalRow(
                                     Icon(
                                         Icons.Default.DateRange,
                                         contentDescription = "Tap to view EDD",
-                                        tint = TagGestationalAgeText,
+                                        tint = if (isDark) TagGestationalAgeDarkText else TagGestationalAgeText,
                                         modifier = Modifier.size(14.dp),
                                     )
                                     Text(
                                         text = row.gestationalAgeText,
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.Bold,
-                                        color = TagGestationalAgeText,
+                                        color = if (isDark) TagGestationalAgeDarkText else TagGestationalAgeText,
                                     )
                                 }
                             }
@@ -738,21 +743,21 @@ private fun PatientClinicalRow(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(6.dp))
-                                .background(TagAttentionBg)
-                                .border(1.dp, TagAttentionBorder, RoundedCornerShape(6.dp))
+                                .background(if (isDark) TagAttentionDarkBg else TagAttentionBg)
+                                .border(1.dp, if (isDark) TagAttentionDarkBorder else TagAttentionBorder, RoundedCornerShape(6.dp))
                                 .padding(horizontal = 10.dp, vertical = 6.dp),
                         ) {
                             Icon(
                                 Icons.Default.Warning,
                                 contentDescription = "Clinical Attention",
-                                tint = TagAttentionIcon,
+                                tint = if (isDark) TagAttentionDarkIcon else TagAttentionIcon,
                                 modifier = Modifier.size(16.dp),
                             )
                             Text(
                                 text = row.clinicalAttention,
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.SemiBold,
-                                color = TagAttentionText,
+                                color = if (isDark) TagAttentionDarkText else TagAttentionText,
                                 modifier = Modifier.weight(1f),
                                 maxLines = 4,
                                 overflow = TextOverflow.Ellipsis,
@@ -779,6 +784,31 @@ private fun PatientClinicalRow(
 }
 
 @Composable
+private fun PatientAgeBadge(ageText: String?) {
+    if (ageText.isNullOrBlank()) return
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val (bgColor, borderColor, textColor) = if (isDark) {
+        Triple(TagAgeDarkBg, TagAgeDarkBorder, TagAgeDarkText)
+    } else {
+        Triple(TagAgeBg, TagAgeBorder, TagAgeText)
+    }
+
+    Surface(
+        shape = RoundedCornerShape(6.dp),
+        color = bgColor,
+        border = BorderStroke(1.dp, borderColor),
+    ) {
+        Text(
+            text = "$ageText yrs",
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = textColor,
+            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+        )
+    }
+}
+
+@Composable
 private fun BloodGroupBadge(
     bloodGroup: String?,
     isRhNegative: Boolean,
@@ -799,10 +829,11 @@ private fun BloodGroupBadge(
         return
     }
 
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
     val (bgColor, borderColor, textColor) = when {
-        isRhNegative -> Triple(TagBloodNegativeBg, TagBloodNegativeBorder, TagBloodNegativeText)
-        isRhPositive -> Triple(TagBloodPositiveBg, TagBloodPositiveBorder, TagBloodPositiveText)
-        else -> Triple(TagBloodNeutralBg, TagBloodNeutralBorder, TagBloodNeutralText)
+        isRhNegative -> if (isDark) Triple(TagBloodNegativeDarkBg, TagBloodNegativeDarkBorder, TagBloodNegativeDarkText) else Triple(TagBloodNegativeBg, TagBloodNegativeBorder, TagBloodNegativeText)
+        isRhPositive -> if (isDark) Triple(TagBloodPositiveDarkBg, TagBloodPositiveDarkBorder, TagBloodPositiveDarkText) else Triple(TagBloodPositiveBg, TagBloodPositiveBorder, TagBloodPositiveText)
+        else -> if (isDark) Triple(TagBloodNeutralDarkBg, TagBloodNeutralDarkBorder, TagBloodNeutralDarkText) else Triple(TagBloodNeutralBg, TagBloodNeutralBorder, TagBloodNeutralText)
     }
 
     Surface(
@@ -822,29 +853,40 @@ private fun BloodGroupBadge(
 
 @Composable
 private fun ClinicalRiskBadge(isHighRisk: Boolean) {
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
     if (isHighRisk) {
+        val (bgColor, borderColor, textColor) = if (isDark) {
+            Triple(TagHighRiskDarkBg, TagHighRiskDarkBorder, TagHighRiskDarkText)
+        } else {
+            Triple(TagHighRiskBg, TagHighRiskBorder, TagHighRiskText)
+        }
         Surface(
             shape = RoundedCornerShape(6.dp),
-            color = TagHighRiskBg,
-            border = BorderStroke(1.dp, TagHighRiskBorder),
+            color = bgColor,
+            border = BorderStroke(1.dp, borderColor),
         ) {
             Text(
                 text = "⚠️ " + stringResource(R.string.high_risk),
-                color = TagHighRiskText,
+                color = textColor,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
             )
         }
     } else {
+        val (bgColor, borderColor, textColor) = if (isDark) {
+            Triple(TagNormalRiskDarkBg, TagNormalRiskDarkBorder, TagNormalRiskDarkText)
+        } else {
+            Triple(TagNormalRiskBg, TagNormalRiskBorder, TagNormalRiskText)
+        }
         Surface(
             shape = RoundedCornerShape(6.dp),
-            color = TagNormalRiskBg,
-            border = BorderStroke(1.dp, TagNormalRiskBorder),
+            color = bgColor,
+            border = BorderStroke(1.dp, borderColor),
         ) {
             Text(
                 text = stringResource(R.string.normal_risk_filter),
-                color = TagNormalRiskText,
+                color = textColor,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
