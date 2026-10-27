@@ -4,9 +4,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sherifradwan.ancnative.security.AppThemeMode
 import com.sherifradwan.ancnative.security.SecuritySettingsRepository
 import com.sherifradwan.ancnative.state.AncViewModel
 import com.sherifradwan.ancnative.storage.VaultState
@@ -23,7 +25,13 @@ class MainActivity : ComponentActivity() {
         viewModel.onForegrounded()
         enableEdgeToEdge()
         setContent {
-            AncTheme(darkTheme = false, dynamicColor = false) {
+            val securitySettings = securityRepo.settings.collectAsStateWithLifecycle().value
+            val isDarkTheme = when (securitySettings.themeMode) {
+                AppThemeMode.SYSTEM -> isSystemInDarkTheme()
+                AppThemeMode.LIGHT -> false
+                AppThemeMode.DARK -> true
+            }
+            AncTheme(darkTheme = isDarkTheme, dynamicColor = false) {
                 val state = viewModel.state.collectAsStateWithLifecycle().value
                 android.util.Log.d("VAULT_DEBUG", "Current vaultState: ${state.vaultState}")
                 val authenticating = state.vaultState as? VaultState.Authenticating
@@ -52,6 +60,8 @@ class MainActivity : ComponentActivity() {
                     },
                     onRetryStorage = viewModel::retryStorageInspection,
                     securityRepo = securityRepo,
+                    onExportBackup = viewModel::exportBackup,
+                    onRestoreBackup = viewModel::restoreBackup,
                 )
             }
         }

@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import java.time.Instant
@@ -112,12 +115,16 @@ fun ClinicalDateField(
             singleLine = true,
             enabled = enabled,
             trailingIcon = {
-                TextButton(
+                IconButton(
                     onClick = { showDatePicker = true },
                     enabled = enabled,
                     modifier = Modifier.testTag("${tag}CalendarButton"),
                 ) {
-                    Text("📅 ${stringResource(R.string.pick_date)}")
+                    Icon(
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = stringResource(R.string.pick_date),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
                 }
             },
             modifier = Modifier.fillMaxWidth().testTag(tag),

@@ -682,4 +682,22 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
         -> true
         else -> false
     }
+
+    fun exportBackup(passphrase: CharArray, onResult: (ByteArray?) -> Unit) {
+        viewModelScope.launch {
+            val bytes = controller.exportEncryptedBackup(passphrase)
+            onResult(bytes)
+        }
+    }
+
+    fun restoreBackup(
+        backupBytes: ByteArray,
+        passphrase: CharArray,
+        onResult: (com.sherifradwan.ancnative.storage.BackupInspectionResult) -> Unit,
+    ) {
+        viewModelScope.launch {
+            val result = controller.restoreEncryptedBackup(backupBytes, passphrase)
+            onResult(result)
+        }
+    }
 }

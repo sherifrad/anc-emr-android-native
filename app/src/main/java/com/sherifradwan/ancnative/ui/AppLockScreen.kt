@@ -153,7 +153,7 @@ fun AppLockScreen(
             // Clinic Logo & Branding Header
             Surface(
                 shape = CircleShape,
-                color = Color(0xFFFBF8F5),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 shadowElevation = 3.dp,
                 modifier = Modifier.size(90.dp),
             ) {

@@ -1,6 +1,11 @@
 package com.sherifradwan.ancnative.ui
 
 import android.app.Activity
+import android.content.Intent
+import androidx.core.content.FileProvider
+import com.sherifradwan.ancnative.storage.BackupInspectionResult
+import java.io.File
+import java.io.FileOutputStream
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,8 +24,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockClock
 import androidx.compose.material.icons.filled.Password
@@ -58,10 +66,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.ui.graphics.Color
 import com.sherifradwan.ancnative.model.codex.ClinicalCodexRepository
 import com.sherifradwan.ancnative.R
+import com.sherifradwan.ancnative.security.AppThemeMode
 import com.sherifradwan.ancnative.security.AutoLockTimeout
 import com.sherifradwan.ancnative.security.BiometricAuthManager
 import com.sherifradwan.ancnative.security.SecuritySettingsRepository
@@ -77,6 +86,8 @@ fun SecuritySettingsDialog(
     securityRepo: SecuritySettingsRepository,
     onDismiss: () -> Unit,
     onLockNow: () -> Unit,
+    onExportBackup: ((CharArray, (ByteArray?) -> Unit) -> Unit)? = null,
+    onRestoreBackup: ((ByteArray, CharArray, (BackupInspectionResult) -> Unit) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
@@ -87,6 +98,31 @@ fun SecuritySettingsDialog(
 
     var showChangePinDialog by remember { mutableStateOf(false) }
     var biometricFeedbackMessage by remember { mutableStateOf<String?>(null) }
+
+    var backupStatusMessage by remember { mutableStateOf<String?>(null) }
+    var isBackupError by remember { mutableStateOf(false) }
+    var showExportDialog by remember { mutableStateOf(false) }
+    var pendingRestoreBytes by remember { mutableStateOf<ByteArray?>(null) }
+    var showRestorePassphraseDialog by remember { mutableStateOf(false) }
+
+    val restoreFileLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.GetContent(),
+    ) { uri ->
+        if (uri != null) {
+            val bytes = try {
+                context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            } catch (_: Exception) {
+                null
+            }
+            if (bytes != null && bytes.isNotEmpty()) {
+                pendingRestoreBytes = bytes
+                showRestorePassphraseDialog = true
+            } else {
+                backupStatusMessage = "تعذر قراءة ملف النسخة الاحتياطية المختار!"
+                isBackupError = true
+            }
+        }
+    }
 
     val isBiometricAvailable = remember(context) {
         BiometricAuthManager.isBiometricAvailable(context)
@@ -124,7 +160,7 @@ fun SecuritySettingsDialog(
                     ) {
                         Surface(
                             shape = CircleShape,
-                            color = androidx.compose.ui.graphics.Color(0xFFFBF8F5),
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
                             modifier = Modifier.size(46.dp),
                         ) {
                             Box(contentAlignment = Alignment.Center) {
@@ -161,7 +197,7 @@ fun SecuritySettingsDialog(
                 var selectedTab by remember { mutableStateOf(SettingsTab.SECURITY) }
                 val codexRepo = remember { ClinicalCodexRepository.getInstance(context) }
 
-                TabRow(
+                PrimaryTabRow(
                     selectedTabIndex = selectedTab.ordinal,
                     containerColor = Color.Transparent,
                     divider = {},
@@ -208,6 +244,75 @@ fun SecuritySettingsDialog(
                 } else if (selectedTab == SettingsTab.MED_CODEX) {
                     MedicationCodexSettingsSection(codexDelegate = codexRepo)
                 } else {
+                    // Section: Theme Mode (Light / Dark / System Default)
+                    Card(
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                        modifier = Modifier.fillMaxWidth().testTag("themeSettingsCard"),
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Icon(Icons.Default.BrightnessAuto, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                Text(
+                                    text = "المظهر ونمط العرض (App Theme)",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+
+                            Text(
+                                text = "اختر نمط الألوان المناسب لبيئة العمل (عيادة مضيئة أو غرفة موجات فوق صوتية معتمة):",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+
+                            AppThemeMode.entries.forEach { mode ->
+                                val isSelected = settingsState.themeMode == mode
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable {
+                                            securityRepo.setThemeMode(mode)
+                                            settingsState = securityRepo.settings.value
+                                        }
+                                        .padding(vertical = 4.dp, horizontal = 6.dp)
+                                        .testTag("themeOption-${mode.name}"),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    RadioButton(
+                                        selected = isSelected,
+                                        onClick = {
+                                            securityRepo.setThemeMode(mode)
+                                            settingsState = securityRepo.settings.value
+                                        },
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Column {
+                                        Text(
+                                            text = mode.displayNameAr,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                        )
+                                        Text(
+                                            text = mode.displayNameEn,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     // Section 0: Clinic Branding & Visual Identity
                 Card(
                     shape = RoundedCornerShape(14.dp),
@@ -239,7 +344,7 @@ fun SecuritySettingsDialog(
                         ) {
                             Surface(
                                 shape = CircleShape,
-                                color = androidx.compose.ui.graphics.Color(0xFFFBF8F5),
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
                                 shadowElevation = 2.dp,
                                 modifier = Modifier.size(56.dp),
                             ) {
@@ -501,20 +606,85 @@ fun SecuritySettingsDialog(
                     }
                 }
 
-                // Lock App Now Button
-                Button(
-                    onClick = {
-                        onDismiss()
-                        onLockNow()
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("lockAppNowButton"),
-                ) {
-                    Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("قفل التطبيق الآن (Lock App Now)", fontWeight = FontWeight.Bold)
-                }
+                    // Section 4: Encrypted Vault Backup & Restore (Zero Data Loss)
+                    Card(
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                        modifier = Modifier.fillMaxWidth().testTag("backupVaultSettingsCard"),
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                Text(
+                                    text = "النسخ الاحتياطي المشفر للخزنة (Encrypted Vault)",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+
+                            Text(
+                                text = "تشفير قياسي مؤسسي (AES-256 GCM مع PBKDF2 بـ 65,536 تكرار). يمكنك تصدير ملفات مشفرة ونقلها أو استعادتها بأمان تام مع ضمان عدم فقد أي بيانات (Zero Data Loss).",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+
+                            if (backupStatusMessage != null) {
+                                Text(
+                                    text = backupStatusMessage ?: "",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (isBackupError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Button(
+                                    onClick = { showExportDialog = true },
+                                    modifier = Modifier.weight(1f).testTag("exportBackupButton"),
+                                ) {
+                                    Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("تصدير مشفر", maxLines = 1)
+                                }
+
+                                OutlinedButton(
+                                    onClick = {
+                                        restoreFileLauncher.launch("*/*")
+                                    },
+                                    modifier = Modifier.weight(1f).testTag("restoreBackupButton"),
+                                ) {
+                                    Icon(Icons.Default.Security, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("استعادة مشفرة", maxLines = 1)
+                                }
+                            }
+                        }
+                    }
+
+                    // Lock App Now Button
+                    Button(
+                        onClick = {
+                            onDismiss()
+                            onLockNow()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("lockAppNowButton"),
+                    ) {
+                        Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("قفل التطبيق الآن (Lock App Now)", fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
@@ -528,6 +698,75 @@ fun SecuritySettingsDialog(
             onSuccess = {
                 showChangePinDialog = false
                 settingsState = securityRepo.settings.value
+            },
+        )
+    }
+
+    // Sub-dialog: Export Backup
+    if (showExportDialog && onExportBackup != null) {
+        ExportBackupDialog(
+            onDismiss = { showExportDialog = false },
+            onConfirm = { passphrase ->
+                showExportDialog = false
+                onExportBackup(passphrase) { backupBytes ->
+                    if (backupBytes != null && backupBytes.isNotEmpty()) {
+                        try {
+                            val backupDir = File(context.cacheDir, "backups").apply { if (!exists()) mkdirs() }
+                            val backupFile = File(backupDir, "ANC_Vault_Backup_${System.currentTimeMillis()}.ancvault")
+                            FileOutputStream(backupFile).use { it.write(backupBytes) }
+                            val contentUri = FileProvider.getUriForFile(
+                                context,
+                                "${context.packageName}.fileprovider",
+                                backupFile,
+                            )
+                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                type = "application/octet-stream"
+                                putExtra(Intent.EXTRA_STREAM, contentUri)
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            context.startActivity(Intent.createChooser(shareIntent, "حفظ أو مشاركة النسخة المشفرة"))
+                            backupStatusMessage = "تم إنشاء وتصدير النسخة الاحتياطية المشفرة بنجاح (${backupBytes.size} بايت)!"
+                            isBackupError = false
+                        } catch (e: Exception) {
+                            backupStatusMessage = "تم إنشاء النسخة ولكن تعذر فتح المشاركة: ${e.message}"
+                            isBackupError = true
+                        }
+                    } else {
+                        backupStatusMessage = "فشل إنشاء النسخة الاحتياطية!"
+                        isBackupError = true
+                    }
+                }
+            },
+        )
+    }
+
+    // Sub-dialog: Restore Passphrase
+    if (showRestorePassphraseDialog && pendingRestoreBytes != null && onRestoreBackup != null) {
+        RestorePassphraseDialog(
+            onDismiss = {
+                showRestorePassphraseDialog = false
+                pendingRestoreBytes = null
+            },
+            onConfirm = { passphrase ->
+                val bytes = pendingRestoreBytes ?: return@RestorePassphraseDialog
+                showRestorePassphraseDialog = false
+                pendingRestoreBytes = null
+                onRestoreBackup(bytes, passphrase) { result ->
+                    when (result) {
+                        is BackupInspectionResult.Valid -> {
+                            backupStatusMessage = "تم استعادة الخزنة بنجاح (${result.patientCount} مريضة)! جميع السجلات متطابقة بنسبة 100% دون أي فقد في البيانات."
+                            isBackupError = false
+                        }
+                        is BackupInspectionResult.InvalidPassphraseOrCorrupted -> {
+                            backupStatusMessage = "فشل فك التشفير: كلمة المرور غير صحيحة أو الملف تالف!"
+                            isBackupError = true
+                        }
+                        is BackupInspectionResult.Error -> {
+                            backupStatusMessage = "خطأ أثناء الاستعادة: ${result.reason}"
+                            isBackupError = true
+                        }
+                    }
+                }
             },
         )
     }
@@ -601,6 +840,142 @@ private fun ChangePinDialog(
                 modifier = Modifier.testTag("saveNewPinButton"),
             ) {
                 Text("حفظ رمز PIN الجديد")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("إلغاء")
+            }
+        },
+    )
+}
+
+@Composable
+private fun ExportBackupDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (CharArray) -> Unit,
+) {
+    var passphrase by remember { mutableStateOf("") }
+    var confirmPassphrase by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text("تصدير نسخة احتياطية مشفرة", fontWeight = FontWeight.Bold)
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = "أدخل كلمة مرور قوية لتشفير ملف النسخة الاحتياطية (AES-256 GCM). ستحتاج لهذه الكلمة عند استعادة السجلات.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                OutlinedTextField(
+                    value = passphrase,
+                    onValueChange = { passphrase = it },
+                    label = { Text("كلمة مرور النسخة المشفرة") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().testTag("backupPassphraseField"),
+                )
+
+                OutlinedTextField(
+                    value = confirmPassphrase,
+                    onValueChange = { confirmPassphrase = it },
+                    label = { Text("تأكيد كلمة المرور") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().testTag("confirmBackupPassphraseField"),
+                )
+
+                if (errorMessage != null) {
+                    Text(
+                        text = errorMessage ?: "",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (passphrase.length < 6) {
+                        errorMessage = "يجب أن لا تقل كلمة المرور عن 6 أحرف/أرقام!"
+                    } else if (passphrase != confirmPassphrase) {
+                        errorMessage = "كلمة المرور وتأكيدها غير متطابقين!"
+                    } else {
+                        onConfirm(passphrase.toCharArray())
+                    }
+                },
+                modifier = Modifier.testTag("confirmExportBackupButton"),
+            ) {
+                Text("تصدير وتشفير")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("إلغاء")
+            }
+        },
+    )
+}
+
+@Composable
+private fun RestorePassphraseDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (CharArray) -> Unit,
+) {
+    var passphrase by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text("استعادة الخزنة المشفرة", fontWeight = FontWeight.Bold)
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = "أدخل كلمة المرور الخاصة بهذا الملف المشفر لفك تشفيره واستعادة جميع سجلات المرضى والزيارات والسونار.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                OutlinedTextField(
+                    value = passphrase,
+                    onValueChange = { passphrase = it },
+                    label = { Text("كلمة المرور لفك التشفير") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().testTag("restorePassphraseField"),
+                )
+
+                if (errorMessage != null) {
+                    Text(
+                        text = errorMessage ?: "",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (passphrase.isEmpty()) {
+                        errorMessage = "يرجى إدخال كلمة المرور!"
+                    } else {
+                        onConfirm(passphrase.toCharArray())
+                    }
+                },
+                modifier = Modifier.testTag("confirmRestoreBackupButton"),
+            ) {
+                Text("فك التشفير واستعادة")
             }
         },
         dismissButton = {

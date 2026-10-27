@@ -7,3 +7,6 @@ evidence/
 keystore/
 *.keystore
 *.jks
+.DS_Store
+release/
+

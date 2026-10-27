@@ -65,7 +65,8 @@ fun GestationalBanner(
                         Text(
                             text = stringResource(R.string.current_gestational_age),
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.tertiary,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                         Text(
                             text = gaResult.formatted,
@@ -147,10 +148,15 @@ fun GestationalBanner(
                     daysDiff == 0L -> stringResource(R.string.due_today)
                     else -> stringResource(R.string.days_past_edd, -daysDiff)
                 }
-                val countdownColor = if (daysDiff < 0L) {
-                    MaterialTheme.colorScheme.error
+                val countdownContainer = if (daysDiff < 0L) {
+                    MaterialTheme.colorScheme.errorContainer
                 } else {
-                    MaterialTheme.colorScheme.primary
+                    MaterialTheme.colorScheme.primaryContainer
+                }
+                val countdownContentColor = if (daysDiff < 0L) {
+                    MaterialTheme.colorScheme.onErrorContainer
+                } else {
+                    MaterialTheme.colorScheme.onPrimaryContainer
                 }
 
                 Row(
@@ -158,17 +164,34 @@ fun GestationalBanner(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        text = "${stringResource(R.string.calculated_edd)}: $edd",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        text = countdownText,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = countdownColor,
-                    )
+                    Column {
+                        Text(
+                            text = stringResource(R.string.calculated_edd),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            text = edd.toString(),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = countdownContainer,
+                    ) {
+                        Text(
+                            text = countdownText,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = countdownContentColor,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    }
                 }
             } else {
                 // Neutral compact state when dating is not established or unavailable

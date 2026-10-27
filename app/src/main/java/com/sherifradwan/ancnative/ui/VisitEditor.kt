@@ -1,22 +1,29 @@
 package com.sherifradwan.ancnative.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -55,270 +62,357 @@ fun VisitEditor(
     val patient = state.patient(route.patientId) ?: return
     val draft = state.draft?.takeIf { it.patientId == route.patientId } ?: return
     val editingEnabled = state.savePhase == SavePhase.IDLE || state.savePhase == SavePhase.ERROR
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val horizontalPadding = maxOf(16.dp, (maxWidth - 720.dp) / 2)
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .imePadding()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = horizontalPadding, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                text = if (draft.visitId == null) stringResource(R.string.add_visit) else stringResource(R.string.edit_visit),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.semantics { heading() }.testTag("visitEditor"),
-            )
-            Text("${patient.displayName} · ${patient.caseId}", color = MaterialTheme.colorScheme.tertiary)
 
-            if (DraftError.STALE_REVISION in draft.errors) {
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = stringResource(R.string.stale_visit),
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(16.dp).testTag("staleError"),
-                    )
-                }
-            }
-
-            if (state.savePhase != SavePhase.IDLE) {
-                Card(modifier = Modifier.fillMaxWidth().testTag("saveStatus")) {
-                    Text(
-                        text = stringResource(state.saveStatusResource()),
-                        color = if (state.savePhase == SavePhase.ERROR || state.savePhase == SavePhase.UNRESOLVED) {
-                            MaterialTheme.colorScheme.error
-                        } else {
-                            MaterialTheme.colorScheme.tertiary
-                        },
-                        modifier = Modifier.padding(16.dp),
-                    )
-                }
-            }
-            Text(
-                text = stringResource(R.string.unsaved_drafts_editor_policy),
-                color = MaterialTheme.colorScheme.tertiary,
-            )
-
-            val dateError = when {
-                DraftError.DATE_REQUIRED in draft.errors -> stringResource(R.string.required_date)
-                DraftError.INVALID_DATE in draft.errors -> stringResource(R.string.invalid_date)
-                else -> null
-            }
-            ClinicalDateField(
-                value = draft.values.date,
-                onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.DATE, it)) },
-                label = stringResource(R.string.visit_date),
-                tag = "visitDate",
-                enabled = editingEnabled,
-                error = dateError != null,
-                errorMessage = dateError,
-                showTodayButton = true,
-            )
-
-            val calculatedGa = GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, draft.values.date)
-            if (calculatedGa != null && calculatedGa.isPostConception) {
-                Card(
-                    modifier = Modifier.fillMaxWidth().testTag("visitCalculatedGaCard"),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.calculated_ga_at_visit, calculatedGa.displayText),
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        )
-                    }
-                }
-            }
-
-            val weightFocusRequester = remember { FocusRequester() }
-            val findingsFocusRequester = remember { FocusRequester() }
-
-            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                val isNarrow = maxWidth < 340.dp
-                if (isNarrow) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        VisitField(
-                            value = draft.values.bloodPressure,
-                            onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.BLOOD_PRESSURE, it)) },
-                            label = "${stringResource(R.string.blood_pressure)} (mmHg)",
-                            tag = "visitBloodPressure",
-                            singleLine = true,
-                            enabled = editingEnabled,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
-                            keyboardActions = KeyboardActions(onNext = { weightFocusRequester.requestFocus() }),
-                        )
-                        VisitField(
-                            value = draft.values.weight,
-                            onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.WEIGHT, it)) },
-                            label = "${stringResource(R.string.weight)} (kg)",
-                            tag = "visitWeight",
-                            singleLine = true,
-                            enabled = editingEnabled,
-                            modifier = Modifier.focusRequester(weightFocusRequester),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
-                            keyboardActions = KeyboardActions(onNext = { findingsFocusRequester.requestFocus() }),
-                        )
-                    }
-                } else {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        VisitField(
-                            value = draft.values.bloodPressure,
-                            onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.BLOOD_PRESSURE, it)) },
-                            label = "${stringResource(R.string.blood_pressure)} (mmHg)",
-                            tag = "visitBloodPressure",
-                            singleLine = true,
-                            enabled = editingEnabled,
-                            modifier = Modifier.weight(1f),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
-                            keyboardActions = KeyboardActions(onNext = { weightFocusRequester.requestFocus() }),
-                        )
-                        VisitField(
-                            value = draft.values.weight,
-                            onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.WEIGHT, it)) },
-                            label = "${stringResource(R.string.weight)} (kg)",
-                            tag = "visitWeight",
-                            singleLine = true,
-                            enabled = editingEnabled,
-                            modifier = Modifier.weight(1f).focusRequester(weightFocusRequester),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
-                            keyboardActions = KeyboardActions(onNext = { findingsFocusRequester.requestFocus() }),
-                        )
-                    }
-                }
-            }
-
-            QuickPresetChips(
-                title = stringResource(R.string.blood_pressure),
-                items = ClinicalPresets.commonBloodPressures,
-                enabled = editingEnabled,
-                onSelect = { onEvent(AncEvent.DraftChanged(DraftField.BLOOD_PRESSURE, it)) },
-                tagPrefix = "bpPreset",
-            )
-            VisitField(
-                value = draft.values.findings,
-                onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.FINDINGS, it)) },
-                label = stringResource(R.string.findings),
-                tag = "visitFindings",
-                modifier = Modifier.focusRequester(findingsFocusRequester),
-                enabled = editingEnabled,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
-            )
-            QuickPresetChips(
-                title = stringResource(R.string.findings),
-                items = ClinicalPresets.commonVisitFindings,
-                enabled = editingEnabled,
-                onSelect = { onEvent(AncEvent.DraftChanged(DraftField.FINDINGS, it)) },
-                tagPrefix = "findingsPreset",
-            )
-
-            // Linked Ultrasound Scan Section
+    EditorPage(
+        title = if (draft.visitId == null) stringResource(R.string.add_visit) else stringResource(R.string.edit_visit),
+        subtitle = "${patient.displayName} · تسجيل ومتابعة الزيارة الدورية",
+        tag = "visitEditor",
+    ) {
+        if (DraftError.STALE_REVISION in draft.errors) {
             Card(
-                modifier = Modifier.fillMaxWidth().testTag("visitLinkedUltrasoundCard"),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
             ) {
-                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = stringResource(R.string.linked_ultrasound),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    if (draft.values.linkedUltrasoundId.isNotBlank()) {
-                        val linkedScan = patient.ultrasoundScans.firstOrNull { it.id == draft.values.linkedUltrasoundId }
+                Text(
+                    text = stringResource(R.string.stale_visit),
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.padding(16.dp).testTag("staleError"),
+                )
+            }
+        }
+
+        if (state.savePhase != SavePhase.IDLE) {
+            Card(
+                modifier = Modifier.fillMaxWidth().testTag("saveStatus"),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (state.savePhase == SavePhase.ERROR || state.savePhase == SavePhase.UNRESOLVED) {
+                        MaterialTheme.colorScheme.errorContainer
+                    } else {
+                        MaterialTheme.colorScheme.tertiaryContainer
+                    },
+                ),
+            ) {
+                Text(
+                    text = stringResource(state.saveStatusResource()),
+                    color = if (state.savePhase == SavePhase.ERROR || state.savePhase == SavePhase.UNRESOLVED) {
+                        MaterialTheme.colorScheme.onErrorContainer
+                    } else {
+                        MaterialTheme.colorScheme.onTertiaryContainer
+                    },
+                    modifier = Modifier.padding(16.dp),
+                )
+            }
+        }
+
+        // CARD 1: VISIT TIMING & GESTATIONAL AGE
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    text = "1. توقيت الزيارة وعمر الحمل · Visit Timing & GA",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+
+                val dateError = when {
+                    DraftError.DATE_REQUIRED in draft.errors -> stringResource(R.string.required_date)
+                    DraftError.INVALID_DATE in draft.errors -> stringResource(R.string.invalid_date)
+                    else -> null
+                }
+                ClinicalDateField(
+                    value = draft.values.date,
+                    onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.DATE, it)) },
+                    label = stringResource(R.string.visit_date),
+                    tag = "visitDate",
+                    enabled = editingEnabled,
+                    error = dateError != null,
+                    errorMessage = dateError,
+                    showTodayButton = true,
+                )
+
+                val calculatedGa = GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, draft.values.date)
+                if (calculatedGa != null && calculatedGa.isPostConception) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth().testTag("visitCalculatedGaCard"),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                        shape = RoundedCornerShape(10.dp),
+                    ) {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                val gaText = if (linkedScan?.gestationalAgeWeeks != null) {
-                                    " (${linkedScan.gestationalAgeWeeks}w ${linkedScan.gestationalAgeDays ?: 0}d)"
-                                } else ""
-                                Text(
-                                    text = stringResource(R.string.ultrasound) + ": " + (linkedScan?.date ?: draft.values.linkedUltrasoundId) + gaText,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                )
-                                if (linkedScan?.impression?.isNotBlank() == true) {
-                                    Text(
-                                        text = linkedScan.impression,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.tertiary,
-                                    )
-                                }
-                            }
-                            OutlinedButton(
-                                onClick = { onEvent(AncEvent.DraftChanged(DraftField.LINKED_ULTRASOUND, "")) },
+                            Text(
+                                text = stringResource(R.string.calculated_ga_at_visit, calculatedGa.displayText),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // CARD 2: VITALS & CLINICAL EXAMINATION
+        val weightFocusRequester = remember { FocusRequester() }
+        val findingsFocusRequester = remember { FocusRequester() }
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    text = "2. العلامات الحيوية والفحص السريري · Vitals & Examination",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    val isNarrow = maxWidth < 340.dp
+                    if (isNarrow) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            VisitField(
+                                value = draft.values.bloodPressure,
+                                onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.BLOOD_PRESSURE, it)) },
+                                label = "${stringResource(R.string.blood_pressure)} (mmHg)",
+                                tag = "visitBloodPressure",
+                                singleLine = true,
                                 enabled = editingEnabled,
-                                modifier = Modifier.minimumTouchTarget().testTag("unlinkUltrasound"),
-                            ) {
-                                Text(stringResource(R.string.unlink_ultrasound))
-                            }
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+                                keyboardActions = KeyboardActions(onNext = { weightFocusRequester.requestFocus() }),
+                            )
+                            VisitField(
+                                value = draft.values.weight,
+                                onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.WEIGHT, it)) },
+                                label = "${stringResource(R.string.weight)} (kg)",
+                                tag = "visitWeight",
+                                singleLine = true,
+                                enabled = editingEnabled,
+                                modifier = Modifier.focusRequester(weightFocusRequester),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
+                                keyboardActions = KeyboardActions(onNext = { findingsFocusRequester.requestFocus() }),
+                            )
                         }
                     } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            VisitField(
+                                value = draft.values.bloodPressure,
+                                onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.BLOOD_PRESSURE, it)) },
+                                label = "${stringResource(R.string.blood_pressure)} (mmHg)",
+                                tag = "visitBloodPressure",
+                                singleLine = true,
+                                enabled = editingEnabled,
+                                modifier = Modifier.weight(1f),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+                                keyboardActions = KeyboardActions(onNext = { weightFocusRequester.requestFocus() }),
+                            )
+                            VisitField(
+                                value = draft.values.weight,
+                                onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.WEIGHT, it)) },
+                                label = "${stringResource(R.string.weight)} (kg)",
+                                tag = "visitWeight",
+                                singleLine = true,
+                                enabled = editingEnabled,
+                                modifier = Modifier.weight(1f).focusRequester(weightFocusRequester),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
+                                keyboardActions = KeyboardActions(onNext = { findingsFocusRequester.requestFocus() }),
+                            )
+                        }
+                    }
+                }
+
+                QuickPresetChips(
+                    title = stringResource(R.string.blood_pressure),
+                    items = ClinicalPresets.commonBloodPressures,
+                    enabled = editingEnabled,
+                    onSelect = { onEvent(AncEvent.DraftChanged(DraftField.BLOOD_PRESSURE, it)) },
+                    tagPrefix = "bpPreset",
+                )
+
+                VisitField(
+                    value = draft.values.findings,
+                    onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.FINDINGS, it)) },
+                    label = stringResource(R.string.findings),
+                    tag = "visitFindings",
+                    modifier = Modifier.focusRequester(findingsFocusRequester),
+                    enabled = editingEnabled,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+                )
+
+                QuickPresetChips(
+                    title = stringResource(R.string.findings),
+                    items = ClinicalPresets.commonVisitFindings,
+                    enabled = editingEnabled,
+                    onSelect = { onEvent(AncEvent.DraftChanged(DraftField.FINDINGS, it)) },
+                    tagPrefix = "findingsPreset",
+                )
+            }
+        }
+
+        // CARD 3: LINKED ULTRASOUND & NOTES
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    text = "3. الفحوصات المرتبطة والملاحظات · Linked Scans & Notes",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+
+                // Linked Ultrasound Scan Section
+                Card(
+                    modifier = Modifier.fillMaxWidth().testTag("visitLinkedUltrasoundCard"),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            text = stringResource(R.string.link_to_ultrasound),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.tertiary,
+                            text = stringResource(R.string.linked_ultrasound),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
-                        if (patient.ultrasoundScans.isNotEmpty()) {
-                            FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                        if (draft.values.linkedUltrasoundId.isNotBlank()) {
+                            val linkedScan = patient.ultrasoundScans.firstOrNull { it.id == draft.values.linkedUltrasoundId }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                patient.ultrasoundScans.forEach { scan ->
-                                    val scanLabel = "${scan.date}" + (scan.gestationalAgeWeeks?.let { " (${it}w)" } ?: "")
-                                    FilterChip(
-                                        selected = false,
-                                        onClick = { onEvent(AncEvent.DraftChanged(DraftField.LINKED_ULTRASOUND, scan.id)) },
-                                        enabled = editingEnabled,
-                                        label = { Text(scanLabel) },
-                                        modifier = Modifier.minimumTouchTarget().testTag("linkScan-${scan.id}"),
+                                Column(modifier = Modifier.weight(1f)) {
+                                    val gaText = if (linkedScan?.gestationalAgeWeeks != null) {
+                                        " (${linkedScan.gestationalAgeWeeks}w ${linkedScan.gestationalAgeDays ?: 0}d)"
+                                    } else ""
+                                    Text(
+                                        text = stringResource(R.string.ultrasound) + ": " + (linkedScan?.date ?: draft.values.linkedUltrasoundId) + gaText,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold,
                                     )
+                                    if (linkedScan?.impression?.isNotBlank() == true) {
+                                        Text(
+                                            text = linkedScan.impression,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
+                                OutlinedButton(
+                                    onClick = { onEvent(AncEvent.DraftChanged(DraftField.LINKED_ULTRASOUND, "")) },
+                                    enabled = editingEnabled,
+                                    modifier = Modifier.minimumTouchTarget().testTag("unlinkUltrasound"),
+                                ) {
+                                    Text(stringResource(R.string.unlink_ultrasound))
+                                }
+                            }
+                        } else {
+                            Text(
+                                text = stringResource(R.string.link_to_ultrasound),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            if (patient.ultrasoundScans.isNotEmpty()) {
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    patient.ultrasoundScans.forEach { scan ->
+                                        val scanLabel = "${scan.date}" + (scan.gestationalAgeWeeks?.let { " (${it}w)" } ?: "")
+                                        FilterChip(
+                                            selected = false,
+                                            onClick = { onEvent(AncEvent.DraftChanged(DraftField.LINKED_ULTRASOUND, scan.id)) },
+                                            enabled = editingEnabled,
+                                            label = { Text(scanLabel) },
+                                            modifier = Modifier.minimumTouchTarget().testTag("linkScan-${scan.id}"),
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            VisitField(
-                value = draft.values.notes,
-                onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.NOTES, it)) },
-                label = stringResource(R.string.notes),
-                tag = "visitNotes",
-                enabled = editingEnabled,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done),
+                VisitField(
+                    value = draft.values.notes,
+                    onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.NOTES, it)) },
+                    label = stringResource(R.string.notes),
+                    tag = "visitNotes",
+                    enabled = editingEnabled,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done),
+                )
+            }
+        }
+
+        // Security Vault Indicator
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                Icons.Default.Lock,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.size(16.dp),
             )
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = "سجلات الزيارات مشفرة ومحمية محلياً (AES-256 GCM) · Hardware Vault Security",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        // Form action buttons
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            OutlinedButton(
+                onClick = { onEvent(AncEvent.CancelEditor) },
+                enabled = editingEnabled,
+                modifier = Modifier.weight(1f).minimumTouchTarget().testTag("cancelVisit"),
             ) {
-                OutlinedButton(
-                    onClick = { onEvent(AncEvent.CancelEditor) },
-                    enabled = editingEnabled,
-                    modifier = Modifier.minimumTouchTarget().testTag("cancelVisit"),
-                ) {
-                    Text(stringResource(R.string.cancel), maxLines = 1, softWrap = false)
-                }
-                Button(
-                    onClick = onSave,
-                    enabled = editingEnabled,
-                    modifier = Modifier.minimumTouchTarget().testTag("saveVisit"),
-                ) {
-                    Text(stringResource(R.string.save), maxLines = 1, softWrap = false)
-                }
+                Text(stringResource(R.string.cancel), maxLines = 1, softWrap = false)
+            }
+            Button(
+                onClick = onSave,
+                enabled = editingEnabled,
+                modifier = Modifier.weight(1f).minimumTouchTarget().testTag("saveVisit"),
+            ) {
+                Text(stringResource(R.string.save), maxLines = 1, softWrap = false)
             }
         }
     }

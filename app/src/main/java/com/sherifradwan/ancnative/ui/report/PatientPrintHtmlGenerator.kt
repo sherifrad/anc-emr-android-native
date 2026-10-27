@@ -128,6 +128,14 @@ object PatientPrintHtmlGenerator {
 
                 val notesText = s.impression ?: biometry
 
+                val efwStr = s.estimatedFetalWeight?.let { weight ->
+                    if (weight.contains("g", ignoreCase = true) || weight.contains("جم") || weight.contains("kg", ignoreCase = true)) {
+                        weight
+                    } else {
+                        "$weight جم"
+                    }
+                } ?: "-"
+
                 """
                 <tr>
                     <td class="text-center date-cell">${s.date}</td>
@@ -135,7 +143,7 @@ object PatientPrintHtmlGenerator {
                     <td class="text-center">${s.presentation ?: "Cephalic"}</td>
                     <td class="text-center">${s.placentalSite ?: "Posterior Grade I"}</td>
                     <td class="text-center">${s.amnioticFluid ?: "Adequate (AFI 14cm)"}</td>
-                    <td class="text-center font-bold text-navy">${s.estimatedFetalWeight?.let { "$it كجم" } ?: "-"}</td>
+                    <td class="text-center font-bold text-navy">${efwStr}</td>
                     <td class="text-center notes-cell">
                         $notesText
                         $photoIndicator
@@ -198,19 +206,37 @@ object PatientPrintHtmlGenerator {
             <table class="clinical-table mini-table">
                 <thead>
                     <tr>
-                        <th style="width: 15%; text-align: center;">السنة / التاريخ</th>
-                        <th style="width: 25%; text-align: center;">نوع الحمل والولادة</th>
-                        <th style="width: 20%; text-align: center;">النتيجة والوزن</th>
-                        <th style="width: 40%; text-align: center;">المستشفى والملاحظات</th>
+                        <th style="width: 14%; text-align: center;">السنة / التاريخ</th>
+                        <th style="width: 26%; text-align: center;">نوع الحمل وطريقة الولادة</th>
+                        <th style="width: 25%; text-align: center;">النتيجة والحالة</th>
+                        <th style="width: 35%; text-align: center;">المستشفى والملاحظات السريرية</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${patient.previousPregnancies.map { pp ->
+                        val outcomeLabel = when (pp.outcome) {
+                            "Stillbirth" -> pp.outcomeText ?: "وفاة جنينية داخل الرحم (Stillbirth/IUFD)"
+                            "EarlyPregnancyLoss" -> pp.outcomeText ?: "إجهاض مبكر (Miscarriage)"
+                            "TerminationOfPregnancy" -> pp.outcomeText ?: "إنهاء حمل علاجي (Termination)"
+                            "LiveBirth" -> pp.outcomeText ?: "مولود حي مكتمل (Live Birth)"
+                            else -> pp.outcomeText ?: pp.outcome ?: "-"
+                        }
+                        val isLoss = pp.outcome in setOf("Stillbirth", "EarlyPregnancyLoss", "TerminationOfPregnancy") ||
+                            (pp.outcomeText?.contains("وفاة", ignoreCase = true) == true) ||
+                            (pp.outcomeText?.contains("إجهاض", ignoreCase = true) == true) ||
+                            (pp.outcomeText?.contains("IUFD", ignoreCase = true) == true) ||
+                            (pp.outcomeText?.contains("Stillbirth", ignoreCase = true) == true)
+                        val outcomeBadge = if (isLoss) {
+                            """<span class="badge" style="background:#fee2e2;color:#991b1b;border:1px solid #f87171;font-weight:bold;padding:2px 6px;border-radius:4px;">$outcomeLabel</span>"""
+                        } else {
+                            """<span style="font-weight:600;color:#0f766e;">$outcomeLabel</span>"""
+                        }
+                        val methodText = pp.birthMethod ?: pp.deliveryBy ?: pp.lossManagement ?: pp.terminationMethod ?: "-"
                         """
                         <tr>
                             <td class="text-center date-cell">${pp.dateText ?: "-"}</td>
-                            <td class="text-center font-bold">${pp.birthMethod ?: pp.outcomeText ?: "ولادة قيصرية (CS)"}</td>
-                            <td class="text-center">${pp.outcome ?: "مولود حي مكتمل"}</td>
+                            <td class="text-center font-bold">${methodText}</td>
+                            <td class="text-center">${outcomeBadge}</td>
                             <td class="text-center">${pp.placeAndDoctor ?: pp.otherDetails ?: "بدون مضاعفات"}</td>
                         </tr>
                         """.trimIndent()
@@ -332,18 +358,11 @@ object PatientPrintHtmlGenerator {
             print-color-adjust: exact;
         }
 
-        /* Paper sheet layout */
+        /* Base page-sheet layout */
         .page-sheet {
-            width: 210mm;
-            min-height: 297mm;
-            max-height: 297mm;
-            margin: 15px auto;
-            padding: 13mm 15mm 11mm 15mm;
             background: var(--surface-white);
-            box-shadow: 0 4px 18px rgba(13, 27, 61, 0.12);
             position: relative;
             box-sizing: border-box;
-            overflow: hidden;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -373,6 +392,98 @@ object PatientPrintHtmlGenerator {
             flex-direction: column;
             gap: 9px;
             flex-grow: 1;
+        }
+
+        /* On-Screen Mobile Preview (In-App WebView) */
+        @media screen {
+            body {
+                background-color: #E2E8F0;
+                padding: 10px 8px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 14px;
+            }
+            .page-sheet {
+                width: 100%;
+                max-width: 210mm;
+                min-height: auto;
+                max-height: none;
+                padding: 12px 14px;
+                border-radius: 6px;
+                box-shadow: 0 4px 14px rgba(13, 27, 61, 0.12);
+                margin: 0 auto;
+                overflow: visible;
+            }
+        }
+
+        @media screen and (max-width: 540px) {
+            .patient-card {
+                grid-template-columns: 1fr 1fr !important;
+                gap: 8px !important;
+            }
+            .grid-two-col {
+                grid-template-columns: 1fr !important;
+            }
+            .dating-matrix {
+                grid-template-columns: 1fr 1fr 1fr !important;
+            }
+            .attestation-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .clinic-header {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 8px !important;
+            }
+            .uniform-meta {
+                border-right: none !important;
+                padding-right: 0 !important;
+                width: 100% !important;
+            }
+        }
+
+        /* Pixel-Perfect ISO A4 Print / PDF Layout */
+        @media print {
+            body {
+                background: transparent;
+                margin: 0;
+                padding: 0;
+            }
+            .page-sheet {
+                margin: 0;
+                width: 210mm;
+                min-height: 297mm;
+                max-height: 297mm;
+                box-shadow: none;
+                page-break-after: always;
+                break-after: page;
+                padding: 10mm 14mm 8mm 14mm;
+                border-radius: 0;
+                overflow: hidden;
+            }
+            .page-sheet:last-child {
+                page-break-after: avoid;
+                break-after: avoid;
+            }
+            .patient-card {
+                grid-template-columns: 2.2fr 1.1fr 1.2fr 1.4fr !important;
+            }
+            .grid-two-col {
+                grid-template-columns: 1fr 1fr !important;
+            }
+            .clinic-header {
+                flex-direction: row !important;
+                align-items: center !important;
+            }
+            .uniform-meta {
+                border-right: 2px solid var(--border-hairline) !important;
+                padding-right: 12px !important;
+                width: auto !important;
+            }
+            .attestation-grid {
+                grid-template-columns: 1.8fr 1.2fr !important;
+            }
         }
 
         /* Clinic Top Header */
@@ -807,28 +918,7 @@ object PatientPrintHtmlGenerator {
             margin-top: auto;
         }
 
-        /* Print media rules */
-        @media print {
-            body {
-                background: transparent;
-                margin: 0;
-                padding: 0;
-            }
-            .page-sheet {
-                margin: 0;
-                width: 100%;
-                height: 100vh;
-                max-height: 100vh;
-                box-shadow: none;
-                page-break-after: always;
-                break-after: page;
-                padding: 10mm 14mm 8mm 14mm;
-            }
-            .page-sheet:last-child {
-                page-break-after: avoid;
-                break-after: avoid;
-            }
-        }
+
     </style>
 </head>
 <body>
@@ -1016,7 +1106,7 @@ object PatientPrintHtmlGenerator {
                             <th style="width: 13%;">المجيء والوضع</th>
                             <th style="width: 14%;">المشيمة</th>
                             <th style="width: 14%;">السائل الأمنيوسي</th>
-                            <th style="width: 14%;">وزن الجنين (كجم)</th>
+                            <th style="width: 14%;">وزن الجنين (جم / EFW)</th>
                             <th style="width: 21%;">الملاحظات الطبية</th>
                         </tr>
                     </thead>

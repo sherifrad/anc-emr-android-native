@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -58,7 +59,6 @@ fun PatientIdentityCard(patient: DemoPatient, modifier: Modifier = Modifier) {
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.semantics { heading() },
             )
-            FactRow(R.string.case_id, patient.caseId)
             FactRow(R.string.date_of_birth, patient.dateOfBirth)
             FactRow(R.string.phone, patient.phone)
         }
@@ -66,43 +66,52 @@ fun PatientIdentityCard(patient: DemoPatient, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun FactRow(@StringRes label: Int, value: String?) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.Top,
-    ) {
-        Text(
-            text = stringResource(label),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.tertiary,
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            text = value?.takeIf(String::isNotBlank) ?: stringResource(R.string.not_recorded),
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.weight(1.4f),
-        )
-    }
+fun FactRow(
+    @StringRes label: Int,
+    value: String?,
+    isEmphasized: Boolean = false,
+    valueColor: Color? = null,
+) {
+    FactRow(
+        label = stringResource(label),
+        value = value,
+        isEmphasized = isEmphasized,
+        valueColor = valueColor,
+    )
 }
 
 @Composable
-fun FactRow(label: String, value: String?) {
+fun FactRow(
+    label: String,
+    value: String?,
+    isEmphasized: Boolean = false,
+    valueColor: Color? = null,
+) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Top,
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.tertiary,
-            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1.1f),
         )
+        Spacer(Modifier.width(10.dp))
         Text(
             text = value?.takeIf(String::isNotBlank) ?: stringResource(R.string.not_recorded),
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.weight(1.4f),
+            style = if (isEmphasized) MaterialTheme.typography.titleSmall else MaterialTheme.typography.bodyMedium,
+            fontWeight = if (isEmphasized) FontWeight.Bold else FontWeight.SemiBold,
+            color = valueColor ?: if (value.isNullOrBlank()) {
+                MaterialTheme.colorScheme.outline
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+            modifier = Modifier.weight(1.3f),
         )
     }
 }

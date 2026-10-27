@@ -1,6 +1,7 @@
 package com.sherifradwan.ancnative.storage
 
 import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.model.PatientVocabulary
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
@@ -573,7 +574,7 @@ object EncryptedBackupManager {
         PreviousPregnancyEntity(
             id = getString("id"),
             patientId = optNullableString("patientId") ?: parentPatientId,
-            modelVersion = optInt("modelVersion", 1),
+            modelVersion = optInt("modelVersion", 3),
             dateText = optNullableString("dateText"),
             outcomeText = optNullableString("outcomeText"),
             pregnancyType = optNullableString("pregnancyType"),
@@ -584,8 +585,8 @@ object EncryptedBackupManager {
             birthMethod = optNullableString("birthMethod"),
             lossManagement = optNullableString("lossManagement"),
             terminationMethod = optNullableString("terminationMethod"),
-            provenanceKind = optNullableString("provenanceKind").orEmpty(),
-            clinicianId = optNullableString("clinicianId").orEmpty(),
+            provenanceKind = optNullableString("provenanceKind").takeIf { !it.isNullOrBlank() } ?: PatientVocabulary.CLINICIAN_ENTRY,
+            clinicianId = optNullableString("clinicianId").takeIf { !it.isNullOrBlank() } ?: "clinician-import",
             recordedAt = optNullableString("recordedAt").orEmpty(),
             updatedAt = optNullableString("updatedAt").orEmpty(),
             revision = optLong("revision", 1),

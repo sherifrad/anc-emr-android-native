@@ -15,6 +15,12 @@ enum class AutoLockTimeout(val displayNameAr: String, val displayNameEn: String,
     NEVER("لا يقفل أبداً (إيقاف القفل)", "Never (Lock Disabled)", Long.MAX_VALUE),
 }
 
+enum class AppThemeMode(val displayNameAr: String, val displayNameEn: String) {
+    SYSTEM("تلقائي (حسب النظام)", "System Default"),
+    LIGHT("فاتح (نهاري عيادة)", "Light Mode"),
+    DARK("داكن (فحص سونار)", "Dark Mode"),
+}
+
 data class SecuritySettingsState(
     val isPinConfigured: Boolean = true,
     val isBiometricEnabled: Boolean = false,
@@ -23,6 +29,7 @@ data class SecuritySettingsState(
     val lastUnlockedAt: Long = 0L,
     val clinicName: String = "Dr. Sherif Radwan Clinic",
     val clinicSubtitle: String = "رعاية الأمومة وطب الجنين · Maternal-Fetal Medicine",
+    val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
 )
 
 class SecuritySettingsRepository private constructor(context: Context) {
@@ -51,6 +58,8 @@ class SecuritySettingsRepository private constructor(context: Context) {
         val rawClinicName = prefs.getString(KEY_CLINIC_NAME, "Dr. Sherif Radwan Clinic") ?: "Dr. Sherif Radwan Clinic"
         val clinicName = if (rawClinicName == "دكتور شريف رضوان كلينك") "Dr. Sherif Radwan Clinic" else rawClinicName
         val clinicSub = prefs.getString(KEY_CLINIC_SUBTITLE, "رعاية الأمومة وطب الجنين · Maternal-Fetal Medicine") ?: "رعاية الأمومة وطب الجنين · Maternal-Fetal Medicine"
+        val themeName = prefs.getString(KEY_THEME_MODE, AppThemeMode.SYSTEM.name)
+        val themeMode = runCatching { AppThemeMode.valueOf(themeName ?: AppThemeMode.SYSTEM.name) }.getOrDefault(AppThemeMode.SYSTEM)
 
         return SecuritySettingsState(
             isPinConfigured = isPinSet,
@@ -60,6 +69,7 @@ class SecuritySettingsRepository private constructor(context: Context) {
             lastUnlockedAt = 0L,
             clinicName = clinicName,
             clinicSubtitle = clinicSub,
+            themeMode = themeMode,
         )
     }
 
@@ -86,6 +96,11 @@ class SecuritySettingsRepository private constructor(context: Context) {
     fun setAutoLockTimeout(timeout: AutoLockTimeout) {
         prefs.edit().putString(KEY_AUTO_LOCK_TIMEOUT, timeout.name).apply()
         _settings.value = _settings.value.copy(autoLockTimeout = timeout)
+    }
+
+    fun setThemeMode(mode: AppThemeMode) {
+        prefs.edit().putString(KEY_THEME_MODE, mode.name).apply()
+        _settings.value = _settings.value.copy(themeMode = mode)
     }
 
     fun unlockApp() {
@@ -135,6 +150,7 @@ class SecuritySettingsRepository private constructor(context: Context) {
         private const val KEY_AUTO_LOCK_TIMEOUT = "key_auto_lock_timeout"
         private const val KEY_CLINIC_NAME = "key_clinic_name"
         private const val KEY_CLINIC_SUBTITLE = "key_clinic_subtitle"
+        private const val KEY_THEME_MODE = "key_theme_mode"
         const val DEFAULT_PIN = "123456"
 
         @Volatile

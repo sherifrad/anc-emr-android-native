@@ -489,6 +489,46 @@ class VaultController internal constructor(
         }
     }
 
+    suspend fun exportEncryptedBackup(passphrase: CharArray): ByteArray? = withContext(dispatcher) {
+        storageMutex.withLock {
+            val active = session ?: return@withLock null
+            val snapshot = active.repository.loadSnapshot()
+            val vaultUuid = active.repository.vaultUuid
+            EncryptedBackupManager.createEncryptedBackup(
+                vaultUuid = vaultUuid,
+                patients = snapshot.patients,
+                passphrase = passphrase,
+            )
+        }
+    }
+
+    suspend fun restoreEncryptedBackup(
+        backupBytes: ByteArray,
+        passphrase: CharArray,
+    ): BackupInspectionResult = withContext(dispatcher) {
+        storageMutex.withLock {
+            val active = session ?: return@withLock BackupInspectionResult.Error("Vault not unlocked")
+            val inspection = EncryptedBackupManager.inspectBackup(backupBytes, passphrase)
+            if (inspection !is BackupInspectionResult.Valid) {
+                return@withLock inspection
+            }
+            val payload = EncryptedBackupManager.decryptAndParseBackup(backupBytes, passphrase)
+                ?: return@withLock BackupInspectionResult.InvalidPassphraseOrCorrupted
+
+            val newSnapshot = try {
+                active.repository.restoreCanonicalBackup(payload)
+            } catch (t: Throwable) {
+                return@withLock BackupInspectionResult.Error(t.message ?: "Failed to restore database")
+            }
+
+            synchronized(stateLock) {
+                val epoch = gate.current()
+                _view.value = VaultSessionView(VaultState.Unlocked(epoch), newSnapshot)
+            }
+            inspection
+        }
+    }
+
     private suspend fun inspectStorage(inspectionEpoch: Long) = storageMutex.withLock {
         if (session != null || retainedUnadmittedHandle != null) {
             publishIfCurrent(

@@ -28,6 +28,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -86,13 +87,14 @@ fun PatientTwoPageReportDialog(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.weight(1f),
                         ) {
                             IconButton(
                                 onClick = onDismiss,
@@ -102,25 +104,29 @@ fun PatientTwoPageReportDialog(
                             }
                             Column {
                                 Text(
-                                    text = "ملف المريضة المعتمد (صفحتين)",
+                                    text = "ملف المريضة المعتمد",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                 )
                                 Text(
-                                    text = "${patient.displayName} · كود: ${patient.caseId}",
+                                    text = patient.displayName,
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = Color.White.copy(alpha = 0.8f),
+                                    color = Color.White.copy(alpha = 0.85f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                 )
                             }
                         }
 
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             // Share text/summary button
-                            OutlinedButton(
+                            IconButton(
                                 onClick = {
                                     val summary = ClinicalSummaryGenerator.generateTextSummary(patient)
                                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
@@ -130,17 +136,12 @@ fun PatientTwoPageReportDialog(
                                     }
                                     context.startActivity(Intent.createChooser(shareIntent, "مشاركة الملف الطبي"))
                                 },
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = Color.White,
-                                ),
                                 modifier = Modifier.minimumTouchTarget().testTag("shareReportButton"),
                             ) {
-                                Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("مشاركة", maxLines = 1, softWrap = false)
+                                Icon(Icons.Default.Share, contentDescription = "مشاركة", tint = Color.White)
                             }
 
-                            // Print / Export PDF button (Enlarged and prominent per Dr. Sherif Radwan)
+                            // Print / Export PDF button
                             Button(
                                 onClick = {
                                     PatientPrintManager.printPatientReport(
@@ -154,23 +155,23 @@ fun PatientTwoPageReportDialog(
                                     contentColor = Color.White,
                                 ),
                                 contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                                    horizontal = 18.dp,
-                                    vertical = 10.dp,
+                                    horizontal = 12.dp,
+                                    vertical = 8.dp,
                                 ),
                                 modifier = Modifier.minimumTouchTarget().testTag("printReportButton"),
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Print,
                                     contentDescription = "طباعة",
-                                    modifier = Modifier.size(24.dp),
+                                    modifier = Modifier.size(20.dp),
                                 )
-                                Spacer(Modifier.width(8.dp))
+                                Spacer(Modifier.width(4.dp))
                                 Text(
-                                    text = "طباعة / حفظ PDF",
+                                    text = "طباعة PDF",
                                     maxLines = 1,
                                     softWrap = false,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.ExtraBold,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold,
                                 )
                             }
                         }
@@ -182,7 +183,7 @@ fun PatientTwoPageReportDialog(
                     modifier = Modifier
                         .fillMaxSize()
                         .weight(1f)
-                        .background(Color(0xFFCBD5E1)),
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
                 ) {
                     AndroidView(
                         factory = { ctx ->
@@ -196,7 +197,7 @@ fun PatientTwoPageReportDialog(
                                     domStorageEnabled = true
                                     builtInZoomControls = true
                                     displayZoomControls = false
-                                    useWideViewPort = true
+                                    useWideViewPort = false
                                     loadWithOverviewMode = true
                                     defaultTextEncodingName = "UTF-8"
                                 }

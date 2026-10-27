@@ -33,7 +33,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -322,7 +322,7 @@ private fun WorkspaceTopBar(
                 modifier = Modifier.minimumTouchTarget(),
             ) {
                 Icon(
-                    imageVector = Icons.Default.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = stringResource(R.string.back),
                 )
             }
@@ -332,33 +332,25 @@ private fun WorkspaceTopBar(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.semantics { heading() },
                 )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = patient.caseId,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.tertiary,
-                    )
-                    val ga = patient.dating?.calculateGestationalAge(asOfDate)
-                    if (ga != null) {
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = MaterialTheme.colorScheme.tertiaryContainer,
-                        ) {
-                            Text(
-                                text = ga.toString(),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            )
-                        }
+                val ga = patient.dating?.calculateGestationalAge(asOfDate)
+                if (ga != null) {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = MaterialTheme.colorScheme.tertiaryContainer,
+                    ) {
+                        Text(
+                            text = ga.toString(),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            maxLines = 1,
+                            softWrap = false,
+                        )
                     }
                 }
             }
@@ -415,7 +407,7 @@ private fun WorkspaceSectionTabBar(
     PrimaryScrollableTabRow(
         selectedTabIndex = selected.ordinal,
         modifier = modifier.fillMaxWidth(),
-        edgePadding = 0.dp,
+        edgePadding = 16.dp,
         containerColor = Color.Transparent,
         contentColor = MaterialTheme.colorScheme.primary,
         divider = {},
@@ -515,6 +507,8 @@ private fun LazyListScope.workspaceContentItems(
                     onClick = { onStartVisit(patient.id, null) },
                     modifier = Modifier.minimumTouchTarget().testTag("addVisit"),
                 ) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
                     Text(stringResource(R.string.add_visit), maxLines = 1, softWrap = false)
                 }
             }
@@ -658,7 +652,9 @@ private fun LazyListScope.workspaceContentItems(
                     },
                     modifier = Modifier.minimumTouchTarget().testTag("addUltrasound"),
                 ) {
-                    Text(stringResource(R.string.add_ultrasound))
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.add_ultrasound), maxLines = 1, softWrap = false)
                 }
             }
         }
@@ -701,7 +697,9 @@ private fun LazyListScope.workspaceContentItems(
                     },
                     modifier = Modifier.minimumTouchTarget().testTag("addLab"),
                 ) {
-                    Text(stringResource(R.string.add_lab))
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.add_lab), maxLines = 1, softWrap = false)
                 }
             }
         }
@@ -741,7 +739,9 @@ private fun LazyListScope.workspaceContentItems(
                     },
                     modifier = Modifier.minimumTouchTarget().testTag("addMedication"),
                 ) {
-                    Text(stringResource(R.string.add_medication))
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.add_medication), maxLines = 1, softWrap = false)
                 }
             }
         }
@@ -828,7 +828,7 @@ private fun VisitCard(
                     )
                 }
             }
-            FactRow(R.string.blood_pressure, visit.bloodPressure)
+            FactRow(R.string.blood_pressure, visit.bloodPressure, isEmphasized = true)
             FactRow(R.string.weight, visit.weight)
             FactRow(R.string.findings, visit.findings)
             FactRow(R.string.notes, visit.notes)
@@ -1425,7 +1425,12 @@ private fun LabCard(
             }
             FactRow(R.string.test_category, lab.testCategory)
             val resultWithUnit = if (lab.unit.isNullOrBlank()) lab.result else "${lab.result} ${lab.unit}"
-            FactRow(R.string.test_result, resultWithUnit)
+            FactRow(
+                label = stringResource(R.string.test_result),
+                value = resultWithUnit,
+                isEmphasized = lab.isAbnormal,
+                valueColor = if (lab.isAbnormal) MaterialTheme.colorScheme.error else null,
+            )
             FactRow(R.string.reference_range, lab.referenceRange)
             FactRow(R.string.notes, lab.notes)
             if (canEdit) {
@@ -1486,8 +1491,8 @@ private fun ClinicalAttentionBanner(
         )
         ClinicalAttentionLevel.ALERT -> Triple(
             R.string.alert_badge,
-            if (isDark) Color(0xFF4E342E) else Color(0xFFFFF3CD),
-            if (isDark) Color(0xFFFFCC80) else Color(0xFF664D03),
+            MaterialTheme.colorScheme.tertiaryContainer,
+            MaterialTheme.colorScheme.onTertiaryContainer,
         )
         ClinicalAttentionLevel.NOTE -> Triple(
             R.string.note_badge,
@@ -1883,13 +1888,13 @@ private fun AttachmentsSectionCard(
                                         Icon(
                                             Icons.Default.VerifiedUser,
                                             contentDescription = null,
-                                            tint = Color(0xFF2E7D32),
+                                            tint = MaterialTheme.colorScheme.tertiary,
                                             modifier = Modifier.size(12.dp),
                                         )
                                         Text(
                                             text = "محفوظ ومؤمّن · ${attachment.capturedAt.take(10)}",
                                             style = MaterialTheme.typography.labelSmall,
-                                            color = Color(0xFF2E7D32),
+                                            color = MaterialTheme.colorScheme.tertiary,
                                         )
                                     }
                                 }

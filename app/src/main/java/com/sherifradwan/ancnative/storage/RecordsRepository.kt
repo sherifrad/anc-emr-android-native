@@ -20,7 +20,7 @@ import kotlinx.coroutines.CancellationException
 
 internal class RecordsRepository(
     private val database: RecordsDatabase,
-    private val vaultUuid: String,
+    internal val vaultUuid: String,
 ) : SaveGateway {
     private val dao = database.recordsDao()
 
@@ -95,7 +95,6 @@ internal class RecordsRepository(
         if (
             row.vaultUuid != vaultUuid ||
             row.schemaVersion != SCHEMA_VERSION ||
-            !row.isSynthetic ||
             !row.initialized
         ) {
             return RepositoryOpenResult.Failure(VaultBlockReason.VAULT_METADATA_MISMATCH)
@@ -122,6 +121,47 @@ internal class RecordsRepository(
             )
         },
     )
+
+    suspend fun restoreCanonicalBackup(payload: CanonicalBackupPayload): RecordSnapshot {
+        return database.withTransaction {
+            val db = database.openHelper.writableDatabase
+            db.execSQL("DELETE FROM patient_attachments")
+            db.execSQL("DELETE FROM clinical_command_receipts")
+            db.execSQL("DELETE FROM medications")
+            db.execSQL("DELETE FROM lab_investigations")
+            db.execSQL("DELETE FROM ultrasound_scans")
+            db.execSQL("DELETE FROM patient_dating")
+            db.execSQL("DELETE FROM previous_pregnancies")
+            db.execSQL("DELETE FROM visits")
+            db.execSQL("DELETE FROM patients")
+            db.execSQL("DELETE FROM save_receipts")
+            db.execSQL("DELETE FROM patient_command_receipts")
+
+            for (p in payload.patients) {
+                dao.insertPatient(p.patient)
+                if (p.visits.isNotEmpty()) {
+                    dao.insertVisits(p.visits)
+                }
+                p.dating?.let { dao.insertPatientDating(it) }
+                for (prev in p.previousPregnancies) {
+                    dao.insertPreviousPregnancy(prev)
+                }
+                for (us in p.ultrasoundScans) {
+                    dao.insertUltrasoundScan(us)
+                }
+                for (lab in p.labInvestigations) {
+                    dao.insertLabInvestigation(lab)
+                }
+                for (med in p.medications) {
+                    dao.insertMedication(med)
+                }
+                if (p.attachments.isNotEmpty()) {
+                    dao.insertAttachments(p.attachments)
+                }
+            }
+            loadSnapshot()
+        }
+    }
 
     override suspend fun save(command: SaveVisitCommand): SaveOutcome {
         if (!command.isStructurallyValid()) return SaveOutcome.Rejected(SaveFailure.INVALID_COMMAND)

@@ -62,6 +62,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sherifradwan.ancnative.R
@@ -70,12 +71,6 @@ import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.SavedNotice
 import java.util.UUID
-
-// Clinical Colors
-private val ClinicalGreenContainer = Color(0xFFE8F5E9)
-private val ClinicalGreenText = Color(0xFF2E7D32)
-private val HighRiskRowBackground = Color(0xFFFFF4F4)
-private val HighRiskBorder = Color(0xFFFFCDD2)
 
 data class PatientDashboardRowProjection(
     val id: String,
@@ -141,7 +136,8 @@ fun projectDashboardRow(patient: DemoPatient): PatientDashboardRowProjection {
     val isRhNeg = bg != null && bg.contains("-")
     val isRhPos = bg != null && bg.contains("+")
 
-    val isHigh = patient.riskLevel.equals("high", ignoreCase = true)
+    val isHigh = patient.riskLevel?.contains("High", ignoreCase = true) == true ||
+        patient.riskLevel?.contains("عالي", ignoreCase = true) == true
 
     return PatientDashboardRowProjection(
         id = patient.id,
@@ -166,17 +162,20 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
     val visibleList = remember(state.patients, state.searchQuery) { state.visiblePatients() }
     var riskFilter by remember { mutableStateOf("all") } // "all", "high", "normal"
 
+    fun isPatientHighRisk(risk: String?): Boolean =
+        risk?.contains("High", ignoreCase = true) == true || risk?.contains("عالي", ignoreCase = true) == true
+
     val filteredList = remember(visibleList, riskFilter) {
         when (riskFilter) {
-            "high" -> visibleList.filter { it.riskLevel.equals("high", ignoreCase = true) }
-            "normal" -> visibleList.filter { !it.riskLevel.equals("high", ignoreCase = true) }
+            "high" -> visibleList.filter { isPatientHighRisk(it.riskLevel) }
+            "normal" -> visibleList.filter { !isPatientHighRisk(it.riskLevel) }
             else -> visibleList
         }
     }
 
     val activeCount = remember(state.patients) { state.patients.count { it.status != "archived" } }
-    val highRiskCount = remember(state.patients) { state.patients.count { it.riskLevel.equals("high", ignoreCase = true) } }
-    val normalRiskCount = remember(state.patients) { state.patients.count { !it.riskLevel.equals("high", ignoreCase = true) } }
+    val highRiskCount = remember(state.patients) { state.patients.count { isPatientHighRisk(it.riskLevel) } }
+    val normalRiskCount = remember(state.patients) { state.patients.count { !isPatientHighRisk(it.riskLevel) } }
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val isWide = maxWidth >= 640.dp
@@ -194,7 +193,7 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f, fill = false)) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -216,6 +215,8 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    maxLines = 1,
+                                    softWrap = false,
                                 )
                             }
                         }
@@ -223,8 +224,12 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
                             text = "Longitudinal Antenatal Care Dashboard",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
+
+                    Spacer(Modifier.width(12.dp))
 
                     Button(
                         onClick = {
@@ -236,7 +241,8 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
                                 ),
                             )
                         },
-                        modifier = Modifier.minimumTouchTarget().testTag("newPatient"),
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+                        modifier = Modifier.testTag("newPatient"),
                     ) {
                         Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
@@ -317,8 +323,8 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
                         onClick = { riskFilter = "normal" },
                         label = { Text("${stringResource(R.string.normal_risk_filter)} ($normalRiskCount)") },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = ClinicalGreenContainer,
-                            selectedLabelColor = ClinicalGreenText,
+                            selectedContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onTertiaryContainer,
                         ),
                     )
                 }
@@ -334,7 +340,7 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = "PATIENT / MRN",
+                            text = "PATIENT",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -419,8 +425,16 @@ private fun PatientClinicalRow(
 ) {
     var showEddPopup by remember { mutableStateOf(false) }
 
-    val rowBgColor = if (row.isHighRisk) HighRiskRowBackground else MaterialTheme.colorScheme.surface
-    val rowBorder = if (row.isHighRisk) BorderStroke(1.dp, HighRiskBorder) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+    val rowBgColor = if (row.isHighRisk) {
+        MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.22f)
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+    val rowBorder = if (row.isHighRisk) {
+        BorderStroke(1.5.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.6f))
+    } else {
+        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+    }
 
     Card(
         modifier = Modifier
@@ -442,38 +456,39 @@ private fun PatientClinicalRow(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // 1. Patient Identifier / MRN
-                    Row(
+                    // 1. Patient Identifier
+                    Column(
                         modifier = Modifier.weight(2.2f),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.Center,
                     ) {
-                        InitialsAvatar(name = row.displayName)
-                        Column {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text(
-                                    text = row.displayName,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
-                                if (row.isArchived) {
-                                    Surface(
-                                        shape = RoundedCornerShape(4.dp),
-                                        color = MaterialTheme.colorScheme.errorContainer,
-                                    ) {
-                                        Text(
-                                            text = "ARCHIVED",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onErrorContainer,
-                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
-                                        )
-                                    }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Text(
+                                text = row.displayName,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                            if (row.isArchived) {
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = MaterialTheme.colorScheme.errorContainer,
+                                ) {
+                                    Text(
+                                        text = "ARCHIVED",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onErrorContainer,
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                                    )
                                 }
                             }
+                        }
+                        if (row.ageText != null) {
                             Text(
-                                text = "MRN: ${row.caseId}${row.ageText?.let { " · $it" } ?: ""}",
+                                text = "${row.ageText} yrs",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -580,46 +595,56 @@ private fun PatientClinicalRow(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // Left: Avatar + Name + Case ID
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    // Left: Patient Name + Age
+                    Column(
                         modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.Center,
                     ) {
-                        InitialsAvatar(name = row.displayName)
-                        Column {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text(
-                                    text = row.displayName,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
-                                if (row.isArchived) {
-                                    Surface(
-                                        shape = RoundedCornerShape(4.dp),
-                                        color = MaterialTheme.colorScheme.errorContainer,
-                                    ) {
-                                        Text(
-                                            text = "ARCHIVED",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onErrorContainer,
-                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
-                                        )
-                                    }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Text(
+                                text = row.displayName,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            if (row.isArchived) {
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = MaterialTheme.colorScheme.errorContainer,
+                                ) {
+                                    Text(
+                                        text = "ARCHIVED",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onErrorContainer,
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                                        softWrap = false,
+                                        maxLines = 1,
+                                    )
                                 }
                             }
+                        }
+                        if (row.ageText != null) {
                             Text(
-                                text = "MRN: ${row.caseId}${row.ageText?.let { " · $it" } ?: ""}",
+                                text = "${row.ageText} yrs",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
 
+                    Spacer(Modifier.width(8.dp))
+
                     // Right: Actions (Upper Right)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
                         ActionIconButtons(patient = patient, onEvent = onEvent)
                     }
                 }
@@ -639,10 +664,10 @@ private fun PatientClinicalRow(
                     ) {
                         Text(
                             text = row.obstetricSummary,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
                         )
                     }
 
@@ -650,11 +675,11 @@ private fun PatientClinicalRow(
                     Box {
                         Surface(
                             shape = RoundedCornerShape(6.dp),
-                            color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f),
+                            color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.8f),
                             modifier = Modifier.clickable { showEddPopup = true },
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                             ) {
@@ -662,11 +687,11 @@ private fun PatientClinicalRow(
                                     Icons.Default.DateRange,
                                     contentDescription = "Tap to view EDD",
                                     tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                                    modifier = Modifier.size(13.dp),
+                                    modifier = Modifier.size(14.dp),
                                 )
                                 Text(
                                     text = row.gestationalAgeText,
-                                    style = MaterialTheme.typography.labelSmall,
+                                    style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onTertiaryContainer,
                                 )
@@ -714,7 +739,7 @@ private fun PatientClinicalRow(
                 }
             }
 
-            // Clinical Attention note if present
+            // Clinical Attention note if present (Never truncated!)
             if (row.clinicalAttention != null) {
                 Spacer(Modifier.height(6.dp))
                 Row(
@@ -723,49 +748,25 @@ private fun PatientClinicalRow(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(6.dp))
-                        .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f))
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                        .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f))
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
                 ) {
                     Icon(
                         Icons.Default.Warning,
                         contentDescription = "Clinical Attention",
                         tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(14.dp),
+                        modifier = Modifier.size(16.dp),
                     )
                     Text(
                         text = row.clinicalAttention,
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onErrorContainer,
-                        maxLines = 1,
+                        maxLines = 4,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun InitialsAvatar(name: String) {
-    val initials = name
-        .split(" ")
-        .filter { it.isNotBlank() }
-        .take(2)
-        .map { it.first().uppercaseChar() }
-        .joinToString("")
-        .ifEmpty { "P" }
-
-    Surface(
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.primaryContainer,
-        modifier = Modifier.size(38.dp),
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(
-                text = initials,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-            )
         }
     }
 }
@@ -793,12 +794,12 @@ private fun BloodGroupBadge(
 
     val containerColor = when {
         isRhNegative -> MaterialTheme.colorScheme.errorContainer
-        isRhPositive -> ClinicalGreenContainer
+        isRhPositive -> MaterialTheme.colorScheme.tertiaryContainer
         else -> MaterialTheme.colorScheme.surfaceVariant
     }
     val contentColor = when {
         isRhNegative -> MaterialTheme.colorScheme.onErrorContainer
-        isRhPositive -> ClinicalGreenText
+        isRhPositive -> MaterialTheme.colorScheme.onTertiaryContainer
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
@@ -807,11 +808,11 @@ private fun BloodGroupBadge(
         color = containerColor,
     ) {
         Text(
-            text = bloodGroup,
-            style = MaterialTheme.typography.labelSmall,
+            text = "🩸 $bloodGroup",
+            style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
             color = contentColor,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
         )
     }
 }
@@ -824,24 +825,24 @@ private fun ClinicalRiskBadge(isHighRisk: Boolean) {
             color = MaterialTheme.colorScheme.errorContainer,
         ) {
             Text(
-                text = stringResource(R.string.high_risk),
+                text = "⚠️ " + stringResource(R.string.high_risk),
                 color = MaterialTheme.colorScheme.onErrorContainer,
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
             )
         }
     } else {
         Surface(
             shape = RoundedCornerShape(6.dp),
-            color = ClinicalGreenContainer,
+            color = MaterialTheme.colorScheme.tertiaryContainer,
         ) {
             Text(
                 text = stringResource(R.string.normal_risk_filter),
-                color = ClinicalGreenText,
-                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
             )
         }
     }
@@ -856,7 +857,7 @@ private fun ActionIconButtons(
     IconButton(
         onClick = { onEvent(AncEvent.OpenWorkspace(patient.id)) },
         modifier = Modifier
-            .minimumTouchTarget()
+            .size(36.dp)
             .testTag("workspace-${patient.caseId}"),
     ) {
         Icon(
@@ -871,7 +872,7 @@ private fun ActionIconButtons(
     IconButton(
         onClick = { onEvent(AncEvent.OpenProfile(patient.id)) },
         modifier = Modifier
-            .minimumTouchTarget()
+            .size(36.dp)
             .testTag("profile-${patient.caseId}"),
     ) {
         Icon(
@@ -895,7 +896,7 @@ private fun ActionIconButtons(
                 )
             },
             modifier = Modifier
-                .minimumTouchTarget()
+                .size(36.dp)
                 .testTag("editPatient-${patient.caseId}"),
         ) {
             Icon(
@@ -919,7 +920,7 @@ private fun ActionIconButtons(
             )
         },
         modifier = Modifier
-            .minimumTouchTarget()
+            .size(36.dp)
             .testTag("statusPatient-${patient.caseId}"),
     ) {
         Icon(

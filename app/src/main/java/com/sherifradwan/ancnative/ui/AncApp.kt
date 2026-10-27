@@ -16,6 +16,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BrightnessAuto
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -41,8 +44,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
+import com.sherifradwan.ancnative.security.AppThemeMode
 import com.sherifradwan.ancnative.security.SecuritySettingsRepository
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
@@ -60,6 +65,8 @@ fun AncApp(
     onLock: () -> Unit,
     onRetryStorage: () -> Unit,
     securityRepo: SecuritySettingsRepository? = null,
+    onExportBackup: ((CharArray, (ByteArray?) -> Unit) -> Unit)? = null,
+    onRestoreBackup: ((ByteArray, CharArray, (com.sherifradwan.ancnative.storage.BackupInspectionResult) -> Unit) -> Unit)? = null,
 ) {
     val unlocked = state.vaultState is VaultState.Unlocked
     val securitySettings = securityRepo?.settings?.collectAsState()?.value
@@ -126,38 +133,68 @@ fun AncApp(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Row(
+                            modifier = Modifier.weight(1f),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Image(
                                 painter = painterResource(R.drawable.clinic_logo_foreground),
                                 contentDescription = "Clinic Logo",
-                                modifier = Modifier.size(36.dp),
+                                modifier = Modifier.size(34.dp),
                             )
-                            Column {
+                            Column(modifier = Modifier.weight(1f, fill = false)) {
                                 Text(
                                     text = securitySettings?.clinicName ?: "Dr. Sherif Radwan Clinic",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                 )
                                 Text(
                                     text = "Maternal-Fetal Medicine & Obstetrics",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                 )
                             }
                         }
-                        if (securityRepo != null) {
-                            IconButton(
-                                onClick = { showSettingsDialog = true },
-                                modifier = Modifier.minimumTouchTarget().testTag("openSecuritySettings"),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Settings,
-                                    contentDescription = "Security Settings",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (securityRepo != null) {
+                                val currentTheme = securitySettings?.themeMode ?: AppThemeMode.SYSTEM
+                                IconButton(
+                                    onClick = {
+                                        val nextTheme = when (currentTheme) {
+                                            AppThemeMode.SYSTEM -> AppThemeMode.LIGHT
+                                            AppThemeMode.LIGHT -> AppThemeMode.DARK
+                                            AppThemeMode.DARK -> AppThemeMode.SYSTEM
+                                        }
+                                        securityRepo.setThemeMode(nextTheme)
+                                    },
+                                    modifier = Modifier.minimumTouchTarget().testTag("themeToggleButton"),
+                                ) {
+                                    Icon(
+                                        imageVector = when (currentTheme) {
+                                            AppThemeMode.LIGHT -> Icons.Default.LightMode
+                                            AppThemeMode.DARK -> Icons.Default.DarkMode
+                                            AppThemeMode.SYSTEM -> Icons.Default.BrightnessAuto
+                                        },
+                                        contentDescription = "Toggle Theme: ${currentTheme.displayNameEn}",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+
+                                IconButton(
+                                    onClick = { showSettingsDialog = true },
+                                    modifier = Modifier.minimumTouchTarget().testTag("openSecuritySettings"),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Settings,
+                                        contentDescription = "Security Settings",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
                             }
                         }
                     }
@@ -199,6 +236,8 @@ fun AncApp(
                 securityRepo.lockApp()
                 onLock()
             },
+            onExportBackup = onExportBackup,
+            onRestoreBackup = onRestoreBackup,
         )
     }
 

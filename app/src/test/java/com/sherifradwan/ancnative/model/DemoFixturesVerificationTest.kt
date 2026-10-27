@@ -13,7 +13,7 @@ class DemoFixturesVerificationTest {
     @Test
     fun syntheticFixturesContainCompleteLongitudinalCaseForDemo002() {
         val patients = DemoFixtures.patients
-        assertEquals(3, patients.size)
+        assertEquals(4, patients.size)
 
         val demo002 = patients.firstOrNull { it.caseId == "DEMO-ANC-002" }
         assertNotNull("DEMO-ANC-002 must be present in synthetic fixtures", demo002)
@@ -105,5 +105,38 @@ class DemoFixturesVerificationTest {
         // 280 - 41 = 239 days = 34w 1d.
         val gaAtLatestVisit = dating.calculateGestationalAge(LocalDate.of(2026, 10, 10))
         assertEquals("34w 1d", gaAtLatestVisit)
+    }
+
+    @Test
+    fun syntheticFixturesContainComprehensiveMultiLossCaseForDemo004() {
+        val demo004 = DemoFixtures.patients.firstOrNull { it.caseId == "DEMO-ANC-004" }
+        assertNotNull("DEMO-ANC-004 must be present in synthetic fixtures", demo004)
+        demo004!!
+
+        assertEquals("فريدة مصطفى أحمد", demo004.displayName)
+        assertEquals("High Risk", demo004.riskLevel)
+        assertEquals("O-", demo004.bloodGroupText)
+        assertEquals(5L, demo004.gravida)
+        assertEquals(1L, demo004.parity)
+        assertEquals(3L, demo004.abortion)
+
+        // Multiple deaths and losses in previous pregnancies
+        assertEquals(4, demo004.previousPregnancies.size)
+        val stillbirth = demo004.previousPregnancies.find { it.outcome == "Stillbirth" }
+        assertNotNull("Stillbirth / IUFD must be recorded", stillbirth)
+        assertTrue(stillbirth!!.outcomeText!!.contains("IUFD", ignoreCase = true))
+
+        val miscarriages = demo004.previousPregnancies.filter { it.outcome == "EarlyPregnancyLoss" }
+        assertEquals(2, miscarriages.size)
+
+        // Multiple ultrasound examinations (7 scans)
+        assertEquals(7, demo004.ultrasoundScans.size)
+
+        // Multiple antenatal visits (9 visits)
+        assertEquals(9, demo004.visits.size)
+
+        // Complete lab & medication profiles
+        assertEquals(6, demo004.labInvestigations.size)
+        assertEquals(5, demo004.medications.size)
     }
 }

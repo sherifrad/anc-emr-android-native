@@ -393,7 +393,6 @@ internal object RecordsMigration {
         if (
             row.vaultUuid != expectedVaultUuid ||
             row.schemaVersion != 1 ||
-            !row.isSynthetic ||
             !row.initialized
         ) {
             throw RecordsMigrationFailure(VaultBlockReason.VAULT_METADATA_MISMATCH)
@@ -423,7 +422,6 @@ internal object RecordsMigration {
         if (
             row.vaultUuid != expectedVaultUuid ||
             row.schemaVersion != 2 ||
-            !row.isSynthetic ||
             !row.initialized
         ) {
             throw RecordsMigrationFailure(VaultBlockReason.VAULT_METADATA_MISMATCH)
@@ -467,7 +465,6 @@ internal object RecordsMigration {
         if (
             row.vaultUuid != expectedVaultUuid ||
             row.schemaVersion != 3 ||
-            !row.isSynthetic ||
             !row.initialized
         ) {
             throw RecordsMigrationFailure(VaultBlockReason.VAULT_METADATA_MISMATCH)
@@ -511,7 +508,6 @@ internal object RecordsMigration {
         if (
             row.vaultUuid != expectedVaultUuid ||
             row.schemaVersion != 4 ||
-            !row.isSynthetic ||
             !row.initialized
         ) {
             throw RecordsMigrationFailure(VaultBlockReason.VAULT_METADATA_MISMATCH)

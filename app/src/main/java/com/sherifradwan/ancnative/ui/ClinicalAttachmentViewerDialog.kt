@@ -148,18 +148,6 @@ fun ClinicalAttachmentViewerDialog(
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
-                                Surface(
-                                    shape = RoundedCornerShape(6.dp),
-                                    color = MaterialTheme.colorScheme.secondaryContainer,
-                                ) {
-                                    Text(
-                                        text = patient.caseId,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                    )
-                                }
                             }
                             Text(
                                 text = AttachmentCategories.localizedName(attachment.category) +
@@ -254,14 +242,14 @@ fun ClinicalAttachmentViewerDialog(
                                 Icon(
                                     if (isIntegrityVerified) Icons.Default.VerifiedUser else Icons.Default.Lock,
                                     contentDescription = null,
-                                    tint = if (isIntegrityVerified) Color(0xFF2E7D32) else MaterialTheme.colorScheme.primary,
+                                    tint = if (isIntegrityVerified) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(16.dp),
                                 )
                                 Text(
                                     text = if (isIntegrityVerified) "نزاهة رقمية مؤكدة · SHA-256" else "تخزين طبي محمي",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isIntegrityVerified) Color(0xFF2E7D32) else MaterialTheme.colorScheme.primary,
+                                    color = if (isIntegrityVerified) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
                                 )
                             }
                             Text(
@@ -296,7 +284,7 @@ fun ClinicalAttachmentViewerDialog(
             title = { Text("تأكيد حذف المرفق الطبي") },
             text = {
                 Text(
-                    "هل أنت متأكد من حذف هذا المرفق (${attachment.title ?: attachment.fileName}) نهائياً من سجل المريضة ${patient.displayName} (${patient.caseId})؟",
+                    "هل أنت متأكد من حذف هذا المرفق (${attachment.title ?: attachment.fileName}) نهائياً من سجل المريضة ${patient.displayName}؟",
                 )
             },
             confirmButton = {

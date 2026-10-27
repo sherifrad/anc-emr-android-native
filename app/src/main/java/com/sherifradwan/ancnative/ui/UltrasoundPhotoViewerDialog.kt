@@ -164,8 +164,8 @@ fun UltrasoundPhotoViewerDialog(
                         .fillMaxWidth()
                         .height(280.dp)
                         .clip(RoundedCornerShape(14.dp))
-                        .background(Color(0xFF090D14))
-                        .border(1.dp, Color(0xFF1E293B), RoundedCornerShape(14.dp)),
+                        .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (loadedBitmap != null) {
@@ -299,6 +299,9 @@ private fun UltrasoundMonitorCanvas(
     photoIndex: Int,
     totalPhotos: Int,
 ) {
+    val outlineVariantColor = MaterialTheme.colorScheme.outlineVariant
+    val surfaceContainerColor = MaterialTheme.colorScheme.surfaceContainer
+
     Box(modifier = Modifier.fillMaxSize()) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val width = size.width
@@ -308,8 +311,8 @@ private fun UltrasoundMonitorCanvas(
             val apexX = width / 2f
             val apexY = 28f
             val maxRadius = height - 40f
-            val sectorColor = Color(0xFF1E293B)
-            val gridColor = Color(0xFF162030)
+            val sectorColor = outlineVariantColor
+            val gridColor = surfaceContainerColor
 
             // Draw concentric range rings (calipers)
             for (step in 1..4) {
@@ -354,14 +357,14 @@ private fun UltrasoundMonitorCanvas(
             ) {
                 Text(
                     text = "ANC ULTRASOUND · 3.5MHz C-PROBE\nDEPTH: 15cm · TIS: 0.2 · MI: 1.1",
-                    color = Color(0xFF64748B),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontFamily = FontFamily.Monospace,
                     fontSize = 10.sp,
                     lineHeight = 13.sp,
                 )
                 Text(
                     text = "GAIN: 68dB\n2D / B-MODE\nFPS: 28",
-                    color = Color(0xFF64748B),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontFamily = FontFamily.Monospace,
                     fontSize = 10.sp,
                     lineHeight = 13.sp,
@@ -377,12 +380,12 @@ private fun UltrasoundMonitorCanvas(
                 Icon(
                     Icons.Default.PhotoCamera,
                     contentDescription = null,
-                    tint = Color(0xFF38BDF8),
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(36.dp),
                 )
                 Text(
                     text = "CLINICAL ULTRASOUND CAPTURE",
-                    color = Color(0xFFE2E8F0),
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
@@ -390,7 +393,7 @@ private fun UltrasoundMonitorCanvas(
                 val fileName = uriString.substringAfterLast("/")
                 Text(
                     text = fileName,
-                    color = Color(0xFF94A3B8),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontFamily = FontFamily.Monospace,
                     fontSize = 10.sp,
                 )
@@ -404,18 +407,18 @@ private fun UltrasoundMonitorCanvas(
             ) {
                 Text(
                     text = "EXAM: ${scan.date}\n${scan.presentation?.uppercase() ?: "CEPHALIC"}",
-                    color = Color(0xFF64748B),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontFamily = FontFamily.Monospace,
                     fontSize = 10.sp,
                     lineHeight = 13.sp,
                 )
                 Surface(
                     shape = RoundedCornerShape(4.dp),
-                    color = Color(0xFF1E293B),
+                    color = MaterialTheme.colorScheme.primaryContainer,
                 ) {
                     Text(
                         text = "FRAME $photoIndex / $totalPhotos",
-                        color = Color(0xFF38BDF8),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold,
                         fontSize = 10.sp,

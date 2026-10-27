@@ -145,7 +145,7 @@ fun AddAttachmentDialog(
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
-                            text = "${patient.displayName} · ${patient.caseId}",
+                            text = patient.displayName,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold,

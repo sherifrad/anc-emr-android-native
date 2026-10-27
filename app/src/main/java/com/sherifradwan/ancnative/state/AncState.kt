@@ -690,7 +690,11 @@ object AncReducer {
         if (state.savePhase.blocksEditing() || state.hasDirtyDraft) return state
         val patient = event.patientId?.let(state::patient)
         if (event.patientId != null && (patient == null || patient.status == "archived")) return state
-        val values = patient?.toPatientDraftValues() ?: PatientDraftValues()
+        val values = patient?.toPatientDraftValues() ?: run {
+            val year = java.time.LocalDate.now().year
+            val nextSeq = (state.patients.size + 1).toString().padStart(3, '0')
+            PatientDraftValues(caseId = "ANC-$year-$nextSeq")
+        }
         val patientId = patient?.id ?: event.newPatientId
         return state.clearDrafts().copy(
             route = AncRoute.PatientEditor(patientId, patient == null),
@@ -1045,9 +1049,10 @@ object AncReducer {
         if (state.savePhase.blocksEditing()) return state
         val destination = when (val route = state.route) {
             AncRoute.PatientList -> return state
-            is AncRoute.Workspace, is AncRoute.Profile -> AncRoute.PatientList
+            is AncRoute.Workspace -> AncRoute.Profile(route.patientId)
+            is AncRoute.Profile -> AncRoute.PatientList
             is AncRoute.VisitEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.VISITS)
-            is AncRoute.PatientEditor -> if (route.isNew) AncRoute.PatientList else AncRoute.Workspace(route.patientId)
+            is AncRoute.PatientEditor -> if (route.isNew) AncRoute.PatientList else AncRoute.Profile(route.patientId)
             is AncRoute.OtherHistoriesEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.OTHER_HISTORIES)
             is AncRoute.PreviousPregnancyEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.OBSTETRIC_HISTORY)
             is AncRoute.StatusEditor -> AncRoute.PatientList

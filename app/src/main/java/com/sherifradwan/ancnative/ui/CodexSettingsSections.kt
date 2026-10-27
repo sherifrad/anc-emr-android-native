@@ -100,7 +100,7 @@ fun LabCodexSettingsSection(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f, fill = false)) {
                 Text(
                     text = "دليل الفحوصات والتحاليل الطبية",
                     style = MaterialTheme.typography.titleMedium,
@@ -110,7 +110,7 @@ fun LabCodexSettingsSection(
                 Text(
                     text = "${items.size} فحصاً · ${categoryGroups.size} باقات/مجموعات سريرية",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.tertiary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
@@ -736,7 +736,7 @@ fun MedicationCodexSettingsSection(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f, fill = false)) {
                 Text(
                     text = "دليل الأدوية والبروتوكولات العلاجية",
                     style = MaterialTheme.typography.titleMedium,
@@ -746,7 +746,7 @@ fun MedicationCodexSettingsSection(
                 Text(
                     text = "${items.size} دواء مسجلاً · متاح لخطط جميع المريضات",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.tertiary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 

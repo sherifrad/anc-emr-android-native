@@ -27,9 +27,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Archive
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Print
@@ -39,9 +40,12 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -133,10 +137,16 @@ fun ProfileScreen(
                         onClick = { onEvent(AncEvent.Back) },
                         modifier = Modifier.minimumTouchTarget(),
                     ) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
                         Text(stringResource(R.string.back), maxLines = 1, softWrap = false)
                     }
+
+                    Image(
+                        painter = painterResource(R.drawable.clinic_logo_foreground),
+                        contentDescription = "Clinic Logo",
+                        modifier = Modifier.size(36.dp),
+                    )
 
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -295,149 +305,34 @@ private fun ProfileHeroIdentityCard(
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            // Top Row: Clinic Branding Header + Integrated Symbolic Action Buttons
+            // Patient Identity Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.clinic_logo_foreground),
-                        contentDescription = "Clinic Logo",
-                        modifier = Modifier.size(30.dp),
-                    )
-                    Column {
-                        Text(
-                            text = "دكتور شريف رضوان كلينك",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                        Text(
-                            text = "Dr. Sherif Radwan Clinic",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-
-                // Symbolic Quick Action Buttons incorporated into Identity Card
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    // Symbolic Print / Report Button
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        modifier = Modifier.clickable { onOpenReport() },
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .padding(horizontal = 8.dp, vertical = 6.dp)
-                                .testTag("openReportButton"),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Print,
-                                contentDescription = "طباعة تقرير المريضة",
-                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                modifier = Modifier.size(18.dp),
-                            )
-                            Text(
-                                text = "طباعة",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            )
-                        }
-                    }
-
-                    // Symbolic Workspace Button
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.clickable { onOpenWorkspace() },
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .padding(horizontal = 8.dp, vertical = 6.dp)
-                                .testTag("workspaceButton"),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = stringResource(R.string.open_workspace),
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(18.dp),
-                            )
-                            Text(
-                                text = "مساحة العمل",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            )
-                        }
-                    }
-                }
-            }
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                // Large Initials Avatar
-                val initials = patient.displayName
-                    .split(" ")
-                    .filter { it.isNotBlank() }
-                    .take(2)
-                    .map { it.first().uppercaseChar() }
-                    .joinToString("")
-                    .ifEmpty { "P" }
-
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier.size(54.dp),
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            text = initials,
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        )
-                    }
-                }
-
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = patient.displayName,
-                        style = MaterialTheme.typography.headlineSmall,
+                        style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.semantics { heading() },
                     )
                     if (patient.ageText != null) {
                         Text(
-                            text = patient.ageText,
+                            text = "${patient.ageText} yrs",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
 
-                // Risk Badge
-                if (patient.riskLevel.equals("high", ignoreCase = true)) {
+                val isHighRisk = patient.riskLevel?.contains("High", ignoreCase = true) == true ||
+                    patient.riskLevel?.contains("عالي", ignoreCase = true) == true
+                if (isHighRisk) {
                     Surface(
                         shape = RoundedCornerShape(8.dp),
                         color = MaterialTheme.colorScheme.errorContainer,
@@ -453,11 +348,11 @@ private fun ProfileHeroIdentityCard(
                 } else {
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = androidx.compose.ui.graphics.Color(0xFFE8F5E9),
+                        color = MaterialTheme.colorScheme.tertiaryContainer,
                     ) {
                         Text(
                             text = stringResource(R.string.normal_risk_filter),
-                            color = androidx.compose.ui.graphics.Color(0xFF2E7D32),
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
@@ -466,40 +361,66 @@ private fun ProfileHeroIdentityCard(
                 }
             }
 
-            // Key Clinical Attributes Chips Row
+            // 3. Main Clinical Indicators (Blood Group, GA, GPA, Prev Pregnancy Summary)
+            val g = patient.gravida ?: 1L
+            val p = patient.parity ?: 0L
+            val a = patient.abortion ?: 0L
+            val gpaText = "G$g P$p A$a"
+
+            val gaResult = patient.dating?.calculateGestationalAgeResult()
+            val gaFormatted = if (gaResult != null) "${gaResult.weeks}+${gaResult.days} wks" else "—"
+
+            val prevCS = patient.previousPregnancies.count {
+                it.birthMethod.equals("Cesarean", ignoreCase = true) ||
+                    it.deliveryBy.equals("CS", ignoreCase = true)
+            }
+            val prevVaginal = patient.previousPregnancies.count {
+                it.birthMethod.equals("Vaginal", ignoreCase = true) ||
+                    it.deliveryBy.equals("Vaginal", ignoreCase = true)
+            }
+            val stillbirthCount = patient.previousPregnancies.count {
+                it.outcome == "Stillbirth" ||
+                    it.outcomeText?.contains("Stillbirth", ignoreCase = true) == true ||
+                    it.outcomeText?.contains("IUFD", ignoreCase = true) == true
+            }
+            val miscarriageCount = patient.previousPregnancies.count {
+                it.outcome == "EarlyPregnancyLoss" ||
+                    it.outcomeText?.contains("Miscarriage", ignoreCase = true) == true ||
+                    it.outcomeText?.contains("إجهاض", ignoreCase = true) == true
+            }
+
+            val prevSummary = when {
+                g == 1L && p == 0L && a == 0L && patient.previousPregnancies.isEmpty() -> "Primigravida"
+                prevCS > 0 && prevVaginal > 0 && stillbirthCount > 0 -> "Prev $prevCS CS, $prevVaginal SVD · 1 IUFD"
+                prevCS > 0 && prevVaginal > 0 -> "Prev $prevCS CS, $prevVaginal SVD"
+                prevCS > 0 && stillbirthCount > 0 -> "Prev $prevCS CS · 1 IUFD"
+                prevCS > 0 -> "Prev $prevCS CS"
+                prevVaginal > 0 && stillbirthCount > 0 -> "Prev $prevVaginal SVD · 1 IUFD"
+                prevVaginal > 0 -> "Prev $prevVaginal SVD"
+                stillbirthCount > 0 -> "Prior Stillbirth (IUFD)"
+                miscarriageCount > 0 -> "$miscarriageCount Prior Miscarriages"
+                p > 0L -> "Parous (P$p)"
+                patient.previousPregnancies.isNotEmpty() -> "${patient.previousPregnancies.size} Prior Pregnancies"
+                else -> "No prior deliveries"
+            }
+
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                // Parity Badge
-                val g = patient.gravida ?: "-"
-                val p = patient.parity ?: "-"
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                ) {
-                    Text(
-                        text = stringResource(R.string.parity_format, g, p),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                    )
-                }
-
-                // Blood Group
+                // 1. Blood Group
                 if (!patient.bloodGroupText.isNullOrBlank()) {
                     val isRhNeg = patient.bloodGroupText.contains("-")
                     val isRhPos = patient.bloodGroupText.contains("+")
                     val bgContainer = when {
                         isRhNeg -> MaterialTheme.colorScheme.errorContainer
-                        isRhPos -> androidx.compose.ui.graphics.Color(0xFFE8F5E9)
+                        isRhPos -> MaterialTheme.colorScheme.tertiaryContainer
                         else -> MaterialTheme.colorScheme.surfaceVariant
                     }
                     val bgText = when {
                         isRhNeg -> MaterialTheme.colorScheme.onErrorContainer
-                        isRhPos -> androidx.compose.ui.graphics.Color(0xFF2E7D32)
+                        isRhPos -> MaterialTheme.colorScheme.onTertiaryContainer
                         else -> MaterialTheme.colorScheme.onSurfaceVariant
                     }
                     Surface(
@@ -514,6 +435,48 @@ private fun ProfileHeroIdentityCard(
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                         )
                     }
+                }
+
+                // 2. Gestational Age (GA)
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                ) {
+                    Text(
+                        text = "⏳ $gaFormatted",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                    )
+                }
+
+                // 3. Obstetric GPA
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                ) {
+                    Text(
+                        text = gpaText,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                    )
+                }
+
+                // 4. Previous Pregnancy Summary
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                ) {
+                    Text(
+                        text = "🤰 $prevSummary",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                    )
                 }
 
                 // Phone
@@ -532,7 +495,7 @@ private fun ProfileHeroIdentityCard(
                 }
             }
 
-            // Clinical Attention Alert Banner
+            // 4. Clinical Attention Alert Banner
             if (!patient.clinicalAttention.isNullOrBlank()) {
                 Surface(
                     shape = RoundedCornerShape(10.dp),
@@ -564,6 +527,69 @@ private fun ProfileHeroIdentityCard(
                             )
                         }
                     }
+                }
+            }
+
+            // 5. DEDICATED FULL-WIDTH CLINICAL ACTIONS BAR (Spacious, Zero Character Wrapping!)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // Primary Clinical Workspace Action
+                Button(
+                    onClick = onOpenWorkspace,
+                    modifier = Modifier
+                        .weight(1.3f)
+                        .testTag("workspaceButton"),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.EditNote,
+                        contentDescription = stringResource(R.string.open_workspace),
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = "مساحة العمل",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
+                }
+
+                // Secondary Print Report Action
+                FilledTonalButton(
+                    onClick = onOpenReport,
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("openReportButton"),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Print,
+                        contentDescription = "طباعة تقرير المريضة",
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = "طباعة",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
                 }
             }
         }
@@ -860,7 +886,7 @@ private fun ProfileVisitsSection(
                 }
 
                 if (patient.status != "archived") {
-                    Button(
+                    FilledTonalIconButton(
                         onClick = {
                             onEvent(
                                 AncEvent.StartVisit(
@@ -871,10 +897,12 @@ private fun ProfileVisitsSection(
                             )
                         },
                         modifier = Modifier.minimumTouchTarget().testTag("addVisit"),
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        ),
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.add_visit), maxLines = 1, softWrap = false)
+                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_visit), modifier = Modifier.size(22.dp))
                     }
                 }
             }
@@ -1243,22 +1271,26 @@ private fun ProfileUltrasoundSection(
                     )
                 }
 
-                Button(
-                    onClick = {
-                        onEvent(
-                            AncEvent.StartUltrasoundEditor(
-                                patientId = patient.id,
-                                scanId = null,
-                                newScanId = UUID.randomUUID().toString(),
-                                editorSessionId = UUID.randomUUID().toString(),
-                            ),
-                        )
-                    },
-                    modifier = Modifier.minimumTouchTarget(),
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text(stringResource(R.string.add_ultrasound), maxLines = 1, softWrap = false)
+                if (patient.status != "archived") {
+                    FilledTonalIconButton(
+                        onClick = {
+                            onEvent(
+                                AncEvent.StartUltrasoundEditor(
+                                    patientId = patient.id,
+                                    scanId = null,
+                                    newScanId = UUID.randomUUID().toString(),
+                                    editorSessionId = UUID.randomUUID().toString(),
+                                ),
+                            )
+                        },
+                        modifier = Modifier.minimumTouchTarget().testTag("addUltrasound"),
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        ),
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_ultrasound), modifier = Modifier.size(22.dp))
+                    }
                 }
             }
 
@@ -1557,7 +1589,7 @@ private fun ProfileLaboratoriesSection(
                 }
 
                 if (patient.status != "archived") {
-                    Button(
+                    FilledTonalIconButton(
                         onClick = {
                             onEvent(
                                 AncEvent.StartLabEditor(
@@ -1569,10 +1601,12 @@ private fun ProfileLaboratoriesSection(
                             )
                         },
                         modifier = Modifier.minimumTouchTarget().testTag("addLab"),
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        ),
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.add_lab), maxLines = 1, softWrap = false)
+                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_lab), modifier = Modifier.size(22.dp))
                     }
                 }
             }
@@ -1940,22 +1974,26 @@ private fun ProfileMedicationsSection(
                     )
                 }
 
-                Button(
-                    onClick = {
-                        onEvent(
-                            AncEvent.StartMedicationEditor(
-                                patientId = patient.id,
-                                medicationId = null,
-                                newMedicationId = UUID.randomUUID().toString(),
-                                editorSessionId = UUID.randomUUID().toString(),
-                            ),
-                        )
-                    },
-                    modifier = Modifier.minimumTouchTarget(),
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text(stringResource(R.string.add_medication), maxLines = 1, softWrap = false)
+                if (patient.status != "archived") {
+                    FilledTonalIconButton(
+                        onClick = {
+                            onEvent(
+                                AncEvent.StartMedicationEditor(
+                                    patientId = patient.id,
+                                    medicationId = null,
+                                    newMedicationId = UUID.randomUUID().toString(),
+                                    editorSessionId = UUID.randomUUID().toString(),
+                                ),
+                            )
+                        },
+                        modifier = Modifier.minimumTouchTarget().testTag("addMedication"),
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        ),
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_medication), modifier = Modifier.size(22.dp))
+                    }
                 }
             }
 
