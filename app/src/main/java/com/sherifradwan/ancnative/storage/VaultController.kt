@@ -603,7 +603,8 @@ class VaultController internal constructor(
                     _view.value = VaultSessionView(VaultState.Locked)
                 }
             }
-        } catch (_: Throwable) {
+        } catch (e: Throwable) {
+            android.util.Log.e("VAULT_INIT_FAIL", "finishInitialization failed: ${e.message}", e)
             blockAuthentication(pending, VaultBlockReason.INCOMPLETE_SETUP)
         } finally {
             passphrase.fill(0)

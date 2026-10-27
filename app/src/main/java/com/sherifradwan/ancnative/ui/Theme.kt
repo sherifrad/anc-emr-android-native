@@ -22,6 +22,40 @@ val ClinicalRose = Color(0xFFD49AA0)
 val ActionRose = Color(0xFF934F5B)
 val ClinicalTeal = Color(0xFF176B70)
 
+// Clinical Badge & Metadata Tag Tokens
+val TagObstetricBg = Color(0xFFF3E8FF)
+val TagObstetricBorder = Color(0xFFDDD6FE)
+val TagObstetricText = Color(0xFF6B21A8)
+
+val TagGestationalAgeBg = Color(0xFFE0F2FE)
+val TagGestationalAgeBorder = Color(0xFFBAE6FD)
+val TagGestationalAgeText = Color(0xFF0369A1)
+
+val TagBloodPositiveBg = Color(0xFFEFF6FF)
+val TagBloodPositiveBorder = Color(0xFFBFDBFE)
+val TagBloodPositiveText = Color(0xFF1D4ED8)
+
+val TagBloodNegativeBg = Color(0xFFFFE4E6)
+val TagBloodNegativeBorder = Color(0xFFFECDD3)
+val TagBloodNegativeText = Color(0xFFBE123C)
+
+val TagBloodNeutralBg = Color(0xFFF1F5F9)
+val TagBloodNeutralBorder = Color(0xFFCBD5E1)
+val TagBloodNeutralText = Color(0xFF334155)
+
+val TagAttentionBg = Color(0xFFFEF3C7)
+val TagAttentionBorder = Color(0xFFFDE68A)
+val TagAttentionIcon = Color(0xFFB45309)
+val TagAttentionText = Color(0xFF92400E)
+
+val TagHighRiskBg = Color(0xFFFEE2E2)
+val TagHighRiskBorder = Color(0xFFFCA5A5)
+val TagHighRiskText = Color(0xFFDC2626)
+
+val TagNormalRiskBg = Color(0xFFDCFCE7)
+val TagNormalRiskBorder = Color(0xFF86EFAC)
+val TagNormalRiskText = Color(0xFF166534)
+
 private val LightColors = lightColorScheme(
     primary = ClinicalNavy,
     onPrimary = Color.White,

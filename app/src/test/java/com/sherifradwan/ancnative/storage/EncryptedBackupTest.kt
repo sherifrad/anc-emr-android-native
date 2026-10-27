@@ -239,6 +239,50 @@ class EncryptedBackupTest {
     }
 
     @Test
+    fun fullCaseFromBookingToDeliveryExportsAndRestoresEncryptedBackupWithZeroLoss() {
+        val maya = DemoFixtures.patients.first { it.caseId == "DEMO-ANC-001" }
+        assertEquals(10, maya.visits.size)
+        assertEquals(4, maya.ultrasoundScans.size)
+        assertEquals(6, maya.labInvestigations.size)
+        assertEquals(4, maya.medications.size)
+        assertEquals(1, maya.previousPregnancies.size)
+
+        val backupBytes = EncryptedBackupManager.createEncryptedBackup(
+            vaultUuid = vaultUuid,
+            patients = listOf(maya),
+            passphrase = passphrase,
+            exportedAtEpochMs = 1775895000000L,
+        )
+
+        assertTrue(backupBytes.isNotEmpty())
+
+        val inspected = EncryptedBackupManager.inspectBackup(backupBytes, passphrase)
+        assertTrue(inspected is BackupInspectionResult.Valid)
+        val valid = inspected as BackupInspectionResult.Valid
+        assertEquals(1, valid.patientCount)
+        assertEquals(3, valid.schemaVersion)
+
+        val restored = EncryptedBackupManager.decryptAndParseBackup(backupBytes, passphrase)
+        org.junit.Assert.assertNotNull(restored)
+        val restoredPatient = restored!!.patients.single()
+
+        assertEquals("Maya Example", restoredPatient.patient.displayName)
+        assertEquals("DEMO-ANC-001", restoredPatient.patient.caseId)
+        assertEquals("O+", restoredPatient.patient.bloodGroupText)
+        assertEquals(10, restoredPatient.visits.size)
+        assertEquals(4, restoredPatient.ultrasoundScans.size)
+        assertEquals(6, restoredPatient.labInvestigations.size)
+        assertEquals(4, restoredPatient.medications.size)
+        assertEquals(1, restoredPatient.previousPregnancies.size)
+        assertEquals("2026-01-10", restoredPatient.dating?.lmpDate)
+        assertEquals("2026-10-17", restoredPatient.dating?.agreedEdd)
+
+        // Verify Delivery notes in obstetricNotes
+        assertTrue(restoredPatient.patient.obstetricNotes?.contains("Spontaneous Vaginal Delivery") == true)
+        assertTrue(restoredPatient.patient.obstetricNotes?.contains("3.35 kg") == true)
+    }
+
+    @Test
     fun clinicalSummaryGeneratorOutputsComprehensiveText() {
         val patient = DemoFixtures.patients.first()
         val text = ClinicalSummaryGenerator.generateTextSummary(patient)

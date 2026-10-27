@@ -586,187 +586,192 @@ private fun PatientClinicalRow(
             } else {
                 // Compact Screen (Phones < 640dp): Highly optimized clinical matrix row
                 val isArabic = row.displayName.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.ARABIC }
-                Row(
+                val cardAlignment = if (isArabic) Alignment.End else Alignment.Start
+                val rowArrangement = if (isArabic) Arrangement.End else Arrangement.Start
+
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top,
+                    horizontalAlignment = cardAlignment,
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    // Left/Right: Patient Name + Risk & Age directly underneath
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        horizontalAlignment = if (isArabic) Alignment.End else Alignment.Start,
+                    // 1. Patient Name (Full Width, Script-Adaptive Alignment)
+                    Text(
+                        text = row.displayName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = if (isArabic) TextAlign.End else TextAlign.Start,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    // 2. Risk Tag with Age beside it (Age NOT in a color tag!)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = rowArrangement,
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text(
-                            text = row.displayName,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = if (isArabic) TextAlign.End else TextAlign.Start,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-
-                        Spacer(Modifier.height(4.dp))
-
-                        // Colored Risk Tag & Age directly below patient name
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = if (isArabic) Arrangement.End else Arrangement.spacedBy(6.dp),
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            ClinicalRiskBadge(isHighRisk = row.isHighRisk)
-                            if (row.ageText != null) {
+                        ClinicalRiskBadge(isHighRisk = row.isHighRisk)
+                        if (row.ageText != null) {
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text = "• ${row.ageText} yrs",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Medium,
+                            )
+                        }
+                        if (row.isArchived) {
+                            Spacer(Modifier.width(6.dp))
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = MaterialTheme.colorScheme.errorContainer,
+                            ) {
                                 Text(
-                                    text = "${row.ageText} yrs",
+                                    text = "ARCHIVED",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = FontWeight.Medium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                                    softWrap = false,
+                                    maxLines = 1,
                                 )
-                            }
-                            if (row.isArchived) {
-                                Surface(
-                                    shape = RoundedCornerShape(4.dp),
-                                    color = MaterialTheme.colorScheme.errorContainer,
-                                ) {
-                                    Text(
-                                        text = "ARCHIVED",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onErrorContainer,
-                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
-                                        softWrap = false,
-                                        maxLines = 1,
-                                    )
-                                }
                             }
                         }
                     }
 
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.height(2.dp))
 
-                    // Right: Actions (Upper Right)
+                    // 3. Clinical Data Multi-line Tags with distinct colors & proper alignment
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = if (isArabic) Arrangement.End else Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        // Tag A: Obstetric GPA & Past Deliveries (Soft Lavender/Purple tag)
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = TagObstetricBg,
+                            border = BorderStroke(1.dp, TagObstetricBorder),
+                        ) {
+                            Text(
+                                text = row.obstetricSummary,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TagObstetricText,
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                            )
+                        }
+
+                        // Tag B: Gestational Age & EDD (Soft Cyan/Sky tag with tap for EDD)
+                        Box {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = TagGestationalAgeBg,
+                                border = BorderStroke(1.dp, TagGestationalAgeBorder),
+                                modifier = Modifier.clickable { showEddPopup = true },
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                ) {
+                                    Icon(
+                                        Icons.Default.DateRange,
+                                        contentDescription = "Tap to view EDD",
+                                        tint = TagGestationalAgeText,
+                                        modifier = Modifier.size(14.dp),
+                                    )
+                                    Text(
+                                        text = row.gestationalAgeText,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TagGestationalAgeText,
+                                    )
+                                }
+                            }
+
+                            DropdownMenu(
+                                expanded = showEddPopup,
+                                onDismissRequest = { showEddPopup = false },
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Text(
+                                        text = "Estimated Due Date (EDD)",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary,
+                                    )
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        text = row.eddText ?: "Not calculated",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                    if (row.datingMethodText != null) {
+                                        Spacer(Modifier.height(2.dp))
+                                        Text(
+                                            text = "Method: ${row.datingMethodText}",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Tag C: Blood Group & Rh (Soft Blue or Rose tag)
+                        BloodGroupBadge(
+                            bloodGroup = row.bloodGroup,
+                            isRhNegative = row.isRhNegative,
+                            isRhPositive = row.isRhPositive,
+                        )
+                    }
+
+                    // 4. Clinical Attention note if present
+                    if (row.clinicalAttention != null) {
+                        Spacer(Modifier.height(2.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(TagAttentionBg)
+                                .border(1.dp, TagAttentionBorder, RoundedCornerShape(6.dp))
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.Warning,
+                                contentDescription = "Clinical Attention",
+                                tint = TagAttentionIcon,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Text(
+                                text = row.clinicalAttention,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TagAttentionText,
+                                modifier = Modifier.weight(1f),
+                                maxLines = 4,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+
+                    // 5. Action Buttons (Positioned below Name & Data tags)
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
                     Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = if (isArabic) Arrangement.Start else Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         ActionIconButtons(patient = patient, onEvent = onEvent)
                     }
-                }
-
-                Spacer(Modifier.height(8.dp))
-
-                // Middle Badges Matrix: Obstetric History, Gestational Age (w/ EDD popup), Blood Group
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    // Obstetric History Pill
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                    ) {
-                        Text(
-                            text = row.obstetricSummary,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
-                        )
-                    }
-
-                    // Gestational Age Pill (Tap for EDD popup)
-                    Box {
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.8f),
-                            modifier = Modifier.clickable { showEddPopup = true },
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            ) {
-                                Icon(
-                                    Icons.Default.DateRange,
-                                    contentDescription = "Tap to view EDD",
-                                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                                    modifier = Modifier.size(14.dp),
-                                )
-                                Text(
-                                    text = row.gestationalAgeText,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                )
-                            }
-                        }
-
-                        DropdownMenu(
-                            expanded = showEddPopup,
-                            onDismissRequest = { showEddPopup = false },
-                        ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Text(
-                                    text = "Estimated Due Date (EDD)",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
-                                Spacer(Modifier.height(4.dp))
-                                Text(
-                                    text = row.eddText ?: "Not calculated",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                )
-                                if (row.datingMethodText != null) {
-                                    Spacer(Modifier.height(2.dp))
-                                    Text(
-                                        text = "Method: ${row.datingMethodText}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    // Blood Group Badge
-                    BloodGroupBadge(
-                        bloodGroup = row.bloodGroup,
-                        isRhNegative = row.isRhNegative,
-                        isRhPositive = row.isRhPositive,
-                    )
-                }
-            }
-
-            // Clinical Attention note if present (Never truncated!)
-            if (row.clinicalAttention != null) {
-                Spacer(Modifier.height(6.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f))
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                ) {
-                    Icon(
-                        Icons.Default.Warning,
-                        contentDescription = "Clinical Attention",
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(16.dp),
-                    )
-                    Text(
-                        text = row.clinicalAttention,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        maxLines = 4,
-                        overflow = TextOverflow.Ellipsis,
-                    )
                 }
             }
         }
@@ -794,26 +799,22 @@ private fun BloodGroupBadge(
         return
     }
 
-    val containerColor = when {
-        isRhNegative -> MaterialTheme.colorScheme.errorContainer
-        isRhPositive -> MaterialTheme.colorScheme.tertiaryContainer
-        else -> MaterialTheme.colorScheme.surfaceVariant
-    }
-    val contentColor = when {
-        isRhNegative -> MaterialTheme.colorScheme.onErrorContainer
-        isRhPositive -> MaterialTheme.colorScheme.onTertiaryContainer
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    val (bgColor, borderColor, textColor) = when {
+        isRhNegative -> Triple(TagBloodNegativeBg, TagBloodNegativeBorder, TagBloodNegativeText)
+        isRhPositive -> Triple(TagBloodPositiveBg, TagBloodPositiveBorder, TagBloodPositiveText)
+        else -> Triple(TagBloodNeutralBg, TagBloodNeutralBorder, TagBloodNeutralText)
     }
 
     Surface(
         shape = RoundedCornerShape(6.dp),
-        color = containerColor,
+        color = bgColor,
+        border = BorderStroke(1.dp, borderColor),
     ) {
         Text(
             text = "🩸 $bloodGroup",
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
-            color = contentColor,
+            color = textColor,
             modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
         )
     }
@@ -824,27 +825,29 @@ private fun ClinicalRiskBadge(isHighRisk: Boolean) {
     if (isHighRisk) {
         Surface(
             shape = RoundedCornerShape(6.dp),
-            color = MaterialTheme.colorScheme.errorContainer,
+            color = TagHighRiskBg,
+            border = BorderStroke(1.dp, TagHighRiskBorder),
         ) {
             Text(
                 text = "⚠️ " + stringResource(R.string.high_risk),
-                color = MaterialTheme.colorScheme.onErrorContainer,
-                style = MaterialTheme.typography.labelMedium,
+                color = TagHighRiskText,
+                style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
             )
         }
     } else {
         Surface(
             shape = RoundedCornerShape(6.dp),
-            color = MaterialTheme.colorScheme.tertiaryContainer,
+            color = TagNormalRiskBg,
+            border = BorderStroke(1.dp, TagNormalRiskBorder),
         ) {
             Text(
                 text = stringResource(R.string.normal_risk_filter),
-                color = MaterialTheme.colorScheme.onTertiaryContainer,
-                style = MaterialTheme.typography.labelMedium,
+                color = TagNormalRiskText,
+                style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
             )
         }
     }

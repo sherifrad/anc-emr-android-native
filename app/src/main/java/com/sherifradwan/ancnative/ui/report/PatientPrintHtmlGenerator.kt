@@ -435,8 +435,8 @@ object PatientPrintHtmlGenerator {
                 gap: 8px !important;
             }
             .uniform-meta {
-                border-right: none !important;
-                padding-right: 0 !important;
+                border-left: none !important;
+                padding-left: 0 !important;
                 width: 100% !important;
             }
         }
@@ -451,12 +451,14 @@ object PatientPrintHtmlGenerator {
             .page-sheet {
                 margin: 0;
                 width: 210mm;
+                height: 297mm;
                 min-height: 297mm;
                 max-height: 297mm;
+                box-sizing: border-box;
                 box-shadow: none;
                 page-break-after: always;
                 break-after: page;
-                padding: 10mm 14mm 8mm 14mm;
+                padding: 8mm 12mm 6mm 12mm;
                 border-radius: 0;
                 overflow: hidden;
             }
@@ -475,8 +477,10 @@ object PatientPrintHtmlGenerator {
                 align-items: center !important;
             }
             .uniform-meta {
-                border-right: 2px solid var(--border-hairline) !important;
-                padding-right: 12px !important;
+                border-left: 2px solid var(--border-hairline) !important;
+                padding-left: 12px !important;
+                border-right: none !important;
+                padding-right: 0 !important;
                 width: auto !important;
             }
             .attestation-grid {
@@ -534,14 +538,14 @@ object PatientPrintHtmlGenerator {
 
         /* Header Meta: Perfectly uniform alignment */
         .uniform-meta {
-            text-align: right;
-            direction: rtl;
+            text-align: left;
+            direction: ltr;
             display: flex;
             flex-direction: column;
             gap: 2px;
             min-width: 175px;
-            border-right: 2px solid var(--border-hairline);
-            padding-right: 12px;
+            border-left: 2px solid var(--border-hairline);
+            padding-left: 12px;
         }
 
         .uniform-meta .doc-badge {
@@ -757,40 +761,50 @@ object PatientPrintHtmlGenerator {
         .history-row .k {
             color: var(--text-muted);
             font-weight: 600;
-            text-align: right;
+            text-align: left;
         }
 
         .history-row .v {
             color: var(--navy-primary);
             font-weight: 700;
-            text-align: left;
+            text-align: right;
             direction: ltr;
         }
 
-        /* Clinical Tables: Perfectly Centered Contents */
+        /* Clinical Tables: Perfectly Centered Contents, Zero-Overflow Fixed Layout */
         .clinical-table {
             width: 100%;
+            table-layout: fixed;
             border-collapse: collapse;
             font-size: 8pt;
             margin-top: 4px;
+            box-sizing: border-box;
         }
 
         .clinical-table th {
             background: #F1F5F9;
             color: var(--navy-primary);
             font-weight: 700;
-            padding: 6px 6px;
+            padding: 5px 4px;
             border: 1px solid var(--border-light);
             text-align: center !important;
             font-size: 7.5pt;
+            box-sizing: border-box;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         .clinical-table td {
-            padding: 6px 6px;
+            padding: 5px 4px;
             border: 1px solid var(--border-hairline);
             color: var(--text-main);
             text-align: center !important;
             vertical-align: middle;
+            box-sizing: border-box;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         .clinical-table tr:nth-child(even) {
@@ -798,8 +812,11 @@ object PatientPrintHtmlGenerator {
         }
 
         .mini-table th, .mini-table td {
-            padding: 4px 5px;
+            padding: 3px 4px;
             font-size: 7.5pt;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         .text-center { text-align: center !important; }
@@ -808,9 +825,16 @@ object PatientPrintHtmlGenerator {
         .text-rose { color: var(--rose-accent); }
         .text-teal { color: var(--teal-clinical); }
         .text-muted { color: var(--text-muted); }
-        .empty-cell { padding: 14px; color: var(--text-muted); font-style: italic; }
-        .date-cell { font-family: monospace; font-size: 8pt; }
-        .notes-cell { font-size: 7.8pt; line-height: 1.35; }
+        .empty-cell { padding: 12px; color: var(--text-muted); font-style: italic; }
+        .date-cell { font-family: monospace; font-size: 7.8pt; }
+        .notes-cell {
+            font-size: 7.2pt;
+            line-height: 1.25;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            max-width: 100%;
+        }
 
         .photo-badge {
             display: inline-block;

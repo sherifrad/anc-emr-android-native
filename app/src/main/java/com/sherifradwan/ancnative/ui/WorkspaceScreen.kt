@@ -1,7 +1,9 @@
 package com.sherifradwan.ancnative.ui
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -1656,26 +1658,44 @@ private fun ClinicalAttentionDialog(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    FilterChip(
-                        selected = selectedLevel == ClinicalAttentionLevel.CRITICAL,
-                        onClick = { selectedLevel = ClinicalAttentionLevel.CRITICAL },
-                        label = { Text("CRITICAL") },
-                        modifier = Modifier.weight(1f),
+                    val levels = listOf(
+                        Triple(ClinicalAttentionLevel.CRITICAL, "CRITICAL", MaterialTheme.colorScheme.error),
+                        Triple(ClinicalAttentionLevel.ALERT, "ALERT", MaterialTheme.colorScheme.tertiary),
+                        Triple(ClinicalAttentionLevel.NOTE, "NOTE", MaterialTheme.colorScheme.primary),
                     )
-                    FilterChip(
-                        selected = selectedLevel == ClinicalAttentionLevel.ALERT,
-                        onClick = { selectedLevel = ClinicalAttentionLevel.ALERT },
-                        label = { Text("ALERT") },
-                        modifier = Modifier.weight(1f),
-                    )
-                    FilterChip(
-                        selected = selectedLevel == ClinicalAttentionLevel.NOTE,
-                        onClick = { selectedLevel = ClinicalAttentionLevel.NOTE },
-                        label = { Text("NOTE") },
-                        modifier = Modifier.weight(1f),
-                    )
+                    levels.forEach { (lvl, title, color) ->
+                        val isSelected = selectedLevel == lvl
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (isSelected) color else color.copy(alpha = 0.08f),
+                            border = BorderStroke(
+                                width = if (isSelected) 2.dp else 1.dp,
+                                color = if (isSelected) color else color.copy(alpha = 0.35f),
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { selectedLevel = lvl },
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 10.dp, horizontal = 4.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = title,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isSelected) MaterialTheme.colorScheme.surface else color,
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                )
+                            }
+                        }
+                    }
                 }
 
                 OutlinedTextField(

@@ -35,7 +35,7 @@ class AncStateTest {
         assertEquals(firstPatient.visits.size + 1, saved.patient(firstPatient.id)?.visits?.size)
         assertEquals(secondPatient.visits, saved.patient(secondPatient.id)?.visits)
         val profileState = saved.reduce(AncEvent.OpenProfile(firstPatient.id))
-        assertEquals("Synthetic unit-test note", profileState.patient(firstPatient.id)?.visits?.first()?.notes)
+        assertEquals("Synthetic unit-test note", profileState.patient(firstPatient.id)?.visits?.find { it.id == newVisitId }?.notes)
     }
 
     @Test

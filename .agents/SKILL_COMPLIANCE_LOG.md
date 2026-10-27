@@ -137,3 +137,221 @@
   - `app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintManager.kt` (`sha256:86dcdbaa3003b843`)
   - `app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt` (`sha256:94db86201461e912`)
   - `app/src/test/java/com/sherifradwan/ancnative/report/PatientPrintHtmlGeneratorTest.kt` (`sha256:b9e5f52a7dd2351c`)
+
+
+---
+
+## 4. Automated Referee Proof (`--verify` executed at `2026-10-27T15:27:23Z`)
+* **Verdict**: `BLOCKED_BY_SKILL_VIOLATIONS` (**90%** — `9/10` gates passed)
+
+| Gate | Status | Deterministic Audit Proof |
+| :--- | :--- | :--- |
+| `G-02 (Spec & Call-Chain Map)` | **PASS** | Verified in SPEC_AND_AUDIT.md |
+| `G-03 (Phase 1.5 UI Mock)` | **PASS** | Found 1 mock artifact(s) |
+| `G-04 (Adversarial Diff Audit)` | **PASS** | Round 1 diff audit recorded in ledger. |
+| `G-05 (Interactive Scenario Mode A/B/C)` | **PASS** | Scenario mode choice documented. |
+| `G-06 (Fast-Forward Intake & Strict Incremental Entry)` | **PASS** | Strict incremental mutation pipeline verified (zero bulk mocks). |
+| `G-08 (3-Layer & Geometric E2E Oracle)` | **PASS** | 3-Layer Outcome Oracle recorded in ledger. |
+| `G-07 (SaMD Zero-Delete, RBAC & JVM Budget Linter)` | **PASS** | Zero hard-delete SQL, zero fragile RBAC string checks, and constructor budgets < 35 params. |
+| `G-10 (4-Pillar Design, Graphic, UI & UX Linter)` | **VIOLATION** | Design/UX linter reported blockers: {
+  "design_linter_status": "FAIL_DESIGN_BLOCKERS",
+  "files_scanned": 203,
+  "hard_blockers_count": 20,
+  "warnings_count": 0,
+  "hard_blockers": [
+    {
+      "pillar": "Pillar 1: Graphic & Design-Token Integrity",
+      "rule": "DESIGN-TOKEN-HARDCODED-COLOR",
+      "location": "app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:655",
+      "line": "color = Color(0xFFF3E8FF),",
+      "remediation": "Do not hardcode raw hex `Color(0xFF...)` inside UI screens or components. Reference semantic MaterialTheme.colorScheme.* or AppTheme tokens so Dark/Light and High-Contrast modes stay consistent."
+    },
+    {
+      "pillar": "Pillar 1: Graphic & Design-Token Integrity",
+      "rule": "DESIGN-TOKEN-HARDCODED-COLOR",
+      "location": "app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:656",
+      "line": "border = BorderStroke(1.dp, Color(0xFFDDD6FE)),",
+      "remediation": "Do not hardcode raw hex `Color(0xFF...)` inside UI screens or components. Reference semantic MaterialTheme.colorScheme.* or AppTheme tokens so Dark/Light and High-Contrast modes stay consistent."
+    },
+    {
+      "pillar": "Pillar 1: Graphic & Design-Token Integrity",
+      "rule": "DESIGN-TOKEN-HARDCODED-COLOR",
+      "location": "app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:662",
+      "line": "color = Color(0xFF6B21A8),",
+      "remediation": "Do not hardcode raw hex `Color(0xFF...)` inside UI screens or components. Reference semantic MaterialTheme.colorScheme.* or AppTheme tokens so Dark/Light and High-Contrast modes stay consistent."
+    },
+    {
+      "pillar": "Pillar 1: Graphic & Design-Token Integrity",
+      "rule": "DESIGN-TOKEN-HARDCODED-COLOR",
+      "location": "app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:671",
+      "line": "color = Color(0xFFE0F2FE),",
+      "remediation": "Do not hardcode raw hex `Color(0xFF...)` inside UI screens or components. Reference semantic MaterialTheme.colorScheme.* or AppTheme tokens so Dark/Light and High-Contrast modes stay consistent."
+    },
+    {
+      "pillar": "Pillar 1: Graphic & Design-Token Integrity",
+      "rule": "DESIGN-TOKEN-HARDCODED-COLOR",
+      "location": "app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:672",
+      "line": "border = BorderStroke(1.dp, Color(0xFFBAE6FD)),",
+      "remediation": "Do not hardcode raw hex `Color(0xFF...)` inside UI screens or components. Reference semantic MaterialTheme.colorScheme.* or AppTheme tokens so Dark/Light and High-Contrast modes stay consistent."
+    },
+    {
+      "pillar": "Pillar 1: Graphic & Design-Token Integrity",
+      "rule": "DESIGN-TOKEN-HARDCODED-COLOR",
+      "location": "app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:683",
+      "line": "tint = Color(0xFF0369A1),",
+      "remediation": "Do not hardcode raw hex `Color(0xFF...)` inside UI screens or components. Reference semantic MaterialTheme.colorScheme.* or AppTheme tokens so Dark/Light and High-Contrast modes stay consistent."
+    },
+    {
+      "pillar": "Pillar 1: Graphic & Design-Token Integrity",
+      "rule": "DESIGN-TOKEN-HARDCODED-COLOR",
+      "location": "app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:690",
+      "line": "color = Color(0xFF0369A1),",
+      "remediation": "Do not hardcode raw hex `Color(0xFF...)` inside UI screens or components. Reference semantic MaterialTheme.colorScheme.* or AppTheme tokens so Dark/Light and High-Contrast modes stay consistent."
+    },
+    {
+      "pillar": "Pillar 1: Graphic & Design-Token Integrity",
+      "rule": "DESIGN-TOKEN-HARDCODED-COLOR",
+      "location": "app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:741",
+      "line": ".background(Color(0xFFFEF3C7))",
+      "remediation": "Do not hardcode raw hex `Color(0xFF...)` inside UI screens or components. Reference semantic MaterialTheme.colorScheme.* or AppTheme tokens so Dark/Light and High-Contrast modes stay consistent."
+    },
+    {
+      "pillar": "Pillar 1: Graphic & Design-Token Integrity",
+      "rule": "DESIGN-TOKEN-HARDCODED-COLOR",
+      "location": "app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:742",
+      "line": ".border(1.dp, Color(0xFFFDE68A), RoundedCornerShape(6.dp))",
+      "remediation": "Do not hardcode raw hex `Color(0xFF...)` inside UI screens or components. Reference semantic MaterialTheme.colorScheme.* or AppTheme tokens so Dark/Light and High-Contrast modes stay consistent."
+    },
+    {
+      "pillar": "Pillar 1: Graphic & Design-Token Integrity",
+      "rule": "DESIGN-TOKEN-HARDCODED-COLOR",
+      "location": "app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:748",
+      "line": "tint = Color(0xFFB45309),",
+      "remediation": "Do not hardcode raw hex `Color(0xFF...)` inside UI screens or components. Reference semantic MaterialTheme.colorScheme.* or AppTheme tokens so Dark/Light and High-Contrast modes stay consistent."
+    },
+    {
+      "pillar": "Pillar 1: Graphic & Design-Token Integrity",
+      "rule": "DESIGN-TOKEN-HARDCODED-COLOR",
+      "location": "app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:755",
+      "line": "color = Color(0xFF92400E),",
+      "remediation": "Do not hardcode raw hex `Color(0xFF...)` inside UI screens or components. Reference semantic MaterialTheme.colorScheme.* or AppTheme tokens so Dark/Light and High-Contrast modes stay consistent."
+    },
+    {
+      "pillar": "Pillar 1: Graphic & Design-Token Integrity",
+      "rule": "DESIGN-TOKEN-HARDCODED-COLOR",
+      "location": "app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:803",
+      "line": "isRhNegative -> Triple(Color(0xFFFFE4E6), Color(0xFFFECDD3), Color(0xFFBE123C))",
+      "remediation": "Do not hardcode raw hex `Color(0xFF...)` inside UI screens or components. Reference semantic MaterialTheme.colorScheme.* or AppTheme tokens so Dark/Light and High-Contrast modes stay consistent."
+    },
+    {
+      "pillar": "Pillar 1: Graphic & Design-Token Integrity",
+      "rule": "DESIGN-TOKEN-HARDCODED-COLOR",
+      "location": "app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:804",
+      "line": "isRhPositive -> Triple(Color(0xFFEFF6FF), Color(0xFFBFDBFE), Color(0xFF1D4ED8))",
+      "remediation": "Do not hardcode raw hex `Color(0xFF...)` inside UI screens or components. Reference semantic MaterialTheme.colorScheme.* or AppTheme tokens so Dark/Light and High-Contrast modes stay consistent."
+    },
+    {
+      "pillar": "Pillar 1: Graphic & Design-Token Integrity",
+      "rule": "DESIGN-TOKEN-HARDCODED-COLOR",
+      "location": "app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:805",
+      "line": "else -> Triple(Color(0xFFF1F5F9), Color(0xFFCBD5E1), Color(0xFF334155))",
+      "remediation": "Do not hardcode raw hex `Color(0xFF...)` inside UI screens or components. Reference semantic MaterialTheme.colorScheme.* or AppTheme tokens so Dark/Light and High-Contrast modes stay consistent."
+    },
+    {
+      "pillar": "Pillar 1: Graphic & Design-Token Integrity",
+      "rule": "DESIGN-TOKEN-HARDCODED-COLOR",
+      "location": "app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:828",
+      "line": "color = Color(0xFFFEE2E2),",
+      "remediation": "Do not hardcode raw hex `Color(0xFF...)` inside UI screens or components. Reference semantic MaterialTheme.colorScheme.* or AppTheme tokens so Dark/Light and High-Contrast modes stay consistent."
+    },
+    {
+      "pillar": "Pillar 1: Graphic & Design-Token Integrity",
+      "rule": "DESIGN-TOKEN-HARDCODED-COLOR",
+      "location": "app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:829",
+      "line": "border = BorderStroke(1.dp, Color(0xFFFCA5A5)),",
+      "remediation": "Do not hardcode raw hex `Color(0xFF...)` inside UI screens or components. Reference semantic MaterialTheme.colorScheme.* or AppTheme tokens so Dark/Light and High-Contrast modes stay consistent."
+    },
+    {
+      "pillar": "Pillar 1: Graphic & Design-Token Integrity",
+      "rule": "DESIGN-TOKEN-HARDCODED-COLOR",
+      "location": "app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:833",
+      "line": "color = Color(0xFFDC2626),",
+      "remediation": "Do not hardcode raw hex `Color(0xFF...)` inside UI screens or components. Reference semantic MaterialTheme.colorScheme.* or AppTheme tokens so Dark/Light and High-Contrast modes stay consistent."
+    },
+    {
+      "pillar": "Pillar 1: Graphic & Design-Token Integrity",
+      "rule": "DESIGN-TOKEN-HARDCODED-COLOR",
+      "location": "app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:842",
+      "line": "color = Color(0xFFDCFCE7),",
+      "remediation": "Do not hardcode raw hex `Color(0xFF...)` inside UI screens or components. Reference semantic MaterialTheme.colorScheme.* or AppTheme tokens so Dark/Light and High-Contrast modes stay consistent."
+    },
+    {
+      "pillar": "Pillar 1: Graphic & Design-Token Integrity",
+      "rule": "DESIGN-TOKEN-HARDCODED-COLOR",
+      "location": "app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:843",
+      "line": "border = BorderStroke(1.dp, Color(0xFF86EFAC)),",
+      "remediation": "Do not hardcode raw hex `Color(0xFF...)` inside UI screens or components. Reference semantic MaterialTheme.colorScheme.* or AppTheme tokens so Dark/Light and High-Contrast modes stay consistent."
+    },
+    {
+      "pillar": "Pillar 1: Graphic & Design-Token Integrity",
+      "rule": "DESIGN-TOKEN-HARDCODED-COLOR",
+      "location": "app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:847",
+      "line": "color = Color(0xFF166534),",
+      "remediation": "Do not hardcode raw hex `Color(0xFF...)` inside UI screens or components. Reference semantic MaterialTheme.colorScheme.* or AppTheme tokens so Dark/Light and High-Contrast modes stay consistent."
+    }
+  ],
+  "warnings": [],
+  "ui_5_state_matrix_summary": {
+    "mocks_found": 1,
+    "states_coverage": {
+      "empty": true,
+      "loading": false,
+      "error_or_alert": true,
+      "rtl_or_bilingual": true,
+      "font_scale_or_overflow": true
+    },
+    "states_covered_count": 4,
+    "total_required_states": 5
+  }
+} |
+| `G-01 (Skill Ambassador Log)` | **PASS** | SKILL_COMPLIANCE_LOG.md active. |
+| `G-09 (Task Queue Sync)` | **PASS** | Found current_task.md (20 item(s) checked off [x]). |
+
+* **Cryptographic File Hashes Verified**:
+  - `app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt` (`sha256:69b3c4b04b881eed`)
+  - `app/src/main/java/com/sherifradwan/ancnative/storage/VaultController.kt` (`sha256:f36c2611083978f5`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt` (`sha256:7660878e93803838`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt` (`sha256:3fe3b6092c19c4f5`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt` (`sha256:a05b8a3bf56bb3c1`)
+  - `app/src/test/java/com/sherifradwan/ancnative/state/AncStateTest.kt` (`sha256:0897669371dbebd5`)
+  - `app/src/test/java/com/sherifradwan/ancnative/storage/EncryptedBackupTest.kt` (`sha256:e9fa3b0172d3cb50`)
+
+
+---
+
+## 4. Automated Referee Proof (`--verify` executed at `2026-10-27T15:28:41Z`)
+* **Verdict**: `APPROVED` (**100%** — `10/10` gates passed)
+
+| Gate | Status | Deterministic Audit Proof |
+| :--- | :--- | :--- |
+| `G-02 (Spec & Call-Chain Map)` | **PASS** | Verified in SPEC_AND_AUDIT.md |
+| `G-03 (Phase 1.5 UI Mock)` | **PASS** | Found 1 mock artifact(s) |
+| `G-04 (Adversarial Diff Audit)` | **PASS** | Round 1 diff audit recorded in ledger. |
+| `G-05 (Interactive Scenario Mode A/B/C)` | **PASS** | Scenario mode choice documented. |
+| `G-06 (Fast-Forward Intake & Strict Incremental Entry)` | **PASS** | Strict incremental mutation pipeline verified (zero bulk mocks). |
+| `G-08 (3-Layer & Geometric E2E Oracle)` | **PASS** | 3-Layer Outcome Oracle recorded in ledger. |
+| `G-07 (SaMD Zero-Delete, RBAC & JVM Budget Linter)` | **PASS** | Zero hard-delete SQL, zero fragile RBAC string checks, and constructor budgets < 35 params. |
+| `G-10 (4-Pillar Design, Graphic, UI & UX Linter)` | **PASS** | Zero hardcoded UI hex colors, valid SVG/Vector viewBox, RTL icon mirroring, and WCAG AA verified. |
+| `G-01 (Skill Ambassador Log)` | **PASS** | SKILL_COMPLIANCE_LOG.md active. |
+| `G-09 (Task Queue Sync)` | **PASS** | Found current_task.md (20 item(s) checked off [x]). |
+
+* **Cryptographic File Hashes Verified**:
+  - `.agents/SKILL_COMPLIANCE_LOG.md` (`sha256:f2bb9fc64d3a73ff`)
+  - `app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt` (`sha256:69b3c4b04b881eed`)
+  - `app/src/main/java/com/sherifradwan/ancnative/storage/VaultController.kt` (`sha256:f36c2611083978f5`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt` (`sha256:03f0b40dd3607109`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt` (`sha256:fc1caf5a9c24cfa7`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt` (`sha256:3fe3b6092c19c4f5`)
+  - `app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt` (`sha256:a05b8a3bf56bb3c1`)
+  - `app/src/test/java/com/sherifradwan/ancnative/state/AncStateTest.kt` (`sha256:0897669371dbebd5`)
+  - `app/src/test/java/com/sherifradwan/ancnative/storage/EncryptedBackupTest.kt` (`sha256:e9fa3b0172d3cb50`)
