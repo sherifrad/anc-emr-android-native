@@ -1,0 +1,3 @@
+ROLE: INDEPENDENT REVIEWER (read-only). You did not write this code. ALLOWED files: none. Reply with text only; do not modify anything.
+Review the CURRENT source against the spec oracles P1-P10: app/src/main/java/com/sherifradwan/ancnative/ui/{DeliveryNotesParser,ClinicalFormat,ClinicalBadges,Theme,WorkspaceScreen,ProfileScreen}.kt and the tests under app/src/test/.../ui/. The pre-change diff for comparison: .agents/work/uncommitted.diff.
+For each oracle say PASS/FAIL with a concrete input and your mental output for FAIL. Then list any NEW defect introduced by the fix (regressions, clinical data hidden or relabelled, changed wording). Severity: Hard Blocker / Should-fix / Nit. End with what you could not verify. Max 60 lines.

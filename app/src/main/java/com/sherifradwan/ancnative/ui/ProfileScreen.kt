@@ -327,19 +327,14 @@ private fun ProfileHeroIdentityCard(
                         textAlign = if (isArabic) TextAlign.End else TextAlign.Start,
                         modifier = Modifier.fillMaxWidth().semantics { heading() },
                     )
-                    if (patient.ageText != null) {
-                        Text(
-                            text = "${patient.ageText} yrs",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = if (isArabic) TextAlign.End else TextAlign.Start,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
+                    if (formatAgeYears(patient.ageText) != null) {
+                        Spacer(Modifier.height(6.dp))
+                        PatientAgeBadge(ageText = patient.ageText, large = true)
                     }
                 }
 
-                val isHighRisk = patient.riskLevel?.contains("High", ignoreCase = true) == true
-                if (isHighRisk) {
+                val highRisk = isHighRisk(patient.riskLevel)
+                if (highRisk) {
                     Surface(
                         shape = RoundedCornerShape(8.dp),
                         color = MaterialTheme.colorScheme.errorContainer,
@@ -418,8 +413,8 @@ private fun ProfileHeroIdentityCard(
             ) {
                 // 1. Blood Group
                 if (!patient.bloodGroupText.isNullOrBlank()) {
-                    val isRhNeg = patient.bloodGroupText.contains("-")
-                    val isRhPos = patient.bloodGroupText.contains("+")
+                    val isRhNeg = isRhNegative(patient.bloodGroupText)
+                    val isRhPos = isRhPositive(patient.bloodGroupText)
                     val bgContainer = when {
                         isRhNeg -> MaterialTheme.colorScheme.errorContainer
                         isRhPos -> MaterialTheme.colorScheme.tertiaryContainer
@@ -435,7 +430,7 @@ private fun ProfileHeroIdentityCard(
                         color = bgContainer,
                     ) {
                         Text(
-                            text = "🩸 ${patient.bloodGroupText}",
+                            text = formatBloodGroup(patient.bloodGroupText).orEmpty(),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color = bgText,
@@ -450,7 +445,7 @@ private fun ProfileHeroIdentityCard(
                     color = MaterialTheme.colorScheme.primaryContainer,
                 ) {
                     Text(
-                        text = "⏳ $gaFormatted",
+                        text = gaFormatted,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -478,7 +473,7 @@ private fun ProfileHeroIdentityCard(
                     color = MaterialTheme.colorScheme.surfaceVariant,
                 ) {
                     Text(
-                        text = "🤰 $prevSummary",
+                        text = prevSummary,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -493,7 +488,7 @@ private fun ProfileHeroIdentityCard(
                         color = MaterialTheme.colorScheme.surfaceContainerHigh,
                     ) {
                         Text(
-                            text = "📞 ${patient.phone}",
+                            text = patient.phone,
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
@@ -633,15 +628,17 @@ private fun ProfileDatingCard(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                 )
-                TextButton(
+                IconButton(
                     onClick = {
                         onEvent(AncEvent.StartDatingEditor(patient.id, UUID.randomUUID().toString()))
                     },
                     modifier = Modifier.minimumTouchTarget(),
                 ) {
-                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text(stringResource(R.string.edit_dating))
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = stringResource(R.string.edit_dating),
+                        modifier = Modifier.size(20.dp),
+                    )
                 }
             }
 
@@ -734,15 +731,17 @@ private fun ProfileObstetricCard(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                 )
-                TextButton(
+                IconButton(
                     onClick = {
                         onEvent(AncEvent.StartHistoriesEditor(patient.id, UUID.randomUUID().toString()))
                     },
                     modifier = Modifier.minimumTouchTarget(),
                 ) {
-                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text(stringResource(R.string.edit_history))
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = stringResource(R.string.edit_history),
+                        modifier = Modifier.size(20.dp),
+                    )
                 }
             }
 
@@ -1030,7 +1029,7 @@ private fun ProfileVisitCard(
                             color = MaterialTheme.colorScheme.secondaryContainer,
                         ) {
                             Text(
-                                text = "Ultrasound 📷",
+                                text = "Ultrasound",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
@@ -1140,7 +1139,7 @@ private fun ProfileVisitCard(
                                         modifier = Modifier.padding(vertical = 2.dp),
                                     ) {
                                         Text(
-                                            stringResource(R.string.photos_count, linkedScan.imageUris.size) + " 📷",
+                                            stringResource(R.string.photos_count, linkedScan.imageUris.size),
                                             style = MaterialTheme.typography.labelSmall,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.secondary,
@@ -1163,7 +1162,7 @@ private fun ProfileVisitCard(
                                                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                                                     ) {
                                                         Text(
-                                                            text = "📷 Photo ${idx + 1}",
+                                                            text = "Photo ${idx + 1}",
                                                             style = MaterialTheme.typography.labelMedium,
                                                             fontWeight = FontWeight.SemiBold,
                                                             color = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -1185,7 +1184,7 @@ private fun ProfileVisitCard(
                                         Text(stringResource(R.string.view_linked_ultrasound))
                                     }
                                     if (canEdit) {
-                                        TextButton(
+                                        IconButton(
                                             onClick = {
                                                 onEvent(
                                                     AncEvent.StartUltrasoundEditor(
@@ -1196,9 +1195,15 @@ private fun ProfileVisitCard(
                                                     ),
                                                 )
                                             },
-                                            modifier = Modifier.testTag("editLinkedScan-${linkedScan.id}"),
+                                            modifier = Modifier
+                                                .minimumTouchTarget()
+                                                .testTag("editLinkedScan-${linkedScan.id}"),
                                         ) {
-                                            Text(stringResource(R.string.edit_ultrasound))
+                                            Icon(
+                                                Icons.Default.Edit,
+                                                contentDescription = stringResource(R.string.edit_ultrasound),
+                                                modifier = Modifier.size(20.dp),
+                                            )
                                         }
                                     }
                                 }
@@ -1208,12 +1213,11 @@ private fun ProfileVisitCard(
                 }
 
                 if (canEdit) {
-                    OutlinedButton(
+                    PencilEditButton(
+                        contentDescription = stringResource(R.string.edit_visit),
+                        tag = "editVisit-${visit.id}",
                         onClick = onEdit,
-                        modifier = Modifier.minimumTouchTarget().testTag("editVisit-${visit.id}"),
-                    ) {
-                        Text(stringResource(R.string.edit_visit), maxLines = 1, softWrap = false)
-                    }
+                    )
                 }
             }
         }
@@ -1407,7 +1411,7 @@ private fun ProfileScanSnapshotCard(
                             modifier = Modifier.clickable { onViewPhotos(scan, 0) },
                         ) {
                             Text(
-                                text = "📷 ${scan.imageUris.size}",
+                                text = stringResource(R.string.photos_count, scan.imageUris.size),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -1436,14 +1440,14 @@ private fun ProfileScanSnapshotCard(
             ) {
                 if (!scan.fetalHeartRate.isNullOrBlank()) {
                     Text(
-                        text = "💓 FHR: ${scan.fetalHeartRate} bpm",
+                        text = "FHR: ${scan.fetalHeartRate} bpm",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
                     )
                 }
                 if (!scan.estimatedFetalWeight.isNullOrBlank()) {
                     Text(
-                        text = "⚖️ EFW: ${scan.estimatedFetalWeight} g",
+                        text = "EFW: ${scan.estimatedFetalWeight} g",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
                     )
@@ -1491,7 +1495,7 @@ private fun ProfileScanSnapshotCard(
                     if (scan.imageUris.isNotEmpty()) {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(
-                                text = "Scan Photos (${scan.imageUris.size}) 📷",
+                                text = "Scan Photos (${scan.imageUris.size})",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary,
@@ -1514,7 +1518,7 @@ private fun ProfileScanSnapshotCard(
                                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                                         ) {
                                             Text(
-                                                text = "📷 Photo ${idx + 1}",
+                                                text = "Photo ${idx + 1}",
                                                 style = MaterialTheme.typography.labelMedium,
                                                 fontWeight = FontWeight.SemiBold,
                                                 color = MaterialTheme.colorScheme.primary,
@@ -1904,7 +1908,7 @@ private fun ProfileDateGroupedLabCard(
                                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                                     ) {
                                         Text(
-                                            text = "📝 Note: ${lab.notes}",
+                                            text = "Note: ${lab.notes}",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         )

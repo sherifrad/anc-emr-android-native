@@ -1,0 +1,133 @@
+package com.sherifradwan.ancnative.ui
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+/** Spec-derived tests (O1-O3) for parseDeliveryNotes. Written from SPEC.md only. */
+class ParseDeliveryNotesSpecTest {
+
+    private fun DeliveryNoteSections.all(): List<String?> = listOf(hospital, fees, plan, postpartum)
+    private fun DeliveryNoteSections.joined(): String = all().filterNotNull().joinToString("\n")
+    private fun DeliveryNoteSections.countOf(line: String): Int =
+        all().filterNotNull().sumOf { sec -> sec.lines().count { it.contains(line.trim()) } }
+
+    private fun assertAllNull(s: DeliveryNoteSections) {
+        assertNull(s.hospital); assertNull(s.fees); assertNull(s.plan); assertNull(s.postpartum)
+    }
+
+    // ---- O1: null / blank ----
+    @Test fun nullNotes_allNull() = assertAllNull(parseDeliveryNotes(null))
+    @Test fun emptyNotes_allNull() = assertAllNull(parseDeliveryNotes(""))
+    @Test fun blankNotes_allNull() = assertAllNull(parseDeliveryNotes("   "))
+    @Test fun whitespaceOnlyMultiline_allNull() = assertAllNull(parseDeliveryNotes(" \n\t\n  \r\n"))
+
+    // ---- O1: lossless, exactly once ----
+    @Test fun everyNonEmptyLine_appearsExactlyOnce() {
+        val lines = listOf(
+            "Delivery hospital: Cairo Maternity Hospital",
+            "Fees: 25000 EGP package",
+            "Plan: elective CS at 39 weeks",
+            "Postpartum: start iron, review at 6 weeks",
+            "Patient prefers morning appointments",   // unclassifiable
+            "Husband will accompany her",              // unclassifiable
+        )
+        val s = parseDeliveryNotes(lines.joinToString("\n\n  \n"))
+        for (l in lines) assertEquals("line must appear exactly once: $l", 1, s.countOf(l))
+    }
+
+    @Test fun unclassifiedLine_isNotDropped() {
+        // Spec ambiguous on where unknown lines go; SAFE: they must be reachable somewhere.
+        val s = parseDeliveryNotes("Allergic to penicillin")
+        assertTrue(s.joined().contains("Allergic to penicillin"))
+    }
+
+    @Test fun multiLine_orderPreservedInsideSection() {
+        val s = parseDeliveryNotes("Plan: step one induction\nPlan: step two epidural\nPlan: step three monitoring")
+        val p = s.plan ?: s.joined()
+        val i1 = p.indexOf("step one"); val i2 = p.indexOf("step two"); val i3 = p.indexOf("step three")
+        assertTrue(i1 >= 0 && i1 < i2 && i2 < i3)
+    }
+
+    @Test fun crlfAndBlankLines_doNotLoseOrDuplicate() {
+        val s = parseDeliveryNotes("Plan: induction\r\n\r\nPostpartum: contraception counselling\r\n")
+        assertEquals(1, s.countOf("induction"))
+        assertEquals(1, s.countOf("contraception counselling"))
+    }
+
+    // ---- O2: no misfiling of history ----
+    @Test fun previousDelivery_notUnderPostpartum() {
+        val line = "Previous delivery was CS in 2019 complicated by PPH"
+        val s = parseDeliveryNotes(line)
+        assertFalse("history must not be shown as current postpartum note", (s.postpartum ?: "").contains(line))
+        assertTrue("must still be reachable", s.joined().contains(line))
+    }
+
+    @Test fun previousDischarge_notUnderPostpartum() {
+        val line = "Discharged day 2 after last pregnancy, previous discharge uneventful"
+        val s = parseDeliveryNotes(line)
+        assertFalse((s.postpartum ?: "").contains(line))
+        assertTrue(s.joined().contains(line))
+    }
+
+    @Test fun previousDeliveryArabic_notUnderPostpartum() {
+        val line = "ولادة سابقة قيصرية عام 2019"
+        val s = parseDeliveryNotes(line)
+        assertFalse((s.postpartum ?: "").contains(line))
+        assertTrue(s.joined().contains(line))
+    }
+
+    @Test fun hospitalAndFeeInOneLine_notLost() {
+        // Spec: O2 says not lost; O3 says fee sentence not returned as hospital.
+        // SAFE: line is in hospital or fees, exactly once.
+        val line = "Hospital: Dar Al Fouad, fee 30000 EGP"
+        val s = parseDeliveryNotes(line)
+        assertEquals(1, s.countOf(line))
+    }
+
+    // ---- O3: hospital purity ----
+    @Test fun feeOnlyLine_isNotHospital() {
+        val s = parseDeliveryNotes("Fees: 25000 EGP, deposit paid")
+        assertFalse((s.hospital ?: "").contains("25000"))
+        assertTrue(s.joined().contains("25000"))
+    }
+
+    @Test fun clinicalSentence_isNotHospital() {
+        val s = parseDeliveryNotes("Severe preeclampsia, BP 160/110, admit for steroids")
+        assertFalse((s.hospital ?: "").contains("preeclampsia"))
+        assertTrue(s.joined().contains("preeclampsia"))
+    }
+
+    @Test fun noHospitalMentioned_hospitalNull() {
+        val s = parseDeliveryNotes("Plan: induce at 40 weeks")
+        assertNull(s.hospital)
+    }
+
+    @Test fun hospitalLine_returnedAsHospital() {
+        val s = parseDeliveryNotes("Hospital: Cairo Maternity Hospital")
+        assertTrue((s.hospital ?: "").contains("Cairo Maternity Hospital"))
+    }
+
+    // ---- keywords: case, Arabic ----
+    @Test fun mixedCaseKeywords_stillClassified() {
+        val s = parseDeliveryNotes("HOSPITAL: Nile Badrawi\nfEeS: 20000 EGP\nPLAN: elective CS\nPOSTPARTUM: review at 2 weeks")
+        assertTrue((s.hospital ?: "").contains("Nile Badrawi"))
+        assertTrue((s.fees ?: "").contains("20000"))
+        assertTrue((s.plan ?: "").contains("elective CS"))
+        assertTrue((s.postpartum ?: "").contains("review at 2 weeks"))
+    }
+
+    @Test fun arabicLine_notDropped() {
+        // Arabic keyword support is unspecified; SAFE: never dropped, never duplicated.
+        val line = "المستشفى: دار الفؤاد - الرسوم 30000 جنيه"
+        val s = parseDeliveryNotes(line)
+        assertEquals(1, s.countOf(line))
+    }
+
+    @Test fun surroundingWhitespace_doesNotCreateEmptyStringSections() {
+        val s = parseDeliveryNotes("\n\n  Plan: induction  \n\n")
+        for (sec in s.all()) if (sec != null) assertTrue("no blank non-null sections", sec.isNotBlank())
+    }
+}

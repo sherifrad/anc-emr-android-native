@@ -135,10 +135,10 @@ fun projectDashboardRow(patient: DemoPatient): PatientDashboardRowProjection {
     }
 
     val bg = patient.bloodGroupText?.trim()
-    val isRhNeg = bg != null && bg.contains("-")
-    val isRhPos = bg != null && bg.contains("+")
+    val isRhNeg = isRhNegative(bg)
+    val isRhPos = isRhPositive(bg)
 
-    val isHigh = patient.riskLevel?.contains("High", ignoreCase = true) == true
+    val isHigh = isHighRisk(patient.riskLevel)
 
     return PatientDashboardRowProjection(
         id = patient.id,
@@ -163,8 +163,7 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
     val visibleList = remember(state.patients, state.searchQuery) { state.visiblePatients() }
     var riskFilter by remember { mutableStateOf("all") } // "all", "high", "normal"
 
-    fun isPatientHighRisk(risk: String?): Boolean =
-        risk?.contains("High", ignoreCase = true) == true
+    fun isPatientHighRisk(risk: String?): Boolean = isHighRisk(risk)
 
     val filteredList = remember(visibleList, riskFilter) {
         when (riskFilter) {
@@ -784,37 +783,13 @@ private fun PatientClinicalRow(
 }
 
 @Composable
-private fun PatientAgeBadge(ageText: String?) {
-    if (ageText.isNullOrBlank()) return
-    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-    val (bgColor, borderColor, textColor) = if (isDark) {
-        Triple(TagAgeDarkBg, TagAgeDarkBorder, TagAgeDarkText)
-    } else {
-        Triple(TagAgeBg, TagAgeBorder, TagAgeText)
-    }
-
-    Surface(
-        shape = RoundedCornerShape(6.dp),
-        color = bgColor,
-        border = BorderStroke(1.dp, borderColor),
-    ) {
-        Text(
-            text = "$ageText yrs",
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = textColor,
-            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
-        )
-    }
-}
-
-@Composable
 private fun BloodGroupBadge(
     bloodGroup: String?,
     isRhNegative: Boolean,
     isRhPositive: Boolean,
 ) {
-    if (bloodGroup.isNullOrBlank()) {
+    val display = formatBloodGroup(bloodGroup)
+    if (display == null) {
         Surface(
             shape = RoundedCornerShape(6.dp),
             color = MaterialTheme.colorScheme.surfaceVariant,
@@ -842,7 +817,7 @@ private fun BloodGroupBadge(
         border = BorderStroke(1.dp, borderColor),
     ) {
         Text(
-            text = "🩸 $bloodGroup",
+            text = display,
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
             color = textColor,
@@ -865,13 +840,24 @@ private fun ClinicalRiskBadge(isHighRisk: Boolean) {
             color = bgColor,
             border = BorderStroke(1.dp, borderColor),
         ) {
-            Text(
-                text = "⚠️ " + stringResource(R.string.high_risk),
-                color = textColor,
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-            )
+            ) {
+                Icon(
+                    Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = textColor,
+                    modifier = Modifier.size(14.dp),
+                )
+                Text(
+                    text = stringResource(R.string.high_risk),
+                    color = textColor,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
         }
     } else {
         val (bgColor, borderColor, textColor) = if (isDark) {

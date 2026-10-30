@@ -571,14 +571,13 @@ private fun LazyListScope.workspaceContentItems(
         }
         if (patient.status != "archived") {
             item {
-                Button(
+                PencilEditButton(
+                    contentDescription = stringResource(R.string.edit_other_histories),
+                    tag = "editHistories",
                     onClick = {
                         onEvent(AncEvent.StartHistoriesEditor(patient.id, UUID.randomUUID().toString()))
                     },
-                    modifier = Modifier.minimumTouchTarget().testTag("editHistories"),
-                ) {
-                    Text(stringResource(R.string.edit_other_histories))
-                }
+                )
             }
         }
     } else if (section == WorkspaceSection.OBSTETRIC_HISTORY) {
@@ -623,7 +622,9 @@ private fun LazyListScope.workspaceContentItems(
         }
         if (patient.status != "archived") {
             item {
-                Button(
+                PencilEditButton(
+                    contentDescription = stringResource(R.string.edit_dating),
+                    tag = "editDating",
                     onClick = {
                         onEvent(
                             AncEvent.StartDatingEditor(
@@ -632,10 +633,7 @@ private fun LazyListScope.workspaceContentItems(
                             ),
                         )
                     },
-                    modifier = Modifier.minimumTouchTarget().testTag("editDating"),
-                ) {
-                    Text(stringResource(R.string.edit_dating))
-                }
+                )
             }
         }
     } else if (section == WorkspaceSection.ULTRASOUND) {
@@ -821,13 +819,24 @@ private fun VisitCard(
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text(
-                        text = "⚠️ $linkIntegrityWarning",
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    )
+                    ) {
+                        Icon(
+                            Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.size(14.dp),
+                        )
+                        Text(
+                            text = linkIntegrityWarning,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
                 }
             }
             FactRow(R.string.blood_pressure, visit.bloodPressure, isEmphasized = true)
@@ -888,7 +897,7 @@ private fun VisitCard(
                                     modifier = Modifier.padding(vertical = 2.dp),
                                 ) {
                                     Text(
-                                        stringResource(R.string.photos_count, linkedScan.imageUris.size) + " 📷",
+                                        stringResource(R.string.photos_count, linkedScan.imageUris.size),
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.secondary,
@@ -911,7 +920,7 @@ private fun VisitCard(
                                                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                                                 ) {
                                                     Text(
-                                                        text = "📷 Photo ${idx + 1}",
+                                                        text = "Photo ${idx + 1}",
                                                         style = MaterialTheme.typography.labelMedium,
                                                         fontWeight = FontWeight.SemiBold,
                                                         color = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -933,7 +942,7 @@ private fun VisitCard(
                                     Text(stringResource(R.string.view_linked_ultrasound))
                                 }
                                 if (canEdit) {
-                                    TextButton(
+                                    IconButton(
                                         onClick = {
                                             onEvent(
                                                 AncEvent.StartUltrasoundEditor(
@@ -944,9 +953,15 @@ private fun VisitCard(
                                                 ),
                                             )
                                         },
-                                        modifier = Modifier.testTag("editLinkedScan-${linkedScan.id}"),
+                                        modifier = Modifier
+                                            .minimumTouchTarget()
+                                            .testTag("editLinkedScan-${linkedScan.id}"),
                                     ) {
-                                        Text(stringResource(R.string.edit_ultrasound))
+                                        Icon(
+                                            Icons.Default.Edit,
+                                            contentDescription = stringResource(R.string.edit_ultrasound),
+                                            modifier = Modifier.size(20.dp),
+                                        )
                                     }
                                 }
                             }
@@ -956,12 +971,11 @@ private fun VisitCard(
             }
 
             if (canEdit) {
-                OutlinedButton(
+                PencilEditButton(
+                    contentDescription = stringResource(R.string.edit_visit),
+                    tag = "editVisit-${visit.id}",
                     onClick = onEdit,
-                    modifier = Modifier.minimumTouchTarget().testTag("editVisit-${visit.id}"),
-                ) {
-                    Text(stringResource(R.string.edit_visit), maxLines = 1, softWrap = false)
-                }
+                )
             }
         }
     }
@@ -1005,11 +1019,15 @@ private fun PreviousPregnancyCard(
             FactRow(R.string.termination_method, pregnancy.terminationMethod)
             FactRow(R.string.clinician_id, pregnancy.clinicianId)
             if (canEdit) {
-                OutlinedButton(
-                    onClick = onEdit,
-                    modifier = Modifier.minimumTouchTarget().testTag("editPregnancy-${pregnancy.id}"),
-                ) {
-                    Text(stringResource(R.string.correct_previous_pregnancy))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(
+                        onClick = onEdit,
+                        modifier = Modifier
+                            .minimumTouchTarget()
+                            .testTag("editPregnancy-${pregnancy.id}"),
+                    ) {
+                        Text(stringResource(R.string.correct_previous_pregnancy))
+                    }
                 }
             }
         }
@@ -1113,13 +1131,24 @@ private fun UltrasoundCard(
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text(
-                        text = "⚠️ $linkIntegrityWarning",
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    )
+                    ) {
+                        Icon(
+                            Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.size(14.dp),
+                        )
+                        Text(
+                            text = linkIntegrityWarning,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
                 }
             }
             Row(
@@ -1136,13 +1165,13 @@ private fun UltrasoundCard(
                             modifier = Modifier.testTag("openLinkedVisit-${scan.id}"),
                         ) {
                             Text(
-                                text = "🔗 " + linkedVisit.date,
+                                text = linkedVisit.date,
                                 style = MaterialTheme.typography.labelMedium,
                             )
                         }
                     } else {
                         Text(
-                            text = "🔗 " + (linkedVisit?.date ?: stringResource(R.string.link_to_visit)),
+                            text = linkedVisit?.date ?: stringResource(R.string.link_to_visit),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.tertiary,
                         )
@@ -1176,7 +1205,7 @@ private fun UltrasoundCard(
 
             if (!scan.impression.isNullOrBlank()) FactRow(R.string.scan_impression, scan.impression)
             if (scan.imageUris.isNotEmpty()) {
-                FactRow(R.string.scan_attachments, stringResource(R.string.photos_count, scan.imageUris.size) + " 📷")
+                FactRow(R.string.scan_attachments, stringResource(R.string.photos_count, scan.imageUris.size))
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -1196,7 +1225,7 @@ private fun UltrasoundCard(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                             ) {
                                 Text(
-                                    text = "📷 Photo ${idx + 1}",
+                                    text = "Photo ${idx + 1}",
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -1207,12 +1236,11 @@ private fun UltrasoundCard(
                 }
             }
             if (canEdit) {
-                OutlinedButton(
+                PencilEditButton(
+                    contentDescription = stringResource(R.string.edit_ultrasound),
+                    tag = "editUltrasound-${scan.id}",
                     onClick = onEdit,
-                    modifier = Modifier.minimumTouchTarget().testTag("editUltrasound-${scan.id}"),
-                ) {
-                    Text(stringResource(R.string.edit_ultrasound))
-                }
+                )
             }
         }
     }
@@ -1328,14 +1356,17 @@ private fun DeliveryPlanningCard(
     patient: DemoPatient,
     onEditPatient: () -> Unit,
 ) {
+    val sections = remember(patient.obstetricNotes) { parseDeliveryNotes(patient.obstetricNotes) }
+    val latestScan = patient.ultrasoundScans.maxByOrNull { it.date }
+    val rhNegative = isRhNegative(patient.bloodGroupText)
+
     Card(
         modifier = Modifier.fillMaxWidth().testTag("deliveryPlanningCard"),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
     ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -1343,48 +1374,96 @@ private fun DeliveryPlanningCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.weight(1f).semantics { heading() },
                 )
-                OutlinedButton(
+                IconButton(
                     onClick = onEditPatient,
-                    modifier = Modifier.minimumTouchTarget(),
+                    modifier = Modifier.testTag("editDeliveryPlan"),
                 ) {
-                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("Edit Delivery Plan")
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = stringResource(R.string.edit_delivery_plan),
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
                 }
             }
+
             Text(
                 text = stringResource(R.string.delivery_planning_notice),
-                color = MaterialTheme.colorScheme.tertiary,
                 style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            FactRow(R.string.blood_group, patient.bloodGroupText)
-            FactRow(R.string.agreed_edd, patient.dating?.agreedEdd ?: patient.dating?.ultrasoundEdd)
-            FactRow(R.string.current_gestational_age, patient.dating?.calculateGestationalAge())
-            FactRow(R.string.manual_risk, patient.riskLevel)
-            val latestScan = patient.ultrasoundScans.maxByOrNull { it.date }
-            FactRow(R.string.fetal_presentation, latestScan?.presentation)
-            FactRow(R.string.placental_site, latestScan?.placentalSite)
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+            // Key clinical facts: label above, bold value, each in its own tile
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                KeyFactTile(
+                    label = stringResource(R.string.blood_group),
+                    value = formatBloodGroup(patient.bloodGroupText),
+                    emphasize = rhNegative,
+                    modifier = Modifier.weight(1f),
+                )
+                KeyFactTile(
+                    label = stringResource(R.string.current_gestational_age),
+                    value = patient.dating?.calculateGestationalAge(),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                KeyFactTile(
+                    label = stringResource(R.string.agreed_edd),
+                    value = patient.dating?.agreedEdd ?: patient.dating?.ultrasoundEdd,
+                    modifier = Modifier.weight(1f),
+                )
+                KeyFactTile(
+                    label = stringResource(R.string.manual_risk),
+                    value = patient.riskLevel,
+                    emphasize = isHighRisk(patient.riskLevel),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                KeyFactTile(
+                    label = stringResource(R.string.fetal_presentation),
+                    value = latestScan?.presentation,
+                    modifier = Modifier.weight(1f),
+                )
+                KeyFactTile(
+                    label = stringResource(R.string.placental_site),
+                    value = latestScan?.placentalSite,
+                    modifier = Modifier.weight(1f),
+                )
+            }
 
-            // Financial Agreement & Delivery Fee Section
-            Text(
-                text = "Delivery Fee & Financial Agreement",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
+            HorizontalDivider()
+
+            DeliverySectionBox(
+                title = "Agreed Delivery Hospital",
+                value = sections.hospital,
+                tone = DeliveryTone.HOSPITAL,
+                placeholder = "Hospital not agreed yet",
+                modifier = Modifier.testTag("deliveryHospital"),
             )
-            val feeInfo = patient.obstetricNotes?.lineSequence()
-                ?.firstOrNull { it.contains("fee", ignoreCase = true) || it.contains("agreement", ignoreCase = true) || it.contains("cost", ignoreCase = true) }
-
-            FactRow(
-                label = "Agreed Delivery Fee & Hospital",
-                value = feeInfo ?: "To be agreed at clinic based on hospital and delivery mode (NVD / CS)",
+            DeliverySectionBox(
+                title = "Agreed Delivery Fees",
+                value = sections.fees,
+                tone = DeliveryTone.FEE,
+                placeholder = "To be agreed based on hospital and delivery mode (NVD / CS)",
+                modifier = Modifier.testTag("deliveryFees"),
             )
-            FactRow(
-                label = "Delivery Plan & Clinical Notes",
-                value = patient.obstetricNotes?.takeIf { it.isNotBlank() } ?: "No additional notes recorded yet",
+            DeliverySectionBox(
+                title = "Delivery Plan",
+                value = sections.plan,
+                tone = DeliveryTone.PLAN,
+                placeholder = "No delivery plan recorded yet",
+                modifier = Modifier.testTag("deliveryPlan"),
+            )
+            DeliverySectionBox(
+                title = "Postpartum Note",
+                value = sections.postpartum,
+                tone = DeliveryTone.POSTPARTUM,
+                placeholder = "No postpartum note recorded yet",
+                modifier = Modifier.testTag("deliveryPostpartum"),
             )
         }
     }
@@ -1436,12 +1515,11 @@ private fun LabCard(
             FactRow(R.string.reference_range, lab.referenceRange)
             FactRow(R.string.notes, lab.notes)
             if (canEdit) {
-                OutlinedButton(
+                PencilEditButton(
+                    contentDescription = stringResource(R.string.edit_lab),
+                    tag = "editLab-${lab.id}",
                     onClick = onEdit,
-                    modifier = Modifier.minimumTouchTarget().testTag("editLab-${lab.id}"),
-                ) {
-                    Text(stringResource(R.string.edit_lab))
-                }
+                )
             }
         }
     }
@@ -1573,11 +1651,11 @@ private fun ClinicalAttentionBanner(
                 ) {
                     IconButton(
                         onClick = onEdit,
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.minimumTouchTarget(),
                     ) {
                         Icon(
                             Icons.Default.Edit,
-                            contentDescription = "Edit Clinical Alerts",
+                            contentDescription = stringResource(R.string.edit_clinical_alerts),
                             tint = contentColor,
                             modifier = Modifier.size(16.dp),
                         )
@@ -1864,7 +1942,7 @@ private fun AttachmentsSectionCard(
                                             contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                                         )
                                     } else {
-                                        Text("📷", fontSize = 24.sp)
+                                        Text("—", fontSize = 24.sp)
                                     }
                                 }
 
@@ -1961,7 +2039,6 @@ private fun AttachmentsSectionCard(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                                 ) {
-                                    Text("📷", style = MaterialTheme.typography.bodySmall)
                                     Text(
                                         text = "Photo ${idx + 1}",
                                         style = MaterialTheme.typography.labelSmall,
@@ -2025,12 +2102,11 @@ private fun MedicationCard(med: DemoMedicationRecord, canEdit: Boolean, onEdit: 
             }
             FactRow(R.string.notes, med.notes)
             if (canEdit) {
-                OutlinedButton(
+                PencilEditButton(
+                    contentDescription = stringResource(R.string.edit_medication),
+                    tag = "editMedication-${med.id}",
                     onClick = onEdit,
-                    modifier = Modifier.minimumTouchTarget().testTag("editMedication-${med.id}"),
-                ) {
-                    Text(stringResource(R.string.edit_medication))
-                }
+                )
             }
         }
     }
@@ -2061,4 +2137,23 @@ fun WorkspaceSection.labelResource(): Int = when (this) {
     WorkspaceSection.MEDICATIONS -> R.string.medications
     WorkspaceSection.DELIVERY -> R.string.delivery
     WorkspaceSection.ATTACHMENTS -> R.string.attachments
+}
+
+/** Global compact edit affordance: a right-aligned pencil icon button. */
+@Composable
+internal fun PencilEditButton(
+    contentDescription: String,
+    tag: String,
+    onClick: () -> Unit,
+) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        IconButton(onClick = onClick, modifier = Modifier.testTag(tag)) {
+            Icon(
+                Icons.Default.Edit,
+                contentDescription = contentDescription,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+    }
 }
