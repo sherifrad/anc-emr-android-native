@@ -94,6 +94,7 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
             AncEvent.SubmitMedication -> saveMedication(isChained = false)
             AncEvent.SubmitMedicationAndAddAnother -> saveMedication(isChained = true)
             is AncEvent.AddAttachment -> addAttachment(event)
+            is AncEvent.ImportScanPhoto -> importScanPhoto(event)
             is AncEvent.DeleteAttachment -> deleteAttachment(event)
             else -> {
                 if (event.clearsFrozenVisit()) frozenVisitCommand = null
@@ -108,14 +109,54 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private fun addAttachment(event: AncEvent.AddAttachment) {
-        val unlocked = _state.value.vaultState as? VaultState.Unlocked ?: return
+    /** Deletes leftover camera files older than an hour that no saved scan (or open draft) still points at. */
+    private fun sweepStaleCaptures() {
+        val current = _state.value
+        val referenced = current.patients.flatMap { p -> p.ultrasoundScans.flatMap { it.imageUris } }.toSet() +
+            current.ultrasoundDraft?.values?.imageUris.orEmpty()
+        com.sherifradwan.ancnative.storage.CameraCaptureHelper.clearStaleCaptures(getApplication(), 60L * 60 * 1000, referenced)
+    }
+
+    private fun importScanPhoto(event: AncEvent.ImportScanPhoto) {
+        if (_state.value.vaultState !is VaultState.Unlocked) {
+            com.sherifradwan.ancnative.storage.CameraCaptureHelper.deleteIfCaptureTemp(getApplication(), event.sourceUri)
+            return
+        }
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
+                sweepStaleCaptures()
+                val saved = com.sherifradwan.ancnative.storage.PatientAttachmentVault.saveAttachment(
+                    context = getApplication(),
+                    patientId = event.patientId,
+                    sourceUri = event.sourceUri,
+                    preset = event.preset,
+                )
+                dispatch(AncEvent.ScanPhotoImported(event.patientId, com.sherifradwan.ancnative.storage.scanPhotoRef(saved.fileName)))
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                android.util.Log.e("AncViewModel", "Failed to import scan photo", e)
+                dispatch(AncEvent.AttachmentFailed(AttachmentError.SAVE_FAILED))
+            } finally {
+                com.sherifradwan.ancnative.storage.CameraCaptureHelper.deleteIfCaptureTemp(getApplication(), event.sourceUri)
+            }
+        }
+    }
+
+    private fun addAttachment(event: AncEvent.AddAttachment) {
+        val unlocked = _state.value.vaultState as? VaultState.Unlocked
+        if (unlocked == null) {
+            com.sherifradwan.ancnative.storage.CameraCaptureHelper.deleteIfCaptureTemp(getApplication(), event.sourceUri)
+            return
+        }
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                sweepStaleCaptures()
                 val savedResult = com.sherifradwan.ancnative.storage.PatientAttachmentVault.saveAttachment(
                     context = getApplication(),
                     patientId = event.patientId,
                     sourceUri = event.sourceUri,
+                    preset = event.preset,
                 )
                 val demoAttachment = com.sherifradwan.ancnative.model.DemoAttachment(
                     id = savedResult.attachmentId,
@@ -144,6 +185,8 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
             } catch (e: Exception) {
                 android.util.Log.e("AncViewModel", "Failed to save attachment", e)
                 dispatch(AncEvent.AttachmentFailed(AttachmentError.SAVE_FAILED))
+            } finally {
+                com.sherifradwan.ancnative.storage.CameraCaptureHelper.deleteIfCaptureTemp(getApplication(), event.sourceUri)
             }
         }
     }

@@ -231,6 +231,7 @@ fun WorkspaceScreen(
 
         if (viewingPhotoScan != null) {
             UltrasoundPhotoViewerDialog(
+                patientId = patient.id,
                 scan = viewingPhotoScan!!,
                 initialIndex = viewingPhotoIndex,
                 onDismiss = { viewingPhotoScan = null },
@@ -260,13 +261,14 @@ fun WorkspaceScreen(
             AddAttachmentDialog(
                 patient = patient,
                 onDismiss = { showAddAttachmentDialog = false },
-                onSave = { uri, category, title ->
+                onSave = { uri, category, title, preset ->
                     onEvent(
                         AncEvent.AddAttachment(
                             patientId = patient.id,
                             sourceUri = uri,
                             category = category,
                             title = title,
+                            preset = preset,
                         ),
                     )
                     showAddAttachmentDialog = false

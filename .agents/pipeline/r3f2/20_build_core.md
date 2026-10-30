@@ -1,0 +1,4 @@
+ROLE: CORE BUILDER for ROUND 3f-2. Implement Q54, Q55, Q56, Q57. Make the tests and checks pass without editing them.
+ALLOWED files (app/src/main/java/com/sherifradwan/ancnative/): storage/PhotoQuality.kt (NEW), storage/PatientAttachmentVault.kt, storage/CameraCaptureHelper.kt, state/AncState.kt, state/AncViewModel.kt.
+Reuse existing functions (CameraCaptureHelper's naming rule, the existing compressor); no second copy of any rule. deleteIfCaptureTemp must compare canonical paths and only delete files inside cacheDir/camera.
+Run: ./gradlew --offline :app:testDebugUnitTest (whole suite), python3 .agents/checks/check_r3f2.py (S40 and the core parts of S41/S42 are yours), every older .agents/checks/check_r3*.py, ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin. Report real results and assumptions.

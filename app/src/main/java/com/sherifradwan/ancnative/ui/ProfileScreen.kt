@@ -272,6 +272,7 @@ fun ProfileScreen(
 
         if (viewingPhotoScan != null) {
             UltrasoundPhotoViewerDialog(
+                patientId = patient.id,
                 scan = viewingPhotoScan!!,
                 initialIndex = viewingPhotoIndex,
                 onDismiss = { viewingPhotoScan = null },

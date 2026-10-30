@@ -1,0 +1,3 @@
+ROLE: CORE BUILDER for ROUND 3f-3. Implement Q61 in app/src/main/java/com/sherifradwan/ancnative/storage/BoundedBitmap.kt (and PatientAttachmentVault.kt only if it needs a change; it should not). Make the tests and checks pass without editing them.
+Pure exifTransform first (it is unit-tested); then the Matrix application after the bounded decode; EXIF read failures mean normal. Do not change the decode limits or the sample-size rule.
+Run: ./gradlew --offline :app:testDebugUnitTest (whole suite), python3 .agents/checks/check_r3f3.py (S43 core part), every older .agents/checks/check_r3*.py, ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin. Report real results and assumptions.

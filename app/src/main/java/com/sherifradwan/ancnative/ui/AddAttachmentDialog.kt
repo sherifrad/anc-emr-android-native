@@ -1,7 +1,5 @@
 package com.sherifradwan.ancnative.ui
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -19,10 +17,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Close
@@ -39,6 +40,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,68 +51,66 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.core.content.ContextCompat
+import androidx.compose.ui.res.stringResource
+import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.storage.AttachmentCategories
 import com.sherifradwan.ancnative.storage.BoundedBitmap
 import com.sherifradwan.ancnative.storage.CameraCaptureHelper
+import com.sherifradwan.ancnative.storage.PhotoQualityPreset
 
 @Composable
 fun AddAttachmentDialog(
     patient: DemoPatient,
     initialCategory: String = AttachmentCategories.ULTRASOUND,
     onDismiss: () -> Unit,
-    onSave: (sourceUri: Uri, category: String, title: String?) -> Unit,
+    onSave: (sourceUri: Uri, category: String, title: String?, preset: PhotoQualityPreset) -> Unit,
 ) {
     val context = LocalContext.current
+    val scrollState = rememberScrollState()
     var selectedCategory by remember { mutableStateOf(initialCategory) }
     var titleText by remember { mutableStateOf("") }
     var selectedUri by remember { mutableStateOf<Uri?>(null) }
-    var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
+    var showCamera by remember { mutableStateOf(false) }
+    var chosenPreset by remember { mutableStateOf<PhotoQualityPreset?>(null) }
+    val preset = chosenPreset ?: PhotoQualityPreset.defaultFor(selectedCategory)
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
     ) { uri: Uri? ->
         if (uri != null) {
+            selectedUri?.let { old -> if (old != uri) CameraCaptureHelper.deleteIfCaptureTemp(context, old) }
             selectedUri = uri
         }
     }
 
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture(),
-    ) { success ->
-        if (success && pendingCameraUri != null) {
-            selectedUri = pendingCameraUri
+    // An unsent camera photo is deleted when the dialog goes away (Cancel, back, app lock);
+    // deleteIfCaptureTemp ignores gallery URIs.
+    var sent by remember { mutableStateOf(false) }
+    DisposableEffect(Unit) {
+        onDispose {
+            // Delegated state is read directly so disposal sees the current values.
+            val pending = selectedUri
+            if (!sent && pending != null) CameraCaptureHelper.deleteIfCaptureTemp(context, pending)
         }
     }
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { isGranted ->
-        val tempUri = CameraCaptureHelper.createCameraTempUri(context)
-        pendingCameraUri = tempUri
-        cameraLauncher.launch(tempUri)
-    }
-
-    fun launchCamera() {
-        val hasPermission = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.CAMERA,
-        ) == PackageManager.PERMISSION_GRANTED
-
-        if (hasPermission) {
-            val tempUri = CameraCaptureHelper.createCameraTempUri(context)
-            pendingCameraUri = tempUri
-            cameraLauncher.launch(tempUri)
-        } else {
-            permissionLauncher.launch(Manifest.permission.CAMERA)
-        }
+    if (showCamera) {
+        InAppCameraDialog(
+            onCaptured = { uri ->
+                selectedUri?.let { old -> if (old != uri) CameraCaptureHelper.deleteIfCaptureTemp(context, old) }
+                selectedUri = uri
+                showCamera = false
+            },
+            onDismiss = { showCamera = false },
+        )
     }
 
     Dialog(
@@ -121,6 +121,7 @@ fun AddAttachmentDialog(
             modifier = Modifier
                 .fillMaxWidth(0.95f)
                 .padding(vertical = 16.dp)
+                .heightIn(max = (LocalConfiguration.current.screenHeightDp - 32).dp)
                 .testTag("addAttachmentDialog"),
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -129,6 +130,7 @@ fun AddAttachmentDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .verticalScroll(scrollState)
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
@@ -183,6 +185,30 @@ fun AddAttachmentDialog(
                     }
                 }
 
+                // Photo size preset (predefined only; defaults from the category until the user picks one)
+                Text(
+                    text = stringResource(R.string.photo_quality_label),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    listOf(
+                        Triple(PhotoQualityPreset.SMALL, "preset_small", R.string.photo_quality_small),
+                        Triple(PhotoQualityPreset.STANDARD, "preset_standard", R.string.photo_quality_standard),
+                        Triple(PhotoQualityPreset.DETAILED, "preset_detailed", R.string.photo_quality_detailed),
+                    ).forEach { (option, tag, label) ->
+                        FilterChip(
+                            selected = preset == option,
+                            onClick = { chosenPreset = option },
+                            label = { Text(stringResource(label), style = MaterialTheme.typography.labelSmall) },
+                            modifier = Modifier.testTag(tag),
+                        )
+                    }
+                }
+
                 // Title / Description
                 OutlinedTextField(
                     value = titleText,
@@ -206,7 +232,7 @@ fun AddAttachmentDialog(
                             modifier = Modifier
                                 .weight(1f)
                                 .height(120.dp)
-                                .clickable { launchCamera() }
+                                .clickable { showCamera = true }
                                 .testTag("captureCameraBtn"),
                         ) {
                             Column(
@@ -284,7 +310,7 @@ fun AddAttachmentDialog(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(180.dp)
+                            .heightIn(min = 120.dp, max = 240.dp)
                             .clip(RoundedCornerShape(12.dp))
                             .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp)),
                         contentAlignment = Alignment.Center,
@@ -298,8 +324,8 @@ fun AddAttachmentDialog(
                             Image(
                                 bitmap = previewBitmap,
                                 contentDescription = "Preview",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxWidth(),
+                                contentScale = ContentScale.Fit,
                             )
                         }
                         // Change photo button overlay
@@ -312,7 +338,7 @@ fun AddAttachmentDialog(
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
                                 color = Color.Black.copy(alpha = 0.75f),
-                                modifier = Modifier.clickable { launchCamera() },
+                                modifier = Modifier.clickable { showCamera = true },
                             ) {
                                 Text(
                                     text = "📷 Retake",
@@ -354,7 +380,8 @@ fun AddAttachmentDialog(
                     Button(
                         onClick = {
                             val uri = selectedUri ?: return@Button
-                            onSave(uri, selectedCategory, titleText.trim().ifEmpty { null })
+                            sent = true
+                            onSave(uri, selectedCategory, titleText.trim().ifEmpty { null }, preset)
                             onDismiss()
                         },
                         enabled = selectedUri != null,

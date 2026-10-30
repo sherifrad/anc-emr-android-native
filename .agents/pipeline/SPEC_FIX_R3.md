@@ -343,3 +343,91 @@ Static checks (.agents/checks/check_r3f1.py, id STATIC-r3f1; strip comments firs
  S34 WorkspaceScreen.kt contains attachment_error_banner, DismissAttachmentError and R.string.attachment_save_failed / attachment_delete_failed; strings.xml defines both.
  S35 no file named PatientPrintHtmlGeneratorTest.kt exists under app/src/test outside ui/report; NegativeControlAndClinicalValidationTest.kt has no `bg.contains("-")`.
 Device check (orchestrator, QA copy, later): attach a photo; force a failure (fill/readonly dir is not allowed on the phone, so on the emulator) and see the banner; delete works; viewers still show photos.
+
+## Round 3f-2 (in-app camera + quality presets)
+Owner (2026-10-30): the camera must be inside the app (frame + capture button) so the app is never left and the lock cannot fire behind the phone's camera app; photos are mostly
+antenatal cards, prescriptions and reports so smaller sizes are fine; quality is chosen from PREDEFINED presets only (no free numbers). CameraX 1.5.3 (camera-core, camera2, lifecycle,
+view) was added to app/build.gradle.kts by the orchestrator (owner-approved; already resolved offline). Reuse principle applies: one camera component, one preset enum, one compressor.
+Q54 (NEW storage/PhotoQuality.kt) `enum class PhotoQualityPreset(val maxSide: Int, val webpQuality: Int, val labelRes... )` is NOT allowed to reference R (keep it Android-free): values
+    SMALL(1280, 70), STANDARD(1600, 75), DETAILED(1920, 85); `companion object { val DEFAULT = SMALL; fun defaultFor(category: String): PhotoQualityPreset }` where ultrasound
+    (AttachmentCategories.ULTRASOUND) -> DETAILED and every other category -> SMALL.
+Q55 (storage/PatientAttachmentVault.kt) saveAttachment and saveAttachmentFromStream take `preset: PhotoQualityPreset = PhotoQualityPreset.DEFAULT`; compressAndWrite uses preset.maxSide and
+    preset.webpQuality instead of the MAX_DIMENSION_PX / WEBP_QUALITY constants (constants removed). Everything else unchanged (WebP, SHA-256, paths).
+Q56 (state/AncState.kt, state/AncViewModel.kt) `AncEvent.AddAttachment` gets `val preset: PhotoQualityPreset = PhotoQualityPreset.defaultFor(category)`... (a default parameter that
+    does not break existing constructor calls); AncViewModel.addAttachment passes it to the vault. After the vault finished (success or failure) a source file that lives in the app's
+    camera cache folder (see Q57) is deleted: `CameraCaptureHelper.deleteIfCaptureTemp(context, uri)`.
+Q57 (storage/CameraCaptureHelper.kt) keep createCameraTempUri; add `createCameraTempFile(context): File` (createCameraTempUri reuses it, no second copy of the naming rule),
+    `uriFor(context, file): Uri` (FileProvider), `deleteIfCaptureTemp(context, uri): Boolean` (true only for files inside cacheDir/camera) and `clearStaleCaptures(context, olderThanMs)`.
+Q58 (NEW ui/InAppCameraDialog.kt) `@Composable fun InAppCameraDialog(onCaptured: (Uri) -> Unit, onDismiss: () -> Unit)`: a full-screen Dialog (usePlatformDefaultWidth=false) with a CameraX
+    PreviewView inside a rounded frame (testTag "camera_preview"), a round capture button (testTag "camera_capture", >= 56dp, contentDescription from strings), a Close button
+    (testTag "camera_close"). After a capture it shows the still photo with "Retake" (testTag "camera_retake") and "Use photo" (testTag "camera_use"); Use calls onCaptured(uriFor(file)),
+    Retake deletes the temp file and returns to the live preview, Close/dismiss deletes any uncommitted temp file. Back camera, ImageCapture to the temp file (CAPTURE_MODE_MINIMIZE_LATENCY),
+    target rotation from the display. CAMERA permission: requested inside the dialog (RequestPermission); while denied show a message (strings) and a Close button; never crash.
+    Lifecycle: bind to LocalLifecycleOwner and unbindAll in a DisposableEffect so the camera is released when the dialog leaves composition (this is what happens when the app lock fires).
+    The component calls clearStaleCaptures(context, 24h) once when it opens. No flash/zoom controls in this round.
+Q59 (ui/AddAttachmentDialog.kt, ui/UltrasoundEditor.kt) Both replace ActivityResultContracts.TakePicture, the permission launcher and launchCamera() with InAppCameraDialog (shown from a
+    `showCamera` state); the result is handled exactly as the old TakePicture success path (same selectedUri / draft IMAGE_URIS update). The gallery picker stays.
+    AddAttachmentDialog shows a preset row of three FilterChips (testTags preset_small, preset_standard, preset_detailed; labels from strings: "Small - documents", "Standard - reports",
+    "Detailed - scans") initialised to PhotoQualityPreset.defaultFor(selectedCategory) and re-defaulted when the category changes unless the user already chose one; the chosen preset is
+    passed through onSave -> AncEvent.AddAttachment. (WorkspaceScreen.kt wires the extra parameter.) The preset is NOT stored in the database (no schema change).
+Q60 res/values/strings.xml: camera_capture, camera_retake, camera_use, camera_close, camera_permission_needed ("Camera permission is needed to take a photo. You can still choose a photo
+    from the gallery."), photo_quality_label ("Photo size"), and the three preset labels. Old external-camera strings may stay.
+Static checks (.agents/checks/check_r3f2.py, id STATIC-r3f2; strip comments first; exit 1 on any FAIL):
+ S37 app/build.gradle.kts has the four androidx.camera dependencies; AndroidManifest has the CAMERA permission.
+ S38 neither AddAttachmentDialog.kt nor UltrasoundEditor.kt contains TakePicture or launchCamera; both call InAppCameraDialog(.
+ S39 InAppCameraDialog.kt exists with the testTags camera_preview, camera_capture, camera_close, camera_retake, camera_use, uses PreviewView and ImageCapture, requests Manifest.permission.CAMERA,
+     and contains unbindAll inside a DisposableEffect/onDispose.
+ S40 PhotoQuality.kt has the three presets with exactly the values of Q54; PatientAttachmentVault.kt has no MAX_DIMENSION_PX / WEBP_QUALITY and references preset.maxSide and preset.webpQuality.
+ S41 AddAttachmentDialog.kt contains preset_small, preset_standard, preset_detailed and PhotoQualityPreset.defaultFor(; AncViewModel.kt calls CameraCaptureHelper.deleteIfCaptureTemp(.
+ S42 CameraCaptureHelper.kt defines deleteIfCaptureTemp, createCameraTempFile and clearStaleCaptures; strings.xml defines every Q60 key.
+Unit: PhotoQualityPresetTest (exact values; defaultFor ULTRASOUND -> DETAILED, others incl. unknown/empty -> SMALL; no preset has maxSide > 1920 or quality > 85).
+Device check (orchestrator, QA copy on the Honor 400): the camera opens inside the app with a live preview; capture, retake, use; photo saved with the Small preset is smaller than Detailed;
+the thumbnail/viewer show it; the app lock does not interfere while the camera is open; permission denied path; no crash in logcat.
+
+## Round 3f-3 (found on the phone: photos saved sideways; Save button unreachable)
+Evidence (Honor 400, QA copy): a camera photo previews rotated 90 degrees in the Add Attachment dialog (only the camera's own still honours EXIF); with a photo selected the dialog is taller than
+the screen, does not scroll, and "Save to Patient Record" / Cancel text cannot be reached.
+Q61 (storage/BoundedBitmap.kt) EXIF orientation is honoured by EVERY BoundedBitmap decode (decodeFile, decodeBytes, decodeStream) - one place, no per-caller rotation code.
+    Add pure `internal data class ExifTransform(val degrees: Float, val flipHorizontal: Boolean)` and `internal fun exifTransform(orientation: Int): ExifTransform` for the 8 android.media.ExifInterface
+    ORIENTATION_* values (1 normal; 2 flip-h; 3 rotate 180; 4 flip-v = rotate 180 + flip-h; 5 transpose = rotate 90 + flip-h; 6 rotate 90; 7 transverse = rotate 270 + flip-h; 8 rotate 270; anything else = normal).
+    After the bounded decode, read the orientation (ExifInterface on the same bytes/file/stream) and, when it is not normal, return a bitmap rotated/flipped accordingly (Matrix); recycle the intermediate;
+    a failure to read EXIF means "normal" (never null/throw). The vault's compressAndWrite already decodes through BoundedBitmap, so saved WebP files become upright.
+    ui/InAppCameraDialog.kt: delete its own decodeUpright/EXIF code and decode the still through BoundedBitmap (same function, no second copy).
+Q62 (ui/AddAttachmentDialog.kt) The dialog content scrolls (verticalScroll with a remembered scroll state, the Card limited to the screen height) so Cancel and "Save to Patient Record" are always reachable
+    at any photo size; the preview image height is capped (heightIn max 240.dp). Keep every testTag and behaviour.
+Static checks (.agents/checks/check_r3f3.py, STATIC-r3f3):
+ S43 BoundedBitmap.kt defines exifTransform and uses ExifInterface; InAppCameraDialog.kt contains no ExifInterface and no decodeUpright; no other file outside BoundedBitmap.kt references ExifInterface.
+ S44 AddAttachmentDialog.kt contains verticalScroll and heightIn( for the preview, and still contains addAttachmentDialog and the save button text.
+Unit: BoundedBitmapTest extended: exifTransform for all 8 orientation values plus an unknown value (0, 9, -1).
+Device (orchestrator): a camera photo previews and saves upright; the dialog scrolls to Save; the saved scan photo opens upright in the viewer.
+
+## Round 3g (ultrasound scan photos go into the vault; safe sweep of leftover camera files)
+Facts (read from the code and seen on the phone): UltrasoundEditor stores the raw camera/gallery URI string in the scan's imageUris; nothing copies the photo, so Android may purge it and the scan keeps a dead link
+(and, on the phone, a captured photo stayed as plain JPEG in cache/camera after the app was locked/killed with the camera open). The print report does not embed scan photos (placeholder only), so only the
+photo viewer reads them. Backups store imageUris as plain strings (photos are not in backups; unchanged, labelled honestly since 3d).
+Q63 (NEW storage/ScanPhotoRef.kt) pure helpers: `const val SCAN_PHOTO_REF_PREFIX = "vault:"`, `fun scanPhotoRef(fileName: String): String` ("vault:" + fileName), `fun isScanPhotoRef(value: String): Boolean`,
+    `fun scanPhotoFileName(value: String): String?` -> the file name only when the value is a vault ref whose name matches `[A-Za-z0-9_-]+\.webp`; null for anything else (empty, other schemes, "..", "/", "\\", extra dots).
+Q64 (storage/CameraCaptureHelper.kt) pure, testable core: `fun staleCaptureFiles(dir: File, olderThanMs: Long, nowMs: Long, referencedNames: Set<String>): List<File>` = regular files in dir older than the limit whose
+    name is NOT in referencedNames; `clearStaleCaptures(context, olderThanMs, referencedUris: Set<String>)` deletes exactly those (referencedNames = last path segment of each referenced URI string). The old
+    2-argument clearStaleCaptures is replaced (no second copy).
+Q65 (state/AncState.kt, state/AncViewModel.kt) `AncEvent.ImportScanPhoto(patientId: String, sourceUri: Uri, preset: PhotoQualityPreset = PhotoQualityPreset.DETAILED)` and `AncEvent.ScanPhotoImported(patientId: String, ref: String)`.
+    Reducer: ScanPhotoImported appends `ref` to the current ultrasoundDraft.values.imageUris only when a draft exists for that patient (otherwise state unchanged); never duplicates a ref already present.
+    ViewModel: on ImportScanPhoto (vault must be Unlocked) on Dispatchers.IO: (1) sweep = CameraCaptureHelper.clearStaleCaptures(context, 1 hour, every imageUris string of every scan in the current state);
+    (2) PatientAttachmentVault.saveAttachment(context, patientId, sourceUri, preset = preset); (3) dispatch ScanPhotoImported(patientId, scanPhotoRef(result.fileName)); (4) in a finally block
+    CameraCaptureHelper.deleteIfCaptureTemp(context, sourceUri). Any non-cancellation exception -> Log.e + AttachmentFailed(SAVE_FAILED) (existing banner). CancellationException rethrown. If the vault is not
+    Unlocked: deleteIfCaptureTemp and return. addAttachment also calls the sweep (same helper, same arguments) before saving.
+Q66 (ui/UltrasoundEditor.kt) The camera result and the gallery result send `AncEvent.ImportScanPhoto(route.patientId, uri)` instead of appending the raw URI to the draft. Everything else in the editor is unchanged.
+Q67 (ui/UltrasoundPhotoViewerDialog.kt + callers) The viewer takes the patientId (callers in WorkspaceScreen.kt and ProfileScreen.kt pass patient.id). For each photo string: a vault ref (scanPhotoFileName != null) resolves with
+    PatientAttachmentVault.resolveAttachmentFile(context, patientId, fileName) and BoundedBitmap.decodeFile(path, 2048); a content/file URI keeps today's decodeStream path (legacy scans); anything else or any failure shows
+    "Image unavailable" (existing testTag image_unavailable). Never throws.
+Static checks (.agents/checks/check_r3g.py, STATIC-r3g):
+ S45 ScanPhotoRef.kt defines the four names of Q63; no other file builds the "vault:" prefix literally.
+ S46 CameraCaptureHelper.kt defines staleCaptureFiles and a 3-argument clearStaleCaptures; AncViewModel.kt calls clearStaleCaptures( at least twice (import and addAttachment) and passes scan imageUris.
+ S47 AncState.kt defines ImportScanPhoto and ScanPhotoImported; AncViewModel.kt handles ImportScanPhoto, dispatches ScanPhotoImported, calls scanPhotoRef(, and deleteIfCaptureTemp( inside a finally.
+ S48 UltrasoundEditor.kt contains ImportScanPhoto( and no longer appends a raw uri.toString() to imageUris (no `imageUris + uri.toString()` / `imageUris + pendingCameraUri`).
+ S49 UltrasoundPhotoViewerDialog.kt references scanPhotoFileName and resolveAttachmentFile; WorkspaceScreen.kt and ProfileScreen.kt pass a patient id to UltrasoundPhotoViewerDialog( .
+Unit: ScanPhotoRefTest (round trip; rejects "../x.webp", "a/b.webp", "x.jpg", "", "content://...", "vault:", "vault:a.b.webp"); CameraCaptureSweepTest with a temp folder (old+unreferenced -> listed; old+referenced -> kept; new -> kept;
+ subfolders ignored); ScanPhotoImportStateTest for the reducer (append, no duplicate, no draft -> unchanged).
+Device (orchestrator): add a scan photo through the Ultrasound editor, save the scan, open the viewer (photo from the vault, upright); a legacy/demo photo shows "Image unavailable"; the camera cache is empty after import;
+ leftover older capture is swept at the next import; no crash.
+Not in this round: migrating legacy scans' cache URIs into the vault (their photos are kept alive by the referenced-set rule), orphan vault files from removed draft photos, encryption of photos.

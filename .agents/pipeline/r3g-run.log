@@ -1,0 +1,21 @@
+MACA pipeline 20261030-233105 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('claude', 'claude-sonnet-5-5'), 'ui': ('claude', 'claude-sonnet-5-5')} review: ['claude:claude-sonnet-5-5', 'opencode:omniroute/cfp/deepseek-ai/deepseek-v4-pro-0813']
+  opencode  /opt/homebrew/bin/opencode
+  claude    /opt/homebrew/bin/claude
+[1-tests] claude completed 86.1s changed=5 violations=0
+[1b-red] ran=7 reused=35 deferred=2 not_gated=7 failed=['STATIC-r3g', 'UNIT-scan-photo-ref', 'UNIT-camera-sweep', 'UNIT-scan-photo-import']
+[2a-core] claude completed 71.0s changed=4 violations=0
+[2a-green] ran=4 reused=2 deferred=0 not_gated=45 failed=[]
+[2b-ui] claude completed 47.4s changed=4 violations=0
+[2b-green] ran=13 reused=38 deferred=0 not_gated=0 failed=['STATIC-r3g']
+[2b-ui-repair1] claude completed 14.3s changed=0 violations=0
+[2b-green-r1] ran=1 reused=50 deferred=0 not_gated=0 failed=['STATIC-r3g']
+[2b-ui-repair2] claude completed 11.5s changed=0 violations=0
+[2b-green-r2] ran=1 reused=50 deferred=0 not_gated=0 failed=['STATIC-r3g']
+[cache-check-no-changes] ran=1 reused=50 deferred=0 not_gated=0 failed=['STATIC-r3g']
+[3-review-0-claude] claude completed 72.5s changed=0 violations=0
+[3-review-1-opencode] opencode:omniroute/cfp/deepseek-ai/deepseek-v4-pro-0813 gave no usable result (completed); trying next model
+[3-review-1-opencode] opencode:openai/gpt-6-luna gave no usable result (failed); trying next model
+[3-review-1-opencode] opencode:omniroute/grok-cli/grok-4.7-low gave no usable result (None); trying next model
+[3-review-1-opencode] opencode ? 1365.2s changed=0 violations=0
+HALT: lane opencode:omniroute/grok-cli/grok-4.7-low unavailable at step 3-review-1-opencode (no output, no changes). Last stderr:
+

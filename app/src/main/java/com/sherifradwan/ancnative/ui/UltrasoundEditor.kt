@@ -31,9 +31,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
-import android.Manifest
-import android.content.pm.PackageManager
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -46,8 +43,6 @@ import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat
-import com.sherifradwan.ancnative.storage.CameraCaptureHelper
 import com.sherifradwan.ancnative.model.ClinicalVocabulary
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
 import com.sherifradwan.ancnative.state.AncEvent
@@ -68,47 +63,24 @@ fun UltrasoundEditor(
     val enabled = state.savePhase == SavePhase.IDLE || state.savePhase == SavePhase.ERROR
     val context = LocalContext.current
 
-    var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
-
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture(),
-    ) { success ->
-        if (success && pendingCameraUri != null) {
-            val updated = draft.values.imageUris + pendingCameraUri.toString()
-            onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.IMAGE_URIS, updated.joinToString(",")))
-        }
-    }
+    var showCamera by remember { mutableStateOf(false) }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
     ) { uri ->
         if (uri != null) {
-            val updated = draft.values.imageUris + uri.toString()
-            onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.IMAGE_URIS, updated.joinToString(",")))
+            onEvent(AncEvent.ImportScanPhoto(route.patientId, uri))
         }
     }
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { isGranted ->
-        val tempUri = CameraCaptureHelper.createCameraTempUri(context)
-        pendingCameraUri = tempUri
-        cameraLauncher.launch(tempUri)
-    }
-
-    fun launchCamera() {
-        val hasPermission = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.CAMERA,
-        ) == PackageManager.PERMISSION_GRANTED
-
-        if (hasPermission) {
-            val tempUri = CameraCaptureHelper.createCameraTempUri(context)
-            pendingCameraUri = tempUri
-            cameraLauncher.launch(tempUri)
-        } else {
-            permissionLauncher.launch(Manifest.permission.CAMERA)
-        }
+    if (showCamera) {
+        InAppCameraDialog(
+            onCaptured = { uri ->
+                onEvent(AncEvent.ImportScanPhoto(route.patientId, uri))
+                showCamera = false
+            },
+            onDismiss = { showCamera = false },
+        )
     }
 
     EditorPage(
@@ -570,7 +542,7 @@ fun UltrasoundEditor(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Button(
-                                onClick = { launchCamera() },
+                                onClick = { showCamera = true },
                                 enabled = enabled,
                                 modifier = Modifier.minimumTouchTarget().testTag("captureScanPhotoCamera"),
                             ) {

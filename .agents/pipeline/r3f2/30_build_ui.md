@@ -1,0 +1,4 @@
+ROLE: UI BUILDER for ROUND 3f-2. Implement Q58, Q59, Q60.
+ALLOWED files: app/src/main/java/com/sherifradwan/ancnative/ui/InAppCameraDialog.kt (NEW), ui/AddAttachmentDialog.kt, ui/UltrasoundEditor.kt, ui/WorkspaceScreen.kt; app/src/main/res/values/strings.xml.
+Use the CameraX classes already on the classpath (androidx.camera.core, camera2, lifecycle, view) - no other library. Use the core lane's CameraCaptureHelper and PhotoQualityPreset; do not redefine them. Keep every existing testTag and behaviour not named in the spec (gallery picker, categories, title field, save/cancel). All user-visible text from strings.xml. Buttons >= 48dp.
+Run: python3 .agents/checks/check_r3f2.py (S37-S39, S41, S42 UI parts are yours), python3 .agents/checks/check_r3e.py, python3 .agents/checks/check_r3f1.py, ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin. Report real results.

@@ -325,5 +325,16 @@
     <string name="pin_setup_hint">Enter a new PIN.</string>
     <string name="pin_confirm_hint">Enter the same PIN again.</string>
     <string name="attachment_save_failed">The attachment could not be saved. Nothing was filed. Please try again.</string>
+    <string name="camera_capture">Take photo</string>
+    <string name="camera_retake">Retake</string>
+    <string name="camera_use">Use photo</string>
+    <string name="camera_close">Close camera</string>
+    <string name="camera_permission_needed">Camera permission is needed to take a photo. You can still choose a photo from the gallery.</string>
+    <string name="camera_bind_failed">The camera could not be started. Close and try again.</string>
+    <string name="camera_capture_failed">The photo could not be taken. Please try again.</string>
+    <string name="photo_quality_label">Photo size</string>
+    <string name="photo_quality_small">Small - documents</string>
+    <string name="photo_quality_standard">Standard - reports</string>
+    <string name="photo_quality_detailed">Detailed - scans</string>
     <string name="attachment_delete_failed">The attachment could not be deleted. Please try again.</string>
 </resources>

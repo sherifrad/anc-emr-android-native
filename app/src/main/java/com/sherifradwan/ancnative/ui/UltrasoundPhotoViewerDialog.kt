@@ -1,6 +1,8 @@
 package com.sherifradwan.ancnative.ui
 
 import com.sherifradwan.ancnative.storage.BoundedBitmap
+import com.sherifradwan.ancnative.storage.PatientAttachmentVault
+import com.sherifradwan.ancnative.storage.scanPhotoFileName
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -55,6 +57,7 @@ import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 
 @Composable
 fun UltrasoundPhotoViewerDialog(
+    patientId: String,
     scan: DemoUltrasoundScan,
     initialIndex: Int = 0,
     onDismiss: () -> Unit,
@@ -69,11 +72,17 @@ fun UltrasoundPhotoViewerDialog(
     val context = LocalContext.current
     val loadedBitmap = remember(currentUriString) {
         runCatching {
-            val uri = Uri.parse(currentUriString)
-            if (uri.scheme == "content" || uri.scheme == "file") {
-                BoundedBitmap.decodeStream({ context.contentResolver.openInputStream(uri) }, 2048)?.asImageBitmap()
+            val fileName = scanPhotoFileName(currentUriString)
+            if (fileName != null) {
+                PatientAttachmentVault.resolveAttachmentFile(context, patientId, fileName)
+                    ?.let { BoundedBitmap.decodeFile(it.absolutePath, 2048)?.asImageBitmap() }
             } else {
-                null
+                val uri = Uri.parse(currentUriString)
+                if (uri.scheme == "content" || uri.scheme == "file") {
+                    BoundedBitmap.decodeStream({ context.contentResolver.openInputStream(uri) }, 2048)?.asImageBitmap()
+                } else {
+                    null
+                }
             }
         }.getOrNull()
     }

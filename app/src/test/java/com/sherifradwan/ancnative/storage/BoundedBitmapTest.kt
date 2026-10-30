@@ -55,6 +55,24 @@ class BoundedBitmapTest {
         assertEquals(1, computeSampleSize(8192, -4096, 2048))
     }
 
+    // android.media.ExifInterface ORIENTATION_* values as plain ints (1..8).
+    @Test fun exifOrientationsMapToRotationAndFlip() {
+        assertEquals(ExifTransform(0f, false), exifTransform(1))
+        assertEquals(ExifTransform(0f, true), exifTransform(2))
+        assertEquals(ExifTransform(180f, false), exifTransform(3))
+        assertEquals(ExifTransform(180f, true), exifTransform(4))
+        assertEquals(ExifTransform(90f, true), exifTransform(5))
+        assertEquals(ExifTransform(90f, false), exifTransform(6))
+        assertEquals(ExifTransform(270f, true), exifTransform(7))
+        assertEquals(ExifTransform(270f, false), exifTransform(8))
+    }
+
+    @Test fun unknownExifOrientationIsNormal() {
+        for (value in listOf(0, 9, -1, Int.MAX_VALUE, Int.MIN_VALUE)) {
+            assertEquals("orientation $value", ExifTransform(0f, false), exifTransform(value))
+        }
+    }
+
     @Test fun smallerMaxSideSamplesMore() {
         assertEquals(2, computeSampleSize(2048, 2048, 1024))
         assertEquals(1, computeSampleSize(2047, 2047, 1024))

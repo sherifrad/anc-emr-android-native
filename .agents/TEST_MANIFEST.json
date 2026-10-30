@@ -241,6 +241,47 @@
       "covers": ["S29", "S30", "S31", "S32", "S33", "S34", "S35"]
     },
     {
+      "id": "STATIC-r3f3",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3f3.py",
+      "deps": [
+        "app/src/main/**/storage/BoundedBitmap.kt",
+        "app/src/main/**/ui/InAppCameraDialog.kt",
+        "app/src/main/**/ui/AddAttachmentDialog.kt",
+        ".agents/checks/check_r3f3.py"
+      ],
+      "covers": ["S43", "S44"]
+    },
+    {
+      "id": "STATIC-r3f2",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3f2.py",
+      "deps": [
+        "app/build.gradle.kts",
+        "app/src/main/AndroidManifest.xml",
+        "app/src/main/**/ui/AddAttachmentDialog.kt",
+        "app/src/main/**/ui/UltrasoundEditor.kt",
+        "app/src/main/**/ui/InAppCameraDialog.kt",
+        "app/src/main/**/storage/PhotoQuality.kt",
+        "app/src/main/**/storage/PatientAttachmentVault.kt",
+        "app/src/main/**/storage/CameraCaptureHelper.kt",
+        "app/src/main/**/state/AncViewModel.kt",
+        "app/src/main/res/values/strings.xml",
+        ".agents/checks/check_r3f2.py"
+      ],
+      "covers": ["S37", "S38", "S39", "S40", "S41", "S42"]
+    },
+    {
+      "id": "UNIT-photo-quality",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*PhotoQualityPresetTest'",
+      "deps": [
+        "app/src/main/**/storage/PhotoQuality.kt",
+        "app/src/test/**/PhotoQualityPresetTest.kt"
+      ],
+      "covers": ["Q54"]
+    },
+    {
       "id": "UNIT-hashing",
       "tier": 1,
       "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*HashingTest'",
@@ -258,7 +299,7 @@
         "app/src/main/**/storage/BoundedBitmap.kt",
         "app/src/test/**/BoundedBitmapTest.kt"
       ],
-      "covers": ["Q48", "Q53"]
+      "covers": ["Q48", "Q53", "Q61"]
     },
     {
       "id": "UNIT-security-settings",
@@ -475,6 +516,53 @@
         "app/src/test/**/GestationalBannerLogicTest.kt"
       ],
       "covers": ["G1"]
+    },
+    {
+      "id": "STATIC-r3g",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3g.py",
+      "deps": [
+        "app/src/main/**/storage/ScanPhotoRef.kt",
+        "app/src/main/**/storage/CameraCaptureHelper.kt",
+        "app/src/main/**/state/AncState.kt",
+        "app/src/main/**/state/AncViewModel.kt",
+        "app/src/main/**/ui/UltrasoundEditor.kt",
+        "app/src/main/**/ui/UltrasoundPhotoViewerDialog.kt",
+        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/main/**/ui/ProfileScreen.kt",
+        ".agents/checks/check_r3g.py"
+      ],
+      "covers": ["S45", "S46", "S47", "S48", "S49"]
+    },
+    {
+      "id": "UNIT-scan-photo-ref",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*ScanPhotoRefTest'",
+      "deps": [
+        "app/src/main/**/storage/ScanPhotoRef.kt",
+        "app/src/test/**/ScanPhotoRefTest.kt"
+      ],
+      "covers": ["Q63"]
+    },
+    {
+      "id": "UNIT-camera-sweep",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*CameraCaptureSweepTest'",
+      "deps": [
+        "app/src/main/**/storage/CameraCaptureHelper.kt",
+        "app/src/test/**/CameraCaptureSweepTest.kt"
+      ],
+      "covers": ["Q64"]
+    },
+    {
+      "id": "UNIT-scan-photo-import",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*ScanPhotoImportStateTest'",
+      "deps": [
+        "app/src/main/**/state/AncState.kt",
+        "app/src/test/**/ScanPhotoImportStateTest.kt"
+      ],
+      "covers": ["Q65"]
     },
     {
       "id": "UNIT-all",

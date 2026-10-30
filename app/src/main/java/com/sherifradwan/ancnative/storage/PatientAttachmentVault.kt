@@ -27,8 +27,6 @@ data class SavedAttachmentResult(
 object PatientAttachmentVault {
 
     private const val ATTACHMENTS_ROOT_DIR = "patient_attachments"
-    private const val MAX_DIMENSION_PX = 1920
-    private const val WEBP_QUALITY = 85
 
     /**
      * Resolves and secures the isolated folder for a specific patient.
@@ -64,6 +62,7 @@ object PatientAttachmentVault {
         patientId: String,
         sourceUri: Uri,
         attachmentId: String = "att_${UUID.randomUUID()}",
+        preset: PhotoQualityPreset = PhotoQualityPreset.DEFAULT,
     ): SavedAttachmentResult {
         val patientDir = getPatientDirectory(context, patientId)
         val fileName = "$attachmentId.webp"
@@ -79,6 +78,7 @@ object PatientAttachmentVault {
             destinationFile = destinationFile,
             fileName = fileName,
             inputStream = inputStream,
+            preset = preset,
         )
     }
 
@@ -90,6 +90,7 @@ object PatientAttachmentVault {
         patientId: String,
         inputStream: InputStream,
         attachmentId: String = "att_${UUID.randomUUID()}",
+        preset: PhotoQualityPreset = PhotoQualityPreset.DEFAULT,
     ): SavedAttachmentResult {
         val patientDir = getPatientDirectory(context, patientId)
         val fileName = "$attachmentId.webp"
@@ -101,6 +102,7 @@ object PatientAttachmentVault {
             destinationFile = destinationFile,
             fileName = fileName,
             inputStream = inputStream,
+            preset = preset,
         )
     }
 
@@ -110,6 +112,7 @@ object PatientAttachmentVault {
         destinationFile: File,
         fileName: String,
         inputStream: InputStream,
+        preset: PhotoQualityPreset,
     ): SavedAttachmentResult {
         val rawBytes = inputStream.use { it.readBytes() }
         if (rawBytes.isEmpty()) {
@@ -117,11 +120,11 @@ object PatientAttachmentVault {
         }
 
         // 1-2. Decode, sampled down so a huge source cannot run out of memory
-        val sampledBitmap = BoundedBitmap.decodeBytes(rawBytes, MAX_DIMENSION_PX)
+        val sampledBitmap = BoundedBitmap.decodeBytes(rawBytes, preset.maxSide)
             ?: throw IllegalStateException("Failed to decode bitmap from source image")
 
-        // 3. Scale precisely to MAX_DIMENSION_PX maintaining aspect ratio
-        val finalBitmap = scaleToMaxDimension(sampledBitmap, MAX_DIMENSION_PX)
+        // 3. Scale precisely to the preset's longest side maintaining aspect ratio
+        val finalBitmap = scaleToMaxDimension(sampledBitmap, preset.maxSide)
 
         // 4. Compress to WebP
         val outputStream = ByteArrayOutputStream()
@@ -131,7 +134,7 @@ object PatientAttachmentVault {
             @Suppress("DEPRECATION")
             Bitmap.CompressFormat.WEBP
         }
-        finalBitmap.compress(format, WEBP_QUALITY, outputStream)
+        finalBitmap.compress(format, preset.webpQuality, outputStream)
         if (finalBitmap != sampledBitmap) {
             finalBitmap.recycle()
         }

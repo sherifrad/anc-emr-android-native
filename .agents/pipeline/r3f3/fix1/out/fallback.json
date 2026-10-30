@@ -1,0 +1,10 @@
+[
+ {
+  "spec": "claude:claude-sonnet-5-5",
+  "status": "completed",
+  "seconds": 23.2,
+  "chars": 1118,
+  "ok": true,
+  "why": ""
+ }
+]
