@@ -1,0 +1,7 @@
+ROLE: TEST DESIGNER (tests first). Write tests from the "Round 3c" section of SPEC_FIX_R3.md only. Do not read the bodies of SecuritySettingsRepository.kt, BiometricAuthManager.kt, MainActivity.kt or the UI files beyond what S8-S13 need. PinPolicy / AppLockPolicy functions and constants do not exist yet: compile failures of your two new test files are expected ONLY for those names.
+ALLOWED files:
+- app/src/test/java/com/sherifradwan/ancnative/security/PinPolicyTest.kt   (NEW: Q25 - every isValidNewPin example plus all ten ascending/descending runs, hashPin determinism and salt sensitivity, 32-byte output, a known PBKDF2-HMAC-SHA256 vector you compute with javax.crypto in the test itself at low iterations, pinMatches true/false, newSalt length 16 and two salts differ, every lockoutDelayMs boundary)
+- app/src/test/java/com/sherifradwan/ancnative/security/AppLockPolicyTest.kt   (NEW: Q26 - every example and the exact 600_000 boundary)
+- .agents/checks/check_r3c.py   (NEW: S8-S13, stdlib Python, PASS/FAIL per sub-check, exit 1 if any FAIL; must FAIL today on S8, S9, S10, S11, S12; S13 may already pass or fail - report which)
+- .agents/TEST_MANIFEST.json   (keep every entry; ADD exactly UNIT-pin-policy, UNIT-lock-policy (tier 1, --tests as in the spec, deps = the new production file + its test) and STATIC-r3c (tier 1, deps SecuritySettingsRepository.kt, BiometricAuthManager.kt, MainActivity.kt, the check))
+Do not implement production code. Report which tests/checks fail today and that no compile error has another cause.

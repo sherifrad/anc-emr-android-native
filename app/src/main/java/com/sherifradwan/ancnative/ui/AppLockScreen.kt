@@ -35,8 +35,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -47,6 +49,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -54,6 +57,7 @@ import androidx.compose.ui.unit.sp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.security.BiometricAuthManager
 import com.sherifradwan.ancnative.security.SecuritySettingsRepository
+import com.sherifradwan.ancnative.security.isValidNewPin
 
 @Composable
 fun AppLockScreen(
@@ -63,19 +67,39 @@ fun AppLockScreen(
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
-    val settingsState = securityRepo.settings.value
+    val settingsState by securityRepo.settings.collectAsState()
 
     var enteredPin by remember { mutableStateOf("") }
+    var confirmationPin by remember { mutableStateOf("") }
+    var isConfirmingPin by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var biometricAttemptedOnLaunch by remember { mutableStateOf(false) }
+    var lockoutRemainingMs by remember { mutableIntStateOf(securityRepo.getLockoutRemainingMs().toInt()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            lockoutRemainingMs = securityRepo.getLockoutRemainingMs().toInt()
+            kotlinx.coroutines.delay(1000)
+        }
+    }
+    val setupMode = settingsState.needsPinSetup
+    val legacyChangeRequired = settingsState.isLegacyPin && !settingsState.needsPinSetup
+
+    LaunchedEffect(settingsState.needsPinSetup) {
+        if (settingsState.needsPinSetup) {
+            enteredPin = ""
+            confirmationPin = ""
+            isConfirmingPin = false
+            errorMessage = null
+        }
+    }
 
     val isBiometricSupported = remember(context) {
         BiometricAuthManager.isBiometricAvailable(context)
     }
 
     // Auto-launch biometric prompt on start if biometric is enabled
-    LaunchedEffect(Unit) {
-        if (!biometricAttemptedOnLaunch && settingsState.isBiometricEnabled && isBiometricSupported && activity != null) {
+    LaunchedEffect(setupMode, legacyChangeRequired, settingsState.isBiometricEnabled, isBiometricSupported) {
+        if (!setupMode && !legacyChangeRequired && !biometricAttemptedOnLaunch && settingsState.isBiometricEnabled && isBiometricSupported && activity != null) {
             biometricAttemptedOnLaunch = true
             BiometricAuthManager.promptBiometric(
                 activity = activity,
@@ -91,17 +115,42 @@ fun AppLockScreen(
 
     // Validate PIN whenever enteredPin reaches 6 digits
     fun handleDigit(digit: String) {
+        if (lockoutRemainingMs > 0) return
         if (enteredPin.length < 6) {
             val updated = enteredPin + digit
             enteredPin = updated
             errorMessage = null
 
             if (updated.length == 6) {
-                if (securityRepo.validatePin(updated)) {
-                    securityRepo.unlockApp()
-                    onUnlockSuccess()
+                if (setupMode && !legacyChangeRequired) {
+                    if (!isValidNewPin(updated)) {
+                        errorMessage = context.getString(R.string.pin_invalid)
+                        enteredPin = ""
+                    } else if (!isConfirmingPin) {
+                        confirmationPin = updated
+                        isConfirmingPin = true
+                        enteredPin = ""
+                    } else if (updated != confirmationPin) {
+                        errorMessage = context.getString(R.string.pin_mismatch)
+                        confirmationPin = ""
+                        isConfirmingPin = false
+                        enteredPin = ""
+                    } else if (securityRepo.setupPin(updated)) {
+                        securityRepo.unlockApp()
+                        onUnlockSuccess()
+                    }
+                } else if (securityRepo.validatePin(updated)) {
+                    if (settingsState.needsPinSetup || !isValidNewPin(updated)) {
+                        isConfirmingPin = false
+                        confirmationPin = ""
+                        enteredPin = ""
+                        errorMessage = null
+                    } else {
+                        securityRepo.unlockApp()
+                        onUnlockSuccess()
+                    }
                 } else {
-                    errorMessage = "Incorrect PIN passcode. Please try again."
+                    errorMessage = if (securityRepo.getLockoutRemainingMs() > 0) null else context.getString(R.string.pin_incorrect)
                     enteredPin = ""
                 }
             }
@@ -109,6 +158,7 @@ fun AppLockScreen(
     }
 
     fun handleBackspace() {
+        if (lockoutRemainingMs > 0) return
         if (enteredPin.isNotEmpty()) {
             enteredPin = enteredPin.dropLast(1)
             errorMessage = null
@@ -186,13 +236,40 @@ fun AppLockScreen(
             Spacer(Modifier.height(20.dp))
 
             Text(
-                text = "Enter Security PIN",
+                text = when {
+                    setupMode && isConfirmingPin -> stringResource(R.string.pin_confirm_title)
+                    setupMode -> stringResource(R.string.pin_setup_title)
+                    legacyChangeRequired -> stringResource(R.string.pin_legacy_title)
+                    else -> stringResource(R.string.pin_unlock_title)
+                },
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
 
             Spacer(Modifier.height(14.dp))
+
+            if (setupMode) {
+                Text(stringResource(R.string.pin_rule), style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(10.dp))
+            }
+            if (lockoutRemainingMs > 0) {
+                val seconds = (lockoutRemainingMs + 999) / 1000
+                Text(
+                    text = stringResource(R.string.pin_lockout, seconds / 60, seconds % 60),
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.testTag("pinLockoutMessage"),
+                    textAlign = TextAlign.Center,
+                )
+            }
+            if (setupMode && !isConfirmingPin) {
+                Spacer(Modifier.height(4.dp))
+                Text(stringResource(R.string.pin_setup_hint), modifier = Modifier.testTag("pinSetup"), textAlign = TextAlign.Center)
+            }
+            if (setupMode && isConfirmingPin) {
+                Spacer(Modifier.height(4.dp))
+                Text(stringResource(R.string.pin_confirm_hint), modifier = Modifier.testTag("pinConfirm"), textAlign = TextAlign.Center)
+            }
 
             // 6-Dot PIN Indicator
             Row(
@@ -283,7 +360,7 @@ fun AppLockScreen(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     // Biometric button
-                    Surface(
+                    if (isBiometricSupported && !setupMode && !legacyChangeRequired) Surface(
                         shape = RoundedCornerShape(16.dp),
                         color = if (isBiometricSupported && settingsState.isBiometricEnabled) {
                             MaterialTheme.colorScheme.primaryContainer
@@ -295,9 +372,9 @@ fun AppLockScreen(
                             .height(60.dp)
                             .testTag("pinKey-biometric")
                             .clip(RoundedCornerShape(16.dp))
-                            .clickable(enabled = isBiometricSupported) { triggerBiometric() },
+                            .clickable(enabled = isBiometricSupported && !setupMode && !legacyChangeRequired && lockoutRemainingMs <= 0) { triggerBiometric() },
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
+                        if (isBiometricSupported && !setupMode && !legacyChangeRequired) Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 Icons.Default.Fingerprint,
                                 contentDescription = "Fingerprint",
@@ -309,7 +386,7 @@ fun AppLockScreen(
                                 modifier = Modifier.size(28.dp),
                             )
                         }
-                    }
+                    } else Spacer(Modifier.weight(1f).height(60.dp))
 
                     // Digit 0
                     KeypadButton("0", modifier = Modifier.weight(1f)) { handleDigit("0") }
@@ -340,7 +417,7 @@ fun AppLockScreen(
             Spacer(Modifier.height(14.dp))
 
             // Direct Biometric Link Action
-            if (isBiometricSupported && settingsState.isBiometricEnabled) {
+            if (isBiometricSupported && settingsState.isBiometricEnabled && !setupMode && !legacyChangeRequired) {
                 TextButton(
                     onClick = { triggerBiometric() },
                     modifier = Modifier.testTag("useBiometricButton"),

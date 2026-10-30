@@ -31,6 +31,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -73,6 +74,12 @@ fun AncApp(
     val isAppLocked = securitySettings?.isAppLocked ?: false
     var showSettingsDialog by remember { mutableStateOf(false) }
 
+    LaunchedEffect(isAppLocked, securitySettings?.needsPinSetup) {
+        if (isAppLocked || securitySettings?.needsPinSetup == true) {
+            showSettingsDialog = false
+        }
+    }
+
     BackHandler(enabled = unlocked && !isAppLocked && (state.route != AncRoute.PatientList || state.showDiscardDialog)) {
         onEvent(if (state.showDiscardDialog) AncEvent.KeepEditing else AncEvent.Back)
     }
@@ -88,7 +95,12 @@ fun AncApp(
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.safeDrawing),
         ) {
-            if (!unlocked) {
+            if (securityRepo != null && (securitySettings?.needsPinSetup == true || isAppLocked)) {
+                AppLockScreen(
+                    securityRepo = securityRepo,
+                    onUnlockSuccess = { securityRepo.unlockApp() },
+                )
+            } else if (!unlocked) {
                 if (state.vaultState is VaultState.Inspecting || state.vaultState is VaultState.Opening || state.vaultState is VaultState.Closing) {
                     Box(
                         modifier = Modifier
@@ -118,11 +130,6 @@ fun AncApp(
                         onRetry = onRetryStorage,
                     )
                 }
-            } else if (isAppLocked && securityRepo != null) {
-                AppLockScreen(
-                    securityRepo = securityRepo,
-                    onUnlockSuccess = { securityRepo.unlockApp() },
-                )
             } else {
                 if (state.route == AncRoute.PatientList) {
                     Row(
@@ -227,7 +234,7 @@ fun AncApp(
         }
     }
 
-    if (securityRepo != null && showSettingsDialog) {
+    if (securityRepo != null && showSettingsDialog && !isAppLocked && securitySettings?.needsPinSetup != true) {
         SecuritySettingsDialog(
             securityRepo = securityRepo,
             onDismiss = { showSettingsDialog = false },
@@ -241,7 +248,7 @@ fun AncApp(
         )
     }
 
-    if (unlocked && !isAppLocked && state.showNewPatientInfo) {
+    if (unlocked && !isAppLocked && securitySettings?.needsPinSetup != true && state.showNewPatientInfo) {
         AlertDialog(
             onDismissRequest = { onEvent(AncEvent.HideNewPatientInfo) },
             title = {
@@ -256,7 +263,7 @@ fun AncApp(
         )
     }
 
-    if (unlocked && !isAppLocked && state.showDiscardDialog) {
+    if (unlocked && !isAppLocked && securitySettings?.needsPinSetup != true && state.showDiscardDialog) {
         AlertDialog(
             onDismissRequest = { onEvent(AncEvent.KeepEditing) },
             title = {

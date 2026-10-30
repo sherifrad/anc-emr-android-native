@@ -39,7 +39,7 @@ benchmarks on free quota). opencode free models (GLM/DeepSeek/Nemotron) still at
 Verdict: all gates green. Fresh --rerun-tasks 317/317; static checks r3b (S5-S7), r3, U-r2, P10 pass; release compile OK; QA build on the
 API 26 emulator opens normally with its 4 demo patients after the vault change.
 Staffing: tests Claude Sonnet, build GPT-6 Luna, review Nemotron 3 Ultra (NVIDIA). Grok 4.7-high (Grok Build sign-in) tried as second
-reviewer: produced no review in 25 min (looped "plan" sessions) -> HALT after the gates; NOT fit as an opencode lane today.
+reviewer: was reading the code (findings matched Nemotron's) but hit the 25-minute relay timeout before writing its report -> HALT after the gates. Needs a longer timeout; the earlier note that it "looped" was wrong.
 Red before green: genuine. The three new-API tests were parked; STATIC-r3b failed on 6 sub-checks; parked files restored byte-identical.
 What changed: findBlockingRecordProblems (revision < 1, previous pregnancy linked to another patient, unsupported model version) is the
 only data reason to block a vault; vocabulary/GPA/provenance oddities become RecordAnomaly entries returned with the snapshot (UI to show
@@ -51,3 +51,32 @@ vocabulary); diffs read in full.
 Not verified: Keystore behaviour on a real device; a real "pointer missing + database present" device scenario (needs file surgery on
 the QA vault - planned for the device pass).
 Open: show anomalies to the clinician (banner + fix flow) - UI round.
+
+# Round 3c (runs 20261030-160322 .. 162108) - app lock, own PIN, Android 8-10 crash
+Verdict: gates green on the final tree. Fresh --rerun-tasks 339/339; check_r3c (S8-S13), r3b, r3 pass; release builds.
+Staffing: tests Claude Sonnet 5.5, build GPT-6 Luna, review Nemotron 3 Ultra (NVIDIA). Scope violations 0.
+Halts (both my spec errors, both caught by the guards): tests lane could not register the gate ids (script needed approval) -> resume with a
+direct-edit note; S13 was not scoped to a file so it flagged legitimate SHA-256 uses -> spec amended, check fixed.
+Review value: found that the old default PIN kept working after a restart (migration dropped the legacy key). Fixed; a further pass (3c-2,
+run from a second session in the same tree) made any weak stored PIN force a new PIN, persisted across restarts.
+Device (Honor 400 QA copy, not the clinic app): old default PIN -> "Set a security PIN", still forced after a force-stop; weak PIN rejected
+with a message; set + confirm unlocks; cold start asks for the PIN; 5 wrong PINs -> "Try again in 0:28". API 26 emulator: PIN setup, Settings
+opens, no crash, no fingerprint button.
+Not verified: biometric prompt on Android 11+; the legacy-PIN repository logic has no unit test.
+Open: system Back on the lock screen exits the app (nit); lockout text for 1 h+ (not reachable).
+
+# Round 3c-3 (run 20261030-164151) - no window above the lock screen
+Why: device test of 3c found the Security Settings dialog stayed on top of the PIN screen after 10+ min away (Hard Blocker for D6).
+Verdict: all gates green. Fresh --rerun-tasks 339/339; check_r3c S8-S16, r3b, r3 pass.
+Staffing: tests Claude Sonnet 5.5 (33 s), build GPT-6 Luna (34 s), review Nemotron 3 Ultra (386 s). Scope: AncApp.kt + check_r3c.py only; violations 0.
+Red before green: pipeline red step reused a cached result, so the orchestrator ran S16 against the pre-fix snapshot by hand: FAIL
+(dialog not guarded; no reset effect). Passes on the fixed tree.
+What changed: SecuritySettingsDialog shown only when !isAppLocked and no PIN setup is needed; a LaunchedEffect on the lock state closes it;
+the two AlertDialogs also gain needsPinSetup != true.
+Review: swept every Dialog/AlertDialog/DropdownMenu/Popup/Activity - all others sit inside the unlocked branch; no separate Activity.
+Its "Hard Blocker" (one-frame race before the effect runs) is wrong: the dialog's own if-condition reads isAppLocked in the same
+composition that shows the lock screen. Not acted on.
+Device (API 26 emulator, QA copy, fresh PIN): Settings open -> Home -> 2 min -> back: Settings still open, no lock (correct);
+-> 11 min -> back: only the PIN screen in the UI tree; after the PIN: patient list, Settings closed. Screenshots device/r3c3_*.png.
+Clock moved backwards also locks (by design, nowMs < backgroundSince). Emulator clock restored, adb unrooted.
+Open nits: system Back on the lock screen exits the app; moving the clock forward shortens a wrong-PIN lockout; unused biometric import.

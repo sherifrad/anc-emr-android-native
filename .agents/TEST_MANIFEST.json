@@ -154,6 +154,38 @@
       "covers": ["S5", "S6", "S7"]
     },
     {
+      "id": "UNIT-pin-policy",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*PinPolicyTest'",
+      "deps": [
+        "app/src/main/**/security/PinPolicy.kt",
+        "app/src/test/**/security/PinPolicyTest.kt"
+      ],
+      "covers": ["Q25"]
+    },
+    {
+      "id": "UNIT-lock-policy",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*AppLockPolicyTest'",
+      "deps": [
+        "app/src/main/**/security/AppLockPolicy.kt",
+        "app/src/test/**/security/AppLockPolicyTest.kt"
+      ],
+      "covers": ["Q26"]
+    },
+    {
+      "id": "STATIC-r3c",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3c.py",
+      "deps": [
+        "app/src/main/**/security/SecuritySettingsRepository.kt",
+        "app/src/main/**/security/BiometricAuthManager.kt",
+        "app/src/main/**/MainActivity.kt",
+        ".agents/checks/check_r3c.py"
+      ],
+      "covers": ["S8", "S9", "S10", "S11", "S12", "S13"]
+    },
+    {
       "id": "UNIT-all",
       "tier": 2,
       "cmd": "./gradlew --offline :app:testDebugUnitTest",

@@ -15,7 +15,7 @@ ap.add_argument("--root", default=str(HOME / "anc-emr-android-native"))
 ap.add_argument("--plan", action="store_true")
 ap.add_argument("--skip-review", action="store_true")
 ap.add_argument("--ui-only", action="store_true", help="tests and core already green: run only the UI lane, cache check and review")
-ap.add_argument("--round", default="r1", choices=["r1", "r2", "r3", "r3b"], help="r2: SPEC_FIX_R2 briefs in pipeline/r2, round-2 file lists")
+ap.add_argument("--round", default="r1", choices=["r1", "r2", "r3", "r3b", "r3c", "r3c2", "r3c3"], help="r2: SPEC_FIX_R2 briefs in pipeline/r2, round-2 file lists")
 ap.add_argument("--resume-tests", metavar="NOTE", help="tests lane timed out after writing tests: send a short finish-up request (NOTE), then continue")
 ap.add_argument("--from-core", metavar="RED_RUN_DIR", help="tests already written and red-checked in RED_RUN_DIR: start at the core lane")
 ap.add_argument("--skip-ui", action="store_true", help="no UI work this round: skip the UI lane, still run the full gate")
@@ -81,10 +81,29 @@ if args.round == "r3b":
         "ui": [],
         "review": [],
     }
-BRIEFS = PIPE / args.round if args.round in ("r2", "r3", "r3b") else PIPE
+if args.round == "r3c":
+    M = "app/src/main/java/com/sherifradwan/ancnative/"; SE = "app/src/test/java/com/sherifradwan/ancnative/security/"
+    TEST_GLOBS = [SE + "PinPolicyTest.kt", SE + "AppLockPolicyTest.kt", ".agents/checks/check_r3c.py", ".agents/TEST_MANIFEST.json"]
+    ALLOW = {
+        "tests": TEST_GLOBS,
+        "core": [M + "security/PinPolicy.kt", M + "security/AppLockPolicy.kt", M + "security/SecuritySettingsRepository.kt",
+                 M + "security/BiometricAuthManager.kt", M + "MainActivity.kt"],
+        "ui": [UI + "AppLockScreen.kt", UI + "AncApp.kt", UI + "SecuritySettingsDialog.kt", "app/src/main/res/values/strings.xml"],
+        "review": [],
+    }
+if args.round == "r3c2":
+    M = "app/src/main/java/com/sherifradwan/ancnative/"
+    TEST_GLOBS = [".agents/checks/check_r3c.py"]
+    ALLOW = {"tests": TEST_GLOBS, "core": [M + "security/SecuritySettingsRepository.kt"], "ui": [UI + "AppLockScreen.kt"], "review": []}
+    CORE_GATE_EXTRA = set()
+if args.round == "r3c3":
+    TEST_GLOBS = [".agents/checks/check_r3c.py"]
+    ALLOW = {"tests": TEST_GLOBS, "core": [], "ui": [UI + "AncApp.kt"], "review": []}
+BRIEFS = PIPE / args.round if args.round in ("r2", "r3", "r3b", "r3c", "r3c2", "r3c3") else PIPE
 # Tests that reference functions the core lane has not written yet; parked during the behavioural red check.
 NEW_API_TESTS = {"r2": [T + "ClinicalFormatR2Test.kt"], "r3": ["app/src/test/java/com/sherifradwan/ancnative/state/IntakeDatingRuleTest.kt"],
-                 "r3b": ["app/src/test/java/com/sherifradwan/ancnative/storage/" + n for n in ("RecordAnomaliesTest.kt", "VaultAutoActionTest.kt", "VaultCleanupRuleTest.kt")]}.get(args.round, [])
+                 "r3b": ["app/src/test/java/com/sherifradwan/ancnative/storage/" + n for n in ("RecordAnomaliesTest.kt", "VaultAutoActionTest.kt", "VaultCleanupRuleTest.kt")],
+                 "r3c": ["app/src/test/java/com/sherifradwan/ancnative/security/" + n for n in ("PinPolicyTest.kt", "AppLockPolicyTest.kt")]}.get(args.round, [])
 WATCH = ["app/src", "tests", ".agents/checks", ".agents/TEST_MANIFEST.json", "build.gradle.kts", "settings.gradle.kts", "gradle.properties", "app/build.gradle.kts"]
 METRICS = []
 
@@ -152,6 +171,8 @@ CORE_GATE = {"UNIT-parse", "UNIT-format", "COMPILE-app"}  # UI-only checks (cont
 if args.round == "r2": CORE_GATE |= {"UNIT-parse-legacy", "UNIT-format-r2", "UNIT-print"}
 if args.round == "r3": CORE_GATE |= {"UNIT-print", "UNIT-intake-dating", "STATIC-r3"}
 if args.round == "r3b": CORE_GATE |= {"UNIT-anomalies", "UNIT-vault-auto", "UNIT-vault-cleanup", "STATIC-r3b"}
+if args.round == "r3c": CORE_GATE |= {"UNIT-pin-policy", "UNIT-lock-policy", "STATIC-r3c"}
+if args.round == "r3c2": CORE_GATE |= {"UNIT-pin-policy", "UNIT-lock-policy"}
 
 def test_compile_failed(res):
     """True when a failure is the unit-test source set not compiling (an error in a test file), not a failing assertion."""
@@ -167,7 +188,7 @@ def red_check():
     for rel in NEW_API_TESTS:
         f = ROOT / rel
         if f.exists(): parked[rel] = hashlib.sha1(f.read_bytes()).hexdigest(); f.rename(f.with_suffix(".kt.parked"))
-    try: red = run_selected("1b-red", max_tier=1, exclude={"UNIT-format-r2", "UNIT-intake-dating", "UNIT-anomalies", "UNIT-vault-auto", "UNIT-vault-cleanup"} if parked else ())
+    try: red = run_selected("1b-red", max_tier=1, exclude={"UNIT-format-r2", "UNIT-intake-dating", "UNIT-anomalies", "UNIT-vault-auto", "UNIT-vault-cleanup", "UNIT-pin-policy", "UNIT-lock-policy"} if parked else ())
     finally:
         for rel, h in parked.items():
             f = ROOT / rel; f.with_suffix(".kt.parked").rename(f)

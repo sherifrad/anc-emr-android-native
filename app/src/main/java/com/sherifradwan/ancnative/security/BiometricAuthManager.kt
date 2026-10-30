@@ -5,10 +5,12 @@ import android.content.Context
 import android.hardware.biometrics.BiometricManager
 import android.hardware.biometrics.BiometricPrompt
 import android.os.CancellationSignal
+import android.os.Build
 
 object BiometricAuthManager {
 
     fun isBiometricAvailable(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT < 30) return false
         val manager = context.getSystemService(BiometricManager::class.java) ?: return false
         val canAuth = manager.canAuthenticate(
             BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK,

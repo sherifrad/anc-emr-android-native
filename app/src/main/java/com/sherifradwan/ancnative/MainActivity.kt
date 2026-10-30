@@ -98,11 +98,15 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
+        if (com.sherifradwan.ancnative.security.shouldLockOnReturn(securityRepo.backgroundTimeMs(), System.currentTimeMillis())) {
+            securityRepo.lockApp()
+        }
         viewModel.onForegrounded()
     }
 
     override fun onStop() {
         super.onStop()
+        securityRepo.recordBackgroundTime(System.currentTimeMillis())
         viewModel.onBackgrounded(authenticationOverlayActive = true)
     }
 }

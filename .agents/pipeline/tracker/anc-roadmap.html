@@ -1,0 +1,173 @@
+<title>ANC EMR Production Roadmap</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,650&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column; progress summary on top, then one section per phase with a ledger of task rows. */
+:root {
+  --bg: #f6f7f9; --surface: #ffffff; --ink: #18202c; --muted: #5b6676; --line: #dfe3ea;
+  --accent: #2f4f8f;
+  --done: #2c7a4b; --done-bg: #e3f2e9;
+  --active: #9a5b00; --active-bg: #fbefd9;
+  --next: #2f4f8f; --next-bg: #e4eaf6;
+  --todo: #5b6676; --todo-bg: #eceff3;
+  --blocked: #a33b3b; --blocked-bg: #f7e3e3;
+  --bar: #dfe3ea;
+  --display: "Literata", Georgia, "Times New Roman", serif;
+  --body: "Public Sans", -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #11151c; --surface: #171d26; --ink: #e6eaf0; --muted: #9aa5b5; --line: #2a3340;
+  --accent: #8fa9e0;
+  --done: #7fcf9c; --done-bg: #1c3226; --active: #f0b85c; --active-bg: #3a2c14;
+  --next: #8fa9e0; --next-bg: #1e2a40; --todo: #9aa5b5; --todo-bg: #232a35;
+  --blocked: #f09a9a; --blocked-bg: #3a1f1f; --bar: #2a3340; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #11151c; --surface: #171d26; --ink: #e6eaf0; --muted: #9aa5b5; --line: #2a3340;
+  --accent: #8fa9e0;
+  --done: #7fcf9c; --done-bg: #1c3226; --active: #f0b85c; --active-bg: #3a2c14;
+  --next: #8fa9e0; --next-bg: #1e2a40; --todo: #9aa5b5; --todo-bg: #232a35;
+  --blocked: #f09a9a; --blocked-bg: #3a1f1f; --bar: #2a3340; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--body); }
+.wrap { max-width: 860px; margin: 0 auto; padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 28px; }
+header { display: grid; gap: 6px; }
+.eyebrow { font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font: 650 clamp(26px, 5vw, 34px)/1.15 var(--display); margin: 0; text-wrap: balance; }
+.lede { color: var(--muted); margin: 0; max-width: 62ch; }
+.summary { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: grid; gap: 14px; }
+.big { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.big strong { font: 650 34px/1 var(--display); font-variant-numeric: tabular-nums; }
+.big span { color: var(--muted); }
+.bar { height: 10px; border-radius: 99px; background: var(--bar); overflow: hidden; display: flex; }
+.bar i { display: block; height: 100%; }
+.bar .d { background: var(--done); } .bar .a { background: var(--active); }
+.counts { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: var(--muted); }
+.counts b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.now { border-left: 3px solid var(--active); padding: 2px 0 2px 12px; display: grid; gap: 2px; }
+.now .label { font: 500 11px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--active); }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.filters button { font: 500 13px var(--body); color: var(--muted); background: transparent; border: 1px solid var(--line);
+  border-radius: 99px; padding: 6px 12px; cursor: pointer; min-height: 36px; }
+.filters button[aria-pressed="true"] { color: var(--ink); border-color: var(--accent); background: var(--next-bg); }
+.filters button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+section.phase { display: grid; gap: 10px; }
+.phase-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+.phase-head h2 { font: 650 19px/1.3 var(--display); margin: 0; text-wrap: balance; }
+.phase-head .pc { font: 500 13px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.phase-head p { flex-basis: 100%; margin: 0; color: var(--muted); font-size: 13.5px; }
+ol.tasks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+li.task { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+li.task details > summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: auto 1fr auto; gap: 10px;
+  align-items: start; padding: 11px 14px; }
+li.task details > summary::-webkit-details-marker { display: none; }
+.pill { font: 500 11px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; padding: 5px 8px; border-radius: 99px;
+  white-space: nowrap; margin-top: 2px; }
+.s-done { color: var(--done); background: var(--done-bg); } .s-active { color: var(--active); background: var(--active-bg); }
+.s-next { color: var(--next); background: var(--next-bg); } .s-todo { color: var(--todo); background: var(--todo-bg); }
+.s-blocked { color: var(--blocked); background: var(--blocked-bg); }
+.t-title { min-width: 0; font-weight: 500; }
+.t-title.done { color: var(--muted); }
+.ref { font: 400 12px var(--mono); color: var(--muted); white-space: nowrap; margin-top: 3px; }
+.t-body { padding: 0 14px 12px 14px; display: grid; gap: 6px; color: var(--muted); font-size: 14px; }
+.t-body .who { font: 400 12px var(--mono); }
+.empty { color: var(--muted); background: var(--surface); border: 1px dashed var(--line); border-radius: 12px; padding: 18px; }
+footer { color: var(--muted); font-size: 12.5px; }
+@media (max-width: 520px) { li.task details > summary { grid-template-columns: auto 1fr; } .ref { grid-column: 2; } }
+@media (prefers-reduced-motion: no-preference) { .bar i { transition: width .4s ease; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Dr. Sherif Radwan Clinic · Android EMR</div>
+    <h1>Road to production</h1>
+    <p class="lede">Every task between today's build and a release you can trust with real antenatal records. Each fix is built tests-first by one AI model and checked by others, then verified by Claude on an emulator or your Honor 400.</p>
+  </header>
+
+  <div class="summary" id="summary">
+    <div class="big"><strong id="pct">–</strong><span id="pctlabel">Loading the task list…</span></div>
+    <div class="bar" id="bar" aria-hidden="true"><i class="d" style="width:0"></i><i class="a" style="width:0"></i></div>
+    <div class="counts" id="counts"></div>
+    <div class="now" id="now" hidden><div class="label">Working on now</div><div id="nowtext"></div></div>
+  </div>
+
+  <div class="filters" role="group" aria-label="Show tasks">
+    <button type="button" id="f-all" data-f="all" aria-pressed="true">All</button>
+    <button type="button" id="f-open" data-f="open" aria-pressed="false">Still to do</button>
+    <button type="button" id="f-done" data-f="done" aria-pressed="false">Done</button>
+  </div>
+
+  <div id="phases"><p class="empty">The task list loads from the roadmap store. If nothing appears, open this page while signed in to claude.ai.</p></div>
+
+  <footer id="foot">Updated by Claude after each round. Tap a task for details.</footer>
+</div>
+
+<script>
+const LABEL = { done: "Done", active: "In progress", next: "Next", todo: "To do", blocked: "Blocked" };
+let tasks = [], phases = [], filter = "all";
+try { filter = localStorage.getItem("roadmap-filter") || "all"; } catch (e) {}
+
+function el(tag, cls, text) { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+
+function render() {
+  const total = tasks.length;
+  const done = tasks.filter(t => t.status === "done").length;
+  const active = tasks.filter(t => t.status === "active").length;
+  document.getElementById("pct").textContent = total ? Math.round(100 * done / total) + "%" : "–";
+  document.getElementById("pctlabel").textContent = total ? `${done} of ${total} tasks done` : "No tasks yet";
+  const [d, a] = document.querySelectorAll("#bar i");
+  d.style.width = total ? (100 * done / total) + "%" : "0"; a.style.width = total ? (100 * active / total) + "%" : "0";
+  const counts = document.getElementById("counts"); counts.replaceChildren();
+  for (const s of ["done", "active", "next", "todo", "blocked"]) {
+    const n = tasks.filter(t => t.status === s).length; if (!n && s === "blocked") continue;
+    const span = el("span"); span.append(el("b", null, String(n)), " " + LABEL[s].toLowerCase()); counts.append(span);
+  }
+  const now = tasks.filter(t => t.status === "active");
+  document.getElementById("now").hidden = !now.length;
+  document.getElementById("nowtext").textContent = now.map(t => t.title).join(" · ");
+
+  document.querySelectorAll(".filters button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.f === filter)));
+  const root = document.getElementById("phases"); root.replaceChildren();
+  if (!total) { root.append(el("p", "empty", "No tasks in the roadmap yet.")); return; }
+  const order = phases.length ? phases : [...new Set(tasks.map(t => t.phase))].map(id => ({ id, title: id }));
+  for (const ph of order) {
+    const all = tasks.filter(t => t.phase === ph.id).sort((x, y) => (x.order || 0) - (y.order || 0));
+    const shown = all.filter(t => filter === "all" || (filter === "done" ? t.status === "done" : t.status !== "done"));
+    if (!shown.length) continue;
+    const sec = el("section", "phase"); const head = el("div", "phase-head");
+    head.append(el("h2", null, ph.title), el("span", "pc", `${all.filter(t => t.status === "done").length}/${all.length} done`));
+    if (ph.note) head.append(el("p", null, ph.note));
+    const ol = el("ol", "tasks");
+    for (const t of shown) {
+      const li = el("li", "task"); const det = el("details"); const sum = el("summary");
+      sum.append(el("span", "pill s-" + (LABEL[t.status] ? t.status : "todo"), LABEL[t.status] || t.status),
+        el("span", "t-title" + (t.status === "done" ? " done" : ""), t.title), el("span", "ref", t.ref || ""));
+      const body = el("div", "t-body");
+      if (t.detail) body.append(el("div", null, t.detail));
+      if (t.owner) body.append(el("div", "who", "Who: " + t.owner));
+      det.append(sum, body); li.append(det); ol.append(li);
+    }
+    sec.append(head, ol); root.append(sec);
+  }
+}
+
+document.querySelectorAll(".filters button").forEach(b => b.addEventListener("click", () => {
+  filter = b.dataset.f; try { localStorage.setItem("roadmap-filter", filter); } catch (e) {} render();
+}));
+
+(async () => {
+  const db = await window.claude?.use?.("db");
+  if (!db) return;
+  db.collection("phases").orderBy("order").onSnapshot(s => { phases = s.docs.map(d => ({ id: d.id, ...d.data() })); render(); }, () => {});
+  db.collection("tasks").onSnapshot(s => {
+    tasks = s.docs.map(d => ({ id: d.id, ...d.data() }));
+    const stamp = tasks.map(t => t.updated || "").sort().pop();
+    if (stamp) document.getElementById("foot").textContent = `Last updated ${stamp}. Updated by Claude after each round. Tap a task for details.`;
+    render();
+  }, () => {});
+})();
+</script>

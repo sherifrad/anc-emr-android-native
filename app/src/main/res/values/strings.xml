@@ -313,4 +313,15 @@
     <string name="no_records">None recorded</string>
     <string name="open_workspace">Open Workspace</string>
     <string name="edit_history">Edit History</string>
+    <string name="pin_setup_title">Set a security PIN</string>
+    <string name="pin_confirm_title">Confirm your security PIN</string>
+    <string name="pin_legacy_title">Enter your current PIN</string>
+    <string name="pin_unlock_title">Enter Security PIN</string>
+    <string name="pin_rule">Use 6 digits. Do not use all the same digit or a straight sequence.</string>
+    <string name="pin_invalid">Choose 6 digits that are not all the same or a straight sequence.</string>
+    <string name="pin_mismatch">The PINs do not match. Enter and confirm your PIN again.</string>
+    <string name="pin_incorrect">Incorrect PIN. Please try again.</string>
+    <string name="pin_lockout">Too many wrong PINs. Try again in %1$d:%2$02d.</string>
+    <string name="pin_setup_hint">Enter a new PIN.</string>
+    <string name="pin_confirm_hint">Enter the same PIN again.</string>
 </resources>

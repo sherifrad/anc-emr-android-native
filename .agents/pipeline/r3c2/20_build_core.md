@@ -1,0 +1,3 @@
+CURRENT TASK = ROUND 3c-2, core part: Q30(a) in app/src/main/java/com/sherifradwan/ancnative/security/SecuritySettingsRepository.kt ONLY (persisted key_pin_change_required; needsPinSetup derived from it at load and after every successful check; cleared by a valid new PIN). Make check_r3c.py S14 pass and keep all tests green. Do not edit tests or checks.
+ALLOWED files: app/src/main/java/com/sherifradwan/ancnative/security/SecuritySettingsRepository.kt
+Run: python3 .agents/checks/check_r3c.py; ./gradlew --offline :app:testDebugUnitTest --tests '*PinPolicyTest' --tests '*AppLockPolicyTest'; ./gradlew --offline :app:compileDebugKotlin. Report real results.

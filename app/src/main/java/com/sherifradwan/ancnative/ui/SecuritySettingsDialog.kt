@@ -59,6 +59,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -74,6 +75,7 @@ import com.sherifradwan.ancnative.security.AppThemeMode
 import com.sherifradwan.ancnative.security.AutoLockTimeout
 import com.sherifradwan.ancnative.security.BiometricAuthManager
 import com.sherifradwan.ancnative.security.SecuritySettingsRepository
+import com.sherifradwan.ancnative.security.isValidNewPin
 
 enum class SettingsTab {
     SECURITY,
@@ -771,6 +773,7 @@ private fun ChangePinDialog(
     var newPin by remember { mutableStateOf("") }
     var confirmPin by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val invalidPinMessage = stringResource(R.string.pin_invalid)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -780,14 +783,14 @@ private fun ChangePinDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
-                    text = "Enter 6 digits to lock and unlock the application. The new PIN will be active immediately.",
+                    text = stringResource(R.string.pin_rule),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 OutlinedTextField(
                     value = newPin,
-                    onValueChange = { if (it.length <= 6 && it.all { c -> c.isDigit() }) newPin = it },
+                    onValueChange = { if (it.length <= 6 && it.all { c -> c in '0'..'9' }) newPin = it },
                     label = { Text("New 6-Digit PIN") },
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
@@ -797,7 +800,7 @@ private fun ChangePinDialog(
 
                 OutlinedTextField(
                     value = confirmPin,
-                    onValueChange = { if (it.length <= 6 && it.all { c -> c.isDigit() }) confirmPin = it },
+                    onValueChange = { if (it.length <= 6 && it.all { c -> c in '0'..'9' }) confirmPin = it },
                     label = { Text("Confirm New PIN") },
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
@@ -818,13 +821,12 @@ private fun ChangePinDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (newPin.length != 6) {
-                        errorMessage = "PIN must be exactly 6 digits!"
+                    if (!isValidNewPin(newPin)) {
+                        errorMessage = invalidPinMessage
                     } else if (newPin != confirmPin) {
                         errorMessage = "New PIN and confirmation do not match!"
                     } else {
-                        securityRepo.updatePin(newPin)
-                        onSuccess()
+                        if (securityRepo.updatePin(newPin)) onSuccess()
                     }
                 },
                 modifier = Modifier.testTag("saveNewPinButton"),
