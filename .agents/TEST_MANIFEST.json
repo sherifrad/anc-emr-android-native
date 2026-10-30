@@ -565,6 +565,26 @@
       "covers": ["Q65"]
     },
     {
+      "id": "STATIC-r3h",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3h.py",
+      "deps": [
+        "app/src/main/**/storage/CameraCaptureHelper.kt",
+        ".agents/checks/check_r3h.py"
+      ],
+      "covers": ["S50"]
+    },
+    {
+      "id": "UNIT-capture-temp-file",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*CaptureTempFileTest'",
+      "deps": [
+        "app/src/main/**/storage/CameraCaptureHelper.kt",
+        "app/src/test/**/CaptureTempFileTest.kt"
+      ],
+      "covers": ["Q68"]
+    },
+    {
       "id": "UNIT-all",
       "tier": 2,
       "cmd": "./gradlew --offline :app:testDebugUnitTest",

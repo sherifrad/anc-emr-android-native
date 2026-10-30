@@ -29,19 +29,10 @@ object CameraCaptureHelper {
      * Deletes the file behind [uri] only when it is one of our FileProvider URIs that resolves
      * (canonically) to a file inside cacheDir/camera. Returns true only when a file was deleted.
      */
-    fun deleteIfCaptureTemp(context: Context, uri: Uri): Boolean {
-        return try {
-            if (uri.scheme != "content" || uri.authority != "${context.packageName}.fileprovider") return false
-            val segments = uri.pathSegments
-            // file_paths.xml maps cacheDir/camera/ to /camera_photos/<relative path>
-            if (segments.size < 2 || segments[0] != "camera_photos") return false
-            val root = cameraDir(context).canonicalFile
-            val candidate = File(root, segments.drop(1).joinToString(File.separator)).canonicalFile
-            candidate.isFile && candidate.parentFile == root && candidate.delete()
-        } catch (e: Exception) {
-            false
-        }
-    }
+    fun deleteIfCaptureTemp(context: Context, uri: Uri): Boolean =
+        captureTempFile(
+            cameraDir(context), "${context.packageName}.fileprovider", uri.scheme, uri.authority, uri.pathSegments,
+        )?.delete() == true
 
     /**
      * Removes capture files older than [olderThanMs] left behind in cacheDir/camera, except those
@@ -50,6 +41,29 @@ object CameraCaptureHelper {
     fun clearStaleCaptures(context: Context, olderThanMs: Long, referencedUris: Set<String>) {
         val referencedNames = referencedUris.map { it.substringAfterLast('/') }.toSet()
         staleCaptureFiles(cameraDir(context), olderThanMs, System.currentTimeMillis(), referencedNames).forEach { it.delete() }
+    }
+}
+
+/**
+ * The canonical file inside [cameraDir] that a FileProvider URI points at, or null unless the URI is ours
+ * and resolves to a regular file directly in [cameraDir]. Never throws.
+ */
+fun captureTempFile(
+    cameraDir: File,
+    expectedAuthority: String,
+    scheme: String?,
+    authority: String?,
+    pathSegments: List<String>,
+): File? {
+    return try {
+        if (scheme != "content" || authority != expectedAuthority) return null
+        // file_paths.xml maps cacheDir/camera/ to /camera_photos/<relative path>
+        if (pathSegments.size < 2 || pathSegments[0] != "camera_photos") return null
+        val root = cameraDir.canonicalFile
+        val candidate = File(root, pathSegments.drop(1).joinToString(File.separator)).canonicalFile
+        if (candidate.isFile && candidate.parentFile == root) candidate else null
+    } catch (e: Exception) {
+        null
     }
 }
 

@@ -1,0 +1,2 @@
+ROLE: CORE BUILDER for ROUND 3h. Implement Q68 in app/src/main/java/com/sherifradwan/ancnative/storage/CameraCaptureHelper.kt only. Use the Edit tool directly. Behaviour of deleteIfCaptureTemp must not change.
+Run: ./gradlew --offline :app:testDebugUnitTest (whole suite), python3 .agents/checks/check_r3h.py, every older .agents/checks/check_r3*.py, ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin. Report real results.

@@ -431,3 +431,16 @@ Unit: ScanPhotoRefTest (round trip; rejects "../x.webp", "a/b.webp", "x.jpg", ""
 Device (orchestrator): add a scan photo through the Ultrasound editor, save the scan, open the viewer (photo from the vault, upright); a legacy/demo photo shows "Image unavailable"; the camera cache is empty after import;
  leftover older capture is swept at the next import; no crash.
 Not in this round: migrating legacy scans' cache URIs into the vault (their photos are kept alive by the referenced-set rule), orphan vault files from removed draft photos, encryption of photos.
+
+## Round 3h (the "delete only our own camera temp file" rule gets a real unit test)
+Reviewers twice noted that deleteIfCaptureTemp (the rule that decides which file may be deleted after a photo import) has no unit test because it needs android.net.Uri and a Context.
+Q68 (storage/CameraCaptureHelper.kt) Extract the rule as a pure top-level function with primitive inputs (no android types):
+    `fun captureTempFile(cameraDir: File, expectedAuthority: String, scheme: String?, authority: String?, pathSegments: List<String>): File?`
+    = the canonical file inside cameraDir that the URI points at, or null unless ALL hold: scheme == "content"; authority == expectedAuthority; pathSegments.size >= 2 and pathSegments[0] == "camera_photos";
+    the resolved canonical candidate (cameraDir.canonicalFile + remaining segments) is a regular file whose parent is exactly cameraDir.canonicalFile (so no ".." segments, no sub-folders, no segment containing a separator,
+    no symlink that resolves elsewhere). Never throws (any exception -> null).
+    deleteIfCaptureTemp(context, uri) becomes a thin wrapper: captureTempFile(cameraDir(context), "${context.packageName}.fileprovider", uri.scheme, uri.authority, uri.pathSegments)?.delete() == true.
+    Behaviour is unchanged. No second copy of the rule.
+Static check (.agents/checks/check_r3h.py, STATIC-r3h): S50 CameraCaptureHelper.kt defines captureTempFile with no android.* type in its signature, and deleteIfCaptureTemp calls captureTempFile( and contains no "canonicalFile".
+Unit (storage/CaptureTempFileTest.kt, temp folders): valid file -> returned; wrong scheme; wrong authority; wrong first segment; only one segment; missing file; directory instead of file; "..": ["camera_photos","..","x.jpg"];
+ sub-folder ["camera_photos","sub","x.jpg"] with the file inside sub; a segment "a/b.jpg"; symlink inside cameraDir pointing to a file outside (skip with Assume if symlinks are unsupported) -> null; unrelated file name case.

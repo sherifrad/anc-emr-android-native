@@ -1,0 +1,20 @@
+MACA pipeline 20261031-003322 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('claude', 'claude-sonnet-5-5'), 'ui': ('claude', 'claude-sonnet-5-5')} review: ['claude:claude-sonnet-5-5']
+  claude    /opt/homebrew/bin/claude
+[1-tests] claude completed 56.8s changed=3 violations=0
+[1b-red] ran=3 reused=41 deferred=2 not_gated=7 failed=['STATIC-r3h', 'UNIT-capture-temp-file']
+[2a-core] claude completed 31.3s changed=1 violations=0
+[2a-green] ran=3 reused=2 deferred=0 not_gated=48 failed=[]
+Traceback (most recent call last):
+  File "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/run_pipeline.py", line 380, in <module>
+    main()
+  File "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/run_pipeline.py", line 362, in main
+    if not args.skip_ui: dispatch("2b-ui", "30_build_ui.md", "ui", "ui")
+  File "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/run_pipeline.py", line 206, in dispatch
+    brief.write_text((BRIEFS / "00_common_prefix.md").read_text() + "\n" + (BRIEFS / role_file).read_text()
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/pathlib.py", line 1256, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/pathlib.py", line 1242, in open
+    return io.open(self, mode, buffering, encoding, errors, newline,
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/pathlib.py", line 1110, in _opener
+    return self._accessor.open(self, flags, mode)
+FileNotFoundError: [Errno 2] No such file or directory: '/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/r3h/30_build_ui.md'
