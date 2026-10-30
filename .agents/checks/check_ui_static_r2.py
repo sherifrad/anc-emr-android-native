@@ -391,10 +391,11 @@ def run() -> int:
                 f"photo count shown as a bare number via imageUris.size.toString() at {shown}; "
                 "the scan photo chip must show stringResource(R.string.photos_count, n)"
             )
-        if not re.search(r"\bstringResource\s*\(\s*R\.string\.photos_count\b", src):
-            problems.append("R.string.photos_count is never shown via stringResource(R.string.photos_count, ...)")
+        # round 3j (Q72) turned the count into a plural: either form labels the number
+        if not re.search(r"\b(?:stringResource\s*\(\s*R\.string|pluralStringResource\s*\(\s*R\.plurals)\.photos_count\b", src):
+            problems.append("photos_count is never shown via stringResource(R.string.photos_count, ...) or pluralStringResource(R.plurals.photos_count, ...)")
         results.append(
-            (not problems, tag, "; ".join(problems) if problems else "photo chip count labelled via stringResource(R.string.photos_count, n)")
+            (not problems, tag, "; ".join(problems) if problems else "photo chip count labelled via the photos_count string or plural")
         )
 
     for ok, sub, message in results:

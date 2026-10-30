@@ -151,7 +151,7 @@ fun ClinicalAttachmentViewerDialog(
                             }
                             Text(
                                 text = AttachmentCategories.localizedName(attachment.category) +
-                                    (attachment.title?.let { " · $it" } ?: ""),
+                                    (attachment.title?.trim()?.takeIf(String::isNotEmpty)?.let { " · $it" } ?: ""),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.SemiBold,
@@ -196,7 +196,11 @@ fun ClinicalAttachmentViewerDialog(
                     if (loadedBitmap != null) {
                         Image(
                             bitmap = loadedBitmap,
-                            contentDescription = attachment.title ?: "Medical Attachment",
+                            contentDescription = attachmentDisplayTitle(
+                                attachment.title,
+                                AttachmentCategories.localizedName(attachment.category),
+                                attachment.capturedAt,
+                            ),
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Fit,
                         )
@@ -285,7 +289,7 @@ fun ClinicalAttachmentViewerDialog(
             title = { Text("Confirm Delete Attachment") },
             text = {
                 Text(
-                    "Are you sure you want to permanently delete this attachment (${attachment.title ?: attachment.fileName}) from patient ${patient.displayName}'s record?",
+                    "Are you sure you want to permanently delete this attachment (${attachmentDisplayTitle(attachment.title, AttachmentCategories.localizedName(attachment.category), attachment.capturedAt)}) from patient ${patient.displayName}'s record?",
                 )
             },
             confirmButton = {

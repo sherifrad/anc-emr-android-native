@@ -341,7 +341,7 @@ fun AddAttachmentDialog(
                                 modifier = Modifier.clickable { showCamera = true },
                             ) {
                                 Text(
-                                    text = "📷 Retake",
+                                    text = stringResource(R.string.attachment_retake),
                                     color = Color.White,
                                     style = MaterialTheme.typography.labelSmall,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -357,7 +357,7 @@ fun AddAttachmentDialog(
                                 },
                             ) {
                                 Text(
-                                    text = "🖼️ Gallery",
+                                    text = stringResource(R.string.attachment_gallery),
                                     color = Color.White,
                                     style = MaterialTheme.typography.labelSmall,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),

@@ -1,0 +1,2 @@
+ROLE: CORE BUILDER for ROUND 3j. Implement Q73 helper only: add `internal fun attachmentDisplayTitle(...)` to app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt exactly as the spec says (pure Kotlin, no android types). Use the Edit tool directly.
+Run: ./gradlew --offline :app:testDebugUnitTest --tests '*AttachmentDisplayTitleTest', then the whole suite ./gradlew --offline :app:testDebugUnitTest, and ./gradlew --offline :app:compileDebugKotlin. Report real results.

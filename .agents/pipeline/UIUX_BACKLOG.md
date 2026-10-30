@@ -3,6 +3,7 @@ Rule: UI/UX issues found while testing are written here and NOT fixed inside unr
 Status: open unless noted. Evidence = Honor 400 (QA copy) unless noted.
 
 ## New (seen 2026-10-30/31 on the phone)
+Fixed in round 3j (2026-10-31, verified on the phone): N-1 GA apply button layout, N-2 readable attachment title, N-3 "1 photo" plural (3 places + 1 hard-coded string), N-5 emoji removed from Retake/Gallery buttons.
 | ID | Where | Issue |
 |---|---|---|
 | N-1 | Ultrasound editor, calculated-GA card | "Apply calculated GA (42w 0d (Post-term))" button is squeezed into a narrow column, one word per line; the card becomes very tall. |
@@ -12,6 +13,7 @@ Status: open unless noted. Evidence = Honor 400 (QA copy) unless noted.
 | N-5 | Add Attachment / camera | "📷 Retake" and "🖼️ Gallery" use emoji in button text (read aloud by TalkBack, inconsistent with the rest). |
 | N-6 | In-app camera | No flash, zoom, or alignment guide; the still preview has no zoom to check sharpness; capture button has only a content description. |
 | N-7 | Ultrasound editor | The numeric keyboard stays open after `Done`; scroll does not work until it is hidden; consider hiding on scroll / imePadding. |
+| N-9 | Ultrasound editor | "GA weeks (0-45)" label wraps to two lines while "GA days (0-6)" does not, so the two boxes have different heights; use shorter labels or equal heights. |
 | N-8 | Viewer | Dark or tiny photos give no hint (no file size/dimensions line); add the size and preset used. |
 
 ## Older open items (DEVICE_TEST_REPORT.md) - re-check on the phone after 3c-3g

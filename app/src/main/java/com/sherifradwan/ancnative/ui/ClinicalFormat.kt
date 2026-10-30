@@ -41,11 +41,27 @@ internal fun formatAgeYears(ageText: String?): String? {
     return if (years in MIN_AGE_YEARS..MAX_AGE_YEARS) years.toString() else null
 }
 
+/**
+ * Attachment title as displayed (Q73): a non-blank trimmed title wins; otherwise the category,
+ * followed by " · " and the captured date when [capturedAt] starts with a yyyy-MM-dd date.
+ * A blank category falls back to "Attachment". The file name is never used as a title.
+ */
+internal fun attachmentDisplayTitle(title: String?, category: String, capturedAt: String): String {
+    val typed = title?.trim().orEmpty()
+    if (typed.isNotEmpty()) return typed
+    val label = category.trim().ifEmpty { "Attachment" }
+    val date = capturedAt.take(10)
+    return if (ISO_DATE.matches(date)) "$label \u00B7 $date" else label
+}
+
 /** Optional "Age" + optional ':', the number, optional unit y/yr/yrs/year/years, optional '.'. */
 private val AGE_TEXT = Regex(
     "^(?:age\\s*:?\\s*)?(\\d+)\\s*(?:years|year|yrs|yr|y)?\\.?$",
     RegexOption.IGNORE_CASE,
 )
+
+/** The first 10 characters of a capture timestamp, when they look like a yyyy-MM-dd date. */
+private val ISO_DATE = Regex("\\d{4}-\\d{2}-\\d{2}")
 
 private const val MIN_AGE_YEARS = 10
 private const val MAX_AGE_YEARS = 70

@@ -1,0 +1,19 @@
+MACA pipeline 20261031-010955 lanes: {'tests': ('opencode', 'opencode/glm-5.3-flash-free'), 'core': ('opencode', 'opencode/deepseek-v4.1-flash-free'), 'ui': ('opencode', 'opencode/deepseek-v4.1-flash-free')} review: ['opencode:opencode/glm-5.3-flash-free', 'claude:claude-sonnet-5-5']
+  claude    /opt/homebrew/bin/claude
+  opencode  /opt/homebrew/bin/opencode
+[1-tests] opencode completed 204.4s changed=3 violations=0
+[1b-red] ran=2 reused=46 deferred=2 not_gated=7 failed=['STATIC-r3j', 'UNIT-attachment-title']
+[2a-core] opencode completed 43.8s changed=1 violations=0
+[2a-green] ran=3 reused=1 deferred=0 not_gated=53 failed=[]
+[2b-ui] opencode completed 285.3s changed=7 violations=0
+[2b-green] ran=16 reused=41 deferred=0 not_gated=0 failed=['STATIC-ui-r2', 'STATIC-r3j']
+[2b-ui-repair1] opencode completed 267.3s changed=1 violations=0
+[2b-green-r1] ran=2 reused=55 deferred=0 not_gated=0 failed=['STATIC-ui-r2', 'STATIC-r3j']
+[2b-ui-repair2] opencode completed 222.1s changed=2 violations=0
+[2b-green-r2] ran=7 reused=50 deferred=0 not_gated=0 failed=[]
+[cache-check-no-changes] ran=0 reused=57 deferred=0 not_gated=0 failed=[]
+[3-review-0-opencode] opencode completed 111.2s changed=0 violations=0
+[3-review-1-claude] claude completed 35.5s changed=0 violations=0
+
+DONE.  Metrics: /Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-010955/metrics.json 
+Tell Claude: pipeline finished.

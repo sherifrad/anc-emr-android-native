@@ -1,0 +1,10 @@
+[
+ {
+  "spec": "opencode:opencode/deepseek-v4.1-flash-free",
+  "status": "completed",
+  "seconds": 22.9,
+  "chars": 540,
+  "ok": true,
+  "why": ""
+ }
+]

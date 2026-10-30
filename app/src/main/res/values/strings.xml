@@ -278,7 +278,6 @@
     <string name="standalone_scan">Standalone scan</string>
     <string name="view_linked_ultrasound">View ultrasound</string>
     <string name="view_linked_visit">View visit</string>
-    <string name="photos_count">%1$d photos</string>
     <string name="calculated_ga_at_visit">Calculated GA: %1$s</string>
     <string name="apply_calculated_ga">Apply calculated GA (%1$s)</string>
     <string name="simulated_photo">Ultrasound capture</string>
@@ -337,4 +336,6 @@
     <string name="photo_quality_standard">Standard - reports</string>
     <string name="photo_quality_detailed">Detailed - scans</string>
     <string name="attachment_delete_failed">The attachment could not be deleted. Please try again.</string>
+    <string name="attachment_retake">Retake</string>
+    <string name="attachment_gallery">Gallery</string>
 </resources>

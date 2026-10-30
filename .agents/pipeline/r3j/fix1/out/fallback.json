@@ -1,0 +1,18 @@
+[
+ {
+  "spec": "opencode:opencode/deepseek-v4.1-flash-free",
+  "status": "completed",
+  "seconds": 28.5,
+  "chars": 870,
+  "ok": false,
+  "why": "ClipboardManager>' is deprecated. Use LocalClipboard instead which supports suspend functions.\n\nBUILD SUCCESSFUL in 2s\n18 actionable tasks: 7 executed, 11 up-to-date\n> build \u00b7 deepseek-v4.1-flash-free no file changed"
+ },
+ {
+  "spec": "claude:claude-sonnet-5-5",
+  "status": "completed",
+  "seconds": 23.6,
+  "chars": 1315,
+  "ok": false,
+  "why": "no file changed"
+ }
+]

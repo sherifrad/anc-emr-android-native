@@ -86,6 +86,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import com.sherifradwan.ancnative.model.ClinicalSummaryGenerator
@@ -921,7 +922,7 @@ private fun VisitCard(
                                     modifier = Modifier.padding(vertical = 2.dp),
                                 ) {
                                     Text(
-                                        stringResource(R.string.photos_count, linkedScan.imageUris.size),
+                                        pluralStringResource(R.plurals.photos_count, linkedScan.imageUris.size, linkedScan.imageUris.size),
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.secondary,
@@ -1229,7 +1230,7 @@ private fun UltrasoundCard(
 
             if (!scan.impression.isNullOrBlank()) FactRow(R.string.scan_impression, scan.impression)
             if (scan.imageUris.isNotEmpty()) {
-                FactRow(R.string.scan_attachments, stringResource(R.string.photos_count, scan.imageUris.size))
+                FactRow(R.string.scan_attachments, pluralStringResource(R.plurals.photos_count, scan.imageUris.size, scan.imageUris.size))
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -1973,7 +1974,11 @@ private fun AttachmentsSectionCard(
                                 // Details
                                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                     Text(
-                                        text = attachment.title ?: attachment.fileName,
+                                        text = attachmentDisplayTitle(
+                                            title = attachment.title,
+                                            category = AttachmentCategories.localizedName(attachment.category),
+                                            capturedAt = attachment.capturedAt,
+                                        ),
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSurface,
@@ -2042,7 +2047,7 @@ private fun AttachmentsSectionCard(
             scansWithPhotos.forEach { scan ->
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = "Scan date: ${scan.date} (${scan.gestationalAgeWeeks?.let { "${it}w" } ?: "Gynecological"}) - ${scan.imageUris.size} photos",
+                        text = "Scan date: ${scan.date} (${scan.gestationalAgeWeeks?.let { "${it}w" } ?: "Gynecological"}) - ${pluralStringResource(R.plurals.photos_count, scan.imageUris.size, scan.imageUris.size)}",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.tertiary,
                     )

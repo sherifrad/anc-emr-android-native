@@ -1,0 +1,7 @@
+Build passes. Summary:
+
+1. `plurals.xml`: removed the fake `<skip>` block and its explanatory comment; only the real `<plurals name="photos_count">` with `quantity="one"/"other"` remains.
+2. `WorkspaceScreen.kt` attachment card now passes `AttachmentCategories.localizedName(attachment.category)` to `attachmentDisplayTitle`.
+3. `ClinicalAttachmentViewerDialog.kt`: delete-confirm dialog passes the localized name; header uses the trimmed-non-blank test so a blank title no longer yields "Category · "; image `contentDescription` now uses `attachmentDisplayTitle(...)` with the localized category.
+4. Removed the narrating Q72 comment in `ProfileScreen.kt` (and no similar comments remain in the allowed files).
+5. `./gradlew --offline :app:compileDebugKotlin` → BUILD SUCCESSFUL (one pre-existing `LocalClipboardManager` deprecation warning). No commit/push performed.

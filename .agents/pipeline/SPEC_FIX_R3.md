@@ -462,3 +462,19 @@ Static check (.agents/checks/check_r3i.py, STATIC-r3i; strip comments first): S5
 Unit (model/IsoDatesTest.kt): lenient: " 2026-01-05 " ok, "2026-1-5" null, "" / null / "abc" null; canonical: " 2026-01-05" null, "2026-01-05" ok, "2026-02-30" null, "2026-1-05" null; eddFromLmp(2026-01-01) == 2026-10-08;
     FULL_TERM_DAYS == 280. The existing GestationalAgeEngineTest, IntakeDatingRuleTest, ClinicalValidationTest, SaveCoordinatorTest and PatientPrintHtmlGeneratorTest must stay green untouched.
 Device (orchestrator, QA copy): new patient editor shows the Estimated Due Date and current GA for an LMP; a patient's banner progress still draws; no crash.
+
+## Round 3j (UI cluster 1 from UIUX_BACKLOG.md: N-1, N-2, N-3, N-5) - first round on the reorganised fleet (GLM tests, DeepSeek build, GLM + Claude review)
+Q71 (ui/UltrasoundEditor.kt, calculated-GA card) The card content is a Column, not a Row: the "Calculated GA ..." text on top, and below it (only when the entered GA differs) the "Apply calculated GA (...)" TextButton aligned to the end
+    with a full-width-friendly layout (no weight/width squeeze, the button text wraps normally). Keep testTags scanCalculatedGaCard and applyScanGa, the same strings, the same onClick events.
+Q72 Plurals (res/values/plurals.xml NEW, res/values/strings.xml, ui/WorkspaceScreen.kt, ui/ProfileScreen.kt) `<plurals name="photos_count">`: one = "%d photo", other = "%d photos". The string `photos_count` is removed from strings.xml and all four call sites
+    (WorkspaceScreen.kt x2, ProfileScreen.kt x2) use `pluralStringResource(R.plurals.photos_count, n, n)`.
+Q73 (ui/ClinicalFormat.kt + callers) pure `internal fun attachmentDisplayTitle(title: String?, category: String, capturedAt: String): String`: a non-blank trimmed title wins; otherwise "$category" + " · " + the first 10 characters of capturedAt when
+    they look like yyyy-MM-dd, else just the category; a blank category falls back to "Attachment". Callers that currently show `attachment.title ?: attachment.fileName` (WorkspaceScreen.kt attachment card; ClinicalAttachmentViewerDialog.kt header if it shows
+    the title/file name) call this helper (reuse, one rule). The file name is never shown as a title.
+Q74 (ui/AddAttachmentDialog.kt, res/values/strings.xml) The two photo-preview buttons show "Retake" and "Gallery" (strings attachment_retake, attachment_gallery) with no emoji characters; testTags and behaviour unchanged.
+Static checks (.agents/checks/check_r3j.py, STATIC-r3j; strip comments first): S55 UltrasoundEditor.kt: inside the scanCalculatedGaCard Card the Text and the applyScanGa button are in a Column (no Row between the Card and the Text of calculated_ga_at_visit).
+ S56 plurals.xml defines photos_count with one/other; strings.xml has no `name="photos_count"`; no `R.string.photos_count` anywhere; pluralStringResource(R.plurals.photos_count used at least 4 times.
+ S57 ClinicalFormat.kt defines attachmentDisplayTitle; WorkspaceScreen.kt calls it and no longer contains `attachment.title ?: attachment.fileName`.
+ S58 AddAttachmentDialog.kt contains no emoji (no char >= U+1F000 and no U+FE0F) and uses R.string.attachment_retake and R.string.attachment_gallery; strings.xml defines both.
+Unit (ui/AttachmentDisplayTitleTest.kt): title wins and is trimmed; blank title + "Ultrasound" + "2026-10-31T10:11:12Z" -> "Ultrasound · 2026-10-31"; bad capturedAt ("", "x") -> "Ultrasound"; blank category -> "Attachment" (with and without date); never returns a file name.
+Device (orchestrator): the Add scan editor card no longer squeezes; "1 photo" shows; an untitled attachment shows a readable title; the buttons have no emoji.

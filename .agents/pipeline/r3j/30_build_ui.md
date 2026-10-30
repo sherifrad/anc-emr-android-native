@@ -1,0 +1,4 @@
+ROLE: UI BUILDER for ROUND 3j. Implement Q71, Q72, Q73 (callers), Q74.
+ALLOWED files: app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt, ui/WorkspaceScreen.kt, ui/ProfileScreen.kt, ui/AddAttachmentDialog.kt, ui/ClinicalAttachmentViewerDialog.kt; app/src/main/res/values/strings.xml, app/src/main/res/values/plurals.xml (NEW). Use the Edit/Write tool directly.
+Reuse attachmentDisplayTitle (written by the core lane in ui/ClinicalFormat.kt) - do not write another title rule. Keep every testTag and behaviour not named in the spec. No emoji characters anywhere in the files you touch for button labels.
+Run: python3 .agents/checks/check_r3j.py, python3 .agents/checks/check_r3e.py, python3 .agents/checks/check_r3f2.py, ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin. Report real results.

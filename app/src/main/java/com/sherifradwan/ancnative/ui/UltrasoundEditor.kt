@@ -129,10 +129,9 @@ fun UltrasoundEditor(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                         shape = RoundedCornerShape(10.dp),
                     ) {
-                        Row(
+                        Column(
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp).fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
                             Text(
                                 text = stringResource(R.string.calculated_ga_at_visit, calculatedGa.displayText),
@@ -149,7 +148,9 @@ fun UltrasoundEditor(
                                         onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.GA_DAYS, calculatedGa.days.toString()))
                                     },
                                     enabled = enabled,
-                                    modifier = Modifier.testTag("applyScanGa"),
+                                    modifier = Modifier
+                                        .align(Alignment.End)
+                                        .testTag("applyScanGa"),
                                 ) {
                                     Text(stringResource(R.string.apply_calculated_ga, calculatedGa.displayText))
                                 }

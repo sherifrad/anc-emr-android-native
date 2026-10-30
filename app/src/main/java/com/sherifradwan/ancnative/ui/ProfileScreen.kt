@@ -67,6 +67,7 @@ import androidx.compose.ui.platform.testTag
 import com.sherifradwan.ancnative.security.SecuritySettingsRepository
 import com.sherifradwan.ancnative.ui.report.PatientTwoPageReportDialog
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -1140,7 +1141,7 @@ private fun ProfileVisitCard(
                                         modifier = Modifier.padding(vertical = 2.dp),
                                     ) {
                                         Text(
-                                            stringResource(R.string.photos_count, linkedScan.imageUris.size),
+                                            pluralStringResource(R.plurals.photos_count, linkedScan.imageUris.size, linkedScan.imageUris.size),
                                             style = MaterialTheme.typography.labelSmall,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.secondary,
@@ -1412,7 +1413,7 @@ private fun ProfileScanSnapshotCard(
                             modifier = Modifier.clickable { onViewPhotos(scan, 0) },
                         ) {
                             Text(
-                                text = stringResource(R.string.photos_count, scan.imageUris.size),
+                                text = pluralStringResource(R.plurals.photos_count, scan.imageUris.size, scan.imageUris.size),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,

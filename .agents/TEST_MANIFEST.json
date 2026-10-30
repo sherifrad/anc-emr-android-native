@@ -600,6 +600,33 @@
       "covers": ["S51", "S52", "S53", "S54"]
     },
     {
+      "id": "STATIC-r3j",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3j.py",
+      "deps": [
+        "app/src/main/**/ui/UltrasoundEditor.kt",
+        "app/src/main/res/values/plurals.xml",
+        "app/src/main/res/values/strings.xml",
+        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/main/**/ui/ProfileScreen.kt",
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/main/**/ui/AddAttachmentDialog.kt",
+        ".agents/checks/check_r3j.py"
+      ],
+      "covers": ["S55", "S56", "S57", "S58"]
+    },
+    {
+      "id": "UNIT-attachment-title",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.ui.AttachmentDisplayTitleTest'",
+      "deps": [
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/test/**/ui/AttachmentDisplayTitleTest.kt"
+      ],
+      "covers": ["Q73"]
+    },
+    {
       "id": "UNIT-iso-dates",
       "tier": 1,
       "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*IsoDatesTest'",
