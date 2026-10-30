@@ -6,7 +6,6 @@ import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.ClinicalValidationError
 import com.sherifradwan.ancnative.state.SavedNotice
 import com.sherifradwan.ancnative.state.WorkspaceSection
-import java.security.MessageDigest
 import java.util.UUID
 
 enum class ClinicalRecordKind {
@@ -480,6 +479,4 @@ private fun isValidUuid(raw: String): Boolean = try {
     false
 }
 
-private fun sha256(text: String): String = MessageDigest.getInstance("SHA-256")
-    .digest(text.toByteArray())
-    .joinToString("") { "%02x".format(it) }
+private fun sha256(text: String): String = sha256Hex(text)

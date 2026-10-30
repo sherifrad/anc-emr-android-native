@@ -1,6 +1,6 @@
 package com.sherifradwan.ancnative.ui
 
-import android.graphics.BitmapFactory
+import com.sherifradwan.ancnative.storage.BoundedBitmap
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -71,9 +71,7 @@ fun UltrasoundPhotoViewerDialog(
         runCatching {
             val uri = Uri.parse(currentUriString)
             if (uri.scheme == "content" || uri.scheme == "file") {
-                context.contentResolver.openInputStream(uri)?.use { stream ->
-                    BitmapFactory.decodeStream(stream)
-                }?.asImageBitmap()
+                BoundedBitmap.decodeStream({ context.contentResolver.openInputStream(uri) }, 2048)?.asImageBitmap()
             } else {
                 null
             }

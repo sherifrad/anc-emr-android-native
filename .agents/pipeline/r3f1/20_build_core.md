@@ -1,0 +1,5 @@
+ROLE: CORE BUILDER for ROUND 3f-1. Make the tests and checks pass without editing them. Implement Q47, Q48 (the non-UI parts), Q49, Q50, Q51 (state + view model).
+ALLOWED files (app/src/main/java/com/sherifradwan/ancnative/): storage/Hashing.kt (NEW), storage/BoundedBitmap.kt (NEW), storage/PatientAttachmentVault.kt, storage/ClinicalCommands.kt, storage/SaveVisitCommand.kt,
+storage/VaultCleanupRule.kt, storage/VaultController.kt, security/SecuritySettingsRepository.kt, state/AncState.kt, state/AncViewModel.kt.
+Hard rules: outputs of the hash and compression paths stay byte-identical; do not change the vault state machine, only replace the three duplicated blocks; grep before deleting any member; keep existing behaviour of everything not named.
+Run: ./gradlew --offline :app:testDebugUnitTest (whole suite), python3 .agents/checks/check_r3f1.py (S29, S31-S33 are yours; S30 and S34 need the UI lane), every older check (.agents/checks/check_r3*.py), ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin. Report real results and assumptions.

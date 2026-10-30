@@ -232,10 +232,12 @@ class VaultController internal constructor(
             if (pending.request.purpose == AuthenticationPurpose.INITIALIZE) {
                 scope.launch {
                     storageMutex.withLock {
-                        if (!files.activePointerFile.exists()) {
-                            files.cleanupUnpublishedArtifacts()
-                            if (!hasVaultDatabase(files.namespaceRoot)) keys.deleteOrphanAliases()
-                        }
+                        cleanUpAbandonedInitialization(
+                            namespaceRoot = files.namespaceRoot,
+                            activePointerFile = files.activePointerFile,
+                            cleanupUnpublished = { files.cleanupUnpublishedArtifacts() },
+                            deleteOrphanAliases = { keys.deleteOrphanAliases() },
+                        )
                     }
                 }
                 _view.value = VaultSessionView(VaultState.Uninitialized)
@@ -257,10 +259,12 @@ class VaultController internal constructor(
                 AuthenticationPurpose.INITIALIZE -> {
                     scope.launch {
                         storageMutex.withLock {
-                            if (!files.activePointerFile.exists()) {
-                                files.cleanupUnpublishedArtifacts()
-                                if (!hasVaultDatabase(files.namespaceRoot)) keys.deleteOrphanAliases()
-                            }
+                            cleanUpAbandonedInitialization(
+                                namespaceRoot = files.namespaceRoot,
+                                activePointerFile = files.activePointerFile,
+                                cleanupUnpublished = { files.cleanupUnpublishedArtifacts() },
+                                deleteOrphanAliases = { keys.deleteOrphanAliases() },
+                            )
                         }
                     }
                     VaultSessionView(VaultState.Uninitialized)
@@ -278,10 +282,12 @@ class VaultController internal constructor(
         }
         scope.launch {
             storageMutex.withLock {
-                if (!files.activePointerFile.exists()) {
-                    files.cleanupUnpublishedArtifacts()
-                    if (!hasVaultDatabase(files.namespaceRoot)) keys.deleteOrphanAliases()
-                }
+                cleanUpAbandonedInitialization(
+                    namespaceRoot = files.namespaceRoot,
+                    activePointerFile = files.activePointerFile,
+                    cleanupUnpublished = { files.cleanupUnpublishedArtifacts() },
+                    deleteOrphanAliases = { keys.deleteOrphanAliases() },
+                )
             }
             inspectStorage(inspectionEpoch)
         }

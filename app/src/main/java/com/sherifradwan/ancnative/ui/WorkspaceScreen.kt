@@ -46,6 +46,8 @@ import androidx.compose.material.icons.filled.VerifiedUser
 import com.sherifradwan.ancnative.model.DemoAttachment
 import com.sherifradwan.ancnative.storage.AttachmentCategories
 import com.sherifradwan.ancnative.storage.AttachmentSyncManager
+import com.sherifradwan.ancnative.storage.BoundedBitmap
+import com.sherifradwan.ancnative.state.AttachmentError
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -483,6 +485,26 @@ private fun LazyListScope.workspaceContentItems(
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(16.dp),
                 )
+            }
+        }
+    }
+    state.attachmentError?.let { error ->
+        item {
+            Card(modifier = Modifier.fillMaxWidth().testTag("attachment_error_banner")) {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth().padding(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    val message = when (error) {
+                        AttachmentError.SAVE_FAILED -> R.string.attachment_save_failed
+                        AttachmentError.DELETE_FAILED -> R.string.attachment_delete_failed
+                    }
+                    Text(stringResource(message), color = MaterialTheme.colorScheme.error)
+                    TextButton(onClick = { onEvent(AncEvent.DismissAttachmentError) }) {
+                        Text(stringResource(R.string.close), maxLines = 1, softWrap = false)
+                    }
+                }
             }
         }
     }
@@ -1922,7 +1944,7 @@ private fun AttachmentsSectionCard(
                                             fileName = attachment.fileName,
                                         )
                                         if (file != null && file.exists()) {
-                                            android.graphics.BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap()
+                                            BoundedBitmap.decodeFile(file.absolutePath, 2048)?.asImageBitmap()
                                         } else null
                                     }.getOrNull()
                                 }

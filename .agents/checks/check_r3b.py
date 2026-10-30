@@ -5,8 +5,9 @@ Stdlib only. Prints PASS/FAIL per sub-check, exits 1 if any FAIL.
 Textual source contract only; verifies nothing at runtime.
   S5 MainActivity.kt: the LaunchedEffect(state.vaultState) block calls vaultAutoAction
      and contains no retryStorageInspection() call.
-  S6 VaultController.kt: at least one deleteOrphanAliases() call, and each one is
-     guarded by hasVaultDatabase within the preceding lines.
+  S6 VaultController.kt: at least one deleteOrphanAliases call, and every one is inside a
+     cleanUpAbandonedInitialization( ... ) argument list; the helper guards the delete with
+     if (!hasVaultDatabase(...)) (rule shared with check_r3f1.py S31).
   S7 VaultFiles.kt: cleanupUnpublishedArtifacts body calls hasVaultDatabase.
 """
 import re
@@ -66,16 +67,29 @@ else:
         record("S5c effect has no retryStorageInspection()", "retryStorageInspection()" not in body)
 
 # S6
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from check_r3f1 import helper_guard_ok, paren_after
+
 raw = read(MAIN / "storage/VaultController.kt")
+rule_raw = read(MAIN / "storage/VaultCleanupRule.kt")
 if raw is None:
     record("S6 VaultController.kt readable", False, "missing")
 else:
     src = strip_comments(raw)
-    calls = [m.start() for m in re.finditer(r"deleteOrphanAliases\(\)", src)]
-    record("S6a deleteOrphanAliases() call sites present", len(calls) > 0)
+    spans = []
+    for m in re.finditer(r"\bcleanUpAbandonedInitialization\s*\(", src):
+        start = src.find("(", m.start())
+        spans.append((start, start + len(paren_after(src, m.start()))))
+    calls = [m.start() for m in re.finditer(r"\bdeleteOrphanAliases\s*\(", src)]
+    record("S6a deleteOrphanAliases call sites present", len(calls) > 0)
     for n, pos in enumerate(calls, 1):
-        window = src[max(0, pos - 400):pos]
-        record("S6b call %d guarded by hasVaultDatabase" % n, "hasVaultDatabase(" in window)
+        record("S6b call %d passed through cleanUpAbandonedInitialization" % n,
+               any(a < pos < b for a, b in spans))
+if rule_raw is None:
+    record("S6c VaultCleanupRule.kt readable", False, "missing")
+else:
+    ok, why = helper_guard_ok(strip_comments(rule_raw))
+    record("S6c helper guards alias delete with hasVaultDatabase", ok, why)
 
 # S7
 raw = read(MAIN / "storage/VaultFiles.kt")

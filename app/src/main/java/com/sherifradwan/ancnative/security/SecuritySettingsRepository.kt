@@ -5,8 +5,8 @@ import android.content.SharedPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import android.util.Base64
-import java.security.MessageDigest
+import com.sherifradwan.ancnative.storage.sha256Hex
+import java.util.Base64
 
 enum class AutoLockTimeout(val displayNameAr: String, val displayNameEn: String, val durationMs: Long) {
     IMMEDIATELY("Immediately on exit", "Immediately on exit", 0L),
@@ -36,10 +36,12 @@ data class SecuritySettingsState(
     val lockoutRemainingMs: Long = 0L,
 )
 
-class SecuritySettingsRepository private constructor(context: Context) {
-    private val prefs: SharedPreferences = context.applicationContext.getSharedPreferences(
-        PREFS_NAME,
-        Context.MODE_PRIVATE,
+class SecuritySettingsRepository internal constructor(
+    private val prefs: SharedPreferences,
+    private val clock: () -> Long = System::currentTimeMillis,
+) {
+    private constructor(context: Context) : this(
+        context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE),
     )
 
     private val _settings = MutableStateFlow(loadSettings())
@@ -90,7 +92,7 @@ class SecuritySettingsRepository private constructor(context: Context) {
         if (!valid) {
             val failures = prefs.getInt(KEY_FAILURES, 0) + 1
             val delay = lockoutDelayMs(failures)
-            prefs.edit().putInt(KEY_FAILURES, failures).putLong(KEY_LOCKOUT_END, System.currentTimeMillis() + delay).apply()
+            prefs.edit().putInt(KEY_FAILURES, failures).putLong(KEY_LOCKOUT_END, clock() + delay).apply()
             refreshLockout()
             return false
         }
@@ -131,13 +133,13 @@ class SecuritySettingsRepository private constructor(context: Context) {
             .remove(KEY_PIN_HASH).apply()
     }
 
-    private fun encode(value: ByteArray) = Base64.encodeToString(value, Base64.NO_WRAP)
-    private fun decode(key: String) = prefs.getString(key, null)?.let { Base64.decode(it, Base64.NO_WRAP) }
-    private fun remainingLockoutMs() = (prefs.getLong(KEY_LOCKOUT_END, 0L) - System.currentTimeMillis()).coerceAtLeast(0L)
+    private fun encode(value: ByteArray) = Base64.getEncoder().encodeToString(value)
+    private fun decode(key: String) = prefs.getString(key, null)?.let { Base64.getDecoder().decode(it) }
+    private fun remainingLockoutMs() = (prefs.getLong(KEY_LOCKOUT_END, 0L) - clock()).coerceAtLeast(0L)
     private fun refreshLockout() { _settings.value = _settings.value.copy(lockoutRemainingMs = remainingLockoutMs()) }
     private fun legacyHashPin(pin: String): String {
         val salted = "ANC_CLINIC_SALT_v1_${pin}_SECURE"
-        return MessageDigest.getInstance("SHA-256").digest(salted.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
+        return sha256Hex(salted)
     }
 
     fun setBiometricEnabled(enabled: Boolean) {
@@ -157,7 +159,7 @@ class SecuritySettingsRepository private constructor(context: Context) {
 
     fun unlockApp() {
         if (remainingLockoutMs() > 0) return
-        val now = System.currentTimeMillis()
+        val now = clock()
         _settings.value = _settings.value.copy(
             isAppLocked = false,
             lastUnlockedAt = now,
@@ -168,21 +170,10 @@ class SecuritySettingsRepository private constructor(context: Context) {
         _settings.value = _settings.value.copy(isAppLocked = true, needsPinSetup = !_settings.value.isPinConfigured)
     }
 
-    fun shouldLockOnBackground(elapsedSinceStopMs: Long): Boolean {
-        val timeout = _settings.value.autoLockTimeout
-        return when (timeout) {
-            AutoLockTimeout.IMMEDIATELY -> true
-            else -> elapsedSinceStopMs >= timeout.durationMs
-        }
-    }
-
     fun getLockoutRemainingMs(): Long = remainingLockoutMs().also { refreshLockout() }
 
     fun recordBackgroundTime(timeMs: Long) { prefs.edit().putLong(KEY_BACKGROUND_TIME, timeMs).apply() }
     fun backgroundTimeMs(): Long? = prefs.getLong(KEY_BACKGROUND_TIME, Long.MIN_VALUE).takeUnless { it == Long.MIN_VALUE }
-    fun lockIfBackgroundTimeoutElapsed(nowMs: Long = System.currentTimeMillis()) {
-        if (shouldLockOnReturn(prefs.getLong(KEY_BACKGROUND_TIME, Long.MIN_VALUE).takeUnless { it == Long.MIN_VALUE }, nowMs)) lockApp()
-    }
 
     fun updateClinicBranding(name: String, subtitle: String) {
         val safeName = name.trim().ifEmpty { "Dr. Sherif Radwan Clinic" }

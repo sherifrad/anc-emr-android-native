@@ -16,7 +16,7 @@ ap.add_argument("--root", default=str(HOME / "anc-emr-android-native"))
 ap.add_argument("--plan", action="store_true")
 ap.add_argument("--skip-review", action="store_true")
 ap.add_argument("--ui-only", action="store_true", help="tests and core already green: run only the UI lane, cache check and review")
-ap.add_argument("--round", default="r1", choices=["r1", "r2", "r3", "r3b", "r3c", "r3c2", "r3c3", "r3d", "r3e"], help="r2: SPEC_FIX_R2 briefs in pipeline/r2, round-2 file lists")
+ap.add_argument("--round", default="r1", choices=["r1", "r2", "r3", "r3b", "r3c", "r3c2", "r3c3", "r3d", "r3e", "r3f1"], help="r2: SPEC_FIX_R2 briefs in pipeline/r2, round-2 file lists")
 ap.add_argument("--resume-tests", metavar="NOTE", help="tests lane timed out after writing tests: send a short finish-up request (NOTE), then continue")
 ap.add_argument("--from-core", metavar="RED_RUN_DIR", help="tests already written and red-checked in RED_RUN_DIR: start at the core lane")
 ap.add_argument("--skip-ui", action="store_true", help="no UI work this round: skip the UI lane, still run the full gate")
@@ -121,12 +121,27 @@ if args.round == "r3e":
                UI + "PatientListScreen.kt", UI + "ProfileScreen.kt", UI + "AddAttachmentDialog.kt", "app/src/main/res/values/strings.xml"],
         "review": [],
     }
-BRIEFS = PIPE / args.round if args.round in ("r2", "r3", "r3b", "r3c", "r3c2", "r3c3", "r3d", "r3e") else PIPE
+if args.round == "r3f1":
+    M = "app/src/main/java/com/sherifradwan/ancnative/"; ST = "app/src/test/java/com/sherifradwan/ancnative/"
+    TEST_GLOBS = [".agents/checks/check_r3f1.py", ".agents/checks/check_r3b.py", ".agents/TEST_MANIFEST.json", ST + "NegativeControlAndClinicalValidationTest.kt",
+                  ST + "storage/HashingTest.kt", ST + "storage/BoundedBitmapTest.kt", ST + "storage/VaultCleanupRuleTest.kt",
+                  ST + "security/SecuritySettingsRepositoryTest.kt", ST + "security/FakeSharedPreferences.kt", ST + "state/AttachmentErrorStateTest.kt"]
+    ALLOW = {
+        "tests": TEST_GLOBS,
+        "core": [M + "storage/Hashing.kt", M + "storage/BoundedBitmap.kt", M + "storage/PatientAttachmentVault.kt", M + "storage/ClinicalCommands.kt",
+                 M + "storage/SaveVisitCommand.kt", M + "storage/VaultCleanupRule.kt", M + "storage/VaultController.kt",
+                 M + "security/SecuritySettingsRepository.kt", M + "state/AncState.kt", M + "state/AncViewModel.kt"],
+        "ui": [UI + "WorkspaceScreen.kt", UI + "ClinicalAttachmentViewerDialog.kt", UI + "UltrasoundPhotoViewerDialog.kt", UI + "AddAttachmentDialog.kt",
+               "app/src/main/res/values/strings.xml"],
+        "review": [],
+    }
+BRIEFS = PIPE / args.round if args.round in ("r2", "r3", "r3b", "r3c", "r3c2", "r3c3", "r3d", "r3e", "r3f1") else PIPE
 # Tests that reference functions the core lane has not written yet; parked during the behavioural red check.
 NEW_API_TESTS = {"r2": [T + "ClinicalFormatR2Test.kt"], "r3": ["app/src/test/java/com/sherifradwan/ancnative/state/IntakeDatingRuleTest.kt"],
                  "r3b": ["app/src/test/java/com/sherifradwan/ancnative/storage/" + n for n in ("RecordAnomaliesTest.kt", "VaultAutoActionTest.kt", "VaultCleanupRuleTest.kt")],
                  "r3c": ["app/src/test/java/com/sherifradwan/ancnative/security/" + n for n in ("PinPolicyTest.kt", "AppLockPolicyTest.kt")],
-                 "r3e": ["app/src/test/java/com/sherifradwan/ancnative/storage/VaultAutoActionTest.kt"]}.get(args.round, [])
+                 "r3e": ["app/src/test/java/com/sherifradwan/ancnative/storage/VaultAutoActionTest.kt"],
+                 "r3f1": ["app/src/test/java/com/sherifradwan/ancnative/" + n for n in ("storage/HashingTest.kt", "storage/BoundedBitmapTest.kt", "storage/VaultCleanupRuleTest.kt", "security/SecuritySettingsRepositoryTest.kt", "security/FakeSharedPreferences.kt", "state/AttachmentErrorStateTest.kt")]}.get(args.round, [])
 WATCH = ["app/src", "tests", ".agents/checks", ".agents/TEST_MANIFEST.json", "build.gradle.kts", "settings.gradle.kts", "gradle.properties", "app/build.gradle.kts"]
 METRICS = []
 
@@ -209,6 +224,7 @@ if args.round == "r3b": CORE_GATE |= {"UNIT-anomalies", "UNIT-vault-auto", "UNIT
 if args.round == "r3c": CORE_GATE |= {"UNIT-pin-policy", "UNIT-lock-policy", "STATIC-r3c"}
 if args.round == "r3c2": CORE_GATE |= {"UNIT-pin-policy", "UNIT-lock-policy"}
 if args.round == "r3e": CORE_GATE |= {"UNIT-vault-auto"}   # STATIC-r3e and UNIT-contrast span the UI lane
+if args.round == "r3f1": CORE_GATE |= {"UNIT-all"}
 if args.round == "r3d": CORE_GATE |= {"UNIT-print"}   # STATIC-r3d spans the UI lane, so it is gated after 2b
 
 def test_compile_failed(res):

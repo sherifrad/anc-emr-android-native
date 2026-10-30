@@ -131,9 +131,19 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
                     linkedRecordId = event.linkedRecordId,
                     syncStatus = com.sherifradwan.ancnative.storage.AttachmentSyncStatus.LOCAL_ONLY,
                 )
-                controller.saveAttachment(demoAttachment, unlocked.sessionEpoch)
+                if (!controller.saveAttachment(demoAttachment, unlocked.sessionEpoch)) {
+                    com.sherifradwan.ancnative.storage.PatientAttachmentVault.deleteAttachment(
+                        context = getApplication(),
+                        patientId = savedResult.patientId,
+                        fileName = savedResult.fileName,
+                    )
+                    dispatch(AncEvent.AttachmentFailed(AttachmentError.SAVE_FAILED))
+                }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 android.util.Log.e("AncViewModel", "Failed to save attachment", e)
+                dispatch(AncEvent.AttachmentFailed(AttachmentError.SAVE_FAILED))
             }
         }
     }
@@ -142,18 +152,25 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
         val unlocked = _state.value.vaultState as? VaultState.Unlocked ?: return
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
+                val rowDeleted = controller.deleteAttachment(
+                    attachmentId = event.attachmentId,
+                    patientId = event.patientId,
+                    sessionEpoch = unlocked.sessionEpoch,
+                )
+                if (!rowDeleted) {
+                    dispatch(AncEvent.AttachmentFailed(AttachmentError.DELETE_FAILED))
+                    return@launch
+                }
                 com.sherifradwan.ancnative.storage.PatientAttachmentVault.deleteAttachment(
                     context = getApplication(),
                     patientId = event.patientId,
                     fileName = event.fileName,
                 )
-                controller.deleteAttachment(
-                    attachmentId = event.attachmentId,
-                    patientId = event.patientId,
-                    sessionEpoch = unlocked.sessionEpoch,
-                )
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 android.util.Log.e("AncViewModel", "Failed to delete attachment", e)
+                dispatch(AncEvent.AttachmentFailed(AttachmentError.DELETE_FAILED))
             }
         }
     }

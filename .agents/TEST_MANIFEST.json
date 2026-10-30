@@ -51,7 +51,7 @@
         "app/src/main/**/ui/DeliveryNotesParser.kt",
         "app/src/test/**/PatientPrintHtmlGeneratorTest.kt"
       ],
-      "covers": ["Q17", "Q7", "Q19"]
+      "covers": ["Q17", "Q7", "Q19", "Q18"]
     },
     {
       "id": "UNIT-contrast",
@@ -136,10 +136,10 @@
       "tier": 1,
       "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*VaultCleanupRuleTest'",
       "deps": [
-        "app/src/main/**/storage/VaultFiles.kt",
+        "app/src/main/**/storage/VaultCleanupRule.kt",
         "app/src/test/**/VaultCleanupRuleTest.kt"
       ],
-      "covers": ["Q24"]
+      "covers": ["Q24", "Q49", "Q53"]
     },
     {
       "id": "STATIC-r3b",
@@ -149,7 +149,9 @@
         "app/src/main/**/MainActivity.kt",
         "app/src/main/**/storage/VaultController.kt",
         "app/src/main/**/storage/VaultFiles.kt",
-        ".agents/checks/check_r3b.py"
+        "app/src/main/**/storage/VaultCleanupRule.kt",
+        ".agents/checks/check_r3b.py",
+        ".agents/checks/check_r3f1.py"
       ],
       "covers": ["S5", "S6", "S7"]
     },
@@ -183,7 +185,7 @@
         "app/src/main/**/MainActivity.kt",
         ".agents/checks/check_r3c.py"
       ],
-      "covers": ["S8", "S9", "S10", "S11", "S12", "S13"]
+      "covers": ["S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16"]
     },
     {
       "id": "STATIC-r3d",
@@ -219,6 +221,260 @@
         ".agents/checks/check_r3e.py"
       ],
       "covers": ["S23", "S24", "S25", "S26", "S27", "S28"]
+    },
+    {
+      "id": "STATIC-r3f1",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3f1.py",
+      "deps": [
+        "app/src/main/**/storage/Hashing.kt",
+        "app/src/main/**/storage/BoundedBitmap.kt",
+        "app/src/main/**/storage/VaultController.kt",
+        "app/src/main/**/storage/VaultCleanupRule.kt",
+        "app/src/main/**/security/SecuritySettingsRepository.kt",
+        "app/src/main/**/state/AncViewModel.kt",
+        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/main/res/values/strings.xml",
+        "app/src/test/**/NegativeControlAndClinicalValidationTest.kt",
+        ".agents/checks/check_r3f1.py"
+      ],
+      "covers": ["S29", "S30", "S31", "S32", "S33", "S34", "S35"]
+    },
+    {
+      "id": "UNIT-hashing",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*HashingTest'",
+      "deps": [
+        "app/src/main/**/storage/Hashing.kt",
+        "app/src/test/**/HashingTest.kt"
+      ],
+      "covers": ["Q47", "Q53"]
+    },
+    {
+      "id": "UNIT-bounded-bitmap",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*BoundedBitmapTest'",
+      "deps": [
+        "app/src/main/**/storage/BoundedBitmap.kt",
+        "app/src/test/**/BoundedBitmapTest.kt"
+      ],
+      "covers": ["Q48", "Q53"]
+    },
+    {
+      "id": "UNIT-security-settings",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*SecuritySettingsRepositoryTest'",
+      "deps": [
+        "app/src/main/**/security/SecuritySettingsRepository.kt",
+        "app/src/main/**/security/PinPolicy.kt",
+        "app/src/main/**/storage/Hashing.kt",
+        "app/src/test/**/SecuritySettingsRepositoryTest.kt",
+        "app/src/test/**/FakeSharedPreferences.kt"
+      ],
+      "covers": ["Q50", "Q53"]
+    },
+    {
+      "id": "UNIT-attachment-error",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*AttachmentErrorStateTest'",
+      "deps": [
+        "app/src/main/**/state/AncState.kt",
+        "app/src/test/**/AttachmentErrorStateTest.kt"
+      ],
+      "covers": ["Q51", "Q53"]
+    },
+    {
+      "id": "UNIT-negative-control",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*NegativeControlAndClinicalValidationTest'",
+      "deps": [
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/main/**/model/GestationalAgeEngine.kt",
+        "app/src/main/**/model/ClinicalModels.kt",
+        "app/src/main/**/state/AncState.kt",
+        "app/src/test/**/NegativeControlAndClinicalValidationTest.kt"
+      ],
+      "covers": ["Q53", "G1"]
+    },
+    {
+      "id": "UNIT-clinical-validation",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*.model.ClinicalValidationTest'",
+      "deps": [
+        "app/src/main/**/model/ClinicalModels.kt",
+        "app/src/test/**/model/ClinicalValidationTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-demo-fixtures",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*DemoFixturesVerificationTest'",
+      "deps": [
+        "app/src/main/**/model/DemoFixtures.kt",
+        "app/src/main/**/model/DemoModels.kt",
+        "app/src/test/**/DemoFixturesVerificationTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-gestational-age",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*GestationalAgeEngineTest'",
+      "deps": [
+        "app/src/main/**/model/GestationalAgeEngine.kt",
+        "app/src/test/**/GestationalAgeEngineTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-timeline-projection",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*LongitudinalTimelineProjectionTest'",
+      "deps": [
+        "app/src/main/**/model/LongitudinalTimelineProjection.kt",
+        "app/src/test/**/LongitudinalTimelineProjectionTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-patient-validation",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*.model.PatientValidationTest'",
+      "deps": [
+        "app/src/main/**/model/ClinicalModels.kt",
+        "app/src/main/**/model/DemoModels.kt",
+        "app/src/test/**/model/PatientValidationTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-previous-pregnancy-validation",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*PreviousPregnancyValidationTest'",
+      "deps": [
+        "app/src/main/**/model/ClinicalModels.kt",
+        "app/src/test/**/PreviousPregnancyValidationTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-codex-repository",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*ClinicalCodexModelsTest'",
+      "deps": [
+        "app/src/main/**/model/codex/*.kt",
+        "app/src/test/**/ClinicalCodexRepositoryTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-anc-state",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*.state.AncStateTest'",
+      "deps": [
+        "app/src/main/**/state/AncState.kt",
+        "app/src/test/**/state/AncStateTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-backup-vault",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*BackupVaultIntegrationAndZeroDataLossTest'",
+      "deps": [
+        "app/src/main/**/storage/EncryptedBackupManager.kt",
+        "app/src/main/**/storage/RecordsRepository.kt",
+        "app/src/main/**/storage/PatientAttachmentVault.kt",
+        "app/src/test/**/BackupVaultIntegrationAndZeroDataLossTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-clinical-commands",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*ClinicalCommandsTest'",
+      "deps": [
+        "app/src/main/**/storage/ClinicalCommands.kt",
+        "app/src/main/**/storage/SaveVisitCommand.kt",
+        "app/src/test/**/ClinicalCommandsTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-encrypted-backup",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*EncryptedBackupTest'",
+      "deps": [
+        "app/src/main/**/storage/EncryptedBackupManager.kt",
+        "app/src/test/**/EncryptedBackupTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-attachment-vault",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*PatientAttachmentVaultTest'",
+      "deps": [
+        "app/src/main/**/storage/PatientAttachmentVault.kt",
+        "app/src/main/**/storage/Hashing.kt",
+        "app/src/main/**/storage/BoundedBitmap.kt",
+        "app/src/test/**/PatientAttachmentVaultTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-patient-commands",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*PatientCommandsTest'",
+      "deps": [
+        "app/src/main/**/storage/PatientCommands.kt",
+        "app/src/test/**/PatientCommandsTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-records-mapping",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*RecordsMappingRoundTripTest'",
+      "deps": [
+        "app/src/main/**/storage/RecordEntities.kt",
+        "app/src/main/**/storage/RecordsRepository.kt",
+        "app/src/test/**/RecordsMappingRoundTripTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-save-coordinator",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*SaveCoordinatorTest'",
+      "deps": [
+        "app/src/main/**/storage/SaveVisitCommand.kt",
+        "app/src/main/**/storage/RecordsRepository.kt",
+        "app/src/test/**/SaveCoordinatorTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-vault-state",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*VaultStateTest'",
+      "deps": [
+        "app/src/main/**/storage/VaultState.kt",
+        "app/src/test/**/VaultStateTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-gestational-banner",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*GestationalBannerLogicTest'",
+      "deps": [
+        "app/src/main/**/ui/GestationalBanner.kt",
+        "app/src/main/**/model/GestationalAgeEngine.kt",
+        "app/src/test/**/GestationalBannerLogicTest.kt"
+      ],
+      "covers": ["G1"]
     },
     {
       "id": "UNIT-all",

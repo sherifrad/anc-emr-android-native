@@ -11,6 +11,8 @@ import com.sherifradwan.ancnative.model.PatientValidationError
 import com.sherifradwan.ancnative.storage.ClinicalRecordKind
 import com.sherifradwan.ancnative.storage.VaultState
 
+enum class AttachmentError { SAVE_FAILED, DELETE_FAILED }
+
 enum class WorkspaceSection {
     OBSTETRIC_HISTORY,
     DATING,
@@ -403,6 +405,7 @@ data class AncState(
     val savePhase: SavePhase = SavePhase.IDLE,
     val saveError: SaveUiError? = null,
     val pendingSave: PendingSaveToken? = null,
+    val attachmentError: AttachmentError? = null,
 ) {
     fun patient(patientId: String): DemoPatient? = patients.firstOrNull { it.id == patientId }
 
@@ -510,6 +513,8 @@ sealed interface AncEvent {
         val attachmentId: String,
         val fileName: String,
     ) : AncEvent
+    data class AttachmentFailed(val error: AttachmentError) : AncEvent
+    data object DismissAttachmentError : AncEvent
     data class SaveValidationFailed(val errors: Set<DraftError>) : AncEvent
     data class ClinicalValidationFailed(
         val recordKind: ClinicalRecordKind,
@@ -649,6 +654,8 @@ object AncReducer {
         AncEvent.KeepEditing -> state.copy(showDiscardDialog = false, pendingAction = null)
         AncEvent.DismissNotice -> state.copy(savedNotice = false, notice = null)
         is AncEvent.AddAttachment, is AncEvent.DeleteAttachment -> state
+        is AncEvent.AttachmentFailed -> state.copy(attachmentError = event.error)
+        AncEvent.DismissAttachmentError -> state.copy(attachmentError = null)
     }
 
     private fun navigate(state: AncState, destination: AncRoute): AncState {

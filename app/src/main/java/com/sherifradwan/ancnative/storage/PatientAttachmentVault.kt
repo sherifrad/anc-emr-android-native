@@ -2,7 +2,6 @@ package com.sherifradwan.ancnative.storage
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.net.Uri
 import java.io.ByteArrayOutputStream
@@ -10,7 +9,6 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
-import java.security.MessageDigest
 import java.time.Instant
 import java.util.UUID
 
@@ -118,29 +116,8 @@ object PatientAttachmentVault {
             throw IllegalArgumentException("Source image stream is empty")
         }
 
-        // 1. Decode bounds
-        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeByteArray(rawBytes, 0, rawBytes.size, options)
-
-        val srcWidth = options.outWidth
-        val srcHeight = options.outHeight
-
-        // 2. Compute sample size to avoid OutOfMemoryError
-        var inSampleSize = 1
-        if (srcWidth > MAX_DIMENSION_PX || srcHeight > MAX_DIMENSION_PX) {
-            val halfWidth = srcWidth / 2
-            val halfHeight = srcHeight / 2
-            while ((halfWidth / inSampleSize) >= MAX_DIMENSION_PX && (halfHeight / inSampleSize) >= MAX_DIMENSION_PX) {
-                inSampleSize *= 2
-            }
-        }
-
-        val decodeOptions = BitmapFactory.Options().apply {
-            this.inSampleSize = inSampleSize
-            inPreferredConfig = Bitmap.Config.ARGB_8888
-        }
-
-        val sampledBitmap = BitmapFactory.decodeByteArray(rawBytes, 0, rawBytes.size, decodeOptions)
+        // 1-2. Decode, sampled down so a huge source cannot run out of memory
+        val sampledBitmap = BoundedBitmap.decodeBytes(rawBytes, MAX_DIMENSION_PX)
             ?: throw IllegalStateException("Failed to decode bitmap from source image")
 
         // 3. Scale precisely to MAX_DIMENSION_PX maintaining aspect ratio
@@ -163,9 +140,7 @@ object PatientAttachmentVault {
         val webpBytes = outputStream.toByteArray()
 
         // 5. Calculate SHA-256 cryptographic hash
-        val digest = MessageDigest.getInstance("SHA-256")
-        val sha256Bytes = digest.digest(webpBytes)
-        val sha256Hex = sha256Bytes.joinToString("") { "%02x".format(it) }
+        val sha256Hex = sha256Hex(webpBytes)
 
         // 6. Write file to disk
         FileOutputStream(destinationFile).use { fos ->
@@ -227,15 +202,7 @@ object PatientAttachmentVault {
      */
     fun verifyIntegrity(file: File, expectedHash: String): Boolean {
         if (!file.exists()) return false
-        val digest = MessageDigest.getInstance("SHA-256")
-        FileInputStream(file).use { fis ->
-            val buffer = ByteArray(8192)
-            var read: Int
-            while (fis.read(buffer).also { read = it } != -1) {
-                digest.update(buffer, 0, read)
-            }
-        }
-        val actualHex = digest.digest().joinToString("") { "%02x".format(it) }
+        val actualHex = FileInputStream(file).use { sha256Hex(it) }
         return actualHex.equals(expectedHash, ignoreCase = true)
     }
 }

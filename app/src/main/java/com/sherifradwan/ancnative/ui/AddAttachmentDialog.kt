@@ -58,6 +58,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.storage.AttachmentCategories
+import com.sherifradwan.ancnative.storage.BoundedBitmap
 import com.sherifradwan.ancnative.storage.CameraCaptureHelper
 
 @Composable
@@ -290,9 +291,7 @@ fun AddAttachmentDialog(
                     ) {
                         val previewBitmap = remember(selectedUri) {
                             runCatching {
-                                context.contentResolver.openInputStream(selectedUri!!)?.use {
-                                    android.graphics.BitmapFactory.decodeStream(it)
-                                }?.asImageBitmap()
+                                BoundedBitmap.decodeStream({ context.contentResolver.openInputStream(selectedUri!!) }, 1024)?.asImageBitmap()
                             }.getOrNull()
                         }
                         if (previewBitmap != null) {

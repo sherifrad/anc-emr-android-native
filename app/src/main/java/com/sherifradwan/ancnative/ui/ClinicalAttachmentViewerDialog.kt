@@ -1,6 +1,5 @@
 package com.sherifradwan.ancnative.ui
 
-import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -59,6 +58,7 @@ import com.sherifradwan.ancnative.model.DemoAttachment
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.storage.AttachmentCategories
 import com.sherifradwan.ancnative.storage.AttachmentSyncManager
+import com.sherifradwan.ancnative.storage.BoundedBitmap
 import com.sherifradwan.ancnative.storage.PatientAttachmentVault
 
 @Composable
@@ -79,7 +79,7 @@ fun ClinicalAttachmentViewerDialog(
                 fileName = attachment.fileName,
             )
             if (file != null && file.exists()) {
-                BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap()
+                BoundedBitmap.decodeFile(file.absolutePath, 2048)?.asImageBitmap()
             } else {
                 null
             }

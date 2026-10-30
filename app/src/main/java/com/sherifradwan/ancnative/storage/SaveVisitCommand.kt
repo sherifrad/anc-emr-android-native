@@ -100,7 +100,7 @@ internal fun canonicalFingerprint(fields: List<String?>): String {
             digest.update(bytes)
         }
     }
-    return digest.digest().joinToString("") { "%02x".format(it) }
+    return digest.digest().toHexLower()
 }
 
 internal fun String?.normalized(): String? = this?.trim()?.takeIf(String::isNotEmpty)

@@ -118,3 +118,10 @@ Review (Nemotron): its "Hard Blocker" tags were speculative (stale setting, layo
 apply - decoding is one synchronous step. Not acted on.
 Not verified: on the Honor 400; TalkBack with a real screen reader; fingerprint on Android 11+; a save started just before the lock.
 Accepted: an open editor is discarded when the lock fires (any vault lock already did this).
+
+## Round 3f-1 (reuse helpers, attachment errors, real PIN/vault-guard tests, bounded decode) - 2026-10-30
+Lanes: tests Claude Sonnet 5.5; core and UI GPT-6 Luna returned nothing each time (4 of 4 dispatches), fallback to Claude Sonnet 5.5 completed every one; review Claude Sonnet 5.5.
+Gates (orchestrator, fresh): 390/390 unit tests, check_r3/r3b/r3c/r3d/r3e/r3f1 and ui_static checks PASS, release compile OK.
+Orchestrator corrections: S30 was too broad (caught decodeResource for the built-in logo) - narrowed to decodeFile/Stream/ByteArray; manifest entry UNIT-codex-repository pointed at a class name that does not exist (file ClinicalCodexRepositoryTest.kt holds class ClinicalCodexModelsTest) - fixed the command. Both were oracle mistakes, not app bugs.
+Review found two real defects (vault Boolean results ignored: silent failed save; file deleted although the row delete returned false) - fixed in a one-file repair and covered by new check S36. Left as is: java.util.Base64 decoder is stricter on whitespace than Android's (stored values are written by the same encoder).
+Not verified: device/emulator run of thumbnails, viewers and the error banner; AncViewModel has no unit test (checked by static S33/S36 only). Not committed.

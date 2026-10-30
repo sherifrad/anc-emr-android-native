@@ -13,6 +13,8 @@ import com.sherifradwan.ancnative.state.AncReducer
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.PatientDraftField
+import com.sherifradwan.ancnative.ui.isRhNegative
+import com.sherifradwan.ancnative.ui.isRhPositive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -201,13 +203,13 @@ class NegativeControlAndClinicalValidationTest {
         val rhPositiveGroups = listOf("A+", "B+", "AB+", "O+")
 
         rhNegativeGroups.forEach { bg ->
-            assertTrue("Blood group $bg must be flagged as Rh negative", bg.contains("-"))
-            assertFalse("Blood group $bg must not be flagged as Rh positive", bg.contains("+"))
+            assertTrue("Blood group $bg must be flagged as Rh negative", isRhNegative(bg))
+            assertFalse("Blood group $bg must not be flagged as Rh positive", isRhPositive(bg))
         }
 
         rhPositiveGroups.forEach { bg ->
-            assertTrue("Blood group $bg must be flagged as Rh positive", bg.contains("+"))
-            assertFalse("Blood group $bg must not be flagged as Rh negative", bg.contains("-"))
+            assertTrue("Blood group $bg must be flagged as Rh positive", isRhPositive(bg))
+            assertFalse("Blood group $bg must not be flagged as Rh negative", isRhNegative(bg))
         }
     }
 

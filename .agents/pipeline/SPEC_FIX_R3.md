@@ -288,3 +288,58 @@ Static checks (new .agents/checks/check_r3e.py, id STATIC-r3e, exit 1 on any FAI
  ThemeContrastTest lists every tag pair in Theme.kt (HighRisk, Attention, Obstetric, GA, Blood, age, delivery) and asserts >= 4.5.
 Device check (orchestrator, QA copy): after 11 min away only the PIN screen shows, the vault reopens after the PIN (time measured) and the list returns;
 Lock now behaves the same; a scan with a missing photo shows "Image unavailable"; cards still look right with 48dp targets.
+
+## Round 3f-1 (audit pass 2: reuse helpers, attachment errors, real PIN/vault-guard tests, bounded decode)
+Owner (2026-10-30): errors must be shown; delete the database row first; real tests for PIN lockout and the vault-key guard; remove the Rh tautology
+and the duplicate print test (duplicate already removed by the orchestrator); fix the test manifest; bound photo decoding. STANDING PRINCIPLE: every rule
+lives in ONE function and other code calls it. No behaviour change except Q51/Q52.
+Q47 (NEW storage/Hashing.kt) `internal fun ByteArray.toHexLower(): String`, `internal fun sha256Hex(bytes: ByteArray): String`,
+    `internal fun sha256Hex(text: String): String` (UTF-8), `internal fun sha256Hex(input: java.io.InputStream): String` (streams, closes nothing).
+    Replace every copy of `joinToString("") { "%02x".format(it) }`: ClinicalCommands.kt (private sha256), SaveVisitCommand.kt (final line; keep its framing logic,
+    only the hex conversion is shared), PatientAttachmentVault.kt (both sites), SecuritySettingsRepository.kt legacyHashPin. Outputs must stay byte-identical.
+    After the change `"%02x"` appears only in Hashing.kt.
+Q48 (NEW storage/BoundedBitmap.kt) `internal fun computeSampleSize(width: Int, height: Int, maxSide: Int): Int` = the SAME rule PatientAttachmentVault uses today
+    (largest power of two such that both width/2/sample and height/2/sample are still >= maxSide; 1 when either side <= maxSide or any value <= 0).
+    `internal object BoundedBitmap { fun decodeFile(path: String, maxSide: Int): Bitmap?; fun decodeBytes(bytes: ByteArray, maxSide: Int): Bitmap?;
+    fun decodeStream(open: () -> InputStream?, maxSide: Int): Bitmap? }` : bounds pass first, then inSampleSize, ARGB_8888; return null (never throw) on bad data,
+    missing file, or OutOfMemoryError. PatientAttachmentVault.compressAndWrite uses computeSampleSize/decodeBytes (its inline loop is removed; output unchanged).
+    UI display sites call BoundedBitmap: WorkspaceScreen.kt (attachment thumbnail ~l.1925) and ClinicalAttachmentViewerDialog.kt with maxSide 2048;
+    UltrasoundPhotoViewerDialog.kt with 2048; AddAttachmentDialog.kt preview with 1024. After the change `BitmapFactory.decode` appears only in BoundedBitmap.kt.
+Q49 (storage/VaultCleanupRule.kt) `internal fun cleanUpAbandonedInitialization(namespaceRoot: File, activePointerFile: File, cleanupUnpublished: () -> Unit, deleteOrphanAliases: () -> Unit)`:
+    if activePointerFile exists -> do nothing. Else call cleanupUnpublished(), THEN if !hasVaultDatabase(namespaceRoot) call deleteOrphanAliases().
+    VaultController.kt's three identical blocks (cancelAuthentication, deviceCredentialUnavailable, retryInspection) call it with
+    `{ files.cleanupUnpublishedArtifacts() }` and `{ keys.deleteOrphanAliases() }`; inline copies are removed. Same lock/mutex context as today.
+Q50 (security/SecuritySettingsRepository.kt) Test seam, no behaviour change: add `internal constructor(prefs: SharedPreferences, clock: () -> Long = System::currentTimeMillis)`;
+    the existing private Context constructor delegates to it; every `System.currentTimeMillis()` in the class uses `clock()`; replace android.util.Base64 with
+    java.util.Base64 (basic encoder/decoder; identical output to NO_WRAP). Remove the unused `setupPin`, `shouldLockOnBackground`, `lockIfBackgroundTimeoutElapsed` only if
+    nothing in app/src references them (grep first); otherwise leave them.
+Q51 (state/AncState.kt, state/AncViewModel.kt) `enum class AttachmentError { SAVE_FAILED, DELETE_FAILED }`; AncState gets `attachmentError: AttachmentError? = null`;
+    events `AncEvent.AttachmentFailed(val error: AttachmentError)` and `data object AncEvent.DismissAttachmentError`; the reducer sets/clears the field and changes nothing else.
+    AncViewModel.addAttachment: any Exception other than CancellationException (rethrown) -> still Log.e, AND dispatch AttachmentFailed(SAVE_FAILED).
+    AncViewModel.deleteAttachment: FIRST controller.deleteAttachment (the database row), THEN PatientAttachmentVault.deleteAttachment (the file). An exception from the
+    first step -> AttachmentFailed(DELETE_FAILED) and the file is NOT touched. An exception thrown by the second step -> AttachmentFailed(DELETE_FAILED). A `false` return
+    (file already missing) is not an error.
+Q52 (ui/WorkspaceScreen.kt, res/values/strings.xml) When state.attachmentError != null show a dismissible Card (testTag "attachment_error_banner", error colour from the
+    theme, same layout as the saved-notice card) with strings attachment_save_failed = "The attachment could not be saved. Nothing was filed. Please try again." and
+    attachment_delete_failed = "The attachment could not be deleted. Please try again."; its Close button dispatches AncEvent.DismissAttachmentError.
+Q53 Tests (tests lane): (a) NegativeControlAndClinicalValidationTest Rh test calls isRhNegative / isRhPositive (ui/ClinicalFormat.kt) over the same table, no `contains("-")`;
+    (b) new unit tests: HashingTest, BoundedBitmapTest (computeSampleSize cases incl. 0/negative and the exact threshold; the Bitmap functions only if testable without Robolectric),
+    VaultCleanupRuleTest extended for cleanUpAbandonedInitialization with temp dirs (pointer exists -> nothing called; no pointer + vault db present -> cleanup called, aliases NOT
+    deleted; no pointer + no vault db -> cleanup then deleteOrphanAliases, in that order), SecuritySettingsRepositoryTest with a map-backed fake SharedPreferences (test-side file) and a
+    fake clock: 5th wrong PIN starts a lockout and growing waits follow lockoutDelayMs; a correct PIN during lockout is rejected; success resets failures and lockout; a legacy
+    SHA-256 PIN verifies, migrates to v2 (legacy key removed) and still verifies; a weak but correct PIN sets needsPinSetup; wrong PIN with no stored PIN returns false;
+    AttachmentErrorStateTest for the reducer (set, dismiss, unrelated events keep it).
+    (c) check_r3b S6 is rewritten for the new shape (see S31) - it must FAIL if a call site passes an unguarded alias delete; (d) TEST_MANIFEST: UNIT-vault-cleanup deps point at
+    VaultCleanupRule.kt; add entries (with covers) for the five new test classes, STATIC-r3f1, S14-S16 under STATIC-r3c, Q18 under UNIT-print, and one entry for every existing
+    test class that has none (list app/src/test/**); the UNIT-all entry stays.
+Static checks (.agents/checks/check_r3f1.py, id STATIC-r3f1; strip comments first; exit 1 on any FAIL):
+ S29 across app/src/main the literal "%02x" occurs only in storage/Hashing.kt.
+ S30 across app/src/main `BitmapFactory.decode` occurs only in storage/BoundedBitmap.kt.
+ S31 VaultController.kt calls cleanUpAbandonedInitialization( exactly 3 times and contains no `hasVaultDatabase(`; VaultCleanupRule.kt's helper body evaluates hasVaultDatabase( inside an
+     `if (!hasVaultDatabase(` immediately guarding the deleteOrphanAliases() invocation, after cleanupUnpublished().
+ S32 SecuritySettingsRepository.kt has no `android.util.Base64`, no `System.currentTimeMillis()` outside the constructor default, and has the internal constructor taking SharedPreferences.
+ S33 AncViewModel.kt: in deleteAttachment the text `controller.deleteAttachment(` comes before `PatientAttachmentVault.deleteAttachment(`; AttachmentFailed( appears in both addAttachment and deleteAttachment;
+     CancellationException is rethrown in addAttachment.
+ S34 WorkspaceScreen.kt contains attachment_error_banner, DismissAttachmentError and R.string.attachment_save_failed / attachment_delete_failed; strings.xml defines both.
+ S35 no file named PatientPrintHtmlGeneratorTest.kt exists under app/src/test outside ui/report; NegativeControlAndClinicalValidationTest.kt has no `bg.contains("-")`.
+Device check (orchestrator, QA copy, later): attach a photo; force a failure (fill/readonly dir is not allowed on the phone, so on the emulator) and see the banner; delete works; viewers still show photos.
