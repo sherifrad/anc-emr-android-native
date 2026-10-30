@@ -2,7 +2,6 @@ package com.sherifradwan.ancnative.ui
 
 import android.graphics.BitmapFactory
 import android.net.Uri
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -42,15 +41,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -158,7 +153,7 @@ fun UltrasoundPhotoViewerDialog(
                     }
                 }
 
-                // Viewport Box: Either real bitmap or high-contrast simulated clinical ultrasound frame
+                // Viewport Box: show the stored image or report that it is unavailable.
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -176,12 +171,10 @@ fun UltrasoundPhotoViewerDialog(
                             modifier = Modifier.fillMaxSize(),
                         )
                     } else {
-                        // High-fidelity clinical ultrasound console visualization
-                        UltrasoundMonitorCanvas(
-                            scan = scan,
-                            uriString = currentUriString,
-                            photoIndex = currentIndex + 1,
-                            totalPhotos = scan.imageUris.size,
+                        Text(
+                            text = "Image unavailable",
+                            modifier = Modifier.testTag("image_unavailable"),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -289,143 +282,5 @@ private fun FactBadge(text: String) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
         )
-    }
-}
-
-@Composable
-private fun UltrasoundMonitorCanvas(
-    scan: DemoUltrasoundScan,
-    uriString: String,
-    photoIndex: Int,
-    totalPhotos: Int,
-) {
-    val outlineVariantColor = MaterialTheme.colorScheme.outlineVariant
-    val surfaceContainerColor = MaterialTheme.colorScheme.surfaceContainer
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val width = size.width
-            val height = size.height
-
-            // Sector fan geometry
-            val apexX = width / 2f
-            val apexY = 28f
-            val maxRadius = height - 40f
-            val sectorColor = outlineVariantColor
-            val gridColor = surfaceContainerColor
-
-            // Draw concentric range rings (calipers)
-            for (step in 1..4) {
-                val r = maxRadius * (step / 4f)
-                drawArc(
-                    color = gridColor,
-                    startAngle = 55f,
-                    sweepAngle = 70f,
-                    useCenter = false,
-                    topLeft = Offset(apexX - r, apexY - r),
-                    size = Size(r * 2, r * 2),
-                    style = Stroke(width = 1.5f),
-                )
-            }
-
-            // Draw sector boundary rays
-            drawLine(
-                color = sectorColor,
-                start = Offset(apexX, apexY),
-                end = Offset(apexX - maxRadius * 0.57f, apexY + maxRadius * 0.82f),
-                strokeWidth = 1.5f,
-            )
-            drawLine(
-                color = sectorColor,
-                start = Offset(apexX, apexY),
-                end = Offset(apexX + maxRadius * 0.57f, apexY + maxRadius * 0.82f),
-                strokeWidth = 1.5f,
-            )
-        }
-
-        // Ultrasound HUD Overlay
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(14.dp),
-            verticalArrangement = Arrangement.SpaceBetween,
-        ) {
-            // Upper HUD telemetry
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    text = "ANC ULTRASOUND · 3.5MHz C-PROBE\nDEPTH: 15cm · TIS: 0.2 · MI: 1.1",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 10.sp,
-                    lineHeight = 13.sp,
-                )
-                Text(
-                    text = "GAIN: 68dB\n2D / B-MODE\nFPS: 28",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 10.sp,
-                    lineHeight = 13.sp,
-                )
-            }
-
-            // Center: Graphic indicator & Image tag
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Icon(
-                    Icons.Default.PhotoCamera,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(36.dp),
-                )
-                Text(
-                    text = "CLINICAL ULTRASOUND CAPTURE",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp,
-                )
-                val fileName = uriString.substringAfterLast("/")
-                Text(
-                    text = fileName,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 10.sp,
-                )
-            }
-
-            // Lower HUD telemetry
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom,
-            ) {
-                Text(
-                    text = "EXAM: ${scan.date}\n${scan.presentation?.uppercase() ?: "CEPHALIC"}",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 10.sp,
-                    lineHeight = 13.sp,
-                )
-                Surface(
-                    shape = RoundedCornerShape(4.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                ) {
-                    Text(
-                        text = "FRAME $photoIndex / $totalPhotos",
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 10.sp,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                    )
-                }
-            }
-        }
     }
 }

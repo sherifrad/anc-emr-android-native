@@ -251,3 +251,40 @@ Static checks (new .agents/checks/check_r3d.py, id STATIC-r3d, exit 1 on any FAI
  Unit tests (PatientPrintHtmlGeneratorTest, id UNIT-print): Q37 a and b as written above, plus the existing tests stay green.
 Device check (orchestrator): Export Backup opens the share sheet; QA copy still screenshot-able; release build sets FLAG_SECURE; weak-PIN restart
 shows the normal PIN entry first; Restore asks before replacing; report still prints with JavaScript off.
+
+## Round 3e (audit checkpoint 1: lock closes the vault, fake scan screen, biometric switch, contrast, TalkBack, touch targets)
+Owner (2026-10-30): photo encryption/photos-in-backup is PAUSED to its own later round (storage cost to be settled first). Q37 printed wording stays as is.
+Facts read from the code: when the vault leaves the Unlocked state the ViewModel replaces AncState with an empty state (open editors and drafts are
+discarded; this is how "Lock now" already behaves), and MainActivity auto-starts beginUnlock() whenever the vault is Locked - so closing the vault on
+the app lock needs the auto-unlock gated on the app lock, otherwise it reopens at once.
+Q41 Vault closes with the app lock.
+  (a) storage/VaultAutoAction.kt: `vaultAutoAction(state: VaultState, appUnlocked: Boolean)` (NO default value). Locked -> BEGIN_UNLOCK only when
+      appUnlocked, else NONE. Uninitialized -> BEGIN_INITIALIZATION as today. Every other state -> NONE.
+  (b) state/AncViewModel.kt: `fun lockVault() = manualLock()` (clears frozen commands and calls controller.lock(); same as the existing Lock-now path).
+  (c) MainActivity.kt: appUnlocked = !isAppLocked && !needsPinSetup (from securityRepo.settings). A LaunchedEffect keyed on isAppLocked calls
+      viewModel.lockVault() when isAppLocked becomes true. The auto-unlock LaunchedEffect is keyed on (state.vaultState, appUnlocked) and uses
+      vaultAutoAction(state.vaultState, appUnlocked). Result: PIN screen up = vault closed and stays closed; correct PIN = vault reopens by itself.
+  Accepted consequence: an open editor is discarded when the lock fires (existing behaviour of any vault lock). Not in scope: draft saving.
+Q42 (ui/AppLockScreen.kt) The fingerprint key's clickable is enabled only when settingsState.isBiometricEnabled is true (plus today's conditions);
+    no automatic biometric prompt when it is off.
+Q43 (ui/UltrasoundPhotoViewerDialog.kt, ui/ClinicalAttachmentViewerDialog.kt) When a photo cannot be decoded or loaded, show the text
+    "Image unavailable" (testTag "image_unavailable") - never a simulated ultrasound canvas, never invented machine values (3.5MHz, DEPTH, GAIN, FPS,
+    TIS, MI) and never a defaulted presentation ("CEPHALIC"). Remove the permanent "Loading encrypted image..." wording: show "Loading image..." only
+    while loading and "Image unavailable" after a failure.
+Q44 (ui/Theme.kt) Every status-tag text/background pair meets WCAG AA 4.5:1 (light and, where dark tokens exist, dark). Only darken the TEXT colour of a
+    failing pair (e.g. TagHighRiskText to a darker red); do not change backgrounds or any other colour.
+Q45 (ui/PatientListScreen.kt, ui/ProfileScreen.kt, ui/AddAttachmentDialog.kt) IconButtons that are `.size(36.dp)` use `.minimumTouchTarget()`
+    (already defined in ui/Components.kt) so they are at least 48dp; icons keep their size; layouts must not overflow.
+Q46 (ui/AppLockScreen.kt) TalkBack: the six PIN dots are one semantics node with a contentDescription like "3 of 6 digits entered"; the error and
+    lockout messages are live regions (Polite); each keypad key has Role.Button. Keep every testTag.
+Static checks (new .agents/checks/check_r3e.py, id STATIC-r3e, exit 1 on any FAIL; strip comments first):
+ S23 VaultAutoAction.kt: vaultAutoAction has an appUnlocked Boolean parameter without default; the Locked branch depends on it.
+ S24 AncViewModel.kt defines lockVault; MainActivity.kt calls vaultAutoAction( with two arguments, calls lockVault() inside an effect keyed on isAppLocked.
+ S25 AppLockScreen.kt: the biometric key's clickable enabled expression contains isBiometricEnabled.
+ S26 neither UltrasoundPhotoViewerDialog.kt nor ClinicalAttachmentViewerDialog.kt contains "3.5MHz", "GAIN", "CEPHALIC" or "Loading encrypted image"; both contain "Image unavailable".
+ S27 AppLockScreen.kt contains liveRegion, Role.Button and a contentDescription mentioning "digits".
+ S28 no `.size(36.dp)` on an IconButton in PatientListScreen.kt, ProfileScreen.kt, AddAttachmentDialog.kt (a Modifier chain on IconButton( ... ) that includes size(36.dp)).
+ Unit: VaultAutoActionTest updated to the new signature (Locked+appUnlocked -> BEGIN_UNLOCK; Locked+!appUnlocked -> NONE; Uninitialized unchanged);
+ ThemeContrastTest lists every tag pair in Theme.kt (HighRisk, Attention, Obstetric, GA, Blood, age, delivery) and asserts >= 4.5.
+Device check (orchestrator, QA copy): after 11 min away only the PIN screen shows, the vault reopens after the PIN (time measured) and the list returns;
+Lock now behaves the same; a scan with a missing photo shows "Image unavailable"; cards still look right with 48dp targets.

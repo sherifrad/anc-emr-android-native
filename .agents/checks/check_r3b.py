@@ -58,9 +58,9 @@ if raw is None:
     record("S5 MainActivity.kt readable", False, "missing")
 else:
     src = strip_comments(raw)
-    m = re.search(r"LaunchedEffect\(\s*state\.vaultState\s*\)", src)
+    m = re.search(r"LaunchedEffect\(\s*state\.vaultState\s*(?:,[^)]*)?\)", src)
     body = block_after(src, m.end()) if m else None
-    record("S5a LaunchedEffect(state.vaultState) found", body is not None)
+    record("S5a LaunchedEffect(state.vaultState[, ...]) found", body is not None)
     if body is not None:
         record("S5b effect calls vaultAutoAction", "vaultAutoAction(" in body)
         record("S5c effect has no retryStorageInspection()", "retryStorageInspection()" not in body)

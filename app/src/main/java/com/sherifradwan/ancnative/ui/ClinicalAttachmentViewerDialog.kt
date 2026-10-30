@@ -212,9 +212,10 @@ fun ClinicalAttachmentViewerDialog(
                                 modifier = Modifier.size(48.dp),
                             )
                             Text(
-                                text = "Loading encrypted image...",
+                                text = "Image unavailable",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color.LightGray,
+                                modifier = Modifier.testTag("image_unavailable"),
                             )
                         }
                     }

@@ -1,0 +1,7 @@
+ROLE: TEST DESIGNER for ROUND 3e (SPEC_FIX_R3.md section "Round 3e"). Write tests only; no production code.
+ALLOWED files: .agents/checks/check_r3e.py (NEW), app/src/test/java/com/sherifradwan/ancnative/storage/VaultAutoActionTest.kt (update to the new two-argument signature and add the new cases), app/src/test/java/com/sherifradwan/ancnative/ui/ThemeContrastTest.kt (extend per spec), .agents/TEST_MANIFEST.json (add ONE entry).
+1. check_r3e.py: implement S23-S28 exactly as the spec says; python3 stdlib only; strip Kotlin comments first; PASS/FAIL per check; exit 1 on any FAIL; follow the style of .agents/checks/check_r3d.py. Every check must FAIL on today's code.
+2. VaultAutoActionTest: keep existing intent, adapt to vaultAutoAction(state, appUnlocked); add Locked+appUnlocked=false -> NONE.
+3. ThemeContrastTest: read ui/Theme.kt, list every status-tag pair; assert contrast >= 4.5 (light, and dark where a dark token exists). It must FAIL today for the High-risk tag. Keep existing assertions.
+4. TEST_MANIFEST.json: add {"id": "STATIC-r3e", "tier": 1, "cmd": "python3 .agents/checks/check_r3e.py", "deps": [every file named in S23-S28 as app/src/main/**/<name>, plus ".agents/checks/check_r3e.py"], "covers": ["S23","S24","S25","S26","S27","S28"]}; edit the file directly with your edit tool. Keep other entries unchanged.
+Run python3 .agents/checks/check_r3e.py and the two unit test classes; report real results (the VaultAutoActionTest may not compile until core is done - say so).

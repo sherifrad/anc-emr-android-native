@@ -890,7 +890,7 @@ private fun ActionIconButtons(
     IconButton(
         onClick = { onEvent(AncEvent.OpenWorkspace(patient.id)) },
         modifier = Modifier
-            .size(36.dp)
+            .minimumTouchTarget()
             .testTag("workspace-${patient.caseId}"),
     ) {
         Icon(
@@ -905,7 +905,7 @@ private fun ActionIconButtons(
     IconButton(
         onClick = { onEvent(AncEvent.OpenProfile(patient.id)) },
         modifier = Modifier
-            .size(36.dp)
+            .minimumTouchTarget()
             .testTag("profile-${patient.caseId}"),
     ) {
         Icon(
@@ -929,7 +929,7 @@ private fun ActionIconButtons(
                 )
             },
             modifier = Modifier
-                .size(36.dp)
+                .minimumTouchTarget()
                 .testTag("editPatient-${patient.caseId}"),
         ) {
             Icon(
@@ -953,7 +953,7 @@ private fun ActionIconButtons(
             )
         },
         modifier = Modifier
-            .size(36.dp)
+            .minimumTouchTarget()
             .testTag("statusPatient-${patient.caseId}"),
     ) {
         Icon(

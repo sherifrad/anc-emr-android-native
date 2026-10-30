@@ -108,6 +108,35 @@ class ThemeContrastTest {
         }
     }
 
+    /** Status tags (round 3e Q44): text token on its own background, light and dark. */
+    private fun statusTagPairs(): List<Pair<String, String>> {
+        val names = listOf(
+            "TagHighRisk", "TagNormalRisk", "TagAttention", "TagObstetric",
+            "TagGestationalAge", "TagBloodPositive", "TagBloodNegative", "TagBloodNeutral",
+        )
+        return names.flatMap { listOf("${it}Text" to "${it}Bg", "${it}DarkText" to "${it}DarkBg") }
+    }
+
+    @Test
+    fun statusTags_everyTextBackgroundPair_meetsWcagAa_4_5() {
+        val tokens = parseColorTokens()
+        val failures = mutableListOf<String>()
+        for ((textToken, bgToken) in statusTagPairs()) {
+            val t = tokens[textToken] ?: throw AssertionError("missing Theme.kt token $textToken")
+            val bg = tokens[bgToken] ?: throw AssertionError("missing Theme.kt token $bgToken")
+            val ratio = contrastRatio(t, bg)
+            if (ratio < 4.5) failures += "$textToken on $bgToken = %.2f:1".format(ratio)
+        }
+        assertTrue("status tag pairs below 4.5:1: $failures", failures.isEmpty())
+    }
+
+    @Test
+    fun highRiskTag_lightText_meetsWcagAa_4_5() {
+        val tokens = parseColorTokens()
+        val ratio = contrastRatio(tokens["TagHighRiskText"]!!, tokens["TagHighRiskBg"]!!)
+        assertTrue("TagHighRiskText on TagHighRiskBg = %.2f:1, needs >= 4.5:1".format(ratio), ratio >= 4.5)
+    }
+
     @Test
     fun textTokens_areFullyOpaque_noAlphaFadedTextTokens() {
         val tokens = parseColorTokens()

@@ -48,6 +48,11 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -258,7 +263,9 @@ fun AppLockScreen(
                 Text(
                     text = stringResource(R.string.pin_lockout, seconds / 60, seconds % 60),
                     color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.testTag("pinLockoutMessage"),
+                    modifier = Modifier
+                        .testTag("pinLockoutMessage")
+                        .semantics { liveRegion = LiveRegionMode.Polite },
                     textAlign = TextAlign.Center,
                 )
             }
@@ -275,7 +282,11 @@ fun AppLockScreen(
             Row(
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.testTag("pinDotsRow"),
+                modifier = Modifier
+                    .testTag("pinDotsRow")
+                    .semantics(mergeDescendants = true) {
+                        contentDescription = "${enteredPin.length} of 6 digits entered"
+                    },
             ) {
                 for (i in 0 until 6) {
                     val isFilled = i < enteredPin.length
@@ -312,6 +323,7 @@ fun AppLockScreen(
                         color = MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Medium,
                         textAlign = TextAlign.Center,
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                     )
                 }
             }
@@ -372,7 +384,10 @@ fun AppLockScreen(
                             .height(60.dp)
                             .testTag("pinKey-biometric")
                             .clip(RoundedCornerShape(16.dp))
-                            .clickable(enabled = isBiometricSupported && !setupMode && !legacyChangeRequired && lockoutRemainingMs <= 0) { triggerBiometric() },
+                            .clickable(
+                                enabled = isBiometricSupported && settingsState.isBiometricEnabled && !setupMode && !legacyChangeRequired && lockoutRemainingMs <= 0,
+                                role = Role.Button,
+                            ) { triggerBiometric() },
                     ) {
                         if (isBiometricSupported && !setupMode && !legacyChangeRequired) Box(contentAlignment = Alignment.Center) {
                             Icon(
@@ -400,7 +415,7 @@ fun AppLockScreen(
                             .height(60.dp)
                             .testTag("pinKey-backspace")
                             .clip(RoundedCornerShape(16.dp))
-                            .clickable { handleBackspace() },
+                            .clickable(role = Role.Button) { handleBackspace() },
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
@@ -453,7 +468,7 @@ private fun KeypadButton(
             .height(60.dp)
             .testTag("pinKey-$digit")
             .clip(RoundedCornerShape(16.dp))
-            .clickable { onClick() },
+            .clickable(role = Role.Button) { onClick() },
         shadowElevation = 1.dp,
     ) {
         Box(contentAlignment = Alignment.Center) {

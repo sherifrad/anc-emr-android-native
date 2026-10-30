@@ -67,14 +67,18 @@ class MainActivity : ComponentActivity() {
             }
             AncTheme(darkTheme = isDarkTheme, dynamicColor = false) {
                 val state = viewModel.state.collectAsStateWithLifecycle().value
+                val appUnlocked = !securitySettings.isAppLocked && !securitySettings.needsPinSetup
                 val authenticating = state.vaultState as? VaultState.Authenticating
                 LaunchedEffect(authenticating?.request?.id) {
                     authenticating?.request?.let { request ->
                         viewModel.completeAuthentication(request)
                     }
                 }
-                LaunchedEffect(state.vaultState) {
-                    when (vaultAutoAction(state.vaultState)) {
+                LaunchedEffect(securitySettings.isAppLocked) {
+                    if (securitySettings.isAppLocked) viewModel.lockVault()
+                }
+                LaunchedEffect(state.vaultState, appUnlocked) {
+                    when (vaultAutoAction(state.vaultState, appUnlocked)) {
                         VaultAutoAction.BEGIN_UNLOCK -> viewModel.beginUnlock()
                         VaultAutoAction.BEGIN_INITIALIZATION -> viewModel.beginInitialization()
                         VaultAutoAction.NONE -> Unit

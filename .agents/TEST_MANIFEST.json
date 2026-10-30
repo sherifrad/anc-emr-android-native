@@ -203,6 +203,24 @@
       "covers": ["S17", "S18", "S19", "S20", "S21", "S22"]
     },
     {
+      "id": "STATIC-r3e",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3e.py",
+      "deps": [
+        "app/src/main/**/storage/VaultAutoAction.kt",
+        "app/src/main/**/state/AncViewModel.kt",
+        "app/src/main/**/MainActivity.kt",
+        "app/src/main/**/ui/AppLockScreen.kt",
+        "app/src/main/**/ui/UltrasoundPhotoViewerDialog.kt",
+        "app/src/main/**/ui/ClinicalAttachmentViewerDialog.kt",
+        "app/src/main/**/ui/PatientListScreen.kt",
+        "app/src/main/**/ui/ProfileScreen.kt",
+        "app/src/main/**/ui/AddAttachmentDialog.kt",
+        ".agents/checks/check_r3e.py"
+      ],
+      "covers": ["S23", "S24", "S25", "S26", "S27", "S28"]
+    },
+    {
       "id": "UNIT-all",
       "tier": 2,
       "cmd": "./gradlew --offline :app:testDebugUnitTest",

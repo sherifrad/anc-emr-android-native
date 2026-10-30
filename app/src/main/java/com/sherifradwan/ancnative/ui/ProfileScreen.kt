@@ -1880,7 +1880,7 @@ private fun ProfileDateGroupedLabCard(
                                     IconButton(
                                         onClick = { onEditLab(lab) },
                                         modifier = Modifier
-                                            .size(36.dp)
+                                            .minimumTouchTarget()
                                             .testTag("editLab-${lab.id}"),
                                     ) {
                                         Icon(

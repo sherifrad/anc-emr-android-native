@@ -99,3 +99,22 @@ Not run on a device: restore confirmation (needs a system file picker), FLAG_SEC
 Review (Nemotron): no real defects found; its "Hard Blocker" tags were boilerplate on items that satisfy the spec.
 Next (3e, need owner decisions): vault close on lock; photos in backup/encryption; PBKDF2 iterations; Q37 wording; fake ultrasound canvas in the scan viewer
 (invents machine settings, defaults "CEPHALIC"); biometric toggle ignored; contrast of High-risk tag; touch targets 36dp; TalkBack on lock screen.
+
+# Round 3e (run 20261030-182233) - the app lock closes the vault; no fake scan screen; biometric switch; contrast; TalkBack; touch targets
+Owner: photo encryption/photos-in-backup PAUSED (storage cost first); printed Rh-negative wording unchanged.
+Verdict: all gates green after one orchestrator fix. Fresh --rerun-tasks 342/342; check_r3, r3b, r3c, r3d, r3e all PASS; release compiles.
+Staffing: tests Claude Sonnet 5.5, build GPT-6 Luna (core + UI), review Nemotron 3 Ultra (375 s). One UI repair attempt of GPT-6 Luna returned nothing and the
+pipeline fell back to Claude automatically (first live use of MACA_FALLBACK_LANES). Scope violations 0.
+Pipeline halt cause (my spec miss, again): check_r3b S5a demanded the exact effect key LaunchedEffect(state.vaultState); Q41 adds a second key. The tests
+lane relaxed S5a only (same strictness for S5b/S5c). Lesson: before a round, grep older checks for the exact code shapes the new spec changes.
+What changed: vaultAutoAction(state, appUnlocked) (no default); AncViewModel.lockVault(); MainActivity locks the vault when the app locks and
+auto-unlocks only when !isAppLocked && !needsPinSetup. Fingerprint key respects the switch; scan viewer shows "Image unavailable" (fake ultrasound
+canvas with invented values removed, -150 lines); High-risk tag text #B91C1C (was #DC2626, 3.95:1 -> 5.3:1) and the contrast test covers every tag;
+36dp action buttons are now 48dp; PIN dots and messages have TalkBack semantics.
+Device (API 26 emulator, QA copy, clock moved +11 min): only the PIN screen shows; open file handles on records.db: 3 unlocked -> 0 while the PIN
+screen is up -> 3 after the PIN, so the vault really closes; list back within ~1.7 s of the last digit (upper bound, includes screen-read delay).
+Missing photo shows "Image unavailable". Patient list cards: buttons 126 px (48 dp), no overflow. Clock restored, adb unrooted.
+Review (Nemotron): its "Hard Blocker" tags were speculative (stale setting, layout overflow); the one concrete worry (spinner that never stops) does not
+apply - decoding is one synchronous step. Not acted on.
+Not verified: on the Honor 400; TalkBack with a real screen reader; fingerprint on Android 11+; a save started just before the lock.
+Accepted: an open editor is discarded when the lock fires (any vault lock already did this).

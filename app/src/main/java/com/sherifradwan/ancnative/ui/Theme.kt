@@ -54,7 +54,7 @@ val TagAttentionText = Color(0xFF92400E)
 
 val TagHighRiskBg = Color(0xFFFEE2E2)
 val TagHighRiskBorder = Color(0xFFFCA5A5)
-val TagHighRiskText = Color(0xFFDC2626)
+val TagHighRiskText = Color(0xFFB91C1C)
 
 val TagNormalRiskBg = Color(0xFFDCFCE7)
 val TagNormalRiskBorder = Color(0xFF86EFAC)

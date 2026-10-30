@@ -4,12 +4,16 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class VaultAutoActionTest {
-    @Test fun lockedBeginsUnlock() {
-        assertEquals(VaultAutoAction.BEGIN_UNLOCK, vaultAutoAction(VaultState.Locked))
+    @Test fun lockedBeginsUnlockWhenAppUnlocked() {
+        assertEquals(VaultAutoAction.BEGIN_UNLOCK, vaultAutoAction(VaultState.Locked, appUnlocked = true))
+    }
+
+    @Test fun lockedDoesNothingWhileAppLocked() {
+        assertEquals(VaultAutoAction.NONE, vaultAutoAction(VaultState.Locked, appUnlocked = false))
     }
 
     @Test fun uninitializedBeginsInitialization() {
-        assertEquals(VaultAutoAction.BEGIN_INITIALIZATION, vaultAutoAction(VaultState.Uninitialized))
+        assertEquals(VaultAutoAction.BEGIN_INITIALIZATION, vaultAutoAction(VaultState.Uninitialized, appUnlocked = true))
     }
 
     @Test fun otherStatesDoNothing() {
@@ -22,12 +26,16 @@ class VaultAutoActionTest {
             VaultState.Closing(),
             VaultState.Closing(busy = true),
         )
-        states.forEach { assertEquals(it.toString(), VaultAutoAction.NONE, vaultAutoAction(it)) }
+        listOf(true, false).forEach { appUnlocked ->
+            states.forEach {
+                assertEquals(it.toString(), VaultAutoAction.NONE, vaultAutoAction(it, appUnlocked))
+            }
+        }
     }
 
     @Test fun everyBlockedReasonDoesNothing() {
         VaultBlockReason.values().forEach {
-            assertEquals(it.name, VaultAutoAction.NONE, vaultAutoAction(VaultState.Blocked(it)))
+            assertEquals(it.name, VaultAutoAction.NONE, vaultAutoAction(VaultState.Blocked(it), appUnlocked = true))
         }
     }
 }

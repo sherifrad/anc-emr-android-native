@@ -596,6 +596,7 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
         clearFrozenCommands()
         controller.lock()
     }
+    fun lockVault() = manualLock()
     fun onForegrounded() = controller.onForegrounded()
     fun onBackgrounded(authenticationOverlayActive: Boolean) {
         if (!authenticationOverlayActive) clearFrozenCommands()
