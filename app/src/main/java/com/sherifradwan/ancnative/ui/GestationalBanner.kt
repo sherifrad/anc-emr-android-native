@@ -28,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatientDating
+import com.sherifradwan.ancnative.model.FULL_TERM_DAYS
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
@@ -125,7 +126,7 @@ fun GestationalBanner(
                     }
                 }
 
-                val progress = (gaResult.totalDays / 280f).coerceIn(0f, 1f)
+                val progress = (gaResult.totalDays / FULL_TERM_DAYS.toFloat()).coerceIn(0f, 1f)
                 val progressPercent = (progress * 100).toInt()
                 val cdMessage = stringResource(R.string.gestational_progress_cd, gaResult.formatted, progressPercent)
 

@@ -2,6 +2,7 @@ package com.sherifradwan.ancnative.storage
 
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.DemoVisit
+import com.sherifradwan.ancnative.model.parseCanonicalIsoDateOrNull
 import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.DraftError
 import java.nio.ByteBuffer
@@ -66,11 +67,7 @@ data class SaveVisitCommand(
             )
         }
 
-        private fun String.isIsoDate(): Boolean = try {
-            LocalDate.parse(this).toString() == this
-        } catch (_: DateTimeParseException) {
-            false
-        }
+        private fun String.isIsoDate(): Boolean = parseCanonicalIsoDateOrNull(this) != null
     }
 }
 

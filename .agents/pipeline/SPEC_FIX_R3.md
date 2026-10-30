@@ -444,3 +444,21 @@ Q68 (storage/CameraCaptureHelper.kt) Extract the rule as a pure top-level functi
 Static check (.agents/checks/check_r3h.py, STATIC-r3h): S50 CameraCaptureHelper.kt defines captureTempFile with no android.* type in its signature, and deleteIfCaptureTemp calls captureTempFile( and contains no "canonicalFile".
 Unit (storage/CaptureTempFileTest.kt, temp folders): valid file -> returned; wrong scheme; wrong authority; wrong first segment; only one segment; missing file; directory instead of file; "..": ["camera_photos","..","x.jpg"];
  sub-folder ["camera_photos","sub","x.jpg"] with the file inside sub; a segment "a/b.jpg"; symlink inside cameraDir pointing to a file outside (skip with Assume if symlinks are unsupported) -> null; unrelated file name case.
+
+## Round 3i (reuse: one due-date rule, one date parser) - owner principle "every rule is one function, recalled everywhere"
+Audit pass 2 found: EDD = LMP + 280 written in GestationalAgeEngine (2x), IntakeDatingRule and PatientEditor (live preview); the constant 280 also in calculateForEdd and GestationalBanner; ISO date parsing in 9 places with
+two different strictness rules (lenient trim in 5 places; canonical "must equal toString()" in IntakeDatingRule, SaveVisitCommand, RecordsRepository). No behaviour change is wanted except the one named in Q70.
+Q69 (NEW model/IsoDates.kt) `fun parseIsoDateOrNull(value: String?): LocalDate?` (null/blank -> null; trims; LocalDate.parse; any exception -> null) and
+    `fun parseCanonicalIsoDateOrNull(value: String?): LocalDate?` (no trimming; the parsed date's toString() must equal the input, so "2026-1-5", " 2026-01-05" and "2026-02-30" are null).
+    `const val FULL_TERM_DAYS = 280L` and `fun eddFromLmp(lmp: LocalDate): LocalDate = lmp.plusDays(FULL_TERM_DAYS)`.
+    Replace every other LocalDate.parse( outside model/DemoFixtures.kt and IsoDates.kt: lenient places (model/GestationalAgeEngine private copy, model/LongitudinalTimelineProjection private copy, model/ClinicalModels.kt:116,
+    ui/AncDatePicker.kt:50, ui/report/PatientPrintHtmlGenerator.kt:88) call parseIsoDateOrNull; canonical places (state/IntakeDatingRule.kt, storage/SaveVisitCommand.kt:70, storage/RecordsRepository.kt:609) call
+    parseCanonicalIsoDateOrNull. Keep each caller's existing null/false handling exactly.
+Q70 Every "+ 280" / "280 -" / "/ 280f" for gestation uses FULL_TERM_DAYS / eddFromLmp: GestationalAgeEngine (calculateEstimatedDueDate LMP branches, calculateForEdd), state/IntakeDatingRule.kt, ui/GestationalBanner.kt progress,
+    ui/PatientEditor.kt live preview: the Estimated Due Date text uses eddFromLmp(parseIsoDateOrNull(lmp)) and the current-GA text uses GestationalAgeEngine.calculateForLmp(...)?.formatted (the engine's cap is 320 days; the preview
+    used 300 - the preview now follows the engine, this is the only intended behaviour change). The editor keeps showing nothing when the LMP does not parse.
+Static check (.agents/checks/check_r3i.py, STATIC-r3i; strip comments first): S51 `LocalDate.parse(` appears in app/src/main only in model/IsoDates.kt and model/DemoFixtures.kt; S52 `plusDays(280` and `/ 280f` and `280 -` do not appear
+    in app/src/main outside IsoDates.kt (FULL_TERM_DAYS is used instead); S53 IsoDates.kt defines the four names of Q69; S54 PatientEditor.kt, IntakeDatingRule.kt and GestationalBanner.kt reference eddFromLmp( or FULL_TERM_DAYS.
+Unit (model/IsoDatesTest.kt): lenient: " 2026-01-05 " ok, "2026-1-5" null, "" / null / "abc" null; canonical: " 2026-01-05" null, "2026-01-05" ok, "2026-02-30" null, "2026-1-05" null; eddFromLmp(2026-01-01) == 2026-10-08;
+    FULL_TERM_DAYS == 280. The existing GestationalAgeEngineTest, IntakeDatingRuleTest, ClinicalValidationTest, SaveCoordinatorTest and PatientPrintHtmlGeneratorTest must stay green untouched.
+Device (orchestrator, QA copy): new patient editor shows the Estimated Due Date and current GA for an LMP; a patient's banner progress still draws; no crash.

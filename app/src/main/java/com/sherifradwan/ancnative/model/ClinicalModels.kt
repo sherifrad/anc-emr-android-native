@@ -112,11 +112,6 @@ object ClinicalVocabulary {
 
     fun isValidIsoDate(value: String?): Boolean {
         if (value.isNullOrBlank()) return true
-        return try {
-            LocalDate.parse(value.trim())
-            true
-        } catch (_: Exception) {
-            false
-        }
+        return parseIsoDateOrNull(value) != null
     }
 }

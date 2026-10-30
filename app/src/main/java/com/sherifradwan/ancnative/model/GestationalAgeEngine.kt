@@ -19,7 +19,7 @@ object GestationalAgeEngine {
 
     fun calculateGestationalAgeAt(dating: DemoPatientDating?, dateString: String?): GestationalAgeResult? {
         if (dateString.isNullOrBlank()) return null
-        val date = parseDateOrNull(dateString) ?: return null
+        val date = parseIsoDateOrNull(dateString) ?: return null
         return calculate(dating, date)
     }
 
@@ -28,7 +28,7 @@ object GestationalAgeEngine {
 
         // If an explicit agreed EDD is assigned by clinician, calculate from agreed EDD
         if (!dating.agreedEdd.isNullOrBlank()) {
-            val edd = parseDateOrNull(dating.agreedEdd)
+            val edd = parseIsoDateOrNull(dating.agreedEdd)
             if (edd != null) {
                 return calculateForEdd(edd, asOfDate)
             }
@@ -38,7 +38,7 @@ object GestationalAgeEngine {
         return when (dating.datingMethod?.uppercase()) {
             "IVF_TRANSFER", "IVF" -> {
                 if (!dating.transferDate.isNullOrBlank()) {
-                    val transfer = parseDateOrNull(dating.transferDate)
+                    val transfer = parseIsoDateOrNull(dating.transferDate)
                     if (transfer != null) {
                         val embryoAge = dating.embryoAgeDays ?: 5
                         calculateForIvf(transfer, embryoAge, asOfDate)
@@ -47,24 +47,24 @@ object GestationalAgeEngine {
             }
             "ULTRASOUND", "US" -> {
                 if (!dating.ultrasoundEdd.isNullOrBlank()) {
-                    val edd = parseDateOrNull(dating.ultrasoundEdd)
+                    val edd = parseIsoDateOrNull(dating.ultrasoundEdd)
                     if (edd != null) calculateForEdd(edd, asOfDate) else null
                 } else null
             }
             "LMP" -> {
                 if (!dating.lmpDate.isNullOrBlank()) {
-                    val lmp = parseDateOrNull(dating.lmpDate)
+                    val lmp = parseIsoDateOrNull(dating.lmpDate)
                     if (lmp != null) calculateForLmp(lmp, asOfDate) else null
                 } else null
             }
             else -> {
                 // Fallback sequence: ultrasound EDD -> LMP
                 if (!dating.ultrasoundEdd.isNullOrBlank()) {
-                    val edd = parseDateOrNull(dating.ultrasoundEdd)
+                    val edd = parseIsoDateOrNull(dating.ultrasoundEdd)
                     if (edd != null) return calculateForEdd(edd, asOfDate)
                 }
                 if (!dating.lmpDate.isNullOrBlank()) {
-                    val lmp = parseDateOrNull(dating.lmpDate)
+                    val lmp = parseIsoDateOrNull(dating.lmpDate)
                     if (lmp != null) return calculateForLmp(lmp, asOfDate)
                 }
                 null
@@ -91,7 +91,7 @@ object GestationalAgeEngine {
 
     fun calculateForEdd(edd: LocalDate, asOfDate: LocalDate = LocalDate.now()): GestationalAgeResult? {
         val daysToEdd = ChronoUnit.DAYS.between(asOfDate, edd)
-        val totalDays = 280 - daysToEdd
+        val totalDays = FULL_TERM_DAYS - daysToEdd
         if (totalDays < 0 || totalDays > 320) return null
         return formatGestationalDays(totalDays)
     }
@@ -99,12 +99,12 @@ object GestationalAgeEngine {
     fun calculateEstimatedDueDate(dating: DemoPatientDating?): LocalDate? {
         if (dating == null) return null
         if (!dating.agreedEdd.isNullOrBlank()) {
-            parseDateOrNull(dating.agreedEdd)?.let { return it }
+            parseIsoDateOrNull(dating.agreedEdd)?.let { return it }
         }
         return when (dating.datingMethod?.uppercase()) {
             "IVF_TRANSFER", "IVF" -> {
                 if (!dating.transferDate.isNullOrBlank()) {
-                    parseDateOrNull(dating.transferDate)?.let { transfer ->
+                    parseIsoDateOrNull(dating.transferDate)?.let { transfer ->
                         val embryoAge = dating.embryoAgeDays ?: 5
                         if (embryoAge != 3 && embryoAge != 5) return null
                         val daysToAdd = if (embryoAge == 3) 263L else 261L
@@ -114,19 +114,19 @@ object GestationalAgeEngine {
             }
             "ULTRASOUND", "US" -> {
                 if (!dating.ultrasoundEdd.isNullOrBlank()) {
-                    parseDateOrNull(dating.ultrasoundEdd)
+                    parseIsoDateOrNull(dating.ultrasoundEdd)
                 } else null
             }
             "LMP" -> {
                 if (!dating.lmpDate.isNullOrBlank()) {
-                    parseDateOrNull(dating.lmpDate)?.plusDays(280)
+                    parseIsoDateOrNull(dating.lmpDate)?.let(::eddFromLmp)
                 } else null
             }
             else -> {
                 if (!dating.ultrasoundEdd.isNullOrBlank()) {
-                    parseDateOrNull(dating.ultrasoundEdd)
+                    parseIsoDateOrNull(dating.ultrasoundEdd)
                 } else if (!dating.lmpDate.isNullOrBlank()) {
-                    parseDateOrNull(dating.lmpDate)?.plusDays(280)
+                    parseIsoDateOrNull(dating.lmpDate)?.let(::eddFromLmp)
                 } else null
             }
         }
@@ -154,11 +154,5 @@ object GestationalAgeEngine {
             trimester = trimester,
             isPostTerm = isPostTerm,
         )
-    }
-
-    private fun parseDateOrNull(value: String): LocalDate? = try {
-        LocalDate.parse(value.trim())
-    } catch (_: Exception) {
-        null
     }
 }

@@ -55,8 +55,11 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
+import com.sherifradwan.ancnative.model.GestationalAgeEngine
 import com.sherifradwan.ancnative.model.PatientValidationError
 import com.sherifradwan.ancnative.model.PatientVocabulary
+import com.sherifradwan.ancnative.model.eddFromLmp
+import com.sherifradwan.ancnative.model.parseIsoDateOrNull
 import com.sherifradwan.ancnative.state.ClinicalValidationError
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
@@ -176,14 +179,9 @@ fun PatientEditor(
                 )
                 val trimmedLmp = draft.values.lmpDate.trim()
                 if (trimmedLmp.isNotBlank()) {
-                    val calculatedEdd = try {
-                        java.time.LocalDate.parse(trimmedLmp).plusDays(280).toString()
-                    } catch (_: Exception) { null }
-                    val currentGa = try {
-                        val parsed = java.time.LocalDate.parse(trimmedLmp)
-                        val days = java.time.temporal.ChronoUnit.DAYS.between(parsed, java.time.LocalDate.now())
-                        if (days in 0..300) "${days / 7}w ${days % 7}d" else null
-                    } catch (_: Exception) { null }
+                    val parsedLmp = parseIsoDateOrNull(trimmedLmp)
+                    val calculatedEdd = parsedLmp?.let { eddFromLmp(it) }?.toString()
+                    val currentGa = parsedLmp?.let { GestationalAgeEngine.calculateForLmp(it)?.formatted }
                     if (calculatedEdd != null) {
                         Surface(
                             shape = RoundedCornerShape(8.dp),

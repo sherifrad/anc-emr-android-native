@@ -7,6 +7,7 @@ import android.util.Base64
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
+import com.sherifradwan.ancnative.model.parseIsoDateOrNull
 import com.sherifradwan.ancnative.security.SecuritySettingsState
 import java.io.ByteArrayOutputStream
 import java.time.LocalDate
@@ -84,12 +85,9 @@ object PatientPrintHtmlGenerator {
             """<tr><td colspan="6" class="text-center empty-cell">No clinical visits recorded yet</td></tr>"""
         } else {
             sortedVisits.take(12).mapIndexed { idx, v ->
-                val vGa = try {
-                    val vDate = LocalDate.parse(v.date.trim())
-                    patient.dating?.calculateGestationalAgeResult(vDate)?.formatted ?: "-"
-                } catch (_: Exception) {
-                    "-"
-                }
+                val vGa = parseIsoDateOrNull(v.date)?.let { vDate ->
+                    patient.dating?.calculateGestationalAgeResult(vDate)?.formatted
+                } ?: "-"
                 """
                 <tr>
                     <td class="text-center font-bold">${idx + 1}</td>

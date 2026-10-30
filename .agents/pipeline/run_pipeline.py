@@ -16,7 +16,7 @@ ap.add_argument("--root", default=str(HOME / "anc-emr-android-native"))
 ap.add_argument("--plan", action="store_true")
 ap.add_argument("--skip-review", action="store_true")
 ap.add_argument("--ui-only", action="store_true", help="tests and core already green: run only the UI lane, cache check and review")
-ap.add_argument("--round", default="r1", choices=["r1", "r2", "r3", "r3b", "r3c", "r3c2", "r3c3", "r3d", "r3e", "r3f1", "r3f2", "r3f3", "r3g", "r3h"], help="r2: SPEC_FIX_R2 briefs in pipeline/r2, round-2 file lists")
+ap.add_argument("--round", default="r1", choices=["r1", "r2", "r3", "r3b", "r3c", "r3c2", "r3c3", "r3d", "r3e", "r3f1", "r3f2", "r3f3", "r3g", "r3h", "r3i"], help="r2: SPEC_FIX_R2 briefs in pipeline/r2, round-2 file lists")
 ap.add_argument("--resume-tests", metavar="NOTE", help="tests lane timed out after writing tests: send a short finish-up request (NOTE), then continue")
 ap.add_argument("--from-core", metavar="RED_RUN_DIR", help="tests already written and red-checked in RED_RUN_DIR: start at the core lane")
 ap.add_argument("--skip-ui", action="store_true", help="no UI work this round: skip the UI lane, still run the full gate")
@@ -159,7 +159,14 @@ if args.round == "r3h":
     M = "app/src/main/java/com/sherifradwan/ancnative/"; ST = "app/src/test/java/com/sherifradwan/ancnative/"
     TEST_GLOBS = [".agents/checks/check_r3h.py", ".agents/TEST_MANIFEST.json", ST + "storage/CaptureTempFileTest.kt"]
     ALLOW = {"tests": TEST_GLOBS, "core": [M + "storage/CameraCaptureHelper.kt"], "ui": [], "review": []}
-BRIEFS = PIPE / args.round if args.round in ("r2", "r3", "r3b", "r3c", "r3c2", "r3c3", "r3d", "r3e", "r3f1", "r3f2", "r3f3", "r3g", "r3h") else PIPE
+if args.round == "r3i":
+    M = "app/src/main/java/com/sherifradwan/ancnative/"; ST = "app/src/test/java/com/sherifradwan/ancnative/"
+    TEST_GLOBS = [".agents/checks/check_r3i.py", ".agents/TEST_MANIFEST.json", ST + "model/IsoDatesTest.kt"]
+    ALLOW = {"tests": TEST_GLOBS,
+             "core": [M + "model/IsoDates.kt", M + "model/GestationalAgeEngine.kt", M + "model/LongitudinalTimelineProjection.kt", M + "model/ClinicalModels.kt",
+                      M + "state/IntakeDatingRule.kt", M + "storage/SaveVisitCommand.kt", M + "storage/RecordsRepository.kt", UI + "AncDatePicker.kt",
+                      UI + "report/PatientPrintHtmlGenerator.kt", UI + "GestationalBanner.kt", UI + "PatientEditor.kt"], "ui": [], "review": []}
+BRIEFS = PIPE / args.round if args.round in ("r2", "r3", "r3b", "r3c", "r3c2", "r3c3", "r3d", "r3e", "r3f1", "r3f2", "r3f3", "r3g", "r3h", "r3i") else PIPE
 # Tests that reference functions the core lane has not written yet; parked during the behavioural red check.
 NEW_API_TESTS = {"r2": [T + "ClinicalFormatR2Test.kt"], "r3": ["app/src/test/java/com/sherifradwan/ancnative/state/IntakeDatingRuleTest.kt"],
                  "r3b": ["app/src/test/java/com/sherifradwan/ancnative/storage/" + n for n in ("RecordAnomaliesTest.kt", "VaultAutoActionTest.kt", "VaultCleanupRuleTest.kt")],
@@ -168,6 +175,7 @@ NEW_API_TESTS = {"r2": [T + "ClinicalFormatR2Test.kt"], "r3": ["app/src/test/jav
                  "r3f2": ["app/src/test/java/com/sherifradwan/ancnative/storage/PhotoQualityPresetTest.kt"],
                  "r3f3": ["app/src/test/java/com/sherifradwan/ancnative/storage/BoundedBitmapTest.kt"],
                  "r3h": ["app/src/test/java/com/sherifradwan/ancnative/storage/CaptureTempFileTest.kt"],
+                 "r3i": ["app/src/test/java/com/sherifradwan/ancnative/model/IsoDatesTest.kt"],
                  "r3g": ["app/src/test/java/com/sherifradwan/ancnative/" + n for n in ("storage/ScanPhotoRefTest.kt", "storage/CameraCaptureSweepTest.kt", "state/ScanPhotoImportStateTest.kt")],
                  "r3f1": ["app/src/test/java/com/sherifradwan/ancnative/" + n for n in ("storage/HashingTest.kt", "storage/BoundedBitmapTest.kt", "storage/VaultCleanupRuleTest.kt", "security/SecuritySettingsRepositoryTest.kt", "security/FakeSharedPreferences.kt", "state/AttachmentErrorStateTest.kt")]}.get(args.round, [])
 WATCH = ["app/src", "tests", ".agents/checks", ".agents/TEST_MANIFEST.json", "build.gradle.kts", "settings.gradle.kts", "gradle.properties", "app/build.gradle.kts"]
@@ -255,6 +263,7 @@ if args.round == "r3e": CORE_GATE |= {"UNIT-vault-auto"}   # STATIC-r3e and UNIT
 if args.round == "r3f1": CORE_GATE |= {"UNIT-all"}
 if args.round == "r3f2": CORE_GATE |= {"UNIT-photo-quality"}
 if args.round == "r3f3": CORE_GATE |= {"UNIT-bounded-bitmap"}
+if args.round == "r3i": CORE_GATE |= {"UNIT-iso-dates", "STATIC-r3i", "UNIT-all"}
 if args.round == "r3h": CORE_GATE |= {"UNIT-capture-temp-file", "STATIC-r3h"}
 if args.round == "r3g": CORE_GATE |= {"UNIT-scan-photo-ref", "UNIT-camera-sweep", "UNIT-scan-photo-import"}
 if args.round == "r3d": CORE_GATE |= {"UNIT-print"}   # STATIC-r3d spans the UI lane, so it is gated after 2b
@@ -359,10 +368,11 @@ def main():
         (RUN / "metrics.json").write_text(json.dumps(METRICS, indent=1))
         print("HALT: core logic still red after 2 repair rounds; UI lane not started. See", RUN); sys.exit(1)
     # Phase 2b: UI builder
-    if not args.skip_ui: dispatch("2b-ui", "30_build_ui.md", "ui", "ui")
+    ui_lane_used = bool(ALLOW.get("ui")) and not args.skip_ui   # a round with no UI files has no UI lane (and no 30_build_ui.md)
+    if ui_lane_used: dispatch("2b-ui", "30_build_ui.md", "ui", "ui")
     res = run_selected("2b-green")
     for rnd in (1, 2):
-        if not res.get("failed"): break
+        if not res.get("failed") or not ui_lane_used: break
         dispatch(f"2b-ui-repair{rnd}", "30_build_ui.md", "ui", "ui", extra="\nREPAIR ROUND: these checks still fail.\n" + tail_of_failures(res))
         res = run_selected(f"2b-green-r{rnd}")
     ui_red = res.get("failed", [])

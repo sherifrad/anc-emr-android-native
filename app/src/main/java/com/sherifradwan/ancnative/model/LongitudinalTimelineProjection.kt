@@ -38,7 +38,7 @@ object LongitudinalTimelineProjection {
 
         // 1. Process Visits
         for (visit in patient.visits) {
-            val parsedDate = parseDateOrNull(visit.date)
+            val parsedDate = parseIsoDateOrNull(visit.date)
             var linkedScan: DemoUltrasoundScan? = null
             var warning: String? = null
 
@@ -77,7 +77,7 @@ object LongitudinalTimelineProjection {
         for (scan in patientScans) {
             val consumedByVisit = patient.visits.any { it.linkedUltrasoundId == scan.id }
             if (!consumedByVisit) {
-                val parsedDate = parseDateOrNull(scan.date)
+                val parsedDate = parseIsoDateOrNull(scan.date)
                 var warning: String? = null
                 if (scan.linkedVisitId != null) {
                     val targetVisit = patient.visits.firstOrNull { it.id == scan.linkedVisitId }
@@ -112,14 +112,5 @@ object LongitudinalTimelineProjection {
                 .thenByDescending { it.parsedDate }
                 .thenBy { it.eventKey }
         )
-    }
-
-    private fun parseDateOrNull(dateString: String?): LocalDate? {
-        if (dateString.isNullOrBlank()) return null
-        return try {
-            LocalDate.parse(dateString.trim())
-        } catch (_: Exception) {
-            null
-        }
     }
 }

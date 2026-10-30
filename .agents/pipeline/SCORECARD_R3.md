@@ -148,3 +148,10 @@ Findings, not fixed: (1) "Apply calculated GA" button in the ultrasound editor i
 Rule extracted as pure captureTempFile(...) (no android types); deleteIfCaptureTemp is a thin wrapper, behaviour unchanged. 12 new unit tests incl. "..", sub-folder, separator in a segment, symlink pointing outside (ran, not skipped).
 Gates (orchestrator): 424/424 unit tests, 0 skipped, all checks PASS, release compile OK. Orchestrator reviewed the 3-file diff itself: the pipeline crashed at the UI step (round had no UI lane and no 30_build_ui.md) before its review step - run_pipeline.py should skip the UI lane when ALLOW["ui"] is empty (open).
 Phone: with the 3g build installed, an import after the leftover capture passed 60 min deleted it (cache/camera empty afterwards) - sweep verified on the device.
+
+## Round 3i (reuse: one due-date rule, one date parser) - 2026-10-31
+Lanes: Claude Sonnet 5.5 for tests/core (no UI lane; pipeline now skips an empty UI lane); one repair round (STATIC-r3i). Review by Claude (its brief carried the generic camera questions - copied template; it reviewed the diff against the spec anyway: no blockers).
+Result: model/IsoDates.kt holds FULL_TERM_DAYS, eddFromLmp, parseIsoDateOrNull (lenient) and parseCanonicalIsoDateOrNull (strict); 9 call sites and 2 private copies replaced; 280 appears once.
+Intended behaviour change: the patient editor's live "Current GA" preview now follows the engine (up to 320 days, label like the banner) instead of its own 0..300 rule.
+Gates (orchestrator): 428/428 unit tests, 0 skipped, all checks PASS, release compile OK. Phone: LMP 2026-05-01 shows Estimated Due Date 2027-02-05 and Current GA 26w 1d (checked by hand).
+Nits left: a few now-unused imports (warnings); duplicate templated review brief should be role-specific per round.

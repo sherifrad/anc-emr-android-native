@@ -31,6 +31,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
+import com.sherifradwan.ancnative.model.parseIsoDateOrNull
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -45,16 +46,7 @@ fun AncDatePickerDialog(
     onDismiss: () -> Unit,
 ) {
     val initialMillis = remember(initialDateText) {
-        try {
-            if (initialDateText.isNotBlank()) {
-                val parsed = LocalDate.parse(initialDateText.trim())
-                parsed.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
-            } else {
-                LocalDate.now().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
-            }
-        } catch (_: DateTimeParseException) {
-            LocalDate.now().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
-        }
+        (parseIsoDateOrNull(initialDateText) ?: LocalDate.now()).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
     }
 
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialMillis)

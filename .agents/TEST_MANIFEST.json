@@ -585,6 +585,31 @@
       "covers": ["Q68"]
     },
     {
+      "id": "STATIC-r3i",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3i.py",
+      "deps": [
+        "app/src/main/**/model/IsoDates.kt",
+        "app/src/main/**/model/DemoFixtures.kt",
+        "app/src/main/**/ui/PatientEditor.kt",
+        "app/src/main/**/state/IntakeDatingRule.kt",
+        "app/src/main/**/ui/GestationalBanner.kt",
+        "app/src/main/**/*.kt",
+        ".agents/checks/check_r3i.py"
+      ],
+      "covers": ["S51", "S52", "S53", "S54"]
+    },
+    {
+      "id": "UNIT-iso-dates",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*IsoDatesTest'",
+      "deps": [
+        "app/src/main/**/model/IsoDates.kt",
+        "app/src/test/**/IsoDatesTest.kt"
+      ],
+      "covers": ["Q69", "Q70"]
+    },
+    {
       "id": "UNIT-all",
       "tier": 2,
       "cmd": "./gradlew --offline :app:testDebugUnitTest",

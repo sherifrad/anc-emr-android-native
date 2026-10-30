@@ -13,6 +13,7 @@ import com.sherifradwan.ancnative.model.DemoMedicationRecord
 import com.sherifradwan.ancnative.model.DemoAttachment
 import com.sherifradwan.ancnative.model.DemoVisit
 import com.sherifradwan.ancnative.model.PatientVocabulary
+import com.sherifradwan.ancnative.model.parseCanonicalIsoDateOrNull
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 import java.util.UUID
@@ -605,11 +606,7 @@ internal class RecordsRepository(
         if (weight != weight.normalized()) return false
         if (findings != findings.normalized()) return false
         if (notes != notes.normalized()) return false
-        return try {
-            LocalDate.parse(date).toString() == date
-        } catch (_: DateTimeParseException) {
-            false
-        }
+        return parseCanonicalIsoDateOrNull(date) != null
     }
 
     private fun String.isCanonicalUuid(): Boolean = try {
