@@ -218,7 +218,7 @@ fun UltrasoundEditor(
                                     )
                                     if (linkedVisit?.bloodPressure != null || linkedVisit?.weight != null) {
                                         Text(
-                                            text = "BP: ${linkedVisit.bloodPressure ?: "-"} · Wt: ${linkedVisit.weight ?: "-"}",
+                                            text = "BP: ${linkedVisit.bloodPressure ?: "-"} · Wt: ${formatWeightKg(linkedVisit.weight) ?: "-"}",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         )

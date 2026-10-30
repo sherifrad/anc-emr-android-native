@@ -16,6 +16,9 @@ Fixed in round 3j (2026-10-31, verified on the phone): N-1 GA apply button layou
 | N-9 | Ultrasound editor | "GA weeks (0-45)" label wraps to two lines while "GA days (0-6)" does not, so the two boxes have different heights; use shorter labels or equal heights. |
 | N-8 | Viewer | Dark or tiny photos give no hint (no file size/dimensions line); add the size and preset used. |
 
+Fixed in round 3k (2026-10-31, verified on the phone): DV-3 delivery tile labels, DV-5 prior-pregnancy summary, DV-8 chip gaps on Arabic cards, DV-13 high-risk card inner frame, DV-15 header subtitle, and a new "74.5 kg kg" duplicate unit (one weight rule, formatWeightKg).
+Still checked present/open: DV-7 (action icons shift between Arabic and English cards), DV-9 profile header crowding, DV-11 font 1.3 filter wrap, DV-12 print preview duplicate titles + pink Print PDF, DV-14 workspace opens scrolled, N-4, N-6, N-7, N-8, N-9. DV-4 (enum names) no longer reproduces.
+
 ## Older open items (DEVICE_TEST_REPORT.md) - re-check on the phone after 3c-3g
 DV-3 clipped delivery tile labels; DV-4 internal enum names printed in prior-pregnancy cards; DV-5 prior-pregnancy summary runs together; DV-7/DV-8 mirrored Arabic-name cards and chip gaps;
 DV-9 profile header crowding; DV-11 font 1.3 filter wrap; DV-12 print preview duplicate titles and pink Print PDF button; DV-13 light-theme high-risk card inner frame;

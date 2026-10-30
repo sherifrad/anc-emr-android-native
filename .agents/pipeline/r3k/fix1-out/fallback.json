@@ -1,0 +1,18 @@
+[
+ {
+  "spec": "opencode:opencode/deepseek-v4.1-flash-free",
+  "status": "failed",
+  "seconds": 1.0,
+  "chars": 0,
+  "ok": false,
+  "why": "\u001b[0m\n> build \u00b7 deepseek-v4.1-flash-free\n\u001b[91m\u001b[1mError: \u001b[0mFree usage limit reached. Free models work in OpenCode (https://opencode.ai); subscribe to OpenCode Go to keep going: https://opencode.ai/go no file changed"
+ },
+ {
+  "spec": "claude:claude-sonnet-5-5",
+  "status": "completed",
+  "seconds": 17.4,
+  "chars": 553,
+  "ok": true,
+  "why": ""
+ }
+]

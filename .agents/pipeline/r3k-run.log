@@ -1,0 +1,5 @@
+MACA pipeline 20261031-014856 lanes: {'tests': ('opencode', 'opencode/glm-5.3-flash-free'), 'core': ('opencode', 'opencode/deepseek-v4.1-flash-free'), 'ui': ('opencode', 'opencode/deepseek-v4.1-flash-free')} review: ['opencode:opencode/glm-5.3-flash-free', 'claude:claude-sonnet-5-5']
+  claude    /opt/homebrew/bin/claude
+  opencode  /opt/homebrew/bin/opencode
+[1-tests] opencode failed 237.8s changed=2 violations=0
+HALT: manifest lacks gate ids ['UNIT-format-weight']

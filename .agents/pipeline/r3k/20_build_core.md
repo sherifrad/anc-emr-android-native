@@ -1,0 +1,2 @@
+ROLE: CORE BUILDER for ROUND 3k. Implement Q78 helper only: add `internal fun formatWeightKg(raw: String?): String?` to app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt exactly as the spec says (pure Kotlin). Use the Edit tool directly. Do not edit tests or checks.
+Run: ./gradlew --offline :app:testDebugUnitTest --tests '*FormatWeightKgTest', the whole suite ./gradlew --offline :app:testDebugUnitTest, and ./gradlew --offline :app:compileDebugKotlin. Report real results.

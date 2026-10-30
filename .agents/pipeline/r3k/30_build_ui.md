@@ -1,0 +1,4 @@
+ROLE: UI BUILDER for ROUND 3k. Implement Q75, Q76, Q77, Q78 (callers), Q79, Q80.
+ALLOWED files: app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt, ui/PatientListScreen.kt, ui/ProfileScreen.kt, ui/WorkspaceScreen.kt (only visit-weight text if it needs formatWeightKg), ui/AncApp.kt. Use the Edit tool directly; no scripts.
+Reuse formatWeightKg (written by the core lane in ui/ClinicalFormat.kt). Keep every testTag and behaviour not named in the spec. Do not leave comments narrating the change. Do not write anything only to satisfy a check.
+Run: python3 .agents/checks/check_r3k.py, python3 .agents/checks/check_r3e.py, python3 .agents/checks/check_ui_static.py, python3 .agents/checks/check_ui_static_r2.py, ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin. Report real results.

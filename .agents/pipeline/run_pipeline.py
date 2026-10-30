@@ -16,7 +16,7 @@ ap.add_argument("--root", default=str(HOME / "anc-emr-android-native"))
 ap.add_argument("--plan", action="store_true")
 ap.add_argument("--skip-review", action="store_true")
 ap.add_argument("--ui-only", action="store_true", help="tests and core already green: run only the UI lane, cache check and review")
-ap.add_argument("--round", default="r1", choices=["r1", "r2", "r3", "r3b", "r3c", "r3c2", "r3c3", "r3d", "r3e", "r3f1", "r3f2", "r3f3", "r3g", "r3h", "r3i", "r3j"], help="r2: SPEC_FIX_R2 briefs in pipeline/r2, round-2 file lists")
+ap.add_argument("--round", default="r1", choices=["r1", "r2", "r3", "r3b", "r3c", "r3c2", "r3c3", "r3d", "r3e", "r3f1", "r3f2", "r3f3", "r3g", "r3h", "r3i", "r3j", "r3k"], help="r2: SPEC_FIX_R2 briefs in pipeline/r2, round-2 file lists")
 ap.add_argument("--resume-tests", metavar="NOTE", help="tests lane timed out after writing tests: send a short finish-up request (NOTE), then continue")
 ap.add_argument("--from-core", metavar="RED_RUN_DIR", help="tests already written and red-checked in RED_RUN_DIR: start at the core lane")
 ap.add_argument("--skip-ui", action="store_true", help="no UI work this round: skip the UI lane, still run the full gate")
@@ -172,7 +172,12 @@ if args.round == "r3j":
     ALLOW = {"tests": TEST_GLOBS, "core": [UI + "ClinicalFormat.kt"],
              "ui": [UI + "UltrasoundEditor.kt", UI + "WorkspaceScreen.kt", UI + "ProfileScreen.kt", UI + "AddAttachmentDialog.kt", UI + "ClinicalAttachmentViewerDialog.kt",
                     "app/src/main/res/values/strings.xml", "app/src/main/res/values/plurals.xml"], "review": []}
-BRIEFS = PIPE / args.round if args.round in ("r2", "r3", "r3b", "r3c", "r3c2", "r3c3", "r3d", "r3e", "r3f1", "r3f2", "r3f3", "r3g", "r3h", "r3i", "r3j") else PIPE
+if args.round == "r3k":
+    M = "app/src/main/java/com/sherifradwan/ancnative/"; ST = "app/src/test/java/com/sherifradwan/ancnative/"
+    TEST_GLOBS = [".agents/checks/check_r3k.py", ".agents/TEST_MANIFEST.json", ST + "ui/FormatWeightKgTest.kt"]
+    ALLOW = {"tests": TEST_GLOBS, "core": [UI + "ClinicalFormat.kt"],
+             "ui": [UI + "ClinicalBadges.kt", UI + "PatientListScreen.kt", UI + "ProfileScreen.kt", UI + "WorkspaceScreen.kt", UI + "AncApp.kt"], "review": []}
+BRIEFS = PIPE / args.round if args.round in ("r2", "r3", "r3b", "r3c", "r3c2", "r3c3", "r3d", "r3e", "r3f1", "r3f2", "r3f3", "r3g", "r3h", "r3i", "r3j", "r3k") else PIPE
 # Tests that reference functions the core lane has not written yet; parked during the behavioural red check.
 NEW_API_TESTS = {"r2": [T + "ClinicalFormatR2Test.kt"], "r3": ["app/src/test/java/com/sherifradwan/ancnative/state/IntakeDatingRuleTest.kt"],
                  "r3b": ["app/src/test/java/com/sherifradwan/ancnative/storage/" + n for n in ("RecordAnomaliesTest.kt", "VaultAutoActionTest.kt", "VaultCleanupRuleTest.kt")],
@@ -183,6 +188,7 @@ NEW_API_TESTS = {"r2": [T + "ClinicalFormatR2Test.kt"], "r3": ["app/src/test/jav
                  "r3h": ["app/src/test/java/com/sherifradwan/ancnative/storage/CaptureTempFileTest.kt"],
                  "r3i": ["app/src/test/java/com/sherifradwan/ancnative/model/IsoDatesTest.kt"],
                  "r3j": ["app/src/test/java/com/sherifradwan/ancnative/ui/AttachmentDisplayTitleTest.kt"],
+                 "r3k": ["app/src/test/java/com/sherifradwan/ancnative/ui/FormatWeightKgTest.kt"],
                  "r3g": ["app/src/test/java/com/sherifradwan/ancnative/" + n for n in ("storage/ScanPhotoRefTest.kt", "storage/CameraCaptureSweepTest.kt", "state/ScanPhotoImportStateTest.kt")],
                  "r3f1": ["app/src/test/java/com/sherifradwan/ancnative/" + n for n in ("storage/HashingTest.kt", "storage/BoundedBitmapTest.kt", "storage/VaultCleanupRuleTest.kt", "security/SecuritySettingsRepositoryTest.kt", "security/FakeSharedPreferences.kt", "state/AttachmentErrorStateTest.kt")]}.get(args.round, [])
 WATCH = ["app/src", "tests", ".agents/checks", ".agents/TEST_MANIFEST.json", "build.gradle.kts", "settings.gradle.kts", "gradle.properties", "app/build.gradle.kts"]
@@ -270,6 +276,7 @@ if args.round == "r3e": CORE_GATE |= {"UNIT-vault-auto"}   # STATIC-r3e and UNIT
 if args.round == "r3f1": CORE_GATE |= {"UNIT-all"}
 if args.round == "r3f2": CORE_GATE |= {"UNIT-photo-quality"}
 if args.round == "r3f3": CORE_GATE |= {"UNIT-bounded-bitmap"}
+if args.round == "r3k": CORE_GATE |= {"UNIT-format-weight"}
 if args.round == "r3j": CORE_GATE |= {"UNIT-attachment-title"}
 if args.round == "r3i": CORE_GATE |= {"UNIT-iso-dates", "STATIC-r3i", "UNIT-all"}
 if args.round == "r3h": CORE_GATE |= {"UNIT-capture-temp-file", "STATIC-r3h"}

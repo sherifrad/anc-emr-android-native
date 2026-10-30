@@ -142,7 +142,7 @@ fun KeyFactTile(label: String, value: String?, modifier: Modifier = Modifier, em
                 text = label.uppercase(),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
+                maxLines = 2,
             )
             Text(
                 text = value?.takeIf { it.isNotBlank() } ?: "—",

@@ -58,6 +58,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -421,11 +422,11 @@ private fun PatientClinicalRow(
     val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
 
     val rowBgColor = if (row.isHighRisk) {
-        if (isDark) {
-            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.40f)
-        } else {
-            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.22f)
-        }
+        lerp(
+            MaterialTheme.colorScheme.surface,
+            MaterialTheme.colorScheme.errorContainer,
+            if (isDark) 0.40f else 0.22f,
+        )
     } else {
         MaterialTheme.colorScheme.surface
     }
@@ -650,7 +651,7 @@ private fun PatientClinicalRow(
                     // 3. Clinical Data Multi-line Tags with distinct colors & proper alignment
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = if (isArabic) Arrangement.End else Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = if (isArabic) Arrangement.spacedBy(8.dp, Alignment.End) else Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         // Tag A: Obstetric GPA & Past Deliveries (Soft Lavender/Purple tag)

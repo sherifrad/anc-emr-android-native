@@ -54,6 +54,19 @@ internal fun attachmentDisplayTitle(title: String?, category: String, capturedAt
     return if (ISO_DATE.matches(date)) "$label \u00B7 $date" else label
 }
 
+/**
+ * Visit weight as displayed (Q78): the trimmed text, with " kg" appended unless it already ends
+ * with a kg / kilogram(s) unit. Null for null or blank text.
+ */
+internal fun formatWeightKg(raw: String?): String? {
+    val text = raw?.trim().orEmpty()
+    if (text.isEmpty()) return null
+    return if (WEIGHT_UNIT.containsMatchIn(text)) text else "$text kg"
+}
+
+/** A trailing kg / kilogram / kilograms unit, optionally after spaces. */
+private val WEIGHT_UNIT = Regex("(?:kg|kilograms?)$", RegexOption.IGNORE_CASE)
+
 /** Optional "Age" + optional ':', the number, optional unit y/yr/yrs/year/years, optional '.'. */
 private val AGE_TEXT = Regex(
     "^(?:age\\s*:?\\s*)?(\\d+)\\s*(?:years|year|yrs|yr|y)?\\.?$",

@@ -865,7 +865,7 @@ private fun VisitCard(
                 }
             }
             FactRow(R.string.blood_pressure, visit.bloodPressure, isEmphasized = true)
-            FactRow(R.string.weight, visit.weight)
+            FactRow(R.string.weight, formatWeightKg(visit.weight))
             FactRow(R.string.findings, visit.findings)
             FactRow(R.string.notes, visit.notes)
             if (visit.isSyntheticEdit) {

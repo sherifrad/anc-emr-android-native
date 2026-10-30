@@ -1,0 +1,3 @@
+ROLE: UI BUILDER, small repair for ROUND 3k. ALLOWED file only: app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt. Use the Edit tool directly; no scripts; no git commit/push. No narrating comments.
+Around line 221 the linked-visit summary prints the raw weight: `"BP: ... · Wt: ${linkedVisit.weight ?: "-"}"`. Make it use the existing helper formatWeightKg (ui/ClinicalFormat.kt) so the unit is shown once: `${formatWeightKg(linkedVisit.weight) ?: "-"}`. Keep the rest of the text exactly.
+Run ./gradlew --offline :app:compileDebugKotlin and python3 .agents/checks/check_r3k.py. Report <= 4 lines.

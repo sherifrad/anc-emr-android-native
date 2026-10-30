@@ -802,10 +802,7 @@ private fun ProfileObstetricCard(
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                 Text(
                                     text = "${p.dateText ?: "Prior"} · ${p.deliveryBy ?: p.birthMethod ?: p.pregnancyType ?: "Delivery"}",
                                     style = MaterialTheme.typography.labelMedium,
@@ -1064,7 +1061,7 @@ private fun ProfileVisitCard(
                     }
                     if (!visit.weight.isNullOrBlank()) {
                         Text(
-                            text = "Weight: ${visit.weight} kg",
+                            text = "Weight: ${formatWeightKg(visit.weight)}",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
                         )
@@ -1082,7 +1079,7 @@ private fun ProfileVisitCard(
             } else {
                 // Expanded Details: The EXACT Workspace style layout with FactRows!
                 FactRow(R.string.blood_pressure, visit.bloodPressure)
-                FactRow(R.string.weight, visit.weight)
+                FactRow(R.string.weight, formatWeightKg(visit.weight))
                 FactRow(R.string.findings, visit.findings)
                 FactRow(R.string.notes, visit.notes)
 

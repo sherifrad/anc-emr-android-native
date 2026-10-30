@@ -616,6 +616,30 @@
       "covers": ["S55", "S56", "S57", "S58"]
     },
     {
+      "id": "STATIC-r3k",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3k.py",
+      "deps": [
+        "app/src/main/**/ui/ClinicalBadges.kt",
+        "app/src/main/**/ui/PatientListScreen.kt",
+        "app/src/main/**/ui/ProfileScreen.kt",
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/main/**/ui/AncApp.kt",
+        ".agents/checks/check_r3k.py"
+      ],
+      "covers": ["S59", "S60", "S61", "S62", "S63"]
+    },
+    {
+      "id": "UNIT-format-weight",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*FormatWeightKgTest'",
+      "deps": [
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/test/**/FormatWeightKgTest.kt"
+      ],
+      "covers": ["Q78"]
+    },
+    {
       "id": "UNIT-attachment-title",
       "tier": 1,
       "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.ui.AttachmentDisplayTitleTest'",
