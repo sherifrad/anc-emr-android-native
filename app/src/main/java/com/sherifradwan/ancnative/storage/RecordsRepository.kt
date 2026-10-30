@@ -102,10 +102,10 @@ internal class RecordsRepository(
             return RepositoryOpenResult.Failure(VaultBlockReason.VAULT_METADATA_MISMATCH)
         }
         val snapshot = loadSnapshot()
-        if (!snapshot.isInternallyValid()) {
+        if (findBlockingRecordProblems(snapshot).isNotEmpty()) {
             return RepositoryOpenResult.Failure(VaultBlockReason.DATABASE_INTEGRITY_FAILED)
         }
-        return RepositoryOpenResult.Success(snapshot)
+        return RepositoryOpenResult.Success(snapshot, findRecordAnomalies(snapshot))
     }
 
     suspend fun loadSnapshot(): RecordSnapshot = RecordSnapshot(
@@ -616,24 +616,6 @@ internal class RecordsRepository(
         UUID.fromString(this).toString() == this
     } catch (_: IllegalArgumentException) {
         false
-    }
-
-    private fun RecordSnapshot.isInternallyValid(): Boolean = patients.all { patient ->
-        val gpa = listOf(patient.gravida, patient.parity, patient.abortion)
-        patient.revision >= 1 &&
-            patient.status?.let { it in PatientVocabulary.statuses } != false &&
-            patient.riskLevel?.let { it in PatientVocabulary.riskLevels } != false &&
-            patient.bloodGroupText?.let { it in PatientVocabulary.bloodGroups } != false &&
-            !(gpa.any { it == null } && gpa.any { it != null }) &&
-            gpa.filterNotNull().all { it in 0..PatientVocabulary.MAX_SAFE_GPA } &&
-            patient.visits.all { it.revision >= 1 } &&
-            patient.previousPregnancies.all { pregnancy ->
-                pregnancy.patientId == patient.id &&
-                    pregnancy.modelVersion == 3 &&
-                    pregnancy.revision >= 1 &&
-                    pregnancy.provenanceKind == PatientVocabulary.CLINICIAN_ENTRY &&
-                    pregnancy.clinicianId.isNotBlank()
-            }
     }
 
     private fun SavePatientProfileCommand.toEntity() = PatientEntity(
@@ -1398,6 +1380,6 @@ internal class RecordsRepository(
 }
 
 internal sealed interface RepositoryOpenResult {
-    data class Success(val snapshot: RecordSnapshot) : RepositoryOpenResult
+    data class Success(val snapshot: RecordSnapshot, val anomalies: List<RecordAnomaly> = emptyList()) : RepositoryOpenResult
     data class Failure(val reason: VaultBlockReason) : RepositoryOpenResult
 }

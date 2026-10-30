@@ -78,3 +78,52 @@ Q19 also covers (same NOT_RECORDED rule, "missing" = null/empty/whitespace):
     "Ultrasound Scan N.M - <date>" with no parentheses. "Fetal Growth Surveillance" never appears unless typed.
 Unchanged on purpose: the structured-outcome fallbacks ("Live Birth", "Miscarriage", "Stillbirth / IUFD", "Therapeutic Termination") are
 derived from the recorded outcome, not invented; "Unspecified" for GA and phone stays.
+
+# Round 3b - one odd value never locks every record; the app never deletes a vault by itself (audit #4, #5)
+Package com.sherifradwan.ancnative.storage unless stated. All new functions are pure Kotlin/java.io (no Android imports) so JVM tests run.
+
+## Q22 Record anomalies do not block the vault (audit #4)
+New file storage/RecordAnomalies.kt:
+    internal data class RecordAnomaly(val patientId: String, val field: String, val value: String?)
+    internal fun findBlockingRecordProblems(snapshot: RecordSnapshot): List<String>   // empty = OK to open
+    internal fun findRecordAnomalies(snapshot: RecordSnapshot): List<RecordAnomaly>   // shown later, never blocks
+Blocking (structural, the data cannot be trusted to map correctly) - each gives one human-readable string naming the patient id:
+  patient.revision < 1; any visit.revision < 1; any previous pregnancy with revision < 1, patientId != patient.id, or modelVersion != 3.
+Anomalies (field names exactly): "status" (not in PatientVocabulary.statuses), "riskLevel" (not in riskLevels), "bloodGroupText"
+  (not in bloodGroups), "gpa" (some but not all of gravida/parity/abortion null, OR any value outside 0..MAX_SAFE_GPA; value = "G/P/A"
+  as text with "null" for missing), "previousPregnancy.provenanceKind" (not CLINICIAN_ENTRY), "previousPregnancy.clinicianId" (blank).
+  null values are never anomalies (same as today's checks). Order: patients in snapshot order, fields in the order listed.
+Examples: patient P1 bloodGroupText "O neg" -> RecordAnomaly("P1","bloodGroupText","O neg"), no blocking problem.
+  riskLevel "Not high risk" -> anomaly "riskLevel". gravida 2, parity null, abortion 0 -> anomaly ("P1","gpa","2/null/0").
+  A pregnancy whose patientId is "P2" inside patient "P1" -> blocking problem. Valid demo fixtures (DemoFixtures.patients) -> both empty.
+Wiring: RecordsRepository.validateAndLoad blocks with DATABASE_INTEGRITY_FAILED only when findBlockingRecordProblems is non-empty
+  (instead of today's isInternallyValid); RepositoryOpenResult.Success gains `val anomalies: List<RecordAnomaly> = emptyList()` filled
+  from findRecordAnomalies. isInternallyValid is removed. Schema, cipher-integrity and metadata checks are unchanged.
+  Showing anomalies in the UI is a later round; the records themselves are shown as stored (never hidden, never altered).
+
+## Q23 No automatic retry loop when the vault is blocked (audit #4)
+New file storage/VaultAutoAction.kt:
+    internal enum class VaultAutoAction { BEGIN_UNLOCK, BEGIN_INITIALIZATION, NONE }
+    internal fun vaultAutoAction(state: VaultState): VaultAutoAction
+  Locked -> BEGIN_UNLOCK; Uninitialized -> BEGIN_INITIALIZATION; every other state, including every Blocked reason -> NONE.
+MainActivity.kt: the LaunchedEffect(state.vaultState) uses vaultAutoAction and no longer calls retryStorageInspection.
+  The Blocked screen's existing Retry button (VaultGateScreen) stays the only way to retry.
+Static S5: MainActivity.kt contains no "retryStorageInspection()" call inside the LaunchedEffect and calls vaultAutoAction.
+
+## Q24 The app never deletes a vault that holds a database (audit #5)
+New pure function (storage/VaultFiles.kt or a new storage/VaultCleanupRule.kt):
+    internal fun hasVaultDatabase(namespaceRoot: java.io.File): Boolean
+  true when any direct child directory whose name starts with "vault-" contains a file named "records.db" (any size, even 0 bytes).
+  Missing root, empty root, a "vault-x" dir with only descriptor/envelope files, or a "records.db" outside a vault-* dir -> false.
+VaultFiles.cleanupUnpublishedArtifacts(): deletes nothing when hasVaultDatabase(namespaceRoot) is true (in addition to today's
+  pointer check). VaultController: both call sites (deviceCredentialUnavailable INITIALIZE branch and retryInspection) call
+  keys.deleteOrphanAliases() ONLY when the pointer is missing AND hasVaultDatabase(files.namespaceRoot) is false. When the pointer
+  is missing but a database exists, nothing is deleted and inspection proceeds (it reports POINTER_MISSING as today).
+Static S6: every deleteOrphanAliases() call in VaultController.kt is guarded by hasVaultDatabase; S7: cleanupUnpublishedArtifacts body
+  calls hasVaultDatabase.
+JVM tests (temp directories) cover hasVaultDatabase fully.
+
+## Gates 3b
+G1 full unit suite, G2 compileDebugKotlin + compileReleaseKotlin, G3 all earlier static checks. New manifest ids: UNIT-anomalies
+(--tests '*RecordAnomaliesTest'), UNIT-vault-auto (--tests '*VaultAutoActionTest'), UNIT-vault-cleanup (--tests '*VaultCleanupRuleTest'),
+STATIC-r3b (python3 .agents/checks/check_r3b.py, S5-S7). Device check by the orchestrator: QA build on the emulator still opens normally.

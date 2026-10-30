@@ -152,7 +152,7 @@ internal class VaultFiles private constructor(
     fun hasIncompletePointerArtifact(): Boolean = atomicArtifacts(activePointerFile).any(File::exists)
 
     fun cleanupUnpublishedArtifacts() {
-        if (!activePointerFile.exists() && namespaceRoot.exists()) {
+        if (!activePointerFile.exists() && namespaceRoot.exists() && !hasVaultDatabase(namespaceRoot)) {
             namespaceRoot.listFiles()?.forEach { target ->
                 target.deleteRecursively()
             }

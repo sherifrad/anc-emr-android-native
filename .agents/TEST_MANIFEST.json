@@ -112,6 +112,48 @@
       "covers": ["S1", "S2", "S3", "S4", "Q20", "Q21"]
     },
     {
+      "id": "UNIT-anomalies",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*RecordAnomaliesTest'",
+      "deps": [
+        "app/src/main/**/storage/RecordAnomalies.kt",
+        "app/src/test/**/RecordAnomaliesTest.kt"
+      ],
+      "covers": ["Q22"]
+    },
+    {
+      "id": "UNIT-vault-auto",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*VaultAutoActionTest'",
+      "deps": [
+        "app/src/main/**/storage/VaultAutoAction.kt",
+        "app/src/test/**/VaultAutoActionTest.kt"
+      ],
+      "covers": ["Q23"]
+    },
+    {
+      "id": "UNIT-vault-cleanup",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*VaultCleanupRuleTest'",
+      "deps": [
+        "app/src/main/**/storage/VaultFiles.kt",
+        "app/src/test/**/VaultCleanupRuleTest.kt"
+      ],
+      "covers": ["Q24"]
+    },
+    {
+      "id": "STATIC-r3b",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3b.py",
+      "deps": [
+        "app/src/main/**/MainActivity.kt",
+        "app/src/main/**/storage/VaultController.kt",
+        "app/src/main/**/storage/VaultFiles.kt",
+        ".agents/checks/check_r3b.py"
+      ],
+      "covers": ["S5", "S6", "S7"]
+    },
+    {
       "id": "UNIT-all",
       "tier": 2,
       "cmd": "./gradlew --offline :app:testDebugUnitTest",

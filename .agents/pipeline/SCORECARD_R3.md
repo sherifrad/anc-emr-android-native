@@ -34,3 +34,20 @@ ultrasound/IVF dating is never overwritten from the profile form. Demo patients:
 ## Economy
 Free quota used: NVIDIA (review only). Paid-plan use: ChatGPT plan for two short builds. Grok connected but not used (owner: no
 benchmarks on free quota). opencode free models (GLM/DeepSeek/Nemotron) still at their limit.
+
+# Round 3b (run 20261030-152104) - one odd value never locks every record; the app never deletes a vault by itself
+Verdict: all gates green. Fresh --rerun-tasks 317/317; static checks r3b (S5-S7), r3, U-r2, P10 pass; release compile OK; QA build on the
+API 26 emulator opens normally with its 4 demo patients after the vault change.
+Staffing: tests Claude Sonnet, build GPT-6 Luna, review Nemotron 3 Ultra (NVIDIA). Grok 4.7-high (Grok Build sign-in) tried as second
+reviewer: produced no review in 25 min (looped "plan" sessions) -> HALT after the gates; NOT fit as an opencode lane today.
+Red before green: genuine. The three new-API tests were parked; STATIC-r3b failed on 6 sub-checks; parked files restored byte-identical.
+What changed: findBlockingRecordProblems (revision < 1, previous pregnancy linked to another patient, unsupported model version) is the
+only data reason to block a vault; vocabulary/GPA/provenance oddities become RecordAnomaly entries returned with the snapshot (UI to show
+them is a later round; records are shown as stored). MainActivity no longer auto-retries a blocked vault (Retry button only).
+hasVaultDatabase guards cleanupUnpublishedArtifacts and all THREE deleteOrphanAliases call sites (the spec named two; the builder found
+the third in cancelAuthentication - correct).
+Orchestrator checks: no code crashes on unknown vocabulary values (only the editor dropdown options and save-time validation use the
+vocabulary); diffs read in full.
+Not verified: Keystore behaviour on a real device; a real "pointer missing + database present" device scenario (needs file surgery on
+the QA vault - planned for the device pass).
+Open: show anomalies to the clinician (banner + fix flow) - UI round.

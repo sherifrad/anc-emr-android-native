@@ -14,6 +14,8 @@ import com.sherifradwan.ancnative.security.AppThemeMode
 import com.sherifradwan.ancnative.security.SecuritySettingsRepository
 import com.sherifradwan.ancnative.state.AncViewModel
 import com.sherifradwan.ancnative.storage.VaultState
+import com.sherifradwan.ancnative.storage.VaultAutoAction
+import com.sherifradwan.ancnative.storage.vaultAutoAction
 import com.sherifradwan.ancnative.ui.AncApp
 import com.sherifradwan.ancnative.ui.AncTheme
 import java.util.Locale
@@ -69,11 +71,10 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 LaunchedEffect(state.vaultState) {
-                    when (state.vaultState) {
-                        is VaultState.Locked -> viewModel.beginUnlock()
-                        is VaultState.Uninitialized -> viewModel.beginInitialization()
-                        is VaultState.Blocked -> viewModel.retryStorageInspection()
-                        else -> Unit
+                    when (vaultAutoAction(state.vaultState)) {
+                        VaultAutoAction.BEGIN_UNLOCK -> viewModel.beginUnlock()
+                        VaultAutoAction.BEGIN_INITIALIZATION -> viewModel.beginInitialization()
+                        VaultAutoAction.NONE -> Unit
                     }
                 }
                 AncApp(

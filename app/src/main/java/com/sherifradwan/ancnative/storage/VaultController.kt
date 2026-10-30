@@ -234,7 +234,7 @@ class VaultController internal constructor(
                     storageMutex.withLock {
                         if (!files.activePointerFile.exists()) {
                             files.cleanupUnpublishedArtifacts()
-                            keys.deleteOrphanAliases()
+                            if (!hasVaultDatabase(files.namespaceRoot)) keys.deleteOrphanAliases()
                         }
                     }
                 }
@@ -259,7 +259,7 @@ class VaultController internal constructor(
                         storageMutex.withLock {
                             if (!files.activePointerFile.exists()) {
                                 files.cleanupUnpublishedArtifacts()
-                                keys.deleteOrphanAliases()
+                                if (!hasVaultDatabase(files.namespaceRoot)) keys.deleteOrphanAliases()
                             }
                         }
                     }
@@ -280,7 +280,7 @@ class VaultController internal constructor(
             storageMutex.withLock {
                 if (!files.activePointerFile.exists()) {
                     files.cleanupUnpublishedArtifacts()
-                    keys.deleteOrphanAliases()
+                    if (!hasVaultDatabase(files.namespaceRoot)) keys.deleteOrphanAliases()
                 }
             }
             inspectStorage(inspectionEpoch)

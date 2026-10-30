@@ -1,0 +1,8 @@
+ROLE: TEST DESIGNER (tests first). Write tests from the "Round 3b" section of SPEC_FIX_R3.md only. You may read model/ (DemoPatient, DemoPreviousPregnancy, DemoFixtures, PatientVocabulary) and storage/VaultState.kt and storage/SaveVisitCommand.kt (RecordSnapshot) to build inputs; do not read the bodies of RecordsRepository.kt, VaultController.kt, VaultFiles.kt or MainActivity.kt beyond what S5-S7 need. findBlockingRecordProblems / findRecordAnomalies / RecordAnomaly / vaultAutoAction / VaultAutoAction / hasVaultDatabase do not exist yet: compile failures of your three new test files are expected ONLY for those names.
+ALLOWED files:
+- app/src/test/java/com/sherifradwan/ancnative/storage/RecordAnomaliesTest.kt   (NEW: every Q22 example exactly; every anomaly field once; every blocking rule once; DemoFixtures.patients -> both lists empty; order rule)
+- app/src/test/java/com/sherifradwan/ancnative/storage/VaultAutoActionTest.kt   (NEW: Q23 - every VaultState kind, every VaultBlockReason -> NONE)
+- app/src/test/java/com/sherifradwan/ancnative/storage/VaultCleanupRuleTest.kt   (NEW: Q24 hasVaultDatabase with JUnit TemporaryFolder: every true/false case in the spec)
+- .agents/checks/check_r3b.py   (NEW: S5-S7, stdlib Python, PASS/FAIL per sub-check, exit 1 if any FAIL; must FAIL today on S5-S7)
+- .agents/TEST_MANIFEST.json   (keep every entry; ADD exactly UNIT-anomalies, UNIT-vault-auto, UNIT-vault-cleanup (tier 1, --tests as in the spec, deps = the new production file + the test) and STATIC-r3b (tier 1, deps MainActivity.kt, VaultController.kt, VaultFiles.kt, the check))
+Do not implement production code. Report which tests/checks fail today and that no compile error has another cause.
