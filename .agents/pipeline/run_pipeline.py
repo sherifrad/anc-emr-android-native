@@ -15,7 +15,7 @@ ap.add_argument("--root", default=str(HOME / "anc-emr-android-native"))
 ap.add_argument("--plan", action="store_true")
 ap.add_argument("--skip-review", action="store_true")
 ap.add_argument("--ui-only", action="store_true", help="tests and core already green: run only the UI lane, cache check and review")
-ap.add_argument("--round", default="r1", choices=["r1", "r2"], help="r2: SPEC_FIX_R2 briefs in pipeline/r2, round-2 file lists")
+ap.add_argument("--round", default="r1", choices=["r1", "r2", "r3"], help="r2: SPEC_FIX_R2 briefs in pipeline/r2, round-2 file lists")
 ap.add_argument("--resume-tests", metavar="NOTE", help="tests lane timed out after writing tests: send a short finish-up request (NOTE), then continue")
 ap.add_argument("--from-core", metavar="RED_RUN_DIR", help="tests already written and red-checked in RED_RUN_DIR: start at the core lane")
 ap.add_argument("--skip-ui", action="store_true", help="no UI work this round: skip the UI lane, still run the full gate")
@@ -52,16 +52,27 @@ ALLOW = {
 T = "app/src/test/java/com/sherifradwan/ancnative/ui/"
 if args.round == "r2":
     TEST_GLOBS = [T + "ParseDeliveryNotesSpecTest.kt", T + "ClinicalFormatR2Test.kt", T + "ClinicalFormatTest.kt",
-                  ".agents/checks/check_ui_static_r2.py", ".agents/TEST_MANIFEST.json"]
+                  T + "report/PatientPrintHtmlGeneratorTest.kt", ".agents/checks/check_ui_static_r2.py", ".agents/TEST_MANIFEST.json"]
     ALLOW = {
         "tests": TEST_GLOBS,
-        "core": [UI + "DeliveryNotesParser.kt", UI + "ClinicalFormat.kt"],
+        "core": [UI + "DeliveryNotesParser.kt", UI + "ClinicalFormat.kt", UI + "report/PatientPrintHtmlGenerator.kt"],
         "ui": [UI + "PatientListScreen.kt", UI + "ProfileScreen.kt", UI + "WorkspaceScreen.kt", UI + "ClinicalBadges.kt", "app/src/main/res/values/strings.xml"],
         "review": [],
     }
-BRIEFS = PIPE / "r2" if args.round == "r2" else PIPE
+if args.round == "r3":
+    M = "app/src/main/java/com/sherifradwan/ancnative/"
+    TEST_GLOBS = [T + "report/PatientPrintHtmlGeneratorTest.kt", "app/src/test/java/com/sherifradwan/ancnative/state/IntakeDatingRuleTest.kt",
+                  ".agents/checks/check_r3.py", ".agents/TEST_MANIFEST.json"]
+    ALLOW = {
+        "tests": TEST_GLOBS,
+        "core": [UI + "report/PatientPrintHtmlGenerator.kt", M + "state/IntakeDatingRule.kt", M + "state/AncViewModel.kt",
+                 M + "storage/RecordsRepository.kt", M + "storage/VaultController.kt", "app/build.gradle.kts"],
+        "ui": [],
+        "review": [],
+    }
+BRIEFS = PIPE / args.round if args.round in ("r2", "r3") else PIPE
 # Tests that reference functions the core lane has not written yet; parked during the behavioural red check.
-NEW_API_TESTS = [T + "ClinicalFormatR2Test.kt"] if args.round == "r2" else []
+NEW_API_TESTS = {"r2": [T + "ClinicalFormatR2Test.kt"], "r3": ["app/src/test/java/com/sherifradwan/ancnative/state/IntakeDatingRuleTest.kt"]}.get(args.round, [])
 WATCH = ["app/src", "tests", ".agents/checks", ".agents/TEST_MANIFEST.json", "build.gradle.kts", "settings.gradle.kts", "gradle.properties", "app/build.gradle.kts"]
 METRICS = []
 
@@ -126,7 +137,8 @@ def dispatch(step, role_file, lane_key, allow_key, extra="", read_only=False, cl
     return m
 
 CORE_GATE = {"UNIT-parse", "UNIT-format", "COMPILE-app"}  # UI-only checks (contrast, static a-d) can't pass before the UI lane
-if args.round == "r2": CORE_GATE |= {"UNIT-parse-legacy", "UNIT-format-r2"}
+if args.round == "r2": CORE_GATE |= {"UNIT-parse-legacy", "UNIT-format-r2", "UNIT-print"}
+if args.round == "r3": CORE_GATE |= {"UNIT-print", "UNIT-intake-dating", "STATIC-r3"}
 
 def test_compile_failed(res):
     """True when a failure is the unit-test source set not compiling (an error in a test file), not a failing assertion."""
@@ -142,7 +154,7 @@ def red_check():
     for rel in NEW_API_TESTS:
         f = ROOT / rel
         if f.exists(): parked[rel] = hashlib.sha1(f.read_bytes()).hexdigest(); f.rename(f.with_suffix(".kt.parked"))
-    try: red = run_selected("1b-red", max_tier=1, exclude={"UNIT-format-r2"} if parked else ())
+    try: red = run_selected("1b-red", max_tier=1, exclude={"UNIT-format-r2", "UNIT-intake-dating"} if parked else ())
     finally:
         for rel, h in parked.items():
             f = ROOT / rel; f.with_suffix(".kt.parked").rename(f)

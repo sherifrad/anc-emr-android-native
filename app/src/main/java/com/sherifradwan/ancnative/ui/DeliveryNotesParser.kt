@@ -295,7 +295,8 @@ private val HOSPITAL_PHRASE = Regex(
 
 /**
  * Leading verbs/prepositions that are dropped from a detected phrase ("Delivery At X Hospital"), plus
- * the Q15(a) clinical words ("Last CS Dar Al Fouad Hospital", "Emergency CS X Hospital").
+ * the Q15(a) clinical words ("Last CS Dar Al Fouad Hospital", "Emergency CS X Hospital") and the
+ * Q16 time words ("Now Cleopatra Hospital", "Currently Booked Dar Al Fouad Hospital").
  */
 private val HOSPITAL_LEADING_WORDS = setOf(
     "at", "in", "to", "for", "from", "via", "booked", "book", "booking", "planned", "plan",
@@ -303,6 +304,7 @@ private val HOSPITAL_LEADING_WORDS = setOf(
     "transferred", "prefers", "preferred", "patient", "agreed",
     "last", "previous", "prior", "earlier", "repeat", "elective", "emergency",
     "cs", "lscs", "svd", "nvd",
+    "now", "current", "currently",
 )
 
 /** A detected phrase after leading words are dropped; [dropped] keeps them for Q15(b). */

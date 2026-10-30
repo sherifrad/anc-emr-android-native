@@ -584,7 +584,7 @@ class VaultController internal constructor(
             )
             try {
                 val repository = RecordsRepository(opened.database, descriptor.vaultUuid)
-                repository.seedInitialSyntheticFixtures()
+                repository.seedInitialSyntheticFixtures(com.sherifradwan.ancnative.BuildConfig.DEBUG)
                 when (repository.validateAndLoad()) {
                     is RepositoryOpenResult.Success -> Unit
                     is RepositoryOpenResult.Failure -> throw IllegalStateException("seed-validation-failed")

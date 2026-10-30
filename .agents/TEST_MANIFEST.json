@@ -42,6 +42,18 @@
       "covers": ["Q5", "Q6"]
     },
     {
+      "id": "UNIT-print",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*PatientPrintHtmlGeneratorTest'",
+      "deps": [
+        "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/main/**/ui/DeliveryNotesParser.kt",
+        "app/src/test/**/PatientPrintHtmlGeneratorTest.kt"
+      ],
+      "covers": ["Q17", "Q7", "Q19"]
+    },
+    {
       "id": "UNIT-contrast",
       "tier": 1,
       "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.ui.ThemeContrastTest'",
@@ -75,6 +87,29 @@
         ".agents/checks/check_ui_static_r2.py"
       ],
       "covers": ["U1", "U2", "U3", "U4", "U5", "U6", "Q7"]
+    },
+    {
+      "id": "UNIT-intake-dating",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*IntakeDatingRuleTest'",
+      "deps": [
+        "app/src/main/**/state/IntakeDatingRule.kt",
+        "app/src/test/**/IntakeDatingRuleTest.kt"
+      ],
+      "covers": ["Q20"]
+    },
+    {
+      "id": "STATIC-r3",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3.py",
+      "deps": [
+        "app/src/main/**/state/AncViewModel.kt",
+        "app/src/main/**/storage/RecordsRepository.kt",
+        "app/src/main/**/storage/VaultController.kt",
+        "app/build.gradle.kts",
+        ".agents/checks/check_r3.py"
+      ],
+      "covers": ["S1", "S2", "S3", "S4", "Q20", "Q21"]
     },
     {
       "id": "UNIT-all",

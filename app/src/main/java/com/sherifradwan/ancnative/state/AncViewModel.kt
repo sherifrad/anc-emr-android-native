@@ -284,22 +284,19 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
                     frozenPatientCommand = null
                     if (command is SavePatientProfileCommand) {
                         val currentDraft = _state.value.patientDraft
-                        val lmp = currentDraft?.values?.lmpDate?.trim()
-                        if (!lmp.isNullOrBlank()) {
-                            val calculatedEdd = try {
-                                java.time.LocalDate.parse(lmp).plusDays(280).toString()
-                            } catch (_: Exception) { null }
-                            val committedPatient = result.snapshot.patients.firstOrNull { it.id == command.patientId }
+                        val committedPatient = result.snapshot.patients.firstOrNull { it.id == command.patientId }
+                        val datingUpdate = intakeDatingUpdate(committedPatient?.dating, currentDraft?.values?.lmpDate)
+                        if (datingUpdate != null) {
                             val datingCmd = SaveDatingCommand(
                                 operationUuid = UUID.randomUUID().toString(),
                                 editorSessionId = UUID.randomUUID().toString(),
                                 patientId = command.patientId,
                                 expectedPatientRevision = committedPatient?.revision ?: 1L,
-                                lmpDate = lmp,
+                                lmpDate = datingUpdate.lmpDate,
                                 ultrasoundEdd = null,
-                                agreedEdd = calculatedEdd,
+                                agreedEdd = datingUpdate.agreedEdd,
                                 datingMethod = "LMP",
-                                notes = "Baseline from intake LMP ($lmp)",
+                                notes = committedPatient?.dating?.notes ?: "Baseline from intake LMP (${datingUpdate.lmpDate})",
                             )
                             controller.execute(datingCmd, sessionEpoch) {}
                         }

@@ -61,9 +61,9 @@ object PatientPrintHtmlGenerator {
             else -> "Primigravida / N/A"
         }
 
-        val riskLevel = patient.riskLevel ?: "Low Risk"
-        val isHighRisk = riskLevel.contains("High", ignoreCase = true)
-        val isRhNegative = patient.bloodGroupText?.contains("-") == true
+        val riskLevel = patient.riskLevel?.takeUnless(String::isBlank)
+        val isHighRisk = com.sherifradwan.ancnative.ui.isHighRisk(riskLevel)
+        val isRhNegative = com.sherifradwan.ancnative.ui.isRhNegative(patient.bloodGroupText)
 
         // Collect ultrasound images if any
         val attachedUltrasoundImages = patient.ultrasoundScans.flatMapIndexed { sIdx, s ->
@@ -71,7 +71,8 @@ object PatientPrintHtmlGenerator {
                 mapOf(
                     "uri" to uri,
                     "date" to s.date,
-                    "label" to "Ultrasound Scan ${sIdx + 1}.${iIdx + 1} - ${s.date} (${s.impression ?: "Fetal Growth Surveillance"})",
+                    "label" to "Ultrasound Scan ${sIdx + 1}.${iIdx + 1} - ${s.date}" +
+                        (s.impression?.takeUnless(String::isBlank)?.let { " ($it)" } ?: ""),
                 )
             }
         }
@@ -96,7 +97,7 @@ object PatientPrintHtmlGenerator {
                     <td class="text-center font-bold text-teal">${vGa}</td>
                     <td class="text-center font-bold text-navy">${v.bloodPressure ?: "-"}</td>
                     <td class="text-center">${v.weight?.let { "$it kg" } ?: "-"}</td>
-                    <td class="text-center notes-cell">${v.findings ?: v.notes ?: "Antenatal course progressing favorably"}</td>
+                    <td class="text-center notes-cell">${v.findings?.takeUnless(String::isBlank) ?: v.notes?.takeUnless(String::isBlank) ?: "Not recorded"}</td>
                 </tr>
                 """.trimIndent()
             }.joinToString("\n")
@@ -140,9 +141,9 @@ object PatientPrintHtmlGenerator {
                 <tr>
                     <td class="text-center date-cell">${s.date}</td>
                     <td class="text-center font-bold text-teal">${scanGaStr}</td>
-                    <td class="text-center">${s.presentation ?: "Cephalic"}</td>
-                    <td class="text-center">${s.placentalSite ?: "Posterior Grade I"}</td>
-                    <td class="text-center">${s.amnioticFluid ?: "Adequate (AFI 14cm)"}</td>
+                    <td class="text-center">${s.presentation?.takeUnless(String::isBlank) ?: "Not recorded"}</td>
+                    <td class="text-center">${s.placentalSite?.takeUnless(String::isBlank) ?: "Not recorded"}</td>
+                    <td class="text-center">${s.amnioticFluid?.takeUnless(String::isBlank) ?: "Not recorded"}</td>
                     <td class="text-center font-bold text-navy">${efwStr}</td>
                     <td class="text-center notes-cell">
                         $notesText
@@ -192,7 +193,7 @@ object PatientPrintHtmlGenerator {
                     <td class="text-center font-bold">${m.dosage} (${m.route})</td>
                     <td class="text-center">${m.frequency}</td>
                     <td class="text-center">${typeBadge}</td>
-                    <td class="text-center notes-cell text-muted">${m.notes ?: "Ongoing as prescribed"}</td>
+                    <td class="text-center notes-cell text-muted">${m.notes?.takeUnless(String::isBlank) ?: "-"}</td>
                 </tr>
                 """.trimIndent()
             }.joinToString("\n")
@@ -236,7 +237,7 @@ object PatientPrintHtmlGenerator {
                             <td class="text-center date-cell">${pp.dateText ?: "-"}</td>
                             <td class="text-center font-bold">${methodText}</td>
                             <td class="text-center">${outcomeBadge}</td>
-                            <td class="text-center">${pp.placeAndDoctor ?: pp.otherDetails ?: "Uncomplicated"}</td>
+                            <td class="text-center">${pp.placeAndDoctor?.takeUnless(String::isBlank) ?: pp.otherDetails?.takeUnless(String::isBlank) ?: "Not recorded"}</td>
                         </tr>
                         """.trimIndent()
                     }.joinToString("\n")}
@@ -258,7 +259,7 @@ object PatientPrintHtmlGenerator {
         }
 
         // Age string format
-        val ageFormatted = if (!patient.ageText.isNullOrBlank()) "${patient.ageText} yrs" else "-"
+        val ageFormatted = patient.ageText?.trim()?.takeIf(String::isNotEmpty)?.let { ageText -> com.sherifradwan.ancnative.ui.formatAgeYears(ageText)?.let { "$it yrs" } ?: ageText } ?: "-"
 
         // Appendix Page 3 HTML (if attached photos exist)
         val page3Html = if (attachedUltrasoundImages.isNotEmpty()) {
@@ -991,7 +992,11 @@ object PatientPrintHtmlGenerator {
                 </div>
                 <div class="data-point" style="align-items: flex-end;">
                     <span class="data-label">Clinical Risk Level</span>
-                    ${if (isHighRisk) """<span class="badge badge-danger">High Risk</span>""" else """<span class="badge badge-success">Normal Risk</span>"""}
+                    ${when {
+                        riskLevel.isNullOrBlank() -> """<span class="badge">Risk not recorded</span>"""
+                        isHighRisk -> """<span class="badge badge-danger">High Risk</span>"""
+                        else -> """<span class="badge badge-success">Normal Risk</span>"""
+                    }}
                 </div>
             </section>
 
@@ -1035,15 +1040,15 @@ object PatientPrintHtmlGenerator {
                         </div>
                         <div class="history-row">
                             <span class="k">Drug Allergies:</span>
-                            <span class="v ${if (!patient.allergyHistory.isNullOrBlank()) "text-rose font-bold" else ""}">${patient.allergyHistory ?: "NKDA"}</span>
+                            <span class="v ${if (!patient.allergyHistory.isNullOrBlank()) "text-rose font-bold" else ""}">${patient.allergyHistory?.takeUnless(String::isBlank) ?: "Not recorded"}</span>
                         </div>
                         <div class="history-row">
                             <span class="k">Medical History:</span>
-                            <span class="v">${patient.medicalHistory ?: "None"}</span>
+                            <span class="v">${patient.medicalHistory?.takeUnless(String::isBlank) ?: "Not recorded"}</span>
                         </div>
                         <div class="history-row">
                             <span class="k">Surgical History:</span>
-                            <span class="v">${patient.surgicalHistory ?: "None"}</span>
+                            <span class="v">${patient.surgicalHistory?.takeUnless(String::isBlank) ?: "Not recorded"}</span>
                         </div>
                     </div>
                 </div>
@@ -1192,11 +1197,11 @@ object PatientPrintHtmlGenerator {
                         <div class="history-list">
                             <div class="history-row">
                                 <span class="k">Planned Delivery Mode:</span>
-                                <span class="v text-rose font-bold">Elective Cesarean Section (CS) / Spontaneous Vaginal Delivery (SVD)</span>
+                                <span class="v text-rose font-bold">${com.sherifradwan.ancnative.ui.parseDeliveryNotes(patient.obstetricNotes).plan?.takeUnless(String::isBlank) ?: "Not recorded"}</span>
                             </div>
                             <div class="history-row">
                                 <span class="k">Target Delivery Timing:</span>
-                                <span class="v text-navy font-bold">${patient.dating?.agreedEdd ?: "At 39 completed weeks"}</span>
+                                <span class="v text-navy font-bold">${patient.dating?.agreedEdd?.takeUnless(String::isBlank) ?: "Not recorded"}</span>
                             </div>
                             <div class="history-row">
                                 <span class="k">Hospital & Blood Bank Precautions:</span>

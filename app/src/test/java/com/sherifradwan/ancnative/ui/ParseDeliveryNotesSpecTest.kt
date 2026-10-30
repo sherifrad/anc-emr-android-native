@@ -17,6 +17,8 @@ import org.junit.Test
  * Round 2c additions: Q13 (previous-delivery hospital, narrowed) and Q14 (value cut at "(").
  * Round 2d additions: Q15 (clinical words dropped from unlabelled hospital names; the dropped
  * text still counts as the text before the phrase for the Q13(b) past-delivery check).
+ * Round 2e additions: Q16 (now/current/currently join the leading-word drop list; per Q15(b)
+ * a dropped one counts as a current marker).
  *
  * SAFE assumptions (spec ambiguity handling):
  *  - Unknown/unclassifiable free-text lines must remain reachable in some section; never dropped.
@@ -716,6 +718,37 @@ class ParseDeliveryNotesSpecTest {
     // Q15(a) drop is case-insensitive on the whole word.
     @Test fun r2d_q15_dropIsCaseInsensitive_csAlone() =
         assertHospitalInPlan("cs Dar Al Fouad Hospital", "Dar Al Fouad Hospital")
+
+    // =====================================================================
+    // Round 2e oracles (Q16, .agents/pipeline/SPEC_FIX_R2.md addendum).
+    // The Q15(a) leading-word drop list gains now/current/currently (whole
+    // word, case-insensitive, same rule; a dropped one counts as a current
+    // marker per Q15(b)). All Q1-Q15 tests must keep passing unchanged.
+    // =====================================================================
+
+    @Test fun r2e_q16_nowCleopatra_cleopatra() =
+        assertHospitalInPlan("Now Cleopatra Hospital", "Cleopatra Hospital")
+
+    @Test fun r2e_q16_currentDarAlFouad_darAlFouad() =
+        assertHospitalInPlan("Current Dar Al Fouad Hospital", "Dar Al Fouad Hospital")
+
+    @Test fun r2e_q16_currentlyBookedDarAlFouad_darAlFouad() =
+        assertHospitalInPlan("Currently Booked Dar Al Fouad Hospital", "Dar Al Fouad Hospital")
+
+    @Test fun r2e_q16_previousCsThenNowCleopatra_cleopatraOnly() =
+        assertHospitalInPlan("Previous CS at Al Salam Hospital, Now Cleopatra Hospital", "Cleopatra Hospital")
+
+    // r2e own boundaries (derived from Q16, SAFE behaviour).
+
+    // The Q16 drop is case-insensitive on the whole word (same rule as Q15(a)).
+    @Test fun r2e_q16_dropIsCaseInsensitive_lowercaseNow() =
+        assertHospitalInPlan("now Dar Al Fouad Hospital", "Dar Al Fouad Hospital")
+
+    // Q15(a) at least one word always kept: after dropping "Current" only the
+    // generic word "Hospital" remains - no real name (Q9), so it must stay null
+    // and the line must stay in plan.
+    @Test fun r2e_q16_onlyGenericWordLeftAfterDrop_hospitalNull() =
+        assertHospitalInPlan("Current Hospital", null)
 
     // Q15(a) at least one word always kept; a phrase reduced to only "Hospital" carries no
     // real name and is rejected (Q9), so it must stay null and stay in plan.

@@ -102,3 +102,31 @@ Q15 (a) These leading words are also dropped from an unlabelled hospital phrase 
    "Emergency CS Dar Al Fouad Hospital given previous CS x2" -> "Dar Al Fouad Hospital"
    "Hospital: Cleopatra Hospital. Last CS Al Salam Hospital" -> "Cleopatra Hospital" (labelled value counts, history phrase skipped)
    Every one of these lines stays in plan, unchanged (Q2/D2). All Q1-Q14 tests must keep passing unchanged.
+
+## Round 2e addendum (R4-1, R4-2)
+Q16 (R4-1) Also drop the leading words now, current, currently (same rule as Q15(a); a dropped one counts as a current marker, Q15(b)).
+   "Now Cleopatra Hospital" -> "Cleopatra Hospital"
+   "Current Dar Al Fouad Hospital" -> "Dar Al Fouad Hospital"
+   "Currently Booked Dar Al Fouad Hospital" -> "Dar Al Fouad Hospital"
+   "Previous CS at Al Salam Hospital, Now Cleopatra Hospital" -> "Cleopatra Hospital"
+   All Q1-Q15 tests must keep passing unchanged.
+Q17 (R4-2) The printed report (ui/report/PatientPrintHtmlGenerator.kt, generateHtml(context = null, patient, asOfDate = fixed date)) uses the
+   shared rules isHighRisk and isRhNegative from ClinicalFormat.kt, exactly like the screens (Q7). Markup and wording stay as they are today:
+   High risk badge: <span class="badge badge-danger">High Risk</span>   else: <span class="badge badge-success">Normal Risk</span>
+   Rh badge: <span class="badge badge-danger">Rh- Negative</span>   anti-D line text: "Anti-D Prophylaxis + Matched Packed RBCs Cross-match"
+   riskLevel "High Risk", "high" -> High Risk badge. "Low Risk", "Moderate Risk", "Not high risk", null -> Normal Risk badge and no High Risk badge.
+   bloodGroupText "O-", "AB-", "O neg", "AB Negative", "O −" (U+2212) -> Rh badge AND anti-D line.
+   "O+", "A+", "A+, antibody screen negative", "pending", null -> neither the Rh badge nor the anti-D line.
+   For the 8 validated groups and 3 validated risk levels the HTML must be byte-identical to today's output (they already print correctly):
+   the change is the two rule lines only (today lines 65-66). Tests build DemoPatient values in a new JVM test
+   app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt (context = null avoids Android calls) and add
+   manifest id UNIT-print (tier 1, --tests '*PatientPrintHtmlGeneratorTest', deps: the generator, ClinicalFormat.kt, the test).
+
+## Round 2f addendum (R5-1: printed age)
+Q18 The printed report's Age value (PatientPrintHtmlGenerator.kt, today line 261 "${ageText} yrs") uses formatAgeYears from ClinicalFormat.kt:
+   valid age (formatAgeYears returns n) -> "n yrs";  non-blank text that is not a valid age -> the trimmed text exactly as typed, no " yrs"
+   (never hide what the clinician typed on a printed record);  null/blank -> "-".
+   ageText "29" -> "29 yrs"; "29 years" -> "29 yrs"; "Age: 29" -> "29 yrs"; " 29 " -> "29 yrs"; "unknown" -> "unknown"; "290" -> "290";
+   "29 years 3 months" -> "29 years 3 months"; "" -> "-"; null -> "-".
+   Tests assert on the exact Age cell: <span class="data-value">VALUE</span> directly after <span class="data-label">Age</span>.
+   Only the age line changes in the generator; all Q17 tests keep passing.

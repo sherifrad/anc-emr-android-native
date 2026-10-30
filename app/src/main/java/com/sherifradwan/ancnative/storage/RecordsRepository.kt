@@ -24,7 +24,7 @@ internal class RecordsRepository(
 ) : SaveGateway {
     private val dao = database.recordsDao()
 
-    suspend fun seedInitialSyntheticFixtures() {
+    suspend fun seedInitialSyntheticFixtures(includeDemoPatients: Boolean) {
         database.withTransaction {
             check(dao.patientCount() == 0)
             check(dao.visitCount() == 0)
@@ -46,27 +46,29 @@ internal class RecordsRepository(
                     initialized = true,
                 ),
             )
-            dao.insertPatients(DemoFixtures.patients.map { patient -> patient.toEntity() })
-            dao.insertVisits(
-                DemoFixtures.patients.flatMap { patient ->
-                    patient.visits.map { visit -> visit.toEntity(patient.id) }
-                },
-            )
-            DemoFixtures.patients.forEach { patient ->
-                patient.dating?.let { dating ->
-                    dao.insertPatientDating(dating.toEntity(patient.id))
-                }
-                patient.previousPregnancies.forEach { p ->
-                    dao.insertPreviousPregnancy(p.toEntity(patient.id))
-                }
-                patient.ultrasoundScans.forEach { scan ->
-                    dao.insertUltrasoundScan(scan.toEntity(patient.id))
-                }
-                patient.labInvestigations.forEach { lab ->
-                    dao.insertLabInvestigation(lab.toEntity(patient.id))
-                }
-                patient.medications.forEach { med ->
-                    dao.insertMedication(med.toEntity(patient.id))
+            if (includeDemoPatients) {
+                dao.insertPatients(DemoFixtures.patients.map { patient -> patient.toEntity() })
+                dao.insertVisits(
+                    DemoFixtures.patients.flatMap { patient ->
+                        patient.visits.map { visit -> visit.toEntity(patient.id) }
+                    },
+                )
+                DemoFixtures.patients.forEach { patient ->
+                    patient.dating?.let { dating ->
+                        dao.insertPatientDating(dating.toEntity(patient.id))
+                    }
+                    patient.previousPregnancies.forEach { p ->
+                        dao.insertPreviousPregnancy(p.toEntity(patient.id))
+                    }
+                    patient.ultrasoundScans.forEach { scan ->
+                        dao.insertUltrasoundScan(scan.toEntity(patient.id))
+                    }
+                    patient.labInvestigations.forEach { lab ->
+                        dao.insertLabInvestigation(lab.toEntity(patient.id))
+                    }
+                    patient.medications.forEach { med ->
+                        dao.insertMedication(med.toEntity(patient.id))
+                    }
                 }
             }
         }

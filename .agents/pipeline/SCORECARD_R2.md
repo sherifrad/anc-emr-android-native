@@ -89,3 +89,22 @@ Reviews: Nemotron PASS Q1-Q15, ~23 own lines, 3 nits. GLM PASS Q1-Q15 (ran the s
   riskLevel.contains("High") and bloodGroupText.contains("-"). Printed report says "High Risk" for "Not high risk", and misses "O neg",
   "O −" (U+2212), "AB Negative" as Rh negative, so the anti-D line (l.1203) is not printed for them. Same bug Q7 fixed on screen.
 - Nit: "Transfer From Aswan General Hospital ..., deliver at Cleopatra Hospital" lists the origin hospital too.
+
+## Round 2e (run 20261030-114106) - R4-1 and R4-2
+Severity correction (orchestrator): R4-2 is NOT a live clinical bug. Blood group and risk are validated on save (8 groups, Low/Moderate/High Risk),
+and the old print rules give the right answer for every validated value. Wrong output needs unvalidated free text (e.g. an old backup).
+Fixed for consistency with the screens (Q7). Earlier message to the owner overstated it; corrected.
+Tests GLM (346 s): 6 parser tests (Q16) + new PatientPrintHtmlGeneratorTest (9 tests, JVM, context = null). Red: 5 parser + 3 print tests
+failed on assertions; the validated-value print tests passed before and after (as specified). Build DeepSeek (69 s): 3 words in the drop list;
+generator diff is exactly the two rule lines (read in full). Gates green, cache re-check 10/10 reused, scope violations 0.
+Fresh --rerun-tasks: 238/238 unit tests, STATIC-ui 6/6, STATIC-ui-r2 30/30.
+Reviews: Nemotron PASS Q1-Q17 (ran full suite 238/238 and both static checks), 13 own lines, no new defects. GLM PASS Q1-Q17, 12 own lines; new:
+- R5-1 Should-fix (confirmed): print report line 261 prints "${ageText} yrs" raw, so "29 years" prints "29 years yrs"; the screens use
+  formatAgeYears. Small fix: use formatAgeYears on the report.
+- Nit: ProfileScreen.kt:1498 hard-coded "Scan Photos (n)" label (other chips use photos_count).
+
+## Round 2f (runs 20261030-123728 tests/red, 20261030-124029 halted, final resume) - R5-1 printed age
+Tests GLM (153 s, 9 q18_ tests; 6 red on assertions, the rest already correct). DeepSeek then Big Pickle halted at once: the opencode free
+limit is SHARED by all opencode free models (GLM, Nemotron, MiMo also blocked after). Builder: GPT-6 Luna via opencode/ChatGPT plan (29 s,
+age line only). Review: Gemini 3.5 Flash failed on its free tokens-per-minute limit; orchestrator reviewed the one-line diff (matches Q18).
+Fresh --rerun-tasks: 247/247. Independence: tests GLM, build OpenAI, review Claude orchestrator.
