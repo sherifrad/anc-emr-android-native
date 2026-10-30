@@ -1,6 +1,7 @@
 package com.sherifradwan.ancnative
 
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -36,6 +37,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (!BuildConfig.DEBUG) {
+            window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+        }
         viewModel = ViewModelProvider(this)[AncViewModel::class.java]
         viewModel.onForegrounded()
         enableEdgeToEdge()
@@ -63,7 +67,6 @@ class MainActivity : ComponentActivity() {
             }
             AncTheme(darkTheme = isDarkTheme, dynamicColor = false) {
                 val state = viewModel.state.collectAsStateWithLifecycle().value
-                android.util.Log.d("VAULT_DEBUG", "Current vaultState: ${state.vaultState}")
                 val authenticating = state.vaultState as? VaultState.Authenticating
                 LaunchedEffect(authenticating?.request?.id) {
                     authenticating?.request?.let { request ->

@@ -210,3 +210,44 @@ Static S16 (check_r3c.py): in AncApp.kt the SecuritySettingsDialog call sits und
 needsPinSetup, and showSettingsDialog is set to false in an effect keyed on the lock state; every AlertDialog( in AncApp.kt is under a
 condition that includes !isAppLocked.
 Device check (orchestrator): repeat the scenario; after the lock only the PIN screen is visible; after unlocking, Settings is closed.
+
+## Round 3d (audit checkpoint 1: confirmed items; 5 of the findings were checked against the code by the orchestrator)
+Source: audit1/ reports of Claude Sonnet 5.5 (security), GPT-6 Luna (clinical), Nemotron 3 Ultra (concurrency). Owner decisions D6-D8 unchanged.
+Deferred to 3e (need an owner decision or a format change, NOT in this round): closing the vault when the app locks (camera/picker/share-sheet
+also background the app, so a naive lock would lose an open editor draft); photos inside the backup and photo encryption; backup PBKDF2
+iterations (needs a file-format change); anomaly banner; HTML-escaping of printed text.
+Q32 (res/xml/file_paths.xml) Add `<cache-path name="backups" path="backups/" />` so FileProvider can share the file the Export Backup button writes to
+     cacheDir/backups. Keep the two existing entries.
+Q33 (ui/SecuritySettingsDialog.kt) The auto-lock timeout picker did nothing (D6 fixes the rule at 10 minutes). Remove the picker and its
+     setAutoLockTimeout call; show one plain line "Locks after 10 minutes away." Leave the AutoLockTimeout enum and the repository field.
+Q35 (MainActivity.kt) In onCreate, before setContent, set FLAG_SECURE on the window ONLY when !BuildConfig.DEBUG (so recents thumbnails and screenshots
+     of the clinic app show no patient data, while the QA/debug copy stays screenshot-able for device tests). Delete the Log.d("VAULT_DEBUG", ...) line.
+Q36 (ui/report/PatientTwoPageReportDialog.kt) The report WebView must not run JavaScript: javaScriptEnabled = false (the report HTML contains no script).
+Q37 DEFERRED TO OWNER (found while running 3d: existing oracles Q17 and Q19g lock in the owner's Rh-negative Anti-D line and the routine-protocol line; changing them is an owner decision). Original text kept for the record - NOT part of this round:
+     (a) "Special Recommendations" prints "Not recorded" (there is no recorded field; never the generic kick-count sentence).
+     (b) "Hospital & Blood Bank Precautions" prints "Not recorded", except for an Rh-negative patient: "Rh negative - anti-D plan not recorded".
+     The output never contains "Anti-D Prophylaxis + Matched", "Routine Obstetric Hospital Protocol" or "Regular fetal kick counts".
+Q38 (security/SecuritySettingsRepository.kt) Weak-PIN setup mode must not be reachable without proving the old PIN.
+     (a) loadSettings: needsPinSetup = !configured. The persisted key_pin_change_required must NOT by itself put the app in setup mode.
+     (b) validatePin: unchanged - a successful check of a weak PIN sets needsPinSetup=true, isAppLocked=true in memory (setup mode after proof).
+     (c) lockApp(): also sets needsPinSetup = !isPinConfigured, so a lock after setup mode started (10 min away) shows the normal PIN entry.
+     Result: after a restart or a lock the weak PIN must be typed again, then the new-PIN form appears; nothing is skipped.
+Q39 (honest labels; ui/WorkspaceScreen.kt, ui/PatientEditor.kt, storage/AttachmentSyncManager.kt, ui/SecuritySettingsDialog.kt) Photos are stored as plain
+     files, and backups hold records only. Replace the false claims: "Encrypted & Verified" -> "Saved on this phone"; PatientEditor line 411 text ->
+     "Photos are stored on this phone (not encrypted separately)"; "Locally Encrypted & Secured" -> "Stored on this phone"; remove "Zero Data Loss" and
+     "100% verified" wording from the backup text and add "Backups contain patient records only, not photos."
+Q40 (ui/SecuritySettingsDialog.kt) Restore must ask first: the Restore button opens an AlertDialog with testTag "restore_confirm_dialog",
+     text "Restoring replaces every patient on this phone with the backup. This cannot be undone.", buttons "Cancel" and "Replace all"; only
+     "Replace all" runs the existing restore code.
+Static checks (new .agents/checks/check_r3d.py, id STATIC-r3d, exit 1 on any FAIL):
+ S17 file_paths.xml has a cache-path whose path is backups or backups/ and still has camera/ and files-path.
+ S18 MainActivity.kt: FLAG_SECURE appears inside an `if` whose condition has `!BuildConfig.DEBUG`; no "VAULT_DEBUG".
+ S19 SecuritySettingsRepository.kt: in loadSettings the needsPinSetup value does not mention KEY_PIN_CHANGE_REQUIRED or "key_pin_change_required";
+     lockApp() body assigns needsPinSetup.
+ S20 PatientTwoPageReportDialog.kt: no `javaScriptEnabled = true`.
+ S21 SecuritySettingsDialog.kt: no `AutoLockTimeout.entries`, no `setAutoLockTimeout(`; contains testTag "restore_confirm_dialog" inside an AlertDialog.
+ S22 false claims gone: none of "Encrypted & Verified" (WorkspaceScreen), "Hardware Vault Security" on the PatientEditor photo line,
+     "Locally Encrypted & Secured" (AttachmentSyncManager), "Zero Data Loss" / "100% verif" (SecuritySettingsDialog).
+ Unit tests (PatientPrintHtmlGeneratorTest, id UNIT-print): Q37 a and b as written above, plus the existing tests stay green.
+Device check (orchestrator): Export Backup opens the share sheet; QA copy still screenshot-able; release build sets FLAG_SECURE; weak-PIN restart
+shows the normal PIN entry first; Restore asks before replacing; report still prints with JavaScript off.

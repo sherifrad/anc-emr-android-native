@@ -80,3 +80,22 @@ Device (API 26 emulator, QA copy, fresh PIN): Settings open -> Home -> 2 min -> 
 -> 11 min -> back: only the PIN screen in the UI tree; after the PIN: patient list, Settings closed. Screenshots device/r3c3_*.png.
 Clock moved backwards also locks (by design, nowMs < backgroundSince). Emulator clock restored, adb unrooted.
 Open nits: system Back on the lock screen exits the app; moving the clock forward shortens a wrong-PIN lockout; unused biometric import.
+
+# Audit checkpoint 1 + Round 3d (runs 20261030-175143 / 175644) - competitive audit, then the confirmed fixes
+Audit: six teams, read-only, one lens each (security, clinical, concurrency, UI/UX, style, tests). Reports in audit1/. Completed: Claude Sonnet 5.5
+(security 18 findings, UI 19), GPT-6 Luna (clinical 2), Nemotron 3 Ultra (concurrency 10). NVIDIA free tier gave no answer for Mistral Large 4,
+DeepSeek V4.1 and GLM 5.3 Flash (probe: no reply in 60 s); Kimi K2.6 is 404 on this account. Style and test-quality lenses are NOT covered yet.
+Orchestrator-verified in code: backup path not in FileProvider; lock is a UI overlay (vault stays open, key not auth-bound); no FLAG_SECURE; timeout
+picker unused; report WebView JS on; weak-PIN setup mode reachable after restart. Refuted: Nemotron #1/#2 (.value on collectAsStateWithLifecycle is fine).
+Fallback built: lane_fallback.py (skill) and MACA_FALLBACK_LANES (pipeline) hand a lane to the next model when one returns nothing.
+Round 3d: Q32 backup share path, Q33 dead timeout picker removed, Q35 FLAG_SECURE (release only) + debug log removed, Q36 no JS in report, Q38 weak-PIN
+needs old PIN after restart/lock, Q39 honest photo/backup labels, Q40 restore confirmation. Q37 (printed anti-D / kick-count text) NOT done: it
+contradicts owner-approved oracles Q17/Q19g - owner decision needed. S14 of check_r3c rewritten (3c-2 rule superseded by Q38).
+Staffing: tests Claude Sonnet 5.5, build GPT-6 Luna, review Nemotron 3 Ultra. Scope violations 0. First core run halted on the Q37 conflict (guard worked).
+Gates (orchestrator, fresh): 339/339 unit tests, check_r3c/r3d/r3b/r3 all PASS, release compiles.
+Device (API 26 emulator, QA copy): settings show "Locks after 10 minutes away."; Export Backup now hands the file to the share sheet (a file exists in
+cache/backups; before the fix it threw); legacy weak PIN -> new-PIN form, restart -> normal PIN entry first, old PIN fails after the new one is set.
+Not run on a device: restore confirmation (needs a system file picker), FLAG_SECURE in the release build, report printing with JS off.
+Review (Nemotron): no real defects found; its "Hard Blocker" tags were boilerplate on items that satisfy the spec.
+Next (3e, need owner decisions): vault close on lock; photos in backup/encryption; PBKDF2 iterations; Q37 wording; fake ultrasound canvas in the scan viewer
+(invents machine settings, defaults "CEPHALIC"); biometric toggle ignored; contrast of High-risk tag; touch targets 36dp; TalkBack on lock screen.

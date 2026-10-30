@@ -193,7 +193,7 @@ fun PatientTwoPageReportDialog(
                                     ViewGroup.LayoutParams.MATCH_PARENT,
                                 )
                                 this.settings.apply {
-                                    javaScriptEnabled = true
+                                    javaScriptEnabled = false
                                     domStorageEnabled = true
                                     builtInZoomControls = true
                                     displayZoomControls = false

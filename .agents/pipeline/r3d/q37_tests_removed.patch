@@ -1,0 +1,59 @@
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt b/app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+index 1f839a8..e2a13f6 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+@@ -537,6 +537,54 @@ class PatientPrintHtmlGeneratorTest {
+         }
+     }
+ 
++    private val RH_NEG_NOT_RECORDED = "Rh negative - anti-D plan not recorded"
++    private val KICK_COUNT_SENTENCE = "Regular fetal kick counts"
++
++    private fun invalidPlanLinesAbsent(html: String) {
++        assertFalse(html.contains("Anti-D Prophylaxis + Matched"))
++        assertFalse(html.contains(ROUTINE_LINE))
++        assertFalse(html.contains(KICK_COUNT_SENTENCE))
++    }
++
++    private fun planRowValue(html: String, label: String): String =
++        Regex("""<span class="k">${Regex.escape(label)}</span>\s*<span class="v[^"]*">(.*?)</span>""", RegexOption.DOT_MATCHES_ALL)
++            .find(html)?.groupValues?.get(1)?.trim() ?: error("row not found: $label")
++
++    @Test
++    fun rhNegativeWithoutNotes_printsAntiDPlanNotRecordedAndNoInventedPlan() {
++        val html = htmlFor("Low Risk", "O-")
++        invalidPlanLinesAbsent(html)
++        assertEquals(RH_NEG_NOT_RECORDED, planRowValue(html, "Hospital & Blood Bank Precautions:"))
++        assertEquals(NOT_RECORDED, planRowValue(html, "Special Recommendations:"))
++    }
++
++    @Test
++    fun rhPositiveWithoutNotes_printsNotRecordedForPrecautionsAndRecommendations() {
++        val html = htmlFor("Low Risk", "O+")
++        invalidPlanLinesAbsent(html)
++        assertEquals(NOT_RECORDED, planRowValue(html, "Hospital & Blood Bank Precautions:"))
++        assertEquals(NOT_RECORDED, planRowValue(html, "Special Recommendations:"))
++        assertFalse(html.contains(RH_NEG_NOT_RECORDED))
++    }
++
++    @Test
++    fun rhNegativeWithRecordedPlan_stillShowsPlanAndNoInventedText() {
++        val html = q19Html(notes = "Agreed delivery mode: Elective Cesarean Section at Cleopatra Hospital.")
++        invalidPlanLinesAbsent(html)
++        assertTrue(html.contains("Elective Cesarean Section"))
++        assertEquals(NOT_RECORDED, planRowValue(html, "Special Recommendations:"))
++    }
++
++    @Test
++    fun rhNegativePatientWithRecordedPlan_precautionsRowIsAntiDNotRecorded() {
++        val html = htmlWith {
++            it.copy(bloodGroupText = "B-", obstetricNotes = "Agreed delivery mode: Elective Cesarean Section.")
++        }
++        invalidPlanLinesAbsent(html)
++        assertTrue(html.contains("Elective Cesarean Section"))
++        assertEquals(RH_NEG_NOT_RECORDED, planRowValue(html, "Hospital & Blood Bank Precautions:"))
++    }
++
+     @Test
+     fun q19k_imageLabelWithImpression_unchanged() {
+         val html = htmlWith { it.copy(ultrasoundScans = listOf(scanWithImage("Normal growth"))) }

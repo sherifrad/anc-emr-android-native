@@ -53,7 +53,7 @@ class SecuritySettingsRepository private constructor(context: Context) {
         val isPinSet = prefs.contains(KEY_PIN_HASH_V2)
         val legacy = !isPinSet && prefs.contains(KEY_PIN_HASH)
         val configured = isPinSet || legacy
-        val needsPinSetup = !configured || prefs.getBoolean(KEY_PIN_CHANGE_REQUIRED, false)
+        val needsPinSetup = !configured
         val rawClinicName = prefs.getString(KEY_CLINIC_NAME, "Dr. Sherif Radwan Clinic") ?: "Dr. Sherif Radwan Clinic"
         val clinicName = if (rawClinicName.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.ARABIC }) "Dr. Sherif Radwan Clinic" else rawClinicName
         val rawClinicSub = prefs.getString(KEY_CLINIC_SUBTITLE, "Maternal-Fetal Medicine & Obstetrics") ?: "Maternal-Fetal Medicine & Obstetrics"
@@ -165,7 +165,7 @@ class SecuritySettingsRepository private constructor(context: Context) {
     }
 
     fun lockApp() {
-        _settings.value = _settings.value.copy(isAppLocked = true)
+        _settings.value = _settings.value.copy(isAppLocked = true, needsPinSetup = !_settings.value.isPinConfigured)
     }
 
     fun shouldLockOnBackground(elapsedSinceStopMs: Long): Boolean {

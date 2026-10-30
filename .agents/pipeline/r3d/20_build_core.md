@@ -1,0 +1,4 @@
+ROLE: CORE BUILDER for ROUND 3d. Make the tests and checks pass without editing them (tests are the contract).
+ALLOWED files: app/src/main/res/xml/file_paths.xml (Q32), app/src/main/java/com/sherifradwan/ancnative/MainActivity.kt (Q35), .../security/SecuritySettingsRepository.kt (Q38), .../ui/report/PatientPrintHtmlGenerator.kt (Q37), .../storage/AttachmentSyncManager.kt (Q39 label only).
+Implement exactly the spec text for those items. Minimal, readable changes in the surrounding style. Do not touch other files.
+Run: python3 .agents/checks/check_r3d.py (S17-S19 and the S22 AttachmentSyncManager part are yours), ./gradlew --offline :app:testDebugUnitTest --tests '*PatientPrintHtmlGeneratorTest' --tests '*PinPolicyTest' --tests '*AppLockPolicyTest', ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin. Report real results.

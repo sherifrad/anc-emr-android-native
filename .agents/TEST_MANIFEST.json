@@ -186,6 +186,23 @@
       "covers": ["S8", "S9", "S10", "S11", "S12", "S13"]
     },
     {
+      "id": "STATIC-r3d",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3d.py",
+      "deps": [
+        "app/src/main/res/xml/file_paths.xml",
+        "app/src/main/**/MainActivity.kt",
+        "app/src/main/**/security/SecuritySettingsRepository.kt",
+        "app/src/main/**/ui/report/PatientTwoPageReportDialog.kt",
+        "app/src/main/**/ui/SecuritySettingsDialog.kt",
+        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/main/**/ui/PatientEditor.kt",
+        "app/src/main/**/storage/AttachmentSyncManager.kt",
+        ".agents/checks/check_r3d.py"
+      ],
+      "covers": ["S17", "S18", "S19", "S20", "S21", "S22"]
+    },
+    {
       "id": "UNIT-all",
       "tier": 2,
       "cmd": "./gradlew --offline :app:testDebugUnitTest",

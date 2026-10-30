@@ -1990,7 +1990,7 @@ private fun AttachmentsSectionCard(
                                             modifier = Modifier.size(12.dp),
                                         )
                                         Text(
-                                            text = "Encrypted & Verified · ${attachment.capturedAt.take(10)}",
+                                            text = "Saved on this phone · ${attachment.capturedAt.take(10)}",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.tertiary,
                                         )

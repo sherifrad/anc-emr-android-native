@@ -1,0 +1,2 @@
+LENS: UI, UX, ACCESSIBILITY and TRANSITIONS
+Primary files: ui/*.kt, ui/report/*, res/values/*. Check touch target sizes (>=48dp), contentDescription/semantics for TalkBack, contrast in light and dark, font scaling / large text overflow, small screens, hard-coded strings vs strings.xml, empty/error/loading states, keyboard/IME handling, animation and transition quality and consistency, dialog flow, destructive-action confirmations, long-text clipping, RTL/Arabic safety if relevant.

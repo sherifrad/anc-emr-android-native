@@ -72,7 +72,6 @@ import androidx.compose.ui.graphics.Color
 import com.sherifradwan.ancnative.model.codex.ClinicalCodexRepository
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.security.AppThemeMode
-import com.sherifradwan.ancnative.security.AutoLockTimeout
 import com.sherifradwan.ancnative.security.BiometricAuthManager
 import com.sherifradwan.ancnative.security.SecuritySettingsRepository
 import com.sherifradwan.ancnative.security.isValidNewPin
@@ -105,6 +104,7 @@ fun SecuritySettingsDialog(
     var isBackupError by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
     var pendingRestoreBytes by remember { mutableStateOf<ByteArray?>(null) }
+    var showRestoreConfirmDialog by remember { mutableStateOf(false) }
     var showRestorePassphraseDialog by remember { mutableStateOf(false) }
 
     val restoreFileLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -118,7 +118,7 @@ fun SecuritySettingsDialog(
             }
             if (bytes != null && bytes.isNotEmpty()) {
                 pendingRestoreBytes = bytes
-                showRestorePassphraseDialog = true
+                showRestoreConfirmDialog = true
             } else {
                 backupStatusMessage = "Unable to read selected backup file!"
                 isBackupError = true
@@ -558,47 +558,14 @@ fun SecuritySettingsDialog(
                         }
 
                         Text(
-                            text = "Set inactivity duration before the app automatically locks in the background:",
+                            text = "Locks after 10 minutes away.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-
-                        AutoLockTimeout.entries.forEach { timeout ->
-                            val isSelected = settingsState.autoLockTimeout == timeout
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .clickable {
-                                        securityRepo.setAutoLockTimeout(timeout)
-                                        settingsState = securityRepo.settings.value
-                                    }
-                                    .padding(vertical = 4.dp, horizontal = 6.dp)
-                                    .testTag("timeoutOption-${timeout.name}"),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                RadioButton(
-                                    selected = isSelected,
-                                    onClick = {
-                                        securityRepo.setAutoLockTimeout(timeout)
-                                        settingsState = securityRepo.settings.value
-                                    },
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                Column {
-                                    Text(
-                                        text = timeout.displayNameEn,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                    )
-                                }
-                            }
-                        }
                     }
                 }
 
-                    // Section 4: Encrypted Vault Backup & Restore (Zero Data Loss)
+                    // Section 4: Vault Backup & Restore
                     Card(
                         shape = RoundedCornerShape(14.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
@@ -614,7 +581,7 @@ fun SecuritySettingsDialog(
                             ) {
                                 Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                 Text(
-                                    text = "Encrypted Vault Backup & Restore",
+                                    text = "Vault Backup & Restore",
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary,
@@ -622,7 +589,7 @@ fun SecuritySettingsDialog(
                             }
 
                             Text(
-                                text = "Enterprise AES-256 GCM encryption with PBKDF2 (65,536 iterations). Safely export and restore all records with guaranteed Zero Data Loss.",
+                                text = "Safely export and restore patient records. Backups contain patient records only, not photos.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -732,6 +699,39 @@ fun SecuritySettingsDialog(
         )
     }
 
+    if (showRestoreConfirmDialog && pendingRestoreBytes != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showRestoreConfirmDialog = false
+                pendingRestoreBytes = null
+            },
+            text = {
+                Text("Restoring replaces every patient on this phone with the backup. This cannot be undone.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showRestoreConfirmDialog = false
+                        showRestorePassphraseDialog = true
+                    },
+                ) {
+                    Text("Replace all")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showRestoreConfirmDialog = false
+                        pendingRestoreBytes = null
+                    },
+                ) {
+                    Text("Cancel")
+                }
+            },
+            modifier = Modifier.testTag("restore_confirm_dialog"),
+        )
+    }
+
     // Sub-dialog: Restore Passphrase
     if (showRestorePassphraseDialog && pendingRestoreBytes != null && onRestoreBackup != null) {
         RestorePassphraseDialog(
@@ -746,7 +746,7 @@ fun SecuritySettingsDialog(
                 onRestoreBackup(bytes, passphrase) { result ->
                     when (result) {
                         is BackupInspectionResult.Valid -> {
-                            backupStatusMessage = "Vault restored successfully (${result.patientCount} patients)! All records 100% verified with Zero Data Loss."
+                            backupStatusMessage = "Vault restored successfully (${result.patientCount} patients)!"
                             isBackupError = false
                         }
                         is BackupInspectionResult.InvalidPassphraseOrCorrupted -> {

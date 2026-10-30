@@ -1,0 +1,2 @@
+LENS: TEST QUALITY and CHECK SCRIPTS
+Primary files: app/src/test/**, .agents/checks/*.py, .agents/TEST_MANIFEST.json. Find vacuous or tautological tests, tests that assert the implementation instead of the clinical rule, missing edge cases, tests that pass for the wrong reason, static checks (regex over source) that can pass while the behaviour is broken or fail on harmless refactors, manifest ids that point to nothing, and untested critical code (list the 10 riskiest untested functions). For 3 high-risk tests, describe the mutation of the code that would still pass them.

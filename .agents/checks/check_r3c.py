@@ -9,7 +9,8 @@ Textual source contract only; verifies nothing at runtime.
   S11 MainActivity.kt: calls shouldLockOnReturn.
   S12 AutoLockTimeout enum has no NEVER.
   S13 security/SecuritySettingsRepository.kt only: SHA-256 MessageDigest only inside a function whose name contains "legacy".
-  S14 SecuritySettingsRepository.kt: key_pin_change_required defined, written, read in loadSettings; validatePin calls isValidNewPin.
+  S14 SecuritySettingsRepository.kt: key_pin_change_required defined, written as true; validatePin calls isValidNewPin;
+      the loadSettings expression assigning needsPinSetup must NOT mention the flag (Q38: reading it was a bypass).
   S15 AppLockScreen.kt: observes securityRepo.settings (collectAsState*) and never reads securityRepo.settings.value.
   S16 AncApp.kt: SecuritySettingsDialog guarded by isAppLocked and needsPinSetup; an effect keyed on lock state resets
       showSettingsDialog to false; every AlertDialog( is under a condition containing !isAppLocked.
@@ -128,8 +129,34 @@ else:
     if not re.search(r"\.put(?:Boolean|String|Int)\(\s*(?:\w*\.)?\w*(?:PIN_CHANGE|CHANGE_REQUIRED)\w*\s*,\s*true", code, flags=re.I) \
             and not re.search(r"\.putBoolean\(\s*\"key_pin_change_required\"\s*,\s*true", code):
         problems.append("no write of the flag as true")
-    if not re.search(r"key_pin_change_required|PIN_CHANGE|CHANGE_REQUIRED", load_body, flags=re.I):
-        problems.append("loadSettings does not read the flag")
+    nm = re.search(r"\bneedsPinSetup\s*=(?!=)", load_body)
+    if not nm:
+        problems.append("loadSettings has no needsPinSetup assignment")
+    else:
+        depth = 0
+        end = len(load_body)
+        for i in range(nm.end(), len(load_body)):
+            c = load_body[i]
+            if c in "([{":
+                depth += 1
+            elif c in ")]}":
+                if depth == 0:
+                    end = i
+                    break
+                depth -= 1
+            elif c == "," and depth == 0:
+                end = i
+                break
+        lines = load_body[nm.end():end].split("\n")
+        kept = [lines[0]]
+        for ln in lines[1:]:
+            prev = kept[-1].rstrip()
+            if ln.strip().startswith(("&&", "||", ".", "?:", "?.")) or prev.endswith(("&&", "||", "(", ",", "=", "?:", ".")):
+                kept.append(ln)
+            else:
+                break
+        if re.search(r"key_pin_change_required|PIN_CHANGE|CHANGE_REQUIRED", "\n".join(kept), flags=re.I):
+            problems.append("loadSettings needsPinSetup expression reads the pin-change flag")
     if "isValidNewPin(" not in val_body:
         problems.append("validatePin does not call isValidNewPin")
     record("S14 persisted pin-change-required flag", not problems, "; ".join(problems))

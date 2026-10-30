@@ -408,7 +408,7 @@ fun PatientEditor(
             )
             Spacer(Modifier.width(6.dp))
             Text(
-                text = "Locally Encrypted (AES-256 GCM) · Hardware Vault Security",
+                text = "Photos are stored on this phone (not encrypted separately)",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

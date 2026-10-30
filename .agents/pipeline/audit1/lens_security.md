@@ -1,0 +1,2 @@
+LENS: SECURITY and LOCK
+Primary files: security/*, MainActivity.kt, ui/AppLockScreen.kt, ui/SecuritySettingsDialog.kt, storage/AndroidVaultKeys.kt, storage/EncryptedBackupManager.kt, storage/Vault*.kt, AndroidManifest.xml, backup/allowBackup/exported components, logging of sensitive values, PIN hashing/salt/throttle, lock-on-return logic, screenshots/recents exposure (FLAG_SECURE), file permissions, intents. Also check security audit items #6 #8 #9 #11 #12 #13 from .agents/pipeline/AUDIT_PHASE1.md: are they really still open or did anything regress?

@@ -1,0 +1,2 @@
+LENS: CLINICAL CORRECTNESS and DATA INTEGRITY
+Primary files: model/*, state/IntakeDatingRule.kt, storage/*Commands.kt, storage/RecordsMigration.kt, RecordsRepository.kt, RecordAnomalies.kt, ui/DeliveryNotesParser.kt, ui/ClinicalFormat.kt, ui/report/*. Check gestational-age/EDD maths (LMP, USS, IVF), date/time-zone/leap-year edge cases, risk classification, Rh handling, unit conversions, parsing of free text, migrations (old data surviving), save/update paths that could silently overwrite or drop data, and anything printed that is not backed by recorded data.

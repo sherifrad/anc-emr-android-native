@@ -26,7 +26,7 @@ object AttachmentSyncStatus {
     const val SYNC_ERROR = "SYNC_ERROR"
 
     fun localizedStatus(status: String): String = when (status) {
-        LOCAL_ONLY -> "Locally Encrypted & Secured"
+        LOCAL_ONLY -> "Stored on this phone"
         PENDING_SYNC -> "Pending Cloud Sync"
         SYNCED_CLOUD -> "Synced with Clinical Cloud"
         SYNC_ERROR -> "Cloud Sync Error"

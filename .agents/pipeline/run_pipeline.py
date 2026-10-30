@@ -3,6 +3,7 @@
 it dispatches lanes to vendor CLIs through the vendored relays, enforces file ownership,
 runs only the tests the evidence cache says must run, and records metrics.
 Usage: run_pipeline.py [--plan] [--root DIR] [--skip-review]
+Fallback (env): MACA_FALLBACK_LANES="cli:model,..." - tried in order when a lane returns nothing usable.
 Lane overrides (env): MACA_LANE_TESTS, MACA_LANE_CORE, MACA_LANE_UI, MACA_REVIEW_LANES  as 'cli:model' (comma list for review)."""
 import argparse, fnmatch, hashlib, json, os, shutil, subprocess, sys, time
 from datetime import datetime
@@ -15,7 +16,7 @@ ap.add_argument("--root", default=str(HOME / "anc-emr-android-native"))
 ap.add_argument("--plan", action="store_true")
 ap.add_argument("--skip-review", action="store_true")
 ap.add_argument("--ui-only", action="store_true", help="tests and core already green: run only the UI lane, cache check and review")
-ap.add_argument("--round", default="r1", choices=["r1", "r2", "r3", "r3b", "r3c", "r3c2", "r3c3"], help="r2: SPEC_FIX_R2 briefs in pipeline/r2, round-2 file lists")
+ap.add_argument("--round", default="r1", choices=["r1", "r2", "r3", "r3b", "r3c", "r3c2", "r3c3", "r3d"], help="r2: SPEC_FIX_R2 briefs in pipeline/r2, round-2 file lists")
 ap.add_argument("--resume-tests", metavar="NOTE", help="tests lane timed out after writing tests: send a short finish-up request (NOTE), then continue")
 ap.add_argument("--from-core", metavar="RED_RUN_DIR", help="tests already written and red-checked in RED_RUN_DIR: start at the core lane")
 ap.add_argument("--skip-ui", action="store_true", help="no UI work this round: skip the UI lane, still run the full gate")
@@ -99,7 +100,18 @@ if args.round == "r3c2":
 if args.round == "r3c3":
     TEST_GLOBS = [".agents/checks/check_r3c.py"]
     ALLOW = {"tests": TEST_GLOBS, "core": [], "ui": [UI + "AncApp.kt"], "review": []}
-BRIEFS = PIPE / args.round if args.round in ("r2", "r3", "r3b", "r3c", "r3c2", "r3c3") else PIPE
+if args.round == "r3d":
+    M = "app/src/main/java/com/sherifradwan/ancnative/"
+    TEST_GLOBS = [".agents/checks/check_r3d.py", "app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt", ".agents/TEST_MANIFEST.json"]
+    ALLOW = {
+        "tests": TEST_GLOBS,
+        "core": ["app/src/main/res/xml/file_paths.xml", M + "MainActivity.kt", M + "security/SecuritySettingsRepository.kt",
+                 M + "ui/report/PatientPrintHtmlGenerator.kt", M + "storage/AttachmentSyncManager.kt"],
+        "ui": [UI + "SecuritySettingsDialog.kt", UI + "report/PatientTwoPageReportDialog.kt", UI + "WorkspaceScreen.kt", UI + "PatientEditor.kt",
+               "app/src/main/res/values/strings.xml"],
+        "review": [],
+    }
+BRIEFS = PIPE / args.round if args.round in ("r2", "r3", "r3b", "r3c", "r3c2", "r3c3", "r3d") else PIPE
 # Tests that reference functions the core lane has not written yet; parked during the behavioural red check.
 NEW_API_TESTS = {"r2": [T + "ClinicalFormatR2Test.kt"], "r3": ["app/src/test/java/com/sherifradwan/ancnative/state/IntakeDatingRuleTest.kt"],
                  "r3b": ["app/src/test/java/com/sherifradwan/ancnative/storage/" + n for n in ("RecordAnomaliesTest.kt", "VaultAutoActionTest.kt", "VaultCleanupRuleTest.kt")],
@@ -143,9 +155,21 @@ def dispatch(step, role_file, lane_key, allow_key, extra="", read_only=False, cl
     before = snapshot(); t = time.time()
     relay = SK / f"vendor/delegate-skills/skills/{cli}-delegate/scripts/relay.mjs"
     out_dir = RUN / step
-    cmd = f'node "{relay}" --brief "{brief}" --cd "{ROOT}" --out-dir "{out_dir}"' + (f' --model "{model}"' if model else "") + (" --read-only" if read_only else "")
-    if cli == "claude" and model: cmd = f'ANTHROPIC_MODEL="{model}" ' + cmd   # claude relay drops --model
-    rc, _, _ = sh(cmd, timeout=1800)
+    chain = [(cli, model)] + [tuple(f.partition(":")[::2]) for f in os.environ.get("MACA_FALLBACK_LANES", "").split(",") if f and f != f"{cli}:{model}"]
+    tried = []
+    for ci, (cli, model) in enumerate(chain):   # a dead or silent provider hands the lane to the next model, never stops the run
+        relay = SK / f"vendor/delegate-skills/skills/{cli}-delegate/scripts/relay.mjs"
+        out_dir = RUN / (step if ci == 0 else f"{step}.fallback{ci}")
+        cmd = f'node "{relay}" --brief "{brief}" --cd "{ROOT}" --out-dir "{out_dir}"' + (f' --model "{model}"' if model and cli != "claude" else "") + (" --read-only" if read_only else "")
+        if cli == "claude" and model: cmd = f'ANTHROPIC_MODEL="{model}" ' + cmd   # claude relay drops --model
+        rc, _, _ = sh(cmd, timeout=1800)
+        try: r = json.loads((out_dir / "result.json").read_text())
+        except Exception: r = {}
+        tried.append(f"{cli}:{model}={r.get('status')}")
+        cur = snapshot(); now_changed = [p for p in set(before) | set(cur) if before.get(p) != cur.get(p)]
+        if r.get("status") == "completed" and (not read_only or len((out_dir / "stdout.txt").read_text() if (out_dir / "stdout.txt").exists() else r.get("finalMessage", "")) > 200): break
+        if now_changed and not read_only: break   # partial work exists: the repair loop continues from it
+        print(f"[{step}] {cli}:{model} gave no usable result ({r.get('status')}); trying next model", flush=True)
     secs = round(time.time() - t, 1)
     after = snapshot()
     changed = sorted(p for p in set(before) | set(after) if before.get(p) != after.get(p))
@@ -157,7 +181,7 @@ def dispatch(step, role_file, lane_key, allow_key, extra="", read_only=False, cl
     status = "?"
     try: status = json.loads((out_dir / "result.json").read_text()).get("status")
     except Exception: pass
-    m = dict(step=step, lane=f"{cli}:{model}", seconds=secs, relay_status=status, relay_exit=rc,
+    m = dict(step=step, lane=f"{cli}:{model}", tried=tried, seconds=secs, relay_status=status, relay_exit=rc,
              changed=[p for p in changed if p not in viol], scope_violations_reverted=viol)
     METRICS.append(m); print(f"[{step}] {cli} {status} {secs}s changed={len(m['changed'])} violations={len(viol)}", flush=True)
     if status != "completed" and not m["changed"]:   # lane produced nothing (quota, auth, permission): repairs cannot help
@@ -173,6 +197,7 @@ if args.round == "r3": CORE_GATE |= {"UNIT-print", "UNIT-intake-dating", "STATIC
 if args.round == "r3b": CORE_GATE |= {"UNIT-anomalies", "UNIT-vault-auto", "UNIT-vault-cleanup", "STATIC-r3b"}
 if args.round == "r3c": CORE_GATE |= {"UNIT-pin-policy", "UNIT-lock-policy", "STATIC-r3c"}
 if args.round == "r3c2": CORE_GATE |= {"UNIT-pin-policy", "UNIT-lock-policy"}
+if args.round == "r3d": CORE_GATE |= {"UNIT-print"}   # STATIC-r3d spans the UI lane, so it is gated after 2b
 
 def test_compile_failed(res):
     """True when a failure is the unit-test source set not compiling (an error in a test file), not a failing assertion."""

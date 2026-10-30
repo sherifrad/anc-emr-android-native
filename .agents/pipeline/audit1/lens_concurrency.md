@@ -1,0 +1,2 @@
+LENS: CONCURRENCY, LIFECYCLE and COMPOSE STATE
+Primary files: state/AncViewModel.kt, state/AncState.kt, MainActivity.kt, storage/VaultController.kt, storage/AttachmentSyncManager.kt, storage/*Dao*, ui/AncApp.kt, ui/WorkspaceScreen.kt. Check coroutine scopes and dispatchers, main-thread I/O, race conditions, StateFlow misuse, state lost on rotation/process death, leaks, rememberSaveable vs remember, LaunchedEffect keys, double-submit, back-stack, cancellation, Room transactions.
