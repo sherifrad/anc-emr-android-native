@@ -45,6 +45,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.ui.platform.LocalContext
 import com.sherifradwan.ancnative.model.ClinicalVocabulary
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
+import com.sherifradwan.ancnative.model.redatingAdvice
+import kotlin.math.abs
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
@@ -139,6 +141,23 @@ fun UltrasoundEditor(
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                             )
+                            val weeks = draft.values.gaWeeks.trim().toIntOrNull()
+                            val days = draft.values.gaDays.trim().toIntOrNull()
+                            if (weeks != null && weeks >= 0 && days != null && days in 0..6) {
+                                val advice = redatingAdvice(calculatedGa.totalDays, weeks * 7L + days)
+                                if (advice != null) {
+                                    Text(
+                                        text = stringResource(
+                                            R.string.redating_hint,
+                                            abs(advice.differenceDays),
+                                            advice.thresholdDays,
+                                        ),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.testTag("redatingHint"),
+                                    )
+                                }
+                            }
                             val isDifferent = draft.values.gaWeeks != calculatedGa.weeks.toString() ||
                                 draft.values.gaDays != calculatedGa.days.toString()
                             if (isDifferent) {

@@ -79,12 +79,9 @@ object GestationalAgeEngine {
     }
 
     fun calculateForIvf(transferDate: LocalDate, embryoAgeDays: Int, asOfDate: LocalDate = LocalDate.now()): GestationalAgeResult? {
-        if (embryoAgeDays != 3 && embryoAgeDays != 5) return null
+        if (embryoAgeDays !in ClinicalVocabulary.embryoAges) return null
         val daysSinceTransfer = ChronoUnit.DAYS.between(transferDate, asOfDate)
-        // Day 3 embryo transfer = 17 days gestational age at transfer (2w 3d)
-        // Day 5 blastocyst transfer = 19 days gestational age at transfer (2w 5d)
-        val initialGestationalDays = if (embryoAgeDays == 3) 17L else 19L
-        val totalDays = initialGestationalDays + daysSinceTransfer
+        val totalDays = ivfGaDaysAtTransfer(embryoAgeDays) + daysSinceTransfer
         if (totalDays < 0 || totalDays > 320) return null
         return formatGestationalDays(totalDays)
     }
@@ -106,9 +103,8 @@ object GestationalAgeEngine {
                 if (!dating.transferDate.isNullOrBlank()) {
                     parseIsoDateOrNull(dating.transferDate)?.let { transfer ->
                         val embryoAge = dating.embryoAgeDays ?: 5
-                        if (embryoAge != 3 && embryoAge != 5) return null
-                        val daysToAdd = if (embryoAge == 3) 263L else 261L
-                        transfer.plusDays(daysToAdd)
+                        if (embryoAge !in ClinicalVocabulary.embryoAges) return null
+                        ivfEddFromTransfer(transfer, embryoAge)
                     }
                 } else null
             }

@@ -1,0 +1,2 @@
+ROLE: UI BUILDER for ROUND 3n. Implement Q90 and Q91. ALLOWED files: ui/DatingEditor.kt, ui/UltrasoundEditor.kt, app/src/main/res/values/strings.xml. Core already added ivf functions, Redating.kt and the embryo ages; call redatingAdvice, never re-implement the table or compute thresholds in UI code. Add only the two strings named in the spec. Keep every existing testTag and the existing apply button. Do not edit tests or checks.
+Run ./gradlew --offline :app:compileDebugKotlin and the whole unit suite. Report real results.

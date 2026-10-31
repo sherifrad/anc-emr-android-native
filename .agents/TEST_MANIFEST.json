@@ -736,6 +736,47 @@
       "covers": ["Q85"]
     },
     {
+      "id": "STATIC-r3n",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3n.py",
+      "deps": [
+        "app/src/main/**/model/IsoDates.kt",
+        "app/src/main/**/model/ClinicalModels.kt",
+        "app/src/main/**/model/GestationalAgeEngine.kt",
+        "app/src/main/**/model/Redating.kt",
+        "app/src/main/**/storage/ClinicalCommands.kt",
+        "app/src/main/**/ui/DatingEditor.kt",
+        "app/src/main/**/ui/UltrasoundEditor.kt",
+        "app/src/main/res/values/strings.xml",
+        ".agents/checks/check_r3n.py"
+      ],
+      "covers": ["S72", "S73", "S74", "S75"]
+    },
+    {
+      "id": "UNIT-ivf-dating",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*IvfDatingTest'",
+      "deps": [
+        "app/src/main/**/model/IsoDates.kt",
+        "app/src/main/**/model/ClinicalModels.kt",
+        "app/src/main/**/model/GestationalAgeEngine.kt",
+        "app/src/main/**/storage/ClinicalCommands.kt",
+        "app/src/main/**/state/AncState.kt",
+        "app/src/test/**/model/IvfDatingTest.kt"
+      ],
+      "covers": ["Q88"]
+    },
+    {
+      "id": "UNIT-redating",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*RedatingTest'",
+      "deps": [
+        "app/src/main/**/model/Redating.kt",
+        "app/src/test/**/model/RedatingTest.kt"
+      ],
+      "covers": ["Q89"]
+    },
+    {
       "id": "UNIT-all",
       "tier": 2,
       "cmd": "./gradlew --offline :app:testDebugUnitTest",

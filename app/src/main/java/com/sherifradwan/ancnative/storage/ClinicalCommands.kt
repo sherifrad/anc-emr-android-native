@@ -94,8 +94,8 @@ data class SaveDatingCommand(
         if (!ClinicalVocabulary.isValidIsoDate(agreedEdd)) return false
         if (!ClinicalVocabulary.isValidIsoDate(transferDate)) return false
         if (datingMethod != null && datingMethod !in ClinicalVocabulary.datingMethods) return false
-        if (embryoAgeDays != null && embryoAgeDays != 3 && embryoAgeDays != 5) return false
-        if (datingMethod == "IVF_TRANSFER" && (transferDate == null || (embryoAgeDays != 3 && embryoAgeDays != 5))) return false
+        if (embryoAgeDays != null && embryoAgeDays !in ClinicalVocabulary.embryoAges) return false
+        if (datingMethod == "IVF_TRANSFER" && (transferDate == null || embryoAgeDays !in ClinicalVocabulary.embryoAges)) return false
         return true
     }
 
@@ -121,10 +121,10 @@ data class SaveDatingCommand(
             if (agreedEdd != null && !ClinicalVocabulary.isValidIsoDate(agreedEdd)) errors.add(ClinicalValidationError.INVALID_DATE)
             if (transfer != null && !ClinicalVocabulary.isValidIsoDate(transfer)) errors.add(ClinicalValidationError.INVALID_DATE)
             if (method != null && method !in ClinicalVocabulary.datingMethods) errors.add(ClinicalValidationError.INVALID_METHOD)
-            if (embryoAge != null && embryoAge != 3 && embryoAge != 5) errors.add(ClinicalValidationError.INVALID_VOCABULARY)
+            if (embryoAge != null && embryoAge !in ClinicalVocabulary.embryoAges) errors.add(ClinicalValidationError.INVALID_VOCABULARY)
             if (method == "IVF_TRANSFER") {
                 if (transfer == null) errors.add(ClinicalValidationError.REQUIRED_DATE)
-                if (embryoAge == null || (embryoAge != 3 && embryoAge != 5)) errors.add(ClinicalValidationError.INVALID_VOCABULARY)
+                if (embryoAge == null || embryoAge !in ClinicalVocabulary.embryoAges) errors.add(ClinicalValidationError.INVALID_VOCABULARY)
             }
 
             if (errors.isNotEmpty()) return ClinicalCommandPreparation.Rejected(errors)

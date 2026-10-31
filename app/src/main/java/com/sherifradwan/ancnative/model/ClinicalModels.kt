@@ -101,7 +101,7 @@ data class DemoAttachment(
 
 object ClinicalVocabulary {
     val datingMethods = setOf("LMP", "Ultrasound", "IVF_TRANSFER", "Clinical")
-    val embryoAges = listOf(3, 5)
+    val embryoAges = listOf(3, 5, 6)
     val fetalNumbers = setOf("Singleton", "Twins", "Higher order")
     val fetalPresentations = setOf("Cephalic", "Breech", "Transverse", "Variable")
     val placentalSites = setOf("Anterior", "Posterior", "Fundal", "Low-lying", "Previa")

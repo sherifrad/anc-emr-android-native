@@ -344,4 +344,6 @@
     <string name="weight_invalid">Enter weight in kg between 30 and 250, for example 68.5.</string>
     <string name="bp_alert_raised">Raised blood pressure (140/90 or above) - recheck</string>
     <string name="bp_alert_severe">Severe-range blood pressure (160/110 or above) - urgent assessment needed</string>
+    <string name="embryo_day_6">Day 6</string>
+    <string name="redating_hint">Scan GA differs from the current dating by %1$d days (more than %2$d). Consider using the scan due date in Dating.</string>
 </resources>

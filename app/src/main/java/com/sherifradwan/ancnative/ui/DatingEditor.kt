@@ -198,7 +198,10 @@ fun DatingEditor(
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary,
                         )
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
                             FilterChip(
                                 selected = draft.values.embryoAgeDays == "3",
                                 onClick = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.EMBRYO_AGE_DAYS, "3")) },
@@ -212,6 +215,13 @@ fun DatingEditor(
                                 label = { Text(stringResource(R.string.embryo_day_5)) },
                                 enabled = enabled,
                                 modifier = Modifier.testTag("embryoDay5"),
+                            )
+                            FilterChip(
+                                selected = draft.values.embryoAgeDays == "6",
+                                onClick = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.EMBRYO_AGE_DAYS, "6")) },
+                                label = { Text(stringResource(R.string.embryo_day_6)) },
+                                enabled = enabled,
+                                modifier = Modifier.testTag("embryoDay6"),
                             )
                         }
                     }
