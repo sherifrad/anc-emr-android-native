@@ -24,3 +24,11 @@ Run on the Honor 400, QA copy `com.sherifradwan.anc.qa` only (PIN 121212), demo 
 12. Print preview of a patient whose visit note is "Hb <10, BP >140/90 & stable": the text shows in full (no cut at "<"), and Print PDF produces the same text.
 13. Print preview: each section title appears once (no capital duplicate beside it); the dialog title "Clinical Medical Record" is fully visible (two lines allowed) and the header buttons still fit.
 
+## RESULTS of the phone pass on 2026-10-31 (Honor 400, QA copy, demo data)
+- Item 1 PARTLY: Day 6 chip is visible and wraps below Day 3/Day 5 cleanly. The due date for a day-6 transfer could not be entered reliably by hand (typing into the form was flaky); covered by unit tests only. Still open: run once more by hand.
+- Item 3 DONE: the redating hint shows at scan GA 25w0d against a 21w5d dating (23 days off, limit 10) and disappears at 22w0d.
+- Item 4 DONE: 145/92 shows "Raised blood pressure (140/90 or above) - recheck" while typing.
+- Items 12 and 13 DONE: a visit note containing < > & prints in full; every section title appears once; the dialog title "Clinical Medical Record" is fully visible on two lines; header buttons fit.
+- NEW findings from the print preview (not part of those rounds): the visits table breaks words mid-word in narrow columns ("Gestati onal Age", "Pressu re", "Weigh t", "120/8 0", "165/1 05") and the medications header "Frequen cy"; "Official Stamp & Signature" is printed twice in the attestation box. Added to UIUX_BACKLOG.md as P-1 and P-2.
+- Not done yet: items 2, 5-11 (GA on the transfer date, large font checks, TalkBack, fingerprint, restore dialog, backup/restore/print end to end).
+

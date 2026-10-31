@@ -1,0 +1,181 @@
+16 of 39 instrumented tests fail on an API 26 emulator (2026-10-31, QA build).
+
+### com.sherifradwan.ancnative.AncWorkflowTest.reviewedVaultLayoutsKeepActionsReachableAndPatientDataFailClosed
+java.lang.AssertionError: Action performScrollTo() failed.
+Reason: Expected exactly '1' node but could not find any node that satisfies: (Text + InputText + EditableText contains 'Encrypted Clinical Records' (ignoreCase: false))
+
+at androidx.compose.ui.test.SemanticsNodeInteraction.fetchOneOrThrow(SemanticsNodeInteraction.kt:178)
+at androidx.compose.ui.test.SemanticsNodeInteraction.fetchOneOrThrow$default(SemanticsNodeInteraction.kt:150)
+at androidx.compose.ui.test.SemanticsNodeInteraction.fetchSemanticsNode(SemanticsNodeInteraction.kt:84)
+at androidx.compose.ui.test.ActionsKt.performScrollTo(Actions.kt:81)
+at com.sherifradwan.ancnative.AncWorkflowTest.reviewedVaultLayoutsKeepActionsReachableAndPatientDataFailClosed(AncWorkflowTest.kt:183)
+
+
+### com.sherifradwan.ancnative.AncWorkflowTest.reviewedVisitEditorLayoutsKeepStatusDraftAndControlsAccessible
+java.lang.AssertionError: Assert failed: The component with (Text + InputText + EditableText contains 'Dr. Sherif Radwan Clinic' (ignoreCase: false))[0] is not displayed!
+at androidx.compose.ui.test.AssertionsKt.assertIsDisplayed(Assertions.kt:34)
+at com.sherifradwan.ancnative.AncWorkflowTest.reviewedVisitEditorLayoutsKeepStatusDraftAndControlsAccessible(AncWorkflowTest.kt:261)
+
+
+### com.sherifradwan.ancnative.AncWorkflowTest.datingAndUltrasoundWorkflowAndWorkspaceSectionsRenderAccurately
+java.lang.IllegalStateException: No ActivityResultRegistryOwner was provided via LocalActivityResultRegistryOwner
+at androidx.activity.compose.ActivityResultRegistryKt.rememberLauncherForActivityResult(ActivityResultRegistry.kt:93)
+at com.sherifradwan.ancnative.ui.UltrasoundEditorKt.UltrasoundEditor(UltrasoundEditor.kt:70)
+at com.sherifradwan.ancnative.ui.AncAppKt.AncApp$lambda$6(AncApp.kt:229)
+at com.sherifradwan.ancnative.ui.AncAppKt.$r8$lambda$MFGuNyaOXZwDpDaFLNoJgqCXGx8(Unknown Source:0)
+at com.sherifradwan.ancnative.ui.AncAppKt$$ExternalSyntheticLambda16.invoke(D8$$SyntheticClass:0)
+at androidx.compose.runtime.internal.ComposableLambdaImpl.invoke(ComposableLambda.kt:122)
+at androidx.compose.runtime.internal.ComposableLambdaImpl.invoke(ComposableLambda.kt:52)
+at androidx.compose.material3.SurfaceKt$Surface$1.invoke(Surface.kt:130)
+at androidx.compose.material3.SurfaceKt$Surface$1.inv
+
+### com.sherifradwan.ancnative.AncWorkflowTest.recordsWindowKeepsSecureFlagAndGateExplainsDraftPolicy
+java.lang.AssertionError
+at org.junit.Assert.fail(Assert.java:87)
+at org.junit.Assert.assertTrue(Assert.java:42)
+at org.junit.Assert.assertFalse(Assert.java:65)
+at org.junit.Assert.assertFalse(Assert.java:75)
+at com.sherifradwan.ancnative.AncWorkflowTest.recordsWindowKeepsSecureFlagAndGateExplainsDraftPolicy$lambda$0(AncWorkflowTest.kt:95)
+at com.sherifradwan.ancnative.AncWorkflowTest.$r8$lambda$BmKhlJMiofhW_gyd_DzmLfSULuo(Unknown Source:0)
+at com.sherifradwan.ancnative.AncWorkflowTest$$ExternalSyntheticLambda8.perform(D8$$SyntheticClass:0)
+at androidx.test.core.app.ActivityScenario.lambda$onActivity$2$androidx-test-core-app-ActivityScenario(ActivityScenario.java:794)
+at androidx.test.core.app.ActivityScenario$$ExternalSyntheticLambda2.run(D8$$SyntheticClass:0)
+at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:457)
+at java.util.concurrent.FutureTask.run(FutureTask.jav
+
+### com.sherifradwan.ancnative.AncWorkflowTest.launchIsFailClosedAndNeverRendersSyntheticPatientsBeforeRealUnlock
+java.lang.AssertionError: Assert failed: The component with (Text + InputText + EditableText contains 'SYNTHETIC DEMO DATA — NOT FOR CLINICAL USE' (ignoreCase: false))[0] is not displayed!
+at androidx.compose.ui.test.AssertionsKt.assertIsDisplayed(Assertions.kt:34)
+at com.sherifradwan.ancnative.AncWorkflowTest.assertDemoBannerDisplayed(AncWorkflowTest.kt:978)
+at com.sherifradwan.ancnative.AncWorkflowTest.launchIsFailClosedAndNeverRendersSyntheticPatientsBeforeRealUnlock(AncWorkflowTest.kt:84)
+
+
+### com.sherifradwan.ancnative.SecurityWorkflowTest.appLockScreenValidatesSixDigitPinAndUnlocksWithDefaultPin
+java.lang.AssertionError: Assert failed: The component with Text + InputText + EditableText contains 'دكتور شريف رضوان كلينك' (ignoreCase: false) is not displayed!
+at androidx.compose.ui.test.AssertionsKt.assertIsDisplayed(Assertions.kt:34)
+at com.sherifradwan.ancnative.SecurityWorkflowTest.appLockScreenValidatesSixDigitPinAndUnlocksWithDefaultPin(SecurityWorkflowTest.kt:67)
+
+
+### com.sherifradwan.ancnative.SecurityWorkflowTest.securitySettingsDialogAllowsAutoLockTimeoutConfigurationAndManualLock
+java.lang.AssertionError: Assert failed: The component with Text + InputText + EditableText contains 'إعدادات الأمان وقفل التطبيق' (ignoreCase: false) is not displayed!
+at androidx.compose.ui.test.AssertionsKt.assertIsDisplayed(Assertions.kt:34)
+at com.sherifradwan.ancnative.SecurityWorkflowTest.securitySettingsDialogAllowsAutoLockTimeoutConfigurationAndManualLock(SecurityWorkflowTest.kt:122)
+
+
+### com.sherifradwan.ancnative.storage.EncryptedRecordsTest.schemaThreeContainsOnlyApprovedTablesColumnsForeignKeysAndIndexes
+java.lang.AssertionError: expected:&lt;[patients, visits, vault_metadata, save_receipts, previous_pregnancies, patient_command_receipts, patient_dating, ultrasound_scans, lab_investigations, medication_records, clinical_command_receipts]&gt; but was:&lt;[patients, visits, vault_metadata, save_receipts, previous_pregnancies, patient_command_receipts, patient_dating, ultrasound_scans, lab_investigations, medication_records, clinical_command_receipts, patient_attachments]&gt;
+at org.junit.Assert.fail(Assert.java:89)
+at org.junit.Assert.failNotEquals(Assert.java:835)
+at org.junit.Assert.assertEquals(Assert.java:120)
+at org.junit.Assert.assertEquals(Assert.java:146)
+at com.sherifradwan.ancnative.storage.EncryptedRecordsTest.schemaThreeContainsOnlyApprovedTablesColumnsForeignKeysAndIndexes$lambda$0(EncryptedRecordsTest.kt:35)
+at com.sherifradwan.ancnative.storage.EncryptedRecordsTest.$r8$lambd
+
+### com.sherifradwan.ancnative.storage.EncryptedRecordsTest.seedSaveReceiptRetryStaleAndCrossPatientRulesAreTransactional
+java.lang.AssertionError: expected:&lt;3&gt; but was:&lt;4&gt;
+at org.junit.Assert.fail(Assert.java:89)
+at org.junit.Assert.failNotEquals(Assert.java:835)
+at org.junit.Assert.assertEquals(Assert.java:120)
+at org.junit.Assert.assertEquals(Assert.java:146)
+at com.sherifradwan.ancnative.storage.EncryptedRecordsTest$seedSaveReceiptRetryStaleAndCrossPatientRulesAreTransactional$1$1.invokeSuspend(EncryptedRecordsTest.kt:465)
+at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:101)
+at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:95)
+at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:69)
+at kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source:1)
+at kotlinx.coroutines.BuildersKt__Bu
+
+### com.sherifradwan.ancnative.storage.EncryptedRecordsTest.emptyCommittedResultNeverSilentlyReseedsFixtures
+android.database.sqlite.SQLiteConstraintException: FOREIGN KEY constraint failed (code 1811)
+at net.zetetic.database.sqlcipher.SQLiteConnection.nativeExecuteForChangedRowCount(Native Method)
+at net.zetetic.database.sqlcipher.SQLiteConnection.executeForChangedRowCount(SQLiteConnection.java:818)
+at net.zetetic.database.sqlcipher.SQLiteSession.executeForChangedRowCount(SQLiteSession.java:759)
+at net.zetetic.database.sqlcipher.SQLiteStatement.executeUpdateDelete(SQLiteStatement.java:90)
+at net.zetetic.database.sqlcipher.SQLiteDatabase.executeSql(SQLiteDatabase.java:2003)
+at net.zetetic.database.sqlcipher.SQLiteDatabase.execSQL(SQLiteDatabase.java:1911)
+at com.sherifradwan.ancnative.storage.EncryptedRecordsTest$emptyCommittedResultNeverSilentlyReseedsFixtures$1$1.invokeSuspend(EncryptedRecordsTest.kt:600)
+at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34
+
+### com.sherifradwan.ancnative.storage.EncryptedRecordsTest.clinicalCommandsPersistDatingAndUltrasoundWithReceiptsAndAudit
+java.lang.AssertionError: expected:&lt;1&gt; but was:&lt;2&gt;
+at org.junit.Assert.fail(Assert.java:89)
+at org.junit.Assert.failNotEquals(Assert.java:835)
+at org.junit.Assert.assertEquals(Assert.java:647)
+at org.junit.Assert.assertEquals(Assert.java:633)
+at com.sherifradwan.ancnative.storage.EncryptedRecordsTest$clinicalCommandsPersistDatingAndUltrasoundWithReceiptsAndAudit$1$1.invokeSuspend(EncryptedRecordsTest.kt:668)
+at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:101)
+at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:95)
+at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:69)
+at kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source:1)
+at kotlinx.coroutines.BuildersKt__B
+
+### com.sherifradwan.ancnative.storage.EncryptedRecordsTest.clinicalCommandsPersistLabAndMedicationWithReceiptsAndAudit
+java.lang.AssertionError: expected:&lt;1&gt; but was:&lt;7&gt;
+at org.junit.Assert.fail(Assert.java:89)
+at org.junit.Assert.failNotEquals(Assert.java:835)
+at org.junit.Assert.assertEquals(Assert.java:120)
+at org.junit.Assert.assertEquals(Assert.java:146)
+at com.sherifradwan.ancnative.storage.EncryptedRecordsTest$clinicalCommandsPersistLabAndMedicationWithReceiptsAndAudit$1$1.invokeSuspend(EncryptedRecordsTest.kt:738)
+at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:101)
+at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:95)
+at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:69)
+at kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source:1)
+at kotlinx.coroutines.BuildersKt__Buil
+
+### com.sherifradwan.ancnative.storage.EncryptedRecordsTest.encryptedSchemaOneMigratesLogicalRowsUnknownsMetadataAndRawVaultUuid
+java.lang.AssertionError: expected:&lt;4&gt; but was:&lt;5&gt;
+at org.junit.Assert.fail(Assert.java:89)
+at org.junit.Assert.failNotEquals(Assert.java:835)
+at org.junit.Assert.assertEquals(Assert.java:120)
+at org.junit.Assert.assertEquals(Assert.java:146)
+at com.sherifradwan.ancnative.storage.EncryptedRecordsTest$encryptedSchemaOneMigratesLogicalRowsUnknownsMetadataAndRawVaultUuid$1$1.invokeSuspend(EncryptedRecordsTest.kt:216)
+at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:101)
+at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:95)
+at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:69)
+at kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source:1)
+at kotlinx.coroutines.Builder
+
+### com.sherifradwan.ancnative.storage.EncryptedRecordsTest.previousPregnancyCreateCorrectAndReplayAdvanceBothRevisionsAtomically
+java.lang.IllegalArgumentException: List has more than one element.
+at kotlin.collections.CollectionsKt___CollectionsKt.single(_Collections.kt:618)
+at com.sherifradwan.ancnative.storage.EncryptedRecordsTest$previousPregnancyCreateCorrectAndReplayAdvanceBothRevisionsAtomically$1$1.invokeSuspend(EncryptedRecordsTest.kt:399)
+at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:101)
+at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:95)
+at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:69)
+at kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source:1)
+at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:47)
+at kotlinx.coroutines.BuildersKt.runBlocking$default(U
+
+### com.sherifradwan.ancnative.storage.VaultIntegrationTest.initializationCancellationAndDetachBlockWhileUnlockCancellationRemainsRetryable
+kotlinx.coroutines.TimeoutCancellationException: Timed out waiting for 15000 ms
+at kotlinx.coroutines.TimeoutKt.TimeoutCancellationException(Timeout.kt:188)
+at kotlinx.coroutines.TimeoutCoroutine.run(Timeout.kt:156)
+at kotlinx.coroutines.EventLoopImplBase$DelayedRunnableTask.run(EventLoop.common.kt:505)
+at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+at kotlinx.coroutines.DefaultExecutor.run(DefaultExecutor.kt:105)
+at java.lang.Thread.run(Thread.java:764)
+
+
+### com.sherifradwan.ancnative.storage.VaultIntegrationTest.backgroundAndManualLockHideSnapshotAndRejectLateAuthentication
+java.lang.AssertionError: expected:&lt;3&gt; but was:&lt;4&gt;
+at org.junit.Assert.fail(Assert.java:89)
+at org.junit.Assert.failNotEquals(Assert.java:835)
+at org.junit.Assert.assertEquals(Assert.java:120)
+at org.junit.Assert.assertEquals(Assert.java:146)
+at com.sherifradwan.ancnative.storage.VaultIntegrationTest$backgroundAndManualLockHideSnapshotAndRejectLateAuthentication$1.invokeSuspend(VaultIntegrationTest.kt:173)
+at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+at kotlinx.coroutines.internal.ScopeCoroutine.afterResume(Scopes.kt:28)
+at kotlinx.coroutines.AbstractCoroutine.resumeWith(AbstractCoroutine.kt:100)
+at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:47)
+at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:101)
+at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+at 

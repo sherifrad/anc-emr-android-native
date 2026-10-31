@@ -31,3 +31,8 @@ One spec section per cluster (e.g. "layouts and wrapping", "labels and plurals",
 Fixed in round 3p (2026-10-31, NOT yet seen on a device): DV-12 duplicate section titles in the printed report and the cut-off dialog title "Clinical Medic...". The pink "Print PDF" button is NOT a contrast failure (white on #934F5B is about 6.0:1, passes AA); no change made.
 Still open and needing the phone to reproduce: DV-7, DV-9, DV-11, DV-14, N-4, N-6, N-7, N-8, N-9.
 
+Seen on the phone 2026-10-31 (print preview, QA copy):
+| P-1 | Printed report, Antenatal Care Visits Log table (and the medications table header) | Narrow columns break words mid-word: "Gestati onal Age (GA)", "Blood Pressu re (BP)", "Weigh t", "120/8 0", "165/1 05", "Frequen cy". Needs column widths / smaller font / no-break for values. |
+| P-2 | Printed report, attestation box | "Official Stamp & Signature" is printed twice (italic grey, then plain). Remove one. |
+Round 3p verified on the phone: duplicate section titles gone, dialog title fully visible (DV-12 done).
+
