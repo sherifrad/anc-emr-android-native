@@ -15,3 +15,7 @@ D12 (2026-10-31) Visit blood-pressure alerts use two ACOG levels (raised 140/90,
 D13 (2026-10-31) IVF embryo days 3, 5, 6 accepted; redating against the scan is a SUGGESTION ONLY (ACOG table); LMP cycle-length adjustment is postponed to its own round.
 D14 (2026-10-31) Verified rounds are committed locally without asking each time; never pushed (owner merges and pushes).
 D15 (2026-10-31) Screen-capture block (FLAG_SECURE) is removed in release builds too, permanently (it is already off in debug). Screenshots and the recent-apps preview may show app content. The owner confirmed this explicitly after being told it lowers protection.
+D16 (2026-10-31) English only: no Arabic resources, no Arabic UI; Arabic patient NAMES and notes still display and print with correct direction.
+D17 (2026-10-31) Hysterotomy deliveries count as cesarean deliveries in the previous-delivery totals, and the difference is shown in the history text (for example G5 P4+0 with "4 previous CS (3 CS, 1 hysterotomy)") on the list, the profile and the printed report; also mentioned where the surgical history is shown. To be built as its own round (reuse previousDeliverySummary).
+D18 (2026-10-31) Scan, lab and medication dates may be in the future (kept as is); only visit dates refuse the future (D12).
+D19 (2026-10-31) agy writing lanes may use --dangerously-skip-permissions (the upstream relay no longer sets accept-edits). Done in run_pipeline.py for writing lanes only; read-only lanes use the relay sandbox. Never for the phone: phone lanes still obey the QA-copy rules.

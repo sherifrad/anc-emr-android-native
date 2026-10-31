@@ -335,7 +335,7 @@ def dispatch(step, role_file, lane_key, allow_key, extra="", read_only=False, cl
     for ci, (cli, model) in enumerate(chain):   # a dead or silent provider hands the lane to the next model, never stops the run
         relay = SK / f"vendor/delegate-skills/skills/{cli}-delegate/scripts/relay.mjs"
         out_dir = RUN / (step if ci == 0 else f"{step}.fallback{ci}")
-        cmd = f'node "{relay}" --brief "{brief}" --cd "{ROOT}" --out-dir "{out_dir}"' + (f' --model "{model}"' if model and cli != "claude" else "") + (" --read-only" if read_only else "")
+        cmd = f'node "{relay}" --brief "{brief}" --cd "{ROOT}" --out-dir "{out_dir}"' + (f' --model "{model}"' if model and cli != "claude" else "") + (" --read-only" if read_only else "") + (" --dangerously-skip-permissions" if cli == "agy" and not read_only else "")   # owner 2026-10-31: agy writing lanes use this flag (the upstream relay no longer sets accept-edits); read-only lanes use the relay sandbox instead
         if cli == "claude" and model: cmd = f'ANTHROPIC_MODEL="{model}" ' + cmd   # claude relay drops --model
         rc, _, _ = sh(cmd, timeout=1800)
         try: r = json.loads((out_dir / "result.json").read_text())
