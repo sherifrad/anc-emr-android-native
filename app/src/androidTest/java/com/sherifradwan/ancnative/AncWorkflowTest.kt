@@ -99,11 +99,7 @@ class AncWorkflowTest {
     fun recordsWindowKeepsSecureFlagAndGateExplainsDraftPolicy() {
         compose.activityRule.scenario.onActivity { activity ->
             val flags = activity.window.attributes.flags
-            if (!com.sherifradwan.ancnative.BuildConfig.DEBUG) {
-                assertFalse(flags and WindowManager.LayoutParams.FLAG_SECURE == 0)
-            } else {
-                assertEquals(0, flags and WindowManager.LayoutParams.FLAG_SECURE)
-            }
+            assertEquals(0, flags and WindowManager.LayoutParams.FLAG_SECURE)
         }
         compose.onNodeWithText("Only completed saves persist", substring = true)
             .assertIsDisplayed()

@@ -61,7 +61,7 @@ Addressing sluggishness and ergonomic bottlenecks:
 | **Android Lint** | Full analysis | **0 ERRORS** | Zero lint regressions across debug and test targets. |
 | **Connected Tests** | Virtual emulator API 36 (`emulator-5586`) | **35 / 35 PASSED** | Complete instrumentation test suite passed in 41s. |
 | **Cold Start Performance** | Android 16 (API 36) | **520 ms** | Status `ok`, launch state `COLD`, 0 crashes, 0 ANRs. |
-| **Fail-Closed Security** | Device Keystore & SQLCipher | **PASS** | `FLAG_SECURE` maintained; synthetic banner prominent. |
+| **Fail-Closed Security** | Device Keystore & SQLCipher | **PASS** | `FLAG_SECURE` maintained at the time of this report (REMOVED later by owner decision D15, 2026-10-31); synthetic banner prominent. |
 
 ---
 

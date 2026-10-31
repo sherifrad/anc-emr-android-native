@@ -4,7 +4,7 @@
 Stdlib only. Prints PASS/FAIL per sub-check, exits 1 if any FAIL.
 Textual source contract only; verifies nothing at runtime.
   S17 file_paths.xml: cache-path with path backups/ (or backups), still camera/ and files-path.
-  S18 MainActivity.kt: FLAG_SECURE inside an if whose condition has !BuildConfig.DEBUG; no VAULT_DEBUG.
+  S18 MainActivity.kt: no FLAG_SECURE (owner decision D15 replaced the release-only block); no VAULT_DEBUG.
   S19 SecuritySettingsRepository.kt: loadSettings needsPinSetup ignores key_pin_change_required; lockApp assigns needsPinSetup.
   S20 PatientTwoPageReportDialog.kt: no javaScriptEnabled = true.
   S21 SecuritySettingsDialog.kt: no AutoLockTimeout.entries / setAutoLockTimeout(; restore_confirm_dialog inside an AlertDialog.
@@ -88,24 +88,16 @@ else:
 # S18
 act = read(MAIN / "MainActivity.kt")
 if act is None:
-    record("S18 FLAG_SECURE only in release, no VAULT_DEBUG", False, "file missing")
+    record("S18 no FLAG_SECURE (D15), no VAULT_DEBUG", False, "file missing")
 else:
     code = strip_comments(act)
     problems = []
-    flags = [m.start() for m in re.finditer(r"FLAG_SECURE", code)]
-    if not flags:
-        problems.append("FLAG_SECURE missing")
-    for pos in flags:
-        ifs = list(re.finditer(r"\bif\s*\(", code[:pos]))
-        ok = False
-        if ifs:
-            cond = paren_after(code, ifs[-1].start())
-            ok = "!BuildConfig.DEBUG" in cond and ifs[-1].start() + len(cond) <= pos
-        if not ok:
-            problems.append("FLAG_SECURE not under if(!BuildConfig.DEBUG)")
+    # D15 (owner, 2026-10-31): the screen-capture block is removed in release builds too.
+    if "FLAG_SECURE" in code:
+        problems.append("FLAG_SECURE present (removed by owner decision D15)")
     if "VAULT_DEBUG" in code:
         problems.append("VAULT_DEBUG still present")
-    record("S18 FLAG_SECURE only in release, no VAULT_DEBUG", not problems, "; ".join(dict.fromkeys(problems)))
+    record("S18 no FLAG_SECURE (D15), no VAULT_DEBUG", not problems, "; ".join(dict.fromkeys(problems)))
 
 # S19
 repo = read(MAIN / "security/SecuritySettingsRepository.kt")

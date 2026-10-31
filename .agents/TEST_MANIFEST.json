@@ -868,6 +868,16 @@
       "covers": ["Q99"]
     },
     {
+      "id": "STATIC-r3r",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3r.py",
+      "deps": [
+        "app/src/main/**/MainActivity.kt",
+        ".agents/checks/check_r3r.py"
+      ],
+      "covers": ["S83"]
+    },
+    {
       "id": "UNIT-all",
       "tier": 2,
       "cmd": "./gradlew --offline :app:testDebugUnitTest",
