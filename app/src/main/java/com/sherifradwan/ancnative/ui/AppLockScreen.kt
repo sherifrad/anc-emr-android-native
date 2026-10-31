@@ -80,6 +80,9 @@ fun AppLockScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var biometricAttemptedOnLaunch by remember { mutableStateOf(false) }
     var lockoutRemainingMs by remember { mutableIntStateOf(securityRepo.getLockoutRemainingMs().toInt()) }
+    val pinInvalidMessage = stringResource(R.string.pin_invalid)
+    val pinMismatchMessage = stringResource(R.string.pin_mismatch)
+    val pinIncorrectMessage = stringResource(R.string.pin_incorrect)
     LaunchedEffect(Unit) {
         while (true) {
             lockoutRemainingMs = securityRepo.getLockoutRemainingMs().toInt()
@@ -129,14 +132,14 @@ fun AppLockScreen(
             if (updated.length == 6) {
                 if (setupMode && !legacyChangeRequired) {
                     if (!isValidNewPin(updated)) {
-                        errorMessage = context.getString(R.string.pin_invalid)
+                        errorMessage = pinInvalidMessage
                         enteredPin = ""
                     } else if (!isConfirmingPin) {
                         confirmationPin = updated
                         isConfirmingPin = true
                         enteredPin = ""
                     } else if (updated != confirmationPin) {
-                        errorMessage = context.getString(R.string.pin_mismatch)
+                        errorMessage = pinMismatchMessage
                         confirmationPin = ""
                         isConfirmingPin = false
                         enteredPin = ""
@@ -155,7 +158,7 @@ fun AppLockScreen(
                         onUnlockSuccess()
                     }
                 } else {
-                    errorMessage = if (securityRepo.getLockoutRemainingMs() > 0) null else context.getString(R.string.pin_incorrect)
+                    errorMessage = if (securityRepo.getLockoutRemainingMs() > 0) null else pinIncorrectMessage
                     enteredPin = ""
                 }
             }

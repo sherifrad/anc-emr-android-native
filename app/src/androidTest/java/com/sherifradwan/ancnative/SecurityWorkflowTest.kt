@@ -4,6 +4,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -118,6 +119,13 @@ class SecurityWorkflowTest {
 
         // 1. Open Security Settings dialog via Top Bar
         compose.onNodeWithTag("openSecuritySettings").performClick()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithText("Clinic & System Settings").fetchSemanticsNodes().isNotEmpty()
+        }
+        // The dialog animates in: wait until the title is really on screen, not just in the tree.
+        compose.waitUntil(timeoutMillis = 5_000) {
+            runCatching { compose.onNodeWithText("Clinic & System Settings").assertIsDisplayed() }.isSuccess
+        }
         compose.onNodeWithTag("securitySettingsDialog").assertIsDisplayed()
         compose.onNodeWithText("Clinic & System Settings").assertIsDisplayed()
 

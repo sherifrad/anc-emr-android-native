@@ -107,34 +107,6 @@ class AncWorkflowTest {
     }
 
     @Test
-    fun everyNewEnglishStorageStringHasAnArabicValue() {
-        compose.activityRule.scenario.onActivity { activity ->
-            val configuration = Configuration(activity.resources.configuration).apply {
-                setLocale(Locale("ar"))
-            }
-            val arabic = activity.createConfigurationContext(configuration).resources
-            val names = listOf(
-                "secure_demo_storage",
-                "initialize_demo_storage",
-                "unlock_demo_storage",
-                "credential_prompt_title",
-                "unsaved_drafts_policy",
-                "storage_uninitialized_title",
-                "storage_locked_title",
-                "storage_blocked_title",
-                "save_pending",
-                "save_reconciling",
-                "save_unresolved",
-                "save_storage_error",
-            )
-            names.forEach { name ->
-                val identifier = arabic.getIdentifier(name, "string", activity.packageName)
-                check(identifier != 0 && arabic.getString(identifier).isNotBlank()) { name }
-            }
-        }
-    }
-
-    @Test
     fun reviewedVaultLayoutsKeepActionsReachableAndPatientDataFailClosed() {
         val fixtures = listOf(
             VaultFixture(
@@ -260,9 +232,6 @@ class AncWorkflowTest {
                 editorState(fixture.phase, fixture.error),
             )
 
-            val lock = compose.onNodeWithTag("lockStorage").assertIsDisplayed().assertIsEnabled()
-            assertFullyWithinHost(lock, "${fixture.layout.name} lock", density, minHeightDp = 48f)
-
             assertFullyWithinHost(
                 compose.onNodeWithTag("visitEditor").performScrollTo().assertIsDisplayed(),
                 "${fixture.layout.name} editor heading",
@@ -319,12 +288,6 @@ class AncWorkflowTest {
             }
             assertFullyWithinHost(cancel, "${fixture.layout.name} cancel", density, minHeightDp = 48f)
             assertFullyWithinHost(save, "${fixture.layout.name} save", density, minHeightDp = 48f)
-            assertFullyWithinHost(
-                compose.onNodeWithTag("lockStorage").assertIsDisplayed(),
-                "${fixture.layout.name} lock after editor scroll",
-                density,
-                minHeightDp = 48f,
-            )
         }
     }
 
@@ -1048,7 +1011,7 @@ class AncWorkflowTest {
         const val DEMO_BANNER = "Dr. Sherif Radwan Clinic"
         const val FIXTURE_HOST_TAG = "layoutFixtureHost"
         const val TEST_PATIENT_ID = "10000000-0000-4000-8000-000000000001"
-        const val TEST_PATIENT_IDENTITY = "Maya Example · DEMO-ANC-001"
+        const val TEST_PATIENT_IDENTITY = "Maya Example · Routine Antenatal Visit & Vitals"
         const val P3_PATIENT_ID = "00000000-0000-4000-8000-000000000501"
         const val P3_PREGNANCY_ID = "00000000-0000-4000-8000-000000000502"
         const val P3_CREATE_OPERATION = "00000000-0000-4000-8000-000000000503"

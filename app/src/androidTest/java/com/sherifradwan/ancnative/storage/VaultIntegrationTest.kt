@@ -17,6 +17,7 @@ import javax.crypto.spec.GCMParameterSpec
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -215,7 +216,7 @@ class VaultIntegrationTest {
     }
 
     @Test
-    fun initializationCancellationAndDetachBlockWhileUnlockCancellationRemainsRetryable() = runBlocking {
+    fun initializationCancellationAndDetachRollBackCleanlyWhileUnlockCancellationRemainsRetryable() = runBlocking {
         listOf<(VaultController, Long) -> Unit>(
             { controller, id -> controller.cancelAuthentication(id) },
             { controller, id -> controller.authenticationDetached(id) },
@@ -228,11 +229,16 @@ class VaultIntegrationTest {
                 val auth = fresh.awaitState { it is VaultState.Authenticating } as VaultState.Authenticating
                 assertTrue(fresh.files.inspect() != VaultDiskState.Empty)
                 interrupt(fresh.controller, auth.request.id)
-                assertEquals(
-                    VaultState.Blocked(VaultBlockReason.INCOMPLETE_SETUP),
-                    fresh.awaitState { it is VaultState.Blocked },
-                )
-                assertTrue(fresh.files.inspect() != VaultDiskState.Empty)
+                assertEquals(VaultState.Uninitialized, fresh.awaitState { it is VaultState.Uninitialized })
+                repeat(100) {
+                    if (fresh.files.inspect() != VaultDiskState.Empty || fresh.keys.hasAnyAlias()) delay(50)
+                }
+                assertEquals(VaultDiskState.Empty, fresh.files.inspect())
+                assertFalse(fresh.keys.hasAnyAlias())
+                fresh.controller.beginInitialization()
+                val retry = fresh.awaitState { it is VaultState.Authenticating } as VaultState.Authenticating
+                fresh.controller.completeAuthentication(retry.request.id)
+                assertEquals(VaultState.Locked, fresh.awaitState { it is VaultState.Locked })
             } finally {
                 fresh.cleanup()
             }

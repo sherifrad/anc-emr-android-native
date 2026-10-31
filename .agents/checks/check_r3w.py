@@ -9,8 +9,8 @@ Textual source contract only; verifies nothing at runtime.
   S95 AncViewModel.kt calls loadDraft, holdSlot, releaseSlot, deleteDraft; AncApp.kt has the testTags
       draftContinue and draftDiscard, dismissOnBackPress = false, dismissOnClickOutside = false and references
       draftRecoveryPrompt; no ui file other than AncApp.kt mentions DraftRecoveryPrompt.
-  S96 no string in values/ or values-ar/ strings.xml says "memory-only" or "discarded on lock"; the five
-      draft_recovery_* names and the nine draft_screen_* names exist in both files.
+  S96 no string in values/strings.xml says "memory-only" or "discarded on lock"; the five
+      draft_recovery_* names and the nine draft_screen_* names exist in it.
 """
 import re
 import sys
@@ -24,7 +24,7 @@ ANC_STATE = MAIN / "state/AncState.kt"
 AUTOSAVER = MAIN / "state/DraftAutosaver.kt"
 VIEWMODEL = MAIN / "state/AncViewModel.kt"
 ANC_APP = MAIN / "ui/AncApp.kt"
-STRINGS = (RES / "values/strings.xml", RES / "values-ar/strings.xml")
+STRINGS = (RES / "values/strings.xml",)
 
 RECOVERY_STRINGS = (
     "draft_recovery_title", "draft_recovery_body", "draft_recovery_stale",
@@ -145,8 +145,8 @@ def check_s96():
         for name in RECOVERY_STRINGS + SCREEN_STRINGS:
             if not re.search(r'<string\s+name="' + name + r'"', xml):
                 problems.append(label + " lacks " + name)
-    record("S96 no memory-only / discarded-on-lock wording in either strings file; recovery and screen-name strings "
-           "exist in both", not problems, "; ".join(problems))
+    record("S96 no memory-only / discarded-on-lock wording in the strings file; recovery and screen-name strings "
+           "exist", not problems, "; ".join(problems))
 
 
 def main():

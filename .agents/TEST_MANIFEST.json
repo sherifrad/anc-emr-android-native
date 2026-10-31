@@ -1027,7 +1027,6 @@
         "app/src/main/**/state/AncViewModel.kt",
         "app/src/main/**/ui/**/*.kt",
         "app/src/main/res/values/strings.xml",
-        "app/src/main/res/values-ar/strings.xml",
         ".agents/checks/check_r3w.py"
       ],
       "covers": ["S94", "S95", "S96"]
@@ -1067,6 +1066,31 @@
         "app/build.gradle*"
       ],
       "covers": ["G2"]
+    },
+    {
+      "id": "STATIC-r3y",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3y.py",
+      "deps": [
+        "app/src/main/res/**",
+        "app/src/main/**/security/BiometricAuthManager.kt",
+        "app/src/main/**/ui/AppLockScreen.kt",
+        "app/src/androidTest/**/*.kt",
+        ".agents/checks/check_r3y.py"
+      ],
+      "covers": ["S99", "S100"]
+    },
+    {
+      "id": "LINT-errors",
+      "tier": 2,
+      "cmd": "./gradlew --offline :app:lintDebug",
+      "deps": [
+        "app/src/main/**/*.kt",
+        "app/src/main/res/**",
+        "app/src/main/AndroidManifest.xml",
+        "app/build.gradle*"
+      ],
+      "covers": ["Q118"]
     }
   ]
 }

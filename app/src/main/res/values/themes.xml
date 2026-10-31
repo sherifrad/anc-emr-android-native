@@ -5,7 +5,5 @@
         <item name="android:statusBarColor">#FBF8F5</item>
         <item name="android:navigationBarColor">#FBF8F5</item>
         <item name="android:fontFamily">sans</item>
-        <item name="android:windowSplashScreenBackground">#FBF8F5</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/clinic_logo_foreground</item>
     </style>
 </resources>

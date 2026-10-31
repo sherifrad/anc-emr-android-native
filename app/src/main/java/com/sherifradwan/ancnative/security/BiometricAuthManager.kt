@@ -10,6 +10,7 @@ import android.os.Build
 object BiometricAuthManager {
 
     fun isBiometricAvailable(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT < 28) return false
         if (Build.VERSION.SDK_INT < 30) return false
         val manager = context.getSystemService(BiometricManager::class.java) ?: return false
         val canAuth = manager.canAuthenticate(
@@ -24,6 +25,10 @@ object BiometricAuthManager {
         subtitle: String = "Touch the fingerprint sensor to unlock the application",
         onResult: (Boolean) -> Unit,
     ): CancellationSignal? {
+        if (Build.VERSION.SDK_INT < 28) {
+            onResult(false)
+            return null
+        }
         if (!isBiometricAvailable(activity)) {
             onResult(false)
             return null
@@ -31,16 +36,20 @@ object BiometricAuthManager {
 
         val cancellationSignal = CancellationSignal()
         try {
-            val prompt = BiometricPrompt.Builder(activity)
+            val builder = BiometricPrompt.Builder(activity)
                 .setTitle(title)
                 .setSubtitle(subtitle)
                 .setNegativeButton("Cancel & Use PIN", activity.mainExecutor) { _, _ ->
                     onResult(false)
                 }
-                .setAllowedAuthenticators(
+
+            if (Build.VERSION.SDK_INT >= 30) {
+                builder.setAllowedAuthenticators(
                     BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK,
                 )
-                .build()
+            }
+
+            val prompt = builder.build()
 
             prompt.authenticate(
                 cancellationSignal,
