@@ -346,4 +346,6 @@
     <string name="bp_alert_severe">Severe-range blood pressure (160/110 or above) - urgent assessment needed</string>
     <string name="embryo_day_6">Day 6</string>
     <string name="redating_hint">Scan GA differs from the current dating by %1$d days (more than %2$d). Consider using the scan due date in Dating.</string>
+    <string name="bp_badge_severe">Severe BP</string>
+    <string name="bp_attention_severe">Severe-range blood pressure at the last visit: %1$s (%2$s)</string>
 </resources>

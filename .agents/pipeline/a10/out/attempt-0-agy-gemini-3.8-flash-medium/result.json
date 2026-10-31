@@ -1,0 +1,26 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "failed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": true,
+  "readOnlyViolation": true,
+  "touchedFiles": [
+    "agents/pipeline/OWNER_DECISIONS.md",
+    "agents/pipeline/SPEC_FIX_R3.md",
+    "agents/pipeline/run_pipeline.py",
+    ".agents/backup-20261031-134721/",
+    ".agents/checks/check_r3q.py",
+    ".agents/pipeline/r3q-run.log",
+    ".agents/pipeline/r3q/",
+    ".agents/pipeline/r3r/",
+    "app/src/test/java/com/sherifradwan/ancnative/model/SevereBpAttentionTest.kt",
+    "app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintBpAlertTest.kt"
+  ],
+  "finalMessage": "ditorErrorCard(hasErrors: Boolean, state: AncState)` in [`ui/Components.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt).\n- Risk: Clinical editor displays patient-domain error text due to copy-paste bug.\n\n**R-11** | `MED` | Vocabulary Lists & Medication Frequencies Redefined\n- Copy 1: [MedicationEditor.kt:273](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/MedicationEditor.kt#L273) `items = listOf(\"Once daily\", \"Twice daily\", \"Three times daily\", \"As needed (PRN)\")`\n- Copy 2: [CodexSettingsSections.kt:968](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/CodexSettingsSections.kt#L968) `val commonFrequencies = listOf(\"Once daily\", \"Twice daily\", \"Three times daily\", \"At bedtime\", \"As needed (PRN)\")`\n- Single constant: `ClinicalPresets.commonMedicationFrequencies` in [`ui/ClinicalPresets.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalPresets.kt).\n- Risk: Doctors see different frequency autocomplete presets in settings vs clinical entry.\n\n**R-12** | `HIGH` | Test Suite Copies Production Progress & Countdown Formulas\n- Copy 1: [GestationalBannerLogicTest.kt:38, 68, 96, 171](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt#L38) `val progress = (result.totalDays / 280f).coerceIn(0f, 1f)`\n- Copy 2: [GestationalBannerLogicTest.kt:42, 72, 101, 133](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt#L42) `val daysDiff = ChronoUnit.DAYS.between(asOf, edd)`\n- Production: [GestationalBanner.kt:129, 146](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt#L129)\n- Single function: Production should expose `progressFraction` and `daysToEdd` on `GestationalAgeResult`; tests must assert against production calls.\n- Risk: Tests test their own local copies of math rather than production code, staying green even if production calculation breaks.\n\n---\n\n### Audit Findings Summary\n\n| ID | Severity | Category | Target Location |\n|:---|:---|:---|:---|\n| **R-1** | HIGH | (1) GA / EDD arithmetic | `model/GestationalAgeEngine.kt` |\n| **R-3** | HIGH | (3) Validation rules | `storage/ClinicalCommands.kt` |\n| **R-4** | HIGH | (4) Obstetric history summary | `model/ClinicalSummaryGenerator.kt` |\n| **R-12** | HIGH | (8) Production math in tests | `model/GestationalAgeEngine.kt` |\n| **R-5** | MED | (4) Risk badge styling | `ui/ClinicalBadges.kt` |\n| **R-6** | MED | (4) SaveUiError mapping | `state/AncState.kt` |\n| **R-7** | MED | (5) Gestational age display text | `model/GestationalAgeEngine.kt` |\n| **R-9** | MED | (6) Cloned editor text fields | `ui/Components.kt` |\n| **R-11** | MED | (7) Redefined vocabulary lists | `ui/ClinicalPresets.kt` |\n| **R-2** | LOW | (2) Date formatting | `model/IsoDates.kt` |\n| **R-8** | LOW | (5) Fetal metrics formatting | `ui/ClinicalFormat.kt` |\n| **R-10** | LOW | (6) Error card composable | `ui/Components.kt` |\n\n### Top 3 to Fix First\n1. **R-4 (Obstetric History & Delivery Summary)**: Prev CS/SVD parsing directly impacts clinical labor management decisions (trial of labor after cesarean vs repeat elective CS); having three divergent text formats across list, profile, and print is a high clinical safety risk.\n2. **R-1 & R-12 (Gestational Age / EDD Countdown & Banner Math)**: Extract progress fraction and countdown days into `GestationalAgeEngine.kt` so UI components and unit tests invoke the single canonical engine calculation instead of mirroring ad-hoc math.\n3. **R-3 (Clinical Date Validation)**: Unify date checks across `ClinicalCommands` and align policy with `SaveVisitCommand` to eliminate inconsistencies around empty, invalid, or future dates.",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/a10/out/attempt-0-agy-gemini-3.8-flash-medium/result.json",
+  "timestamp": "2026-10-31T11:52:01.469Z"
+}

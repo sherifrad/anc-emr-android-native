@@ -5,8 +5,10 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
 import com.sherifradwan.ancnative.R
+import com.sherifradwan.ancnative.model.BpLevel
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
+import com.sherifradwan.ancnative.model.bpLevel
 import com.sherifradwan.ancnative.model.parseIsoDateOrNull
 import com.sherifradwan.ancnative.security.SecuritySettingsState
 import java.io.ByteArrayOutputStream
@@ -14,6 +16,9 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 object PatientPrintHtmlGenerator {
+
+    private const val BP_ALERT_RAISED = "Raised BP - recheck"
+    private const val BP_ALERT_SEVERE = "Severe-range BP - urgent assessment"
 
     private fun getLogoBase64(context: Context?): String {
         if (context == null) return ""
@@ -81,19 +86,32 @@ object PatientPrintHtmlGenerator {
 
         // Visits table rows (Centered text, No SFH, No FHR, Spacious and comfortable)
         val sortedVisits = patient.visits.sortedBy { it.date }
+        val displayedVisits = sortedVisits.take(12)
+        val bpAlertCss = when {
+            displayedVisits.any { bpLevel(it.bloodPressure) == BpLevel.SEVERE } ->
+                "\n        .bp-alert { font-size: 6.8pt; line-height: 1.1; margin-top: 2px; color: #b45309; }\n        .bp-alert-severe { color: #dc2626; }"
+            displayedVisits.any { bpLevel(it.bloodPressure) == BpLevel.RAISED } ->
+                "\n        .bp-alert { font-size: 6.8pt; line-height: 1.1; margin-top: 2px; color: #b45309; }"
+            else -> ""
+        }
         val visitsRowsHtml = if (sortedVisits.isEmpty()) {
             """<tr><td colspan="6" class="text-center empty-cell">No clinical visits recorded yet</td></tr>"""
         } else {
-            sortedVisits.take(12).mapIndexed { idx, v ->
+            displayedVisits.mapIndexed { idx, v ->
                 val vGa = parseIsoDateOrNull(v.date)?.let { vDate ->
                     patient.dating?.calculateGestationalAgeResult(vDate)?.formatted
                 } ?: "-"
+                val bpAlert = when (bpLevel(v.bloodPressure)) {
+                    BpLevel.RAISED -> """<div class="bp-alert">$BP_ALERT_RAISED</div>"""
+                    BpLevel.SEVERE -> """<div class="bp-alert bp-alert-severe">$BP_ALERT_SEVERE</div>"""
+                    BpLevel.NORMAL -> ""
+                }
                 """
                 <tr>
                     <td class="text-center font-bold">${idx + 1}</td>
                     <td class="text-center date-cell">${escapeHtml(v.date)}</td>
                     <td class="text-center font-bold text-teal">${vGa}</td>
-                    <td class="text-center font-bold text-navy">${escapeHtml(v.bloodPressure ?: "-")}</td>
+                    <td class="text-center font-bold text-navy">${escapeHtml(v.bloodPressure ?: "-")}$bpAlert</td>
                     <td class="text-center">${escapeHtml(v.weight?.let { "$it kg" } ?: "-")}</td>
                     <td class="text-center notes-cell">${escapeHtml(v.findings?.takeUnless(String::isBlank) ?: v.notes?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
                 </tr>
@@ -826,7 +844,7 @@ object PatientPrintHtmlGenerator {
             overflow-wrap: break-word;
             word-break: break-word;
             max-width: 100%;
-        }
+        }$bpAlertCss
 
         .photo-badge {
             display: inline-block;

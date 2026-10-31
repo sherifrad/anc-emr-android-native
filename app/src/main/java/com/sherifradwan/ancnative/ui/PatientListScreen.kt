@@ -70,6 +70,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.model.SevereBpAttention
+import com.sherifradwan.ancnative.model.severeBpAttention
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.SavedNotice
@@ -417,6 +419,7 @@ private fun PatientClinicalRow(
     isWide: Boolean,
     onEvent: (AncEvent) -> Unit,
 ) {
+    val severeBp = remember(patient.visits) { severeBpAttention(patient.visits) }
     var showEddPopup by remember { mutableStateOf(false) }
 
     val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
@@ -581,7 +584,12 @@ private fun PatientClinicalRow(
 
                     // 5. Risk
                     Box(modifier = Modifier.weight(1.1f)) {
-                        ClinicalRiskBadge(isHighRisk = row.isHighRisk)
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            ClinicalRiskBadge(isHighRisk = row.isHighRisk)
+                            if (severeBp != null) {
+                                SevereBpBadge()
+                            }
+                        }
                     }
 
                     // 6. Compact Action Icons
@@ -593,6 +601,10 @@ private fun PatientClinicalRow(
                         ActionIconButtons(patient = patient, onEvent = onEvent)
                     }
                 }
+                PatientAttentionRow(
+                    clinicalAttention = row.clinicalAttention,
+                    severeBp = severeBp,
+                )
             } else {
                 // Compact Screen (Phones < 640dp): Highly optimized clinical matrix row
                 val isArabic = row.displayName.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.ARABIC }
@@ -623,6 +635,10 @@ private fun PatientClinicalRow(
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         ClinicalRiskBadge(isHighRisk = row.isHighRisk)
+                        if (severeBp != null) {
+                            Spacer(Modifier.width(6.dp))
+                            SevereBpBadge()
+                        }
                         if (row.ageText != null) {
                             Spacer(Modifier.width(6.dp))
                             PatientAgeBadge(ageText = row.ageText)
@@ -735,35 +751,10 @@ private fun PatientClinicalRow(
                     }
 
                     // 4. Clinical Attention note if present
-                    if (row.clinicalAttention != null) {
-                        Spacer(Modifier.height(2.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(if (isDark) TagAttentionDarkBg else TagAttentionBg)
-                                .border(1.dp, if (isDark) TagAttentionDarkBorder else TagAttentionBorder, RoundedCornerShape(6.dp))
-                                .padding(horizontal = 10.dp, vertical = 6.dp),
-                        ) {
-                            Icon(
-                                Icons.Default.Warning,
-                                contentDescription = "Clinical Attention",
-                                tint = if (isDark) TagAttentionDarkIcon else TagAttentionIcon,
-                                modifier = Modifier.size(16.dp),
-                            )
-                            Text(
-                                text = row.clinicalAttention,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = if (isDark) TagAttentionDarkText else TagAttentionText,
-                                modifier = Modifier.weight(1f),
-                                maxLines = 4,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
+                    PatientAttentionRow(
+                        clinicalAttention = row.clinicalAttention,
+                        severeBp = severeBp,
+                    )
 
                     // 5. Action Buttons (Positioned below Name & Data tags)
                     HorizontalDivider(
@@ -828,58 +819,130 @@ private fun BloodGroupBadge(
 }
 
 @Composable
-private fun ClinicalRiskBadge(isHighRisk: Boolean) {
+private fun PatientAttentionRow(
+    clinicalAttention: String?,
+    severeBp: SevereBpAttention?,
+) {
+    if (clinicalAttention == null && severeBp == null) return
+
     val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-    if (isHighRisk) {
-        val (bgColor, borderColor, textColor) = if (isDark) {
+    Spacer(Modifier.height(2.dp))
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(6.dp))
+            .background(if (isDark) TagAttentionDarkBg else TagAttentionBg)
+            .border(1.dp, if (isDark) TagAttentionDarkBorder else TagAttentionBorder, RoundedCornerShape(6.dp))
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+    ) {
+        Icon(
+            Icons.Default.Warning,
+            contentDescription = "Clinical Attention",
+            tint = if (isDark) TagAttentionDarkIcon else TagAttentionIcon,
+            modifier = Modifier.size(16.dp),
+        )
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            if (severeBp != null) {
+                Text(
+                    text = stringResource(R.string.bp_attention_severe, severeBp.bloodPressure, severeBp.date),
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (isDark) TagAttentionDarkText else TagAttentionText,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            if (clinicalAttention != null) {
+                Text(
+                    text = clinicalAttention,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (isDark) TagAttentionDarkText else TagAttentionText,
+                    maxLines = 4,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ClinicalTagBadge(
+    text: String,
+    showWarningIcon: Boolean = false,
+    isError: Boolean = true,
+) {
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val (bgColor, borderColor, textColor) = if (isError) {
+        if (isDark) {
             Triple(TagHighRiskDarkBg, TagHighRiskDarkBorder, TagHighRiskDarkText)
         } else {
             Triple(TagHighRiskBg, TagHighRiskBorder, TagHighRiskText)
         }
-        Surface(
-            shape = RoundedCornerShape(6.dp),
-            color = bgColor,
-            border = BorderStroke(1.dp, borderColor),
+    } else {
+        if (isDark) {
+            Triple(TagNormalRiskDarkBg, TagNormalRiskDarkBorder, TagNormalRiskDarkText)
+        } else {
+            Triple(TagNormalRiskBg, TagNormalRiskBorder, TagNormalRiskText)
+        }
+    }
+    Surface(
+        shape = RoundedCornerShape(6.dp),
+        color = bgColor,
+        border = BorderStroke(1.dp, borderColor),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-            ) {
+            if (showWarningIcon) {
                 Icon(
                     Icons.Default.Warning,
                     contentDescription = null,
                     tint = textColor,
                     modifier = Modifier.size(14.dp),
                 )
-                Text(
-                    text = stringResource(R.string.high_risk),
-                    color = textColor,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                )
             }
-        }
-    } else {
-        val (bgColor, borderColor, textColor) = if (isDark) {
-            Triple(TagNormalRiskDarkBg, TagNormalRiskDarkBorder, TagNormalRiskDarkText)
-        } else {
-            Triple(TagNormalRiskBg, TagNormalRiskBorder, TagNormalRiskText)
-        }
-        Surface(
-            shape = RoundedCornerShape(6.dp),
-            color = bgColor,
-            border = BorderStroke(1.dp, borderColor),
-        ) {
             Text(
-                text = stringResource(R.string.normal_risk_filter),
+                text = text,
                 color = textColor,
                 style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                fontWeight = if (isError) FontWeight.Bold else FontWeight.SemiBold,
             )
         }
     }
+}
+
+@Composable
+private fun ClinicalRiskBadge(isHighRisk: Boolean) {
+    if (isHighRisk) {
+        ClinicalTagBadge(
+            text = stringResource(R.string.high_risk),
+            showWarningIcon = true,
+            isError = true,
+        )
+    } else {
+        ClinicalTagBadge(
+            text = stringResource(R.string.normal_risk_filter),
+            showWarningIcon = false,
+            isError = false,
+        )
+    }
+}
+
+@Composable
+private fun SevereBpBadge() {
+    ClinicalTagBadge(
+        text = stringResource(R.string.bp_badge_severe),
+        showWarningIcon = true,
+        isError = true,
+    )
 }
 
 @Composable

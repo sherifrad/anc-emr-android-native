@@ -14,3 +14,4 @@ D11 (2026-10-31) No Lock button inside entry screens (visit editor etc.); lockin
 D12 (2026-10-31) Visit blood-pressure alerts use two ACOG levels (raised 140/90, severe 160/110); visit inputs use strict plausible ranges that block the save (BP 60-260 / 30-160, weight 30-250 kg, no future dates).
 D13 (2026-10-31) IVF embryo days 3, 5, 6 accepted; redating against the scan is a SUGGESTION ONLY (ACOG table); LMP cycle-length adjustment is postponed to its own round.
 D14 (2026-10-31) Verified rounds are committed locally without asking each time; never pushed (owner merges and pushes).
+D15 (2026-10-31) Screen-capture block (FLAG_SECURE) is removed in release builds too, permanently (it is already off in debug). Screenshots and the recent-apps preview may show app content. The owner confirmed this explicitly after being told it lowers protection.

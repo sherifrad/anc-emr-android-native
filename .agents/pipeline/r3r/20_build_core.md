@@ -1,0 +1,2 @@
+ROLE: CORE BUILDER for ROUND 3r. Implement Q100 only. ALLOWED file: app/src/main/java/com/sherifradwan/ancnative/MainActivity.kt. Remove the FLAG_SECURE block and any import that becomes unused; change nothing else. Do not edit tests or checks.
+Run: ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin, the whole unit suite ./gradlew --offline :app:testDebugUnitTest, and python3 .agents/checks/check_r3r.py. Report real results.

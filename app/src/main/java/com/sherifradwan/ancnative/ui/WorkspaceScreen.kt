@@ -102,6 +102,8 @@ import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.model.DemoVisit
+import com.sherifradwan.ancnative.model.SevereBpAttention
+import com.sherifradwan.ancnative.model.severeBpAttention
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
@@ -171,9 +173,11 @@ fun WorkspaceScreen(
                     onOpenReport = { showReportDialog = true },
                     onOpenAttentionDialog = { showAttentionDialog = true },
                 )
-                if (!patient.clinicalAttention.isNullOrBlank()) {
+                val severeBp = remember(patient.visits) { severeBpAttention(patient.visits) }
+                if (!patient.clinicalAttention.isNullOrBlank() || severeBp != null) {
                     ClinicalAttentionBanner(
                         attention = patient.clinicalAttention,
+                        severeBp = severeBp,
                         onEdit = { showAttentionDialog = true },
                     )
                 }
@@ -1582,11 +1586,18 @@ enum class ClinicalAttentionLevel {
 
 @Composable
 private fun ClinicalAttentionBanner(
-    attention: String,
+    attention: String?,
+    severeBp: SevereBpAttention? = null,
     onEdit: () -> Unit,
 ) {
     var isExpanded by remember { mutableStateOf(false) }
-    val (level, narrative) = ClinicalAttentionLevel.parse(attention)
+    val hasStored = !attention.isNullOrBlank()
+    val (parsedLevel, narrative) = if (hasStored) {
+        ClinicalAttentionLevel.parse(attention!!)
+    } else {
+        ClinicalAttentionLevel.NOTE to ""
+    }
+    val level = if (severeBp != null) ClinicalAttentionLevel.CRITICAL else parsedLevel
     val isDark = isSystemInDarkTheme()
 
     val (badgeRes, containerColor, contentColor) = when (level) {
@@ -1608,7 +1619,8 @@ private fun ClinicalAttentionBanner(
     }
 
     val items = remember(narrative) {
-        narrative.split("\n")
+        if (narrative.isBlank()) emptyList()
+        else narrative.split("\n")
             .flatMap { it.split("•") }
             .map { it.trim().removePrefix("-").trim() }
             .filter { it.isNotEmpty() }
@@ -1630,7 +1642,7 @@ private fun ClinicalAttentionBanner(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { isExpanded = !isExpanded },
+                    .then(if (hasStored) Modifier.clickable { isExpanded = !isExpanded } else Modifier),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
@@ -1651,7 +1663,17 @@ private fun ClinicalAttentionBanner(
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                         )
                     }
-                    if (!isExpanded) {
+                    if (severeBp != null && !hasStored) {
+                        Text(
+                            text = stringResource(R.string.bp_attention_severe, severeBp.bloodPressure, severeBp.date),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = contentColor,
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("severeBpAttention"),
+                        )
+                    } else if (!isExpanded) {
                         Text(
                             text = items.firstOrNull() ?: narrative,
                             style = MaterialTheme.typography.bodySmall,
@@ -1686,16 +1708,29 @@ private fun ClinicalAttentionBanner(
                             modifier = Modifier.size(16.dp),
                         )
                     }
-                    Icon(
-                        imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = if (isExpanded) "Collapse" else "Expand",
-                        tint = contentColor,
-                        modifier = Modifier.size(20.dp),
-                    )
+                    if (hasStored) {
+                        Icon(
+                            imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            contentDescription = if (isExpanded) "Collapse" else "Expand",
+                            tint = contentColor,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
                 }
             }
 
-            AnimatedVisibility(visible = isExpanded) {
+            if (severeBp != null && hasStored) {
+                HorizontalDivider(color = contentColor.copy(alpha = 0.2f))
+                Text(
+                    text = stringResource(R.string.bp_attention_severe, severeBp.bloodPressure, severeBp.date),
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = contentColor,
+                    modifier = Modifier.testTag("severeBpAttention"),
+                )
+            }
+
+            AnimatedVisibility(visible = isExpanded && hasStored) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()

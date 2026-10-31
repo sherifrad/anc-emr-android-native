@@ -831,6 +831,43 @@
       "covers": ["Q94"]
     },
     {
+      "id": "STATIC-r3q",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3q.py",
+      "deps": [
+        "app/src/main/**/model/VisitVitals.kt",
+        "app/src/main/**/ui/PatientListScreen.kt",
+        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/main/res/values/strings.xml",
+        "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
+        ".agents/checks/check_r3q.py"
+      ],
+      "covers": ["S80", "S81", "S82"]
+    },
+    {
+      "id": "UNIT-severe-bp",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*SevereBpAttentionTest'",
+      "deps": [
+        "app/src/main/**/model/VisitVitals.kt",
+        "app/src/main/**/model/DemoModels.kt",
+        "app/src/test/**/model/SevereBpAttentionTest.kt"
+      ],
+      "covers": ["Q96"]
+    },
+    {
+      "id": "UNIT-print-bp-alert",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*PrintBpAlertTest'",
+      "deps": [
+        "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
+        "app/src/main/**/model/VisitVitals.kt",
+        "app/src/main/**/model/DemoModels.kt",
+        "app/src/test/**/ui/report/PrintBpAlertTest.kt"
+      ],
+      "covers": ["Q99"]
+    },
+    {
       "id": "UNIT-all",
       "tier": 2,
       "cmd": "./gradlew --offline :app:testDebugUnitTest",

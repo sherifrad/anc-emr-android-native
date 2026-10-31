@@ -32,3 +32,20 @@ fun bpLevel(raw: String?): BpLevel {
         else -> BpLevel.NORMAL
     }
 }
+
+data class SevereBpAttention(val bloodPressure: String, val date: String)
+
+fun severeBpAttention(visits: List<DemoVisit>): SevereBpAttention? {
+    val latest = visits
+        .filter { parseBloodPressure(it.bloodPressure) != null }
+        .maxWithOrNull(compareBy<DemoVisit> { it.date }.thenBy { it.revision })
+        ?: return null
+    return if (bpLevel(latest.bloodPressure) == BpLevel.SEVERE) {
+        SevereBpAttention(
+            bloodPressure = latest.bloodPressure!!.trim(),
+            date = latest.date,
+        )
+    } else {
+        null
+    }
+}
