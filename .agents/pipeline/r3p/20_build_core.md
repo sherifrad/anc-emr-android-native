@@ -1,0 +1,2 @@
+ROLE: CORE BUILDER for ROUND 3p. Implement Q94 only. ALLOWED file: app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt. Delete the 8 en-sub span lines and the .en-sub CSS rule; change nothing else. Do not edit tests or checks.
+Run: ./gradlew --offline :app:testDebugUnitTest --tests '*PrintSectionTitlesTest' --tests '*PatientPrintHtml*', the whole suite, ./gradlew --offline :app:compileDebugKotlin. Report real results.

@@ -19,3 +19,8 @@ Run on the Honor 400, QA copy `com.sherifradwan.anc.qa` only (PIN 121212), demo 
 9. Fingerprint unlock on Android 11 and later.
 10. Restore confirmation dialog, then backup, restore and print-to-PDF end to end.
 11. UI/UX cluster items still open: UIUX_BACKLOG.md DV-7, DV-9, DV-11, DV-12, DV-14, N-4, N-6 to N-9 (see that file).
+
+## Rounds 3o and 3p (print) - built, unit-tested, NOT seen on a device
+12. Print preview of a patient whose visit note is "Hb <10, BP >140/90 & stable": the text shows in full (no cut at "<"), and Print PDF produces the same text.
+13. Print preview: each section title appears once (no capital duplicate beside it); the dialog title "Clinical Medical Record" is fully visible (two lines allowed) and the header buttons still fit.
+

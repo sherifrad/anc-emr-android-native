@@ -27,3 +27,7 @@ Done: DV-1 (lock, 3c), DV-2 (Android 8-10 settings crash, 3c).
 
 ## How to run the round
 One spec section per cluster (e.g. "layouts and wrapping", "labels and plurals", "print preview"), UI lane only, tests = static checks plus ThemeContrast-style unit tests where possible, then a phone pass with screenshots at font 1.0 and 1.3, light and dark.
+
+Fixed in round 3p (2026-10-31, NOT yet seen on a device): DV-12 duplicate section titles in the printed report and the cut-off dialog title "Clinical Medic...". The pink "Print PDF" button is NOT a contrast failure (white on #934F5B is about 6.0:1, passes AA); no change made.
+Still open and needing the phone to reproduce: DV-7, DV-9, DV-11, DV-14, N-4, N-6, N-7, N-8, N-9.
+

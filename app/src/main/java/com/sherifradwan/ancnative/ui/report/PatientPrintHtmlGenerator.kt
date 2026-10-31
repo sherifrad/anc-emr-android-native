@@ -288,7 +288,6 @@ object PatientPrintHtmlGenerator {
                     <div class="section-box" style="flex-grow: 1;">
                         <div class="section-title">
                             <span>Clinical Imaging & Ultrasound Scans</span>
-                            <span class="en-sub">ULTRASOUND ATTACHMENTS</span>
                         </div>
                         <div class="photos-grid">
                             ${attachedUltrasoundImages.map { photo ->
@@ -699,12 +698,6 @@ object PatientPrintHtmlGenerator {
             align-items: center;
         }
 
-        .section-title .en-sub {
-            font-size: 7.5pt;
-            color: var(--rose-accent);
-            font-weight: 600;
-        }
-
         .dating-matrix {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -1004,7 +997,6 @@ object PatientPrintHtmlGenerator {
                 <div class="section-box">
                     <div class="section-title">
                         <span>Pregnancy Dating</span>
-                        <span class="en-sub">PREGNANCY DATING</span>
                     </div>
                     <div class="dating-matrix">
                         <div class="matrix-item">
@@ -1029,7 +1021,6 @@ object PatientPrintHtmlGenerator {
                 <div class="section-box">
                     <div class="section-title">
                         <span>Obstetric & Medical History</span>
-                        <span class="en-sub">OBSTETRIC & MEDICAL HISTORY</span>
                     </div>
                     <div class="history-list">
                         <div class="history-row">
@@ -1056,7 +1047,6 @@ object PatientPrintHtmlGenerator {
             <div class="section-box">
                 <div class="section-title">
                     <span>Previous Pregnancies & Obstetric Outcomes</span>
-                    <span class="en-sub">PREVIOUS PREGNANCIES & OUTCOMES</span>
                 </div>
                 $prevPregRows
             </div>
@@ -1065,7 +1055,6 @@ object PatientPrintHtmlGenerator {
             <div class="section-box" style="flex-grow: 1;">
                 <div class="section-title">
                     <span>Antenatal Care Visits Log</span>
-                    <span class="en-sub">ANTENATAL CARE VISITS LOG</span>
                 </div>
                 <table class="clinical-table">
                     <thead>
@@ -1121,7 +1110,6 @@ object PatientPrintHtmlGenerator {
             <div class="section-box">
                 <div class="section-title">
                     <span>Ultrasound Biometry & Fetal Surveillance</span>
-                    <span class="en-sub">ULTRASOUND BIOMETRY & SURVEILLANCE</span>
                 </div>
                 <table class="clinical-table">
                     <thead>
@@ -1145,7 +1133,6 @@ object PatientPrintHtmlGenerator {
             <div class="section-box">
                 <div class="section-title">
                     <span>Laboratory Investigations</span>
-                    <span class="en-sub">LABORATORY INVESTIGATIONS</span>
                 </div>
                 <table class="clinical-table">
                     <thead>
@@ -1166,7 +1153,6 @@ object PatientPrintHtmlGenerator {
             <div class="section-box">
                 <div class="section-title">
                     <span>Active Medications & Prophylaxis</span>
-                    <span class="en-sub">ACTIVE MEDICATIONS & PROPHYLAXIS</span>
                 </div>
                 <table class="clinical-table">
                     <thead>
@@ -1188,7 +1174,6 @@ object PatientPrintHtmlGenerator {
             <div class="section-box" style="margin-top: auto;">
                 <div class="section-title">
                     <span>Delivery Management Plan & Attestation</span>
-                    <span class="en-sub">DELIVERY MANAGEMENT PLAN & CONSULTANT ATTESTATION</span>
                 </div>
                 <div class="attestation-grid">
                     <div class="plan-box">

@@ -806,6 +806,31 @@
       "covers": ["Q92", "Q93"]
     },
     {
+      "id": "STATIC-r3p",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3p.py",
+      "deps": [
+        "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
+        "app/src/main/**/ui/report/PatientTwoPageReportDialog.kt",
+        ".agents/checks/check_r3p.py"
+      ],
+      "covers": ["S78", "S79"]
+    },
+    {
+      "id": "UNIT-print-titles",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*PrintSectionTitlesTest'",
+      "deps": [
+        "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
+        "app/src/main/**/ui/report/HtmlEscape.kt",
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/main/**/ui/DeliveryNotesParser.kt",
+        "app/src/main/**/model/DemoModels.kt",
+        "app/src/test/**/ui/report/PrintSectionTitlesTest.kt"
+      ],
+      "covers": ["Q94"]
+    },
+    {
       "id": "UNIT-all",
       "tier": 2,
       "cmd": "./gradlew --offline :app:testDebugUnitTest",
