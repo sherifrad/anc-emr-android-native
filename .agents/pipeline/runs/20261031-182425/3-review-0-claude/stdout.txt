@@ -1,0 +1,42 @@
+**Verdict: not ready to merge.** I read the diff, the new files and the strings. I ran no tests, so nothing below is test-verified.
+
+**Hard Blockers**
+1. **Unrequested reducer changes in `AncState.kt`.**
+   - `startVisit` now accepts an unknown patient. The old lines were `val patient = state.patient(event.patientId) ?: return state` and `if (patient.status == "archived") return state`. They became `val patient = state.patient(event.patientId)` and `if (patient?.status == "archived")`. A visit editor can now open for a patient id that doesn't exist, which is a misfile risk. The spec doesn't ask for this.
+   - `requestBack` has a new `AncRoute.PatientList -> { if (state.draft != null) ... }` branch, nine `else if` lines long. It is also outside Round 3w.
+   - Both look like test-fitting. Revert them, or justify them in the spec.
+2. **Editors opened after Discard get no prompt and no hold.** `confirmDiscard` calls `startVisit` inside the reducer. Only the `Start*` events trigger `isStartEditorEvent`, so this path never loads the stored draft. The user then types over a stored draft for that slot, and the autosaver silently replaces it. That is draft loss without choosing Discard on the stored draft. The same applies to any other way an editor opens that isn't a `Start*` dispatch.
+3. **A stored draft is never replaced by a prompt when the user confirms the discard dialog.** Related to 2: `closedDraftSlot` deletes the old slot on `ConfirmDiscard`, so the stored draft of the slot being closed is deleted. The deletion is the same as Discard, but the user sees "Discard draft changes?" and not the new alert. Check this against the owner's intent.
+
+**Should-fix**
+4. **Hold is a `Set`, not a count.** An earlier editor's late `loadDraft` returns, sees a session mismatch, and runs `autosaver.releaseSlot(slot)`. That releases the hold of the newer editor on the same slot. The newer editor's typing can then overwrite the stored draft before its prompt appears.
+5. **Hold leak.** `DraftRecoveryFound` sets the prompt and keeps the hold. If the end-of-`reduce` check clears the prompt (editor changed), nobody calls `releaseSlot`. Only lock (`cancelPending`) or the next `Start*` on that slot clears it.
+6. **Race with save-and-add-another.**
+   - `closedDraftSlot` delete runs asynchronously under `saveMutex`.
+   - The new `loadDraft` isn't under that mutex. It can read the draft that was just saved, which produces a false "Unsaved draft found" for text that is already saved.
+   - Accept would then make it dirty again.
+7. **Typing before the load returns is lost on Continue.** Hold drops the autosave for that period, and Accept overwrites the form with the stored text. The window is short.
+8. **Other editor-mutating events aren't blocked while the prompt is open.** Only the 11 `*Changed` events are in `isValueChangeEvent`. I did not check whether `AddAttachment`, `ImportScanPhoto`, `DeleteAttachment` or `ScanPhotoImported` touch the draft. Verify. The spec says "the editor's own events that change values do nothing."
+9. **Arabic plurals.**
+   - Only `one`/`other` are defined, so "منذ 11 دقائق" and "منذ 25 أيام" are ungrammatical, and lint raises MissingQuantity for Arabic.
+   - Add `zero`, `two`, `few` and `many`, or reword to a form that doesn't need agreement.
+   - Separately, `draft_recovery_body` says "لقد بدأت" (masculine). It's acceptable but not neutral.
+10. **Accept leaves a stored draft behind when the applied text equals the base.** The form is then not dirty, so `draftRecordFor` returns null and `closedDraftSlot` never deletes. The prompt re-appears at every open.
+
+**Checked and OK**
+- Q1: back and outside tap are disabled in the dialog. Lock keeps the draft because `closedDraftSlot` needs `Unlocked` on both sides. Opening and closing the editor while held doesn't delete. A failed load releases the hold. The hold-then-cancel order (`holdSlot` bumps the generation and drops pending) is correct.
+- Q2: Accept goes through `applyDraftRecord`, which checks the slot against the patient and kind, issues a new `editorSessionId`, and clears errors. `imageUris` is kept from the current form and not restored from the draft.
+- Q3: `activeEditorBaseRevision` matches the nine `baseRevision =` assignments in `draftRecordFor`. The rule is written twice (nit: a duplicate of the "one function per rule" principle).
+- Q5: dialog is in `AncApp`, gated on `unlocked && !isAppLocked && !needsPinSetup`. `dismissOnBackPress` and `dismissOnClickOutside` are false. Buttons are the Material default (48 dp). I did not check focus order or TalkBack labels, and there are no explicit semantics. Not tested at large font.
+- Q6: no "memory-only" or "discarded on lock" remains in `values/` or `values-ar/`. The five named strings are rewritten. The English wording for those five is clear.
+
+**Nits**
+- `DraftAge.LessThanMinute` returns early at `nowMillis <= savedMillis`. That is redundant with the `seconds < 60` branch.
+- `AncReducer.reduce` indentation inside `reduceInternal` is off by one level (`return when (event) {` body not re-indented).
+- `values-ar/strings.xml` is a new untracked file with 326 lines, so the whole Arabic file is part of this change. Say so in the commit.
+
+**Tests**
+- `DraftRecoveryTest` calls production functions (`AncReducer.reduce`, `draftAge`, `isDraftStale`) and would fail on old code, since those symbols don't exist.
+- `DraftAutosaverTest` additions call `holdSlot` and `releaseSlot` and would also fail on old code.
+- Missing coverage: nothing exercises the `AncViewModel` race paths (items 2, 4, 5, 6).
+- `AncWorkflowTest` was renamed to the new gate wording as the spec asks.

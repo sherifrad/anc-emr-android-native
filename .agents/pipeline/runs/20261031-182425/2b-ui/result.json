@@ -1,0 +1,22 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "agents/pipeline/SPEC_FIX_R3.md",
+    "agents/pipeline/run_pipeline.py",
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt",
+    "pp/src/main/res/values/strings.xml",
+    ".agents/pipeline/r3x/",
+    "app/src/main/res/values-ar/"
+  ],
+  "finalMessage": "Files changed:\n- app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt\n- app/src/main/res/values/strings.xml\n- app/src/main/res/values-ar/strings.xml\n\nWhat was done per oracle:\n- Q114: Added modal draft recovery alert in AncApp.kt next to discard dialog, gated on unlocked && !isAppLocked && !needsPinSetup && state.draftRecoveryPrompt != null, with dismissOnBackPress = false and dismissOnClickOutside = false.\n- Q114: Mapped DraftScreenKind to the 9 draft_screen_* strings and DraftAge to plural/age strings using a when expression.\n- Q114: Added \"Continue\" (testTag \"draftContinue\" -> AcceptDraftRecovery) and \"Discard and start fresh\" (testTag \"draftDiscard\" -> DiscardDraftRecovery).\n- Q114: Conditionally displayed draft_recovery_stale when isStale is true.\n- Q114: Rewrote unsaved_drafts_policy, unsaved_drafts_editor_policy, save_confirmed_not_saved, save_storage_error, and storage_closing_body to reflect encrypted local draft retention; updated values/strings.xml and values-ar/strings.xml.\n\nAssumptions:\n- Single-choice prompt uses empty onDismissRequest as back press and click outside are disabled.\n\nVerification and test results:\n- ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin :app:compileDebugAndroidTestKotlin: PASSED (BUILD SUCCESSFUL in 7s)\n- ./gradlew --offline :app:testDebugUnitTest: PASSED (BUILD SUCCESSFUL in 11s)\n- python3 .agents/checks/check_r3w.py: PASSED (S94, S95, S96)\n- python3 .agents/checks/check_r3*.py: All passed (S1-S96)\n- Device and connected instrumented tests: not run (device testing deferred to orchestrator)",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-182425/2b-ui/result.json",
+  "timestamp": "2026-10-31T16:46:38.287Z"
+}

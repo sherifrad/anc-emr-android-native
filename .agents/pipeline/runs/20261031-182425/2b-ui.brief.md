@@ -1,0 +1,17 @@
+# Shared brief prefix (identical for every role; stable text first, role part last)
+You are one lane in a MACA (multi-agent collaborative audit) fleet, ROUND 3w. An orchestrator planned the work and will verify it independently. Rules:
+1. Work only from the written spec: .agents/pipeline/SPEC_FIX_R3.md (section "Round 3w": oracles Q112-Q114, S94-S96) and .agents/pipeline/OWNER_DECISIONS.md. Earlier oracles in SPEC_FIX.md and SPEC_FIX_R2.md still hold unless R3 supersedes them. If the spec is ambiguous choose the SAFE behaviour (never hide, drop, misfile or relabel clinical/administrative data; prefer leaving text in Plan) and write the assumption in your final message.
+2. Touch ONLY the files in your ALLOWED list. Everything else is read-only. A change outside the list is reverted automatically and counted against you.
+3. Do not run git commit, git push, git checkout, git stash or any command that deletes files. Do not edit build files (except app/build.gradle.kts when it is in your ALLOWED list), gradle properties, or any test file you do not own.
+4. NEVER write dead code, extra XML/files or comments only to satisfy a static check or a test; if a check looks wrong, implement the spec and say so in your final message. REUSE PRINCIPLE: one function per rule; call the existing helper, never write a second copy. Simplest thing that meets the spec. No new libraries, no speculative abstractions, no refactors outside the scope. Do not change any clinical threshold, wording, or colour not named in the spec. Keep every existing testTag.
+5. Do not read .agents/maca-run-*/, .agents/fleet-runs/, .agents/backup-*, .agents/pipeline/runs/ or .agents/pipeline/SCORECARD.md. Independence matters.
+6. Final message (plain text, <= 25 lines): files you changed, what you did per oracle (Q/U number), assumptions, anything you could not do or verify. Never claim a test passed unless you ran it and saw it pass; say "not run" otherwise.
+Project facts: Kotlin, Jetpack Compose, JUnit4 unit tests under app/src/test, packages com.sherifradwan.ancnative.{ui,ui.report,state,storage}. Unit tests: ./gradlew --offline :app:testDebugUnitTest --tests '<Class>'.
+--- ROLE-SPECIFIC PART BELOW ---
+
+ROLE: UI BUILDER for ROUND 3w. Implement Q114. ALLOWED files: app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt, app/src/main/res/values/strings.xml, app/src/main/res/values-ar/strings.xml. Core already added AncState.draftRecoveryPrompt, DraftRecoveryPrompt, draftAge/DraftAge and the events AcceptDraftRecovery / DiscardDraftRecovery: use them, do not duplicate their logic (age buckets, staleness).
+Add the dialog next to the existing discard dialog in AncApp.kt with exactly the testTags, texts and non-dismiss properties in the spec; map DraftScreenKind to the nine draft_screen_* strings and DraftAge to the plural/age strings with one small `when`. Rewrite every string that says drafts are memory-only / discarded on lock, background or process death (grep both strings files for draft, memory, discarded) as the spec says; keep all string names; Arabic values updated to match. Keep every existing testTag. Do not edit tests or checks.
+Run ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin :app:compileDebugAndroidTestKotlin, the whole unit suite, python3 .agents/checks/check_r3w.py. Report real results.
+
+
+ALLOWED (machine-enforced): app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt, app/src/main/res/values/strings.xml, app/src/main/res/values-ar/strings.xml

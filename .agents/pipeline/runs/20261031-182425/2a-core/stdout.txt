@@ -1,0 +1,20 @@
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/state/DraftRecovery.kt (NEW)
+- app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+- app/src/main/java/com/sherifradwan/ancnative/state/DraftAutosaver.kt
+- app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
+
+What was done:
+- Q112: Created DraftRecovery.kt defining DraftRecoveryPrompt, activeEditorSessionId, activeEditorBaseRevision (reusing draftRecordFor baseRevision logic), isDraftStale, DraftAge sealed hierarchy, and draftAge without android imports. Updated AncState with draftRecoveryPrompt, events DraftRecoveryFound, AcceptDraftRecovery, and DiscardDraftRecovery. Implemented modal guard in AncReducer ignoring value-change events while a prompt is set, applying stored draft on AcceptDraftRecovery with fresh sessionId, clearing prompt on DiscardDraftRecovery, and clearing prompt at end of reduce when activeEditorSessionId changes.
+- Q113: Added holdSlot and releaseSlot to DraftAutosaver; held slots suppress saves and deletes and cancelPending clears all holds. In AncViewModel.dispatch, hooked the nine Start* events to hold activeDraftSlot, asynchronously call VaultController.loadDraft without logging content, and dispatch DraftRecoveryFound or releaseSlot; handled AcceptDraftRecovery (reduce, releaseSlot, auto-save state change) and DiscardDraftRecovery (reduce, deleteDraft, releaseSlot).
+
+Assumptions:
+- None beyond the safe behavior specified in SPEC_FIX_R3.md.
+
+Verification & Test Results:
+- python3 .agents/checks/check_r3w.py: S94 PASS; S95 and S96 failed only on UI lane files (AncApp.kt and strings.xml) as expected.
+- ./gradlew --offline :app:testDebugUnitTest --tests '*DraftRecoveryTest' --tests '*DraftAutosaverTest': PASSED (30 tests).
+- ./gradlew --offline :app:testDebugUnitTest: PASSED (all unit tests green).
+- ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin: PASSED.
+- ./gradlew --offline :app:compileDebugAndroidTestKotlin: failed only because DraftRecoveryDialogTest depends on strings.xml entries owned by the UI lane.
+- Device instrumented tests: not run (owned by orchestrator / test lane).

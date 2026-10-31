@@ -1,0 +1,30 @@
+I wrote the tests and the static check, but I couldn't run `check_r3w.py` here. Every `python3` and compound Bash call needed approval that this session couldn't give. So it has not been run, and neither have the unit tests nor the androidTest compile.
+
+**Files changed**
+- `.agents/checks/check_r3w.py` (new): checks S94, S95 and S96 as the spec words them, in the style of `check_r3v.py`. It strips Kotlin and XML comments first and exits 1 on any FAIL. Since the production code isn't there yet, each check should fail today, but I haven't seen it do so.
+- `.agents/TEST_MANIFEST.json`: added `STATIC-r3w` and `UNIT-draft-recovery`. The second one runs `DraftRecoveryTest` and `DraftAutosaverTest` and covers Q112, Q113, Q114, S94, S95 and S96. I haven't confirmed the JSON parses.
+- `state/DraftRecoveryTest.kt` (new):
+  - Session id and base revision for all nine editors, plus the new-record `null` cases.
+  - The stale truth table and the age boundaries.
+  - Reducer behaviour:
+    - A prompt is set only for the open editor session, and only once.
+    - Accept and Discard act as the spec says.
+    - Cancel, Back and a new Start clear the prompt.
+    - Value-change events are ignored while a prompt is set.
+- `state/DraftAutosaverTest.kt`: four tests added. A held slot is neither saved nor deleted, and its pending save is dropped. A hold only affects its own slot. Release resumes saving and deleting. `cancelPending` clears holds.
+- `androidTest/DraftRecoveryDialogTest.kt` (new): mounts `AncApp` with a prompt on the lab editor. It checks:
+  - the title, screen name, "3 hours ago" and both buttons;
+  - the stale line only when `isStale` is true;
+  - no alert without a prompt;
+  - Back does not dismiss it;
+  - each button dispatches its event.
+- `androidTest/AncWorkflowTest.kt`: renamed the draft-policy test to `recordsWindowKeepsSecureFlagAndGateExplainsEncryptedDraftPolicy`. It now expects the text "encrypted draft" and "saved or discarded", and no "memory-only" or "discarded on lock".
+
+**Assumptions**
+- The lock reset isn't a reducer event, so the unit test covers the clearing transitions that are: Cancel, Back and a new Start.
+- The dialog test asserts English text, as the older androidTests do, and uses the `draft_recovery_*` and `draft_screen_lab` resource names.
+- I sent Back with `Instrumentation.sendKeyDownUpSync` because Espresso isn't a dependency.
+
+**Not done**
+- I skipped the optional end-to-end lock/unlock test. The harness has no real vault unlock path, and the test would be flaky.
+- The tests won't compile until core and ui add the new types, events, strings and resources.

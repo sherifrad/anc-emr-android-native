@@ -1,0 +1,21 @@
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt
+- app/src/main/res/values/strings.xml
+- app/src/main/res/values-ar/strings.xml
+
+What was done per oracle:
+- Q114: Added modal draft recovery alert in AncApp.kt next to discard dialog, gated on unlocked && !isAppLocked && !needsPinSetup && state.draftRecoveryPrompt != null, with dismissOnBackPress = false and dismissOnClickOutside = false.
+- Q114: Mapped DraftScreenKind to the 9 draft_screen_* strings and DraftAge to plural/age strings using a when expression.
+- Q114: Added "Continue" (testTag "draftContinue" -> AcceptDraftRecovery) and "Discard and start fresh" (testTag "draftDiscard" -> DiscardDraftRecovery).
+- Q114: Conditionally displayed draft_recovery_stale when isStale is true.
+- Q114: Rewrote unsaved_drafts_policy, unsaved_drafts_editor_policy, save_confirmed_not_saved, save_storage_error, and storage_closing_body to reflect encrypted local draft retention; updated values/strings.xml and values-ar/strings.xml.
+
+Assumptions:
+- Single-choice prompt uses empty onDismissRequest as back press and click outside are disabled.
+
+Verification and test results:
+- ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin :app:compileDebugAndroidTestKotlin: PASSED (BUILD SUCCESSFUL in 7s)
+- ./gradlew --offline :app:testDebugUnitTest: PASSED (BUILD SUCCESSFUL in 11s)
+- python3 .agents/checks/check_r3w.py: PASSED (S94, S95, S96)
+- python3 .agents/checks/check_r3*.py: All passed (S1-S96)
+- Device and connected instrumented tests: not run (device testing deferred to orchestrator)

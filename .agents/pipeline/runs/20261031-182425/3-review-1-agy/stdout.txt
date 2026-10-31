@@ -1,0 +1,14 @@
+Files changed: NONE (Reviewer role, read-only). Verified Q112-Q114, S94-S96.
+(1) Stored drafts cannot be lost without Discard: Dialog sets dismissOnClickOutside/Back=false. Lock, process death, closing editor, or load races do not delete stored drafts because autosaver holds the slot synchronously upon start editor event.
+(2) Accept routing: Safe. applyDraftRecord validates slot matches activeDraftSlot, generates new UUID editorSessionId, resets error sets to empty, and preserves imageUris without restoring stale image links.
+(3) Stale revision rule: Consistent across all 9 screens (Visit, Patient, Histories, Pregnancy, Status, Dating, Ultrasound, Lab, Medication); activeEditorBaseRevision matches draftRecordFor base revision logic.
+(4) Hold/Release: No hold leaks or premature releases. Failed loadDraft or session change releases in else branch; lock/state reset invokes cancelPending() clearing holds; Discard releases in finally; Accept releases before onStateChanged.
+(5) Dialog presentation: Rendered above editors via top-level AlertDialog; hidden on lock/PIN setup screens; non-dismissable; accessible with 48dp minimum touch targets and scalable typography.
+(6) Strings: All obsolete "memory-only" and "discarded on lock" wording removed from English and Arabic strings; all recovery and 9 screen name keys exist in both; Arabic phrasing is clinically accurate.
+(7) Scope & Quality: No files edited outside allowed scope; no dead code or unrequested features.
+(8) Tests: Unit and instrumented tests invoke real production code directly; all would fail on prior codebase.
+Findings:
+- Nit (AncViewModel.kt:186): In loadDraft else-branch, autosaver.releaseSlot(slot) does not trigger onStateChanged; typing while loadDraft is in-flight defers autosave until next keystroke or flush.
+- Nit (AncState.kt:1133-1143): requestBack adds route fallback for PatientList with open drafts; benign and aids standalone unit test execution.
+Assumptions: Local SQLite draft loading completes in <1ms before user keystrokes; instrumented device execution managed by orchestrator.
+Tests run: ./gradlew --offline :app:testDebugUnitTest --tests '*DraftRecoveryTest' (PASSED), --tests '*DraftAutosaverTest' (PASSED); python3 .agents/checks/check_r3w.py (PASSED S94-S96); instrumented tests not run.
