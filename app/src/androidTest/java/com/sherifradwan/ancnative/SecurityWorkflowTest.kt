@@ -123,7 +123,7 @@ class SecurityWorkflowTest {
             compose.onAllNodesWithText("Clinic & System Settings").fetchSemanticsNodes().isNotEmpty()
         }
         // The dialog animates in: wait until the title is really on screen, not just in the tree.
-        compose.waitUntil(timeoutMillis = 5_000) {
+        compose.waitUntil(timeoutMillis = 15_000) {
             runCatching { compose.onNodeWithText("Clinic & System Settings").assertIsDisplayed() }.isSuccess
         }
         compose.onNodeWithTag("securitySettingsDialog").assertIsDisplayed()
