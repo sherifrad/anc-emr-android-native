@@ -58,6 +58,9 @@ internal fun attachmentDisplayTitle(title: String?, category: String, capturedAt
     return if (ISO_DATE.matches(date)) "$label \u00B7 $date" else label
 }
 
+internal fun formatFetalMetrics(fhr: String?, efw: String?): String =
+    "FHR: ${fhr ?: "-"} bpm · EFW: ${efw ?: "-"} g"
+
 /**
  * Visit weight as displayed (Q78): the trimmed text, with " kg" appended unless it already ends
  * with a kg / kilogram(s) unit. Null for null or blank text.

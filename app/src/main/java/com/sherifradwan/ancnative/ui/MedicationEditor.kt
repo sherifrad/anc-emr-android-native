@@ -81,7 +81,7 @@ fun MedicationEditor(
         subtitle = "${patient.displayName} · Pregnancy Medication Management & Prescription",
         tag = "medicationEditor",
     ) {
-        ClinicalEditorErrorCard(state, draft.errors)
+        GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
 
         // 1-Tap Presets from Medication Codex Delegate
         val context = LocalContext.current
@@ -270,7 +270,7 @@ fun MedicationEditor(
                 // Frequency shortcuts
                 QuickPresetChips(
                     title = stringResource(R.string.frequency),
-                    items = listOf("Once daily", "Twice daily", "Three times daily", "As needed (PRN)"),
+                    items = COMMON_MEDICATION_FREQUENCIES,
                     enabled = enabled,
                     onSelect = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.FREQUENCY, it)) },
                     tagPrefix = "freqPreset",

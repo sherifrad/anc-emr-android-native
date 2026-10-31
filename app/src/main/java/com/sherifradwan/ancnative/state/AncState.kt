@@ -1,5 +1,6 @@
 package com.sherifradwan.ancnative.state
 
+import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoMedicationRecord
 import com.sherifradwan.ancnative.model.DemoPatient
@@ -170,6 +171,17 @@ enum class SaveUiError {
     CASE_ID_CONFLICT,
     STORAGE_ERROR,
     OUTCOME_UNRESOLVED,
+}
+
+fun SaveUiError?.stringRes(): Int = when (this) {
+    SaveUiError.CONFIRMED_NOT_SAVED -> R.string.save_confirmed_not_saved
+    SaveUiError.STALE_OR_CONFLICT -> R.string.save_stale_conflict
+    SaveUiError.CROSS_PATIENT_REJECTED -> R.string.save_cross_patient_rejected
+    SaveUiError.DUPLICATE_OPERATION_MISMATCH -> R.string.save_operation_mismatch
+    SaveUiError.PATIENT_ARCHIVED -> R.string.save_patient_archived
+    SaveUiError.CASE_ID_CONFLICT -> R.string.save_case_id_conflict
+    SaveUiError.OUTCOME_UNRESOLVED -> R.string.save_unresolved
+    SaveUiError.STORAGE_ERROR, null -> R.string.save_storage_error
 }
 enum class SavedNotice { VISIT, PATIENT, PATIENT_DATING_NOT_UPDATED, HISTORIES, PREGNANCY, ARCHIVED, UNARCHIVED, DATING, ULTRASOUND, LABORATORY, MEDICATIONS }
 enum class PatientEditorKind { PROFILE, HISTORIES, PREGNANCY, STATUS }

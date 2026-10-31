@@ -90,7 +90,7 @@ fun UltrasoundEditor(
         subtitle = "${patient.displayName} · Ultrasound Examination & Fetal Biometry",
         tag = "ultrasoundEditor",
     ) {
-        ClinicalEditorErrorCard(state, draft.errors)
+        GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
 
         // CARD 1: SCAN TIMING & GESTATIONAL AGE
         Card(

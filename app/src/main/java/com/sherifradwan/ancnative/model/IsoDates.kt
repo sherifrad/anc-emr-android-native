@@ -11,6 +11,8 @@ fun ivfGaDaysAtTransfer(embryoAgeDays: Int): Long = 14L + embryoAgeDays
 fun ivfEddFromTransfer(transfer: LocalDate, embryoAgeDays: Int): LocalDate =
     transfer.plusDays(FULL_TERM_DAYS - ivfGaDaysAtTransfer(embryoAgeDays))
 
+fun formatIsoDate(date: LocalDate): String = date.toString()
+
 fun parseIsoDateOrNull(value: String?): LocalDate? {
     if (value.isNullOrBlank()) return null
     return try {

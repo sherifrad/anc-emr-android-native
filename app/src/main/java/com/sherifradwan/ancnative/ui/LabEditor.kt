@@ -73,7 +73,7 @@ fun LabEditor(
         subtitle = "${patient.displayName} · Laboratory Investigations & Diagnostic Results",
         tag = "labEditor",
     ) {
-        ClinicalEditorErrorCard(state, draft.errors)
+        GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
 
         val isChainedHeader = route.isNew && (draft.values.date.isNotBlank() || !draft.values.labName.isNullOrBlank())
 

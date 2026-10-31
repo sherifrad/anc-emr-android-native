@@ -336,34 +336,7 @@ private fun ProfileHeroIdentityCard(
                     }
                 }
 
-                val highRisk = isHighRisk(patient.riskLevel)
-                if (highRisk) {
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.errorContainer,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.high_risk),
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                        )
-                    }
-                } else {
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.tertiaryContainer,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.normal_risk_filter),
-                            color = MaterialTheme.colorScheme.onTertiaryContainer,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                        )
-                    }
-                }
+                ClinicalRiskBadge(isHighRisk = isHighRisk(patient.riskLevel))
             }
 
             // 3. Main Clinical Indicators (Blood Group, GA, GPA, Prev Pregnancy Summary)
@@ -1099,7 +1072,7 @@ private fun ProfileVisitCard(
                                 }
                                 if (linkedScan.fetalHeartRate != null || linkedScan.estimatedFetalWeight != null) {
                                     Text(
-                                        "FHR: ${linkedScan.fetalHeartRate ?: "-"} bpm · EFW: ${linkedScan.estimatedFetalWeight ?: "-"} g",
+                                        formatFetalMetrics(linkedScan.fetalHeartRate, linkedScan.estimatedFetalWeight),
                                         style = MaterialTheme.typography.bodySmall,
                                     )
                                 }

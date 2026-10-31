@@ -33,6 +33,8 @@ data class ClinicalMedPreset(
     val isProphylaxis: Boolean,
 )
 
+val COMMON_MEDICATION_FREQUENCIES = listOf("Once daily", "Twice daily", "Three times daily", "At bedtime", "As needed (PRN)")
+
 object ClinicalPresets {
     val commonBloodPressures = listOf("110/70", "120/80", "130/80", "140/90")
 

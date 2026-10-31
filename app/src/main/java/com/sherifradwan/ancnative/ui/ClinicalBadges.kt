@@ -3,6 +3,7 @@ package com.sherifradwan.ancnative.ui
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,6 +11,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -25,6 +29,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.BpLevel
 import com.sherifradwan.ancnative.model.bpLevel
 
@@ -186,6 +191,75 @@ fun BpAlertLabel(raw: String?, modifier: Modifier = Modifier) {
             fontWeight = FontWeight.SemiBold,
             color = contentColor,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+        )
+    }
+}
+
+@Composable
+internal fun ClinicalTagBadge(
+    text: String,
+    showWarningIcon: Boolean = false,
+    isError: Boolean = true,
+    modifier: Modifier = Modifier,
+) {
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val (bgColor, borderColor, textColor) = if (isError) {
+        if (isDark) {
+            Triple(TagHighRiskDarkBg, TagHighRiskDarkBorder, TagHighRiskDarkText)
+        } else {
+            Triple(TagHighRiskBg, TagHighRiskBorder, TagHighRiskText)
+        }
+    } else {
+        if (isDark) {
+            Triple(TagNormalRiskDarkBg, TagNormalRiskDarkBorder, TagNormalRiskDarkText)
+        } else {
+            Triple(TagNormalRiskBg, TagNormalRiskBorder, TagNormalRiskText)
+        }
+    }
+    Surface(
+        shape = RoundedCornerShape(6.dp),
+        color = bgColor,
+        border = BorderStroke(1.dp, borderColor),
+        modifier = modifier,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+        ) {
+            if (showWarningIcon) {
+                Icon(
+                    Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = textColor,
+                    modifier = Modifier.size(14.dp),
+                )
+            }
+            Text(
+                text = text,
+                color = textColor,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = if (isError) FontWeight.Bold else FontWeight.SemiBold,
+            )
+        }
+    }
+}
+
+@Composable
+fun ClinicalRiskBadge(isHighRisk: Boolean, modifier: Modifier = Modifier) {
+    if (isHighRisk) {
+        ClinicalTagBadge(
+            text = stringResource(R.string.high_risk),
+            showWarningIcon = true,
+            isError = true,
+            modifier = modifier,
+        )
+    } else {
+        ClinicalTagBadge(
+            text = stringResource(R.string.normal_risk_filter),
+            showWarningIcon = false,
+            isError = false,
+            modifier = modifier,
         )
     }
 }

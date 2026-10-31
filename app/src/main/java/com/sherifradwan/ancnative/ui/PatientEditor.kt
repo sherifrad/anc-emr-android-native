@@ -60,13 +60,11 @@ import com.sherifradwan.ancnative.model.PatientValidationError
 import com.sherifradwan.ancnative.model.PatientVocabulary
 import com.sherifradwan.ancnative.model.eddFromLmp
 import com.sherifradwan.ancnative.model.parseIsoDateOrNull
-import com.sherifradwan.ancnative.state.ClinicalValidationError
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.PatientDraftField
 import com.sherifradwan.ancnative.state.SavePhase
-import com.sherifradwan.ancnative.state.SaveUiError
 
 @Composable
 fun PatientEditor(
@@ -82,7 +80,7 @@ fun PatientEditor(
         subtitle = "Demographic & Clinical Profile",
         tag = "patientEditor",
     ) {
-        EditorErrorCard(state, draft.errors)
+        GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
 
         // CARD 1: PATIENT DEMOGRAPHICS & IDENTITY
         Card(
@@ -439,7 +437,7 @@ fun PatientStatusEditor(
         subtitle = patient.displayName,
         tag = "patientStatusEditor",
     ) {
-        EditorErrorCard(state, draft.errors)
+        GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
         Text(stringResource(R.string.status_reason_notice), color = MaterialTheme.colorScheme.tertiary)
         EditorField(
             value = draft.reason,
@@ -494,35 +492,6 @@ internal fun EditorPage(
             content()
         }
     }
-}
-
-@Composable
-internal fun EditorField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    tag: String,
-    enabled: Boolean,
-    modifier: Modifier = Modifier,
-    error: Boolean = false,
-    singleLine: Boolean = false,
-    keyboardType: KeyboardType = KeyboardType.Text,
-    imeAction: ImeAction = ImeAction.Default,
-    keyboardActions: KeyboardActions = KeyboardActions.Default,
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        supportingText = if (error) ({ Text(stringResource(R.string.correct_highlighted_field)) }) else null,
-        isError = error,
-        singleLine = singleLine,
-        minLines = if (singleLine) 1 else 3,
-        enabled = enabled,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
-        keyboardActions = keyboardActions,
-        modifier = modifier.fillMaxWidth().testTag(tag),
-    )
 }
 
 @Composable
@@ -628,59 +597,4 @@ internal fun EditorActions(
             Text(stringResource(R.string.save))
         }
     }
-}
-
-@Composable
-internal fun EditorErrorCard(state: AncState, validationErrors: Set<PatientValidationError>) {
-    if (validationErrors.isEmpty() && state.savePhase == SavePhase.IDLE) return
-    Card(modifier = Modifier.fillMaxWidth().testTag("editorError")) {
-        Text(
-            text = when {
-                validationErrors.isNotEmpty() -> stringResource(R.string.correct_highlighted_fields)
-                state.savePhase == SavePhase.PENDING -> stringResource(R.string.save_pending)
-                state.savePhase == SavePhase.RECONCILING -> stringResource(R.string.save_reconciling)
-                state.savePhase == SavePhase.UNRESOLVED -> stringResource(R.string.save_unresolved)
-                else -> stringResource(state.patientEditorErrorResource())
-            },
-            color = if (validationErrors.isNotEmpty() || state.savePhase == SavePhase.ERROR || state.savePhase == SavePhase.UNRESOLVED) {
-                MaterialTheme.colorScheme.error
-            } else {
-                MaterialTheme.colorScheme.tertiary
-            },
-            modifier = Modifier.padding(16.dp),
-        )
-    }
-}
-
-@Composable
-internal fun ClinicalEditorErrorCard(state: AncState, validationErrors: Set<ClinicalValidationError>) {
-    if (validationErrors.isEmpty() && state.savePhase == SavePhase.IDLE) return
-    Card(modifier = Modifier.fillMaxWidth().testTag("editorError")) {
-        Text(
-            text = when {
-                validationErrors.isNotEmpty() -> stringResource(R.string.correct_highlighted_fields)
-                state.savePhase == SavePhase.PENDING -> stringResource(R.string.save_pending)
-                state.savePhase == SavePhase.RECONCILING -> stringResource(R.string.save_reconciling)
-                state.savePhase == SavePhase.UNRESOLVED -> stringResource(R.string.save_unresolved)
-                else -> stringResource(state.patientEditorErrorResource())
-            },
-            color = if (validationErrors.isNotEmpty() || state.savePhase == SavePhase.ERROR || state.savePhase == SavePhase.UNRESOLVED) {
-                MaterialTheme.colorScheme.error
-            } else {
-                MaterialTheme.colorScheme.tertiary
-            },
-            modifier = Modifier.padding(16.dp),
-        )
-    }
-}
-
-private fun AncState.patientEditorErrorResource(): Int = when (saveError) {
-    SaveUiError.CONFIRMED_NOT_SAVED -> R.string.save_confirmed_not_saved
-    SaveUiError.STALE_OR_CONFLICT -> R.string.save_stale_conflict
-    SaveUiError.CROSS_PATIENT_REJECTED -> R.string.save_cross_patient_rejected
-    SaveUiError.DUPLICATE_OPERATION_MISMATCH -> R.string.save_operation_mismatch
-    SaveUiError.PATIENT_ARCHIVED -> R.string.save_patient_archived
-    SaveUiError.CASE_ID_CONFLICT -> R.string.save_case_id_conflict
-    SaveUiError.OUTCOME_UNRESOLVED -> R.string.save_unresolved
-    SaveUiError.STORAGE_ERROR, null -> R.string.save_storage_error
 }

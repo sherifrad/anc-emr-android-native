@@ -917,7 +917,7 @@ private fun VisitCard(
                             }
                             if (linkedScan.fetalHeartRate != null || linkedScan.estimatedFetalWeight != null) {
                                 Text(
-                                    "FHR: ${linkedScan.fetalHeartRate ?: "-"} bpm · EFW: ${linkedScan.estimatedFetalWeight ?: "-"} g",
+                                    formatFetalMetrics(linkedScan.fetalHeartRate, linkedScan.estimatedFetalWeight),
                                     style = MaterialTheme.typography.bodySmall,
                                 )
                             }

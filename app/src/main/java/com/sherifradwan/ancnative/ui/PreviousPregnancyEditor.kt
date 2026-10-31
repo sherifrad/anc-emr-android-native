@@ -53,7 +53,7 @@ fun PreviousPregnancyEditor(
         subtitle = "${patient.displayName} · Previous Pregnancy History & Outcomes",
         tag = "previousPregnancyEditor",
     ) {
-        EditorErrorCard(state, draft.errors)
+        GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
 
         // CARD 1: TIMING & PREGNANCY BASICS
         Card(

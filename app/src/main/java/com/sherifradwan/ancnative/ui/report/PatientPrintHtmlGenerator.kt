@@ -9,6 +9,7 @@ import com.sherifradwan.ancnative.model.BpLevel
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
 import com.sherifradwan.ancnative.model.bpLevel
+import com.sherifradwan.ancnative.model.formatIsoDate
 import com.sherifradwan.ancnative.model.isEarlyLoss
 import com.sherifradwan.ancnative.model.isStillbirth
 import com.sherifradwan.ancnative.model.parseIsoDateOrNull
@@ -56,7 +57,7 @@ object PatientPrintHtmlGenerator {
         val clinicNameEn = "Dr. Sherif Radwan Clinic"
         val clinicSpecialty = "Maternal-Fetal Medicine & Advanced Obstetrics"
         val doctorOfficialTitle = "Consultant of Obstetrics, Gynecology & Laparoscopy"
-        val printDateStr = asOfDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        val printDateStr = formatIsoDate(asOfDate)
         val gaResult = patient.dating?.calculateGestationalAgeResult(asOfDate)
         val currentGaFormatted = gaResult?.formatted ?: "Unspecified"
 

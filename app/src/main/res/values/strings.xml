@@ -59,8 +59,6 @@
     <string name="retry_storage_check">Check again</string>
     <string name="credential_prompt_title">Unlock Clinical Records</string>
     <string name="credential_prompt_subtitle">Confirm biometric or device credential to access patient records.</string>
-    <string name="unsaved_drafts_policy">Unsaved text is kept as an encrypted draft on this device until it is saved or discarded; only completed saves become part of the patient record.</string>
-    <string name="unsaved_drafts_editor_policy">Unsaved text is kept as an encrypted draft on this device until it is saved or discarded; only completed saves become part of the patient record.</string>
     <string name="storage_checking_title">Checking clinical storage</string>
     <string name="storage_checking_body">Patient data remains hidden while storage is inspected.</string>
     <string name="storage_uninitialized_title">Clinical storage is not initialized</string>

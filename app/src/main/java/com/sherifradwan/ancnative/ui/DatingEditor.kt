@@ -74,7 +74,7 @@ fun DatingEditor(
         subtitle = "${patient.displayName} · Gestational Age & Estimated Due Date",
         tag = "datingEditor",
     ) {
-        ClinicalEditorErrorCard(state, draft.errors)
+        GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
 
         // CARD 1: BASELINE DATING PARAMETERS
         Card(

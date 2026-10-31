@@ -965,8 +965,6 @@ private fun AddMedicationDialog(
     var instructions by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    val commonFrequencies = listOf("Once daily", "Twice daily", "Three times daily", "At bedtime", "As needed (PRN)")
-
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add New Medication to Codex") },
@@ -1021,7 +1019,7 @@ private fun AddMedicationDialog(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    commonFrequencies.forEach { freq ->
+                    COMMON_MEDICATION_FREQUENCIES.forEach { freq ->
                         FilterChip(
                             selected = frequency == freq,
                             onClick = { frequency = freq },

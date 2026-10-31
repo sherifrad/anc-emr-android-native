@@ -1081,6 +1081,35 @@
       "covers": ["S99", "S100"]
     },
     {
+      "id": "STATIC-r3z",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3z.py",
+      "deps": [
+        "app/src/main/**/*.kt",
+        "app/src/main/res/values/strings.xml",
+        "app/src/androidTest/**/*.kt",
+        ".agents/checks/check_r3z.py"
+      ],
+      "covers": ["S101", "S102"]
+    },
+    {
+      "id": "UNIT-r3z-small",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.model.FormatIsoDateTest' --tests 'com.sherifradwan.ancnative.state.SaveUiErrorTextTest' --tests 'com.sherifradwan.ancnative.ui.ClinicalFormatTest' --tests 'com.sherifradwan.ancnative.ui.ClinicalPresetsTest'",
+      "deps": [
+        "app/src/main/**/model/IsoDates.kt",
+        "app/src/main/**/state/AncState.kt",
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/main/**/ui/ClinicalPresets.kt",
+        "app/src/main/res/values/strings.xml",
+        "app/src/test/**/FormatIsoDateTest.kt",
+        "app/src/test/**/SaveUiErrorTextTest.kt",
+        "app/src/test/**/ClinicalFormatTest.kt",
+        "app/src/test/**/ClinicalPresetsTest.kt"
+      ],
+      "covers": ["Q120", "Q121", "Q122", "Q123", "Q124", "Q125", "S101", "S102"]
+    },
+    {
       "id": "LINT-errors",
       "tier": 2,
       "cmd": "./gradlew --offline :app:lintDebug",

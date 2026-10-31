@@ -131,4 +131,21 @@ class ClinicalFormatTest {
     fun formatAgeYears_boundaryCases() {
         for (c in AGE_BOUNDARY) assertEquals("formatAgeYears(${c})", c.expect, formatAgeYears(c.input))
     }
+
+    // ---- Q122 formatFetalMetrics ----
+    @Test
+    fun fetalMetrics_bothPresent() {
+        assertEquals("FHR: 142 bpm · EFW: 1250 g", formatFetalMetrics("142", "1250"))
+    }
+
+    @Test
+    fun fetalMetrics_oneMissing() {
+        assertEquals("FHR: - bpm · EFW: 1250 g", formatFetalMetrics(null, "1250"))
+        assertEquals("FHR: 142 bpm · EFW: - g", formatFetalMetrics("142", null))
+    }
+
+    @Test
+    fun fetalMetrics_bothMissing() {
+        assertEquals("FHR: - bpm · EFW: - g", formatFetalMetrics(null, null))
+    }
 }

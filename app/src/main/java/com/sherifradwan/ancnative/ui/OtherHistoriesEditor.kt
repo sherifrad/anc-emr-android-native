@@ -52,7 +52,7 @@ fun OtherHistoriesEditor(
         subtitle = "${patient.displayName} · Medical, Surgical, Family & Allergy Histories",
         tag = "otherHistoriesEditor",
     ) {
-        EditorErrorCard(state, draft.errors)
+        GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
 
         // 1-Tap Fill All Explicit Negative Histories
         Card(

@@ -11,22 +11,31 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.state.AncState
+import com.sherifradwan.ancnative.state.SavePhase
+import com.sherifradwan.ancnative.state.stringRes
 
 @Composable
 fun DemoBanner(modifier: Modifier = Modifier) {
@@ -139,3 +148,57 @@ fun PlaceholderCard() {
 }
 
 fun Modifier.minimumTouchTarget(): Modifier = sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+
+@Composable
+internal fun EditorField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    tag: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    error: Boolean = false,
+    errorMessage: String? = null,
+    singleLine: Boolean = false,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    imeAction: ImeAction = ImeAction.Default,
+    keyboardOptions: KeyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+) {
+    val showError = error || errorMessage != null
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        supportingText = if (showError) ({ Text(errorMessage ?: stringResource(R.string.correct_highlighted_field)) }) else null,
+        isError = showError,
+        singleLine = singleLine,
+        minLines = if (singleLine) 1 else 3,
+        enabled = enabled,
+        keyboardOptions = keyboardOptions,
+        keyboardActions = keyboardActions,
+        modifier = modifier.fillMaxWidth().testTag(tag),
+    )
+}
+
+@Composable
+internal fun GenericEditorErrorCard(hasErrors: Boolean, state: AncState) {
+    if (!hasErrors && state.savePhase == SavePhase.IDLE) return
+    Card(modifier = Modifier.fillMaxWidth().testTag("editorError")) {
+        Text(
+            text = when {
+                hasErrors -> stringResource(R.string.correct_highlighted_fields)
+                state.savePhase == SavePhase.PENDING -> stringResource(R.string.save_pending)
+                state.savePhase == SavePhase.RECONCILING -> stringResource(R.string.save_reconciling)
+                state.savePhase == SavePhase.UNRESOLVED -> stringResource(R.string.save_unresolved)
+                else -> stringResource(state.saveError.stringRes())
+            },
+            color = if (hasErrors || state.savePhase == SavePhase.ERROR || state.savePhase == SavePhase.UNRESOLVED) {
+                MaterialTheme.colorScheme.error
+            } else {
+                MaterialTheme.colorScheme.tertiary
+            },
+            modifier = Modifier.padding(16.dp),
+        )
+    }
+}

@@ -52,7 +52,7 @@ import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.DraftError
 import com.sherifradwan.ancnative.state.DraftField
 import com.sherifradwan.ancnative.state.SavePhase
-import com.sherifradwan.ancnative.state.SaveUiError
+import com.sherifradwan.ancnative.state.stringRes
 
 @Composable
 fun VisitEditor(
@@ -203,12 +203,12 @@ fun VisitEditor(
                     val isNarrow = maxWidth < 340.dp
                     if (isNarrow) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            VisitField(
+                            EditorField(
                                 value = draft.values.bloodPressure,
                                 onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.BLOOD_PRESSURE, it)) },
                                 label = "${stringResource(R.string.blood_pressure)} (mmHg)",
                                 tag = "visitBloodPressure",
-                                error = bpError,
+                                errorMessage = bpError,
                                 singleLine = true,
                                 enabled = editingEnabled,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
@@ -217,12 +217,12 @@ fun VisitEditor(
                             if (bpLevel(draft.values.bloodPressure) != BpLevel.NORMAL) {
                                 BpAlertLabel(draft.values.bloodPressure)
                             }
-                            VisitField(
+                            EditorField(
                                 value = draft.values.weight,
                                 onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.WEIGHT, it)) },
                                 label = "${stringResource(R.string.weight)} (kg)",
                                 tag = "visitWeight",
-                                error = weightError,
+                                errorMessage = weightError,
                                 singleLine = true,
                                 enabled = editingEnabled,
                                 modifier = Modifier.focusRequester(weightFocusRequester),
@@ -240,12 +240,12 @@ fun VisitEditor(
                                 modifier = Modifier.weight(1f),
                                 verticalArrangement = Arrangement.spacedBy(4.dp),
                             ) {
-                                VisitField(
+                                EditorField(
                                     value = draft.values.bloodPressure,
                                     onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.BLOOD_PRESSURE, it)) },
                                     label = "${stringResource(R.string.blood_pressure)} (mmHg)",
                                     tag = "visitBloodPressure",
-                                    error = bpError,
+                                    errorMessage = bpError,
                                     singleLine = true,
                                     enabled = editingEnabled,
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
@@ -255,12 +255,12 @@ fun VisitEditor(
                                     BpAlertLabel(draft.values.bloodPressure)
                                 }
                             }
-                            VisitField(
+                            EditorField(
                                 value = draft.values.weight,
                                 onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.WEIGHT, it)) },
                                 label = "${stringResource(R.string.weight)} (kg)",
                                 tag = "visitWeight",
-                                error = weightError,
+                                errorMessage = weightError,
                                 singleLine = true,
                                 enabled = editingEnabled,
                                 modifier = Modifier.weight(1f).focusRequester(weightFocusRequester),
@@ -279,7 +279,7 @@ fun VisitEditor(
                     tagPrefix = "bpPreset",
                 )
 
-                VisitField(
+                EditorField(
                     value = draft.values.findings,
                     onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.FINDINGS, it)) },
                     label = stringResource(R.string.findings),
@@ -390,7 +390,7 @@ fun VisitEditor(
                     }
                 }
 
-                VisitField(
+                EditorField(
                     value = draft.values.notes,
                     onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.NOTES, it)) },
                     label = stringResource(R.string.notes),
@@ -445,47 +445,10 @@ fun VisitEditor(
     }
 }
 
-@Composable
-private fun VisitField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    tag: String,
-    modifier: Modifier = Modifier,
-    error: String? = null,
-    singleLine: Boolean = false,
-    enabled: Boolean = true,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    keyboardActions: KeyboardActions = KeyboardActions.Default,
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        supportingText = error?.let { message -> ({ Text(message) }) },
-        isError = error != null,
-        singleLine = singleLine,
-        minLines = if (singleLine) 1 else 3,
-        enabled = enabled,
-        keyboardOptions = keyboardOptions,
-        keyboardActions = keyboardActions,
-        modifier = modifier.fillMaxWidth().testTag(tag),
-    )
-}
-
 private fun AncState.saveStatusResource(): Int = when (savePhase) {
     SavePhase.IDLE -> R.string.save
     SavePhase.PENDING -> R.string.save_pending
     SavePhase.RECONCILING -> R.string.save_reconciling
     SavePhase.UNRESOLVED -> R.string.save_unresolved
-    SavePhase.ERROR -> when (saveError) {
-        SaveUiError.CONFIRMED_NOT_SAVED -> R.string.save_confirmed_not_saved
-        SaveUiError.STALE_OR_CONFLICT -> R.string.save_stale_conflict
-        SaveUiError.CROSS_PATIENT_REJECTED -> R.string.save_cross_patient_rejected
-        SaveUiError.DUPLICATE_OPERATION_MISMATCH -> R.string.save_operation_mismatch
-        SaveUiError.PATIENT_ARCHIVED -> R.string.save_patient_archived
-        SaveUiError.CASE_ID_CONFLICT -> R.string.save_case_id_conflict
-        SaveUiError.STORAGE_ERROR, null -> R.string.save_storage_error
-        SaveUiError.OUTCOME_UNRESOLVED -> R.string.save_unresolved
-    }
+    SavePhase.ERROR -> saveError.stringRes()
 }
