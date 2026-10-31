@@ -17,7 +17,6 @@ import com.sherifradwan.ancnative.model.previousDeliverySummary
 import com.sherifradwan.ancnative.security.SecuritySettingsState
 import java.io.ByteArrayOutputStream
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 object PatientPrintHtmlGenerator {
 
