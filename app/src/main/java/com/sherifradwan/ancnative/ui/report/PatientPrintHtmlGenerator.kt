@@ -72,7 +72,7 @@ object PatientPrintHtmlGenerator {
                 mapOf(
                     "uri" to uri,
                     "date" to s.date,
-                    "label" to "Ultrasound Scan ${sIdx + 1}.${iIdx + 1} - ${s.date}" +
+                    "label" to "Ultrasound Scan ${sIdx + 1}.${iIdx + 1} - " + s.date +
                         (s.impression?.takeUnless(String::isBlank)?.let { " ($it)" } ?: ""),
                 )
             }
@@ -91,11 +91,11 @@ object PatientPrintHtmlGenerator {
                 """
                 <tr>
                     <td class="text-center font-bold">${idx + 1}</td>
-                    <td class="text-center date-cell">${v.date}</td>
+                    <td class="text-center date-cell">${escapeHtml(v.date)}</td>
                     <td class="text-center font-bold text-teal">${vGa}</td>
-                    <td class="text-center font-bold text-navy">${v.bloodPressure ?: "-"}</td>
-                    <td class="text-center">${v.weight?.let { "$it kg" } ?: "-"}</td>
-                    <td class="text-center notes-cell">${v.findings?.takeUnless(String::isBlank) ?: v.notes?.takeUnless(String::isBlank) ?: "Not recorded"}</td>
+                    <td class="text-center font-bold text-navy">${escapeHtml(v.bloodPressure ?: "-")}</td>
+                    <td class="text-center">${escapeHtml(v.weight?.let { "$it kg" } ?: "-")}</td>
+                    <td class="text-center notes-cell">${escapeHtml(v.findings?.takeUnless(String::isBlank) ?: v.notes?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
                 </tr>
                 """.trimIndent()
             }.joinToString("\n")
@@ -137,14 +137,14 @@ object PatientPrintHtmlGenerator {
 
                 """
                 <tr>
-                    <td class="text-center date-cell">${s.date}</td>
+                    <td class="text-center date-cell">${escapeHtml(s.date)}</td>
                     <td class="text-center font-bold text-teal">${scanGaStr}</td>
-                    <td class="text-center">${s.presentation?.takeUnless(String::isBlank) ?: "Not recorded"}</td>
-                    <td class="text-center">${s.placentalSite?.takeUnless(String::isBlank) ?: "Not recorded"}</td>
-                    <td class="text-center">${s.amnioticFluid?.takeUnless(String::isBlank) ?: "Not recorded"}</td>
-                    <td class="text-center font-bold text-navy">${efwStr}</td>
+                    <td class="text-center">${escapeHtml(s.presentation?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                    <td class="text-center">${escapeHtml(s.placentalSite?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                    <td class="text-center">${escapeHtml(s.amnioticFluid?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                    <td class="text-center font-bold text-navy">${escapeHtml(efwStr)}</td>
                     <td class="text-center notes-cell">
-                        $notesText
+                        ${escapeHtml(notesText)}
                         $photoIndicator
                     </td>
                 </tr>
@@ -159,16 +159,16 @@ object PatientPrintHtmlGenerator {
         } else {
             sortedLabs.take(10).map { l ->
                 val resultHtml = if (l.isAbnormal) {
-                    """<span class="val-abnormal">${l.result} ${l.unit ?: ""} (Abnormal)</span>"""
+                    """<span class="val-abnormal">${escapeHtml(l.result)} ${escapeHtml(l.unit ?: "")} (Abnormal)</span>"""
                 } else {
-                    """<span class="font-bold text-navy">${l.result} ${l.unit ?: ""}</span>"""
+                    """<span class="font-bold text-navy">${escapeHtml(l.result)} ${escapeHtml(l.unit ?: "")}</span>"""
                 }
                 """
                 <tr>
-                    <td class="text-center date-cell">${l.date}</td>
-                    <td class="text-center font-bold text-navy">${l.testName}</td>
+                    <td class="text-center date-cell">${escapeHtml(l.date)}</td>
+                    <td class="text-center font-bold text-navy">${escapeHtml(l.testName)}</td>
                     <td class="text-center">${resultHtml}</td>
-                    <td class="text-center text-muted">${l.referenceRange ?: "-"}</td>
+                    <td class="text-center text-muted">${escapeHtml(l.referenceRange ?: "-")}</td>
                 </tr>
                 """.trimIndent()
             }.joinToString("\n")
@@ -187,11 +187,11 @@ object PatientPrintHtmlGenerator {
                 }
                 """
                 <tr>
-                    <td class="text-center font-bold text-navy">${m.name}</td>
-                    <td class="text-center font-bold">${m.dosage} (${m.route})</td>
-                    <td class="text-center">${m.frequency}</td>
+                    <td class="text-center font-bold text-navy">${escapeHtml(m.name)}</td>
+                    <td class="text-center font-bold">${escapeHtml(m.dosage)} (${escapeHtml(m.route)})</td>
+                    <td class="text-center">${escapeHtml(m.frequency)}</td>
                     <td class="text-center">${typeBadge}</td>
-                    <td class="text-center notes-cell text-muted">${m.notes?.takeUnless(String::isBlank) ?: "-"}</td>
+                    <td class="text-center notes-cell text-muted">${escapeHtml(m.notes?.takeUnless(String::isBlank) ?: "-")}</td>
                 </tr>
                 """.trimIndent()
             }.joinToString("\n")
@@ -225,17 +225,17 @@ object PatientPrintHtmlGenerator {
                             (pp.outcomeText?.contains("Stillbirth", ignoreCase = true) == true) ||
                             (pp.outcomeText?.contains("Miscarriage", ignoreCase = true) == true)
                         val outcomeBadge = if (isLoss) {
-                            """<span class="badge" style="background:#fee2e2;color:#991b1b;border:1px solid #f87171;font-weight:bold;padding:2px 6px;border-radius:4px;">$outcomeLabel</span>"""
+                            """<span class="badge" style="background:#fee2e2;color:#991b1b;border:1px solid #f87171;font-weight:bold;padding:2px 6px;border-radius:4px;">${escapeHtml(outcomeLabel)}</span>"""
                         } else {
-                            """<span style="font-weight:600;color:#0f766e;">$outcomeLabel</span>"""
+                            """<span style="font-weight:600;color:#0f766e;">${escapeHtml(outcomeLabel)}</span>"""
                         }
                         val methodText = pp.birthMethod ?: pp.deliveryBy ?: pp.lossManagement ?: pp.terminationMethod ?: "-"
                         """
                         <tr>
-                            <td class="text-center date-cell">${pp.dateText ?: "-"}</td>
-                            <td class="text-center font-bold">${methodText}</td>
+                            <td class="text-center date-cell">${escapeHtml(pp.dateText ?: "-")}</td>
+                            <td class="text-center font-bold">${escapeHtml(methodText)}</td>
                             <td class="text-center">${outcomeBadge}</td>
-                            <td class="text-center">${pp.placeAndDoctor?.takeUnless(String::isBlank) ?: pp.otherDetails?.takeUnless(String::isBlank) ?: "Not recorded"}</td>
+                            <td class="text-center">${escapeHtml(pp.placeAndDoctor?.takeUnless(String::isBlank) ?: pp.otherDetails?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
                         </tr>
                         """.trimIndent()
                     }.joinToString("\n")}
@@ -278,8 +278,8 @@ object PatientPrintHtmlGenerator {
                         </div>
                         <div class="header-meta uniform-meta">
                             <div class="doc-badge">IMAGING ATTACHMENTS</div>
-                            <div class="meta-row"><span class="k">Patient:</span> <span class="v">${patient.displayName}</span></div>
-                            <div class="meta-row"><span class="k">Case ID:</span> <span class="v">${patient.caseId}</span></div>
+                            <div class="meta-row"><span class="k">Patient:</span> <span class="v">${escapeHtml(patient.displayName)}</span></div>
+                            <div class="meta-row"><span class="k">Case ID:</span> <span class="v">${escapeHtml(patient.caseId)}</span></div>
                             <div class="meta-row"><span class="k">Print Date:</span> <span class="v">$printDateStr</span></div>
                             <div class="meta-row"><span class="k">Page:</span> <span class="v">3 of $totalPages</span></div>
                         </div>
@@ -295,7 +295,7 @@ object PatientPrintHtmlGenerator {
                                 """
                                 <div class="photo-card">
                                     <div class="photo-preview-placeholder">📷 [Original Ultrasound Scan Stored in Secure System]</div>
-                                    <div class="photo-caption">${photo["label"]}</div>
+                                    <div class="photo-caption">${escapeHtml(photo["label"])}</div>
                                 </div>
                                 """.trimIndent()
                             }.joinToString("\n")}
@@ -319,7 +319,7 @@ object PatientPrintHtmlGenerator {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clinical Record - ${patient.displayName} - $clinicNameEn</title>
+    <title>Clinical Record - ${escapeHtml(patient.displayName)} - $clinicNameEn</title>
     <style>
         :root {
             --navy-primary: #0D1B3D;
@@ -964,7 +964,7 @@ object PatientPrintHtmlGenerator {
                 <div class="header-meta uniform-meta">
                     <div class="doc-badge">CLINICAL RECORD</div>
                     <div class="meta-row"><span class="k">Type:</span> <span class="v">Certified Record</span></div>
-                    <div class="meta-row"><span class="k">Patient ID:</span> <span class="v">${patient.caseId}</span></div>
+                    <div class="meta-row"><span class="k">Patient ID:</span> <span class="v">${escapeHtml(patient.caseId)}</span></div>
                     <div class="meta-row"><span class="k">Print Date:</span> <span class="v">$printDateStr</span></div>
                     <div class="meta-row"><span class="k">Page:</span> <span class="v">1 of $totalPages</span></div>
                 </div>
@@ -973,18 +973,18 @@ object PatientPrintHtmlGenerator {
             <!-- Patient Identity Banner: Refined with phone on new line, age only -->
             <section class="patient-card">
                 <div class="pt-name-box">
-                    <h3>${patient.displayName}</h3>
-                    <div class="pt-code">Patient ID: ${patient.caseId}</div>
-                    <div class="pt-phone">Phone: ${patient.phone ?: "Unspecified"}</div>
+                    <h3>${escapeHtml(patient.displayName)}</h3>
+                    <div class="pt-code">Patient ID: ${escapeHtml(patient.caseId)}</div>
+                    <div class="pt-phone">Phone: ${escapeHtml(patient.phone ?: "Unspecified")}</div>
                 </div>
                 <div class="data-point">
                     <span class="data-label">Age</span>
-                    <span class="data-value">$ageFormatted</span>
+                    <span class="data-value">${escapeHtml(ageFormatted)}</span>
                 </div>
                 <div class="data-point">
                     <span class="data-label">Blood Group</span>
                     <span class="data-value ${if (isRhNegative) "text-rose" else "text-navy"}">
-                        ${patient.bloodGroupText ?: "-"}
+                        ${escapeHtml(patient.bloodGroupText ?: "-")}
                         ${if (isRhNegative) """<span class="badge badge-danger">Rh- Negative</span>""" else ""}
                     </span>
                 </div>
@@ -1009,15 +1009,15 @@ object PatientPrintHtmlGenerator {
                     <div class="dating-matrix">
                         <div class="matrix-item">
                             <div class="label">LMP Date</div>
-                            <div class="val">${patient.dating?.lmpDate ?: "-"}</div>
+                            <div class="val">${escapeHtml(patient.dating?.lmpDate ?: "-")}</div>
                         </div>
                         <div class="matrix-item">
                             <div class="label">Ultrasound EDD</div>
-                            <div class="val">${patient.dating?.ultrasoundEdd ?: "-"}</div>
+                            <div class="val">${escapeHtml(patient.dating?.ultrasoundEdd ?: "-")}</div>
                         </div>
                         <div class="matrix-item">
                             <div class="label">Agreed EDD</div>
-                            <div class="val text-rose">${patient.dating?.agreedEdd ?: "-"}</div>
+                            <div class="val text-rose">${escapeHtml(patient.dating?.agreedEdd ?: "-")}</div>
                         </div>
                     </div>
                     <div class="ga-highlight">
@@ -1038,15 +1038,15 @@ object PatientPrintHtmlGenerator {
                         </div>
                         <div class="history-row">
                             <span class="k">Drug Allergies:</span>
-                            <span class="v ${if (!patient.allergyHistory.isNullOrBlank()) "text-rose font-bold" else ""}">${patient.allergyHistory?.takeUnless(String::isBlank) ?: "Not recorded"}</span>
+                            <span class="v ${if (!patient.allergyHistory.isNullOrBlank()) "text-rose font-bold" else ""}">${escapeHtml(patient.allergyHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
                         </div>
                         <div class="history-row">
                             <span class="k">Medical History:</span>
-                            <span class="v">${patient.medicalHistory?.takeUnless(String::isBlank) ?: "Not recorded"}</span>
+                            <span class="v">${escapeHtml(patient.medicalHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
                         </div>
                         <div class="history-row">
                             <span class="k">Surgical History:</span>
-                            <span class="v">${patient.surgicalHistory?.takeUnless(String::isBlank) ?: "Not recorded"}</span>
+                            <span class="v">${escapeHtml(patient.surgicalHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
                         </div>
                     </div>
                 </div>
@@ -1111,8 +1111,8 @@ object PatientPrintHtmlGenerator {
                 </div>
                 <div class="header-meta uniform-meta">
                     <div class="doc-badge" style="background: var(--rose-accent);">Page 2 of $totalPages</div>
-                    <div class="meta-row"><span class="k">Patient:</span> <span class="v">${patient.displayName}</span></div>
-                    <div class="meta-row"><span class="k">Patient ID:</span> <span class="v">${patient.caseId}</span></div>
+                    <div class="meta-row"><span class="k">Patient:</span> <span class="v">${escapeHtml(patient.displayName)}</span></div>
+                    <div class="meta-row"><span class="k">Patient ID:</span> <span class="v">${escapeHtml(patient.caseId)}</span></div>
                     <div class="meta-row"><span class="k">Print Date:</span> <span class="v">$printDateStr</span></div>
                 </div>
             </header>
@@ -1195,11 +1195,11 @@ object PatientPrintHtmlGenerator {
                         <div class="history-list">
                             <div class="history-row">
                                 <span class="k">Planned Delivery Mode:</span>
-                                <span class="v text-rose font-bold">${com.sherifradwan.ancnative.ui.parseDeliveryNotes(patient.obstetricNotes).plan?.takeUnless(String::isBlank) ?: "Not recorded"}</span>
+                                <span class="v text-rose font-bold">${escapeHtml(com.sherifradwan.ancnative.ui.parseDeliveryNotes(patient.obstetricNotes).plan?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
                             </div>
                             <div class="history-row">
                                 <span class="k">Target Delivery Timing:</span>
-                                <span class="v text-navy font-bold">${patient.dating?.agreedEdd?.takeUnless(String::isBlank) ?: "Not recorded"}</span>
+                                <span class="v text-navy font-bold">${escapeHtml(patient.dating?.agreedEdd?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
                             </div>
                             <div class="history-row">
                                 <span class="k">Hospital & Blood Bank Precautions:</span>

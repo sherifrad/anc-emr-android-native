@@ -777,6 +777,35 @@
       "covers": ["Q89"]
     },
     {
+      "id": "STATIC-r3o",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3o.py",
+      "deps": [
+        "app/src/main/**/ui/report/HtmlEscape.kt",
+        "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
+        "app/src/main/**/*.kt",
+        ".agents/checks/check_r3o.py"
+      ],
+      "covers": ["S76", "S77"]
+    },
+    {
+      "id": "UNIT-print-escape",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*PatientPrintHtmlEscapeTest'",
+      "deps": [
+        "app/src/main/**/ui/report/HtmlEscape.kt",
+        "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
+        "app/src/main/**/ui/DeliveryNotesParser.kt",
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/main/**/model/GestationalAgeEngine.kt",
+        "app/src/main/**/model/DemoModels.kt",
+        "app/src/main/**/model/ClinicalModels.kt",
+        "app/src/main/**/security/SecuritySettingsRepository.kt",
+        "app/src/test/**/ui/report/PatientPrintHtmlEscapeTest.kt"
+      ],
+      "covers": ["Q92", "Q93"]
+    },
+    {
       "id": "UNIT-all",
       "tier": 2,
       "cmd": "./gradlew --offline :app:testDebugUnitTest",

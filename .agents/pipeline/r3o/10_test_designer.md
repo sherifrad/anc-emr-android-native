@@ -1,0 +1,6 @@
+ROLE: TEST DESIGNER for ROUND 3o (SPEC_FIX_R3.md section "Round 3o"). Tests only; no production code.
+ALLOWED files: .agents/checks/check_r3o.py (NEW), .agents/TEST_MANIFEST.json, app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt (NEW).
+1. check_r3o.py: S76 and S77 as the spec says; python3 stdlib only; strip Kotlin comments first; PASS/FAIL per S, print offending expressions; exit 1 on FAIL; style of .agents/checks/check_r3n.py. Each S must FAIL on today's code. For S77 read PatientPrintHtmlGenerator.kt completely first and build the allow-list from what is really there (numbers, logoBase64, generated-fragment variables); the allow-list must be short and each entry justified in a comment.
+2. PatientPrintHtmlEscapeTest per the "Unit" paragraph. Read PatientPrintHtmlGeneratorTest.kt for the builders (DemoPatient, DemoVisit, scans, labs, meds, SecuritySettingsState) but do not edit it. Make EVERY printed string field carry the marker and also assert the marker text never appears raw.
+3. TEST_MANIFEST.json: add STATIC-r3o and UNIT-print-escape (cmd, deps incl. PatientPrintHtmlGenerator.kt, HtmlEscape.kt, the test file, the check, covers). Keep other entries unchanged.
+Run check_r3o.py and report real results (the unit test will not compile until core exists).
