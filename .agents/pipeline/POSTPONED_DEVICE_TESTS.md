@@ -32,3 +32,8 @@ Run on the Honor 400, QA copy `com.sherifradwan.anc.qa` only (PIN 121212), demo 
 - NEW findings from the print preview (not part of those rounds): the visits table breaks words mid-word in narrow columns ("Gestati onal Age", "Pressu re", "Weigh t", "120/8 0", "165/1 05") and the medications header "Frequen cy"; "Official Stamp & Signature" is printed twice in the attestation box. Added to UIUX_BACKLOG.md as P-1 and P-2.
 - Not done yet: items 2, 5-11 (GA on the transfer date, large font checks, TalkBack, fingerprint, restore dialog, backup/restore/print end to end).
 
+
+## Built and tested, NOT seen on a device (added 2026-10-31, later rounds)
+14. Severe blood pressure: after saving a visit with 165/105, the patient list card shows a "Severe BP" badge and a line, the workspace attention banner shows the same line (even if no attention note was typed), and the printed report shows the BP label; 145/92 shows the raised label on the print only.
+15. The same patient shows the same previous-delivery history ("Prev 1 CS, 2 SVD", IUFD count, singular "1 Prior Miscarriage") on the list, the profile and the printed report.
+16. Release build: no screen-capture block (a screenshot works), no demo patients, PIN setup on first start.
