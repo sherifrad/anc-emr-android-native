@@ -1,0 +1,17 @@
+I have launched the lint task to check current errors and will wait for it to complete.
+I have launched the full unit test suite with `--rerun-tasks` and will wait for it to complete.
+Files changed:
+- [BiometricAuthManager.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/security/BiometricAuthManager.kt)
+
+What was done per oracle:
+- Q118: Added `Build.VERSION.SDK_INT < 28` guard to [`promptBiometric`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/security/BiometricAuthManager.kt#L21-L75) to prevent touching `BiometricPrompt` on API < 28; guarded `setAllowedAuthenticators` with `Build.VERSION.SDK_INT >= 30` (omitted on API 28-29); retained `Build.VERSION.SDK_INT < 30` in [`isBiometricAvailable`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/security/BiometricAuthManager.kt#L12-L19) before `BiometricManager` to satisfy Q28 and S8. Kept strings, titles, and API 30+ behavior identical.
+
+Assumptions:
+- Safe behavior on API < 30 returns false for `isBiometricAvailable` to avoid runtime `NoClassDefFoundError` on `BiometricManager` on API 28-29 while satisfying both S8 and S100.
+
+Verification:
+- `./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin :app:compileDebugAndroidTestKotlin`: PASSED
+- `./gradlew --offline :app:testDebugUnitTest --rerun-tasks`: PASSED (full unit suite executed)
+- `python3 .agents/checks/check_r3c.py`: PASSED (S8 passed)
+- `python3 .agents/checks/check_r3y.py`: S100 BiometricAuthManager API 28/30 checks passed
+- `./gradlew --offline :app:lintDebug`: 0 errors in BiometricAuthManager.kt; 5 errors reported overall (2 in `themes.xml` for splash screen attributes, 3 in `AppLockScreen.kt` for `LocalContextGetResourceValueCall`, both assigned to UI lane).

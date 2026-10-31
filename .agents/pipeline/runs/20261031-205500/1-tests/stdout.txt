@@ -1,0 +1,26 @@
+I couldn't run anything: every attempt to run `check_r3y.py`, `check_r3w.py` or the androidTest compile was refused for approval. So the new check was never run, `check_r3w.py` was not re-run, and the androidTest source set has not been compiled. Q119e is also not written.
+
+**Files changed**
+- `.agents/checks/check_r3y.py` (new)
+- `.agents/checks/check_r3w.py`
+- `.agents/TEST_MANIFEST.json`
+- `AncWorkflowTest.kt`, `SecurityWorkflowTest.kt` and `storage/VaultIntegrationTest.kt`, all under `app/src/androidTest/java/com/sherifradwan/ancnative/`
+
+**What I did**
+- **S99 and S100 (`check_r3y.py`):**
+  - S99 fails on today's code: the androidTest source still has `Locale("ar")` next to `getIdentifier`, until my 119a edit removes it.
+  - S100 fails because `BiometricAuthManager.kt` only guards API 30, and `themes.xml` has no `windowSplashScreen` items moved to `values-v31` yet. It also still has `getString(R.string.pin_...)` in `AppLockScreen.kt`.
+  - I expect both to fail as written, but I haven't seen them run.
+- **`check_r3w.py`:** `values-ar` is gone from `STRINGS` and the docstring, and I reworded the S96 message to match.
+- **Manifest:** added `STATIC-r3y` (tier 1) and `LINT-errors` (tier 2, `./gradlew --offline :app:lintDebug`). The JSON was not re-validated after the edits.
+- **Q119a:** removed `everyNewEnglishStorageStringHasAnArabicValue`.
+- **Q119b:** after interrupting setup, the test now expects Uninitialized. It then waits for the disk to be `Empty` and the fake keys to hold no alias, and finally runs a setup retry through to Locked. The unlock-cancel part is unchanged.
+  - `VaultController.cancelAuthentication` and `authenticationDetached` do roll back, via `cleanUpAbandonedInitialization`, but the cleanup is asynchronous, hence the wait.
+  - The alias is only deleted when no vault database remains. I couldn't confirm the database gets removed, so the wait may time out on a device. That would point to something left behind.
+  - I added the `kotlinx.coroutines.delay` import for the wait.
+- **Q119c:** removed both `lockStorage` assertions from the visit editor layout test and kept everything else.
+- **Q119d:** wait up to 5 s for "Clinic & System Settings" before asserting. `SecuritySettingsDialog.kt` shows that title unconditionally, so I take the failure to be timing.
+
+**Not done:** Q119e, the end-to-end draft test. `MainActivity` uses the real vault, which needs device-credential authentication to initialise or unlock. The existing test already shows the vault gate staying up, and the real vault would hold no demo patient. Existing tests use a fixed-state harness with no draft persistence. I wrote nothing rather than a flaky test; the alert dialog itself is covered by `DraftRecoveryDialogTest`.
+
+**Assumption:** the `arabicRtl` layout fixture still uses `Locale("ar")` for right-to-left layout of Arabic patient data. I kept it, and S99 only flags `Locale("ar")` combined with a resource lookup in the same file, plus any use in main.

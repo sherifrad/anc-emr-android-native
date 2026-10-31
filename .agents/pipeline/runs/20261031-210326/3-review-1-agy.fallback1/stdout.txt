@@ -1,0 +1,45 @@
+**Round 3y review (read-only). No Hard Blockers. Nothing was compiled or run, so every verdict comes from reading the diff and the code.**
+
+**(1) BiometricAuthManager**
+- Should-fix: `if (Build.VERSION.SDK_INT < 28) return false` sits directly above `if (Build.VERSION.SDK_INT < 30) return false` in `isBiometricAvailable`. The first check is dead.
+- API 30+ is unchanged: the same builder calls run, and `setAllowedAuthenticators(STRONG or WEAK)` is now guarded by `>= 30`.
+- Below API 28, `promptBiometric` calls `onResult(false)` and returns null before any `BiometricPrompt` class loads. The UI then falls back to PIN. `isBiometricAvailable` also returns false, so `AppLockScreen` and `SecuritySettingsDialog` never reach the prompt.
+- Nit: the API 28-29 branch (no `setAllowedAuthenticators`) is unreachable, because `isBiometricAvailable` is still false below 30. It is correct, and it matches the spec and the old behaviour. It is lint-only code.
+
+**(2) Themes**
+- Nit: both `values/themes.xml` and `values-v31/themes.xml` define `Theme.AncNativeDemo` with the same parent. The v31 file repeats the four base items plus the two splash items. The base file has no splash items.
+- I see no item lost and nothing unresolved.
+- Repeating the base items is inherent to same-name overriding. A parent/child pair would need a manifest change, which is outside the allowed files.
+
+**(3) AppLockScreen**
+- The three strings are read with `stringResource(...)` at composition level, and the click handler only uses the resolved values: `errorMessage = pinInvalidMessage` (and the mismatch and incorrect equivalents).
+- The string resource IDs are unchanged, and the PIN logic is untouched.
+- A stale string would need a locale change, which recreates the activity anyway.
+
+**(4) Tests**
+- **Vault cancellation:** the test is stronger, not weaker.
+  - It asserts `Uninitialized`, then polls up to 5 s for `files.inspect() == Empty` and `!keys.hasAnyAlias()`. It then asserts both.
+  - It retries with `beginInitialization()` and `completeAuthentication`, and expects `Locked`.
+  - `VaultController.cancelAuthentication` really does clean up: `cleanUpAbandonedInitialization` plus `deleteOrphanAliases` run under `storageMutex`. The retry takes the same mutex, so it cannot race the cleanup.
+  - The unlock-cancellation half is unchanged.
+- **Visit editor layout:** only the `lockStorage` assertions were removed, in two places (before and after the scroll). That matches spec item c, and the other assertions are intact. `lockStorage` does not exist in `app/src/main`.
+- **Settings dialog:** only a `waitUntil` of 5 s on the title was added, and the assertions are unchanged. Not weakened.
+- **Draft tests:** both assert "Unsaved draft found".
+  - Continue is checked with `EditableText == DRAFT_NOTE`.
+  - Discard is checked with an empty note, then a reopen where neither button exists.
+  - The tags `draftContinue` and `draftDiscard` exist in `AncApp.kt:336,344`.
+- Should-fix: two `Thread.sleep` calls affect the outcome.
+  - `DRAFT_AUTOSAVE_WAIT_MS = 2_500` is a fixed wait for autosave, which the spec allows ("wait about 2 seconds"). It would be more deterministic as a wait on a signal, if one exists.
+  - `Thread.sleep(DRAFT_LOAD_SETTLE_MS)` precedes the `assertDoesNotExist` check. A slow draft load could make that check pass without proving anything.
+  - `discardLeftoverVisitDraft` uses `runCatching{waitUntil(3s)}` as its "is there a leftover draft" test. This is timing-dependent and flaky-prone.
+- Nit: `unlockedSecurityRepo` calls `updatePin("135246")`. Please confirm it matches the PIN the other tests use.
+
+**(5) Arabic**
+- `values-ar` is gone, and the string-locale test is removed.
+- Should-fix or Nit: `Locale("ar")` remains once, at `AncWorkflowTest.kt:1078`, in the `arabicRtl()` layout fixture with `LayoutDirection.Rtl`. It is used at lines 183, 259, 607 and 683. It tests RTL layout, not UI strings, and `check_r3y.py` explicitly allows at most one such use. If the owner means "no Arabic at all", they should confirm whether this should stay.
+- `import java.util.Locale` is still needed.
+
+**(6) Dead code and unrequested changes**
+- The redundant `< 28` check in `isBiometricAvailable` (see item 1).
+- Nit: an untracked `retry/` directory at the repo root holds `style/`, `tests/` and `ui/` attempt folders. It is not in `.gitignore` (the check printed nothing). It looks like fleet-run leftovers and should not be committed.
+- Every tracked change under `app/src` is within scope. `AncWorkflowTest`, `SecurityWorkflowTest`, `VaultIntegrationTest`, `BiometricAuthManager`, `AppLockScreen` and `themes.xml` match the spec, plus the new `values-v31/themes.xml`.

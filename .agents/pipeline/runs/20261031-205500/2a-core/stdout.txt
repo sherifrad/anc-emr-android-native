@@ -1,0 +1,23 @@
+The lint build has been started in the background. Waiting for results.
+I will wait for the task to complete.
+Compilation is in progress. Waiting for completion.
+Waiting for the compilation task to finish.
+Running unit test suite in background. Waiting for results.
+Waiting for the unit tests task to finish.
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/security/BiometricAuthManager.kt
+
+What was done (Q118):
+- Added `Build.VERSION.SDK_INT < 28` guard in `promptBiometric` (calls `onResult(false)` and returns null) so `BiometricPrompt` is not touched below API 28.
+- Guarded `setAllowedAuthenticators(...)` with `Build.VERSION.SDK_INT >= 30` on the `BiometricPrompt.Builder` so API 28-29 omits it.
+- Kept `Build.VERSION.SDK_INT < 30` in `isBiometricAvailable` before any `BiometricManager` access (satisfies S8 and S100). Behavior on API 30+ is identical, no string changes, no new dependencies.
+
+Assumptions: None.
+
+Verification results:
+- `./gradlew --offline :app:compileDebugKotlin`: passed.
+- `./gradlew --offline :app:compileReleaseKotlin`: passed.
+- `./gradlew --offline :app:compileDebugAndroidTestKotlin`: failed (unresolved reference 'onAllNodes' in AncWorkflowTest.kt:41:33, belongs to tests lane).
+- `./gradlew --offline :app:testDebugUnitTest`: passed (whole suite green).
+- `./gradlew --offline :app:lintDebug`: 0 errors in BiometricAuthManager.kt (down from 17 total project errors to 5 errors in UI files: 2 in themes.xml, 3 in AppLockScreen.kt).
+- `python3 .agents/checks/check_r3c.py`: PASS (all checks including S8).

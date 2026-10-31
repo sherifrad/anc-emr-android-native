@@ -1,0 +1,17 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "pp/src/main/java/com/sherifradwan/ancnative/security/BiometricAuthManager.kt"
+  ],
+  "finalMessage": "Changed files:\n- app/src/main/java/com/sherifradwan/ancnative/security/BiometricAuthManager.kt\n\nActions per oracle:\n- Q118: Added SDK_INT guards in BiometricAuthManager: guarded API 28 in isBiometricAvailable and promptBiometric (returning false/null below API 28 without referencing BiometricPrompt classes), and guarded setAllowedAuthenticators to API 30+ while keeping identical authenticators and behavior on API 30+. No string or title changes.\n\nAssumptions:\n- None; implementation directly follows the Q118 spec and static checks S8/S100.\n\nVerification:\n- ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin :app:compileDebugAndroidTestKotlin: PASSED (BUILD SUCCESSFUL).\n- ./gradlew --offline :app:testDebugUnitTest: PASSED (BUILD SUCCESSFUL, full unit test suite passed).\n- python3 .agents/checks/check_r3c.py: PASSED (including S8).\n- ./gradlew --offline :app:lintDebug: 0 errors in BiometricAuthManager.kt (reduced from 17 total errors to 5 errors, all 5 remaining errors are outside this file: 2 in themes.xml, 3 in AppLockScreen.kt).",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-210326/2a-core/result.json",
+  "timestamp": "2026-10-31T19:11:15.691Z"
+}

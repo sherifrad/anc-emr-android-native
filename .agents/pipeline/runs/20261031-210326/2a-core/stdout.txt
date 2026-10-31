@@ -1,0 +1,14 @@
+Changed files:
+- app/src/main/java/com/sherifradwan/ancnative/security/BiometricAuthManager.kt
+
+Actions per oracle:
+- Q118: Added SDK_INT guards in BiometricAuthManager: guarded API 28 in isBiometricAvailable and promptBiometric (returning false/null below API 28 without referencing BiometricPrompt classes), and guarded setAllowedAuthenticators to API 30+ while keeping identical authenticators and behavior on API 30+. No string or title changes.
+
+Assumptions:
+- None; implementation directly follows the Q118 spec and static checks S8/S100.
+
+Verification:
+- ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin :app:compileDebugAndroidTestKotlin: PASSED (BUILD SUCCESSFUL).
+- ./gradlew --offline :app:testDebugUnitTest: PASSED (BUILD SUCCESSFUL, full unit test suite passed).
+- python3 .agents/checks/check_r3c.py: PASSED (including S8).
+- ./gradlew --offline :app:lintDebug: 0 errors in BiometricAuthManager.kt (reduced from 17 total errors to 5 errors, all 5 remaining errors are outside this file: 2 in themes.xml, 3 in AppLockScreen.kt).

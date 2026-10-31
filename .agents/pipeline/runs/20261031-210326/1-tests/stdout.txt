@@ -1,0 +1,42 @@
+I couldn't run anything: the sandbox refuses every `python3` and `gradlew` command, so none of the new checks or the androidTest compile has run. The test and manifest edits are made, but I haven't confirmed that any of them behave as intended.
+
+**Files changed**
+- `.agents/checks/check_r3y.py` (new)
+- `.agents/checks/check_r3w.py`
+- `.agents/TEST_MANIFEST.json`
+- `AncWorkflowTest.kt`
+- `SecurityWorkflowTest.kt`
+- `storage/VaultIntegrationTest.kt`
+
+**S99 and S100**
+- `check_r3y.py` strips Kotlin and XML comments first, prints PASS/FAIL per check and exits 1 on any FAIL.
+- By reading the current code, both should FAIL today:
+  - `BiometricAuthManager.kt` only has a `SDK_INT < 30` guard, with no API 28 guard.
+  - `res/values/themes.xml` still has the two splash items.
+  - `values-v31` is an empty folder.
+  - `AppLockScreen.kt` still calls `context.getString(` at lines 132, 139 and 158.
+- S99 is meaningful beyond the folder check. It also looks for the removed Arabic string-resource test, any `Locale("ar")` in `app/src/main`, and `values-ar` in `check_r3w.py`.
+
+**Q119**
+- **a:** I removed `everyNewEnglishStorageStringHasAnArabicValue`.
+- **b:** The test is renamed to `initializationCancellationAndDetachRollBackCleanlyWhileUnlockCancellationRemainsRetryable`.
+  - After cancel or detach it expects `Uninitialized`.
+  - It then waits up to 5 s for the disk to be `Empty` and `keys.hasAnyAlias()` to be false.
+  - It retries initialization through to `Locked`.
+  - The unlock-cancellation part is unchanged.
+- **c:** I deleted both `lockStorage` expectations from the visit editor layout test; everything else stays.
+- **d:** I added `waitUntil(5 s)` on the "Clinic & System Settings" title. I found no state in which the dialog genuinely doesn't show that title.
+- **e:** Two new tests, `unsavedVisitNoteSurvivesLockAndContinueRestoresIt` and `unsavedVisitNoteDiscardShowsEmptyNoteAndAlertDoesNotReturn`.
+  - They use the real activity with its debug-seeded demo patient `DEMO-ANC-001` and the PIN `135246`.
+  - Each test type a note, wait 2.5 s, lock with `securityRepo.lockApp()`, unlock with `unlockApp()`, and reopen the editor.
+  - They assert the "Unsaved draft found" alert, then Continue restoring the note, or Discard giving an empty note with no alert on the next open.
+  - Each test first discards any leftover draft, so they don't depend on each other.
+
+**Manifest:** I added `STATIC-r3y` and `LINT-errors`, and removed the deleted `values-ar` dependency from `STATIC-r3w`.
+
+**Assumptions**
+- **Cleanup in b:** `VaultController` sets `Uninitialized` immediately on cancel, but removes the descriptor, files and key alias asynchronously under the storage mutex, so the test polls before asserting. From reading the code, nothing is left behind. That is unverified until it runs on the emulator.
+- **Locale fixture:** I kept the `arabicRtl` layout fixture, which uses `Locale("ar")` once in `AncWorkflowTest` and lays out English strings right-to-left. S99 allows at most that one use and bans any Arabic string-resource lookup. If you want zero `Locale("ar")` anywhere, say so and I'll rework the fixture.
+- **Timing in e:** The tests use real `Thread.sleep` (2.5 s) to get past the 1 s autosave debounce, and a 3 s settle before asserting that the alert does not return.
+
+**Not done:** `check_r3y.py`, `check_r3w.py` and `:app:compileDebugAndroidTestKotlin` (plus the `.agents/TEST_MANIFEST.json` JSON syntax check). Please run them. The androidTests themselves also haven't run, since I can't drive a device.

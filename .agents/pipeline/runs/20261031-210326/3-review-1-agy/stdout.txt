@@ -1,0 +1,13 @@
+(1) BiometricAuthManager: Behavior on API 30+ is unchanged. Below 28, it fails safe (returns false/null without touching BiometricPrompt or BiometricManager). For API 28-29, promptBiometric implements the branch omitting setAllowedAuthenticators, but line 14 keeps biometrics disabled on API 28-29 (fails safe to PIN, but builder logic is unreachable).
+(2) Splash theme: Base and v31 themes both resolve cleanly and no items were lost. However, `values-v31/themes.xml` duplicates the 4 base items rather than inheriting from `Theme.AncNativeDemo`.
+(3) AppLockScreen: Texts are unchanged, resolved via `stringResource()` in composable scope and read in `handleDigit` on every recomposition without caching stale strings; PIN verification and setup logic are untouched.
+(4) Tests: No assertions were weakened.
+- Vault cancellation test was strengthened: verifies clean rollback to `VaultState.Uninitialized`, confirms disk is empty and no key aliases remain, and executes a successful retry reaching `VaultState.Locked`.
+- Visit editor test removed only the `lockStorage` button assertion per D11/Q119c; all other layout, heading, field, save/cancel, and touch-target assertions remain intact.
+- Settings dialog test added a 5s `waitUntil` on dialog appearance without weakening any assertions.
+- Draft E2E tests deterministically verify alert display, Continue note restoration, and Discard clearing (and non-recurrence) using Compose `waitUntil` and `waitForIdle`.
+(5) Localisation: `res/values-ar/` and the Arabic locale string test are completely removed. The sole remaining `Locale("ar")` is in the RTL layout fixture `arabicRtl()`, which tests layout direction for English text.
+(6) Findings:
+- [Should-fix] `app/src/main/java/com/sherifradwan/ancnative/security/BiometricAuthManager.kt:14`: `if (Build.VERSION.SDK_INT < 30) return false` inside `isBiometricAvailable` causes API 28-29 to always return false and renders lines 46-52 in `promptBiometric` unreachable dead code.
+- [Nit] `app/src/main/res/values-v31/themes.xml:4-7`: Duplicates 4 base theme items instead of inheriting `parent="Theme.AncNativeDemo"`.
+- No unauthorized file modifications detected. Lint reported 0 errors.

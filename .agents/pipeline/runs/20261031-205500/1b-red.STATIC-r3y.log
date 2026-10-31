@@ -1,0 +1,2 @@
+PASS S99 no values-ar folder, no Arabic UI-string locale test, check_r3w without values-ar
+FAIL S100 API guards in BiometricAuthManager, splash items only in values-v31, no context.getString(pin_: BiometricAuthManager.kt has no API 28 guard; values/themes.xml still has windowSplashScreen; values-v31/themes.xml missing; AppLockScreen.kt still reads pin_ strings through getString(

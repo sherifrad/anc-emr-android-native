@@ -1,0 +1,43 @@
+Review of Round 3y. I read the diff and the spec but ran no tests, lint or builds.
+
+**Hard Blocker**
+- None found by inspection.
+
+**Should-fix**
+1. **Q119a / S99, Arabic locale fixture left in `AncWorkflowTest.kt:1078`.** `locale = Locale("ar"),` is still in the `arabicRtl()` fixture. Nothing in `values-ar` or the main sources reads Arabic strings, so it only drives an RTL layout check, which may be intended as data handling. The S99 check ("no `Locale("ar")` as a UI-string locale test") may still trip on this literal. The orchestrator should decide whether the fixture stays; I don't see a UI-string assertion tied to it.
+2. **Q118, API 28-29 path is unreachable (dead code).** `BiometricAuthManager.kt:14` is `if (Build.VERSION.SDK_INT < 30) return false`, so `isBiometricAvailable` is false on 28-29 and `promptBiometric` returns at the `!isBiometricAvailable` check. The `if (SDK_INT >= 30)` branch around `setAllowedAuthenticators` therefore always runs, and the 28-29 behaviour in the spec is never exercised. I did not check whether a `canAuthenticate()` check is possible on 28-29 (`BiometricManager` is API 29+). Safe outcome, but the spec's "28-29 omits setAllowedAuthenticators" can't happen. Either say so in the report, or drop the `>= 30` guard and keep a single `< 30` gate.
+3. **Q118, redundant line `BiometricAuthManager.kt:13`.** `if (Build.VERSION.SDK_INT < 28) return false` is made redundant by the `< 30` check on the next line. The same applies to the `< 28` block at the top of `promptBiometric`, since `isBiometricAvailable` already covers it. This is unrequested duplication. Lint may need the explicit version checks, so run lint before removing them.
+4. **Q119e, timing decides the outcome in `discardLeftoverVisitDraft`.** It wraps a 3 s `waitUntil` in `runCatching` and treats a timeout as "no leftover draft". If a leftover draft loads in more than 3 s, it is not discarded. The later `draftContinue` wait would then see the old draft, and the Continue test would assert the wrong note. This is rare but non-deterministic.
+5. **Q119e, `Thread.sleep(DRAFT_LOAD_SETTLE_MS)` before the "alert does not return" assertions.** A sleep followed by `assertDoesNotExist` is weak: it could pass before the draft loads. A deterministic signal would be better, for example waiting for a field value or the editor's loaded state. I didn't check what signals the editor exposes.
+
+**Nit**
+- `Thread.sleep(DRAFT_AUTOSAVE_WAIT_MS)` (2.5 s) before locking is required by the spec ("wait about 2 seconds"). It is a fixed wait, not a wait on a condition, so an autosave slower than 2.5 s would make the test fail.
+- `AncWorkflowTest.kt` imports `android.content.res.Configuration` (line 3) and `java.util.Locale`. Both are still used (the `Configuration` hits at lines 802-807 are `LocalConfiguration`, `fixtureConfiguration` and similar, so I'm not certain the `android.content.res.Configuration` import itself is still used). Check for an unused import.
+- Q119c: the two `lockStorage` assertions are removed and nothing else changed. In the diff, `assertIsEnabled` is still used elsewhere in the file (lines 204, 311, 321-322).
+
+**Per-question answers**
+1. **Biometrics.**
+   - On API 30+ behaviour is identical: same builder, strings and negative button, and `setAllowedAuthenticators` is still applied.
+   - Below 28 it returns `onResult(false)` and `null`, so no crash and the app falls back to the PIN.
+   - `BiometricPrompt` is only referenced after the `isBiometricAvailable` gate, so it is never touched below 30.
+   - `BiometricManager::class.java` is also only reached after the `< 30` return.
+   - The 28-29 path is unreachable (see Should-fix 2).
+2. **Splash theme.**
+   - The base `values/themes.xml` has the same parent and 4 items, minus the 2 splash items.
+   - `values-v31/themes.xml` is a full copy of the style plus the 2 splash items. No item is lost and both configurations resolve. The spec allowed the full-copy variant.
+   - The 4 shared items are duplicated across the two files. A parent/child pair would avoid that, but the spec said "choose the smaller".
+3. **AppLockScreen.**
+   - The three `stringResource(...)` values are read once at the top of the composable, and the text is unchanged.
+   - Locale changes recompose the composable, so no stale string is kept.
+   - The PIN logic is untouched. The diff only swaps the string source.
+4. **Tests.**
+   - **Vault test.** The old test expected `Blocked(INCOMPLETE_SETUP)`. The new one expects `Uninitialized` and polls for empty disk state and no key alias, with up to 100 × 50 ms of polling. It then asserts `Empty` and `!hasAnyAlias`, starts a retry with `beginInitialization()`, completes it and expects `Locked`. This is stronger, not weaker, and proves a working retry. `VaultController.cancelAuthentication` runs an async `cleanUpAbandonedInitialization`, which the polling covers. The old unlock-retry part is outside the diff, so I haven't confirmed it still runs.
+   - **Visit editor test.** Only the `lockStorage` assertions are removed (spec 119c).
+   - **Settings dialog test.** A `waitUntil` was added before the existing assertions, which are unchanged.
+   - **Draft tests.** They cover the alert, Continue (text restored) and Discard (empty note, no alert on reopen) in two tests. See Should-fix 4 and 5 for determinism.
+5. **Arabic.**
+   - No `values-ar` folder remains and no `setLocale` / `Locale("ar")` hits in `app/src/main`, other than `MainActivity.kt:31` (`config.setLocale(locale)`, which I didn't inspect).
+   - The only leftover is the RTL layout fixture (Should-fix 1). The old Arabic string test is removed.
+6. **Dead code / scope.**
+   - The changed files are the six above plus the new `values-v31/themes.xml`. The `.agents` check and manifest files also show as modified.
+   - Dead code: the unreachable 28-29 path and the redundant `< 28` checks.

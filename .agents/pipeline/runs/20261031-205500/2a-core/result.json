@@ -1,0 +1,20 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "pp/src/main/java/com/sherifradwan/ancnative/security/BiometricAuthManager.kt",
+    ".agents/pipeline/runs/20261031-205447/1-tests/",
+    ".agents/pipeline/runs/20261031-205447/2a-core.brief.md",
+    ".agents/pipeline/runs/20261031-205447/snap-before-2a-core/"
+  ],
+  "finalMessage": "The lint build has been started in the background. Waiting for results.\nI will wait for the task to complete.\nCompilation is in progress. Waiting for completion.\nWaiting for the compilation task to finish.\nRunning unit test suite in background. Waiting for results.\nWaiting for the unit tests task to finish.\nFiles changed:\n- app/src/main/java/com/sherifradwan/ancnative/security/BiometricAuthManager.kt\n\nWhat was done (Q118):\n- Added `Build.VERSION.SDK_INT < 28` guard in `promptBiometric` (calls `onResult(false)` and returns null) so `BiometricPrompt` is not touched below API 28.\n- Guarded `setAllowedAuthenticators(...)` with `Build.VERSION.SDK_INT >= 30` on the `BiometricPrompt.Builder` so API 28-29 omits it.\n- Kept `Build.VERSION.SDK_INT < 30` in `isBiometricAvailable` before any `BiometricManager` access (satisfies S8 and S100). Behavior on API 30+ is identical, no string changes, no new dependencies.\n\nAssumptions: None.\n\nVerification results:\n- `./gradlew --offline :app:compileDebugKotlin`: passed.\n- `./gradlew --offline :app:compileReleaseKotlin`: passed.\n- `./gradlew --offline :app:compileDebugAndroidTestKotlin`: failed (unresolved reference 'onAllNodes' in AncWorkflowTest.kt:41:33, belongs to tests lane).\n- `./gradlew --offline :app:testDebugUnitTest`: passed (whole suite green).\n- `./gradlew --offline :app:lintDebug`: 0 errors in BiometricAuthManager.kt (down from 17 total project errors to 5 errors in UI files: 2 in themes.xml, 3 in AppLockScreen.kt).\n- `python3 .agents/checks/check_r3c.py`: PASS (all checks including S8).",
+  "stderrTail": "root agent idle; waiting up to 30m0s for 1 background task(s)",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-205500/2a-core/result.json",
+  "timestamp": "2026-10-31T19:00:42.931Z"
+}
