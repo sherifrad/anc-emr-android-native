@@ -1,0 +1,2 @@
+FAIL S97 print CSS has no break-word, has nowrap; stamp text printed once: still contains word-break: break-word; no white-space: nowrap; 'Official Stamp & Signature' occurs 2 times, expected 1
+FAIL S98 hiddenRowsHtml used >= 4 times, MAX_PRINT_* constants defined, no literal .take(: fun hiddenRowsHtml defined 0 times, expected 1; hiddenRowsHtml called 0 times, expected >= 4; no val MAX_PRINT_VISITS; no val MAX_PRINT_SCANS; no val MAX_PRINT_LABS; no val MAX_PRINT_MEDICATIONS; .take( with a numeric literal remains

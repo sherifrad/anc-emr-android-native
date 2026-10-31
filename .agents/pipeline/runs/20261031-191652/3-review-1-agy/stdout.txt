@@ -1,0 +1,27 @@
+# Round 3x Independent Review (Read-only)
+
+**(1) Values, Splitting & Overflow:**
+- Mid-word/number/date splitting is resolved: `word-break: normal; overflow-wrap: normal; hyphens: none;` on tables; `.date-cell`, `#`, GA, weight, BP, and EFW are nowrap.
+- **[Should-fix]** [PatientPrintHtmlGenerator.kt:865](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt#L865): `.clinical-table td.text-navy { white-space: nowrap; }`. This selector inadvertently sets `white-space: nowrap` on Lab investigation names (`l.testName`, L193) and Medication names (`m.name`, L216). Long names (e.g. "Complete Blood Count with Differential", "Calcium Carbonate + Vitamin D3") cannot wrap and will overflow fixed columns (32% and 28%) into adjacent cells at 380px and in print. BP and EFW cells should use `.nowrap-cell` directly instead.
+
+**(2) List Caps & Announcement:**
+- Every cut list is announced with exact count via `hiddenRowsHtml`: Visits (cap 12, colspan 6), Scans (cap 7, colspan 7), Labs (cap 10, colspan 4), Medications (cap 8, colspan 5).
+- Boundary behavior verified: exactly at cap -> no more-row; 1 over -> "and 1 more not shown"; empty -> empty message row only, no more-row.
+- No silent `.take(` or `.subList` calls remain in the file.
+
+**(3) HTML Escaping:**
+- All dynamic patient and clinical record text in modified rows is passed through `escapeHtml()`; count and colspan interpolations are strictly integer-based.
+
+**(4) Signature Box:**
+- "Official Stamp & Signature" appears exactly once (inside `.stamp-placeholder`, L1248); duplicate lower text removed; doctor name, official title, and structure preserved.
+
+**(5) CSS, Scope & Wording:**
+- No dead CSS rules or unrequested wording changes.
+- **[Nit]** [PatientPrintHtmlGenerator.kt:866](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt#L866): `.mini-table td:nth-child(4) { word-break: normal; overflow-wrap: anywhere; }` is an ad-hoc nth-child selector; adding `.notes-cell` to L264 would be cleaner.
+- **[Nit]** [PatientPrintHtmlGenerator.kt:1160-1168](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt#L1160-L1168): Ultrasound table column widths were rebalanced (GA 12%->14%, Placenta 14%->12%, Notes 21%->24%); accommodates "Gestational" nicely, but was unrequested outside visits table.
+
+**(6) Tests Verification:**
+- Tests in [`PrintLayoutTest.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintLayoutTest.kt) and [`PrintSampleDumpTest.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintSampleDumpTest.kt) invoke production `PatientPrintHtmlGenerator.generateHtml()`.
+- Tests would fail on old code: old CSS had `word-break: break-word`, `.date-cell` had no nowrap, stamp appeared twice, and `.take(` cut silently.
+- **[Nit]** [`PrintLayoutTest.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintLayoutTest.kt): Lacks an assertion checking that text-heavy columns (drug names, lab names) remain wrappable, allowing the `td.text-navy` nowrap issue to slip through.
+- Check `check_r3x.py` (S97-S98): passed. Gradle unit tests: not run (Gradle daemon IPC blocked by environment sandbox).

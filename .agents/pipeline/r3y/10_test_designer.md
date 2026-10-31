@@ -1,0 +1,6 @@
+ROLE: TEST DESIGNER for ROUND 3y (SPEC_FIX_R3.md section "Round 3y"). Tests and checks only; no production code.
+ALLOWED files: .agents/checks/check_r3y.py (NEW), .agents/checks/check_r3w.py (only: drop values-ar from its STRINGS list and docstring), .agents/TEST_MANIFEST.json, app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt, app/src/androidTest/java/com/sherifradwan/ancnative/SecurityWorkflowTest.kt, app/src/androidTest/java/com/sherifradwan/ancnative/storage/VaultIntegrationTest.kt (edit only what Q119 lists).
+1. check_r3y.py: S99-S100 as the spec says; python3 stdlib only; strip Kotlin comments (XML comments) first; PASS/FAIL; exit 1 on FAIL; style of .agents/checks/check_r3x.py; each S must FAIL on today's code (S99 passes on the folder part already: make the check meaningful through the other parts).
+2. Q119 a-e exactly as written. The androidTest source set must COMPILE (./gradlew --offline :app:compileDebugAndroidTestKotlin); you cannot run it on a device. Read the code under test (VaultController, SecuritySettingsDialog, the draft recovery dialog tags draftContinue / draftDiscard) before you change an assertion; never weaken an assertion to make it pass.
+3. TEST_MANIFEST.json: add STATIC-r3y and LINT-errors as the spec says.
+Run check_r3y.py and report real results.

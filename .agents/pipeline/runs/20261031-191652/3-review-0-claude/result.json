@@ -1,0 +1,15 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "claude-delegate",
+  "cli": "claude",
+  "status": "failed",
+  "exitCode": 1,
+  "signal": null,
+  "readOnly": true,
+  "readOnlyViolation": false,
+  "touchedFiles": [],
+  "finalMessage": "You've hit your 5-hour limit · resets 8:30pm (Africa/Cairo)",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-191652/3-review-0-claude/result.json",
+  "timestamp": "2026-10-31T17:30:04.193Z"
+}
