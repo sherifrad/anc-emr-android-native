@@ -1067,6 +1067,7 @@ private fun ProfileVisitCard(
                         )
                     }
                 }
+                BpAlertLabel(visit.bloodPressure)
 
                 if (!visit.findings.isNullOrBlank()) {
                     Text(
@@ -1079,6 +1080,7 @@ private fun ProfileVisitCard(
             } else {
                 // Expanded Details: The EXACT Workspace style layout with FactRows!
                 FactRow(R.string.blood_pressure, visit.bloodPressure)
+                BpAlertLabel(visit.bloodPressure)
                 FactRow(R.string.weight, formatWeightKg(visit.weight))
                 FactRow(R.string.findings, visit.findings)
                 FactRow(R.string.notes, visit.notes)

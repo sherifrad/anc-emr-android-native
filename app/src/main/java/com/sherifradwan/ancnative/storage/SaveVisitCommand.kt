@@ -2,7 +2,11 @@ package com.sherifradwan.ancnative.storage
 
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.DemoVisit
+import com.sherifradwan.ancnative.model.isPlausibleBloodPressure
+import com.sherifradwan.ancnative.model.isPlausibleWeightKg
+import com.sherifradwan.ancnative.model.parseBloodPressure
 import com.sherifradwan.ancnative.model.parseCanonicalIsoDateOrNull
+import com.sherifradwan.ancnative.model.parseWeightKg
 import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.DraftError
 import java.nio.ByteBuffer
@@ -30,15 +34,29 @@ data class SaveVisitCommand(
             state: AncState,
             operationUuid: String,
             newVisitId: String,
+            today: LocalDate = LocalDate.now(),
         ): SavePreparation {
             val draft = state.draft ?: return SavePreparation.Rejected(setOf(DraftError.SAVE_FAILED))
             val date = draft.values.date.trim()
-            val dateErrors = when {
-                date.isEmpty() -> setOf(DraftError.DATE_REQUIRED)
-                !date.isIsoDate() -> setOf(DraftError.INVALID_DATE)
-                else -> emptySet()
+            val parsedDate = parseCanonicalIsoDateOrNull(date)
+            val errors = buildSet {
+                when {
+                    date.isEmpty() -> add(DraftError.DATE_REQUIRED)
+                    parsedDate == null -> add(DraftError.INVALID_DATE)
+                    parsedDate.isAfter(today) -> add(DraftError.DATE_IN_FUTURE)
+                }
+                val bloodPressure = draft.values.bloodPressure.normalized()
+                if (bloodPressure != null &&
+                    parseBloodPressure(bloodPressure)?.let(::isPlausibleBloodPressure) != true
+                ) {
+                    add(DraftError.BLOOD_PRESSURE_INVALID)
+                }
+                val weight = draft.values.weight.normalized()
+                if (weight != null && parseWeightKg(weight)?.let(::isPlausibleWeightKg) != true) {
+                    add(DraftError.WEIGHT_INVALID)
+                }
             }
-            if (dateErrors.isNotEmpty()) return SavePreparation.Rejected(dateErrors)
+            if (errors.isNotEmpty()) return SavePreparation.Rejected(errors)
 
             val patient = state.patient(draft.patientId)
                 ?: return SavePreparation.Rejected(setOf(DraftError.SAVE_FAILED))
@@ -66,8 +84,6 @@ data class SaveVisitCommand(
                 command.copy(fingerprint = command.canonicalFingerprint()),
             )
         }
-
-        private fun String.isIsoDate(): Boolean = parseCanonicalIsoDateOrNull(this) != null
     }
 }
 

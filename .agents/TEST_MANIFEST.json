@@ -696,6 +696,46 @@
       "covers": ["S64", "S65", "S66"]
     },
     {
+      "id": "STATIC-r3m",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3m.py",
+      "deps": [
+        "app/src/main/**/model/VisitVitals.kt",
+        "app/src/main/**/storage/SaveVisitCommand.kt",
+        "app/src/main/**/state/AncState.kt",
+        "app/src/main/**/ui/VisitEditor.kt",
+        "app/src/main/**/ui/ClinicalBadges.kt",
+        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/main/**/ui/ProfileScreen.kt",
+        "app/src/main/res/values/strings.xml",
+        ".agents/checks/check_r3m.py"
+      ],
+      "covers": ["S67", "S68", "S69", "S70", "S71"]
+    },
+    {
+      "id": "UNIT-visit-vitals",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*VisitVitalsTest'",
+      "deps": [
+        "app/src/main/**/model/VisitVitals.kt",
+        "app/src/test/**/model/VisitVitalsTest.kt"
+      ],
+      "covers": ["Q84"]
+    },
+    {
+      "id": "UNIT-save-visit-validation",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*SaveVisitValidationTest'",
+      "deps": [
+        "app/src/main/**/model/VisitVitals.kt",
+        "app/src/main/**/storage/SaveVisitCommand.kt",
+        "app/src/main/**/state/AncState.kt",
+        "app/src/main/**/model/DemoFixtures.kt",
+        "app/src/test/**/storage/SaveVisitValidationTest.kt"
+      ],
+      "covers": ["Q85"]
+    },
+    {
       "id": "UNIT-all",
       "tier": 2,
       "cmd": "./gradlew --offline :app:testDebugUnitTest",

@@ -1,5 +1,9 @@
 package com.sherifradwan.ancnative.ui
 
+import com.sherifradwan.ancnative.R
+import com.sherifradwan.ancnative.model.BpLevel
+import com.sherifradwan.ancnative.model.bpLevel
+
 /** True when a recorded blood group is Rh negative ("A-", "O neg", "B Rh -ve", "O minus", ...). */
 internal fun isRhNegative(bloodGroup: String?): Boolean {
     val raw = bloodGroup?.trim()?.replace('\u2212', '-')?.lowercase() ?: return false
@@ -78,3 +82,10 @@ private val ISO_DATE = Regex("\\d{4}-\\d{2}-\\d{2}")
 
 private const val MIN_AGE_YEARS = 10
 private const val MAX_AGE_YEARS = 70
+
+/** Alert text for a blood pressure value, or null when it is normal or unreadable. */
+internal fun bpAlertResource(raw: String?): Int? = when (bpLevel(raw)) {
+    BpLevel.RAISED -> R.string.bp_alert_raised
+    BpLevel.SEVERE -> R.string.bp_alert_severe
+    BpLevel.NORMAL -> null
+}

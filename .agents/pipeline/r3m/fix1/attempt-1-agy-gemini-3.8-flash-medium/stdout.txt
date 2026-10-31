@@ -1,0 +1,44 @@
+### Code Changes
+Applied the fix to [VisitVitals.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/model/VisitVitals.kt#L8-L20):
+```kotlin
+private val weightRegex = Regex("""^(\d{1,4})(?:[.,](\d))?(?:\s*(?:kg|kilograms|kilogram))?$""", RegexOption.IGNORE_CASE)
+```
+```kotlin
+fun parseWeightKg(raw: String?): Double? {
+    val match = weightRegex.matchEntire(raw?.trim().orEmpty()) ?: return null
+    return "${match.groupValues[1]}.${match.groupValues[2].ifEmpty { "0" }}".toDoubleOrNull()
+}
+```
+
+---
+
+### Test Execution Result
+
+Ran:
+```bash
+./gradlew --offline :app:testDebugUnitTest --tests '*VisitVitalsTest'
+```
+
+**Real Result: FAILED (8 tests completed, 1 failed)**
+
+```
+> Task :app:testDebugUnitTest FAILED
+
+VisitVitalsTest > parseWeightRejectsTwoDecimalsBlankAndGarbage FAILED
+    java.lang.AssertionError at VisitVitalsTest.kt:64
+
+8 tests completed, 1 failed
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:testDebugUnitTest'.
+> There were failing tests. See the report at: file:///Users/sherifgamalradwan/anc-emr-android-native/app/build/reports/tests/testDebugUnitTest/index.html
+```
+
+#### Cause of Failure
+In [VisitVitalsTest.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/model/VisitVitalsTest.kt#L64), line 64 currently contains:
+```kotlin
+assertNull(parseWeightKg("68,5 kg"))
+```
+With the spec fix, `parseWeightKg("68,5 kg")` now evaluates to `68.5`, causing `assertNull(...)` at line 64 to fail. Per instructions, test files were left untouched.

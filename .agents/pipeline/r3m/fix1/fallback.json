@@ -1,0 +1,18 @@
+[
+ {
+  "spec": "agy:claude-sonnet-5-5-medium",
+  "status": "failed",
+  "seconds": 3.8,
+  "chars": 0,
+  "ok": false,
+  "why": "your subscription to increase your limits. Resets in 86h43m22s.\",\"status\":\"RESOURCE_EXHAUSTED\",\"error_code\":429,\"code_kind\":\"http\",\"retryable\":true,\"error_id\":\"84c17ae5-4bfe-4172-8468-f69e0b3c86e5-1\"} no file changed"
+ },
+ {
+  "spec": "agy:gemini-3.8-flash-medium",
+  "status": "completed",
+  "seconds": 130.0,
+  "chars": 1618,
+  "ok": false,
+  "why": "no file changed"
+ }
+]

@@ -134,7 +134,15 @@ enum class MedicationDraftField {
     ADVERSE_NOTES,
 }
 
-enum class DraftError { DATE_REQUIRED, INVALID_DATE, STALE_REVISION, SAVE_FAILED }
+enum class DraftError {
+    DATE_REQUIRED,
+    INVALID_DATE,
+    DATE_IN_FUTURE,
+    BLOOD_PRESSURE_INVALID,
+    WEIGHT_INVALID,
+    STALE_REVISION,
+    SAVE_FAILED,
+}
 enum class ClinicalValidationError {
     REQUIRED_DATE,
     INVALID_DATE,

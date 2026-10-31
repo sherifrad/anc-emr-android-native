@@ -19,11 +19,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.sherifradwan.ancnative.model.BpLevel
+import com.sherifradwan.ancnative.model.bpLevel
 
 @Composable
 private fun isDarkSurface(): Boolean = MaterialTheme.colorScheme.surface.luminance() < 0.5f
@@ -151,5 +154,38 @@ fun KeyFactTile(label: String, value: String?, modifier: Modifier = Modifier, em
                 color = if (emphasize) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
             )
         }
+    }
+}
+
+/**
+ * Alert badge for abnormal blood pressure (Q87). Renders nothing when bpAlertResource is null.
+ * Severe-range BP uses errorContainer/onErrorContainer; raised BP uses tertiaryContainer/onTertiaryContainer.
+ */
+@Composable
+fun BpAlertLabel(raw: String?, modifier: Modifier = Modifier) {
+    val res = bpAlertResource(raw) ?: return
+    val isSevere = bpLevel(raw) == BpLevel.SEVERE
+    val containerColor = if (isSevere) {
+        MaterialTheme.colorScheme.errorContainer
+    } else {
+        MaterialTheme.colorScheme.tertiaryContainer
+    }
+    val contentColor = if (isSevere) {
+        MaterialTheme.colorScheme.onErrorContainer
+    } else {
+        MaterialTheme.colorScheme.onTertiaryContainer
+    }
+    Surface(
+        shape = RoundedCornerShape(6.dp),
+        color = containerColor,
+        modifier = modifier.testTag("bpAlertLabel"),
+    ) {
+        Text(
+            text = stringResource(res),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = contentColor,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+        )
     }
 }

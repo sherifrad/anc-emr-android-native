@@ -43,7 +43,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
+import com.sherifradwan.ancnative.model.BpLevel
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
+import com.sherifradwan.ancnative.model.bpLevel
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
@@ -128,6 +130,7 @@ fun VisitEditor(
                 val dateError = when {
                     DraftError.DATE_REQUIRED in draft.errors -> stringResource(R.string.required_date)
                     DraftError.INVALID_DATE in draft.errors -> stringResource(R.string.invalid_date)
+                    DraftError.DATE_IN_FUTURE in draft.errors -> stringResource(R.string.visit_date_in_future)
                     else -> null
                 }
                 ClinicalDateField(
@@ -169,6 +172,15 @@ fun VisitEditor(
         val weightFocusRequester = remember { FocusRequester() }
         val findingsFocusRequester = remember { FocusRequester() }
 
+        val bpError = when {
+            DraftError.BLOOD_PRESSURE_INVALID in draft.errors -> stringResource(R.string.blood_pressure_invalid)
+            else -> null
+        }
+        val weightError = when {
+            DraftError.WEIGHT_INVALID in draft.errors -> stringResource(R.string.weight_invalid)
+            else -> null
+        }
+
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -196,16 +208,21 @@ fun VisitEditor(
                                 onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.BLOOD_PRESSURE, it)) },
                                 label = "${stringResource(R.string.blood_pressure)} (mmHg)",
                                 tag = "visitBloodPressure",
+                                error = bpError,
                                 singleLine = true,
                                 enabled = editingEnabled,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
                                 keyboardActions = KeyboardActions(onNext = { weightFocusRequester.requestFocus() }),
                             )
+                            if (bpLevel(draft.values.bloodPressure) != BpLevel.NORMAL) {
+                                BpAlertLabel(draft.values.bloodPressure)
+                            }
                             VisitField(
                                 value = draft.values.weight,
                                 onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.WEIGHT, it)) },
                                 label = "${stringResource(R.string.weight)} (kg)",
                                 tag = "visitWeight",
+                                error = weightError,
                                 singleLine = true,
                                 enabled = editingEnabled,
                                 modifier = Modifier.focusRequester(weightFocusRequester),
@@ -217,23 +234,33 @@ fun VisitEditor(
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.Top,
                         ) {
-                            VisitField(
-                                value = draft.values.bloodPressure,
-                                onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.BLOOD_PRESSURE, it)) },
-                                label = "${stringResource(R.string.blood_pressure)} (mmHg)",
-                                tag = "visitBloodPressure",
-                                singleLine = true,
-                                enabled = editingEnabled,
+                            Column(
                                 modifier = Modifier.weight(1f),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
-                                keyboardActions = KeyboardActions(onNext = { weightFocusRequester.requestFocus() }),
-                            )
+                                verticalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                VisitField(
+                                    value = draft.values.bloodPressure,
+                                    onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.BLOOD_PRESSURE, it)) },
+                                    label = "${stringResource(R.string.blood_pressure)} (mmHg)",
+                                    tag = "visitBloodPressure",
+                                    error = bpError,
+                                    singleLine = true,
+                                    enabled = editingEnabled,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+                                    keyboardActions = KeyboardActions(onNext = { weightFocusRequester.requestFocus() }),
+                                )
+                                if (bpLevel(draft.values.bloodPressure) != BpLevel.NORMAL) {
+                                    BpAlertLabel(draft.values.bloodPressure)
+                                }
+                            }
                             VisitField(
                                 value = draft.values.weight,
                                 onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.WEIGHT, it)) },
                                 label = "${stringResource(R.string.weight)} (kg)",
                                 tag = "visitWeight",
+                                error = weightError,
                                 singleLine = true,
                                 enabled = editingEnabled,
                                 modifier = Modifier.weight(1f).focusRequester(weightFocusRequester),

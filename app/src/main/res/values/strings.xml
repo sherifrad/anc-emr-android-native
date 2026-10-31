@@ -339,4 +339,9 @@
     <string name="attachment_delete_failed">The attachment could not be deleted. Please try again.</string>
     <string name="attachment_retake">Retake</string>
     <string name="attachment_gallery">Gallery</string>
+    <string name="visit_date_in_future">Visit date cannot be in the future.</string>
+    <string name="blood_pressure_invalid">Enter blood pressure like 120/80 (top number higher than bottom).</string>
+    <string name="weight_invalid">Enter weight in kg between 30 and 250, for example 68.5.</string>
+    <string name="bp_alert_raised">Raised blood pressure (140/90 or above) - recheck</string>
+    <string name="bp_alert_severe">Severe-range blood pressure (160/110 or above) - urgent assessment needed</string>
 </resources>
