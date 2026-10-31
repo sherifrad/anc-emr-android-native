@@ -373,7 +373,7 @@ private fun ProfileHeroIdentityCard(
             val gpaText = "G$g P$p A$a"
 
             val gaResult = patient.dating?.calculateGestationalAgeResult()
-            val gaFormatted = if (gaResult != null) "${gaResult.weeks}+${gaResult.days} wks" else "—"
+            val gaFormatted = gaResult?.shortWeeksText ?: "—"
 
             val prevSummary = previousDeliverySummary(patient)
 

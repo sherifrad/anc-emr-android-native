@@ -1,0 +1,2 @@
+ROLE: CORE BUILDER for ROUND 3t. Implement Q104. ALLOWED file: app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt. Add exactly the members in the spec; make calculateForEdd call daysToEdd; do not change any existing result, string or constant. Do not touch screens, tests or checks.
+Run: ./gradlew --offline :app:testDebugUnitTest --tests '*GestationalDisplayTest' --tests '*GestationalAgeEngineTest' --tests '*GestationalBannerLogicTest', the whole suite, ./gradlew --offline :app:compileDebugKotlin. Report real results.

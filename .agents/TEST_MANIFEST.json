@@ -515,7 +515,7 @@
         "app/src/main/**/model/GestationalAgeEngine.kt",
         "app/src/test/**/GestationalBannerLogicTest.kt"
       ],
-      "covers": ["G1"]
+      "covers": ["G1", "Q106"]
     },
     {
       "id": "STATIC-r3g",
@@ -913,6 +913,30 @@
         "app/src/test/**/ui/report/PrintObstetricSummaryTest.kt"
       ],
       "covers": ["Q102", "Q103"]
+    },
+    {
+      "id": "STATIC-r3t",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3t.py",
+      "deps": [
+        "app/src/main/**/model/GestationalAgeEngine.kt",
+        "app/src/main/**/ui/GestationalBanner.kt",
+        "app/src/main/**/ui/PatientListScreen.kt",
+        "app/src/main/**/ui/ProfileScreen.kt",
+        "app/src/test/**/ui/GestationalBannerLogicTest.kt",
+        ".agents/checks/check_r3t.py"
+      ],
+      "covers": ["S86", "S87", "S88"]
+    },
+    {
+      "id": "UNIT-gestational-display",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*GestationalDisplayTest'",
+      "deps": [
+        "app/src/main/**/model/GestationalAgeEngine.kt",
+        "app/src/test/**/model/GestationalDisplayTest.kt"
+      ],
+      "covers": ["Q104"]
     },
     {
       "id": "UNIT-all",

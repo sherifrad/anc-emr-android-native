@@ -6,7 +6,7 @@ Textual source contract only; verifies nothing at runtime.
   S51 LocalDate.parse( appears in app/src/main only in model/IsoDates.kt and model/DemoFixtures.kt.
   S52 plusDays(280, "/ 280f" and "280 -" do not appear in app/src/main outside IsoDates.kt.
   S53 model/IsoDates.kt defines parseIsoDateOrNull, parseCanonicalIsoDateOrNull, FULL_TERM_DAYS, eddFromLmp.
-  S54 ui/PatientEditor.kt, state/IntakeDatingRule.kt and ui/GestationalBanner.kt reference eddFromLmp( or FULL_TERM_DAYS.
+  S54 ui/PatientEditor.kt and state/IntakeDatingRule.kt reference eddFromLmp( or FULL_TERM_DAYS.
 """
 import re
 import sys
@@ -75,7 +75,9 @@ def main():
     record("S53 IsoDates.kt defines the four Q69 names", not problems, "; ".join(problems))
 
     problems = []
-    for rel in ("ui/PatientEditor.kt", "state/IntakeDatingRule.kt", "ui/GestationalBanner.kt"):
+    # The banner no longer names the rule: since the gestational-age display round it reads progress, term stage and days
+    # to EDD from the engine (model/GestationalAgeEngine.kt), so it is checked for NOT owning any term constant (S52 covers it).
+    for rel in ("ui/PatientEditor.kt", "state/IntakeDatingRule.kt"):
         src = read(MAIN / rel)
         if src is None:
             problems.append(rel + " missing")
@@ -83,7 +85,7 @@ def main():
         code = strip_comments(src)
         if "eddFromLmp(" not in code and "FULL_TERM_DAYS" not in code:
             problems.append(rel + " references neither eddFromLmp( nor FULL_TERM_DAYS")
-    record("S54 editor, dating rule and banner use the shared due-date rule", not problems, "; ".join(problems))
+    record("S54 editor and dating rule use the shared due-date rule", not problems, "; ".join(problems))
 
     sys.exit(0 if all(results) else 1)
 

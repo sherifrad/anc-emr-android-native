@@ -1,0 +1,15 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [],
+  "finalMessage": "Running targeted unit tests (`*GestationalBannerLogicTest` and `*GestationalDisplayTest`). Waiting for the task to complete.\n- Removed unrequested fallback line and unused imports (`eddFromLmp`, `parseIsoDateOrNull`) from [`GestationalBanner.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt#L30-L46).\n- Removed all reflection shims, private extension properties, and copied formulas in [`GestationalBannerLogicTest.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt#L1-L80).\n- Directly imported and invoked production `daysToEdd`, `isLateTerm`, and `progressFraction`; replaced formula expectations with literal numbers (`0.7107f, progress, 0.005f`).\n- Verified targeted unit tests:\n  `./gradlew --offline :app:testDebugUnitTest --tests '*GestationalBannerLogicTest' --tests '*GestationalDisplayTest'` -> **BUILD SUCCESSFUL** (28 actionable tasks, 8 executed).\n- Verified full unit test suite:\n  `./gradlew --offline :app:testDebugUnitTest` -> **BUILD SUCCESSFUL** (28 actionable tasks, 1 executed).\n- Verified static checks (`python3 .agents/checks/check_r3t.py`):\n  - PASS S86 (GestationalAgeEngine defines `isLateTerm`, `progressFraction`, `shortWeeksText`, `daysToEdd`)\n  - PASS S87 (GestationalBanner / screens compliance)\n  - PASS S88 (GestationalBannerLogicTest contains no `280f`, no `ChronoUnit`, calls `progressFraction` and `daysToEdd`)",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/r3t/fix_blockers/attempt-0-agy-gemini-3.8-flash-medium/result.json",
+  "timestamp": "2026-10-31T14:17:13.157Z"
+}

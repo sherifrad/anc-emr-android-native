@@ -3,6 +3,8 @@ package com.sherifradwan.ancnative.model
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
+fun daysToEdd(edd: LocalDate, asOf: LocalDate): Long = ChronoUnit.DAYS.between(asOf, edd)
+
 data class GestationalAgeResult(
     val weeks: Int,
     val days: Int,
@@ -13,6 +15,9 @@ data class GestationalAgeResult(
 ) {
     val displayText: String get() = formatted
     val isPostConception: Boolean get() = totalDays >= 0
+    val isLateTerm: Boolean get() = weeks == 41
+    val progressFraction: Float get() = (totalDays / FULL_TERM_DAYS.toFloat()).coerceIn(0f, 1f)
+    val shortWeeksText: String get() = "${weeks}+${days} wks"
 }
 
 object GestationalAgeEngine {
@@ -87,7 +92,7 @@ object GestationalAgeEngine {
     }
 
     fun calculateForEdd(edd: LocalDate, asOfDate: LocalDate = LocalDate.now()): GestationalAgeResult? {
-        val daysToEdd = ChronoUnit.DAYS.between(asOfDate, edd)
+        val daysToEdd = daysToEdd(edd, asOfDate)
         val totalDays = FULL_TERM_DAYS - daysToEdd
         if (totalDays < 0 || totalDays > 320) return null
         return formatGestationalDays(totalDays)

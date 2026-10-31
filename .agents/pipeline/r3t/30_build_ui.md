@@ -1,0 +1,2 @@
+ROLE: UI BUILDER for ROUND 3t. Implement Q105. ALLOWED files: ui/GestationalBanner.kt, ui/PatientListScreen.kt, ui/ProfileScreen.kt. Core added isLateTerm, progressFraction, shortWeeksText and daysToEdd to the engine: call them, delete the local formulas and hand-written text. Displayed output stays identical; keep every testTag. Do not edit tests or checks.
+Run ./gradlew --offline :app:compileDebugKotlin and the whole unit suite. Report real results.

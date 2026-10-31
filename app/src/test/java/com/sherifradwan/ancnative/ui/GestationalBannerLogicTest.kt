@@ -1,7 +1,8 @@
 package com.sherifradwan.ancnative.ui
 
 import com.sherifradwan.ancnative.model.DemoPatientDating
-import com.sherifradwan.ancnative.model.GestationalAgeEngine
+import com.sherifradwan.ancnative.model.GestationalAgeResult
+import com.sherifradwan.ancnative.model.daysToEdd
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -9,7 +10,6 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
-import java.time.temporal.ChronoUnit
 
 class GestationalBannerLogicTest {
 
@@ -34,12 +34,13 @@ class GestationalBannerLogicTest {
         assertEquals(0, result.days)
         assertEquals(1, result.trimester)
         assertFalse(result.isPostTerm)
+        assertFalse(result.isLateTerm)
 
-        val progress = (result.totalDays / 280f).coerceIn(0f, 1f)
+        val progress = result.progressFraction
         assertEquals(0f, progress, 0.001f)
 
         assertNotNull(edd)
-        val daysDiff = ChronoUnit.DAYS.between(asOf, edd)
+        val daysDiff = daysToEdd(edd!!, asOf)
         assertEquals(280L, daysDiff)
         assertTrue(daysDiff > 0)
     }
@@ -64,12 +65,13 @@ class GestationalBannerLogicTest {
         assertEquals(3, result.days)
         assertEquals(3, result.trimester)
         assertFalse(result.isPostTerm)
+        assertFalse(result.isLateTerm)
 
-        val progress = (result.totalDays / 280f).coerceIn(0f, 1f)
-        assertEquals(199f / 280f, progress, 0.005f)
+        val progress = result.progressFraction
+        assertEquals(0.7107f, progress, 0.005f)
 
         assertNotNull(edd)
-        val daysDiff = ChronoUnit.DAYS.between(asOf, edd)
+        val daysDiff = daysToEdd(edd!!, asOf)
         assertEquals(81L, daysDiff)
     }
 
@@ -90,15 +92,15 @@ class GestationalBannerLogicTest {
 
         assertNotNull(result)
         assertEquals(41, result!!.weeks)
-        val isLateTerm = !result.isPostTerm && result.weeks == 41
-        assertTrue(isLateTerm)
+        assertTrue(result.isLateTerm)
+        assertFalse(result.isPostTerm)
 
-        val progress = (result.totalDays / 280f).coerceIn(0f, 1f)
+        val progress = result.progressFraction
         // Progress should clamp to 1.0f max
         assertEquals(1f, progress, 0.001f)
 
         assertNotNull(edd)
-        val daysDiff = ChronoUnit.DAYS.between(asOf, edd)
+        val daysDiff = daysToEdd(edd!!, asOf)
         assertEquals(-8L, daysDiff)
         assertTrue(daysDiff < 0)
 
@@ -106,8 +108,7 @@ class GestationalBannerLogicTest {
         val postTerm42 = dating.calculateGestationalAgeResult(LocalDate.of(2026, 10, 23))
         assertNotNull(postTerm42)
         assertTrue(postTerm42!!.isPostTerm)
-        val isPostTerm = postTerm42.isPostTerm || postTerm42.weeks >= 42
-        assertTrue(isPostTerm)
+        assertFalse(postTerm42.isLateTerm)
     }
 
     @Test
@@ -130,7 +131,7 @@ class GestationalBannerLogicTest {
         assertEquals(0, result.days)
 
         assertNotNull(edd)
-        val daysDiff = ChronoUnit.DAYS.between(asOf, edd)
+        val daysDiff = daysToEdd(edd!!, asOf)
         assertEquals(0L, daysDiff)
     }
 
@@ -167,8 +168,14 @@ class GestationalBannerLogicTest {
         val result = dating.calculateGestationalAgeResult(asOf)
         assertNull(result)
 
-        // Math clamping verification
-        val clampedProgress = (-5L / 280f).coerceIn(0f, 1f)
+        // Math clamping verification via production GestationalAgeResult
+        val clampedProgress = GestationalAgeResult(
+            weeks = 0,
+            days = 0,
+            totalDays = -5L,
+            formatted = "0w 0d",
+            trimester = 1,
+        ).progressFraction
         assertEquals(0f, clampedProgress, 0.001f)
     }
 }

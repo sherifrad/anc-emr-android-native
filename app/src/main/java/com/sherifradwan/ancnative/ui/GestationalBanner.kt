@@ -28,9 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatientDating
-import com.sherifradwan.ancnative.model.FULL_TERM_DAYS
+import com.sherifradwan.ancnative.model.daysToEdd
 import java.time.LocalDate
-import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -94,9 +93,7 @@ fun GestationalBanner(
                             )
                         }
 
-                        val isPostTerm = gaResult.isPostTerm || gaResult.weeks >= 42
-                        val isLateTerm = !isPostTerm && gaResult.weeks == 41
-                        if (isPostTerm) {
+                        if (gaResult.isPostTerm) {
                             Surface(
                                 color = MaterialTheme.colorScheme.errorContainer,
                                 shape = RoundedCornerShape(8.dp),
@@ -109,7 +106,7 @@ fun GestationalBanner(
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                 )
                             }
-                        } else if (isLateTerm) {
+                        } else if (gaResult.isLateTerm) {
                             Surface(
                                 color = MaterialTheme.colorScheme.tertiaryContainer,
                                 shape = RoundedCornerShape(8.dp),
@@ -126,7 +123,7 @@ fun GestationalBanner(
                     }
                 }
 
-                val progress = (gaResult.totalDays / FULL_TERM_DAYS.toFloat()).coerceIn(0f, 1f)
+                val progress = gaResult.progressFraction
                 val progressPercent = (progress * 100).toInt()
                 val cdMessage = stringResource(R.string.gestational_progress_cd, gaResult.formatted, progressPercent)
 
@@ -143,7 +140,7 @@ fun GestationalBanner(
                     trackColor = MaterialTheme.colorScheme.surfaceVariant,
                 )
 
-                val daysDiff = ChronoUnit.DAYS.between(asOfDate, edd)
+                val daysDiff = daysToEdd(edd, asOfDate)
                 val countdownText = when {
                     daysDiff > 0L -> stringResource(R.string.days_remaining, daysDiff)
                     daysDiff == 0L -> stringResource(R.string.due_today)

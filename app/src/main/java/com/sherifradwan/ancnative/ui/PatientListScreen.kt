@@ -104,11 +104,7 @@ fun projectDashboardRow(patient: DemoPatient): PatientDashboardRowProjection {
     val obstetricFormatted = "G$g P$p · $prevSummary"
 
     val gaResult = patient.dating?.calculateGestationalAgeResult()
-    val gaFormatted = if (gaResult != null) {
-        "${gaResult.weeks}+${gaResult.days} wks"
-    } else {
-        "—"
-    }
+    val gaFormatted = gaResult?.shortWeeksText ?: "—"
 
     val edd = patient.dating?.calculateEstimatedDueDate()?.toString()
         ?: patient.dating?.ultrasoundEdd
