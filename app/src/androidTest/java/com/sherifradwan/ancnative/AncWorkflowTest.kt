@@ -89,7 +89,6 @@ class AncWorkflowTest {
         securityRepo.unlockApp()
         compose.waitForIdle()
 
-        assertDemoBannerDisplayed()
         compose.onNodeWithTag("vaultGate").assertIsDisplayed()
         compose.onNodeWithText("Maya Example").assertDoesNotExist()
         compose.onNodeWithText("DEMO-ANC-001").assertDoesNotExist()

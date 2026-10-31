@@ -1,0 +1,18 @@
+### reviewedVisitEditorLayoutsKeepStatusDraftAndControlsAccessible
+java.lang.AssertionError: Assert failed: The component with TestTag = 'lockStorage' is not displayed!
+at androidx.compose.ui.test.AssertionsKt.assertIsDisplayed(Assertions.kt:34)
+at com.sherifradwan.ancnative.AncWorkflowTest.reviewedVisitEditorLayoutsKeepStatusDraftAndControlsAccessible(AncWorkflowTest.kt:269)
+
+
+### recordsWindowKeepsSecureFlagAndGateExplainsDraftPolicy
+java.lang.AssertionError: Assert failed: The component with Text + InputText + EditableText contains 'Only completed saves persist' (ignoreCase: false) as substring is not displayed!
+at androidx.compose.ui.test.AssertionsKt.assertIsDisplayed(Assertions.kt:34)
+at com.sherifradwan.ancnative.AncWorkflowTest.recordsWindowKeepsSecureFlagAndGateExplainsDraftPolicy(AncWorkflowTest.kt:110)
+
+
+### launchIsFailClosedAndNeverRendersSyntheticPatientsBeforeRealUnlock
+java.lang.AssertionError: Assert failed: The component with (Text + InputText + EditableText contains 'Dr. Sherif Radwan Clinic' (ignoreCase: false))[0] is not displayed!
+at androidx.compose.ui.test.AssertionsKt.assertIsDisplayed(Assertions.kt:34)
+at com.sherifradwan.ancnative.AncWorkflowTest.assertDemoBannerDisplayed(AncWorkflowTest.kt:982)
+at com.sherifradwan.ancnative.AncWorkflowTest.launchIsFailClosedAndNeverRendersSyntheticPatientsBeforeRealUnlock(AncWorkflowTest.kt:92)
+

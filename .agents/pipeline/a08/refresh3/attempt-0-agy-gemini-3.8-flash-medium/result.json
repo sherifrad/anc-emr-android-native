@@ -1,0 +1,17 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "pp/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt"
+  ],
+  "finalMessage": "**1. `reviewedVisitEditorLayoutsKeepStatusDraftAndControlsAccessible`** — **PRODUCT-BUG-SUSPECT**\n- **Evidence**: [`AncApp.kt:134`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt#L134) renders the top bar exclusively on `PatientList`; [`VisitEditor.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/VisitEditor.kt) has no `lockStorage` control for clinicians.\n- **Change**: None (left unchanged; clinicians require a terminal storage lock control during open visit edits).\n\n**2. `recordsWindowKeepsSecureFlagAndGateExplainsDraftPolicy`** — **PRODUCT-BUG-SUSPECT**\n- **Evidence**: [`VaultGateScreen.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/VaultGateScreen.kt) only renders vault title/body; `R.string.unsaved_drafts_policy` (`strings.xml:62`) is unreferenced anywhere in UI.\n- **Change**: None (left unchanged; gate must communicate the clinical draft discard policy).\n\n**3. `launchIsFailClosedAndNeverRendersSyntheticPatientsBeforeRealUnlock`** — **STALE-TEST**\n- **Evidence**: [`AncApp.kt:104-124`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt#L104-L124) renders logo + spinner (`vaultGate`) without clinic text during opening; synthetic banner was removed in D8.\n- **Change**: Removed stale `assertDemoBannerDisplayed()` on line 92 in [`AncWorkflowTest.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt#L85-L97); preserved fail-closed gate & patient non-leak assertions.",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/a08/refresh3/attempt-0-agy-gemini-3.8-flash-medium/result.json",
+  "timestamp": "2026-10-31T11:28:12.290Z"
+}
