@@ -1,0 +1,15 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "opencode-delegate",
+  "cli": "opencode",
+  "status": "failed",
+  "exitCode": 1,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [],
+  "finalMessage": "",
+  "stderrTail": "            | 215 +++++----------\n .agents/mocks/phase1_5_english_ui_mock.png         | Bin 0 -> 381541 bytes\n .../com/sherifradwan/ancnative/MainActivity.kt     |  11 +\n .../sherifradwan/ancnative/model/DemoFixtures.kt   |  24 +-\n> build · deepseek-v4.1-flash-free\n\u001b[0m$ \u001b[0mgit show 36c303e:app/src/main/java/com/sherifradwan/ancnative/ui/VaultGateScreen.kt | grep -n \"unsaved\\|draft\\|policy\\|Only completed\" ; echo \"---\"; git log --oneline --follow -- app/src/main/java/com/sherifradwan/ancnative/ui/VaultGateScreen.kt | head\n---\n5c272ef feat(ui): 100% English conversion, script-adaptive name alignment, LMP calculation, and clinical UI density optimization\n36c303e feat: initial open-source release of ANC EMR Native Android app with full clinical workflows, encrypted vault, and cross-platform sync\n> build · deepseek-v4.1-flash-free\n\u001b[91m\u001b[1mError: \u001b[0mFree usage limit reached. Free models work in OpenCode (https://opencode.ai); subscribe to OpenCode Go to keep going: https://opencode.ai/go",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/a08/refresh2/attempt-1-opencode-opencode_deepseek-v4.1-flash-free/result.json",
+  "timestamp": "2026-10-31T11:17:34.487Z"
+}

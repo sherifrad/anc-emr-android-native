@@ -170,7 +170,7 @@ class VaultIntegrationTest {
         try {
             fixture.provision()
             fixture.unlock()
-            assertEquals(3, fixture.controller.view.value.snapshot?.patients?.size)
+            assertEquals(4, fixture.controller.view.value.snapshot?.patients?.size)
 
             fixture.controller.onBackgrounded(authenticationOverlayActive = false)
             assertNull(fixture.controller.view.value.snapshot)

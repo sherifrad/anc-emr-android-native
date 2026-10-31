@@ -11,7 +11,6 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sherifradwan.ancnative.model.DemoFixtures
-import com.sherifradwan.ancnative.security.AutoLockTimeout
 import com.sherifradwan.ancnative.security.SecuritySettingsRepository
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
@@ -34,7 +33,7 @@ class SecurityWorkflowTest {
     fun appLockScreenValidatesSixDigitPinAndUnlocksWithDefaultPin() {
         val activity = compose.activity
         val securityRepo = SecuritySettingsRepository.getInstance(activity)
-        securityRepo.updatePin("123456")
+        securityRepo.updatePin("135246")
         securityRepo.lockApp()
 
         val patient = DemoFixtures.patients.first()
@@ -64,17 +63,17 @@ class SecurityWorkflowTest {
 
         // 1. Verify AppLockScreen is displayed
         compose.onNodeWithTag("appLockScreen").assertIsDisplayed()
-        compose.onNodeWithText("دكتور شريف رضوان كلينك").assertIsDisplayed()
+        compose.onNodeWithText("Dr. Sherif Radwan Clinic").assertIsDisplayed()
 
         // 2. Type incorrect PIN: 999999
         repeat(6) {
             compose.onNodeWithTag("pinKey-9").performClick()
         }
         // Verify error message is displayed
-        compose.onNodeWithText("رمز المرور غير صحيح. يرجى المحاولة مرة أخرى.").assertIsDisplayed()
+        compose.onNodeWithText("Incorrect PIN. Please try again.").assertIsDisplayed()
 
-        // 3. Type correct PIN: 123456
-        listOf("1", "2", "3", "4", "5", "6").forEach { digit ->
+        // 3. Type correct PIN: 135246
+        listOf("1", "3", "5", "2", "4", "6").forEach { digit ->
             compose.onNodeWithTag("pinKey-$digit").performClick()
         }
 
@@ -86,9 +85,10 @@ class SecurityWorkflowTest {
     }
 
     @Test
-    fun securitySettingsDialogAllowsAutoLockTimeoutConfigurationAndManualLock() {
+    fun securitySettingsDialogDisplaysFixedAutoLockTimeoutAndAllowsManualLock() {
         val activity = compose.activity
         val securityRepo = SecuritySettingsRepository.getInstance(activity)
+        securityRepo.updatePin("135246")
         securityRepo.unlockApp()
 
         val patient = DemoFixtures.patients.first()
@@ -119,23 +119,13 @@ class SecurityWorkflowTest {
         // 1. Open Security Settings dialog via Top Bar
         compose.onNodeWithTag("openSecuritySettings").performClick()
         compose.onNodeWithTag("securitySettingsDialog").assertIsDisplayed()
-        compose.onNodeWithText("إعدادات الأمان وقفل التطبيق").assertIsDisplayed()
+        compose.onNodeWithText("Clinic & System Settings").assertIsDisplayed()
 
-        // 2. Select a non-default Auto-Lock Timeout (the default is TEN_MINUTES)
-        compose.onNodeWithTag("timeoutOption-${AutoLockTimeout.FIFTEEN_MINUTES.name}")
-            .performScrollTo()
-            .performClick()
+        // 2. Verify fixed Auto-Lock Timeout is displayed (D6: fixed at 10 minutes)
+        compose.onNodeWithText("Auto-Lock Timeout").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Locks after 10 minutes away.").performScrollTo().assertIsDisplayed()
 
-        // Verify repository updated
-        assertEquals(AutoLockTimeout.FIFTEEN_MINUTES, securityRepo.settings.value.autoLockTimeout)
-
-        // 3. Test changing to 1 minute
-        compose.onNodeWithTag("timeoutOption-${AutoLockTimeout.ONE_MINUTE.name}")
-            .performScrollTo()
-            .performClick()
-        assertEquals(AutoLockTimeout.ONE_MINUTE, securityRepo.settings.value.autoLockTimeout)
-
-        // 4. Click Lock App Now
+        // 3. Click Lock App Now
         compose.onNodeWithTag("lockAppNowButton")
             .performScrollTo()
             .performClick()

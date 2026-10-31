@@ -1,0 +1,3 @@
+[fallback] agy:gemini-3.8-flash-medium: failed 900.3s 0 chars -> next
+[fallback] opencode:opencode/deepseek-v4.1-flash-free: failed 126.2s 0 chars -> next
+[fallback] whole chain failed

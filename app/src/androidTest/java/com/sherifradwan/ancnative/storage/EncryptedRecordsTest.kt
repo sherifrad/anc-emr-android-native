@@ -45,10 +45,11 @@ class EncryptedRecordsTest {
                 "lab_investigations",
                 "medication_records",
                 "clinical_command_receipts",
+                "patient_attachments",
             ),
             tables,
         )
-        assertEquals(4, db.query("PRAGMA user_version").use { it.moveToFirst(); it.getInt(0) })
+        assertEquals(5, db.query("PRAGMA user_version").use { it.moveToFirst(); it.getInt(0) })
 
         val patients = tableColumns(db, "patients")
         assertEquals(
@@ -213,12 +214,12 @@ class EncryptedRecordsTest {
                     assertEquals("a".repeat(64), receipt.fingerprint)
                     val metadata = dao.metadataRows().single()
                     assertEquals(fixture.vaultUuid, metadata.vaultUuid)
-                    assertEquals(4, metadata.schemaVersion)
+                    assertEquals(5, metadata.schemaVersion)
                     assertTrue(metadata.isSynthetic)
                     assertTrue(metadata.initialized)
                 }
                 assertEquals(
-                    4,
+                    5,
                     opened.database.openHelper.writableDatabase.query("PRAGMA user_version").use {
                         it.moveToFirst()
                         it.getInt(0)
@@ -396,7 +397,7 @@ class EncryptedRecordsTest {
             val corrected = repository.execute(correction) as PatientCommandOutcome.Committed
             assertEquals(2L, corrected.receipt.committedRevision)
             assertEquals(3L, corrected.receipt.committedPatientRevision)
-            val pregnancy = corrected.snapshot.patients.single { it.id == patient.id }.previousPregnancies.single()
+            val pregnancy = corrected.snapshot.patients.first { it.id == patient.id }.previousPregnancies.first { it.id == create.pregnancyId }
             assertEquals("EarlyPregnancyLoss", pregnancy.outcome)
             assertNull(pregnancy.birthMethod)
             assertEquals("Medical", pregnancy.lossManagement)
@@ -404,7 +405,7 @@ class EncryptedRecordsTest {
 
             val replay = repository.execute(create) as PatientCommandOutcome.Committed
             assertEquals(created.receipt, replay.receipt)
-            assertEquals(2L, replay.snapshot.patients.single { it.id == patient.id }.previousPregnancies.single().revision)
+            assertEquals(2L, replay.snapshot.patients.first { it.id == patient.id }.previousPregnancies.first { it.id == create.pregnancyId }.revision)
             assertEquals(
                 PatientCommandOutcome.Rejected(PatientCommandFailure.STALE_PATIENT_REVISION),
                 repository.execute(
@@ -462,7 +463,7 @@ class EncryptedRecordsTest {
             val repository = RecordsRepository(opened.database, vaultUuid)
             repository.seedInitialSyntheticFixtures(includeDemoPatients = true)
             val initial = repository.validateAndLoad() as RepositoryOpenResult.Success
-            assertEquals(3, initial.snapshot.patients.size)
+            assertEquals(4, initial.snapshot.patients.size)
 
             val patient = DemoFixtures.patients[0]
             val insert = command(
@@ -596,6 +597,14 @@ class EncryptedRecordsTest {
             repository.seedInitialSyntheticFixtures(includeDemoPatients = true)
             val db = opened.database.openHelper.writableDatabase
             db.execSQL("DELETE FROM save_receipts")
+            db.execSQL("DELETE FROM clinical_command_receipts")
+            db.execSQL("DELETE FROM patient_command_receipts")
+            db.execSQL("DELETE FROM previous_pregnancies")
+            db.execSQL("DELETE FROM patient_dating")
+            db.execSQL("DELETE FROM ultrasound_scans")
+            db.execSQL("DELETE FROM lab_investigations")
+            db.execSQL("DELETE FROM medication_records")
+            db.execSQL("DELETE FROM patient_attachments")
             db.execSQL("DELETE FROM visits")
             db.execSQL("DELETE FROM patients")
             val result = repository.validateAndLoad() as RepositoryOpenResult.Success
@@ -665,7 +674,7 @@ class EncryptedRecordsTest {
                 notes = "Dating confirmed",
             )
             val datingOutcome = repository.execute(datingCmd) as ClinicalCommandOutcome.Committed
-            assertEquals(1L, datingOutcome.receipt.committedRevision)
+            assertEquals(2L, datingOutcome.receipt.committedRevision)
             val datingPatient = datingOutcome.snapshot.patients.first { it.id == patient.id }
             assertEquals("2026-01-01", datingPatient.dating?.lmpDate)
             assertEquals("2026-10-08", datingPatient.dating?.agreedEdd)
@@ -696,10 +705,11 @@ class EncryptedRecordsTest {
             val usOutcome = repository.execute(usCmd) as ClinicalCommandOutcome.Committed
             assertEquals(1L, usOutcome.receipt.committedRevision)
             val usPatient = usOutcome.snapshot.patients.first { it.id == patient.id }
-            assertEquals(1, usPatient.ultrasoundScans.size)
-            assertEquals("2026-05-15", usPatient.ultrasoundScans.first().date)
-            assertEquals(20, usPatient.ultrasoundScans.first().gestationalAgeWeeks)
-            assertEquals("Cephalic", usPatient.ultrasoundScans.first().presentation)
+            assertEquals(patient.ultrasoundScans.size + 1, usPatient.ultrasoundScans.size)
+            val savedScan = usPatient.ultrasoundScans.first { it.id == scanId }
+            assertEquals("2026-05-15", savedScan.date)
+            assertEquals(20, savedScan.gestationalAgeWeeks)
+            assertEquals("Cephalic", savedScan.presentation)
 
             // Verify idempotency
             val usReplay = repository.execute(usCmd) as ClinicalCommandOutcome.Committed
@@ -735,10 +745,11 @@ class EncryptedRecordsTest {
             val labOutcome = repository.execute(labCmd) as ClinicalCommandOutcome.Committed
             assertEquals(1L, labOutcome.receipt.committedRevision)
             val labPatient = labOutcome.snapshot.patients.first { it.id == patient.id }
-            assertEquals(1, labPatient.labInvestigations.size)
-            assertEquals("Hemoglobin", labPatient.labInvestigations.first().testName)
-            assertEquals("10.5", labPatient.labInvestigations.first().result)
-            assertTrue(labPatient.labInvestigations.first().isAbnormal)
+            assertEquals(patient.labInvestigations.size + 1, labPatient.labInvestigations.size)
+            val savedLab = labPatient.labInvestigations.first { it.id == labId }
+            assertEquals("Hemoglobin", savedLab.testName)
+            assertEquals("10.5", savedLab.result)
+            assertTrue(savedLab.isAbnormal)
 
             // Verify lab replay idempotency
             val labReplay = repository.execute(labCmd) as ClinicalCommandOutcome.Committed
@@ -765,10 +776,11 @@ class EncryptedRecordsTest {
             val medOutcome = repository.execute(medCmd) as ClinicalCommandOutcome.Committed
             assertEquals(1L, medOutcome.receipt.committedRevision)
             val medPatient = medOutcome.snapshot.patients.first { it.id == patient.id }
-            assertEquals(1, medPatient.medications.size)
-            assertEquals("Ferrous Sulfate", medPatient.medications.first().name)
-            assertEquals("200 mg", medPatient.medications.first().dosage)
-            assertEquals("Oral", medPatient.medications.first().route)
+            assertEquals(patient.medications.size + 1, medPatient.medications.size)
+            val savedMed = medPatient.medications.first { it.id == medId }
+            assertEquals("Ferrous Sulfate", savedMed.name)
+            assertEquals("200 mg", savedMed.dosage)
+            assertEquals("Oral", savedMed.route)
 
             // Verify medication replay idempotency
             val medReplay = repository.execute(medCmd) as ClinicalCommandOutcome.Committed

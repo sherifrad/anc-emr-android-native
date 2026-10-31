@@ -1,0 +1,21 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "agents/pipeline/UIUX_BACKLOG.md",
+    "pp/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt",
+    "pp/src/androidTest/java/com/sherifradwan/ancnative/SecurityWorkflowTest.kt",
+    "pp/src/androidTest/java/com/sherifradwan/ancnative/storage/EncryptedRecordsTest.kt",
+    "pp/src/androidTest/java/com/sherifradwan/ancnative/storage/VaultIntegrationTest.kt"
+  ],
+  "finalMessage": "#1: Asserted dynamic `vaultStateTitle(fixture.state)` on gate screen card instead of removed `R.string.secure_demo_storage`.\n#2: Removed `demo_banner` assertion in `reviewedVisitEditorLayouts...` since clinic header is rendered only on `PatientList`.\n#3: Added `LocalActivityResultRegistryOwner provides activity` in `mountFixture` `CompositionLocalProvider`.\n#4: Asserted `FLAG_SECURE` conditionally on `!BuildConfig.DEBUG` matching `MainActivity.onCreate`.\n#5: Updated `DEMO_BANNER` constant to `\"Dr. Sherif Radwan Clinic\"` per D8 clinic branding.\n#6: Initialized valid non-sequential PIN (`135246`); updated Arabic assertions and keypad inputs to English.\n#7: Updated dialog title assertion to `\"Clinic & System Settings\"`.\n#8: Added `\"patient_attachments\"` to approved tables; triage missed that `PRAGMA user_version` also needed updating from 4 to 5.\n#9: Updated expected patient snapshot count to 4 to account for `DEMO-ANC-004`.\n#10: Deleted from all child tables before `DELETE FROM patients` to resolve SQLite FK 1811 constraint failure.\n#11: Updated dating committedRevision expectation to 2L because patient 0 has pre-existing seeded dating.\n#12: Located saved lab and medication by ID and asserted count + 1; triage missed medication assertion failure at size 1.\n#13: Updated expected `metadata.schemaVersion` and `PRAGMA user_version` from 4 to 5.\n#14: Located pregnancy by ID for both correction and replay; triage missed second `.single()` at replay assertion.\n#15: Untouched (suspected product issue awaiting owner decision).\n#16: Updated expected snapshot patient count from 3 to 4.\nInstrumented tests cannot run in sandbox (no connected device/emulator); orchestrator runs them on emulator.\nVerified: `./gradlew --offline :app:compileDebugAndroidTestKotlin` and `:app:testDebugUnitTest` both succeeded.\nFiles changed:\n- [AncWorkflowTest.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt)\n- [SecurityWorkflowTest.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/androidTest/java/com/sherifradwan/ancnative/SecurityWorkflowTest.kt)\n- [EncryptedRecordsTest.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/androidTest/java/com/sherifradwan/ancnative/storage/EncryptedRecordsTest.kt)\n- [VaultIntegrationTest.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/androidTest/java/com/sherifradwan/ancnative/storage/VaultIntegrationTest.kt)",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/a08/refresh/attempt-0-agy-gemini-3.8-flash-medium/result.json",
+  "timestamp": "2026-10-31T10:58:46.619Z"
+}

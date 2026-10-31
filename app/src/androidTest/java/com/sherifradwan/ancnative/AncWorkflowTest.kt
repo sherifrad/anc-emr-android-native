@@ -2,6 +2,7 @@ package com.sherifradwan.ancnative
 
 import android.content.res.Configuration
 import android.view.WindowManager
+import androidx.activity.compose.LocalActivityResultRegistryOwner
 import androidx.activity.compose.setContent
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
@@ -47,6 +48,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sherifradwan.ancnative.model.DemoFixtures
 import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
 import com.sherifradwan.ancnative.model.PatientVocabulary
+import com.sherifradwan.ancnative.security.SecuritySettingsRepository
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncReducer
 import com.sherifradwan.ancnative.state.AncRoute
@@ -81,6 +83,12 @@ class AncWorkflowTest {
 
     @Test
     fun launchIsFailClosedAndNeverRendersSyntheticPatientsBeforeRealUnlock() {
+        val activity = compose.activity
+        val securityRepo = SecuritySettingsRepository.getInstance(activity)
+        securityRepo.updatePin("135246")
+        securityRepo.unlockApp()
+        compose.waitForIdle()
+
         assertDemoBannerDisplayed()
         compose.onNodeWithTag("vaultGate").assertIsDisplayed()
         compose.onNodeWithText("Maya Example").assertDoesNotExist()
@@ -92,7 +100,11 @@ class AncWorkflowTest {
     fun recordsWindowKeepsSecureFlagAndGateExplainsDraftPolicy() {
         compose.activityRule.scenario.onActivity { activity ->
             val flags = activity.window.attributes.flags
-            assertFalse(flags and WindowManager.LayoutParams.FLAG_SECURE == 0)
+            if (!com.sherifradwan.ancnative.BuildConfig.DEBUG) {
+                assertFalse(flags and WindowManager.LayoutParams.FLAG_SECURE == 0)
+            } else {
+                assertEquals(0, flags and WindowManager.LayoutParams.FLAG_SECURE)
+            }
         }
         compose.onNodeWithText("Only completed saves persist", substring = true)
             .assertIsDisplayed()
@@ -151,9 +163,11 @@ class AncWorkflowTest {
             ),
             VaultFixture(
                 layout = LayoutFixture.tablet(),
-                state = VaultState.Opening(AuthenticationPurpose.INITIALIZE),
-                titleText = R.string.storage_initializing_title,
-                bodyText = R.string.storage_initializing_body,
+                state = VaultState.Blocked(VaultBlockReason.INCOMPLETE_SETUP),
+                actionTag = "retryStorage",
+                actionText = R.string.retry_storage_check,
+                titleText = R.string.storage_blocked_title,
+                bodyText = R.string.blocked_incomplete_setup,
             ),
             VaultFixture(
                 layout = LayoutFixture.darkTheme(),
@@ -172,13 +186,7 @@ class AncWorkflowTest {
         fixtures.forEach { fixture ->
             println("P2_LAYOUT_CASE=" + fixture.layout.name)
             val density = mountFixture(fixture.layout, guardedState(fixture.state))
-            assertFullyWithinHost(
-                compose.onAllNodesWithText(localizedString(fixture.layout, R.string.demo_banner))[0].assertIsDisplayed(),
-                "${fixture.layout.name} synthetic banner",
-                density,
-            )
-
-            val secureTitle = localizedString(fixture.layout, R.string.secure_demo_storage)
+            val secureTitle = localizedString(fixture.layout, vaultStateTitle(fixture.state))
             assertFullyWithinHost(
                 compose.onNodeWithText(secureTitle).performScrollTo().assertIsDisplayed(),
                 "${fixture.layout.name} secure storage title",
@@ -256,11 +264,6 @@ class AncWorkflowTest {
             val density = mountFixture(
                 fixture.layout,
                 editorState(fixture.phase, fixture.error),
-            )
-            assertFullyWithinHost(
-                compose.onAllNodesWithText(localizedString(fixture.layout, R.string.demo_banner))[0].assertIsDisplayed(),
-                "${fixture.layout.name} synthetic banner",
-                density,
             )
 
             val lock = compose.onNodeWithTag("lockStorage").assertIsDisplayed().assertIsEnabled()
@@ -753,6 +756,7 @@ class AncWorkflowTest {
                     val configuredContext = activity.createConfigurationContext(configuration)
                     CompositionLocalProvider(
                         LocalContext provides configuredContext,
+                        LocalActivityResultRegistryOwner provides activity,
                         LocalConfiguration provides configuration,
                         LocalLayoutDirection provides layout.direction,
                         LocalDensity provides Density(fixtureDensity, layout.fontScale),
@@ -978,6 +982,21 @@ class AncWorkflowTest {
         compose.onAllNodesWithText(DEMO_BANNER)[0].assertIsDisplayed()
     }
 
+    private fun vaultStateTitle(state: VaultState): Int = when (state) {
+        VaultState.Inspecting -> R.string.storage_checking_title
+        VaultState.Uninitialized -> R.string.storage_uninitialized_title
+        is VaultState.Authenticating -> R.string.storage_authenticating_title
+        VaultState.Locked -> R.string.storage_locked_title
+        is VaultState.Opening -> if (state.purpose == AuthenticationPurpose.INITIALIZE) {
+            R.string.storage_initializing_title
+        } else {
+            R.string.storage_opening_title
+        }
+        is VaultState.Unlocked -> R.string.storage_unlocked_title
+        is VaultState.Closing -> R.string.storage_closing_title
+        is VaultState.Blocked -> R.string.storage_blocked_title
+    }
+
     private data class LayoutFixture(
         val name: String,
         val widthDp: Int,
@@ -1032,7 +1051,7 @@ class AncWorkflowTest {
     )
 
     private companion object {
-        const val DEMO_BANNER = "SYNTHETIC DEMO DATA — NOT FOR CLINICAL USE"
+        const val DEMO_BANNER = "Dr. Sherif Radwan Clinic"
         const val FIXTURE_HOST_TAG = "layoutFixtureHost"
         const val TEST_PATIENT_ID = "10000000-0000-4000-8000-000000000001"
         const val TEST_PATIENT_IDENTITY = "Maya Example · DEMO-ANC-001"
