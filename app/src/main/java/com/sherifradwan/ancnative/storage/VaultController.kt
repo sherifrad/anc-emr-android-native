@@ -495,6 +495,27 @@ class VaultController internal constructor(
         }
     }
 
+    suspend fun saveDraft(record: DraftRecord): Boolean = withContext(dispatcher) {
+        storageMutex.withLock {
+            val active = session ?: return@withLock false
+            active.repository.saveDraft(record)
+        }
+    }
+
+    suspend fun loadDraft(patientId: String, kind: DraftScreenKind): DraftRecord? = withContext(dispatcher) {
+        storageMutex.withLock {
+            val active = session ?: return@withLock null
+            active.repository.loadDraft(patientId, kind)
+        }
+    }
+
+    suspend fun deleteDraft(patientId: String, kind: DraftScreenKind): Unit = withContext(dispatcher) {
+        storageMutex.withLock {
+            val active = session ?: return@withLock
+            active.repository.deleteDraft(patientId, kind)
+        }
+    }
+
     suspend fun exportEncryptedBackup(passphrase: CharArray): ByteArray? = withContext(dispatcher) {
         storageMutex.withLock {
             val active = session ?: return@withLock null

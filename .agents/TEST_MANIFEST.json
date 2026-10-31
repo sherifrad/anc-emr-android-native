@@ -967,6 +967,36 @@
       "covers": ["Q104"]
     },
     {
+      "id": "STATIC-r3v",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3v.py",
+      "deps": [
+        "app/src/main/**/state/DraftMapping.kt",
+        "app/src/main/**/state/DraftAutosaver.kt",
+        "app/src/main/**/state/AncViewModel.kt",
+        "app/src/main/**/storage/VaultController.kt",
+        "app/src/main/**/storage/EncryptedBackupManager.kt",
+        "app/src/main/**/ui/**/*.kt",
+        ".agents/checks/check_r3v.py"
+      ],
+      "covers": ["S92", "S93"]
+    },
+    {
+      "id": "UNIT-draft-sync",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*DraftMappingTest' --tests '*DraftAutosaverTest'",
+      "deps": [
+        "app/src/main/**/state/DraftMapping.kt",
+        "app/src/main/**/state/DraftAutosaver.kt",
+        "app/src/main/**/state/AncState.kt",
+        "app/src/main/**/storage/DraftRecord.kt",
+        "app/src/main/**/storage/DraftCodec.kt",
+        "app/src/test/**/state/DraftMappingTest.kt",
+        "app/src/test/**/state/DraftAutosaverTest.kt"
+      ],
+      "covers": ["Q109", "Q110", "Q111"]
+    },
+    {
       "id": "UNIT-all",
       "tier": 2,
       "cmd": "./gradlew --offline :app:testDebugUnitTest",

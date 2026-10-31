@@ -12,6 +12,7 @@ import com.sherifradwan.ancnative.storage.ClinicalCommandFailure
 import com.sherifradwan.ancnative.storage.ClinicalCommandOutcome
 import com.sherifradwan.ancnative.storage.ClinicalCommandPreparation
 import com.sherifradwan.ancnative.storage.ClinicalRecordKind
+import com.sherifradwan.ancnative.storage.DraftRecord
 import com.sherifradwan.ancnative.storage.PatientCommandOutcome
 import com.sherifradwan.ancnative.storage.PatientCommandPreparation
 import com.sherifradwan.ancnative.storage.SaveDatingCommand
@@ -35,6 +36,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 
 class AncViewModel(application: Application) : AndroidViewModel(application) {
     private val controller = VaultController.get(application)
@@ -63,18 +67,44 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
     private var pendingChainedLab: PendingChainedLab? = null
     private var pendingChainedMedication: PendingChainedMedication? = null
 
+    private val draftStore = object : DraftStore {
+        override suspend fun save(record: DraftRecord): Boolean = controller.saveDraft(record)
+        override suspend fun delete(slot: DraftSlot) {
+            controller.deleteDraft(slot.patientId, slot.kind)
+        }
+    }
+    internal val autosaver = DraftAutosaver(viewModelScope, draftStore)
+    private val lifecycleMutex = Mutex()
+
+    private inline fun updateState(crossinline transform: (AncState) -> AncState) {
+        var before: AncState? = null
+        var after: AncState? = null
+        _state.update { current ->
+            before = current
+            val updated = transform(current)
+            after = updated
+            updated
+        }
+        val b = before
+        val a = after
+        if (b != null && a != null && b !== a) {
+            autosaver.onStateChanged(b, a)
+        }
+    }
+
     init {
         viewModelScope.launch {
             controller.view.collectLatest { sessionView ->
-                _state.update { current ->
-                    val vaultState = sessionView.state
-                    val snapshot = sessionView.snapshot
-                    if (vaultState is VaultState.Unlocked && snapshot != null) {
+                val vaultState = sessionView.state
+                val snapshot = sessionView.snapshot
+                if (vaultState is VaultState.Unlocked && snapshot != null) {
+                    _state.update { current ->
                         current.copy(patients = snapshot.patients, vaultState = vaultState)
-                    } else {
-                        clearFrozenCommands()
-                        AncState(patients = emptyList(), vaultState = vaultState)
                     }
+                } else {
+                    clearFrozenCommands()
+                    _state.value = AncState(patients = emptyList(), vaultState = vaultState)
+                    autosaver.cancelPending()
                 }
             }
         }
@@ -104,7 +134,7 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
                     pendingChainedLab = null
                     pendingChainedMedication = null
                 }
-                _state.update { AncReducer.reduce(it, event) }
+                updateState { AncReducer.reduce(it, event) }
             }
         }
     }
@@ -337,7 +367,7 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
         if (_state.value.pendingSave != token) return
         viewModelScope.launch {
             val result = controller.execute(command, sessionEpoch) {
-                _state.update { AncReducer.reduce(it, AncEvent.SaveReconciling(token)) }
+                updateState { AncReducer.reduce(it, AncEvent.SaveReconciling(token)) }
             }
             when (result) {
                 is PatientCommandOutcome.Committed -> {
@@ -368,7 +398,7 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
                             notice = profileSavedNotice(datingAttempted = true, datingSaved = datingSaved)
                         }
                     }
-                    _state.update {
+                    updateState {
                         AncReducer.reduce(
                             it,
                             AncEvent.RecordCommitted(
@@ -380,13 +410,13 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
                         )
                     }
                 }
-                is PatientCommandOutcome.Rejected -> _state.update {
+                is PatientCommandOutcome.Rejected -> updateState {
                     AncReducer.reduce(
                         it,
                         AncEvent.SaveFailed(token, result.failure.toUiError(), unresolved = false),
                     )
                 }
-                PatientCommandOutcome.Ambiguous -> _state.update {
+                PatientCommandOutcome.Ambiguous -> updateState {
                     AncReducer.reduce(
                         it,
                         AncEvent.SaveFailed(token, SaveUiError.OUTCOME_UNRESOLVED, unresolved = true),
@@ -541,12 +571,12 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
         }
         viewModelScope.launch {
             val result = controller.execute(command, sessionEpoch) {
-                _state.update { AncReducer.reduce(it, AncEvent.SaveReconciling(token)) }
+                updateState { AncReducer.reduce(it, AncEvent.SaveReconciling(token)) }
             }
             when (result) {
                 is ClinicalCommandOutcome.Committed -> {
                     frozenClinicalCommand = null
-                    _state.update {
+                    updateState {
                         AncReducer.reduce(
                             it,
                             AncEvent.RecordCommitted(
@@ -592,7 +622,7 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
                 is ClinicalCommandOutcome.Rejected -> {
                     pendingChainedLab = null
                     pendingChainedMedication = null
-                    _state.update {
+                    updateState {
                         AncReducer.reduce(
                             it,
                             AncEvent.SaveFailed(token, result.failure.toUiError(), unresolved = false),
@@ -602,7 +632,7 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
                 ClinicalCommandOutcome.Ambiguous -> {
                     pendingChainedLab = null
                     pendingChainedMedication = null
-                    _state.update {
+                    updateState {
                         AncReducer.reduce(
                             it,
                             AncEvent.SaveFailed(token, SaveUiError.OUTCOME_UNRESOLVED, unresolved = true),
@@ -623,25 +653,25 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
         if (_state.value.pendingSave != token) return
         viewModelScope.launch {
             val result = controller.save(command, sessionEpoch) {
-                _state.update { AncReducer.reduce(it, AncEvent.SaveReconciling(token)) }
+                updateState { AncReducer.reduce(it, AncEvent.SaveReconciling(token)) }
             }
             when (result) {
                 is SaveOutcome.Committed -> {
                     frozenVisitCommand = null
-                    _state.update {
+                    updateState {
                         AncReducer.reduce(
                             it,
                             AncEvent.SaveCommitted(token, result.snapshot.patients, command.patientId),
                         )
                     }
                 }
-                is SaveOutcome.Rejected -> _state.update {
+                is SaveOutcome.Rejected -> updateState {
                     AncReducer.reduce(
                         it,
                         AncEvent.SaveFailed(token, result.failure.toUiError(), unresolved = false),
                     )
                 }
-                SaveOutcome.Ambiguous -> _state.update {
+                SaveOutcome.Ambiguous -> updateState {
                     AncReducer.reduce(
                         it,
                         AncEvent.SaveFailed(token, SaveUiError.OUTCOME_UNRESOLVED, unresolved = true),
@@ -661,13 +691,44 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
     fun retryStorageInspection() = controller.retryInspection()
     fun manualLock() {
         clearFrozenCommands()
-        controller.lock()
+        viewModelScope.launch {
+            lifecycleMutex.withLock {
+                try {
+                    flushDraftsBounded()
+                } finally {
+                    controller.lock()
+                }
+            }
+        }
     }
     fun lockVault() = manualLock()
-    fun onForegrounded() = controller.onForegrounded()
+    fun onForegrounded() {
+        viewModelScope.launch {
+            lifecycleMutex.withLock {
+                controller.onForegrounded()
+            }
+        }
+    }
     fun onBackgrounded(authenticationOverlayActive: Boolean) {
         if (!authenticationOverlayActive) clearFrozenCommands()
-        controller.onBackgrounded(authenticationOverlayActive)
+        viewModelScope.launch {
+            lifecycleMutex.withLock {
+                try {
+                    flushDraftsBounded()
+                } finally {
+                    controller.onBackgrounded(authenticationOverlayActive)
+                }
+            }
+        }
+    }
+
+    private suspend fun flushDraftsBounded() {
+        val job = viewModelScope.launch {
+            autosaver.flush()
+        }
+        withTimeoutOrNull(2000L) {
+            job.join()
+        }
     }
 
     private fun clearFrozenCommands() {
