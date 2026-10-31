@@ -1,0 +1,270 @@
+[
+ {
+  "step": "1-tests",
+  "lane": "claude:claude-sonnet-5-5",
+  "tried": [
+   "claude:claude-sonnet-5-5=completed"
+  ],
+  "seconds": 53.7,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   ".agents/TEST_MANIFEST.json",
+   ".agents/checks/check_r3i.py",
+   "app/src/test/java/com/sherifradwan/ancnative/model/IsoDatesTest.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "1b-red",
+  "ran": 5,
+  "reused": 41,
+  "deferred": 2,
+  "not_gated": [
+   "UNIT-format-r2",
+   "UNIT-intake-dating",
+   "UNIT-anomalies",
+   "UNIT-vault-auto",
+   "UNIT-vault-cleanup",
+   "UNIT-pin-policy",
+   "UNIT-lock-policy"
+  ],
+  "passed": [
+   "STATIC-r3f2",
+   "STATIC-r3g",
+   "UNIT-camera-sweep"
+  ],
+  "failed": [
+   "STATIC-r3i",
+   "UNIT-iso-dates"
+  ]
+ },
+ {
+  "step": "red-check",
+  "parked": [
+   "app/src/test/java/com/sherifradwan/ancnative/model/IsoDatesTest.kt"
+  ],
+  "failed": [
+   "STATIC-r3i",
+   "UNIT-iso-dates"
+  ],
+  "compile_error": false,
+  "behavioural_red_confirmed": true
+ },
+ {
+  "step": "2a-core",
+  "lane": "claude:claude-sonnet-5-5",
+  "tried": [
+   "claude:claude-sonnet-5-5=completed"
+  ],
+  "seconds": 99.3,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   "app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/model/LongitudinalTimelineProjection.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/storage/SaveVisitCommand.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/ui/AncDatePicker.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2a-green",
+  "ran": 4,
+  "reused": 2,
+  "deferred": 0,
+  "not_gated": [
+   "UNIT-parse-legacy",
+   "UNIT-format-r2",
+   "UNIT-print",
+   "UNIT-contrast",
+   "STATIC-ui",
+   "STATIC-ui-r2",
+   "UNIT-intake-dating",
+   "STATIC-r3",
+   "UNIT-anomalies",
+   "UNIT-vault-auto",
+   "UNIT-vault-cleanup",
+   "STATIC-r3b",
+   "UNIT-pin-policy",
+   "UNIT-lock-policy",
+   "STATIC-r3c",
+   "STATIC-r3d",
+   "STATIC-r3e",
+   "STATIC-r3f1",
+   "STATIC-r3f3",
+   "STATIC-r3f2",
+   "UNIT-photo-quality",
+   "UNIT-hashing",
+   "UNIT-bounded-bitmap",
+   "UNIT-security-settings",
+   "UNIT-attachment-error",
+   "UNIT-negative-control",
+   "UNIT-clinical-validation",
+   "UNIT-demo-fixtures",
+   "UNIT-gestational-age",
+   "UNIT-timeline-projection",
+   "UNIT-patient-validation",
+   "UNIT-previous-pregnancy-validation",
+   "UNIT-codex-repository",
+   "UNIT-anc-state",
+   "UNIT-backup-vault",
+   "UNIT-clinical-commands",
+   "UNIT-encrypted-backup",
+   "UNIT-attachment-vault",
+   "UNIT-patient-commands",
+   "UNIT-records-mapping",
+   "UNIT-save-coordinator",
+   "UNIT-vault-state",
+   "UNIT-gestational-banner",
+   "STATIC-r3g",
+   "UNIT-scan-photo-ref",
+   "UNIT-camera-sweep",
+   "UNIT-scan-photo-import",
+   "STATIC-r3h",
+   "UNIT-capture-temp-file"
+  ],
+  "passed": [
+   "UNIT-iso-dates",
+   "UNIT-all",
+   "COMPILE-app"
+  ],
+  "failed": [
+   "STATIC-r3i"
+  ]
+ },
+ {
+  "step": "2a-core-repair1",
+  "lane": "claude:claude-sonnet-5-5",
+  "tried": [
+   "claude:claude-sonnet-5-5=completed"
+  ],
+  "seconds": 17.1,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   "app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2a-green-r1",
+  "ran": 3,
+  "reused": 3,
+  "deferred": 0,
+  "not_gated": [
+   "UNIT-parse-legacy",
+   "UNIT-format-r2",
+   "UNIT-print",
+   "UNIT-contrast",
+   "STATIC-ui",
+   "STATIC-ui-r2",
+   "UNIT-intake-dating",
+   "STATIC-r3",
+   "UNIT-anomalies",
+   "UNIT-vault-auto",
+   "UNIT-vault-cleanup",
+   "STATIC-r3b",
+   "UNIT-pin-policy",
+   "UNIT-lock-policy",
+   "STATIC-r3c",
+   "STATIC-r3d",
+   "STATIC-r3e",
+   "STATIC-r3f1",
+   "STATIC-r3f3",
+   "STATIC-r3f2",
+   "UNIT-photo-quality",
+   "UNIT-hashing",
+   "UNIT-bounded-bitmap",
+   "UNIT-security-settings",
+   "UNIT-attachment-error",
+   "UNIT-negative-control",
+   "UNIT-clinical-validation",
+   "UNIT-demo-fixtures",
+   "UNIT-gestational-age",
+   "UNIT-timeline-projection",
+   "UNIT-patient-validation",
+   "UNIT-previous-pregnancy-validation",
+   "UNIT-codex-repository",
+   "UNIT-anc-state",
+   "UNIT-backup-vault",
+   "UNIT-clinical-commands",
+   "UNIT-encrypted-backup",
+   "UNIT-attachment-vault",
+   "UNIT-patient-commands",
+   "UNIT-records-mapping",
+   "UNIT-save-coordinator",
+   "UNIT-vault-state",
+   "UNIT-gestational-banner",
+   "STATIC-r3g",
+   "UNIT-scan-photo-ref",
+   "UNIT-camera-sweep",
+   "UNIT-scan-photo-import",
+   "STATIC-r3h",
+   "UNIT-capture-temp-file"
+  ],
+  "passed": [
+   "STATIC-r3i",
+   "UNIT-all",
+   "COMPILE-app"
+  ],
+  "failed": []
+ },
+ {
+  "step": "2b-green",
+  "ran": 15,
+  "reused": 40,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [
+   "UNIT-print",
+   "UNIT-intake-dating",
+   "STATIC-r3",
+   "STATIC-r3d",
+   "UNIT-negative-control",
+   "UNIT-clinical-validation",
+   "UNIT-gestational-age",
+   "UNIT-timeline-projection",
+   "UNIT-patient-validation",
+   "UNIT-previous-pregnancy-validation",
+   "UNIT-backup-vault",
+   "UNIT-clinical-commands",
+   "UNIT-records-mapping",
+   "UNIT-save-coordinator",
+   "UNIT-gestational-banner"
+  ],
+  "failed": []
+ },
+ {
+  "step": "ui-gate-final",
+  "still_failing": []
+ },
+ {
+  "step": "cache-check-no-changes",
+  "ran": 0,
+  "reused": 55,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [],
+  "failed": []
+ },
+ {
+  "step": "3-review-0-claude",
+  "lane": "claude:claude-sonnet-5-5",
+  "tried": [
+   "claude:claude-sonnet-5-5=completed"
+  ],
+  "seconds": 34.7,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [],
+  "scope_violations_reverted": []
+ }
+]

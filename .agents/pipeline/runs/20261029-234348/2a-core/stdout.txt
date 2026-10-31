@@ -1,0 +1,46 @@
+I'll start by reading the spec and the tests that define the contract.
+Now I have the full contract. Let me write the parser.
+Now ClinicalFormat.kt (Q5, Q6):
+One failure: the `\b` after the `?` alternative can never match. Fixing:
+All 81 pass. Let me verify the run really executed those classes and check nothing else depends on the changed behaviour.
+Both files are green. Final report:
+
+```
+FILES CHANGED (only these two)
+- app/src/main/java/com/sherifradwan/ancnative/ui/DeliveryNotesParser.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt
+
+WHAT I DID
+Q1 line -> segments at ';' and at ". " + capital letter; no split after dr/mr/mrs/ms/st/no/approx/vs/e.g/i.e
+   (whole token, case-insensitive); decimals/times can't split; each segment placed on its own.
+Q2 pieces keep raw offsets, so consecutive same-home segments rejoin with the ORIGINAL separator
+   ("Elective CS at 39w. Avoid NSAIDs." is byte-identical); lines join with "\n"; label stripped only
+   for known labels and only for fees/postpartum; plan keeps the full segment. Nothing dropped.
+Q3 unlabelled segment -> postpartum only with whole-word delivered/discharged, no history marker and no
+   plan/future marker (will, shall, "to be", plan(ed/ning), expected/expect, booked, scheduled, if,
+   should, would, may, aim, intend(ed)). Labels still win.
+Q4(a) "Hospital:" (case-insensitive) -> name cut at ';' ',' '.' " - "; blank/undecided (tbd, to be decided,
+   not decided, undecided, not agreed, none, ?) -> null; source line stays in Plan. 
+Q4(b) capital-H "<Name> Hospital" phrase, al/el/de/of/and allowed between capitalised words, leading list
+   words dropped; lowercase "hospital" and "Hospitalised" never match. Names deduped, "\n", source order.
+Q5 formatAgeYears: whole trimmed text, optional Age(:), int, optional unit, optional '.', 10..70 else null.
+Q6 isRhPositive (mirror, false for negative/blank/null/pending) + formatBloodGroup (trim + " (Rh negative)",
+   no emoji). Existing isRhNegative/isHighRisk untouched; the parser stays a pure function.
+
+ASSUMPTIONS (SAFE side)
+- An undecided hospital value that merely STARTS with an undecided phrase ("not decided yet") is null, so an
+  odd name beginning with such a word stays in Plan (false negative, never a wrong box); "?"-prefixed -> null.
+- Blank ';' piece is skipped, but its delimiter survives in the neighbour separator when both share a home.
+- (a) and (b) names in the same segment are both kept when they differ (nothing hidden).
+
+NOT DONE (outside my file list, read-only notes)
+- PatientPrintHtmlGenerator.kt still uses bloodGroupText?.contains("-") (Q7/U3 name other files).
+- Q5 side effect in UI lanes: ProfileScreen/ClinicalBadges show the age badge only when formatAgeYears != null,
+  so free text like "about 30" no longer renders an age there. Unchanged by me.
+
+TESTS (really run)
+- ./gradlew --offline :app:testDebugUnitTest --tests '*ParseDeliveryNotesSpecTest' --tests
+  '*DeliveryNotesParserTest' --tests '*ClinicalFormatTest' --tests '*ClinicalFormatR2Test' -> BUILD SUCCESSFUL,
+  81 tests, 0 failures (64/8/6/3 from the XML results).
+- Also ran the full :app:testDebugUnitTest -> 24 classes, 194 tests, 0 failures; :app:compileDebugKotlin passed.
+```

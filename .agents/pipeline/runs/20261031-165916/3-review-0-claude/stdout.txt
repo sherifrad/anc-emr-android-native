@@ -1,0 +1,50 @@
+**Review of the Round 3u draft storage.** I read the diff and new files only. I ran no builds or tests. I could not check that the instrumented test compiles.
+
+**(1) Migration 5→6**
+- `from5To6` mirrors `from4To5`: the same table and metadata checks, then the same guarded `UPDATE vault_metadata ... schema_version = 5 ... is_synthetic = 1 AND initialized = 1`. It throws on `changed != 1` and creates the table and index.
+- Room sets `user_version` itself, as it did for 4→5.
+- Every version site is updated:
+  - `RecordsDatabase.kt` has `version = 6` and `from5To6` in the migration chain.
+  - `RecordsRepository.SCHEMA_VERSION` is 6. It feeds the `PRAGMA user_version` check, the metadata check at about line 100, and the seed insert.
+  - `6.json` exists and `app/schemas` has 1 to 6.
+- The backup envelope has its own `SCHEMA_VERSION = 3`, which is unrelated and correctly untouched.
+- The existing chain is not broken, and the tests in the repo have no other hard-coded 5.
+- **Should-fix:** `RecordsMigration.kt:645` `private val SCHEMA_SIX_TABLES = SCHEMA_FIVE_TABLES + "drafts"` is never used. It is dead code that produces an unused-property warning. Remove it.
+- **Nit:** `validateSchemaFiveTables` and `validateSchemaFiveMetadata` are copies of the Four versions. That is the existing pattern, but it goes against "one function per rule".
+- **Nit:** `private companion object` became a public `companion object` so the test can read `SCHEMA_VERSION`. It also exposes `PREGNANCY_KINDS`. Harmless, because the class is internal.
+
+**(2) `DraftEntity` against the migration SQL**
+- The `DraftEntity` columns and nullability match the migration SQL one to one.
+- The primary key is `(patient_id, screen_kind)`, there is no foreign key, and the index is `index_drafts_patient_id` on `patient_id`.
+- `6.json` matches the entity, so I see no Room schema-validation crash.
+
+**(3) `DraftCodec`**
+- Keys are sorted and all strings go through `JSONObject.quote`, so the round trip is exact.
+- The cap is measured in UTF-8 bytes and returns null when over. Decode catches `Throwable` and returns null.
+- Non-string values are dropped and unknown keys are kept.
+- **Nit:** `DraftCodec.kt` `if (next != '\u0000'.toChar() && next != 0.toChar())` compares the same character twice. Keep one.
+- **Nit:** a trailing NUL after the object is accepted. Harmless.
+- No logging, preferences or file writes appear in `DraftCodec.kt`, `DraftRecord.kt` or the draft code in the repository.
+
+**(4) Repository**
+- `saveDraft` returns false before touching the DAO when encoding fails, so nothing is stored.
+- `restoreCanonicalBackup` calls `dao.deleteAllDrafts()` first, inside the same `withTransaction`.
+- `EncryptedBackupManager.kt` and `VaultController.kt` contain no "draft", and the export is unchanged.
+- `loadDraft` and `loadDrafts` skip rows with an unknown kind or an undecodable payload, and the rows stay in the table.
+- **Should-fix (confirm with the owner):** `deleteDrafts` is never called by anything in this step. Nothing in this step deletes a patient's drafts when the patient is removed, and other patient deletion or reset paths are not covered.
+
+**(5) Storage outside the encrypted database**
+- None found.
+
+**(6) Dead code or checks-only changes**
+- Only `SCHEMA_SIX_TABLES`, covered under (1).
+
+**(7) Tests**
+- `DraftCodecTest` calls production code. The functions are new, so old code would not compile against it.
+- It covers the cap boundary, the cap counting UTF-8 bytes, malformed input, ignored non-string values, kept unknown keys and stable key order.
+- The instrumented test updates the table list and both version expectations to 6, and adds every test the spec lists. It uses existing helpers (`withDatabase`, `countRows`, `VaultFiles.isolatedTest`).
+- **Should-fix:** `rawDatabaseFileDoesNotContainPlainTextDraftMarker` has no positive control. It never shows the marker would be found in an unencrypted file, so it only proves the marker is absent.
+- **Nit:** the oversize test checks `saveDraft` returns false and no row is stored, but it does not check the `DraftCodec` boundary against the repository at exactly the cap.
+- There is no migration test that opens a version-5 database and upgrades it. I could not confirm whether the repo has one for earlier versions, so I cannot say if this is a gap.
+
+**Verdict:** no Hard Blockers. The Should-fix items are `SCHEMA_SIX_TABLES`, the patient-removal draft cleanup, and the encryption test control.

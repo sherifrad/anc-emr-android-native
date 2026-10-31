@@ -1,0 +1,31 @@
+PASS U1(ProfileScreen.kt) no emoji code points
+PASS U1(PatientListScreen.kt) no emoji code points
+PASS U1(WorkspaceScreen.kt) no emoji code points
+PASS U1(ClinicalBadges.kt) no emoji code points
+PASS U2(ProfileScreen.kt) formatBloodGroup( is called
+PASS U2(PatientListScreen.kt) formatBloodGroup( is called
+PASS U2(WorkspaceScreen.kt) formatBloodGroup( is called
+PASS U3(ProfileScreen.kt) no inline contains()-Rh/risk logic; uses isRhNegative/isHighRisk
+PASS U3(PatientListScreen.kt) no inline contains()-Rh/risk logic; uses isRhNegative/isHighRisk
+PASS U4(ProfileScreen.kt/edit_dating) all 1 reference(s) are pencil-button contentDescriptions
+PASS U4(ProfileScreen.kt/edit_history) all 1 reference(s) are pencil-button contentDescriptions
+PASS U4(ProfileScreen.kt/edit_ultrasound) all 1 reference(s) are pencil-button contentDescriptions
+PASS U4(ProfileScreen.kt/edit_visit) all 1 reference(s) are pencil-button contentDescriptions
+PASS U4(ProfileScreen.kt/edit_other_histories) no references (vacuous; resource must still exist for U6 where applicable)
+PASS U4(ProfileScreen.kt/edit_lab) all 1 reference(s) are pencil-button contentDescriptions
+PASS U4(ProfileScreen.kt/edit_medication) no references (vacuous; resource must still exist for U6 where applicable)
+PASS U4(ProfileScreen.kt/edit_delivery_plan) no references (vacuous; resource must still exist for U6 where applicable)
+PASS U4(ProfileScreen.kt/edit_clinical_alerts) no references (vacuous; resource must still exist for U6 where applicable)
+PASS U4(WorkspaceScreen.kt/edit_dating) all 1 reference(s) are pencil-button contentDescriptions
+PASS U4(WorkspaceScreen.kt/edit_history) no references (vacuous; resource must still exist for U6 where applicable)
+PASS U4(WorkspaceScreen.kt/edit_ultrasound) all 2 reference(s) are pencil-button contentDescriptions
+PASS U4(WorkspaceScreen.kt/edit_visit) all 1 reference(s) are pencil-button contentDescriptions
+PASS U4(WorkspaceScreen.kt/edit_other_histories) all 1 reference(s) are pencil-button contentDescriptions
+PASS U4(WorkspaceScreen.kt/edit_lab) all 1 reference(s) are pencil-button contentDescriptions
+PASS U4(WorkspaceScreen.kt/edit_medication) all 1 reference(s) are pencil-button contentDescriptions
+PASS U4(WorkspaceScreen.kt/edit_delivery_plan) all 1 reference(s) are pencil-button contentDescriptions
+PASS U4(WorkspaceScreen.kt/edit_clinical_alerts) all 1 reference(s) are pencil-button contentDescriptions
+PASS U5(WorkspaceScreen.kt/correct_previous_pregnancy) line 1054: Text inside TextButton
+PASS U6(WorkspaceScreen.kt/edit_clinical_alerts) resource used, no literal, no size(32.dp)
+PASS U7(ProfileScreen.kt/photos_count) photo chip count labelled via stringResource(R.string.photos_count, n)
+PASS U-r2 overall: 30/30 sub-checks passed

@@ -1,0 +1,22 @@
+I made the Q62 and Q61 edits, but I couldn't run any of the three verification commands. Each one was blocked pending approval, so the two check scripts and the compile are **not run**.
+
+**Files changed**
+- `ui/AddAttachmentDialog.kt`
+- `ui/InAppCameraDialog.kt`
+
+**Q62 (`AddAttachmentDialog.kt`)**
+- The content `Column` now uses `verticalScroll(rememberScrollState())`.
+- The `Card` is capped at `heightIn(max = screenHeightDp - 32)`, so Cancel and "Save to Patient Record" can always be scrolled to.
+- The preview box is now `heightIn(min = 120.dp, max = 240.dp)`.
+- Every testTag and behaviour is kept, and I did not touch the buttons.
+
+**Q61 cleanup (`InAppCameraDialog.kt`)**
+- I deleted `decodeUpright` and the `ExifInterface`, `Matrix` and `FileInputStream` imports.
+- The still is now decoded with `BoundedBitmap.decodeFile(shot.absolutePath, STILL_MAX_SIDE)`.
+
+**Assumptions**
+- The preview image is now `ContentScale.Fit` with `fillMaxWidth`, instead of `Crop` with `fillMaxSize`. Without a fixed height, a `fillMaxSize` image would collapse the box. `Fit` also shows the whole photo, which seems safer for clinical images.
+- The camera still now only comes out upright if the `BoundedBitmap.kt` lane adds EXIF handling to `decodeFile`. That file is outside my allowed list, and I didn't check that it's done.
+
+**Still to do**
+- Run `python3 .agents/checks/check_r3f3.py`, `python3 .agents/checks/check_r3f2.py`, and `./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin`. Approve them for me or run them yourself.

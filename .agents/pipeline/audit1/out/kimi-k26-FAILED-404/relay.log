@@ -1,0 +1,15 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "opencode-delegate",
+  "cli": "opencode",
+  "status": "failed",
+  "exitCode": 1,
+  "signal": null,
+  "readOnly": true,
+  "readOnlyViolation": false,
+  "touchedFiles": [],
+  "finalMessage": "",
+  "stderrTail": "\u001b[0m\n> plan · nvidia/moonshotai/kimi-k2.6\n> plan · nvidia/moonshotai/kimi-k2.6\n> plan · nvidia/moonshotai/kimi-k2.6\n\u001b[91m\u001b[1mError: \u001b[0m[nvidia/moonshotai/kimi-k2.6] [404]: Function '23d4f03a-b8a6-4adb-a183-7daa083a09cc': Not found for account 'ETWru7QPj2ZCNcQ3OVBxtK7yAsaTW2hZYpuUAng6d90' (reset after 2m)",
+  "resultPath": "out/kimi-k26/result.json",
+  "timestamp": "2026-10-30T15:09:17.055Z"
+}

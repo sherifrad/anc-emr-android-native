@@ -1,0 +1,26 @@
+[
+ {
+  "spec": "opencode:omniroute/nvidia/nvidia/nemotron-3-ultra-550b-a55b",
+  "status": "failed",
+  "seconds": 600.1,
+  "chars": 0,
+  "ok": false,
+  "why": "0b-a55b\n\u001b[0m\u2192 \u001b[0mRead /Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/BackupVaultIntegrationAndZeroDataLossTest.kt \u001b[90m[limit=80, offset=150]\u001b[0m"
+ },
+ {
+  "spec": "claude:claude-sonnet-5-5",
+  "status": "failed",
+  "seconds": 148.8,
+  "chars": 15146,
+  "ok": false,
+  "why": ""
+ },
+ {
+  "spec": "opencode:openai/gpt-6-luna",
+  "status": "completed",
+  "seconds": 43.1,
+  "chars": 4153,
+  "ok": true,
+  "why": ""
+ }
+]

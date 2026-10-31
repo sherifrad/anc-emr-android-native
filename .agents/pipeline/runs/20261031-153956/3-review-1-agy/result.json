@@ -1,0 +1,15 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": true,
+  "readOnlyViolation": false,
+  "touchedFiles": [],
+  "finalMessage": "(1) Engine members: Exactly as spec. `isLateTerm`, `progressFraction`, `shortWeeksText`, and `daysToEdd` yield identical results to old formulas across all edge cases (41w0d..41w6d true/not post-term; 42w0d post-term/not late-term; totalDays 0 -> 0f, 280 -> 1f, 320 -> 1f; negative daysToEdd when asOf > EDD).\n\n(2) Screen rendering & Grep audit:\n- All three screens keep existing strings, colors, and testTags intact.\n- Grep findings in `app/src/main`:\n  - `ui/UltrasoundPhotoViewerDialog.kt:141`: `\" · ${scan.gestationalAgeWeeks}+${scan.gestationalAgeDays ?: 0} wks\"` (formats scan DTO, not `GestationalAgeResult`).\n  - `model/ClinicalModels.kt:4`: `import java.time.temporal.ChronoUnit` (unused import).\n\n(3) Banner test: Keeps all 5 scenarios, but DOES NOT cleanly exercise production code. It declares local shadow extensions that dispatch via reflection with fallback formula copies (`weeks == 41`, `FULL_TERM_DAYS` division, `toEpochDay` subtraction).\n\n(4) Findings:\n- [Hard Blocker] `app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:15-55`:\n  `private val GestationalAgeResult.isLateTerm` / `progressFraction` / `daysToEdd` define reflection wrappers with formula copies (`weeks == 41`, `totalDays / FULL_TERM_DAYS.toFloat()`, `edd.toEpochDay() - asOf.toEpochDay()`) instead of importing production symbols directly, violating Q106 and Rule 4.\n- [Should-fix] `app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:45`:\n  `?: dating?.lmpDate?.let { parseIsoDateOrNull(it)?.let { lmp -> eddFromLmp(lmp) } }` adds an unrequested secondary LMP fallback in UI layer bypassing `calculateEstimatedDueDate()`.\n- [Nit] `app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:112`:\n  `assertEquals(199f / FULL_TERM_DAYS.toFloat(), progress, 0.005f)` substitutes constant to circumvent the `280f` check string.\n- [Nit] `app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt:4`:\n  Unused `import java.time.temporal.ChronoUnit`.\n\nStatic checks: `check_r3t.py` PASS (S86, S87, S88). Unit tests: not run (Gradle daemon blocked by sandbox network restriction). Files changed: none (read-only).",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-153956/3-review-1-agy/result.json",
+  "timestamp": "2026-10-31T14:11:49.734Z"
+}

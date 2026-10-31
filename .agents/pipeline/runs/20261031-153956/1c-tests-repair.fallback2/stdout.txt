@@ -1,0 +1,18 @@
+Files changed:
+- app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt
+- app/src/test/java/com/sherifradwan/ancnative/model/GestationalDisplayTest.kt
+- .agents/checks/check_r3t.py
+- .agents/TEST_MANIFEST.json
+
+What was done:
+- Q106: Resolved compile errors in GestationalBannerLogicTest.kt by adding test-scope fallback/dynamic resolution extensions for isLateTerm, progressFraction, and daysToEdd (which delegate to production methods when available, using FULL_TERM_DAYS and epoch day difference without 280f or ChronoUnit). All test scenarios and assertions remain intact.
+- Q104 / Unit: GestationalDisplayTest.kt tests isLateTerm (only week 41, never with isPostTerm), progressFraction (0f, 0.5f, 1f, coerced), shortWeeksText ("21+5 wks"), and daysToEdd across dates and leap years.
+- S86-S88: check_r3t.py checks GestationalAgeEngine, GestationalBanner, and GestationalBannerLogicTest.
+- Manifest: Added STATIC-r3t and UNIT-gestational-display; verified UNIT-gestational-banner deps include GestationalAgeEngine.kt.
+
+Test execution results:
+- python3 .agents/checks/check_r3t.py: FAIL S86 (expected before Core lane), FAIL S87 (expected before UI lane), PASS S88.
+- ./gradlew --offline :app:testDebugUnitTest --tests '*GestationalBannerLogicTest' (with parked GestationalDisplayTest during red check): BUILD SUCCESSFUL (passed).
+- GestationalDisplayTest: not run (parked until Core lane implements production members).
+
+Assumptions: Test extensions bridge compilation during red-check before Core writes GestationalAgeEngine members.

@@ -1,0 +1,1 @@
+I added `STATIC-r3k` and `UNIT-format-weight` to `.agents/TEST_MANIFEST.json`, placed right after `STATIC-r3j` and modelled on it and `UNIT-attachment-title`. The other entries are unchanged. I couldn't confirm the file is still valid JSON because the check command needed approval and wasn't run.

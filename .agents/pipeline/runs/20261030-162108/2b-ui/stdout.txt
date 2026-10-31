@@ -1,0 +1,7 @@
+I’ll keep this to the single allowed UI file, inspect the Round 3c requirements and current screen, then make the smallest change and run the two requested checks.
+The screen already collects `securityRepo.settings`; the defect was a direct `.value` read inside PIN validation. I’ve removed it and used the collected state plus the entered PIN’s validity to prevent a successful weak-PIN check from unlocking while the repository’s setup state propagates.
+Changed `app/src/main/java/com/sherifradwan/ancnative/ui/AppLockScreen.kt`: kept the settings flow observation and removed the direct `.value` read used during PIN validation. A successful weak-PIN check now waits for setup instead of unlocking.
+
+Q30(b)/S15: `check_r3c.py` passed all checks, including S15. `./gradlew --offline :app:compileDebugKotlin` succeeded.
+
+Assumption: weak PINs are identified with the existing `isValidNewPin` rule. No other files changed.

@@ -1,0 +1,21 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "claude-delegate",
+  "cli": "claude",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/AddAttachmentDialog.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt",
+    "pp/src/main/res/values/strings.xml"
+  ],
+  "finalMessage": "I made the Q48 and Q52 edits, but I haven't run any of the three required checks. Each Bash call to run them was refused for approval. So the static checks and the compile are all \"not run\", and I haven't confirmed the code compiles.\n\n**Files changed:** `ui/WorkspaceScreen.kt`, `ui/ClinicalAttachmentViewerDialog.kt`, `ui/UltrasoundPhotoViewerDialog.kt`, `ui/AddAttachmentDialog.kt`, `res/values/strings.xml`.\n\n**Q48 (UI call sites).** Every `BitmapFactory.decode*` call in the four UI files now goes through `BoundedBitmap`. A grep before my edits showed those four were the only UI uses, and I didn't grep again afterwards.\n- The attachment thumbnail in `WorkspaceScreen.kt` and the viewer in `ClinicalAttachmentViewerDialog.kt` use `decodeFile(path, 2048)`.\n- `UltrasoundPhotoViewerDialog.kt` uses `decodeStream({ openInputStream(uri) }, 2048)`.\n- The preview in `AddAttachmentDialog.kt` uses `decodeStream({ openInputStream(uri) }, 1024)`.\n- `BoundedBitmap` opens the stream twice (bounds pass, then the decode), so I pass a lambda that opens it each time.\n- I removed the now-unused `BitmapFactory` imports and added the `BoundedBitmap` imports.\n- All testTags and the \"Image unavailable\" fallbacks are untouched, because `BoundedBitmap` returns null on failure, as the old `getOrNull` paths did.\n\n**Q52 (error banner).**\n- `WorkspaceScreen.kt` shows a `Card` tagged `attachment_error_banner` whenever `state.attachmentError != null`. It uses the same `FlowRow` layout as the saved-notice card, with the text in the theme's error colour.\n- The message comes from `R.string.attachment_save_failed` or `R.string.attachment_delete_failed`.\n- The Close button dispatches `AncEvent.DismissAttachmentError`.\n- It sits just before the saved-notice card.\n- `strings.xml` has both strings with the spec's exact wording.\n\n**Assumptions:** I imported `state.AttachmentError`, which `AncState.kt` already defines. Unlike the old `getOrNull` paths, the bounds pass does not stop a huge image from failing outright. It only limits memory use.\n\n**Still to do:** please run these three, or approve them and I'll run them:\n- `python3 .agents/checks/check_r3f1.py` (S30 and S34 are mine)\n- `python3 .agents/checks/check_r3e.py`\n- `./gradlew --offline :app:compileDebugKotlin`",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261030-210523/2b-ui.fallback1/result.json",
+  "timestamp": "2026-10-30T19:13:56.454Z"
+}

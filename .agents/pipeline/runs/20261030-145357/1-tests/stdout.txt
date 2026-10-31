@@ -1,0 +1,42 @@
+I couldn't run any of the verification commands, so nothing is verified yet. Each `python3` and `./gradlew` call was blocked pending approval, which I didn't get. All four files are written. Nothing has been compiled, executed or JSON-validated.
+
+**Files changed**
+- `app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt`
+- `app/src/test/java/com/sherifradwan/ancnative/state/IntakeDatingRuleTest.kt` (new)
+- `.agents/checks/check_r3.py` (new)
+- `.agents/TEST_MANIFEST.json`
+
+**What I did per oracle**
+- **Q19(a)–(g):** new `q19*` tests in the print test, each checking exact strings with both presence and absence.
+  - Missing is covered as null, empty and whitespace-only.
+  - (a) Three "Not recorded" cells, no "Cephalic", "Posterior Grade I" or "Adequate (AFI 14cm)"; "Breech" prints unchanged.
+  - (b) "NKDA" absent when allergy is missing and printed only if typed; a present allergy prints exactly as typed with the `text-rose font-bold` styling.
+  - (c) No ">None<" anywhere.
+  - (d) Target Delivery Timing (also with no dating at all).
+  - (e) The exact `<span class="badge">Risk not recorded</span>` with neither the High nor the Normal badge.
+  - (f) The expected value comes from `parseDeliveryNotes(notes).plan`.
+  - (g) The owner wording still prints.
+- **Q17 assertion changed:** in `q17_riskLevelsNonHigh_normalRiskBadge` I removed `null` from the list, because Q19(e) supersedes it. Nothing else was weakened.
+- **Q20:** all 9 spec examples exactly, plus 5 boundary tests:
+  - leap year (`2028-02-29` → `2028-12-05`)
+  - whitespace-only `ultrasoundEdd` treated as missing
+  - lowercase method `"lmp"`
+  - impossible date `2026-02-30` → null
+  - padded existing LMP equal to the draft → null
+- **S1–S4:** `check_r3.py` prints PASS/FAIL per sub-check and exits 1 on any FAIL.
+  - S2 is a textual check that every non-metadata insert sits inside an `if (includeDemoPatients)` block.
+  - It should fail on S1–S4 against today's code, because `plusDays(280)` is present and the other three changes don't exist yet. That is untested.
+- **Manifest:** added `UNIT-intake-dating` and `STATIC-r3` with the specified deps. `UNIT-print` now also lists `DeliveryNotesParser.kt` and covers Q19. Existing entries and ids are untouched.
+
+**Assumptions**
+- `IntakeDatingRuleTest` won't compile until `IntakeDating` and `intakeDatingUpdate` exist. That is expected.
+- In the print test, `parseDeliveryNotes` is imported from `ui`. I assumed `internal` visibility is reachable from the same module's tests.
+- The fixture note for the Q19(f) plan test is "Elective repeat caesarean booked at 39 weeks". The test asserts the parser returns a non-null plan for it, so it fails loudly if my assumption about the parser is wrong.
+
+**Not run**
+- The print test class (the expected failures could not be listed).
+- `IntakeDatingRuleTest`.
+- `check_r3.py`.
+- JSON validation of the manifest.
+
+If you approve `python3 .agents/checks/check_r3.py` and `./gradlew --offline :app:testDebugUnitTest --tests '*PatientPrintHtmlGeneratorTest'`, I'll run them and report.

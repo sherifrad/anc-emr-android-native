@@ -1,0 +1,15 @@
+MACA pipeline 20261031-173757 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('agy', 'gemini-3.8-flash-medium'), 'ui': ('agy', 'gemini-3.8-flash-medium')} review: ['claude:claude-sonnet-5-5', 'agy:gemini-3.8-flash-medium']
+  agy       /Users/sherifgamalradwan/.local/bin/agy
+  claude    /opt/homebrew/bin/claude
+[1-tests] claude completed 139.3s changed=4 violations=0
+[1b-red] ran=11 reused=65 deferred=2 not_gated=7 failed=['STATIC-r3v', 'UNIT-draft-sync']
+[2a-core] agy completed 887.3s changed=4 violations=0
+[2a-green] ran=4 reused=2 deferred=0 not_gated=79 failed=[]
+[2b-green] ran=10 reused=75 deferred=0 not_gated=0 failed=[]
+[cache-check-no-changes] ran=0 reused=85 deferred=0 not_gated=0 failed=[]
+[3-review-0-claude] claude completed 104.0s changed=0 violations=0
+[3-review-1-agy] agy:gemini-3.8-flash-medium gave no usable result (failed); trying next model
+[3-review-1-agy] claude completed 416.0s changed=0 violations=0
+
+DONE.  Metrics: /Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-173757/metrics.json 
+Tell Claude: pipeline finished.

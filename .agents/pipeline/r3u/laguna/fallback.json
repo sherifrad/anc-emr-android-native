@@ -1,0 +1,10 @@
+[
+ {
+  "spec": "opencode:omniroute/nvidia/poolside/laguna-xs-2.1",
+  "status": "failed",
+  "seconds": 600.1,
+  "chars": 1075,
+  "ok": false,
+  "why": "m\n> plan \u00b7 nvidia/poolside/laguna-xs-2.1\n\u001b[0m\u2192 \u001b[0mRead app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt \u001b[90m[limit=80, offset=120]\u001b[0m\n> plan \u00b7 nvidia/poolside/laguna-xs-2.1"
+ }
+]

@@ -1,0 +1,23 @@
+Now let me look at the current state of the production files (read-only) that S55–S58 target, plus the manifest.
+Let me check the older checks' exact shapes that this round will disturb, and the U1 file list:
+All context gathered. Now I'll write the static check, modeling the style of `check_r3i.py`:
+All four S checks properly FAIL on today's code. Now the unit test (Q73 oracle):
+Now the manifest — inserting the two new entries after `STATIC-r3i` and keeping all others unchanged:
+Fleet round 3j test-designer work complete. Report:
+
+**Files changed (all within ALLOWED list):**
+1. `.agents/checks/check_r3j.py` (NEW) — stdlib-only, comments stripped first, PASS/FAIL per S, exit 1 on any FAIL.
+2. `app/src/test/java/com/sherifradwan/ancnative/ui/AttachmentDisplayTitleTest.kt` (NEW) — JUnit4, only `attachmentDisplayTitle` API.
+3. `.agents/TEST_MANIFEST.json` — added `STATIC-r3j` + `UNIT-attachment-title` after STATIC-r3i; all other entries byte-unchanged (57 tests total, JSON re-validated).
+
+**Real results — `python3 .agents/checks/check_r3j.py` (ran; exit 1):**
+- S55 FAIL — Row( sits between card and calculated_ga_at_visit Text; Text not in Column (matches Q71's finding).
+- S56 FAIL — plurals.xml missing; strings.xml still has photos_count; R.string.photos_count in ProfileScreen/WorkspaceScreen; 0 pluralStringResource uses.
+- S57 FAIL — ClinicalFormat.kt lacks the helper; WorkspaceScreen still has `attachment.title ?: attachment.fileName`.
+- S58 FAIL — emoji 0x1f4f7 (line 344), 0x1f5bc + U+FE0F (line 360); no attachment_retake/attachment_gallery resource use.
+
+**Older checks whose shapes R3j disturbs (cannot touch — report for orchestrator):**
+- `check_ui_static_r2.py` U7: requires `stringResource(R.string.photos_count` in ProfileScreen.kt — Q72 replaces it with `pluralStringResource(R.plurals.photos_count, ...)`, so U7 will FAIL once landed. Needs a R3j follow-up edit or the U7 check must be rewritten to the plural API.
+- No older check greps `attachment.title`, `scanCalculatedGaCard`, or the AddAttachmentDialog button text; check_r3f3/r3f2/r3e assertions on that dialog (verticalScroll, preset chips, camera tags, size(36.dp)) are unaffected by Q71–Q74.
+
+**Assumptions:** (1) S55 forbids any Row( between the Card opening and the calculated_ga_at_visit Text and requires a Column( before it, including the apply button in the same Column. (2) S56 counts the 2 WorkspaceScreen + 2 ProfileScreen call sites in-suite, tolerant to whitespace only. (3) S58 emoji rule exactly as written (no char >= U+1F000, no U+FE0F), values must be "Retake"/"Gallery". (4) Blank-category unit case: dated result asserted `startsWith("Attachment")` — the spec's "(with and without date)" is ambiguous about whether the date suffix still applies under the fallback; the loose assertion passes either implementation and the no-date case is exact. Flag if the build lane wants it pinned.

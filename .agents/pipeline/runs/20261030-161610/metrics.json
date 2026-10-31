@@ -1,0 +1,108 @@
+[
+ {
+  "step": "red-check-reused",
+  "from_run": "runs/20261030-160822",
+  "red": {
+   "step": "1b-red",
+   "ran": 2,
+   "reused": 8,
+   "deferred": 2,
+   "not_gated": [
+    "UNIT-format-r2",
+    "UNIT-intake-dating",
+    "UNIT-anomalies",
+    "UNIT-vault-auto",
+    "UNIT-vault-cleanup",
+    "UNIT-pin-policy",
+    "UNIT-lock-policy"
+   ],
+   "passed": [
+    "STATIC-r3b",
+    "STATIC-r3c"
+   ],
+   "failed": []
+  }
+ },
+ {
+  "step": "2a-core",
+  "lane": "opencode:openai/gpt-6-luna",
+  "seconds": 29.6,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   "app/src/main/java/com/sherifradwan/ancnative/security/SecuritySettingsRepository.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2a-green",
+  "ran": 2,
+  "reused": 4,
+  "deferred": 0,
+  "not_gated": [
+   "UNIT-parse-legacy",
+   "UNIT-format-r2",
+   "UNIT-print",
+   "UNIT-contrast",
+   "STATIC-ui",
+   "STATIC-ui-r2",
+   "UNIT-intake-dating",
+   "STATIC-r3",
+   "UNIT-anomalies",
+   "UNIT-vault-auto",
+   "UNIT-vault-cleanup",
+   "STATIC-r3b",
+   "UNIT-all"
+  ],
+  "passed": [
+   "STATIC-r3c",
+   "COMPILE-app"
+  ],
+  "failed": []
+ },
+ {
+  "step": "2b-ui",
+  "lane": "opencode:openai/gpt-6-luna",
+  "seconds": 61.7,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   "app/src/main/java/com/sherifradwan/ancnative/ui/AppLockScreen.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2b-green",
+  "ran": 2,
+  "reused": 17,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [
+   "UNIT-all",
+   "COMPILE-app"
+  ],
+  "failed": []
+ },
+ {
+  "step": "ui-gate-final",
+  "still_failing": []
+ },
+ {
+  "step": "cache-check-no-changes",
+  "ran": 0,
+  "reused": 19,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [],
+  "failed": []
+ },
+ {
+  "step": "3-review-0-opencode",
+  "lane": "opencode:omniroute/nvidia/nvidia/nemotron-3-ultra-550b-a55b",
+  "seconds": 94.5,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [],
+  "scope_violations_reverted": []
+ }
+]

@@ -1,0 +1,18 @@
+I’ll read the Round 3e requirements and owner decisions first, then inspect only the permitted UI files before making the scoped changes.
+Assumptions: I’ll treat the Round 3e section as controlling Q42–Q46, preserve existing tags/behavior, and avoid any modifications outside the provided allowlist. If wording is ambiguous, I’ll prefer keeping information visible in Plan and state that assumption.
+> 🦅 **MACA Active Fleet Dispatch** — Tier 1 (single lane), Phase 3 implementation; UI Builder owns Q42–Q46 / S25–S28. Independent orchestrator verification remains external.
+
+Q41 is outside my assigned UI scope; I’ll leave it untouched. I’ll now inspect the allowed files for the relevant existing patterns.
+Q42’s biometric auto-prompt already checks the enabled preference; the fingerprint key itself does not, so I’ll align its enabled state and click handling. Q43’s current loaders are synchronous, not ongoing; failed/undecodable results should therefore render the required unavailable state rather than any synthetic image or permanent loading claim. For Q44, I’ll change only failing text tokens, leaving backgrounds and unrelated colors intact.
+The static check initially required the exact “Image unavailable” text in each viewer source, so I switched those two UI labels to the specified literal and reran it successfully. The requested contrast test and Kotlin compile also passed. I’m doing a final scope/diff check now.
+> 🦅 **MACA Active Fleet Dispatch** — Tier 1, Phase 3; UI Builder: Q42–Q46 / S25–S28.
+
+Changed files:
+- `AppLockScreen.kt`: Q42 biometric key respects the enabled setting; Q46 PIN dots expose one digit-count description, error/lockout text uses polite live regions, keypad controls have button roles.
+- `UltrasoundPhotoViewerDialog.kt`, `ClinicalAttachmentViewerDialog.kt`: Q43 failed or undecodable images show “Image unavailable”; removed the simulated scan and misleading loading text.
+- `Theme.kt`: Q44 darkened the failing high-risk tag text color only.
+- `PatientListScreen.kt`, `ProfileScreen.kt`: Q45 replaced 36dp IconButton sizing with the existing minimum touch target modifier.
+
+Verification: S23–S28 check passed; `ThemeContrastTest` passed; `:app:compileDebugKotlin` passed; `git diff --check` passed. Q41 was outside my assigned scope and left untouched. `AddAttachmentDialog.kt` needed no change; it has no 36dp IconButton.
+
+Assumption: image loading is synchronous here, so no loading state is displayed; failures show “Image unavailable.”

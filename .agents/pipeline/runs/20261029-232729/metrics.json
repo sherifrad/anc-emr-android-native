@@ -1,0 +1,16 @@
+[
+ {
+  "step": "1-tests",
+  "lane": "opencode:opencode/glm-5.3-flash-free",
+  "seconds": 900.2,
+  "relay_status": "failed",
+  "relay_exit": 130,
+  "changed": [
+   ".agents/checks/check_ui_static_r2.py",
+   "app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalFormatR2Test.kt",
+   "app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalFormatTest.kt",
+   "app/src/test/java/com/sherifradwan/ancnative/ui/ParseDeliveryNotesSpecTest.kt"
+  ],
+  "scope_violations_reverted": []
+ }
+]

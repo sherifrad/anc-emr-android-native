@@ -1,0 +1,20 @@
+Files changed:
+- .agents/checks/check_r3q.py (NEW)
+- .agents/TEST_MANIFEST.json
+- app/src/test/java/com/sherifradwan/ancnative/model/SevereBpAttentionTest.kt (NEW)
+- app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintBpAlertTest.kt (NEW)
+
+What I did:
+- S80-S82: Implemented check_r3q.py asserting severeBpAttention/SevereBpAttention in VisitVitals.kt and BP threshold single source of truth (S80), severe BP badge/attention line in PatientListScreen.kt, WorkspaceScreen.kt, strings.xml (S81), and bpLevel/bp-alert-severe in PatientPrintHtmlGenerator.kt (S82).
+- Q96: Created SevereBpAttentionTest.kt asserting exact values across empty visits, normal/severe inputs, ordering/latest parseable semantics, same-date revision ties, boundaries (159/109, 160/80, 120/110), and trimmed BP string output.
+- Q99: Created PrintBpAlertTest.kt asserting exact counts for "Raised BP - recheck" and "Severe-range BP - urgent assessment", presence of CSS classes bp-alert and bp-alert-severe, and no alert for 120/80.
+- Manifest: Added STATIC-r3q, UNIT-severe-bp, and UNIT-print-bp-alert to TEST_MANIFEST.json with full deps and covers.
+
+Assumptions: DemoVisit/DemoPatient builders mirror PatientPrintHtmlGeneratorTest; context=null suffices for JVM HTML tests.
+
+Verification:
+- check_r3q.py ran and failed all 3 checks as expected on today's code:
+  FAIL S80 (VisitVitals.kt lacks SevereBpAttention / severeBpAttention)
+  FAIL S81 (PatientListScreen/WorkspaceScreen lack severeBpAttention and strings)
+  FAIL S82 (PatientPrintHtmlGenerator lacks bpLevel call and bp-alert-severe)
+- Unit tests: not run (awaiting production code implementation in model/ui).

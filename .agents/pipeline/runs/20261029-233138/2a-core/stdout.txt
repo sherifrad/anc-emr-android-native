@@ -1,0 +1,18 @@
+Q8–Q12 are implemented in `DeliveryNotesParser.kt`, but I could not run the tests. The Gradle command was refused by the permission gate, so everything below is verified by reading only.
+
+**Files changed:** `app/src/main/java/com/sherifradwan/ancnative/ui/DeliveryNotesParser.kt` only. `ClinicalFormat.kt` is untouched, as the brief said. I checked that every function the `ClinicalFormatTest` and `ClinicalFormatR2Test` call exists in it.
+
+**Per oracle:**
+- **Q8:** `hospitalNames` returns nothing for a segment matching `HISTORY_MARKER`. The segment still lands in plan through the existing placement logic.
+- **Q9:** new `isNamePhrase` rejects a phrase whose words are all Maternity/Medical/Hospital, or that contains To, Go or If as whole words. Checked against the three transport cases and "Maternity Hospital".
+- **Q10:** `HOSPITAL_PHRASE.findAll` replaces the single `find`, so every phrase is collected in source order. Duplicates are removed by the existing `LinkedHashSet`.
+- **Q11:** `isValueEnd` ends a labelled value at ';', ',' or " - ", or at a '.' that is not after a Q1 abbreviation. `pending` is added to the undecided list. `collapseWithLabelled` keeps only the longer of a labelled name and a nested or equal phrase from the same segment, once.
+- **Q12:** the sentence split now fires before any letter (`isLetter`) instead of only a capital. Abbreviation exceptions are unchanged.
+
+**Assumptions:**
+- Q8 applies to the labelled "Hospital:" value as well as unlabelled phrases. A history segment never contributes a hospital, whichever form it takes.
+- Q11's collapse covers only labelled-versus-phrase pairs within one segment, as the spec states. Phrase-versus-phrase is not collapsed.
+- The labelled value is placed first in the collapsed list, which matches source order because "Hospital:" always opens its segment.
+
+**Not run:** the Gradle command for `ParseDeliveryNotesSpecTest`, `DeliveryNotesParserTest`, `ClinicalFormatTest` and `ClinicalFormatR2Test`. It needs the permission approved, and I have not tried to get around the gate. To run it, approve the command and run:
+`./gradlew --offline :app:testDebugUnitTest --tests '*ParseDeliveryNotesSpecTest' --tests '*DeliveryNotesParserTest' --tests '*ClinicalFormatTest' --tests '*ClinicalFormatR2Test'`

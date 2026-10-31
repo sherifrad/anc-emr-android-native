@@ -1,0 +1,8 @@
+I’ll limit this repair to the five allowed production files. S13 points to four files outside that allowlist, so I’ll first inspect the Round 3c rules and the check’s precise failure criteria, then determine whether any allowed-file change can address it without expanding scope.
+S13 explicitly governs SHA-256 use in four unrelated classes outside the allowed list, while the permitted repository already must retain SHA-256 privately for legacy PIN migration. I’ll inspect the checker and local git status to confirm whether there is any permitted, safe repair; I won’t edit or revert other files.
+No files changed. S13 cannot be fixed within the allowed list: it flags SHA-256 calls in `ClinicalCommands.kt`, `PatientAttachmentVault.kt`, and `SaveVisitCommand.kt`, all outside scope. I left them untouched.
+
+- S8–S12: checker passed.
+- S13: checker failed on those four reported locations.
+- PIN/lock policy tests and debug/release Kotlin compilation passed.
+- Assumption: the file allowlist takes precedence over S13’s broader requirement. The UI-facing repository API was not changed in this repair.

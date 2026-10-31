@@ -1,0 +1,15 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "failed",
+  "exitCode": 3,
+  "signal": null,
+  "readOnly": true,
+  "readOnlyViolation": false,
+  "touchedFiles": [],
+  "finalMessage": "",
+  "stderrTail": "error: Individual quota reached. Please upgrade your subscription to increase your limits. Resets in 74h32m44s.\nAGY_ERROR: {\"short_error\":\"RESOURCE_EXHAUSTED (code 429): Individual quota reached. Please upgrade your subscription to increase your limits. Resets in 74h32m44s.\",\"status\":\"RESOURCE_EXHAUSTED\",\"error_code\":429,\"code_kind\":\"http\",\"retryable\":true,\"error_id\":\"7cbd0ad1-1970-4f59-b363-d611554b2838-1\"}",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-152526/3-review-0-agy/result.json",
+  "timestamp": "2026-10-31T13:29:32.165Z"
+}

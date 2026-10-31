@@ -1,0 +1,15 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "opencode-delegate",
+  "cli": "opencode",
+  "status": "failed",
+  "exitCode": 1,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [],
+  "finalMessage": "",
+  "stderrTail": " Oct 29 02:45 __pycache__\ndrwxr-xr-x@  7 sherifgamalradwan  staff    224 Oct 29 23:26 r2\n-rw-r--r--@  1 sherifgamalradwan  staff    422 Oct 29 23:42 r2-run.log\n-rw-r--r--@  1 sherifgamalradwan  staff      0 Oct 29 23:42 r2-run2.log\n-rw-r--r--@  1 sherifgamalradwan  staff    989 Oct 29 23:01 r2-run3.log\n-rw-r--r--@  1 sherifgamalradwan  staff    982 Oct 29 23:10 r2b-run.log\n-rw-r--r--@  1 sherifgamalradwan  staff    984 Oct 29 23:34 r2b-run2.log\n-rw-r--r--@  1 sherifgamalradwan  staff    804 Oct 29 23:40 r2c-run.log\n-rwx--x--x@  1 sherifgamalradwan  staff  16299 Oct 30 11:40 run_pipeline.py\ndrwxr-xr-x@ 15 sherifgamalradwan  staff    480 Oct 30 12:37 runs\n---\n     132 .agents/pipeline/SPEC_FIX_R2.md\n       6 .agents/pipeline/OWNER_DECISIONS.md\n      28 .agents/pipeline/SPEC_FIX.md\n     166 total\n> build · deepseek-v4.1-flash-free\n\u001b[91m\u001b[1mError: \u001b[0mFree usage limit reached. Free models work in OpenCode (https://opencode.ai); subscribe to OpenCode Go to keep going: https://opencode.ai/go",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261030-123728/2a-core/result.json",
+  "timestamp": "2026-10-30T10:40:16.904Z"
+}

@@ -1,0 +1,15 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "opencode-delegate",
+  "cli": "opencode",
+  "status": "failed",
+  "exitCode": 130,
+  "signal": null,
+  "readOnly": true,
+  "readOnlyViolation": false,
+  "touchedFiles": [],
+  "finalMessage": "Now let me read the key files from the lens:",
+  "stderrTail": "        VaultAutoAction.NONE -> Unit\n^36c303e (sherifrad 2026-10-15 20:56:01 +0300 78)                     }\n^36c303e (sherifrad 2026-10-15 20:56:01 +0300 79)                 }\n^36c303e (sherifrad 2026-10-15 20:56:01 +0300 80)                 AncApp(\n> plan · nvidia/nvidia/nemotron-3-ultra-550b-a55b\n\u001b[0m$ \u001b[0mcd /Users/sherifgamalradwan/anc-emr-android-native && git blame -L 107,112 app/src/main/java/com/sherifradwan/ancnative/MainActivity.kt\n^36c303e (sherifrad 2026-10-15 20:56:01 +0300 107)     override fun onStop() {\n^36c303e (sherifrad 2026-10-15 20:56:01 +0300 108)         super.onStop()\n5fd691da (sherifrad 2026-10-30 16:57:24 +0200 109)         securityRepo.recordBackgroundTime(System.currentTimeMillis())\n^36c303e (sherifrad 2026-10-15 20:56:01 +0300 110)         viewModel.onBackgrounded(authenticationOverlayActive = true)\n^36c303e (sherifrad 2026-10-15 20:56:01 +0300 111)     }\n^36c303e (sherifrad 2026-10-15 20:56:01 +0300 112) }\n> plan · nvidia/nvidia/nemotron-3-ultra-550b-a55b",
+  "resultPath": "out/nemotron-ultra/result.json",
+  "timestamp": "2026-10-30T15:12:13.591Z"
+}

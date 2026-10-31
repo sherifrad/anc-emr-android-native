@@ -1,0 +1,20 @@
+I’ll follow the supplied Round 3a lane constraints: inspect the governing spec/decisions and contract tests first, edit only the listed files, then run the requested checks and report actual results.
+The requested behavior is now wired for Q19–Q21. I kept the Q19 edits confined to the named report values/badge; the seed guard encloses every demo-owned insert while metadata remains unconditional. Next I’m running the exact unit, static, and release-compilation checks from the brief.
+Both requested checks completed successfully: the focused unit tests and `:app:compileReleaseKotlin`; `check_r3.py` passed S1–S4. During final spec review I tightened one Q20 edge case: only a `null` dating method is treated as LMP, while any non-null non-LMP value—including whitespace—is protected. I’m rerunning validation after that correction.
+> 🦅 **MACA Active Fleet Dispatch** — Tier 1 | Round 3a | CORE LOGIC BUILDER
+
+Implemented Q19–Q21 in the six allowed files:
+- **Q19:** Missing report values now show “Not recorded”; risk and delivery-plan output follow the spec.
+- **Q20:** Added the pure intake dating rule and wired profile saves to avoid overwriting existing dating.
+- **Q21:** Demo rows are seeded only when `BuildConfig.DEBUG` is true; vault metadata remains unconditional.
+
+The initial focused tests, R3 static check, and release compile succeeded. After a final Q20 edge-case correction, validation was rerun and **results are pending**.
+
+Assumption: intake LMP dates must be canonical ISO dates (`yyyy-MM-dd`); only a null dating method counts as LMP.
+> 🦅 **MACA Active Fleet Dispatch** — Tier 1 | Round 3a | CORE LOGIC BUILDER
+
+Implemented Q19–Q21 in the six allowed files: report values no longer invent missing findings; intake LMP updates preserve existing non-LMP dating; demo records seed only in debug builds.
+
+**Validation passed:** focused PatientPrint and IntakeDating unit tests, `:app:compileReleaseKotlin`, R3 static checks S1–S4, and `git diff --check`.
+
+Assumption: draft LMP dates must be canonical `yyyy-MM-dd`; only a null dating method counts as LMP.

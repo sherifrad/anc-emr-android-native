@@ -1,0 +1,156 @@
+[
+ {
+  "step": "1-tests-finish",
+  "lane": "claude:claude-sonnet-5-5",
+  "seconds": 31.5,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   ".agents/TEST_MANIFEST.json"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "1b-red",
+  "ran": 1,
+  "reused": 9,
+  "deferred": 2,
+  "not_gated": [
+   "UNIT-format-r2",
+   "UNIT-intake-dating",
+   "UNIT-anomalies",
+   "UNIT-vault-auto",
+   "UNIT-vault-cleanup",
+   "UNIT-pin-policy",
+   "UNIT-lock-policy"
+  ],
+  "passed": [],
+  "failed": [
+   "STATIC-r3c"
+  ]
+ },
+ {
+  "step": "red-check",
+  "parked": [
+   "app/src/test/java/com/sherifradwan/ancnative/security/PinPolicyTest.kt",
+   "app/src/test/java/com/sherifradwan/ancnative/security/AppLockPolicyTest.kt"
+  ],
+  "failed": [
+   "STATIC-r3c"
+  ],
+  "compile_error": false,
+  "behavioural_red_confirmed": true
+ },
+ {
+  "step": "2a-core",
+  "lane": "opencode:openai/gpt-6-luna",
+  "seconds": 82.0,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   "app/src/main/java/com/sherifradwan/ancnative/MainActivity.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/security/AppLockPolicy.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/security/BiometricAuthManager.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/security/PinPolicy.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/security/SecuritySettingsRepository.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2a-green",
+  "ran": 4,
+  "reused": 2,
+  "deferred": 0,
+  "not_gated": [
+   "UNIT-parse-legacy",
+   "UNIT-format-r2",
+   "UNIT-print",
+   "UNIT-contrast",
+   "STATIC-ui",
+   "STATIC-ui-r2",
+   "UNIT-intake-dating",
+   "STATIC-r3",
+   "UNIT-anomalies",
+   "UNIT-vault-auto",
+   "UNIT-vault-cleanup",
+   "STATIC-r3b",
+   "UNIT-all"
+  ],
+  "passed": [
+   "UNIT-pin-policy",
+   "UNIT-lock-policy",
+   "COMPILE-app"
+  ],
+  "failed": [
+   "STATIC-r3c"
+  ]
+ },
+ {
+  "step": "2a-core-repair1",
+  "lane": "opencode:openai/gpt-6-luna",
+  "seconds": 15.2,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2a-green-r1",
+  "ran": 1,
+  "reused": 5,
+  "deferred": 0,
+  "not_gated": [
+   "UNIT-parse-legacy",
+   "UNIT-format-r2",
+   "UNIT-print",
+   "UNIT-contrast",
+   "STATIC-ui",
+   "STATIC-ui-r2",
+   "UNIT-intake-dating",
+   "STATIC-r3",
+   "UNIT-anomalies",
+   "UNIT-vault-auto",
+   "UNIT-vault-cleanup",
+   "STATIC-r3b",
+   "UNIT-all"
+  ],
+  "passed": [],
+  "failed": [
+   "STATIC-r3c"
+  ]
+ },
+ {
+  "step": "2a-core-repair2",
+  "lane": "opencode:openai/gpt-6-luna",
+  "seconds": 17.4,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2a-green-r2",
+  "ran": 1,
+  "reused": 5,
+  "deferred": 0,
+  "not_gated": [
+   "UNIT-parse-legacy",
+   "UNIT-format-r2",
+   "UNIT-print",
+   "UNIT-contrast",
+   "STATIC-ui",
+   "STATIC-ui-r2",
+   "UNIT-intake-dating",
+   "STATIC-r3",
+   "UNIT-anomalies",
+   "UNIT-vault-auto",
+   "UNIT-vault-cleanup",
+   "STATIC-r3b",
+   "UNIT-all"
+  ],
+  "passed": [],
+  "failed": [
+   "STATIC-r3c"
+  ]
+ }
+]

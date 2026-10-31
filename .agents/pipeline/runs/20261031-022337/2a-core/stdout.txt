@@ -1,0 +1,21 @@
+Compile passed. Now the tests.
+I'll wait for the notification.
+Round 3l: Q81, Q82 and Q83 are implemented. The full unit suite and `:app:compileDebugKotlin` pass, but `:app:compileDebugAndroidTestKotlin` fails.
+
+**Verification**
+- `:app:testDebugUnitTest` ran as a whole-suite run and passed, with no failing tests. It included `VisitSyntheticFlagTest` and `ProfileSavedNoticeTest`. I did not run those two on their own with `--tests`.
+- `:app:compileDebugAndroidTestKotlin` fails in `EncryptedRecordsTest.kt` with "No value passed for parameter 'includeDemoPatients'", at lines 520, 567, 596, 611, 630, 652 and 714. That file is not on my allowed list, and the error is not in code I touched. It looks like a constructor signature that changed outside my files. `ClinicalSaveAtomicityTest` is not yet written or compiled.
+- The `check_r3l.py` static checks were not run.
+
+**Changes**
+- **Q81** ([RecordsRepository.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt)): in `saveDating`, `saveUltrasoundScan`, `saveLabInvestigation` and `saveMedication`, the `patientUpdated != 1` check now does `throw ClinicalCommandAbort(STALE_PATIENT_REVISION)` instead of returning `Rejected`. Room rolls the transaction back, and `execute` already maps the abort to `Rejected`.
+- **Q82**: `isSyntheticEdit = false` in `withCommittedVisit` in [SaveVisitCommand.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/SaveVisitCommand.kt) and in `SaveVisitCommand.toEntity` in `RecordsRepository.kt`. The `patient_saved` string now reads "Patient record saved."
+- **Q83**:
+  - New `profileSavedNotice` in [IntakeDatingRule.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt).
+  - New `SavedNotice.PATIENT_DATING_NOT_UPDATED` in `AncState.kt`.
+  - `submitPreparedPatientCommand` in `AncViewModel.kt` now keeps the dating result. When it is `Committed`, the patients list comes from the dating snapshot. The notice comes from `profileSavedNotice`.
+  - `WorkspaceScreen.kt` maps the new notice to the new string `patient_saved_dating_not_updated`.
+
+**Assumptions**
+- For Q81 I changed only the four `patientUpdated != 1` checks. The other `Rejected` returns, such as `updated != 1 -> STALE_REVISION`, happen before any write in their branch, so they stay as `return`.
+- A dating save that is neither `Committed` nor `Rejected` (an ambiguous outcome) counts as "not saved" and shows the "due date was not updated" notice. That is the safe choice, since the user is told to check Dating.

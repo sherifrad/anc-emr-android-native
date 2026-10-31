@@ -1,0 +1,17 @@
+Q73 helper implemented.
+
+Files changed (1, inside ALLOWED):
+- app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt
+
+Q73: added `internal fun attachmentDisplayTitle(title: String?, category: String, capturedAt: String): String` (pure Kotlin, no android imports) plus a private `ISO_DATE` regex, reusing the file's existing private-constant style. Rule: non-blank trimmed title wins (trimmed); otherwise trimmed category, or "Attachment" when the category is blank; if `capturedAt.take(10)` matches yyyy-MM-dd, append " · " + that date. No file name is ever returned or consulted.
+
+Assumptions (spec silent on these):
+- "look like yyyy-MM-dd" implemented as a shape check only (`\d{4}-\d{2}-\d{2}`), not a calendar-validity check; "2026-99-99" would still render as a date suffix.
+- Category is trimmed before display (consistent with the title rule).
+- Callers (WorkspaceScreen.kt, ClinicalAttachmentViewerDialog.kt) are outside my ALLOWED list, so S57 caller wiring was NOT done by me.
+
+Verification (real runs):
+- `--tests '*AttachmentDisplayTitleTest'`: PASS (BUILD SUCCESSFUL).
+- Full `:app:testDebugUnitTest`: PASS (BUILD SUCCESSFUL).
+- `:app:compileDebugKotlin`: PASS (BUILD SUCCESSFUL).
+- Static check check_r3j.py: not run (not in my lane).

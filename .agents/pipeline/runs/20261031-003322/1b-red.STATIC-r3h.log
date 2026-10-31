@@ -1,0 +1,1 @@
+FAIL S50 captureTempFile is the pure rule, deleteIfCaptureTemp is a thin wrapper: lacks top-level fun captureTempFile(; deleteIfCaptureTemp does not call captureTempFile(; deleteIfCaptureTemp still contains canonicalFile

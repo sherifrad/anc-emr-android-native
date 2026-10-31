@@ -1,0 +1,84 @@
+appId: com.sherifradwan.anc
+---
+- launchApp:
+    clearState: false
+
+# 1. Main Patient Directory
+- assertVisible: "Patients"
+- takeScreenshot: 01_patient_list
+
+# 2. Patient Profile Screen
+- tapOn: "نور المثال"
+- assertVisible:
+    id: "workspaceButton"
+- takeScreenshot: 02_patient_profile
+
+# 3. Two-Page Clinical Report Preview Dialog
+- tapOn:
+    id: "openReportButton"
+- takeScreenshot: 03_patient_report_preview
+- back
+
+# 4. Clinical Workspace - Episode Overview
+- tapOn:
+    id: "workspaceButton"
+- takeScreenshot: 04_workspace_overview
+
+# 5. Clinical Workspace - Ultrasound Tab
+- tapOn:
+    id: "section-ULTRASOUND"
+- assertVisible:
+    id: "addUltrasound"
+- takeScreenshot: 05_workspace_ultrasound
+
+# 6. Clinical Workspace - Laboratory Tab
+- tapOn:
+    id: "section-LABORATORY"
+- assertVisible:
+    id: "addLab"
+- takeScreenshot: 06_workspace_laboratory
+
+# 7. Clinical Workspace - Medications Tab
+- tapOn:
+    id: "section-MEDICATIONS"
+- assertVisible:
+    id: "addMedication"
+- takeScreenshot: 07_workspace_medications
+
+# 8. Clinical Workspace - Delivery Planning Tab
+- tapOn:
+    id: "section-DELIVERY"
+- takeScreenshot: 08_workspace_delivery
+
+# 9. Clinical Workspace - Attachments Tab
+- tapOn:
+    id: "section-ATTACHMENTS"
+- takeScreenshot: 09_workspace_attachments
+
+# 10. Exit Workspace back to Profile (Verifying Restored Backstack Hierarchy)
+- back
+- assertVisible:
+    id: "workspaceButton"
+
+# 11. Exit Profile back to Directory
+- back
+- assertVisible: "Patients"
+
+# 12. Register New Patient Screen (Verifying M3 & Focus Isolation)
+- tapOn:
+    id: "newPatient"
+- assertVisible:
+    id: "patientEditor"
+- takeScreenshot: 10_patient_editor
+- tapOn:
+    id: "patientName"
+- inputText: "سارة محمود"
+- tapOn:
+    id: "patientCaseId"
+- eraseText: 15
+- inputText: "ANC-2026-CUSTOM-01"
+- takeScreenshot: 11_patient_editor_custom_case_id
+- back
+- tapOn:
+    id: "discardDialog"
+- assertVisible: "Patients"

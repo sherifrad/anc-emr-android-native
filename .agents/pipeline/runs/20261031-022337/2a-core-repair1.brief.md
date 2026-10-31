@@ -1,0 +1,22 @@
+# Shared brief prefix (identical for every role; stable text first, role part last)
+You are one lane in a MACA (multi-agent collaborative audit) fleet, ROUND 3l. An orchestrator planned the work and will verify it independently. Rules:
+1. Work only from the written spec: .agents/pipeline/SPEC_FIX_R3.md (section "Round 3l": oracles Q81-Q83, S64-S66) and .agents/pipeline/OWNER_DECISIONS.md. Earlier oracles in SPEC_FIX.md and SPEC_FIX_R2.md still hold unless R3 supersedes them. If the spec is ambiguous choose the SAFE behaviour (never hide, drop, misfile or relabel clinical/administrative data; prefer leaving text in Plan) and write the assumption in your final message.
+2. Touch ONLY the files in your ALLOWED list. Everything else is read-only. A change outside the list is reverted automatically and counted against you.
+3. Do not run git commit, git push, git checkout, git stash or any command that deletes files. Do not edit build files (except app/build.gradle.kts when it is in your ALLOWED list), gradle properties, or any test file you do not own.
+4. NEVER write dead code, extra XML/files or comments only to satisfy a static check or a test; if a check looks wrong, implement the spec and say so in your final message. REUSE PRINCIPLE: one function per rule; call the existing helper, never write a second copy. Simplest thing that meets the spec. No new libraries, no speculative abstractions, no refactors outside the scope. Do not change any clinical threshold, wording, or colour not named in the spec. Keep every existing testTag.
+5. Do not read .agents/maca-run-*/, .agents/fleet-runs/, .agents/backup-*, .agents/pipeline/runs/ or .agents/pipeline/SCORECARD.md. Independence matters.
+6. Final message (plain text, <= 25 lines): files you changed, what you did per oracle (Q/U number), assumptions, anything you could not do or verify. Never claim a test passed unless you ran it and saw it pass; say "not run" otherwise.
+Project facts: Kotlin, Jetpack Compose, JUnit4 unit tests under app/src/test, packages com.sherifradwan.ancnative.{ui,ui.report,state,storage}. Unit tests: ./gradlew --offline :app:testDebugUnitTest --tests '<Class>'.
+--- ROLE-SPECIFIC PART BELOW ---
+
+ROLE: CORE BUILDER for ROUND 3l. Implement Q81, Q82, Q83 exactly as the spec says. ALLOWED files: app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt, storage/SaveVisitCommand.kt, state/AncViewModel.kt, state/IntakeDatingRule.kt, state/AncState.kt, ui/WorkspaceScreen.kt (only the SavedNotice -> string mapping), app/src/main/res/values/strings.xml (only patient_saved text and the one new string).
+Read first: RecordsRepository.kt around ClinicalCommandAbort and PatientCommandAbort (the existing pattern), AncViewModel.submitPreparedPatientCommand. Make the smallest edits; no refactors. Do not touch tests or checks.
+Run: ./gradlew --offline :app:testDebugUnitTest --tests '*VisitSyntheticFlagTest' --tests '*ProfileSavedNoticeTest', the whole suite ./gradlew --offline :app:testDebugUnitTest, ./gradlew --offline :app:compileDebugKotlin and :app:compileDebugAndroidTestKotlin. Report real results.
+
+
+ALLOWED (machine-enforced): app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt, app/src/main/java/com/sherifradwan/ancnative/storage/SaveVisitCommand.kt, app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt, app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt, app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt, app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt, app/src/main/res/values/strings.xml
+
+REPAIR ROUND: these selected tests still fail. Fix the production code only.
+PASS S64 late rejections in the four clinical save functions abort the transaction
+PASS S65 doctor-entered visits are real (isSyntheticEdit = false in both places) and the saved notice says Patient record saved
+FAIL S66 the profile save reports the dating outcome via profileSavedNotice and the UI maps it to patient_saved_dating_not_updated: AncViewModel.kt still contains the fire-and-forget statement controller.execute(datingCmd, sessionEpoch) {}

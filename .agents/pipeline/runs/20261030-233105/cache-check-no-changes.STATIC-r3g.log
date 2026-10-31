@@ -1,0 +1,5 @@
+PASS S45 scan photo ref helpers in one file
+FAIL S46 stale-capture sweep keeps referenced files: AncViewModel.kt calls clearStaleCaptures( 1 time(s), need 2
+PASS S47 import event, reducer event, temp delete in finally
+PASS S48 editor imports photos instead of storing raw URIs
+PASS S49 viewer resolves vault refs, callers pass patient id

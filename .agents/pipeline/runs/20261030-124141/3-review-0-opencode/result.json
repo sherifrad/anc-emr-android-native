@@ -1,0 +1,15 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "opencode-delegate",
+  "cli": "opencode",
+  "status": "failed",
+  "exitCode": 1,
+  "signal": null,
+  "readOnly": true,
+  "readOnlyViolation": false,
+  "touchedFiles": [],
+  "finalMessage": "",
+  "stderrTail": "radwan/ancnative/ui/ClinicalFormat.kt \n> plan · gemini-3.5-flash\n> plan · gemini-3.5-flash\n\u001b[0m→ \u001b[0mRead app/src/main/java/com/sherifradwan/ancnative/ui/DeliveryNotesParser.kt \n> plan · gemini-3.5-flash\n\u001b[0m→ \u001b[0mRead app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt \n> plan · gemini-3.5-flash\n\u001b[0m→ \u001b[0mRead app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt \n> plan · gemini-3.5-flash\n\u001b[91m\u001b[1mError: \u001b[0mYou exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 250000, model: gemini-3.6-flash, description: Generate content input tokens per minute limit exceeded on Free Tier. See https://ai.google.dev/gemini-api/docs/rate-limits.\nPlease retry in 8.426758279s.",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261030-124141/3-review-0-opencode/result.json",
+  "timestamp": "2026-10-30T10:42:51.839Z"
+}

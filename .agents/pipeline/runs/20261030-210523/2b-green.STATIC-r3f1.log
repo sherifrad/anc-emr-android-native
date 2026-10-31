@@ -1,0 +1,7 @@
+PASS S29 hex formatting lives only in Hashing.kt
+FAIL S30 bitmap decoding lives only in BoundedBitmap.kt: ui/report/PatientPrintHtmlGenerator.kt
+PASS S31 one guarded cleanup helper, three call sites
+PASS S32 repository seam
+PASS S33 attachment errors surfaced, row deleted first
+PASS S34 attachment error banner and strings
+PASS S35 duplicate print test gone, Rh tautology gone

@@ -1,0 +1,25 @@
+I made the Q48 and Q52 edits, but I haven't run any of the three required checks. Each Bash call to run them was refused for approval. So the static checks and the compile are all "not run", and I haven't confirmed the code compiles.
+
+**Files changed:** `ui/WorkspaceScreen.kt`, `ui/ClinicalAttachmentViewerDialog.kt`, `ui/UltrasoundPhotoViewerDialog.kt`, `ui/AddAttachmentDialog.kt`, `res/values/strings.xml`.
+
+**Q48 (UI call sites).** Every `BitmapFactory.decode*` call in the four UI files now goes through `BoundedBitmap`. A grep before my edits showed those four were the only UI uses, and I didn't grep again afterwards.
+- The attachment thumbnail in `WorkspaceScreen.kt` and the viewer in `ClinicalAttachmentViewerDialog.kt` use `decodeFile(path, 2048)`.
+- `UltrasoundPhotoViewerDialog.kt` uses `decodeStream({ openInputStream(uri) }, 2048)`.
+- The preview in `AddAttachmentDialog.kt` uses `decodeStream({ openInputStream(uri) }, 1024)`.
+- `BoundedBitmap` opens the stream twice (bounds pass, then the decode), so I pass a lambda that opens it each time.
+- I removed the now-unused `BitmapFactory` imports and added the `BoundedBitmap` imports.
+- All testTags and the "Image unavailable" fallbacks are untouched, because `BoundedBitmap` returns null on failure, as the old `getOrNull` paths did.
+
+**Q52 (error banner).**
+- `WorkspaceScreen.kt` shows a `Card` tagged `attachment_error_banner` whenever `state.attachmentError != null`. It uses the same `FlowRow` layout as the saved-notice card, with the text in the theme's error colour.
+- The message comes from `R.string.attachment_save_failed` or `R.string.attachment_delete_failed`.
+- The Close button dispatches `AncEvent.DismissAttachmentError`.
+- It sits just before the saved-notice card.
+- `strings.xml` has both strings with the spec's exact wording.
+
+**Assumptions:** I imported `state.AttachmentError`, which `AncState.kt` already defines. Unlike the old `getOrNull` paths, the bounds pass does not stop a huge image from failing outright. It only limits memory use.
+
+**Still to do:** please run these three, or approve them and I'll run them:
+- `python3 .agents/checks/check_r3f1.py` (S30 and S34 are mine)
+- `python3 .agents/checks/check_r3e.py`
+- `./gradlew --offline :app:compileDebugKotlin`

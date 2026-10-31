@@ -1,0 +1,28 @@
+Now let me look at the print generator and demo model builders (both explicitly allowed for this lane), plus the current ClinicalFormatTest for style reference.
+The ClinicalFormatR2Test and Q1-Q15 tests already exist from earlier rounds. Let me check what else already exists (static check, manifest state, report test dir).
+Round 1/2/2b-2d lanes left everything green: Q1–Q15 tests exist and pass, the R2 static check passes today (production fixes already landed), `ClinicalFormatR2Test.kt` exists with the Q5/Q6 tables, and the manifest already carries the five required ids minus `UNIT-print`. So my remaining Round 2e work is exactly: **Q16 tests (r2e_), Q17 new print test (UNIT-print), and the manifest entry.**
+
+Adding the Q16 tests:
+Also update the file's docstring chronology so the round is recorded:
+Now the new Q17 print test file:
+Now the manifest entry `UNIT-print`:
+Manifest is valid. Now compile the unit test sources to verify my Round 2e additions compile against today's code (the expected-only failures are the two not-yet-existing function names in `ClinicalFormatR2Test`):
+Unit test sources compile — the round-2 production functions (`isRhPositive`/`formatBloodGroup`) already exist, so everything can actually run. Running my two test classes:
+All red-on-today failures are exactly the intended ones. Verifying nothing outside my allowed file list changed:
+Round 2e complete. Final report:
+
+**Files changed (allowed list only)**
+1. `app/src/test/java/com/sherifradwan/ancnative/ui/ParseDeliveryNotesSpecTest.kt` — added 6 Q16 tests (prefix `r2e_`): the 4 spec examples exact, plus 2 own safe boundaries (lowercase "now" drop case-insensitivity; "Current Hospital" → null, stays in Plan). Also extended the file's round-history docstring. No existing test touched.
+2. `app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt` — NEW, 8 Q17 tests: every listed risk value ("High Risk", "high" / "Low Risk", "Moderate Risk", "Not high risk", null) and blood value ("O-", "AB-", "O neg", "AB Negative", "O −" U+2212 / "O+", "A+", "A+, antibody screen negative", "pending", null), asserting exact badge markup (`badge-danger">High Risk`, `badge-success">Normal Risk`, `badge-danger">Rh- Negative`) and anti-D line presence/absence; validated patients (High Risk+O-, Low Risk+O+) pinned as passing-today; 2 boundary combos prove the two rules are independent. `context = null`, fixed `asOfDate`.
+3. `.agents/TEST_MANIFEST.json` — added exactly `UNIT-print` (tier 1, `--tests '*PatientPrintHtmlGeneratorTest'`, deps: PatientPrintHtmlGenerator.kt + ClinicalFormat.kt + the test, covers Q17/Q7). The other four required ids already existed with precise deps and no `"always": true` anywhere (verified; JSON valid).
+
+**Per oracle**
+- **Q16**: red on today for all 4 spec examples (`Now Cleopatra Hospital` included, as required) — ran, saw fail; correct per spec.
+- **Q17**: red on today exactly for the legacy values ("Not high risk", "O neg", "O −", "AB Negative", "A+, antibody screen negative" leak-through via `contains`); validated combos green today.
+
+**Ran and saw**
+- `:app:compileDebugUnitTestKotlin` — **passed**; zero compile errors (the two new function names already exist, so no compile failure at all).
+- Both my classes via `:app:testDebugUnitTest --tests '...ParseDeliveryNotesSpecTest' --tests '...PatientPrintHtmlGeneratorTest'` — 108 tests, 8 failed, all 8 the expected red-phase failures listed above. Not yet "passed" (implementer's fix pending).
+- `check_ui_static_r2.py` 30/30 PASS (exit 0) and round-1 `check_ui_static.py` 6/6 PASS — already green from earlier rounds; I added no changes there.
+
+**Assumptions**: "Current Hospital" boundary uses Q9's generic rejection after a full Q16 drop; "no hospitals pending verification — `Previous CS ... Now Cleopatra` red today is the Q16-specified expected end state, not a test bug. Git status shows only my three paths changed by this lane; other modified files predate it.

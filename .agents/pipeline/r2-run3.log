@@ -1,0 +1,13 @@
+MACA pipeline 20261029-234348 lanes: {'tests': ('opencode', 'opencode/glm-5.3-flash-free'), 'core': ('opencode', 'opencode/deepseek-v4.1-flash-free'), 'ui': ('opencode', 'opencode/deepseek-v4.1-flash-free')} review: ['opencode:opencode/glm-5.3-flash-free']
+  opencode  /opt/homebrew/bin/opencode
+[1-tests-finish] opencode completed 268.6s changed=2 violations=0
+[1b-red] ran=5 reused=1 deferred=2 not_gated=1 failed=['UNIT-parse', 'UNIT-format', 'STATIC-ui-r2']
+[2a-core] opencode completed 266.2s changed=2 violations=0
+[2a-green] ran=5 reused=0 deferred=0 not_gated=4 failed=[]
+[2b-ui] opencode completed 260.1s changed=5 violations=0
+[2b-green] ran=5 reused=4 deferred=0 not_gated=0 failed=[]
+[cache-check-no-changes] ran=0 reused=9 deferred=0 not_gated=0 failed=[]
+[3-review-0-opencode] opencode completed 281.1s changed=0 violations=0
+
+DONE.  Metrics: /Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261029-234348/metrics.json 
+Tell Claude: pipeline finished.

@@ -1,0 +1,15 @@
+I implemented Q61 in `BoundedBitmap.kt`, but I couldn't run any of the required checks. Gradle and Python commands were blocked here and needed approval. So the unit suite, the debug and release compiles, `check_r3f3.py` and the older `check_r3*.py` scripts are all **not run**.
+
+- **File changed:** only `app/src/main/java/com/sherifradwan/ancnative/storage/BoundedBitmap.kt`. `PatientAttachmentVault.kt` is untouched.
+- **Q61 pure part:** I added `ExifTransform(degrees, flipHorizontal)` and `exifTransform(orientation)`. Orientations 1–8 follow the spec table, and any other value (0, 9, -1) maps to normal.
+- **Q61 decode part:** `decodeBytes` and `decodeStream` now pass their result through a private `upright()` helper. `decodeFile` goes through `decodeStream`, so all three decodes honour EXIF in one place. The helper reads the orientation with `ExifInterface` on a fresh stream or the same bytes. Any failure counts as normal. For a non-normal orientation it builds a `Matrix` (flip first, then rotate), creates the new bitmap and recycles the intermediate.
+- **Unchanged:** the decode limits and sample-size rule.
+
+**Assumptions**
+- I used `android.media.ExifInterface`, as the spec names it. That avoids adding the androidx exifinterface library, which would have needed a build-file change.
+- If creating the rotated bitmap throws or runs out of memory, `upright()` returns the unrotated bitmap instead of null, so a photo is never dropped.
+- `InAppCameraDialog.kt` is outside my allowed list. It still needs its `decodeUpright` and `ExifInterface` code removed and its still decoded through `BoundedBitmap`. Until then the S43 check will fail on that part.
+
+Run these to verify:
+- `./gradlew --offline :app:testDebugUnitTest :app:compileDebugKotlin :app:compileReleaseKotlin`
+- `python3 .agents/checks/check_r3f3.py`

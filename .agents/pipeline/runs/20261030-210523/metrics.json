@@ -1,0 +1,301 @@
+[
+ {
+  "step": "1-tests",
+  "lane": "claude:claude-sonnet-5-5",
+  "tried": [
+   "claude:claude-sonnet-5-5=completed"
+  ],
+  "seconds": 271.4,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   ".agents/TEST_MANIFEST.json",
+   ".agents/checks/check_r3b.py",
+   ".agents/checks/check_r3f1.py",
+   "app/src/test/java/com/sherifradwan/ancnative/NegativeControlAndClinicalValidationTest.kt",
+   "app/src/test/java/com/sherifradwan/ancnative/security/FakeSharedPreferences.kt",
+   "app/src/test/java/com/sherifradwan/ancnative/security/SecuritySettingsRepositoryTest.kt",
+   "app/src/test/java/com/sherifradwan/ancnative/state/AttachmentErrorStateTest.kt",
+   "app/src/test/java/com/sherifradwan/ancnative/storage/BoundedBitmapTest.kt",
+   "app/src/test/java/com/sherifradwan/ancnative/storage/HashingTest.kt",
+   "app/src/test/java/com/sherifradwan/ancnative/storage/VaultCleanupRuleTest.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "1b-red",
+  "ran": 25,
+  "reused": 10,
+  "deferred": 2,
+  "not_gated": [
+   "UNIT-format-r2",
+   "UNIT-intake-dating",
+   "UNIT-anomalies",
+   "UNIT-vault-auto",
+   "UNIT-vault-cleanup",
+   "UNIT-pin-policy",
+   "UNIT-lock-policy"
+  ],
+  "passed": [
+   "UNIT-print",
+   "UNIT-negative-control",
+   "UNIT-clinical-validation",
+   "UNIT-demo-fixtures",
+   "UNIT-gestational-age",
+   "UNIT-timeline-projection",
+   "UNIT-patient-validation",
+   "UNIT-previous-pregnancy-validation",
+   "UNIT-anc-state",
+   "UNIT-backup-vault",
+   "UNIT-clinical-commands",
+   "UNIT-encrypted-backup",
+   "UNIT-attachment-vault",
+   "UNIT-patient-commands",
+   "UNIT-records-mapping",
+   "UNIT-save-coordinator",
+   "UNIT-vault-state",
+   "UNIT-gestational-banner"
+  ],
+  "failed": [
+   "STATIC-r3b",
+   "STATIC-r3f1",
+   "UNIT-hashing",
+   "UNIT-bounded-bitmap",
+   "UNIT-security-settings",
+   "UNIT-attachment-error",
+   "UNIT-codex-repository"
+  ]
+ },
+ {
+  "step": "red-check",
+  "parked": [
+   "app/src/test/java/com/sherifradwan/ancnative/storage/HashingTest.kt",
+   "app/src/test/java/com/sherifradwan/ancnative/storage/BoundedBitmapTest.kt",
+   "app/src/test/java/com/sherifradwan/ancnative/storage/VaultCleanupRuleTest.kt",
+   "app/src/test/java/com/sherifradwan/ancnative/security/SecuritySettingsRepositoryTest.kt",
+   "app/src/test/java/com/sherifradwan/ancnative/security/FakeSharedPreferences.kt",
+   "app/src/test/java/com/sherifradwan/ancnative/state/AttachmentErrorStateTest.kt"
+  ],
+  "failed": [
+   "STATIC-r3b",
+   "STATIC-r3f1",
+   "UNIT-hashing",
+   "UNIT-bounded-bitmap",
+   "UNIT-security-settings",
+   "UNIT-attachment-error",
+   "UNIT-codex-repository"
+  ],
+  "compile_error": false,
+  "behavioural_red_confirmed": true
+ },
+ {
+  "step": "2a-core",
+  "lane": "claude:claude-sonnet-5-5",
+  "tried": [
+   "opencode:openai/gpt-6-luna=failed",
+   "claude:claude-sonnet-5-5=completed"
+  ],
+  "seconds": 124.9,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   "app/src/main/java/com/sherifradwan/ancnative/security/SecuritySettingsRepository.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/storage/BoundedBitmap.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/storage/Hashing.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/storage/PatientAttachmentVault.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/storage/SaveVisitCommand.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/storage/VaultCleanupRule.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/storage/VaultController.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2a-green",
+  "ran": 2,
+  "reused": 2,
+  "deferred": 0,
+  "not_gated": [
+   "UNIT-parse-legacy",
+   "UNIT-format-r2",
+   "UNIT-print",
+   "UNIT-contrast",
+   "STATIC-ui",
+   "STATIC-ui-r2",
+   "UNIT-intake-dating",
+   "STATIC-r3",
+   "UNIT-anomalies",
+   "UNIT-vault-auto",
+   "UNIT-vault-cleanup",
+   "STATIC-r3b",
+   "UNIT-pin-policy",
+   "UNIT-lock-policy",
+   "STATIC-r3c",
+   "STATIC-r3d",
+   "STATIC-r3e",
+   "STATIC-r3f1",
+   "UNIT-hashing",
+   "UNIT-bounded-bitmap",
+   "UNIT-security-settings",
+   "UNIT-attachment-error",
+   "UNIT-negative-control",
+   "UNIT-clinical-validation",
+   "UNIT-demo-fixtures",
+   "UNIT-gestational-age",
+   "UNIT-timeline-projection",
+   "UNIT-patient-validation",
+   "UNIT-previous-pregnancy-validation",
+   "UNIT-codex-repository",
+   "UNIT-anc-state",
+   "UNIT-backup-vault",
+   "UNIT-clinical-commands",
+   "UNIT-encrypted-backup",
+   "UNIT-attachment-vault",
+   "UNIT-patient-commands",
+   "UNIT-records-mapping",
+   "UNIT-save-coordinator",
+   "UNIT-vault-state",
+   "UNIT-gestational-banner"
+  ],
+  "passed": [
+   "UNIT-all",
+   "COMPILE-app"
+  ],
+  "failed": []
+ },
+ {
+  "step": "2b-ui",
+  "lane": "claude:claude-sonnet-5-5",
+  "tried": [
+   "opencode:openai/gpt-6-luna=failed",
+   "claude:claude-sonnet-5-5=completed"
+  ],
+  "seconds": 69.9,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   "app/src/main/java/com/sherifradwan/ancnative/ui/AddAttachmentDialog.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt",
+   "app/src/main/res/values/strings.xml"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2b-green",
+  "ran": 22,
+  "reused": 22,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [
+   "STATIC-ui",
+   "STATIC-ui-r2",
+   "STATIC-r3",
+   "UNIT-vault-cleanup",
+   "STATIC-r3b",
+   "STATIC-r3c",
+   "STATIC-r3d",
+   "STATIC-r3e",
+   "UNIT-hashing",
+   "UNIT-bounded-bitmap",
+   "UNIT-security-settings",
+   "UNIT-attachment-error",
+   "UNIT-negative-control",
+   "UNIT-anc-state",
+   "UNIT-backup-vault",
+   "UNIT-clinical-commands",
+   "UNIT-attachment-vault",
+   "UNIT-save-coordinator",
+   "UNIT-all",
+   "COMPILE-app"
+  ],
+  "failed": [
+   "STATIC-r3f1",
+   "UNIT-codex-repository"
+  ]
+ },
+ {
+  "step": "2b-ui-repair1",
+  "lane": "claude:claude-sonnet-5-5",
+  "tried": [
+   "opencode:openai/gpt-6-luna=failed",
+   "claude:claude-sonnet-5-5=completed"
+  ],
+  "seconds": 26.0,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2b-green-r1",
+  "ran": 2,
+  "reused": 42,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [],
+  "failed": [
+   "STATIC-r3f1",
+   "UNIT-codex-repository"
+  ]
+ },
+ {
+  "step": "2b-ui-repair2",
+  "lane": "claude:claude-sonnet-5-5",
+  "tried": [
+   "opencode:openai/gpt-6-luna=failed",
+   "claude:claude-sonnet-5-5=completed"
+  ],
+  "seconds": 19.3,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2b-green-r2",
+  "ran": 2,
+  "reused": 42,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [],
+  "failed": [
+   "STATIC-r3f1",
+   "UNIT-codex-repository"
+  ]
+ },
+ {
+  "step": "ui-gate-final",
+  "still_failing": [
+   "STATIC-r3f1",
+   "UNIT-codex-repository"
+  ]
+ },
+ {
+  "step": "cache-check-no-changes",
+  "ran": 2,
+  "reused": 42,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [],
+  "failed": [
+   "STATIC-r3f1",
+   "UNIT-codex-repository"
+  ]
+ },
+ {
+  "step": "3-review-0-claude",
+  "lane": "claude:claude-sonnet-5-5",
+  "tried": [
+   "claude:claude-sonnet-5-5=completed"
+  ],
+  "seconds": 74.6,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [],
+  "scope_violations_reverted": []
+ }
+]

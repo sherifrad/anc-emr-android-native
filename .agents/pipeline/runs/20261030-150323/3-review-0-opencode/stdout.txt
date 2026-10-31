@@ -1,0 +1,26 @@
+**Q19(a)-(k): PASS**
+- (a) Ultrasound cells: presentation/placentalSite/amnioticFluid use `takeUnless(String::isBlank) ?: "Not recorded"` (lines 144-146)
+- (b) Allergy: `allergyHistory?.takeUnless(String::isBlank) ?: "Not recorded"` (line 1043)
+- (c) Medical/Surgical: same pattern (lines 1047, 1051)
+- (d) Target Delivery Timing: `agreedEdd?.takeUnless(String::isBlank) ?: "Not recorded"` (line 1204)
+- (e) Risk missing: shows `<span class="badge">Risk not recorded</span>` exactly (lines 995-999)
+- (f) Planned Delivery Mode: `parseDeliveryNotes(...).plan?.takeUnless(String::isBlank) ?: "Not recorded"` (line 1200)
+- (g) Owner wording unchanged: anti-D line, Routine protocol, Special Recommendations all present
+- (h) Visits notes: `findings ?: notes ?: "Not recorded"` (line 100)
+- (i) Prev pregnancies: `placeAndDoctor ?: otherDetails ?: "Not recorded"` (line 240)
+- (j) Meds notes: `notes?.takeUnless(String::isBlank) ?: "-"` (line 196) — correct per spec
+- (k) Image label: `impression?.takeUnless(String::isBlank)?.let { " ($it)" } ?: ""` (lines 74-75)
+
+**No invented clinical defaults found** — searched all `?: "` fallbacks; remaining ones are numeric placeholders (`-`), phone `"Unspecified"`, structured outcome fallbacks (explicitly allowed per spec line 79), or biometry derived from real measurements.
+
+**Q20: PASS** — `IntakeDatingRule.kt` implements all rules (a)-(e) correctly; `AncViewModel.kt` lines 288-299 calls it and contains no `plusDays(280)` (S1 ✓).
+
+**Q21: PASS** — `seedInitialSyntheticFixtures(includeDemoPatients: Boolean)` at line 27; all patient-owned inserts inside the guard (lines 49-73); `VaultController.kt` line 587 passes `BuildConfig.DEBUG` (S3 ✓); `app/build.gradle.kts` line 56 has `buildConfig = true` (S4 ✓). Release vault validates with zero patients (validateAndLoad doesn't require patients).
+
+**Q17 Rh/risk behaviour**: Only change is null risk → "Risk not recorded" badge (Q19(e) supersedes). No other Rh/risk logic changed.
+
+**Tests weakened**: Only the mandated single Q17 null-risk assertion removal (null removed from `q17_riskLevelsNonHigh_normalRiskBadge` list). All other assertions unchanged.
+
+**Severity**: No Hard Blockers or Should-fix. No Nits.
+
+**Could not verify**: Unit tests not executed (`./gradlew --offline :app:testDebugUnitTest` not run). Static checks S1-S4 pass by inspection.

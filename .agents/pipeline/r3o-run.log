@@ -1,0 +1,18 @@
+MACA pipeline 20261031-113341 lanes: {'tests': ('opencode', 'opencode/glm-5.3-flash-free'), 'core': ('agy', 'claude-sonnet-5-5-medium'), 'ui': ('agy', 'claude-sonnet-5-5-medium')} review: ['agy:claude-opus-5-5-medium', 'agy:gemini-3.8-flash-medium']
+  agy       /Users/sherifgamalradwan/.local/bin/agy
+  opencode  /opt/homebrew/bin/opencode
+[1-tests] opencode completed 807.8s changed=3 violations=0
+[1b-red] ran=2 reused=59 deferred=2 not_gated=7 failed=['STATIC-r3o', 'UNIT-print-escape']
+[2a-core] agy:claude-sonnet-5-5-medium gave no usable result (failed); trying next model
+[2a-core] agy completed 385.9s changed=2 violations=0
+[2a-green] ran=5 reused=2 deferred=0 not_gated=63 failed=['UNIT-print', 'UNIT-print-escape', 'UNIT-all']
+[2a-tests-compile-repair1] opencode completed 74.0s changed=1 violations=0
+[2a-green-r1] ran=4 reused=3 deferred=0 not_gated=63 failed=[]
+[2b-green] ran=1 reused=69 deferred=0 not_gated=0 failed=[]
+[cache-check-no-changes] ran=0 reused=70 deferred=0 not_gated=0 failed=[]
+[3-review-0-agy] agy:claude-opus-5-5-medium gave no usable result (failed); trying next model
+[3-review-0-agy] agy completed 275.3s changed=0 violations=0
+[3-review-1-agy] agy completed 196.6s changed=0 violations=0
+
+DONE.  Metrics: /Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-113341/metrics.json 
+Tell Claude: pipeline finished.

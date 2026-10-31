@@ -1,0 +1,33 @@
+I'm the TEST DESIGNER lane. Let me read the required inputs: the seed test file, Theme.kt, current source files (for the static check), and the manifest template.
+The template and theme are in. Now let me read the current WorkspaceScreen.kt and ClinicalBadges.kt so the static check (P10) is designed to fail on today's code, and check what tests exist today.
+Now let me read the current `parseDeliveryNotes` and `DeliveryPlanningCard` in WorkspaceScreen.kt to design the static check's sub-checks so they fail on today's code.
+Current-code facts confirmed: `parseDeliveryNotes` is in WorkspaceScreen (f fails), inline `endsWith("-")` Rh logic (e fails), literals contentDescription "Edit Delivery Plan" (c fails), `delivery_planning_notice` not referenced (a fails), and the five fact labels in DeliveryPlanningCard are hardcoded English so scoped (b) fails — the resource-based facts belong in the card per P10(b). Let me check the existing test setup.
+One quick look at the existing `ui/GestationalBannerLogicTest.kt` to confirm what Compose APIs are already usable in plain JVM unit tests here:
+All inputs are gathered. Now I'll write the five deliverables. Starting with the parser spec test (P1–P5), adapted from the seed file and extended for the required cases.
+That file has two broken block constructions I need to clean up — let me rewrite it properly with a simpler label-strip helper.
+Now the clinical format tests (P6–P8), table-driven:
+Now the contrast test (P9):
+Now the P10 static checker:
+Now run the static checker to verify it fails on today's code exactly as required (a panel of FAIL a–f):
+The checker fails on today's code for all six sub-checks as required. Finally, the TEST_MANIFEST.json per the skills template:
+Let me do a final sanity check that no leftovers from the earlier broken draft remain in the parser test:
+**Files changed (allowed list only):**
+- `app/src/test/java/com/sherifradwan/ancnative/ui/ParseDeliveryNotesSpecTest.kt`
+- `app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalFormatTest.kt`
+- `app/src/test/java/com/sherifradwan/ancnative/ui/ThemeContrastTest.kt`
+- `.agents/checks/check_ui_static.py`
+- `.agents/TEST_MANIFEST.json` (template shape, 5 entries with real dep globs)
+
+**Per oracle:**
+- P1: parser test — "Feels reduced fetal movements" / "exclusively breastfeed" must not land in fees (substring‑"fee" misrouting caught); confirmed‑fee line stays in fees.
+- P2: 6‑case history table (previous/prior/history/earlier/pregnancy/G5P3) → plan with wording intact, never postpartum; current delivered/labeled lines → postpartum.
+- P3: label stripping only for known labels; "10:30" colon cases (time‑before‑label and unknown‑"Timing:" label intact); unconfirmed‑fee table (quoted/estimate/proposed/discussed/undecided/not agreed) → fees null, wording in plan.
+- P4: `<Name> Hospital` phrase only, searched on all lines incl. fee lines, multiple " at ", time never returned, negatives ("declines hospital birth", "Hospitalised at 28w").
+- P5: null/blank→all null; lossless counting tolerant of the P3 label strip; hospital‑bearing line max twice, others exactly once; no invented words; order preserved.
+- P6/7/8: table‑driven spec cases + 3 boundary cases each (e.g. "A+, antibody screen negative" false, "Not high risk" false, "Age 29"→"29").
+- P9: WCAG 2.x contrast function in the test; 12 Theme.kt pairs (age badge + 4 delivery tones, light+dark) ≥ 4.5:1; text tokens fully opaque; ClinicalBadges.kt must not `copy(alpha = 0.65)`.
+- P10: stdlib `check_ui_static.py`; verified it prints FAIL for a–f and exits 1 on today's code (ran it, saw the fails above); sub-checks (e)(f) include the positive side (uses isRhNegative/isHighRisk; parser not in WorkspaceScreen).
+
+**Assumptions (from ambiguous spec):** unclassifiable lines stay reachable (never dropped); known labels = the delivery-section labels listed in the test; (b) is scoped to the DeliveryPlanningCard body since the five facts belong there and file‑wide scope would pass today's code (assumption written in the script header too); dark label pair uses `TagAgeLabelText` on `TagAgeLabelDarkBg` per current badge mapping.
+
+**Not run / not verified:** unit tests not run — red phase means ClinicalFormat.kt/DeliveryNotesParser.kt don't exist yet and the current WorkspaceScreen behavior fails them; compile gate will fail until the implementer lands the functions. Existing `ui/DeliveryNotesParserTest.kt` (not mine) may need the implementer's reconciliation — not touched.

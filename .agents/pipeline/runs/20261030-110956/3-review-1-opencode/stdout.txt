@@ -1,0 +1,24 @@
+Static checks pass and the spec test suites I ran all went green. Now hunting for defects the tests don't cover — let me inspect the UI screens and the badges file more closely.
+The grep output confirms tags are intact. Now I'll independently verify my own hospital lines by simulating the parser's exact regex logic (in a scratch script outside the repo — read-only for the project).
+My simulation contradicts the passing unit tests — before trusting either, let me debug the sim regex directly.
+Found it — my simulation had the Q13(b) check inverted (Python sim bug, not Kotlin). Fixing and rerunning:
+The Q15 oracle cases now all verify under my independent simulation. Let me finish testing my remaining mixed lines, plus the "invented name" suspects:
+One more close look — the `formatBloodGroup` result must actually be *rendered*, not just computed:
+All displayed values verified. Let me run the full unit suite (regression gate G1) as the final check:
+**INDEPENDENT REVIEWER — ROUND 2d (read-only, no files touched)**
+
+**Oracles — verdicts (verified by running the real JUnit spec suites + a Python re-simulation of the parser regexes from scratch for my own lines):**
+- **Q15 PASS** (all 7 spec lines + boundaries: "cs Dar Al Fouad Hospital" → name; "CS Hospital" → null). Key mechanism checked: trimLeadingWords drops Q15(a) words; isPreviousDeliveryPhrase prepends `dropped` to the pre-phrase text, so dropped "Last CS"/"Previous LSCS" become past markers (skip) and dropped "Elective"/"Emergency" block the past-marker skip. Mental-output check for "Last CS Dar Al Fouad Hospital, plan Cleopatra Hospital": first phrase rejected (past marker "Last CS"), second accepted because "plan" is a current marker → exactly "Cleopatra Hospital". Matches oracle.
+- **Q1–Q14 PASS.** Q4b "Now Cleopatra"? — see defect D2 below. All 94 parser-spec tests + Maya test + ClinicalFormat tests ran GREEN (./gradlew --offline, just now; G1 indirectly, G2 via compile, G3 both static checkers pass: round-1 6/6, R2 30/30).
+- **U1–U7 PASS** (checker read/opened OK — it is not missing; also independently grepped: no emoji ranges in the 4 files, `formatBloodGroup` result is actually *rendered* in all three screens, no `contains("-"/"+"/High")` in PatientList/Profile, edit buttons are pencil `contentDescription = stringResource(...)`, no `imageUris.size.toString()`).
+
+**My own 15 hospital lines (mixing past + current deliveries, real names — Dar El Teaa, Nile Badrawi, Al Hekma, Helios Medical, El Shatby, Dar Al Fouad, Al Salam, Zayed…):** 14/15 extracted exactly the current-delivery hospital, none invented a name, every line stayed whole in plan (D2), e.g. "Previous CS Cleopatra Hospital 2021, this pregnancy planned Nile Badrawi Hospital" → only Nile Badrawi; "Last pregnancy delivered Cleopatra Hospital normally, plan Al Salam Hospital now" → only Al Salam; "Delivered at Al Jala Hospital 2020; booked Dar Al Fouad Hospital this pregnancy" → both, correctly.
+
+**NEW defects found:**
+- **D2 Should-fix:** a capitalised ordinary word directly before the name glues into the hospital name: "Now Cleopatra Hospital", "Current Cleopatra Hospital", "Overview Nile Badrawi Hospital" → extracted as the whole string. "Now"/"current" are Q13 current-marker words but are absent from the Q4b/Q15(a) leading-drop list. Predates Q15 but is live today.
+- **D3 Nit/Should-fix (spec-level, Q10 design):** "Transfer From Aswan General Hospital done last month, deliver at Cleopatra Hospital" lists the *origin* hospital too ("From" is on the drop list, so "Aswan General Hospital" becomes a name). Data-kept-in-plan, never hidden — but the box can carry a non-destination hospital.
+- **D4 Adjacent risk (out of Q7's named scope):** `ui/report/PatientPrintHtmlGenerator.kt` still uses `contains("-")`/`contains("High")` and a printed report can mislabel "Not high risk" as High Risk and miss U+2212 "O −". Rumoured-consistency gap, not an oracle failure.
+
+**Tests weakened vs round 1?** No. Round-1 P1–P5 parser cases, ClinicalFormatTest P6/P7 cases, and the Maya test are all intact; the only changed round-1 expectation is `AgeCase("0","0")` → null, explicitly documented in-file as Q5 supersedes P8 (in-file, not a weakening).
+
+**Assumptions / could not verify:** I participated in zero file edits (ALLOWED = none). I could not diff the working tree against round-1 sources (history dirs prohibited), so testTags are confirmed present, not diffed. "Real hospital names beginning with a dropped whole word" — I could not find any real Egyptian hospital starting with "At/Via/Plan/Last/CS…"; closest hypothetical ("Planned Parenthood Hospital") would render "Parenthood Hospital" — flagged as inherent, SAFE-side risk. My ≤60-line ad-hoc simulations being Python regex replications of the Kotlin regexes; the spec-oracle lines themselves ran through real JUnit.

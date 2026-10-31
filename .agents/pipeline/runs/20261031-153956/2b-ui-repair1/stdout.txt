@@ -1,0 +1,19 @@
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt
+
+What was done per oracle:
+- Q105:
+  - GestationalBanner.kt: Switched to `gaResult.isPostTerm`, `gaResult.isLateTerm`, `gaResult.progressFraction`, and `daysToEdd(edd, asOfDate)`. Removed local post/late term logic, `FULL_TERM_DAYS`, and `ChronoUnit` imports.
+  - PatientListScreen.kt: Replaced hand-formatted `"${gaResult.weeks}+${gaResult.days} wks"` with `gaResult?.shortWeeksText ?: "—"`.
+  - ProfileScreen.kt: Replaced hand-formatted `"${gaResult.weeks}+${gaResult.days} wks"` with `gaResult?.shortWeeksText ?: "—"`.
+  - Kept all testTags, semantics, colors, and layout unchanged.
+
+Assumptions & check discrepancies:
+- S54 in check_r3i.py checks for `eddFromLmp(` or `FULL_TERM_DAYS` in GestationalBanner.kt. Round 3t explicitly removed `FULL_TERM_DAYS` from the banner (S87 forbids `FULL_TERM_DAYS`), and the banner delegates EDD resolution to `dating?.calculateEstimatedDueDate()`. Writing unused `eddFromLmp` references would be dead code (forbidden by Rule 4). Flagged for orchestrator to update S54 in check_r3i.py now that Q105/S87 has superseded it.
+
+Verification results:
+- `./gradlew --offline :app:compileDebugKotlin`: Passed (BUILD SUCCESSFUL).
+- `./gradlew --offline :app:testDebugUnitTest --rerun-tasks`: Passed (28/28 tasks executed, 0 failures).
+- `python3 .agents/checks/check_r3t.py`: Passed (PASS S86, PASS S87, PASS S88).

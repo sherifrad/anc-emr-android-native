@@ -1,0 +1,16 @@
+Files changed:
+- .agents/checks/check_r3r.py (new)
+- .agents/TEST_MANIFEST.json
+- app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt
+
+What was done:
+- S83 (.agents/checks/check_r3r.py): Created static check verifying no occurrence of FLAG_SECURE under app/src/main (stripping comments first) and ensuring MainActivity.kt calls enableEdgeToEdge() and contains setContent.
+- Q101 (AncWorkflowTest.kt): Updated recordsWindowKeepsSecureFlagAndGateExplainsDraftPolicy to assert the FLAG_SECURE window flag is 0 across all builds, removing the BuildConfig.DEBUG branch.
+- Manifest (.agents/TEST_MANIFEST.json): Added tier-1 entry STATIC-r3r with cmd "python3 .agents/checks/check_r3r.py", deps on MainActivity.kt and check_r3r.py, covering S83.
+
+Assumptions:
+- None; spec was unambiguous.
+
+Verification:
+- python3 .agents/checks/check_r3r.py: RAN; FAILED (exit code 1) as expected on today's code (FLAG_SECURE detected in MainActivity.kt).
+- ./gradlew --offline :app:compileDebugAndroidTestKotlin: RAN; PASSED (BUILD SUCCESSFUL).

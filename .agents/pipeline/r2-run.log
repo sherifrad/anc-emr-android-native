@@ -1,0 +1,4 @@
+MACA pipeline 20261029-232729 lanes: {'tests': ('opencode', 'opencode/glm-5.3-flash-free'), 'core': ('opencode', 'opencode/deepseek-v4.1-flash-free'), 'ui': ('opencode', 'opencode/deepseek-v4.1-flash-free')} review: ['opencode:opencode/glm-5.3-flash-free']
+  opencode  /opt/homebrew/bin/opencode
+[1-tests] opencode failed 900.2s changed=4 violations=0
+HALT: manifest lacks gate ids ['UNIT-format-r2', 'UNIT-parse-legacy']

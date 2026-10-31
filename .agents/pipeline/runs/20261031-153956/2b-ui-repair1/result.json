@@ -1,0 +1,15 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [],
+  "finalMessage": "Files changed:\n- app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt\n- app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt\n- app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt\n\nWhat was done per oracle:\n- Q105:\n  - GestationalBanner.kt: Switched to `gaResult.isPostTerm`, `gaResult.isLateTerm`, `gaResult.progressFraction`, and `daysToEdd(edd, asOfDate)`. Removed local post/late term logic, `FULL_TERM_DAYS`, and `ChronoUnit` imports.\n  - PatientListScreen.kt: Replaced hand-formatted `\"${gaResult.weeks}+${gaResult.days} wks\"` with `gaResult?.shortWeeksText ?: \"—\"`.\n  - ProfileScreen.kt: Replaced hand-formatted `\"${gaResult.weeks}+${gaResult.days} wks\"` with `gaResult?.shortWeeksText ?: \"—\"`.\n  - Kept all testTags, semantics, colors, and layout unchanged.\n\nAssumptions & check discrepancies:\n- S54 in check_r3i.py checks for `eddFromLmp(` or `FULL_TERM_DAYS` in GestationalBanner.kt. Round 3t explicitly removed `FULL_TERM_DAYS` from the banner (S87 forbids `FULL_TERM_DAYS`), and the banner delegates EDD resolution to `dating?.calculateEstimatedDueDate()`. Writing unused `eddFromLmp` references would be dead code (forbidden by Rule 4). Flagged for orchestrator to update S54 in check_r3i.py now that Q105/S87 has superseded it.\n\nVerification results:\n- `./gradlew --offline :app:compileDebugKotlin`: Passed (BUILD SUCCESSFUL).\n- `./gradlew --offline :app:testDebugUnitTest --rerun-tasks`: Passed (28/28 tasks executed, 0 failures).\n- `python3 .agents/checks/check_r3t.py`: Passed (PASS S86, PASS S87, PASS S88).",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-153956/2b-ui-repair1/result.json",
+  "timestamp": "2026-10-31T14:01:26.130Z"
+}

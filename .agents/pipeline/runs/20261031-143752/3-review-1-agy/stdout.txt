@@ -1,0 +1,12 @@
+Files changed: none (read-only reviewer).
+Q100 / Q101 / S83 review: PASS across all criteria.
+
+(1) FLAG_SECURE removal: Verified. Grep across `app/src/main` returned 0 hits (no occurrences in manifest, themes, dialogs, or code). In `MainActivity.kt`, only the flag block and its unused import were removed:
+`- window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)` ([MainActivity.kt:38-40](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/MainActivity.kt#L38-L40)). Nothing else was modified.
+(2) Other screenshot/recents blockers: None found. No `excludeFromRecents`, `setRecentsScreenshotEnabled`, or custom `SecureFlagPolicy` in dialogs.
+(3) Dead imports or comments: None. In `MainActivity.kt`, `import android.view.WindowManager` was cleanly removed and all remaining imports are actively used.
+(4) androidTest scope: Verified. `AncWorkflowTest.kt` changed only the flag assertion:
+`+ assertEquals(0, flags and WindowManager.LayoutParams.FLAG_SECURE)` ([AncWorkflowTest.kt:102](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt#L102)).
+
+Findings: None (no Hard Blocker, Should-fix, or Nit).
+Verification: STATIC-r3r (`python3 .agents/checks/check_r3r.py`) passed; Gradle unit/instrumented builds not run (read-only role).

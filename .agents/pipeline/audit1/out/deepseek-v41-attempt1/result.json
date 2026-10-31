@@ -1,0 +1,15 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "opencode-delegate",
+  "cli": "opencode",
+  "status": "failed",
+  "exitCode": 130,
+  "signal": null,
+  "readOnly": true,
+  "readOnlyViolation": false,
+  "touchedFiles": [],
+  "finalMessage": "",
+  "stderrTail": "\u001b[0m\n> plan · nvidia/deepseek-ai/deepseek-v4.1-flash",
+  "resultPath": "out/deepseek-v41/result.json",
+  "timestamp": "2026-10-30T15:12:13.591Z"
+}

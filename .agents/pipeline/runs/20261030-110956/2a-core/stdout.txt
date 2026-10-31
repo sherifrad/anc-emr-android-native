@@ -1,0 +1,19 @@
+I'll start by reading the spec and the current parser implementation.
+Now I have the full picture. Let me implement Q15 in the parser.
+Now the leading-word drop list and the trim helper:
+Files changed: `app/src/main/java/com/sherifradwan/ancnative/ui/DeliveryNotesParser.kt` (only). ClinicalFormat.kt already satisfied Q5/Q6, so I left it untouched.
+
+Q15(a): added last, previous, prior, earlier, repeat, elective, emergency, CS, LSCS, SVD, NVD to `HOSPITAL_LEADING_WORDS` (whole word, case-insensitive, at least one word always kept). Replaced `dropLeadingWords` with `trimLeadingWords` returning a small `TrimmedPhrase(name, dropped)` so the dropped text is not lost.
+
+Q15(b): `isPreviousDeliveryPhrase(text, phraseStart, dropped)` now evaluates `text-before-phrase + " " + dropped`, so dropped words count as text before the phrase — a dropped "Last CS" acts as a past marker, a dropped "Elective" as a current marker (they land immediately before the phrase, so the "current marker between past marker and phrase" test sees them).
+
+Assumption 1: "Previous LSCS Al Salam Hospital" (test expects null) cannot match the Q13 marker list as written, so I added LSCS/SVD/NVD to `PAST_DELIVERY_MARKER`'s delivery-word group. Effect is only extra skipping of unlabelled phrases after a past marker (a false negative keeps the line verbatim in Plan, per the safety rule); no clinical threshold, wording or testTag touched, no new libraries, parser still a pure function.
+
+All Q1-Q14 behaviour is preserved (I checked each existing hospital/tense example by reading the assertions); the full unit suite is green.
+
+Verification (run, observed passing):
+- ./gradlew --offline :app:testDebugUnitTest --tests '*ParseDeliveryNotesSpecTest' --tests '*DeliveryNotesParserTest' --tests '*ClinicalFormatTest' --tests '*ClinicalFormatR2Test' -> BUILD SUCCESSFUL (ParseDeliveryNotesSpecTest 94 tests, 0 failures; all 9 r2d Q15 tests present and green)
+- ./gradlew --offline :app:testDebugUnitTest (full suite) -> BUILD SUCCESSFUL
+- G2 compile: :app:compileDebugKotlin ran clean.
+
+Not done / not verified: no static/UI checks (U-series) or device work attempted — out of my lane.

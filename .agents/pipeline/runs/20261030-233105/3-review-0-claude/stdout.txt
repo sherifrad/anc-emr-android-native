@@ -1,0 +1,46 @@
+No Hard Blockers in the Round 3g diff. I read the code and ran no tests or builds, so every point below comes from reading.
+
+**(1) InAppCameraDialog**
+- **Camera release:** it is always released. The bind effect calls `unbindAll()` when it is disposed, and a `disposed` flag stops a late `ProcessCameraProvider` listener from binding afterwards.
+- **Late capture callback:** it is handled. `session.gone` is set on dispose; a late `onImageSaved` deletes the file, and `onError` always deletes it. `onDispose` also deletes `session.inFlight`, and CameraX may recreate that file when its write finishes. The late callback's own `file.delete()` covers that case.
+- **Temp files:**
+  - Retake calls `discardCapture()`, which deletes the file.
+  - Close and dismiss delete an uncommitted `captureFile` on dispose.
+  - Use sets `committed`, and the viewmodel's `finally` deletes the file after import or save.
+  - `createCameraTempFile` only builds a path, so a failed capture leaves nothing behind.
+- **Permission denied:** it is safe. It shows a message and a Close button, and the camera never binds.
+- **Main thread:** no blocking. The still is decoded on `Dispatchers.Default`. `onDispose` calls `delete()` on the main thread, which is a trivial cost.
+- **Error handling:** capture errors set `failed` and show `camera_capture_failed`. Bind errors set `bindFailed` and show `camera_bind_failed`. Neither is silent.
+- **Should-fix:** `checkNotNull(session.previewView)` in the bind listener assumes the `AndroidView` factory has already run, but the dialog content composes separately from the parent's effect. If the listener fires first, the camera shows the "could not start" text with no retry except Close. It fails visibly, but a retry on Retake or reopen would be safer.
+- **Nit:** the dialog never sets a rotation on `Preview`; only `imageCapture` gets one.
+
+**(2) Result flow**
+- **AddAttachmentDialog:** it matches the old path. `selectedUri` is set, and an earlier camera temp file is deleted when the user picks a different one.
+- **UltrasoundEditor:** it does not match the old path, but Q66 required that change. The result now goes through `ImportScanPhoto`, which saves to the vault on IO and then `ScanPhotoImported` appends `vault:<name>` to the draft. It no longer goes through `UltrasoundDraftChanged(IMAGE_URIS)`. The draft entry now appears asynchronously. The chip UI doesn't use the URI, so nothing else breaks.
+- **Should-fix:** `importScanPhoto` with the vault not Unlocked deletes the temp photo and returns. The user gets no `AttachmentFailed` banner, so the photo disappears silently. The same applies to `addAttachment`.
+  - `AncViewModel.kt:121`: `if (_state.value.vaultState !is VaultState.Unlocked) { ...deleteIfCaptureTemp...; return }`
+
+**(3) Presets**
+- **Values:** `SMALL(1280, 70)`, `STANDARD(1600, 75)`, `DETAILED(1920, 85)` match the spec exactly.
+- **Defaults:** `defaultFor` returns DETAILED for ultrasound and SMALL for everything else. The dialog re-defaults when the category changes unless the user already chose a preset.
+- **Path to the vault:** the chosen preset flows through `onSave` → `WorkspaceScreen` → `AddAttachment(preset)` → `saveAttachment(preset = event.preset)` → `compressAndWrite` using `preset.maxSide` and `preset.webpQuality`.
+- **Callers:** `AddAttachmentDialog` is called only from `WorkspaceScreen`, and `ProfileScreen` doesn't use it, so nothing else needed the new parameter.
+- **Nit:** scan photos always use DETAILED. That is the spec default for `ImportScanPhoto`, so it is fine.
+
+**(4) deleteIfCaptureTemp**
+- **Path traversal:** it is safe. The checks are scheme `content`, authority `<package>.fileprovider`, first segment `camera_photos`, canonical file, and `candidate.parentFile == root`.
+  - An encoded `..` or `/` in a segment resolves canonically and fails the direct-child check.
+  - A symlink that resolves outside `cacheDir/camera` is rejected.
+  - Gallery URIs are ignored.
+- **Draft URIs:** deleting after save does not break the UltrasoundEditor draft, because the draft holds the vault ref, not the temp URI.
+- **Nit:** the sweep deletes unreferenced captures older than 1 hour. A `selectedUri` camera photo held open in `AddAttachmentDialog` for more than an hour would be swept by another import. This is extremely unlikely.
+
+**(5) Duplicated rules**
+- **Nit:** `STILL_MAX_SIDE = 1600` in `InAppCameraDialog.kt:68` repeats `STANDARD.maxSide`. It serves a different purpose (preview decode), so it is acceptable, but it could use the enum.
+- **Clean:** temp file naming has one source, `createCameraTempFile`. EXIF handling lives only in `BoundedBitmap`. The compression constants are gone and replaced by the preset. `scanPhotoRef` is the only place that builds the `vault:` prefix.
+
+**(6) Tests**
+- **Coverage:** the new tests call production code. `ScanPhotoImportStateTest` runs the real `AncReducer`, `CameraCaptureSweepTest` runs the real `staleCaptureFiles`, and the preset and ref tests run the real enum and helpers.
+- **Gaps (Should-fix):** nothing exercises `deleteIfCaptureTemp`, `importScanPhoto`, `InAppCameraDialog`, or the viewer's vault-ref branch. The `deleteIfCaptureTemp` traversal and symlink rules are the most worthwhile to test.
+
+**Assumption:** I treated the Round 3f-2 camera and presets as in scope because they are in the same uncommitted diff.

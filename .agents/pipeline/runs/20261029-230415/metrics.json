@@ -1,0 +1,115 @@
+[
+ {
+  "step": "1-tests",
+  "lane": "opencode:opencode/glm-5.3-flash-free",
+  "seconds": 332.7,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   ".agents/checks/check_ui_static_r2.py",
+   "app/src/test/java/com/sherifradwan/ancnative/ui/ParseDeliveryNotesSpecTest.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "1b-red",
+  "ran": 1,
+  "reused": 5,
+  "deferred": 2,
+  "not_gated": [
+   "UNIT-format-r2"
+  ],
+  "passed": [],
+  "failed": [
+   "UNIT-parse"
+  ]
+ },
+ {
+  "step": "red-check",
+  "parked": [
+   "app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalFormatR2Test.kt"
+  ],
+  "failed": [
+   "UNIT-parse"
+  ],
+  "compile_error": false,
+  "behavioural_red_confirmed": true
+ },
+ {
+  "step": "2a-core",
+  "lane": "opencode:opencode/deepseek-v4.1-flash-free",
+  "seconds": 1.2,
+  "relay_status": "failed",
+  "relay_exit": 1,
+  "changed": [],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2a-green",
+  "ran": 2,
+  "reused": 3,
+  "deferred": 0,
+  "not_gated": [
+   "UNIT-contrast",
+   "STATIC-ui",
+   "STATIC-ui-r2",
+   "UNIT-all"
+  ],
+  "passed": [
+   "COMPILE-app"
+  ],
+  "failed": [
+   "UNIT-parse"
+  ]
+ },
+ {
+  "step": "2a-core-repair1",
+  "lane": "opencode:opencode/deepseek-v4.1-flash-free",
+  "seconds": 0.8,
+  "relay_status": "failed",
+  "relay_exit": 1,
+  "changed": [],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2a-green-r1",
+  "ran": 1,
+  "reused": 4,
+  "deferred": 0,
+  "not_gated": [
+   "UNIT-contrast",
+   "STATIC-ui",
+   "STATIC-ui-r2",
+   "UNIT-all"
+  ],
+  "passed": [],
+  "failed": [
+   "UNIT-parse"
+  ]
+ },
+ {
+  "step": "2a-core-repair2",
+  "lane": "opencode:opencode/deepseek-v4.1-flash-free",
+  "seconds": 0.8,
+  "relay_status": "failed",
+  "relay_exit": 1,
+  "changed": [],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2a-green-r2",
+  "ran": 1,
+  "reused": 4,
+  "deferred": 0,
+  "not_gated": [
+   "UNIT-contrast",
+   "STATIC-ui",
+   "STATIC-ui-r2",
+   "UNIT-all"
+  ],
+  "passed": [],
+  "failed": [
+   "UNIT-parse"
+  ]
+ }
+]

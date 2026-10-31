@@ -1,0 +1,1 @@
+CURRENT TASK = ROUND 3c-3. Edit ONLY .agents/checks/check_r3c.py with your file-edit tool: add S16 exactly as the "Round 3c-3 addendum" in SPEC_FIX_R3.md describes (PASS/FAIL, exit 1 on any FAIL). It must FAIL on today's code. Keep S8-S15 unchanged. Do not run scripts that edit files.

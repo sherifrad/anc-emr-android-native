@@ -1,0 +1,31 @@
+Your questions (1)–(6) are about the camera and photo code, but the Round 3i diff doesn't touch that code. SPEC_FIX_R3.md "Round 3i" is the due-date and ISO-date-parser reuse round (Q69–Q70, S51–S54). I reviewed that diff against that spec. I did not run any tests or Gradle.
+
+The camera code (`InAppCameraDialog`, `CameraCaptureHelper`, `deleteIfCaptureTemp`, the presets) was committed in 9bd952a and c3ffbb0. Under "report nothing outside the diff" I left it out. Questions (1)–(4) are unanswered. The brief looks like it was written for a camera-round diff.
+
+**Spec compliance**
+- **Q69:** `model/IsoDates.kt` defines `FULL_TERM_DAYS`, `eddFromLmp`, `parseIsoDateOrNull` and `parseCanonicalIsoDateOrNull` exactly as specced. Lenient callers use the lenient parser and canonical callers use the canonical one. I found no remaining `LocalDate.parse(` in `app/src/main` outside `IsoDates.kt` and `DemoFixtures.kt`.
+- **Q70:** the engine, `IntakeDatingRule`, `GestationalBanner` and `PatientEditor` now use `FULL_TERM_DAYS` or `eddFromLmp`.
+- **Preview change:** the editor's current-GA text now comes from `calculateForLmp`, which returns null for negative days or more than 320 days. The old range was 0..300. This is the one behaviour change the spec names.
+- **Static check:** I ran `.agents/checks/check_r3i.py`. S51–S54 all print PASS.
+
+**(5) Second copies of a rule**
+- No second copy of the parse or 280-day rule remains. The two private `parseDateOrNull` copies are deleted.
+- The `isIsoDate()` wrapper in `SaveVisitCommand` is a one-line delegate to the shared parser. That is fine.
+
+**(6) Tests**
+- `IsoDatesTest` calls the production functions directly and covers every case listed in the spec.
+- The spec's regression suites (`GestationalAgeEngineTest`, `IntakeDatingRuleTest` and the others) are not run by me, so I can't confirm they stay green.
+
+**Findings**
+- **Hard Blocker:** none.
+- **Should-fix:** `retry/` at the repo root is untracked and holds `style`, `tests` and `ui` directories. It looks like orchestrator leftovers. Keep it out of the commit.
+- **Nit:** these imports are probably unused now (Kotlin only warns):
+  - `RecordsRepository.kt`: `import java.time.format.DateTimeParseException`, and `java.time.LocalDate` if nothing else uses it.
+  - `SaveVisitCommand.kt`: `LocalDate` and `DateTimeParseException`.
+  - `AncDatePicker.kt`: `DateTimeParseException`.
+  - `LongitudinalTimelineProjection.kt`: `LocalDate`.
+  - `PatientPrintHtmlGenerator.kt`: `LocalDate`, if nothing else uses it.
+- **Nit:** `PatientEditor.kt` has `parsedLmp?.let { eddFromLmp(it) }`. `parsedLmp?.let(::eddFromLmp)` would match the style used in `GestationalAgeEngine`.
+- **Nit:** `GestationalBanner.kt` has `gaResult.totalDays / FULL_TERM_DAYS.toFloat()`. That is correct, and the progress ratio is unchanged.
+
+**Assumption:** the review questions were meant for a camera round, not this one. To get answers on the camera code, give me that diff or tell me to review commit 9bd952a and c3ffbb0.

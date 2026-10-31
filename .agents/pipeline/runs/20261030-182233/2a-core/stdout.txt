@@ -1,0 +1,16 @@
+ASSUMPTIONS I’M MAKING:
+1. Round 3e in `SPEC_FIX_R3.md` governs Q41–Q46, while R1/R2 remain active unless superseded; I’ll implement only Q41 a/b/c in the three allowed files.
+2. I’ll treat any ambiguity conservatively: retain text in Plan rather than hide, drop, misfile, or relabel it.
+3. I’ll run the three requested checks and report their actual outcomes.
+The requested MACA protocol file is not readable in this non-interactive harness (`permission.rejected`), so the independent fleet audit/dispatch cannot be performed here. I’m proceeding within the explicit lane and checking the targeted test, S23/S24 static checks, and both Kotlin compilations.
+Changed:
+- `storage/VaultAutoAction.kt`: Q41a—Locked starts unlock only when `appUnlocked`; added required Boolean parameter without a default.
+- `state/AncViewModel.kt`: Q41b—added `lockVault()` delegating to the existing `manualLock()` behavior.
+- `MainActivity.kt`: Q41c—derives `appUnlocked` from app-lock and PIN-setup state, locks the vault when app lock becomes active, and keys auto-action on vault state and `appUnlocked`.
+
+Verification:
+- `*VaultAutoActionTest`: **passed**.
+- Debug and release Kotlin compilation: **passed**.
+- `check_r3e.py`: S23 and S24 **passed**; S25–S28 **failed** on findings for other, out-of-scope UI files, which I did not change.
+
+Assumption: the existing `manualLock()` behavior is the intended “Lock now” path, including clearing frozen commands. Device behavior was not verified. MACA protocol retrieval was blocked by harness permissions (`UNKNOWN / HARNESS ERROR`); independent fleet review was not performed.

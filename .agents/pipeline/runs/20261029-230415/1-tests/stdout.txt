@@ -1,0 +1,32 @@
+Let me look at the photo chip contexts in ProfileScreen.kt to scope U7 precisely.
+Current state verified: round-1/round-2 tests exist, manifest already R2-shaped with all deps present. Let me first observe today's behaviour of the round-2 static check before adding U7.
+U1–U6 all pass on the current build (round-2 fixes landed). Now I add the U7 sub-check to `check_ui_static_r2.py`:
+U7 fails on today's code as required, while U1–U6 stay green. Now the Q8–Q12 parser tests:
+Now run the changed test class once:
+9 of my 12 new tests fail on today's code (red, as designed); the other 3 (`r2_q11_labelledNameAndPhraseEqual_dedupedOnce`, `r2_q12_egAbbreviation_stillDoesNotSplit`, `r2_q12_lowercaseSplitSameSections_rejoinedExact`) already pass because today's code satisfies those sub-behaviours via the round-2 Q1/Q2/Q4 work. I'll add one more genuinely red Q12 end-to-end case where today's unsplit line misroutes a *delivered* note into plan, then re-run:
+Both deliverables are in place and verified. Final report:
+
+**Files changed (2)**
+- `app/src/test/java/com/sherifradwan/ancnative/ui/ParseDeliveryNotesSpecTest.kt` — added 13 R2b tests (Q8–Q12), every spec example with exact expected strings, plus own boundaries. Updated only the class docstring; zero round-1/round-2 tests or helpers changed (no Q2/P5 conflict arose).
+- `.agents/checks/check_ui_static_r2.py` — added U7 sub-check: FAIL if `imageUris.size.toString()` appears in ProfileScreen.kt, FAIL if `stringResource(R.string.photos_count` is never used there; docstring updated. U1–U6 untouched.
+
+**Per oracle**
+- Q8: history-marker segments' hospital never collected; "Al Salam" excluded, current name kept — 2 tests, both FAIL today.
+- Q9: To/Go/If + generic-only phrases rejected, line stays in plan exactly — 2 tests, FAIL today.
+- Q10: both phrases joined "\n" in source order, exact labels — FAIL today.
+- Q11: "St." dot not a cut; "pending"/"Pending" undecided -> null, line kept; equal labelled/phrase deduped once — FAIL today (pending + St. cases); the equal-dedupe case passes today (already correct via distinct-set collection; kept as regression guard).
+- Q12: ". " lowercase split, "e.g" exception, exact rejoin — fails via fee/plan split, delivered-rescue case, and pointless-split rejoin; 2 of 4 pass today only because today's code doesn't split at all (the rejoin/abbreviation halves are inherently satisfied; those guard after Q12 is implemented).
+- U7: check runs 30 sub-checks; U1–U6 all PASS, U7 FAIL today (bare number at ProfileScreen.kt line 1414), exit 1.
+
+**Runs** (actually executed)
+- `./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.ui.ParseDeliveryNotesSpecTest'`: 77 tests, 10 FAILED — all 10 expected reds; 67 pre-existing all pass. Compiles cleanly (no non-2b compile errors).
+- `python3 .agents/checks/check_ui_static_r2.py`: 29/30, only U7 FAIL, exit 1.
+- ClinicalFormatR2Test.kt and ClinicalFormatTest.kt unchanged, not run this round. TEST_MANIFEST.json unchanged: all deps present (STATIC-ui-r2 already depends on ProfileScreen.kt).
+
+**Assumptions** (SAFE choices)
+- Q8/Q9/Q10 single-segment lines stay in plan verbatim (D2 lossless).
+- "pending" inherits the whole-word, case-insensitive matching of the Q4(a) undecided list.
+- Q11 containment-dedupe (substring case) not separately tested — no unambiguous natural example in the spec; equal-case covered.
+- U7 enforces exactly the two oral conditions; the "Scan Photos (${...})" template (line ~1498) is not a named U7 violation — flagged here for the owner, not failed by this check.
+
+**Could not verify**: production Q8–Q12/U7 fixes are not mine to write; my U5/U4 rely on the pre-existing round-2 checker's nesting heuristics (unchanged by me).

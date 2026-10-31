@@ -1,0 +1,28 @@
+I made the Q47–Q51 edits, but nothing is verified. Every command I tried to run needs approval and was not approved, so no tests, checks or compiles ran. I won't retry the same commands.
+
+**Files changed**
+- New: `storage/Hashing.kt`, `storage/BoundedBitmap.kt`.
+- Edited: `ClinicalCommands.kt`, `SaveVisitCommand.kt`, `PatientAttachmentVault.kt`, `VaultCleanupRule.kt`, `VaultController.kt`, `SecuritySettingsRepository.kt`, `AncState.kt`, `AncViewModel.kt`.
+
+**Per oracle**
+- **Q47:** `toHexLower` and the three `sha256Hex` overloads are in `Hashing.kt`. All five `"%02x"` sites now call them, and I removed the imports that became unused.
+- **Q48 (non-UI):** `computeSampleSize` and `BoundedBitmap` (`decodeFile`, `decodeBytes`, `decodeStream`) are in `BoundedBitmap.kt`. They return null on bad data, a missing file or `OutOfMemoryError`. `compressAndWrite` now uses `decodeBytes`, and its inline sampling loop is gone. The UI decode sites (S30) belong to the UI lane.
+- **Q49:** `cleanUpAbandonedInitialization` is in `VaultCleanupRule.kt`. `VaultController.kt` now calls it in its three places, inside the same mutex blocks as before.
+- **Q50:**
+  - `SecuritySettingsRepository` has the `internal` constructor taking `SharedPreferences` and a clock, and the private `Context` constructor delegates to it.
+  - Every `System.currentTimeMillis()` now goes through `clock()`.
+  - It uses `java.util.Base64` instead of `android.util.Base64`.
+  - `legacyHashPin` calls `sha256Hex`.
+  - I removed `shouldLockOnBackground` and `lockIfBackgroundTimeoutElapsed` because nothing else in `app/src` references them.
+  - I kept `setupPin` because `AppLockScreen.kt:143` calls it.
+- **Q51:**
+  - `AncState.kt` has `AttachmentError`, the `attachmentError` field, `AttachmentFailed`, `DismissAttachmentError` and the two reducer branches.
+  - `addAttachment` rethrows `CancellationException` and otherwise logs and dispatches `SAVE_FAILED`.
+  - `deleteAttachment` deletes the database row first, then the file. Any exception dispatches `DELETE_FAILED`. A `false` return from the file delete is not treated as an error.
+
+**Assumptions**
+- `computeSampleSize` also returns 1 when `maxSide <= 0`, which the spec doesn't cover.
+- Stream decoding opens the stream twice (bounds pass, then decode), so `open` must return a fresh stream each call.
+- The attachment-failed dispatch runs on the IO thread. The state update is thread-safe, and the vault-unlocked guard in `dispatch` still applies.
+
+**Not run:** `check_r3f1.py`, the older `check_r3*.py` checks, `:app:testDebugUnitTest` and the debug/release compiles. A compile error is possible, especially around `System::currentTimeMillis` as a default argument and the unused-import cleanups. Please run those and send me the output, or approve the commands and I'll run them.

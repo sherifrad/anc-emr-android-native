@@ -1,0 +1,5 @@
+FAIL S45 scan photo ref helpers in one file: ScanPhotoRef.kt missing
+FAIL S46 stale-capture sweep keeps referenced files: lacks fun staleCaptureFiles; clearStaleCaptures does not take exactly 3 parameters; AncViewModel.kt calls clearStaleCaptures( 0 time(s), need 2; AncViewModel.kt never reads scan imageUris
+FAIL S47 import event, reducer event, temp delete in finally: AncState.kt lacks ImportScanPhoto; AncState.kt lacks ScanPhotoImported; AncViewModel.kt lacks ImportScanPhoto; AncViewModel.kt lacks ScanPhotoImported(; AncViewModel.kt lacks scanPhotoRef(
+FAIL S48 editor imports photos instead of storing raw URIs: UltrasoundEditor.kt lacks ImportScanPhoto(; still appends a raw uri to imageUris
+FAIL S49 viewer resolves vault refs, callers pass patient id: UltrasoundPhotoViewerDialog.kt lacks scanPhotoFileName; UltrasoundPhotoViewerDialog.kt lacks resolveAttachmentFile; ui/WorkspaceScreen.kt does not pass a patient id to UltrasoundPhotoViewerDialog(; ui/ProfileScreen.kt does not pass a patient id to UltrasoundPhotoViewerDialog(

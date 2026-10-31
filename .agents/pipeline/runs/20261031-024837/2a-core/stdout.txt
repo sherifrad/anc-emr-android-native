@@ -1,0 +1,23 @@
+All LF originally; strip the CRs I introduced and redo with LF.
+Q84 and Q85 are implemented and compile. The full suite has one failing test, which looks wrong against the spec. I can't edit it because I don't own the test file.
+
+- **Test run:** `:app:compileDebugKotlin` passed. `:app:testDebugUnitTest` ran 460 tests with 1 failure. I did not run the `--tests '*VisitVitalsTest' --tests '*SaveVisitValidationTest'` command separately. I read `SaveVisitValidationTest` only through the full run, which reported no failure for it.
+- **The failing test:** `VisitVitalsTest.parseWeightRejectsTwoDecimalsBlankAndGarbage` asserts that `parseWeightKg("68,5 kg")` is null. The spec says `68,5` is valid and a trailing `kg` is optional, so `"68,5 kg"` parses to 68.5. The spec also accepts `"75.0 kg"`, so this assertion contradicts it. I followed the spec; the orchestrator or test owner should drop that line.
+
+**Files changed**
+- [VisitVitals.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/model/VisitVitals.kt) (new)
+- [SaveVisitCommand.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/SaveVisitCommand.kt)
+- [AncState.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt) (`DraftError` enum only)
+- [ClinicalFormat.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt)
+- [strings.xml](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/res/values/strings.xml)
+
+**Per oracle**
+- **Q84:** [VisitVitals.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/model/VisitVitals.kt) is pure Kotlin with every function and type from the spec. Each value has one parser and the file has no `android.` import.
+- **Q85:** `DraftError` has the three new values. `prepare` takes `today: LocalDate = LocalDate.now()` and calls the parsers and plausibility functions from `VisitVitals.kt`. It returns all applicable errors together as one `Rejected` set. A blank BP or weight is accepted, and the stored command text is still the trimmed text.
+- **Q87:** `bpAlertResource` returns `R.string.bp_alert_raised`, `R.string.bp_alert_severe` or null. The five strings are added exactly as written in the spec.
+
+**Assumptions and notes**
+- An invalid date (required or unparseable) skips the future-date check, but the BP and weight checks still run. The spec only says the future check comes after the required/invalid checks, so I applied it to the date alone.
+- I removed `isIsoDate`, which is now unused.
+- **Self-inflicted truncation, repaired:** a bad script of mine briefly emptied `AncState.kt` and `SaveVisitCommand.kt`. I restored both from `git show HEAD`, which is read-only. Both were unmodified before my edits, so nothing was lost, and I then reapplied the edits.
+- The new `DraftError` values are not yet mapped in the UI. `VisitEditor.kt` is the UI lane's job.

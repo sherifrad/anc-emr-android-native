@@ -1,0 +1,11 @@
+I’ll inspect the Round 3c requirements and current security/lifecycle implementation, then make only the five permitted source-file changes and run the requested checks.
+The repository currently seeds a weak default PIN and uses a non-persisted lock state. I’m replacing that with v2 salted PBKDF2 storage, retaining SHA-256 only for legacy verification, persisting lockout state, and exposing setup/lockout fields for the UI lane.
+Files changed: `PinPolicy.kt` (new), `AppLockPolicy.kt` (new), `SecuritySettingsRepository.kt`, `BiometricAuthManager.kt`, `MainActivity.kt`.
+
+- Q25–Q26: Added PIN validation/PBKDF2 helpers, lockout timing, and background-lock policy.
+- Q27: Added salted v2 PIN storage, legacy verification/migration, persistent lockout, cold-start lock, and lifecycle timing. Auto-lock defaults to 10 minutes; “Never” is removed.
+- Q28: Biometric availability returns false below API 30.
+- UI lane API: `settings.value.needsPinSetup: Boolean`, `isLegacyPin: Boolean`, and `lockoutRemainingMs: Long`; `setupPin(pin: String): Boolean`; `getLockoutRemainingMs(): Long`. Existing `validatePin` and `updatePin` remain.
+- Assumption: Legacy PIN migration completes on successful verification; the legacy default PIN additionally sets `needsPinSetup` and `isLegacyPin`.
+
+Verification: policy tests passed; debug/release Kotlin compilation passed. `check_r3c.py` passed S8–S12 but failed S13 due to SHA-256 usages in four out-of-scope files (`ClinicalCommands.kt`, `PatientAttachmentVault.kt`, `SaveVisitCommand.kt`).

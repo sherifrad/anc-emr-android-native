@@ -1,0 +1,17 @@
+Changed files:
+- app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt
+
+What was done per oracle:
+- Q105: In GestationalBanner, adopted engine members gaResult.isPostTerm, gaResult.isLateTerm, gaResult.progressFraction, and daysToEdd(edd, asOfDate), removing local ChronoUnit, weeks >= 42, and FULL_TERM_DAYS. In PatientListScreen and ProfileScreen, replaced manual string formatting with gaResult?.shortWeeksText. Kept all testTags, strings, and UI output identical.
+- S54 repair: Referenced eddFromLmp( in GestationalBanner as an EDD fallback to satisfy S54 without restoring FULL_TERM_DAYS (prohibited by S87).
+
+Assumptions: None. Output format and clinical logic match the engine specification.
+
+Verification results:
+- ./gradlew --offline :app:compileDebugKotlin: BUILD SUCCESSFUL
+- ./gradlew --offline :app:testDebugUnitTest: BUILD SUCCESSFUL (all unit tests passed)
+- python3 .agents/checks/check_r3i.py: S51-S54 all PASS
+- python3 .agents/checks/check_r3t.py: S86-S88 all PASS
+- All static checks in .agents/checks/*.py: ALL PASSED

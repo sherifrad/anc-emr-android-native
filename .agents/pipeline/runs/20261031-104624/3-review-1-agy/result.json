@@ -1,0 +1,15 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": true,
+  "readOnlyViolation": false,
+  "touchedFiles": [],
+  "finalMessage": "(1) IVF:\n- Day 3 and 5 unchanged: day 3 gives GA 17d at transfer and EDD transfer+263d; day 5 gives GA 19d and EDD transfer+261d. Day 6 gives GA 20d and EDD transfer+260d (via `14L + age` and `FULL_TERM_DAYS - gaAtTransfer`).\n- Days 4/7 refused: engine returns null (`embryoAge !in ClinicalVocabulary.embryoAges`), `isStructurallyValid` returns false, and `SaveDatingCommand.prepare` adds `INVALID_VOCABULARY`. Backup restore parses stored integer without schema rejection (unchanged file outside diff), but any restored 4/7 entity produces null GA/EDD in the engine and is rejected if resaved.\n- Literals grep: no literal `17L`, `19L`, `261L`, or `263L` remains in `app/src/main` (matches in `DemoFixtures.kt` are ISO date strings). Literals 3 and 5 remain only in `ClinicalVocabulary.embryoAges = listOf(3, 5, 6)`, `DatingEditor` chip state checks, and the engine fallback `?: 5`.\n\n(2) Redating Table:\n- Edges: exactly <=62 (5d), 63..111 (7d), 112..153 (10d), 154..195 (14d), and >=196 (21d). Comparison is strictly `abs(difference) > threshold`.\n- Sign handling: `RedatingAdvice.differenceDays` is signed (`scanGaDays - datingGaDays`); `UltrasoundEditor` passes `abs(advice.differenceDays)` to string formatting.\n- Dating presence: uses `calculatedGa.totalDays`. Sits inside `if (calculatedGa != null && calculatedGa.isPostConception)` in `UltrasoundEditor.kt`; cannot render when no dating exists.\n\n(3) UI:\n- Day 6 chip wrapped in `FlowRow` with 8.dp horizontal / 6.dp vertical spacing, wrapping cleanly at large font scales.\n- Hint wording in `strings.xml` matches the spec verbatim; rendered in `onPrimaryContainer` on `primaryContainer`.\n- Informational only: hint never blocks saving or adds validation errors.\n- TestTags preserved (`scanCalculatedGaCard`, `applyScanGa`, `embryoDay3`, `embryoDay5`); new tags `embryoDay6` and `redatingHint` present.\n- Parsing: `weeks.trim().toIntOrNull()` and `days.trim().toIntOrNull()` guarded by `weeks >= 0 && days in 0..6`; blank/invalid input causes no crash and suppresses the hint.\n\n(4) Check-only code / comments:\n- None. Code is minimal, idiomatic Kotlin, and directly implements the spec.\n\n(5) Test coverage & Findings:\n- Nit: [app/src/test/java/com/sherifradwan/ancnative/model/RedatingTest.kt:7](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/model/RedatingTest.kt#L7): unused import `java.time.LocalDate`.\n- Tests exercise production code and cover all required edges and branches. Static check STATIC-r3n passed (4/4 PASS). Unit tests not run (Gradle daemon loopback socket blocked in sandbox).",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-104624/3-review-1-agy/result.json",
+  "timestamp": "2026-10-31T09:08:48.520Z"
+}

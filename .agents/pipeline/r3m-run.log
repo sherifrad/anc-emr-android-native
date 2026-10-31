@@ -1,0 +1,25 @@
+MACA pipeline 20261031-024837 lanes: {'tests': ('opencode', 'opencode/glm-5.3-flash-free'), 'core': ('agy', 'claude-sonnet-5-5-medium'), 'ui': ('agy', 'claude-sonnet-5-5-medium')} review: ['agy:claude-opus-5-5-medium', 'agy:gemini-3.8-flash-medium']
+  agy       /Users/sherifgamalradwan/.local/bin/agy
+  opencode  /opt/homebrew/bin/opencode
+[1-tests] opencode completed 419.1s changed=4 violations=0
+[1b-red] ran=3 reused=53 deferred=2 not_gated=7 failed=['STATIC-r3m', 'UNIT-visit-vitals', 'UNIT-save-visit-validation']
+[2a-core] agy completed 112.0s changed=5 violations=0
+[2a-green] ran=5 reused=1 deferred=0 not_gated=59 failed=['UNIT-visit-vitals', 'UNIT-all']
+[2a-core-repair1] agy failed 25.0s changed=1 violations=0
+[2a-green-r1] ran=4 reused=2 deferred=0 not_gated=59 failed=[]
+[2b-ui] agy:claude-sonnet-5-5-medium gave no usable result (failed); trying next model
+[2b-ui] agy completed 349.3s changed=4 violations=0
+[2b-green] ran=27 reused=38 deferred=0 not_gated=0 failed=['STATIC-r3m']
+[2b-ui-repair1] agy:claude-sonnet-5-5-medium gave no usable result (failed); trying next model
+[2b-ui-repair1] agy completed 241.8s changed=0 violations=0
+[2b-green-r1] ran=1 reused=64 deferred=0 not_gated=0 failed=['STATIC-r3m']
+[2b-ui-repair2] agy:claude-sonnet-5-5-medium gave no usable result (failed); trying next model
+[2b-ui-repair2] agy completed 137.0s changed=0 violations=0
+[2b-green-r2] ran=1 reused=64 deferred=0 not_gated=0 failed=['STATIC-r3m']
+[cache-check-no-changes] ran=1 reused=64 deferred=0 not_gated=0 failed=['STATIC-r3m']
+[3-review-0-agy] agy:claude-opus-5-5-medium gave no usable result (failed); trying next model
+[3-review-0-agy] agy completed 249.2s changed=0 violations=0
+[3-review-1-agy] agy completed 184.9s changed=0 violations=0
+
+UI GATE STILL RED: ['STATIC-r3m'] Metrics: /Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-024837/metrics.json 
+Tell Claude: pipeline finished.

@@ -1,0 +1,23 @@
+I wrote the checker, the unit tests and the manifest entry, but I could not run any of them. Bash kept asking for approval and I never got it, so there are no pass/fail results to report.
+
+**Not run**
+- `python3 .agents/checks/check_r3d.py` is not run. I expect S17–S22 to FAIL on today's code, based on reading the sources. For S20 I have not confirmed whether `javaScriptEnabled = false` is already set. S20 passes only when `javaScriptEnabled = false` is present and `javaScriptEnabled = true` is absent.
+- `./gradlew --offline :app:testDebugUnitTest --tests '*PatientPrintHtmlGeneratorTest'` is not run, so the new tests are not compiled. I did not confirm that the new tests fail on today's code.
+
+**Files changed**
+- `.agents/checks/check_r3d.py` (new): checks S17–S22 as the spec describes. It strips Kotlin comments, prints PASS or FAIL per check, and exits 1 on any FAIL.
+- `app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt`: four new tests added; existing tests untouched.
+  - `rhNegativeWithoutNotes_printsAntiDPlanNotRecordedAndNoInventedPlan`
+  - `rhPositiveWithoutNotes_printsNotRecordedForPrecautionsAndRecommendations`
+  - `rhNegativeWithRecordedPlan_stillShowsPlanAndNoInventedText`
+  - `rhNegativePatientWithRecordedPlan_precautionsRowIsAntiDNotRecorded`
+- `.agents/TEST_MANIFEST.json`: added the `STATIC-r3d` entry, edited directly.
+
+**Assumptions**
+- The tests read the two rows by their label and the following value span, matching today's markup. If the builders change that markup, the `rowValue` helper in the test file will need adjusting.
+- A "recorded plan" in the tests is a note starting "Agreed delivery mode: Elective Cesarean Section", on the assumption that `parseDeliveryNotes` files it under plan.
+- S18 requires every `FLAG_SECURE` to sit directly under an `if (...)` whose condition contains `!BuildConfig.DEBUG`.
+- S21 requires the `restore_confirm_dialog` tag to appear inside the argument list of an `AlertDialog(` call.
+
+**Expected conflict**
+Three existing tests assert the old Q17 behaviour: `q17_rhNegative_values_showRhBadgeAndAntiD`, `q17_rhPositiveOrUnknown_noRhBadgeNoAntiD` and one near line 440 that asserts `ROUTINE_LINE`. They will go red once Q37 is implemented. I left them unchanged because the brief says to keep every existing test as is. Someone with permission to edit them will need to update them.

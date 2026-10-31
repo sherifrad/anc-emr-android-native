@@ -1,0 +1,42 @@
+Review is read-only. I read the diff and both new source files and skimmed the tests. I ran no Gradle build or tests.
+
+**Hard Blocker**
+- None found.
+
+**Should-fix**
+1. **Latest typing can be lost during an in-flight write** (Q3). In `DraftAutosaver.onStateChanged`: `val isSameAsSaved = !pendingRecords.containsKey(slot) && lastSavedValues[slot] == record.fields`.
+   - Scenario: X is saved, the user types Y, and Y's write starts. `performSave` has already removed Y from `pendingRecords` but has not yet set `lastSavedValues`. The user then types back to X.
+   - `isSameAsSaved` is true, so nothing is scheduled. Y finishes and sets `lastSavedValues = Y`. The database holds Y, not the latest X.
+   - Fix: track an "in-flight" or "latest requested" value per slot, and compare against that.
+2. **Opening and closing a clean editor deletes the stored draft** (Q2). In `closedDraftSlot`, `if (beforeSlot != afterSlot) return beforeSlot` fires even when `before` was not dirty.
+   - Scenario: a draft survives a crash or lock, the user reopens that editor without typing, then backs out. The stored draft is deleted silently, and step 3 is not there yet to ask first.
+   - The spec says "no longer open (or no longer dirty)", which is ambiguous. The safe reading is to require that the `before` editor was dirty.
+3. **`onBackgrounded` and `manualLock` are now asynchronous** (Q4):
+   - **Reordering with `onForegrounded()`:** `controller.onForegrounded()` is still synchronous. A quick background then foreground can run `onForegrounded` first and the delayed `controller.onBackgrounded(...)` afterwards. The controller would then think the app is backgrounded, and it may lock a foreground app.
+   - **The 2 s cap is not guaranteed:** `withTimeoutOrNull(2000L)` only cancels at suspension points. `withContext(dispatcher)` around blocking SQLite work can run past 2 s if the write hangs. Cancellation of `flush` could also lose the records it already took out of `pendingRecords`.
+   - **Locking is delayed:** `manualLock` can now wait up to 2 s before it locks.
+   - Fix: make the lock the guaranteed step, for example by putting the timeout on a separate job and calling `controller.lock()` in a `finally`. Keep the foreground order consistent.
+4. **Duplicated code in `AncViewModel`** (Q8, reuse rule): `manualLock` and `onBackgrounded` carry identical `try { withTimeoutOrNull(2000L) { autosaver.flush() } } catch (_: Throwable) {}` blocks. The `try/catch` is also redundant, because `flush()` never throws. It also swallows `CancellationException`. Extract one helper and drop the `catch`.
+5. **Dead production code in `DraftMapping.kt`** (Q8): `object VaultState { val Inspecting…; fun Unlocked(...); fun Closing(...) }` shadows `storage.VaultState` in package `state`.
+   - Only the tests use it. They write `VaultState.Unlocked(1L)` with no import (`DraftMappingTest.kt:18`, `DraftAutosaverTest.kt:53`).
+   - This violates "no code only to satisfy a test". Remove it and import `storage.VaultState` in the tests.
+   - It also sits beside an explicit `import ...storage.VaultState` in the same file. I could not confirm that compiles cleanly, because I did not build.
+
+**Nit**
+- **Failed saves are not retried until the next state change.** `flush` and `performSave` drop the record when `store.save` returns false. A failed delete is also swallowed, so a stale draft can remain after a successful save. This costs no data, but step 3 will show a draft for content that was already saved.
+- **Pending save lost on controller-initiated locks.** The lock reset in the collector (`_state.value = AncState(...)` then `cancelPending()`) is correct, because it is not a discard and does not delete (Q1 OK). But a lock that does not go through `manualLock` or `onBackgrounded` drops a save that was still waiting out its debounce, losing up to about 1 s of typing.
+- **`nowMillis` has a default** (`System::currentTimeMillis`), while the spec shows it as required. Harmless.
+- **Test gaps:**
+  - No test drives `AncViewModel`, so the flush-before-lock ordering and the "report every `_state` change" rule are covered only by the static check.
+  - No test for the in-flight race in Should-fix 1.
+  - No test of `closedDraftSlot` across all nine screens (it uses one visit, `DraftMappingTest.kt:304`).
+  - No test of lab or medication "save and add another", or of a new patient.
+  - The tests do call production functions. I believe the mapping and autosaver tests would fail on the old code, because the new classes would not exist; I did not run them.
+
+**Confirmed OK**
+- **Q5:** No logging, no files, no `SharedPreferences`. The repository writes only to the encrypted database, and `exportEncryptedBackup` is untouched.
+- **Q6:** `applyDraftRecord` sets a fresh UUID session id, sets `errors = emptySet()`, and keeps `original`, ids and base revisions from the freshly opened editor. `imageUris = v.imageUris` keeps the fresh editor's links.
+- **Q7:** Every `_state` write in `AncViewModel` now goes through `updateState`, except the two in the controller-view collector, which are deliberate. These are the `patients` snapshot update, which does not touch editors, and the lock reset.
+- **Q3 locking:** Save and delete go through `storageMutex` in `VaultController`, and they return false or do nothing when `session` is null, so writes never happen while the vault is locked or closing. FIFO ordering of the autosaver's `saveMutex` keeps an older value from landing after a newer one, apart from the race in Should-fix 1.
+- **Q2:** Deletion is driven by editor-close and dirty→clean transitions, so save success, cancel, confirmed discard and save-and-add-another (dirty→clean in the same slot) are all covered by the same rule. The new-patient slot uses `NEW_PATIENT_DRAFT_KEY`.
+- **Q8 scope:** The changed source files are `AncViewModel.kt` and `VaultController.kt`, plus the new `DraftMapping.kt`, `DraftAutosaver.kt` and the two test files. I saw no UI-file changes. `git status` also lists an untracked `retry/` directory that I did not inspect.

@@ -1,0 +1,15 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [],
+  "finalMessage": "Changed files:\n- app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt\n- app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt\n- app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt\n\nWhat was done per oracle:\n- Q105: In GestationalBanner, adopted engine members gaResult.isPostTerm, gaResult.isLateTerm, gaResult.progressFraction, and daysToEdd(edd, asOfDate), removing local ChronoUnit, weeks >= 42, and FULL_TERM_DAYS. In PatientListScreen and ProfileScreen, replaced manual string formatting with gaResult?.shortWeeksText. Kept all testTags, strings, and UI output identical.\n- S54 repair: Referenced eddFromLmp( in GestationalBanner as an EDD fallback to satisfy S54 without restoring FULL_TERM_DAYS (prohibited by S87).\n\nAssumptions: None. Output format and clinical logic match the engine specification.\n\nVerification results:\n- ./gradlew --offline :app:compileDebugKotlin: BUILD SUCCESSFUL\n- ./gradlew --offline :app:testDebugUnitTest: BUILD SUCCESSFUL (all unit tests passed)\n- python3 .agents/checks/check_r3i.py: S51-S54 all PASS\n- python3 .agents/checks/check_r3t.py: S86-S88 all PASS\n- All static checks in .agents/checks/*.py: ALL PASSED",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-153956/2b-ui-repair2/result.json",
+  "timestamp": "2026-10-31T14:05:14.338Z"
+}

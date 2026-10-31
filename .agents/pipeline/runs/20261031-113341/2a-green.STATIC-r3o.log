@@ -1,0 +1,2 @@
+PASS S76 one escapeHtml rule: internal fun in HtmlEscape.kt, generator calls it, no copies elsewhere
+PASS S77 every ${...} is escapeHtml( or an allow-listed generated fragment

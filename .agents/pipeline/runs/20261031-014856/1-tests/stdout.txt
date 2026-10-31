@@ -1,0 +1,3 @@
+Now let me look at an existing test in the same package for style, and check where `AttachmentDisplayTitle` tests live:
+Now I have everything I need. Writing the three deliverables:
+Now the unit test file:

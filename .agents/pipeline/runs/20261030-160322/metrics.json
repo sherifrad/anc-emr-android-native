@@ -1,0 +1,15 @@
+[
+ {
+  "step": "1-tests",
+  "lane": "claude:claude-sonnet-5-5",
+  "seconds": 100.3,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   ".agents/checks/check_r3c.py",
+   "app/src/test/java/com/sherifradwan/ancnative/security/AppLockPolicyTest.kt",
+   "app/src/test/java/com/sherifradwan/ancnative/security/PinPolicyTest.kt"
+  ],
+  "scope_violations_reverted": []
+ }
+]

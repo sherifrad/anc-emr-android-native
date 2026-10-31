@@ -1,0 +1,8 @@
+I’ll inspect the Round 3d requirements and the allowed UI files, then make only the specified UI changes and run the requested checks.
+The requested UI edits are in place: fixed the 10-minute label, disabled WebView JavaScript, corrected photo/backup claims, and added restore confirmation before the passphrase flow. I’m running the specified static check and Kotlin compile now.
+Files changed:
+- `SecuritySettingsDialog.kt`: Q33 fixed the timeout display to “Locks after 10 minutes away.” Q39 corrected backup claims and noted backups exclude photos. Q40 added a confirmation dialog; only “Replace all” proceeds to the existing passphrase and restore flow.
+- `PatientTwoPageReportDialog.kt`: Q36 disabled JavaScript in the report WebView.
+- `PatientEditor.kt`, `WorkspaceScreen.kt`: Q39 replaced inaccurate photo-security labels with the specified honest descriptions.
+
+Checks: `check_r3d.py` passed S17–S22; `:app:compileDebugKotlin` succeeded, with one existing deprecation warning; `git diff --check` passed. No assumptions needed. Other pre-existing working-tree changes were left untouched.

@@ -1,0 +1,22 @@
+MACA pipeline 20261030-152104 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('opencode', 'openai/gpt-6-luna'), 'ui': ('opencode', 'opencode/deepseek-v4.1-flash-free')} review: ['opencode:omniroute/nvidia/nvidia/nemotron-3-ultra-550b-a55b', 'opencode:omniroute/gc/grok-4.7-high']
+  opencode  /opt/homebrew/bin/opencode
+  claude    /opt/homebrew/bin/claude
+[1-tests] claude completed 118.4s changed=5 violations=0
+[1b-red] ran=1 reused=8 deferred=2 not_gated=5 failed=['STATIC-r3b']
+[2a-core] opencode completed 44.7s changed=7 violations=0
+[2a-green] ran=5 reused=2 deferred=0 not_gated=9 failed=[]
+[2b-green] ran=2 reused=14 deferred=0 not_gated=0 failed=[]
+[cache-check-no-changes] ran=0 reused=16 deferred=0 not_gated=0 failed=[]
+[3-review-0-opencode] opencode completed 266.8s changed=0 violations=0
+[3-review-1-opencode] opencode failed 1500.1s changed=0 violations=0
+HALT: lane opencode:omniroute/gc/grok-4.7-high unavailable at step 3-review-1-opencode (no output, no changes). Last stderr:
+ S5b effect calls vaultAutoAction
+PASS S5c effect has no retryStorageInspection()
+PASS S6a deleteOrphanAliases() call sites present
+PASS S6b call 1 guarded by hasVaultDatabase
+PASS S6b call 2 guarded by hasVaultDatabase
+PASS S6b call 3 guarded by hasVaultDatabase
+PASS S7 cleanupUnpublishedArtifacts calls hasVaultDatabase
+> plan · gc/grok-4.7-high
+> plan · gc/grok-4.7-high
+> plan · gc/grok-4.7-high

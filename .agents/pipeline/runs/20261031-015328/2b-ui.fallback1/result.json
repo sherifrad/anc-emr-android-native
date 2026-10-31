@@ -1,0 +1,21 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "claude-delegate",
+  "cli": "claude",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt"
+  ],
+  "finalMessage": "All six edits (Q75–Q80) are in place, but I couldn't run any of the checks or the compile. Every Bash call to the check scripts and to gradle was blocked pending approval, and this session is non-interactive.\n\nNot run: `check_r3k.py`, `check_r3e.py`, `check_ui_static.py`, `check_ui_static_r2.py`, and `./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin`. The orchestrator needs to run them, because I have no pass or fail result for any of them.\n\n**Files changed**\n- `ui/ClinicalBadges.kt`\n- `ui/PatientListScreen.kt`\n- `ui/ProfileScreen.kt`\n- `ui/WorkspaceScreen.kt`\n- `ui/AncApp.kt`\n\n**Per oracle**\n- **Q75:** the `KeyFactTile` label Text now has `maxLines = 2`. The value Text is unchanged.\n- **Q76:** on the chip FlowRow, Arabic cards now use `Arrangement.spacedBy(8.dp, Alignment.End)`. Non-Arabic cards are unchanged.\n- **Q77:** in the Prior Pregnancies cards, the summary and outcome Texts now sit in a Column with 2 dp spacing instead of a `SpaceBetween` Row. The details line is untouched.\n- **Q78:**\n  - **Callers:** the visit row now reads `\"Weight: ${formatWeightKg(visit.weight)}\"`. The two `FactRow(R.string.weight, ...)` calls, one in `ProfileScreen.kt` and one in `WorkspaceScreen.kt`, now pass `formatWeightKg(visit.weight)`. Those are the only visit-weight uses the grep found.\n  - **Helper:** `formatWeightKg` already existed in `ClinicalFormat.kt` from the core lane, so I only call it.\n- **Q79:** the high-risk card background is now `lerp(surface, errorContainer, if (isDark) 0.40f else 0.22f)`, which is opaque. I added `import androidx.compose.ui.graphics.lerp`. The borders and everything else are unchanged.\n- **Q80:** the header subtitle Text now has `maxLines = 2`. The clinic name stays one line.\n\n**Assumptions**\n- I assumed `FactRow` accepts a nullable String, since it was already being passed the nullable `visit.weight`. The compile would confirm this.\n- I left the `Row` import in `ProfileScreen.kt` alone, since it is used elsewhere in the file.",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-015328/2b-ui.fallback1/result.json",
+  "timestamp": "2026-10-30T23:55:01.964Z"
+}

@@ -1,0 +1,30 @@
+Review of Round 3q changes (SPEC_FIX_R3.md Q96–Q99, S80–S82):
+
+Findings: None (No Hard Blockers, Should-fixes, or Nits). All changes strictly satisfy the spec.
+
+1. severeBpAttention (VisitVitals.kt):
+- Latest parseable visit decides: filters `parseBloodPressure(it.bloodPressure) != null` and selects via `compareBy<DemoVisit> { it.date }.thenBy { it.revision }`.
+- SEVERE only: returns non-null `SevereBpAttention(latest.bloodPressure!!.trim(), latest.date)` iff `bpLevel(latest.bloodPressure) == BpLevel.SEVERE`.
+- Boundaries & ties: correctly handles 159/109 (null), 160/80 (severe), 120/110 (severe), and same-date revision ties.
+- Single source of truth: reuses `parseBloodPressure` and `bpLevel`; zero duplicate threshold numbers or regex/split parsers added.
+
+2. List card and workspace banner (PatientListScreen.kt, WorkspaceScreen.kt):
+- Shown only on severe: `SevereBpBadge` and attention row line appear only when `severeBp != null`.
+- Stored `clinicalAttention` untouched: displayed alongside computed line and never modified or overwritten.
+- Banner shows on blank stored text: `ClinicalAttentionBanner` renders with `CRITICAL` level when `patient.clinicalAttention` is blank/null but `severeBp != null`.
+- Reuse: `ClinicalTagBadge` extracted to share styling between `ClinicalRiskBadge` and `SevereBpBadge`.
+- Safety: `testTag("severeBpAttention")` retained across both branches; labels wrap without row-squeeze issues at large font sizes.
+
+3. Print report (PatientPrintHtmlGenerator.kt):
+- Alert labels emitted only for `BpLevel.RAISED` ("Raised BP - recheck") and `BpLevel.SEVERE` ("Severe-range BP - urgent assessment"); NORMAL outputs nothing extra.
+- Text uses package-private string constants; CSS `.bp-alert` / `.bp-alert-severe` injected only when displayed visits contain alerts.
+- Plain visits are byte-identical (empty CSS and empty alert string). Table layout remains intact with block divs inside cells.
+
+4. Check-only code/comments:
+- None. No dead code, extra XML, or artificial constructs written solely to pass static checks.
+
+5. Test evaluation:
+- `SevereBpAttentionTest` exercises ordering, revision ties, unparseable visit skipping, boundary levels, and whitespace trimming.
+- `PrintBpAlertTest` exercises full HTML report generation and asserts alert text, CSS classes, and absence on normal readings.
+- Both test suites directly exercise production code and fail against pre-3q code.
+- Verification: `.agents/checks/check_r3q.py` passed (S80–S82). Unit tests not run (Gradle daemon port binding restricted in sandbox).

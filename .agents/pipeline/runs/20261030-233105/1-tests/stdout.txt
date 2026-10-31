@@ -1,0 +1,31 @@
+I wrote all five files, but I couldn't run `check_r3g.py`. Both `python3` commands, the manifest JSON parse and the check run, needed approval and weren't approved. So the check results below are unconfirmed, and none of the unit tests have been run either.
+
+**Files**
+- `.agents/checks/check_r3g.py` (new)
+- `.agents/TEST_MANIFEST.json` (added `STATIC-r3g`, `UNIT-scan-photo-ref`, `UNIT-camera-sweep`, `UNIT-scan-photo-import`; other entries untouched)
+- `ScanPhotoRefTest.kt`, `CameraCaptureSweepTest.kt`, `ScanPhotoImportStateTest.kt` (new)
+
+**Static check S45–S49**
+- It follows the style of `check_r3f3.py`, uses stdlib only, strips Kotlin comments, prints PASS/FAIL per check, and exits 1 on any failure.
+- **S45:** `ScanPhotoRef.kt` must define the four names, and no other main file may contain a `"vault:` literal.
+- **S46:** `CameraCaptureHelper.kt` must define `staleCaptureFiles` and a three-parameter `clearStaleCaptures`. `AncViewModel.kt` must call `CameraCaptureHelper.clearStaleCaptures(` at least twice and mention `imageUris`.
+- **S47:** `AncState.kt` must define both new events. `AncViewModel.kt` must handle `ImportScanPhoto`, dispatch `ScanPhotoImported(`, call `scanPhotoRef(`, and call `deleteIfCaptureTemp(` within 400 characters after a `finally {`.
+- **S48:** `UltrasoundEditor.kt` must contain `ImportScanPhoto(` and must not contain `imageUris + uri` or `imageUris + pendingCameraUri`.
+- **S49:** the viewer must use `scanPhotoFileName` and `resolveAttachmentFile`. Every `UltrasoundPhotoViewerDialog(` call in `WorkspaceScreen.kt` and `ProfileScreen.kt` must pass something matching `patientId`, `patient.id` or `.id`.
+- By reading the code, each check should fail on today's source: `ScanPhotoRef.kt` doesn't exist, `clearStaleCaptures` has two parameters, the events are missing, the editor still appends `uri.toString()`, and the viewer has no patient id. I haven't confirmed that by running it.
+
+**Unit tests**
+- **`ScanPhotoRefTest`:** round trip, plus rejection of every example in the spec and a few extras.
+- **`CameraCaptureSweepTest`:** uses a `TemporaryFolder` and covers old unreferenced files (listed), old referenced files (kept), new files (kept), subfolders (ignored) and a missing folder (empty list).
+- **`ScanPhotoImportStateTest`:** it opens the editor with `StartUltrasoundEditor`, then checks append, order, no duplicate, no draft leaves state unchanged, and a draft for a different patient is untouched.
+- **Won't compile yet:** all three need the core code (`ScanPhotoRef.kt`, the new `staleCaptureFiles`, the new `AncEvent` cases).
+
+**Older checks that touch code this round changes**
+- `check_r3f1.py` S33: `fun_body(vm, "addAttachment")` expects `AttachmentFailed(` and a `CancellationException` rethrow inside `addAttachment`. Keep both there when adding the sweep.
+- `check_r3f1.py` S36: it slices `AncViewModel.kt` from `fun addAttachment` to `fun deleteAttachment`. It expects `if (!controller.saveAttachment(` and `PatientAttachmentVault.deleteAttachment(` in that slice. The sweep call is fine, but `fun deleteAttachment` must stay after `addAttachment`.
+- `check_r3f2.py` S42: it only checks `fun clearStaleCaptures\s*\(`, so the three-parameter version passes. It also expects `CameraCaptureHelper.deleteIfCaptureTemp(` in `AncViewModel.kt` (S41), which the finally block keeps.
+- Nothing in the older checks looks for `pendingCameraUri` or `imageUris`, so the `UltrasoundEditor.kt` change breaks none of them.
+
+**Assumptions**
+- The reducer test uses `StartUltrasoundEditor` to create a draft.
+- A `ScanPhotoImported` for a patient other than the draft's leaves state unchanged. The spec says "draft exists for that patient".

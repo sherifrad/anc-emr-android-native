@@ -1,0 +1,20 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "agents/TEST_MANIFEST.json",
+    ".agents/checks/check_r3s.py",
+    "app/src/test/java/com/sherifradwan/ancnative/model/ObstetricHistoryTest.kt",
+    "app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintObstetricSummaryTest.kt"
+  ],
+  "finalMessage": "Files changed:\n- .agents/checks/check_r3s.py (NEW)\n- .agents/TEST_MANIFEST.json\n- app/src/test/java/com/sherifradwan/ancnative/model/ObstetricHistoryTest.kt (NEW)\n- app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintObstetricSummaryTest.kt (NEW)\n\nWhat was done per oracle:\n- S84: check_r3s.py verifies model/ObstetricHistory.kt defines PreviousDeliveryCounts, previousDeliveryCounts, previousDeliverySummary, and has no android.* imports.\n- S85: check_r3s.py verifies PatientListScreen, ProfileScreen, and PatientPrintHtmlGenerator call previousDeliverySummary(, and no main file outside ObstetricHistory.kt has inline delivery comparisons (\"Cesarean\" vs birthMethod, \"CS\" vs deliveryBy, contains(\"Cesarean\"/\"CS\"/\"SVD\"/\"Stillbirth\")).\n- Q102: ObstetricHistoryTest covers all birthMethod/deliveryBy combinations, structured-field precedence, Cesarean conflict resolution, hysterotomy exclusion, whole-word outcomeText fallback (\"CSF\" and \"Vaginally\" rejected), stillbirth/miscarriage rules, and each previousDeliverySummary branch.\n- Q103: PrintObstetricSummaryTest asserts projectDashboardRow(patient).prevSummary == previousDeliverySummary(patient) and generated HTML contains the same string across obstetric histories.\n- Added STATIC-r3s, UNIT-obstetric-history, and UNIT-print-obstetric to .agents/TEST_MANIFEST.json.\n\nVerification and findings:\n- Ran `python3 .agents/checks/check_r3s.py`: returned exit 1; S84 FAIL (ObstetricHistory.kt missing) and S85 FAIL (missing calls and inline delivery comparisons found).\n- Unit tests: not run (production code in ObstetricHistory.kt to be authored by builder lane).\n- Old test expectations: PatientPrintHtmlGeneratorTest did not pin old print wording (\"Prev N CS + M SVD\" or \"Primigravida / N/A\"); no changes needed there.",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-150045/1-tests.fallback2/result.json",
+  "timestamp": "2026-10-31T13:07:19.848Z"
+}

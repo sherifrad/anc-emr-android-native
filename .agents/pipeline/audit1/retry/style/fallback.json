@@ -1,0 +1,18 @@
+[
+ {
+  "spec": "claude:claude-sonnet-5-5",
+  "status": "failed",
+  "seconds": 165.8,
+  "chars": 14540,
+  "ok": false,
+  "why": ""
+ },
+ {
+  "spec": "opencode:openai/gpt-6-luna",
+  "status": "failed",
+  "seconds": 119.8,
+  "chars": 5625,
+  "ok": false,
+  "why": "(sherifrad 2026-10-30 15:18:48 +0200 22)  *\n2ff50517 (sherifrad 2026-10-30 15:18:48 +0200 23)  * Expectations today: \"High Risk\"/\"high\"/\"Low Risk\"/\"O-\"/\"AB-\"/\"pending\"/null already\n> plan \u00b7 gpt-6-luna"
+ }
+]

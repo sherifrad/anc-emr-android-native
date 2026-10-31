@@ -1,0 +1,37 @@
+Review of Round 3j (read-only). I read the diff and the new files. I ran no build or tests, so nothing below is confirmed by a run.
+
+**(1) UltrasoundEditor GA card (Q71): OK**
+- The Row is now a Column with `spacedBy(4.dp)`. The `Text` is unchanged and `applyScanGa` sits below it with `.align(Alignment.End)`.
+- Both `UltrasoundDraftChanged` events, the `enabled` flag, and the `scanCalculatedGaCard` and `applyScanGa` testTags are all unchanged.
+- Nothing has a fixed width or height, so font scale 1.3 and long text wrap and grow the card. I did not see it on a device.
+- Nit: `Arrangement` and `Alignment` were already imported, since the same file uses them elsewhere in the diff context. The compiler confirms this.
+
+**(2) Plurals (Q72)**
+- Should-fix, build risk: `plurals.xml` has a `<skip>` block that duplicates `name="photos_count"` and uses `<item name="one">`, which is invalid. It exists only to satisfy the static check:
+  `<skip> <plurals name="photos_count"> <item name="one">%d photo</item>`
+  I'm not sure AAPT2 ignores the nested children. If it parses them, you get a duplicate resource or a missing-quantity error. Run `:app:assembleDebug` or `:app:processDebugResources` to confirm. The better fix is to change S56 in `check_r3j.py` to read `quantity=`. Shipping dead XML to fool a checker is a hack.
+- All 4 call sites pass `(R.plurals.photos_count, n, n)` with the same expression twice: WorkspaceScreen.kt:925 and :1233, ProfileScreen.kt:1146 and :1418.
+- No `R.string.photos_count` is left in `app/src/main/java` (my grep covered `app/src/main` and `app/src/test`). The string is removed from `strings.xml`, and there is no other `values-*` folder.
+- Nit: `FactRow(R.string.scan_attachments, pluralStringResource(...))` is called inside a composable, so that is fine.
+- Nit: the Q72 comment at ProfileScreen.kt:1143 narrates the change. Drop it.
+
+**(3) attachmentDisplayTitle (Q73)**
+- Null or blank title falls back to the category (a blank category becomes "Attachment"). A bad `capturedAt` is handled: `take(10)` is safe on short strings and the regex rejects junk.
+- Nit: the regex checks the shape, not the date. "9999-99-99" would pass. That is acceptable under the spec.
+- Should-fix, not fully migrated: ClinicalAttachmentViewerDialog.kt:154 still shows `AttachmentCategories.localizedName(attachment.category) + (attachment.title?.let { " · $it" } ?: "")`. A blank-but-non-null title gives "Category · ", a trailing separator. Your grep for `.title ?:` would not catch this. The spec said "if it shows the title", so it should call the helper or at least use `isNullOrBlank`.
+- Should-fix: ClinicalAttachmentViewerDialog.kt:199 has `contentDescription = attachment.title ?: "Medical Attachment"`. A blank title becomes an empty accessibility label.
+- Should-fix, inconsistency: the delete-confirm dialog at :288 passes the raw `attachment.category` (a stored key?) to the helper. The viewer header uses `AttachmentCategories.localizedName(...)`. If the category is stored as a key, the delete dialog shows the key and the header shows the localized name. Check this.
+- The file name is not shown as a title anywhere I could find. It is still used for vault and file operations, which is correct.
+
+**(4) AddAttachmentDialog (Q74): OK**
+- Both emoji strings are replaced with `stringResource(R.string.attachment_retake)` and `stringResource(R.string.attachment_gallery)`. Both strings are defined.
+- The diff touches only the text, so the clickables and testTags are unchanged.
+- I did not grep the rest of the file for emoji. The S58 check covers it.
+
+**(5) Tests**
+- `AttachmentDisplayTitleTest` calls the production `attachmentDisplayTitle` directly. It is not a copy.
+- Should-fix: `blankCategoryFallsBackToAttachment` weakens the spec. For the blank category with a date, the spec expects an exact string, "Attachment · 2026-10-31". The test only asserts `startsWith("Attachment")`. Change it to assertEquals.
+- Nit: `neverReturnsAFileName` only checks that results lack ".webp", ".jpg" and ".png". That is weak, and the helper never receives a file name anyway.
+- Nit: there is no test for a non-date prefix such as "abcd-ef-gh", or for a category with surrounding whitespace.
+
+**Hard Blockers:** none found. The `<skip>` plurals block becomes one if the build fails.

@@ -1,0 +1,15 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": true,
+  "readOnlyViolation": false,
+  "touchedFiles": [],
+  "finalMessage": "Files changed: none (read-only lane).\n\nReview findings for Round 3t:\n(1) Engine members: Exactly as spec (Q104). `daysToEdd`, `isLateTerm`, `progressFraction`, and `shortWeeksText` yield identical results to old formulas across all inputs: 41w0d..41w6d true, 42w0d false (never both late and post-term), totalDays 0 -> 0f, 280 -> 1.0f, 320 -> 1.0f, negative totalDays -> 0f, negative daysToEdd matches ChronoUnit.DAYS.between. `calculateForEdd` correctly delegates to `daysToEdd`.\n(2) Screen rendering & grep:\n- Screens render identical UI (strings, colours, testTags unchanged).\n- Grep findings in `app/src/main`:\n  * ChronoUnit: unused `import java.time.temporal.ChronoUnit` in `ClinicalModels.kt:4`; internal day diffs in `GestationalAgeEngine.kt:81,88`.\n  * 280: none for gestation outside `IsoDates.kt:5` (`FULL_TERM_DAYS = 280L`).\n  * `weeks >= 42`: only `GestationalAgeEngine.kt:139` (and default parameter).\n  * `+${...} wks`: `UltrasoundPhotoViewerDialog.kt:141` still hand-formats `\" · ${scan.gestationalAgeWeeks}+${scan.gestationalAgeDays ?: 0} wks\"`.\n(3) Rewritten banner test (Q106): Preserves all 6 scenarios, but FAILS the formula copy / direct production call requirement due to reflection shims and fallback formula copies.\n(4) Code written to satisfy checks / issues:\n- [Hard Blocker] `GestationalBannerLogicTest.kt#L15-L55`: Private reflection getters and top-level `daysToEdd` with fallback formula copies (`weeks == 41`, `coerceIn(0f, 1f)`, `toEpochDay() - toEpochDay()`) were added to bypass red-check compilation. The property extensions are shadowed dead code; `daysToEdd` calls reflection instead of directly importing `com.sherifradwan.ancnative.model.daysToEdd`. Violates Rule 4 and Q106.\n- [Should-fix] `GestationalBanner.kt#L45`: Unrequested redundant fallback `?: dating?.lmpDate?.let { parseIsoDateOrNull(it)?.let { lmp -> eddFromLmp(lmp) } }` added to `edd` calculation.\n- [Nit] `ClinicalModels.kt#L4`: Unused import `java.time.temporal.ChronoUnit`.\n\nVerification:\n- `python3 .agents/checks/check_r3t.py` passed (S86-S88).\n- `./gradlew --offline :app:testDebugUnitTest --tests '*Gestational*'` passed (`GestationalDisplayTest`, `GestationalBannerLogicTest`).",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-153956/3-review-0-agy.fallback2/result.json",
+  "timestamp": "2026-10-31T14:08:44.892Z"
+}

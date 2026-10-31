@@ -1,0 +1,27 @@
+The three Kotlin tests, the S5–S7 check and the manifest entries are written. I couldn't run anything: the sandbox refused every `python3` and `gradlew` command. So I don't know which tests or checks fail today, and I can't confirm that missing production names are the only compile errors.
+
+Files created or changed:
+- `app/src/test/java/com/sherifradwan/ancnative/storage/RecordAnomaliesTest.kt` (new)
+- `app/src/test/java/com/sherifradwan/ancnative/storage/VaultAutoActionTest.kt` (new)
+- `app/src/test/java/com/sherifradwan/ancnative/storage/VaultCleanupRuleTest.kt` (new)
+- `.agents/checks/check_r3b.py` (new)
+- `.agents/TEST_MANIFEST.json`: kept every entry and added `UNIT-anomalies`, `UNIT-vault-auto`, `UNIT-vault-cleanup` and `STATIC-r3b`, all tier 1, placed before `UNIT-all`.
+
+What each file covers:
+- **Q22:** one test per blocking rule (patient revision, visit revision, pregnancy revision, pregnancy `patientId` mismatch, pregnancy `modelVersion` not 3). Each asserts a single string that names the patient id. One test checks that odd values never block. There is one test per anomaly field, plus the spec examples `"O neg"`, `"Not high risk"` and `"2/null/0"`. It also tests GPA out of range and at the boundaries, nulls never being anomalies, the field order, and `DemoFixtures.patients` giving two empty lists.
+- **Q23:** `Locked` gives `BEGIN_UNLOCK` and `Uninitialized` gives `BEGIN_INITIALIZATION`. Every other state and every `VaultBlockReason` gives `NONE`.
+- **Q24:** `hasVaultDatabase` is tested with `TemporaryFolder`. It is false for a missing or empty root, for a vault dir with only descriptor files, for `records.db` outside a `vault-*` dir or nested one level too deep, and for a `vault-*` entry that is a file. It is true for a `records.db` in a `vault-*` dir, including a 0-byte one.
+- **S5–S7 check:**
+  - **S5** looks inside the `LaunchedEffect(state.vaultState)` block for a `vaultAutoAction(` call and no `retryStorageInspection()`.
+  - **S6** requires every `deleteOrphanAliases()` call in `VaultController.kt` to have `hasVaultDatabase(` within the 400 characters before it.
+  - **S7** requires `cleanupUnpublishedArtifacts` to call `hasVaultDatabase(`.
+
+Expected results once someone runs them:
+- **`check_r3b.py`:** it should FAIL today. `MainActivity.kt` line 75 still calls `retryStorageInspection()` inside the effect, there is no `vaultAutoAction`, and `hasVaultDatabase` doesn't exist.
+- **The three new test classes:** they should fail to compile only on `RecordAnomaly`, `findBlockingRecordProblems`, `findRecordAnomalies`, `vaultAutoAction`, `VaultAutoAction` and `hasVaultDatabase`.
+
+Assumptions:
+- **Third call site:** `VaultController.kt` has three `deleteOrphanAliases()` calls (lines 237, 262, 283), not the two the spec names. S6 requires all three to be guarded, which is the spec's "every".
+- **Blocking-string wording:** the spec doesn't fix it, so I only assert that each string contains the patient id.
+- **`provenanceKind` anomaly value:** I assumed it is the raw value, for example `"IMPORT"`.
+- **`clinicianId` anomaly value:** I didn't assert it.

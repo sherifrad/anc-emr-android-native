@@ -1,0 +1,11 @@
+Files changed: none (read-only reviewer).
+Review per oracle (Round 3o: Q92-Q93, S76-S77):
+(1) Unescaped text: None. Every patient text field enters HTML via [escapeHtml](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/report/HtmlEscape.kt#L3) (visits BP/weight/notes, scans presentation/placenta/fluid/EFW/notes, labs date/name/result/unit/range, meds name/dosage/route/freq/notes, previous pregnancies, patient name/caseId/phone/age/blood/histories, delivery plan, photo labels). Settings clinicName is not interpolated into HTML (uses constant clinicNameEn). GA labels and g/p/a are numeric.
+(2) Double escaping: None. Composite fragments (`resultHtml`, `outcomeBadge`, table row builders) are not re-escaped.
+(3) escapeHtml: Replaces `&` first, then `<`, `>`, `"`, `'`; null -> `""`; Arabic/emoji untouched. S76 confirmed no duplicate escaper exists in `app/src/main`.
+(4) Plain text output: [PatientPrintHtmlGeneratorTest](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt) is untouched and passed.
+(5) Coverage & S77: [PatientPrintHtmlEscapeTest](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt) exercises every printed section with marker `<b>&"'`. S77 allow-list entries in [check_r3o.py](file:///Users/sherifgamalradwan/anc-emr-android-native/.agents/checks/check_r3o.py#L90) are strictly numbers, base64 data URIs, numeric GA strings, constant markup branches, and pre-escaped table fragments; all verified safe.
+(6) Findings:
+- [Nit] [PatientPrintHtmlGenerator.kt:75](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt#L75): `"label" to ... - " + s.date +` uses string concatenation instead of `"${s.date}"` in a helper map to avoid triggering the whole-file S77 regex prior to leaf escaping at L298. Safe and harmless.
+Tests verified: `python3 .agents/checks/check_r3o.py` passed (S76, S77); `PatientPrintHtmlGeneratorTest` passed; `PatientPrintHtmlEscapeTest` passed.
+Assumptions: Safe behavior followed; JVM unit test harness passing `context = null` cleanly short-circuits Android logo bitmap loading.

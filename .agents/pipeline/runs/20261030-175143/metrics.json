@@ -1,0 +1,204 @@
+[
+ {
+  "step": "1-tests",
+  "lane": "claude:claude-sonnet-5-5",
+  "tried": [
+   "claude:claude-sonnet-5-5=completed"
+  ],
+  "seconds": 76.6,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   ".agents/TEST_MANIFEST.json",
+   ".agents/checks/check_r3d.py",
+   "app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "1b-red",
+  "ran": 2,
+  "reused": 16,
+  "deferred": 2,
+  "not_gated": [],
+  "passed": [],
+  "failed": [
+   "UNIT-print",
+   "STATIC-r3d"
+  ]
+ },
+ {
+  "step": "red-check",
+  "parked": [],
+  "failed": [
+   "UNIT-print",
+   "STATIC-r3d"
+  ],
+  "compile_error": true,
+  "behavioural_red_confirmed": false
+ },
+ {
+  "step": "1c-tests-repair",
+  "lane": "claude:claude-sonnet-5-5",
+  "tried": [
+   "claude:claude-sonnet-5-5=completed"
+  ],
+  "seconds": 46.3,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   "app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "1b-red",
+  "ran": 2,
+  "reused": 16,
+  "deferred": 2,
+  "not_gated": [],
+  "passed": [],
+  "failed": [
+   "UNIT-print",
+   "STATIC-r3d"
+  ]
+ },
+ {
+  "step": "red-check",
+  "parked": [],
+  "failed": [
+   "UNIT-print",
+   "STATIC-r3d"
+  ],
+  "compile_error": false,
+  "behavioural_red_confirmed": true
+ },
+ {
+  "step": "2a-core",
+  "lane": "opencode:openai/gpt-6-luna",
+  "tried": [
+   "opencode:openai/gpt-6-luna=completed"
+  ],
+  "seconds": 41.0,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   "app/src/main/java/com/sherifradwan/ancnative/MainActivity.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/security/SecuritySettingsRepository.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/storage/AttachmentSyncManager.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt",
+   "app/src/main/res/xml/file_paths.xml"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2a-green",
+  "ran": 2,
+  "reused": 2,
+  "deferred": 0,
+  "not_gated": [
+   "UNIT-parse-legacy",
+   "UNIT-format-r2",
+   "UNIT-contrast",
+   "STATIC-ui",
+   "STATIC-ui-r2",
+   "UNIT-intake-dating",
+   "STATIC-r3",
+   "UNIT-anomalies",
+   "UNIT-vault-auto",
+   "UNIT-vault-cleanup",
+   "STATIC-r3b",
+   "UNIT-pin-policy",
+   "UNIT-lock-policy",
+   "STATIC-r3c",
+   "STATIC-r3d",
+   "UNIT-all"
+  ],
+  "passed": [
+   "COMPILE-app"
+  ],
+  "failed": [
+   "UNIT-print"
+  ]
+ },
+ {
+  "step": "2a-core-repair1",
+  "lane": "opencode:openai/gpt-6-luna",
+  "tried": [
+   "opencode:openai/gpt-6-luna=completed"
+  ],
+  "seconds": 29.5,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2a-green-r1",
+  "ran": 1,
+  "reused": 3,
+  "deferred": 0,
+  "not_gated": [
+   "UNIT-parse-legacy",
+   "UNIT-format-r2",
+   "UNIT-contrast",
+   "STATIC-ui",
+   "STATIC-ui-r2",
+   "UNIT-intake-dating",
+   "STATIC-r3",
+   "UNIT-anomalies",
+   "UNIT-vault-auto",
+   "UNIT-vault-cleanup",
+   "STATIC-r3b",
+   "UNIT-pin-policy",
+   "UNIT-lock-policy",
+   "STATIC-r3c",
+   "STATIC-r3d",
+   "UNIT-all"
+  ],
+  "passed": [],
+  "failed": [
+   "UNIT-print"
+  ]
+ },
+ {
+  "step": "2a-core-repair2",
+  "lane": "opencode:openai/gpt-6-luna",
+  "tried": [
+   "opencode:openai/gpt-6-luna=completed"
+  ],
+  "seconds": 44.0,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2a-green-r2",
+  "ran": 1,
+  "reused": 3,
+  "deferred": 0,
+  "not_gated": [
+   "UNIT-parse-legacy",
+   "UNIT-format-r2",
+   "UNIT-contrast",
+   "STATIC-ui",
+   "STATIC-ui-r2",
+   "UNIT-intake-dating",
+   "STATIC-r3",
+   "UNIT-anomalies",
+   "UNIT-vault-auto",
+   "UNIT-vault-cleanup",
+   "STATIC-r3b",
+   "UNIT-pin-policy",
+   "UNIT-lock-policy",
+   "STATIC-r3c",
+   "STATIC-r3d",
+   "UNIT-all"
+  ],
+  "passed": [],
+  "failed": [
+   "UNIT-print"
+  ]
+ }
+]

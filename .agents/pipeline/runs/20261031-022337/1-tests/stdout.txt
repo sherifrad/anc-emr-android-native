@@ -1,0 +1,38 @@
+Spec read. Now let me look at the reference check script, the production files, and the manifest.
+Now let me check the seed signature, the clinical command classes, DAO accessors, and outcome types used by the instrumented test.
+I have almost everything. Let me check the demo model constructors for the unit test, and SavedNotice location.
+One more look at the clinical `execute` entry and the demo startup, then I'll write the files.
+All references gathered. Now I'll write the static check.
+All three S checks FAIL on today's code as required. Fixing a typo in the label, then writing the unit tests.
+Good, the constructor matches. Now the profile-saved-notice unit test.
+Now the instrumented atomicity test.
+Trimming to the spec's two scenarios (lab + medication) and adding the missing import.
+The leftover edit glued a duplicate header; fixing it back to the helper declaration.
+The androidTest file is clean now. Let me try compiling the androidTest source set to see what surfaces.
+All 13 errors are in files I don't own (SecurityWorkflowTest.kt, EncryptedRecordsTest.kt) — zero diagnostics in my ClinicalSaveAtomicityTest.kt. Now the manifest.
+Now the final run of my check and the mandated greps, collected cleanly.
+All work is complete and verified. Final report:
+
+FILES CHANGED
+1. .agents/checks/check_r3l.py (NEW) — S64-S66 checker, python3 stdlib only, comment-stripped, PASS/FAIL per S, exit 1 on any FAIL, style copied from check_r3j.py.
+2. .agents/TEST_MANIFEST.json — added STATIC-r3l, UNIT-visit-synthetic-flag, UNIT-profile-saved-notice (tier 1, with cmd/deps/covers; androidTest deliberately not added as a gated test).
+3. app/src/test/java/com/sherifradwan/ancnative/storage/VisitSyntheticFlagTest.kt (NEW)
+4. app/src/test/java/com/sherifradwan/ancnative/state/ProfileSavedNoticeTest.kt (NEW)
+5. app/src/androidTest/java/com/sherifradwan/ancnative/storage/ClinicalSaveAtomicityTest.kt (NEW)
+
+PER ORACLE
+- S64: scoped strictly to the four clinical save function bodies (saveDating, saveUltrasoundScan, saveLabInvestigation, saveMedication) via brace matching. Fails today: 4x `if (patientUpdated != 1) ... return`, 0x `throw ClinicalCommandAbort(`. I also require `patientUpdated` to still be evaluated at least 4x so core must convert the guard, not delete it (assumption: "no ... return remains" means converted, not removed).
+- S65: no `isSyntheticEdit = true` in SaveVisitCommand.kt/RecordsRepository.kt; no "Synthetic patient record saved" in strings.xml. Fails today (2 source hits + the string).
+- S66: AncViewModel calls profileSavedNotice(, no bare `controller.execute(datingCmd, sessionEpoch) {}`; WorkspaceScreen handles SavedNotice.PATIENT_DATING_NOT_UPDATED; strings.xml defines patient_saved_dating_not_updated. Fails today on all four sub-checks.
+- UNIT-visit-synthetic-flag: withCommittedVisit → isSyntheticEdit=false (Q82), every command field intact, existing visits untouched, sorted by date.
+- UNIT-profile-saved-notice: all four combinations; attempted=false,saved=true is PATIENT; attempted=true,saved=false is PATIENT_DATING_NOT_UPDATED (Q83).
+- Instrumented ClinicalSaveAtomicityTest: lab + medication cases with a stale expectedPatientRevision; asserts Rejected(STALE_PATIENT_REVISION), no record row, no clinical receipt, unchanged patient revision. Copies EncryptedRecordsTest's withDatabase shape.
+
+RUN RESULTS (real)
+- python3 .agents/checks/check_r3l.py: S64 FAIL, S65 FAIL, S66 FAIL, exit 1 — exactly as required on today's code.
+- :app:compileDebugUnitTestKotlin: visit-synthetic-flag test compiles clean (no diagnostics); profile-saved-notice test shows 5 unresolved refs (profileSavedNotice, PATIENT_DATING_NOT_UPDATED) — expected until core lands. Unit tests NOT RUN.
+- :app:compileDebugAndroidTestKotlin: FAILS, but all 13 errors are in files I don't own (SecurityWorkflowTest.kt: AutoLockTimeout.NEVER x2; EncryptedRecordsTest.kt: seedInitialSyntheticFixtures missing includeDemoPatients x11). Zero diagnostics for ClinicalSaveAtomicityTest.kt; full link will be verifiable only once those are fixed.
+
+ASSUMPTIONS
+- A deterministic single-threaded stale-revision hit fires the pre-write guard today (patient.revision != expected before any write), so the androidTest asserts the zero-persistence invariant per the spec; the true post-write abort (Q81) only triggers under concurrent revision change and cannot be forced deterministically in an instrumented test.
+- Grep hits for texts this round changes: "Synthetic patient record saved" — none in older checks/tests. "isSyntheticEdit = true" — EncryptedBackupTest.kt:101 (constructs a VisitEntity directly for a backup round-trip; does not pass through SaveVisitCommand.toEntity or withCommittedVisit, so unaffected by Q82). "patientUpdated" — none in older checks/tests. Also no test/check references patient_saved.

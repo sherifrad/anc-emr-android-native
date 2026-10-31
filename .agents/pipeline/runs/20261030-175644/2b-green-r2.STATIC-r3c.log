@@ -1,0 +1,9 @@
+PASS S8 SDK_INT<30 guard before BiometricManager use
+PASS S9 no 123456 / DEFAULT_PIN
+PASS S10 repository uses PinPolicy for v2
+PASS S11 MainActivity calls shouldLockOnReturn
+PASS S12 AutoLockTimeout has no NEVER
+PASS S13 SHA-256 only in legacy check function
+FAIL S14 persisted pin-change-required flag: loadSettings does not read the flag
+PASS S15 lock screen observes settings flow
+PASS S16 dialogs hidden while locked / PIN setup

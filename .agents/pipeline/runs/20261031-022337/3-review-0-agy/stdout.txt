@@ -1,0 +1,34 @@
+**Round 3l review (read-only)**
+
+**(1) Q81: write-then-reject paths**
+- All four functions are fixed. Each `patientUpdated != 1` check is now `throw ClinicalCommandAbort(ClinicalCommandFailure.STALE_PATIENT_REVISION)`: saveDating L1077, saveUltrasoundScan L1185, saveLabInvestigation L1266, saveMedication L1351.
+- The checks that run before any write still return Rejected, as the spec allows: not-found, archived, stale revision, exhausted revision, CROSS_PATIENT_WRITE, RECORD_CONFLICT, RECORD_NOT_FOUND.
+- The remaining `if (updated != 1) return ...Rejected(STALE_REVISION)` returns (L1072, L1173, L1261, L1346) come right after an UPDATE that matched 0 rows. Each is the first write in its function, so nothing has been committed when it returns. Safe, no finding.
+- Ultrasound: the link/unlink calls (L1177-1182) run before the increment, so the throw now rolls them back too. Fixed.
+- `execute` (L347-348) still turns `catch (abort: ClinicalCommandAbort)` into `Rejected(abort.failure)`. The receipt is inserted only after the throw point, so the abort leaves no receipt and replay still works. This is the same shape as `PatientCommandAbort`, and no new class was added. **No blocker.**
+
+**(2) Q82: synthetic visits**
+- The only places that create visits with the flag are `SaveVisitCommand.kt:175` and `RecordsRepository.kt:668`. Both are now `isSyntheticEdit = false`.
+- No other `isSyntheticEdit = true` in app/src/main. The other mappers (L703, L895, EncryptedBackupManager) copy the stored value through, and DemoFixtures already use false. The string is fixed.
+- Nit, outside the diff: visits already saved with `is_synthetic_edit=1` will still show the "Synthetic edit" label. The device check only covers new saves.
+
+**(3) Q83: dating result after a profile save**
+- `val datingSaved = datingResult is ClinicalCommandOutcome.Committed` is correct. Ambiguous, Rejected and Obsolete all count as not saved, and `patients` stays on the profile snapshot unless the dating save committed.
+- Rejected now rolls back fully thanks to Q81, so the profile snapshot matches the database. No stale revision on that path.
+- `noticeResource()` is an exhaustive `when` and includes the new value. The spec doesn't constrain any other consumer, and PatientListScreen only handles ARCHIVED/UNARCHIVED.
+- **Should-fix (spec-sanctioned risk):** if the result is still Ambiguous after reconcile, the dating row may actually be in the database while state keeps the profile-snapshot revision. "Open Dating to set it" could then fail with STALE_PATIENT_REVISION. That shows an error, not data loss, so I'm only noting it.
+- Nit: `val datingSaved = datingResult is ClinicalCommandOutcome.Committed` followed by `if (datingResult is ClinicalCommandOutcome.Committed)` checks the same condition twice (the second is needed for the smart cast). Harmless.
+- Nit: the warning notice still uses the success colour (`colorScheme.tertiary`, L522). The spec says not to change colours, so this is correct, just flagging the UX.
+
+**(4) Code that exists only to satisfy a check**
+- None found. `controller.execute(datingCmd, sessionEpoch, onReconciliation = {})` uses a named argument where a trailing lambda would also work. Both are fine; the result is genuinely used.
+
+**(5) Do the tests exercise production code?**
+- **Should-fix (important for the orchestrator): ClinicalSaveAtomicityTest does not exercise the Q81 change.** It sets `expectedPatientRevision = patient.revision + 99`. That hits the pre-write check `if (patient.revision != command.expectedPatientRevision) return ...Rejected(STALE_PATIENT_REVISION)` (L1207, L1288), so it returns before any insert. The test would pass on HEAD without the fix.
+  - Inside one SQLite transaction the new throw can't actually be reached after that pre-check, so it's purely defensive. Proving it would need fault injection (e.g. a fake DAO whose `incrementPatientRevision` returns 0).
+  - The test does assert that no lab/medication row and no receipt exist and that the patient revision is unchanged, as the spec asks. The spec's own wording ("with a stale expectedPatientRevision") is what makes it vacuous; the lane followed the spec.
+- Compile check: I couldn't build anything. The Gradle daemon wouldn't start in my sandbox, so compiling the androidTest is **not verified**. Checked by reading only: the command constructors match (labName, isNonCompliant and adverseNotes have defaults), and the DAO methods, `validateAndLoad`, `seedInitialSyntheticFixtures(includeDemoPatients:)`, `VaultFiles.isolatedTest` and `cleanupRegisteredTestNamespace` all exist.
+- VisitSyntheticFlagTest calls the real `withCommittedVisit`, and its old visit is `isSyntheticEdit = true`, so it does show the old flag is kept. ProfileSavedNoticeTest covers all 4 input combinations.
+- Unit tests: **not run**.
+
+**Verdict:** no hard blockers. One should-fix to decide on: the atomicity test passes without the fix and needs fault injection to cover the new throw.

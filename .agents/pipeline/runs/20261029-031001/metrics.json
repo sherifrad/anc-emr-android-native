@@ -1,0 +1,146 @@
+[
+ {
+  "step": "1c-tests-repair",
+  "lane": "opencode:opencode/glm-5.3-flash-free",
+  "seconds": 45.6,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   "app/src/test/java/com/sherifradwan/ancnative/ui/ThemeContrastTest.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "1c-core-gate",
+  "ran": 3,
+  "reused": 0,
+  "deferred": 0,
+  "not_gated": [
+   "UNIT-contrast",
+   "STATIC-ui"
+  ],
+  "passed": [
+   "UNIT-parse",
+   "UNIT-format",
+   "COMPILE-app"
+  ],
+  "failed": []
+ },
+ {
+  "step": "1c-contrast-red",
+  "ran": 1,
+  "reused": 0,
+  "deferred": 0,
+  "not_gated": [
+   "UNIT-parse",
+   "UNIT-format",
+   "STATIC-ui",
+   "COMPILE-app"
+  ],
+  "passed": [],
+  "failed": [
+   "UNIT-contrast"
+  ]
+ },
+ {
+  "step": "red-check-contrast",
+  "red_confirmed": true,
+  "compiled": true
+ },
+ {
+  "step": "2b-ui",
+  "lane": "agy:",
+  "seconds": 94.0,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2b-green",
+  "ran": 4,
+  "reused": 1,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [
+   "UNIT-parse",
+   "UNIT-format"
+  ],
+  "failed": [
+   "UNIT-contrast",
+   "STATIC-ui"
+  ]
+ },
+ {
+  "step": "2b-ui-repair1",
+  "lane": "agy:",
+  "seconds": 3.7,
+  "relay_status": "failed",
+  "relay_exit": 3,
+  "changed": [],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2b-green-r1",
+  "ran": 4,
+  "reused": 1,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [
+   "UNIT-parse",
+   "UNIT-format"
+  ],
+  "failed": [
+   "UNIT-contrast",
+   "STATIC-ui"
+  ]
+ },
+ {
+  "step": "2b-ui-repair2",
+  "lane": "agy:",
+  "seconds": 3.3,
+  "relay_status": "failed",
+  "relay_exit": 3,
+  "changed": [],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2b-green-r2",
+  "ran": 4,
+  "reused": 1,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [
+   "UNIT-parse",
+   "UNIT-format"
+  ],
+  "failed": [
+   "UNIT-contrast",
+   "STATIC-ui"
+  ]
+ },
+ {
+  "step": "cache-check-no-changes",
+  "ran": 4,
+  "reused": 1,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [
+   "UNIT-parse",
+   "UNIT-format"
+  ],
+  "failed": [
+   "UNIT-contrast",
+   "STATIC-ui"
+  ]
+ },
+ {
+  "step": "3-review-0-opencode",
+  "lane": "opencode:opencode/glm-5.3-flash-free",
+  "seconds": 187.8,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [],
+  "scope_violations_reverted": []
+ }
+]

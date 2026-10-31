@@ -1,0 +1,11 @@
+I’ll implement only the assigned UI lane (Q33, Q36, Q39 UI, Q40) in the allowlisted files. I’ll first read the round-specific spec and owner decisions, then make the smallest scoped change and run the requested checks.
+Most assigned changes are already present in the current worktree: the timeout is a fixed line, the restore confirmation is wired before passphrase/restore, the report WebView has JavaScript disabled, and the visible photo/backup wording is corrected. I’m checking the exact scoped diff and then will run the two requested validations; I will not touch the separate Q39 storage file, which is outside my allowlist.
+> 🦅 **MACA Active Fleet Dispatch** — Round 3d | Phase 2 build/validation | UI Builder: Q33, Q36, Q39 UI, Q40; core and other lanes are outside this lane.
+
+Files in scope with changes present:
+- `SecuritySettingsDialog.kt` — Q33: fixed 10-minute lock message; Q39: removed unsupported backup-security claims and clarified backups contain records, not photos; Q40: restore now requires “Replace all” confirmation before continuing to the existing restore flow.
+- `PatientTwoPageReportDialog.kt` — Q36: disabled JavaScript.
+- `WorkspaceScreen.kt` — Q39: changed the attachment label to “Saved on this phone.”
+- `PatientEditor.kt` — Q39: clarified photos are not separately encrypted.
+
+Validation: `check_r3d.py` passed S17–S22. `:app:compileDebugKotlin` succeeded (tasks were up-to-date). No tests beyond those checks were run. No assumptions were needed for these UI changes; Q39’s `AttachmentSyncManager.kt` wording is outside my allowlist and was not changed in this lane.

@@ -1,0 +1,18 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt"
+  ],
+  "finalMessage": "Files changed:\n- app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt\n- app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt\n\nWhat was done per oracle:\n- Q103: Removed local CS/SVD counting and summary building in `projectDashboardRow(patient)` in `PatientListScreen.kt` and delegated to `previousDeliverySummary(patient)`.\n- Q103: Removed local CS/SVD/stillbirth/miscarriage counting and summary building in `ProfileHeroIdentityCard` in `ProfileScreen.kt` and delegated to `previousDeliverySummary(patient)`.\n- Retained all other row projection fields, composable parameters, and existing test tags.\n\nAssumptions: None. Followed the written specification in SPEC_FIX_R3.md (Round 3s).\n\nVerification results:\n- Static checks (.agents/checks/check_r3s.py): S84 PASS, S85 PASS.\n- Build: `./gradlew --offline :app:compileDebugKotlin` PASSED.\n- Unit tests: `./gradlew --offline :app:testDebugUnitTest` PASSED (full suite passed, including PrintObstetricSummaryTest and ObstetricHistoryTest).",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-152526/2b-ui/result.json",
+  "timestamp": "2026-10-31T13:29:15.739Z"
+}

@@ -1,0 +1,36 @@
+I'll start by reading the spec and the current state of the allowed files.
+Now the core repair: `plurals.xml` uses `quantity=` but S56 demands `name=`. Let me test whether aapt2 accepts both.
+S56's regex demands invalid Android syntax (`<item name="one">` without `quantity`), which aapt2 rejects. Let me confirm the full picture before deciding.
+Verification complete. Final results and the one blocker:
+
+```
+MACA Fleet Dispatch - ROUND 3j | phase: build-ui | lane: UI builder (Q71-Q74)
+FILES CHANGED THIS SESSION
+- app/src/main/res/values/plurals.xml (new): <plurals name="photos_count"> with
+  <item quantity="one">%d photo</item> / <item quantity="other">%d photos</item>.
+- No Kotlin edits were needed: Q71/Q72/Q73/Q74 were already implemented in the
+  allowed files by earlier lanes; I verified each one and left it as is.
+PER ORACLE
+- Q71 PASS: scanCalculatedGaCard body is a Column; Text on top, conditional
+  applyScanGa TextButton below with Modifier.align(Alignment.End); tags/strings/onClick kept.
+- Q72: strings.xml no longer defines photos_count; 2 call sites in WorkspaceScreen.kt
+  (l.925, l.1233) and 2 in ProfileScreen.kt (l.1144, l.1416) use pluralStringResource.
+- Q73 PASS: ClinicalFormat.attachmentDisplayTitle used by WorkspaceScreen.kt (l.1977)
+  and by the viewer's delete-confirm (l.288); no "title ?: fileName" left. Viewer header
+  shows category + typed title only (never a file name), so it was left unchanged.
+- Q74 PASS: preview buttons use R.string.attachment_retake / attachment_gallery; no emoji.
+RESULTS (really run)
+- check_r3e.py exit 0; check_r3f2.py exit 0; :app:compileDebugKotlin + compileReleaseKotlin
+  BUILD SUCCESSFUL (run with --rerun-tasks; only pre-existing deprecation warnings).
+- AttachmentDisplayTitleTest: BUILD SUCCESSFUL.
+- check_r3j.py: S55/S57/S58 PASS, S56 FAIL.
+BLOCKER - S56 is unsatisfiable with the compile gate (checker bug, not code):
+its regex demands <item name="one">%d photo</item>, but aapt2 requires quantity=;
+I proved name-only makes mergeDebugResources fail with "<item> in <plurals> are required
+to have the 'quantity' attribute". Fix: check_r3j.py lines 133/135, s/name=/quantity=/.
+ASSUMPTION: check_ui_static_r2.py U7 still wants R.string.photos_count in ProfileScreen,
+which Q72/S56 forbid; Q72 supersedes U7 and that checker needs updating too.
+ASSUMPTION: left the "Photo N" emoji label in UltrasoundEditor.kt l.523 untouched
+(display label, not a button; wording not named in Q71).
+NOT DONE: nothing else; S56 and U7 can only be cleared by the orchestrator's check files.
+```

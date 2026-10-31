@@ -1,0 +1,14 @@
+MACA pipeline 20261030-160822 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('opencode', 'openai/gpt-6-luna'), 'ui': ('opencode', 'openai/gpt-6-luna')} review: ['opencode:omniroute/nvidia/nvidia/nemotron-3-ultra-550b-a55b']
+  opencode  /opt/homebrew/bin/opencode
+  claude    /opt/homebrew/bin/claude
+[1-tests-finish] claude completed 14.9s changed=1 violations=0
+[1b-red] ran=2 reused=8 deferred=2 not_gated=7 failed=[]
+[2a-core] opencode completed 24.7s changed=0 violations=0
+[2a-green] ran=0 reused=6 deferred=0 not_gated=13 failed=[]
+[2b-ui] opencode completed 108.8s changed=4 violations=0
+[2b-green] ran=2 reused=17 deferred=0 not_gated=0 failed=[]
+[cache-check-no-changes] ran=0 reused=19 deferred=0 not_gated=0 failed=[]
+[3-review-0-opencode] opencode completed 261.3s changed=0 violations=0
+
+DONE.  Metrics: /Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261030-160822/metrics.json 
+Tell Claude: pipeline finished.

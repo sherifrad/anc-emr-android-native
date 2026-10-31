@@ -1,0 +1,74 @@
+[
+ {
+  "step": "0-core-gate-recheck",
+  "ran": 2,
+  "reused": 1,
+  "deferred": 0,
+  "not_gated": [
+   "UNIT-contrast",
+   "STATIC-ui"
+  ],
+  "passed": [
+   "UNIT-parse",
+   "UNIT-format"
+  ],
+  "failed": []
+ },
+ {
+  "step": "2b-ui",
+  "lane": "opencode:opencode/deepseek-v4.1-flash-free",
+  "seconds": 76.3,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   "app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt",
+   "app/src/main/res/values/strings.xml"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2b-green",
+  "ran": 5,
+  "reused": 0,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [
+   "UNIT-parse",
+   "UNIT-format",
+   "UNIT-contrast",
+   "STATIC-ui",
+   "COMPILE-app"
+  ],
+  "failed": []
+ },
+ {
+  "step": "ui-gate-final",
+  "still_failing": []
+ },
+ {
+  "step": "cache-check-no-changes",
+  "ran": 4,
+  "reused": 1,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [
+   "UNIT-parse",
+   "UNIT-format",
+   "UNIT-contrast",
+   "STATIC-ui"
+  ],
+  "failed": []
+ },
+ {
+  "step": "3-review-0-opencode",
+  "lane": "opencode:opencode/glm-5.3-flash-free",
+  "seconds": 117.9,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [],
+  "scope_violations_reverted": []
+ }
+]

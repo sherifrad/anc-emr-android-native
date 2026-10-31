@@ -1,0 +1,19 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "agents/TEST_MANIFEST.json",
+    "pp/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt",
+    ".agents/checks/check_r3r.py"
+  ],
+  "finalMessage": "Files changed:\n- .agents/checks/check_r3r.py (new)\n- .agents/TEST_MANIFEST.json\n- app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt\n\nWhat was done:\n- S83 (.agents/checks/check_r3r.py): Created static check verifying no occurrence of FLAG_SECURE under app/src/main (stripping comments first) and ensuring MainActivity.kt calls enableEdgeToEdge() and contains setContent.\n- Q101 (AncWorkflowTest.kt): Updated recordsWindowKeepsSecureFlagAndGateExplainsDraftPolicy to assert the FLAG_SECURE window flag is 0 across all builds, removing the BuildConfig.DEBUG branch.\n- Manifest (.agents/TEST_MANIFEST.json): Added tier-1 entry STATIC-r3r with cmd \"python3 .agents/checks/check_r3r.py\", deps on MainActivity.kt and check_r3r.py, covering S83.\n\nAssumptions:\n- None; spec was unambiguous.\n\nVerification:\n- python3 .agents/checks/check_r3r.py: RAN; FAILED (exit code 1) as expected on today's code (FLAG_SECURE detected in MainActivity.kt).\n- ./gradlew --offline :app:compileDebugAndroidTestKotlin: RAN; PASSED (BUILD SUCCESSFUL).",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-143752/1-tests.fallback2/result.json",
+  "timestamp": "2026-10-31T12:41:12.173Z"
+}

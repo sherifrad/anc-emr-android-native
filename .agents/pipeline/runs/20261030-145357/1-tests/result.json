@@ -1,0 +1,18 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "claude-delegate",
+  "cli": "claude",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    ".agents/checks/check_r3.py",
+    "app/src/test/java/com/sherifradwan/ancnative/state/IntakeDatingRuleTest.kt"
+  ],
+  "finalMessage": "I couldn't run any of the verification commands, so nothing is verified yet. Each `python3` and `./gradlew` call was blocked pending approval, which I didn't get. All four files are written. Nothing has been compiled, executed or JSON-validated.\n\n**Files changed**\n- `app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt`\n- `app/src/test/java/com/sherifradwan/ancnative/state/IntakeDatingRuleTest.kt` (new)\n- `.agents/checks/check_r3.py` (new)\n- `.agents/TEST_MANIFEST.json`\n\n**What I did per oracle**\n- **Q19(a)–(g):** new `q19*` tests in the print test, each checking exact strings with both presence and absence.\n  - Missing is covered as null, empty and whitespace-only.\n  - (a) Three \"Not recorded\" cells, no \"Cephalic\", \"Posterior Grade I\" or \"Adequate (AFI 14cm)\"; \"Breech\" prints unchanged.\n  - (b) \"NKDA\" absent when allergy is missing and printed only if typed; a present allergy prints exactly as typed with the `text-rose font-bold` styling.\n  - (c) No \">None<\" anywhere.\n  - (d) Target Delivery Timing (also with no dating at all).\n  - (e) The exact `<span class=\"badge\">Risk not recorded</span>` with neither the High nor the Normal badge.\n  - (f) The expected value comes from `parseDeliveryNotes(notes).plan`.\n  - (g) The owner wording still prints.\n- **Q17 assertion changed:** in `q17_riskLevelsNonHigh_normalRiskBadge` I removed `null` from the list, because Q19(e) supersedes it. Nothing else was weakened.\n- **Q20:** all 9 spec examples exactly, plus 5 boundary tests:\n  - leap year (`2028-02-29` → `2028-12-05`)\n  - whitespace-only `ultrasoundEdd` treated as missing\n  - lowercase method `\"lmp\"`\n  - impossible date `2026-02-30` → null\n  - padded existing LMP equal to the draft → null\n- **S1–S4:** `check_r3.py` prints PASS/FAIL per sub-check and exits 1 on any FAIL.\n  - S2 is a textual check that every non-metadata insert sits inside an `if (includeDemoPatients)` block.\n  - It should fail on S1–S4 against today's code, because `plusDays(280)` is present and the other three changes don't exist yet. That is untested.\n- **Manifest:** added `UNIT-intake-dating` and `STATIC-r3` with the specified deps. `UNIT-print` now also lists `DeliveryNotesParser.kt` and covers Q19. Existing entries and ids are untouched.\n\n**Assumptions**\n- `IntakeDatingRuleTest` won't compile until `IntakeDating` and `intakeDatingUpdate` exist. That is expected.\n- In the print test, `parseDeliveryNotes` is imported from `ui`. I assumed `internal` visibility is reachable from the same module's tests.\n- The fixture note for the Q19(f) plan test is \"Elective repeat caesarean booked at 39 weeks\". The test asserts the parser returns a non-null plan for it, so it fails loudly if my assumption about the parser is wrong.\n\n**Not run**\n- The print test class (the expected failures could not be listed).\n- `IntakeDatingRuleTest`.\n- `check_r3.py`.\n- JSON validation of the manifest.\n\nIf you approve `python3 .agents/checks/check_r3.py` and `./gradlew --offline :app:testDebugUnitTest --tests '*PatientPrintHtmlGeneratorTest'`, I'll run them and report.",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261030-145357/1-tests/result.json",
+  "timestamp": "2026-10-30T12:56:10.294Z"
+}

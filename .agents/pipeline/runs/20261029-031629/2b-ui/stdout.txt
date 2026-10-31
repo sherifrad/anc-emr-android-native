@@ -1,0 +1,41 @@
+I'll start by reading the spec and the allowed files.
+Now ClinicalBadges.kt:
+Now WorkspaceScreen's DeliveryPlanningCard:
+All changes are in and verified.
+
+```
+Fleet lane: UI/UX BUILDER — MACA round 2026-10-29
+
+Files changed
+- ui/ClinicalBadges.kt
+- ui/Theme.kt
+- ui/WorkspaceScreen.kt (DeliveryPlanningCard only)
+- ui/ProfileScreen.kt (age badge usage only)
+- res/values/strings.xml (added edit_delivery_plan = "Edit Delivery Plan")
+
+Per oracle
+- P10a: stringResource(R.string.delivery_planning_notice) Text restored directly under the card header row.
+- P10b: KeyFactTile labels now stringResource for agreed_edd, current_gestational_age, manual_risk,
+  fetal_presentation, placental_site; tile rows/layout untouched (blood_group unchanged).
+- P10c: delivery edit icon contentDescription = stringResource(R.string.edit_delivery_plan); new string
+  carries today's exact text "Edit Delivery Plan".
+- P10d: PatientAgeBadge = formatAgeYears(ageText) ?: return, clearAndSetSemantics { contentDescription =
+  "Age $cleanAge years" } (same description text), testTag kept outside the clear; ProfileScreen spacer
+  and badge now render only when formatAgeYears(patient.ageText) != null.
+- P9: TagAgeLabelDarkBg 0xFF6366F1 -> 0xFF4F46E5 (white on it = 6.3:1, was 4.47:1). DeliverySectionBox
+  placeholder uses full-opacity c.text + FontStyle.Italic; the copy(alpha = 0.65f) is gone.
+
+Assumptions
+- Placeholder reuses the section's existing text token (already >= 4.5:1 on its own bg, light+dark) rather
+  than inventing a new token; no wording or colour identity changed.
+- clearAndSetSemantics placed after testTag so the patientAgeBadge testTag is not cleared; description
+  wording unchanged, now digits-only age.
+- Badge value text is now "29 yrs" from digits (previously could echo "29 years years"). Same visual intent.
+
+Verification (real results)
+- python3 .agents/checks/check_ui_static.py -> PASS 6/6 (P10 a-f).
+- ./gradlew --offline :app:compileDebugKotlin -> BUILD SUCCESSFUL (warnings only, pre-existing).
+- ./gradlew --offline :app:testDebugUnitTest --tests '*ThemeContrastTest' -> BUILD SUCCESSFUL;
+  report: tests=3 skipped=0 failures=0 errors=0.
+Not run: full :app:testDebugUnitTest suite, instrumented/UI tests, device contrast or touch-target checks.
+```

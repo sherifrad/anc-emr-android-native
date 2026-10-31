@@ -1,0 +1,19 @@
+Repair round: fixing the compile errors in `ThemeContrastTest.kt` only. Root cause: `org.junit.Assert.fail(...)` returns Java `void`, which Kotlin sees as `Unit` — not `Nothing` — so `tokens[name] ?: fail(...)` types `value` as `Any`, breaking `ushr` and the `== 0xFF` comparison. I'm also fixing a latent runtime crash in the token parser: `toInt(16)` throws `NumberFormatException` for any 8-digit hex ≥ `0x80000000` (every real Compose token is `0xFF......`), which would abort the oracle on harness failure instead of evaluating it. `toLong(16).toInt()` preserves the exact same Int value (two's-complement wrap), so assertions and strictness are unchanged.
+Now verifying compile, then running the test class:
+Compile clean. Running the test class to confirm runtime behavior (spec expects current code to fail P9 — red phase):
+> 🦅 **MACA Active Fleet Dispatch** — Tier 1 (TEST DESIGNER lane, REPAIR round) | Phase: test-compile repair | Lane: `app/src/test/.../ui/ThemeContrastTest.kt` only | Orchestrator verifies independently.
+
+Repair complete. Report:
+
+**Files changed (1):**
+- `app/src/test/java/com/sherifradwan/ancnative/ui/ThemeContrastTest.kt` — 2 targeted edits, assertions/strictness untouched.
+
+**What I fixed:**
+1. **Line 115-116 compile errors (root cause):** `org.junit.Assert.fail()` is a Java `void` method, which Kotlin types as `Unit` — not `Nothing` — so `tokens[name] ?: fail(...)` inferred `value: Any`, making `ushr` unresolved and `alpha == 0xFF` invalid. Replaced with `?: throw AssertionError("missing Theme.kt token $name")` — same missing-token failure condition and message.
+2. **Latent runtime crash in token parser (affected this test's own oracle):** `toInt(16)` throws `NumberFormatException` for any 8-digit hex ≥ `0x80000000` (every real Compose token is `0xFF......`). Changed to `toLong(16).toInt()` — produces the identical `0xAARRGGBB` Int (two's-complement wrap), so contrast values are bit-for-bit unchanged. Flagging as an assumption: I widened this beyond the literal compiler errors because without it the test aborts on harness error rather than evaluating P9.
+
+**Verification (ran, not assumed):**
+- `./gradlew --offline :app:compileDebugUnitTestKotlin` → BUILD SUCCESSFUL (one pre-existing warning at line 21 about `user.dir` nullability; left as-is, outside this round's scope).
+- `./gradlew --offline :app:testDebugUnitTest --tests '...ThemeContrastTest'` → 3 tests run: contrast-oracle FAILED (AssertionError, expected red phase on current code), placeholder-alpha FAILED (expected red), opacity test PASSED (all tokens already fully opaque).
+
+**Not run:** the other two unit classes and `check_ui_static.py` were untouched in this round and were not re-run. No production code touched; no other test files modified.

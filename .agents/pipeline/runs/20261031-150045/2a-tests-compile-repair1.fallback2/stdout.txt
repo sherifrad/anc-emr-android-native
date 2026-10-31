@@ -1,0 +1,16 @@
+Files changed:
+app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintObstetricSummaryTest.kt
+
+What was done:
+- Repaired compilation failure in PrintObstetricSummaryTest by defining private extension property PatientDashboardRowProjection.prevSummary (delegating to obstetricSummary.substringAfter(" · ")).
+- Kept all test assertions and structure unchanged.
+- Q102 / S84: model/ObstetricHistoryTest passes (13 tests executed, 0 failures).
+- Q103 / S85: check_r3s.py executed: S84 PASS, S85 FAIL on today's un-migrated UI code as expected.
+- PrintObstetricSummaryTest compiles and runs against today's code (6 tests executed, 4 failed on un-migrated UI code).
+- :app:compileDebugUnitTestKotlin compiles with zero errors.
+
+Assumptions:
+- PatientDashboardRowProjection's obstetricSummary begins with "G<g> P<p> · " followed by the delivery summary, matching projectDashboardRow implementation.
+
+Could not do / verify:
+- None. All unit-test source set compilation issues resolved and verified offline.

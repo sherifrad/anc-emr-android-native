@@ -1,0 +1,13 @@
+MACA pipeline 20261029-233138 lanes: {'tests': ('opencode', 'opencode/glm-5.3-flash-free'), 'core': ('claude', 'claude-haiku-5-5'), 'ui': ('claude', 'claude-haiku-5-5')} review: ['opencode:opencode/glm-5.3-flash-free']
+  claude    /opt/homebrew/bin/claude
+  opencode  /opt/homebrew/bin/opencode
+[2a-core] claude completed 128.6s changed=1 violations=0
+[2a-green] ran=3 reused=2 deferred=0 not_gated=4 failed=[]
+[2b-ui] claude completed 24.8s changed=1 violations=0
+[2b-green] ran=3 reused=6 deferred=0 not_gated=0 failed=[]
+[cache-check-no-changes] ran=0 reused=9 deferred=0 not_gated=0 failed=[]
+[3-review-0-opencode] opencode failed 1.5s changed=0 violations=0
+HALT: lane opencode:opencode/glm-5.3-flash-free unavailable at step 3-review-0-opencode (no output, no changes). Last stderr:
+[0m
+> plan · glm-5.3-flash-free
+[91m[1mError: [0mFree usage limit reached. Free models work in OpenCode (https://opencode.ai); subscribe to OpenCode Go to keep going: https://opencode.ai/go

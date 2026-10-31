@@ -1,0 +1,84 @@
+## Team Claude Sonnet 5.5 - lens CODE CONSISTENCY / BEST PRACTICES
+
+Nothing was run: no build, lint or tests. All of it is from reading code, `grep` and `git log`/`git blame`. Four checks are my own scripts rather than lint: the unused-import count, the `!!` count, the Compose-modifier count and the catch-type counts.
+
+**Author attribution is not possible.** There are 9 commits, all by `sherifrad`, and nearly every deviation blames to the initial import `36c303e`. The repo history cannot separate GLM, Gemini, GPT or Claude work. Where I name a model below it is inferred from comments in the file, not from git.
+
+Dominant project pattern, inferred from the majority of files: **Kotlin official style, 4-space indent, trailing commas, explicit imports, `internal`/`private` top-level helpers, Compose screens taking `(state, onEvent)`, strings in `strings.xml`, camelCase test names with a descriptive suffix.**
+
+### Bugs
+| # | Sev | file:line | quote | failure scenario | fix | conf |
+|---|---|---|---|---|---|---|
+| 1 | Should-fix | `state/AncViewModel.kt:135-136` | `android.util.Log.e("AncViewModel", "Failed to save attachment", e)` | Disk full or vault error while saving a scan or lab photo: the catch only logs, so the clinician sees nothing and believes it was attached. Same at `:156` for delete. | Emit an error event or snackbar state from the catch. | M (I did not check whether the UI surfaces the error another way) |
+| 2 | Should-fix | `ui/PatientEditor.kt:180-184` | `java.time.LocalDate.parse(trimmedLmp).plusDays(280).toString()` | The editor recomputes EDD and GA itself (`if (days in 0..300)`) instead of calling `GestationalAgeEngine`. Anything the engine rejects or limits differently (future LMP, a different range) shows a different value in the editor than on the banner, the profile and the printed report. | Call `GestationalAgeEngine.calculate/calculateEstimatedDueDate`. | M |
+| 3 | Should-fix | `storage/VaultController.kt:118` (also `:191`, `:322`, `:337`) | `} catch (_: Throwable) {` then `blockIfCurrent(..., VaultBlockReason.INCOMPLETE_SETUP)` | There are 16 `catch (_: Throwable)` in the app. If one covers a suspend call, a `CancellationException` or an `OutOfMemoryError` is treated as a vault fault. The `:118` handler would then block the vault as INCOMPLETE_SETUP. `RecordsRepository.kt:249` shows the right pattern (`if (failure is CancellationException) throw failure`), so the rule is not applied consistently. | Rethrow `CancellationException` (and `Error`) in every broad catch. | M-L (I did not read each site's suspend context) |
+| 4 | Should-fix | `app/build.gradle.kts:41` | `isMinifyEnabled = false` | The release build ships unobfuscated and unshrunk classes for an app holding real patient data. This is not in D1-D8 as far as I know; I did not open `OWNER_DECISIONS.md` for it. | Enable R8 with tested keep rules. | M |
+| 5 | Nit | `MainActivity.kt:66` | `android.util.Log.d("VAULT_DEBUG", "Current vaultState: ${state.vaultState}")` | Debug logging inside the composition body runs on every state change, in release too. It logs vault state names into logcat. | Delete it. | H |
+| 6 | Nit | `ui/WorkspaceScreen.kt:232,241`; `ui/ProfileScreen.kt:275` | `scan = viewingPhotoScan!!,` | The `!!` reads a mutable Compose state variable after an `if (x != null)` guard. It is safe on the main thread today, but it is brittle and there are 5 `!!` in main code. | `viewingPhotoScan?.let { ... }`. | H (style only) |
+| 7 | Nit | `ui/ClinicalFormat.kt:4` vs `ui/ClinicalFormatR2Test.kt` | `internal fun isRhNegative(bloodGroup: String?)` | Round 2 added `isRhPositive`, and a test says it "mirrors" `isRhNegative`. Two parallel predicates can drift. Only the mirror test guards them. | Define one in terms of the other. | L |
+| 8 | Nit | `storage/PatientCommands.kt:387` and `storage/RecordsRepository.kt:615` | `String.isCanonicalUuid(): Boolean = try {` | The same helper is written twice, once `internal` and once `private`. | Delete the private copy. | H |
+| 9 | Nit | `model/GestationalAgeEngine.kt:159` and `model/LongitudinalTimelineProjection.kt:117` | `private fun parseDateOrNull(` | Same helper, two bodies. One trims a nullable string, the other takes non-null. Behaviour differs by input type. | Share one `internal` helper. | H |
+| 10 | Nit | `ui/ThemeContrastTest.kt:25-36` | `File(current, "app/src/main/java/com/sherifradwan/ancnative/ui")` | The test locates `Theme.kt` and parses hex tokens with regex. It breaks if `Theme.kt` is renamed, split or reformatted, and it depends on the working directory. It does fail loudly rather than pass silently. | Expose the colour tokens `internal` and test them directly. | M |
+| 11 | Nit | `test/.../report/PatientPrintHtmlGeneratorTest.kt:10` | `class PatientPrintHtmlGeneratorTest {` | Two classes with the same simple name exist: `report/` (53 lines, 1 test) and `ui/report/` (593 lines, 44 tests). The first has package `...ancnative.report`, which does not exist in main. | Merge the one test into the `ui/report` class. | H |
+| 12 | Nit | `ui/MedicationEditor.kt:123` | `java.time.LocalDate.now().toString()` | The "today" default bypasses the injectable `asOfDate` pattern used elsewhere. `AncState.kt:696` and `:848` do the same. Time-dependent logic there cannot be tested with a fixed date. | Pass the clock or date in from the state. | M |
+
+### Style groups
+The 11 groups below total about 300 sites. The 28 numbers `grep` gave are exact; "about" figures are my estimates.
+
+| Rule | Deviation | Count | Examples | Introduced by |
+|---|---|---|---|---|
+| **S1 User-visible text lives in `strings.xml`** (478 `stringResource` uses against it) | Hard-coded English in `Text("…")` and in `label =`, `placeholder =`, `title =` and `contentDescription =` parameters | 121 `Text("` + 168 named params (about 290) | `ui/CodexSettingsSections.kt:125` (`Text("Add Test"…`), `ui/MedicationEditor.kt:170`, `ui/UltrasoundPhotoViewerDialog.kt:155,174,205`, `ui/WorkspaceScreen.kt:371` | `36c303e` (initial import). `CodexSettingsSections.kt` has 56 of them; `SecuritySettingsDialog.kt` has 22. |
+| **S2 One explicit import, no fully-qualified names inline** | Inline `java.time.…`, `com.sherifradwan.ancnative.…`, `kotlinx.coroutines.…` | about 47 (6 `java.time`, 41 other) | `ui/AncApp.kt:70`, `state/AncViewModel.kt:115,120,132`, `ui/WorkspaceScreen.kt:1919`, `ui/PatientEditor.kt:180-184`, `MainActivity.kt:101` | `36c303e` and `5c272ef` |
+| **S3 No unused imports** | The heuristic finds 60 unused imports in main and test | 60 | `ui/UltrasoundPhotoViewerDialog.kt` (`Spacer`, `Color`), `ui/AncApp.kt:9,29` (`Spacer`, `OutlinedButton`), `ui/PatientListScreen.kt` (`CircleShape`, `Info`, `DropdownMenuItem`), `test/.../NegativeControlAndClinicalValidationTest.kt:4` (`DemoPatient`), `test/.../PatientAttachmentVaultTest.kt:5,8` | Mixed. Full list: `scratchpad/unused.txt` (path below). |
+| **S4 Compose: public composables take `modifier: Modifier = Modifier` as the first optional parameter** | 67 of 83 composables in `ui/` have no `modifier` parameter (rough multi-line regex). No `@Preview` anywhere. | 67 (rough estimate); 0 previews | `ui/WorkspaceScreen.kt` (`WorkspaceScreen`, `WorkspaceTopBar`, `VisitCard`, `HistoriesCard`, `PreviousPregnancyCard`), `ui/Components.kt:69,84` | `36c303e`, `f0e1cb9` |
+| **S5 Domain model names match what they are** | `Demo*` prefix on production domain types. All 8 are in `model/DemoModels.kt`, and `DemoPatient` is the real patient type. | 8 classes, used in about 25 files | `model/DemoModels.kt:3,6,30,36,48,52,67,84` | `36c303e` |
+| **S6 One catch policy** (typed, rethrow cancellation, log or surface) | `catch (_: Throwable)` 16, `catch (_: Exception)` 13, `catch (e: Exception)` 3, plus 9 `failure: Throwable`. Only `RecordsRepository` rethrows `CancellationException`. | 35 broad catches | `storage/VaultController.kt:118,191,322,337,520`, `ui/PatientEditor.kt:181,185` (`catch (_: Exception) { null }`), `state/AncViewModel.kt:135` | `36c303e`, with the rethrow added later in `2ff5051`/`64bb935` |
+| **S7 Logging via one project logger** | Raw `android.util.Log` with ad-hoc tags in 4 places (`VAULT_DEBUG`, `VAULT_INIT_FAIL`, `AncViewModel`) | 4 | `MainActivity.kt:66`, `storage/VaultController.kt:607`, `state/AncViewModel.kt:136,156` | `36c303e` |
+| **S8 Dispatcher and clock injection** | `Dispatchers.IO` is written fully-qualified in 2 launches. `LocalDate.now()` and `System.currentTimeMillis()` are called directly in 25 places, with defaults on some function parameters and none on others. | 27 | `state/AncViewModel.kt:113,143`, `ui/AncDatePicker.kt:53,56,141,142`, `ui/DatingEditor.kt:69`, `security/SecuritySettingsRepository.kt:93,136,160` | `36c303e`; the security repository was updated in `5fd691d` |
+| **S9 Test naming and structure** (camelCase `subject_condition`) | All 343 test names are camelCase with no backticks, but suffixes vary: `formatAgeYears_r2_acceptsWholeTextMatches`, `testGenerateHtml…`, and `rhNegative_trueCases` mix three schemes. Round numbers leak into names and KDoc ("Red phase… the functions do not exist yet", "Round 2 tests"). | about 40 names; 4 files with stale KDoc | `test/.../ui/ClinicalFormatR2Test.kt:66,132`, `ClinicalFormatTest.kt:1-12`, `report/PatientPrintHtmlGeneratorTest.kt:14`, `ui/ThemeContrastTest.kt:1-12` | Round-2 lanes (the comments say so) |
+| **S10 Test files split by round, not by subject** | `ClinicalFormatTest` and `ClinicalFormatR2Test` cover the same file. `DeliveryNotesParserTest` and `ParseDeliveryNotesSpecTest` (757 lines) cover the same parser. | 2 pairs | `test/.../ui/ClinicalFormat*Test.kt`, `test/.../ui/DeliveryNotesParserTest.kt`, `ParseDeliveryNotesSpecTest.kt` | Rounds 2-3 |
+| **S11 Files over 600 lines** | Large screen or repository files with several concerns | 15 (14 main, 1 test) | `ui/WorkspaceScreen.kt` 2159, `ui/ProfileScreen.kt` 2129, `storage/RecordsRepository.kt` 1385, `model/DemoFixtures.kt` 1269, `ui/report/PatientPrintHtmlGenerator.kt` 1245, `state/AncState.kt` 1211, `ui/CodexSettingsSections.kt` 1097; plus `SecuritySettingsDialog` 979, `PatientListScreen` 968, `VaultController` 813, `AncViewModel` 722, `EncryptedBackupManager` 710, `PatientEditor` 688, `UltrasoundEditor` 645, test `ParseDeliveryNotesSpecTest` 757 | grew across all commits |
+
+### Author-commit table
+Every one of the 9 commits is by `sherifrad`, and model attribution is not recoverable from git.
+
+| Commit | What it added (title) | Style traces I can see |
+|---|---|---|
+| `36c303e` initial | App, vault, Room, Codex | Most hard-coded strings, `Demo*` names, FQNs, `catch Throwable`, raw `Log` |
+| `f0e1cb9` | UX overhaul | `Components.kt` duplicate-overload `FactRow`, `SecuritySettingsDialog` backup code |
+| `5c272ef` | English conversion, LMP calc | Inline LMP/GA in `PatientEditor`, more hard-coded text |
+| `df2d251`, `ee6c981` | Case, theme | Theme tokens (`ThemeContrastTest` source parsing) |
+| `c0e4917` | Parser, shared helpers | Round-tagged tests and "spec" KDoc |
+| `2ff5051`, `64bb935`, `5fd691d` | Report, vault, lock | Cleaner `CancellationException` handling (`RecordsRepository.kt:249`), `isCanonicalUuid` duplicated |
+
+### Duplicates and dead code
+- `isCanonicalUuid` ×2 (bug 8). `parseDateOrNull` ×2 (bug 9).
+- `FactRow` has two overloads in `ui/Components.kt:69,84`. This is deliberate (`@StringRes` wrapper) and fine.
+- The "LMP + 280 days" rule appears in `PatientEditor.kt:180` as well as in `GestationalAgeEngine`. `ClinicalModels.kt:17-27` only forwards to the engine, so it is a thin wrapper, not a copy.
+- `contentDescription = null` appears 61 times in `ui/`. Some may be decorative icons; others are probably tappable (accessibility, **not verified per site**).
+- I did not find `TODO`/`FIXME`, `GlobalScope`, `runBlocking`, or wildcard imports.
+
+### Proposed single standard (ranked, safest first)
+1. **Delete unused imports and the debug log** (S3, bug 5). Mechanical, zero behaviour risk.
+2. **Merge duplicate helpers** (bugs 8 and 9) and the duplicate test class name (bug 11). One shared `internal` file in `model/`.
+3. **Replace inline FQNs with imports** (S2). Mechanical.
+4. **Broad-catch policy** (S6, bug 3): a single `CancellationException`/`Error` rethrow rule, applied to the storage layer first.
+5. **Route `PatientEditor` LMP/EDD preview through `GestationalAgeEngine`** (bug 2) and inject the date (bug 12). Add one test.
+6. **Surface attachment save and delete errors** (bug 1).
+7. **Move hard-coded strings to `strings.xml`** (S1), starting with `CodexSettingsSections.kt` and `contentDescription`s. Large but safe.
+8. **Add `modifier` and a first `@Preview` to reusable composables** (S4), then split the over-600-line files (S11).
+9. **Rename `Demo*` to domain names** (S5), as one IDE refactor commit with no other change.
+10. **Collapse the round-split test files** (S9, S10) and remove "red phase" KDoc.
+
+### Not covered / not verified
+- Per-model attribution (git has one author), compile warnings, ktlint/detekt output, and runtime behaviour: not run.
+- I did not read all 33k lines. The `Throwable` catch sites other than `VaultController.kt:118`, the 61 `contentDescription = null` sites and the Compose `modifier` order are counts and samples, not a per-site review.
+- The unused-import count is a word-match heuristic. Imports used only through a KDoc link or an extension operator could be false positives, though I excluded `getValue`/`setValue`.
+- I did not check `proguard-rules.pro` or the manifest, and did not read `OWNER_DECISIONS.md` in full.
+- Temp file with the 60 unused imports: `/private/tmp/claude-501/-Users-sherifgamalradwan-anc-emr-android-native/38a4b873-aca5-442d-9d3b-d213fdecf029/scratchpad/unused.txt`.
+
+### Verdict: **YES-after-fixes**
+Nothing here is a data-corruption or security blocker in the style lens. The tree is workable, but three things should be fixed before more feature work:
+1. **Catch policy and silent failures:** rethrow `CancellationException` in the storage layer's broad `Throwable` catches (bug 3), and surface attachment save and delete failures to the user (bug 1).
+2. **One source of truth for dating:** make `PatientEditor` call `GestationalAgeEngine` (bug 2), and merge the duplicated helpers and the duplicate test class (bugs 8, 9, 11).
+3. **Release hygiene:** remove the `VAULT_DEBUG` log (bug 5), decide on R8 minification (bug 4), and start moving hard-coded strings and `contentDescription`s out of `CodexSettingsSections.kt`, `SecuritySettingsDialog.kt` and the photo viewer.

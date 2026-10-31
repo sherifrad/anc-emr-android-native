@@ -1,0 +1,6 @@
+FAIL S17 file_paths.xml cache-path backups: no cache-path with path backups/
+FAIL S18 FLAG_SECURE only in release, no VAULT_DEBUG: FLAG_SECURE missing; VAULT_DEBUG still present
+FAIL S19 weak-PIN setup needs proof of old PIN: needsPinSetup still reads key_pin_change_required; lockApp does not assign needsPinSetup
+FAIL S20 report WebView has no JavaScript: javaScriptEnabled = true present
+FAIL S21 settings dialog: no timeout picker, restore confirm: AutoLockTimeout.entries still used; setAutoLockTimeout( still called; restore_confirm_dialog testTag not inside an AlertDialog
+FAIL S22 false security claims removed: ui/WorkspaceScreen.kt still has 'Encrypted & Verified'; ui/PatientEditor.kt still has 'Hardware Vault Security'; storage/AttachmentSyncManager.kt still has 'Locally Encrypted & Secured'; ui/SecuritySettingsDialog.kt still has 'Zero Data Loss'; ui/SecuritySettingsDialog.kt still has '100% verif'

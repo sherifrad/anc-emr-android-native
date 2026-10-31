@@ -1,0 +1,28 @@
+[
+ {
+  "step": "red-check-reused",
+  "from_run": "runs/20261030-123728",
+  "red": {
+   "step": "1b-red",
+   "ran": 1,
+   "reused": 6,
+   "deferred": 2,
+   "not_gated": [
+    "UNIT-format-r2"
+   ],
+   "passed": [],
+   "failed": [
+    "UNIT-print"
+   ]
+  }
+ },
+ {
+  "step": "2a-core",
+  "lane": "opencode:opencode/big-pickle",
+  "seconds": 1.1,
+  "relay_status": "failed",
+  "relay_exit": 1,
+  "changed": [],
+  "scope_violations_reverted": []
+ }
+]

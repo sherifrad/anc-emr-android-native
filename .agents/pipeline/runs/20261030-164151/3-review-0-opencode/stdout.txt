@@ -1,0 +1,44 @@
+Based on my review of `AncApp.kt` and searching all of `app/src/main/java` for Dialogs, AlertDialogs, ModalBottomSheets, Popups, DropdownMenus, and separate Activities, here are the findings for Q31:
+
+## Windows/Dialogs OUTSIDE the lock-screen-guarded region in AncApp.kt
+
+### 1. **SecuritySettingsDialog** (AncApp.kt:238) — **Hard Blocker**
+- Rendered as a sibling to the main `Column` (outside the `if/else` that chooses between `AppLockScreen` vs main content).
+- Guard: `securityRepo != null && showSettingsDialog && !isAppLocked && needsPinSetup != true` — **lacks `unlocked` check**.
+- When app backgrounds >10 min, `isAppLocked` becomes true but `showSettingsDialog` isn't reset until the `LaunchedEffect` runs *after* composition; in that frame the dialog composes **on top of** `AppLockScreen`.
+- Shows clinic settings, backup export/restore, PIN change — all sensitive without PIN.
+
+### 2. **New Patient Info AlertDialog** (AncApp.kt:252) — **Should-fix**
+- Also rendered outside the main `Column`.
+- Guard: `unlocked && !isAppLocked && needsPinSetup != true && state.showNewPatientInfo` — has `unlocked` so it won't show during vault inspection, but shares the same composition-order risk if `unlocked`/`isAppLocked` race.
+
+### 3. **Discard Changes AlertDialog** (AncApp.kt:267) — **Should-fix**
+- Same structure as #2: outside main `Column`, guard includes `unlocked && !isAppLocked && needsPinSetup != true`.
+
+---
+
+## All OTHER dialogs — **Inside the lock-guarded region (safe)**
+
+These are composed **inside** the `else` block (line 133) that only runs when `unlocked && !isAppLocked`:
+- `UltrasoundPhotoViewerDialog` (WorkspaceScreen.kt:231, ProfileScreen.kt:274)
+- `PatientTwoPageReportDialog` (WorkspaceScreen.kt:276, ProfileScreen.kt:282) — shows full patient record
+- `ClinicalAttachmentViewerDialog` (WorkspaceScreen.kt:239)
+- `AddAttachmentDialog` (WorkspaceScreen.kt:258)
+- `ClinicalAttentionDialog`/`AlertDialog` (WorkspaceScreen.kt:300)
+- `ChangePinDialog`, `ExportBackupDialog`, `RestorePassphraseDialog` — nested inside `SecuritySettingsDialog`, so gated by its guards
+- `DropdownMenu` in `PatientEditor.kt:590` and `PatientListScreen.kt:543,699` — inside main content
+
+No `ModalBottomSheet`, `Popup`, or separate `Activity` (only `MainActivity` exists) are present.
+
+---
+
+## Summary for Q31
+
+| Window | Location | Outside lock guard? | Shows patient data/settings? | Severity |
+|--------|----------|---------------------|------------------------------|----------|
+| SecuritySettingsDialog | AncApp.kt:238 | **Yes** | Yes (clinic settings, backup, PIN) | **Hard Blocker** |
+| New Patient Info AlertDialog | AncApp.kt:252 | Yes | No (generic info) | Should-fix |
+| Discard Changes AlertDialog | AncApp.kt:267 | Yes | No (unsaved edit warning) | Should-fix |
+| All others | Workspace/Profile/PatientList | No (inside `else` block) | Yes, but guarded | — |
+
+**Assumption**: The `LaunchedEffect` (AncApp.kt:77-81) resets `showSettingsDialog` synchronously enough in practice, but the composition-order race is real per the device evidence in SPEC_FIX_R3.md:203-204. The fix in Q31 (S16) addresses exactly this by requiring the condition to include `isAppLocked`/`needsPinSetup` and resetting `showSettingsDialog` in an effect keyed on lock state.

@@ -1,0 +1,18 @@
+[
+ {
+  "spec": "claude:claude-sonnet-5-5",
+  "status": "failed",
+  "seconds": 244.2,
+  "chars": 13515,
+  "ok": false,
+  "why": ""
+ },
+ {
+  "spec": "opencode:openai/gpt-6-luna",
+  "status": "failed",
+  "seconds": 1.6,
+  "chars": 0,
+  "ok": false,
+  "why": "\u001b[0m\n> plan \u00b7 gpt-6-luna\n\u001b[91m\u001b[1mError: \u001b[0mThe usage limit has been reached"
+ }
+]

@@ -1,0 +1,7 @@
+I didn't change anything, and S5a still fails. The failure is in a file I'm not allowed to edit.
+
+- **Cause:** S5a is in `.agents/checks/check_r3b.py:61`. It matches only `LaunchedEffect(state.vaultState)`, with no other key. `MainActivity.kt:80` now reads `LaunchedEffect(state.vaultState, appUnlocked)`. That second key came from the earlier app-lock work (round 3d), where the vault must not auto-unlock until the app lock is open.
+- **Why I left it:** `MainActivity.kt` is outside my allowed list. Dropping `appUnlocked` from the key would also undo the 3d lock behaviour.
+- **S5b and S5c:** they only run when S5a passes. The effect body does call `vaultAutoAction(` and does not call `retryStorageInspection()`, so they would pass.
+- **Decision for you:** either loosen the check regex to `LaunchedEffect\(\s*state\.vaultState\b[^)]*\)`, or tell me to edit `MainActivity.kt` anyway.
+- **Not run:** `check_r3e.py` was blocked by a permission prompt. I also haven't run `ThemeContrastTest` or `compileDebugKotlin`, so the Q42–Q46 work is unverified in this repair round.

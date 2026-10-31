@@ -1,0 +1,15 @@
+FILES CHANGED:
+- app/src/main/java/com/sherifradwan/ancnative/ui/report/HtmlEscape.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+
+ORACLES IMPLEMENTED:
+- Q92: Implemented `escapeHtml(text: String?): String` in `HtmlEscape.kt`. Replaces `&` first, then `<`, `>`, `"`, `'` with `&amp;`, `&lt;`, `&gt;`, `&quot;`, `&#39;`; returns `""` for null.
+- Q93: Wrapped all patient- and settings-derived values in `PatientPrintHtmlGenerator.kt` with `escapeHtml(...)` once at their HTML entry point (patient identity, case ID, phone, age, blood group, dating dates, histories, delivery plan/timing, visit date/BP/weight/findings/notes, scan fields/EFW/impression/biometry, lab test/result/unit/reference range, medication fields/notes, previous pregnancies fields/outcome badge label, and scan photo captions). Preserved generator-owned HTML fragments, CSS classes, badges, and counters without double-escaping.
+
+ASSUMPTIONS:
+- User-supplied photo caption label and outcome badge label are escaped inside their respective generator helpers prior to table/grid inclusion; generator constants and numbers are left unescaped.
+
+VERIFICATION RESULTS:
+- python3 .agents/checks/check_r3o.py: PASS (S76, S77)
+- ./gradlew --offline :app:compileDebugKotlin: PASS
+- Unit tests (`PatientPrintHtmlEscapeTest`, `PatientPrintHtmlGeneratorTest`, full suite): NOT RUN / BLOCKED because `app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt:184` fails `compileDebugUnitTestKotlin` with "Too many characters in a character literal" (single quotes around a multi-character assertion message). The test file was not modified as it is outside the ALLOWED list.

@@ -1,0 +1,17 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "claude-delegate",
+  "cli": "claude",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt"
+  ],
+  "finalMessage": "The helper is in place, but I couldn't run any of the three Gradle commands. The Bash tool asked for approval on each, and this session is non-interactive, so there was nobody to give it. Nothing has been compiled or tested.\n\n**File changed:** `app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt`\n\n**Q78:** I added `internal fun formatWeightKg(raw: String?): String?`.\n- It returns null for null or blank input, and otherwise the trimmed text.\n- It appends \" kg\" unless the text already ends with `kg`, `kilogram` or `kilograms`, case-insensitive.\n- The unit check is a private `WEIGHT_UNIT` regex placed beside the function. It matches the spec's \"optionally after spaces\" because the text is trimmed first.\n\n**Not run:**\n- `:app:testDebugUnitTest --tests '*FormatWeightKgTest'`\n- The full `:app:testDebugUnitTest` suite\n- `:app:compileDebugKotlin`\n\nBy reading the code, all of the spec's unit cases give the expected result: \"74.5\", \"74.5 kg\", \"74.5KG\", \" 63 kg \", blank and null, and \"63 kilograms\".\n\n**Assumption:** a weight like \"74.5kg\" with no space is treated as already carrying its unit, so it is left as typed.\n\n**Not done:** I didn't touch `ProfileScreen.kt` or any workspace visit-weight caller, since my allowed list covers only this file. Those callers still need to be switched to `formatWeightKg`.",
+  "stderrTail": "[mcp-sdk] SEP-2352: stored OAuth credential has no 'issuer' stamp (pre-upgrade storage or provider not round-tripping the value). SEP-2352 isolation is inactive for this read; ensure your provider round-trips the issuer field.",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-015328/2a-core.fallback1/result.json",
+  "timestamp": "2026-10-30T23:54:10.474Z"
+}

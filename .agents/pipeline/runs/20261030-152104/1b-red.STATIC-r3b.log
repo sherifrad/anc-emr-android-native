@@ -1,0 +1,8 @@
+PASS S5a LaunchedEffect(state.vaultState) found
+FAIL S5b effect calls vaultAutoAction
+FAIL S5c effect has no retryStorageInspection()
+PASS S6a deleteOrphanAliases() call sites present
+FAIL S6b call 1 guarded by hasVaultDatabase
+FAIL S6b call 2 guarded by hasVaultDatabase
+FAIL S6b call 3 guarded by hasVaultDatabase
+FAIL S7 cleanupUnpublishedArtifacts calls hasVaultDatabase

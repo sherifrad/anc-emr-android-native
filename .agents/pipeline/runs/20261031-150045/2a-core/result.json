@@ -1,0 +1,18 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt",
+    "app/src/main/java/com/sherifradwan/ancnative/model/ObstetricHistory.kt"
+  ],
+  "finalMessage": "Files changed:\n- app/src/main/java/com/sherifradwan/ancnative/model/ObstetricHistory.kt (NEW)\n- app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt\n\nWhat was done:\n- Q102: Created pure Kotlin `ObstetricHistory.kt` (no `android.` imports). Defined `PreviousDeliveryCounts`, `previousDeliveryCounts`, `previousDeliverySummary`, and helper functions `isStillbirth` and `isEarlyLoss` following exact spec rules (structured fields priority, Cesarean conflict resolution, Hysterotomy exclusion, case-insensitive whole-word regex fallback on `outcomeText`, stillbirth/early loss counting, exact summary precedence and string branches).\n- Q103 (print part): In `PatientPrintHtmlGenerator.kt`, deleted local delivery counting and summary calculation, replaced with `previousDeliverySummary(patient)` and reused loss helpers for table badging. Preserved byte-identical HTML markup otherwise.\n- Static check S84 passes (`python3 .agents/checks/check_r3s.py`). `PatientPrintHtmlGenerator.kt` has no inline delivery comparisons or banned keywords.\n- Builds: `./gradlew --offline :app:compileDebugKotlin` and `:app:compileReleaseKotlin` passed.\n\nAssumptions: None outside written spec.\nNot run / could not verify: Unit test suite execution (`:app:testDebugUnitTest`) was not run to completion because `compileDebugUnitTestKotlin` failed on `PrintObstetricSummaryTest.kt` referencing `row.prevSummary` on `PatientDashboardRowProjection`, which awaits the UI lane's updates to `PatientListScreen.kt`.",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-150045/2a-core/result.json",
+  "timestamp": "2026-10-31T13:13:28.161Z"
+}

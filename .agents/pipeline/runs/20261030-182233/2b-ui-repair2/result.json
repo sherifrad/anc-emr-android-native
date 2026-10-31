@@ -1,0 +1,15 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "opencode-delegate",
+  "cli": "opencode",
+  "status": "failed",
+  "exitCode": 1,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [],
+  "finalMessage": "> 🦅 **MACA Active Fleet Dispatch** — Tier: single-lane; Phase: inspect spec → implement assigned UI oracles → validate; Lane: UI Builder (Q42–Q46, S25–S28). S5a is outside this lane’s allowed files, so I’ll leave it untouched.",
+  "stderrTail": "cnative/ui/UltrasoundPhotoViewerDialog.kt \n\u001b[0m→ \u001b[0mRead app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt \n\u001b[0m→ \u001b[0mRead app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt \n\u001b[0m✱ \u001b[0mGrep \"size\\(36\\.dp\\)|IconButton\\(\" \u001b[90min app/src/main/java/com/sherifradwan/ancnative/ui · 19 matches\u001b[0m\n> build · gpt-6-luna\n\u001b[0m→ \u001b[0mRead app/src/test/java/com/sherifradwan/ancnative/ui/ThemeContrastTest.kt \n\u001b[0m→ \u001b[0mRead app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt \n\u001b[0m→ \u001b[0mRead app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt \u001b[90m[offset=135, limit=50]\u001b[0m\n\u001b[0m→ \u001b[0mRead app/src/main/java/com/sherifradwan/ancnative/ui/AddAttachmentDialog.kt \u001b[90m[offset=205, limit=75]\u001b[0m\n\u001b[0m→ \u001b[0mRead app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt \u001b[90m[offset=870, limit=95]\u001b[0m\n> build · gpt-6-luna\n\u001b[0m→ \u001b[0mRead .agents/checks/check_r3e.py \n> build · gpt-6-luna\n\u001b[91m\u001b[1mError: \u001b[0mThe usage limit has been reached",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261030-182233/2b-ui-repair2/result.json",
+  "timestamp": "2026-10-30T16:27:34.616Z"
+}

@@ -1,0 +1,19 @@
+Files changed: none. Repair round needed no production edit — the parser/helpers already satisfy P1–P8; the failure is not in my files.
+
+Real command result (not a claim of pass):
+`./gradlew --offline :app:testDebugUnitTest --tests '*ParseDeliveryNotesSpecTest' --tests '*ClinicalFormatTest'`
+→ BUILD FAILED at `:app:compileDebugUnitTestKotlin`. Both errors are inside `app/src/test/.../ThemeContrastTest.kt` (lines 115:32 `ushr`, 116:80 `BigInteger == Int`). No test executes because the test source set does not compile.
+
+Root cause (test-side, outside my ALLOWED list):
+`val value = tokens[name] ?: fail("...")` (line 114) — `Assert.fail` returns Unit, so the elvis result is not `Int`. Owner fix: `?: error("missing Theme.kt token $name")` (or `?: return fail(...)`). I did not touch it: it is another lane's file, and no production change can fix it (an `Any.ushr` extension hack would pollute production for a broken assertion).
+
+Evidence I could obtain without editing owned files: I copied the two production files and the three parser/format test files to a scratch dir (`.../T/openecode/corelogic-verify`) and compiled/ran them with the cached Kotlin compiler + JUnit, so the contract was still exercised unchanged:
+`java ... JUnitCore ParseDeliveryNotesSpecTest ClinicalFormatTest DeliveryNotesParserTest` → `OK (46 tests)` (43 spec tests + 3 legacy parser tests). Pass, observed.
+
+Status per oracle: P1 whole-word fees vocabulary — OK; P2 history markers → plan, this-pregnancy delivered → postpartum — OK; P3 label-only stripping, unconfirmed fee wording → plan — OK; P4 capitalised "<Name> [Maternity|Medical] Hospital" on every line, no time/sentence — OK; P5 lossless, hospital line may repeat — OK; P6 Rh negative (incl. U+2212, neg/-ve/(-)/minus, "+"/positive guard) — OK; P7 high-risk with negation guard — OK; P8 digits-only age — OK.
+
+Assumptions (safe behaviour): unclassifiable lines fall back to plan (never dropped); unknown label prefixes are never stripped; hospital phrase matching is case-sensitive so "declines hospital birth"/"Hospitalised" yield null.
+
+Not verified: P9 contrast and P10 static/UI checks (Theme.kt, ClinicalBadges.kt, R.string values are other lanes' files), and anything requiring a device.
+
+Blocker for the orchestrator: `ThemeContrastTest.kt` must be repaired by its owner before any `:app:testDebugUnitTest` run can execute.

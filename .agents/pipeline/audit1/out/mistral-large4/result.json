@@ -1,0 +1,15 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "opencode-delegate",
+  "cli": "opencode",
+  "status": "failed",
+  "exitCode": 130,
+  "signal": null,
+  "readOnly": true,
+  "readOnlyViolation": false,
+  "touchedFiles": [],
+  "finalMessage": "",
+  "stderrTail": "c-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt \u001b[90m[limit=60]\u001b[0m\n> plan · nvidia/mistralai/mistral-large-4-1t-a52b\n\u001b[0m→ \u001b[0mRead /Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt \u001b[90m[limit=120]\u001b[0m\n\u001b[0m✱ \u001b[0mGrep \"remember\\w+\\(|mutableStateOf|StateFlow|MutableStateFlow|collectAsState\" \u001b[90min /Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt · 5 matches\u001b[0m\n> plan · nvidia/mistralai/mistral-large-4-1t-a52b\n\u001b[0m✱ \u001b[0mGrep \"^fun [a-z][A-Za-z]*\\(\" \u001b[90min /Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt · 0 matches\u001b[0m\n\u001b[0m✱ \u001b[0mGrep \"fun formatAgeYears|fun formatRh|fun riskLevel|fun calculate|fun parse|fun format\" \u001b[90min /Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java · 18 matches\u001b[0m\n> plan · nvidia/mistralai/mistral-large-4-1t-a52b",
+  "resultPath": "out/mistral-large4/result.json",
+  "timestamp": "2026-10-30T15:41:32.631Z"
+}

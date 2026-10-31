@@ -1,0 +1,16 @@
+I’ll first load the required MACA workflow and inspect only the permitted spec/decision files and owned source files, then make the smallest production-only changes and run the requested checks.
+> 🦅 **MACA Active Fleet Dispatch** — Tier: single-lane implementation; Phase: Round 3d spec-bound build; Lanes: Core Builder (Q32, Q35, Q37–Q39, S17–S19/S22 subset). Orchestrator audit remains independent.
+
+Assumptions: I’ll follow the supplied allowlist exactly, treat the listed test failures as repro context, and apply only explicit Round 3d requirements; any ambiguity defaults to preserving data/text.
+**Round 3d work is blocked by a spec/test conflict.** Q37 requires the report HTML to never contain “Routine Obstetric Hospital Protocol,” but the requested `PatientPrintHtmlGeneratorTest` cases assert that exact line for Rh-positive/unknown blood groups. I kept Q37’s specified behavior rather than reintroducing the prohibited wording; the six reported print-test failures remain.
+
+- Q32: `file_paths.xml` already has the required backups cache path.
+- Q35: `MainActivity.kt` already sets `FLAG_SECURE` only outside debug and has no `VAULT_DEBUG` line.
+- Q37: the report already prints “Not recorded” for the two rows, with the specified Rh-negative exception.
+- Q38: the repository already follows the Round 3d setup-mode rules.
+- Q39: `AttachmentSyncManager.kt` has no matching false claim to change.
+- `check_r3d.py`: S17–S19 passed; S20–S22 failed on files outside my allowlist.
+- Requested Gradle tests: **failed**, 6 print tests; PIN and lock-policy tests are included in that run.
+- Debug/release compile: **not run**.
+
+No assumptions beyond the specified safe behavior. The incidental edit to the report generator only reordered adjacent rows; it did not resolve the conflict and should be removed by the orchestrator if not already reverted.

@@ -1,0 +1,17 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "failed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": true,
+  "readOnlyViolation": true,
+  "touchedFiles": [
+    ".agents/pipeline/r3v/fix_review.md"
+  ],
+  "finalMessage": "### Round 3v Independent Review\n\n1. **Draft survival on lock/background/kill**: **YES**. Lock is not treated as discard (`closedDraftSlot` requires both states `is Unlocked`; `AncViewModel` direct state reset bypasses `updateState` and calls `cancelPending()`, preserving drafts). Background and lock flush to encrypted DB before gating; DB rows survive process kill.\n2. **Draft cleanup**: **YES**. Removed on save success, cancel, and confirmed discard for all 9 screens (`activeDraftSlot`/`clearDrafts()` map all 9). For chained lab/medication, the committed draft clears before the next editor opens. For new patient, `NEW_PATIENT_DRAFT_KEY` slot is properly tracked and deleted.\n3. **Ordering and lock concurrency**: **SAFE**. Saves and deletions serialize via `saveMutex` and `VaultController.storageMutex`. `flush()` drains latest pending records under lock before acquiring `saveMutex`, preventing older values overwriting newer ones. `VaultController.saveDraft` aborts when `session == null`, preventing writes when locked.\n4. **Flush timeout before lock**: **YES**. `manualLock()` and `onBackgrounded()` wrap `autosaver.flush()` in `withTimeoutOrNull(2000L)` inside a `try/catch`, ensuring the controller locks within ~2s even if writes hang or throw.\n5. **Storage & logging integrity**: **SAFE**. Drafts are stored solely in SQLCipher Room `drafts` table. Zero usage of SharedPreferences, plain files, or logging of draft payloads.\n6. **`applyDraftRecord` fidelity**: **YES**. Generates fresh UUID `editorSessionId`, clears `errors`, retains fresh editor's IDs/revisions/originals, and preserves in-memory `imageUris` for ultrasound without restoring stale links.\n7. **State notification coverage**: **YES**. Every state transition via `dispatch` or save result handlers (`SaveCommitted`, `RecordCommitted`, `SaveFailed`) routes through `updateState`, notifying `onStateChanged`.\n8. **Scope & Code cleanliness**:\n   - **Should-fix**: `DraftMapping.kt:10-16` defines an unused `object VaultState` that shadows `storage.VaultState`. It is dead code and should be removed.\n   - **Should-fix**: `DraftAutosaver.kt:88` in `performSave`: if a slot was closed/deleted while waiting on `saveMutex`, `lastSavedValues[slot]` is still populated with the saved fields. If the user immediately re-opens and types identical text, `isSameAsSaved` skips auto-saving.\n   - **Nit**: `VaultController.kt:496` `saveDraft` checks `session ?: return@withLock false` rather than `_view.value.state is VaultState.Unlocked`, though `storageMutex` prevents saving after session closes.\n   - Files changed strictly match Round 3v scope.\n9. **Tests**: All 27 new tests in `DraftMappingTest` and `DraftAutosaverTest` directly invoke production mapping and saver logic. They thoroughly test specification requirements and fail on the old codebase. All pass.",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-173757/3-review-1-agy/result.json",
+  "timestamp": "2026-10-31T16:01:55.264Z"
+}

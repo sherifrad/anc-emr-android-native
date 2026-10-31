@@ -1,0 +1,108 @@
+[
+ {
+  "step": "1-tests",
+  "lane": "opencode:opencode/glm-5.3-flash-free",
+  "seconds": 136.3,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   "app/src/test/java/com/sherifradwan/ancnative/ui/ParseDeliveryNotesSpecTest.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "1b-red",
+  "ran": 1,
+  "reused": 5,
+  "deferred": 2,
+  "not_gated": [
+   "UNIT-format-r2"
+  ],
+  "passed": [],
+  "failed": [
+   "UNIT-parse"
+  ]
+ },
+ {
+  "step": "red-check",
+  "parked": [
+   "app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalFormatR2Test.kt"
+  ],
+  "failed": [
+   "UNIT-parse"
+  ],
+  "compile_error": false,
+  "behavioural_red_confirmed": true
+ },
+ {
+  "step": "2a-core",
+  "lane": "opencode:opencode/deepseek-v4.1-flash-free",
+  "seconds": 112.6,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   "app/src/main/java/com/sherifradwan/ancnative/ui/DeliveryNotesParser.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2a-green",
+  "ran": 3,
+  "reused": 2,
+  "deferred": 0,
+  "not_gated": [
+   "UNIT-contrast",
+   "STATIC-ui",
+   "STATIC-ui-r2",
+   "UNIT-all"
+  ],
+  "passed": [
+   "UNIT-parse",
+   "UNIT-parse-legacy",
+   "COMPILE-app"
+  ],
+  "failed": []
+ },
+ {
+  "step": "2b-green",
+  "ran": 1,
+  "reused": 8,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [
+   "UNIT-all"
+  ],
+  "failed": []
+ },
+ {
+  "step": "ui-gate-final",
+  "still_failing": []
+ },
+ {
+  "step": "cache-check-no-changes",
+  "ran": 0,
+  "reused": 9,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [],
+  "failed": []
+ },
+ {
+  "step": "3-review-0-opencode",
+  "lane": "opencode:opencode/nemotron-3.5-super-vl-free",
+  "seconds": 453.6,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "3-review-1-opencode",
+  "lane": "opencode:opencode/glm-5.3-flash-free",
+  "seconds": 406.9,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [],
+  "scope_violations_reverted": []
+ }
+]

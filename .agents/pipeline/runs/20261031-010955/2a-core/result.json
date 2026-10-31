@@ -1,0 +1,17 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "opencode-delegate",
+  "cli": "opencode",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt"
+  ],
+  "finalMessage": "Q73 helper implemented.\n\nFiles changed (1, inside ALLOWED):\n- app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt\n\nQ73: added `internal fun attachmentDisplayTitle(title: String?, category: String, capturedAt: String): String` (pure Kotlin, no android imports) plus a private `ISO_DATE` regex, reusing the file's existing private-constant style. Rule: non-blank trimmed title wins (trimmed); otherwise trimmed category, or \"Attachment\" when the category is blank; if `capturedAt.take(10)` matches yyyy-MM-dd, append \" · \" + that date. No file name is ever returned or consulted.\n\nAssumptions (spec silent on these):\n- \"look like yyyy-MM-dd\" implemented as a shape check only (`\\d{4}-\\d{2}-\\d{2}`), not a calendar-validity check; \"2026-99-99\" would still render as a date suffix.\n- Category is trimmed before display (consistent with the title rule).\n- Callers (WorkspaceScreen.kt, ClinicalAttachmentViewerDialog.kt) are outside my ALLOWED list, so S57 caller wiring was NOT done by me.\n\nVerification (real runs):\n- `--tests '*AttachmentDisplayTitleTest'`: PASS (BUILD SUCCESSFUL).\n- Full `:app:testDebugUnitTest`: PASS (BUILD SUCCESSFUL).\n- `:app:compileDebugKotlin`: PASS (BUILD SUCCESSFUL).\n- Static check check_r3j.py: not run (not in my lane).",
+  "stderrTail": "pDebugUnitTestKotlin UP-TO-DATE\n> Task :app:compileDebugUnitTestKotlin UP-TO-DATE\n> Task :app:preDebugUnitTestBuild UP-TO-DATE\n> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE\n> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE\n> Task :app:processDebugJavaRes UP-TO-DATE\n> Task :app:processDebugUnitTestJavaRes UP-TO-DATE\n> Task :app:testDebugUnitTest\n\nBUILD SUCCESSFUL in 11s\n28 actionable tasks: 1 executed, 27 up-to-date\n> build · deepseek-v4.1-flash-free\n\u001b[0m$ \u001b[0m./gradlew --offline :app:compileDebugKotlin 2>&1 | tail -8\n> Task :app:processDebugManifest UP-TO-DATE\n> Task :app:processDebugManifestForPackage UP-TO-DATE\n> Task :app:processDebugResources UP-TO-DATE\n> Task :app:kspDebugKotlin UP-TO-DATE\n> Task :app:compileDebugKotlin UP-TO-DATE\n\nBUILD SUCCESSFUL in 364ms\n18 actionable tasks: 18 up-to-date\n> build · deepseek-v4.1-flash-free\n\u001b[0m→ \u001b[0mRead app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt \u001b[90m[offset=44, limit=25]\u001b[0m\n> build · deepseek-v4.1-flash-free",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-010955/2a-core/result.json",
+  "timestamp": "2026-10-30T23:14:11.279Z"
+}

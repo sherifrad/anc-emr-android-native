@@ -1,0 +1,2 @@
+FAIL S78 section titles keep their single block, capital en-sub duplicates and CSS rule gone: en-sub still present 10 time(s)
+FAIL S79 dialog title allows two lines, report testTags kept: title Text still has maxLines = 1; title Text does not set maxLines = 2

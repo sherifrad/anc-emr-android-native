@@ -1,0 +1,14 @@
+Independent Review of Round 3u (Draft Storage & Migration 5->6):
+
+1. Migration 5->6: Follows from4To5 exactly. Table check, vault UUID check, metadata schema_version update (from 5 to 6), and user_version check are present in RecordsMigration.from5To6. Room and RecordsRepository.SCHEMA_VERSION (line 1416) are updated to 6. EncryptedBackupManager retains envelope version 3 as intended. Existing installs migrate 1->...->6 seamlessly without breaking.
+2. DraftEntity: Primary key is (patient_id, screen_kind) and index is index_drafts_patient_id without foreign keys, matching spec Q108. Column definitions in RecordEntities.kt (lines 364-372) match Room schema 6.json and migration SQL exactly.
+3. DraftCodec: Round-trip preserves Unicode, Arabic, emoji, quotes, newlines, and backslashes. Key order is deterministic via toSortedMap(). Enforces 65,536 UTF-8 byte payload cap (returns null when exceeded). decodeDraftFields ignores non-string values, keeps unknown keys, and catches Throwable returning null without throwing or logging.
+4. RecordsRepository: saveDraft returns false and touches no DAO/DB when encoding fails or exceeds cap. restoreCanonicalBackup calls dao.deleteAllDrafts() inside database.withTransaction (RecordsRepository.kt:131). Backup export contains no draft fields.
+5. Storage Boundaries: Verified that nothing is stored outside the SQLCipher database. No SharedPreferences, files, or logging are used for draft records.
+6. Dead code:
+   - Nit: RecordsMigration.kt:645 `private val SCHEMA_SIX_TABLES = SCHEMA_FIVE_TABLES + "drafts"` is currently unused until a future migration from 6->7.
+7. Test Coverage & Verification:
+   - UNIT-draft-codec (DraftCodecTest) and UNIT-all pass in JVM test runner.
+   - EncryptedRecordsTest compiles cleanly (compileDebugAndroidTestKotlin succeeded), tests real repository methods against SQLCipher, asserts isolation, replacement, new patient keys, and verifies raw DB/WAL file bytes contain no plaintext draft markers.
+
+Verdict: APPROVED (0 Hard Blockers, 0 Should-fix, 1 Nit).

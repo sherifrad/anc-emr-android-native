@@ -1,0 +1,7 @@
+FAIL P10(a) DeliveryPlanningCard does not reference R.string.delivery_planning_notice
+FAIL P10(b) DeliveryPlanningCard missing R.string ids: agreed_edd, current_gestational_age, manual_risk, fetal_presentation, placental_site
+FAIL P10(c) delivery edit button uses a contentDescription string literal: contentDescription = "
+FAIL P10(d) ClinicalBadges.kt missing: clearAndSetSemantics/mergeDescendants, formatAgeYears
+FAIL P10(e) inline endsWith("-") Rh logic present in WorkspaceScreen.kt: .endsWith("-")
+FAIL P10(f) parser must live in ui/DeliveryNotesParser.kt, still defined in WorkspaceScreen.kt: fun parseDeliveryNotes(, data class DeliveryNoteSections(
+FAIL P10 overall: 0/6 sub-checks passed

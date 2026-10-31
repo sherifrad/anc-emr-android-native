@@ -1,0 +1,8 @@
+No files changed. S13 cannot be repaired within this lane’s allowed files: the checker reports SHA-256 uses in `ClinicalCommands.kt`, `PatientAttachmentVault.kt`, and `SaveVisitCommand.kt`, all outside the allowed list. I left them untouched.
+
+Verification:
+- PIN/lock policy tests: **BUILD SUCCESSFUL** (tasks reported `UP-TO-DATE`)
+- `check_r3c.py`: **failed S13**; S8–S12 passed
+- Debug and release Kotlin compilation: **BUILD SUCCESSFUL** (tasks reported `UP-TO-DATE`)
+
+UI-facing repository API already present: `settings: StateFlow<SecuritySettingsState>` exposes `needsPinSetup`, `isLegacyPin`, and `lockoutRemainingMs`; `setupPin(pin: String): Boolean` sets a valid PIN; `validatePin(pin: String): Boolean` checks it; `updatePin(newPin: String): Boolean` updates it. No additional changes or assumptions.

@@ -1,0 +1,15 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [],
+  "finalMessage": "Files changed:\n- app/src/main/java/com/sherifradwan/ancnative/model/ObstetricHistory.kt\n- app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt\n\nWhat was done:\n- Q102: Implemented ObstetricHistory.kt with pure Kotlin rules for PreviousDeliveryCounts, previousDeliveryCounts, isStillbirth, isEarlyLoss, and previousDeliverySummary per SPEC_FIX_R3.\n- Q103 (print part): Removed local CS/SVD counting and fallback in PatientPrintHtmlGenerator.kt, replaced with previousDeliverySummary(patient), updated line 209 empty-pregnancy fallback to ($pastDeliverySummary), and used shared loss checkers; kept all other generator output byte-identical.\n\nAssumptions:\n- ObstetricHistory.kt is pure Kotlin without Android imports.\n- Line 209 in PatientPrintHtmlGenerator.kt reflects the shared past delivery summary ($pastDeliverySummary) instead of the hardcoded \"(Primigravida / N/A)\".\n\nVerification:\n- ./gradlew --offline :app:compileDebugKotlin: PASSED\n- ./gradlew --offline :app:compileReleaseKotlin: PASSED\n- ./gradlew --offline :app:testDebugUnitTest --tests '*ObstetricHistoryTest': PASSED (32/32 tests)\n- ./gradlew --offline :app:testDebugUnitTest --tests '*PatientPrintHtml*': PASSED (55/55 tests)\n- In PrintObstetricSummaryTest: primigravida_listRowAndPrintReportAgreeWithSharedRule, cesareanOnly, and vaginalOnly PASSED. All print report assertions (html.contains) in all 6 tests PASSED.\n- 3 failures remain in PrintObstetricSummaryTest: lines 95, 177, 198 assert projectDashboardRow(patient).prevSummary from PatientListScreen.kt (owned by the UI lane, not in this lane's ALLOWED list).\n- Full suite ./gradlew --offline :app:testDebugUnitTest: 534 passed, 3 failed (all 3 from PatientListScreen in PrintObstetricSummaryTest).",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-150045/2a-core-repair2/result.json",
+  "timestamp": "2026-10-31T13:23:54.950Z"
+}

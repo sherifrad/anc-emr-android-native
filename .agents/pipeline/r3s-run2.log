@@ -1,0 +1,5 @@
+MACA pipeline 20261031-152448 lanes: {'tests': ('opencode', 'opencode/glm-5.3-flash-free'), 'core': ('agy', 'gemini-3.8-flash-medium'), 'ui': ('agy', 'gemini-3.8-flash-medium')} review: ['agy:gpt-oss-120b-medium', 'agy:gemini-3.8-flash-medium']
+  agy       /Users/sherifgamalradwan/.local/bin/agy
+  opencode  /opt/homebrew/bin/opencode
+[0-core-gate-recheck] ran=2 reused=8 deferred=0 not_gated=69 failed=['UNIT-print-obstetric', 'UNIT-all']
+HALT: core gate is not green; run the full pipeline.

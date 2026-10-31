@@ -1,0 +1,7 @@
+Changed `SecuritySettingsRepository.kt` only: added persisted `key_pin_change_required`, loaded it into `needsPinSetup`, checked PIN strength after successful validation, and cleared the flag when a valid new PIN is set. Legacy PINs are migrated to v2 after successful verification.
+
+- S14: **PASS**. S8–S13: **PASS**.
+- S15: **FAIL**; the lock-screen change is outside my allowed file.
+- PIN policy and app-lock unit tests: **PASS**.
+- `:app:compileDebugKotlin`: **PASS** on the first run; a later rerun failed in KSP due to a missing generated `RecordsDao_Impl.kt`.
+- Assumption: a successful check of a weak PIN persists the setup requirement and keeps the app locked.

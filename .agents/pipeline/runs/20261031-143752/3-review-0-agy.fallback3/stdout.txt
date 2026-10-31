@@ -1,0 +1,22 @@
+Round 3r review (read-only). No Hard Blockers.
+
+**(1) FLAG_SECURE removal: clean.**
+- A grep of `app/src/main` (Kotlin, XML, themes, manifest) finds no `FLAG_SECURE`, `setSecure`, `setRecentsScreenshotEnabled` or `excludeFromRecents`.
+- The only `app/src/main` change is in `MainActivity.kt`. It removes the `if (!BuildConfig.DEBUG) { window.setFlags(... FLAG_SECURE ...) }` block and the `import android.view.WindowManager`. No other edits.
+- There are no other activities or dialog windows setting the flag.
+
+**(2) Other screenshot or recents blockers: none found.**
+- The manifest has only `android:allowBackup="false"`. That is a backup setting and unrelated to screenshots or the recents preview, so it needs no change.
+- Stale docs still claim the flag is on, so D15 makes them wrong (Should-fix, docs only):
+  - `docs/P2_VALIDATION.md:73`: "`FLAG_SECURE` kept enabled"
+  - `docs/FINAL_STABILIZATION.md:64`: "`FLAG_SECURE` maintained"
+
+**(3) Dead imports or comments: none.**
+- `MainActivity.kt` has no remaining `BuildConfig` or `WindowManager` use.
+- In `AncWorkflowTest.kt`, `import android.view.WindowManager` (line 4) is still used at line 102. `assertFalse` is still used elsewhere (lines 586 and others).
+
+**(4) androidTest change: one assertion only, plus a stale name.**
+- The diff is 1 insertion and 5 deletions, and it only collapses the debug/release branch into `assertEquals(0, flags and WindowManager.LayoutParams.FLAG_SECURE)`.
+- Nit: the test name is stale: `recordsWindowKeepsSecureFlagAndGateExplainsDraftPolicy` (line ~99). It now asserts the flag is absent. Renaming would be cleaner, but the spec may want the name kept, so it is optional.
+
+I did not run any tests.

@@ -1,0 +1,11 @@
+MACA pipeline 20261029-230415 lanes: {'tests': ('opencode', 'opencode/glm-5.3-flash-free'), 'core': ('opencode', 'opencode/deepseek-v4.1-flash-free'), 'ui': ('opencode', 'opencode/deepseek-v4.1-flash-free')} review: ['opencode:opencode/glm-5.3-flash-free']
+  opencode  /opt/homebrew/bin/opencode
+[1-tests] opencode completed 332.7s changed=2 violations=0
+[1b-red] ran=1 reused=5 deferred=2 not_gated=1 failed=['UNIT-parse']
+[2a-core] opencode failed 1.2s changed=0 violations=0
+[2a-green] ran=2 reused=3 deferred=0 not_gated=4 failed=['UNIT-parse']
+[2a-core-repair1] opencode failed 0.8s changed=0 violations=0
+[2a-green-r1] ran=1 reused=4 deferred=0 not_gated=4 failed=['UNIT-parse']
+[2a-core-repair2] opencode failed 0.8s changed=0 violations=0
+[2a-green-r2] ran=1 reused=4 deferred=0 not_gated=4 failed=['UNIT-parse']
+HALT: core logic still red after 2 repair rounds; UI lane not started. See /Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261029-230415

@@ -1,0 +1,46 @@
+[
+ {
+  "step": "1-tests",
+  "lane": "opencode:opencode/glm-5.3-flash-free",
+  "seconds": 153.2,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   "app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "1b-red",
+  "ran": 1,
+  "reused": 6,
+  "deferred": 2,
+  "not_gated": [
+   "UNIT-format-r2"
+  ],
+  "passed": [],
+  "failed": [
+   "UNIT-print"
+  ]
+ },
+ {
+  "step": "red-check",
+  "parked": [
+   "app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalFormatR2Test.kt"
+  ],
+  "failed": [
+   "UNIT-print"
+  ],
+  "compile_error": false,
+  "behavioural_red_confirmed": true
+ },
+ {
+  "step": "2a-core",
+  "lane": "opencode:opencode/deepseek-v4.1-flash-free",
+  "seconds": 14.1,
+  "relay_status": "failed",
+  "relay_exit": 1,
+  "changed": [],
+  "scope_violations_reverted": []
+ }
+]

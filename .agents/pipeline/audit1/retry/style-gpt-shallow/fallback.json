@@ -1,0 +1,10 @@
+[
+ {
+  "spec": "opencode:openai/gpt-6-luna",
+  "status": "completed",
+  "seconds": 20.7,
+  "chars": 2178,
+  "ok": true,
+  "why": ""
+ }
+]

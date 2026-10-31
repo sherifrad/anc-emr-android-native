@@ -1,0 +1,16 @@
+Changed files:
+- app/src/main/res/values/strings.xml
+- app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt
+
+Per oracle:
+- Q97: Added bp_badge_severe ("Severe BP") and bp_attention_severe ("Severe-range blood pressure at the last visit: %1$s (%2$s)") to strings.xml. In PatientListScreen.kt, evaluated severeBpAttention(patient.visits); rendered "Severe BP" badge reusing the high-risk badge composable pattern (ClinicalTagBadge) and added bp_attention_severe on its own line in the patient card's attention row alongside stored clinicalAttention.
+- Q98: In WorkspaceScreen.kt, called severeBpAttention(patient.visits); displayed the attention banner when severeBpAttention is non-null even if stored clinicalAttention is blank. Rendered the computed bp_attention_severe line with testTag("severeBpAttention") together with stored text when both exist. Left the attention dialog and stored clinicalAttention logic untouched.
+
+Assumptions:
+- Severe BP attention line is displayed prominently in the attention banner with testTag("severeBpAttention") without requiring manual expansion.
+
+Verification:
+- ./gradlew --offline :app:compileDebugKotlin: PASSED
+- ./gradlew --offline :app:testDebugUnitTest: PASSED (506 tests, 0 failures)
+- python3 .agents/checks/check_r3q.py: PASSED (S80, S81, S82)

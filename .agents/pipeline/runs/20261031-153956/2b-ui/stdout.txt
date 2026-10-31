@@ -1,0 +1,17 @@
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt
+
+Per oracle:
+- Q105: In GestationalBanner.kt, replaced local term checks, division by FULL_TERM_DAYS, and ChronoUnit calls with gaResult.isPostTerm, gaResult.isLateTerm, gaResult.progressFraction, and daysToEdd(edd, asOfDate). Removed unused ChronoUnit and FULL_TERM_DAYS imports.
+- Q105: In PatientListScreen.kt and ProfileScreen.kt, replaced hand-formatted "+${...} wks" with gaResult?.shortWeeksText ?: "—".
+
+Assumptions: Preserved identical UI display, formatting, and testTags.
+
+Verification:
+- python3 .agents/checks/check_r3t.py: PASS (S86, S87, S88)
+- ./gradlew --offline :app:compileDebugKotlin: BUILD SUCCESSFUL
+- ./gradlew --offline :app:testDebugUnitTest: BUILD SUCCESSFUL (all unit tests passed)
+
+Could not do or verify: None.

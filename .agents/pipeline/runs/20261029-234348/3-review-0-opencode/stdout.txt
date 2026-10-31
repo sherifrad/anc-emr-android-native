@@ -1,0 +1,36 @@
+ProfileScreen fully read. Now WorkspaceScreen — I'll target the relevant regions first with grep, then read them fully.
+Emoji hits are all in files outside the four (out of scope per spec). Now reading the relevant WorkspaceScreen regions:
+Now let me check the round-1 spec (still in force), the tests, strings.xml, and the static check script:
+The static check script is genuinely independent and thorough. Let me check strings.xml for the new resource, list the test files, and check for test weakening:
+Let me verify the medication edit button context and the `PencilEditButton` definition, then run the static checks:
+Both static checks pass. Now run the relevant unit tests offline:
+Tests pass. Let me check git history to see whether any test was weakened versus the round-1 committed state:
+Round-1-era files vs HEAD: I can diff the modified tracked files to hunt for lost testTags/click handlers:
+Now confirm all previously-existing testTags survive in the current source:
+The tags are now passed via PencilEditButton's `tag` parameter (which applies `Modifier.testTag(tag)` internally at line 2150), so `testTag(` won't match the literals. Let me check the tag values directly:
+Quick check that the pencil buttons kept the same click semantics as the old text buttons:
+Full-suite check (G1) for completeness:
+**INDEPENDENT REVIEW round 2 — report**
+
+Verification run by me (not claimed from others): `check_ui_static_r2.py` 29/29 PASS, `check_ui_static.py` 6/6 PASS, full suite `./gradlew --offline :app:testDebugUnitTest` BUILD SUCCESSFUL (compileDebugKotlin up-to-date/passing). Files changed by implementers (verified via git): PatientListScreen.kt, ProfileScreen.kt, WorkspaceScreen.kt, Theme.kt, strings.xml; new ClinicalFormat.kt, DeliveryNotesParser.kt, ClinicalBadges.kt, 4 test files, check_ui_static_r2.py.
+
+**Oracle verdicts (all with concrete inputs)**
+- **Q1 PASS** "Dr. Ahmed to attend. Fee 2.5k EGP" → "Dr. Ahmed to attend." / "Fee 2.5k EGP"; "2.5" and "10:30" verified in code and tests (no split: '.' must be followed by space+capital).
+- **Q2 PASS** "Elective CS at 39w. Avoid NSAIDs." → plan exactly; "Fee 15,000 EGP; penicillin allergy - avoid" → fees/plan split; original-separator rejoin logic correct (separatorBefore spans are verbatim slices); nothing dropped, only known labels stripped.
+- **Q3 PASS** "Expected to be discharged day 2 after CS" → plan, postpartum null; "Delivered 12/10 by CS, baby well" → postpartum; "Postpartum: will review at 6 weeks" → postpartum ("postpartum\ note?" label wins).
+- **Q4 PASS** "Hospital: TBD" → hospital null, full line in plan (D2); "Booked Cleopatra Maternity Hospital" → "Cleopatra Maternity Hospital"; "CS at Dar al Fouad Hospital" exact; "Delivery at Cleopatra hospital" → null+plan; "(Full hospital stay…)" → null; "**Hospitalised**"/"39 weeks" still null via `(?![\p{L}])` guard.
+- **Q5 PASS** "290","71","1990-05-01","29 years 3 months","about 30" → null; "Age: 29","29 yrs.","29y" → "29" (whole-text anchored regex + 10..70 gate).
+- **Q6 PASS** "O-" → "O- (Rh negative)"; "  B+ " → "B+"; "pending" → "pending" (not false-negative); ""/null → null. isRhPositive mirrors correctly incl. "A+, antibody screen negative" → positive (documented SAFE assumption).
+- **Q7 PASS** All three screens now use isRhNegative/isRhPositive/isHighRisk only; zero `.contains("-"/"+"/"High")` — "Not high risk" can never flag high again (verified source + static U3).
+- **U1–U6 PASS** via the r2 checker I ran; U5 TextButton+tag intact (WorkspaceScreen.kt:1023–1030); U6 no literal, no size(32.dp), res "Edit clinical alerts" exists in strings.xml:240.
+
+**Hunt for NEW defects**
+1. **Should-fix (parser)**: unlabelled 2-word phrase can yield a bare generic name — "Referral To Hospital Urgently" → hospital box shows **"Hospital"** (match "Referral To Hospital", "Referral"/"To" dropped). Residual by design of the Q4(b) drop list; a 2-token minimum (<Name> Hospital with a non-generic name) would close it. Data stays visible in plan, so not lost — but the box reads as if agreed.
+2. **Should-fix (parser)**: "Hospital: St. Mary's Maternity Hospital" → box shows **"St"** (cut at first '.'); line stays in plan so text is visible, but the box contains a meaningless fragment. The cut rule has no abbreviation exception.
+3. **Nit**: "Hospital: pending" is not in the undecided list (tbd/not decided/none/…) → box shows "pending". Spec-facing, owner may want "pending" added.
+4. **Nit**: a fee line with a lowercase-following sentence ("Fee 15,000 EGP. if bleeding call") is unsplit by spec and the whole piece lands in Fees. Spec-conformant; noted per the safety preference for Plan.
+5. Emoji scan across the whole ui/ tree: hits only in files outside the four in-scope ones (OtherHistoriesEditor, LabEditor, dialogs) — all explicitly out of scope this round.
+
+**No weakening found**: all round-1 assertions still present; every old testTag (editDating, editHistories, editVisit-, editUltrasound-, editLinkedScan-, editPregnancy-, editLab-, editMedication-) survives, now via PencilEditButton(tag=…) → Modifier.testTag(tag); all pencil buttons fire the same StartXxxEditor events as the old TextButtons (spot-checked 6 of 9). Only documented expectation change: ClinicalFormatTest AgeCase("0","0")→null — that is exactly what Q5 mandates, not a weakening.
+
+**Could not verify**: no HEAD baseline exists for the round-1-era test files (untracked), so "no weakening" rests on reading their assertions against SPEC_FIX.md rather than a diff; device/UI runtime behaviour and the phase-1 security findings are out of scope. COPY: /\.(└/)

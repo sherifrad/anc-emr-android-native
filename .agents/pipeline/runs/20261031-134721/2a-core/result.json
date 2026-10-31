@@ -1,0 +1,18 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "pp/src/main/java/com/sherifradwan/ancnative/model/VisitVitals.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt"
+  ],
+  "finalMessage": "Files changed:\n- app/src/main/java/com/sherifradwan/ancnative/model/VisitVitals.kt\n- app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt\n\nPer oracle:\n- Q96: Added `SevereBpAttention` data class and `severeBpAttention(visits: List<DemoVisit>)` in `VisitVitals.kt`. Filters for parseable BP, finds the latest visit by date then revision, and returns `SevereBpAttention(trimmedBp, date)` only when `bpLevel` is `SEVERE` (reusing existing `bpLevel` and `parseBloodPressure`).\n- Q99: Added BP alert labels in `PatientPrintHtmlGenerator.kt` visits table using `bpLevel(v.bloodPressure)` for RAISED (\"Raised BP - recheck\", `bp-alert`) and SEVERE (\"Severe-range BP - urgent assessment\", `bp-alert bp-alert-severe`). Defined report-package constants and conditionally added `.bp-alert` and `.bp-alert-severe` CSS rules.\n\nAssumptions:\n- Conditional inclusion of BP alert CSS ensures byte-identical HTML output for visits with no alert and prevents `bp-alert-severe` from leaking into normal reports.\n\nVerification:\n- `./gradlew --offline :app:compileDebugKotlin`: passed.\n- `./gradlew --offline :app:testDebugUnitTest --tests '*SevereBpAttentionTest' --tests '*PrintBpAlertTest' --tests '*PatientPrintHtml*'`: passed.\n- `./gradlew --offline :app:testDebugUnitTest` (full suite): passed.\n- `python3 .agents/checks/check_r3q.py`: S80 PASS, S82 PASS (S81 failed as expected; owned by UI lane).\n- `python3 .agents/checks/check_r3o.py` and `check_r3p.py`: passed.\n\nNot done / could not verify:\n- S81 (UI lane for `PatientListScreen.kt`, `WorkspaceScreen.kt`, and `strings.xml`) not touched per ALLOWED files restriction.",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-134721/2a-core/result.json",
+  "timestamp": "2026-10-31T11:59:51.404Z"
+}

@@ -1,0 +1,22 @@
+I'll start by reading the spec and understanding the current state.
+Now the plural call sites and title helper callers.
+Now the attachment title callers.
+The static check and the Android resource compiler disagree. Let me confirm the correct compiled form and document the conflict.
+**Files changed**
+- `ui/UltrasoundEditor.kt`, `ui/WorkspaceScreen.kt`, `ui/ProfileScreen.kt`, `ui/AddAttachmentDialog.kt`, `ui/ClinicalAttachmentViewerDialog.kt`, `res/values/strings.xml`, `res/values/plurals.xml` (new)
+
+**Q71** Calculated-GA card: Row → Column (text on top; `applyScanGa` TextButton below with `Modifier.align(Alignment.End)`, no weight/squeeze). Tags and events unchanged.
+**Q72** New `plurals.xml` `photos_count`; removed the string; all four call sites (WorkspaceScreen x2, ProfileScreen x2) use `pluralStringResource(R.plurals.photos_count, n, n)`; imports added.
+**Q73** WorkspaceScreen attachment card now calls the core lane's `attachmentDisplayTitle(title, category, capturedAt)`; the viewer's delete-confirm text (which held `title ?: fileName`) uses the same helper.
+**Q74** Preview buttons use `R.string.attachment_retake` / `attachment_gallery` ("Retake"/"Gallery"); emoji removed; tags/behaviour unchanged.
+
+**Checks run**
+- `check_r3j.py` → exit 1: S55 PASS, S57 PASS, S58 PASS, **S56 FAIL**.
+- `check_r3e.py` → exit 0 (all PASS). `check_r3f2.py` → exit 0 (all PASS).
+- `./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin` → BUILD SUCCESSFUL.
+- `./gradlew --offline :app:testDebugUnitTest --tests '*AttachmentDisplayTitleTest'` → passed.
+
+**S56 conflict (needs a check fix, not a code fix)**: aapt2 rejects `<item name="one">` in `<plurals>` ("required to have the 'quantity' attribute"); it accepts `quantity="one"/"other"` (verified by running mergeDebugResources both ways). `check_r3j.py` S56 regex demands the `name` attribute, so no file can satisfy both. I kept the valid compiled XML; the regex should accept `quantity="one"` / `quantity="other"`.
+**Also**: legacy `check_ui_static_r2.py` U7 fails only because it requires `stringResource(R.string.photos_count, …)`, which Q72 explicitly removes — superseded.
+
+**Assumptions**: the viewer header shows category + optional title (never a file name), so it was left as is; only its `title ?: fileName` text was switched to the helper. The pre-existing "📷 Photo N" chip label in UltrasoundEditor (not a button, outside Q71) was left untouched.

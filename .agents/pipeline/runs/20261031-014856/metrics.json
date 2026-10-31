@@ -1,0 +1,17 @@
+[
+ {
+  "step": "1-tests",
+  "lane": "opencode:opencode/glm-5.3-flash-free",
+  "tried": [
+   "opencode:opencode/glm-5.3-flash-free=failed"
+  ],
+  "seconds": 237.8,
+  "relay_status": "failed",
+  "relay_exit": 1,
+  "changed": [
+   ".agents/checks/check_r3k.py",
+   "app/src/test/java/com/sherifradwan/ancnative/ui/FormatWeightKgTest.kt"
+  ],
+  "scope_violations_reverted": []
+ }
+]

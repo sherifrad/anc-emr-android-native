@@ -1,0 +1,12 @@
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/model/ObstetricHistory.kt (NEW)
+- app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+
+What was done:
+- Q102: Created pure Kotlin `ObstetricHistory.kt` (no `android.` imports). Defined `PreviousDeliveryCounts`, `previousDeliveryCounts`, `previousDeliverySummary`, and helper functions `isStillbirth` and `isEarlyLoss` following exact spec rules (structured fields priority, Cesarean conflict resolution, Hysterotomy exclusion, case-insensitive whole-word regex fallback on `outcomeText`, stillbirth/early loss counting, exact summary precedence and string branches).
+- Q103 (print part): In `PatientPrintHtmlGenerator.kt`, deleted local delivery counting and summary calculation, replaced with `previousDeliverySummary(patient)` and reused loss helpers for table badging. Preserved byte-identical HTML markup otherwise.
+- Static check S84 passes (`python3 .agents/checks/check_r3s.py`). `PatientPrintHtmlGenerator.kt` has no inline delivery comparisons or banned keywords.
+- Builds: `./gradlew --offline :app:compileDebugKotlin` and `:app:compileReleaseKotlin` passed.
+
+Assumptions: None outside written spec.
+Not run / could not verify: Unit test suite execution (`:app:testDebugUnitTest`) was not run to completion because `compileDebugUnitTestKotlin` failed on `PrintObstetricSummaryTest.kt` referencing `row.prevSummary` on `PatientDashboardRowProjection`, which awaits the UI lane's updates to `PatientListScreen.kt`.

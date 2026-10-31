@@ -1,0 +1,1 @@
+I'll run this read-only consistency audit. Let me start by mapping the repo structure and commit history, while staying out of the forbidden pipeline directories.

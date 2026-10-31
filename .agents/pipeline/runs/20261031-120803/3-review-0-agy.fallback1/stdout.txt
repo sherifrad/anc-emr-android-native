@@ -1,0 +1,19 @@
+> 🦅 **MACA Active Fleet Dispatch** — Tier: single-model multi-session · Phase: R3p independent review (read-only) · Lane: reviewer (no ALLOWED files)
+
+**Verdict: no Hard Blockers.** Code matches Q94/Q95; 2 of 4 new tests genuinely discriminate.
+
+**(1) HTML diff** — exactly 9 `en-sub` spans + the 1 CSS rule removed (10 lines); nothing else in the string changed. Spec says "8 spans" but there were 9 (page‑1/2 = 8 sections, page‑3 photo section = `ULTRASOUND ATTACHMENTS`); S78 ("no en-sub at all") and the unit test both require that 9th removal, so the code is right and the spec count is a miscount. Layout: `.section-title` still `display: flex; justify-content: space-between;` (line ~696) — with one child, space-between degenerates to flex-start, i.e. the title stays left-aligned exactly as before. No print regression.
+- Nit: `justify-content: space-between` is now inert; leaving it is the spec-compliant choice.
+
+**(2) Dialog** — the diff is the single line `maxLines = 1` → `2`; patient name still `maxLines = 1`; `printReportButton` / `shareReportButton` / `closeReportDialog` untouched. Header `Row` is content-height with `Alignment.CenterVertically` and the buttons keep `minimumTouchTarget()`; a 2-line `titleMedium` grows the navy bar instead of clipping or pushing the buttons. Fine.
+- Nit: on a narrow window a 2-line title will still ellipsize (spec's "last resort") — expected.
+
+**(3) Tests do exercise production code** — `PatientPrintHtmlGenerator.generateHtml(context = null, …)`, run and observed: PrintSectionTitlesTest 4/4 pass; PatientPrintHtmlGeneratorTest 40/40 and PatientPrintHtmlEscapeTest 22/22 still pass, unmodified. On the old code `q94_noEnSub` (CSS rule + spans) and `q94_noCapitalTitleDuplicate` ("PREGNANCY DATING") fail; `q94_everyCoreSectionTitle_appearsExactlyOnce` and the photo-title test pass before and after (regression guards, not discriminators). `withoutHtmlComments` is justified, not speculative: comment at `PatientPrintHtmlGenerator.kt:996` still contains `PREGNANCY DATING`.
+- Nit: `spanCount` only matches the exact `<span>Title</span>` form, so a title duplicated as plain text would slip through — no such duplicate exists today.
+
+**(4) Check-only / stale artifacts**
+- Should-fix: `PrintSectionTitlesTest.kt:21-22` "Expectations today: FAIL - the en-sub spans … are part of the generated HTML" is now false — misleading comment shipped with the fix.
+- Nit: `PatientPrintHtmlGenerator.kt:996` `<!-- Pregnancy Dating (PREGNANCY DATING without Matrix) -->` names a duplicate that no longer exists (harmless, not printed).
+- Nit: `check_r3p.py` honestly documents the 8-vs-9 block floor, but SPEC Q94/S78 still says "8 spans"/"8 blocks" — fix the spec text, not the code.
+
+Note: `.agents/TEST_MANIFEST.json`, `run_pipeline.py`, `SPEC_FIX_R3.md` are also modified — pipeline infra, outside this review's product diff. Not verified: device print rendering (postponed per spec).

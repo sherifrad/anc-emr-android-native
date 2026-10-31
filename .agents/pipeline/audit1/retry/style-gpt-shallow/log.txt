@@ -1,0 +1,1 @@
+[fallback] opencode:openai/gpt-6-luna: completed 20.7s 2178 chars -> OK

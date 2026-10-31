@@ -1,0 +1,213 @@
+[
+ {
+  "step": "1-tests",
+  "lane": "opencode:opencode/glm-5.3-flash-free",
+  "tried": [
+   "opencode:opencode/glm-5.3-flash-free=completed"
+  ],
+  "seconds": 318.1,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   ".agents/TEST_MANIFEST.json",
+   ".agents/checks/check_r3p.py",
+   "app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintSectionTitlesTest.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "1b-red",
+  "ran": 2,
+  "reused": 61,
+  "deferred": 2,
+  "not_gated": [
+   "UNIT-format-r2",
+   "UNIT-intake-dating",
+   "UNIT-anomalies",
+   "UNIT-vault-auto",
+   "UNIT-vault-cleanup",
+   "UNIT-pin-policy",
+   "UNIT-lock-policy"
+  ],
+  "passed": [],
+  "failed": [
+   "STATIC-r3p",
+   "UNIT-print-titles"
+  ]
+ },
+ {
+  "step": "red-check",
+  "parked": [
+   "app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintSectionTitlesTest.kt"
+  ],
+  "failed": [
+   "STATIC-r3p",
+   "UNIT-print-titles"
+  ],
+  "compile_error": false,
+  "behavioural_red_confirmed": true
+ },
+ {
+  "step": "2a-core",
+  "lane": "agy:gemini-3.8-flash-medium",
+  "tried": [
+   "agy:gemini-3.8-flash-medium=completed"
+  ],
+  "seconds": 176.5,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   "app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2a-green",
+  "ran": 5,
+  "reused": 2,
+  "deferred": 0,
+  "not_gated": [
+   "UNIT-parse-legacy",
+   "UNIT-format-r2",
+   "UNIT-contrast",
+   "STATIC-ui",
+   "STATIC-ui-r2",
+   "UNIT-intake-dating",
+   "STATIC-r3",
+   "UNIT-anomalies",
+   "UNIT-vault-auto",
+   "UNIT-vault-cleanup",
+   "STATIC-r3b",
+   "UNIT-pin-policy",
+   "UNIT-lock-policy",
+   "STATIC-r3c",
+   "STATIC-r3d",
+   "STATIC-r3e",
+   "STATIC-r3f1",
+   "STATIC-r3f3",
+   "STATIC-r3f2",
+   "UNIT-photo-quality",
+   "UNIT-hashing",
+   "UNIT-bounded-bitmap",
+   "UNIT-security-settings",
+   "UNIT-attachment-error",
+   "UNIT-negative-control",
+   "UNIT-clinical-validation",
+   "UNIT-demo-fixtures",
+   "UNIT-gestational-age",
+   "UNIT-timeline-projection",
+   "UNIT-patient-validation",
+   "UNIT-previous-pregnancy-validation",
+   "UNIT-codex-repository",
+   "UNIT-anc-state",
+   "UNIT-backup-vault",
+   "UNIT-clinical-commands",
+   "UNIT-encrypted-backup",
+   "UNIT-attachment-vault",
+   "UNIT-patient-commands",
+   "UNIT-records-mapping",
+   "UNIT-save-coordinator",
+   "UNIT-vault-state",
+   "UNIT-gestational-banner",
+   "STATIC-r3g",
+   "UNIT-scan-photo-ref",
+   "UNIT-camera-sweep",
+   "UNIT-scan-photo-import",
+   "STATIC-r3h",
+   "UNIT-capture-temp-file",
+   "STATIC-r3i",
+   "STATIC-r3j",
+   "STATIC-r3k",
+   "UNIT-format-weight",
+   "UNIT-attachment-title",
+   "UNIT-iso-dates",
+   "UNIT-profile-saved-notice",
+   "UNIT-visit-synthetic-flag",
+   "STATIC-r3l",
+   "STATIC-r3m",
+   "UNIT-visit-vitals",
+   "UNIT-save-visit-validation",
+   "STATIC-r3n",
+   "UNIT-ivf-dating",
+   "UNIT-redating",
+   "STATIC-r3o",
+   "STATIC-r3p"
+  ],
+  "passed": [
+   "UNIT-print",
+   "UNIT-print-escape",
+   "UNIT-print-titles",
+   "UNIT-all",
+   "COMPILE-app"
+  ],
+  "failed": []
+ },
+ {
+  "step": "2b-ui",
+  "lane": "agy:gemini-3.8-flash-medium",
+  "tried": [
+   "agy:gemini-3.8-flash-medium=completed"
+  ],
+  "seconds": 59.2,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   "app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2b-green",
+  "ran": 6,
+  "reused": 66,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [
+   "STATIC-r3d",
+   "STATIC-r3i",
+   "STATIC-r3o",
+   "STATIC-r3p",
+   "UNIT-all",
+   "COMPILE-app"
+  ],
+  "failed": []
+ },
+ {
+  "step": "ui-gate-final",
+  "still_failing": []
+ },
+ {
+  "step": "cache-check-no-changes",
+  "ran": 0,
+  "reused": 72,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [],
+  "failed": []
+ },
+ {
+  "step": "3-review-0-agy",
+  "lane": "opencode:opencode/deepseek-v4.1-flash-free",
+  "tried": [
+   "agy:gpt-oss-120b-medium=failed",
+   "opencode:opencode/deepseek-v4.1-flash-free=completed"
+  ],
+  "seconds": 82.2,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "3-review-1-agy",
+  "lane": "agy:gemini-3.8-flash-medium",
+  "tried": [
+   "agy:gemini-3.8-flash-medium=completed"
+  ],
+  "seconds": 104.3,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [],
+  "scope_violations_reverted": []
+ }
+]

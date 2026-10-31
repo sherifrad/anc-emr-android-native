@@ -1,0 +1,17 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt"
+  ],
+  "finalMessage": "Files changed:\napp/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt\n\nWhat was done per oracle:\n- Q94: Deleted all duplicate capital title `<span class=\"en-sub\">...</span>` lines across all section-title blocks (8 core sections + ultrasound attachments) and removed the `.section-title .en-sub` CSS rule, leaving single visible titles in their original casing and markup unchanged.\n\nAssumptions:\n- None.\n\nVerification results:\n- `./gradlew --offline :app:testDebugUnitTest --tests '*PrintSectionTitlesTest' --tests '*PatientPrintHtml*'`: PASSED.\n- `./gradlew --offline :app:testDebugUnitTest` (full unit test suite): PASSED.\n- `./gradlew --offline :app:compileDebugKotlin`: PASSED.\n- `python3 .agents/checks/check_r3p.py`: S78 PASSED (S79 not run/implemented here as Q95 belongs to dialog lane).",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-120803/2a-core/result.json",
+  "timestamp": "2026-10-31T10:16:20.338Z"
+}

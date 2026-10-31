@@ -1,0 +1,20 @@
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/model/VisitVitals.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+
+Per oracle:
+- Q96: Added `SevereBpAttention` data class and `severeBpAttention(visits: List<DemoVisit>)` in `VisitVitals.kt`. Filters for parseable BP, finds the latest visit by date then revision, and returns `SevereBpAttention(trimmedBp, date)` only when `bpLevel` is `SEVERE` (reusing existing `bpLevel` and `parseBloodPressure`).
+- Q99: Added BP alert labels in `PatientPrintHtmlGenerator.kt` visits table using `bpLevel(v.bloodPressure)` for RAISED ("Raised BP - recheck", `bp-alert`) and SEVERE ("Severe-range BP - urgent assessment", `bp-alert bp-alert-severe`). Defined report-package constants and conditionally added `.bp-alert` and `.bp-alert-severe` CSS rules.
+
+Assumptions:
+- Conditional inclusion of BP alert CSS ensures byte-identical HTML output for visits with no alert and prevents `bp-alert-severe` from leaking into normal reports.
+
+Verification:
+- `./gradlew --offline :app:compileDebugKotlin`: passed.
+- `./gradlew --offline :app:testDebugUnitTest --tests '*SevereBpAttentionTest' --tests '*PrintBpAlertTest' --tests '*PatientPrintHtml*'`: passed.
+- `./gradlew --offline :app:testDebugUnitTest` (full suite): passed.
+- `python3 .agents/checks/check_r3q.py`: S80 PASS, S82 PASS (S81 failed as expected; owned by UI lane).
+- `python3 .agents/checks/check_r3o.py` and `check_r3p.py`: passed.
+
+Not done / could not verify:
+- S81 (UI lane for `PatientListScreen.kt`, `WorkspaceScreen.kt`, and `strings.xml`) not touched per ALLOWED files restriction.

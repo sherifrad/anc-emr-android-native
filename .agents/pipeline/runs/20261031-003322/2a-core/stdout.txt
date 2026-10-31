@@ -1,0 +1,24 @@
+I rewrote `CameraCaptureHelper.kt` for Q68, but I haven't run any tests, checks or compiles. The shell commands for them were blocked pending approval, and one even refused the loop over the older `check_r3*.py` files. I did not retry them another way.
+
+**File changed:** `app/src/main/java/com/sherifradwan/ancnative/storage/CameraCaptureHelper.kt`
+
+**Q68 / S50:**
+- **New function:** I added a top-level `captureTempFile(cameraDir: File, expectedAuthority: String, scheme: String?, authority: String?, pathSegments: List<String>): File?`. It has no android types in its signature.
+- **What it checks:** It returns the canonical file only when all of these hold:
+  - the scheme is `content`;
+  - the authority equals `expectedAuthority`;
+  - there are at least two segments and the first is `camera_photos`;
+  - the resolved candidate is a regular file whose parent is exactly `cameraDir.canonicalFile`.
+- **Failure behaviour:** Any exception gives null. A `..` segment, a sub-folder, a segment containing a separator, or a symlink that resolves elsewhere all fail the parent check.
+- **Thin wrapper:** `deleteIfCaptureTemp(context, uri)` now calls `captureTempFile(cameraDir(context), "${context.packageName}.fileprovider", uri.scheme, uri.authority, uri.pathSegments)?.delete() == true`. It no longer contains `canonicalFile`.
+- **Behaviour:** This is the same logic moved over, and `deleteIfCaptureTemp` still returns true only when a file was deleted.
+
+**Not run:**
+- `./gradlew --offline :app:testDebugUnitTest` (the whole suite)
+- `python3 .agents/checks/check_r3h.py`
+- the older `check_r3*.py` files (`check_r3.py`, `check_r3b`–`check_r3e`, `check_r3f1`–`f3`, `check_r3g`)
+- `./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin`
+
+I read `check_r3h.py` and believe the edit satisfies it, but that is my reading, not a result. `CaptureTempFileTest.kt` is outside my ALLOWED list, so I didn't write it.
+
+**Assumptions:** none beyond the spec.

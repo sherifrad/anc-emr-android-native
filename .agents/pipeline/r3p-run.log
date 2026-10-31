@@ -1,0 +1,16 @@
+MACA pipeline 20261031-120803 lanes: {'tests': ('opencode', 'opencode/glm-5.3-flash-free'), 'core': ('agy', 'gemini-3.8-flash-medium'), 'ui': ('agy', 'gemini-3.8-flash-medium')} review: ['agy:gpt-oss-120b-medium', 'agy:gemini-3.8-flash-medium']
+  agy       /Users/sherifgamalradwan/.local/bin/agy
+  opencode  /opt/homebrew/bin/opencode
+[1-tests] opencode completed 318.1s changed=3 violations=0
+[1b-red] ran=2 reused=61 deferred=2 not_gated=7 failed=['STATIC-r3p', 'UNIT-print-titles']
+[2a-core] agy completed 176.5s changed=1 violations=0
+[2a-green] ran=5 reused=2 deferred=0 not_gated=65 failed=[]
+[2b-ui] agy completed 59.2s changed=1 violations=0
+[2b-green] ran=6 reused=66 deferred=0 not_gated=0 failed=[]
+[cache-check-no-changes] ran=0 reused=72 deferred=0 not_gated=0 failed=[]
+[3-review-0-agy] agy:gpt-oss-120b-medium gave no usable result (failed); trying next model
+[3-review-0-agy] opencode completed 82.2s changed=0 violations=0
+[3-review-1-agy] agy completed 104.3s changed=0 violations=0
+
+DONE.  Metrics: /Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-120803/metrics.json 
+Tell Claude: pipeline finished.

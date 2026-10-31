@@ -1,0 +1,37 @@
+Spec loaded (Round 3n: Q88–Q91, S72–S75). Now reading the production files the oracles reference plus the existing tests I must mirror.
+Production shape is clear. Now checking the two UI files the static checks must inspect, plus current strings.xml.
+I have the full picture. Now reading the rest of GestationalAgeEngineTest (for the hits list), the owner decisions file, and grepping the checks dir for text this round changes.
+All inputs gathered. Writing the four deliverables now.
+Now the manifest additions.
+All 4 checks FAIL on today's code as required (exit 1) and the manifest is still valid JSON. One cosmetic fix — S72's fail detail prints raw regexes; swapping to readable labels to match r3m style:
+Lane complete.
+
+FILES CHANGED
+- .agents/checks/check_r3n.py (NEW) — S72–S75, python3 stdlib only, check_r3m.py style (comments stripped, direct call OR ::function-reference accepted as a "use").
+- app/src/test/java/com/sherifradwan/ancnative/model/IvfDatingTest.kt (NEW)
+- app/src/test/java/com/sherifradwan/ancnative/model/RedatingTest.kt (NEW)
+- .agents/TEST_MANIFEST.json — added STATIC-r3n, UNIT-ivf-dating, UNIT-redating (with cmd, deps covering every file named in S72–S75, covers); other entries untouched; JSON re-validated.
+
+PER ORACLE
+- S72: one check covering IsoDates fun ivfGaDaysAtTransfer/ivfEddFromTransfer, `embryoAges = listOf(3, 5, 6)` in ClinicalModels.kt, banned literals `17L/19L/263L/261L/!= 3 &&/!= 5` in GestationalAgeEngine.kt and ClinicalCommands.kt, both files referencing ClinicalVocabulary.embryoAges, and the engine using both ivf helpers.
+- S73: model/Redating.kt defines RedatingAdvice + redatingThresholdDays + redatingAdvice, no `android.` import.
+- S74: DatingEditor.kt has the "embryoDay6" tag and R.string.embryo_day_6; strings.xml defines embryo_day_6 and redating_hint.
+- S75: UltrasoundEditor.kt uses redatingAdvice (call or reference), "redatingHint" tag, R.string.redating_hint, and the call is brace-verified inside the scanCalculatedGaCard Card block.
+- UNIT-ivf-dating: exact spec numbers — EDD for transfer 2026-01-01 day 3/5/6 → 2026-09-21/19/18; GA at transfer 17/19/20 d = "2w 3d"/"2w 5d"/"2w 6d" via GestationalAgeEngine.calculate (IVF_TRANSFER) plus ivfGaDaysAtTransfer 17/19/20; days 4 and 7 → null GA and null EDD; embryoAges == [3,5,6]. The ClinicalValidation/commands case is in this class through the same public entry points (owner-approved fallback): SaveDatingCommand.isStructurallyValid (6 true, 4 false) and SaveDatingCommand.prepare with a DatingDraft (day 6 → Ready with embryoAgeDays 6; day 4 → Rejected with INVALID_VOCABULARY), because ClinicalValidationTest/ClinicalCommandsTest define no extractable helpers.
+- UNIT-redating: threshold table 62/63/111/112/153/154/195/196 → 5/7/7/10/10/14/14/21; at each edge diff==threshold → null, diff==threshold+1 → advice with that threshold and signed difference; a negative diff 8 days below dating GA → differenceDays −8 (within-threshold negative → null); diff 0 → null.
+
+HITS IN OLDER ARTIFACTS (will need the owners' lanes to update: both engine behaviours and day-3/5-only wording)
+- model/GestationalAgeEngineTest.kt: lines 39/64 (day 3, plusDays(263)), 68/93 (day 5, plusDays(261)), 97–107 (embryoAgeDays = 4, "Invalid: must be 3 or 5").
+- model/ClinicalValidationTest.kt: lines 142–170 (261/263 comments and assertions, embryoAgeDays 3/5).
+- storage/ClinicalCommandsTest.kt: lines 458–474 (IVF rules, embryoAgeDays 5, rejects 4 — 4 still exits invalid under Q88 so only the "3 or 5" framing ages).
+- state/IntakeDatingRuleTest.kt line 44 and storage/EncryptedBackupTest.kt lines 135/232 (embryoAgeDays 5 — still valid, no change needed).
+- storage/VisitVitalsTest.kt line 77 (261L as a BP plausibility input — unrelated to dating, no change).
+- Grep of .agents/checks found no hits (no older check references these tokens).
+
+RUN RESULTS
+- python3 .agents/checks/check_r3n.py: S72 FAIL, S73 FAIL, S74 FAIL, S75 FAIL, exit 1 — every S fails on today's code as required.
+
+ASSUMPTIONS / NOT DONE
+- The two unit tests reference ivfGaDaysAtTransfer, ivfEddFromTransfer, redatingThresholdDays, redatingAdvice, RedatingAdvice which do not exist yet, so both classes do not compile and the gradle unit runs were NOT run (cannot pass until the core lane lands Q88/Q89). No production file was touched.
+- Assumed redatingThresholdDays/redatingAdvice take Long day counts exactly as written in Q89; thresholds asserted only at the spec's edge values.
+- S75's "inside the scanCalculatedGaCard block" is verified by brace-scanning the enclosing Card(...) { } whose params contain the scanCalculatedGaCard tag; if the editor restructures so the hint renders outside that Card, the check will fail by design (spec requires the hint inside the card).

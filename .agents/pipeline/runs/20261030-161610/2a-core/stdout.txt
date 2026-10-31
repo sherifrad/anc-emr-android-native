@@ -1,0 +1,10 @@
+> 🦅 **MACA Active Fleet Dispatch** — Tier 1 (single-lane execution); Phase 2 implementation; lane: Core Logic Builder. I’ll stay within the listed five files and treat the tests as read-only.
+Files changed: `app/src/main/java/com/sherifradwan/ancnative/security/SecuritySettingsRepository.kt`
+
+Q27c: A valid legacy default PIN now leaves the legacy hash in place, keeps the app locked, and sets `needsPinSetup` and `isLegacyPin` to `true`. A valid non-default legacy PIN still migrates to v2 storage.
+
+UI API exposed in the repository state: `needsPinSetup: Boolean`, `isLegacyPin: Boolean`, `lockoutRemainingMs: Long`; functions `setupPin(pin: String): Boolean`, `validatePin(pin: String): Boolean`, and `updatePin(newPin: String): Boolean`.
+
+Assumption: none.
+
+Could not verify: test run, `check_r3c.py`, and debug/release compilation were not run; the command runner rejected the requests.

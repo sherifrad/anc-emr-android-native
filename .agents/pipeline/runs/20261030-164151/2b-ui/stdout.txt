@@ -1,0 +1,8 @@
+> 🦅 **MACA Active Fleet Dispatch** — Tier 1 / Round 3c-3; lane: Q31 (`AncApp.kt`) only.
+I’ll check the governing decisions and current file, then make only the requested edit and run both specified checks.
+Q31 implemented in `app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt`: Security Settings now requires the app to be unlocked and PIN setup not to be needed; an effect closes it when either condition changes. Both existing `AlertDialog` guards also require PIN setup not to be needed.
+
+- `check_r3c.py`: passed S8–S16.
+- `:app:compileDebugKotlin`: passed.
+- Assumption: a null `needsPinSetup` value counts as not needing setup, matching the requested `!= true` guard.
+- Preserved pre-existing staged changes in the allowed file; did not alter them.

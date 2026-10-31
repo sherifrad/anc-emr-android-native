@@ -1,0 +1,25 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "pp/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/storage/RecordsDatabase.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/storage/RecordsMigration.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt",
+    ".agents/pipeline/omni_review.py",
+    "app/schemas/com.sherifradwan.ancnative.storage.RecordsDatabase/6.json",
+    "app/src/main/java/com/sherifradwan/ancnative/storage/DraftCodec.kt",
+    "app/src/main/java/com/sherifradwan/ancnative/storage/DraftRecord.kt"
+  ],
+  "finalMessage": "Files changed:\n- app/src/main/java/com/sherifradwan/ancnative/storage/DraftRecord.kt (NEW)\n- app/src/main/java/com/sherifradwan/ancnative/storage/DraftCodec.kt (NEW)\n- app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt\n- app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt\n- app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDatabase.kt\n- app/src/main/java/com/sherifradwan/ancnative/storage/RecordsMigration.kt\n- app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt\n- app/schemas/com.sherifradwan.ancnative.storage.RecordsDatabase/6.json\n\nWork per oracle:\n- Q107: Added DraftScreenKind, NEW_PATIENT_DRAFT_KEY, DraftEditorKind, and DraftRecord data class. Implemented encodeDraftFields (canonical sorted keys, UTF-8 64KiB cap, escapes special chars/unicode/emojis) and decodeDraftFields (robust JSON parsing, ignores non-string values, retains unknown keys, returns null on malformed/invalid inputs) without Android imports or logs.\n- Q108: Added DraftEntity with composite primary key (patient_id, screen_kind) and index on patient_id without foreign keys. Bumped schema version to 6 in RecordsDatabase, RecordsMigration (from5To6), and RecordsRepository (SCHEMA_VERSION = 6). Added DAO methods (upsertDraft, draft, draftsForPatient, deleteDraft, deleteDraftsForPatient, deleteAllDrafts) and repository suspend methods (saveDraft, loadDraft, loadDrafts, deleteDraft, deleteDrafts). Added draft clearing in restoreCanonicalBackup.\n\nAssumptions: Payload limit is strictly 65,536 bytes UTF-8; decoding invalid or unparseable draft payloads safely yields null.\nVerification:\n- ./gradlew --offline :app:testDebugUnitTest --tests '*DraftCodecTest': PASSED (14/14 tests)\n- Full unit suite (./gradlew --offline :app:testDebugUnitTest): PASSED\n- Compilation (compileDebugKotlin, compileDebugAndroidTestKotlin): PASSED\n- Static checks (python3 .agents/checks/check_r3u.py, S89-S91): PASS\n- Instrumented tests: not run (per instructions).",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-165916/2a-core/result.json",
+  "timestamp": "2026-10-31T15:10:09.147Z"
+}

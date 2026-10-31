@@ -1,0 +1,49 @@
+I'll review the Round 3d changes as an Independent Reviewer. Let me start by examining the specification and the actual changes.
+> 🦅 **MACA Active Fleet Dispatch** | Round: 3d | Phase: Independent Review | Lane: read-only | Tier: 1 | Status: reviewing diff against SPEC_FIX_R3.md
+
+---
+
+### Q32: FileProvider cache-path for backups
+**Finding: Nit** — The `<cache-path name="backups" path="backups/" />` is added correctly and both existing entries (`camera_photos`, `app_files`) are preserved. The path matches `cacheDir/backups/` where Export Backup writes. No breakage risk.
+**Code**: `app/src/main/res/xml/file_paths.xml:4`
+
+### Q33: Auto-lock timeout picker removed
+**Finding: Should-fix (nit-level)** — The picker UI and `setAutoLockTimeout` call are removed; the static line "Locks after 10 minutes away." is shown. The `AutoLockTimeout` enum and repository field remain (per spec). No functional regression — D6 already fixed the timeout at 10 min.
+**Code**: `SecuritySettingsDialog.kt:105-118, 558-571`
+
+### Q35: FLAG_SECURE before setContent, non-debug only
+**Finding: Hard Blocker if not enforced** — The code correctly wraps `window.setFlags(FLAG_SECURE)` in `if (!BuildConfig.DEBUG)` and places it **before** `setContent` in `onCreate`. The `Log.d("VAULT_DEBUG", ...)` line is deleted. This satisfies S18 exactly.
+**Code**: `MainActivity.kt:37-42`
+
+### Q36: WebView javaScriptEnabled = false
+**Finding: Should-fix** — `javaScriptEnabled = false` is set. The spec asserts the report HTML contains no script; disabling JS is safe and prevents XSS surface. No print/page-fit scripts are needed (Android print framework handles printing).
+**Code**: `PatientTwoPageReportDialog.kt:196`
+
+### Q38: Weak-PIN setup mode gate
+**Finding: Hard Blocker** — The changes correctly implement the three-part rule:
+- `loadSettings`: `needsPinSetup = !configured` (KEY_PIN_CHANGE_REQUIRED no longer forces setup mode on restart) — **S19 satisfied**.
+- `validatePin` (unchanged in diff): on weak-PIN success, sets `needsPinSetup=true, isAppLocked=true` in memory — setup mode only **after proof**.
+- `lockApp()`: sets `needsPinSetup = !isPinConfigured` — a lock during setup mode reverts to normal PIN entry.
+**Risk**: None. A weak PIN can never unlock straight to patient data; after restart or lock, the old PIN must be re-entered before the new-PIN form appears. No stuck state: if setup is cancelled, `needsPinSetup` stays true (no PIN configured) and setup screen returns.
+**Code**: `SecuritySettingsRepository.kt:56, 168`
+
+### Q39: Honest labels — false claims replaced
+**Finding: Nit** — All four replacements match the spec exactly:
+- WorkspaceScreen: "Encrypted & Verified" → "Saved on this phone"
+- PatientEditor: "Locally Encrypted (AES-256 GCM) · Hardware Vault Security" → "Photos are stored on this phone (not encrypted separately)"
+- AttachmentSyncManager: "Locally Encrypted & Secured" → "Stored on this phone"
+- SecuritySettingsDialog: "Zero Data Loss" / "100% verified" removed; "Backups contain patient records only, not photos." added
+**Code**: `WorkspaceScreen.kt:1993`, `PatientEditor.kt:411`, `AttachmentSyncManager.kt:29`, `SecuritySettingsDialog.kt:589, 601, 658`
+
+### Q40: Restore confirmation dialog
+**Finding: Should-fix** — New `AlertDialog` with `testTag="restore_confirm_dialog"`, correct warning text, "Cancel" (clears `pendingRestoreBytes`, safe), "Replace all" (proceeds to existing `RestorePassphraseDialog` → `onRestoreBackup`). The restore code path is unchanged; Cancel is safe (no data mutation).
+**Code**: `SecuritySettingsDialog.kt:108, 121, 702-735`
+
+---
+
+**Assumptions**: 
+- `validatePin` logic for weak-PIN detection (setting `needsPinSetup=true` in memory) is unchanged per spec Q38(b) — not visible in this diff.
+- Export Backup writes to `cacheDir/backups/` — assumed from spec wording.
+- Report HTML contains no JavaScript — asserted by Q19/Q36 spec.
+
+**Could not verify** (read-only): Unit test runs (UNIT-print), STATIC-r3d gate, device checks. Not run.

@@ -1,0 +1,9 @@
+Changed `app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt` for Q19(h)–(k): blank visit and pregnancy details now use “Not recorded,” blank medication notes use “-,” and missing ultrasound impressions omit parentheses.
+
+Assumption: whitespace-only values count as missing; nonblank text is preserved as entered.
+
+Verification:
+- `check_r3.py`: passed.
+- `:app:compileReleaseKotlin`: passed.
+- Requested unit tests: not run — **UNKNOWN / HARNESS ERROR**; the command was rejected by the non-interactive permission gate.
+- `git diff --check`: passed.

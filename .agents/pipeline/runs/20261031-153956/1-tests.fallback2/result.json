@@ -1,0 +1,20 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "agents/TEST_MANIFEST.json",
+    "pp/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt",
+    ".agents/checks/check_r3t.py",
+    "app/src/test/java/com/sherifradwan/ancnative/model/GestationalDisplayTest.kt"
+  ],
+  "finalMessage": "Files changed:\n.agents/checks/check_r3t.py (NEW)\n.agents/TEST_MANIFEST.json\napp/src/test/java/com/sherifradwan/ancnative/model/GestationalDisplayTest.kt (NEW)\napp/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt\n\nPer oracle:\n- S86-S88 (.agents/checks/check_r3t.py): Implemented static checks verifying GestationalAgeEngine definitions & calculateForEdd calling daysToEdd (S86), GestationalBanner removal of ChronoUnit/weeks>=42/FULL_TERM_DAYS and screen usage of shortWeeksText (S87), and GestationalBannerLogicTest elimination of 280f/ChronoUnit with production calls (S88).\n- Q104 / Unit (GestationalDisplayTest.kt): Tests isLateTerm (true only at 41w, mutually exclusive with isPostTerm across weeks 0..45), progressFraction (0f at 0d, 0.5f at 140d, 1f at 280d, 1f coerced at 320d, 0f clamped), shortWeeksText (\"21+5 wks\", edges), and daysToEdd (positive, zero, negative, and across 2028 leap day).\n- Q106 (GestationalBannerLogicTest.kt): Replaced local formula copies with production members across all scenarios while preserving inputs and expected numbers:\n  * `(result.totalDays / 280f).coerceIn(0f, 1f)` -> `result.progressFraction`\n  * `ChronoUnit.DAYS.between(asOf, edd)` -> `daysToEdd(edd!!, asOf)`\n  * `!result.isPostTerm && result.weeks == 41` -> `result.isLateTerm`\n  * `postTerm42.isPostTerm || postTerm42.weeks >= 42` -> `postTerm42.isPostTerm`\n  * `(-5L / 280f).coerceIn(0f, 1f)` -> `GestationalAgeResult(..., totalDays = -5L).progressFraction`\n  * Removed imports of `java.time.temporal.ChronoUnit` and literal `280f`.\n- TEST_MANIFEST.json: Added STATIC-r3t and UNIT-gestational-display; verified UNIT-gestational-banner deps include GestationalAgeEngine.kt and covers Q106.\n\nVerification:\n- Ran `python3 .agents/checks/check_r3t.py`: S86 FAIL, S87 FAIL, S88 PASS (prior to test rewrite all three S86-S88 failed on today's code).\n- Unit tests not run (GestationalDisplayTest and GestationalBannerLogicTest require Q104 engine changes from core lane to compile).",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-153956/1-tests.fallback2/result.json",
+  "timestamp": "2026-10-31T13:45:01.149Z"
+}

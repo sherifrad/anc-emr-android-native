@@ -1,0 +1,6 @@
+PASS S23 vaultAutoAction takes appUnlocked
+PASS S24 lock closes the vault; auto-unlock gated
+PASS S25 biometric key honours isBiometricEnabled
+PASS S26 no fake scan screen; Image unavailable
+PASS S27 TalkBack semantics on lock screen
+PASS S28 no 36dp IconButton

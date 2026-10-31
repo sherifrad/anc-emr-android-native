@@ -1,0 +1,15 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "opencode-delegate",
+  "cli": "opencode",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [],
+  "finalMessage": "Changed `app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt` for Q19(h)–(k): blank visit and pregnancy details now use “Not recorded,” blank medication notes use “-,” and missing ultrasound impressions omit parentheses.\n\nAssumption: whitespace-only values count as missing; nonblank text is preserved as entered.\n\nVerification:\n- `check_r3.py`: passed.\n- `:app:compileReleaseKotlin`: passed.\n- Requested unit tests: not run — **UNKNOWN / HARNESS ERROR**; the command was rejected by the non-interactive permission gate.\n- `git diff --check`: passed.",
+  "stderrTail": "eleaseManifestForPackage UP-TO-DATE\n> Task :app:processReleaseResources UP-TO-DATE\n> Task :app:kspReleaseKotlin\n> Task :app:compileReleaseKotlin\n\nBUILD SUCCESSFUL in 1s\n18 actionable tasks: 2 executed, 16 up-to-date\n> build · gpt-6-luna\n\u001b[0m$ \u001b[0mgit diff --check -- app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt && git diff --stat -- app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt\n.../ui/report/PatientPrintHtmlGenerator.kt         | 39 ++++++++++++----------\n 1 file changed, 22 insertions(+), 17 deletions(-)\n> build · gpt-6-luna\n\u001b[93m\u001b[1m! \u001b[0mpermission requested: external_directory (/Users/sherifradwan/anc-emr-android-native/*); auto-rejecting\n\u001b[0m✗ \u001b[0mgit diff -- app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt failed\n\u001b[91m\u001b[1mError: \u001b[0mThis non-interactive run cannot ask the user for permission, so the request was rejected. Continue without this action.\n> build · gpt-6-luna",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261030-150323/2a-core/result.json",
+  "timestamp": "2026-10-30T13:05:11.243Z"
+}

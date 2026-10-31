@@ -1,0 +1,43 @@
+I've read the diff and the new files and I'm writing up the review now. I ran no builds or tests.
+
+**Hard Blocker**
+1. **`clearStaleCaptures` deletes photos of saved ultrasound scans.** `InAppCameraDialog.kt`: `CameraCaptureHelper.clearStaleCaptures(context, STALE_CAPTURE_MS)` runs on every camera open.
+   - The UltrasoundEditor stores the `content://…fileprovider/camera_photos/capture_*.jpg` URI directly in the scan's `IMAGE_URIS`.
+   - Nothing copies it into the vault. The viewer, `ProfileScreen` and `PatientPrintHtmlGenerator` read `imageUris` straight from those URIs.
+   - After 24 hours, the next time anyone opens the camera, every older scan photo is deleted. The scan then points at a missing file. That is silent loss of clinical data.
+   - Safe fix within the spec: don't sweep files younger than the draft lifetime. Better, don't sweep files that scan records still reference. Or move ultrasound camera photos into the vault, which is a spec change for the orchestrator.
+   - The old `TakePicture` path put the same files in the same cache folder, so Android could already clear them. This diff adds a deterministic sweep on top of that.
+
+**Should-fix**
+2. **Temp file left behind if the dialog closes mid-capture.** `onImageSaved { captureFile = file }`: if the dialog is dismissed (Close, Back or app lock) between `takePicture` and the callback, `onDispose` sees `latestFile == null`. The file is written and never deleted until the next sweep.
+3. **Rapid double tap on `camera_capture`.** `takePhoto()` creates a new file per tap and the capture button is not disabled while saving. The second success overwrites `captureFile`, so the first file is orphaned (patient photo in cache for up to 24 hours).
+4. **Orphans from AddAttachmentDialog.** `onCaptured = { uri -> selectedUri = uri … }` and `onDismiss = { showCamera = false }`.
+   - "📷 Retake" overwrites the previous captured `selectedUri` without deleting its file.
+   - Cancelling `AddAttachmentDialog` after a capture also leaves the file.
+   - `AncViewModel.addAttachment` returns early (`?: return`, vault not unlocked) before the `try … finally`, so `deleteIfCaptureTemp` never runs on that path.
+   - All of these leave patient photos in the cache until the 24-hour sweep, which only runs on the next camera open.
+5. **Main-thread work during composition.** `val still = remember(shot) { decodeUpright(shot) }` decodes a JPEG, reads EXIF and calls `Bitmap.createBitmap` (rotate) on the composition thread. On a 12MP photo that can drop frames. `BoundedBitmap` limits memory, not time. Move it to `produceState(Dispatchers.IO)`. The old bitmap is also never recycled (Nit-level).
+6. **Capture and bind errors share one message.** `.onFailure { failed = true }` shows `camera_capture_failed` ("The photo could not be taken") when camera binding fails. The user then sees a live-looking but black preview with a working capture button. Show a distinct message, or hide the capture button when binding failed.
+
+**Nit**
+7. `factory = { previewView }` reuses one `PreviewView` across Retake. If the old `AndroidView` has not detached yet, Android can throw "view already has a parent". Creating the view inside `factory` is safer.
+8. Unit tests: `PhotoQualityPresetTest` imports the real production enum, so the preset values and `defaultFor` are covered. These are not tested:
+   - `deleteIfCaptureTemp` (traversal and outside-folder cases)
+   - `clearStaleCaptures`
+   - `preset` reaching the vault from the UI event
+   - the dialog's lifecycle
+
+**Question-by-question**
+- **(1) Camera release:**
+   - `DisposableEffect(lifecycleOwner, live)` calls `provider?.unbindAll()` in `onDispose`, and the `disposed` flag guards a late listener, so the camera is released whenever the dialog leaves composition.
+   - A capture callback can fire after dismissal; see items 2 and 3. If `unbindAll` cancels an in-flight capture, `onError` runs `file.delete()`, which is fine.
+   - Retake and Close/dismiss delete the file through `deleteIfCaptureTemp`; the exceptions are items 2 and 3.
+   - Permission denied: the path is safe. The message appears only after the first ask, a Close button is shown, and nothing crashes.
+   - `onError` shows a visible message (`camera_capture_failed`, defined in `strings.xml`).
+- **(2) Result flow:** Equivalent to the old `TakePicture` path. AddAttachmentDialog sets `selectedUri`, and UltrasoundEditor appends `uri.toString()` to `draft.values.imageUris`. The gallery picker is untouched.
+- **(3) Presets:** Values match the spec exactly: SMALL 1280/70, STANDARD 1600/75, DETAILED 1920/85. `PhotoQuality.kt` references no `R`. The default follows the category until the user picks one (`chosenPreset ?: defaultFor(selectedCategory)`). The preset travels: the chip → `onSave(..., preset)` → `AncEvent.AddAttachment(preset)` → `AncViewModel` → `saveAttachment(preset = event.preset)` → `compressAndWrite` (`preset.maxSide` / `preset.webpQuality`). The old constants are gone.
+- **(4) `deleteIfCaptureTemp`:** It is safe against traversal. It checks scheme and authority, requires the first segment `camera_photos`, canonicalises the root and the candidate, and requires `candidate.parentFile == root` and `isFile`. `..`, encoded `/` and symlinks that resolve elsewhere all return false. Deleting after the AddAttachment save does not touch UltrasoundEditor draft URIs, because only `AddAttachment` events trigger it. The real draft-URI danger is the sweep in item 1.
+- **(5) Duplicated rules:** None found. `createCameraTempUri` reuses `createCameraTempFile`, and the compression constants live only in the enum. `STILL_MAX_SIDE = 1600` is a preview-only constant and is not a copy of the preset values.
+- **(6) Tests:** See item 8.
+
+**Assumption:** I judged item 1 as a blocker because I found no code path that copies ultrasound `IMAGE_URIS` into the vault. If another path exists that I missed, it drops to Should-fix.

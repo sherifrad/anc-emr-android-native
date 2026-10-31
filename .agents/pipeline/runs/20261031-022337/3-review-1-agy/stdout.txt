@@ -1,0 +1,25 @@
+Review of Round 3l changes (`git diff` against HEAD):
+
+Findings: None (No Hard Blockers, Should-fixes, or Nits). All changes meet spec cleanly.
+
+1. Q81 (Transaction Atomicity on Clinical Save):
+- In all four clinical save functions (`saveDating`, `saveUltrasoundScan`, `saveLabInvestigation`, `saveMedication`), every rejection following a write is now `throw ClinicalCommandAbort(STALE_PATIENT_REVISION)` ([RecordsRepository.kt:1077, 1185, 1266, 1351](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt#L1077)).
+- Pre-write checks and revision mismatch checks where no rows were modified (`updated != 1`) correctly remain direct `return Rejected(...)`.
+- No path commits writes before returning Rejected. In `saveUltrasoundScan`, scan writes and visit link/unlinks ([RecordsRepository.kt:1178-1181](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt#L1178-L1181)) are fully rolled back by Room upon abort.
+- `execute` ([RecordsRepository.kt:347-348](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt#L347-L348)) catches `ClinicalCommandAbort` and maps it to `Rejected(abort.failure)`. Because the transaction rolls back, no receipt is committed, preserving replay/reconcile idempotency.
+
+2. Q82 (Visit Synthetic Flag):
+- No other place creates visits with `isSyntheticEdit = true`. Both production creation sites ([SaveVisitCommand.kt:175](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/SaveVisitCommand.kt#L175) and [RecordsRepository.kt:668](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt#L668)) write `false`. Strings updated as required ([strings.xml:132](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/res/values/strings.xml#L132)).
+
+3. Q83 (Profile Save Notice & Dating Integration):
+- In [AncViewModel.kt:363-368](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt#L363-L368), dating outcome is captured. `patients` uses `datingResult.snapshot.patients` only when committed; `Ambiguous` is treated as not saved (`datingSaved = false`). `expectedPatientRevision` uses the freshly committed revision (`committedPatient?.revision ?: 1L`).
+- Notice mapping in [WorkspaceScreen.kt:2146](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt#L2146) is exhaustive across all `SavedNotice` cases.
+- If dating fails, the profile remains saved, drafts are cleared, and the UI correctly shows `PATIENT_DATING_NOT_UPDATED`. No inconsistent state is left.
+
+4. Checks & Dead Code:
+- Zero dead code, superfluous comments, or artificial constructs added to satisfy checks.
+
+5. Test Verification:
+- `VisitSyntheticFlagTest` and `ProfileSavedNoticeTest` directly exercise production code.
+- `ClinicalSaveAtomicityTest.kt` imports production classes and explicitly queries the DAO to assert row absence (`labInvestigation`, `medication`, and `clinicalCommandReceipt` asserted `null`) on stale revision aborts.
+- STATIC-r3l (`python3 .agents/checks/check_r3l.py`) passed. Gradle test execution was not run due to daemon sandbox loopback restrictions.

@@ -1,0 +1,84 @@
+Now I have a comprehensive understanding of all the source files. Let me do a final check for any SecuritySettingsRepository tests and the check script logic:
+Now I have a complete picture. Let me provide the independent review:
+
+---
+
+## ROUND 3C INDEPENDENT REVIEW
+
+### Oracle Compliance (Q25-Q29, S8-S13, D6, D7)
+
+**Q25 PIN Policy (PinPolicy.kt) - PASS**  
+All rules implemented: 6 ASCII digits, rejects all-same, rejects straight runs up/down, PBKDF2-HMAC-SHA256 120k iterations, 16-byte salt, constant-time compare, lockout delays match spec (0-4→0, 5→30s, 6→60s, 7→5m, 8+→15m). Tests cover boundaries.
+
+**Q26 Lock Timing (AppLockPolicy.kt) - PASS**  
+`BACKGROUND_LOCK_MS = 600_000L`, `shouldLockOnReturn` correctly handles null, boundary, clock-back, and normal cases. Unit tests verify all examples.
+
+**Q27 Repository & Lifecycle (SecuritySettingsRepository.kt, MainActivity.kt) - MOSTLY PASS, 1 HARD BLOCKER**  
+(a) No DEFAULT_PIN/123456 default ✓ (b) isPinConfigured checks v2 hash ✓ (c) Legacy migration with old SHA-256 check, stores v2, deletes legacy key, forces new PIN if legacy was "123456" ✓ (d) `isAppLocked = configured` at cold start ✓ (e) Failed attempts + lockout end time persist in SharedPrefs, correct PIN resets, lockout blocks entry ✓ (f) MainActivity onStop records time, onStart calls `shouldLockOnReturn` and `lockApp()` ✓ (g) AutoLockTimeout has no NEVER, default is TEN_MINUTES ✓ (h) `updatePin` rejects invalid PINs ✓
+
+**HARD BLOCKER in Q27(e)**: `remainingLockoutMs()` and `refreshLockout()` in `validatePin()` and `lockIfBackgroundTimeoutElapsed()` recompute from `System.currentTimeMillis()` each call, but the `lockoutRemainingMs` StateFlow is only updated via `refreshLockout()`. When lockout expires naturally (no user interaction), the UI continues showing the expired lockout message because `lockoutRemainingMs` in the StateFlow is stale. The LaunchedEffect in AppLockScreen polls `securityRepo.getLockoutRemainingMs()` every second which fixes it for the lock screen, but **Settings dialog** and **any other consumer** reading `settingsState.lockoutRemainingMs` will show stale data.
+
+**Q28 Android 8-10 Crash (BiometricAuthManager.kt) - PASS**  
+`isBiometricAvailable` returns false for SDK_INT < 30 before any BiometricManager use. Android 11+ unchanged.
+
+**Q29 Screens (AppLockScreen, AncApp, SecuritySettingsDialog, strings.xml) - MOSTLY PASS, 1 SHOULD-FIX**  
+(a) PIN setup screen enforces rule, shows hint, no patient data visible ✓ (b) Lockout shows "Too many wrong PINs. Try again in M:SS" and disables entry (lockoutRemainingMs > 0 blocks keypad) ✓ (c) Change PIN uses isValidNewPin, shows rule, auto-lock list has no Never ✓ (d) Biometric button hidden when `!isBiometricSupported` ✓ (e) All text in strings.xml ✓
+
+**SHOULD-FIX in Q29(b)**: Lockout time format in strings.xml uses `%1$d:%2$02d` (minutes:seconds) but AppLockScreen computes `seconds / 60` and `seconds % 60`. At 30s this shows "0:30" (OK), at 90s shows "1:30" (OK). But at 3600s (1hr) would show "60:00" — spec only requires up to 15m so acceptable. Minor: should use plural-aware string.
+
+---
+
+### Static Checks (check_r3c.py S8-S13) - ALL PASS
+- S8: SDK_INT < 30 guard before BiometricManager ✓
+- S9: No "123456" or "DEFAULT_PIN" in SecuritySettingsRepository ✓
+- S10: Uses hashPin, pinMatches, v2 keys ✓
+- S11: MainActivity calls shouldLockOnReturn ✓
+- S12: AutoLockTimeout enum has no NEVER ✓
+- S13: SHA-256 only in legacyHashPin (function name contains "legacy") ✓
+
+---
+
+### NEW DEFECTS FOUND (by severity)
+
+#### HARD BLOCKER
+1. **Lockout StateFlow staleness** (Q27e): `SecuritySettingsRepository.lockoutRemainingMs` StateFlow only updates via explicit `refreshLockout()` calls. When lockout expires naturally (app in background, user returns after lockout), `settingsState.lockoutRemainingMs` remains >0 until next PIN attempt or Settings dialog open. The lock screen polls every second so it's OK there, but any other UI reading this value (Settings dialog, future screens) shows incorrect lockout time.
+
+2. **Legacy PIN "123456" check uses list join** (SecuritySettingsRepository line 98): `pin == listOf('1', '2', '3', '4', '5', '6').joinToString("")` — works but brittle; should use string literal "123456" for clarity (the check is only for migration logic, not a default).
+
+3. **Process death + restore scenario**: On cold start, `isAppLocked = configured` (true if PIN exists). But `lastUnlockedAt = 0L` means `shouldLockOnBackground` would return true for IMMEDIATELY timeout, though `lockApp()` is idempotent. OK.
+
+#### SHOULD-FIX
+4. **Biometric prompt on lock screen auto-launches** (AppLockScreen LaunchedEffect): Auto-triggers biometric on first show if enabled. If user cancels biometric, `errorMessage` shows "Fingerprint verification failed. Use your PIN." but `onResult(false)` doesn't set lockout. Acceptable but could be clearer.
+
+5. **Settings dialog biometric Switch enabled state**: `enabled = isBiometricAvailable` — correct. But when disabled, the switch is grayed out; user can't toggle. Good.
+
+6. **Settings dialog "Change PIN" doesn't verify current PIN**: ChangePinDialog only validates new PIN via `isValidNewPin`, calls `securityRepo.updatePin(newPin)` which stores v2 hash without verifying old PIN. Spec Q27(h) says "updatePin rejects anything isValidNewPin rejects" — doesn't require current PIN verification, but this allows PIN change without knowing current PIN if Settings is accessible. **However**: Settings is only accessible when app is unlocked, so user already authenticated. Acceptable.
+
+7. **BiometricAuthManager promptBiometric onResult(false) on cancel**: Returns false for both failure and cancel. AppLockScreen treats both as "Fingerprint verification failed. Use your PIN." — doesn't distinguish cancel vs fail. Acceptable per spec.
+
+#### NIT
+8. **strings.xml pin_lockout format**: Uses `%1$d:%2$02d` (minutes:seconds) but spec says "Try again in <time>." — format acceptable.
+
+9. **AppLockScreen LaunchedEffect for biometric auto-launch**: Runs when `setupMode`, `legacyChangeRequired`, `isBiometricEnabled`, `isBiometricSupported` change. If user enables biometric in Settings while lock screen showing, it won't re-trigger (biometricAttemptedOnLaunch stays true). Minor.
+
+10. **SecuritySettingsRepository.legacyHashPin uses "ANC_CLINIC_SALT_v1_"** — hardcoded salt. Only used for legacy migration check. Acceptable.
+
+---
+
+### TESTS WEAKENED?
+- No SecuritySettingsRepository unit tests exist (only androidTest SecurityWorkflowTest). Not weakened — simply not covered at JVM level. PinPolicyTest and AppLockPolicyTest are new and comprehensive.
+
+---
+
+### COULD NOT VERIFY
+- Device-level behavior on API 26 emulator (S8 device check) — not run
+- QA build on Honor 400 first launch / cold start / 5 wrong PINs — not run
+- Full unit suite green (G1) — not run
+- Compile debug + release (G2) — not run
+- Earlier static checks (G3) — not run
+
+---
+
+### SUMMARY
+**2 HARD BLOCKERS, 7 SHOULD-FIX, 3 NITS**  
+Primary blocker: Lockout StateFlow staleness affects any UI beyond the lock screen. Should fix by making `lockoutRemainingMs` a derived StateFlow or polling in all consumers.

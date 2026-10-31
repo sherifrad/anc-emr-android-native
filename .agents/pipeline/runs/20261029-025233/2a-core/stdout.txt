@@ -1,0 +1,27 @@
+I'll start by reading the spec and the tests that form the contract.
+Now let me check the static check script and current clinical badge usage to avoid breaking the contract.
+Now I'll write the two new files.
+Now the WorkspaceScreen edits: remove the moved definitions and swap in the helpers.
+Test compilation is blocked by another lane's file (`ThemeContrastTest.kt`, not mine). Let me verify my logic independently.
+> 🦅 **MACA Active Fleet Dispatch** — Tier 1 (single-model multi-session), Phase 3 Implementation, Lane: CORE LOGIC BUILDER (build core)
+
+Files changed:
+- `app/src/main/java/com/sherifradwan/ancnative/ui/DeliveryNotesParser.kt` (NEW)
+- `app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt` (NEW)
+- `app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt` (3 edits only: removed moved definitions; `val rhNegative = isRhNegative(...)` + `emphasize = rhNegative`; `emphasize = isHighRisk(patient.riskLevel)`)
+
+Per oracle:
+- P1 whole-word fee vocabulary (`\b(fees?|egp|cost|costs|package)\b`); "feels"/"breastfeed" no longer match.
+- P2 postpartum = "Postpartum [note]:" label, or whole-word delivered/discharged with no history marker (previous|prior|history|earlier|pregnancy|G\d+P\d+); history lines stay in plan verbatim.
+- P3 only known label prefixes are stripped, and only for fees/postpartum boxes; plan/fees-unlabelled lines stay verbatim, so "10:30" survives; unconfirmed fee wording (quoted/estimate/proposed/discussed/undecided/not agreed) goes to plan.
+- P4 hospital = regex phrase of capitalised words ending in "Hospital" (optional Maternity/Medical), searched on all lines; declines/Hospitalised/lowercase "hospital" give null.
+- P5 every non-empty line lands in exactly one home section (plan fallback); hospital line may additionally appear in the hospital box; null/blank → all null.
+- P6/P7/P8 as specified (U+2212 normalised, positive/negation guards, digits-only age).
+- P10(e),(f): verified by running `.agents/checks/check_ui_static.py` → both PASS (a–d belong to the UI lane, still FAIL there).
+
+Verification:
+- `./gradlew --offline :app:compileDebugKotlin` passes.
+- `./gradlew --offline :app:testDebugUnitTest --tests '*ParseDeliveryNotesSpecTest' --tests '*ClinicalFormatTest'`: **not run to completion** — `compileDebugUnitTestKotlin` fails on another lane's file `app/src/test/.../ThemeContrastTest.kt:115` (`ushr` on BigInteger) + `:116`. I did not touch it.
+- Substitute evidence: compiled my two files with the Gradle Kotlin compiler into a scratch dir outside the repo and ran a harness mirroring every assertion of the two spec tests + the existing `DeliveryNotesParserTest` → **159/159 checks pass**. This is a mirror, not the JUnit run.
+
+Assumptions: "Delivery fee package agreed:" is treated as the same label family as "Delivery fee:" (required to keep the existing `DeliveryNotesParserTest` startsWith("15,000 EGP") contract); plan keeps label prefixes verbatim (safe, nothing altered); multiple hospitals join with newline in the hospital box.

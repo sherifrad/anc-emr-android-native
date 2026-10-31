@@ -1,0 +1,17 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "claude-delegate",
+  "cli": "claude",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "app/src/main/java/com/sherifradwan/ancnative/storage/ScanPhotoRef.kt"
+  ],
+  "finalMessage": "I couldn't verify any of this. Bash kept asking for approval and I couldn't grant it. The unit tests, `check_r3g.py`, the older checks and both compile tasks are all **not run**.\n\n**Files changed** (all in the allowed list):\n- `storage/ScanPhotoRef.kt` (new)\n- `storage/CameraCaptureHelper.kt`\n- `state/AncState.kt`\n- `state/AncViewModel.kt`\n\n**What I did per oracle:**\n- **Q63:** `ScanPhotoRef.kt` has `SCAN_PHOTO_REF_PREFIX = \"vault:\"`, `scanPhotoRef`, `isScanPhotoRef` and `scanPhotoFileName`. The last returns the name only when it matches `[A-Za-z0-9_-]+\\.webp`. That also rejects `..`, `/`, `\\`, extra dots, other schemes and an empty name.\n- **Q64:** I added `staleCaptureFiles(dir, olderThanMs, nowMs, referencedNames)` as a top-level function, because `CameraCaptureSweepTest` calls it without a receiver. `clearStaleCaptures(context, olderThanMs, referencedUris)` takes the last path segment of each URI and deletes the files `staleCaptureFiles` lists. The old two-argument version is gone.\n- **Q65, state:** I added `AncEvent.ImportScanPhoto` (`preset` defaults to `DETAILED`) and `AncEvent.ScanPhotoImported`. The reducer appends the ref to the draft's `imageUris` with `.distinct()`. It leaves state unchanged when there is no draft or the draft belongs to another patient.\n- **Q65, ViewModel:** `importScanPhoto` follows the spec.\n  - Without an unlocked vault it calls `deleteIfCaptureTemp` and returns.\n  - Otherwise, on `Dispatchers.IO`, it sweeps, calls `saveAttachment`, then dispatches `ScanPhotoImported(patientId, scanPhotoRef(fileName))`.\n  - On failure it logs and dispatches `AttachmentFailed(SAVE_FAILED)`. `CancellationException` is rethrown. `deleteIfCaptureTemp` runs in a `finally`.\n- **Shared sweep:** `addAttachment` and `importScanPhoto` both call one private `sweepStaleCaptures()` with a one-hour limit. Its referenced set is every `imageUris` string of every patient's scans.\n\n**Assumptions:**\n- **Draft photos are protected:** the referenced set also includes the open ultrasound draft's `imageUris`. That goes beyond the spec, and I did it so an unsaved legacy draft photo can't be swept.\n- **Patient mismatch:** the reducer ignores a `ScanPhotoImported` whose `patientId` differs from the draft's. `ScanPhotoImportStateTest` expects this.\n\nPlease run `./gradlew --offline :app:testDebugUnitTest`, `python3 .agents/checks/check_r3g.py` and the older `check_r3*.py` scripts. Also run `./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin`. I also did not touch `UltrasoundEditor.kt`, the photo viewer or its callers (Q66/Q67), which are outside my allowed list. So `check_r3g.py` will still fail on S48 and S49 until another lane finishes them.",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261030-233105/2a-core/result.json",
+  "timestamp": "2026-10-30T21:33:50.312Z"
+}

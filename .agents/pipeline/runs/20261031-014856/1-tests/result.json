@@ -1,0 +1,18 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "opencode-delegate",
+  "cli": "opencode",
+  "status": "failed",
+  "exitCode": 1,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    ".agents/checks/check_r3k.py",
+    "app/src/test/java/com/sherifradwan/ancnative/ui/FormatWeightKgTest.kt"
+  ],
+  "finalMessage": "Now let me look at an existing test in the same package for style, and check where `AttachmentDisplayTitle` tests live:\nNow I have everything I need. Writing the three deliverables:\nNow the unit test file:",
+  "stderrTail": "ems.append(\"the Prior Pregnancies block still uses Arrangement.SpaceBetween\")\n                 if \"Column(\" not in block:\n                     problems.append(\"the Prior Pregnancies block does not contain a Column\")\n                 for m in re.finditer(r\"(?<![A-Za-z])Row\\(\", block):\n-                    body = brace_body(block, m.start() + len(\"Row\") - 1)\n+                    body = brace_body(block, m.start() + len(\"Row\"))\n                     if body is None:\n                         continue\n                     if re.search(\n                         r'p\\.dateText\\s*\\?:\\s*\"Prior\"', body\n\n> build · glm-5.3-flash-free\n\u001b[0m← \u001b[0mWrite app/src/test/java/com/sherifradwan/ancnative/ui/FormatWeightKgTest.kt\nCreated file successfully: app/src/test/java/com/sherifradwan/ancnative/ui/FormatWeightKgTest.kt\n> build · glm-5.3-flash-free\n\u001b[91m\u001b[1mError: \u001b[0mFree usage limit reached. Free models work in OpenCode (https://opencode.ai); subscribe to OpenCode Go to keep going: https://opencode.ai/go",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-014856/1-tests/result.json",
+  "timestamp": "2026-10-30T23:52:54.574Z"
+}

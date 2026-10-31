@@ -1,0 +1,26 @@
+### Round 3n Independent Review
+
+**1. IVF Dating (Q88)**
+* Day 3 (GA 17d, EDD transfer+263), Day 5 (GA 19d, EDD transfer+261), Day 6 (GA 20d, EDD transfer+260) match the spec exactly via [IsoDates.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt#L9-L13).
+* Days 4 and 7 are refused in engine (`GestationalAgeEngine.kt`), command structure checks, and command preparation (`ClinicalCommands.kt`). On backup restore, raw entities are loaded without validation, but `GestationalAgeEngine` returns `null` GA and EDD for unapproved days.
+* No calculation literals (3, 5, 17, 19, 261, 263) remain in `app/src/main`. The only occurrences are `ClinicalVocabulary.embryoAges = listOf(3, 5, 6)`, chip labels / default `5` fallback, a hex color in `Theme.kt`, and demo fixture dates.
+
+**2. Redating Engine (Q89)**
+* Edges in [Redating.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/model/Redating.kt#L10-L16) match exactly: `<=62 -> 5`, `63..111 -> 7`, `112..153 -> 10`, `154..195 -> 14`, `>=196 -> 21`.
+* Strict "more than": `abs(difference) > threshold` properly returns `null` at boundary.
+* Difference is signed (`scanGaDays - datingGaDays`).
+* In [UltrasoundEditor.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt#L147), `redatingAdvice` receives `calculatedGa.totalDays`. The card and hint are guarded by `calculatedGa != null && calculatedGa.isPostConception`, preventing display when no dating exists.
+
+**3. UI & Accessibility (Q90, Q91)**
+* Day 6 chip uses `FlowRow` with 8.dp horizontal and 6.dp vertical spacing, wrapping cleanly at large font scales.
+* Hint text matches `R.string.redating_hint` on `onPrimaryContainer` (readable). It is purely informational and never blocks saving.
+* All testTags preserved (`embryoDay3`, `embryoDay5`, `scanCalculatedGaCard`, `applyScanGa`) and new ones added (`embryoDay6`, `redatingHint`).
+* Input parsing (`trim().toIntOrNull()`, `weeks >= 0 && days in 0..6`) safely ignores blank/malformed entries without crashing or triggering hints.
+
+**4. Check Satisfy-Only Code**
+* None found. Code strictly follows the reuse principle.
+
+**5. Findings & Test Coverage**
+* **Nit**: [RedatingTest.kt#L7](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/model/RedatingTest.kt#L7): Unused import `java.time.LocalDate`.
+* **Nit**: [IvfDatingTest.kt#L89,L115](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/model/IvfDatingTest.kt#L89): Day 4 is checked on `SaveDatingCommand`, but day 7 rejection is only asserted on `GestationalAgeEngine` (line 57).
+* Verification: S72–S75 static checks pass (`python3 .agents/checks/check_r3n.py`). Gradle unit test execution was blocked by the sandbox socket restriction (not run).

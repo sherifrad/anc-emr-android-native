@@ -1,0 +1,14 @@
+I’ll stay within the UI-builder allowlist and the Round 3d written spec. The reported failing S14 is outside this role’s UI scope, so I’ll avoid changing its implementation.
+> 🦅 **MACA Active Fleet Dispatch** — single-model; Phase 2 / UI Builder lane (no reviewer dispatch from this bounded lane). The allowlisted files already contain the requested Round 3d UI changes in the current worktree; I’m validating them without disturbing pre-existing edits.
+> 🦅 **MACA Active Fleet Dispatch** — single-model; Phase 2 / UI Builder lane.
+
+No additional edits were needed: the requested UI changes were already present in the worktree.
+
+- **Q33:** Removed the timeout picker and setter; shows “Locks after 10 minutes away.”
+- **Q36:** Report WebView JavaScript is disabled.
+- **Q39 UI:** Updated the attachment and photo labels; backup text says backups contain patient records only, not photos, and removes the unsupported guarantees.
+- **Q40:** Restore asks for confirmation; only “Replace all” proceeds to the existing passphrase and restore flow.
+
+**Verification:** `check_r3d.py` passed S17–S22. `:app:compileDebugKotlin` succeeded.
+
+**Scope note:** The AttachmentSyncManager label is outside this lane’s allowlist and was not checked or changed. S14 is also outside this UI scope.

@@ -1,0 +1,21 @@
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt (NEW)
+- app/src/main/java/com/sherifradwan/ancnative/state/DraftAutosaver.kt (NEW)
+- app/src/main/java/com/sherifradwan/ancnative/storage/VaultController.kt
+- app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
+
+Implementation by oracle:
+- Q109: DraftMapping.kt implements DraftSlot, activeDraftSlot, draftRecordFor (all 9 screens, CREATE/EDIT detection, excludes ultrasound imageUris, NEW_PATIENT_DRAFT_KEY), applyDraftRecord (fresh UUID editorSessionId, clears errors), closedDraftSlot (gated on Unlocked vaultState), and state-package VaultState factory/proxy object.
+- Q110: DraftAutosaver.kt implements DraftStore and DraftAutosaver with debounced save, delete on closed slot, cancelPending, and exception-safe flush. VaultController implements saveDraft, loadDraft, deleteDraft using storageMutex.
+- Q111: AncViewModel owns DraftAutosaver with VaultController DraftStore; dispatches and save completions report via private updateState(); lock reset cancels pending without discard; manualLock/onBackgrounded await autosaver.flush() (max 2s) before delegating to controller.
+
+Assumptions:
+- Defined VaultState factory in DraftMapping.kt so state-package test files can access VaultState.Unlocked/Locked/Closing without explicit storage import.
+
+Verification:
+- python3 .agents/checks/check_r3v.py: PASS (S92, S93)
+- Earlier static checks (check_r3u, check_r3t, check_r3s, check_r3e, check_r3f1): PASS
+- Unit tests (*DraftMappingTest, *DraftAutosaverTest): PASSED
+- Full unit test suite (:app:testDebugUnitTest): PASSED
+- Compilations (:app:compileDebugKotlin, :app:compileReleaseKotlin, :app:compileDebugAndroidTestKotlin): PASSED
+- Device tests: not run (nothing was run on a device).

@@ -1,0 +1,14 @@
+U7 is applied, but I could not run the verification commands: the shell is refusing to run them without approval.
+
+**Changed:** `app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt` only.
+
+**U7:** The scan photo chip in the scan snapshot card (around line 1414) showed `scan.imageUris.size.toString()`, a bare number. It now reads `text = stringResource(R.string.photos_count, scan.imageUris.size)`. Colours, padding, `clickable` and the surrounding layout are unchanged. A grep confirms the chip now uses `photos_count`, and the other `photos_count` usage at line 1142 was already correct.
+
+**Not run:**
+- `python3 .agents/checks/check_ui_static_r2.py`
+- `python3 .agents/checks/check_ui_static.py`
+- `./gradlew --offline :app:compileDebugKotlin`
+
+Each was rejected with "This command requires approval", so I have no real results from them. The change is a one-line swap to a string resource that already exists in `strings.xml`, but it has not been compiled.
+
+**Assumption:** I read U7's "no `imageUris.size.toString()`" as applying to this chip only. The other `imageUris.size` uses in ProfileScreen.kt are inside longer strings, so I left them alone.

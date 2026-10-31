@@ -1,0 +1,5 @@
+MACA pipeline 20261030-160322 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('opencode', 'openai/gpt-6-luna'), 'ui': ('opencode', 'openai/gpt-6-luna')} review: ['opencode:omniroute/nvidia/nvidia/nemotron-3-ultra-550b-a55b']
+  claude    /opt/homebrew/bin/claude
+  opencode  /opt/homebrew/bin/opencode
+[1-tests] claude completed 100.3s changed=3 violations=0
+HALT: manifest lacks gate ids ['STATIC-r3c', 'UNIT-lock-policy', 'UNIT-pin-policy']

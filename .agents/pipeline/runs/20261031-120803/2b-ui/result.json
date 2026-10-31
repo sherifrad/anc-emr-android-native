@@ -1,0 +1,17 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt"
+  ],
+  "finalMessage": "Files changed:\n- app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt\n\nWhat was done per oracle:\n- Q95: Updated the dialog title Text (\"Clinical Medical Record\") to allow two lines (`maxLines = 2`, keeping `overflow = TextOverflow.Ellipsis`). Retained patient name line (`maxLines = 1`) and all test tags, colours, and action buttons.\n\nAssumptions:\n- None. Followed Q95 specification directly.\n\nVerification:\n- Static check: `python3 .agents/checks/check_r3p.py` passed (S78 PASS, S79 PASS).\n- Compilation: `./gradlew --offline :app:compileDebugKotlin` passed (BUILD SUCCESSFUL).\n- Unit tests: `./gradlew --offline :app:testDebugUnitTest` passed (BUILD SUCCESSFUL, full unit suite green).\n- Device check: not run (postponed per round 3p spec).",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-120803/2b-ui/result.json",
+  "timestamp": "2026-10-31T10:17:31.657Z"
+}

@@ -1,0 +1,8 @@
+I’ll make only the requested `ageFormatted` line change, after checking the governing spec and nearby implementation. I’ll leave all other allowed files untouched.
+> 🦅 **MACA Active Fleet Dispatch** — Tier: single lane; Phase: implementation + validation; Lane: CORE LOGIC BUILDER (Q18)
+
+Changed `PatientPrintHtmlGenerator.kt` only: Age now uses `formatAgeYears`; valid ages print as “n yrs,” invalid nonblank text is trimmed and preserved, and blank/null prints “-”.
+
+Assumptions: none.
+
+Validation: requested parser/clinical-format tests passed; `PatientPrintHtmlGeneratorTest` passed.

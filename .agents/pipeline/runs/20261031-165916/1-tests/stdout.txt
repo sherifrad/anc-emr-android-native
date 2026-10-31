@@ -1,0 +1,19 @@
+Files changed: `.agents/checks/check_r3u.py` (new), `app/src/test/java/com/sherifradwan/ancnative/storage/DraftCodecTest.kt` (new), `app/src/androidTest/java/com/sherifradwan/ancnative/storage/EncryptedRecordsTest.kt`, and `.agents/TEST_MANIFEST.json`. I could not run anything: every `python3` and Bash run was blocked for approval in this non-interactive session. All four files are written but unrun.
+
+**Not run (all of it)**
+- `check_r3u.py` has not run, so I have no PASS/FAIL output to report.
+- `DraftCodecTest` has not run.
+- The androidTest file has not been compiled with `:compileDebugAndroidTestKotlin`. It also can't compile until core adds `DraftRecord`, `DraftScreenKind`, `DraftEditorKind`, `NEW_PATIENT_DRAFT_KEY`, `MAX_DRAFT_PAYLOAD_BYTES`, and the repository draft methods.
+- I did not check that `TEST_MANIFEST.json` parses. The edit was a plain insertion before `STATIC-r3t`.
+- S89–S91 should fail on today's code because `DraftEntity`, `from5To6` and the draft methods don't exist yet and `SCHEMA_VERSION` is 5. That is from reading the sources, not from a run.
+
+**Per oracle**
+- **Q107:** `DraftCodecTest` covers every case in the spec's Unit paragraph. It adds a check that the cap counts UTF-8 bytes rather than characters, and that `MAX_DRAFT_PAYLOAD_BYTES` is 65,536.
+- **Q108:** In `EncryptedRecordsTest`, the table set now includes `drafts`, and the three schema-version expectations are 6 (the two named in the brief plus `metadata.schemaVersion`). The eight new draft tests are in, and they reuse `withDatabase` and `countRows`. The encryption test checks the main database file and any `-wal` or `-shm` siblings for a plain-text marker.
+- **S89–S91:** The check strips comments first. It uses a regex to find where each repository function starts and ends. The five draft methods checked for S91 are `saveDraft`, `loadDraft`, `loadDrafts`, `deleteDraft` and `deleteDrafts`.
+- **Manifest:** `STATIC-r3u` and `UNIT-draft-codec` are added.
+
+**Assumptions**
+- The check looks for the entity's primary key as `primaryKeys = ["patient_id", "screen_kind"]` in the `@Entity` annotation. A composite key declared another way would fail S90.
+- It accepts either `deleteAllDrafts(` or `DELETE FROM drafts` inside `restoreCanonicalBackup`.
+- The restore test builds `CanonicalBackupPayload` with an empty patient list.

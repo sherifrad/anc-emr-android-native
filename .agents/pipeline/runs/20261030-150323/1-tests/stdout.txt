@@ -1,0 +1,18 @@
+I added the q19h–q19k tests, but I couldn't run them. Gradle needs approval in this session and wasn't approved, so I don't know yet whether they compile or which ones fail.
+
+I appended the 8 tests to `PatientPrintHtmlGeneratorTest.kt` and left the existing tests alone. This changed no other file and no Q17 assertion. Here is what each one checks:
+
+- **q19h_visitNotesMissing_notRecorded_noInventedCourse:** a visit with null, empty or whitespace findings and notes prints exactly `<td class="text-center notes-cell">Not recorded</td>`. "Antenatal course progressing favorably" must not appear.
+- **q19h_visitFindingsThenNotes_printed:** findings print first, then notes when findings are blank. The "Antenatal course progressing favorably" text prints when the clinician typed it.
+- **q19i_prevPregnancyDetailsMissing_notRecorded_noUncomplicated:** missing `placeAndDoctor` and `otherDetails` print `<td class="text-center">Not recorded</td>`. "Uncomplicated" must not appear.
+- **q19i_prevPregnancyPlaceThenOther_printed:** `placeAndDoctor` prints first, then `otherDetails`. "Uncomplicated" prints when typed.
+- **q19j_medNotesMissing_dash_noOngoing:** missing medication notes print `<td class="text-center notes-cell text-muted">-</td>`. "Ongoing as prescribed" must not appear.
+- **q19j_medNotesPresent_printed:** typed notes print as given, including the text "Ongoing as prescribed" when typed.
+- **q19k_imageLabelNoImpression_noParensNoInvention:** a missing impression gives `<div class="photo-caption">Ultrasound Scan 1.1 - 2026-09-01</div>` with no parentheses. "Fetal Growth Surveillance" must not appear.
+- **q19k_imageLabelWithImpression_unchanged:** an impression of "Normal growth" gives `... - 2026-09-01 (Normal growth)</div>`.
+
+I expect the missing-value tests (q19h, q19i and q19j missing; q19k no-impression) to fail on today's code, because it still emits the invented defaults I read in `PatientPrintHtmlGenerator.kt`. I expect the "present value printed" tests to pass.
+
+The new tests use full model class names inline (`com.sherifradwan.ancnative.model.DemoVisit` and similar) instead of new imports. The `<td>` and `photo-caption` strings come from reading the generator's current markup. If the implementation changes that markup, these exact-string checks will need updating.
+
+To get the actual pass/fail result, run `./gradlew --offline :app:testDebugUnitTest --tests '*PatientPrintHtmlGeneratorTest'`.

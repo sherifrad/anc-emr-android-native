@@ -1,0 +1,10 @@
+> 🦅 **MACA Active Fleet Dispatch** — Tier: single-lane implementation; Phase: spec-bound build (Round 3c); Lane: Core logic builder, limited to the five authorized Kotlin files.
+
+I’ll inspect the written Round 3c requirements and existing security/lifecycle code, then make only the authorized changes and run the requested checks.
+The authorized files already contain most of the Round 3c implementation. I’m checking the repo’s existing callers and the focused oracle/check behavior now; I’ll keep any corrections confined to the allowed files.
+No files changed. The authorized implementation already satisfies the requested Round 3c checks; no assumptions were needed.
+
+- **Q25–Q28:** Focused PIN/lock-policy tests passed; static checks S8–S13 passed.
+- **Q27:** Debug and release Kotlin compilation passed.
+- **Q29 UI API:** `settings: StateFlow<SecuritySettingsState>` exposes `needsPinSetup`, `isLegacyPin`, and `lockoutRemainingMs`; repository functions include `setupPin(pin: String): Boolean`, `validatePin(pin: String): Boolean`, `updatePin(newPin: String): Boolean`, and `getLockoutRemainingMs(): Long`.
+- **Not verified:** Device checks were not run. The Gradle tasks reported `UP-TO-DATE`.

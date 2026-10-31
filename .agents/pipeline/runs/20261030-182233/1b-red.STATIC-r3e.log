@@ -1,0 +1,6 @@
+FAIL S23 vaultAutoAction takes appUnlocked: no appUnlocked: Boolean parameter; Locked branch does not depend on appUnlocked
+FAIL S24 lock closes the vault; auto-unlock gated: AncViewModel.lockVault missing; vaultAutoAction( not called with two arguments; no LaunchedEffect keyed on isAppLocked calling lockVault()
+FAIL S25 biometric key honours isBiometricEnabled: biometric clickable enabled expression lacks isBiometricEnabled
+FAIL S26 no fake scan screen; Image unavailable: ui/UltrasoundPhotoViewerDialog.kt still has '3.5MHz'; ui/UltrasoundPhotoViewerDialog.kt still has 'GAIN'; ui/UltrasoundPhotoViewerDialog.kt still has 'CEPHALIC'; ui/UltrasoundPhotoViewerDialog.kt lacks 'Image unavailable'; ui/ClinicalAttachmentViewerDialog.kt still has 'Loading encrypted image'; ui/ClinicalAttachmentViewerDialog.kt lacks 'Image unavailable'
+FAIL S27 TalkBack semantics on lock screen: no liveRegion; no Role.Button; no contentDescription mentioning digits
+FAIL S28 no 36dp IconButton: ui/PatientListScreen.kt IconButton with size(36.dp); ui/PatientListScreen.kt IconButton with size(36.dp); ui/PatientListScreen.kt IconButton with size(36.dp); ui/PatientListScreen.kt IconButton with size(36.dp); ui/ProfileScreen.kt IconButton with size(36.dp)

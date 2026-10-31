@@ -1,0 +1,15 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "opencode-delegate",
+  "cli": "opencode",
+  "status": "failed",
+  "exitCode": 1,
+  "signal": null,
+  "readOnly": true,
+  "readOnlyViolation": false,
+  "touchedFiles": [],
+  "finalMessage": "",
+  "stderrTail": "\u001b[0m\n> plan · gpt-6-luna\n\u001b[91m\u001b[1mError: \u001b[0mThe usage limit has been reached",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/audit1/retry2/tests/attempt-0-opencode-openai_gpt-6-luna/result.json",
+  "timestamp": "2026-10-30T18:09:33.418Z"
+}

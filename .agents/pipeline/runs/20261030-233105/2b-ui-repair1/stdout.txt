@@ -1,0 +1,8 @@
+I didn't change anything this round, because the one failing check, S46, can only be fixed in a file I'm not allowed to edit.
+
+- **S46:** `AncViewModel.kt` calls `clearStaleCaptures(` once, at `state/AncViewModel.kt:117`, and the check needs two calls. `CameraCaptureHelper.kt` already has the 3-argument function. The missing second call, with its `imageUris` argument, belongs in `AncViewModel.kt`.
+- **Allowed files:** my list is only `UltrasoundEditor.kt`, `UltrasoundPhotoViewerDialog.kt`, `WorkspaceScreen.kt` and `ProfileScreen.kt`. An edit to `AncViewModel.kt` would be reverted and counted against me.
+- **Q66/Q67 (S45, S47, S48, S49):** these already pass.
+- **Checks and compile:** I didn't run the check scripts or the Gradle compile this round. The first `check_r3g.py` run was blocked by a permission prompt on the compound command, so the S46 status above comes from your repair message and a grep of the source.
+
+The lane that owns `AncViewModel.kt` should add the second `CameraCaptureHelper.clearStaleCaptures(...)` call. Either of two places would satisfy the check: the same cleanup path invoked when the app starts or the vault closes, or a second sweep after a photo import completes. Both would pass the referenced image URIs.

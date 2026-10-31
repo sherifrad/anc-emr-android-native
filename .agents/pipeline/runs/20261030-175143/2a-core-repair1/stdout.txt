@@ -1,0 +1,9 @@
+I’ll follow the Round 3d spec and owner decisions, stay within the five allowed production files, then run the requested checks and tests.
+The current production code already has the R3d behaviors in the allowed files, including Q37’s “Not recorded”/anti-D-plan wording. The provided failing assertions expect the superseded Q17 anti-D phrase, which Q37 explicitly forbids. I’ll preserve the written R3d spec rather than reintroduce that text, and run the requested gates to capture the actual status.
+No files changed: the allowed production files already contain the applicable R3d behavior.
+
+- Q32, Q35, Q37, Q38, and the AttachmentSyncManager Q39 label appear implemented.
+- `check_r3d.py`: S17–S19 passed; S20–S22 failed on files outside my allowed list.
+- Requested unit tests: 67 completed, 6 failed. The failures expect Q17 anti-D/routine-protocol wording that Q37 explicitly forbids.
+- Debug/release Kotlin compilation succeeded.
+- Assumption: Round 3d Q37 supersedes those conflicting Q17 wording assertions; I did not reintroduce the prohibited wording.

@@ -1,0 +1,20 @@
+I'll start by reading the spec and the files I need to change.
+Now I'll make the edits. Starting with `PatientListScreen.kt`:
+Now the remaining emoji in `ProfileScreen.kt`:
+Now `WorkspaceScreen.kt`:
+Now U5 (correct previous pregnancy keeps a text button) and U6 (clinical alerts):
+Now let me verify with the static checks:
+Files changed (all inside my ALLOWED list):
+- ui/PatientListScreen.kt, ui/ProfileScreen.kt, ui/WorkspaceScreen.kt, ui/ClinicalBadges.kt, res/values/strings.xml
+
+What I did, per oracle:
+- Q7: list row projection and profile hero now use isRhNegative/isRhPositive/isHighRisk only (no contains("-")/contains("+")/contains("High") remains in either screen).
+- U1: removed every emoji code point from the four files (🩸 ⚠️ 🤰 📞 📷 💓 ⚖️ 📝 🔗 🏥 💵 📋 👶, plus ⏳). The two link-integrity warnings and the list high-risk badge keep the cue as Icon(Icons.Default.Warning, contentDescription = null, size 14.dp). DeliverySectionBox dropped its emoji `icon` parameter (its only 4 callers are in WorkspaceScreen); titles unchanged.
+- U2: formatBloodGroup() used wherever a blood group value is displayed (list badge, profile hero tile, workspace delivery blood-group tile); badge colours still keyed off the Rh helpers.
+- U4: edit_dating/edit_history (Profile headers) and editHistories/editDating (Workspace) are now pencil IconButtons/PencilEditButton; edit_visit in Profile and edit_ultrasound inline-scan buttons are pencils. All existing testTags preserved (editVisit-<id>, editLinkedScan-<id>, editHistories, editDating, editLab-<id>, editMedication-<id>, editDeliveryPlan).
+- U5: "Correct previous pregnancy" is a TextButton whose Text is stringResource(R.string.correct_previous_pregnancy), testTag "editPregnancy-<id>" kept.
+- U6: clinical-alerts pencil uses new string edit_clinical_alerts = "Edit clinical alerts"; literal removed; size(32.dp) replaced with minimumTouchTarget().
+
+Verification actually run: check_ui_static_r2.py = 29/29 PASS; check_ui_static.py (round 1) = 6/6 PASS; ./gradlew --offline :app:compileDebugKotlin = BUILD SUCCESSFUL; ./gradlew --offline :app:testDebugUnitTest = BUILD SUCCESSFUL (194 tests, 0 failures, 0 skipped).
+
+Assumptions: dropping the emoji left the adjacent wording untouched (no clinical text, threshold or colour changed); a bare photo placeholder became "—" and the duplicate 📷 before "Photo N" was deleted since the label already names it. I did not touch Theme.kt (it shows as modified from another lane) and made no git commits.

@@ -1,0 +1,89 @@
+Based on my review of the Round 3e diff against SPEC_FIX_R3.md, here are my findings:
+
+---
+
+### Q41: Vault closes with app lock (S23, S24)
+
+**Finding: Should-fix** — Race condition risk between lock/unlock effects  
+Lines: `MainActivity.kt:74-86` — Two `LaunchedEffect`s: one keyed on `securitySettings.isAppLocked` calling `lockVault()`, another on `(state.vaultState, appUnlocked)` calling `vaultAutoAction`. When `isAppLocked` flips true→false (correct PIN), both effects may fire concurrently: `lockVault()` from the first (if it hasn't completed) and `BEGIN_UNLOCK` from the second. The spec says "correct PIN = vault reopens by itself" but doesn't address ordering. The `lockVault()` call clears frozen commands and calls `controller.lock()` — if this races with `beginUnlock()`, the vault could flicker or deadlock.  
+**Assumption:** The ViewModel's `manualLock()`/`beginUnlock()` are sequentialised by the controller, but this isn't visible in the diff.
+
+**Finding: Nit** — `appUnlocked` derivation  
+Line: `MainActivity.kt:71` — `val appUnlocked = !securitySettings.isAppLocked && !securitySettings.needsPinSetup`. The spec says "from securityRepo.settings" — this reads from the collected state, which is correct.
+
+---
+
+### Q42: Biometric prompt only when enabled (S25)
+
+**Finding: Hard Blocker** — `settingsState.isBiometricEnabled` may be stale  
+Line: `AppLockScreen.kt:387` — `enabled = isBiometricSupported && settingsState.isBiometricEnabled && ...`. `settingsState` comes from `securityRepo.settings.collectAsStateWithLifecycle()`. If the user toggles biometric off in Settings while the lock screen is showing, the recomposition will pick up the new value — **this works**. However, the spec also says "plus today's conditions" — the existing conditions include `isBiometricSupported` (SDK check) but the legacy `BiometricAuthManager.isBiometricAvailable` returns false on API <30. That check happens in `BiometricAuthManager`, not here. If `isBiometricSupported` is true but `isBiometricAvailable` is false (API 26-29), the button would still be enabled here but `triggerBiometric()` would fail silently. The spec Q28 fixed `isBiometricAvailable` to return false on API<30, but `AppLockScreen` uses `isBiometricSupported` (likely a different flag). Need to verify they're the same.
+
+---
+
+### Q43: No invented values in scan viewer (S26)
+
+**Finding: Should-fix** — `ClinicalAttachmentViewerDialog.kt` still has a `Surface` wrapper that implies a loading state  
+Lines: `ClinicalAttachmentViewerDialog.kt:212-218` — The diff only changes the text from "Loading encrypted image..." to "Image unavailable". The surrounding `Surface` with `Modifier.size(48.dp)` and `CircularProgressIndicator` (not shown in diff but likely still there) suggests a loading spinner that never stops. The spec says "show 'Loading image...' only while loading and 'Image unavailable' after a failure" — but there's no loading state shown in the diff. If the bitmap load is synchronous (it uses `BitmapFactory.decodeStream`), there's no async loading phase — "Image unavailable" should show immediately on failure. The `Surface`/`CircularProgressIndicator` should be removed.
+
+**Finding: Nit** — `UltrasoundPhotoViewerDialog.kt` clean  
+Lines: `UltrasoundPhotoViewerDialog.kt:171-180` — The fake `UltrasoundMonitorCanvas` (with "3.5MHz", "CEPHALIC", "GAIN", etc.) is fully removed. Shows "Image unavailable" with `testTag("image_unavailable")`. Correct.
+
+---
+
+### Q44: Contrast WCAG AA 4.5:1 (S27 - actually S28 in spec)
+
+**Finding: Should-fix** — Only `TagHighRiskText` was darkened; other pairs unchecked  
+Line: `Theme.kt:57` — `TagHighRiskText` changed from `#DC2626` to `#B91C1C`. My calculation: on `TagHighRiskBg #FEE2E2`, old ratio ≈ 3.98:1 (fail), new ≈ 5.33:1 (pass).  
+**But:** The test `ThemeContrastTest.statusTagPairs()` checks 8 tag pairs × 2 (light/dark) = 16 combinations. The spec says "Every status-tag text/background pair meets WCAG AA 4.5:1 (light and, where dark tokens exist, dark). Only darken the TEXT colour of a failing pair". The test will catch any failing pair, but the fix only addresses HighRisk. If other pairs (e.g., `TagAttentionText` on `TagAttentionBg`, `TagBloodPositiveText` on `TagBloodPositiveBg`) also fail, they won't be fixed. The static check S27 only verifies the test exists, not that all pairs actually pass.
+
+---
+
+### Q45: 48dp touch targets on IconButtons (S28)
+
+**Finding: Nit** — `AddAttachmentDialog.kt` has no `IconButton` with `.size(36.dp)`  
+Lines: `AddAttachmentDialog.kt:154` (dismiss button), `222` & `264` (Icons inside Surface cards, not IconButtons). The spec targets "IconButtons that are `.size(36.dp)`". This file has no such pattern — the static check S28 will pass, but the spec may have expected the dismiss `IconButton` to get `.minimumTouchTarget()`. It currently has no size modifier at all (Material3 default is 48dp min), so it's likely fine.
+
+**Finding: Nit** — `ProfileScreen.kt` has no `IconButton` with `.size(36.dp)`  
+All IconButtons already use `.minimumTouchTarget()` (lines 167, 635, 738, 1883). The `size(36.dp)` at line 149 is on an `Image` (clinic logo), not an `IconButton`. Static check S28 passes.
+
+**Finding: Hard Blocker** — `PatientListScreen.kt` changes look correct (lines 893, 908, 932, 956 use `.minimumTouchTarget()` instead of `.size(36.dp)`), but **layouts must not overflow** — the spec says "icons keep their size; layouts must not overflow". The diff doesn't show surrounding layout constraints. If the parent `Row`/`Column` doesn't have enough space, the 48dp minimum could push adjacent content. Not verifiable from diff alone.
+
+---
+
+### Q46: TalkBack semantics on PIN screen (S27)
+
+**Finding: Should-fix** — PIN dots `contentDescription` updates on every keystroke may be verbose  
+Line: `AppLockScreen.kt:283-286` — `contentDescription = "${enteredPin.length} of 6 digits entered"` with `mergeDescendants = true`. This announces on every digit entry. Acceptable per spec ("like '3 of 6 digits entered'").
+
+**Finding: Hard Blocker** — Lockout message `liveRegion = Polite` but **error message also needs it**  
+Line: `AppLockScreen.kt:326` — Error message ("PINs don't match" / "Invalid PIN") has `Modifier.semantics { liveRegion = LiveRegionMode.Polite }`. Correct.  
+Line: `AppLockScreen.kt:266-268` — Lockout message ("Too many wrong PINs. Try again in X.") has `liveRegion = Polite`. Correct.
+
+**Finding: Nit** — Keypad keys have `Role.Button` but no `contentDescription`  
+Lines: `AppLockScreen.kt:415, 468` — `KeypadButton` digits and backspace have `role = Role.Button` but no `contentDescription`. TalkBack will announce "Button" without the digit. The spec says "each keypad key has Role.Button" — doesn't require contentDescription, but accessibility best practice would include it.
+
+---
+
+### Summary
+
+| Oracle | Finding | Severity | Key Line |
+|--------|---------|----------|----------|
+| Q41 | Race between lock/unlock effects | Should-fix | MainActivity.kt:74-86 |
+| Q41 | appUnlocked derivation correct | Nit | MainActivity.kt:71 |
+| Q42 | Biometric enabled check may use wrong flag | Hard Blocker | AppLockScreen.kt:387 |
+| Q43 | ClinicalAttachmentViewerDialog loading UI not removed | Should-fix | ClinicalAttachmentViewerDialog.kt:212-218 |
+| Q43 | UltrasoundPhotoViewerDialog clean | — | — |
+| Q44 | Only HighRisk fixed; other pairs unchecked | Should-fix | Theme.kt:57 |
+| Q45 | AddAttachmentDialog no IconButton.size(36.dp) | Nit | — |
+| Q45 | ProfileScreen no IconButton.size(36.dp) | Nit | — |
+| Q45 | PatientListScreen layout overflow risk | Hard Blocker | PatientListScreen.kt:893-956 |
+| Q46 | PIN dots semantics correct | — | AppLockScreen.kt:283-286 |
+| Q46 | Keypad keys missing contentDescription | Nit | AppLockScreen.kt:415, 468 |
+
+**Assumptions:**  
+- `isBiometricSupported` in `AppLockScreen` equals `BiometricAuthManager.isBiometricAvailable` (API≥30 check). If not, Q42 is a Hard Blocker.  
+- `VaultAutoAction`/`lockVault`/`beginUnlock` are thread-safe in the controller.  
+- Dark theme tokens (`*DarkText`, `*DarkBg`) exist in `Theme.kt` for all status tags (test assumes they do).  
+- Layout overflow in Q45 not verifiable without running the app.
+
+**Not run:** Unit tests (`VaultAutoActionTest`, `ThemeContrastTest`), static checks (`check_r3e.py`), device checks.

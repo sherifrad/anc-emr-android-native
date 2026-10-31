@@ -1,0 +1,39 @@
+I couldn't run `check_r3h.py` or validate the manifest JSON. Each Bash call was held for approval, so none of the checks has been run. I wrote all three files.
+
+**Files**
+- `.agents/checks/check_r3h.py` (new)
+- `app/src/test/java/com/sherifradwan/ancnative/storage/CaptureTempFileTest.kt` (new)
+- `.agents/TEST_MANIFEST.json` (added two entries before `UNIT-all`, others untouched)
+
+**S50 (`check_r3h.py`)**
+- It strips Kotlin comments, then checks four things:
+  - `CameraCaptureHelper.kt` has a top-level `fun captureTempFile(`.
+  - Its signature has no `Uri`, `Context` or `android.` type.
+  - `deleteIfCaptureTemp` calls `captureTempFile(`.
+  - `deleteIfCaptureTemp` has no `canonicalFile`.
+- It prints PASS or FAIL and exits 1 on FAIL, in the style of `check_r3g.py`.
+- It should FAIL on today's code: `captureTempFile` doesn't exist yet and `deleteIfCaptureTemp` still contains `canonicalFile` (line 38 of `CameraCaptureHelper.kt`). I read that from the source but did not run the script.
+
+**Q68 (`CaptureTempFileTest.kt`)**
+- It uses JUnit4 with a `TemporaryFolder` rule and calls only `captureTempFile(cameraDir, authority, scheme, authority, segments)`.
+- The cases are:
+  - valid file returns the canonical file;
+  - wrong scheme, wrong authority, wrong first segment, and a single segment each return null;
+  - missing file and directory instead of a file return null;
+  - `..`, a sub-folder with the file inside it, and a segment `"a/b.jpg"` return null;
+  - a symlink to a file outside `cameraDir` returns null, skipped with `Assume` if symlinks fail;
+  - the unrelated-name case, which I read as "the rule is location-based, not name-based": any file inside `cameraDir` resolves, and a differently-cased name is null if that file doesn't exist.
+- It will not compile until `captureTempFile` exists. I did not run it.
+
+**Manifest**
+- `STATIC-r3h` runs `check_r3h.py`, depends on `CameraCaptureHelper.kt` and the script, and covers S50.
+- `UNIT-capture-temp-file` runs `--tests '*CaptureTempFileTest'`, depends on `CameraCaptureHelper.kt` and the test, and covers Q68.
+- I did not confirm the manifest is still valid JSON; the edit only inserted two objects.
+
+**Older checks that touch `CameraCaptureHelper.kt`** (none inspects `canonicalFile` or the body of `deleteIfCaptureTemp`):
+- `check_r3f2.py` S41 requires `AncViewModel.kt` to contain `CameraCaptureHelper.deleteIfCaptureTemp(`. S42 requires `fun deleteIfCaptureTemp`, `createCameraTempFile` and `clearStaleCaptures`. The wrapper keeps both, so they stay satisfied.
+- `check_r3g.py` S46 and S47 only check for `staleCaptureFiles`, `clearStaleCaptures` and a `deleteIfCaptureTemp(` call inside a `finally`. The wrapper keeps these satisfied too.
+
+**Assumption:** the symlink case is skipped rather than failed when symlinks can't be created.
+
+To finish, please approve or run `python3 .agents/checks/check_r3h.py` and `python3 -m json.tool .agents/TEST_MANIFEST.json`.

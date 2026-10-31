@@ -1,0 +1,18 @@
+REVIEW: Round 3r (Q100-Q101, S83, D15) - PASS
+
+1. FLAG_SECURE removal in app/src/main:
+- Clean: `FLAG_SECURE` block removed from [MainActivity.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/MainActivity.kt#L37-L40). Nothing else changed in `MainActivity.kt`.
+- Full grep across `app/src/main` (Kotlin, XML themes, manifest, Compose `DialogProperties`) confirms zero occurrences of `FLAG_SECURE`, `setFlags`, or `SecureFlagPolicy`.
+
+2. Other places blocking screenshots or hiding recents preview (D15):
+- None: No `setRecentsScreenshotEnabled`, `excludeFromRecents`, or recents-obscuring hooks found.
+
+3. Dead imports or comments:
+- Clean: Unused `android.view.WindowManager` import was removed from [MainActivity.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/MainActivity.kt#L3). All remaining imports are actively used. Zero dead comments left.
+
+4. androidTest change:
+- Verified: [AncWorkflowTest.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt#L101-L103) changed only the flag assertion to `assertEquals(0, flags and WindowManager.LayoutParams.FLAG_SECURE)`. The rest of the test is untouched.
+
+Findings:
+- Nit: `AncWorkflowTest.kt:99` `fun recordsWindowKeepsSecureFlagAndGateExplainsDraftPolicy()` keeps "KeepsSecureFlag" in name while asserting 0, matching Q101 spec verbatim.
+- Status: No Hard Blockers or Should-fix items. S83 (`check_r3r.py`) and S18 (`check_r3d.py`) pass.

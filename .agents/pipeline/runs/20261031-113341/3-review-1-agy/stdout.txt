@@ -1,0 +1,31 @@
+INDEPENDENT REVIEW: Round 3o (Q92-Q93, S76-S77)
+
+1. Unescaped record/settings text in HTML: NONE.
+Every record field entering HTML is wrapped in escapeHtml():
+- Patient identity & demographics: displayName (L281, L322, L976, L1114), caseId (L282, L967, L977, L1115), phone (L978), ageFormatted (L982), bloodGroupText (L987).
+- Dating & histories: lmpDate (L1012), ultrasoundEdd (L1016), agreedEdd (L1020, L1202), allergyHistory (L1041), medicalHistory (L1045), surgicalHistory (L1049).
+- Tables: visits v.date, v.bloodPressure, v.weight, v.findings/notes (L94-L98); scans s.date, s.presentation, s.placentalSite, s.amnioticFluid, efwStr, notesText (L140-L148); labs l.date, l.testName, l.result, l.unit, l.referenceRange (L162-L171); medications m.name, m.dosage, m.route, m.frequency, m.notes (L190-L194); previous pregnancies pp.dateText, methodText, outcomeLabel, pp.placeAndDoctor/otherDetails (L228-L238).
+- Delivery plan: parseDeliveryNotes(patient.obstetricNotes).plan (L1198).
+- Appendix: photo caption (L298). Settings (clinicName) is not used in the template (generator uses hardcoded clinicNameEn); logoBase64 is a constant resource PNG; attributes are generator-owned.
+
+2. Escaped twice: NONE.
+Fragments (resultHtml, outcomeBadge, typeBadge, visitsRowsHtml, scansRowsHtml, etc.) are escaped once at leaf construction and interpolated directly without secondary escaping. PatientPrintHtmlEscapeTest confirms neither "&amp;lt;" nor "&amp;amp;" occurs.
+
+3. escapeHtml rule:
+- Order: & first (&amp;), then < (&lt;), > (&gt;), " (&quot;), ' (&#39;).
+- Null handling: returns "" when text == null.
+- Arabic/emoji: untouched; only the 5 target characters are replaced.
+- Second escape function: NONE across app/src/main (verified by S76 and grep).
+
+4. Plain text output: UNCHANGED.
+Existing PatientPrintHtmlGeneratorTest is untouched and passes (BUILD SUCCESSFUL).
+
+5. Test coverage & S77 allow-list:
+- PatientPrintHtmlEscapeTest covers all printed clinical/identity fields, edge markers (<b>&"'), "BP <90", and abnormal/normal labs.
+- S77 allow-list: each entry is safe (integers/counts, Base64 logo tags, engine GA strings, constant badge HTML/CSS, and row fragments whose leaf expressions are recursively validated).
+
+6. Findings:
+- [Nit] PatientPrintHtmlGenerator.kt:75
+  "label" to "Ultrasound Scan ${sIdx + 1}.${iIdx + 1} - " + s.date +
+  Replacing ${s.date} with string concatenation avoids triggering S77 on an in-memory data map; the value is safely escaped at line 298.
+- Hard Blockers: 0. Should-fix: 0.

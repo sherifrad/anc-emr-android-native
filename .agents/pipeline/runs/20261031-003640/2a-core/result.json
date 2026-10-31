@@ -1,0 +1,27 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "claude-delegate",
+  "cli": "claude",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "pp/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/model/LongitudinalTimelineProjection.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/storage/SaveVisitCommand.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/AncDatePicker.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt",
+    "app/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt"
+  ],
+  "finalMessage": "I've made the Q69/Q70 code changes, but I couldn't run any of the verification. Every Bash command that runs a script or Gradle was refused with \"requires approval\", so nothing has been compiled or tested.\n\n**Not run:**\n- `./gradlew --offline :app:testDebugUnitTest`\n- `.agents/checks/check_r3i.py`, the older `check_r3*.py` and `check_ui_static*.py`\n- `compileDebugKotlin` and `compileReleaseKotlin`\n\nPlease approve those commands or run them yourself. I'd start with the compile, since I added imports by hand and left some now-unused ones.\n\n**Files changed** (all in the allowed list):\n- NEW `model/IsoDates.kt`\n- `model/GestationalAgeEngine.kt`\n- `model/LongitudinalTimelineProjection.kt`\n- `model/ClinicalModels.kt`\n- `state/IntakeDatingRule.kt`\n- `storage/SaveVisitCommand.kt`\n- `storage/RecordsRepository.kt`\n- `ui/AncDatePicker.kt`\n- `ui/report/PatientPrintHtmlGenerator.kt`\n- `ui/GestationalBanner.kt`\n- `ui/PatientEditor.kt`\n\n**Q69**\n- `IsoDates.kt` defines `parseIsoDateOrNull`, `parseCanonicalIsoDateOrNull`, `FULL_TERM_DAYS = 280L` and `eddFromLmp`.\n- The lenient callers now use `parseIsoDateOrNull`. These are the engine (private copy removed), the timeline projection (private copy removed), `ClinicalModels.isValidIsoDate`, `AncDatePicker` and the print generator.\n- The canonical callers now use `parseCanonicalIsoDateOrNull`. These are `IntakeDatingRule`, `SaveVisitCommand.isIsoDate` and `RecordsRepository`.\n- Each caller keeps its existing null/false handling.\n\n**Q70**\n- The engine's two LMP branches use `eddFromLmp`.\n- `calculateForEdd` uses `FULL_TERM_DAYS`.\n- `IntakeDatingRule` uses `eddFromLmp`.\n- The banner progress is `totalDays / FULL_TERM_DAYS.toFloat()`.\n- The editor preview now takes the due date from `eddFromLmp(parseIsoDateOrNull(lmp))` and the current GA from `GestationalAgeEngine.calculateForLmp(...)?.formatted`. This is the one intended behaviour change: the cap is now the engine's 320 days instead of 300. The editor still shows nothing when the LMP doesn't parse.\n\n**Assumptions**\n- In `AncDatePicker`, a blank or unparseable date falls back to today, same as before.\n- In the print generator, an unparseable visit date or a missing dating record still gives \"-\".\n- Imports left unused (`java.time.LocalDate` in some files, `DateTimeParseException` in `AncDatePicker`, `SaveVisitCommand` and `RecordsRepository`) are warnings only.\n\nI did not touch `IsoDatesTest.kt` or any other test or check file.",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-003640/2a-core/result.json",
+  "timestamp": "2026-10-30T22:39:24.174Z"
+}

@@ -1,0 +1,11 @@
+I’ll work only within the listed files, first checking the Round 3b spec and existing implementations, then making the smallest scoped changes and running the requested validations.
+Q22–Q24 are wired within the allowed files. One scope detail surfaced: `deleteOrphanAliases()` has three existing call sites (including authentication cancellation), so I guarded all three with the same database-presence check to satisfy the requirement that no such deletion occurs while a vault database exists.
+Implemented Q22–Q24 in the seven allowed files.
+
+- **Q22:** Separated structural blocking problems from record anomalies; `validateAndLoad` now blocks only on structural problems and returns anomalies with successful opens.
+- **Q23:** Added `vaultAutoAction`; the state effect starts unlock or initialization when appropriate and no longer retries blocked storage automatically.
+- **Q24:** Added the database-presence check and guarded cleanup and all three orphan-alias deletion call sites.
+
+Assumption: guarded the authentication-cancellation call site too, since the spec’s “both call sites” wording did not account for that third call.
+
+Validation: requested unit tests **passed**; `check_r3b.py` **passed**; `compileReleaseKotlin` **passed**; `git diff --check` **passed**. No device check run.

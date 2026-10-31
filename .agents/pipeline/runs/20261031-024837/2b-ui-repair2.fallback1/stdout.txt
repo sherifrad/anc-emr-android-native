@@ -1,0 +1,19 @@
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/VisitEditor.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt
+
+What was done per oracle:
+- Q86 / S70: In VisitEditor.kt, mapped DATE_IN_FUTURE to visit_date_in_future on the date field, mapped BLOOD_PRESSURE_INVALID to blood_pressure_invalid on the BP field, and mapped WEIGHT_INVALID to weight_invalid on the weight field. Added BpAlertLabel under the BP field as a live alert hint when bpLevel is not NORMAL.
+- Q87 / S71: Added BpAlertLabel(raw: String?, modifier: Modifier = Modifier) in ClinicalBadges.kt (testTag "bpAlertLabel", returns nothing when bpAlertResource is null, styled with errorContainer/onErrorContainer for severe and tertiaryContainer/onTertiaryContainer for raised). Integrated BpAlertLabel under BP in WorkspaceScreen.kt visit card and ProfileScreen.kt visit row (collapsed) and detail (expanded).
+
+Assumptions:
+- Safe behavior followed: existing testTags preserved, no re-parsing or duplicating thresholds.
+- SaveVisitCommand.kt (failing S68) is not in the UI BUILDER allowed files and is left untouched for the Core lane.
+
+Verifications:
+- ./gradlew --offline :app:compileDebugKotlin passed.
+- ./gradlew --offline :app:testDebugUnitTest --rerun passed (all tests green).
+- python3 .agents/checks/check_r3m.py: S70 PASS, S71 PASS.
+- python3 .agents/checks/{check_ui_static.py,check_ui_static_r2.py,check_r3j.py,check_r3k.py,check_r3l.py}: all PASS.

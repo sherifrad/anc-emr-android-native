@@ -1,0 +1,34 @@
+I made the edits, but I couldn't run the checks or the compile, so none of it is verified. Every Bash command I tried (the three check scripts and the Gradle compile) was blocked pending approval.
+
+**Files changed**
+- `ui/InAppCameraDialog.kt` (new)
+- `ui/AddAttachmentDialog.kt`
+- `ui/UltrasoundEditor.kt`
+- `ui/WorkspaceScreen.kt`
+- `res/values/strings.xml`
+
+**What I did per oracle**
+- **Q58:** `InAppCameraDialog(onCaptured, onDismiss)` is a full-screen dialog with the live preview, a round 72dp capture button, and a Close button, all using the spec's testTags.
+  - After a capture it shows the still photo with Retake and Use photo.
+  - Use calls `onCaptured(uriFor(file))`. Retake, Close and leaving composition delete any uncommitted temp file.
+  - It requests CAMERA permission itself. While permission is denied it shows the message and a Close button.
+  - It binds to the lifecycle owner, and `unbindAll` runs in the `DisposableEffect` `onDispose`, so the camera is released when the app lock removes the dialog.
+  - It calls `clearStaleCaptures(context, 24h)` once on open.
+  - Buttons use `minimumTouchTarget()`.
+- **Q59:** `AddAttachmentDialog` and `UltrasoundEditor` no longer use `TakePicture`, the permission launcher or `launchCamera` as a launcher. Both now show `InAppCameraDialog` from a `showCamera` state, and the result is handled exactly as the old success path. The gallery picker is unchanged.
+  - `AddAttachmentDialog` has the three preset FilterChips (`preset_small`, `preset_standard`, `preset_detailed`). The default comes from `PhotoQualityPreset.defaultFor(selectedCategory)` and follows the category until the user picks one.
+  - The chosen preset goes through `onSave` into `AncEvent.AddAttachment`, and `WorkspaceScreen` passes it on.
+- **Q60:** `strings.xml` has `camera_capture`, `camera_retake`, `camera_use`, `camera_close`, `camera_permission_needed`, `photo_quality_label` and `photo_quality_small`, `photo_quality_standard`, `photo_quality_detailed`.
+
+**Assumptions**
+- I added a `camera_capture_failed` string and a message for when CameraX binding or capture fails, so a failure doesn't crash.
+- `BoundedBitmap` ignores EXIF orientation, so the Retake/Use still preview applies the EXIF rotation itself (`decodeUpright`).
+- The dialog has `dismissOnClickOutside = false` so a stray tap can't discard a photo.
+- Permission denied, and any camera failure, show a message and a Close button.
+
+**Not done**
+- Not run: `check_r3f2.py`, `check_r3e.py`, `check_r3f1.py`, `compileDebugKotlin`, `compileReleaseKotlin`.
+- Compile risk: `LocalLifecycleOwner` is imported from `androidx.compose.ui.platform`. If the Compose version has moved it to `androidx.lifecycle.compose`, that import will fail.
+- Possible warning: `context` in `UltrasoundEditor` may now be unused.
+
+Please run the checks and the compile, or approve those commands and I'll run them.

@@ -1,0 +1,17 @@
+Changed files:
+- app/src/main/java/com/sherifradwan/ancnative/MainActivity.kt
+
+Oracle implementations:
+- Q100: Removed the `if (!BuildConfig.DEBUG) { window.setFlags(...) }` block setting FLAG_SECURE in `MainActivity.onCreate` and removed the now-unused `import android.view.WindowManager`. Changed nothing else.
+
+Assumptions:
+- None.
+
+What could not be done or verified:
+- Q101 was not implemented here (androidTest file is outside CORE BUILDER allowed list).
+- Device check postponed/not run (requires physical device or emulator).
+
+Verification results:
+- `./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin`: PASSED (BUILD SUCCESSFUL)
+- `./gradlew --offline :app:testDebugUnitTest`: PASSED (BUILD SUCCESSFUL)
+- `python3 .agents/checks/check_r3r.py`: PASSED (S83 PASS)

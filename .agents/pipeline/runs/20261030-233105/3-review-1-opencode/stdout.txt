@@ -1,0 +1,5 @@
+I'll review the Round 3g changes by examining the spec and git diff. Let me gather the information.
+
+<read_file>
+<path>.agents/pipeline/SPEC_FIX_R3.md</path>
+</read_file>

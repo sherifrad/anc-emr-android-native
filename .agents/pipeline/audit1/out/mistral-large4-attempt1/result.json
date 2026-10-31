@@ -1,0 +1,15 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "opencode-delegate",
+  "cli": "opencode",
+  "status": "failed",
+  "exitCode": 130,
+  "signal": null,
+  "readOnly": true,
+  "readOnlyViolation": false,
+  "touchedFiles": [],
+  "finalMessage": "I'll run this read-only consistency audit. Let me start by mapping the repo structure and commit history, while staying out of the forbidden pipeline directories.",
+  "stderrTail": "USS/IVF dating; no demo patients in release\nc0e4917 | sherifrad | 2026-10-30 | fix(clinical-ui): tested delivery-notes parser, shared Rh/risk/age helpers, pencil edit buttons\nee6c981 | sherifrad | 2026-10-27 | fix(theme): dynamic high-contrast status bar, dark mode card distinction, and patient age tag box\ndf2d251 | sherifrad | 2026-10-27 | feat(clinical-case): full-cycle booking-to-delivery case, dashboard card redesign, alert dialog flex, and zero-overflow PDF printing\n5c272ef | sherifrad | 2026-10-27 | feat(ui): 100% English conversion, script-adaptive name alignment, LMP calculation, and clinical UI density optimization\nf0e1cb9 | sherifrad | 2026-10-27 | feat(ui/ux): overhaul clinical workflows, card alignment, risk styling, theme switcher, and eradicate visible MRN\n36c303e | sherifrad | 2026-10-15 | feat: initial open-source release of ANC EMR Native Android app with full clinical workflows, encrypted vault, and cross-platform sync\n> plan · nvidia/mistralai/mistral-large-4-1t-a52b",
+  "resultPath": "out/mistral-large4/result.json",
+  "timestamp": "2026-10-30T15:12:13.591Z"
+}

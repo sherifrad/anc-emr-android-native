@@ -1,0 +1,15 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "claude-delegate",
+  "cli": "claude",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [],
+  "finalMessage": "Q13 and Q14 are implemented in `DeliveryNotesParser.kt`, but the tests have not been run: every Gradle invocation was refused with \"This command requires approval\", so I could not verify anything by execution.\n\n**Files changed**\n- `app/src/main/java/com/sherifradwan/ancnative/ui/DeliveryNotesParser.kt` only. `ClinicalFormat.kt` is unchanged.\n\n**Per oracle**\n- **Q13 (supersedes Q8):**\n  - Removed the whole-segment history gate from `hospitalNames`. A labelled \"Hospital:\" value now always counts.\n  - Added `PAST_DELIVERY_MARKER` (previous/prior/earlier/last, then up to 2 words, then baby/delivery/birth/CS/caesarean/cesarean/section/pregnancy/child) and `CURRENT_PREGNANCY_MARKER` (now, this pregnancy, current, currently, booked, planned, plan, will, elective, scheduled).\n  - New `isPreviousDeliveryPhrase` skips an unlabelled phrase only when the nearest past marker before it has no current marker between the two. Segment placement is unchanged, so these lines stay in plan.\n- **Q14:** the labelled value now also ends at \"(\", in `isValueEnd`.\n- **Q5/Q6 (`ClinicalFormat.kt`):** I did not edit this file. `formatAgeYears`, `isRhPositive` and `formatBloodGroup` already exist, and I checked them by hand against the spec examples; they appear to match.\n\n**Hand-checked against the spec examples, not executed**\n- The Q13 and Q14 examples in `ParseDeliveryNotesSpecTest` (the `r2c_*` tests).\n- The existing `DeliveryNotesParserTest` Maya note, which should still give \"Cleopatra Maternity Hospital\".\n\n**Assumptions**\n- \"Within 3 words\" means the delivery word is at most 2 words after the past word.\n- The nearest past marker before a phrase decides the Q13 skip.\n\n**Not run**\n- `./gradlew --offline :app:testDebugUnitTest` with the four test classes, and `:app:compileDebugKotlin`. The command needs approval in this session. Someone with approval needs to run it. The Kotlin was checked by reading only.",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261029-233755/2a-core/result.json",
+  "timestamp": "2026-10-29T21:40:12.873Z"
+}

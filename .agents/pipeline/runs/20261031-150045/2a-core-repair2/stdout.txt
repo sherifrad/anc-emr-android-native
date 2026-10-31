@@ -1,0 +1,20 @@
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/model/ObstetricHistory.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+
+What was done:
+- Q102: Implemented ObstetricHistory.kt with pure Kotlin rules for PreviousDeliveryCounts, previousDeliveryCounts, isStillbirth, isEarlyLoss, and previousDeliverySummary per SPEC_FIX_R3.
+- Q103 (print part): Removed local CS/SVD counting and fallback in PatientPrintHtmlGenerator.kt, replaced with previousDeliverySummary(patient), updated line 209 empty-pregnancy fallback to ($pastDeliverySummary), and used shared loss checkers; kept all other generator output byte-identical.
+
+Assumptions:
+- ObstetricHistory.kt is pure Kotlin without Android imports.
+- Line 209 in PatientPrintHtmlGenerator.kt reflects the shared past delivery summary ($pastDeliverySummary) instead of the hardcoded "(Primigravida / N/A)".
+
+Verification:
+- ./gradlew --offline :app:compileDebugKotlin: PASSED
+- ./gradlew --offline :app:compileReleaseKotlin: PASSED
+- ./gradlew --offline :app:testDebugUnitTest --tests '*ObstetricHistoryTest': PASSED (32/32 tests)
+- ./gradlew --offline :app:testDebugUnitTest --tests '*PatientPrintHtml*': PASSED (55/55 tests)
+- In PrintObstetricSummaryTest: primigravida_listRowAndPrintReportAgreeWithSharedRule, cesareanOnly, and vaginalOnly PASSED. All print report assertions (html.contains) in all 6 tests PASSED.
+- 3 failures remain in PrintObstetricSummaryTest: lines 95, 177, 198 assert projectDashboardRow(patient).prevSummary from PatientListScreen.kt (owned by the UI lane, not in this lane's ALLOWED list).
+- Full suite ./gradlew --offline :app:testDebugUnitTest: 534 passed, 3 failed (all 3 from PatientListScreen in PrintObstetricSummaryTest).

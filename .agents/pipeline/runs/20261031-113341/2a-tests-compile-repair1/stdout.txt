@@ -1,0 +1,20 @@
+The compilation error is real: line 184 uses single quotes as a string delimiter (Python style), but Kotlin treats single quotes as a character literal. I'll switch that message to a Kotlin string.
+Now recompiling the unit test source set to confirm the fix:
+Compilation succeeds now. Since HtmlEscape.kt and the generator changes exist on this branch, I'll actually run the test class to see where it stands:
+21 of 22 tests pass; the failure is the generator-markup assertion for `mini-table` at line 285. Let me check what the generator actually emits before touching anything:
+The generator's only HTML markup for the mini-table is `class="clinical-table mini-table"` (line 205) — my assertion expected a standalone `class="mini-table"`, which never exists. That's a factually wrong assertion in my own test, so I'll correct it to the real combined class attribute (same coverage intent, checked exactly as the generator emits it):
+All 22 tests pass now. Per the lane brief I should also report real results for the static check — let me verify `check_r3o.py` still runs cleanly (read-only):
+Repair complete.
+
+**Files changed (1)** — all within my ALLOWED list; no production code touched:
+- `app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt` — 2 fixes:
+
+1. **Compile error (Q93 test, line 184)**: the failure message was written with single quotes (`'#import <b>…'`-style Python quoting), which Kotlin parses as a character literal → "Too many characters in a character literal". Rewrote it as a proper Kotlin string with escaped inner quotes; the assertion itself is byte-identical.
+2. **Wrong assertion in my own test (q93_generatorOwnMarkup_stillPresent)**: after the compile fix the suite ran and 21/22 passed; I was surprised to find only one failing case, @q93_generatorOwnMarkup_stillPresent, asserting `class="mini-table"` as a standalone string. Reading PatientPrintHtmlGenerator.kt line 205 showed the generator's markup is actually `<table class="clinical-table mini-table">`, so a standalone `class="mini-table"` never exists and this assertion could never pass. I rewrote it to assert the generator's own markup exactly as it emits it — no coverage lost, no test weakened, no assertion made trivially true.
+
+**Verification (ran and saw):**
+- `:app:compileDebugUnitTestKotlin` → BUILD SUCCESSFUL.
+- `:app:testDebugUnitTest --tests '...PatientPrintHtmlEscapeTest'` → **BUILD SUCCESSFUL, all 22 tests pass** (Q92 escape cases + Q93 generator cases).
+- `python3 .agents/checks/check_r3o.py` → PASS S76, PASS S77, exit 0.
+
+**Not touched:** `check_r3o.py`, `TEST_MANIFEST.json`, and all earlier assertions (`q93_noRawMarkerAnywhere`, `q93_bpUnderNinetyNote_printsAsEscapedText`, all section老师的 escaped-once checks, `q93_appendixPage3_escapedOnce`) — unchanged.

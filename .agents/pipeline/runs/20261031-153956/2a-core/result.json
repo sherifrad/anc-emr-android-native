@@ -1,0 +1,17 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "pp/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt"
+  ],
+  "finalMessage": "Files changed:\n- app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt\n\nOracle implementations (Q104):\n- Added top-level function `daysToEdd(edd: LocalDate, asOf: LocalDate): Long = ChronoUnit.DAYS.between(asOf, edd)`.\n- Added `isLateTerm: Boolean get() = weeks == 41` to `GestationalAgeResult`.\n- Added `progressFraction: Float get() = (totalDays / FULL_TERM_DAYS.toFloat()).coerceIn(0f, 1f)` to `GestationalAgeResult`.\n- Added `shortWeeksText: String get() = \"${weeks}+${days} wks\"` to `GestationalAgeResult`.\n- Updated `calculateForEdd` to delegate remaining-days calculation to `daysToEdd(edd, asOfDate)`. Preserved all existing outputs, strings, and constants.\n\nAssumptions:\n- None. Implementation followed exact specification for Q104.\n\nVerification results:\n- `./gradlew --offline :app:compileDebugKotlin`: PASSED.\n- `./gradlew --offline :app:testDebugUnitTest --tests '*GestationalDisplayTest' --tests '*GestationalAgeEngineTest' --tests '*GestationalBannerLogicTest'`: PASSED.\n- `./gradlew --offline :app:testDebugUnitTest` (full suite): PASSED.\n- `python3 .agents/checks/check_r3t.py`: S86 PASS, S88 PASS (S87 FAIL expected; screens belong to UI lane).",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-153956/2a-core/result.json",
+  "timestamp": "2026-10-31T13:54:26.787Z"
+}

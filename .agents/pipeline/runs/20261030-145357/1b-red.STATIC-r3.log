@@ -1,0 +1,7 @@
+FAIL S1a AncViewModel.kt calls intakeDatingUpdate(: no call
+FAIL S1b AncViewModel.kt has no plusDays(280): plusDays(280) still present
+FAIL S2a seed function has includeDemoPatients: Boolean: parameter missing
+FAIL S2b seed body has an `if (includeDemoPatients)` guard: no guard
+FAIL S2c every non-metadata insert is inside the guard: no guard or no inserts found
+FAIL S3 VaultController.kt passes BuildConfig.DEBUG: BuildConfig.DEBUG not passed to seed call
+FAIL S4 build.gradle.kts has buildConfig = true: missing

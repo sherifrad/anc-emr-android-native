@@ -1,0 +1,67 @@
+{
+  "_comment": "Copy of skills template shape (~/skills/multi-agent-collaborative-audit/resources/templates/TEST_MANIFEST.template.json). One entry per test. deps = globs of every file whose change could alter the result (code under test, callers, fixtures, the test itself). Oracles P1-P10 come from .agents/pipeline/SPEC_FIX.md. Tier 1 = fast local (unit/static), tier 2 = build gate.",
+  "tests": [
+    {
+      "id": "UNIT-parse",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.ui.ParseDeliveryNotesSpecTest'",
+      "deps": [
+        "app/src/main/**/ui/DeliveryNotesParser.kt",
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/main/**/ui/*.kt",
+        "app/src/test/**/ParseDeliveryNotesSpecTest.kt"
+      ],
+      "always": true,
+      "covers": ["P1", "P2", "P3", "P4", "P5"]
+    },
+    {
+      "id": "UNIT-format",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.ui.ClinicalFormatTest'",
+      "deps": [
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/main/**/ui/*.kt",
+        "app/src/test/**/ClinicalFormatTest.kt"
+      ],
+      "always": true,
+      "covers": ["P6", "P7", "P8"]
+    },
+    {
+      "id": "UNIT-contrast",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.ui.ThemeContrastTest'",
+      "deps": [
+        "app/src/main/**/ui/Theme.kt",
+        "app/src/main/**/ui/ClinicalBadges.kt",
+        "app/src/main/**/ui/*.kt",
+        "app/src/test/**/ThemeContrastTest.kt"
+      ],
+      "always": true,
+      "covers": ["P9"]
+    },
+    {
+      "id": "STATIC-ui",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_ui_static.py",
+      "deps": [
+        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/main/**/ui/ClinicalBadges.kt",
+        ".agents/checks/check_ui_static.py"
+      ],
+      "always": true,
+      "covers": ["P10"]
+    },
+    {
+      "id": "COMPILE-app",
+      "tier": 2,
+      "cmd": "./gradlew --offline :app:compileDebugKotlin",
+      "deps": [
+        "app/src/main/**/*.kt",
+        "app/src/test/**/*.kt",
+        "app/build.gradle*"
+      ],
+      "covers": ["build-gate"]
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+Review of Round 3f-1 (read-only, nothing run).
+
+**Hard Blockers**
+
+1. **Q51: failures can still be silent.** `VaultController.saveAttachment` and `deleteAttachment` return `Boolean` and return `false` when the session or epoch is stale, the patient is archived, or no row was deleted. `AncViewModel.kt:~133` calls `controller.saveAttachment(demoAttachment, unlocked.sessionEpoch)` and ignores the result, so only exceptions reach the banner. In the spec's own wording, the first step failing is a failure. Fix: treat `false` as `SAVE_FAILED` / `DELETE_FAILED`.
+2. **Q51: delete order loses the file when the row delete returns `false`.** At `AncViewModel.kt:~148`, `controller.deleteAttachment(...)` is followed unconditionally by `PatientAttachmentVault.deleteAttachment(...)`. If the row delete returns `false` (stale epoch, no row), the file is deleted anyway. The row is left pointing at a missing file and no error is shown. This breaks "the file is NOT touched on first-step failure". Fix: `if (!controller.deleteAttachment(...)) { dispatch(AttachmentFailed(DELETE_FAILED)); return@launch }`.
+
+**Should-fix**
+
+3. **Q51: error is lost if the vault locks.** `dispatch` starts with `if (_state.value.vaultState !is VaultState.Unlocked) return`. If the app locks between the start of the work and the failure, `AttachmentFailed` is silently dropped. This is arguably fine, since the banner would be hidden behind the lock anyway, but the spec says "never silent". At least keep the `Log.e`.
+4. **Q51: failed save leaves the file behind.** If `controller.saveAttachment` fails after `PatientAttachmentVault.saveAttachment` has already written the file, the file stays on disk. The banner says "Nothing was filed", which is true for the database but leaves an orphan file. This was already the case before the diff; mention it to the owner.
+5. **Q50: `java.util.Base64` decoding is stricter.** `Base64.getDecoder().decode(it)` throws `IllegalArgumentException` on stray whitespace or newlines (`SecuritySettingsRepository.kt:~137`). Encoded output is identical to the old NO_WRAP, and minSdk 26 supports the class, so already-stored hashes decode fine. The risk is only a stored value that was hand-edited or wrapped. Android's decoder skipped whitespace; no caller wraps `decode` in a try.
+
+**Nits**
+
+6. **Q48: viewers now downsample.** Display sites used to decode at full size; they now use `inSampleSize` with a floor of `maxSide` per side. This is intended. The vault's own `compressAndWrite` result is unchanged: the old `if (src > MAX)` guard and the new `width <= maxSide || height <= maxSide → 1` give the same answer, because the loop needs both halves ≥ max anyway.
+7. **Q48: `OutOfMemoryError` is now caught in the vault path.** `compressAndWrite` now throws `IllegalStateException("Failed to decode…")` instead of letting the OOM propagate. This is acceptable and is caught by the ViewModel.
+8. **Q48: non-null decode cases.** `decodeStream` opens the stream twice, which is fine for content URIs and files. `decodeFile` with a missing file returns null, and all four callers use `?.asImageBitmap()` or the vault's null check. There is no path that returns a blank bitmap.
+9. **Tests, `HashingTest.legacyPinHashInputStaysByteIdentical`:** it re-implements the old formula (`String.format("%02x", b)` over `MessageDigest`) as the oracle. This is an intentional old-vs-new equivalence check, but the known-vector tests already cover it, so it is mostly redundant.
+10. **Tests, `BoundedBitmapTest`:** only `computeSampleSize` is tested. The file's header comment says the Bitmap decoders are not covered, which matches the spec's allowance.
+11. **`UltrasoundPhotoViewerDialog.kt:3`:** the `com.sherifradwan…BoundedBitmap` import sits above `android.net.Uri`, out of alphabetical order, unlike the neighbouring files.
+
+**Answers to your questions**
+
+- **(1) Q47: hash output is unchanged.** `toHexLower` is the same `"%02x".format` as before. The only text hashed is `ClinicalCommands.sha256` (was default-charset `toByteArray()`, now UTF-8, the same on Android). `SaveVisitCommand` keeps its framing and shares only the hex step. The stream variant uses an 8192-byte buffer, as `verifyIntegrity` did. `"%02x"` now appears only in `Hashing.kt`.
+- **(2) Q48:** see items 6–8 above.
+- **(3) Q49: order and guard are identical.** The helper does exists → `cleanupUnpublished()` → `!hasVaultDatabase` → `deleteOrphanAliases()`. All three call sites run inside `storageMutex.withLock` as before. `VaultController` has no `hasVaultDatabase(` left. `VaultFiles.kt:155` still uses it for something else, which is out of scope.
+- **(4) Q50:** see item 5. The clock only replaces `System.currentTimeMillis()` inside the class. `MainActivity` and the other callers keep the real clock. The three removed functions have no references; only `setupPin` is still used, at `AppLockScreen.kt:143`, and it was kept.
+- **(5) Q51/Q52:** blockers 1–2 and items 3–4 above. `CancellationException` is rethrown in both coroutines and is not reported as an error. The banner is only in `workspaceContentItems`, which is the only screen that dispatches `AddAttachment` and `DeleteAttachment`, so that coverage is sufficient. It uses the error colour and the same Card/FlowRow layout, and the Close button dispatches `DismissAttachmentError`.
+- **(6) Tests exercise production code:** `VaultCleanupRuleTest`, `SecuritySettingsRepositoryTest` (fake prefs and clock), `AttachmentErrorStateTest` (the real reducer) and the Rh test (`isRhNegative` / `isRhPositive`) all call production code. There are no ViewModel tests, so blockers 1 and 2 are untested.

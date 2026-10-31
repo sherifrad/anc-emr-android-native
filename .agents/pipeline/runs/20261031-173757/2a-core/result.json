@@ -1,0 +1,20 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "pp/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/storage/VaultController.kt",
+    "app/src/main/java/com/sherifradwan/ancnative/state/DraftAutosaver.kt",
+    "app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt"
+  ],
+  "finalMessage": "Files changed:\n- app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt (NEW)\n- app/src/main/java/com/sherifradwan/ancnative/state/DraftAutosaver.kt (NEW)\n- app/src/main/java/com/sherifradwan/ancnative/storage/VaultController.kt\n- app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt\n\nImplementation by oracle:\n- Q109: DraftMapping.kt implements DraftSlot, activeDraftSlot, draftRecordFor (all 9 screens, CREATE/EDIT detection, excludes ultrasound imageUris, NEW_PATIENT_DRAFT_KEY), applyDraftRecord (fresh UUID editorSessionId, clears errors), closedDraftSlot (gated on Unlocked vaultState), and state-package VaultState factory/proxy object.\n- Q110: DraftAutosaver.kt implements DraftStore and DraftAutosaver with debounced save, delete on closed slot, cancelPending, and exception-safe flush. VaultController implements saveDraft, loadDraft, deleteDraft using storageMutex.\n- Q111: AncViewModel owns DraftAutosaver with VaultController DraftStore; dispatches and save completions report via private updateState(); lock reset cancels pending without discard; manualLock/onBackgrounded await autosaver.flush() (max 2s) before delegating to controller.\n\nAssumptions:\n- Defined VaultState factory in DraftMapping.kt so state-package test files can access VaultState.Unlocked/Locked/Closing without explicit storage import.\n\nVerification:\n- python3 .agents/checks/check_r3v.py: PASS (S92, S93)\n- Earlier static checks (check_r3u, check_r3t, check_r3s, check_r3e, check_r3f1): PASS\n- Unit tests (*DraftMappingTest, *DraftAutosaverTest): PASSED\n- Full unit test suite (:app:testDebugUnitTest): PASSED\n- Compilations (:app:compileDebugKotlin, :app:compileReleaseKotlin, :app:compileDebugAndroidTestKotlin): PASSED\n- Device tests: not run (nothing was run on a device).",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-173757/2a-core/result.json",
+  "timestamp": "2026-10-31T15:55:11.455Z"
+}

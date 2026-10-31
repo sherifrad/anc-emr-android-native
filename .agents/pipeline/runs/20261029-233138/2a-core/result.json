@@ -1,0 +1,15 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "claude-delegate",
+  "cli": "claude",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [],
+  "finalMessage": "Q8–Q12 are implemented in `DeliveryNotesParser.kt`, but I could not run the tests. The Gradle command was refused by the permission gate, so everything below is verified by reading only.\n\n**Files changed:** `app/src/main/java/com/sherifradwan/ancnative/ui/DeliveryNotesParser.kt` only. `ClinicalFormat.kt` is untouched, as the brief said. I checked that every function the `ClinicalFormatTest` and `ClinicalFormatR2Test` call exists in it.\n\n**Per oracle:**\n- **Q8:** `hospitalNames` returns nothing for a segment matching `HISTORY_MARKER`. The segment still lands in plan through the existing placement logic.\n- **Q9:** new `isNamePhrase` rejects a phrase whose words are all Maternity/Medical/Hospital, or that contains To, Go or If as whole words. Checked against the three transport cases and \"Maternity Hospital\".\n- **Q10:** `HOSPITAL_PHRASE.findAll` replaces the single `find`, so every phrase is collected in source order. Duplicates are removed by the existing `LinkedHashSet`.\n- **Q11:** `isValueEnd` ends a labelled value at ';', ',' or \" - \", or at a '.' that is not after a Q1 abbreviation. `pending` is added to the undecided list. `collapseWithLabelled` keeps only the longer of a labelled name and a nested or equal phrase from the same segment, once.\n- **Q12:** the sentence split now fires before any letter (`isLetter`) instead of only a capital. Abbreviation exceptions are unchanged.\n\n**Assumptions:**\n- Q8 applies to the labelled \"Hospital:\" value as well as unlabelled phrases. A history segment never contributes a hospital, whichever form it takes.\n- Q11's collapse covers only labelled-versus-phrase pairs within one segment, as the spec states. Phrase-versus-phrase is not collapsed.\n- The labelled value is placed first in the collapsed list, which matches source order because \"Hospital:\" always opens its segment.\n\n**Not run:** the Gradle command for `ParseDeliveryNotesSpecTest`, `DeliveryNotesParserTest`, `ClinicalFormatTest` and `ClinicalFormatR2Test`. It needs the permission approved, and I have not tried to get around the gate. To run it, approve the command and run:\n`./gradlew --offline :app:testDebugUnitTest --tests '*ParseDeliveryNotesSpecTest' --tests '*DeliveryNotesParserTest' --tests '*ClinicalFormatTest' --tests '*ClinicalFormatR2Test'`",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261029-233138/2a-core/result.json",
+  "timestamp": "2026-10-29T21:33:47.620Z"
+}

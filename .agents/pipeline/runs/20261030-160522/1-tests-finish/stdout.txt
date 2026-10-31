@@ -1,0 +1,15 @@
+I added the three entries to `.agents/TEST_MANIFEST.json` (`UNIT-pin-policy`, `UNIT-lock-policy`, `STATIC-r3c`). I could not confirm the file is still valid JSON, because the validation command was blocked pending approval, so the parse check did not run.
+
+I inserted the entries as a single edit right after `STATIC-r3b` and left every existing entry untouched. By hand, the comma placement and brackets look correct.
+
+- **`UNIT-pin-policy` and `UNIT-lock-policy`:**
+  - Both are tier 1.
+  - Each runs its test class with `--tests '*PinPolicyTest'` / `'*AppLockPolicyTest'`.
+  - Each depends on the new production file (`security/PinPolicy.kt`, `security/AppLockPolicy.kt`) and its test.
+  - They cover Q25 and Q26.
+- **`STATIC-r3c`:**
+  - It is tier 1 and runs `python3 .agents/checks/check_r3c.py`.
+  - It depends on `SecuritySettingsRepository.kt`, `BiometricAuthManager.kt`, `MainActivity.kt` and the check itself.
+  - It covers S8–S13.
+- **Assumption:** the spec text wasn't re-read in this finish-up round, so the `--tests` filters follow the existing manifest style (`*ClassName`).
+- **Not done in this round:** I did not re-run the test files or `check_r3c.py`. I have no run results for which tests or checks fail today, or whether any compile error has a cause other than the missing `PinPolicy` / `AppLockPolicy` names.

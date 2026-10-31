@@ -1,0 +1,13 @@
+INDEPENDENT REVIEWER REPORT - Round 3s (Oracles Q102-Q103, S84-S85)
+
+1. Counting rule: Exact match to Q102 spec. Structured fields are checked first (`ObstetricHistory.kt:35-37`, trimmed, case-insensitive). Conflicting structured values count once with Cesarean winning (`ObstetricHistory.kt:38-41`). Hysterotomy counts as neither. Free-text fallback via `\b(?:CS|Cesarean)\b` and `\b(?:SVD|Vaginal)\b` triggers only when both structured fields are null/blank (`ObstetricHistory.kt:42`). Rejects non-words ("CSF", "Vaginally", "NonSVD"); ignores whitespace/case. Stillbirth and early loss accurately map structured and free-text representations.
+2. Screen coverage & grep: All three screens (`PatientListScreen.kt:102`, `ProfileScreen.kt:378`, `PatientPrintHtmlGenerator.kt:57`) delegate entirely to `previousDeliverySummary(patient)`. Grep across `app/src/main` confirms no legacy inline CS/SVD/stillbirth/miscarriage counting remains.
+3. Summary text: Every branch matches Q102 verbatim (Primigravida, P0 · No prior deliveries, Prev <n> CS / <n> SVD joined by ", ", real `${c.stillbirth} IUFD` count replacing old hardcoded "1 IUFD", Prior Stillbirth (IUFD), <n> Prior Miscarriages, Parous (P<p>), <size> Prior Pregnancies, fallback). Print report replaces "+" and "Primigravida / N/A" as required.
+4. Clinical risk: None. Resolves clinical false-positive risks present in old code (e.g., "CSF leak" previously triggered a false Cesarean delivery on the printed report due to substring matching).
+5. Dead code & checks: None. No dead code or dummy comments. `isStillbirth` and `isEarlyLoss` are cleanly reused for HTML outcome badge styling (`PatientPrintHtmlGenerator.kt:230-232`).
+6. Test efficacy: `ObstetricHistoryTest` (19 tests) and `PrintObstetricSummaryTest` (6 tests) exercise production code directly. Both fail on old code due to fixed delimiters ("," vs "+"), elimination of substring false positives, structured conflict precedence, and real IUFD counts. Full suite `:app:testDebugUnitTest` passes.
+
+Findings:
+- Hard Blockers: None
+- Should-fix: None
+- Nit (`ObstetricHistory.kt:89`): `"${c.earlyLoss} Prior Miscarriages"` produces "1 Prior Miscarriages" for singular count; strictly adheres to spec wording.

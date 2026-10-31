@@ -1,0 +1,2 @@
+FAIL S43 EXIF handled once in BoundedBitmap: BoundedBitmap.kt lacks fun exifTransform; BoundedBitmap.kt does not use ExifInterface; InAppCameraDialog.kt still contains ExifInterface; InAppCameraDialog.kt still contains decodeUpright
+FAIL S44 attachment dialog scrolls, preview height capped: AddAttachmentDialog.kt lacks verticalScroll; AddAttachmentDialog.kt lacks heightIn(

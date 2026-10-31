@@ -1,0 +1,25 @@
+Q66 and Q67 are edited, but I couldn't run any of the checks or the compile. Every Bash call I tried (`check_r3g.py`, `check_r3e.py`, `check_r3f2.py`, and the `./gradlew` compile of debug and release) was blocked for approval. So the three checks, the compile and the unit tests are all not run, and nothing is verified beyond reading the edits.
+
+**Files changed**
+- `ui/UltrasoundEditor.kt`
+- `ui/UltrasoundPhotoViewerDialog.kt`
+- `ui/WorkspaceScreen.kt`
+- `ui/ProfileScreen.kt`
+
+**Q66** (`UltrasoundEditor.kt`)
+- The gallery picker result and the camera result now send `AncEvent.ImportScanPhoto(route.patientId, uri)`.
+- Neither one appends the raw `uri.toString()` to `imageUris` any more.
+
+**Q67**
+- `UltrasoundPhotoViewerDialog` now takes `patientId: String` as its first parameter.
+- A photo string with a vault ref (`scanPhotoFileName(...) != null`) is resolved with `PatientAttachmentVault.resolveAttachmentFile(context, patientId, fileName)` and decoded with `BoundedBitmap.decodeFile(path, 2048)`.
+- A `content` or `file` URI keeps the existing `decodeStream` path, so legacy scans still load.
+- Anything else, or any failure, shows "Image unavailable" with the `image_unavailable` tag.
+- The existing `runCatching` still wraps all of it, so it never throws.
+- The calls in `WorkspaceScreen.kt` and `ProfileScreen.kt` now pass `patientId = patient.id`. I assumed `patient` is in scope at both call sites, as it is in the neighbouring dialogs.
+
+**Assumptions and loose ends**
+- `draft.values.imageUris` is no longer read in the two picker callbacks. The draft is still read elsewhere in the editor, so I expect no unused-variable problem, but the compile would show it.
+- I did not touch any testTag.
+
+You'll need to run the three check scripts and the debug and release compile yourself.

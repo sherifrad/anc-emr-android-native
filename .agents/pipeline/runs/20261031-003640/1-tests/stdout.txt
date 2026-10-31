@@ -1,0 +1,23 @@
+I wrote all three files, but I couldn't run `check_r3i.py` or validate the manifest JSON. Both commands were refused for lack of approval. So every result below is "not run".
+
+**Files**
+- `.agents/checks/check_r3i.py` (new): S51–S54, stdlib only, comments stripped first, PASS/FAIL per check, exit 1 on any FAIL. It follows the style of `check_r3h.py`.
+- `app/src/test/java/com/sherifradwan/ancnative/model/IsoDatesTest.kt` (new): covers every case in the spec's Unit paragraph. It will not compile until `model/IsoDates.kt` exists.
+- `.agents/TEST_MANIFEST.json`: added `STATIC-r3i` (covers S51–S54) and `UNIT-iso-dates` (covers Q69, Q70) before `UNIT-all`. I left other entries unchanged.
+
+**Per check**
+- **S51:** fails today because `LocalDate.parse(` still appears outside `IsoDates.kt` and `DemoFixtures.kt`. I haven't confirmed the exact files.
+- **S52:** matches `plusDays(280`, `/ 280f` and `280 -` in `app/src/main` outside `IsoDates.kt`. It should fail today, since the spec says those shapes exist.
+- **S53:** fails today because `model/IsoDates.kt` doesn't exist yet.
+- **S54:** fails today unless those three files already reference `eddFromLmp(` or `FULL_TERM_DAYS`. I haven't confirmed which.
+
+**Older checks**
+A grep of `.agents/checks/*.py` for `LocalDate.parse`, `plusDays(280`, `IntakeDatingRule`, `GestationalBanner`, `PatientEditor` and `280` found one real conflict:
+- `check_r3.py:6` and `check_r3.py:47` (S1/S1b) assert that `AncViewModel.kt` has no `plusDays(280`. That absence is compatible with this round.
+- `check_r3d.py:165` and `check_r3d.py:11` mention `PatientEditor` only for the "Hardware Vault Security" claim, which is unrelated.
+- `check_r3f2.py:94` matches only `1280`, which is unrelated.
+- No older check references `LocalDate.parse`, `IntakeDatingRule` or `GestationalBanner`. `check_ui_static*.py` had no hits for these shapes.
+
+**Assumptions**
+- S52's `280 -` is matched as `\b280\s*-`.
+- The manifest deps for `STATIC-r3i` name every file in S51–S54, plus a glob over `app/src/main/**/*.kt` because S51 and S52 scan all of main.

@@ -1,0 +1,5 @@
+I changed S13 in `.agents/checks/check_r3c.py` so it scans only `security/SecuritySettingsRepository.kt`. It used to scan every `.kt` file under the main source tree.
+
+- **Docstring:** I updated the S13 line to say it covers that one file.
+- **Not touched:** the tests and the manifest.
+- **Not run:** I didn't run the check after the edit, so I haven't seen how S13 comes out now.

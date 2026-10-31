@@ -1,0 +1,7 @@
+PASS P10(a) delivery_planning_notice referenced inside DeliveryPlanningCard
+PASS P10(b) all five fact string resources used in DeliveryPlanningCard
+PASS P10(c) delivery edit button uses stringResource(R.string.edit_delivery_plan), no literal contentDescription
+PASS P10(d) PatientAgeBadge uses clearAndSetSemantics/mergeDescendants and formatAgeYears
+PASS P10(e) WorkspaceScreen.kt uses isRhNegative/isHighRisk, no inline endsWith("-") logic
+PASS P10(f) parseDeliveryNotes/DeliveryNoteSections not defined in WorkspaceScreen.kt
+PASS P10 overall: 6/6 sub-checks passed

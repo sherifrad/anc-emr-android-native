@@ -1,0 +1,6 @@
+PASS S37 camera dependencies and CAMERA permission
+PASS S38 old camera flow replaced by InAppCameraDialog
+PASS S39 InAppCameraDialog contract
+PASS S40 presets and vault use them
+PASS S41 preset chips and temp-file cleanup
+PASS S42 helper functions and strings

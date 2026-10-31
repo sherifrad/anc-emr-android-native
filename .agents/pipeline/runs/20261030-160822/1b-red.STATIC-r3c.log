@@ -1,0 +1,6 @@
+PASS S8 SDK_INT<30 guard before BiometricManager use
+PASS S9 no 123456 / DEFAULT_PIN
+PASS S10 repository uses PinPolicy for v2
+PASS S11 MainActivity calls shouldLockOnReturn
+PASS S12 AutoLockTimeout has no NEVER
+PASS S13 SHA-256 only in legacy check function

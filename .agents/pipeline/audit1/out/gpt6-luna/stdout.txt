@@ -1,0 +1,23 @@
+## Team GPT-6 Luna - lens CLINICAL CORRECTNESS and DATA INTEGRITY
+
+**Dominant style pattern:** Kotlin source generally uses package-level imports, descriptive names, and focused KDoc for domain rules; tests generally use descriptive method names and direct assertions.
+
+### Bugs
+| # | Sev | file:line | quote (<=1 line) | failure scenario (input -> wrong result) | fix (1 line) | confidence H/M/L |
+|---|---|---|---|---|---|---|
+| 1 | Should-fix | `app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt:1208` | `if (isRhNegative) "Anti-D Prophylaxis + Matched Packed RBCs Cross-match" else "Routine Obstetric Hospital Protocol"` | Print a report for an Rh-negative patient whose record contains no prophylaxis or blood-bank plan -> the report presents those precautions as patient-specific plans. | Label these as general guidance, or show them only when backed by recorded clinical data. | H |
+| 2 | Should-fix | `app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt:1212` | `Regular fetal kick counts; immediate hospital evaluation for bleeding, ruptured membranes, or severe pain.` | Print a report for a patient with no recorded recommendations -> the report presents generic advice as a recorded special recommendation. | Omit this section when unrecorded, or clearly distinguish general guidance from patient-recorded recommendations. | H |
+
+### Style groups
+| rule | deviation | count | examples file:line | introduced by (commit/model if known) |
+|---|---|---:|---|---|
+| Prefer concise, maintainable comments that document behavior rather than implementation history or work-item labels. | `DeliveryNotesParser.kt` has unusually dense comments with round/Q references and repeated explanations; this is less consistent with focused KDoc elsewhere. | 1 file | `app/src/main/java/com/sherifradwan/ancnative/ui/DeliveryNotesParser.kt:15`, `:37`, `:88` | `c0e4917` (author shown as `sherifrad`; model unknown) |
+| Prefer descriptive test names that state behavior, not issue/question identifiers. | Test methods use `qNN_...` names, making intent depend on external round numbering. | At least 2 files | `app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalFormatR2Test.kt:106`; `app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt:71` | `c0e4917` (author shown as `sherifrad`; model unknown) |
+
+### Not covered / not verified
+- Read-only inspection only; no builds or tests run.
+- Reviewed dating calculations, selected save/update paths, migration SQL, Rh/risk helpers, delivery-note parsing, and report output. I found no additional confirmed defects in those inspected areas.
+- Did not exhaustively inspect every scoped file or verify behavior by execution.
+
+### Verdict: can the project continue to the next tasks?
+**YES-after-fixes.** First: (1) stop presenting generic blood-bank precautions as recorded plans; (2) distinguish or omit unrecorded special recommendations; (3) verify printed reports no longer imply patient-specific care plans that are absent from the record.

@@ -1,0 +1,15 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "opencode-delegate",
+  "cli": "opencode",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": true,
+  "readOnlyViolation": false,
+  "touchedFiles": [],
+  "finalMessage": "I'll review the Round 3g changes by examining the spec and git diff. Let me gather the information.\n\n<read_file>\n<path>.agents/pipeline/SPEC_FIX_R3.md</path>\n</read_file>",
+  "stderrTail": "\u001b[0m\n> plan · cfp/deepseek-ai/deepseek-v4-pro-0813",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261030-233105/3-review-1-opencode/result.json",
+  "timestamp": "2026-10-30T21:36:56.544Z"
+}

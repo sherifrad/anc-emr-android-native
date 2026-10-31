@@ -1,0 +1,14 @@
+Files changed:
+app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+
+What was done per oracle:
+- Q94: Deleted all duplicate capital title `<span class="en-sub">...</span>` lines across all section-title blocks (8 core sections + ultrasound attachments) and removed the `.section-title .en-sub` CSS rule, leaving single visible titles in their original casing and markup unchanged.
+
+Assumptions:
+- None.
+
+Verification results:
+- `./gradlew --offline :app:testDebugUnitTest --tests '*PrintSectionTitlesTest' --tests '*PatientPrintHtml*'`: PASSED.
+- `./gradlew --offline :app:testDebugUnitTest` (full unit test suite): PASSED.
+- `./gradlew --offline :app:compileDebugKotlin`: PASSED.
+- `python3 .agents/checks/check_r3p.py`: S78 PASSED (S79 not run/implemented here as Q95 belongs to dialog lane).

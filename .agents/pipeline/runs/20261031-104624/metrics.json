@@ -1,0 +1,238 @@
+[
+ {
+  "step": "1-tests",
+  "lane": "opencode:opencode/glm-5.3-flash-free",
+  "tried": [
+   "opencode:opencode/glm-5.3-flash-free=completed"
+  ],
+  "seconds": 349.8,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   ".agents/TEST_MANIFEST.json",
+   ".agents/checks/check_r3n.py",
+   "app/src/test/java/com/sherifradwan/ancnative/model/IvfDatingTest.kt",
+   "app/src/test/java/com/sherifradwan/ancnative/model/RedatingTest.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "1b-red",
+  "ran": 7,
+  "reused": 52,
+  "deferred": 2,
+  "not_gated": [
+   "UNIT-format-r2",
+   "UNIT-intake-dating",
+   "UNIT-anomalies",
+   "UNIT-vault-auto",
+   "UNIT-vault-cleanup",
+   "UNIT-pin-policy",
+   "UNIT-lock-policy"
+  ],
+  "passed": [
+   "STATIC-r3i",
+   "STATIC-r3m",
+   "UNIT-visit-vitals",
+   "UNIT-save-visit-validation"
+  ],
+  "failed": [
+   "STATIC-r3n",
+   "UNIT-ivf-dating",
+   "UNIT-redating"
+  ]
+ },
+ {
+  "step": "red-check",
+  "parked": [
+   "app/src/test/java/com/sherifradwan/ancnative/model/IvfDatingTest.kt",
+   "app/src/test/java/com/sherifradwan/ancnative/model/RedatingTest.kt"
+  ],
+  "failed": [
+   "STATIC-r3n",
+   "UNIT-ivf-dating",
+   "UNIT-redating"
+  ],
+  "compile_error": false,
+  "behavioural_red_confirmed": true
+ },
+ {
+  "step": "2a-core",
+  "lane": "agy:gemini-3.8-flash-medium",
+  "tried": [
+   "agy:claude-sonnet-5-5-medium=failed",
+   "agy:gemini-3.8-flash-medium=completed"
+  ],
+  "seconds": 217.7,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   "app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/model/Redating.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2a-green",
+  "ran": 4,
+  "reused": 2,
+  "deferred": 0,
+  "not_gated": [
+   "UNIT-parse-legacy",
+   "UNIT-format-r2",
+   "UNIT-print",
+   "UNIT-contrast",
+   "STATIC-ui",
+   "STATIC-ui-r2",
+   "UNIT-intake-dating",
+   "STATIC-r3",
+   "UNIT-anomalies",
+   "UNIT-vault-auto",
+   "UNIT-vault-cleanup",
+   "STATIC-r3b",
+   "UNIT-pin-policy",
+   "UNIT-lock-policy",
+   "STATIC-r3c",
+   "STATIC-r3d",
+   "STATIC-r3e",
+   "STATIC-r3f1",
+   "STATIC-r3f3",
+   "STATIC-r3f2",
+   "UNIT-photo-quality",
+   "UNIT-hashing",
+   "UNIT-bounded-bitmap",
+   "UNIT-security-settings",
+   "UNIT-attachment-error",
+   "UNIT-negative-control",
+   "UNIT-clinical-validation",
+   "UNIT-demo-fixtures",
+   "UNIT-gestational-age",
+   "UNIT-timeline-projection",
+   "UNIT-patient-validation",
+   "UNIT-previous-pregnancy-validation",
+   "UNIT-codex-repository",
+   "UNIT-anc-state",
+   "UNIT-backup-vault",
+   "UNIT-clinical-commands",
+   "UNIT-encrypted-backup",
+   "UNIT-attachment-vault",
+   "UNIT-patient-commands",
+   "UNIT-records-mapping",
+   "UNIT-save-coordinator",
+   "UNIT-vault-state",
+   "UNIT-gestational-banner",
+   "STATIC-r3g",
+   "UNIT-scan-photo-ref",
+   "UNIT-camera-sweep",
+   "UNIT-scan-photo-import",
+   "STATIC-r3h",
+   "UNIT-capture-temp-file",
+   "STATIC-r3i",
+   "STATIC-r3j",
+   "STATIC-r3k",
+   "UNIT-format-weight",
+   "UNIT-attachment-title",
+   "UNIT-iso-dates",
+   "UNIT-profile-saved-notice",
+   "UNIT-visit-synthetic-flag",
+   "STATIC-r3l",
+   "STATIC-r3m",
+   "UNIT-visit-vitals",
+   "UNIT-save-visit-validation",
+   "STATIC-r3n"
+  ],
+  "passed": [
+   "UNIT-ivf-dating",
+   "UNIT-redating",
+   "UNIT-all",
+   "COMPILE-app"
+  ],
+  "failed": []
+ },
+ {
+  "step": "2b-ui",
+  "lane": "agy:gemini-3.8-flash-medium",
+  "tried": [
+   "agy:claude-sonnet-5-5-medium=failed",
+   "agy:gemini-3.8-flash-medium=completed"
+  ],
+  "seconds": 330.2,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   "app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt",
+   "app/src/main/res/values/strings.xml"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2b-green",
+  "ran": 18,
+  "reused": 50,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [
+   "STATIC-r3f1",
+   "STATIC-r3f2",
+   "UNIT-negative-control",
+   "UNIT-clinical-validation",
+   "UNIT-gestational-age",
+   "UNIT-patient-validation",
+   "UNIT-previous-pregnancy-validation",
+   "UNIT-clinical-commands",
+   "UNIT-gestational-banner",
+   "STATIC-r3g",
+   "STATIC-r3i",
+   "STATIC-r3j",
+   "UNIT-iso-dates",
+   "STATIC-r3l",
+   "STATIC-r3m",
+   "STATIC-r3n",
+   "UNIT-all",
+   "COMPILE-app"
+  ],
+  "failed": []
+ },
+ {
+  "step": "ui-gate-final",
+  "still_failing": []
+ },
+ {
+  "step": "cache-check-no-changes",
+  "ran": 0,
+  "reused": 68,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [],
+  "failed": []
+ },
+ {
+  "step": "3-review-0-agy",
+  "lane": "agy:gemini-3.8-flash-medium",
+  "tried": [
+   "agy:claude-opus-5-5-medium=failed",
+   "agy:gemini-3.8-flash-medium=completed"
+  ],
+  "seconds": 199.4,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "3-review-1-agy",
+  "lane": "agy:gemini-3.8-flash-medium",
+  "tried": [
+   "agy:gemini-3.8-flash-medium=completed"
+  ],
+  "seconds": 211.7,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [],
+  "scope_violations_reverted": []
+ }
+]

@@ -1,0 +1,27 @@
+I added the Q13 and Q14 tests, but I could not run them. Gradle is blocked on a permission prompt that was never approved, so I can't say which tests fail today.
+
+**File changed:** `app/src/test/java/com/sherifradwan/ancnative/ui/ParseDeliveryNotesSpecTest.kt`. I appended 8 tests; no existing test was edited or weakened. They use a small shared helper, `assertHospitalInPlan`, that checks the hospital value and that the plan is exactly the input line.
+
+**Q13**, one test per spec example:
+- `r2c_q13_deliveredPreviousBaby_null`
+- `r2c_q13_priorPregnancy_null`
+- `r2c_q13_previousCsThenBooked_cleopatra`
+- `r2c_q13_previousCsNowBooked_cleopatra`
+- `r2c_q13_electiveCsGivenPrevious_darAlFouad`
+- `r2c_q13_plannedDeliveryThisPregnancy_cleopatra`
+
+I added one extra test, `r2c_q13_labelledHospitalAlwaysCounts_afterPastMarker`. It uses "Previous CS 2019. Hospital: Cleopatra Hospital" to cover rule (a): a labelled value always counts.
+
+**Q14:** `r2c_q14_labelledValueEndsAtParen` feeds "Hospital: Cleopatra Hospital (history of PPH, cross-match 2 units)" and expects hospital "Cleopatra Hospital".
+
+**Assumptions:**
+- Each example asserts `plan == input line`, because the spec says every line stays in Plan unchanged.
+- For the labelled-hospital test I only check that the full line is still present in some section, since the spec doesn't say which section holds it.
+
+**Expected results, from the spec and not yet confirmed:** the four examples that give null today (the two "stays null" lines and the two with a later booked or planned hospital) should fail. The others, including the elective and labelled ones, may already pass.
+
+**Compile risk:** none expected. These tests use only `parseDeliveryNotes` and the existing result fields. `isRhPositive` and `formatBloodGroup` are not involved.
+
+**Not done:** I did not touch `ClinicalFormatR2Test.kt`, `check_ui_static_r2.py` or `TEST_MANIFEST.json`. The task says those need no change for 2c.
+
+To get the real fail list, approve and run `./gradlew --offline :app:testDebugUnitTest --tests '*ParseDeliveryNotesSpecTest'` from `/Users/sherifgamalradwan/anc-emr-android-native`.

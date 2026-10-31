@@ -1,0 +1,4 @@
+PASS S51 LocalDate.parse( only in IsoDates.kt and DemoFixtures.kt
+PASS S52 no hard-coded 280 for gestation outside IsoDates.kt
+PASS S53 IsoDates.kt defines the four Q69 names
+FAIL S54 editor, dating rule and banner use the shared due-date rule: ui/GestationalBanner.kt references neither eddFromLmp( nor FULL_TERM_DAYS

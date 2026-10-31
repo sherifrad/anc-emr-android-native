@@ -1,0 +1,17 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "pp/src/main/java/com/sherifradwan/ancnative/MainActivity.kt"
+  ],
+  "finalMessage": "Changed files:\n- app/src/main/java/com/sherifradwan/ancnative/MainActivity.kt\n\nOracle implementations:\n- Q100: Removed the `if (!BuildConfig.DEBUG) { window.setFlags(...) }` block setting FLAG_SECURE in `MainActivity.onCreate` and removed the now-unused `import android.view.WindowManager`. Changed nothing else.\n\nAssumptions:\n- None.\n\nWhat could not be done or verified:\n- Q101 was not implemented here (androidTest file is outside CORE BUILDER allowed list).\n- Device check postponed/not run (requires physical device or emulator).\n\nVerification results:\n- `./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin`: PASSED (BUILD SUCCESSFUL)\n- `./gradlew --offline :app:testDebugUnitTest`: PASSED (BUILD SUCCESSFUL)\n- `python3 .agents/checks/check_r3r.py`: PASSED (S83 PASS)",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-143752/2a-core/result.json",
+  "timestamp": "2026-10-31T12:42:54.995Z"
+}

@@ -1,0 +1,19 @@
+S30 still fails, and the cause is in a file I'm not allowed to edit. I couldn't run any of the checks or the Gradle build, so none of this is verified.
+
+**S30 failure:** `ui/report/PatientPrintHtmlGenerator.kt:20` calls `BitmapFactory.decodeResource(context.resources, R.drawable.clinic_logo_foreground)`. The S30 check flags this because it expects `BitmapFactory` only in `storage/BoundedBitmap.kt`. That file isn't in my ALLOWED list, so I left it alone.
+
+**My four UI files are done.** A grep shows each call site already goes through `BoundedBitmap`, with no direct `BitmapFactory` use left:
+- `WorkspaceScreen.kt:1947` uses `decodeFile(..., 2048)`.
+- `ClinicalAttachmentViewerDialog.kt:82` uses `decodeFile(..., 2048)`.
+- `UltrasoundPhotoViewerDialog.kt:74` uses `decodeStream(..., 2048)`.
+- `AddAttachmentDialog.kt:294` uses `decodeStream(..., 1024)`.
+
+S34 (error banner and strings) passed in your last run.
+
+**Next step:** the owner of `PatientPrintHtmlGenerator.kt` has two options:
+1. Add a `BoundedBitmap.decodeResource(...)` helper and call it from the generator.
+2. Have the S30 check exempt that file, since it decodes a small bundled drawable and not user-supplied photos. The decode is still a bounded-size concern, so I'd lean toward option 1.
+
+**Test failure:** the last output shows `No tests found for given includes: *ClinicalCodexRepositoryTest`. That is a wrong or missing `--tests` filter, not a code failure. I didn't touch it.
+
+**Not run:** `check_r3f1.py`, `check_r3e.py` and `:app:compileDebugKotlin`. The sandbox asked for approval on each command and I didn't get it in this session. If you approve them, I'll re-run all three.

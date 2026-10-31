@@ -1,0 +1,38 @@
+Spec, diff, sources, and tests read. Now let me run the four spec-derived test classes to get real PASS/FAIL evidence instead of only static reasoning.
+One more check — where `patient.ageText` is produced, to judge the badge's `cleanAge` trimming against real data shape.
+> 🦅 **MACA Active Fleet Dispatch** — Tier: Review | Phase: Postimage Audit | Lane: Independent Reviewer (read-only, ALLOWED: none)
+
+REVIEW — current source vs P1–P10 (spec .agents/pipeline/SPEC_FIX.md)
+
+P1 PASS — `\b(fees?|egp|cost…)\b`. Input "Feels reduced fetal movements, CTG booked" → fees=null, line in plan (ran; unit test agrees).
+P2 PASS — "Delivered by emergency CS in 2019, previous baby 4kg" → plan, wording intact (HISTORY_MARKER); "Delivered healthy girl on 2026-10-12" → postpartum. Ran.
+P3 PASS — "Lab review booked: 10:30" verbatim in plan; only known labels ("Delivery fee:", "Postpartum note:") stripped; "Delivery fee: 25,000 EGP (estimate)" → plan, fees null. Ran.
+P4 PASS — "…deliver at Helios Medical Hospital at 38 weeks" → hospital="Helios Medical Hospital" only; "Hospitalised at 28w" and "Declines hospital birth" → null. Ran.
+P5 PASS — null/blank → all null; every non-empty line routed exactly once (when-arms cover all inputs); only hospital-bearing lines may duplicate. Ran.
+P6 PASS — "A+","O pos","A+, antibody screen negative","pending" → false ('+' short-circuits before "negative"); "O −"(U+2212 remapped), "O neg","B Rh -ve","O Rh(-)","O minus" → true. Ran.
+P7 PASS — "high"→true; "Not high risk"→false (`\bnot\b` guard). Ran.
+P8 PASS — "29 yrs."→"29", "Age 29"→"29", "yrs","unknown","" → null (first digits match; none → null). Ran.
+P9 FAIL — ran ThemeContrastTest: (1) `contrast TagAgeLabelText on TagAgeLabelDarkBg = 4.47:1, needs ≥ 4.5:1` (dark AGE chip; light pair = 6.29 OK); (2) `copy(alpha = 0.65f)` placeholder colour in DeliverySectionBox (ClinicalBadges.kt:124). Mental output for fix: dark label bg ≈ #4F46E5, placeholder text = full-opacity tone token.
+P10 (ran 4 test classes: 47/49 pass; static checks done by read/grep):
+ (a) FAIL — delivery_planning_notice not in DeliveryPlanningCard (zero refs in WorkspaceScreen.kt); notice silently removed from card.
+ (b) PASS technically (agreed_edd/current_gestational_age/manual_risk/fetal_presentation/placental_site used elsewhere in file) — but intent miss, see defect 3.
+ (c) FAIL — WorkspaceScreen.kt:1354 `contentDescription = "Edit Delivery Plan"` literal; `R.string.edit_delivery_plan` does not exist in strings.xml.
+ (d) FAIL — PatientAgeBadge uses plain `semantics{}` (no clearAndSetSemantics/mergeDescendants) and its own removeSuffix chain, not formatAgeYears. Input "29 yrs." (clinician free-text, saved via AGE_TEXT) renders "29 yrs. yrs"; TalkBack may double-announce. Mental output: badge value "29 yrs" via formatAgeYears, a11y "Age 29 years".
+ (e) PASS — isRhNegative/isHighRisk used; no inline endsWith("-").
+ (f) PASS — parser lives in DeliveryNotesParser.kt.
+
+NEW DEFECTS / CARRIED REGRESSIONS (vs pre-change diff .agents/work/uncommitted.diff):
+1. Hard Blocker — R.string.delivery_planning_notice text removed from the delivery card (was shown pre-change; violates "nothing silently removed"). Restore the notice row.
+2. Should-fix — (c) as above: patch would be `IconButton…contentDescription = stringResource(R.string.edit_delivery_plan)` + add the string to strings.xml.
+3. Should-fix — delivery-card facts reworded to hardcoded English tiles: "Agreed EDD" was R.string.agreed_edd ("Agreed clinical EDD"), "Risk" was manual_risk ("Manual risk level"), "Placenta" was placental_site ("Placental site"). Clinical/administrative wording changed without owner approval; wire stringResource labels back.
+4. Should-fix — (c)/(d) as above: resource + formatAgeYears/clearAndSetSemantics.
+5. Should-fix — Section-box placeholder wording drifted: "To be agreed based on hospital and delivery mode (NVD / CS)" vs original committed "To be agreed **at clinic** …". Restore exact original wording or get owner sign-off.
+6. Nit — @Composable fun isDarkSurface (ClinicalBadges.kt:28) reads theme colour on every call; fine for now, no action needed for this round.
+
+Assumptions (SAFE per rule 1): none beyond spec; parser duplicate-hospital listing left as-is (spec P5 marks owner confirmation pending).
+
+NOT VERIFIED / COULD NOT DO:
+- check_ui_static.py: not found anywhere in the repo; P10 checked by read/grep instead.
+- Instrumented/device checks: touch-target ≥48dp (IconButton default 48dp assumed, not measured), TalkBack announcements, emoji rendering.
+- Full unit suite not run this round (only the four spec test classes); `./gradlew --offline :app:testDebugUnitTest` (those 4) = 47 pass / 2 fail (both P9).
+- Light-theme rendered contrast of the alpha-faded placeholder (0.65 blend over tone bg) not computed; source-level alpha violation is already a confirmed oracle failure.

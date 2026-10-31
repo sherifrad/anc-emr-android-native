@@ -1,0 +1,14 @@
+ASSUMPTIONS I’M MAKING:
+1. The explicit UI-builder scope (Q42–Q46, allowed UI files only) takes precedence over the trailing S5a repair note; I will not edit files outside the allowlist.
+2. I’ll use the Round 3e spec and owner decisions as source of truth, and run the requested validations.
+3. I won’t access the explicitly excluded run/scorecard paths.
+> 🦅 **MACA Active Fleet Dispatch** — Tier: single-model (no independent lane dispatch); Phase 2 Build; Lane: UI Builder — Q42–Q46. Scope remains the supplied allowlist; the separate S5a failure concerns an out-of-scope file.
+Implemented Q42–Q46 within the UI-builder scope.
+
+Changed `AppLockScreen.kt`: gated biometric-key clicks on the biometric setting, added polite live regions for errors and lockout messages, grouped PIN dots into one “N of 6 digits entered” accessibility node, and assigned button roles to keypad keys.
+
+Q43’s viewers already show “Image unavailable” on load/decode failure without simulated scan content or permanent loading text, so they needed no changes. Q44’s existing status-tag text/background pairs meet 4.5:1; no color changes were needed. Q45’s scoped screens had no 36dp IconButton modifier chains; no touch-target changes were needed.
+
+Validation: `check_r3e.py` passed S23–S28; `ThemeContrastTest` passed; `compileDebugKotlin` passed; `git diff --check` passed.
+
+Assumption/scope note: the reported S5a failure is outside the requested Q42–Q46 scope and allowlist; I did not modify it.

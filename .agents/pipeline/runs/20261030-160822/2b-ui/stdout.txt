@@ -1,0 +1,12 @@
+I’ll keep this lane limited to the four allowed files, first checking the Round 3c requirements and the supplied security APIs. I won’t commit or touch tests.
+The repository exposes setup and legacy-migration state directly, and validates new PINs through `isValidNewPin`. I’ll use those APIs to keep setup/migration ahead of all vault content, and to refuse PIN entry during persisted lockout.
+The first validation caught one compile issue: the Change PIN dialog’s click handler cannot call `context.getString` because that function has no local context. I’ll move the resource lookup into composition and rerun both required checks.
+Files changed:
+- `AppLockScreen.kt`: Added first-launch and legacy-`123456` PIN setup with confirmation, PIN rule validation, lockout countdown and disabled entry, and biometric controls only when available.
+- `AncApp.kt`: Shows setup or lock screen before vault or patient content.
+- `SecuritySettingsDialog.kt`: Validates changed PINs with `isValidNewPin`; the auto-lock choices contain no “Never” option.
+- `strings.xml`: Added the new PIN and lockout messages.
+
+Q29 a, b, d implemented. Q29 c implemented. Assumption: The PIN gate appears before vault screens too, so no patient content is shown before setup or unlock.
+
+Verification: debug Kotlin compilation passed; full unit suite passed. Release compilation and device checks not run. No commit made.

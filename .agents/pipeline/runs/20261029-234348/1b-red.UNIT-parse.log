@@ -1,0 +1,92 @@
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:kspDebugKotlin UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac NO-SOURCE
+> Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:kspDebugUnitTestKotlin
+> Task :app:compileDebugUnitTestKotlin UP-TO-DATE
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+
+> Task :app:testDebugUnitTest FAILED
+
+ParseDeliveryNotesSpecTest > r2_q4a_nameCutAtSpaceDash FAILED
+    java.lang.AssertionError at ParseDeliveryNotesSpecTest.kt:460
+
+ParseDeliveryNotesSpecTest > r2_q4b_lowercaseConnectorAllowed_nameKeptAsTyped FAILED
+    org.junit.ComparisonFailure at ParseDeliveryNotesSpecTest.kt:486
+
+ParseDeliveryNotesSpecTest > r2_q4b_bookedPhrase_extractedExactly FAILED
+    org.junit.ComparisonFailure at ParseDeliveryNotesSpecTest.kt:475
+
+ParseDeliveryNotesSpecTest > r2_q4_twoDistinctNames_joinedNewline_sourceOrder FAILED
+    org.junit.ComparisonFailure at ParseDeliveryNotesSpecTest.kt:521
+
+ParseDeliveryNotesSpecTest > r2_q3_semicolon_dischargedToPostpartum_planMarkerToPlan FAILED
+    org.junit.ComparisonFailure at ParseDeliveryNotesSpecTest.kt:415
+
+ParseDeliveryNotesSpecTest > r2_q4a_hospitalLabel_nameExtracted_fullLineStaysInPlan FAILED
+    java.lang.AssertionError at ParseDeliveryNotesSpecTest.kt:428
+
+ParseDeliveryNotesSpecTest > r2_q4b_leadingWordsDropped_nameOnly FAILED
+    org.junit.ComparisonFailure at ParseDeliveryNotesSpecTest.kt:481
+
+ParseDeliveryNotesSpecTest > r2_q3_expectedTense_neverPostpartum FAILED
+    java.lang.AssertionError at ParseDeliveryNotesSpecTest.kt:401
+
+ParseDeliveryNotesSpecTest > r2_q4a_labelCaseInsensitive_valueTrimmed_labelledSegmentSplit FAILED
+    java.lang.AssertionError at ParseDeliveryNotesSpecTest.kt:434
+
+ParseDeliveryNotesSpecTest > r2_q2_semicolonSplit_sendsFeeAndHistoryToTheirHomes FAILED
+    org.junit.ComparisonFailure at ParseDeliveryNotesSpecTest.kt:352
+
+ParseDeliveryNotesSpecTest > r2_q1_sentenceSplits_routeEachSegment_home FAILED
+    java.lang.AssertionError at ParseDeliveryNotesSpecTest.kt:360
+
+ParseDeliveryNotesSpecTest > r2_q4_sameNameTwice_deduped FAILED
+    java.lang.AssertionError at ParseDeliveryNotesSpecTest.kt:526
+
+ParseDeliveryNotesSpecTest > r2_q3_futureTense_neverPostpartum FAILED
+    java.lang.AssertionError at ParseDeliveryNotesSpecTest.kt:393
+
+ParseDeliveryNotesSpecTest > r2_q1_drAbbreviation_neverSplits_decimalNeverSplits FAILED
+    java.lang.AssertionError at ParseDeliveryNotesSpecTest.kt:368
+
+ParseDeliveryNotesSpecTest > r2_q4a_nameCutAtSentenceEnd FAILED
+    java.lang.AssertionError at ParseDeliveryNotesSpecTest.kt:454
+26 actionable tasks: 2 executed, 24 up-to-date
+
+64 tests completed, 15 failed
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:testDebugUnitTest'.
+> There were failing tests. See the report at: file:///Users/sherifgamalradwan/anc-emr-android-native/app/build/reports/tests/testDebugUnitTest/index.html
+
+* Try:
+> Run with --scan to get full insights.
+
+BUILD FAILED in 1s

@@ -1,0 +1,38 @@
+I’ll keep this read-only and within the stated audit scope, including the exclusions. I’ll inventory every in-scope Kotlin file, compare authorship/style via history and blame, then verify any bug claims against exact source lines; I won’t run builds or tests.
+## Team GPT-6 Luna — lens CODE CONSISTENCY and BEST PRACTICES
+
+**Dominant pattern:** domain-based packages, conventional Kotlin names, named arguments for larger constructors, Compose state passed down from screen/state owners, and descriptive behavior-focused tests. Most storage and clinical rules are isolated behind repository or pure-rule boundaries.
+
+**History caveat:** the inspected Git history records `sherifrad` as author for the relevant commits; it does not identify which model wrote each change. I can attribute examples to commits, but not reliably to a model or round.
+
+### Bugs
+
+| # | Sev | file:line | quote (≤1 line) | failure scenario (input → wrong result) | fix (1 line) | confidence |
+|---|---|---|---|---|---|---|
+| 1 | Blocker | `app/src/main/java/com/sherifradwan/ancnative/storage/EncryptedBackupManager.kt:384` | `put("dataUrl", JSONObject.NULL)` | A patient with an attachment is backed up and restored → attachment metadata returns with an empty file path (`EncryptedBackupManager.kt:671`), while the image file itself is not part of the backup. The test explicitly asserts an empty path (`app/src/test/java/com/sherifradwan/ancnative/storage/EncryptedBackupTest.kt:237`). | Include attachment bytes in the encrypted backup and restore them to the patient vault, or reject incomplete exports. | H |
+| 2 | Should-fix | `app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt:145` | `PatientAttachmentVault.deleteAttachment(` | A delete begins while unlocked, then the vault locks before the repository operation → the file is deleted first, while `VaultController.deleteAttachment` can reject the stale session at `VaultController.kt:478`; the database can retain a row for a missing image. | Coordinate file and metadata deletion so a rejected/stale database operation cannot leave a dangling attachment record. | H |
+| 3 | Should-fix | `app/src/main/java/com/sherifradwan/ancnative/storage/PatientAttachmentVault.kt:43` | `val rootDir = File(context.filesDir, ATTACHMENTS_ROOT_DIR)` | Clinical images are stored as ordinary app files; unlike the encrypted database, this helper does not encrypt them. Device/app-data extraction that can read the app sandbox can expose image contents without the vault key. | Encrypt attachment contents with the vault’s data-at-rest protection and verify integrity after decryption. | M |
+
+### Style groups
+
+| Rule | Deviation | Count | Examples (`file:line`) | Introduced by (commit/model if known) |
+|---|---|---:|---|---|
+| Keep files focused; split large screens, state, and persistence code into cohesive units. | **15 Kotlin files exceed 600 lines** (largest: 2,159 lines); this makes review and focused testing harder. | 15 files | `ui/WorkspaceScreen.kt:1`; `ui/ProfileScreen.kt:1`; `storage/RecordsRepository.kt:1`; `state/AncState.kt:1`; `storage/EncryptedBackupManager.kt:1` | Accumulated across `36c303e` through `5fd691d`; model attribution unavailable. |
+| Put user-visible UI text in string resources rather than composable literals. | Grep found **182** `text`/`label`/`placeholder` literal occurrences in main Kotlin sources. This conflicts with the existing resource-based UI pattern and impedes localization and consistent copy changes. | 182 occurrences | `ui/ClinicalBadges.kt:55`, `:64`, `:120` | `c0e49179` for these examples; author-model unknown. |
+| Use one test naming and layout convention; prefer descriptive behavior names and consistently formatted annotations. | **36** test functions use the `testX` prefix, while other tests use behavior descriptions; several newer tests compress `@Test` and the function onto one line. | 36 prefixed functions; multiple inline examples | `model/GestationalAgeEngineTest.kt:14`; `storage/VaultAutoActionTest.kt:7`; compare `model/ClinicalValidationTest.kt:14` | Present in earlier tests and later additions; model attribution unavailable. |
+| Keep comments focused on durable code intent, not transient round/spec workflow. | One confirmed test file contains round/Q-number and pipeline-spec narration, making the source dependent on process context rather than explaining the test contract. | 1 confirmed file | `ui/report/PatientPrintHtmlGeneratorTest.kt:13` | `2ff50517`; author-model unknown. |
+
+**Suggested normalization order:** (1) correct attachment backup and deletion consistency before data-bearing use; (2) establish and apply attachment-at-rest encryption; (3) extract focused units from the largest files; (4) resource-ize UI copy and standardize test naming/comments. These are recommendations, not applied changes.
+
+### Not covered / not verified
+
+- Read every in-scope `.kt` path for inventory; targeted source review and searches informed the findings and style counts.
+- No builds or tests were run; findings are **not verified by running**.
+- I did not establish additional dead code or duplicate-helper findings with sufficient evidence to report.
+- I did not read excluded audit/pipeline/scorecard files.
+
+### Verdict: **NO** — do not proceed to real clinic data until the following are fixed
+
+1. Encrypted backups must preserve attachments or clearly fail rather than restore unusable records.
+2. Attachment deletion must not remove the file when the vault rejects the corresponding metadata operation.
+3. Attachment bytes need data-at-rest protection consistent with the encrypted-vault claim.

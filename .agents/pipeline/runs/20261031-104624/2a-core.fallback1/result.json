@@ -1,0 +1,21 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "pp/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt",
+    "app/src/main/java/com/sherifradwan/ancnative/model/Redating.kt"
+  ],
+  "finalMessage": "Files changed:\n- app/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt\n- app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt\n- app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt\n- app/src/main/java/com/sherifradwan/ancnative/model/Redating.kt (NEW)\n- app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt\n\nWork done per oracle:\n- Q88: Added ivfGaDaysAtTransfer and ivfEddFromTransfer to IsoDates.kt. Set ClinicalVocabulary.embryoAges = listOf(3, 5, 6) in ClinicalModels.kt. Updated GestationalAgeEngine (calculateForIvf, calculateEstimatedDueDate) and ClinicalCommands (isStructurallyValid x2, prepare x2) to route all embryo age checks through ClinicalVocabulary.embryoAges and IVF calculations through the new IsoDates functions; removed literal constants and 3/5 comparisons.\n- Q89: Implemented pure Kotlin model/Redating.kt defining RedatingAdvice, redatingThresholdDays implementing the ACOG table (5, 7, 10, 14, 21 days), and redatingAdvice returning signed differenceDays and thresholdDays when |scan - dating| > threshold, null otherwise.\n\nAssumptions: None outside written spec.\nVerification:\n- check_r3n.py S72 and S73: PASS\n- ./gradlew --offline :app:testDebugUnitTest --tests '*IvfDatingTest' --tests '*RedatingTest': PASSED\n- ./gradlew --offline :app:testDebugUnitTest: PASSED (full suite)\n- ./gradlew --offline :app:compileDebugKotlin: PASSED",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-104624/2a-core.fallback1/result.json",
+  "timestamp": "2026-10-31T08:56:00.139Z"
+}

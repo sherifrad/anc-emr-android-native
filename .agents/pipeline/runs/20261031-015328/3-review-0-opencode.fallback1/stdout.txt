@@ -1,0 +1,45 @@
+**Review of Round 3k.** I read the diff and grepped; I did not build or run anything.
+
+**(1) Q75–Q80 against the spec**
+- Q75 (`ClinicalBadges.kt:145`), Q80 (`AncApp.kt:165`), Q76 (`PatientListScreen.kt:654`), Q78 and Q79 match the spec. All testTags are kept.
+- Q77 deviates slightly; see Should-fix 1.
+- No changes outside the spec. The `TEST_MANIFEST.json` entries are orchestrator-owned.
+
+**(2) Anything that exists only for a static check**
+- **Should-fix 1:** `ProfileScreen.kt:805-806`, `Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {` directly followed by `Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {`.
+  - The inner Column is redundant. The outer Column already stacks the summary, outcome and details lines with the same 2 dp spacing.
+  - It exists only because S61 requires the block to contain a Column. Remove it and fix S61.
+  - Real change: swap the Row for plain siblings. The spec's "in a Column" is already satisfied by the outer Column.
+- There is no fake `<skip>` block this time (`grep skip` finds nothing in `check_r3k.py`).
+
+**(3) formatWeightKg and migration**
+- **Nit:** `ClinicalFormat.kt` `WEIGHT_UNIT = Regex("(?:kg|kilograms?)$", IGNORE_CASE)`.
+  - `"74.5 kg."` becomes `"74.5 kg. kg"`.
+  - `"150 lb"` becomes `"150 lb kg"`, which mislabels the unit.
+  - Both are outside the spec. The first is cosmetic, but the second is a clinical-data concern worth deciding on.
+  - `"5pkg"` also counts as unit-bearing (no word boundary), which is harmless.
+- **Nit:** `ProfileScreen.kt:1062-1064`, the `isNullOrBlank` guard plus `"Weight: ${formatWeightKg(visit.weight)}"`. This is correct, since the guard guarantees non-null.
+- **Should-fix 2:** `report/PatientPrintHtmlGenerator.kt:97`, `${v.weight?.let { "$it kg" } ?: "-"}`.
+  - A stored "74.5 kg" prints as "74.5 kg kg" in the printed report.
+  - It is not in the diff, but it is the same bug Q78 targets, and the `.weight` grep finds it.
+- **Should-fix 3:** two places print a bare weight, which the spec's "no bare 74.5" forbids:
+  - `UltrasoundEditor.kt:221`: `"BP: … · Wt: ${linkedVisit.weight ?: "-"}"`.
+  - `ClinicalSummaryGenerator.kt:40`: `" | Wt: ${v.weight}"`.
+  - The spec only named ProfileScreen and "workspace" explicitly. These two are likely outside the lane's ALLOWED list, so confirm with the orchestrator.
+- Migrated: `ProfileScreen.kt:1064`, `ProfileScreen.kt:1082` and `WorkspaceScreen.kt:868`. `FactRow` accepts `String?`, so a null result behaves as before.
+
+**(4) lerp**
+- The import `androidx.compose.ui.graphics.lerp` (`PatientListScreen.kt:61`) is correct, and no other `lerp` import conflicts.
+- `lerp(surface, errorContainer, if (isDark) 0.40f else 0.22f)` has the stop and fraction in the right order, and the fractions match the old alphas. The result is opaque. When the card sits on `surface`, it looks the same as the old alpha overlay minus the inner frame. Text colours are unchanged, so contrast is unchanged.
+
+**(5) Arrangement**
+- **Nit:** `Arrangement.spacedBy(8.dp, Alignment.End)` is the correct overload, `spacedBy(Dp, Alignment.Horizontal)`. `Alignment.End` is layout-direction aware, so it behaves the same as the old `Arrangement.End` in RTL and LTR. The line is now very long; wrapping it would read better.
+
+**(6) Tests**
+- `FormatWeightKgTest` calls the production `formatWeightKg` directly, and its cases cover every example in the spec. It is not tautological. Not run.
+- **Nit:** there are no cases for `"74.5 kg."` or other units. Add them if you decide those behaviours.
+- Nothing tests Q75–Q80 UI behaviour. The spec relies on static checks and device checks for those.
+
+**Hard Blockers:** none.
+
+**Assumptions:** none needed; this was a read-only review.

@@ -1,0 +1,3 @@
+[fallback] claude:claude-sonnet-5-5: failed 165.8s 14540 chars -> next
+[fallback] opencode:openai/gpt-6-luna: failed 119.8s 5625 chars -> next
+[fallback] whole chain failed

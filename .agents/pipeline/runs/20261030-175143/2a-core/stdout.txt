@@ -1,0 +1,15 @@
+I’ll make only the five allowed-file changes. First I’m checking the existing implementations and the later R2 rules that remain in force, then I’ll run the requested checks without modifying tests.
+Files changed:
+- `file_paths.xml`: Q32 added the backup cache path; kept existing entries.
+- `MainActivity.kt`: Q35 sets `FLAG_SECURE` only in release builds and removes the vault debug log.
+- `SecuritySettingsRepository.kt`: Q38 setup mode now requires an unconfigured PIN; locking resets setup mode unless no PIN is configured.
+- `PatientPrintHtmlGenerator.kt`: Q37 prints “Not recorded” for Special Recommendations and non-Rh-negative precautions; uses the specified Rh-negative wording.
+- `AttachmentSyncManager.kt`: Q39 changes the local-only label to “Stored on this phone.”
+
+Assumptions: None.
+
+Verification:
+- S17–S19 passed. `check_r3d.py` failed S20–S21 and other S22 wording in files outside my allowed list; those were not changed.
+- Requested unit tests ran but failed 6 existing `PatientPrintHtmlGeneratorTest` assertions, including assertions for wording Q37 supersedes.
+- Debug and release Kotlin compilation passed.
+- `git diff --check` passed. Other pre-existing working-tree changes were left untouched.

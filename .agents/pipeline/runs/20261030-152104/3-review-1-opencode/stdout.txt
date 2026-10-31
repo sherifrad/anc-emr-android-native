@@ -1,0 +1,15 @@
+I'll review the current source against Round 3b (Q22–Q24, S5–S7) only, read-only, and report pass/fail plus any new defects.
+The spec is loaded. Next I’ll read the storage paths, MainActivity vault effect, the new tests, and the static check.
+Backup copies are drowning the search. I’ll restrict it to current `app/src` and read the Round 3b files.
+Deletion sites are few. I’ll read the new rule files, the three call sites, and the tests next.
+The new rules look close to the spec. I’ll now check how they are wired into the repository, vault cleanup, and controller.
+Wiring matches the spec at the call sites. I’ll read the surrounding logic and the tests for gaps.
+Cleanup is guarded, but I still need the database filename constant and whether other paths can still delete a vault or alias.
+The old validity check may still live on the model. I’ll compare it to the new split so nothing structural was demoted to an anomaly.
+The old `isInternallyValid` is gone. I’ll compare the old check against the new split so a structural rule wasn’t quietly demoted.
+I’ll read the old `isInternallyValid` from one backup so I can see whether any structural rule was dropped.
+The old check only blocked on those fields. I’ll now look for leftover auto-retry loops and whether child rows can still be attached to the wrong patient.
+One `while (true)` remains in vault files. I’ll read it, then check how child rows are loaded onto a patient.
+Relations are keyed by `patient_id`, so a mismatched child would not load onto the wrong patient. I’ll check whether anomalies are dropped and whether the static check actually passes.
+Anomalies are accepted and then ignored. I’ll read those two success branches to see whether records are still shown unchanged.
+The success path keeps the snapshot and drops the anomaly list, which the spec allows for this round. I’ll run the static check and confirm there is no third delete site.

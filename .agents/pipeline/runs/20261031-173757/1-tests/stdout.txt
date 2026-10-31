@@ -1,0 +1,28 @@
+I couldn't run `check_r3v.py` or validate the manifest JSON, so nothing here has been run. The Bash tool refused each `python3` call because it needs approval, and this session can't grant that. Neither test class has been compiled or run either, because the production code they call doesn't exist yet.
+
+**Files changed**
+- `.agents/checks/check_r3v.py` (new)
+- `.agents/TEST_MANIFEST.json`: added `STATIC-r3v` (covers S92, S93) and `UNIT-draft-sync` (covers Q109, Q110, Q111), both before `UNIT-all`. `UNIT-draft-sync` runs both test classes with the manifest's usual `--tests` form.
+- `app/src/test/java/com/sherifradwan/ancnative/state/DraftMappingTest.kt` (new)
+- `app/src/test/java/com/sherifradwan/ancnative/state/DraftAutosaverTest.kt` (new)
+
+**What each file does**
+- **S92 and S93:** `check_r3v.py` follows the spec text for both, using `check_r3u.py`'s helpers.
+  - S92 and S93 should FAIL on today's code, because `DraftMapping.kt` and `DraftAutosaver.kt` don't exist.
+  - It prints PASS or FAIL per check and exits 1 if any fail.
+- **Q109:** `DraftMappingTest` has 21 tests that build `AncState` values directly from the real draft classes.
+  - They cover all 9 screens: fields, slot, kind, `editorKind`, `recordId`, `baseRevision`, and `NEW_PATIENT_DRAFT_KEY` for a new patient.
+  - They also cover clean or no editor giving null, the round trip with a new session id and no errors, and ultrasound `imageUris` kept out of the record.
+  - The rest cover a non-matching slot, Arabic and emoji text through the codec, and `closedDraftSlot`, including that a lock is not a discard.
+- **Q110:** `DraftAutosaverTest` has 10 tests with a fake `DraftStore`, `runBlocking`, and a 30 ms debounce.
+  - They cover fast typing giving one save, `flush`, closing an editor, a clean editor, a lock, `cancelPending`, a store that throws or returns false, and one pending save per slot.
+- **Q111:** `AncViewModel` is only covered by the static check S93, since the unit tests don't exercise it.
+
+**Assumptions to check against the spec**
+- **Constructors:** the tests call `DraftAutosaver(scope, store, debounce) { 42L }` with positional arguments.
+- **Pregnancy `baseRevision`:** I assert it equals `basePregnancyRevision` (7), and the record is CREATE when that is null. The spec only says "the revision the editor was opened on."
+- **Dating `baseRevision`:** I assert it equals `basePatientRevision`.
+- **Field counts:** I assert the exact number of fields per screen, for example 14 for patient and 15 for ultrasound without `imageUris`. These follow the current `values` classes.
+- **Coroutines on the test classpath:** I did not verify that `kotlinx.coroutines` is on the unit-test classpath. The tests assume it comes in through `room-ktx`. If it doesn't, the autosaver test won't compile, and core would need to add a dependency.
+
+Please run `python3 .agents/checks/check_r3v.py` yourself.

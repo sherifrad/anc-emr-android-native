@@ -1,0 +1,32 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "opencode-delegate",
+  "cli": "opencode",
+  "status": "failed",
+  "exitCode": 130,
+  "signal": null,
+  "readOnly": true,
+  "readOnlyViolation": true,
+  "touchedFiles": [
+    "agents/TEST_MANIFEST.json",
+    "agents/pipeline/SPEC_FIX_R3.md",
+    "pp/src/main/java/com/sherifradwan/ancnative/MainActivity.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/security/SecuritySettingsRepository.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/storage/AttachmentSyncManager.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt",
+    "pp/src/main/res/xml/file_paths.xml",
+    ".agents/backup-20261030-175143/",
+    ".agents/backup-20261030-175644/",
+    ".agents/checks/check_r3d.py",
+    ".agents/pipeline/r3d-run.log",
+    ".agents/pipeline/r3d-run2.log",
+    ".agents/pipeline/r3d/"
+  ],
+  "finalMessage": "",
+  "stderrTail": "ve/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt \n> plan · nvidia/nvidia/nemotron-3-ultra-550b-a55b\n\u001b[0m→ \u001b[0mRead /Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt \u001b[90m[offset=1, limit=100]\u001b[0m\n> plan · nvidia/nvidia/nemotron-3-ultra-550b-a55b\n\u001b[0m→ \u001b[0mRead /Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/VaultController.kt \u001b[90m[offset=1, limit=200]\u001b[0m\n> plan · nvidia/nvidia/nemotron-3-ultra-550b-a55b\n\u001b[0m✱ \u001b[0mGrep \"retryStorageInspection|deleteOrphanAliases\" \u001b[90min /Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/VaultController.kt · 3 matches\u001b[0m\n> plan · nvidia/nvidia/nemotron-3-ultra-550b-a55b\n\u001b[0m→ \u001b[0mRead /Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/BackupVaultIntegrationAndZeroDataLossTest.kt \u001b[90m[limit=80, offset=150]\u001b[0m",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/audit1/retry/tests/attempt-0-opencode-omniroute_nvidia_nvidia_nemotron-3-ultra-550b-a55b/result.json",
+  "timestamp": "2026-10-30T15:59:39.662Z"
+}

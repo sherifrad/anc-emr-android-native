@@ -1,0 +1,14 @@
+MACA pipeline 20261030-175143 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('opencode', 'openai/gpt-6-luna'), 'ui': ('opencode', 'openai/gpt-6-luna')} review: ['opencode:omniroute/nvidia/nvidia/nemotron-3-ultra-550b-a55b']
+  opencode  /opt/homebrew/bin/opencode
+  claude    /opt/homebrew/bin/claude
+[1-tests] claude completed 76.6s changed=3 violations=0
+[1b-red] ran=2 reused=16 deferred=2 not_gated=0 failed=['UNIT-print', 'STATIC-r3d']
+[1c-tests-repair] claude completed 46.3s changed=1 violations=0
+[1b-red] ran=2 reused=16 deferred=2 not_gated=0 failed=['UNIT-print', 'STATIC-r3d']
+[2a-core] opencode completed 41.0s changed=5 violations=0
+[2a-green] ran=2 reused=2 deferred=0 not_gated=16 failed=['UNIT-print']
+[2a-core-repair1] opencode completed 29.5s changed=0 violations=0
+[2a-green-r1] ran=1 reused=3 deferred=0 not_gated=16 failed=['UNIT-print']
+[2a-core-repair2] opencode completed 44.0s changed=0 violations=0
+[2a-green-r2] ran=1 reused=3 deferred=0 not_gated=16 failed=['UNIT-print']
+HALT: core logic still red after 2 repair rounds; UI lane not started. See /Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261030-175143

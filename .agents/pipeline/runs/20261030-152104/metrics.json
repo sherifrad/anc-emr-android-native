@@ -1,0 +1,132 @@
+[
+ {
+  "step": "1-tests",
+  "lane": "claude:claude-sonnet-5-5",
+  "seconds": 118.4,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   ".agents/TEST_MANIFEST.json",
+   ".agents/checks/check_r3b.py",
+   "app/src/test/java/com/sherifradwan/ancnative/storage/RecordAnomaliesTest.kt",
+   "app/src/test/java/com/sherifradwan/ancnative/storage/VaultAutoActionTest.kt",
+   "app/src/test/java/com/sherifradwan/ancnative/storage/VaultCleanupRuleTest.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "1b-red",
+  "ran": 1,
+  "reused": 8,
+  "deferred": 2,
+  "not_gated": [
+   "UNIT-format-r2",
+   "UNIT-intake-dating",
+   "UNIT-anomalies",
+   "UNIT-vault-auto",
+   "UNIT-vault-cleanup"
+  ],
+  "passed": [],
+  "failed": [
+   "STATIC-r3b"
+  ]
+ },
+ {
+  "step": "red-check",
+  "parked": [
+   "app/src/test/java/com/sherifradwan/ancnative/storage/RecordAnomaliesTest.kt",
+   "app/src/test/java/com/sherifradwan/ancnative/storage/VaultAutoActionTest.kt",
+   "app/src/test/java/com/sherifradwan/ancnative/storage/VaultCleanupRuleTest.kt"
+  ],
+  "failed": [
+   "STATIC-r3b"
+  ],
+  "compile_error": false,
+  "behavioural_red_confirmed": true
+ },
+ {
+  "step": "2a-core",
+  "lane": "opencode:openai/gpt-6-luna",
+  "seconds": 44.7,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   "app/src/main/java/com/sherifradwan/ancnative/MainActivity.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/storage/RecordAnomalies.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/storage/VaultAutoAction.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/storage/VaultCleanupRule.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/storage/VaultController.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/storage/VaultFiles.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2a-green",
+  "ran": 5,
+  "reused": 2,
+  "deferred": 0,
+  "not_gated": [
+   "UNIT-parse-legacy",
+   "UNIT-format-r2",
+   "UNIT-print",
+   "UNIT-contrast",
+   "STATIC-ui",
+   "STATIC-ui-r2",
+   "UNIT-intake-dating",
+   "STATIC-r3",
+   "UNIT-all"
+  ],
+  "passed": [
+   "UNIT-anomalies",
+   "UNIT-vault-auto",
+   "UNIT-vault-cleanup",
+   "STATIC-r3b",
+   "COMPILE-app"
+  ],
+  "failed": []
+ },
+ {
+  "step": "2b-green",
+  "ran": 2,
+  "reused": 14,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [
+   "STATIC-r3",
+   "UNIT-all"
+  ],
+  "failed": []
+ },
+ {
+  "step": "ui-gate-final",
+  "still_failing": []
+ },
+ {
+  "step": "cache-check-no-changes",
+  "ran": 0,
+  "reused": 16,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [],
+  "failed": []
+ },
+ {
+  "step": "3-review-0-opencode",
+  "lane": "opencode:omniroute/nvidia/nvidia/nemotron-3-ultra-550b-a55b",
+  "seconds": 266.8,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "3-review-1-opencode",
+  "lane": "opencode:omniroute/gc/grok-4.7-high",
+  "seconds": 1500.1,
+  "relay_status": "failed",
+  "relay_exit": 130,
+  "changed": [],
+  "scope_violations_reverted": []
+ }
+]

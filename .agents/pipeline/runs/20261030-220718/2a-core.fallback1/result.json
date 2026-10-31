@@ -1,0 +1,21 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "claude-delegate",
+  "cli": "claude",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "pp/src/main/java/com/sherifradwan/ancnative/state/AncState.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/storage/CameraCaptureHelper.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/storage/PatientAttachmentVault.kt",
+    "app/src/main/java/com/sherifradwan/ancnative/storage/PhotoQuality.kt"
+  ],
+  "finalMessage": "I made the Q54–Q57 code edits, but I couldn't run anything. The harness blocked every `python3` and `./gradlew` call, either for approval or as multiple operations, so I couldn't run any check, test or compile.\n\nThe unit-test suite, `check_r3f2.py`, the older `check_r3*.py` scripts and the debug/release Kotlin compiles are all **not run**. S40 and the core parts of S41/S42 are untested, so please run these before relying on the changes.\n\n**Changed files** (all under `app/src/main/java/com/sherifradwan/ancnative/`):\n- `storage/PhotoQuality.kt` (new)\n- `storage/PatientAttachmentVault.kt`\n- `storage/CameraCaptureHelper.kt`\n- `state/AncState.kt`\n- `state/AncViewModel.kt`\n\n**By oracle:**\n- **Q54:** `PhotoQualityPreset` is Android-free, with SMALL(1280, 70), STANDARD(1600, 75) and DETAILED(1920, 85). `DEFAULT` is SMALL. `defaultFor(category)` gives DETAILED for `AttachmentCategories.ULTRASOUND` and SMALL for everything else, including unknown or empty categories.\n- **Q55:** `saveAttachment` and `saveAttachmentFromStream` take `preset` (default `PhotoQualityPreset.DEFAULT`) and pass it to `compressAndWrite`. That uses `preset.maxSide` for decoding and scaling and `preset.webpQuality` for compression. I removed the two old constants.\n- **Q56:** `AncEvent.AddAttachment` has a new `preset` parameter that defaults to `defaultFor(category)`, so existing constructor calls still compile. `AncViewModel.addAttachment` passes it to the vault. A `finally` block then calls `CameraCaptureHelper.deleteIfCaptureTemp(getApplication(), event.sourceUri)` on both success and failure.\n- **Q57:** `createCameraTempFile` now holds the naming rule, and `createCameraTempUri` calls it, so there's no second copy. I also added `uriFor`, `deleteIfCaptureTemp` and `clearStaleCaptures`. `deleteIfCaptureTemp` returns true only when the file was actually deleted from `cacheDir/camera`.\n\n**Assumptions:**\n- `deleteIfCaptureTemp` only accepts our own FileProvider URIs (`<package>.fileprovider`) whose first path segment is `camera_photos`, which is the name in `res/xml/file_paths.xml`. It resolves the rest against `cacheDir/camera` and requires the canonical parent to equal that folder. Anything else, including gallery URIs and `..` tricks, returns false.\n- `clearStaleCaptures` only removes plain files in `cacheDir/camera` whose last-modified time is older than the cutoff.\n- If the vault is locked, `addAttachment` returns early before the `try`, so a camera temp file in that case isn't deleted. `clearStaleCaptures` will remove it later.",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261030-220718/2a-core.fallback1/result.json",
+  "timestamp": "2026-10-30T20:10:19.940Z"
+}

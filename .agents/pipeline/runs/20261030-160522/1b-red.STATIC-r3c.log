@@ -1,0 +1,6 @@
+FAIL S8 SDK_INT<30 guard before BiometricManager use: no guard before first use
+FAIL S9 no 123456 / DEFAULT_PIN: default PIN remnant found
+FAIL S10 repository uses PinPolicy for v2: missing hashPin/pinMatches/v2 keys
+FAIL S11 MainActivity calls shouldLockOnReturn: no call
+FAIL S12 AutoLockTimeout has no NEVER: NEVER still in enum
+FAIL S13 SHA-256 only in legacy check function: SecuritySettingsRepository.kt:hashPin, ClinicalCommands.kt:sha256, PatientAttachmentVault.kt:compressAndWrite, PatientAttachmentVault.kt:verifyIntegrity, SaveVisitCommand.kt:canonicalFingerprint

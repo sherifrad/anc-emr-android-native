@@ -1,0 +1,1 @@
+> 🦅 **MACA Active Fleet Dispatch** — Tier: single-lane; Phase: inspect spec → implement assigned UI oracles → validate; Lane: UI Builder (Q42–Q46, S25–S28). S5a is outside this lane’s allowed files, so I’ll leave it untouched.

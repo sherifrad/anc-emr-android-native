@@ -1,0 +1,17 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "claude-delegate",
+  "cli": "claude",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "agents/TEST_MANIFEST.json"
+  ],
+  "finalMessage": "I added `STATIC-r3k` and `UNIT-format-weight` to `.agents/TEST_MANIFEST.json`, placed right after `STATIC-r3j` and modelled on it and `UNIT-attachment-title`. The other entries are unchanged. I couldn't confirm the file is still valid JSON because the check command needed approval and wasn't run.",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-015328/1-tests-finish.fallback1/result.json",
+  "timestamp": "2026-10-30T23:53:44.492Z"
+}

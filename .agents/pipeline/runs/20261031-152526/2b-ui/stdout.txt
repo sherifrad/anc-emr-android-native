@@ -1,0 +1,15 @@
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt
+
+What was done per oracle:
+- Q103: Removed local CS/SVD counting and summary building in `projectDashboardRow(patient)` in `PatientListScreen.kt` and delegated to `previousDeliverySummary(patient)`.
+- Q103: Removed local CS/SVD/stillbirth/miscarriage counting and summary building in `ProfileHeroIdentityCard` in `ProfileScreen.kt` and delegated to `previousDeliverySummary(patient)`.
+- Retained all other row projection fields, composable parameters, and existing test tags.
+
+Assumptions: None. Followed the written specification in SPEC_FIX_R3.md (Round 3s).
+
+Verification results:
+- Static checks (.agents/checks/check_r3s.py): S84 PASS, S85 PASS.
+- Build: `./gradlew --offline :app:compileDebugKotlin` PASSED.
+- Unit tests: `./gradlew --offline :app:testDebugUnitTest` PASSED (full suite passed, including PrintObstetricSummaryTest and ObstetricHistoryTest).

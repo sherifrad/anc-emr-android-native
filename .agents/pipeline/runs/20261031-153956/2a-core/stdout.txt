@@ -1,0 +1,18 @@
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt
+
+Oracle implementations (Q104):
+- Added top-level function `daysToEdd(edd: LocalDate, asOf: LocalDate): Long = ChronoUnit.DAYS.between(asOf, edd)`.
+- Added `isLateTerm: Boolean get() = weeks == 41` to `GestationalAgeResult`.
+- Added `progressFraction: Float get() = (totalDays / FULL_TERM_DAYS.toFloat()).coerceIn(0f, 1f)` to `GestationalAgeResult`.
+- Added `shortWeeksText: String get() = "${weeks}+${days} wks"` to `GestationalAgeResult`.
+- Updated `calculateForEdd` to delegate remaining-days calculation to `daysToEdd(edd, asOfDate)`. Preserved all existing outputs, strings, and constants.
+
+Assumptions:
+- None. Implementation followed exact specification for Q104.
+
+Verification results:
+- `./gradlew --offline :app:compileDebugKotlin`: PASSED.
+- `./gradlew --offline :app:testDebugUnitTest --tests '*GestationalDisplayTest' --tests '*GestationalAgeEngineTest' --tests '*GestationalBannerLogicTest'`: PASSED.
+- `./gradlew --offline :app:testDebugUnitTest` (full suite): PASSED.
+- `python3 .agents/checks/check_r3t.py`: S86 PASS, S88 PASS (S87 FAIL expected; screens belong to UI lane).

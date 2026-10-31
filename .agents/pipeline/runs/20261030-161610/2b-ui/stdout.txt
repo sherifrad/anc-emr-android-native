@@ -1,0 +1,14 @@
+> 🦅 **MACA Active Fleet Dispatch** — Round 3c, UI Builder lane; implementing the assigned Q29 UI slice. I’ll use the specified files only and run the requested Kotlin compile and unit suite.
+The assigned UI changes are already present in the working tree, including setup/confirm, lockout, settings validation, resource strings, and the lock gate before patient content. The addendum’s specific defect remains: `AppLockScreen` reads a one-time settings snapshot. I’ll limit my edit to making that state live and resetting the PIN-entry flow when setup becomes required.
+Files changed: app/src/main/java/com/sherifradwan/ancnative/ui/AppLockScreen.kt
+
+Q29a/b/d: Made lock-screen settings live. When setup becomes required, entered and confirmed PIN state is cleared and the setup flow appears. Unlock remains gated on successful PIN setup.
+Q29c and AncApp lock gate: No additional edits in this step; existing working-tree implementation was left intact.
+
+Assumptions: None.
+
+Verification:
+:app:compileDebugKotlin — passed.
+:app:compileReleaseKotlin — passed.
+:app:testDebugUnitTest — passed.
+Device behavior — not verified.

@@ -1,0 +1,115 @@
+[
+ {
+  "step": "1-tests",
+  "lane": "opencode:opencode/glm-5.3-flash-free",
+  "seconds": 377.5,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   ".agents/TEST_MANIFEST.json",
+   ".agents/checks/check_ui_static.py",
+   "app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalFormatTest.kt",
+   "app/src/test/java/com/sherifradwan/ancnative/ui/ParseDeliveryNotesSpecTest.kt",
+   "app/src/test/java/com/sherifradwan/ancnative/ui/ThemeContrastTest.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "1b-red",
+  "ran": 5,
+  "reused": 0,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [
+   "COMPILE-app"
+  ],
+  "failed": [
+   "UNIT-parse",
+   "UNIT-format",
+   "UNIT-contrast",
+   "STATIC-ui"
+  ]
+ },
+ {
+  "step": "red-check",
+  "red_confirmed": true
+ },
+ {
+  "step": "2a-core",
+  "lane": "opencode:opencode/deepseek-v4.1-flash-free",
+  "seconds": 303.6,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   "app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/ui/DeliveryNotesParser.kt",
+   "app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2a-green",
+  "ran": 3,
+  "reused": 0,
+  "deferred": 0,
+  "not_gated": [
+   "UNIT-contrast",
+   "STATIC-ui"
+  ],
+  "passed": [
+   "COMPILE-app"
+  ],
+  "failed": [
+   "UNIT-parse",
+   "UNIT-format"
+  ]
+ },
+ {
+  "step": "2a-core-repair1",
+  "lane": "opencode:opencode/deepseek-v4.1-flash-free",
+  "seconds": 154.0,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2a-green-r1",
+  "ran": 2,
+  "reused": 1,
+  "deferred": 0,
+  "not_gated": [
+   "UNIT-contrast",
+   "STATIC-ui"
+  ],
+  "passed": [],
+  "failed": [
+   "UNIT-parse",
+   "UNIT-format"
+  ]
+ },
+ {
+  "step": "2a-core-repair2",
+  "lane": "opencode:opencode/deepseek-v4.1-flash-free",
+  "seconds": 132.2,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2a-green-r2",
+  "ran": 2,
+  "reused": 1,
+  "deferred": 0,
+  "not_gated": [
+   "UNIT-contrast",
+   "STATIC-ui"
+  ],
+  "passed": [],
+  "failed": [
+   "UNIT-parse",
+   "UNIT-format"
+  ]
+ }
+]

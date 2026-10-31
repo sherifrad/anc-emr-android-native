@@ -1,0 +1,23 @@
+Q13 and Q14 are implemented in `DeliveryNotesParser.kt`, but the tests have not been run: every Gradle invocation was refused with "This command requires approval", so I could not verify anything by execution.
+
+**Files changed**
+- `app/src/main/java/com/sherifradwan/ancnative/ui/DeliveryNotesParser.kt` only. `ClinicalFormat.kt` is unchanged.
+
+**Per oracle**
+- **Q13 (supersedes Q8):**
+  - Removed the whole-segment history gate from `hospitalNames`. A labelled "Hospital:" value now always counts.
+  - Added `PAST_DELIVERY_MARKER` (previous/prior/earlier/last, then up to 2 words, then baby/delivery/birth/CS/caesarean/cesarean/section/pregnancy/child) and `CURRENT_PREGNANCY_MARKER` (now, this pregnancy, current, currently, booked, planned, plan, will, elective, scheduled).
+  - New `isPreviousDeliveryPhrase` skips an unlabelled phrase only when the nearest past marker before it has no current marker between the two. Segment placement is unchanged, so these lines stay in plan.
+- **Q14:** the labelled value now also ends at "(", in `isValueEnd`.
+- **Q5/Q6 (`ClinicalFormat.kt`):** I did not edit this file. `formatAgeYears`, `isRhPositive` and `formatBloodGroup` already exist, and I checked them by hand against the spec examples; they appear to match.
+
+**Hand-checked against the spec examples, not executed**
+- The Q13 and Q14 examples in `ParseDeliveryNotesSpecTest` (the `r2c_*` tests).
+- The existing `DeliveryNotesParserTest` Maya note, which should still give "Cleopatra Maternity Hospital".
+
+**Assumptions**
+- "Within 3 words" means the delivery word is at most 2 words after the past word.
+- The nearest past marker before a phrase decides the Q13 skip.
+
+**Not run**
+- `./gradlew --offline :app:testDebugUnitTest` with the four test classes, and `:app:compileDebugKotlin`. The command needs approval in this session. Someone with approval needs to run it. The Kotlin was checked by reading only.

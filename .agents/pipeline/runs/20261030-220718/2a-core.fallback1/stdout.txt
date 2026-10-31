@@ -1,0 +1,21 @@
+I made the Q54–Q57 code edits, but I couldn't run anything. The harness blocked every `python3` and `./gradlew` call, either for approval or as multiple operations, so I couldn't run any check, test or compile.
+
+The unit-test suite, `check_r3f2.py`, the older `check_r3*.py` scripts and the debug/release Kotlin compiles are all **not run**. S40 and the core parts of S41/S42 are untested, so please run these before relying on the changes.
+
+**Changed files** (all under `app/src/main/java/com/sherifradwan/ancnative/`):
+- `storage/PhotoQuality.kt` (new)
+- `storage/PatientAttachmentVault.kt`
+- `storage/CameraCaptureHelper.kt`
+- `state/AncState.kt`
+- `state/AncViewModel.kt`
+
+**By oracle:**
+- **Q54:** `PhotoQualityPreset` is Android-free, with SMALL(1280, 70), STANDARD(1600, 75) and DETAILED(1920, 85). `DEFAULT` is SMALL. `defaultFor(category)` gives DETAILED for `AttachmentCategories.ULTRASOUND` and SMALL for everything else, including unknown or empty categories.
+- **Q55:** `saveAttachment` and `saveAttachmentFromStream` take `preset` (default `PhotoQualityPreset.DEFAULT`) and pass it to `compressAndWrite`. That uses `preset.maxSide` for decoding and scaling and `preset.webpQuality` for compression. I removed the two old constants.
+- **Q56:** `AncEvent.AddAttachment` has a new `preset` parameter that defaults to `defaultFor(category)`, so existing constructor calls still compile. `AncViewModel.addAttachment` passes it to the vault. A `finally` block then calls `CameraCaptureHelper.deleteIfCaptureTemp(getApplication(), event.sourceUri)` on both success and failure.
+- **Q57:** `createCameraTempFile` now holds the naming rule, and `createCameraTempUri` calls it, so there's no second copy. I also added `uriFor`, `deleteIfCaptureTemp` and `clearStaleCaptures`. `deleteIfCaptureTemp` returns true only when the file was actually deleted from `cacheDir/camera`.
+
+**Assumptions:**
+- `deleteIfCaptureTemp` only accepts our own FileProvider URIs (`<package>.fileprovider`) whose first path segment is `camera_photos`, which is the name in `res/xml/file_paths.xml`. It resolves the rest against `cacheDir/camera` and requires the canonical parent to equal that folder. Anything else, including gallery URIs and `..` tricks, returns false.
+- `clearStaleCaptures` only removes plain files in `cacheDir/camera` whose last-modified time is older than the cutoff.
+- If the vault is locked, `addAttachment` returns early before the `try`, so a camera temp file in that case isn't deleted. `clearStaleCaptures` will remove it later.

@@ -1,0 +1,16 @@
+MACA pipeline 20261031-150045 lanes: {'tests': ('opencode', 'opencode/glm-5.3-flash-free'), 'core': ('agy', 'gemini-3.8-flash-medium'), 'ui': ('agy', 'gemini-3.8-flash-medium')} review: ['agy:gpt-oss-120b-medium', 'agy:gemini-3.8-flash-medium']
+  agy       /Users/sherifgamalradwan/.local/bin/agy
+  opencode  /opt/homebrew/bin/opencode
+[1-tests] opencode:opencode/glm-5.3-flash-free gave no usable result (failed); trying next model
+[1-tests] opencode:opencode/deepseek-v4.1-flash-free gave no usable result (failed); trying next model
+[1-tests] agy completed 394.7s changed=4 violations=0
+[1b-red] ran=4 reused=66 deferred=2 not_gated=7 failed=['STATIC-r3s', 'UNIT-obstetric-history', 'UNIT-print-obstetric']
+[2a-core] agy completed 363.4s changed=2 violations=0
+[2a-green] ran=8 reused=2 deferred=0 not_gated=69 failed=['UNIT-print', 'UNIT-print-escape', 'UNIT-print-titles', 'UNIT-print-bp-alert', 'UNIT-obstetric-history', 'UNIT-print-obstetric', 'UNIT-all']
+[2a-tests-compile-repair1] opencode:opencode/glm-5.3-flash-free gave no usable result (failed); trying next model
+[2a-tests-compile-repair1] opencode:opencode/deepseek-v4.1-flash-free gave no usable result (failed); trying next model
+[2a-tests-compile-repair1] agy completed 156.1s changed=1 violations=0
+[2a-green-r1] ran=8 reused=2 deferred=0 not_gated=69 failed=['UNIT-print-obstetric', 'UNIT-all']
+[2a-core-repair2] agy completed 450.5s changed=1 violations=0
+[2a-green-r2] ran=7 reused=3 deferred=0 not_gated=69 failed=['UNIT-print-obstetric', 'UNIT-all']
+HALT: core logic still red after 2 repair rounds; UI lane not started. See /Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-150045

@@ -1,0 +1,30 @@
+FAIL U1(ProfileScreen.kt) emoji/glyph code points present: line 433: 0x1fa78, line 476: 0x1f930, line 491: 0x1f4de, line 1028: 0x1f4f7, line 1138: 0x1f4f7, line 1161: 0x1f4f7, line 1405: 0x1f4f7, line 1434: 0x1f493 (+5 more)
+FAIL U1(PatientListScreen.kt) emoji/glyph code points present: line 820: 0x1fa78, line 844: 0x26a0, line 844: 0xfe0f
+FAIL U1(WorkspaceScreen.kt) emoji/glyph code points present: line 825: 0x26a0, line 825: 0xfe0f, line 891: 0x1f4f7, line 914: 0x1f4f7, line 1115: 0x26a0, line 1115: 0xfe0f, line 1137: 0x1f517, line 1143: 0x1f517 (+9 more)
+PASS U1(ClinicalBadges.kt) no emoji code points
+FAIL U2(ProfileScreen.kt) formatBloodGroup( is never called
+FAIL U2(PatientListScreen.kt) formatBloodGroup( is never called
+FAIL U2(WorkspaceScreen.kt) formatBloodGroup( is never called
+FAIL U3(ProfileScreen.kt) inline contains() Rh/risk logic present: '.contains("-"' at line 416, '.contains("+"' at line 417, '.contains("High' at line 336
+FAIL U3(PatientListScreen.kt) inline contains() Rh/risk logic present: '.contains("-"' at line 138, '.contains("+"' at line 139, '.contains("High' at line 141, '.contains("High' at line 167
+FAIL U4(ProfileScreen.kt/edit_dating) line 639: stringResource(...) sits inside 'Text', not PencilEditButton/Icon (expected PencilEditButton/Icon(Icons.Default.Edit))
+FAIL U4(ProfileScreen.kt/edit_history) line 740: stringResource(...) sits inside 'Text', not PencilEditButton/Icon (expected PencilEditButton/Icon(Icons.Default.Edit))
+FAIL U4(ProfileScreen.kt/edit_ultrasound) line 1196: stringResource(...) sits inside 'Text', not PencilEditButton/Icon (expected PencilEditButton/Icon(Icons.Default.Edit))
+FAIL U4(ProfileScreen.kt/edit_visit) line 1210: stringResource(...) sits inside 'Text', not PencilEditButton/Icon (expected PencilEditButton/Icon(Icons.Default.Edit))
+PASS U4(ProfileScreen.kt/edit_other_histories) no references (vacuous; resource must still exist for U6 where applicable)
+PASS U4(ProfileScreen.kt/edit_lab) all 1 reference(s) are pencil-button contentDescriptions
+PASS U4(ProfileScreen.kt/edit_medication) no references (vacuous; resource must still exist for U6 where applicable)
+PASS U4(ProfileScreen.kt/edit_delivery_plan) no references (vacuous; resource must still exist for U6 where applicable)
+PASS U4(ProfileScreen.kt/edit_clinical_alerts) no references (vacuous; resource must still exist for U6 where applicable)
+FAIL U4(WorkspaceScreen.kt/edit_dating) line 637: stringResource(...) sits inside 'Text', not PencilEditButton/Icon (expected PencilEditButton/Icon(Icons.Default.Edit))
+PASS U4(WorkspaceScreen.kt/edit_history) no references (vacuous; resource must still exist for U6 where applicable)
+FAIL U4(WorkspaceScreen.kt/edit_ultrasound) line 949: stringResource(...) sits inside 'Text', not PencilEditButton/Icon (expected PencilEditButton/Icon(Icons.Default.Edit))
+PASS U4(WorkspaceScreen.kt/edit_visit) all 1 reference(s) are pencil-button contentDescriptions
+FAIL U4(WorkspaceScreen.kt/edit_other_histories) line 580: stringResource(...) sits inside 'Text', not PencilEditButton/Icon (expected PencilEditButton/Icon(Icons.Default.Edit))
+PASS U4(WorkspaceScreen.kt/edit_lab) all 1 reference(s) are pencil-button contentDescriptions
+PASS U4(WorkspaceScreen.kt/edit_medication) all 1 reference(s) are pencil-button contentDescriptions
+PASS U4(WorkspaceScreen.kt/edit_delivery_plan) all 1 reference(s) are pencil-button contentDescriptions
+PASS U4(WorkspaceScreen.kt/edit_clinical_alerts) no references (vacuous; resource must still exist for U6 where applicable)
+FAIL U5(WorkspaceScreen.kt/correct_previous_pregnancy) line 1008: chain ['stringResource', 'PencilEditButton'], expected [stringResource, Text, TextButton...]
+FAIL U6(WorkspaceScreen.kt/edit_clinical_alerts) contentDescription literal "Edit Clinical Alerts" at line 1631; R.string.edit_clinical_alerts is not used
+FAIL U-r2 overall: 12/29 sub-checks passed

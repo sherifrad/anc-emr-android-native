@@ -1,0 +1,19 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt",
+    "pp/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt"
+  ],
+  "finalMessage": "Files changed:\n- app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt\n- app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt\n- app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt\n\nPer oracle:\n- Q105: In GestationalBanner.kt, replaced local term checks, division by FULL_TERM_DAYS, and ChronoUnit calls with gaResult.isPostTerm, gaResult.isLateTerm, gaResult.progressFraction, and daysToEdd(edd, asOfDate). Removed unused ChronoUnit and FULL_TERM_DAYS imports.\n- Q105: In PatientListScreen.kt and ProfileScreen.kt, replaced hand-formatted \"+${...} wks\" with gaResult?.shortWeeksText ?: \"—\".\n\nAssumptions: Preserved identical UI display, formatting, and testTags.\n\nVerification:\n- python3 .agents/checks/check_r3t.py: PASS (S86, S87, S88)\n- ./gradlew --offline :app:compileDebugKotlin: BUILD SUCCESSFUL\n- ./gradlew --offline :app:testDebugUnitTest: BUILD SUCCESSFUL (all unit tests passed)\n\nCould not do or verify: None.",
+  "stderrTail": "",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261031-153956/2b-ui/result.json",
+  "timestamp": "2026-10-31T13:58:03.469Z"
+}

@@ -1,0 +1,14 @@
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt
+
+What was done per oracle:
+- Q95: Updated the dialog title Text ("Clinical Medical Record") to allow two lines (`maxLines = 2`, keeping `overflow = TextOverflow.Ellipsis`). Retained patient name line (`maxLines = 1`) and all test tags, colours, and action buttons.
+
+Assumptions:
+- None. Followed Q95 specification directly.
+
+Verification:
+- Static check: `python3 .agents/checks/check_r3p.py` passed (S78 PASS, S79 PASS).
+- Compilation: `./gradlew --offline :app:compileDebugKotlin` passed (BUILD SUCCESSFUL).
+- Unit tests: `./gradlew --offline :app:testDebugUnitTest` passed (BUILD SUCCESSFUL, full unit suite green).
+- Device check: not run (postponed per round 3p spec).

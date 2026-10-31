@@ -1,0 +1,17 @@
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt
+- app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt
+- app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt
+- app/src/main/java/com/sherifradwan/ancnative/model/Redating.kt (NEW)
+- app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt
+
+Work done per oracle:
+- Q88: Added ivfGaDaysAtTransfer and ivfEddFromTransfer to IsoDates.kt. Set ClinicalVocabulary.embryoAges = listOf(3, 5, 6) in ClinicalModels.kt. Updated GestationalAgeEngine (calculateForIvf, calculateEstimatedDueDate) and ClinicalCommands (isStructurallyValid x2, prepare x2) to route all embryo age checks through ClinicalVocabulary.embryoAges and IVF calculations through the new IsoDates functions; removed literal constants and 3/5 comparisons.
+- Q89: Implemented pure Kotlin model/Redating.kt defining RedatingAdvice, redatingThresholdDays implementing the ACOG table (5, 7, 10, 14, 21 days), and redatingAdvice returning signed differenceDays and thresholdDays when |scan - dating| > threshold, null otherwise.
+
+Assumptions: None outside written spec.
+Verification:
+- check_r3n.py S72 and S73: PASS
+- ./gradlew --offline :app:testDebugUnitTest --tests '*IvfDatingTest' --tests '*RedatingTest': PASSED
+- ./gradlew --offline :app:testDebugUnitTest: PASSED (full suite)
+- ./gradlew --offline :app:compileDebugKotlin: PASSED

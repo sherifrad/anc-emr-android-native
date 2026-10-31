@@ -1,0 +1,80 @@
+[
+ {
+  "step": "red-check-reused",
+  "from_run": "runs/20261030-123728",
+  "red": {
+   "step": "1b-red",
+   "ran": 1,
+   "reused": 6,
+   "deferred": 2,
+   "not_gated": [
+    "UNIT-format-r2"
+   ],
+   "passed": [],
+   "failed": [
+    "UNIT-print"
+   ]
+  }
+ },
+ {
+  "step": "2a-core",
+  "lane": "opencode:openai/gpt-6-luna",
+  "seconds": 28.9,
+  "relay_status": "completed",
+  "relay_exit": 0,
+  "changed": [
+   "app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt"
+  ],
+  "scope_violations_reverted": []
+ },
+ {
+  "step": "2a-green",
+  "ran": 2,
+  "reused": 4,
+  "deferred": 0,
+  "not_gated": [
+   "UNIT-contrast",
+   "STATIC-ui",
+   "STATIC-ui-r2",
+   "UNIT-all"
+  ],
+  "passed": [
+   "UNIT-print",
+   "COMPILE-app"
+  ],
+  "failed": []
+ },
+ {
+  "step": "2b-green",
+  "ran": 1,
+  "reused": 9,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [
+   "UNIT-all"
+  ],
+  "failed": []
+ },
+ {
+  "step": "ui-gate-final",
+  "still_failing": []
+ },
+ {
+  "step": "cache-check-no-changes",
+  "ran": 0,
+  "reused": 10,
+  "deferred": 0,
+  "not_gated": [],
+  "passed": [],
+  "failed": []
+ },
+ {
+  "step": "3-review-0-opencode",
+  "lane": "opencode:google/gemini-3.5-flash",
+  "seconds": 38.7,
+  "relay_status": "failed",
+  "relay_exit": 1,
+  "changed": [],
+  "scope_violations_reverted": []
+ }
+]

@@ -1,0 +1,21 @@
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/storage/DraftRecord.kt (NEW)
+- app/src/main/java/com/sherifradwan/ancnative/storage/DraftCodec.kt (NEW)
+- app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt
+- app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt
+- app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDatabase.kt
+- app/src/main/java/com/sherifradwan/ancnative/storage/RecordsMigration.kt
+- app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt
+- app/schemas/com.sherifradwan.ancnative.storage.RecordsDatabase/6.json
+
+Work per oracle:
+- Q107: Added DraftScreenKind, NEW_PATIENT_DRAFT_KEY, DraftEditorKind, and DraftRecord data class. Implemented encodeDraftFields (canonical sorted keys, UTF-8 64KiB cap, escapes special chars/unicode/emojis) and decodeDraftFields (robust JSON parsing, ignores non-string values, retains unknown keys, returns null on malformed/invalid inputs) without Android imports or logs.
+- Q108: Added DraftEntity with composite primary key (patient_id, screen_kind) and index on patient_id without foreign keys. Bumped schema version to 6 in RecordsDatabase, RecordsMigration (from5To6), and RecordsRepository (SCHEMA_VERSION = 6). Added DAO methods (upsertDraft, draft, draftsForPatient, deleteDraft, deleteDraftsForPatient, deleteAllDrafts) and repository suspend methods (saveDraft, loadDraft, loadDrafts, deleteDraft, deleteDrafts). Added draft clearing in restoreCanonicalBackup.
+
+Assumptions: Payload limit is strictly 65,536 bytes UTF-8; decoding invalid or unparseable draft payloads safely yields null.
+Verification:
+- ./gradlew --offline :app:testDebugUnitTest --tests '*DraftCodecTest': PASSED (14/14 tests)
+- Full unit suite (./gradlew --offline :app:testDebugUnitTest): PASSED
+- Compilation (compileDebugKotlin, compileDebugAndroidTestKotlin): PASSED
+- Static checks (python3 .agents/checks/check_r3u.py, S89-S91): PASS
+- Instrumented tests: not run (per instructions).
