@@ -38,4 +38,15 @@ Run on the Honor 400, QA copy `com.sherifradwan.anc.qa` only (PIN 121212), demo 
 15. The same patient shows the same previous-delivery history ("Prev 1 CS, 2 SVD", IUFD count, singular "1 Prior Miscarriage") on the list, the profile and the printed report.
 16. Release build: no screen-capture block (a screenshot works), no demo patients, PIN setup on first start.
 17. Backup restore end to end: export a backup, change a patient, restore it, the change is gone and the app still works (restore was broken before 2026-10-31 by a wrong table name; now only tested on the emulator by a unit-style test).
-18. Draft auto-save: open a visit, type a note, wait 2 seconds, force-stop the app, reopen: nothing is shown yet (the alert comes later), but typing, saving, cancelling and locking must feel exactly as before with no delay; lock right after typing must not lose or slow anything.
+18. Draft recovery (auto-save + alert): open a visit, type a note, wait 2 seconds, lock the app (lock button on the patient list), unlock, open the same patient's visit editor again: the alert "Unsaved draft found" appears with the screen name and age; Continue puts the note back; repeat and choose "Discard and start fresh": the note is empty and the alert does not come back. Typing, saving, cancelling and locking must feel as fast as before.
+19. Printed report on the phone preview (print layout round): no word, number or date breaks across lines in any table; tables scroll sideways at phone width; the "and N more not shown" row is visible for a patient with more than 12 visits (7 scans, 10 labs, 8 medications); "Official Stamp & Signature" appears once.
+20. Risk badge: the patient profile and the patient list now show the SAME risk badge for the same patient (high risk and normal).
+21. Medication entry: the frequency suggestions now include "At bedtime" (five entries).
+22. Android 15 launch: splash screen and lock screen look as before (splash theme items moved to the Android 12+ theme folder); fingerprint unlock still works.
+
+## PLAN for the phone session (orchestrator, 2026-10-31) - about 60 to 75 minutes in four blocks
+Block A (about 20 min, orchestrator drives by adb, left-side taps only): items 1, 2, 3 (Day 6 due date entered slowly by hand), 14, 15, 20, 21, 18 (draft alert), 4. Needs the latest debug build of the QA copy installed (the orchestrator installs it).
+Block B (about 15 min, orchestrator drives): items 12, 13, 19 and 10 (restore confirmation dialog, backup, restore, print to PDF). Needs one backup file location on the phone and a second patient edit to prove the restore.
+Block C (about 15 min, OWNER hands needed): item 9 fingerprint unlock and item 22 (needs your finger), item 8 TalkBack walk-through (TalkBack is a phone system setting: you switch it on and off), item 5 large font scale 1.3 (display setting: you change it, then set it back).
+Block D (about 15 min): item 16 release build: install the signed release build next to the QA copy, check first start (PIN setup, no demo patients, screenshot allowed), then uninstall it. Not on the clinic app.
+Rules kept: QA copy only (com.sherifradwan.anc.qa, PIN 121212), demo data, never the clinic app, no changes to phone settings by me, personal apps never opened, discard screenshots I did not need.
