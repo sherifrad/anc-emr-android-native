@@ -342,6 +342,46 @@ internal object RecordsMigration {
         }
     }
 
+    fun from5To6(expectedVaultUuid: String): Migration = object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            validateSchemaFiveTables(db)
+            validateSchemaFiveMetadata(db, expectedVaultUuid)
+
+            db.execSQL(
+                """
+                CREATE TABLE drafts (
+                    patient_id TEXT NOT NULL,
+                    screen_kind TEXT NOT NULL,
+                    editor_kind TEXT NOT NULL,
+                    record_id TEXT,
+                    base_revision INTEGER,
+                    payload TEXT NOT NULL,
+                    updated_at INTEGER NOT NULL,
+                    PRIMARY KEY(patient_id, screen_kind)
+                )
+                """.trimIndent(),
+            )
+            db.execSQL(
+                "CREATE INDEX index_drafts_patient_id ON drafts (patient_id)",
+            )
+
+            val changed = db.compileStatement(
+                """
+                UPDATE vault_metadata
+                SET schema_version = 6
+                WHERE vault_uuid = ?
+                  AND schema_version = 5
+                  AND is_synthetic = 1
+                  AND initialized = 1
+                """.trimIndent(),
+            ).use { statement ->
+                statement.bindString(1, expectedVaultUuid)
+                statement.executeUpdateDelete()
+            }
+            if (changed != 1) throw RecordsMigrationFailure(VaultBlockReason.VAULT_METADATA_MISMATCH)
+        }
+    }
+
     private fun validateSchemaOneTables(db: SupportSQLiteDatabase) {
         val tables = db.query("SELECT name FROM sqlite_master WHERE type = 'table'").use { cursor ->
             buildSet {
@@ -508,6 +548,49 @@ internal object RecordsMigration {
         if (
             row.vaultUuid != expectedVaultUuid ||
             row.schemaVersion != 4 ||
+            !row.initialized
+        ) {
+            throw RecordsMigrationFailure(VaultBlockReason.VAULT_METADATA_MISMATCH)
+        }
+    }
+
+    private fun validateSchemaFiveTables(db: SupportSQLiteDatabase) {
+        val tables = db.query("SELECT name FROM sqlite_master WHERE type = 'table'").use { cursor ->
+            buildSet {
+                while (cursor.moveToNext()) {
+                    val name = cursor.getString(0)
+                    if (!name.startsWith("sqlite_") && name !in ROOM_INTERNAL_TABLES) add(name)
+                }
+            }
+        }
+        if (tables != SCHEMA_FIVE_TABLES) {
+            throw RecordsMigrationFailure(VaultBlockReason.UNKNOWN_SCHEMA)
+        }
+    }
+
+    private fun validateSchemaFiveMetadata(db: SupportSQLiteDatabase, expectedVaultUuid: String) {
+        val rows = db.query(
+            "SELECT vault_uuid, schema_version, is_synthetic, initialized FROM vault_metadata LIMIT 2",
+        ).use { cursor ->
+            buildList {
+                while (cursor.moveToNext()) {
+                    add(
+                        MetadataRow(
+                            vaultUuid = cursor.getString(0),
+                            schemaVersion = cursor.getInt(1),
+                            isSynthetic = cursor.getInt(2) == 1,
+                            initialized = cursor.getInt(3) == 1,
+                        ),
+                    )
+                }
+            }
+        }
+        if (rows.isEmpty()) throw RecordsMigrationFailure(VaultBlockReason.VAULT_METADATA_MISSING)
+        val row = rows.singleOrNull()
+            ?: throw RecordsMigrationFailure(VaultBlockReason.VAULT_METADATA_MISMATCH)
+        if (
+            row.vaultUuid != expectedVaultUuid ||
+            row.schemaVersion != 5 ||
             !row.initialized
         ) {
             throw RecordsMigrationFailure(VaultBlockReason.VAULT_METADATA_MISMATCH)

@@ -128,17 +128,19 @@ internal class RecordsRepository(
     suspend fun restoreCanonicalBackup(payload: CanonicalBackupPayload): RecordSnapshot {
         return database.withTransaction {
             val db = database.openHelper.writableDatabase
+            dao.deleteAllDrafts()
+            db.execSQL("DELETE FROM drafts")
             db.execSQL("DELETE FROM patient_attachments")
             db.execSQL("DELETE FROM clinical_command_receipts")
-            db.execSQL("DELETE FROM medications")
+            db.execSQL("DELETE FROM medication_records")
             db.execSQL("DELETE FROM lab_investigations")
             db.execSQL("DELETE FROM ultrasound_scans")
             db.execSQL("DELETE FROM patient_dating")
             db.execSQL("DELETE FROM previous_pregnancies")
-            db.execSQL("DELETE FROM visits")
-            db.execSQL("DELETE FROM patients")
             db.execSQL("DELETE FROM save_receipts")
             db.execSQL("DELETE FROM patient_command_receipts")
+            db.execSQL("DELETE FROM visits")
+            db.execSQL("DELETE FROM patients")
 
             for (p in payload.patients) {
                 dao.insertPatient(p.patient)
@@ -1364,8 +1366,55 @@ internal class RecordsRepository(
         return ClinicalCommandOutcome.Committed(snapshot, receipt.toDomain())
     }
 
-    private companion object {
-        const val SCHEMA_VERSION = 5
+    suspend fun saveDraft(draft: DraftRecord): Boolean {
+        val payload = encodeDraftFields(draft.fields) ?: return false
+        val entity = DraftEntity(
+            patientId = draft.patientId,
+            screenKind = draft.screenKind.name,
+            editorKind = draft.editorKind.name,
+            recordId = draft.recordId,
+            baseRevision = draft.baseRevision,
+            payload = payload,
+            updatedAt = draft.updatedAtMillis,
+        )
+        dao.upsertDraft(entity)
+        return true
+    }
+
+    suspend fun loadDraft(patientId: String, kind: DraftScreenKind): DraftRecord? {
+        val entity = dao.draft(patientId, kind.name) ?: return null
+        return entity.toDraftRecord()
+    }
+
+    suspend fun loadDrafts(patientId: String): List<DraftRecord> {
+        return dao.draftsForPatient(patientId).mapNotNull { it.toDraftRecord() }
+    }
+
+    suspend fun deleteDraft(patientId: String, kind: DraftScreenKind) {
+        dao.deleteDraft(patientId, kind.name)
+    }
+
+    suspend fun deleteDrafts(patientId: String) {
+        dao.deleteDraftsForPatient(patientId)
+    }
+
+    private fun DraftEntity.toDraftRecord(): DraftRecord? {
+        val screenKind = runCatching { DraftScreenKind.valueOf(screenKind) }.getOrNull() ?: return null
+        val editorKind = runCatching { DraftEditorKind.valueOf(editorKind) }.getOrNull() ?: return null
+        val fields = decodeDraftFields(payload) ?: return null
+        return DraftRecord(
+            patientId = patientId,
+            screenKind = screenKind,
+            editorKind = editorKind,
+            recordId = recordId,
+            baseRevision = baseRevision,
+            fields = fields,
+            updatedAtMillis = updatedAt,
+        )
+    }
+
+    companion object {
+        const val SCHEMA_VERSION = 6
         val PREGNANCY_KINDS = setOf(
             PatientRecordKind.PREVIOUS_PREGNANCY_CREATE,
             PatientRecordKind.PREVIOUS_PREGNANCY_UPDATE,

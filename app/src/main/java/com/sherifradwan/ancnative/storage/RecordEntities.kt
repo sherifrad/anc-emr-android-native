@@ -356,6 +356,21 @@ data class PatientAttachmentEntity(
     val revision: Long = 1,
 )
 
+@Entity(
+    tableName = "drafts",
+    primaryKeys = ["patient_id", "screen_kind"],
+    indices = [Index(value = ["patient_id"])],
+)
+data class DraftEntity(
+    @ColumnInfo(name = "patient_id") val patientId: String,
+    @ColumnInfo(name = "screen_kind") val screenKind: String,
+    @ColumnInfo(name = "editor_kind") val editorKind: String,
+    @ColumnInfo(name = "record_id") val recordId: String?,
+    @ColumnInfo(name = "base_revision") val baseRevision: Long?,
+    val payload: String,
+    @ColumnInfo(name = "updated_at") val updatedAt: Long,
+)
+
 data class PatientWithVisits(
     @Embedded val patient: PatientEntity,
     @Relation(parentColumn = "id", entityColumn = "patient_id")

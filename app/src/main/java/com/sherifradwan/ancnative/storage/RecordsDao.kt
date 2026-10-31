@@ -486,4 +486,22 @@ interface RecordsDao {
         cloudUrl: String?,
         syncedAt: String?,
     ): Int
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertDraft(draft: DraftEntity)
+
+    @Query("SELECT * FROM drafts WHERE patient_id = :patientId AND screen_kind = :screenKind LIMIT 1")
+    suspend fun draft(patientId: String, screenKind: String): DraftEntity?
+
+    @Query("SELECT * FROM drafts WHERE patient_id = :patientId ORDER BY updated_at DESC")
+    suspend fun draftsForPatient(patientId: String): List<DraftEntity>
+
+    @Query("DELETE FROM drafts WHERE patient_id = :patientId AND screen_kind = :screenKind")
+    suspend fun deleteDraft(patientId: String, screenKind: String): Int
+
+    @Query("DELETE FROM drafts WHERE patient_id = :patientId")
+    suspend fun deleteDraftsForPatient(patientId: String): Int
+
+    @Query("DELETE FROM drafts")
+    suspend fun deleteAllDrafts(): Int
 }

@@ -915,6 +915,34 @@
       "covers": ["Q102", "Q103"]
     },
     {
+      "id": "STATIC-r3u",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3u.py",
+      "deps": [
+        "app/src/main/**/storage/RecordsDatabase.kt",
+        "app/src/main/**/storage/RecordsMigration.kt",
+        "app/src/main/**/storage/RecordsRepository.kt",
+        "app/src/main/**/storage/RecordEntities.kt",
+        "app/src/main/**/storage/DraftCodec.kt",
+        "app/src/main/**/storage/DraftRecord.kt",
+        "app/src/main/**/storage/EncryptedBackupManager.kt",
+        "app/src/main/**/storage/VaultController.kt",
+        ".agents/checks/check_r3u.py"
+      ],
+      "covers": ["S89", "S90", "S91"]
+    },
+    {
+      "id": "UNIT-draft-codec",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*DraftCodecTest'",
+      "deps": [
+        "app/src/main/**/storage/DraftCodec.kt",
+        "app/src/main/**/storage/DraftRecord.kt",
+        "app/src/test/**/storage/DraftCodecTest.kt"
+      ],
+      "covers": ["Q107"]
+    },
+    {
       "id": "STATIC-r3t",
       "tier": 1,
       "cmd": "python3 .agents/checks/check_r3t.py",

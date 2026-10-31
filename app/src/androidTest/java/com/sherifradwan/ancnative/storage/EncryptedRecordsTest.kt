@@ -11,6 +11,7 @@ import java.util.UUID
 import kotlinx.coroutines.runBlocking
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
@@ -46,10 +47,11 @@ class EncryptedRecordsTest {
                 "medication_records",
                 "clinical_command_receipts",
                 "patient_attachments",
+                "drafts",
             ),
             tables,
         )
-        assertEquals(5, db.query("PRAGMA user_version").use { it.moveToFirst(); it.getInt(0) })
+        assertEquals(6, db.query("PRAGMA user_version").use { it.moveToFirst(); it.getInt(0) })
 
         val patients = tableColumns(db, "patients")
         assertEquals(
@@ -214,12 +216,12 @@ class EncryptedRecordsTest {
                     assertEquals("a".repeat(64), receipt.fingerprint)
                     val metadata = dao.metadataRows().single()
                     assertEquals(fixture.vaultUuid, metadata.vaultUuid)
-                    assertEquals(5, metadata.schemaVersion)
+                    assertEquals(6, metadata.schemaVersion)
                     assertTrue(metadata.isSynthetic)
                     assertTrue(metadata.initialized)
                 }
                 assertEquals(
-                    5,
+                    6,
                     opened.database.openHelper.writableDatabase.query("PRAGMA user_version").use {
                         it.moveToFirst()
                         it.getInt(0)
@@ -786,6 +788,169 @@ class EncryptedRecordsTest {
             val medReplay = repository.execute(medCmd) as ClinicalCommandOutcome.Committed
             assertEquals(medOutcome.receipt, medReplay.receipt)
         }
+    }
+
+    @Test
+    fun draftSaveThenLoadReturnsTheSameRecord() = withDatabase { opened, vaultUuid ->
+        runBlocking {
+            val repository = RecordsRepository(opened.database, vaultUuid)
+            val draft = draftRecord("patient-a", DraftScreenKind.VISIT)
+            assertTrue(repository.saveDraft(draft))
+            assertEquals(draft, repository.loadDraft("patient-a", DraftScreenKind.VISIT))
+            assertNull(repository.loadDraft("patient-a", DraftScreenKind.LAB))
+        }
+    }
+
+    @Test
+    fun draftSavingSamePatientAndKindReplacesTheOlderRow() = withDatabase { opened, vaultUuid ->
+        runBlocking {
+            val repository = RecordsRepository(opened.database, vaultUuid)
+            assertTrue(repository.saveDraft(draftRecord("patient-a", DraftScreenKind.VISIT, notes = "first", updatedAt = 1L)))
+            val newer = draftRecord("patient-a", DraftScreenKind.VISIT, notes = "second", updatedAt = 2L)
+            assertTrue(repository.saveDraft(newer))
+            assertEquals(newer, repository.loadDraft("patient-a", DraftScreenKind.VISIT))
+            assertEquals(1, draftRowCount(opened))
+        }
+    }
+
+    @Test
+    fun draftsOfTwoKindsForOnePatientCoexistAndDeleteOneKeepsTheOther() = withDatabase { opened, vaultUuid ->
+        runBlocking {
+            val repository = RecordsRepository(opened.database, vaultUuid)
+            val visit = draftRecord("patient-a", DraftScreenKind.VISIT)
+            val lab = draftRecord("patient-a", DraftScreenKind.LAB, notes = "lab note")
+            assertTrue(repository.saveDraft(visit))
+            assertTrue(repository.saveDraft(lab))
+            assertEquals(setOf(visit, lab), repository.loadDrafts("patient-a").toSet())
+            assertEquals(2, draftRowCount(opened))
+
+            repository.deleteDraft("patient-a", DraftScreenKind.VISIT)
+            assertNull(repository.loadDraft("patient-a", DraftScreenKind.VISIT))
+            assertEquals(lab, repository.loadDraft("patient-a", DraftScreenKind.LAB))
+        }
+    }
+
+    @Test
+    fun deleteDraftsForPatientRemovesOnlyThatPatientsDrafts() = withDatabase { opened, vaultUuid ->
+        runBlocking {
+            val repository = RecordsRepository(opened.database, vaultUuid)
+            val other = draftRecord("patient-b", DraftScreenKind.VISIT)
+            assertTrue(repository.saveDraft(draftRecord("patient-a", DraftScreenKind.VISIT)))
+            assertTrue(repository.saveDraft(draftRecord("patient-a", DraftScreenKind.LAB)))
+            assertTrue(repository.saveDraft(other))
+
+            repository.deleteDrafts("patient-a")
+            assertTrue(repository.loadDrafts("patient-a").isEmpty())
+            assertEquals(listOf(other), repository.loadDrafts("patient-b"))
+        }
+    }
+
+    @Test
+    fun newPatientDraftKeyWorksWithoutAPatientsRow() = withDatabase { opened, vaultUuid ->
+        runBlocking {
+            val repository = RecordsRepository(opened.database, vaultUuid)
+            assertEquals(0, countRows(opened.database.openHelper.writableDatabase, "SELECT 1 FROM patients"))
+            val draft = draftRecord(
+                NEW_PATIENT_DRAFT_KEY,
+                DraftScreenKind.PATIENT_PROFILE,
+                editor = DraftEditorKind.CREATE,
+                recordId = null,
+                baseRevision = null,
+            )
+            assertTrue(repository.saveDraft(draft))
+            assertEquals(draft, repository.loadDraft(NEW_PATIENT_DRAFT_KEY, DraftScreenKind.PATIENT_PROFILE))
+        }
+    }
+
+    @Test
+    fun oversizeDraftPayloadReturnsFalseAndStoresNothing() = withDatabase { opened, vaultUuid ->
+        runBlocking {
+            val repository = RecordsRepository(opened.database, vaultUuid)
+            val oversize = draftRecord("patient-a", DraftScreenKind.VISIT, notes = "x".repeat(MAX_DRAFT_PAYLOAD_BYTES + 1))
+            assertFalse(repository.saveDraft(oversize))
+            assertNull(repository.loadDraft("patient-a", DraftScreenKind.VISIT))
+            assertEquals(0, draftRowCount(opened))
+        }
+    }
+
+    @Test
+    fun restoreCanonicalBackupClearsAllDrafts() = withDatabase { opened, vaultUuid ->
+        runBlocking {
+            val repository = RecordsRepository(opened.database, vaultUuid)
+            assertTrue(repository.saveDraft(draftRecord("patient-a", DraftScreenKind.VISIT)))
+            assertTrue(repository.saveDraft(draftRecord(NEW_PATIENT_DRAFT_KEY, DraftScreenKind.PATIENT_PROFILE)))
+            assertEquals(2, draftRowCount(opened))
+
+            repository.restoreCanonicalBackup(
+                CanonicalBackupPayload(
+                    vaultUuid = vaultUuid,
+                    schemaVersion = RecordsRepository.SCHEMA_VERSION,
+                    exportedAtEpochMs = 0L,
+                    patients = emptyList(),
+                ),
+            )
+            assertEquals(0, draftRowCount(opened))
+            assertTrue(repository.loadDrafts("patient-a").isEmpty())
+        }
+    }
+
+    @Test
+    fun rawDatabaseFileDoesNotContainPlainTextDraftMarker() {
+        val namespace = UUID.randomUUID().toString()
+        val files = VaultFiles.isolatedTest(context, namespace)
+        val vaultUuid = UUID.randomUUID().toString()
+        files.prepareDescriptor(VaultDescriptor(vaultUuid, UUID.randomUUID().toString()))
+        val passphrase = ByteArray(32).also(SecureRandom()::nextBytes)
+        val marker = "PLAINTEXT-DRAFT-MARKER-" + UUID.randomUUID()
+        try {
+            val dbFile = files.databaseFile(vaultUuid)
+            RecordsDatabase.open(context, dbFile.absolutePath, passphrase).use { opened ->
+                runBlocking {
+                    val repository = RecordsRepository(opened.database, vaultUuid)
+                    assertTrue(repository.saveDraft(draftRecord("patient-a", DraftScreenKind.VISIT, notes = marker)))
+                }
+                opened.database.openHelper.writableDatabase.query("PRAGMA wal_checkpoint(FULL)").use { it.moveToFirst() }
+            }
+            val markerBytes = marker.toByteArray(Charsets.UTF_8)
+            val siblings = dbFile.parentFile!!.listFiles { f -> f.name.startsWith(dbFile.name) }.orEmpty()
+            assertTrue(siblings.isNotEmpty())
+            for (file in siblings) {
+                assertFalse("marker found in ${file.name}", indexOf(file.readBytes(), markerBytes) >= 0)
+            }
+        } finally {
+            passphrase.fill(0)
+            files.cleanupRegisteredTestNamespace()
+        }
+    }
+
+    private fun draftRecord(
+        patientId: String,
+        kind: DraftScreenKind,
+        notes: String = "draft notes",
+        editor: DraftEditorKind = DraftEditorKind.EDIT,
+        recordId: String? = "record-1",
+        baseRevision: Long? = 2L,
+        updatedAt: Long = 1_700_000_000_000L,
+    ) = DraftRecord(
+        patientId = patientId,
+        screenKind = kind,
+        editorKind = editor,
+        recordId = recordId,
+        baseRevision = baseRevision,
+        fields = mapOf("notes" to notes, "unicode" to "ملاحظات 👶"),
+        updatedAtMillis = updatedAt,
+    )
+
+    private fun draftRowCount(opened: OpenedRecordsDatabase): Int =
+        countRows(opened.database.openHelper.writableDatabase, "SELECT 1 FROM drafts")
+
+    private fun indexOf(haystack: ByteArray, needle: ByteArray): Int {
+        if (needle.isEmpty() || haystack.size < needle.size) return -1
+        outer@ for (i in 0..haystack.size - needle.size) {
+            for (j in needle.indices) if (haystack[i + j] != needle[j]) continue@outer
+            return i
+        }
+        return -1
     }
 
     private fun withDatabase(block: (OpenedRecordsDatabase, String) -> Unit) {
