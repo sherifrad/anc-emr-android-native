@@ -121,13 +121,13 @@ class SecurityWorkflowTest {
         compose.onNodeWithTag("securitySettingsDialog").assertIsDisplayed()
         compose.onNodeWithText("إعدادات الأمان وقفل التطبيق").assertIsDisplayed()
 
-        // 2. Select Auto-Lock Timeout: "لا يقفل أبداً (إيقاف القفل)" (NEVER)
-        compose.onNodeWithTag("timeoutOption-${AutoLockTimeout.NEVER.name}")
+        // 2. Select a non-default Auto-Lock Timeout (the default is TEN_MINUTES)
+        compose.onNodeWithTag("timeoutOption-${AutoLockTimeout.FIFTEEN_MINUTES.name}")
             .performScrollTo()
             .performClick()
 
         // Verify repository updated
-        assertEquals(AutoLockTimeout.NEVER, securityRepo.settings.value.autoLockTimeout)
+        assertEquals(AutoLockTimeout.FIFTEEN_MINUTES, securityRepo.settings.value.autoLockTimeout)
 
         // 3. Test changing to 1 minute
         compose.onNodeWithTag("timeoutOption-${AutoLockTimeout.ONE_MINUTE.name}")

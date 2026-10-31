@@ -264,7 +264,7 @@ class EncryptedRecordsTest {
     fun patientCommandsAreIdempotentRevisionedAndArchiveRejectsFurtherWrites() = withDatabase { opened, vaultUuid ->
         runBlocking {
             val repository = RecordsRepository(opened.database, vaultUuid)
-            repository.seedInitialSyntheticFixtures()
+            repository.seedInitialSyntheticFixtures(includeDemoPatients = true)
             val create = patientCommand(
                 operationUuid = "00000000-0000-4000-8000-000000000401",
                 patientId = "00000000-0000-4000-8000-000000000402",
@@ -369,7 +369,7 @@ class EncryptedRecordsTest {
     fun previousPregnancyCreateCorrectAndReplayAdvanceBothRevisionsAtomically() = withDatabase { opened, vaultUuid ->
         runBlocking {
             val repository = RecordsRepository(opened.database, vaultUuid)
-            repository.seedInitialSyntheticFixtures()
+            repository.seedInitialSyntheticFixtures(includeDemoPatients = true)
             val patient = DemoFixtures.patients.first()
             val create = pregnancyCommand(
                 operationUuid = "00000000-0000-4000-8000-000000000411",
@@ -426,7 +426,7 @@ class EncryptedRecordsTest {
     fun operationUuidCollisionsAreRejectedAcrossBothReceiptTables() = withDatabase { opened, vaultUuid ->
         runBlocking {
             val repository = RecordsRepository(opened.database, vaultUuid)
-            repository.seedInitialSyntheticFixtures()
+            repository.seedInitialSyntheticFixtures(includeDemoPatients = true)
             val patient = DemoFixtures.patients.first()
             val visitOperation = "00000000-0000-4000-8000-000000000421"
             repository.save(
@@ -460,7 +460,7 @@ class EncryptedRecordsTest {
     fun seedSaveReceiptRetryStaleAndCrossPatientRulesAreTransactional() = withDatabase { opened, vaultUuid ->
         runBlocking {
             val repository = RecordsRepository(opened.database, vaultUuid)
-            repository.seedInitialSyntheticFixtures()
+            repository.seedInitialSyntheticFixtures(includeDemoPatients = true)
             val initial = repository.validateAndLoad() as RepositoryOpenResult.Success
             assertEquals(3, initial.snapshot.patients.size)
 
@@ -517,7 +517,7 @@ class EncryptedRecordsTest {
     fun durableReceiptsReplayAfterLaterEditsWithLatestAuthoritativeSnapshot() = withDatabase { opened, vaultUuid ->
         runBlocking {
             val repository = RecordsRepository(opened.database, vaultUuid)
-            repository.seedInitialSyntheticFixtures()
+            repository.seedInitialSyntheticFixtures(includeDemoPatients = true)
             val patient = DemoFixtures.patients[0]
             val visitId = "00000000-0000-4000-8000-000000000312"
             val create = command(
@@ -564,7 +564,7 @@ class EncryptedRecordsTest {
     fun exhaustedRevisionIsRejectedBeforeRowOrReceiptMutation() = withDatabase { opened, vaultUuid ->
         runBlocking {
             val repository = RecordsRepository(opened.database, vaultUuid)
-            repository.seedInitialSyntheticFixtures()
+            repository.seedInitialSyntheticFixtures(includeDemoPatients = true)
             val patient = DemoFixtures.patients[0]
             val visitId = patient.visits.first().id
             opened.database.openHelper.writableDatabase.execSQL(
@@ -593,7 +593,7 @@ class EncryptedRecordsTest {
     fun emptyCommittedResultNeverSilentlyReseedsFixtures() = withDatabase { opened, vaultUuid ->
         runBlocking {
             val repository = RecordsRepository(opened.database, vaultUuid)
-            repository.seedInitialSyntheticFixtures()
+            repository.seedInitialSyntheticFixtures(includeDemoPatients = true)
             val db = opened.database.openHelper.writableDatabase
             db.execSQL("DELETE FROM save_receipts")
             db.execSQL("DELETE FROM visits")
@@ -608,7 +608,7 @@ class EncryptedRecordsTest {
     fun absentMetadataFailsClosed() = withDatabase { opened, vaultUuid ->
         runBlocking {
             val repository = RecordsRepository(opened.database, vaultUuid)
-            repository.seedInitialSyntheticFixtures()
+            repository.seedInitialSyntheticFixtures(includeDemoPatients = true)
             opened.database.openHelper.writableDatabase.execSQL("DELETE FROM vault_metadata")
             assertEquals(
                 RepositoryOpenResult.Failure(VaultBlockReason.VAULT_METADATA_MISSING),
@@ -627,7 +627,7 @@ class EncryptedRecordsTest {
         val wrong = ByteArray(32).also(SecureRandom()::nextBytes)
         try {
             RecordsDatabase.open(context, files.databaseFile(vaultUuid).absolutePath, correct).use { opened ->
-                runBlocking { RecordsRepository(opened.database, vaultUuid).seedInitialSyntheticFixtures() }
+                runBlocking { RecordsRepository(opened.database, vaultUuid).seedInitialSyntheticFixtures(includeDemoPatients = true) }
             }
             var wrongPassphraseOpened = false
             try {
@@ -649,7 +649,7 @@ class EncryptedRecordsTest {
     fun clinicalCommandsPersistDatingAndUltrasoundWithReceiptsAndAudit() = withDatabase { opened, vaultUuid ->
         runBlocking {
             val repository = RecordsRepository(opened.database, vaultUuid)
-            repository.seedInitialSyntheticFixtures()
+            repository.seedInitialSyntheticFixtures(includeDemoPatients = true)
             val initial = repository.validateAndLoad() as RepositoryOpenResult.Success
             val patient = initial.snapshot.patients.first()
 
@@ -711,7 +711,7 @@ class EncryptedRecordsTest {
     fun clinicalCommandsPersistLabAndMedicationWithReceiptsAndAudit() = withDatabase { opened, vaultUuid ->
         runBlocking {
             val repository = RecordsRepository(opened.database, vaultUuid)
-            repository.seedInitialSyntheticFixtures()
+            repository.seedInitialSyntheticFixtures(includeDemoPatients = true)
             val initial = repository.validateAndLoad() as RepositoryOpenResult.Success
             val patient = initial.snapshot.patients.first()
 
