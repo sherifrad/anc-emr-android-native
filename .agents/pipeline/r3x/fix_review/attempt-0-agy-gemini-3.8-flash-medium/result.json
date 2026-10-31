@@ -1,0 +1,15 @@
+{
+  "schema": "delegate-relay.result.v1",
+  "skill": "agy-delegate",
+  "cli": "agy",
+  "status": "completed",
+  "exitCode": 0,
+  "signal": null,
+  "readOnly": false,
+  "readOnlyViolation": false,
+  "touchedFiles": [],
+  "finalMessage": "Running `PrintSampleDumpTest` to refresh the sample report...\nRunning the full unit test suite...\nFiles changed:\n- app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt\n- app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintLayoutTest.kt\n\nWhat was done per oracle:\n- Q115 (Narrow screen layout & nowrap/wrap fixes): Wrapped each of the five clinical tables in `<div class=\"table-scroll\">`. In `@media screen and (max-width: 540px)`, configured `.table-scroll` with `overflow-x: auto; -webkit-overflow-scrolling: touch;` and `.clinical-table` with `min-width: 600px;`; removed redundant narrow font-squeezing rules.\n- Q115 (Free-text cascade): Increased specificity for `.clinical-table td.notes-cell` and `.clinical-table.mini-table td:nth-child(4)` with `overflow-wrap: anywhere; word-break: normal;` so free-text breaking wins over `.clinical-table td`.\n- Q115 (Cell nowrap separation): Removed `.clinical-table td.text-navy { white-space: nowrap; }`. Assigned `nowrap-cell` directly to BP and EFW cells; lab test names and medication names wrap at spaces.\n- Q116-Q117 / S97-S98: Preserved single stamp label, escapeHtml everywhere, MAX_PRINT_* constants, and hiddenRowsHtml logic.\n- PrintLayoutTest: Added unit tests verifying all 5 tables reside in `.table-scroll`, narrow block contains scroll/min-width while print rules do not, no `td.text-navy` nowrap rule exists, and lab/medication names wrap without `nowrap`.\n\nAssumptions:\n- Applied `min-width: 600px` for `.clinical-table` in the narrow screen media query to safely fit all dates, \"Gestational\", \"Presentation\", and \"Prophylaxis\" badges.\n\nVerification results:\n- python3 .agents/checks/check_r3x.py: S97 and S98 passed.\n- ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin :app:compileDebugAndroidTestKotlin: passed.\n- ./gradlew --offline :app:testDebugUnitTest --tests '*Print*': passed.\n- ./gradlew --offline :app:testDebugUnitTest --tests '*PrintSampleDumpTest' --rerun-tasks: passed; sample report refreshed.\n- ./gradlew --offline :app:testDebugUnitTest (full suite): passed.\n- Visual inspection in browser: not run.",
+  "stderrTail": "root agent idle; waiting up to 30m0s for 1 background task(s)",
+  "resultPath": "/Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/r3x/fix_review/attempt-0-agy-gemini-3.8-flash-medium/result.json",
+  "timestamp": "2026-10-31T18:43:05.049Z"
+}

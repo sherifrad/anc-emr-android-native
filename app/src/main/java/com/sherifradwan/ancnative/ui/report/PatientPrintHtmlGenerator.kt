@@ -20,8 +20,18 @@ import java.time.format.DateTimeFormatter
 
 object PatientPrintHtmlGenerator {
 
+    private const val MAX_PRINT_VISITS = 12
+    private const val MAX_PRINT_SCANS = 7
+    private const val MAX_PRINT_LABS = 10
+    private const val MAX_PRINT_MEDICATIONS = 8
+
     private const val BP_ALERT_RAISED = "Raised BP - recheck"
     private const val BP_ALERT_SEVERE = "Severe-range BP - urgent assessment"
+
+    private fun hiddenRowsHtml(hidden: Int, colspan: Int): String {
+        if (hidden <= 0) return ""
+        return """<tr class="more-row"><td colspan="$colspan" class="text-center empty-cell">and $hidden more not shown</td></tr>"""
+    }
 
     private fun getLogoBase64(context: Context?): String {
         if (context == null) return ""
@@ -75,18 +85,19 @@ object PatientPrintHtmlGenerator {
 
         // Visits table rows (Centered text, No SFH, No FHR, Spacious and comfortable)
         val sortedVisits = patient.visits.sortedBy { it.date }
-        val displayedVisits = sortedVisits.take(12)
+        val displayedVisits = sortedVisits.take(MAX_PRINT_VISITS)
+        val moreVisitsHtml = hiddenRowsHtml(sortedVisits.size - MAX_PRINT_VISITS, 6)
         val bpAlertCss = when {
             displayedVisits.any { bpLevel(it.bloodPressure) == BpLevel.SEVERE } ->
-                "\n        .bp-alert { font-size: 6.8pt; line-height: 1.1; margin-top: 2px; color: #b45309; }\n        .bp-alert-severe { color: #dc2626; }"
+                "\n        .bp-alert { font-size: 6.8pt; line-height: 1.1; margin-top: 2px; color: #b45309; white-space: normal; }\n        .bp-alert-severe { color: #dc2626; }"
             displayedVisits.any { bpLevel(it.bloodPressure) == BpLevel.RAISED } ->
-                "\n        .bp-alert { font-size: 6.8pt; line-height: 1.1; margin-top: 2px; color: #b45309; }"
+                "\n        .bp-alert { font-size: 6.8pt; line-height: 1.1; margin-top: 2px; color: #b45309; white-space: normal; }"
             else -> ""
         }
         val visitsRowsHtml = if (sortedVisits.isEmpty()) {
             """<tr><td colspan="6" class="text-center empty-cell">No clinical visits recorded yet</td></tr>"""
         } else {
-            displayedVisits.mapIndexed { idx, v ->
+            val rows = displayedVisits.mapIndexed { idx, v ->
                 val vGa = parseIsoDateOrNull(v.date)?.let { vDate ->
                     patient.dating?.calculateGestationalAgeResult(vDate)?.formatted
                 } ?: "-"
@@ -97,23 +108,26 @@ object PatientPrintHtmlGenerator {
                 }
                 """
                 <tr>
-                    <td class="text-center font-bold">${idx + 1}</td>
+                    <td class="text-center font-bold nowrap-cell">${idx + 1}</td>
                     <td class="text-center date-cell">${escapeHtml(v.date)}</td>
-                    <td class="text-center font-bold text-teal">${vGa}</td>
-                    <td class="text-center font-bold text-navy">${escapeHtml(v.bloodPressure ?: "-")}$bpAlert</td>
-                    <td class="text-center">${escapeHtml(v.weight?.let { "$it kg" } ?: "-")}</td>
+                    <td class="text-center font-bold text-teal nowrap-cell">${vGa}</td>
+                    <td class="text-center nowrap-cell font-bold text-navy">${escapeHtml(v.bloodPressure ?: "-")}$bpAlert</td>
+                    <td class="text-center nowrap-cell">${escapeHtml(v.weight?.let { "$it kg" } ?: "-")}</td>
                     <td class="text-center notes-cell">${escapeHtml(v.findings?.takeUnless(String::isBlank) ?: v.notes?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
                 </tr>
                 """.trimIndent()
             }.joinToString("\n")
+            if (moreVisitsHtml.isNotEmpty()) "$rows\n$moreVisitsHtml" else rows
         }
 
         // Ultrasound Scans rows (Centered, EFW (g), Clinical Notes, image badge if photos exist)
         val sortedScans = patient.ultrasoundScans.sortedBy { it.date }
+        val displayedScans = sortedScans.take(MAX_PRINT_SCANS)
+        val moreScansHtml = hiddenRowsHtml(sortedScans.size - MAX_PRINT_SCANS, 7)
         val scansRowsHtml = if (sortedScans.isEmpty()) {
             """<tr><td colspan="7" class="text-center empty-cell">No ultrasound scans recorded yet</td></tr>"""
         } else {
-            sortedScans.take(7).map { s ->
+            val rows = displayedScans.map { s ->
                 val scanGaStr = when {
                     s.gestationalAgeWeeks != null && s.gestationalAgeDays != null -> "${s.gestationalAgeWeeks}w + ${s.gestationalAgeDays}d"
                     s.gestationalAgeWeeks != null -> "${s.gestationalAgeWeeks}w"
@@ -145,11 +159,11 @@ object PatientPrintHtmlGenerator {
                 """
                 <tr>
                     <td class="text-center date-cell">${escapeHtml(s.date)}</td>
-                    <td class="text-center font-bold text-teal">${scanGaStr}</td>
+                    <td class="text-center font-bold text-teal nowrap-cell">${scanGaStr}</td>
                     <td class="text-center">${escapeHtml(s.presentation?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
                     <td class="text-center">${escapeHtml(s.placentalSite?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
                     <td class="text-center">${escapeHtml(s.amnioticFluid?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
-                    <td class="text-center font-bold text-navy">${escapeHtml(efwStr)}</td>
+                    <td class="text-center nowrap-cell font-bold text-navy">${escapeHtml(efwStr)}</td>
                     <td class="text-center notes-cell">
                         ${escapeHtml(notesText)}
                         $photoIndicator
@@ -157,14 +171,17 @@ object PatientPrintHtmlGenerator {
                 </tr>
                 """.trimIndent()
             }.joinToString("\n")
+            if (moreScansHtml.isNotEmpty()) "$rows\n$moreScansHtml" else rows
         }
 
         // Labs rows (Centered, NO status column, Abnormal result displayed in RED)
         val sortedLabs = patient.labInvestigations.sortedByDescending { it.date }
+        val displayedLabs = sortedLabs.take(MAX_PRINT_LABS)
+        val moreLabsHtml = hiddenRowsHtml(sortedLabs.size - MAX_PRINT_LABS, 4)
         val labsRowsHtml = if (sortedLabs.isEmpty()) {
             """<tr><td colspan="4" class="text-center empty-cell">No laboratory test results recorded yet</td></tr>"""
         } else {
-            sortedLabs.take(10).map { l ->
+            val rows = displayedLabs.map { l ->
                 val resultHtml = if (l.isAbnormal) {
                     """<span class="val-abnormal">${escapeHtml(l.result)} ${escapeHtml(l.unit ?: "")} (Abnormal)</span>"""
                 } else {
@@ -179,14 +196,16 @@ object PatientPrintHtmlGenerator {
                 </tr>
                 """.trimIndent()
             }.joinToString("\n")
+            if (moreLabsHtml.isNotEmpty()) "$rows\n$moreLabsHtml" else rows
         }
 
         // Medications rows (Centered)
-        val activeMeds = patient.medications.take(8)
-        val medsRowsHtml = if (activeMeds.isEmpty()) {
+        val displayedMeds = patient.medications.take(MAX_PRINT_MEDICATIONS)
+        val moreMedsHtml = hiddenRowsHtml(patient.medications.size - MAX_PRINT_MEDICATIONS, 5)
+        val medsRowsHtml = if (patient.medications.isEmpty()) {
             """<tr><td colspan="5" class="text-center empty-cell">No active medications or supplements recorded</td></tr>"""
         } else {
-            activeMeds.map { m ->
+            val rows = displayedMeds.map { m ->
                 val typeBadge = if (m.isProphylaxis) {
                     """<span class="badge badge-teal">Prophylaxis</span>"""
                 } else {
@@ -202,6 +221,7 @@ object PatientPrintHtmlGenerator {
                 </tr>
                 """.trimIndent()
             }.joinToString("\n")
+            if (moreMedsHtml.isNotEmpty()) "$rows\n$moreMedsHtml" else rows
         }
 
         // Previous Pregnancies (Centered)
@@ -209,6 +229,7 @@ object PatientPrintHtmlGenerator {
             """<p class="text-muted text-center text-small" style="padding: 6px;">No previous pregnancies or deliveries recorded ($pastDeliverySummary).</p>"""
         } else {
             """
+            <div class="table-scroll">
             <table class="clinical-table mini-table">
                 <thead>
                     <tr>
@@ -247,6 +268,7 @@ object PatientPrintHtmlGenerator {
                     }.joinToString("\n")}
                 </tbody>
             </table>
+            </div>
             """.trimIndent()
         }
 
@@ -442,6 +464,13 @@ object PatientPrintHtmlGenerator {
                 border-left: none !important;
                 padding-left: 0 !important;
                 width: 100% !important;
+            }
+            .table-scroll {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            .clinical-table {
+                min-width: 600px;
             }
         }
 
@@ -788,9 +817,9 @@ object PatientPrintHtmlGenerator {
             text-align: center !important;
             font-size: 7.5pt;
             box-sizing: border-box;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            word-break: break-word;
+            word-break: normal;
+            overflow-wrap: normal;
+            hyphens: none;
         }
 
         .clinical-table td {
@@ -800,9 +829,9 @@ object PatientPrintHtmlGenerator {
             text-align: center !important;
             vertical-align: middle;
             box-sizing: border-box;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            word-break: break-word;
+            word-break: normal;
+            overflow-wrap: normal;
+            hyphens: none;
         }
 
         .clinical-table tr:nth-child(even) {
@@ -812,9 +841,9 @@ object PatientPrintHtmlGenerator {
         .mini-table th, .mini-table td {
             padding: 3px 4px;
             font-size: 7.5pt;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            word-break: break-word;
+            word-break: normal;
+            overflow-wrap: normal;
+            hyphens: none;
         }
 
         .text-center { text-align: center !important; }
@@ -824,13 +853,20 @@ object PatientPrintHtmlGenerator {
         .text-teal { color: var(--teal-clinical); }
         .text-muted { color: var(--text-muted); }
         .empty-cell { padding: 12px; color: var(--text-muted); font-style: italic; }
-        .date-cell { font-family: monospace; font-size: 7.8pt; }
+        .date-cell { font-family: monospace; font-size: 7.8pt; white-space: nowrap; }
+        .nowrap-cell { white-space: nowrap; }
+        .clinical-table .more-row td {
+            text-align: left !important;
+            padding-left: 8px;
+        }
+        .clinical-table.mini-table td:nth-child(4),
+        .mini-table td:nth-child(4),
+        .clinical-table td.notes-cell,
         .notes-cell {
             font-size: 7.2pt;
             line-height: 1.25;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            word-break: break-word;
+            word-break: normal;
+            overflow-wrap: anywhere;
             max-width: 100%;
         }$bpAlertCss
 
@@ -1062,21 +1098,23 @@ object PatientPrintHtmlGenerator {
                 <div class="section-title">
                     <span>Antenatal Care Visits Log</span>
                 </div>
+                <div class="table-scroll">
                 <table class="clinical-table">
                     <thead>
                         <tr>
-                            <th style="width: 5%;">#</th>
-                            <th style="width: 15%;">Date</th>
-                            <th style="width: 15%;">Gestational Age (GA)</th>
-                            <th style="width: 14%;">Blood Pressure (BP)</th>
-                            <th style="width: 14%;">Weight</th>
-                            <th style="width: 37%;">Clinical Findings & Observations</th>
+                            <th style="width: 4%;">#</th>
+                            <th style="width: 16%;">Date</th>
+                            <th style="width: 17%;">Gestational Age (GA)</th>
+                            <th style="width: 15%;">Blood Pressure (BP)</th>
+                            <th style="width: 10%;">Weight</th>
+                            <th style="width: 38%;">Clinical Findings & Observations</th>
                         </tr>
                     </thead>
                     <tbody>
                         $visitsRowsHtml
                     </tbody>
                 </table>
+                </div>
             </div>
 
         </div>
@@ -1117,22 +1155,24 @@ object PatientPrintHtmlGenerator {
                 <div class="section-title">
                     <span>Ultrasound Biometry & Fetal Surveillance</span>
                 </div>
+                <div class="table-scroll">
                 <table class="clinical-table">
                     <thead>
                         <tr>
-                            <th style="width: 12%;">Date</th>
-                            <th style="width: 12%;">Gestational Age</th>
+                            <th style="width: 11%;">Date</th>
+                            <th style="width: 14%;">Gestational Age</th>
                             <th style="width: 13%;">Presentation</th>
-                            <th style="width: 14%;">Placenta</th>
+                            <th style="width: 12%;">Placenta</th>
                             <th style="width: 14%;">Amniotic Fluid</th>
-                            <th style="width: 14%;">EFW (g)</th>
-                            <th style="width: 21%;">Clinical Notes</th>
+                            <th style="width: 12%;">EFW (g)</th>
+                            <th style="width: 24%;">Clinical Notes</th>
                         </tr>
                     </thead>
                     <tbody>
                         $scansRowsHtml
                     </tbody>
                 </table>
+                </div>
             </div>
 
             <!-- Laboratory Investigations -->
@@ -1140,6 +1180,7 @@ object PatientPrintHtmlGenerator {
                 <div class="section-title">
                     <span>Laboratory Investigations</span>
                 </div>
+                <div class="table-scroll">
                 <table class="clinical-table">
                     <thead>
                         <tr>
@@ -1153,6 +1194,7 @@ object PatientPrintHtmlGenerator {
                         $labsRowsHtml
                     </tbody>
                 </table>
+                </div>
             </div>
 
             <!-- Active Medications & Prophylaxis -->
@@ -1160,6 +1202,7 @@ object PatientPrintHtmlGenerator {
                 <div class="section-title">
                     <span>Active Medications & Prophylaxis</span>
                 </div>
+                <div class="table-scroll">
                 <table class="clinical-table">
                     <thead>
                         <tr>
@@ -1174,6 +1217,7 @@ object PatientPrintHtmlGenerator {
                         $medsRowsHtml
                     </tbody>
                 </table>
+                </div>
             </div>
 
             <!-- Delivery Management Plan & Attestation -->
@@ -1208,9 +1252,6 @@ object PatientPrintHtmlGenerator {
                             <div class="doc-name">Dr. Sherif Radwan</div>
                             <div class="doc-title">$doctorOfficialTitle</div>
                             <div class="stamp-placeholder">Official Stamp & Signature</div>
-                        </div>
-                        <div style="font-size: 7pt; color: #64748B; margin-top: 12px;">
-                            Official Stamp & Signature
                         </div>
                     </div>
                 </div>

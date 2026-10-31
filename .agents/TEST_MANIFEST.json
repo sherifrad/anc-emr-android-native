@@ -982,6 +982,26 @@
       "covers": ["S92", "S93"]
     },
     {
+      "id": "STATIC-r3x",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3x.py",
+      "deps": [
+        "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
+        ".agents/checks/check_r3x.py"
+      ],
+      "covers": ["S97", "S98"]
+    },
+    {
+      "id": "UNIT-print-layout",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*PrintLayoutTest'",
+      "deps": [
+        "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
+        "app/src/test/**/ui/report/PrintLayoutTest.kt"
+      ],
+      "covers": ["Q115", "Q116", "Q117", "S97", "S98"]
+    },
+    {
       "id": "UNIT-draft-sync",
       "tier": 1,
       "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*DraftMappingTest' --tests '*DraftAutosaverTest'",
