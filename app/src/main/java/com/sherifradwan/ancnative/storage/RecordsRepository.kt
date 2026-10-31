@@ -665,7 +665,7 @@ internal class RecordsRepository(
         notes = notes,
         linkedUltrasoundId = linkedUltrasoundId,
         revision = revision,
-        isSyntheticEdit = true,
+        isSyntheticEdit = false,
     )
 
     internal fun DemoPatient.toEntity() = PatientEntity(
@@ -1074,7 +1074,7 @@ internal class RecordsRepository(
         }
 
         val patientUpdated = dao.incrementPatientRevision(command.patientId, command.expectedPatientRevision)
-        if (patientUpdated != 1) return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_PATIENT_REVISION)
+        if (patientUpdated != 1) throw ClinicalCommandAbort(ClinicalCommandFailure.STALE_PATIENT_REVISION)
 
         val receipt = ClinicalCommandReceiptEntity(
             operationUuid = command.operationUuid,
@@ -1182,7 +1182,7 @@ internal class RecordsRepository(
         }
 
         val patientUpdated = dao.incrementPatientRevision(command.patientId, command.expectedPatientRevision)
-        if (patientUpdated != 1) return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_PATIENT_REVISION)
+        if (patientUpdated != 1) throw ClinicalCommandAbort(ClinicalCommandFailure.STALE_PATIENT_REVISION)
 
         val receipt = ClinicalCommandReceiptEntity(
             operationUuid = command.operationUuid,
@@ -1263,7 +1263,7 @@ internal class RecordsRepository(
         }
 
         val patientUpdated = dao.incrementPatientRevision(command.patientId, command.expectedPatientRevision)
-        if (patientUpdated != 1) return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_PATIENT_REVISION)
+        if (patientUpdated != 1) throw ClinicalCommandAbort(ClinicalCommandFailure.STALE_PATIENT_REVISION)
 
         val receipt = ClinicalCommandReceiptEntity(
             operationUuid = command.operationUuid,
@@ -1348,7 +1348,7 @@ internal class RecordsRepository(
         }
 
         val patientUpdated = dao.incrementPatientRevision(command.patientId, command.expectedPatientRevision)
-        if (patientUpdated != 1) return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_PATIENT_REVISION)
+        if (patientUpdated != 1) throw ClinicalCommandAbort(ClinicalCommandFailure.STALE_PATIENT_REVISION)
 
         val receipt = ClinicalCommandReceiptEntity(
             operationUuid = command.operationUuid,

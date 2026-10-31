@@ -129,7 +129,8 @@
     <string name="patient_archived_notice">Patient archived. Existing committed records remain read-only.</string>
     <string name="patient_unarchived_notice">Patient unarchived.</string>
     <string name="archived_read_only_notice">This patient is archived. Profile and committed records remain readable; writes are blocked.</string>
-    <string name="patient_saved">Synthetic patient record saved.</string>
+    <string name="patient_saved">Patient record saved.</string>
+    <string name="patient_saved_dating_not_updated">Patient saved, but the due date was not updated. Open Dating to set it.</string>
     <string name="histories_saved">Other histories saved without inferring normal or negative findings.</string>
     <string name="pregnancy_saved">Previous pregnancy record saved.</string>
     <string name="patient_status">Patient status</string>

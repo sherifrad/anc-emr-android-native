@@ -172,7 +172,7 @@ internal fun DemoPatient.withCommittedVisit(command: SaveVisitCommand, revision:
         notes = command.notes,
         linkedUltrasoundId = command.linkedUltrasoundId,
         revision = revision,
-        isSyntheticEdit = true,
+        isSyntheticEdit = false,
     )
     return copy(
         visits = visits.filterNot { it.id == visit.id }.plus(visit).sortedByDescending { it.date },

@@ -21,3 +21,6 @@ internal fun intakeDatingUpdate(existing: DemoPatientDating?, draftLmp: String?)
 
     return IntakeDating(lmp, eddFromLmp(parsedLmp).toString())
 }
+
+internal fun profileSavedNotice(datingAttempted: Boolean, datingSaved: Boolean): SavedNotice =
+    if (datingAttempted && !datingSaved) SavedNotice.PATIENT_DATING_NOT_UPDATED else SavedNotice.PATIENT

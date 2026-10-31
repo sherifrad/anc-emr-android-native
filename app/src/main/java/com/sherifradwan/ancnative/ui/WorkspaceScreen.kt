@@ -2143,6 +2143,7 @@ private fun MedicationCard(med: DemoMedicationRecord, canEdit: Boolean, onEdit: 
 
 private fun AncState.noticeResource(): Int = when (notice) {
     SavedNotice.PATIENT -> R.string.patient_saved
+    SavedNotice.PATIENT_DATING_NOT_UPDATED -> R.string.patient_saved_dating_not_updated
     SavedNotice.HISTORIES -> R.string.histories_saved
     SavedNotice.PREGNANCY -> R.string.pregnancy_saved
     SavedNotice.ARCHIVED -> R.string.patient_archived_notice

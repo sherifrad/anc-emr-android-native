@@ -342,6 +342,8 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
             when (result) {
                 is PatientCommandOutcome.Committed -> {
                     frozenPatientCommand = null
+                    var patients = result.snapshot.patients
+                    var notice = command.savedNotice()
                     if (command is SavePatientProfileCommand) {
                         val currentDraft = _state.value.patientDraft
                         val committedPatient = result.snapshot.patients.firstOrNull { it.id == command.patientId }
@@ -358,7 +360,12 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
                                 datingMethod = "LMP",
                                 notes = committedPatient?.dating?.notes ?: "Baseline from intake LMP (${datingUpdate.lmpDate})",
                             )
-                            controller.execute(datingCmd, sessionEpoch) {}
+                            val datingResult = controller.execute(datingCmd, sessionEpoch, onReconciliation = {})
+                            val datingSaved = datingResult is ClinicalCommandOutcome.Committed
+                            if (datingResult is ClinicalCommandOutcome.Committed) {
+                                patients = datingResult.snapshot.patients
+                            }
+                            notice = profileSavedNotice(datingAttempted = true, datingSaved = datingSaved)
                         }
                     }
                     _state.update {
@@ -366,9 +373,9 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
                             it,
                             AncEvent.RecordCommitted(
                                 token = token,
-                                patients = result.snapshot.patients,
+                                patients = patients,
                                 destination = command.destination(),
-                                notice = command.savedNotice(),
+                                notice = notice,
                             ),
                         )
                     }

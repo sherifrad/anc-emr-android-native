@@ -661,6 +661,41 @@
       "covers": ["Q69", "Q70"]
     },
     {
+      "id": "UNIT-profile-saved-notice",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*ProfileSavedNoticeTest'",
+      "deps": [
+        "app/src/main/**/state/IntakeDatingRule.kt",
+        "app/src/main/**/state/AncState.kt",
+        "app/src/test/**/state/ProfileSavedNoticeTest.kt"
+      ],
+      "covers": ["Q83"]
+    },
+    {
+      "id": "UNIT-visit-synthetic-flag",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*VisitSyntheticFlagTest'",
+      "deps": [
+        "app/src/main/**/storage/SaveVisitCommand.kt",
+        "app/src/test/**/storage/VisitSyntheticFlagTest.kt"
+      ],
+      "covers": ["Q82"]
+    },
+    {
+      "id": "STATIC-r3l",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3l.py",
+      "deps": [
+        "app/src/main/**/storage/RecordsRepository.kt",
+        "app/src/main/**/storage/SaveVisitCommand.kt",
+        "app/src/main/**/state/AncViewModel.kt",
+        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/main/res/values/strings.xml",
+        ".agents/checks/check_r3l.py"
+      ],
+      "covers": ["S64", "S65", "S66"]
+    },
+    {
       "id": "UNIT-all",
       "tier": 2,
       "cmd": "./gradlew --offline :app:testDebugUnitTest",
