@@ -14,7 +14,7 @@
 
 <div align="center">
   <img src="docs/assets/anc_app_tour.gif" alt="ANC EMR App Tour" width="360" />
-  <p><em>Interactive Walkthrough: Patient Directory, Arabic Clinical Workspace, Dark Mode, and Real-time Biometry</em></p>
+  <p><em>Interactive Walkthrough: Patient Directory, Clinical Workspace, Dark Mode, and Real-time Biometry</em></p>
 </div>
 
 🎬 **Full Movie Available**: You can also watch or download the high-definition tour movie at [`docs/assets/anc_app_tour.mp4`](docs/assets/anc_app_tour.mp4).
@@ -48,7 +48,7 @@ ANC EMR consists of two synchronized, zero-cloud dependency, offline-first solut
 - **Ultrasound Biometry Workspace**: Structured biometry entry for BPD, HC, AC, FL, EFW, fetal presentation, placental localization, and amniotic fluid index.
 - **Laboratory & Prescription System**: Reusable clinical item library (Hematology, Biochemistry, Serology, Urinalysis) and multi-panel groups (First Trimester Booking, Preeclampsia Workup, GDM Screening).
 - **Patient Attachments with In-App Camera**: Capture and attach ultrasound scan images or lab sheets with SHA-256 integrity verification.
-- **Arabic / English Bilingual Interface**: Full RTL (Right-to-Left) and LTR support with localized medical terminology.
+- **English interface, Arabic patient data**: The app is English only. Patient names and notes may be typed in Arabic and are shown and printed with the correct text direction.
 - **Export & Printing**: Generate clinical summary summaries and print prescriptions directly from the device.
 
 ---
