@@ -80,6 +80,7 @@ import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.model.DemoVisit
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
+import com.sherifradwan.ancnative.model.previousDeliverySummary
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
@@ -374,39 +375,7 @@ private fun ProfileHeroIdentityCard(
             val gaResult = patient.dating?.calculateGestationalAgeResult()
             val gaFormatted = if (gaResult != null) "${gaResult.weeks}+${gaResult.days} wks" else "—"
 
-            val prevCS = patient.previousPregnancies.count {
-                it.birthMethod.equals("Cesarean", ignoreCase = true) ||
-                    it.deliveryBy.equals("CS", ignoreCase = true)
-            }
-            val prevVaginal = patient.previousPregnancies.count {
-                it.birthMethod.equals("Vaginal", ignoreCase = true) ||
-                    it.deliveryBy.equals("Vaginal", ignoreCase = true)
-            }
-            val stillbirthCount = patient.previousPregnancies.count {
-                it.outcome == "Stillbirth" ||
-                    it.outcomeText?.contains("Stillbirth", ignoreCase = true) == true ||
-                    it.outcomeText?.contains("IUFD", ignoreCase = true) == true
-            }
-            val miscarriageCount = patient.previousPregnancies.count {
-                it.outcome == "EarlyPregnancyLoss" ||
-                    it.outcomeText?.contains("Miscarriage", ignoreCase = true) == true ||
-                    it.outcomeText?.contains("Loss", ignoreCase = true) == true
-            }
-
-            val prevSummary = when {
-                g == 1L && p == 0L && a == 0L && patient.previousPregnancies.isEmpty() -> "Primigravida"
-                prevCS > 0 && prevVaginal > 0 && stillbirthCount > 0 -> "Prev $prevCS CS, $prevVaginal SVD · 1 IUFD"
-                prevCS > 0 && prevVaginal > 0 -> "Prev $prevCS CS, $prevVaginal SVD"
-                prevCS > 0 && stillbirthCount > 0 -> "Prev $prevCS CS · 1 IUFD"
-                prevCS > 0 -> "Prev $prevCS CS"
-                prevVaginal > 0 && stillbirthCount > 0 -> "Prev $prevVaginal SVD · 1 IUFD"
-                prevVaginal > 0 -> "Prev $prevVaginal SVD"
-                stillbirthCount > 0 -> "Prior Stillbirth (IUFD)"
-                miscarriageCount > 0 -> "$miscarriageCount Prior Miscarriages"
-                p > 0L -> "Parous (P$p)"
-                patient.previousPregnancies.isNotEmpty() -> "${patient.previousPregnancies.size} Prior Pregnancies"
-                else -> "No prior deliveries"
-            }
+            val prevSummary = previousDeliverySummary(patient)
 
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),

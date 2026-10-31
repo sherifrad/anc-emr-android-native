@@ -9,7 +9,10 @@ import com.sherifradwan.ancnative.model.BpLevel
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
 import com.sherifradwan.ancnative.model.bpLevel
+import com.sherifradwan.ancnative.model.isEarlyLoss
+import com.sherifradwan.ancnative.model.isStillbirth
 import com.sherifradwan.ancnative.model.parseIsoDateOrNull
+import com.sherifradwan.ancnative.model.previousDeliverySummary
 import com.sherifradwan.ancnative.security.SecuritySettingsState
 import java.io.ByteArrayOutputStream
 import java.time.LocalDate
@@ -51,21 +54,7 @@ object PatientPrintHtmlGenerator {
         val g = patient.gravida ?: "-"
         val p = patient.parity ?: "-"
         val a = patient.abortion ?: "-"
-        val prevCsCount = patient.previousPregnancies.count {
-            it.birthMethod?.contains("Cesarean", ignoreCase = true) == true ||
-            it.outcomeText?.contains("CS", ignoreCase = true) == true
-        }
-        val prevSvdCount = patient.previousPregnancies.count {
-            it.birthMethod?.contains("Vaginal", ignoreCase = true) == true ||
-            it.outcomeText?.contains("SVD", ignoreCase = true) == true
-        }
-        val pastDeliverySummary = when {
-            prevCsCount > 0 && prevSvdCount > 0 -> "Prev $prevCsCount CS + $prevSvdCount SVD"
-            prevCsCount > 0 -> "Prev $prevCsCount CS"
-            prevSvdCount > 0 -> "Prev $prevSvdCount SVD"
-            patient.previousPregnancies.isNotEmpty() -> "${patient.previousPregnancies.size} Previous Pregnancies"
-            else -> "Primigravida / N/A"
-        }
+        val pastDeliverySummary = previousDeliverySummary(patient)
 
         val riskLevel = patient.riskLevel?.takeUnless(String::isBlank)
         val isHighRisk = com.sherifradwan.ancnative.ui.isHighRisk(riskLevel)
@@ -217,7 +206,7 @@ object PatientPrintHtmlGenerator {
 
         // Previous Pregnancies (Centered)
         val prevPregRows = if (patient.previousPregnancies.isEmpty()) {
-            """<p class="text-muted text-center text-small" style="padding: 6px;">No previous pregnancies or deliveries recorded (Primigravida / N/A).</p>"""
+            """<p class="text-muted text-center text-small" style="padding: 6px;">No previous pregnancies or deliveries recorded ($pastDeliverySummary).</p>"""
         } else {
             """
             <table class="clinical-table mini-table">
@@ -238,10 +227,9 @@ object PatientPrintHtmlGenerator {
                             "LiveBirth" -> pp.outcomeText ?: "Live Birth"
                             else -> pp.outcomeText ?: pp.outcome ?: "-"
                         }
-                        val isLoss = pp.outcome in setOf("Stillbirth", "EarlyPregnancyLoss", "TerminationOfPregnancy") ||
-                            (pp.outcomeText?.contains("IUFD", ignoreCase = true) == true) ||
-                            (pp.outcomeText?.contains("Stillbirth", ignoreCase = true) == true) ||
-                            (pp.outcomeText?.contains("Miscarriage", ignoreCase = true) == true)
+                        val isLoss = pp.outcome == "TerminationOfPregnancy" ||
+                            isStillbirth(pp) ||
+                            isEarlyLoss(pp)
                         val outcomeBadge = if (isLoss) {
                             """<span class="badge" style="background:#fee2e2;color:#991b1b;border:1px solid #f87171;font-weight:bold;padding:2px 6px;border-radius:4px;">${escapeHtml(outcomeLabel)}</span>"""
                         } else {

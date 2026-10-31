@@ -878,6 +878,43 @@
       "covers": ["S83"]
     },
     {
+      "id": "STATIC-r3s",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3s.py",
+      "deps": [
+        "app/src/main/**/model/ObstetricHistory.kt",
+        "app/src/main/**/ui/PatientListScreen.kt",
+        "app/src/main/**/ui/ProfileScreen.kt",
+        "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
+        ".agents/checks/check_r3s.py"
+      ],
+      "covers": ["S84", "S85"]
+    },
+    {
+      "id": "UNIT-obstetric-history",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*ObstetricHistoryTest'",
+      "deps": [
+        "app/src/main/**/model/ObstetricHistory.kt",
+        "app/src/main/**/model/DemoModels.kt",
+        "app/src/test/**/model/ObstetricHistoryTest.kt"
+      ],
+      "covers": ["Q102"]
+    },
+    {
+      "id": "UNIT-print-obstetric",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*PrintObstetricSummaryTest'",
+      "deps": [
+        "app/src/main/**/model/ObstetricHistory.kt",
+        "app/src/main/**/ui/PatientListScreen.kt",
+        "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
+        "app/src/main/**/model/DemoModels.kt",
+        "app/src/test/**/ui/report/PrintObstetricSummaryTest.kt"
+      ],
+      "covers": ["Q102", "Q103"]
+    },
+    {
       "id": "UNIT-all",
       "tier": 2,
       "cmd": "./gradlew --offline :app:testDebugUnitTest",

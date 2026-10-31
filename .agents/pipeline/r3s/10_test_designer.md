@@ -1,0 +1,6 @@
+ROLE: TEST DESIGNER for ROUND 3s (SPEC_FIX_R3.md section "Round 3s"). Tests only; no production code.
+ALLOWED files: .agents/checks/check_r3s.py (NEW), .agents/TEST_MANIFEST.json, app/src/test/java/com/sherifradwan/ancnative/model/ObstetricHistoryTest.kt (NEW), app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintObstetricSummaryTest.kt (NEW), and ONLY if an existing test pins the old print wording ("Prev N CS + M SVD" or "Primigravida / N/A"): that single expectation in app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt.
+1. check_r3s.py: S84-S85 as the spec says; python3 stdlib only; strip Kotlin comments first; PASS/FAIL; exit 1 on FAIL; style of .agents/checks/check_r3q.py; each S must FAIL on today's code.
+2. The unit tests per the "Unit" paragraph with exact strings and numbers. Build DemoPreviousPregnancy/DemoPatient values like PatientPrintHtmlGeneratorTest does (DemoPreviousPregnancy has many required fields: copy a builder shape). The cross-screen test calls the real projectDashboardRow (ui/PatientListScreen.kt) and the real print generator.
+3. TEST_MANIFEST.json: add STATIC-r3s, UNIT-obstetric-history, UNIT-print-obstetric (cmd, deps, covers).
+Run check_r3s.py and report real results; list any old test expectation you had to change.

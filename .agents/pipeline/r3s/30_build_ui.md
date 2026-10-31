@@ -1,0 +1,2 @@
+ROLE: UI BUILDER for ROUND 3s. Implement the screen part of Q103. ALLOWED files: ui/PatientListScreen.kt and ui/ProfileScreen.kt. Core already added model/ObstetricHistory.kt: delete the local CS/SVD/stillbirth/miscarriage counting and summary building in projectDashboardRow and in the profile summary and call previousDeliverySummary(patient). Keep every other value in the row projection and every testTag. Do not edit tests or checks.
+Run ./gradlew --offline :app:compileDebugKotlin and the whole unit suite. Report real results.

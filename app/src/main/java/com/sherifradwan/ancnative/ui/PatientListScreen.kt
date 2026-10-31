@@ -71,6 +71,7 @@ import androidx.compose.ui.unit.sp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.SevereBpAttention
+import com.sherifradwan.ancnative.model.previousDeliverySummary
 import com.sherifradwan.ancnative.model.severeBpAttention
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncState
@@ -98,24 +99,7 @@ fun projectDashboardRow(patient: DemoPatient): PatientDashboardRowProjection {
     val g = patient.gravida ?: 1L
     val p = patient.parity ?: 0L
 
-    val prevCS = patient.previousPregnancies.count {
-        it.birthMethod.equals("Cesarean", ignoreCase = true) ||
-            it.deliveryBy.equals("CS", ignoreCase = true)
-    }
-    val prevVaginal = patient.previousPregnancies.count {
-        it.birthMethod.equals("Vaginal", ignoreCase = true) ||
-            it.deliveryBy.equals("Vaginal", ignoreCase = true)
-    }
-
-    val prevSummary = when {
-        g == 1L && p == 0L && patient.previousPregnancies.isEmpty() -> "Primigravida"
-        p == 0L && patient.previousPregnancies.isEmpty() -> "P0 · No prior deliveries"
-        prevCS > 0 && prevVaginal > 0 -> "Prev $prevCS CS, $prevVaginal SVD"
-        prevCS > 0 -> "Prev $prevCS CS"
-        prevVaginal > 0 -> "Prev $prevVaginal SVD"
-        p > 0 -> "Parous ($p)"
-        else -> "P0"
-    }
+    val prevSummary = previousDeliverySummary(patient)
 
     val obstetricFormatted = "G$g P$p · $prevSummary"
 
