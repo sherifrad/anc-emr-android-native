@@ -6,7 +6,7 @@ Textual source contract only; verifies nothing at runtime.
   S89 RecordsDatabase.kt declares version = 6 and lists DraftEntity; RecordsMigration.kt
       defines from5To6; RecordsRepository's SCHEMA_VERSION is 6.
   S90 DraftEntity has primary key patient_id + screen_kind and no ForeignKey;
-      EncryptedBackupManager.kt and VaultController.kt contain no "draft";
+      EncryptedBackupManager.kt and VaultController.exportEncryptedBackup contain no "draft";
       restoreCanonicalBackup deletes drafts.
   S91 DraftCodec.kt, DraftRecord.kt and the draft methods of RecordsRepository.kt use no
       SharedPreferences, File write or Log call.
@@ -97,10 +97,17 @@ def check_s90():
                 problems.append("DraftEntity primaryKeys is not [patient_id, screen_kind]")
             if "ForeignKey" in whole:
                 problems.append("DraftEntity has a ForeignKey")
-    for path in (BACKUP, CONTROLLER):
-        code = code_of(path, problems)
-        if code is not None and re.search(r"draft", code, flags=re.I):
-            problems.append(path.name + " mentions draft")
+    code = code_of(BACKUP, problems)
+    if code is not None and re.search(r"draft", code, flags=re.I):
+        problems.append(BACKUP.name + " mentions draft")
+    # Step 2 (auto-save) gives VaultController its own draft methods; only the backup export must stay draft-free.
+    ctl = code_of(CONTROLLER, problems)
+    if ctl is not None:
+        export = function_body(ctl, "exportEncryptedBackup")
+        if export is None:
+            problems.append("exportEncryptedBackup missing")
+        elif re.search(r"draft", export, flags=re.I):
+            problems.append("exportEncryptedBackup mentions draft")
     repo = code_of(REPOSITORY, problems)
     if repo is not None:
         body = function_body(repo, "restoreCanonicalBackup")
@@ -108,7 +115,7 @@ def check_s90():
             problems.append("restoreCanonicalBackup missing")
         elif not re.search(r"deleteAllDrafts\s*\(|DELETE\s+FROM\s+drafts\b", body):
             problems.append("restoreCanonicalBackup does not delete drafts")
-    record("S90 DraftEntity key patient_id+screen_kind without ForeignKey, backup/controller draft-free, restore deletes drafts",
+    record("S90 DraftEntity key patient_id+screen_kind without ForeignKey, backup export draft-free, restore deletes drafts",
            not problems, "; ".join(problems))
 
 
