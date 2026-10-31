@@ -67,6 +67,9 @@ fun previousDeliveryCounts(pregnancies: List<DemoPreviousPregnancy>): PreviousDe
     )
 }
 
+private fun pluralize(count: Int, singular: String, plural: String): String =
+    "$count " + if (count == 1) singular else plural
+
 fun previousDeliverySummary(patient: DemoPatient): String {
     val g = patient.gravida ?: 1L
     val p = patient.parity ?: 0L
@@ -86,9 +89,9 @@ fun previousDeliverySummary(patient: DemoPatient): String {
             "Prev $routes$iufd"
         }
         c.stillbirth > 0 -> "Prior Stillbirth (IUFD)"
-        c.earlyLoss > 0 -> "${c.earlyLoss} Prior Miscarriages"
+        c.earlyLoss > 0 -> pluralize(c.earlyLoss, "Prior Miscarriage", "Prior Miscarriages")
         p > 0L -> "Parous (P$p)"
-        pregnancies.isNotEmpty() -> "${pregnancies.size} Prior Pregnancies"
+        pregnancies.isNotEmpty() -> pluralize(pregnancies.size, "Prior Pregnancy", "Prior Pregnancies")
         else -> "No prior deliveries"
     }
 }

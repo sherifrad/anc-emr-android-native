@@ -437,7 +437,7 @@ class ObstetricHistoryTest {
                 preg(outcome = "EarlyPregnancyLoss"),
             ),
         )
-        assertEquals("1 Prior Miscarriages", previousDeliverySummary(p1))
+        assertEquals("1 Prior Miscarriage", previousDeliverySummary(p1))
 
         val p2 = patient(
             gravida = 4L, parity = 0L, abortion = 3L,
@@ -448,6 +448,26 @@ class ObstetricHistoryTest {
             ),
         )
         assertEquals("3 Prior Miscarriages", previousDeliverySummary(p2))
+    }
+
+    @Test
+    fun summary_priorMiscarriage_count1AndCount2() {
+        val p1 = patient(
+            gravida = 2L, parity = 0L, abortion = 1L,
+            pregnancies = listOf(
+                preg(outcome = "EarlyPregnancyLoss"),
+            ),
+        )
+        assertEquals("1 Prior Miscarriage", previousDeliverySummary(p1))
+
+        val p2 = patient(
+            gravida = 3L, parity = 0L, abortion = 2L,
+            pregnancies = listOf(
+                preg(id = "1", outcome = "EarlyPregnancyLoss"),
+                preg(id = "2", outcome = "EarlyPregnancyLoss"),
+            ),
+        )
+        assertEquals("2 Prior Miscarriages", previousDeliverySummary(p2))
     }
 
     @Test
@@ -472,7 +492,27 @@ class ObstetricHistoryTest {
                 preg(birthMethod = null, deliveryBy = null, outcome = null, outcomeText = null),
             ),
         )
-        assertEquals("1 Prior Pregnancies", previousDeliverySummary(p))
+        assertEquals("1 Prior Pregnancy", previousDeliverySummary(p))
+
+        val p2 = patient(
+            gravida = 3L, parity = 0L, abortion = 0L,
+            pregnancies = listOf(
+                preg(id = "1", birthMethod = null, deliveryBy = null, outcome = null, outcomeText = null),
+                preg(id = "2", birthMethod = null, deliveryBy = null, outcome = null, outcomeText = null),
+            ),
+        )
+        assertEquals("2 Prior Pregnancies", previousDeliverySummary(p2))
+    }
+
+    @Test
+    fun summary_priorPregnancy_count1AndCount2() {
+        val p1 = patient(
+            gravida = 2L, parity = 0L, abortion = 0L,
+            pregnancies = listOf(
+                preg(birthMethod = null, deliveryBy = null, outcome = null, outcomeText = null),
+            ),
+        )
+        assertEquals("1 Prior Pregnancy", previousDeliverySummary(p1))
 
         val p2 = patient(
             gravida = 3L, parity = 0L, abortion = 0L,
