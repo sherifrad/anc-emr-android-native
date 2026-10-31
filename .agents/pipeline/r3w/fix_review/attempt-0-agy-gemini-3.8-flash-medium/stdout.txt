@@ -1,0 +1,14 @@
+Waiting for the test execution to complete.
+Waiting for the full unit test suite to complete.
+Changed: AncState.kt, DraftRecovery.kt, DraftAutosaver.kt, DraftMapping.kt, AncViewModel.kt, strings.xml, values-ar/strings.xml, DraftRecoveryTest.kt, DraftAutosaverTest.kt.
+Q112 / S94 (Reducer & pure logic): Reverted startVisit & requestBack reducer hacks; fixed tests to use real active patient fixture. Extended isValueChangeEvent to ignore all draft-mutating events while prompt is set: DraftChanged (including LINKED_ULTRASOUND), PatientDraftChanged, HistoriesDraftChanged, PregnancyDraftChanged, StatusReasonChanged, DatingDraftChanged, UltrasoundDraftChanged, LabDraftChanged, LabAbnormalChanged, MedicationDraftChanged, MedicationProphylaxisChanged, and ScanPhotoImported. Removed redundant early return in draftAge and fixed reduceInternal indentation.
+Q112 / S94 (Draft mapping reuse): draftRecordFor reads baseRevision once from activeEditorBaseRevision; verified agreement across all 9 screens in unit tests.
+Q113 / S95 (Autosaver & session-tied holds): holdSlot(slot, sessionId) and releaseSlot(slot, sessionId) bind holds to editor session; onStateChanged drops holds no longer matching active editor session in after; cancelPending clears holds. Added DraftStore.load and DraftAutosaver.load under saveMutex so recovery load queues behind pending async deletes.
+Q113 / S95 (ViewModel state recovery): Replaced isStartEditorEvent with state-change check in updateState (activeEditorSessionId(after) != activeEditorSessionId(before)); recovers via autosaver.load; remembers recoveredSessionId on AcceptDraftRecovery to skip self-prompting; deletes draft on AcceptDraftRecovery if form is not dirty.
+Q114 / S96 (Wording & i18n): Screen names lowercase (visit, patient profile, etc.); body set to "Unsaved %1$s entry, started %2$s. Continue where you stopped, or discard it and start fresh."; storage_closing_body reverted to original hiding text in en and ar; Arabic age plurals expanded to all 6 CLDR quantities (zero, one, two, few, many, other) with gender-neutral Arabic body.
+Tests ran and passed:
+- DraftRecoveryTest & DraftAutosaverTest: passed
+- Full unit suite (./gradlew --offline :app:testDebugUnitTest): passed
+- Compiles (:app:compileDebugKotlin :app:compileReleaseKotlin :app:compileDebugAndroidTestKotlin): passed
+- Static checks (.agents/checks/check_r3w.py S94-S96): passed
+Assumptions: Closing an editor without discard keeps stored drafts safely in storage. Instrumented test suite on emulator was not run (test lane / orchestrator domain).

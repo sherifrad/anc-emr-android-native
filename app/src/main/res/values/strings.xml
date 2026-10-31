@@ -59,8 +59,8 @@
     <string name="retry_storage_check">Check again</string>
     <string name="credential_prompt_title">Unlock Clinical Records</string>
     <string name="credential_prompt_subtitle">Confirm biometric or device credential to access patient records.</string>
-    <string name="unsaved_drafts_policy">Only completed saves persist. Unsaved drafts are discarded on lock, background, or process death.</string>
-    <string name="unsaved_drafts_editor_policy">This draft is memory-only until the encrypted save is confirmed.</string>
+    <string name="unsaved_drafts_policy">Unsaved text is kept as an encrypted draft on this device until it is saved or discarded; only completed saves become part of the patient record.</string>
+    <string name="unsaved_drafts_editor_policy">Unsaved text is kept as an encrypted draft on this device until it is saved or discarded; only completed saves become part of the patient record.</string>
     <string name="storage_checking_title">Checking clinical storage</string>
     <string name="storage_checking_body">Patient data remains hidden while storage is inspected.</string>
     <string name="storage_uninitialized_title">Clinical storage is not initialized</string>
@@ -98,11 +98,11 @@
     <string name="save_pending">Saving to encrypted clinical records… Editing and navigation are paused.</string>
     <string name="save_reconciling">The save result was interrupted. Checking the durable operation receipt before allowing a retry…</string>
     <string name="save_unresolved">The save outcome is still unresolved. Locking is allowed; do not retry this operation.</string>
-    <string name="save_confirmed_not_saved">The save was confirmed not committed. Your memory-only draft is retained.</string>
+    <string name="save_confirmed_not_saved">The save was confirmed not committed. Your encrypted draft is retained.</string>
     <string name="save_stale_conflict">The committed visit changed or conflicts with this draft. Review before retrying.</string>
     <string name="save_cross_patient_rejected">The save was rejected because its patient binding did not match.</string>
     <string name="save_operation_mismatch">The operation receipt does not match this command. The draft was not applied.</string>
-    <string name="save_storage_error">The encrypted save failed. Your memory-only draft is retained.</string>
+    <string name="save_storage_error">The encrypted save failed. Your encrypted draft is retained.</string>
     <string name="register_patient">Register patient</string>
     <string name="edit_patient">Edit patient</string>
     <string name="synthetic_patient_editor_notice">Required identity fields are trimmed. Blank optional fields remain unknown.</string>
@@ -348,4 +348,31 @@
     <string name="redating_hint">Scan GA differs from the current dating by %1$d days (more than %2$d). Consider using the scan due date in Dating.</string>
     <string name="bp_badge_severe">Severe BP</string>
     <string name="bp_attention_severe">Severe-range blood pressure at the last visit: %1$s (%2$s)</string>
+    <string name="draft_recovery_title">Unsaved draft found</string>
+    <string name="draft_recovery_body">Unsaved %1$s entry, started %2$s. Continue where you stopped, or discard it and start fresh.</string>
+    <string name="draft_recovery_stale">The saved record changed after this draft was started. Review it carefully before saving.</string>
+    <string name="draft_recovery_continue">Continue</string>
+    <string name="draft_recovery_discard">Discard and start fresh</string>
+    <string name="draft_screen_visit">visit</string>
+    <string name="draft_screen_patient_profile">patient profile</string>
+    <string name="draft_screen_histories">other histories</string>
+    <string name="draft_screen_previous_pregnancy">previous pregnancy</string>
+    <string name="draft_screen_patient_status">patient status</string>
+    <string name="draft_screen_dating">dating</string>
+    <string name="draft_screen_ultrasound">ultrasound scan</string>
+    <string name="draft_screen_lab">lab result</string>
+    <string name="draft_screen_medication">medication</string>
+    <string name="draft_age_less_than_minute">less than a minute ago</string>
+    <plurals name="draft_age_minutes">
+        <item quantity="one">%d minute ago</item>
+        <item quantity="other">%d minutes ago</item>
+    </plurals>
+    <plurals name="draft_age_hours">
+        <item quantity="one">%d hour ago</item>
+        <item quantity="other">%d hours ago</item>
+    </plurals>
+    <plurals name="draft_age_days">
+        <item quantity="one">%d day ago</item>
+        <item quantity="other">%d days ago</item>
+    </plurals>
 </resources>

@@ -72,9 +72,13 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
         override suspend fun delete(slot: DraftSlot) {
             controller.deleteDraft(slot.patientId, slot.kind)
         }
+        override suspend fun load(slot: DraftSlot): DraftRecord? =
+            controller.loadDraft(slot.patientId, slot.kind)
     }
     internal val autosaver = DraftAutosaver(viewModelScope, draftStore)
     private val lifecycleMutex = Mutex()
+    private var isAcceptingRecovery = false
+    internal var recoveredSessionId: String? = null
 
     private inline fun updateState(crossinline transform: (AncState) -> AncState) {
         var before: AncState? = null
@@ -88,7 +92,50 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
         val b = before
         val a = after
         if (b != null && a != null && b !== a) {
+            if (isAcceptingRecovery) {
+                recoveredSessionId = activeEditorSessionId(a)
+                isAcceptingRecovery = false
+            }
             autosaver.onStateChanged(b, a)
+            checkEditorSessionChanged(b, a)
+        }
+    }
+
+    private fun checkEditorSessionChanged(before: AncState, after: AncState) {
+        val beforeSession = activeEditorSessionId(before)
+        val afterSession = activeEditorSessionId(after)
+        if (afterSession != null && afterSession != beforeSession) {
+            if (afterSession == recoveredSessionId) {
+                recoveredSessionId = null
+                return
+            }
+            val slot = activeDraftSlot(after) ?: return
+            autosaver.holdSlot(slot, afterSession)
+            viewModelScope.launch {
+                val record = try {
+                    autosaver.load(slot)
+                } catch (_: Throwable) {
+                    null
+                }
+                val stateAfterLoad = _state.value
+                val currentSessionId = activeEditorSessionId(stateAfterLoad)
+                val currentSlot = activeDraftSlot(stateAfterLoad)
+                if (record != null && currentSessionId == afterSession && currentSlot == slot) {
+                    val isStale = isDraftStale(record, activeEditorBaseRevision(stateAfterLoad))
+                    val prompt = DraftRecoveryPrompt(
+                        slot = slot,
+                        editorSessionId = afterSession,
+                        record = record,
+                        isStale = isStale,
+                    )
+                    updateState { AncReducer.reduce(it, AncEvent.DraftRecoveryFound(prompt)) }
+                    if (_state.value.draftRecoveryPrompt == null) {
+                        autosaver.releaseSlot(slot, afterSession)
+                    }
+                } else {
+                    autosaver.releaseSlot(slot, afterSession)
+                }
+            }
         }
     }
 
@@ -126,6 +173,42 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
             is AncEvent.AddAttachment -> addAttachment(event)
             is AncEvent.ImportScanPhoto -> importScanPhoto(event)
             is AncEvent.DeleteAttachment -> deleteAttachment(event)
+            is AncEvent.AcceptDraftRecovery -> {
+                val prompt = _state.value.draftRecoveryPrompt
+                val slot = prompt?.slot
+                val oldSession = prompt?.editorSessionId
+                isAcceptingRecovery = true
+                updateState { AncReducer.reduce(it, event) }
+                val after = _state.value
+                if (slot != null && oldSession != null) {
+                    if (!after.hasDirtyDraft) {
+                        viewModelScope.launch {
+                            try {
+                                controller.deleteDraft(slot.patientId, slot.kind)
+                            } finally {
+                                autosaver.releaseSlot(slot, oldSession)
+                            }
+                        }
+                    } else {
+                        autosaver.releaseSlot(slot, oldSession)
+                    }
+                }
+            }
+            is AncEvent.DiscardDraftRecovery -> {
+                val prompt = _state.value.draftRecoveryPrompt
+                val slot = prompt?.slot
+                val session = prompt?.editorSessionId
+                updateState { AncReducer.reduce(it, event) }
+                if (slot != null && session != null) {
+                    viewModelScope.launch {
+                        try {
+                            controller.deleteDraft(slot.patientId, slot.kind)
+                        } finally {
+                            autosaver.releaseSlot(slot, session)
+                        }
+                    }
+                }
+            }
             else -> {
                 if (event.clearsFrozenVisit()) frozenVisitCommand = null
                 if (event.clearsFrozenPatient()) frozenPatientCommand = null

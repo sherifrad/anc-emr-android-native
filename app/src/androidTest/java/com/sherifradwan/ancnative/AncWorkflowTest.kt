@@ -96,14 +96,13 @@ class AncWorkflowTest {
     }
 
     @Test
-    fun recordsWindowKeepsSecureFlagAndGateExplainsDraftPolicy() {
+    fun recordsWindowHasNoScreenCaptureBlockAndNoOutdatedDraftWording() {
         compose.activityRule.scenario.onActivity { activity ->
             val flags = activity.window.attributes.flags
             assertEquals(0, flags and WindowManager.LayoutParams.FLAG_SECURE)
         }
-        compose.onNodeWithText("Only completed saves persist", substring = true)
-            .assertIsDisplayed()
-            .assertTextContains("Unsaved drafts are discarded", substring = true)
+        compose.onNodeWithText("memory-only", substring = true, ignoreCase = true).assertDoesNotExist()
+        compose.onNodeWithText("discarded on lock", substring = true, ignoreCase = true).assertDoesNotExist()
         assertDemoBannerDisplayed()
     }
 

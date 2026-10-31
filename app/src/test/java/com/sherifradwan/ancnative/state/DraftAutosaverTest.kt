@@ -1,5 +1,6 @@
 package com.sherifradwan.ancnative.state
 
+import com.sherifradwan.ancnative.storage.DraftEditorKind
 import com.sherifradwan.ancnative.storage.DraftRecord
 import com.sherifradwan.ancnative.storage.DraftScreenKind
 import com.sherifradwan.ancnative.storage.VaultState
@@ -7,11 +8,13 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Collections
@@ -23,10 +26,13 @@ class DraftAutosaverTest {
     private class FakeStore : DraftStore {
         val saved: MutableList<DraftRecord> = Collections.synchronizedList(mutableListOf())
         val deleted: MutableList<DraftSlot> = Collections.synchronizedList(mutableListOf())
+        val records = Collections.synchronizedMap(mutableMapOf<DraftSlot, DraftRecord>())
         @Volatile var failNext = 0
         @Volatile var throwNext = 0
         @Volatile var onSaveStarted: (() -> Unit)? = null
         @Volatile var saveRelease: CompletableDeferred<Unit>? = null
+        @Volatile var onDeleteStarted: (() -> Unit)? = null
+        @Volatile var deleteRelease: CompletableDeferred<Unit>? = null
 
         override suspend fun save(record: DraftRecord): Boolean {
             if (throwNext > 0) {
@@ -40,12 +46,18 @@ class DraftAutosaverTest {
             onSaveStarted?.invoke()
             saveRelease?.await()
             saved += record
+            records[DraftSlot(record.patientId, record.screenKind)] = record
             return true
         }
 
         override suspend fun delete(slot: DraftSlot) {
+            onDeleteStarted?.invoke()
+            deleteRelease?.await()
             deleted += slot
+            records.remove(slot)
         }
+
+        override suspend fun load(slot: DraftSlot): DraftRecord? = records[slot]
     }
 
     private val store = FakeStore()
@@ -59,12 +71,12 @@ class DraftAutosaverTest {
     private val unlocked = VaultState.Unlocked(1L)
     private fun base() = AncState(patients = emptyList(), vaultState = unlocked)
 
-    private fun visit(notes: String, patientId: String = "p1", original: DraftValues = DraftValues()) = base().copy(
-        draft = VisitDraft("s1", patientId, "v1", 3, original, original.copy(notes = notes)),
+    private fun visit(notes: String, patientId: String = "p1", session: String = "s1", original: DraftValues = DraftValues()) = base().copy(
+        draft = VisitDraft(session, patientId, "v1", 3, original, original.copy(notes = notes)),
     )
 
-    private fun lab(result: String) = base().copy(
-        labDraft = LabDraft("s2", "p1", "l1", 9L, 3L, LabDraftValues(), LabDraftValues(result = result)),
+    private fun lab(result: String, session: String = "s2") = base().copy(
+        labDraft = LabDraft(session, "p1", "l1", 9L, 3L, LabDraftValues(), LabDraftValues(result = result)),
     )
 
     private fun type(from: AncState, to: AncState) = saver.onStateChanged(from, to)
@@ -234,5 +246,122 @@ class DraftAutosaverTest {
         type(base(), lab("result1"))
         saver.flush()
         assertEquals(1, store.saved.filter { it.screenKind == DraftScreenKind.LAB }.size)
+    }
+
+    @Test
+    fun heldSlotIsNeitherSavedNorDeletedAndPendingSaveIsDropped() = runBlocking {
+        val slot = DraftSlot("p1", DraftScreenKind.VISIT)
+        type(visit(""), visit("early"))
+        saver.holdSlot(slot, "s1")
+        type(visit("early"), visit("typed"))
+        delay(debounce * 4)
+        saver.flush()
+        assertTrue(store.saved.isEmpty())
+    }
+
+    @Test
+    fun holdOnlyAffectsItsOwnSlot() = runBlocking {
+        saver.holdSlot(DraftSlot("p1", DraftScreenKind.VISIT), "s1")
+        type(visit(""), visit("held text"))
+        type(base().copy(labDraft = null), lab("11"))
+        saver.flush()
+        assertEquals(listOf(DraftScreenKind.LAB), store.saved.map { it.screenKind })
+    }
+
+    @Test
+    fun releaseResumesNormalSaving() = runBlocking {
+        val slot = DraftSlot("p1", DraftScreenKind.VISIT)
+        saver.holdSlot(slot, "s1")
+        type(visit(""), visit("held"))
+        saver.releaseSlot(slot, "s1")
+        type(visit("held"), visit("after release"))
+        saver.flush()
+        assertEquals("after release", store.saved.single().fields["notes"])
+
+        type(visit("after release"), base())
+        delay(debounce * 4)
+        assertEquals(listOf(slot), store.deleted.toList())
+    }
+
+    @Test
+    fun cancelPendingClearsHolds() = runBlocking {
+        saver.holdSlot(DraftSlot("p1", DraftScreenKind.VISIT), "s1")
+        saver.cancelPending()
+        type(visit(""), visit("typed"))
+        saver.flush()
+        assertEquals("typed", store.saved.single().fields["notes"])
+    }
+
+    @Test
+    fun holdTiedToSessionAndReleaseOnlyOwnSession() = runBlocking {
+        val slot = DraftSlot("p1", DraftScreenKind.VISIT)
+        saver.holdSlot(slot, "s1")
+        type(visit(""), visit("held text"))
+
+        // Release with wrong session ID must be ignored
+        saver.releaseSlot(slot, "s0")
+        type(visit("held text"), visit("still held"))
+        saver.flush()
+        assertTrue(store.saved.isEmpty())
+
+        // Release with correct session ID resumes normal saving
+        saver.releaseSlot(slot, "s1")
+        type(visit("still held"), visit("now saving"))
+        saver.flush()
+        assertEquals("now saving", store.saved.single().fields["notes"])
+    }
+
+    @Test
+    fun autoReleaseOnSessionChange() = runBlocking {
+        val slot = DraftSlot("p1", DraftScreenKind.VISIT)
+        saver.holdSlot(slot, "s1")
+
+        // Transition editor to a different session s2
+        type(visit(""), visit("typed in s2", session = "s2"))
+        saver.flush()
+
+        // S1 hold is auto-dropped, so s2 saves normally
+        assertEquals("typed in s2", store.saved.single().fields["notes"])
+    }
+
+    @Test
+    fun loadQueuesBehindPendingDelete() = runBlocking {
+        val slot = DraftSlot("p1", DraftScreenKind.VISIT)
+        val initialRecord = DraftRecord(
+            patientId = "p1",
+            screenKind = DraftScreenKind.VISIT,
+            editorKind = DraftEditorKind.CREATE,
+            recordId = null,
+            baseRevision = null,
+            fields = mapOf("notes" to "old draft"),
+            updatedAtMillis = 1000L,
+        )
+        store.records[slot] = initialRecord
+
+        val deleteStarted = CompletableDeferred<Unit>()
+        val deleteRelease = CompletableDeferred<Unit>()
+        store.onDeleteStarted = { deleteStarted.complete(Unit) }
+        store.deleteRelease = deleteRelease
+
+        // Trigger delete via closing dirty editor
+        val dirty = visit("to delete")
+        type(visit(""), dirty)
+        type(dirty, base())
+        deleteStarted.await()
+
+        // Now load through saver while delete is in progress
+        val loadJob = async { saver.load(slot) }
+
+        // Give load a moment to queue behind saveMutex
+        delay(debounce * 2)
+
+        // Complete the delete
+        store.onDeleteStarted = null
+        store.deleteRelease = null
+        deleteRelease.complete(Unit)
+
+        val loaded = loadJob.await()
+        // Must see null because delete finished before load executed under saveMutex
+        assertNull(loaded)
     }
 }

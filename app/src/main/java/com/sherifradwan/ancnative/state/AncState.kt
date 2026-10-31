@@ -414,6 +414,7 @@ data class AncState(
     val saveError: SaveUiError? = null,
     val pendingSave: PendingSaveToken? = null,
     val attachmentError: AttachmentError? = null,
+    val draftRecoveryPrompt: DraftRecoveryPrompt? = null,
 ) {
     fun patient(patientId: String): DemoPatient? = patients.firstOrNull { it.id == patientId }
 
@@ -564,124 +565,170 @@ sealed interface AncEvent {
     data object ConfirmDiscard : AncEvent
     data object KeepEditing : AncEvent
     data object DismissNotice : AncEvent
+    data class DraftRecoveryFound(val prompt: DraftRecoveryPrompt) : AncEvent
+    data object AcceptDraftRecovery : AncEvent
+    data object DiscardDraftRecovery : AncEvent
 }
 
 object AncReducer {
-    fun reduce(state: AncState, event: AncEvent): AncState = when (event) {
-        is AncEvent.SearchChanged -> state.copy(searchQuery = event.query)
-        AncEvent.ClearSearch -> state.copy(searchQuery = "")
-        AncEvent.ShowNewPatientInfo -> state.copy(showNewPatientInfo = true)
-        AncEvent.HideNewPatientInfo -> state.copy(showNewPatientInfo = false)
-        is AncEvent.OpenWorkspace -> navigate(state, AncRoute.Workspace(event.patientId))
-        is AncEvent.OpenProfile -> navigate(state, AncRoute.Profile(event.patientId))
-        is AncEvent.SelectSection -> {
-            val route = state.route as? AncRoute.Workspace
-            if (route == null) state else state.copy(route = route.copy(section = event.section), savedNotice = false, notice = null)
+    fun reduce(state: AncState, event: AncEvent): AncState {
+        val next = reduceInternal(state, event)
+        val prompt = next.draftRecoveryPrompt
+        return if (prompt != null && activeEditorSessionId(next) != prompt.editorSessionId) {
+            next.copy(draftRecoveryPrompt = null)
+        } else {
+            next
         }
-        is AncEvent.StartVisit -> startVisit(state, event)
-        is AncEvent.StartPatientEditor -> startPatientEditor(state, event)
-        is AncEvent.StartHistoriesEditor -> startHistoriesEditor(state, event)
-        is AncEvent.StartPregnancyEditor -> startPregnancyEditor(state, event)
-        is AncEvent.StartStatusEditor -> startStatusEditor(state, event)
-        is AncEvent.StartDatingEditor -> startDatingEditor(state, event)
-        is AncEvent.StartUltrasoundEditor -> startUltrasoundEditor(state, event)
-        is AncEvent.StartLabEditor -> startLabEditor(state, event)
-        is AncEvent.StartMedicationEditor -> startMedicationEditor(state, event)
-        is AncEvent.DraftChanged -> updateDraft(state, event)
-        is AncEvent.PatientDraftChanged -> updatePatientDraft(state, event)
-        is AncEvent.HistoriesDraftChanged -> updateHistoriesDraft(state, event)
-        is AncEvent.PregnancyDraftChanged -> updatePregnancyDraft(state, event)
-        is AncEvent.DatingDraftChanged -> updateDatingDraft(state, event)
-        is AncEvent.UltrasoundDraftChanged -> updateUltrasoundDraft(state, event)
-        is AncEvent.LabDraftChanged -> updateLabDraft(state, event)
-        is AncEvent.LabAbnormalChanged -> updateLabAbnormal(state, event.isAbnormal)
-        is AncEvent.MedicationDraftChanged -> updateMedicationDraft(state, event)
-        is AncEvent.MedicationProphylaxisChanged -> updateMedicationProphylaxis(state, event.isProphylaxis)
-        is AncEvent.StatusReasonChanged -> state.copy(
-            statusDraft = state.statusDraft?.copy(reason = event.value, errors = emptySet()),
-            savePhase = SavePhase.IDLE,
-            saveError = null,
-        )
-        AncEvent.SubmitPatientProfile,
-        AncEvent.SubmitOtherHistories,
-        AncEvent.SubmitPreviousPregnancy,
-        AncEvent.SubmitPatientStatus,
-        AncEvent.SubmitDating,
-        AncEvent.SubmitUltrasound,
-        AncEvent.SubmitLab,
-        AncEvent.SubmitLabAndAddAnother,
-        AncEvent.SubmitMedication,
-        AncEvent.SubmitMedicationAndAddAnother,
-        -> state
-        is AncEvent.SaveValidationFailed -> state.copy(
-            draft = state.draft?.copy(errors = event.errors),
-            savePhase = SavePhase.IDLE,
-            saveError = null,
-        )
-        is AncEvent.ClinicalValidationFailed -> when (event.recordKind) {
-            ClinicalRecordKind.DATING -> state.copy(datingDraft = state.datingDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
-            ClinicalRecordKind.ULTRASOUND_CREATE, ClinicalRecordKind.ULTRASOUND_UPDATE -> state.copy(ultrasoundDraft = state.ultrasoundDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
-            ClinicalRecordKind.LAB_CREATE, ClinicalRecordKind.LAB_UPDATE -> state.copy(labDraft = state.labDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
-            ClinicalRecordKind.MEDICATION_CREATE, ClinicalRecordKind.MEDICATION_UPDATE -> state.copy(medicationDraft = state.medicationDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
+    }
+
+    private fun isValueChangeEvent(event: AncEvent): Boolean = when (event) {
+        is AncEvent.DraftChanged,
+        is AncEvent.PatientDraftChanged,
+        is AncEvent.HistoriesDraftChanged,
+        is AncEvent.PregnancyDraftChanged,
+        is AncEvent.StatusReasonChanged,
+        is AncEvent.DatingDraftChanged,
+        is AncEvent.UltrasoundDraftChanged,
+        is AncEvent.LabDraftChanged,
+        is AncEvent.LabAbnormalChanged,
+        is AncEvent.MedicationDraftChanged,
+        is AncEvent.MedicationProphylaxisChanged,
+        is AncEvent.ScanPhotoImported -> true
+        else -> false
+    }
+
+    private fun reduceInternal(state: AncState, event: AncEvent): AncState {
+        if (state.draftRecoveryPrompt != null && isValueChangeEvent(event)) {
+            return state
         }
-        is AncEvent.PatientValidationFailed -> validationFailed(state, event)
-        is AncEvent.SaveStarted -> if (state.canAccept(event.token)) {
-            state.copy(
-                savePhase = SavePhase.PENDING,
-                saveError = null,
-                pendingSave = event.token,
-                savedNotice = false,
-                notice = null,
-            )
-        } else state
-        is AncEvent.SaveReconciling -> if (state.pendingSave == event.token) {
-            state.copy(savePhase = SavePhase.RECONCILING, saveError = null)
-        } else state
-        is AncEvent.SaveFailed -> if (state.pendingSave == event.token) {
-            state.copy(
-                savePhase = if (event.unresolved) SavePhase.UNRESOLVED else SavePhase.ERROR,
-                saveError = event.error,
-                pendingSave = if (event.unresolved) event.token else null,
-            )
-        } else state
-        is AncEvent.SaveCommitted -> if (state.pendingSave == event.token) {
-            state.clearDrafts().copy(
-                patients = event.patients,
-                route = AncRoute.Workspace(event.patientId, WorkspaceSection.VISITS),
-                savedNotice = true,
-                notice = SavedNotice.VISIT,
+        return when (event) {
+            is AncEvent.SearchChanged -> state.copy(searchQuery = event.query)
+            AncEvent.ClearSearch -> state.copy(searchQuery = "")
+            AncEvent.ShowNewPatientInfo -> state.copy(showNewPatientInfo = true)
+            AncEvent.HideNewPatientInfo -> state.copy(showNewPatientInfo = false)
+            is AncEvent.OpenWorkspace -> navigate(state, AncRoute.Workspace(event.patientId))
+            is AncEvent.OpenProfile -> navigate(state, AncRoute.Profile(event.patientId))
+            is AncEvent.SelectSection -> {
+                val route = state.route as? AncRoute.Workspace
+                if (route == null) state else state.copy(route = route.copy(section = event.section), savedNotice = false, notice = null)
+            }
+            is AncEvent.StartVisit -> startVisit(state, event)
+            is AncEvent.StartPatientEditor -> startPatientEditor(state, event)
+            is AncEvent.StartHistoriesEditor -> startHistoriesEditor(state, event)
+            is AncEvent.StartPregnancyEditor -> startPregnancyEditor(state, event)
+            is AncEvent.StartStatusEditor -> startStatusEditor(state, event)
+            is AncEvent.StartDatingEditor -> startDatingEditor(state, event)
+            is AncEvent.StartUltrasoundEditor -> startUltrasoundEditor(state, event)
+            is AncEvent.StartLabEditor -> startLabEditor(state, event)
+            is AncEvent.StartMedicationEditor -> startMedicationEditor(state, event)
+            is AncEvent.DraftChanged -> updateDraft(state, event)
+            is AncEvent.PatientDraftChanged -> updatePatientDraft(state, event)
+            is AncEvent.HistoriesDraftChanged -> updateHistoriesDraft(state, event)
+            is AncEvent.PregnancyDraftChanged -> updatePregnancyDraft(state, event)
+            is AncEvent.DatingDraftChanged -> updateDatingDraft(state, event)
+            is AncEvent.UltrasoundDraftChanged -> updateUltrasoundDraft(state, event)
+            is AncEvent.LabDraftChanged -> updateLabDraft(state, event)
+            is AncEvent.LabAbnormalChanged -> updateLabAbnormal(state, event.isAbnormal)
+            is AncEvent.MedicationDraftChanged -> updateMedicationDraft(state, event)
+            is AncEvent.MedicationProphylaxisChanged -> updateMedicationProphylaxis(state, event.isProphylaxis)
+            is AncEvent.StatusReasonChanged -> state.copy(
+                statusDraft = state.statusDraft?.copy(reason = event.value, errors = emptySet()),
                 savePhase = SavePhase.IDLE,
                 saveError = null,
-                pendingSave = null,
             )
-        } else state
-        is AncEvent.RecordCommitted -> if (state.pendingSave == event.token) {
-            state.clearDrafts().copy(
-                patients = event.patients,
-                route = event.destination,
-                savedNotice = true,
-                notice = event.notice,
+            AncEvent.SubmitPatientProfile,
+            AncEvent.SubmitOtherHistories,
+            AncEvent.SubmitPreviousPregnancy,
+            AncEvent.SubmitPatientStatus,
+            AncEvent.SubmitDating,
+            AncEvent.SubmitUltrasound,
+            AncEvent.SubmitLab,
+            AncEvent.SubmitLabAndAddAnother,
+            AncEvent.SubmitMedication,
+            AncEvent.SubmitMedicationAndAddAnother,
+            -> state
+            is AncEvent.SaveValidationFailed -> state.copy(
+                draft = state.draft?.copy(errors = event.errors),
                 savePhase = SavePhase.IDLE,
                 saveError = null,
-                pendingSave = null,
             )
-        } else state
-        AncEvent.CancelEditor, AncEvent.Back -> requestBack(state)
-        AncEvent.ConfirmDiscard -> confirmDiscard(state)
-        AncEvent.KeepEditing -> state.copy(showDiscardDialog = false, pendingAction = null)
-        AncEvent.DismissNotice -> state.copy(savedNotice = false, notice = null)
-        is AncEvent.AddAttachment, is AncEvent.DeleteAttachment, is AncEvent.ImportScanPhoto -> state
-        is AncEvent.ScanPhotoImported -> {
-            val draft = state.ultrasoundDraft
-            if (draft == null || draft.patientId != event.patientId) state
-            else state.copy(
-                ultrasoundDraft = draft.copy(
-                    values = draft.values.copy(imageUris = (draft.values.imageUris + event.ref).distinct()),
-                ),
-            )
+            is AncEvent.ClinicalValidationFailed -> when (event.recordKind) {
+                ClinicalRecordKind.DATING -> state.copy(datingDraft = state.datingDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
+                ClinicalRecordKind.ULTRASOUND_CREATE, ClinicalRecordKind.ULTRASOUND_UPDATE -> state.copy(ultrasoundDraft = state.ultrasoundDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
+                ClinicalRecordKind.LAB_CREATE, ClinicalRecordKind.LAB_UPDATE -> state.copy(labDraft = state.labDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
+                ClinicalRecordKind.MEDICATION_CREATE, ClinicalRecordKind.MEDICATION_UPDATE -> state.copy(medicationDraft = state.medicationDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
+            }
+            is AncEvent.PatientValidationFailed -> validationFailed(state, event)
+            is AncEvent.SaveStarted -> if (state.canAccept(event.token)) {
+                state.copy(
+                    savePhase = SavePhase.PENDING,
+                    saveError = null,
+                    pendingSave = event.token,
+                    savedNotice = false,
+                    notice = null,
+                )
+            } else state
+            is AncEvent.SaveReconciling -> if (state.pendingSave == event.token) {
+                state.copy(savePhase = SavePhase.RECONCILING, saveError = null)
+            } else state
+            is AncEvent.SaveFailed -> if (state.pendingSave == event.token) {
+                state.copy(
+                    savePhase = if (event.unresolved) SavePhase.UNRESOLVED else SavePhase.ERROR,
+                    saveError = event.error,
+                    pendingSave = if (event.unresolved) event.token else null,
+                )
+            } else state
+            is AncEvent.SaveCommitted -> if (state.pendingSave == event.token) {
+                state.clearDrafts().copy(
+                    patients = event.patients,
+                    route = AncRoute.Workspace(event.patientId, WorkspaceSection.VISITS),
+                    savedNotice = true,
+                    notice = SavedNotice.VISIT,
+                    savePhase = SavePhase.IDLE,
+                    saveError = null,
+                    pendingSave = null,
+                )
+            } else state
+            is AncEvent.RecordCommitted -> if (state.pendingSave == event.token) {
+                state.clearDrafts().copy(
+                    patients = event.patients,
+                    route = event.destination,
+                    savedNotice = true,
+                    notice = event.notice,
+                    savePhase = SavePhase.IDLE,
+                    saveError = null,
+                    pendingSave = null,
+                )
+            } else state
+            AncEvent.CancelEditor, AncEvent.Back -> requestBack(state)
+            AncEvent.ConfirmDiscard -> confirmDiscard(state)
+            AncEvent.KeepEditing -> state.copy(showDiscardDialog = false, pendingAction = null)
+            AncEvent.DismissNotice -> state.copy(savedNotice = false, notice = null)
+            is AncEvent.AddAttachment, is AncEvent.DeleteAttachment, is AncEvent.ImportScanPhoto -> state
+            is AncEvent.ScanPhotoImported -> {
+                val draft = state.ultrasoundDraft
+                if (draft == null || draft.patientId != event.patientId) state
+                else state.copy(
+                    ultrasoundDraft = draft.copy(
+                        values = draft.values.copy(imageUris = (draft.values.imageUris + event.ref).distinct()),
+                    ),
+                )
+            }
+            is AncEvent.AttachmentFailed -> state.copy(attachmentError = event.error)
+            AncEvent.DismissAttachmentError -> state.copy(attachmentError = null)
+            is AncEvent.DraftRecoveryFound -> {
+                if (state.draftRecoveryPrompt == null && activeEditorSessionId(state) == event.prompt.editorSessionId) {
+                    state.copy(draftRecoveryPrompt = event.prompt)
+                } else {
+                    state
+                }
+            }
+            AncEvent.AcceptDraftRecovery -> {
+                val prompt = state.draftRecoveryPrompt ?: return state
+                applyDraftRecord(state, prompt.record).copy(draftRecoveryPrompt = null)
+            }
+            AncEvent.DiscardDraftRecovery -> state.copy(draftRecoveryPrompt = null)
         }
-        is AncEvent.AttachmentFailed -> state.copy(attachmentError = event.error)
-        AncEvent.DismissAttachmentError -> state.copy(attachmentError = null)
     }
 
     private fun navigate(state: AncState, destination: AncRoute): AncState {
@@ -1133,6 +1180,7 @@ object AncReducer {
         savePhase = SavePhase.IDLE,
         saveError = null,
         pendingSave = null,
+        draftRecoveryPrompt = null,
     )
 
     private fun DemoVisit.toDraftValues() = DraftValues(
@@ -1231,13 +1279,7 @@ object AncReducer {
     )
 
     private fun AncState.canAccept(token: PendingSaveToken): Boolean =
-        (savePhase == SavePhase.IDLE || savePhase == SavePhase.ERROR) && activeEditorSessionId() == token.editorSessionId
-
-    private fun AncState.activeEditorSessionId(): String? =
-        draft?.editorSessionId ?: patientDraft?.editorSessionId ?: historiesDraft?.editorSessionId
-            ?: pregnancyDraft?.editorSessionId ?: statusDraft?.editorSessionId
-            ?: datingDraft?.editorSessionId ?: ultrasoundDraft?.editorSessionId
-            ?: labDraft?.editorSessionId ?: medicationDraft?.editorSessionId
+        (savePhase == SavePhase.IDLE || savePhase == SavePhase.ERROR) && activeEditorSessionId(this) == token.editorSessionId
 
     private fun SavePhase.blocksEditing(): Boolean =
         this == SavePhase.PENDING || this == SavePhase.RECONCILING || this == SavePhase.UNRESOLVED

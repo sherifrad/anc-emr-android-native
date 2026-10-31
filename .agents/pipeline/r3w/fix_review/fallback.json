@@ -1,0 +1,10 @@
+[
+ {
+  "spec": "agy:gemini-3.8-flash-medium",
+  "status": "completed",
+  "seconds": 1003.6,
+  "chars": 2566,
+  "ok": true,
+  "why": ""
+ }
+]

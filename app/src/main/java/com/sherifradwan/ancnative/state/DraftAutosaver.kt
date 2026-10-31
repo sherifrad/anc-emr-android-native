@@ -11,6 +11,7 @@ import kotlinx.coroutines.sync.withLock
 interface DraftStore {
     suspend fun save(record: DraftRecord): Boolean
     suspend fun delete(slot: DraftSlot)
+    suspend fun load(slot: DraftSlot): DraftRecord?
 }
 
 class DraftAutosaver(
@@ -25,21 +26,56 @@ class DraftAutosaver(
     private val pendingJobs = mutableMapOf<DraftSlot, Job>()
     private val latestRequestedFields = mutableMapOf<DraftSlot, Map<String, String>>()
     private val slotGenerations = mutableMapOf<DraftSlot, Long>()
+    private val heldSlots = mutableMapOf<DraftSlot, String>()
+
+    fun holdSlot(slot: DraftSlot, sessionId: String) {
+        synchronized(lock) {
+            heldSlots[slot] = sessionId
+            pendingJobs.remove(slot)?.cancel()
+            pendingRecords.remove(slot)
+            latestRequestedFields.remove(slot)
+            slotGenerations[slot] = (slotGenerations[slot] ?: 0L) + 1L
+        }
+    }
+
+    fun releaseSlot(slot: DraftSlot, sessionId: String) {
+        synchronized(lock) {
+            if (heldSlots[slot] == sessionId) {
+                heldSlots.remove(slot)
+            }
+        }
+    }
+
+    suspend fun load(slot: DraftSlot): DraftRecord? = saveMutex.withLock {
+        try {
+            store.load(slot)
+        } catch (_: Throwable) {
+            null
+        }
+    }
 
     fun onStateChanged(before: AncState, after: AncState) {
+        val currentSessionId = activeEditorSessionId(after)
+        synchronized(lock) {
+            heldSlots.entries.removeAll { it.value != currentSessionId }
+        }
+
         val closedSlot = closedDraftSlot(before, after)
         if (closedSlot != null) {
-            synchronized(lock) {
-                pendingJobs.remove(closedSlot)?.cancel()
-                pendingRecords.remove(closedSlot)
-                latestRequestedFields.remove(closedSlot)
-                slotGenerations[closedSlot] = (slotGenerations[closedSlot] ?: 0L) + 1L
-            }
-            scope.launch {
-                saveMutex.withLock {
-                    try {
-                        store.delete(closedSlot)
-                    } catch (_: Throwable) {
+            val isHeld = synchronized(lock) { heldSlots.containsKey(closedSlot) }
+            if (!isHeld) {
+                synchronized(lock) {
+                    pendingJobs.remove(closedSlot)?.cancel()
+                    pendingRecords.remove(closedSlot)
+                    latestRequestedFields.remove(closedSlot)
+                    slotGenerations[closedSlot] = (slotGenerations[closedSlot] ?: 0L) + 1L
+                }
+                scope.launch {
+                    saveMutex.withLock {
+                        try {
+                            store.delete(closedSlot)
+                        } catch (_: Throwable) {
+                        }
                     }
                 }
             }
@@ -49,7 +85,7 @@ class DraftAutosaver(
         if (record != null) {
             val slot = DraftSlot(record.patientId, record.screenKind)
             val shouldSchedule = synchronized(lock) {
-                if (latestRequestedFields[slot] != record.fields) {
+                if (!heldSlots.containsKey(slot) && latestRequestedFields[slot] != record.fields) {
                     latestRequestedFields[slot] = record.fields
                     pendingRecords[slot] = record
                     pendingJobs.remove(slot)?.cancel()
@@ -74,6 +110,7 @@ class DraftAutosaver(
 
     private suspend fun performSave(slot: DraftSlot) {
         val (record, gen) = synchronized(lock) {
+            if (heldSlots.containsKey(slot)) return
             pendingJobs.remove(slot)
             val r = pendingRecords.remove(slot) ?: return
             r to (slotGenerations[slot] ?: 0L)
@@ -81,7 +118,7 @@ class DraftAutosaver(
 
         saveMutex.withLock {
             val isStillValid = synchronized(lock) {
-                (slotGenerations[slot] ?: 0L) == gen
+                !heldSlots.containsKey(slot) && (slotGenerations[slot] ?: 0L) == gen
             }
             if (!isStillValid) {
                 return
@@ -104,20 +141,21 @@ class DraftAutosaver(
     suspend fun flush() {
         try {
             val toSave = synchronized(lock) {
-                val items = pendingRecords.map { (slot, record) ->
-                    Triple(slot, record, slotGenerations[slot] ?: 0L)
+                val nonHeldSlots = pendingRecords.keys.filter { !heldSlots.containsKey(it) }
+                val items = nonHeldSlots.mapNotNull { slot ->
+                    pendingRecords.remove(slot)?.let { record ->
+                        Triple(slot, record, slotGenerations[slot] ?: 0L)
+                    }
                 }
-                for ((_, job) in pendingJobs) {
-                    job.cancel()
+                for (slot in nonHeldSlots) {
+                    pendingJobs.remove(slot)?.cancel()
                 }
-                pendingJobs.clear()
-                pendingRecords.clear()
                 items
             }
             saveMutex.withLock {
                 for ((slot, record, gen) in toSave) {
                     val isStillValid = synchronized(lock) {
-                        (slotGenerations[slot] ?: 0L) == gen
+                        !heldSlots.containsKey(slot) && (slotGenerations[slot] ?: 0L) == gen
                     }
                     if (!isStillValid) continue
 
@@ -141,6 +179,7 @@ class DraftAutosaver(
 
     fun cancelPending() {
         synchronized(lock) {
+            heldSlots.clear()
             for ((_, job) in pendingJobs) {
                 job.cancel()
             }

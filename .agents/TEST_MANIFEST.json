@@ -997,6 +997,37 @@
       "covers": ["Q109", "Q110", "Q111"]
     },
     {
+      "id": "STATIC-r3w",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3w.py",
+      "deps": [
+        "app/src/main/**/state/DraftRecovery.kt",
+        "app/src/main/**/state/AncState.kt",
+        "app/src/main/**/state/DraftAutosaver.kt",
+        "app/src/main/**/state/AncViewModel.kt",
+        "app/src/main/**/ui/**/*.kt",
+        "app/src/main/res/values/strings.xml",
+        "app/src/main/res/values-ar/strings.xml",
+        ".agents/checks/check_r3w.py"
+      ],
+      "covers": ["S94", "S95", "S96"]
+    },
+    {
+      "id": "UNIT-draft-recovery",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*DraftRecoveryTest' --tests '*DraftAutosaverTest'",
+      "deps": [
+        "app/src/main/**/state/DraftRecovery.kt",
+        "app/src/main/**/state/DraftMapping.kt",
+        "app/src/main/**/state/DraftAutosaver.kt",
+        "app/src/main/**/state/AncState.kt",
+        "app/src/main/**/storage/DraftRecord.kt",
+        "app/src/test/**/state/DraftRecoveryTest.kt",
+        "app/src/test/**/state/DraftAutosaverTest.kt"
+      ],
+      "covers": ["Q112", "Q113", "Q114", "S94", "S95", "S96"]
+    },
+    {
       "id": "UNIT-all",
       "tier": 2,
       "cmd": "./gradlew --offline :app:testDebugUnitTest",

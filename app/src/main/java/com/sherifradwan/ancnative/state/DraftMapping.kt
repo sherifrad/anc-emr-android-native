@@ -54,6 +54,8 @@ fun activeDraftSlot(state: AncState): DraftSlot? {
 }
 
 fun draftRecordFor(state: AncState, nowMillis: Long): DraftRecord? {
+    val baseRevision = activeEditorBaseRevision(state)
+
     state.draft?.let { draft ->
         if (!draft.isDirty) return null
         return DraftRecord(
@@ -61,7 +63,7 @@ fun draftRecordFor(state: AncState, nowMillis: Long): DraftRecord? {
             screenKind = DraftScreenKind.VISIT,
             editorKind = if (draft.visitId == null) DraftEditorKind.CREATE else DraftEditorKind.EDIT,
             recordId = draft.visitId,
-            baseRevision = draft.baseRevision?.toLong(),
+            baseRevision = baseRevision,
             fields = mapOf(
                 "date" to draft.values.date,
                 "bloodPressure" to draft.values.bloodPressure,
@@ -83,7 +85,7 @@ fun draftRecordFor(state: AncState, nowMillis: Long): DraftRecord? {
             screenKind = DraftScreenKind.PATIENT_PROFILE,
             editorKind = if (isNew) DraftEditorKind.CREATE else DraftEditorKind.EDIT,
             recordId = null,
-            baseRevision = draft.baseRevision,
+            baseRevision = baseRevision,
             fields = mapOf(
                 "caseId" to draft.values.caseId,
                 "displayName" to draft.values.displayName,
@@ -111,7 +113,7 @@ fun draftRecordFor(state: AncState, nowMillis: Long): DraftRecord? {
             screenKind = DraftScreenKind.HISTORIES,
             editorKind = DraftEditorKind.EDIT,
             recordId = null,
-            baseRevision = draft.baseRevision,
+            baseRevision = baseRevision,
             fields = mapOf(
                 "medicalHistory" to draft.values.medicalHistory,
                 "surgicalHistory" to draft.values.surgicalHistory,
@@ -130,7 +132,7 @@ fun draftRecordFor(state: AncState, nowMillis: Long): DraftRecord? {
             screenKind = DraftScreenKind.PREVIOUS_PREGNANCY,
             editorKind = if (isNew) DraftEditorKind.CREATE else DraftEditorKind.EDIT,
             recordId = draft.pregnancyId,
-            baseRevision = draft.basePregnancyRevision,
+            baseRevision = baseRevision,
             fields = mapOf(
                 "dateText" to draft.values.dateText,
                 "outcomeText" to draft.values.outcomeText,
@@ -155,7 +157,7 @@ fun draftRecordFor(state: AncState, nowMillis: Long): DraftRecord? {
             screenKind = DraftScreenKind.PATIENT_STATUS,
             editorKind = DraftEditorKind.EDIT,
             recordId = null,
-            baseRevision = draft.baseRevision,
+            baseRevision = baseRevision,
             fields = mapOf(
                 "targetStatus" to draft.targetStatus,
                 "reason" to draft.reason,
@@ -171,7 +173,7 @@ fun draftRecordFor(state: AncState, nowMillis: Long): DraftRecord? {
             screenKind = DraftScreenKind.DATING,
             editorKind = DraftEditorKind.EDIT,
             recordId = null,
-            baseRevision = draft.basePatientRevision,
+            baseRevision = baseRevision,
             fields = mapOf(
                 "lmpDate" to draft.values.lmpDate,
                 "ultrasoundEdd" to draft.values.ultrasoundEdd,
@@ -193,7 +195,7 @@ fun draftRecordFor(state: AncState, nowMillis: Long): DraftRecord? {
             screenKind = DraftScreenKind.ULTRASOUND,
             editorKind = if (isNew) DraftEditorKind.CREATE else DraftEditorKind.EDIT,
             recordId = draft.scanId,
-            baseRevision = draft.baseScanRevision,
+            baseRevision = baseRevision,
             fields = mapOf(
                 "date" to draft.values.date,
                 "gaWeeks" to draft.values.gaWeeks,
@@ -223,7 +225,7 @@ fun draftRecordFor(state: AncState, nowMillis: Long): DraftRecord? {
             screenKind = DraftScreenKind.LAB,
             editorKind = if (isNew) DraftEditorKind.CREATE else DraftEditorKind.EDIT,
             recordId = draft.labId,
-            baseRevision = draft.baseLabRevision,
+            baseRevision = baseRevision,
             fields = mapOf(
                 "date" to draft.values.date,
                 "testCategory" to draft.values.testCategory,
@@ -247,7 +249,7 @@ fun draftRecordFor(state: AncState, nowMillis: Long): DraftRecord? {
             screenKind = DraftScreenKind.MEDICATION,
             editorKind = if (isNew) DraftEditorKind.CREATE else DraftEditorKind.EDIT,
             recordId = draft.medicationId,
-            baseRevision = draft.baseMedicationRevision,
+            baseRevision = baseRevision,
             fields = mapOf(
                 "name" to draft.values.name,
                 "dosage" to draft.values.dosage,

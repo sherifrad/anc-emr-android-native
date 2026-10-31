@@ -41,13 +41,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import com.sherifradwan.ancnative.R
+import com.sherifradwan.ancnative.state.DraftAge
+import com.sherifradwan.ancnative.state.draftAge
+import com.sherifradwan.ancnative.storage.DraftScreenKind
 import com.sherifradwan.ancnative.security.AppThemeMode
 import com.sherifradwan.ancnative.security.SecuritySettingsRepository
 import com.sherifradwan.ancnative.state.AncEvent
@@ -284,6 +289,61 @@ fun AncApp(
                     modifier = Modifier.testTag("keepEditingDialog"),
                 ) {
                     Text(stringResource(R.string.keep_editing))
+                }
+            },
+        )
+    }
+
+    val recoveryPrompt = state.draftRecoveryPrompt
+    if (unlocked && !isAppLocked && securitySettings?.needsPinSetup != true && recoveryPrompt != null) {
+        val screenName = when (recoveryPrompt.record.screenKind) {
+            DraftScreenKind.VISIT -> stringResource(R.string.draft_screen_visit)
+            DraftScreenKind.PATIENT_PROFILE -> stringResource(R.string.draft_screen_patient_profile)
+            DraftScreenKind.HISTORIES -> stringResource(R.string.draft_screen_histories)
+            DraftScreenKind.PREVIOUS_PREGNANCY -> stringResource(R.string.draft_screen_previous_pregnancy)
+            DraftScreenKind.PATIENT_STATUS -> stringResource(R.string.draft_screen_patient_status)
+            DraftScreenKind.DATING -> stringResource(R.string.draft_screen_dating)
+            DraftScreenKind.ULTRASOUND -> stringResource(R.string.draft_screen_ultrasound)
+            DraftScreenKind.LAB -> stringResource(R.string.draft_screen_lab)
+            DraftScreenKind.MEDICATION -> stringResource(R.string.draft_screen_medication)
+        }
+        val ageText = when (val age = draftAge(System.currentTimeMillis(), recoveryPrompt.record.updatedAtMillis)) {
+            is DraftAge.LessThanMinute -> stringResource(R.string.draft_age_less_than_minute)
+            is DraftAge.Minutes -> pluralStringResource(R.plurals.draft_age_minutes, age.n.toInt(), age.n)
+            is DraftAge.Hours -> pluralStringResource(R.plurals.draft_age_hours, age.n.toInt(), age.n)
+            is DraftAge.Days -> pluralStringResource(R.plurals.draft_age_days, age.n.toInt(), age.n)
+        }
+        AlertDialog(
+            onDismissRequest = {},
+            properties = DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false,
+            ),
+            title = {
+                Text(stringResource(R.string.draft_recovery_title))
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.draft_recovery_body, screenName, ageText))
+                    if (recoveryPrompt.isStale) {
+                        Text(stringResource(R.string.draft_recovery_stale))
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { onEvent(AncEvent.AcceptDraftRecovery) },
+                    modifier = Modifier.testTag("draftContinue"),
+                ) {
+                    Text(stringResource(R.string.draft_recovery_continue))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { onEvent(AncEvent.DiscardDraftRecovery) },
+                    modifier = Modifier.testTag("draftDiscard"),
+                ) {
+                    Text(stringResource(R.string.draft_recovery_discard))
                 }
             },
         )
