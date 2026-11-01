@@ -68,3 +68,34 @@ T303 Tapping preset button `labResultPreset-<index of Positive>` sets the result
 T304 Result "9" with range "11-14" shows the flag as abnormal: the `labAbnormal` switch is on after opening `labFlagToggle`.
 T305 `labNoteToggle` opens `labNotes`; text typed there reaches the draft.
 T306 Existing: `saveLab`, `cancelLab` still displayed.
+
+## Round 5c: medication entry screen (approved mock d4/d1 section 3, option B; decisions D20, D22)
+Design only, on today's single-medication draft. NOT built here because it needs new state first (a later logic round): the session list "Today's list" with several drugs, Stop with Undo, and "Save N changes". Decision D22 overrides the mock: NO Prophylaxis button, and exactly four statuses (Active, Completed, Discontinued, Patient non-compliant). "+ Add other" waits for the custom-choices logic round.
+
+M400. `MedicationEditor.kt` has no direct `Card(` call: every card is `SectionCard` (from `ui/DesignSystem.kt`; no new shared piece). Every existing testTag stays unless an item below says so.
+M401. Card 1 "Medication" (tag `medPickCard`): the name field `medName` (typing a new drug allowed), the patient's previous medications (`patientPrevMed`, with its safety reset unchanged), the common-medication chips (`medPreset`; one tap still fills name, dose, route, frequency and start date today exactly as now) and the "add to my list" banner (`saveToMedCodexBanner`, `saveToMedCodexButton`).
+M402. Card 2 "Dose and schedule" (tag `medDetailsCard`): four guided rows, one open at a time, fixed order: `dose`, `route`, `frequency`, `start`.
+  - Closed row: `SummaryRow` with tag `medRow-<key>`, label = the field's existing label string, value = the current value or the string "Not set" (route defaults to "Oral" so it shows Oral).
+  - Open row: a column with tag `medOpen-<key>` holding the existing controls: dose = `medDosage`; route = the existing `ChoiceGroup` (`medRouteChoice`); frequency = the frequency chips (`freqPreset`) and `medFrequency`; start = `medStartDate` with its Today button.
+  - At most one row open. Tapping a closed row opens it and closes the other. On entry, and after choosing a preset, a route, a frequency chip or the Today button, the first row whose value is blank opens (none if all are filled). Typing in a text field never moves the open row. The "first blank row" rule is ONE small private function used by every case.
+  - State kept with `rememberSaveable`.
+M403. Card 3 "Status" (tag `medStatusCard`): exactly four `BigChoiceButton`s in this order: Active, Completed, Discontinued, Patient non-compliant (the existing `ClinicalVocabulary.medicationStatuses` and `effectiveMedicationStatus` decide selection; no new rule). Tags `medStatusChoice-<index>` with the same index order the old ChoiceGroup produced. Tapping sends the existing `MedicationDraftChanged(STATUS, value)`.
+M404. "More" (tag `medMoreToggle`, a `SummaryRow`): expanded shows, in a container tagged `medMoreSection`, end date (`medEndDate`), adverse effects (`medAdverseNotes`) and notes (`medNotes`). Initially expanded exactly when any of the three is non-empty (today's rule); `rememberSaveable`.
+M405. No Prophylaxis control, text or chip anywhere on the screen. The codex item created by "add to my list" keeps `isProphylaxis = false`.
+M406. The security-vault indicator and the action row (`cancelMedication`, `addAnotherMedication`, `saveMedication`) stay as they are.
+M407. 48 dp touch targets (56 dp for `BigChoiceButton`); theme colours only; works at 160% font; short labels stay on one line; no new library; English only.
+M408. Strings: add only what M402-M404 need ("Not set" already exists as `finding_not_set`: reuse it), each once; delete none.
+
+### Static check (S220-S223, `.agents/checks/check_r5c.py`)
+S220 `MedicationEditor.kt` calls `SectionCard(`, `SummaryRow(` and `BigChoiceButton(` and has no direct `Card(`.
+S221 It carries every tag in M401-M404 and the kept ones (`medName`, `medDosage`, `medFrequency`, `medStartDate`, `medEndDate`, `medAdverseNotes`, `medNotes`, `medRouteChoice`, `freqPreset`, `medPreset`, `patientPrevMed`, `saveToMedCodexBanner`, `saveToMedCodexButton`, `cancelMedication`, `addAnotherMedication`, `saveMedication`, `medStatusChoice`).
+S222 The word "Prophylaxis" (any case) does not appear in `MedicationEditor.kt` outside the one `isProphylaxis = false` assignment.
+S223 No file under model/, state/ or storage/ changed against HEAD.
+
+### UI tests (independent author, file `MedicationEntryDesignTest.kt`)
+T400 New medication (blank draft): `medOpen-dose` exists and `medDosage` is displayed; `medRow-route` shows "Oral"; `medRow-frequency` and `medRow-start` exist; `medPickCard` has `medName` displayed.
+T401 Tapping a `medPreset` chip fills name and dose (the `medRow-*` values or fields reflect it) and opens the first blank row (not dose).
+T402 Tapping `medRow-frequency` opens it (`medOpen-frequency` exists) and `medOpen-dose` is gone.
+T403 Exactly four `medStatusChoice-*` buttons exist; none says Prophylaxis; tapping the fourth sets the draft status so that Patient non-compliant is selected.
+T404 With an end date or adverse note in the draft, `medMoreSection` exists on entry; with none it does not, and tapping `medMoreToggle` shows it.
+T405 `saveMedication`, `cancelMedication` and `addAnotherMedication` are displayed.

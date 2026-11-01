@@ -1297,6 +1297,17 @@
         ".agents/checks/check_r5b.py"
       ],
       "covers": ["S210", "S211", "S212", "S213"]
+    },
+    {
+      "id": "STATIC-r5c",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r5c.py",
+      "deps": [
+        "app/src/main/**/*.kt",
+        "app/src/main/res/values/strings.xml",
+        ".agents/checks/check_r5c.py"
+      ],
+      "covers": ["S220", "S221", "S222", "S223"]
     }
   ]
 }

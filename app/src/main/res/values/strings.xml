@@ -391,4 +391,7 @@
     <string name="lab_preset_non_reactive">Non-reactive</string>
     <string name="lab_preset_normal">Normal</string>
     <string name="lab_preset_positive">Positive</string>
+    <string name="medication">Medication</string>
+    <string name="medication_dose_and_schedule">Dose and schedule</string>
+    <string name="medication_more">More: end date, adverse effects and notes</string>
 </resources>
