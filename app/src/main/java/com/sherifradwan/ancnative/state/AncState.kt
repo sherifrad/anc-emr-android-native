@@ -73,6 +73,13 @@ enum class PatientDraftField {
     OBSTETRIC_NOTES,
     CLINICAL_ATTENTION,
     LMP_DATE,
+    DATING_METHOD,
+    TRANSFER_DATE,
+    EMBRYO_AGE_DAYS,
+    AGREED_EDD,
+    SCAN_DATE,
+    SCAN_GA_WEEKS,
+    SCAN_GA_DAYS,
 }
 enum class HistoriesDraftField { MEDICAL, SURGICAL, FAMILY, ALLERGY }
 enum class PregnancyDraftField {
@@ -229,6 +236,13 @@ data class PatientDraftValues(
     val obstetricNotes: String = "",
     val clinicalAttention: String = "",
     val lmpDate: String = "",
+    val datingMethod: String = "",
+    val transferDate: String = "",
+    val embryoAgeDays: String = "",
+    val agreedEdd: String = "",
+    val scanDate: String = "",
+    val scanGaWeeks: String = "",
+    val scanGaDays: String = "",
 )
 
 data class PatientDraft(
@@ -991,6 +1005,13 @@ object AncReducer {
             PatientDraftField.OBSTETRIC_NOTES -> draft.values.copy(obstetricNotes = event.value)
             PatientDraftField.CLINICAL_ATTENTION -> draft.values.copy(clinicalAttention = event.value)
             PatientDraftField.LMP_DATE -> draft.values.copy(lmpDate = event.value)
+            PatientDraftField.DATING_METHOD -> draft.values.copy(datingMethod = event.value)
+            PatientDraftField.TRANSFER_DATE -> draft.values.copy(transferDate = event.value)
+            PatientDraftField.EMBRYO_AGE_DAYS -> draft.values.copy(embryoAgeDays = event.value)
+            PatientDraftField.AGREED_EDD -> draft.values.copy(agreedEdd = event.value)
+            PatientDraftField.SCAN_DATE -> draft.values.copy(scanDate = event.value)
+            PatientDraftField.SCAN_GA_WEEKS -> draft.values.copy(scanGaWeeks = event.value)
+            PatientDraftField.SCAN_GA_DAYS -> draft.values.copy(scanGaDays = event.value)
         }
         return state.copy(patientDraft = draft.copy(values = values, errors = emptySet()), savePhase = SavePhase.IDLE, saveError = null)
     }

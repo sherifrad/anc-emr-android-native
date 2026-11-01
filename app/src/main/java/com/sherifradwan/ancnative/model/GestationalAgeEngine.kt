@@ -77,12 +77,6 @@ object GestationalAgeEngine {
         return calculateForEdd(edd, asOfDate)
     }
 
-    fun calculateForLmp(lmpDate: LocalDate, asOfDate: LocalDate = LocalDate.now()): GestationalAgeResult? {
-        val totalDays = ChronoUnit.DAYS.between(lmpDate, asOfDate)
-        if (totalDays < 0 || totalDays > 320) return null
-        return formatGestationalDays(totalDays)
-    }
-
     fun calculateForEdd(edd: LocalDate, asOfDate: LocalDate = LocalDate.now()): GestationalAgeResult? {
         val daysToEdd = daysToEdd(edd, asOfDate)
         val totalDays = FULL_TERM_DAYS - daysToEdd

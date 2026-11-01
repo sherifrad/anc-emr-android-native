@@ -6,6 +6,11 @@ const val FULL_TERM_DAYS = 280L
 
 fun eddFromLmp(lmp: LocalDate): LocalDate = lmp.plusDays(FULL_TERM_DAYS)
 
+fun eddFromScan(scanDate: LocalDate, gaWeeks: Int, gaDays: Int): LocalDate? {
+    if (gaWeeks !in 0..42 || gaDays !in 0..6) return null
+    return scanDate.plusDays(FULL_TERM_DAYS - (gaWeeks * 7L + gaDays))
+}
+
 fun ivfGaDaysAtTransfer(embryoAgeDays: Int): Long = 14L + embryoAgeDays
 
 fun ivfEddFromTransfer(transfer: LocalDate, embryoAgeDays: Int): LocalDate =

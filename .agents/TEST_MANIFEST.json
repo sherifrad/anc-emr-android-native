@@ -1252,6 +1252,29 @@
         "app/src/test/**/DatingDraftRuleTest.kt"
       ],
       "covers": ["Q260", "Q261", "Q262", "Q263", "Q264"]
+    },
+    {
+      "id": "STATIC-r4g",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r4g.py",
+      "deps": [
+        "app/src/main/**/*.kt",
+        ".agents/checks/check_r4g.py"
+      ],
+      "covers": ["S170", "S171", "S172", "S173", "S174", "S175"]
+    },
+    {
+      "id": "UNIT-r4g",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.model.EddFromScanTest' --tests 'com.sherifradwan.ancnative.state.PatientDatingDraftTest' --tests 'com.sherifradwan.ancnative.state.IntakeDatingRuleTest' --tests 'com.sherifradwan.ancnative.state.DraftMappingTest'",
+      "deps": [
+        "app/src/main/**/model/IsoDates.kt",
+        "app/src/main/**/state/*.kt",
+        "app/src/test/**/EddFromScanTest.kt",
+        "app/src/test/**/PatientDatingDraftTest.kt",
+        "app/src/test/**/IntakeDatingRuleTest.kt"
+      ],
+      "covers": ["Q270", "Q271", "Q272", "Q273", "Q274", "Q275"]
     }
   ]
 }

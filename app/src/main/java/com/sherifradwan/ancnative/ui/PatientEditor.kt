@@ -56,16 +56,14 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
-import com.sherifradwan.ancnative.model.GestationalAgeEngine
 import com.sherifradwan.ancnative.model.PatientValidationError
 import com.sherifradwan.ancnative.model.PatientVocabulary
-import com.sherifradwan.ancnative.model.eddFromLmp
-import com.sherifradwan.ancnative.model.parseIsoDateOrNull
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.PatientDraftField
 import com.sherifradwan.ancnative.state.SavePhase
+import com.sherifradwan.ancnative.state.intakeDatingPreview
 
 @Composable
 fun PatientEditor(
@@ -176,36 +174,31 @@ fun PatientEditor(
                     showTodayButton = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                val trimmedLmp = draft.values.lmpDate.trim()
-                if (trimmedLmp.isNotBlank()) {
-                    val parsedLmp = parseIsoDateOrNull(trimmedLmp)
-                    val calculatedEdd = parsedLmp?.let { eddFromLmp(it) }?.toString()
-                    val currentGa = parsedLmp?.let { GestationalAgeEngine.calculateForLmp(it)?.formatted }
-                    if (calculatedEdd != null) {
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
-                            modifier = Modifier.fillMaxWidth(),
+                val preview = intakeDatingPreview(draft.values)
+                if (preview != null) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
+                            Text(
+                                text = "Estimated Due Date: ${preview.dueDate}",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            )
+                            if (preview.gestationalAge != null) {
                                 Text(
-                                    text = "Estimated Due Date: $calculatedEdd",
+                                    text = "Current GA: ${preview.gestationalAge}",
                                     style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    color = MaterialTheme.colorScheme.primary,
                                 )
-                                if (currentGa != null) {
-                                    Text(
-                                        text = "Current GA: $currentGa",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary,
-                                    )
-                                }
                             }
                         }
                     }

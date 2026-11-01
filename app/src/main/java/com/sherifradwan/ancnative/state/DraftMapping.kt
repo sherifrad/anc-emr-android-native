@@ -80,28 +80,42 @@ fun draftRecordFor(state: AncState, nowMillis: Long): DraftRecord? {
         if (!draft.isDirty) return null
         val isNew = draft.baseRevision == null
         val patientId = if (isNew) NEW_PATIENT_DRAFT_KEY else draft.patientId
+        val baseFields = mapOf(
+            "caseId" to draft.values.caseId,
+            "displayName" to draft.values.displayName,
+            "dateOfBirth" to draft.values.dateOfBirth,
+            "phone" to draft.values.phone,
+            "ageText" to draft.values.ageText,
+            "addressText" to draft.values.addressText,
+            "bloodGroupText" to draft.values.bloodGroupText,
+            "riskLevel" to draft.values.riskLevel,
+            "gravida" to draft.values.gravida,
+            "parity" to draft.values.parity,
+            "abortion" to draft.values.abortion,
+            "obstetricNotes" to draft.values.obstetricNotes,
+            "clinicalAttention" to draft.values.clinicalAttention,
+            "lmpDate" to draft.values.lmpDate,
+        )
+        val fields = if (isNew) {
+            baseFields + mapOf(
+                "datingMethod" to draft.values.datingMethod,
+                "transferDate" to draft.values.transferDate,
+                "embryoAgeDays" to draft.values.embryoAgeDays,
+                "agreedEdd" to draft.values.agreedEdd,
+                "scanDate" to draft.values.scanDate,
+                "scanGaWeeks" to draft.values.scanGaWeeks,
+                "scanGaDays" to draft.values.scanGaDays,
+            )
+        } else {
+            baseFields
+        }
         return DraftRecord(
             patientId = patientId,
             screenKind = DraftScreenKind.PATIENT_PROFILE,
             editorKind = if (isNew) DraftEditorKind.CREATE else DraftEditorKind.EDIT,
             recordId = null,
             baseRevision = baseRevision,
-            fields = mapOf(
-                "caseId" to draft.values.caseId,
-                "displayName" to draft.values.displayName,
-                "dateOfBirth" to draft.values.dateOfBirth,
-                "phone" to draft.values.phone,
-                "ageText" to draft.values.ageText,
-                "addressText" to draft.values.addressText,
-                "bloodGroupText" to draft.values.bloodGroupText,
-                "riskLevel" to draft.values.riskLevel,
-                "gravida" to draft.values.gravida,
-                "parity" to draft.values.parity,
-                "abortion" to draft.values.abortion,
-                "obstetricNotes" to draft.values.obstetricNotes,
-                "clinicalAttention" to draft.values.clinicalAttention,
-                "lmpDate" to draft.values.lmpDate,
-            ),
+            fields = fields,
             updatedAtMillis = nowMillis,
         )
     }
@@ -315,6 +329,13 @@ fun applyDraftRecord(state: AncState, record: DraftRecord): AncState {
                         obstetricNotes = record.fields["obstetricNotes"] ?: v.obstetricNotes,
                         clinicalAttention = record.fields["clinicalAttention"] ?: v.clinicalAttention,
                         lmpDate = record.fields["lmpDate"] ?: v.lmpDate,
+                        datingMethod = record.fields["datingMethod"] ?: v.datingMethod,
+                        transferDate = record.fields["transferDate"] ?: v.transferDate,
+                        embryoAgeDays = record.fields["embryoAgeDays"] ?: v.embryoAgeDays,
+                        agreedEdd = record.fields["agreedEdd"] ?: v.agreedEdd,
+                        scanDate = record.fields["scanDate"] ?: v.scanDate,
+                        scanGaWeeks = record.fields["scanGaWeeks"] ?: v.scanGaWeeks,
+                        scanGaDays = record.fields["scanGaDays"] ?: v.scanGaDays,
                     ),
                     errors = emptySet(),
                 ),

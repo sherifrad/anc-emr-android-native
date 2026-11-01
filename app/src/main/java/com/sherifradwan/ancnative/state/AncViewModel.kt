@@ -460,7 +460,7 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
                     if (command is SavePatientProfileCommand) {
                         val currentDraft = _state.value.patientDraft
                         val committedPatient = result.snapshot.patients.firstOrNull { it.id == command.patientId }
-                        val datingUpdate = intakeDatingUpdate(committedPatient?.dating, currentDraft?.values?.lmpDate)
+                        val datingUpdate = currentDraft?.let { intakeDatingUpdate(committedPatient?.dating, it.values) }
                         if (datingUpdate != null) {
                             val datingCmd = SaveDatingCommand(
                                 operationUuid = UUID.randomUUID().toString(),
@@ -468,10 +468,12 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
                                 patientId = command.patientId,
                                 expectedPatientRevision = committedPatient?.revision ?: 1L,
                                 lmpDate = datingUpdate.lmpDate,
-                                ultrasoundEdd = null,
+                                ultrasoundEdd = datingUpdate.ultrasoundEdd,
                                 agreedEdd = datingUpdate.agreedEdd,
-                                datingMethod = "LMP",
-                                notes = committedPatient?.dating?.notes ?: "Baseline from intake LMP (${datingUpdate.lmpDate})",
+                                datingMethod = datingUpdate.datingMethod,
+                                notes = committedPatient?.dating?.notes ?: datingUpdate.note,
+                                transferDate = datingUpdate.transferDate,
+                                embryoAgeDays = datingUpdate.embryoAgeDays,
                             )
                             val datingResult = controller.execute(datingCmd, sessionEpoch, onReconciliation = {})
                             val datingSaved = datingResult is ClinicalCommandOutcome.Committed

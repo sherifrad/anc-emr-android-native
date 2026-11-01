@@ -83,8 +83,8 @@ def main():
             problems.append(rel + " missing")
             continue
         code = strip_comments(src)
-        if "eddFromLmp(" not in code and "FULL_TERM_DAYS" not in code:
-            problems.append(rel + " references neither eddFromLmp( nor FULL_TERM_DAYS")
+        if not any(n in code for n in ("eddFromLmp(", "FULL_TERM_DAYS", "dueDateForMethod(", "intakeDatingPreview(")):
+            problems.append(rel + " does not use the shared due-date rule (eddFromLmp, FULL_TERM_DAYS, dueDateForMethod or intakeDatingPreview)")
     record("S54 editor and dating rule use the shared due-date rule", not problems, "; ".join(problems))
 
     sys.exit(0 if all(results) else 1)
