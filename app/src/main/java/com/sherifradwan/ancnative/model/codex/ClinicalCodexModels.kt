@@ -38,11 +38,65 @@ data class LabCategoryGroup(
     val isCustom: Boolean = false,
 )
 
+data class LabItemEdit(
+    val items: List<LabCodexItem>,
+    val groups: List<LabCategoryGroup>,
+)
+
+fun applyLabItemEdit(
+    items: List<LabCodexItem>,
+    groups: List<LabCategoryGroup>,
+    edited: LabCodexItem,
+): LabItemEdit? {
+    val trimmedName = edited.testName.trim()
+    if (trimmedName.isBlank()) return null
+
+    val existingIndex = items.indexOfFirst { it.id == edited.id }
+    if (existingIndex < 0) return null
+    val oldItem = items[existingIndex]
+
+    if (items.any { it.id != edited.id && it.testName.trim().equals(trimmedName, ignoreCase = true) }) {
+        return null
+    }
+
+    val updatedItem = edited.copy(
+        testName = trimmedName,
+        category = edited.category.trim(),
+        unit = edited.unit.trim(),
+        referenceRange = edited.referenceRange.trim(),
+        defaultResult = edited.defaultResult.trim(),
+        isCustom = true,
+    )
+
+    val newItems = items.toMutableList()
+    newItems[existingIndex] = updatedItem
+
+    val nameChanged = oldItem.testName.trim() != trimmedName
+    val newGroups = if (nameChanged) {
+        groups.map { group ->
+            group.copy(
+                testNames = group.testNames.map { testName ->
+                    if (testName.trim().equals(oldItem.testName.trim(), ignoreCase = true)) {
+                        trimmedName
+                    } else {
+                        testName
+                    }
+                }
+            )
+        }
+    } else {
+        groups
+    }
+
+    return LabItemEdit(items = newItems, groups = newGroups)
+}
+
 interface LabCodexDelegate {
     val labCodexItems: StateFlow<List<LabCodexItem>>
     val labCategoryGroups: StateFlow<List<LabCategoryGroup>>
 
     fun addLabCodexItem(item: LabCodexItem): Boolean
+    fun updateLabCodexItem(item: LabCodexItem): Boolean
     fun deleteLabCodexItem(itemId: String): Boolean
     fun getLabCodexItem(itemId: String): LabCodexItem?
     fun findLabCodexItemByName(name: String): LabCodexItem?

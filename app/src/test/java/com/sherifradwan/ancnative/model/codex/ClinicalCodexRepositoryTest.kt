@@ -66,6 +66,7 @@ class ClinicalCodexModelsTest {
                 labCodexItems.value = labList.toList()
                 return true
             }
+            override fun updateLabCodexItem(item: LabCodexItem): Boolean = false
             override fun deleteLabCodexItem(itemId: String): Boolean {
                 val removed = labList.removeIf { it.id == itemId }
                 labCodexItems.value = labList.toList()
@@ -113,6 +114,7 @@ class ClinicalCodexModelsTest {
             override val labCategoryGroups = kotlinx.coroutines.flow.MutableStateFlow<List<LabCategoryGroup>>(emptyList())
 
             override fun addLabCodexItem(item: LabCodexItem): Boolean = true
+            override fun updateLabCodexItem(item: LabCodexItem): Boolean = false
             override fun deleteLabCodexItem(itemId: String): Boolean = true
             override fun getLabCodexItem(itemId: String): LabCodexItem? = null
             override fun findLabCodexItemByName(name: String): LabCodexItem? = null

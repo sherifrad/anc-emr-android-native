@@ -181,7 +181,7 @@ fun SecuritySettingsDialog(
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
                             Text(
-                                text = "Clinic Settings, Codex & Security",
+                                text = "Clinic settings & security",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -220,7 +220,7 @@ fun SecuritySettingsDialog(
                         onClick = { selectedTab = SettingsTab.LAB_CODEX },
                         text = {
                             Text(
-                                "Lab Codex",
+                                "Lab tests",
                                 fontWeight = if (selectedTab == SettingsTab.LAB_CODEX) FontWeight.Bold else FontWeight.Normal,
                                 color = if (selectedTab == SettingsTab.LAB_CODEX) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -231,7 +231,7 @@ fun SecuritySettingsDialog(
                         onClick = { selectedTab = SettingsTab.MED_CODEX },
                         text = {
                             Text(
-                                "Med Codex",
+                                "Medications",
                                 fontWeight = if (selectedTab == SettingsTab.MED_CODEX) FontWeight.Bold else FontWeight.Normal,
                                 color = if (selectedTab == SettingsTab.MED_CODEX) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             )

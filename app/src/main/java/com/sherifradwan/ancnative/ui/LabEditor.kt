@@ -213,10 +213,11 @@ fun LabEditor(
                             verticalArrangement = Arrangement.spacedBy(6.dp),
                             modifier = Modifier.fillMaxWidth(),
                         ) {
+                            val labItemCount = codexLabItems.size
                             androidx.compose.material3.FilterChip(
                                 selected = selectedGroupName == null,
                                 onClick = { selectedGroupName = null },
-                                label = { Text("All Tests (${codexLabItems.size})") },
+                                label = { Text("All Tests ($labItemCount)") },
                                 modifier = Modifier.testTag("allLabTestsChip"),
                             )
                             codexGroups.forEach { grp ->
@@ -274,7 +275,7 @@ fun LabEditor(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                text = "New Test: Save to Clinic Lab Codex?",
+                                text = "New test: add it to your lab test list?",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                             )
@@ -295,7 +296,7 @@ fun LabEditor(
                             ) {
                                 Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(4.dp))
-                                Text("Save to Codex")
+                                Text("Add to list")
                             }
                         }
                     }

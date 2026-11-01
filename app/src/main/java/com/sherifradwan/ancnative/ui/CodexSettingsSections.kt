@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
@@ -68,6 +69,7 @@ fun LabCodexSettingsSection(
     var currentSubView by remember { mutableStateOf(LabCodexSubView.INDIVIDUAL_TESTS) }
     var searchQuery by remember { mutableStateOf("") }
     var showAddTestDialog by remember { mutableStateOf(false) }
+    var itemToEdit by remember { mutableStateOf<LabCodexItem?>(null) }
     var showAddGroupDialog by remember { mutableStateOf(false) }
     var itemToDelete by remember { mutableStateOf<LabCodexItem?>(null) }
     var groupToDelete by remember { mutableStateOf<LabCategoryGroup?>(null) }
@@ -102,7 +104,7 @@ fun LabCodexSettingsSection(
         ) {
             Column(modifier = Modifier.weight(1f, fill = false)) {
                 Text(
-                    text = "Laboratory Codex Directory",
+                    text = "Laboratory tests",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -185,7 +187,7 @@ fun LabCodexSettingsSection(
                     ) {
                         Text(
                             text = if (searchQuery.isNotBlank()) "No matching results for: $searchQuery"
-                            else "Lab Codex directory is currently empty.",
+                            else "Lab test directory is currently empty.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -246,16 +248,34 @@ fun LabCodexSettingsSection(
                                     }
                                 }
 
-                                IconButton(
-                                    onClick = { itemToDelete = lab },
-                                    modifier = Modifier.testTag("deleteLabCodexBtn-${lab.id}"),
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = "Delete Test",
-                                        tint = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.size(20.dp),
-                                    )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    IconButton(
+                                        onClick = { itemToEdit = lab },
+                                        modifier = Modifier
+                                            .size(48.dp)
+                                            .testTag("editLabCodexBtn-${lab.id}"),
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Edit,
+                                            contentDescription = "Edit test",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(20.dp),
+                                        )
+                                    }
+
+                                    IconButton(
+                                        onClick = { itemToDelete = lab },
+                                        modifier = Modifier
+                                            .size(48.dp)
+                                            .testTag("deleteLabCodexBtn-${lab.id}"),
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Delete Test",
+                                            tint = MaterialTheme.colorScheme.error,
+                                            modifier = Modifier.size(20.dp),
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -364,7 +384,7 @@ fun LabCodexSettingsSection(
         ) {
             Icon(Icons.Default.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(4.dp))
-            Text("Reset Clinic Lab Codex to Defaults")
+            Text("Reset lab tests to defaults")
         }
     }
 
@@ -373,8 +393,26 @@ fun LabCodexSettingsSection(
         AddLabTestDialog(
             onDismiss = { showAddTestDialog = false },
             onSave = { newItem ->
-                codexDelegate.addLabCodexItem(newItem)
-                showAddTestDialog = false
+                val success = codexDelegate.addLabCodexItem(newItem)
+                if (success) {
+                    showAddTestDialog = false
+                }
+                success
+            },
+        )
+    }
+
+    // Edit Lab Test Dialog
+    if (itemToEdit != null) {
+        AddLabTestDialog(
+            initial = itemToEdit,
+            onDismiss = { itemToEdit = null },
+            onSave = { editedItem ->
+                val success = codexDelegate.updateLabCodexItem(editedItem)
+                if (success) {
+                    itemToEdit = null
+                }
+                success
             },
         )
     }
@@ -443,7 +481,7 @@ fun LabCodexSettingsSection(
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
-            title = { Text("Reset to Default Lab Codex") },
+            title = { Text("Reset lab tests to defaults") },
             text = { Text("This will restore the clinic lab catalog and panels back to standard antenatal clinical care defaults.") },
             confirmButton = {
                 Button(
@@ -467,24 +505,32 @@ fun LabCodexSettingsSection(
 
 @Composable
 private fun AddLabTestDialog(
+    initial: LabCodexItem? = null,
     onDismiss: () -> Unit,
-    onSave: (LabCodexItem) -> Unit,
+    onSave: (LabCodexItem) -> Boolean,
 ) {
-    var testName by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf(ClinicalVocabulary.testCategories.first()) }
-    var unit by remember { mutableStateOf("") }
-    var referenceRange by remember { mutableStateOf("") }
-    var defaultResult by remember { mutableStateOf("") }
+    var testName by remember(initial) { mutableStateOf(initial?.testName ?: "") }
+    var selectedCategory by remember(initial) {
+        mutableStateOf(
+            initial?.category?.takeIf { it.isNotBlank() } ?: ClinicalVocabulary.testCategories.first()
+        )
+    }
+    var unit by remember(initial) { mutableStateOf(initial?.unit ?: "") }
+    var referenceRange by remember(initial) { mutableStateOf(initial?.referenceRange ?: "") }
+    var defaultResult by remember(initial) { mutableStateOf(initial?.defaultResult ?: "") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add New Lab Test to Codex") },
+        title = { Text(if (initial != null) "Edit lab test" else "Add lab test") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(
                     value = testName,
-                    onValueChange = { testName = it },
+                    onValueChange = {
+                        testName = it
+                        errorMessage = null
+                    },
                     label = { Text("Test Name (Required)") },
                     placeholder = { Text("e.g. Complete Blood Count or TSH") },
                     modifier = Modifier.fillMaxWidth().testTag("addLabNameField"),
@@ -553,24 +599,41 @@ private fun AddLabTestDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (testName.trim().isBlank()) {
+                    val trimmed = testName.trim()
+                    if (trimmed.isBlank()) {
                         errorMessage = "Please enter test name!"
                     } else {
-                        onSave(
+                        val itemToSave = if (initial != null) {
+                            initial.copy(
+                                testName = trimmed,
+                                category = selectedCategory,
+                                unit = unit,
+                                referenceRange = referenceRange,
+                                defaultResult = defaultResult,
+                            )
+                        } else {
                             LabCodexItem(
-                                testName = testName.trim(),
+                                testName = trimmed,
                                 category = selectedCategory,
                                 unit = unit.trim(),
                                 referenceRange = referenceRange.trim(),
                                 defaultResult = defaultResult.trim(),
                                 isCustom = true,
                             )
-                        )
+                        }
+                        val success = onSave(itemToSave)
+                        if (!success) {
+                            errorMessage = if (initial != null) {
+                                "Test name already used or invalid"
+                            } else {
+                                "Unable to save test"
+                            }
+                        }
                     }
                 },
                 modifier = Modifier.testTag("saveLabCodexConfirmBtn"),
             ) {
-                Text("Save to Codex")
+                Text("Save")
             }
         },
         dismissButton = {

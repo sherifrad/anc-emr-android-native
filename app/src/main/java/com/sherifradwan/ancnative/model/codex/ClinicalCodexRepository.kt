@@ -79,6 +79,15 @@ class ClinicalCodexRepository private constructor(context: Context) :
         return true
     }
 
+    override fun updateLabCodexItem(item: LabCodexItem): Boolean {
+        val edit = applyLabItemEdit(_labCodexItems.value, _labCategoryGroups.value, item) ?: return false
+        _labCodexItems.value = edit.items
+        _labCategoryGroups.value = edit.groups
+        saveLabItems(edit.items)
+        saveLabCategoryGroups(edit.groups)
+        return true
+    }
+
     override fun deleteLabCodexItem(itemId: String): Boolean {
         val current = _labCodexItems.value.toMutableList()
         val removed = current.removeAll { it.id == itemId }

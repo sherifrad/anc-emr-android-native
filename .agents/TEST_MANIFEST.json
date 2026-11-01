@@ -1165,6 +1165,27 @@
         "app/src/test/**/UltrasoundImpressionTest.kt"
       ],
       "covers": ["Q210", "Q211", "Q212", "Q213", "Q214"]
+    },
+    {
+      "id": "STATIC-r4c",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r4c.py",
+      "deps": [
+        "app/src/main/**/*.kt",
+        "app/src/main/res/values/strings.xml",
+        ".agents/checks/check_r4c.py"
+      ],
+      "covers": ["S130", "S131", "S132"]
+    },
+    {
+      "id": "UNIT-r4c",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.model.codex.LabItemEditTest'",
+      "deps": [
+        "app/src/main/**/model/codex/*.kt",
+        "app/src/test/**/LabItemEditTest.kt"
+      ],
+      "covers": ["Q220", "Q221", "Q222", "Q223"]
     }
   ]
 }
