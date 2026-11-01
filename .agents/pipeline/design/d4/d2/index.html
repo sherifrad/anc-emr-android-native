@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ANC EMR · History, dating, attention and delivery · approved designs</title>
+<style>
+:root{
+  color-scheme:light;--fs:1;
+  --bg:#FBF8F5;--sf:#FFFFFF;--sv:#F3E9E7;--sc:#F4EFEA;--scl:#F9F5F3;--sch:#EFE9E4;
+  --on:#0D1B3D;--onv:#4C3F43;--mut:#6B6166;--out:#79747E;--outv:#CAC4D0;
+  --pri:#0D1B3D;--onpri:#FFFFFF;--pc:#D6DFFF;--opc:#041334;--sec:#934F5B;--secc:#FFD9DE;--osecc:#3B0815;
+  --ter:#176B70;--terc:#AFECEE;--oterc:#002021;--err:#BA1A1A;--errc:#FFDAD6;--oerrc:#410002;
+  --page-bg:#EAE5DE;--phone-shadow:0 12px 36px rgba(13,27,61,0.18);
+  --tag-obs-bg:#F3E8FF;--tag-obs-txt:#6B21A8;--tag-obs-bd:#DDD6FE;
+  --tag-ga-bg:#E0F2FE;--tag-ga-txt:#0369A1;--tag-ga-bd:#BAE6FD;
+  --tag-att-bg:#FEF3C7;--tag-att-txt:#92400E;--tag-att-bd:#FDE68A;--tag-att-ico:#B45309;
+  --tag-risk-bg:#FEE2E2;--tag-risk-txt:#B91C1C;--tag-risk-bd:#FCA5A5;
+  --tag-norm-bg:#DCFCE7;--tag-norm-txt:#166534;--tag-norm-bd:#86EFAC;
+  --tag-plan-bg:#E0F2FE;--tag-plan-txt:#075985;--tag-plan-bd:#7DD3FC;
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0E121B;--sf:#1A202E;--sv:#262E40;--sc:#1E2638;--scl:#141924;--sch:#283248;
+  --on:#E2E2EA;--onv:#CDC3C6;--mut:#A79EA4;--out:#8E95A5;--outv:#3A4459;
+  --pri:#B4C5FF;--onpri:#002A78;--pc:#183F91;--opc:#DCE1FF;--sec:#FFB2BC;--secc:#762E3B;--osecc:#FFD9DE;
+  --ter:#70D7D9;--terc:#004F50;--oterc:#8CF3F5;--err:#FFB4AB;--errc:#5C141D;--oerrc:#FFDAD6;
+  --page-bg:#070A0F;--phone-shadow:0 12px 36px rgba(0,0,0,0.6);
+  --tag-obs-bg:#2E1065;--tag-obs-txt:#E9D5FF;--tag-obs-bd:#581C87;
+  --tag-ga-bg:#082F49;--tag-ga-txt:#BAE6FD;--tag-ga-bd:#075985;
+  --tag-att-bg:#451A03;--tag-att-txt:#FDE68A;--tag-att-bd:#78350F;--tag-att-ico:#F59E0B;
+  --tag-risk-bg:#450A0A;--tag-risk-txt:#FCA5A5;--tag-risk-bd:#991B1B;
+  --tag-norm-bg:#052E16;--tag-norm-txt:#86EFAC;--tag-norm-bd:#166534;
+  --tag-plan-bg:#082F49;--tag-plan-txt:#BAE6FD;--tag-plan-bd:#075985;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:where(.phone *){min-width:0}
+html{scroll-behavior:smooth;scroll-padding-top:60px}
+body{margin:0;padding-bottom:96px;background:var(--page-bg);color:var(--on);font:calc(14px*var(--fs))/1.4 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+nav.topbar{position:sticky;top:0;z-index:100;background:#0D1B3D;color:#fff;padding:2px 8px;display:flex;flex-wrap:wrap;align-items:center;gap:2px;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+nav.topbar a{color:#fff;text-decoration:none;font-size:.9em;font-weight:600;padding:0 12px;border-radius:24px;min-height:48px;display:inline-flex;align-items:center;white-space:nowrap}
+nav.topbar a:hover{background:rgba(255,255,255,.15)}
+nav.topbar b{padding:0 6px}
+main.container{max-width:520px;margin:0 auto;padding:14px 10px 40px}
+header.hero{margin-bottom:20px;background:var(--sf);padding:14px 16px;border-radius:16px;border:1px solid var(--outv)}
+header.hero h1{margin:0 0 6px;font-size:1.35em;color:var(--pri)}
+header.hero p{margin:0;color:var(--onv);font-size:.95em}
+section.screen-section{margin-bottom:40px;display:flex;flex-direction:column;align-items:center}
+.section-header{width:min(360px,100%);margin-bottom:12px}
+.section-header h2{margin:0 0 4px;font-size:1.25em;color:var(--pri)}
+.section-header p{margin:0;color:var(--onv)}
+.review-notes{margin-top:12px;width:min(360px,100%);background:var(--sf);border:1px solid var(--outv);border-radius:14px;padding:10px 12px;font-size:.88em;color:var(--onv)}
+.review-notes div{margin-bottom:4px}.review-notes b{color:var(--on)}
+.review-notes .kept-fields{font-size:.85em;color:var(--mut);margin-top:6px;border-top:1px dashed var(--outv);padding-top:6px}
+/* 360 dp phone */
+.phone{width:min(360px,100%);height:720px;background:var(--bg);border-radius:24px;border:2px solid var(--outv);box-shadow:var(--phone-shadow);display:flex;flex-direction:column;overflow:hidden;position:relative;font-size:calc(14px*var(--fs));line-height:1.3}
+.phone-app-bar{background:var(--pri);color:var(--onpri);padding:4px 10px 4px 2px;flex-shrink:0;display:flex;align-items:center;gap:2px;min-height:56px}
+.back-btn{background:transparent;border:0;color:inherit;font-size:1.3em;width:48px;height:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:50%;flex:0 0 48px}
+.app-bar-titles{flex:1}
+.app-bar-titles h3{margin:0;font-size:1.05em;font-weight:700}
+.app-bar-titles small{display:block;font-size:.8em;opacity:.85}
+.app-chip{font-size:.78em;font-weight:700;padding:3px 10px;border-radius:12px;white-space:nowrap}
+.phone-body{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin}
+.phone-actions-bar{background:var(--sf);border-top:1px solid var(--outv);padding:8px 10px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+button{font-family:inherit}
+.btn-save,.btn-cancel{min-height:48px;border-radius:24px;font:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0 14px;white-space:nowrap}
+.btn-save{flex:2;background:var(--pri);color:var(--onpri);border:0}
+.btn-cancel{flex:1;background:transparent;color:var(--onv);border:1px solid var(--outv);font-weight:600}
+.toast{position:absolute;left:10px;right:10px;bottom:76px;background:#0D1B3D;color:#fff;border-radius:14px;padding:4px 6px 4px 12px;display:flex;align-items:center;justify-content:space-between;gap:6px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20;border:1px solid rgba(255,255,255,.25)}
+.toast.show{opacity:1;pointer-events:auto}
+.toast button{min-height:48px;border:0;background:transparent;color:#FFB2BC;font:inherit;font-weight:800;cursor:pointer;padding:0 12px}
+.m3-card{background:var(--sf);border-radius:16px;border:1px solid var(--outv);padding:10px 12px;box-shadow:0 1px 3px rgba(0,0,0,.05);display:flex;flex-direction:column;gap:8px}
+.card-header-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0 8px}
+.card-title{margin:0;font-size:.98em;font-weight:700;color:var(--pri)}
+.card-header-action{background:transparent;border:0;color:var(--pri);font:inherit;font-size:.9em;font-weight:700;cursor:pointer;padding:0 10px;border-radius:14px;min-height:48px;white-space:nowrap}
+.card-header-action:hover{background:var(--pc)}
+.rowx{display:flex;align-items:center;justify-content:space-between;gap:6px 8px;flex-wrap:wrap}
+.rowx>b{font-weight:700}
+.fact-tile{background:var(--scl);border-radius:10px;padding:6px 10px;display:flex;flex-direction:column;gap:2px}
+.fact-tile .label{font-size:.74em;font-weight:600;text-transform:uppercase;color:var(--mut);letter-spacing:.3px}
+.fact-tile .val{font-size:1.02em;font-weight:700;color:var(--on)}
+.stepper-control{display:inline-flex;align-items:center;background:var(--sv);border-radius:24px;border:1px solid var(--outv);overflow:hidden;min-height:48px}
+.stepper-btn{width:48px;height:48px;background:transparent;border:0;font-size:1.25em;font-weight:700;color:var(--pri);display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;font-family:inherit}
+.stepper-btn:active{background:rgba(0,0,0,.08)}
+.stepper-val{min-width:44px;text-align:center;font-weight:700;font-size:1.02em;padding:0 4px;color:var(--on);white-space:nowrap}
+.chip-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chip{min-height:44px;padding:4px 12px;border-radius:22px;border:1px solid var(--outv);background:var(--sf);color:var(--onv);font:inherit;font-size:.9em;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;max-width:100%;text-align:left}
+.chip:active{transform:scale(.97)}
+.chip.active{background:var(--pc);color:var(--opc);border-color:var(--pri);font-weight:700}
+.chip.danger.active{background:var(--errc);color:var(--oerrc);border-color:var(--err)}
+.chip.teal.active{background:var(--terc);color:var(--oterc);border-color:var(--ter)}
+.chip.addo{border-style:dashed;border-color:var(--sec);color:var(--sec);background:transparent}
+.aoRow{flex:1 1 100%;display:flex;align-items:center;gap:6px}
+.aoRow input{flex:1 1 auto;min-height:48px;border:1.5px solid var(--outv);border-radius:12px;padding:6px 12px;background:var(--sf);color:var(--on);font:inherit}
+.btn-use-this{background:var(--pri);color:var(--onpri);border:0;border-radius:24px;min-height:48px;padding:0 16px;font:inherit;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
+.fb{min-height:48px;min-width:48px;background:transparent;border:0;cursor:pointer;color:var(--on);font:inherit}
+input:focus,textarea:focus,button:focus-visible{outline:3px solid var(--ter);outline-offset:1px}
+.dinp{background:var(--sv);border:1px solid var(--outv);border-radius:10px;padding:0 10px;font:inherit;font-weight:700;color:var(--on);min-height:48px;width:100%}
+.lbl{font-size:.76em;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--mut)}
+.subtext{font-size:.8em;color:var(--mut);line-height:1.35}
+.tag-badge{font-size:.78em;font-weight:700;padding:2px 8px;border-radius:6px;display:inline-flex;align-items:center;white-space:nowrap}
+/* timeline */
+.timeline-list{display:flex;flex-direction:column;border-left:2px solid var(--outv);margin-left:6px;padding-left:14px;gap:10px}
+.timeline-item{position:relative;background:var(--sf);border:1px solid var(--outv);border-radius:12px;padding:8px 10px;cursor:pointer;text-align:left;font:inherit;color:inherit;width:100%}
+.timeline-item::before{content:"";position:absolute;left:-23px;top:14px;width:12px;height:12px;border-radius:50%;background:var(--pri);border:2px solid var(--bg)}
+.tl-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:2px 6px}
+.tl-year{font-weight:700;color:var(--pri)}
+.tl-route{font-size:.8em;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--tag-obs-bg);color:var(--tag-obs-txt);white-space:nowrap}
+.tl-details{font-size:.88em;color:var(--onv);margin-top:2px}
+.tl-more{display:none;margin-top:6px;padding-top:6px;border-top:1px dashed var(--outv);font-size:.85em}
+.timeline-item.expanded .tl-more{display:block}
+/* alerts */
+.alert-banner{border-radius:12px;padding:8px 10px;font-size:.9em;background:var(--tag-risk-bg);color:var(--tag-risk-txt);border:1.5px solid var(--tag-risk-bd)}
+.alert-banner .t{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:2px 8px;font-weight:700}
+.alert-banner .bdg{font-size:.85em;background:#BA1A1A;color:#fff;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.fld textarea{width:100%;border:1.5px solid var(--outv);border-radius:12px;padding:8px 12px;background:var(--sf);color:var(--on);font:inherit;resize:none;line-height:1.35}
+.fld .cnt{text-align:right;font-size:.8em;color:var(--mut)}
+.fld .cnt.max{color:var(--err);font-weight:700}
+.plc{background:var(--sf);border-radius:14px;border:1px solid var(--outv);padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.plc .h{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:2px 8px}
+.plc .nm{font-weight:700;font-size:1.02em}
+.plc .cs{font-size:.8em;color:var(--mut)}
+.pbadges{display:flex;flex-wrap:wrap;gap:6px}
+.attbox{width:100%;text-align:left;background:var(--tag-att-bg);border:1px solid var(--tag-att-bd);border-radius:8px;padding:6px 10px;color:var(--tag-att-txt);font:inherit;font-size:.88em;font-weight:600;cursor:pointer;display:flex;align-items:flex-start;gap:8px;min-height:48px}
+.attbox .ls{flex:1;display:flex;flex-direction:column;gap:2px}
+.attbox .ls span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.attbox.open .ls span{white-space:normal}
+.attbox .more{background:var(--tag-att-ico);color:#fff;padding:2px 8px;border-radius:10px;font-size:.85em;white-space:nowrap;align-self:center}
+/* dating */
+.hero-calc{background:var(--pri);color:var(--onpri);border-radius:16px;padding:12px}
+.hero-calc .l{font-size:.76em;text-transform:uppercase;letter-spacing:.4px;opacity:.85}
+.hero-calc .ga{font-size:1.6em;font-weight:800}
+.hero-calc .r{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:4px 10px;margin-top:2px}
+.hero-calc .edd{font-size:1.1em;font-weight:700}
+.reconcile-card{background:var(--tag-att-bg);border:1.5px solid var(--tag-att-bd);color:var(--tag-att-txt);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.reconcile-card.ok{background:var(--tag-norm-bg);border-color:var(--tag-norm-bd);color:var(--tag-norm-txt)}
+.reconcile-diff{display:flex;align-items:center;justify-content:space-around;gap:6px;background:rgba(255,255,255,.65);border-radius:10px;padding:6px;color:#0D1B3D}
+:root[data-theme=dark] .reconcile-diff{background:rgba(0,0,0,.35);color:#E2E2EA}
+.diff-item{text-align:center}
+.diff-item .m{font-size:.74em;text-transform:uppercase;font-weight:600;white-space:nowrap}
+.diff-item .e{font-weight:700;white-space:nowrap}
+.diff-item .g{font-size:.85em;font-weight:600;white-space:nowrap}
+.delivery-date{font-weight:700;color:var(--pri);white-space:nowrap}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+<nav class="topbar" aria-label="Screens">
+  <b>ANC EMR</b>
+  <a href="#scr1">History</a><a href="#scr2">Pregnancies</a><a href="#scr3">Dating</a><a href="#scr4">Attention</a><a href="#scr5">Delivery</a>
+</nav>
+
+<main class="container">
+
+  <header class="hero">
+    <h1>History, dating, attention, delivery</h1>
+    <p>Approved design. Live mock-ups with made-up data, in a 360 dp phone frame. Values added with <b>+ Add other</b> stay in this browser only.</p>
+  </header>
+
+  <!-- SCREEN 1 -->
+  <section id="scr1" class="screen-section">
+    <div class="section-header"><h2>1. Obstetric history</h2><p>Approved design</p></div>
+    <div class="phone">
+      <div class="phone-app-bar">
+        <button class="back-btn" data-act="toast" data-m="Back (demo only)" aria-label="Back">←</button>
+        <div class="app-bar-titles"><h3>Mariam El-Sayed</h3><small>Obstetric profile</small></div>
+      </div>
+      <div class="phone-body">
+        <div style="background:var(--tag-obs-bg);border:1.5px solid var(--tag-obs-bd);border-radius:14px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 8px">
+          <div><div class="lbl" style="color:var(--tag-obs-txt)">Obstetric status</div><div id="obs-summary" style="font-size:1.1em;font-weight:800;color:var(--tag-obs-txt)">G3 P2 A0 · 2 previous</div></div>
+          <span class="tag-badge" style="background:#fff;color:var(--tag-obs-txt);border:1px solid var(--tag-obs-bd)">Singleton</span>
+        </div>
+        <div class="m3-card">
+          <div class="card-header-row"><span class="card-title">Obstetric formula</span><button class="card-header-action" data-act="primi">Primigravida</button></div>
+          <div class="rowx"><b>Gravida (G)</b><div class="stepper-control"><button class="stepper-btn" data-act="gpa" data-f="g" data-d="-1" aria-label="Gravida minus">−</button><span id="gpa-g" class="stepper-val">3</span><button class="stepper-btn" data-act="gpa" data-f="g" data-d="1" aria-label="Gravida plus">+</button></div></div>
+          <div class="rowx"><b>Parity (P)</b><div class="stepper-control"><button class="stepper-btn" data-act="gpa" data-f="p" data-d="-1" aria-label="Parity minus">−</button><span id="gpa-p" class="stepper-val">2</span><button class="stepper-btn" data-act="gpa" data-f="p" data-d="1" aria-label="Parity plus">+</button></div></div>
+          <div class="rowx"><b>Loss (A)</b><div class="stepper-control"><button class="stepper-btn" data-act="gpa" data-f="a" data-d="-1" aria-label="Loss minus">−</button><span id="gpa-a" class="stepper-val">0</span><button class="stepper-btn" data-act="gpa" data-f="a" data-d="1" aria-label="Loss plus">+</button></div></div>
+          <div class="subtext" data-wrap>Gravida always includes the current pregnancy, so it is never lower than P + A + 1.</div>
+        </div>
+        <div class="m3-card">
+          <div class="card-header-row"><span class="card-title">Prior pregnancies (2)</span><button class="card-header-action" data-act="toast" data-m="Opens the previous-pregnancy editor (screen 2)">+ Add delivery</button></div>
+          <div class="timeline-list">
+            <button type="button" class="timeline-item" data-act="tl">
+              <div class="tl-head"><span class="tl-year">2023 · Term</span><span class="tl-route">Elective CS</span></div>
+              <div class="tl-details" data-wrap>Male, 3,450 g · Uneventful repeat cesarean</div>
+              <div class="tl-more" data-wrap><b>Al Salam International · Dr. Sherif Radwan.</b> Indication: previous 1 CS. Spinal anesthesia, no complications.</div>
+            </button>
+            <button type="button" class="timeline-item" data-act="tl">
+              <div class="tl-head"><span class="tl-year">2021 · Term</span><span class="tl-route">Primary CS</span></div>
+              <div class="tl-details" data-wrap>Female, 3,100 g · Breech presentation</div>
+              <div class="tl-more" data-wrap><b>Cleopatra Hospital · Dr. Sherif Radwan.</b> Indication: persistent frank breech at 38w. APGAR 9/10.</div>
+            </button>
+          </div>
+        </div>
+        <div class="m3-card">
+          <div class="card-header-row"><span class="card-title">Background histories</span><button class="card-header-action" data-act="allnil">✓ All nil</button></div>
+          <div class="chip-row" data-list="obs.hist"></div>
+        </div>
+      </div>
+      <div class="phone-actions-bar"><button class="btn-cancel" data-act="toast" data-m="Closed (demo only)">Close</button><button class="btn-save" data-act="toast" data-m="Obstetric history saved (demo only)">Save profile</button></div>
+      <div class="toast"></div>
+    </div>
+    <div class="review-notes">
+      <div><b>Faster:</b> G/P/A steppers instead of typing; one tap sets primigravida (G1 P0 A0).</div>
+      <div><b>Keeps:</b> gravida, parity, abortion, prior deliveries, medical, surgical, family and allergy histories.</div>
+      <div class="kept-fields">Fields kept: <code>gravida</code>, <code>parity</code>, <code>abortion</code>, <code>previousPregnancies</code>, <code>medicalHistory</code>, <code>surgicalHistory</code>, <code>familyHistory</code>, <code>allergyHistory</code>.</div>
+    </div>
+  </section>
+
+  <!-- SCREEN 2 -->
+  <section id="scr2" class="screen-section">
+    <div class="section-header"><h2>2. Previous pregnancies</h2><p>Approved design</p></div>
+    <div class="phone">
+      <div class="phone-app-bar">
+        <button class="back-btn" data-act="toast" data-m="Back (demo only)" aria-label="Back">←</button>
+        <div class="app-bar-titles"><h3>Previous pregnancy</h3><small>Nour Hassan</small></div>
+        <span class="app-chip" style="background:#fff;color:#0D1B3D">Add / Edit</span>
+      </div>
+      <div class="phone-body">
+        <div class="m3-card">
+          <span class="card-title">1 · Year and type</span>
+          <div class="rowx"><div><div class="lbl">Delivery year</div><div class="stepper-control" style="margin-top:2px"><button class="stepper-btn" data-act="yr" data-d="-1" aria-label="Year minus">−</button><span id="pp-year" class="stepper-val">2022</span><button class="stepper-btn" data-act="yr" data-d="1" aria-label="Year plus">+</button></div></div></div>
+          <div class="chip-row" data-list="pp.year"></div>
+          <div class="lbl">Fetal number</div>
+          <div class="chip-row" data-list="pp.fetal"></div>
+        </div>
+        <div class="m3-card">
+          <span class="card-title">2 · Outcome and mode</span>
+          <div class="subtext" data-wrap>Tap the outcome; the mode choices follow it.</div>
+          <div class="chip-row" data-list="pp.out"></div>
+          <div style="background:var(--scl);border-radius:12px;padding:8px">
+            <div id="branch-title" class="lbl">Cesarean sub-type</div>
+            <div class="chip-row" style="margin-top:6px" data-list="pp.mode"></div>
+          </div>
+        </div>
+        <div class="m3-card">
+          <div class="card-header-row"><span class="card-title">3 · Hospital and notes</span><span class="subtext">Optional</span></div>
+          <div class="lbl">Hospital</div>
+          <div class="chip-row" data-list="pp.hosp"></div>
+          <div class="lbl">Complications</div>
+          <div class="chip-row" data-list="pp.comp"></div>
+          <div class="subtext" data-wrap>Full term boy 3.3 kg. Uneventful recovery. Dr. Sherif Radwan.</div>
+        </div>
+      </div>
+      <div class="phone-actions-bar"><button class="btn-cancel" data-act="toast" data-m="Cancelled (demo only)">Cancel</button><button class="btn-save" data-act="toast" data-m="Previous pregnancy saved (demo only)">Save record</button></div>
+      <div class="toast"></div>
+    </div>
+    <div class="review-notes">
+      <div><b>Faster:</b> one tap on the outcome sets outcome and mode choices; year stepper, no keyboard.</div>
+      <div><b>Keeps:</b> year, pregnancy type, outcome, mode, loss management, hospital and doctor, other details, clinician.</div>
+      <div class="kept-fields">Fields kept: <code>dateText</code>, <code>outcome</code>, <code>birthMethod</code>, <code>deliveryBy</code>, <code>pregnancyType</code>, <code>lossManagement</code>, <code>placeAndDoctor</code>, <code>otherDetails</code>, <code>clinicianId</code>.</div>
+    </div>
+  </section>
+
+  <!-- SCREEN 3 -->
+  <section id="scr3" class="screen-section">
+    <div class="section-header"><h2>3. Pregnancy dating</h2><p>Approved design</p></div>
+    <div class="phone">
+      <div class="phone-app-bar">
+        <button class="back-btn" data-act="toast" data-m="Back (demo only)" aria-label="Back">←</button>
+        <div class="app-bar-titles"><h3>Pregnancy dating</h3><small>Farida Mansour</small></div>
+      </div>
+      <div class="phone-body">
+        <div class="m3-card">
+          <div class="lbl">Dating method</div>
+          <div class="chip-row" data-list="dt.method"></div>
+        </div>
+        <div class="m3-card">
+          <div class="card-header-row"><span id="dt-title" class="card-title">LMP and cycle</span><span id="dt-badge" class="tag-badge" style="background:var(--pc);color:var(--opc)">Standard</span></div>
+          <div id="p-lmp">
+            <div class="lbl">Last menstrual period</div>
+            <input type="date" id="d-lmp" class="dinp" value="2026-07-20" data-calc style="margin-top:2px">
+            <div style="margin-top:6px"><button class="btn-use-this" style="background:var(--sv);color:var(--on)" data-act="lmp14">14 weeks ago</button></div>
+            <div class="lbl" style="margin-top:8px">Cycle</div>
+            <div class="chip-row" data-list="dt.cycle" style="margin-top:4px"></div>
+          </div>
+          <div id="p-ivf" hidden>
+            <div class="lbl">Embryo transfer date</div>
+            <input type="date" id="d-ivf" class="dinp" value="2026-08-05" data-calc style="margin-top:2px">
+            <div class="lbl" style="margin-top:8px">Embryo age at transfer</div>
+            <div class="chip-row" data-list="dt.emb" style="margin-top:4px"></div>
+          </div>
+          <div id="p-us" hidden>
+            <div class="lbl">First-trimester scan date</div>
+            <input type="date" id="d-us" class="dinp" value="2026-10-15" data-calc style="margin-top:2px">
+            <div class="rowx" style="margin-top:8px;align-items:stretch">
+              <div class="fact-tile" style="flex:1 1 40%"><span class="label">CRL 45 mm</span><span class="val">11w 1d</span></div>
+              <div class="fact-tile" style="flex:1 1 40%"><span class="label">Scan due date</span><span id="us-edd" class="val" style="color:var(--pri)">5 May 2027</span></div>
+            </div>
+          </div>
+          <div id="p-edd" hidden>
+            <div class="lbl">Agreed due date (direct)</div>
+            <input type="date" id="d-edd" class="dinp" value="2027-05-05" data-calc style="margin-top:2px">
+            <div class="subtext" style="margin-top:6px" data-wrap>The doctor’s agreed due date overrides all automatic calculations.</div>
+          </div>
+        </div>
+        <div class="hero-calc">
+          <div class="l">Current pregnancy</div>
+          <div class="r">
+            <div><div id="hero-ga" class="ga">14w 5d</div><div id="hero-sub" style="font-size:.88em;opacity:.9" data-wrap>2nd trimester</div></div>
+            <div style="text-align:right"><div class="l">Due date</div><div id="hero-edd" class="edd">26 Apr 2027</div></div>
+          </div>
+        </div>
+        <div id="disc-warn" class="reconcile-card" hidden>
+          <div style="font-weight:700">⚠ Dating differs</div>
+          <div class="subtext" style="color:inherit" data-wrap id="disc-text"></div>
+          <div class="reconcile-diff">
+            <div class="diff-item"><div class="m" id="df-l-m">By LMP</div><div class="e" id="df-l-e"></div><div class="g" id="df-l-g"></div></div>
+            <div style="font-weight:700;color:var(--err)">≠</div>
+            <div class="diff-item"><div class="m" id="df-s-m">By scan</div><div class="e" id="df-s-e"></div><div class="g" id="df-s-g"></div></div>
+          </div>
+          <button class="btn-use-this" data-act="resolve">✓ Use scan due date</button>
+        </div>
+        <div id="disc-ok" class="reconcile-card ok" hidden>
+          <div style="font-weight:700">✓ Dating reconciled</div>
+          <div class="subtext" style="color:inherit" data-wrap>Agreed due date set from the first-trimester scan.</div>
+        </div>
+      </div>
+      <div class="phone-actions-bar"><button class="btn-cancel" data-act="toast" data-m="Cancelled (demo only)">Cancel</button><button class="btn-save" data-act="toast" data-m="Dating accepted (demo only)">Accept dating</button></div>
+      <div class="toast"></div>
+    </div>
+    <div class="review-notes">
+      <div><b>Faster:</b> one tap picks the method (LMP, IVF, Scan, Clinical); only that method’s inputs show; the due date is calculated live.</div>
+      <div><b>Keeps:</b> LMP, transfer date and embryo age, scan date, agreed due date, method.</div>
+      <div><b>Try:</b> Dating method Scan or Clinical, or change the LMP date; the scan differs from LMP by 9 days.</div>
+      <div class="kept-fields">Fields kept: <code>lmpDate</code>, <code>ultrasoundEdd</code>, <code>agreedEdd</code>, <code>datingMethod</code>, <code>transferDate</code>, <code>embryoAgeDays</code>, <code>notes</code>.</div>
+    </div>
+  </section>
+
+  <!-- SCREEN 4 -->
+  <section id="scr4" class="screen-section">
+    <div class="section-header"><h2>4. Clinical attention card</h2><p>Approved design</p></div>
+    <div class="phone">
+      <div class="phone-app-bar">
+        <button class="back-btn" data-act="toast" data-m="Back (demo only)" aria-label="Back">←</button>
+        <div class="app-bar-titles"><h3>Yasmine Zaki</h3><small>High-risk · 32w 1d</small></div>
+        <span class="app-chip" style="background:var(--err);color:#fff">High risk</span>
+      </div>
+      <div class="phone-body">
+        <div class="alert-banner">
+          <div class="t"><span>Severe blood pressure</span><span class="bdg">165/110</span></div>
+          <div data-wrap style="font-weight:600">Recorded 28 Oct 2026 · shows in red on the list, set automatically from visit vitals.</div>
+        </div>
+        <div class="m3-card fld">
+          <label for="ca-text" class="card-title">Clinical attention</label>
+          <div class="lbl">Quick phrases</div>
+          <div class="chip-row" data-list="ca.phr"></div>
+          <textarea id="ca-text" rows="2" maxlength="140" aria-label="Clinical attention"></textarea>
+          <div class="cnt" id="ca-cnt">0/140</div>
+        </div>
+        <div class="lbl">Shows on the patient list as:</div>
+        <div class="plc">
+          <div class="h"><div><div class="nm">Yasmine Zaki</div><div class="cs">ANC-2026-092 · Age 34</div></div><span class="tag-badge" style="background:var(--tag-risk-bg);color:var(--tag-risk-txt);border:1px solid var(--tag-risk-bd)">BP 165/110</span></div>
+          <div class="pbadges"><span class="tag-badge" style="background:var(--tag-ga-bg);color:var(--tag-ga-txt)">32w 1d</span><span class="tag-badge" style="background:var(--errc);color:var(--oerrc)">Rh−</span><span class="tag-badge" style="background:var(--tag-obs-bg);color:var(--tag-obs-txt)">Prev 2 CS</span></div>
+          <div id="ca-prev"></div>
+        </div>
+      </div>
+      <div class="phone-actions-bar"><button class="btn-cancel" data-act="toast" data-m="Closed (demo only)">Back</button><button class="btn-save" data-act="toast" data-m="Attention saved (demo only)">Save attention</button></div>
+      <div class="toast"></div>
+    </div>
+    <div class="review-notes">
+      <div><b>Faster:</b> tap a phrase to add it as a new line; the patient-list preview updates as you type (2 lines, then “+N more”; tap it to open all).</div>
+      <div><b>Keeps:</b> the multi-line clinical attention text (140 characters), the automatic severe blood pressure alert.</div>
+      <div class="kept-fields">Fields kept: <code>clinicalAttention</code> (multi-line string), <code>SevereBpAttention</code> (vitals hook), <code>riskLevel</code>.</div>
+    </div>
+  </section>
+
+  <!-- SCREEN 5 -->
+  <section id="scr5" class="screen-section">
+    <div class="section-header"><h2>5. Delivery plan</h2><p>Approved design</p></div>
+    <div class="phone">
+      <div class="phone-app-bar">
+        <button class="back-btn" data-act="toast" data-m="Back (demo only)" aria-label="Back">←</button>
+        <div class="app-bar-titles"><h3>Delivery plan</h3><small>Laila Tawfik · 36w 4d</small></div>
+        <span class="app-chip" style="background:var(--tag-plan-bg);color:var(--tag-plan-txt)">Term plan</span>
+      </div>
+      <div class="phone-body">
+        <div class="m3-card">
+          <span class="card-title">1 · Mode and timing</span>
+          <div class="lbl">Planned mode</div>
+          <div class="chip-row" data-list="dp.mode"></div>
+          <div class="rowx" style="margin-top:4px">
+            <div><div class="lbl">Target timing</div><div class="stepper-control" style="margin-top:2px"><button class="stepper-btn" data-act="tm" data-d="-1" aria-label="Timing minus">−</button><span id="tm-val" class="stepper-val" style="min-width:64px">38w 4d</span><button class="stepper-btn" data-act="tm" data-d="1" aria-label="Timing plus">+</button></div></div>
+            <div style="text-align:right"><div class="lbl">Date</div><div id="tm-date" class="delivery-date">15 Nov 2026</div></div>
+          </div>
+          <div class="chip-row" data-list="dp.time"></div>
+        </div>
+        <div class="m3-card">
+          <span class="card-title">2 · Hospital and team</span>
+          <div class="lbl">Planned hospital</div>
+          <div class="chip-row" data-list="dp.hosp"></div>
+          <div class="fact-tile"><span class="label">Primary consultant</span><span class="val" style="color:var(--pri)">Dr. Sherif Radwan</span></div>
+          <div class="fact-tile"><span class="label">Anesthesia</span><span class="val">Spinal (regional)</span></div>
+        </div>
+        <div class="m3-card">
+          <span class="card-title">3 · Safety and blood bank</span>
+          <div class="subtext">Tap the precautions to enable</div>
+          <div class="chip-row" data-list="dp.prec"></div>
+        </div>
+        <div class="m3-card">
+          <span class="card-title">4 · Fees</span>
+          <div class="rowx"><div><div class="lbl">Obstetrician fee</div><div class="stepper-control" style="margin-top:2px"><button class="stepper-btn" data-act="fee" data-d="-1000" aria-label="Fee minus">−</button><span id="fee-val" class="stepper-val" style="min-width:96px">18,000 EGP</span><button class="stepper-btn" data-act="fee" data-d="1000" aria-label="Fee plus">+</button></div></div></div>
+          <div class="lbl">Hospital package</div>
+          <div class="chip-row" data-list="dp.tier"></div>
+          <div class="subtext" data-wrap>Includes operative delivery, assistant fees and 2 routine postpartum visits.</div>
+        </div>
+        <button type="button" class="m3-card" style="border-style:dashed;text-align:left;color:inherit;font:inherit;cursor:pointer" data-act="toast" data-m="Postpartum details are entered after delivery">
+          <div class="card-header-row"><span class="card-title" style="color:var(--mut)">5 · Postpartum plan</span><span class="tag-badge" style="background:var(--scl);color:var(--mut)">After delivery</span></div>
+          <div class="subtext" data-wrap>Kept apart from antepartum planning. Active once delivery is confirmed.</div>
+        </button>
+      </div>
+      <div class="phone-actions-bar"><button class="btn-cancel" data-act="toast" data-m="Cancelled (demo only)">Cancel</button><button class="btn-save" data-act="toast" data-m="Delivery plan saved (demo only)">Save plan</button></div>
+      <div class="toast"></div>
+    </div>
+    <div class="review-notes">
+      <div><b>Faster:</b> planned mode, hospital and precautions are taps; the timing stepper gives the calendar date.</div>
+      <div><b>Keeps:</b> hospital, agreed fees, mode, timing, consultant, special instructions, postpartum note.</div>
+      <div class="kept-fields">Fields kept: <code>hospital</code>, <code>fees</code>, <code>plan</code>, <code>postpartum</code> (from <code>DeliveryNoteSections</code> in <code>DeliveryNotesParser.kt</code>).</div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+'use strict';
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAY=864e5,TD=Date.UTC(2026,10,1);
+const fit=()=>{if(window.AncUI)AncUI.fit()};
+function toast(f,msg,undo){const t=$('.toast',f);t.innerHTML='<span data-wrap>'+esc(msg)+'</span>'+(undo?'<button type="button" data-undo>Undo</button>':'');t.classList.add('show');f._undo=undo||null;clearTimeout(f._tt);f._tt=setTimeout(()=>t.classList.remove('show'),undo?5000:2600);fit()}
+
+/* ---------- ONE shared chip-list engine with "+ Add other" ---------- */
+const S={},L={},AO={open:null,val:''};
+AO.load=k=>{try{const v=JSON.parse(localStorage.getItem('anc-ao-'+k)||'[]');return Array.isArray(v)?v:[]}catch(e){return []}};
+AO.save=(k,a)=>{try{localStorage.setItem('anc-ao-'+k,JSON.stringify(a))}catch(e){}};
+function def(k,cfg){L[k]=Object.assign({m:'single',add:true,skey:()=>k,norm:v=>v,err:'',on:null},cfg);S[k]=cfg.init!==undefined?cfg.init:(L[k].m==='multi'?[]:'')}
+function items(k){const c=L[k],base=c.base();if(!c.add)return base;const lc=base.map(x=>x.toLowerCase());return base.concat(AO.load(c.skey()).filter(v=>!lc.includes(v.toLowerCase())))}
+function isSel(k,v){const c=L[k];return c.m==='multi'?S[k].includes(v):c.m==='append'?c.has(v):S[k]===v}
+function aoRow(k){return '<span class="aoRow"><input class="aoin" data-ao-in maxlength="40" value="'+esc(AO.val)+'" placeholder="Type a value" aria-label="New value"><button type="button" class="btn-use-this" data-aoadd="'+k+'">Add</button><button type="button" class="fb" data-aoclose aria-label="Cancel">✕</button></span>'}
+function draw(k){const el=$('[data-list="'+k+'"]');if(!el)return;const c=L[k];
+  el.innerHTML=items(k).map(v=>{const on=isSel(k,v);return '<button type="button" class="chip'+(on?' active':'')+(c.cls?' '+c.cls(v):'')+'" data-k="'+k+'" data-v="'+esc(v)+'" aria-pressed="'+on+'">'+(on?'✓ ':'')+esc(v)+'</button>'}).join('')+(c.add?(AO.open===k?aoRow(k):'<button type="button" class="chip addo" data-ao="'+k+'">+ Add other</button>'):'');fit()}
+const drawAll=()=>Object.keys(L).forEach(draw);
+function setSel(k,v){const c=L[k];
+  if(c.m==='multi'){if(S[k].includes(v))S[k]=S[k].filter(x=>x!==v);else S[k]=S[k].concat(v)}
+  else if(c.m==='append'){return c.append(v)}
+  else S[k]=v;
+  if(c.on)c.on(v);return true}
+function pick(k,v){setSel(k,v);draw(k)}
+function aoAdd(k){const c=L[k],f=$('[data-list="'+k+'"]').closest('.phone'),raw=AO.val.trim().replace(/\s+/g,' ');
+  if(!raw){toast(f,'Type a value first');return}
+  const n=c.norm(raw);if(n===null){toast(f,c.err||'Not a valid value');return}
+  const sk=c.skey(),saved=AO.load(sk),have=c.base().concat(saved).find(x=>x.toLowerCase()===n.toLowerCase()),v=have||n,isNew=!have;
+  if(isNew){saved.push(v);AO.save(sk,saved)}
+  const snap=JSON.stringify(S[k]);AO.open=null;AO.val='';
+  let used=true;
+  if(c.m==='multi'){if(!S[k].includes(v)){S[k]=S[k].concat(v)}if(c.on)c.on(v)}
+  else if(c.m==='append'){used=c.append(v)}
+  else{S[k]=v;if(c.on)c.on(v)}
+  drawAll();
+  toast(f,used?(isNew?'Saved for next time':'Already in your list'):'Saved for next time (not added: limit reached)',()=>{
+    if(isNew)AO.save(sk,AO.load(sk).filter(x=>x!==v));
+    if(c.m==='append')c.remove(v);else{S[k]=JSON.parse(snap);if(c.on)c.on(S[k])}
+    drawAll();toast(f,'Undone')});
+}
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button,[data-act]');if(!t)return;
+  if(t.dataset.k&&t.dataset.v!==undefined){pick(t.dataset.k,t.dataset.v);return}
+  if(t.dataset.ao){AO.open=t.dataset.ao;AO.val='';drawAll();const i=$('[data-ao-in]');if(i)i.focus();return}
+  if(t.hasAttribute('data-aoclose')){AO.open=null;drawAll();return}
+  if(t.dataset.aoadd){aoAdd(t.dataset.aoadd);return}
+  if(t.hasAttribute('data-undo')){const f=t.closest('.phone'),u=f._undo;f._undo=null;if(u)u();return}
+  if(t.dataset.act&&ACT[t.dataset.act])ACT[t.dataset.act](t);
+});
+document.addEventListener('input',e=>{
+  if(e.target.hasAttribute&&e.target.hasAttribute('data-ao-in'))AO.val=e.target.value;
+  if(e.target.id==='ca-text')caUpdate();
+  if(e.target.hasAttribute&&e.target.hasAttribute('data-calc'))calc();
+});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.hasAttribute&&e.target.hasAttribute('data-ao-in')){e.preventDefault();const k=AO.open;if(k)aoAdd(k)}});
+const ACT={toast:t=>toast(t.closest('.phone'),t.dataset.m)};
+
+/* ---------- screen 1 ---------- */
+const gpa={g:3,p:2,a:0};
+function gpaShow(){['g','p','a'].forEach(f=>$('#gpa-'+f).textContent=gpa[f]);
+  $('#obs-summary').textContent='G'+gpa.g+' P'+gpa.p+' A'+gpa.a+' · '+(gpa.g===1&&gpa.p===0&&gpa.a===0?'Primigravida':gpa.p+' previous')}
+ACT.gpa=t=>{const f=t.dataset.f;gpa[f]=Math.max(0,gpa[f]+ +t.dataset.d);if(f!=='g'&&gpa.g<gpa.p+gpa.a+1)gpa.g=gpa.p+gpa.a+1;if(f==='g'&&gpa.g<gpa.p+gpa.a+1)gpa.g=gpa.p+gpa.a+1;gpaShow()};
+ACT.primi=()=>{gpa.g=1;gpa.p=0;gpa.a=0;gpaShow()};
+ACT.tl=t=>{t.classList.toggle('expanded')};
+ACT.allnil=t=>{S['obs.hist']=['Medical: Nil','Allergy: Nil (NKDA)'];draw('obs.hist');toast(t.closest('.phone'),'Empty histories set to nil')};
+def('obs.hist',{m:'multi',base:()=>['Medical: Nil','Surgical: Appendectomy','Family: T2DM (Mother)','Allergy: Nil (NKDA)'],init:['Medical: Nil','Allergy: Nil (NKDA)'],cls:v=>/Nil/.test(v)?'teal':''});
+
+/* ---------- screen 2 ---------- */
+const OUTS={
+ 'Live birth (CS)':{t:'Cesarean sub-type',modes:['Elective LSCS','Emergency LSCS','Classical cesarean']},
+ 'Live birth (vaginal)':{t:'Vaginal route',modes:['Spontaneous (SVD)','Instrumental (vacuum)','Instrumental (forceps)']},
+ 'Miscarriage':{t:'Loss management',modes:['Medical','Surgical (D&C / MVA)','Expectant']},
+ 'Stillbirth (IUFD)':{t:'Delivery route',modes:['Induction (vaginal)','Cesarean section']},
+ 'Termination':{t:'Termination method',modes:['Medical','Surgical evacuation','Hysterotomy']},
+ 'Hysterotomy (CS)':{t:'Hysterotomy indication',modes:['Elective LSCS','Emergency LSCS','Classical cesarean']}
+};
+const outInfo=()=>OUTS[S['pp.out']]||{t:'Delivery mode',modes:[]};
+const yearOk=v=>/^(19[89]\d|20[0-2]\d)$/.test(v)?v:null;
+def('pp.year',{base:()=>['2024','2023','2022','2020'],init:'2022',norm:yearOk,err:'Enter a year between 1980 and 2029',on:v=>{$('#pp-year').textContent=v}});
+def('pp.fetal',{base:()=>['Singleton','Twins'],init:'Singleton'});
+def('pp.out',{base:()=>Object.keys(OUTS),init:'Live birth (CS)',cls:v=>/Miscarriage|Stillbirth/.test(v)?'danger':'',
+  on:()=>{S['pp.mode']=outInfo().modes[0]||'';$('#branch-title').textContent=outInfo().t;draw('pp.mode')}});
+def('pp.mode',{base:()=>outInfo().modes,init:'Elective LSCS',skey:()=>'pp.mode|'+S['pp.out']});
+def('pp.hosp',{base:()=>['Al Salam Int.','Cleopatra','Dar Al Fouad'],init:'Al Salam Int.'});
+def('pp.comp',{m:'multi',base:()=>['Uneventful','PPH','Pre-eclampsia','Gestational DM','NICU stay'],init:['Uneventful'],cls:v=>v==='Uneventful'?'teal':''});
+ACT.yr=t=>{const y=Math.max(1990,Math.min(2026,+$('#pp-year').textContent+ +t.dataset.d));S['pp.year']=String(y);$('#pp-year').textContent=y;draw('pp.year')};
+
+/* ---------- screen 3: dating (methods are fixed, no add-other) ---------- */
+const P=s=>{const a=s.split('-').map(Number);return Date.UTC(a[0],a[1]-1,a[2])};
+const iso=ms=>new Date(ms).toISOString().slice(0,10);
+const fmt=ms=>{const d=new Date(ms);return d.getUTCDate()+' '+MON[d.getUTCMonth()]+' '+d.getUTCFullYear()};
+const gaTxt=t=>Math.floor(t/7)+'w '+(t%7)+'d';
+const dating={done:false};
+const embAge=()=>{const m=/\d+/.exec(S['dt.emb']);return m?+m[0]:5};
+function eddOf(m){
+  if(m==='LMP')return P($('#d-lmp').value)+280*DAY;
+  if(m==='IVF')return P($('#d-ivf').value)+(266-embAge())*DAY;
+  if(m==='Scan')return P($('#d-us').value)+202*DAY;
+  return P($('#d-edd').value)}
+const TITLES={LMP:['LMP and cycle','Standard'],IVF:['IVF embryo transfer','Assisted'],Scan:['First-trimester scan','Biometric'],Clinical:['Agreed due date','Override']};
+const PANEL={LMP:'p-lmp',IVF:'p-ivf',Scan:'p-us',Clinical:'p-edd'};
+function calc(){const m=S['dt.method'];
+  Object.keys(PANEL).forEach(k=>{$('#'+PANEL[k]).hidden=k!==m});
+  $('#dt-title').textContent=TITLES[m][0];$('#dt-badge').textContent=TITLES[m][1];
+  const edd=eddOf(m),ga=280-Math.round((edd-TD)/DAY),left=Math.round((edd-TD)/DAY);
+  $('#hero-ga').textContent=gaTxt(Math.max(0,ga));
+  $('#hero-sub').textContent=(ga<98?'1st':ga<196?'2nd':'3rd')+' trimester · '+left+' days to due date';
+  $('#hero-edd').textContent=fmt(edd);
+  const le=eddOf('LMP'),se=eddOf('Scan'),diff=Math.round(Math.abs(le-se)/DAY);
+  $('#us-edd').textContent=fmt(se);
+  const warn=m!=='Clinical'&&diff>7;
+  $('#disc-warn').hidden=!warn;$('#disc-ok').hidden=!(dating.done&&m==='Clinical');
+  if(warn){
+    $('#disc-text').innerHTML='LMP and the first-trimester scan differ by <b>'+diff+' days</b> (more than 7). The scan date takes precedence.';
+    const g=e=>gaTxt(Math.max(0,280-Math.round((e-TD)/DAY)));
+    $('#df-l-m').textContent='By LMP';$('#df-l-e').textContent=fmt(le);$('#df-l-g').textContent=g(le);
+    $('#df-s-m').textContent='By scan';$('#df-s-e').textContent=fmt(se);$('#df-s-g').textContent=g(se)}
+  fit()}
+def('dt.method',{base:()=>['LMP','IVF','Scan','Clinical'],init:'LMP',add:false,on:calc});
+def('dt.cycle',{base:()=>['Regular 28-day','Irregular cycle','Uncertain date'],init:'Regular 28-day'});
+def('dt.emb',{base:()=>['Day 3 · cleavage','Day 5 · blastocyst','Day 6 · blastocyst'],init:'Day 5 · blastocyst',on:calc,
+  norm:v=>/^\d\b/.test(v)?'Day '+v:/\d/.test(v)?v:null,err:'Include the day number, for example Day 4'});
+ACT.lmp14=()=>{$('#d-lmp').value=iso(TD-98*DAY);calc()};
+ACT.resolve=t=>{$('#d-edd').value=iso(eddOf('Scan'));dating.done=true;S['dt.method']='Clinical';draw('dt.method');calc();toast(t.closest('.phone'),'Agreed due date set to '+fmt(eddOf('Scan')))};
+
+/* ---------- screen 4: clinical attention ---------- */
+const MAXC=140;let caOpen=false;
+const caLines=()=>$('#ca-text').value.split('\n').map(x=>x.trim()).filter(Boolean);
+function caSet(txt){$('#ca-text').value=txt;caUpdate()}
+def('ca.phr',{m:'append',base:()=>['Planned vaginal delivery','Previous cesarean','Anaemia on iron','PIH on labetalol','GDM on diet','Rh negative','Twin pregnancy'],
+  has:v=>caLines().some(x=>x.toLowerCase()===v.toLowerCase()),
+  append:v=>{const f=$('#ca-text').closest('.phone');if(L['ca.phr'].has(v)){toast(f,'Already added');return false}
+    const cur=$('#ca-text').value.replace(/\s+$/,''),nx=cur?cur+'\n'+v:v;
+    if(nx.length>MAXC){toast(f,'Limit is 140 characters');return false}caSet(nx);return true},
+  remove:v=>caSet(caLines().filter(x=>x.toLowerCase()!==v.toLowerCase()).join('\n'))});
+function caUpdate(){const v=$('#ca-text').value,c=$('#ca-cnt');c.textContent=v.length+'/'+MAXC;c.classList.toggle('max',v.length>=MAXC);draw('ca.phr');
+  const ls=caLines(),shown=caOpen?ls:ls.slice(0,2),more=ls.length-2;
+  $('#ca-prev').innerHTML=ls.length?'<button type="button" class="attbox'+(caOpen?' open':'')+'" data-act="caopen" aria-expanded="'+caOpen+'"><span class="ls">'+shown.map(x=>'<span>⚠ '+esc(x)+'</span>').join('')+'</span>'+(more>0&&!caOpen?'<span class="more">+'+more+' more</span>':'')+'</button>':'<div class="subtext">No attention text. Nothing extra shows on the list.</div>';
+  fit()}
+ACT.caopen=()=>{caOpen=!caOpen;caUpdate()};
+
+/* ---------- screen 5: delivery plan ---------- */
+let tw=38,td=4;const GA0=36*7+4;
+function tmShow(txt,date){$('#tm-val').textContent=txt||(tw+'w '+td+'d');$('#tm-date').textContent=date||fmt(TD+(tw*7+td-GA0)*DAY);fit()}
+function tmParse(v){if(/^spont/i.test(v)){tmShow('Spontaneous','On labour');return}const m=/^(\d+)\+(\d)/.exec(v);if(m){tw=+m[1];td=+m[2];tmShow()}}
+def('dp.mode',{base:()=>['Elective CS','Trial of scar (VBAC)','Normal vaginal (NVD)','Induction of labour'],init:'Elective CS'});
+def('dp.time',{base:()=>['38+0 w','38+4 w','39+0 w','Spontaneous'],init:'38+4 w',on:tmParse,
+  norm:v=>{const m=/^(3[6-9]|4[0-2])\s*(?:\+|w|\s)?\s*([0-6])?/i.exec(v);return m?m[1]+'+'+(m[2]||'0')+' w':null},err:'Use weeks from 36 to 42, for example 39+2'});
+def('dp.hosp',{base:()=>['Al Salam Int.','Cleopatra','Dar Al Fouad'],init:'Al Salam Int.'});
+def('dp.prec',{m:'multi',base:()=>['2 units PRBC crossmatch','Paediatrician at delivery','ICU bed standby','Anti-D ready','Hold LMWH 12 h before','Tubal ligation consent'],init:['2 units PRBC crossmatch','Paediatrician at delivery']});
+def('dp.tier',{base:()=>['Standard','Suite'],init:'Suite'});
+ACT.tm=t=>{td+= +t.dataset.d;if(td>6){tw++;td=0}if(td<0){tw--;td=6}S['dp.time']=tw+'+'+td+' w';tmShow();draw('dp.time')};
+let fee=18000;
+ACT.fee=t=>{fee=Math.max(5000,fee+ +t.dataset.d);$('#fee-val').textContent=fee.toLocaleString('en-US')+' EGP';fit()};
+
+/* ---------- start ---------- */
+caSet('Previous severe PPH\nRh negative\nPenicillin allergy');
+gpaShow();drawAll();calc();tmShow();
+</script>
+<script src="../shared.js"></script>
+</body>
+</html>

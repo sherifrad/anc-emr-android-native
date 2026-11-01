@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ANC EMR · Directory, chart, visit</title>
+<style>
+:root{color-scheme:light;
+--bg:#FBF8F5;--sf:#fff;--sv:#F3E9E7;--sc:#F4EFEA;--sch:#EFE9E4;--on:#0D1B3D;--onv:#4C3F43;--mut:#6B6166;--out:#79747E;--outv:#CAC4D0;
+--pri:#0D1B3D;--onpri:#fff;--pc:#D6DFFF;--opc:#041334;--sec:#934F5B;--secc:#FFD9DE;--osecc:#3B0815;--ter:#176B70;--terc:#AFECEE;--oterc:#002021;
+--err:#BA1A1A;--errc:#FFDAD6;--gB:#DCFCE7;--gT:#166534;--rB:#FEE2E2;--rT:#B91C1C;--bB:#E0F2FE;--bT:#0369A1;--aB:#FEF3C7;--aT:#92400E;
+--abg:#0D1B3D;--aon:#fff;--page:#E9E4DF;--shadow:0 1px 2px rgba(13,27,61,.12);--rose:#D49AA0}
+html[data-theme=dark]{color-scheme:dark;
+--bg:#0E121B;--sf:#1A202E;--sv:#262E40;--sc:#1E2638;--sch:#283248;--on:#E2E2EA;--onv:#CDC3C6;--mut:#A79EA4;--out:#8E95A5;--outv:#3A4459;
+--pri:#B4C5FF;--onpri:#002A78;--pc:#183F91;--opc:#DCE1FF;--sec:#FFB2BC;--secc:#762E3B;--osecc:#FFD9DE;--ter:#70D7D9;--terc:#004F50;--oterc:#8CF3F5;
+--err:#FFB4AB;--errc:#5C141D;--gB:#052E16;--gT:#86EFAC;--rB:#450A0A;--rT:#FCA5A5;--bB:#082F49;--bT:#BAE6FD;--aB:#451A03;--aT:#FDE68A;
+--abg:#141924;--aon:#E2E2EA;--page:#07090E;--shadow:0 1px 2px rgba(0,0,0,.5)}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+body{margin:0 0 96px;background:var(--page);color:var(--on);font:calc(15px*var(--fs))/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--fs:1}
+nav{position:sticky;top:0;z-index:50;background:#0D1B3D;color:#fff;display:flex;gap:2px;align-items:center;flex-wrap:wrap;padding:2px 8px;font-size:14px}
+nav b{margin-right:8px;font-size:.95em}
+nav a{color:#fff;text-decoration:none;padding:0 10px;min-height:48px;display:inline-flex;align-items:center;border-radius:24px;font:inherit;font-weight:600;background:transparent;border:0;cursor:pointer;white-space:nowrap}
+nav a:hover{background:rgba(255,255,255,.16)}
+header.top,section.scr{max-width:1000px;margin:0 auto;padding:16px 10px}
+h1{font-size:1.5em;margin:8px 0}
+h2{font-size:1.35em;margin:0 0 6px}
+.lead{color:var(--onv);margin:4px 0 14px;max-width:70ch}
+.pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(360px,100%),1fr));gap:28px;justify-items:center;align-items:start}
+.opt{width:min(360px,100%)}
+.opt h3{margin:0 0 8px;font-size:1.05em}
+.opt h3 span{background:var(--sec);color:var(--sf);border-radius:12px;padding:2px 10px;margin-right:6px}
+ul.nt{margin:12px 0 0;padding:12px 14px 12px 30px;background:var(--sf);border:1px solid var(--outv);border-radius:14px;font-size:.92em;color:var(--onv)}
+ul.nt li{margin:3px 0}
+ul.nt b{color:var(--on)}
+hr.sep{border:0;border-top:2px dashed var(--outv);margin:34px 0}
+/* ---------- phone ---------- */
+.phone{position:relative;width:min(360px,100%);height:720px;background:var(--bg);border:1px solid var(--outv);border-radius:26px;overflow:hidden;box-shadow:0 8px 28px rgba(13,27,61,.2);font-size:calc(14px*var(--fs));color:var(--on);line-height:1.35}
+.inner{display:flex;flex-direction:column;height:100%}
+.appbar{display:flex;align-items:center;gap:6px;background:var(--abg);color:var(--aon);padding:6px 8px;min-height:56px}
+.appbar .x{width:48px;height:48px;border:0;background:transparent;color:inherit;font-size:1.3em;cursor:pointer;flex:0 0 48px}
+.appbar b{display:block;font-size:1.1em}
+.appbar small{display:block;opacity:.8;font-size:.82em}
+.scroll{flex:1;overflow:auto;padding:0 10px 20px;overscroll-behavior:contain}
+.foot{display:flex;gap:8px;flex-wrap:wrap;padding:6px 10px;background:var(--sf);border-top:1px solid var(--outv)}
+.toast{position:absolute;left:12px;right:12px;bottom:84px;background:#0D1B3D;color:#fff;border-radius:14px;padding:6px 8px 6px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20;border:1px solid rgba(255,255,255,.25)}
+.toast.show{opacity:1;pointer-events:auto}
+.toast button{min-height:48px;border:0;background:transparent;color:#FFB2BC;font:inherit;font-weight:800;cursor:pointer;padding:0 12px}
+button{font-family:inherit}
+.btn{min-height:48px;min-width:max-content;padding:0 14px;border-radius:24px;border:1.5px solid var(--outv);background:var(--sf);color:var(--on);font:inherit;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.btn.pri{background:var(--pri);color:var(--onpri);border-color:var(--pri)}
+.btn.sec{background:var(--secc);color:var(--osecc);border-color:transparent}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--sec);padding:0 10px}
+.btn.danger{color:var(--err)}
+.btn.grow{flex:1 1 9em}
+.btn.full{width:100%}
+.btn:disabled{opacity:.45}
+/* sections: header sits on the page, card below */
+.sec{margin:12px 0 0}
+.sh{display:flex;align-items:center;gap:8px;margin:0 2px 6px;min-height:34px;font-size:.78em;letter-spacing:.1em;text-transform:uppercase;color:var(--sec);font-weight:800;border-left:4px solid var(--sec);padding-left:8px;width:100%;background:none;border-top:0;border-right:0;border-bottom:0;text-align:left;font-family:inherit}
+button.sh{cursor:pointer;min-height:48px}
+.sh em{margin-left:auto;font-style:normal;text-transform:none;letter-spacing:0;font-weight:500;color:var(--mut);text-align:right}
+.card{background:var(--sf);border:1px solid var(--outv);border-radius:16px;padding:10px;box-shadow:var(--shadow)}
+.card+.card{margin-top:10px}
+.lab{display:block;font-size:.74em;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);margin:12px 0 6px}
+.lab:first-child{margin-top:0}
+small,.sub{color:var(--mut);font-size:.82em;font-weight:400}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{position:relative;min-height:44px;padding:6px 12px;border-radius:22px;border:1.5px solid var(--outv);background:var(--sf);color:var(--on);font:inherit;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;max-width:100%;text-align:left}
+.chip::after{content:"";position:absolute;inset:-3px}
+.chip.on{background:var(--pc);border-color:var(--pri);color:var(--opc)}
+.chip .ck{font-style:normal;font-weight:800}
+.chip .cn{background:var(--sch);color:var(--on);border-radius:10px;padding:0 7px;font-size:.85em}
+.chip.on .cn{background:var(--sf)}
+.chip.warn.on{background:var(--rB);color:var(--rT);border-color:var(--rT)}
+.chip.ok.on{background:var(--gB);color:var(--gT);border-color:var(--gT)}
+.txt{width:100%;min-height:48px;border:1.5px solid var(--outv);border-radius:12px;padding:8px 12px;background:var(--sf);color:var(--on);font:inherit}
+textarea.txt{min-height:0;resize:none;line-height:1.35}
+.search{width:100%;min-height:48px;border:1.5px solid var(--outv);border-radius:24px;padding:0 16px;background:var(--sf);color:var(--on);font:inherit}
+input:focus,textarea:focus,button:focus-visible{outline:3px solid var(--ter);outline-offset:1px}
+.num{width:5.4em;min-height:48px;text-align:center;font-weight:800;font-size:1.15em;border:1.5px solid var(--outv);border-radius:12px;background:var(--sc);color:var(--on);font-family:inherit}
+.num.wide{width:9em;font-size:1em}
+.pill{display:inline-block;padding:3px 10px;border-radius:12px;font-weight:700;font-size:.82em;white-space:nowrap}
+.p-g{background:var(--gB);color:var(--gT)}.p-r{background:var(--rB);color:var(--rT)}.p-b{background:var(--bB);color:var(--bT)}.p-n{background:var(--sc);color:var(--mut)}.p-a{background:var(--aB);color:var(--aT)}
+.fb{min-height:48px;min-width:48px;background:transparent;border:0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
+/* batch bar */
+.batch{position:sticky;top:0;z-index:5;margin:0 -12px;padding:8px 12px;background:var(--bg);border-bottom:1px solid var(--outv)}
+.batch .b1{width:100%;min-height:48px;display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap;background:var(--sf);border:1.5px solid var(--outv);border-radius:14px;padding:6px 12px;color:var(--on);font:inherit;text-align:left;cursor:pointer}
+.batch .b1 .edit{margin-left:auto;color:var(--sec);font-weight:700}
+.batch .box{background:var(--sf);border:1.5px solid var(--pri);border-radius:14px;padding:12px}
+.dpick{min-height:48px;border:1.5px solid var(--outv);border-radius:22px;padding:0 10px;background:var(--sf);color:var(--on);font:inherit}
+/* list rows (lab A) */
+.lrow{padding:8px 0;border-top:1px solid var(--outv)}
+.lrow:first-child{border-top:0}
+.lr1{display:flex;align-items:center;gap:8px}
+.lname{flex:1 1 auto;min-width:0;background:none;border:0;padding:4px 0;text-align:left;cursor:pointer;color:var(--on);font:inherit;min-height:48px}
+.lname b{display:block;font-size:1em}
+.lname small{display:block}
+.lrow .chips{margin:2px 0 4px}
+.det{background:var(--sc);border-radius:12px;padding:10px 12px;margin-top:6px}
+.hl{background:linear-gradient(0deg,var(--secc),var(--secc)) no-repeat;background-size:4px 100%}
+/* steppers */
+.stp{display:flex;align-items:center;gap:4px;flex:0 0 auto}
+.stp button{width:48px;height:48px;border-radius:50%;border:1.5px solid var(--outv);background:var(--sf);font-size:1.5em;font-weight:700;color:var(--pri);cursor:pointer;touch-action:manipulation;line-height:1;padding:0}
+.stp input{width:3.9em;border:0;border-bottom:2px solid var(--outv);background:transparent;font:inherit;font-weight:800;font-size:1.25em;text-align:center;color:var(--on);min-height:44px}
+.stp .un{color:var(--mut);font-size:.82em;min-width:2.3em}
+.brow{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--outv)}
+.brow:first-of-type{border-top:0}
+.brow .bl{flex:1 1 7.5em;min-width:0}
+.brow .bl b{display:block}
+/* choice cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(6.6em,1fr));gap:8px}
+.cc{position:relative;min-height:84px;border:1.5px solid var(--outv);border-radius:14px;background:var(--sf);color:var(--on);font:inherit;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px 4px;cursor:pointer;overflow-wrap:anywhere;text-align:center;line-height:1.15}
+.cc svg{width:40px;height:40px;flex:none}
+.cc.on{background:var(--pc);border-color:var(--pri);color:var(--opc)}
+.cc .tick{position:absolute;top:3px;right:7px;font-style:normal;font-weight:800}
+svg .pl{stroke:var(--sec);stroke-width:5;stroke-linecap:round;fill:none}
+svg .fl{fill:currentColor;stroke:none;opacity:.85}
+svg .os{fill:var(--ter);stroke:none}
+svg{stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.gac{background:var(--pc);color:var(--opc);border-radius:12px;padding:8px 12px;margin-top:10px}
+.gac p{margin:4px 0}
+.ga2{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.warnbox{background:var(--aB);color:var(--aT);border-radius:10px;padding:8px 10px;margin:8px 0 0}
+/* focus pager (lab B) */
+.tabs{display:flex;gap:6px;margin:10px 0}
+.tabs .chip{flex:1 1 auto;justify-content:center}
+.segs{display:flex;gap:3px;margin:4px 0 10px}
+.segs button{flex:1;min-height:48px;border:0;background:transparent;padding:0;cursor:pointer;display:flex;align-items:center}
+.segs i{display:block;width:100%;height:8px;border-radius:4px;background:var(--outv)}
+.segs .d i{background:var(--ter)}.segs .dh i{background:var(--rT)}.segs .dl i{background:var(--bT)}.segs .cur i{background:var(--pri);height:12px}
+.big{font-size:2.6em;font-weight:800;text-align:center;min-height:1.4em;letter-spacing:.02em}
+.big small{font-size:.4em}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}
+.keys button{min-height:54px;border-radius:14px;border:1.5px solid var(--outv);background:var(--sf);color:var(--on);font:inherit;font-size:1.5em;font-weight:700;cursor:pointer}
+.opt-big{display:flex;width:100%;min-height:56px;align-items:center;justify-content:space-between;gap:8px;border:1.5px solid var(--outv);border-radius:14px;background:var(--sf);color:var(--on);font:inherit;font-weight:700;padding:8px 16px;margin:6px 0;cursor:pointer;text-align:left}
+.opt-big.on{background:var(--pc);border-color:var(--pri);color:var(--opc)}
+.navr{display:flex;gap:8px;margin-top:10px}
+.navr .btn{flex:1 1 auto}
+.rv{display:flex;align-items:center;gap:8px;width:100%;min-height:56px;background:none;border:0;border-top:1px solid var(--outv);padding:6px 0;text-align:left;cursor:pointer;color:var(--on);font:inherit}
+.rv:first-child{border-top:0}
+.rv .a{flex:1;min-width:0}.rv .a b{display:block}
+.rv .v{font-weight:800}
+.pcard{padding:10px 0;border-top:1px solid var(--outv);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pcard:first-child{border-top:0}
+.pcard .a{flex:1 1 10em}
+.pcard .a b{display:block}
+/* ultrasound B rows */
+.frow{border-top:1px solid var(--outv)}
+.frow:first-child{border-top:0}
+.fh{width:100%;min-height:56px;display:flex;align-items:center;gap:10px;background:none;border:0;padding:4px 0;cursor:pointer;color:var(--on);font:inherit;text-align:left}
+.fh svg{width:30px;height:30px;flex:none;color:var(--onv)}
+.fh .t{flex:1;min-width:0}
+.fh .t small{display:block;text-transform:uppercase;letter-spacing:.07em;font-weight:700;font-size:.7em}
+.fh .val{font-weight:800}
+.fh .val.unset{color:var(--sec);border:1.5px dashed var(--sec);border-radius:14px;padding:4px 12px;font-weight:600}
+.fbody{padding:2px 0 12px}
+input[type=range]{width:100%;min-height:48px;accent-color:var(--sec)}
+.mini{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+/* medication */
+.mrow{display:flex;align-items:center;gap:4px;padding:8px 0;border-top:1px solid var(--outv);flex-wrap:wrap}
+.mrow:first-child{border-top:0}
+.mrow .mm{flex:1 1 9em;min-width:0}
+.mrow .mm b{display:block}
+.ib{min-height:48px;min-width:48px;padding:0 10px;border-radius:24px;border:0;background:transparent;color:var(--pri);font:inherit;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap}
+.ib.stop{color:var(--err)}
+.rx{border:2px solid var(--pri);border-radius:16px;padding:12px;background:var(--sf);margin-top:10px}
+.rx .rh{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+.rx .rh b{flex:1;font-size:1.15em}
+.tile{display:flex;align-items:center;gap:8px;min-height:56px;border:1.5px solid var(--outv);border-radius:14px;background:var(--sf);color:var(--on);font:inherit;padding:6px 8px 6px 12px;cursor:pointer;text-align:left}
+.tile .a{flex:1;min-width:0}.tile b{display:block}
+.tile .plus{font-style:normal;font-size:1.5em;color:var(--sec);font-weight:700;width:30px;text-align:center}
+.tile.has{background:var(--sc)}
+.tile.has .plus{color:var(--ter)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(11em,1fr));gap:8px}
+.mcard{border:1.5px solid var(--outv);border-radius:16px;background:var(--sf);padding:10px 10px 8px;margin-top:10px}
+.mcard.fresh{border-color:var(--ter);box-shadow:0 0 0 3px var(--terc)}
+.mcard.stopped{opacity:.65;background:var(--sc)}
+.mh{display:flex;align-items:center;gap:4px}
+.mh b{flex:1;min-width:0;font-size:1.05em}
+.toks{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 6px}
+.tok{position:relative;min-height:44px;border:1.5px solid var(--outv);border-radius:22px;background:var(--sc);color:var(--on);font:inherit;font-weight:700;padding:4px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.tok::after{content:"";position:absolute;inset:-2px}
+.tok i{font-style:normal;color:var(--mut);font-size:.8em}
+.tok.on{background:var(--pc);border-color:var(--pri);color:var(--opc)}
+.tok.pro.on2{background:var(--gB);color:var(--gT);border-color:var(--gT)}
+.panelx{background:var(--sc);border-radius:12px;padding:10px;margin:2px 0 6px}
+.tag{display:inline-block;margin:2px 4px 0 0;padding:1px 8px;border-radius:10px;font-size:.76em;font-weight:700;background:var(--gB);color:var(--gT)}
+.tag.r{background:var(--rB);color:var(--rT)}
+.empty{color:var(--mut);padding:8px 2px}
+@media (max-width:430px){header.top{padding:12px 12px}section.scr{padding:12px 0}section.scr>h2,section.scr>.lead,.opt:not(:first-child){padding:0 12px}.phone{border-radius:0;border-left:0;border-right:0;height:720px}}
+/* ---------- additions (same tokens, no new palette) ---------- */
+nav b{white-space:nowrap}
+.pill,.chip,.btn,.opt-big .ck{white-space:nowrap}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:30;border:0;padding:0;cursor:pointer}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:31;background:var(--sf);border-radius:22px 22px 0 0;padding:8px 12px 12px;box-shadow:0 -6px 24px rgba(0,0,0,.25);max-height:92%;overflow:auto}
+.sheet .sticky{position:sticky;bottom:-12px;background:var(--sf);padding:8px 0 12px;display:flex;gap:8px}
+.sheet h5{margin:6px 2px 8px;font-size:1.05em}
+.grab{width:40px;height:4px;border-radius:2px;background:var(--outv);margin:4px auto 8px}
+.fab{position:absolute;right:16px;bottom:16px;z-index:10;min-height:56px;padding:0 22px;border-radius:28px;border:0;background:var(--sec);color:var(--sf);font:inherit;font-weight:800;box-shadow:0 4px 14px rgba(0,0,0,.3);cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:8px}
+.scroll.fabpad{padding-bottom:96px}
+.dc{background:var(--sf);border:1px solid var(--outv);border-radius:16px;padding:2px 4px 12px 14px;margin-top:10px;cursor:pointer;box-shadow:var(--shadow)}
+.dr1{display:flex;align-items:center;gap:6px;min-height:48px}
+.dr1 b{flex:1;min-width:0;font-size:1.08em}
+.dm{color:var(--onv);padding-right:10px}
+.al{display:flex;gap:8px;align-items:flex-start;margin-top:6px;padding-right:10px}
+.al .t{flex:1;min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--onv)}
+.hd{background:var(--abg);color:var(--aon);padding:6px 8px 4px}
+.hd .r1{display:flex;align-items:center;gap:2px}
+.hd .r1 b{display:block;font-size:1.15em}
+.hd .r1 small{color:inherit;opacity:.85}
+.hd .pills{display:flex;gap:6px;flex-wrap:wrap;padding:0 8px 6px 48px}
+.hbtn{width:48px;height:48px;flex:0 0 48px;border:0;background:transparent;color:inherit;font-size:1.4em;cursor:pointer;position:relative;display:inline-flex;align-items:center;justify-content:center}
+.hbtn i{position:absolute;top:4px;right:2px;background:#D32F2F;color:#fff;border-radius:10px;font-style:normal;font-size:.62em;font-weight:800;min-width:1.6em;text-align:center;padding:1px 4px}
+.tabs4{display:flex;background:var(--abg);border-top:1px solid rgba(255,255,255,.12)}
+.tabs4 button{flex:1 1 auto;min-height:48px;padding:0 6px;background:none;border:0;border-bottom:3px solid transparent;color:var(--aon);opacity:.7;font:inherit;font-weight:700;white-space:nowrap;cursor:pointer}
+.tabs4 button.on{opacity:1;border-bottom-color:var(--rose)}
+.notec{width:100%;display:flex;align-items:center;gap:8px;min-height:56px;text-align:left;border:1.5px solid var(--outv);background:var(--sf);color:var(--on);font:inherit;border-radius:14px;padding:6px 12px;cursor:pointer;margin-top:12px}
+.notec .a{flex:1;min-width:0}
+.notec .a small{display:block;text-transform:uppercase;letter-spacing:.07em;font-weight:700;font-size:.7em}
+.notec .a span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.notec{padding:0 0 0 12px;cursor:default}
+.notec .tg{flex:1;min-width:0;display:flex;align-items:center;gap:8px;min-height:56px;background:none;border:0;padding:4px 0;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.notec .ed{flex:0 0 auto;min-width:56px;padding:0 14px}
+.cnt{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:12px 0 6px}
+.cnt .lab{margin:0}
+.cnt small{font-weight:700}
+.pv{border:1.5px dashed var(--outv);border-radius:14px;padding:8px 12px;background:var(--sc)}
+.pv .t{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--onv)}
+.aoin{flex:1 1 100%;display:flex;gap:8px;align-items:center}
+.aoin .txt{flex:1;min-width:0}
+.aoerr{flex:1 1 100%;color:var(--rT);font-size:.82em;font-weight:700}
+.chip.oth{border-style:dashed;color:var(--sec)}
+.notebody{background:var(--sc);border-radius:0 0 14px 14px;padding:10px 12px;margin-top:-6px}
+.tl{position:relative;margin:14px 0 0 10px;padding-left:18px;border-left:3px solid var(--outv)}
+.tli{position:relative;padding:0 0 16px}
+.tli::before{content:"";position:absolute;left:-27px;top:4px;width:15px;height:15px;border-radius:50%;background:var(--pri);border:3px solid var(--bg);box-sizing:border-box}
+.tli .h{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.tli .vl{white-space:nowrap;font-weight:700;margin-top:2px}
+.tli .sm{color:var(--onv)}
+.chev{color:var(--mut);font-size:1.4em;min-width:1ch;text-align:center}
+.fh .val{white-space:nowrap}
+.fh .val.hi,.val.hi{color:var(--rT)}
+.fh .val.unset{color:var(--sec)}
+.bpc{display:flex;gap:10px;align-items:center;margin:2px 0 10px}
+.bpn{flex:1;min-width:0;height:72px;font-size:2.2em;font-weight:800;text-align:center;border:2px solid var(--outv);border-radius:16px;background:var(--sc);color:var(--on);font-family:inherit}
+.bpn.hi{border-color:var(--rT);background:var(--rB);color:var(--rT)}
+.bpsl{font-size:2em;color:var(--mut)}
+.bpl{display:flex;gap:10px;color:var(--mut);font-size:.74em;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px}
+.bpl span{flex:1;text-align:center}
+.bpl i{width:.8em}
+.row2{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 0}
+.stline{font-size:.82em;font-weight:700;color:var(--onv);margin:10px 2px 0;display:flex;justify-content:space-between;gap:8px}
+.segs{margin:2px 0 4px}
+.opt-big .ck{font-style:normal;font-weight:800}
+.opt-big.sevh.on{background:var(--rB);color:var(--rT);border-color:var(--rT)}
+.opt-big.sevn.on{background:var(--aB);color:var(--aT);border-color:var(--aT)}
+.opt-big.ab{color:var(--rT)}
+.opt-big small{display:block;font-weight:400}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.two .opt-big{margin:0;min-height:60px}
+.dn{text-align:center;padding:40px 16px}
+.dn .ok{width:72px;height:72px;border-radius:50%;background:var(--gB);color:var(--gT);display:flex;align-items:center;justify-content:center;font-size:2.4em;font-weight:800;margin:0 auto 12px}
+.lbl{display:block;font-size:.74em;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);margin:12px 0 6px}
+.dpick.big{width:100%;min-height:56px;font-size:1.1em;font-weight:700}
+.lnk{padding:6px 14px;background:var(--sf);border:1px solid var(--outv);border-radius:12px;display:inline-block;margin-top:6px}
+.lnk a{color:var(--sec);font-weight:700}
+</style>
+</head>
+<body>
+<nav aria-label="Screens">
+<b>ANC EMR</b>
+<a href="#dir">1 Directory</a><a href="#chart">2 Chart</a><a href="#visit">3 Visit</a>
+</nav>
+
+<header class="top">
+<h1>Directory, chart and visit entry</h1>
+<p class="lead" data-wrap>Three live phones (about 360 dp wide, like an Honor 400). Same rules everywhere: one thing open at a time, closed rows read &ldquo;Label value &gt;&rdquo;, the open row shows big one-tap choices, abnormal values turn rose but never block, the primary button is pinned. Every list of choices ends with <b>+ Add other</b>: type a value, it is used at once and kept for later patients. All data is made up (patient <b>Maya Example</b>, today 1 Nov 2026 is <b>28w 0d</b>). Nothing is saved. Use <b>A-</b> / <b>A+</b> and Light / Dark in the bottom bar.</p>
+<div class="lnk" data-wrap>Laboratory, ultrasound, medication and the other approved screens: see the other pages (<a href="../d1/index.html">page 1</a>, <a href="../d2/index.html">page 2</a>).</div>
+</header>
+
+<section class="scr" id="dir">
+<h2>1 · Patient directory</h2>
+<p class="lead">Find a patient in one glance. Only the risk badge carries colour; everything else is calm text. Try: type “fat”, tap the High chip, tap a card to open the chart, tap “⋯” on a card for Edit or Archive (then Undo).</p>
+<div class="pair">
+<div class="opt"><div class="phone" id="pDir"><div class="inner"></div><div class="toast"></div></div></div>
+<div class="opt"><h3>What changes vs today</h3><ul class="nt">
+<li><b>One colour:</b> only the risk badge is coloured; no coloured left edges, no icon rows.</li>
+<li><b>Clinical attention at a glance:</b> the doctor's own short note (up to 140 characters) on at most two lines; edit it from the chart.</li>
+<li><b>Labelled actions:</b> a 48dp “⋯” opens a sheet with words (Edit, Archive), not tiny icons on every card.</li>
+<li><b>Filter chips with counts</b> sit under the search box; one pinned “New patient” button replaces the toolbar icon.</li>
+</ul></div>
+</div>
+</section>
+
+<hr class="sep">
+
+<section class="scr" id="chart">
+<h2>2 · Patient chart</h2>
+<p class="lead">One header that stays put (identity, GA, risk, alerts bell) and four tabs under it. The clinical attention line has an Edit action; Save updates the chart and the directory card. The visit list is a timeline whose vitals read on one line. Try: Edit the attention line, add quick phrases or your own, Save (then open the directory phone to see the card); switch tabs; tap the bell; tap “Add”.</p>
+<div class="pair">
+<div class="opt"><div class="phone" id="pChart"><div class="inner"></div><div class="toast"></div></div></div>
+<div class="opt"><h3>What changes vs today</h3><ul class="nt">
+<li><b>One sticky header</b> replaces the stack of cards: name, age, G/P, blood group, GA pill, risk pill, bell with count.</li>
+<li><b>Tabs</b> Visits | Scans | Labs+Meds | Notes: nothing longer than a screen and a half.</li>
+<li><b>Timeline:</b> date, GA, “BP 118/76 · Wt 74.5 kg” on one line, then a short summary.</li>
+<li><b>One “Add” button</b> opens a sheet: Visit, Ultrasound, Lab, Medication, Note.</li>
+<li><b>+ Add other</b> in the attention sheet: your own phrase is used now and offered next time.</li>
+</ul></div>
+</div>
+</section>
+
+<hr class="sep">
+
+<section class="scr" id="visit">
+<h2>3 · Visit and vitals entry</h2>
+<p class="lead">The most-used screen, so the fewest taps. Four steps; each step shows closed rows, one opens at a time, answering opens the next blank one. Try: step 1 “Same as last” then Next; step 3 “Fill normal values”; or type BP 150 / 95 and see it turn rose (it still saves).</p>
+<div class="pair">
+<div class="opt"><div class="phone" id="pVisit"><div class="inner"></div><div class="toast"></div></div></div>
+<div class="opt"><h3>What changes vs today</h3><ul class="nt">
+<li><b>Date defaults to Today;</b> BP is two big cells with “Same as last” and “Normal” chips.</li>
+<li><b>Weight and fundal height</b> start from the last visit; one tap repeats it.</li>
+<li><b>“Fill normal values”</b> fills only oedema none, movements good, urine negative, and only blanks. It never touches BP or weight.</li>
+<li><b>BP 140/90 or higher</b> turns rose with a flag; it never blocks saving.</li>
+<li><b>+ Add other</b> ends the oedema, movement, urine, BP, weight and fundal-height choices: one line to type, “Saved for next time” with Undo.</li>
+<li><b>Last step</b> is a one-line summary, then a pinned “Save visit”.</li>
+</ul></div>
+</div>
+</section>
+
+<script>
+'use strict';
+/* ================= shared helpers ================= */
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const TODAY='2026-11-01',YEST='2026-10-31';
+const fd=d=>{if(!d)return '';const p=d.split('-');return (+p[2])+' '+MON[+p[1]-1]+' '+p[0]};
+const fds=d=>{if(!d)return '';const p=d.split('-');return (+p[2])+' '+MON[+p[1]-1]};
+const D=s=>{const p=s.split('-').map(Number);return Date.UTC(p[0],p[1]-1,p[2])};
+const iso=t=>new Date(t).toISOString().slice(0,10);
+const addD=(s,n)=>iso(D(s)+n*864e5);
+const dd=(a,b)=>Math.round((D(a)-D(b))/864e5);
+const gaS=t=>t<0?'not yet':Math.floor(t/7)+'w '+(t%7)+'d';
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+/* Text-only buttons get their label in a span so the fit pass measures the label, not the 48dp button box. */
+const wrapT=root=>root.querySelectorAll('button').forEach(b=>[...b.childNodes].forEach(n=>{if(n.nodeType===3&&n.textContent.trim()){const w=document.createElement('span');b.replaceChild(w,n);w.appendChild(n)}}));
+function mount(id,st,render,act,inp){
+  const el=document.getElementById(id),inner=el.querySelector('.inner'),tt=el.querySelector('.toast');
+  const c={st,el,render,
+    r(){
+      const ae=document.activeElement;let key=null,pos=null;
+      if(ae&&el.contains(ae)&&ae.dataset&&ae.dataset.i){key=ae.dataset.i;try{pos=ae.selectionStart}catch(e){pos=null}}
+      const o=inner.querySelector('.scroll'),t=o?o.scrollTop:0;
+      inner.innerHTML=render(c);wrapT(inner);
+      const n=inner.querySelector('.scroll');if(n)n.scrollTop=t;
+      if(key){const f=inner.querySelector('[data-i="'+key+'"]');if(f){try{f.focus({preventScroll:true})}catch(e){}if(pos!=null){try{f.setSelectionRange(pos,pos)}catch(e){}}}}
+    },
+    top(){const n=inner.querySelector('.scroll');if(n)n.scrollTop=0;},
+    later(fn,ms){clearTimeout(c.lt);c.lt=setTimeout(fn,ms)},
+    toast(m,undo,uf){c.uf=uf||null;tt.innerHTML='<span>'+esc(m)+'</span>'+(undo?'<button type="button" data-a="undo">Undo</button>':'');wrapT(tt);tt.classList.add('show');clearTimeout(c.tt);c.tt=setTimeout(()=>tt.classList.remove('show'),undo?5000:2600)},
+    act:(a,d,t)=>{d=d||{};
+      if(a==='undo'&&c.uf){const f=c.uf;c.uf=null;f();tt.classList.remove('show');c.r();return}
+      if(a==='aoOpen'){c.st.ao={l:d.l,v:'',err:''};c.r();const f=inner.querySelector('[data-i="ao"]');if(f)f.focus();return}
+      if(a==='aoX'){c.st.ao=null;c.r();return}
+      if(a==='aoAdd'){addOther(c);c.r();return}
+      c.st.ao=null;act(c,a,d,t);c.r()},
+    inp:(i,d,v,t)=>{if(i==='ao'){if(c.st.ao){c.st.ao.v=v;c.st.ao.err=''}return}if(inp){inp(c,i,d||{},v,t);c.r()}}};
+  el.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t||!el.contains(t))return;if(t.hasAttribute('data-hold')&&e.detail!==0)return;c.act(t.dataset.a,t.dataset,t)});
+  el.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.i==='ao'){e.preventDefault();c.act('aoAdd',{})}});
+  el.addEventListener('input',e=>{const t=e.target.closest('[data-i]');if(t)c.inp(t.dataset.i,t.dataset,t.value,t)});
+  el.addEventListener('pointerdown',e=>{const t=e.target.closest('[data-hold]');if(!t||!el.contains(t))return;e.preventDefault();c.act(t.dataset.a,t.dataset,t);clearTimeout(c.ht);clearInterval(c.hi);c.ht=setTimeout(()=>{c.hi=setInterval(()=>c.act(t.dataset.a,t.dataset,t),90)},450)});
+  const stop=()=>{clearTimeout(c.ht);clearInterval(c.hi)};
+  window.addEventListener('pointerup',stop);window.addEventListener('pointercancel',stop);
+  c.r();return c;
+}
+/* shared view pieces */
+/* ONE shared add-your-own-values piece: store, chip/inline input, add. Lists: LISTS[key]. */
+const LK='anc-mock-list-',MEMC={};
+function customOf(l){if(!MEMC[l]){let a=[];try{a=JSON.parse(localStorage.getItem(LK+l))||[]}catch(e){}MEMC[l]=Array.isArray(a)?a:[]}return MEMC[l]}
+function saveCustom(l,a){MEMC[l]=a;try{localStorage.setItem(LK+l,JSON.stringify(a))}catch(e){}}
+const txtNorm=m=>raw=>{const v=raw.trim().replace(/\s+/g,' ');if(!v)return{err:'Type a value first'};if(v.length>m)return{err:'Up to '+m+' characters'};return{val:v.charAt(0).toUpperCase()+v.slice(1)}};
+const numNorm=(lo,hi,dec,u)=>raw=>{const n=parseFloat(raw.replace(',','.'));if(!isFinite(n)||n<lo||n>hi)return{err:'Use '+lo+' to '+hi+' '+u};return{val:dec?n.toFixed(1):String(Math.round(n))}};
+const LISTS={
+ oed:{base:['None','Mild','Marked'],norm:txtNorm(16),ph:'e.g. Trace'},
+ mov:{base:['Good','Reduced','Absent'],norm:txtNorm(16),ph:'e.g. Increased'},
+ uri:{base:['Negative','Trace','+','++'],norm:txtNorm(16),ph:'e.g. +++'},
+ bp:{base:[],norm:raw=>{const m=raw.trim().match(/^(\d{2,3})\s*\/\s*(\d{2,3})$/);if(!m||+m[1]<60||+m[1]>260||+m[2]<30||+m[2]>160||+m[1]<=+m[2])return{err:'Use the form 130/80'};return{val:(+m[1])+'/'+(+m[2])}},ph:'e.g. 130/80'},
+ wt:{base:[],norm:numNorm(30,200,1,'kg'),ph:'e.g. 76.0'},
+ fh:{base:[],norm:numNorm(10,50,0,'cm'),ph:'e.g. 30'},
+ attn:{base:['Planned vaginal delivery','Previous cesarean','Anaemia on iron','PIH on labetalol','GDM on diet','Rh negative','Twin pregnancy'],norm:txtNorm(30),ph:'e.g. Breech at 36w'}
+};
+const listItems=l=>LISTS[l].base.concat(customOf(l).filter(x=>!LISTS[l].base.some(b=>b.toLowerCase()===x.toLowerCase())));
+function otherChip(c,l){const o=c.st.ao;
+  if(o&&o.l===l)return '<span class="aoin"><input class="txt" data-i="ao" maxlength="30" autocomplete="off" placeholder="'+esc(LISTS[l].ph)+'" value="'+esc(o.v)+'" aria-label="New value"><button type="button" class="btn pri" data-a="aoAdd">Add</button><button type="button" class="fb" data-a="aoX" aria-label="Cancel">✕</button></span>'+(o.err?'<span class="aoerr" data-wrap>'+esc(o.err)+'</span>':'');
+  return '<button type="button" class="chip oth" data-a="aoOpen" data-l="'+l+'">+ Add other</button>'}
+function addOther(c){const s=c.st,o=s.ao;if(!o)return;const L=LISTS[o.l],r=L.norm(o.v);
+  if(r.err){o.err=r.err;return}
+  const val=r.val,dup=listItems(o.l).find(x=>x.toLowerCase()===val.toLowerCase()),undo=c.snap?c.snap():null;
+  s.ao=null;
+  if(dup){c.use(o.l,dup);c.toast('Already in the list');return}
+  saveCustom(o.l,customOf(o.l).concat(val));c.use(o.l,val);
+  c.toast('Saved for next time',true,()=>{saveCustom(o.l,customOf(o.l).filter(x=>x!==val));if(undo)undo()})}
+const bigs=(list,cur,a,cls)=>list.map(x=>{const v=Array.isArray(x)?x[0]:x,s=Array.isArray(x)?x[1]:'';const on=v===cur;
+  return '<button type="button" class="opt-big'+(cls?' '+cls(v):'')+(on?' on':'')+'" data-a="'+a+'" data-v="'+esc(v)+'" aria-pressed="'+on+'"><span>'+esc(v)+(s?'<small data-wrap>'+esc(s)+'</small>':'')+'</span>'+(on?'<i class="ck">✓</i>':'')+'</button>'}).join('');
+const rowH=(k,label,val,open,body,o)=>{o=o||{};const un=val===''||val==null;
+  return '<div class="frow"><button type="button" class="fh" data-a="tog" data-k="'+k+'" aria-expanded="'+!!open+'"><span class="t">'+label+'</span><span class="val'+(o.hi?' hi':'')+(un?' unset':'')+'">'+(un?(o.ph||'Choose'):val)+'</span><span class="chev">'+(open?'⌄':'›')+'</span></button>'+(open?'<div class="fbody">'+body+'</div>':'')+'</div>'};
+const stp=(a,key,val,unit)=>'<div class="stp"><button type="button" data-a="'+a+'" data-d="-1" data-k="'+key+'" data-hold aria-label="Decrease">−</button><input inputmode="decimal" data-i="'+key+'" value="'+esc(val)+'" aria-label="'+key+'"><button type="button" data-a="'+a+'" data-d="1" data-k="'+key+'" data-hold aria-label="Increase">+</button>'+(unit?'<span class="un">'+unit+'</span>':'')+'</div>';
+const chipB=(label,on,a,data)=>'<button type="button" class="chip'+(on?' on':'')+'" data-a="'+a+'" '+(data||'')+' aria-pressed="'+!!on+'">'+(on?'<i class="ck">✓</i>':'')+esc(label)+'</button>';
+const sheetH=(title,body)=>'<button type="button" class="scrim" data-a="close" aria-label="Close"></button><div class="sheet" role="dialog" aria-label="'+esc(title)+'"><div class="grab"></div><h5>'+esc(title)+'</h5>'+body+'<button type="button" class="btn full" style="margin-top:6px" data-a="close">Cancel</button></div>';
+
+/* ================= 1 + 2. DIRECTORY and CHART ================= */
+const P=[
+ {id:1,n:'Maya Example',age:29,gp:'G3 P2+0',bg:'O+',risk:'High',gaDays:196,attn:'Previous cesarean · Anaemia on iron · Rh negative',al:[
+   {t:'Pre-eclampsia risk',sev:'High'},{t:'Previous C/S',sev:'Note'},{t:'Anaemia',sev:'Note'},{t:'Rh negative',sev:'High'}]},
+ {id:2,n:'Fatma Ahmed',age:34,gp:'G4 P3+0',bg:'A+',risk:'High',gaDays:255,attn:'GDM on diet · Previous cesarean ×2',al:[{t:'GDM on insulin',sev:'High'},{t:'Previous C/S ×2',sev:'Note'}]},
+ {id:3,n:'Layla Sample',age:38,gp:'G5 P2+2',bg:'AB+',risk:'High',gaDays:225,attn:'Twin pregnancy · IUGR twin B · Planned vaginal delivery',al:[{t:'Twin pregnancy',sev:'High'},{t:'IUGR twin B',sev:'High'},{t:'Previous C/S',sev:'Note'},{t:'Anaemia',sev:'Note'}]},
+ {id:4,n:'Salma Demo',age:31,gp:'G2 P1+0',bg:'A−',risk:'Medium',gaDays:145,attn:'Rh negative',al:[{t:'Rh negative: anti-D at 28w',sev:'Note'}]},
+ {id:5,n:'Mona Hassan',age:26,gp:'G1 P0',bg:'B+',risk:'Low',gaDays:100,attn:'',al:[]},
+ {id:6,n:'Hana Demo',age:27,gp:'G2 P1+0',bg:'O+',risk:'Low',gaDays:270,attn:'',al:[]}
+];
+P.forEach(p=>{p.lmp=addD(TODAY,-p.gaDays);p.edd=addD(p.lmp,280);p.ga=gaS(p.gaDays)});
+const RC={High:'p-r',Medium:'p-a',Low:'p-g'},RO={High:0,Medium:1,Low:2};
+const BPS=['118/76','122/78','120/74','116/72'],WTS=[74.5,73.8,72.9,72.0],SUMS=['Routine visit. Movements good. Iron continued.','Mild ankle oedema. Advised rest and fluids.','Hb 10.9: oral iron started.','Booking visit. Dating scan arranged.'];
+function mkApp(dir){return {dir,view:dir?'list':'chart',q:'',f:'All',pid:1,tab:'visits',note:false,sheet:null,draft:'',arch:[],last:null,ao:null}}
+const svgBell='<svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M6 17h12l-1.5-2v-4a4.5 4.5 0 0 0-9 0v4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>';
+function listV(c){const s=c.st;
+  const act=P.filter(p=>!s.arch.includes(p.id));
+  const cnt=r=>act.filter(p=>r==='All'||p.risk===r).length;
+  const q=s.q.trim().toLowerCase();
+  const L=act.filter(p=>(s.f==='All'||p.risk===s.f)&&p.n.toLowerCase().includes(q)).sort((a,b)=>RO[a.risk]-RO[b.risk]||b.gaDays-a.gaDays);
+  const chips=['All','High','Medium','Low'].map(r=>'<button type="button" class="chip'+(s.f===r?' on':'')+'" data-a="fil" data-v="'+r+'" aria-pressed="'+(s.f===r)+'">'+(s.f===r?'<i class="ck">✓</i>':'')+r+' <span class="cn">'+cnt(r)+'</span></button>').join('');
+  const cards=L.map(p=>{
+    const al=p.attn?'<div class="al"><span class="t" data-wrap>'+esc(p.attn)+'</span></div>':'<div class="al"><span class="t" data-wrap style="color:var(--mut)">No clinical attention</span></div>';
+    return '<div class="dc" data-a="open" data-id="'+p.id+'" role="button" tabindex="0"><div class="dr1"><b>'+esc(p.n)+'</b><span class="pill '+RC[p.risk]+'">'+p.risk+' risk</span><button type="button" class="fb" data-a="menu" data-id="'+p.id+'" aria-label="More actions for '+esc(p.n)+'" style="font-size:1.4em;color:var(--onv)">⋯</button></div><div class="dm">'+p.age+' y · '+p.gp+' · '+p.bg+'</div><div class="dm"><b>'+p.ga+'</b> · EDD '+fds(p.edd)+'</div>'+al+'</div>'}).join('');
+  const empty=L.length?'':'<div class="card" style="margin-top:12px;text-align:center"><p>No patient matches.</p><button type="button" class="btn" data-a="clr">Clear search and filter</button></div>';
+  let sh='';
+  if(s.sheet&&s.sheet.t==='menu'){const p=P.find(x=>x.id===s.sheet.id);sh=sheetH(p.n,'<button type="button" class="opt-big" data-a="edit" data-id="'+p.id+'"><span>Edit patient</span><span class="chev">›</span></button><button type="button" class="opt-big" data-a="archive" data-id="'+p.id+'"><span>Archive patient<small>Hidden from this list; can be restored</small></span><span class="chev">›</span></button>')}
+  return '<div class="appbar"><div style="padding-left:10px"><b>Patients</b><small>'+act.length+' active · by risk</small></div></div><div class="scroll fabpad"><div style="padding-top:10px"><input class="search" type="search" placeholder="Search by name" value="'+esc(s.q)+'" data-i="q" aria-label="Search patients"></div><div class="chips" style="margin-top:10px">'+chips+'</div>'+cards+empty+'</div><button type="button" class="fab" data-a="newp"><span style="font-size:1.4em;line-height:1">+</span><span>New patient</span></button>'+sh;
+}
+function chartV(c){const s=c.st,p=P.find(x=>x.id===s.pid),nA=p.al.length;
+  const tabs=[['visits','Visits'],['us','Scans'],['lm','Labs+Meds'],['notes','Notes']].map(t=>'<button type="button" data-a="tab" data-v="'+t[0]+'" class="'+(s.tab===t[0]?'on':'')+'" aria-selected="'+(s.tab===t[0])+'">'+t[1]+'</button>').join('');
+  const hd='<div class="hd"><div class="r1"><button type="button" class="hbtn" data-a="back" aria-label="Back to patients">←</button><div style="flex:1;min-width:0"><b>'+esc(p.n)+'</b><small>'+p.age+' y · '+p.gp+' · '+p.bg+'</small></div><button type="button" class="hbtn" data-a="bell" aria-label="'+nA+' alerts">'+svgBell+(nA?'<i>'+nA+'</i>':'')+'</button></div><div class="pills"><span class="pill p-b">GA '+p.ga+'</span><span class="pill '+RC[p.risk]+'">'+p.risk+' risk</span><span class="pill p-n">EDD '+fds(p.edd)+'</span></div></div><div class="tabs4" role="tablist">'+tabs+'</div>';
+  const att=p.attn;
+  const note='<div class="notec"><button type="button" class="tg" data-a="note" aria-expanded="'+s.note+'"><span class="a"><small>Clinical attention</small><span data-wrap>'+(att?(s.note?'Tap to close':esc(att)):'None yet. Tap Edit to add.')+'</span></span><span class="chev">'+(s.note?'⌄':'›')+'</span></button><button type="button" class="btn ghost ed" data-a="attnedit">Edit</button></div>'+(s.note&&att?'<div class="notebody" data-wrap>'+esc(att)+'</div>':'');
+  let body='';
+  if(s.tab==='visits'){
+    const V=[];for(let k=0;k<4;k++){const g=p.gaDays-(7+14*k);if(g>=42)V.push({d:addD(TODAY,-(7+14*k)),g,k})}
+    body='<div class="tl">'+V.map(v=>'<div class="tli"><div class="h"><b>'+fd(v.d)+'</b><span class="pill p-n">'+gaS(v.g)+'</span></div><div class="vl">BP '+BPS[v.k]+' · Wt '+(WTS[v.k]+(p.id%3)).toFixed(1)+' kg</div><div class="sm" data-wrap>'+SUMS[v.k]+'</div></div>').join('')+'</div>';
+  }else if(s.tab==='us'){
+    body='<section class="sec"><h4 class="sh"><span>Scans</span><em>2</em></h4><div class="card"><div class="rv" style="cursor:default"><div class="a"><b>'+fds(addD(TODAY,-21))+' · '+gaS(p.gaDays-21)+'</b><small data-wrap>Cephalic · Liquor normal · Placenta anterior</small></div><span class="v">1,180 g</span></div><div class="rv" style="cursor:default"><div class="a"><b>'+fds(addD(TODAY,-84))+' · '+gaS(Math.max(0,p.gaDays-84))+'</b><small data-wrap>Anomaly scan · No abnormality seen</small></div><span class="v">Normal</span></div></div></section>';
+  }else if(s.tab==='lm'){
+    body='<section class="sec"><h4 class="sh"><span>Laboratory</span><em>latest</em></h4><div class="card"><div class="rv" style="cursor:default"><div class="a"><b>Haemoglobin</b><small>'+fds(addD(TODAY,-20))+'</small></div><span class="v" style="color:var(--rT)">10.9 g/dL</span></div><div class="rv" style="cursor:default"><div class="a"><b>Fasting glucose</b><small>'+fds(addD(TODAY,-20))+'</small></div><span class="v">82 mg/dL</span></div><div class="rv" style="cursor:default"><div class="a"><b>Urine protein</b><small>'+fds(addD(TODAY,-7))+'</small></div><span class="v">Negative</span></div></div></section><section class="sec"><h4 class="sh"><span>Medication</span><em>active</em></h4><div class="card"><div class="rv" style="cursor:default"><div class="a"><b>Low-dose aspirin</b><small>75 mg · oral · nightly</small></div><span class="pill p-g">Active</span></div><div class="rv" style="cursor:default"><div class="a"><b>Ferrous sulfate</b><small>200 mg · oral · once daily</small></div><span class="pill p-g">Active</span></div></div></section>';
+  }else{
+    body='<section class="sec"><h4 class="sh"><span>Notes</span><em>2</em></h4><div class="card"><div class="rv" style="cursor:default"><div class="a"><b>'+fd(addD(TODAY,-7))+'</b><small data-wrap>Discussed birth plan; wants to avoid repeat cesarean if safe.</small></div></div><div class="rv" style="cursor:default"><div class="a"><b>'+fd(addD(TODAY,-35))+'</b><small data-wrap>Counselled on aspirin and kick counts.</small></div></div></div></section>';
+  }
+  let sh='';
+  if(s.sheet&&s.sheet.t==='add')sh=sheetH('Add to this chart',bigs(['Visit','Ultrasound','Lab','Medication','Note'],null,'addopt'));
+  if(s.sheet&&s.sheet.t==='attn')sh=attnSheet(c);
+  if(s.sheet&&s.sheet.t==='bell')sh=sheetH('Alerts for '+p.n.split(' ')[0],(nA?p.al.map(a=>'<div class="rv" style="cursor:default"><div class="a"><b>'+esc(a.t)+'</b></div><span class="pill '+(a.sev==='High'?'p-r':'p-a')+'">'+a.sev+'</span></div>').join(''):'<p class="empty">No active alerts.</p>')+'<button type="button" class="btn pri full" style="margin-top:8px" data-a="go" data-m="Opens the alerts screen (other pages)">Open alerts</button>');
+  return hd+'<div class="scroll fabpad">'+note+body+'</div><button type="button" class="fab" data-a="add"><span style="font-size:1.4em;line-height:1">+</span><span>Add</span></button>'+sh;
+}
+function appV(c){return c.st.view==='list'?listV(c):chartV(c)}
+function appAct(c,a,d){const s=c.st;
+  switch(a){
+    case 'fil':s.f=d.v;break;
+    case 'clr':s.f='All';s.q='';break;
+    case 'open':s.view='chart';s.pid=+d.id;s.tab='visits';s.note=false;s.sheet=null;c.top();break;
+    case 'back':if(s.dir){s.view='list';s.sheet=null}else c.toast('Back to the patient directory');break;
+    case 'tab':s.tab=d.v;c.top();break;
+    case 'note':s.note=!s.note;break;
+    case 'attnedit':{const p=P.find(x=>x.id===s.pid);s.draft=p.attn||'';s.sheet={t:'attn'};break}
+    case 'apq':{const ph=d.v;if(s.draft.toLowerCase().includes(ph.toLowerCase())){c.toast('Already in the note');break}
+      const nx=s.draft.trim()?s.draft.trim()+' · '+ph:ph;if(nx.length>140){c.toast('Over 140 characters');break}s.draft=nx;break}
+    case 'attnsave':{const p=P.find(x=>x.id===s.pid);p.attn=s.draft.trim().slice(0,140);s.sheet=null;c.toast('Saved. Shown on the patient list.');if(typeof aDir!=='undefined')aDir.r();if(typeof aChart!=='undefined')aChart.r();break}
+    case 'menu':s.sheet={t:'menu',id:+d.id};break;
+    case 'close':s.sheet=null;break;
+    case 'edit':s.sheet=null;c.toast('The edit form opens here');break;
+    case 'archive':s.sheet=null;s.arch.push(+d.id);s.last=+d.id;c.toast('Archived '+P.find(x=>x.id===+d.id).n,true);break;
+    case 'undo':if(s.last!=null){s.arch=s.arch.filter(x=>x!==s.last);s.last=null;c.toast('Restored')}break;
+    case 'newp':c.toast('Opens New patient (other pages)');break;
+    case 'add':s.sheet={t:'add'};break;
+    case 'addopt':s.sheet=null;c.toast('Opens '+d.v+' entry'+(d.v==='Visit'?' (section 3)':''));break;
+    case 'bell':s.sheet={t:'bell'};break;
+    case 'go':s.sheet=null;c.toast(d.m);break;
+  }
+}
+function appInp(c,i,d,v){if(i==='q')c.st.q=v;else if(i==='attn')c.st.draft=v.slice(0,140)}
+function attnSheet(c){const s=c.st,p=P.find(x=>x.id===s.pid),t=s.draft,n=t.length;
+  const chips=listItems('attn').map(x=>chipB(x,false,'apq','data-v="'+esc(x)+'"')).join('')+otherChip(c,'attn');
+  return '<button type="button" class="scrim" data-a="close" aria-label="Close"></button><div class="sheet" role="dialog" aria-label="Clinical attention"><div class="grab"></div>'
+   +'<div class="cnt" style="margin-top:2px"><span class="lab">Clinical attention</span><small style="color:'+(n>=140?'var(--rT)':'var(--mut)')+'">'+n+'/140</small></div>'
+   +'<textarea class="txt" rows="2" maxlength="140" data-i="attn" placeholder="What must the next doctor notice?" aria-label="Clinical attention">'+esc(t)+'</textarea>'
+   +'<span class="lab">Quick phrases</span><div class="chips">'+chips+'</div>'
+   +'<div class="sub" style="margin:12px 2px 6px">Shows on the patient list as:</div><div class="pv"><b>'+esc(p.n)+'</b><div class="t" data-wrap'+(t.trim()?'':' style="color:var(--mut)"')+'>'+(t.trim()?esc(t.trim()):'No clinical attention')+'</div></div>'
+   +'<div class="sticky"><button type="button" class="btn grow" data-a="close">Cancel</button><button type="button" class="btn pri grow" data-a="attnsave">Save</button></div></div>'}
+const aDir=mount('pDir',mkApp(true),appV,appAct,appInp);
+const aChart=mount('pChart',mkApp(false),appV,appAct,appInp);
+[aDir,aChart].forEach(c=>{
+  c.snap=()=>{const d=c.st.draft;return()=>{c.st.draft=d}};
+  c.use=(l,v)=>{if(l==='attn')appAct(c,'apq',{v})};
+});
+
+/* ================= 3. VISIT ENTRY ================= */
+const LAST={sys:118,dia:76,wt:74.5,fh:27},VGA0=196;
+const VSTEPS=[
+ {t:'Date and blood pressure',rows:['date','bp']},
+ {t:'Weight and fundal height',rows:['wt','fh']},
+ {t:'Findings',rows:['oed','mov','uri']},
+ {t:'Review and save',rows:[]}];
+const OED=LISTS.oed.base,MOV=LISTS.mov.base,URI=LISTS.uri.base;
+const ABN={oed:['Marked'],mov:['Reduced','Absent'],uri:['+','++']};
+const cstr=(k,x)=>k==='wt'?x+' kg':k==='fh'?x+' cm':x;
+const visitInit=()=>({step:0,open:'bp',v:{date:TODAY,sys:null,dia:null,wt:null,fh:null,oed:null,mov:null,uri:null},bp:{s:'',d:''},dr:{wt:'',fh:''},snap:null,saved:false,dateOpen:true,ao:null});
+const vSet=(s,k)=>k==='date'?true:k==='bp'?(s.v.sys!=null&&s.v.dia!=null):s.v[k]!=null;
+const bpHigh=(sy,di)=>(sy!==''&&sy!=null&&+sy>=140)||(di!==''&&di!=null&&+di>=90);
+const dateLbl=d=>d===TODAY?'Today':d===YEST?'Yesterday':fd(d);
+const vGA=s=>gaS(VGA0+dd(s.v.date,TODAY));
+function vFirstOpen(s){const r=VSTEPS[s.step].rows.find(k=>!vSet(s,k));s.open=r||null}
+function vNext(s,k){const rows=VSTEPS[s.step].rows;const i=rows.indexOf(k);const n=rows.slice(i+1).find(x=>!vSet(s,x))||rows.find(x=>!vSet(s,x));s.open=n||null}
+function vVal(s,k){
+  const v=s.v;
+  if(k==='date')return dateLbl(v.date);
+  if(k==='bp')return v.sys==null?'':'<span class="'+(bpHigh(v.sys,v.dia)?'hi':'')+'">'+v.sys+'/'+v.dia+'</span>'+(bpHigh(v.sys,v.dia)?' <span class="pill p-r">Flag</span>':'');
+  if(k==='wt')return v.wt==null?'':v.wt.toFixed(1)+' kg';
+  if(k==='fh')return v.fh==null?'':v.fh+' cm';
+  const L=v[k];return L==null?'':'<span class="'+(ABN[k].includes(L)?'hi':'')+'">'+esc(L)+'</span>';
+}
+const vName={date:'Date',bp:'Blood pressure',wt:'Weight',fh:'Fundal height',oed:'Oedema',mov:'Fetal movements',uri:'Urine protein'};
+function vBody(c,k){const s=c.st,v=s.v;
+  if(k==='date')return '<div class="chips">'+chipB('Today',v.date===TODAY,'dset','data-v="'+TODAY+'"')+chipB('Yesterday',v.date===YEST,'dset','data-v="'+YEST+'"')+'</div><span class="lbl">Other date</span><input type="date" class="dpick big" data-i="date" value="'+v.date+'" max="'+TODAY+'" aria-label="Visit date">';
+  if(k==='bp'){const hi=bpHigh(s.bp.s,s.bp.d),ok=+s.bp.s>=60&&+s.bp.d>=30&&s.bp.s!==''&&s.bp.d!=='';
+    return '<div class="chips" style="margin-bottom:10px">'+chipB('Same as last ('+LAST.sys+'/'+LAST.dia+')',false,'bpchip','data-s="'+LAST.sys+'" data-d="'+LAST.dia+'"')+chipB('Normal (110/70)',false,'bpchip','data-s="110" data-d="70"')+listItems('bp').map(x=>chipB(x,v.sys+'/'+v.dia===x,'bpchip','data-s="'+x.split('/')[0]+'" data-d="'+x.split('/')[1]+'"')).join('')+otherChip(c,'bp')+'</div>'
+     +'<div class="bpl"><span>Systolic</span><i></i><span>Diastolic</span></div><div class="bpc"><input class="bpn'+(hi?' hi':'')+'" inputmode="numeric" maxlength="3" placeholder="—" data-i="sys" value="'+esc(s.bp.s)+'" aria-label="Systolic mmHg"><span class="bpsl">/</span><input class="bpn'+(hi?' hi':'')+'" inputmode="numeric" maxlength="3" placeholder="—" data-i="dia" value="'+esc(s.bp.d)+'" aria-label="Diastolic mmHg"></div>'
+     +(hi?'<div class="warnbox" data-wrap style="margin:0 0 8px">High BP is flagged on the visit. You can still save.</div>':'')
+     +'<button type="button" class="btn pri full" data-a="bpdone"'+(ok?'':' disabled')+'>Done</button>';}
+  if(k==='wt'||k==='fh'){const wt=k==='wt',cur=s.dr[k]!==''?s.dr[k]:(wt?LAST.wt.toFixed(1):String(28));
+    return '<div class="chips" style="margin-bottom:8px">'+(wt?chipB('Same as last ('+LAST.wt.toFixed(1)+' kg)',false,'same','data-k="wt"'):chipB('Same as last ('+LAST.fh+' cm)',false,'same','data-k="fh"')+chipB('Matches GA (28 cm)',false,'same2','data-k="fh"'))+listItems(k).map(x=>chipB(cstr(k,x),v[k]!=null&&String(wt?v[k].toFixed(1):v[k])===x,'cnum','data-k="'+k+'" data-v="'+x+'"')).join('')+otherChip(c,k)+'</div>'
+     +'<div style="display:flex;justify-content:center;margin:6px 0 10px">'+stp('vstep',k,cur,wt?'kg':'cm')+'</div><button type="button" class="btn pri full" data-a="vdone" data-k="'+k+'">Done</button>';}
+  return bigs(listItems(k),v[k],'vpick',x=>ABN[k].includes(x)?'ab':'').replace(/data-a="vpick"/g,'data-a="vpick" data-k="'+k+'"')+'<div class="chips" style="margin-top:6px">'+otherChip(c,k)+'</div>';
+}
+function visitV(c){const s=c.st,v=s.v,st=VSTEPS[s.step],n=VSTEPS.length;
+  if(s.saved)return '<div class="appbar"><button class="x" data-a="cancel" aria-label="Close">✕</button><div><b>Visit saved</b><small>Maya Example</small></div></div><div class="scroll"><div class="dn"><div class="ok"><span>✓</span></div><h3 style="margin:0 0 6px">Visit saved</h3><p class="lead" data-wrap style="margin:0 auto">'+esc(vSummary(s))+'</p></div></div><div class="foot"><button type="button" class="btn grow" data-a="chartgo">Open chart</button><button type="button" class="btn pri grow" data-a="again">Add another</button></div>';
+  const segs='<div class="segs">'+VSTEPS.map((x,i)=>'<button type="button" class="'+(i<s.step?'d':i===s.step?'cur':'')+'" data-a="vgo" data-s="'+i+'" aria-label="Step '+(i+1)+': '+x.t+'"><i></i></button>').join('')+'</div>';
+  let body='';
+  if(s.step<3){
+    if(s.step===2)body+='<button type="button" class="btn sec full" data-a="fillnorm" style="min-height:56px;margin-top:6px">Fill normal values</button><p class="sub" data-wrap style="margin:4px 4px 0">Fills blank oedema, movements and urine only. Never BP or weight.</p>';
+    body+='<section class="sec"><div class="card" style="padding:4px 12px">'+st.rows.map(k=>rowH(k,vName[k],vVal(s,k),s.open===k,vBody(c,k),{hi:(k==='bp'&&v.sys!=null&&bpHigh(v.sys,v.dia))||(ABN[k]&&v[k]!=null&&ABN[k].includes(v[k])),ph:k==='bp'?'Enter':'Choose'})).join('')+'</div></section>';
+  }else{
+    const f=[];if(v.sys!=null&&bpHigh(v.sys,v.dia))f.push('High BP');['oed','mov','uri'].forEach(k=>{if(v[k]!=null&&ABN[k].includes(v[k]))f.push(vName[k]+' '+v[k].toLowerCase())});
+    body+='<div class="gac" style="margin-top:8px"><b>Summary</b><p data-wrap>'+esc(vSummary(s))+'</p>'+(f.length?'<div class="chips">'+f.map(x=>'<span class="pill p-r">'+esc(x)+'</span>').join('')+'</div>':'<span class="pill p-g">Nothing flagged</span>')+'</div>'
+     +'<section class="sec"><div class="card" style="padding:4px 12px">'+['date','bp','wt','fh','oed','mov','uri'].map(k=>'<button type="button" class="rv" data-a="vedit" data-k="'+k+'"><span class="a"><b>'+vName[k]+'</b></span><span class="v'+((k==='bp'&&v.sys!=null&&bpHigh(v.sys,v.dia))||(ABN[k]&&v[k]!=null&&ABN[k].includes(v[k]))?' hi':'')+'">'+(vVal(s,k)||'<span style="color:var(--mut);font-weight:500">Not recorded</span>')+'</span><span class="chev">›</span></button>').join('')+'</div></section>';
+  }
+  const foot='<div class="foot">'+(s.step>0?'<button type="button" class="btn" data-a="vback">Back</button>':'')+'<button type="button" class="btn pri grow" data-a="vnext">'+(s.step===n-1?'Save visit':'Next')+'</button></div>';
+  return '<div class="appbar"><button class="x" data-a="cancel" aria-label="Close">✕</button><div><b>New visit</b><small>Maya Example · '+vGA(s)+'</small></div></div><div class="scroll"><div class="stline"><span>Step '+(s.step+1)+' of '+n+'</span><span>'+st.t+'</span></div>'+segs+body+'</div>'+foot;
+}
+function vSummary(s){const v=s.v,p=[dateLbl(v.date)+' · '+vGA(s)];
+  if(v.sys!=null)p.push('BP '+v.sys+'/'+v.dia);if(v.wt!=null)p.push('Wt '+v.wt.toFixed(1)+' kg');if(v.fh!=null)p.push('FH '+v.fh+' cm');
+  if(v.oed!=null)p.push('Oedema '+v.oed.toLowerCase());if(v.mov!=null)p.push('Movements '+v.mov.toLowerCase());if(v.uri!=null)p.push('Urine '+v.uri.toLowerCase());
+  return p.join(' · ')}
+function visitAct(c,a,d){const s=c.st,v=s.v;
+  switch(a){
+    case 'tog':s.open=s.open===d.k?null:d.k;if(d.k==='bp'&&v.sys!=null&&s.bp.s==='')s.bp={s:String(v.sys),d:String(v.dia)};break;
+    case 'dset':v.date=d.v;vNext(s,'date');break;
+    case 'bpchip':v.sys=+d.s;v.dia=+d.d;s.bp={s:d.s,d:d.d};vNext(s,'bp');break;
+    case 'bpdone':if(+s.bp.s>=60&&+s.bp.d>=30){v.sys=+s.bp.s;v.dia=+s.bp.d;vNext(s,'bp');if(bpHigh(v.sys,v.dia))c.toast('BP '+v.sys+'/'+v.dia+' flagged high')}break;
+    case 'same':v[d.k]=d.k==='wt'?LAST.wt:LAST.fh;s.dr[d.k]='';vNext(s,d.k);break;
+    case 'same2':v.fh=28;s.dr.fh='';vNext(s,'fh');break;
+    case 'vstep':{const k=d.k,cur=parseFloat(s.dr[k]!==''?s.dr[k]:(k==='wt'?LAST.wt:28));const nx=k==='wt'?Math.round((cur+(+d.d)*0.1)*10)/10:Math.round(cur+(+d.d));s.dr[k]=k==='wt'?nx.toFixed(1):String(Math.max(0,nx));break}
+    case 'vdone':{const k=d.k,x=parseFloat(s.dr[k]!==''?s.dr[k]:(k==='wt'?LAST.wt:28));if(isFinite(x)){v[k]=k==='wt'?x:Math.round(x);s.dr[k]='';vNext(s,k)}break}
+    case 'vpick':v[d.k]=d.v;vNext(s,d.k);break;
+    case 'cnum':v[d.k]=+d.v;s.dr[d.k]='';vNext(s,d.k);break;
+    case 'fillnorm':{s.snap=JSON.parse(JSON.stringify(v));let n=0;if(v.oed==null){v.oed='None';n++}if(v.mov==null){v.mov='Good';n++}if(v.uri==null){v.uri='Negative';n++}s.open=null;
+      if(n)c.toast('Filled '+n+' normal finding'+(n>1?'s':'')+'. Check them.',true);else c.toast('Nothing left to fill');break}
+    case 'undo':if(s.snap){s.v=s.snap;s.snap=null;vFirstOpen(s);c.toast('Undone')}break;
+    case 'vnext':if(s.step<VSTEPS.length-1){s.step++;vFirstOpen(s);c.top()}else{s.saved=true;c.toast('Visit saved to chart')}break;
+    case 'vback':s.step=Math.max(0,s.step-1);vFirstOpen(s);c.top();break;
+    case 'vgo':s.step=+d.s;vFirstOpen(s);c.top();break;
+    case 'vedit':{const si=VSTEPS.findIndex(x=>x.rows.includes(d.k));s.step=si;s.open=d.k;if(d.k==='bp'&&v.sys!=null)s.bp={s:String(v.sys),d:String(v.dia)};c.top();break}
+    case 'cancel':c.toast('Closes without saving');break;
+    case 'chartgo':c.toast('Returns to the patient chart');break;
+    case 'again':{const f=visitInit();Object.keys(f).forEach(k=>s[k]=f[k]);vFirstOpen(s);break}
+  }
+}
+function visitInp(c,i,d,val){const s=c.st;
+  if(i==='sys')s.bp.s=val.replace(/\D/g,'').slice(0,3);
+  else if(i==='dia')s.bp.d=val.replace(/\D/g,'').slice(0,3);
+  else if(i==='date'){if(val){s.v.date=val;vNext(s,'date')}}
+  else if(i==='wt'||i==='fh')s.dr[i]=val.replace(/[^0-9.]/g,'');
+}
+const aVisit=mount('pVisit',visitInit(),visitV,visitAct,visitInp);
+aVisit.snap=()=>{const st=aVisit.st,j=JSON.stringify({v:st.v,bp:st.bp,dr:st.dr,open:st.open});return()=>Object.assign(st,JSON.parse(j))};
+aVisit.use=(l,val)=>{const s=aVisit.st,v=s.v;
+  if(l==='bp'){const m=val.split('/');v.sys=+m[0];v.dia=+m[1];s.bp={s:m[0],d:m[1]};vNext(s,'bp');if(bpHigh(v.sys,v.dia))aVisit.toast('BP '+val+' flagged high')}
+  else if(l==='wt'||l==='fh'){v[l]=+val;s.dr[l]='';vNext(s,l)}
+  else{v[l]=val;vNext(s,l)}};
+
+</script>
+<script src="../shared.js"></script>
+</body>
+</html>
