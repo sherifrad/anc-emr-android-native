@@ -1040,15 +1040,7 @@ object AncReducer {
     private fun updateDatingDraft(state: AncState, event: AncEvent.DatingDraftChanged): AncState {
         if (state.savePhase.blocksEditing()) return state
         val draft = state.datingDraft ?: return state
-        val values = when (event.field) {
-            DatingDraftField.LMP_DATE -> draft.values.copy(lmpDate = event.value)
-            DatingDraftField.ULTRASOUND_EDD -> draft.values.copy(ultrasoundEdd = event.value)
-            DatingDraftField.AGREED_EDD -> draft.values.copy(agreedEdd = event.value)
-            DatingDraftField.DATING_METHOD -> draft.values.copy(datingMethod = event.value)
-            DatingDraftField.TRANSFER_DATE -> draft.values.copy(transferDate = event.value)
-            DatingDraftField.EMBRYO_AGE_DAYS -> draft.values.copy(embryoAgeDays = event.value)
-            DatingDraftField.NOTES -> draft.values.copy(notes = event.value)
-        }
+        val values = applyDatingChange(draft.values, event.field, event.value)
         return state.copy(datingDraft = draft.copy(values = values, errors = emptySet()), savePhase = SavePhase.IDLE, saveError = null)
     }
 

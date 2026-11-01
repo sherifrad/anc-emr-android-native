@@ -29,7 +29,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
-import com.sherifradwan.ancnative.model.DemoPatientDating
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
@@ -37,6 +36,7 @@ import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.ClinicalValidationError
 import com.sherifradwan.ancnative.state.DatingDraftField
 import com.sherifradwan.ancnative.state.SavePhase
+import com.sherifradwan.ancnative.state.datingDraftToDating
 import java.time.LocalDate
 
 @Composable
@@ -51,16 +51,7 @@ fun DatingEditor(
 
     // Compute live gestational age and EDD preview from current draft inputs
     val currentDatingPreview = remember(draft.values) {
-        DemoPatientDating(
-            patientId = patient.id,
-            lmpDate = draft.values.lmpDate.ifBlank { null },
-            ultrasoundEdd = draft.values.ultrasoundEdd.ifBlank { null },
-            agreedEdd = draft.values.agreedEdd.ifBlank { null },
-            datingMethod = draft.values.datingMethod.ifBlank { null },
-            transferDate = draft.values.transferDate.ifBlank { null },
-            embryoAgeDays = draft.values.embryoAgeDays.toIntOrNull(),
-            notes = draft.values.notes.ifBlank { null },
-        )
+        datingDraftToDating(patient.id, draft.values)
     }
     val calculatedEdd = remember(currentDatingPreview) {
         GestationalAgeEngine.calculateEstimatedDueDate(currentDatingPreview)

@@ -1230,6 +1230,28 @@
         "app/src/test/**/LabPanelQueueTest.kt"
       ],
       "covers": ["Q250", "Q251", "Q252", "Q253", "Q254"]
+    },
+    {
+      "id": "STATIC-r4f",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r4f.py",
+      "deps": [
+        "app/src/main/**/*.kt",
+        ".agents/checks/check_r4f.py"
+      ],
+      "covers": ["S160", "S161", "S162", "S163"]
+    },
+    {
+      "id": "UNIT-r4f",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.model.DueDatesByMethodTest' --tests 'com.sherifradwan.ancnative.state.DatingDraftRuleTest' --tests 'com.sherifradwan.ancnative.model.GestationalAgeEngineTest' --tests 'com.sherifradwan.ancnative.model.IvfDatingTest'",
+      "deps": [
+        "app/src/main/**/model/GestationalAgeEngine.kt",
+        "app/src/main/**/state/*.kt",
+        "app/src/test/**/DueDatesByMethodTest.kt",
+        "app/src/test/**/DatingDraftRuleTest.kt"
+      ],
+      "covers": ["Q260", "Q261", "Q262", "Q263", "Q264"]
     }
   ]
 }

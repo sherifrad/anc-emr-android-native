@@ -134,7 +134,7 @@ def check_s72():
     engine = read(MAIN / "model/GestationalAgeEngine.kt")
     if engine is not None:
         code = strip_comments(engine)
-        for name in ("ivfGaDaysAtTransfer", "ivfEddFromTransfer"):
+        for name in ("ivfEddFromTransfer",):
             if not uses_function(code, name):
                 problems.append("GestationalAgeEngine.kt does not use " + name)
     record("S72 one IVF rule: IsoDates helpers, embryoAges [3,5,6], engine/commands through vocabulary",
