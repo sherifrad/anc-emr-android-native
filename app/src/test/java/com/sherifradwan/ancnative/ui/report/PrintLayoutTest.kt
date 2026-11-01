@@ -24,7 +24,7 @@ class PrintLayoutTest {
     private val VISITS_TITLE = "Antenatal Care Visits Log"
     private val SCANS_TITLE = "Ultrasound Biometry & Fetal Surveillance"
     private val LABS_TITLE = "Laboratory Investigations"
-    private val MEDS_TITLE = "Active Medications & Prophylaxis"
+    private val MEDS_TITLE = "Active Medications"
 
     private fun date(i: Int): String = LocalDate.of(2026, 1, 1).plusDays(i.toLong()).toString()
 

@@ -3,6 +3,21 @@ package com.sherifradwan.ancnative.model
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
+const val MEDICATION_STATUS_NON_COMPLIANT = "Patient non-compliant"
+
+fun effectiveMedicationStatus(status: String, isNonCompliant: Boolean = false): String {
+    return if (status == "Active" && isNonCompliant) {
+        MEDICATION_STATUS_NON_COMPLIANT
+    } else {
+        status
+    }
+}
+
+fun isOngoingMedication(status: String, isNonCompliant: Boolean = false): Boolean {
+    val effective = effectiveMedicationStatus(status, isNonCompliant)
+    return effective == "Active" || effective == MEDICATION_STATUS_NON_COMPLIANT
+}
+
 data class DemoPatientDating(
     val patientId: String,
     val lmpDate: String?,
@@ -108,7 +123,7 @@ object ClinicalVocabulary {
     val amnioticFluids = setOf("Normal", "Oligohydramnios", "Polyhydramnios")
     val testCategories = setOf("Hematology", "Urinalysis", "Biochemistry", "Serology", "Other")
     val medicationRoutes = setOf("Oral", "IM", "IV", "Topical", "Subcutaneous")
-    val medicationStatuses = setOf("Active", "Completed", "Discontinued")
+    val medicationStatuses = listOf("Active", "Completed", "Discontinued", MEDICATION_STATUS_NON_COMPLIANT)
 
     fun isValidIsoDate(value: String?): Boolean {
         if (value.isNullOrBlank()) return true

@@ -80,6 +80,8 @@ import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.model.DemoVisit
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
+import com.sherifradwan.ancnative.model.effectiveMedicationStatus
+import com.sherifradwan.ancnative.model.isOngoingMedication
 import com.sherifradwan.ancnative.model.previousDeliverySummary
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
@@ -1965,8 +1967,8 @@ private fun ProfileMedicationsSection(
                             modifier = Modifier.padding(vertical = 8.dp),
                         )
                     } else {
-                        val activeMeds = patient.medications.filter { !it.status.equals("Stopped", ignoreCase = true) }
-                        val stoppedMeds = patient.medications.filter { it.status.equals("Stopped", ignoreCase = true) }
+                        val activeMeds = patient.medications.filter { isOngoingMedication(it.status, it.isNonCompliant) }
+                        val stoppedMeds = patient.medications.filterNot { isOngoingMedication(it.status, it.isNonCompliant) }
 
                         if (activeMeds.isNotEmpty()) {
                             Text(
@@ -2049,21 +2051,22 @@ private fun ProfileMedicationCard(med: DemoMedicationRecord, onEdit: () -> Unit)
                 }
             }
 
+            val ongoing = isOngoingMedication(med.status, med.isNonCompliant)
             Surface(
                 shape = RoundedCornerShape(6.dp),
-                color = if (med.status.equals("Stopped", ignoreCase = true))
-                    MaterialTheme.colorScheme.surfaceContainerHigh
+                color = if (ongoing)
+                    MaterialTheme.colorScheme.secondaryContainer
                 else
-                    MaterialTheme.colorScheme.secondaryContainer,
+                    MaterialTheme.colorScheme.surfaceContainerHigh,
             ) {
                 Text(
-                    text = med.status,
+                    text = effectiveMedicationStatus(med.status, med.isNonCompliant),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (med.status.equals("Stopped", ignoreCase = true))
-                        MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (ongoing)
+                        MaterialTheme.colorScheme.onSecondaryContainer
                     else
-                        MaterialTheme.colorScheme.onSecondaryContainer,
+                        MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                 )
             }

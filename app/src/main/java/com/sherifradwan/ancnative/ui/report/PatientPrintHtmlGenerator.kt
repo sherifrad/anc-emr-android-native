@@ -8,7 +8,9 @@ import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.BpLevel
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
+import com.sherifradwan.ancnative.model.MEDICATION_STATUS_NON_COMPLIANT
 import com.sherifradwan.ancnative.model.bpLevel
+import com.sherifradwan.ancnative.model.effectiveMedicationStatus
 import com.sherifradwan.ancnative.model.formatIsoDate
 import com.sherifradwan.ancnative.model.isEarlyLoss
 import com.sherifradwan.ancnative.model.isStillbirth
@@ -206,11 +208,13 @@ object PatientPrintHtmlGenerator {
             """<tr><td colspan="5" class="text-center empty-cell">No active medications or supplements recorded</td></tr>"""
         } else {
             val rows = displayedMeds.map { m ->
-                val typeBadge = if (m.isProphylaxis) {
-                    """<span class="badge badge-teal">Prophylaxis</span>"""
-                } else {
-                    """<span class="badge badge-navy">Rx</span>"""
+                val statusText = effectiveMedicationStatus(m.status, m.isNonCompliant)
+                val badgeClass = when (statusText) {
+                    "Active" -> "badge badge-teal"
+                    MEDICATION_STATUS_NON_COMPLIANT -> "badge badge-danger"
+                    else -> "badge"
                 }
+                val typeBadge = """<span class="$badgeClass">${escapeHtml(statusText)}</span>"""
                 """
                 <tr>
                     <td class="text-center font-bold text-navy">${escapeHtml(m.name)}</td>
@@ -1197,10 +1201,10 @@ object PatientPrintHtmlGenerator {
                 </div>
             </div>
 
-            <!-- Active Medications & Prophylaxis -->
+            <!-- Active Medications -->
             <div class="section-box">
                 <div class="section-title">
-                    <span>Active Medications & Prophylaxis</span>
+                    <span>Active Medications</span>
                 </div>
                 <div class="table-scroll">
                 <table class="clinical-table">
@@ -1209,7 +1213,7 @@ object PatientPrintHtmlGenerator {
                             <th style="width: 28%;">Medication</th>
                             <th style="width: 20%;">Dosage & Route</th>
                             <th style="width: 18%;">Frequency</th>
-                            <th style="width: 16%;">Type</th>
+                            <th style="width: 16%;">Status</th>
                             <th style="width: 18%;">Notes</th>
                         </tr>
                     </thead>

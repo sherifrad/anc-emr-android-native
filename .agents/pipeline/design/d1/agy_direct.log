@@ -1,0 +1,41 @@
+### Screens Completed
+
+1. **Laboratory Entry (`ui/LabEditor.kt`, clinical lab panels)**
+   - **Option A: One list, type in place** — Panel selection (First Trimester Booking, Preeclampsia Workup, GDM, Anemia, Infection) adds all constituent tests in a single tap; batch date and lab set once at top; in-row typing for numbers and inline chips for serology; automated reference range flags (`Normal ✓`, `High ▲`, `Low ▼`) with 1-tap popover override; single-test search; zero separate Normal/Abnormal switches; zero mentions of the word "Codex".
+   - **Option B: One test at a time, number keypad** — Dedicated on-screen keypad to eliminate keyboard jump and layout shifts; auto-advances through the panel upon entry; review tab showing the complete batch overview.
+
+2. **Ultrasound Entry (`ui/UltrasoundEditor.kt`)**
+   - **Option A: Picture cards and steppers** — Graphical anatomical choice cards for placenta site (anterior, posterior, fundal, lateral, low-lying, previa), amniotic fluid/liquor, fetal presentation, and fetal number; smart biometry steppers (FHR, BPD, HC, AC, FL, EFW) pre-calibrated to 28w GA typical medians; dating calculation hint area with redating threshold advice; "✨ From my choices" automated clinical impression synthesizer; collapsible photo attachments and linked visit selector.
+   - **Option B: Start from a normal scan, one finding at a time** — 1-tap "Fill normal scan" button; live updating single-line report string; auto-advancing accordion rows; biometry sliders with fine-step adjusters.
+
+3. **Medication Entry (`ui/MedicationEditor.kt`)**
+   - **Option A: Build one prescription card** — Pick from common antenatal drugs or recent patient medications; pre-fills standard obstetric dose, route, and frequency; 1-tap chips for frequency and route; start date defaults to today; prophylaxis indicator badge; active medication list below with 1-tap stop (completed vs discontinued) and inline edit; 5-second undo toast.
+   - **Option B: One tap to add, fix it in the list** — Instant-add from drug catalog; newly added drug highlighted with interactive tokens directly on the row to tweak dose or frequency without opening a separate editing form; inline stop and edit actions.
+
+---
+
+### Deliverables Generated
+- **Interactive Clickable Mock-up:** [index.html](file:///Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/design/d1/index.html) (~76 KB, inline CSS/JS, system fonts, zero external network calls, 390 px frames, light/dark mode switch, 100%/130%/160% text scale toggle).
+- **Design Review & Clinical Field Audit:** [NOTES.md](file:///Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/design/d1/NOTES.md) (comprehensive table detailing field mapping, interaction behaviors, tradeoffs, and open clinical questions).
+
+---
+
+### Anything That Could Not Be Done
+**None.** All requirements and constraints were fully met:
+- Zero clinical fields dropped (all fields mapped directly to the primary view or reachable via inline "More" drawers).
+- Zero app Kotlin code modified; zero git commands run; zero emulator/adb dependencies used.
+- All developer jargon ("Codex") completely eliminated from the visible user interface.
+- 48 dp minimum touch targets with anti-wrapping styles enforced across all buttons and chips.
+
+---
+
+### Recommended Options per Screen (with Clinical Rationale)
+
+1. **Laboratory Entry: Recommend Option A ("One list, type in place")**
+   - *Reason:* Diagnostic lab reports arrive from labs (such as Al Borg or El Mokhtabar) as a complete printed or digital panel sheet; seeing all 6–8 tests on a single scrollable screen allows the doctor to scan down the column and transcribe values in seconds without navigating 8 successive page transitions.
+
+2. **Ultrasound Entry: Recommend Option A ("Picture cards and steppers")**
+   - *Reason:* Visual anatomical diagrams for placenta, presentation, and fluid drastically reduce cognitive reading fatigue during an active bedside scan, while biometry steppers calibrated to the patient's gestational age median allow a complete routine scan to be recorded in fewer than 10 total screen taps.
+
+3. **Medication Entry: Recommend Option A ("Build one prescription card")**
+   - *Reason:* Populating a dedicated prescription composer card with the standard antenatal dose, route, and frequency creates a vital clinical safety checkpoint before committing the order, preventing accidental taps while remaining rapid (under 3 seconds per drug).

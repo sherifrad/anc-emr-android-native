@@ -33,7 +33,7 @@ class PrintSectionTitlesTest {
         "Antenatal Care Visits Log",
         "Ultrasound Biometry & Fetal Surveillance",
         "Laboratory Investigations",
-        "Active Medications & Prophylaxis",
+        "Active Medications",
         "Delivery Management Plan & Attestation",
     )
 
@@ -45,7 +45,7 @@ class PrintSectionTitlesTest {
         "ANTENATAL CARE VISITS LOG",
         "ULTRASOUND BIOMETRY & SURVEILLANCE",
         "LABORATORY INVESTIGATIONS",
-        "ACTIVE MEDICATIONS & PROPHYLAXIS",
+        "ACTIVE MEDICATIONS",
         "DELIVERY MANAGEMENT PLAN & CONSULTANT ATTESTATION",
         "ULTRASOUND ATTACHMENTS",
     )

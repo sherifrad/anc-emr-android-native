@@ -1,0 +1,2457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ANC EMR · UI/UX Design Mock-ups · Lane D2 (Dr. Sherif Radwan)</title>
+<style>
+:root {
+  color-scheme: light dark;
+  /* Light Theme (ANC EMR Android Native Tokens) */
+  --bg: #FBF8F5;               /* ClinicalIvory */
+  --sf: #FFFFFF;               /* Surface */
+  --sv: #F3E9E7;               /* SurfaceVariant */
+  --sc: #F4EFEA;               /* SurfaceContainer */
+  --scl: #F9F5F3;              /* SurfaceContainerLow */
+  --sch: #EFE9E4;              /* SurfaceContainerHigh */
+  --on: #0D1B3D;               /* OnSurface / ClinicalNavy */
+  --onv: #4C3F43;              /* OnSurfaceVariant */
+  --mut: #6B6166;              /* Muted text */
+  --out: #79747E;              /* Outline */
+  --outv: #CAC4D0;             /* OutlineVariant */
+  --pri: #0D1B3D;              /* ClinicalNavy */
+  --onpri: #FFFFFF;
+  --pc: #D6DFFF;               /* PrimaryContainer */
+  --opc: #041334;              /* OnPrimaryContainer */
+  --sec: #934F5B;              /* ActionRose */
+  --onsec: #FFFFFF;
+  --secc: #FFD9DE;             /* SecondaryContainer */
+  --osecc: #3B0815;
+  --ter: #176B70;              /* ClinicalTeal */
+  --terc: #AFECEE;             /* TertiaryContainer */
+  --oterc: #002021;
+  --err: #BA1A1A;              /* Error */
+  --errc: #FFDAD6;             /* ErrorContainer */
+  --oerrc: #410002;
+  --page-bg: #EAE5DE;
+  --phone-shadow: 0 12px 36px rgba(13,27,61,0.18);
+
+  /* Clinical Tag Badges (Light) */
+  --tag-obs-bg: #F3E8FF; --tag-obs-txt: #6B21A8; --tag-obs-bd: #DDD6FE;
+  --tag-ga-bg: #E0F2FE;  --tag-ga-txt: #0369A1;  --tag-ga-bd: #BAE6FD;
+  --tag-att-bg: #FEF3C7; --tag-att-txt: #92400E; --tag-att-bd: #FDE68A; --tag-att-ico: #B45309;
+  --tag-risk-bg: #FEE2E2; --tag-risk-txt: #B91C1C; --tag-risk-bd: #FCA5A5;
+  --tag-norm-bg: #DCFCE7; --tag-norm-txt: #166534; --tag-norm-bd: #86EFAC;
+  --tag-hosp-bg: #F3E8FF; --tag-hosp-txt: #6B21A8; --tag-hosp-bd: #D8B4FE;
+  --tag-fee-bg: #DCFCE7;  --tag-fee-txt: #166534;  --tag-fee-bd: #86EFAC;
+  --tag-plan-bg: #E0F2FE; --tag-plan-txt: #075985; --tag-plan-bd: #7DD3FC;
+  --tag-post-bg: #FCE7F3; --tag-post-txt: #9D174D; --tag-post-bd: #F9A8D4;
+
+  --fs: 1; /* Font scale factor */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E121B;
+    --sf: #1A202E;
+    --sv: #262E40;
+    --sc: #1E2638;
+    --scl: #141924;
+    --sch: #283248;
+    --on: #E2E2EA;
+    --onv: #CDC3C6;
+    --mut: #A79EA4;
+    --out: #8E95A5;
+    --outv: #3A4459;
+    --pri: #B4C5FF;
+    --onpri: #002A78;
+    --pc: #183F91;
+    --opc: #DCE1FF;
+    --sec: #FFB2BC;
+    --onsec: #5A1826;
+    --secc: #762E3B;
+    --osecc: #FFD9DE;
+    --ter: #70D7D9;
+    --terc: #004F50;
+    --oterc: #8CF3F5;
+    --err: #FFB4AB;
+    --errc: #5C141D;
+    --oerrc: #FFDAD6;
+    --page-bg: #070A0F;
+    --phone-shadow: 0 12px 36px rgba(0,0,0,0.6);
+
+    /* Clinical Tag Badges (Dark) */
+    --tag-obs-bg: #2E1065; --tag-obs-txt: #E9D5FF; --tag-obs-bd: #581C87;
+    --tag-ga-bg: #082F49;  --tag-ga-txt: #BAE6FD;  --tag-ga-bd: #075985;
+    --tag-att-bg: #451A03; --tag-att-txt: #FDE68A; --tag-att-bd: #78350F; --tag-att-ico: #F59E0B;
+    --tag-risk-bg: #450A0A; --tag-risk-txt: #FCA5A5; --tag-risk-bd: #991B1B;
+    --tag-norm-bg: #052E16; --tag-norm-txt: #86EFAC; --tag-norm-bd: #166534;
+    --tag-hosp-bg: #2E1065; --tag-hosp-txt: #E9D5FF; --tag-hosp-bd: #6B21A8;
+    --tag-fee-bg: #052E16;  --tag-fee-txt: #86EFAC;  --tag-fee-bd: #166534;
+    --tag-plan-bg: #082F49; --tag-plan-txt: #BAE6FD; --tag-plan-bd: #075985;
+    --tag-post-bg: #500724; --tag-post-txt: #FBCFE8; --tag-post-bd: #9D174D;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0E121B;
+  --sf: #1A202E;
+  --sv: #262E40;
+  --sc: #1E2638;
+  --scl: #141924;
+  --sch: #283248;
+  --on: #E2E2EA;
+  --onv: #CDC3C6;
+  --mut: #A79EA4;
+  --out: #8E95A5;
+  --outv: #3A4459;
+  --pri: #B4C5FF;
+  --onpri: #002A78;
+  --pc: #183F91;
+  --opc: #DCE1FF;
+  --sec: #FFB2BC;
+  --onsec: #5A1826;
+  --secc: #762E3B;
+  --osecc: #FFD9DE;
+  --ter: #70D7D9;
+  --terc: #004F50;
+  --oterc: #8CF3F5;
+  --err: #FFB4AB;
+  --errc: #5C141D;
+  --oerrc: #FFDAD6;
+  --page-bg: #070A0F;
+  --phone-shadow: 0 12px 36px rgba(0,0,0,0.6);
+
+  --tag-obs-bg: #2E1065; --tag-obs-txt: #E9D5FF; --tag-obs-bd: #581C87;
+  --tag-ga-bg: #082F49;  --tag-ga-txt: #BAE6FD;  --tag-ga-bd: #075985;
+  --tag-att-bg: #451A03; --tag-att-txt: #FDE68A; --tag-att-bd: #78350F; --tag-att-ico: #F59E0B;
+  --tag-risk-bg: #450A0A; --tag-risk-txt: #FCA5A5; --tag-risk-bd: #991B1B;
+  --tag-norm-bg: #052E16; --tag-norm-txt: #86EFAC; --tag-norm-bd: #166534;
+  --tag-hosp-bg: #2E1065; --tag-hosp-txt: #E9D5FF; --tag-hosp-bd: #6B21A8;
+  --tag-fee-bg: #052E16;  --tag-fee-txt: #86EFAC;  --tag-fee-bd: #166534;
+  --tag-plan-bg: #082F49; --tag-plan-txt: #BAE6FD; --tag-plan-bd: #075985;
+  --tag-post-bg: #500724; --tag-post-txt: #FBCFE8; --tag-post-bd: #9D174D;
+}
+
+:root[data-theme="light"] {
+  --bg: #FBF8F5;
+  --sf: #FFFFFF;
+  --sv: #F3E9E7;
+  --sc: #F4EFEA;
+  --scl: #F9F5F3;
+  --sch: #EFE9E4;
+  --on: #0D1B3D;
+  --onv: #4C3F43;
+  --mut: #6B6166;
+  --out: #79747E;
+  --outv: #CAC4D0;
+  --pri: #0D1B3D;
+  --onpri: #FFFFFF;
+  --pc: #D6DFFF;
+  --opc: #041334;
+  --sec: #934F5B;
+  --onsec: #FFFFFF;
+  --secc: #FFD9DE;
+  --osecc: #3B0815;
+  --ter: #176B70;
+  --terc: #AFECEE;
+  --oterc: #002021;
+  --err: #BA1A1A;
+  --errc: #FFDAD6;
+  --oerrc: #410002;
+  --page-bg: #EAE5DE;
+  --phone-shadow: 0 12px 36px rgba(13,27,61,0.18);
+
+  --tag-obs-bg: #F3E8FF; --tag-obs-txt: #6B21A8; --tag-obs-bd: #DDD6FE;
+  --tag-ga-bg: #E0F2FE;  --tag-ga-txt: #0369A1;  --tag-ga-bd: #BAE6FD;
+  --tag-att-bg: #FEF3C7; --tag-att-txt: #92400E; --tag-att-bd: #FDE68A; --tag-att-ico: #B45309;
+  --tag-risk-bg: #FEE2E2; --tag-risk-txt: #B91C1C; --tag-risk-bd: #FCA5A5;
+  --tag-norm-bg: #DCFCE7; --tag-norm-txt: #166534; --tag-norm-bd: #86EFAC;
+  --tag-hosp-bg: #F3E8FF; --tag-hosp-txt: #6B21A8; --tag-hosp-bd: #D8B4FE;
+  --tag-fee-bg: #DCFCE7;  --tag-fee-txt: #166534;  --tag-fee-bd: #86EFAC;
+  --tag-plan-bg: #E0F2FE; --tag-plan-txt: #075985; --tag-plan-bd: #7DD3FC;
+  --tag-post-bg: #FCE7F3; --tag-post-txt: #9D174D; --tag-post-bd: #F9A8D4;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+body {
+  margin: 0;
+  background: var(--page-bg);
+  color: var(--on);
+  font: calc(14px * var(--fs)) / 1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Sticky Top Navigation Bar */
+nav.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #0D1B3D;
+  color: #FFFFFF;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+  scrollbar-width: none;
+}
+nav.topbar::-webkit-scrollbar { display: none; }
+nav.topbar .brand {
+  font-weight: 700;
+  font-size: 0.95em;
+  white-space: nowrap;
+  padding-right: 8px;
+  border-right: 1px solid rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+nav.topbar a, nav.topbar button {
+  color: #FFFFFF;
+  text-decoration: none;
+  font-size: 0.85em;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+nav.topbar a:hover, nav.topbar button:hover {
+  background: rgba(255,255,255,0.15);
+}
+nav.topbar a.active {
+  background: #176B70;
+  border-color: #AFECEE;
+}
+nav.topbar .tools {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+nav.topbar .tool-btn {
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 18px;
+  padding: 4px 10px;
+  min-height: 38px;
+}
+
+/* Page Layout */
+main.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 14px 60px;
+}
+header.hero {
+  margin-bottom: 28px;
+  background: var(--sf);
+  padding: 20px 24px;
+  border-radius: 18px;
+  border: 1px solid var(--outv);
+}
+header.hero h1 {
+  margin: 0 0 6px;
+  font-size: 1.45em;
+  color: var(--pri);
+}
+header.hero p {
+  margin: 0;
+  color: var(--onv);
+  font-size: 0.95em;
+  line-height: 1.5;
+}
+
+/* Section styling */
+section.screen-section {
+  margin-bottom: 48px;
+}
+.section-header {
+  margin-bottom: 18px;
+}
+.section-header h2 {
+  margin: 0 0 6px;
+  font-size: 1.35em;
+  color: var(--pri);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-header p {
+  margin: 0;
+  color: var(--onv);
+  font-size: 0.92em;
+}
+
+/* Two-column options grid */
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(390px, 100%), 1fr));
+  gap: 32px;
+  align-items: start;
+  justify-items: center;
+}
+.option-col {
+  width: min(390px, 100%);
+  display: flex;
+  flex-direction: column;
+}
+.option-title {
+  margin: 0 0 10px;
+  font-size: 1.05em;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pill-badge {
+  background: var(--sec);
+  color: #FFFFFF;
+  font-size: 0.75em;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+  letter-spacing: 0.5px;
+}
+.pill-badge.rec {
+  background: var(--ter);
+}
+
+/* Plain Review Notes under each option */
+.review-notes {
+  margin-top: 14px;
+  background: var(--sf);
+  border: 1px solid var(--outv);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 0.88em;
+  line-height: 1.45;
+  color: var(--onv);
+}
+.review-notes div { margin-bottom: 4px; }
+.review-notes b { color: var(--on); }
+.review-notes .kept-fields {
+  font-size: 0.82em;
+  color: var(--mut);
+  margin-top: 6px;
+  border-top: 1px dashed var(--outv);
+  padding-top: 6px;
+}
+
+/* 390px Phone Frame */
+.phone-frame {
+  width: 390px;
+  max-width: 100%;
+  height: 840px;
+  background: var(--bg);
+  border-radius: 36px;
+  border: 2px solid var(--outv);
+  box-shadow: var(--phone-shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  user-select: none;
+}
+.phone-status-bar {
+  height: 28px;
+  background: var(--pri);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  font-size: 0.75em;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.phone-app-bar {
+  background: var(--pri);
+  color: #FFFFFF;
+  padding: 6px 14px 10px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.app-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.back-btn {
+  background: transparent;
+  border: 0;
+  color: #FFFFFF;
+  font-size: 1.3em;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 50%;
+}
+.app-bar-titles h3 {
+  margin: 0;
+  font-size: 1.05em;
+  font-weight: 700;
+  letter-spacing: 0.1px;
+}
+.app-bar-titles small {
+  display: block;
+  font-size: 0.76em;
+  opacity: 0.85;
+}
+
+/* Phone Scrollable Body */
+.phone-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scrollbar-width: thin;
+}
+.phone-body::-webkit-scrollbar { width: 4px; }
+.phone-body::-webkit-scrollbar-thumb { background: var(--outv); border-radius: 4px; }
+
+/* Phone Bottom Actions Bar */
+.phone-actions-bar {
+  background: var(--sf);
+  border-top: 1px solid var(--outv);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.btn-save {
+  flex: 2;
+  background: var(--pri);
+  color: #FFFFFF;
+  border: 0;
+  border-radius: 24px;
+  min-height: 48px;
+  font-weight: 700;
+  font-size: 0.95em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.btn-save:active { opacity: 0.85; transform: scale(0.98); }
+.btn-cancel {
+  flex: 1;
+  background: transparent;
+  color: var(--onv);
+  border: 1px solid var(--outv);
+  border-radius: 24px;
+  min-height: 48px;
+  font-weight: 600;
+  font-size: 0.92em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* Clinical Material 3 Style Cards */
+.m3-card {
+  background: var(--sf);
+  border-radius: 16px;
+  border: 1px solid var(--outv);
+  padding: 12px 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.card-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-title {
+  margin: 0;
+  font-size: 0.95em;
+  font-weight: 700;
+  color: var(--pri);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.card-header-action {
+  background: transparent;
+  border: 0;
+  color: var(--pri);
+  font-size: 0.82em;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 14px;
+  min-height: 40px;
+}
+.card-header-action:hover { background: var(--pc); }
+
+/* Clinical Value Pair (Label Above Small Muted, Value Large Bold) */
+.fact-tile {
+  background: var(--scl);
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.fact-tile .label {
+  font-size: 0.72em;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--mut);
+  letter-spacing: 0.4px;
+}
+.fact-tile .val {
+  font-size: 1.05em;
+  font-weight: 700;
+  color: var(--on);
+}
+
+/* Stepper Component */
+.stepper-control {
+  display: inline-flex;
+  align-items: center;
+  background: var(--sv);
+  border-radius: 24px;
+  border: 1px solid var(--outv);
+  overflow: hidden;
+  min-height: 48px;
+}
+.stepper-btn {
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: 0;
+  font-size: 1.25em;
+  font-weight: 700;
+  color: var(--pri);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+}
+.stepper-btn:active { background: rgba(0,0,0,0.08); }
+.stepper-val {
+  min-width: 44px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.05em;
+  padding: 0 4px;
+  color: var(--on);
+}
+
+/* Chips and Tap Choices */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.chip {
+  min-height: 48px;
+  padding: 8px 14px;
+  border-radius: 24px;
+  border: 1px solid var(--outv);
+  background: var(--sf);
+  color: var(--onv);
+  font-size: 0.88em;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.chip:active { transform: scale(0.97); }
+.chip.active {
+  background: var(--pc);
+  color: var(--opc);
+  border-color: var(--pri);
+  font-weight: 700;
+}
+.chip.danger.active {
+  background: var(--errc);
+  color: var(--oerrc);
+  border-color: var(--err);
+}
+.chip.teal.active {
+  background: var(--terc);
+  color: var(--oterc);
+  border-color: var(--ter);
+}
+
+/* Timeline Components */
+.timeline-list {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding-left: 20px;
+  border-left: 2px solid var(--outv);
+  margin-left: 10px;
+  gap: 14px;
+}
+.timeline-item {
+  position: relative;
+  background: var(--sf);
+  border: 1px solid var(--outv);
+  border-radius: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.timeline-item::before {
+  content: "";
+  position: absolute;
+  left: -27px;
+  top: 14px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--pri);
+  border: 2px solid var(--bg);
+}
+.timeline-item:hover { border-color: var(--pri); }
+.timeline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.timeline-year {
+  font-weight: 700;
+  font-size: 0.95em;
+  color: var(--pri);
+}
+.timeline-route {
+  font-size: 0.8em;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--tag-obs-bg);
+  color: var(--tag-obs-txt);
+}
+.timeline-details {
+  font-size: 0.85em;
+  color: var(--onv);
+  margin-top: 4px;
+  line-height: 1.35;
+}
+.timeline-collapsed-area {
+  display: none;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--outv);
+  font-size: 0.82em;
+}
+.timeline-item.expanded .timeline-collapsed-area {
+  display: block;
+}
+
+/* Clinical Alert Badges */
+.alert-banner {
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.88em;
+  cursor: pointer;
+}
+.alert-banner.severe-bp {
+  background: var(--tag-risk-bg);
+  color: var(--tag-risk-txt);
+  border: 1.5px solid var(--tag-risk-bd);
+}
+.alert-banner.manual-att {
+  background: var(--tag-att-bg);
+  color: var(--tag-att-txt);
+  border: 1.5px solid var(--tag-att-bd);
+}
+.alert-banner-icon {
+  font-size: 1.25em;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.alert-banner-content {
+  flex: 1;
+}
+.alert-banner-title {
+  font-weight: 700;
+  font-size: 0.92em;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.alert-banner-badge {
+  font-size: 0.78em;
+  font-weight: 700;
+  background: rgba(0,0,0,0.08);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.alert-expandable-list {
+  display: none;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(0,0,0,0.15);
+  font-size: 0.85em;
+  line-height: 1.45;
+}
+.alert-banner.expanded .alert-expandable-list {
+  display: block;
+}
+
+/* Patient List Card Representation */
+.patient-list-card {
+  background: var(--sf);
+  border-radius: 14px;
+  border: 1px solid var(--outv);
+  padding: 12px 14px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.patient-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.patient-list-name {
+  font-weight: 700;
+  font-size: 1.05em;
+  color: var(--on);
+}
+.patient-list-case {
+  font-size: 0.8em;
+  color: var(--mut);
+}
+.patient-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.tag-badge {
+  font-size: 0.75em;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Discrepancy Reconciliation Box */
+.reconcile-card {
+  background: var(--tag-att-bg);
+  border: 1.5px solid var(--tag-att-bd);
+  color: var(--tag-att-txt);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.reconcile-title {
+  font-weight: 700;
+  font-size: 0.9em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.reconcile-diff {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: rgba(255,255,255,0.7);
+  border-radius: 10px;
+  padding: 8px;
+  color: var(--on);
+}
+.diff-item {
+  text-align: center;
+}
+.diff-item .method { font-size: 0.7em; text-transform: uppercase; color: var(--mut); font-weight: 600; }
+.diff-item .edd { font-size: 0.92em; font-weight: 700; color: var(--pri); }
+.diff-item .ga { font-size: 0.8em; font-weight: 600; color: var(--onv); }
+.btn-use-this {
+  background: var(--pri);
+  color: #FFFFFF;
+  border: 0;
+  border-radius: 20px;
+  min-height: 48px;
+  padding: 8px 16px;
+  font-weight: 700;
+  font-size: 0.88em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btn-use-this:active { opacity: 0.9; transform: scale(0.98); }
+
+/* Delivery Section Tones */
+.delivery-box {
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.delivery-box.hosp { background: var(--tag-hosp-bg); color: var(--tag-hosp-txt); border: 1px solid var(--tag-hosp-bd); }
+.delivery-box.fee  { background: var(--tag-fee-bg);  color: var(--tag-fee-txt);  border: 1px solid var(--tag-fee-bd); }
+.delivery-box.plan { background: var(--tag-plan-bg); color: var(--tag-plan-txt); border: 1px solid var(--tag-plan-bd); }
+.delivery-box.post { background: var(--tag-post-bg); color: var(--tag-post-txt); border: 1px solid var(--tag-post-bd); }
+.delivery-box-title { font-size: 0.76em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
+.delivery-box-val   { font-size: 0.95em; font-weight: 700; }
+
+/* Subtle sub-text notes */
+.subtext {
+  font-size: 0.75em;
+  color: var(--mut);
+  line-height: 1.35;
+}
+</style>
+</head>
+<body>
+
+<!-- STICKY TOP MENU -->
+<nav class="topbar">
+  <div class="brand">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    ANC EMR · D2
+  </div>
+  <a href="#scr1" class="active">1. Obstetric History</a>
+  <a href="#scr2">2. Prior Pregnancies</a>
+  <a href="#scr3">3. Pregnancy Dating</a>
+  <a href="#scr4">4. Clinical Attention</a>
+  <a href="#scr5">5. Delivery Plan</a>
+  <div class="tools">
+    <button class="tool-btn" onclick="toggleTheme()" title="Toggle Dark/Light Mode">🌓 Mode</button>
+    <button class="tool-btn" onclick="adjustFont(0.08)" title="Enlarge Text">A+</button>
+    <button class="tool-btn" onclick="adjustFont(-0.08)" title="Shrink Text">A-</button>
+  </div>
+</nav>
+
+<main class="container">
+
+  <header class="hero">
+    <h1>ANC EMR Android Design Lab · Lane D2</h1>
+    <p>
+      Clickable interactive mock-ups tailored for <b>Dr. Sherif Radwan</b> (Consultant Obstetrician).
+      Every screen offers <b>Option A</b> and <b>Option B</b> in a 390 dp mobile frame with tactile taps, live calculations, 48 dp touch targets, and zero keyboard typing fatigue.
+    </p>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- SCREEN 1: OBSTETRIC HISTORY SECTION -->
+  <!-- ========================================================================= -->
+  <section id="scr1" class="screen-section">
+    <div class="section-header">
+      <h2>1. Obstetric History Section</h2>
+      <p>Replacing wall-to-wall text boxes with instant G/P/A stepper controls, auto-computed clinical delivery badges, and chronological history tracking.</p>
+    </div>
+
+    <div class="options-grid">
+
+      <!-- OPTION A -->
+      <div class="option-col">
+        <div class="option-title">
+          <span class="pill-badge rec">Option A</span>
+          <span>Interactive Timeline & Stepper Hub (Recommended)</span>
+        </div>
+
+        <div class="phone-frame">
+          <div class="phone-status-bar">
+            <span>09:41</span>
+            <span>5G ▰ 100%</span>
+          </div>
+          <div class="phone-app-bar">
+            <div class="app-bar-left">
+              <button class="back-btn">←</button>
+              <div class="app-bar-titles">
+                <h3>Mariam El-Sayed</h3>
+                <small>Obstetric Profile · Case #ANC-2026-084</small>
+              </div>
+            </div>
+            <button class="card-header-action" style="color:#fff;" onclick="alert('Switched default style to Option B in Settings')">⚙ Style</button>
+          </div>
+
+          <div class="phone-body">
+
+            <!-- Hero Delivery Summary Badge -->
+            <div style="background:var(--tag-obs-bg); border:1.5px solid var(--tag-obs-bd); border-radius:14px; padding:10px 14px; display:flex; align-items:center; justify-content:space-between;">
+              <div>
+                <div style="font-size:0.75em; text-transform:uppercase; font-weight:700; color:var(--tag-obs-txt);">Obstetric Status</div>
+                <div id="obs-summary-a" style="font-size:1.15em; font-weight:800; color:var(--tag-obs-txt);">G3 P2 A0 · Prev 2 CS</div>
+              </div>
+              <span class="tag-badge" style="background:#FFFFFF; color:var(--tag-obs-txt); border:1px solid var(--tag-obs-bd);">Singleton</span>
+            </div>
+
+            <!-- CARD 1: RAPID GPA STEPPERS -->
+            <div class="m3-card">
+              <div class="card-header-row">
+                <span class="card-title">Obstetric Formula (GPA)</span>
+                <button class="card-header-action" onclick="resetPrimigravida()">1-Tap Primigravida</button>
+              </div>
+
+              <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+                <!-- Gravida -->
+                <div class="fact-tile" style="align-items:center;">
+                  <span class="label">Gravida (G)</span>
+                  <div class="stepper-control" style="margin-top:4px;">
+                    <button class="stepper-btn" onclick="stepGPA('g', -1)">−</button>
+                    <span id="gpa-g" class="stepper-val">3</span>
+                    <button class="stepper-btn" onclick="stepGPA('g', 1)">+</button>
+                  </div>
+                </div>
+
+                <!-- Parity -->
+                <div class="fact-tile" style="align-items:center;">
+                  <span class="label">Parity (P)</span>
+                  <div class="stepper-control" style="margin-top:4px;">
+                    <button class="stepper-btn" onclick="stepGPA('p', -1)">−</button>
+                    <span id="gpa-p" class="stepper-val">2</span>
+                    <button class="stepper-btn" onclick="stepGPA('p', 1)">+</button>
+                  </div>
+                </div>
+
+                <!-- Abortion -->
+                <div class="fact-tile" style="align-items:center;">
+                  <span class="label">Loss (A)</span>
+                  <div class="stepper-control" style="margin-top:4px;">
+                    <button class="stepper-btn" onclick="stepGPA('a', -1)">−</button>
+                    <span id="gpa-a" class="stepper-val">0</span>
+                    <button class="stepper-btn" onclick="stepGPA('a', 1)">+</button>
+                  </div>
+                </div>
+              </div>
+              <div class="subtext">Auto-balances: Gravida reflects total pregnancies including current gestation.</div>
+            </div>
+
+            <!-- CARD 2: PRIOR PREGNANCIES CHRONOLOGICAL TIMELINE -->
+            <div class="m3-card">
+              <div class="card-header-row">
+                <span class="card-title">Prior Pregnancies Timeline (2)</span>
+                <button class="card-header-action" onclick="alert('Opens Add Prior Pregnancy sheet')">+ Add Delivery</button>
+              </div>
+
+              <div class="timeline-list">
+                <!-- Pregnancy 1 -->
+                <div class="timeline-item" onclick="this.classList.toggle('expanded')">
+                  <div class="timeline-header">
+                    <span class="timeline-year">2023 · Full Term Delivery</span>
+                    <span class="timeline-route">Elective CS</span>
+                  </div>
+                  <div class="timeline-details">Male, 3,450 g · Uneventful repeat Cesarean</div>
+                  <div class="timeline-collapsed-area">
+                    <div style="font-weight:600; color:var(--pri);">Al Salam International Hospital · Dr. Sherif Radwan</div>
+                    <div style="margin-top:2px;">Indication: Previous 1 CS. Spinal anesthesia, no intraoperative complications.</div>
+                    <div style="margin-top:6px; color:var(--sec); font-weight:700;">Tap to collapse ▴</div>
+                  </div>
+                </div>
+
+                <!-- Pregnancy 2 -->
+                <div class="timeline-item" onclick="this.classList.toggle('expanded')">
+                  <div class="timeline-header">
+                    <span class="timeline-year">2021 · Full Term Delivery</span>
+                    <span class="timeline-route">Primary CS</span>
+                  </div>
+                  <div class="timeline-details">Female, 3,100 g · Breech Presentation</div>
+                  <div class="timeline-collapsed-area">
+                    <div style="font-weight:600; color:var(--pri);">Cleopatra Hospital · Dr. Sherif Radwan</div>
+                    <div style="margin-top:2px;">Indication: Persistent Frank Breech at 38w. Healthy APGAR 9/10.</div>
+                    <div style="margin-top:6px; color:var(--sec); font-weight:700;">Tap to collapse ▴</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- CARD 3: MEDICAL, SURGICAL, FAMILY, ALLERGY HISTORIES -->
+            <div class="m3-card">
+              <div class="card-header-row">
+                <span class="card-title">Background Histories</span>
+                <button class="card-header-action" onclick="alert('Toggled all empty histories to Negative')">✓ All Nil</button>
+              </div>
+
+              <div class="chip-row">
+                <div class="chip teal active" onclick="alert('Medical History: Nil significant')">Medical: Nil</div>
+                <div class="chip" onclick="alert('Surgical History: Appendectomy 2017')">Surgical: Appendectomy</div>
+                <div class="chip" onclick="alert('Family History: T2DM (Mother)')">Family: T2DM (Mother)</div>
+                <div class="chip teal active" onclick="alert('Allergy History: NKDA')">Allergy: Nil (NKDA)</div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="phone-actions-bar">
+            <button class="btn-cancel" onclick="alert('Cancelled')">Close</button>
+            <button class="btn-save" onclick="alert('Obstetric history updated')">Save Profile</button>
+          </div>
+        </div>
+
+        <div class="review-notes">
+          <div><b>What is faster:</b> Single-tap GPA steppers adjust counts in 1 second without opening keyboard; 1-tap Primigravida sets G1P0A0.</div>
+          <div><b>What it keeps:</b> Gravida, parity, abortion, prior delivery routes, dates, hospitals, medical, surgical, family, and allergy histories.</div>
+          <div><b>What it costs:</b> Timeline takes vertical height when a patient has >4 previous deliveries (mitigated by collapsible items).</div>
+          <div class="kept-fields">Fields kept: <code>gravida</code>, <code>parity</code>, <code>abortion</code>, <code>previousPregnancies</code>, <code>medicalHistory</code>, <code>surgicalHistory</code>, <code>familyHistory</code>, <code>allergyHistory</code>.</div>
+        </div>
+      </div>
+
+      <!-- OPTION B -->
+      <div class="option-col">
+        <div class="option-title">
+          <span class="pill-badge">Option B</span>
+          <span>Modular Cards & Route Matrix</span>
+        </div>
+
+        <div class="phone-frame">
+          <div class="phone-status-bar">
+            <span>09:41</span>
+            <span>5G ▰ 100%</span>
+          </div>
+          <div class="phone-app-bar">
+            <div class="app-bar-left">
+              <button class="back-btn">←</button>
+              <div class="app-bar-titles">
+                <h3>Mariam El-Sayed</h3>
+                <small>Obstetric Profile · Card View Style</small>
+              </div>
+            </div>
+            <button class="card-header-action" style="color:#fff;" onclick="alert('Switched to Timeline View in Settings')">⇋ Timeline</button>
+          </div>
+
+          <div class="phone-body">
+
+            <!-- GPA Matrix with Quick Chips -->
+            <div class="m3-card">
+              <div class="card-header-row">
+                <span class="card-title">Obstetric Parity Matrix</span>
+                <span class="tag-badge" style="background:var(--pc); color:var(--opc);">G3 P2 A0</span>
+              </div>
+              <div class="chip-row">
+                <div class="chip" onclick="setPresetGPA(1,0,0, this)">G1 P0 (Primi)</div>
+                <div class="chip" onclick="setPresetGPA(2,1,0, this)">G2 P1</div>
+                <div class="chip active" onclick="setPresetGPA(3,2,0, this)">G3 P2</div>
+                <div class="chip" onclick="setPresetGPA(4,3,0, this)">G4 P3</div>
+                <div class="chip" onclick="setPresetGPA(3,1,1, this)">G3 P1 A1</div>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                <span class="subtext">Previous Deliveries: 2 Cesarean Sections (Prev 2 CS)</span>
+                <button class="card-header-action" onclick="alert('Custom GPA Picker')">Edit Custom</button>
+              </div>
+            </div>
+
+            <!-- SEPARATE CARDS PER PREGNANCY -->
+            <div style="font-weight:700; font-size:0.92em; color:var(--pri); margin-top:2px;">Previous Deliveries (2 Records)</div>
+
+            <!-- Delivery Card 1 -->
+            <div class="m3-card" style="border-left: 4px solid var(--sec);">
+              <div class="card-header-row">
+                <div>
+                  <span style="font-size:0.75em; text-transform:uppercase; color:var(--mut); font-weight:700;">Delivery #2</span>
+                  <div style="font-weight:700; font-size:1.05em; color:var(--on);">2023 · Cesarean Section</div>
+                </div>
+                <span class="tag-badge" style="background:var(--tag-obs-bg); color:var(--tag-obs-txt);">Live Birth</span>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                <div class="fact-tile"><span class="label">Baby</span><span class="val">Boy · 3.45 kg</span></div>
+                <div class="fact-tile"><span class="label">Hospital</span><span class="val">Al Salam Int.</span></div>
+              </div>
+              <div class="subtext">Elective repeat CS at 38w. Uneventful recovery.</div>
+            </div>
+
+            <!-- Delivery Card 2 -->
+            <div class="m3-card" style="border-left: 4px solid var(--ter);">
+              <div class="card-header-row">
+                <div>
+                  <span style="font-size:0.75em; text-transform:uppercase; color:var(--mut); font-weight:700;">Delivery #1</span>
+                  <div style="font-weight:700; font-size:1.05em; color:var(--on);">2021 · Cesarean Section</div>
+                </div>
+                <span class="tag-badge" style="background:var(--tag-obs-bg); color:var(--tag-obs-txt);">Live Birth</span>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                <div class="fact-tile"><span class="label">Baby</span><span class="val">Girl · 3.10 kg</span></div>
+                <div class="fact-tile"><span class="label">Hospital</span><span class="val">Cleopatra</span></div>
+              </div>
+              <div class="subtext">Primary CS for persistent frank breech presentation.</div>
+            </div>
+
+            <!-- Background Histories Accordion -->
+            <div class="m3-card">
+              <div class="card-header-row">
+                <span class="card-title">Past Medical & Surgical History</span>
+                <span style="font-size:0.8em; color:var(--mut);">All reviewed</span>
+              </div>
+              <div style="font-size:0.85em; display:flex; flex-direction:column; gap:6px;">
+                <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--sv); padding-bottom:4px;">
+                  <span style="color:var(--mut);">Medical:</span> <span style="font-weight:600;">No chronic illnesses</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--sv); padding-bottom:4px;">
+                  <span style="color:var(--mut);">Surgical:</span> <span style="font-weight:600;">Appendectomy (2017)</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--sv); padding-bottom:4px;">
+                  <span style="color:var(--mut);">Family:</span> <span style="font-weight:600;">Type 2 Diabetes (Mother)</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                  <span style="color:var(--mut);">Allergies:</span> <span style="font-weight:600; color:var(--tag-norm-txt);">No Known Drug Allergies</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="phone-actions-bar">
+            <button class="btn-cancel" onclick="alert('Cancelled')">Close</button>
+            <button class="btn-save" onclick="alert('Saved Card Style')">Save Profile</button>
+          </div>
+        </div>
+
+        <div class="review-notes">
+          <div><b>What is faster:</b> Common obstetric formula chips (G1P0, G2P1, G3P2) configure GPA with a single tap.</div>
+          <div><b>What it keeps:</b> Every prior pregnancy detail, baby weight, hospital name, indications, and all 4 background histories.</div>
+          <div><b>What it costs:</b> Higher vertical scrolling footprint when multiple delivery cards are present.</div>
+          <div class="kept-fields">Fields kept: <code>gravida</code>, <code>parity</code>, <code>abortion</code>, <code>previousPregnancies</code>, <code>medicalHistory</code>, <code>surgicalHistory</code>, <code>familyHistory</code>, <code>allergyHistory</code>.</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- SCREEN 2: PREVIOUS PREGNANCIES LIST AND ITS EDITOR -->
+  <!-- ========================================================================= -->
+  <section id="scr2" class="screen-section">
+    <div class="section-header">
+      <h2>2. Previous Pregnancies List & Rapid Editor</h2>
+      <p>High-contrast visual hierarchy: Year and Outcome first with prominent values and small light labels; rapid outcome chips including Hysterotomy.</p>
+    </div>
+
+    <div class="options-grid">
+
+      <!-- OPTION A -->
+      <div class="option-col">
+        <div class="option-title">
+          <span class="pill-badge rec">Option A</span>
+          <span>Outcome-Driven Tap Matrix (Recommended)</span>
+        </div>
+
+        <div class="phone-frame">
+          <div class="phone-status-bar">
+            <span>09:41</span>
+            <span>5G ▰ 100%</span>
+          </div>
+          <div class="phone-app-bar">
+            <div class="app-bar-left">
+              <button class="back-btn">←</button>
+              <div class="app-bar-titles">
+                <h3>Previous Pregnancy Editor</h3>
+                <small>Nour Hassan · Case #ANC-2026-112</small>
+              </div>
+            </div>
+            <span class="tag-badge" style="background:#FFFFFF; color:var(--pri);">Add / Edit</span>
+          </div>
+
+          <div class="phone-body">
+
+            <!-- STEP 1: YEAR STEPPER WITH RECENT CHIPS -->
+            <div class="m3-card">
+              <div class="card-header-row">
+                <span class="card-title">1. Delivery Year & Pregnancy Type</span>
+              </div>
+
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div>
+                  <div class="subtext">DELIVERY YEAR</div>
+                  <div class="stepper-control" style="margin-top:4px;">
+                    <button class="stepper-btn" onclick="stepYear('pp-year', -1)">−</button>
+                    <span id="pp-year" class="stepper-val">2022</span>
+                    <button class="stepper-btn" onclick="stepYear('pp-year', 1)">+</button>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="subtext">FETAL NUMBER</div>
+                  <div class="chip-row" style="margin-top:4px;">
+                    <div class="chip active" onclick="selectSingleChip(this)">Singleton</div>
+                    <div class="chip" onclick="selectSingleChip(this)">Twins</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick Year Shortcuts -->
+              <div class="chip-row">
+                <div class="chip" onclick="setYear('pp-year', 2024)">2024</div>
+                <div class="chip" onclick="setYear('pp-year', 2023)">2023</div>
+                <div class="chip active" onclick="setYear('pp-year', 2022)">2022</div>
+                <div class="chip" onclick="setYear('pp-year', 2020)">2020</div>
+                <div class="chip" onclick="setYear('pp-year', 2018)">Older</div>
+              </div>
+            </div>
+
+            <!-- STEP 2: PRIMARY OUTCOME CHIPS (ONE-TAP SELECTION) -->
+            <div class="m3-card">
+              <div class="card-header-row">
+                <span class="card-title">2. Clinical Outcome & Delivery Mode</span>
+              </div>
+              <div class="subtext">Tap outcome to automatically classify route and loss management:</div>
+
+              <div class="chip-row" style="margin-top:6px;">
+                <div class="chip active" onclick="selectOutcomeChip('cs', this)">Live Birth (CS)</div>
+                <div class="chip" onclick="selectOutcomeChip('vaginal', this)">Live Birth (Vaginal)</div>
+                <div class="chip danger" onclick="selectOutcomeChip('miscarriage', this)">Miscarriage</div>
+                <div class="chip danger" onclick="selectOutcomeChip('stillbirth', this)">Stillbirth (IUFD)</div>
+                <div class="chip" onclick="selectOutcomeChip('termination', this)">Termination</div>
+                <div class="chip" onclick="selectOutcomeChip('hysterotomy', this)">Hysterotomy (CS)</div>
+              </div>
+
+              <!-- Dynamic Sub-branch: Appears based on choice -->
+              <div id="outcome-branch" style="background:var(--scl); border-radius:12px; padding:10px; margin-top:6px;">
+                <div id="branch-title" style="font-size:0.78em; font-weight:700; text-transform:uppercase; color:var(--mut);">Cesarean Section Sub-Type</div>
+                <div id="branch-chips" class="chip-row" style="margin-top:6px;">
+                  <div class="chip active" onclick="selectSingleChip(this)">Elective Lower Segment CS</div>
+                  <div class="chip" onclick="selectSingleChip(this)">Emergency CS</div>
+                  <div class="chip" onclick="selectSingleChip(this)">Classical CS</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- STEP 3: PLACE, DOCTOR & COMPLICATIONS (PROGRESSIVE DISCLOSURE) -->
+            <div class="m3-card">
+              <div class="card-header-row">
+                <span class="card-title">3. Hospital, Doctor & Notes</span>
+                <span style="font-size:0.8em; color:var(--mut);">Optional</span>
+              </div>
+
+              <div class="subtext">QUICK HOSPITAL PRESET:</div>
+              <div class="chip-row">
+                <div class="chip active" onclick="selectSingleChip(this)">Al Salam Int.</div>
+                <div class="chip" onclick="selectSingleChip(this)">Cleopatra</div>
+                <div class="chip" onclick="selectSingleChip(this)">Dar Al Fouad</div>
+                <div class="chip" onclick="selectSingleChip(this)">Other Hospital</div>
+              </div>
+
+              <!-- Collapsible Notes -->
+              <div style="background:var(--scl); border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:6px;">
+                <div class="subtext">CLINICAL DETAILS & COMPLICATIONS:</div>
+                <div style="font-weight:600; font-size:0.92em; color:var(--on);">Full term boy 3.3 kg. Uneventful recovery. Dr. Sherif Radwan.</div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="phone-actions-bar">
+            <button class="btn-cancel" onclick="alert('Cancelled')">Cancel</button>
+            <button class="btn-save" onclick="alert('Previous pregnancy recorded!')">Save Record</button>
+          </div>
+        </div>
+
+        <div class="review-notes">
+          <div><b>What is faster:</b> 1-tap outcome chips configure both <code>outcome</code> and <code>birthMethod</code> instantly; year stepper eliminates keyboard.</div>
+          <div><b>What it keeps:</b> Outcome, year, pregnancy type, delivery mode, loss management, place and doctor, other details, and clinician ID.</div>
+          <div><b>What it costs:</b> Hysterotomy is grouped with CS classification for safety and clarity as instructed.</div>
+          <div class="kept-fields">Fields kept: <code>dateText</code>, <code>outcome</code>, <code>birthMethod</code>, <code>deliveryBy</code>, <code>pregnancyType</code>, <code>lossManagement</code>, <code>placeAndDoctor</code>, <code>otherDetails</code>, <code>clinicianId</code>.</div>
+        </div>
+      </div>
+
+      <!-- OPTION B -->
+      <div class="option-col">
+        <div class="option-title">
+          <span class="pill-badge">Option B</span>
+          <span>Hierarchical 3-Step Flow with Complication Tags</span>
+        </div>
+
+        <div class="phone-frame">
+          <div class="phone-status-bar">
+            <span>09:41</span>
+            <span>5G ▰ 100%</span>
+          </div>
+          <div class="phone-app-bar">
+            <div class="app-bar-left">
+              <button class="back-btn">←</button>
+              <div class="app-bar-titles">
+                <h3>Prior Pregnancy Entry</h3>
+                <small>Hierarchical Workflow Style</small>
+              </div>
+            </div>
+            <span class="tag-badge" style="background:#FFFFFF; color:var(--pri);">Step Flow</span>
+          </div>
+
+          <div class="phone-body">
+
+            <!-- Card List View Demonstration (High Contrast labels/values) -->
+            <div class="m3-card" style="background:var(--scl);">
+              <div class="subtext">EXISTING RECORD PREVIEW IN LIST:</div>
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-top:4px;">
+                <div>
+                  <div style="font-size:0.7em; font-weight:700; text-transform:uppercase; color:var(--mut);">DELIVERY & YEAR</div>
+                  <div style="font-size:1.15em; font-weight:800; color:var(--pri);">2022 · Cesarean Section</div>
+                </div>
+                <span class="tag-badge" style="background:var(--tag-obs-bg); color:var(--tag-obs-txt);">Live Birth (Term)</span>
+              </div>
+              <div style="display:flex; gap:12px; margin-top:6px;">
+                <div>
+                  <div style="font-size:0.7em; text-transform:uppercase; color:var(--mut);">HOSPITAL / DOCTOR</div>
+                  <div style="font-size:0.9em; font-weight:600;">Al Salam · Dr. Sherif</div>
+                </div>
+                <div>
+                  <div style="font-size:0.7em; text-transform:uppercase; color:var(--mut);">BABY DETAILS</div>
+                  <div style="font-size:0.9em; font-weight:600;">Male · 3.30 kg</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- STEPPER EDITOR IN-PLACE -->
+            <div class="m3-card">
+              <span class="card-title">1. Timing & Pregnancy Type</span>
+              <div style="display:flex; gap:10px; align-items:center;">
+                <div class="fact-tile" style="flex:1;">
+                  <span class="label">Delivery Year</span>
+                  <div class="stepper-control" style="margin-top:2px;">
+                    <button class="stepper-btn" onclick="stepYear('step-year', -1)">−</button>
+                    <span id="step-year" class="stepper-val">2020</span>
+                    <button class="stepper-btn" onclick="stepYear('step-year', 1)">+</button>
+                  </div>
+                </div>
+                <div class="fact-tile" style="flex:1;">
+                  <span class="label">Type</span>
+                  <div class="chip active" style="min-height:44px; margin-top:2px;" onclick="this.textContent = this.textContent === 'Singleton' ? 'Twins' : 'Singleton'">Singleton ▾</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- STEP 2: OUTCOME & COMORBIDITY QUICK TAGS -->
+            <div class="m3-card">
+              <span class="card-title">2. Outcome & Complications Quick-Tags</span>
+              <div class="subtext">PRIMARY OUTCOME:</div>
+              <div class="chip-row">
+                <div class="chip active" onclick="selectSingleChip(this)">Vaginal (SVD)</div>
+                <div class="chip" onclick="selectSingleChip(this)">Cesarean (CS)</div>
+                <div class="chip" onclick="selectSingleChip(this)">Hysterotomy</div>
+                <div class="chip danger" onclick="selectSingleChip(this)">Miscarriage</div>
+                <div class="chip danger" onclick="selectSingleChip(this)">Stillbirth</div>
+              </div>
+
+              <div class="subtext" style="margin-top:8px;">TAP COMPLICATIONS TO APPEND (NO TYPING):</div>
+              <div class="chip-row">
+                <div class="chip teal active" onclick="this.classList.toggle('active')">Uneventful</div>
+                <div class="chip" onclick="this.classList.toggle('active')">+ PPH</div>
+                <div class="chip" onclick="this.classList.toggle('active')">+ Pre-eclampsia</div>
+                <div class="chip" onclick="this.classList.toggle('active')">+ Gestational DM</div>
+                <div class="chip" onclick="this.classList.toggle('active')">+ NICU Stay</div>
+              </div>
+            </div>
+
+            <!-- STEP 3: AUDIT & DOCTOR -->
+            <div class="m3-card">
+              <span class="card-title">3. Documentation & Verification</span>
+              <div class="fact-tile">
+                <span class="label">Attending Clinician (Session Signer)</span>
+                <span class="val" style="color:var(--ter);">Dr. Sherif Radwan (Logged in)</span>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="phone-actions-bar">
+            <button class="btn-cancel" onclick="alert('Cancelled')">Cancel</button>
+            <button class="btn-save" onclick="alert('Saved Prior Pregnancy')">Save Record</button>
+          </div>
+        </div>
+
+        <div class="review-notes">
+          <div><b>What is faster:</b> Complication tags (+ PPH, + Pre-eclampsia, Uneventful) append to clinical details in 1 tap.</div>
+          <div><b>What it keeps:</b> All historical delivery fields, hospital presets, clinician audit trail, and outcome classifications.</div>
+          <div><b>What it costs:</b> Requires 3 distinct card passes rather than the single-screen tap matrix of Option A.</div>
+          <div class="kept-fields">Fields kept: <code>dateText</code>, <code>outcome</code>, <code>birthMethod</code>, <code>deliveryBy</code>, <code>pregnancyType</code>, <code>lossManagement</code>, <code>placeAndDoctor</code>, <code>otherDetails</code>, <code>clinicianId</code>.</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- SCREEN 3: NEW PATIENT FORM: PREGNANCY DATING -->
+  <!-- ========================================================================= -->
+  <section id="scr3" class="screen-section">
+    <div class="section-header">
+      <h2>3. New Patient Form: How Pregnancy is Dated</h2>
+      <p>Instant method selection (LMP, IVF, First-Trimester Scan, Agreed Due Date); live calculation of EDD and Gestational Age; clear side-by-side discrepancy reconciliation with 'Use this one'.</p>
+    </div>
+
+    <div class="options-grid">
+
+      <!-- OPTION A -->
+      <div class="option-col">
+        <div class="option-title">
+          <span class="pill-badge rec">Option A</span>
+          <span>Multi-Method Comparator & Live Adjudicator (Recommended)</span>
+        </div>
+
+        <div class="phone-frame">
+          <div class="phone-status-bar">
+            <span>09:41</span>
+            <span>5G ▰ 100%</span>
+          </div>
+          <div class="phone-app-bar">
+            <div class="app-bar-left">
+              <button class="back-btn">←</button>
+              <div class="app-bar-titles">
+                <h3>Pregnancy Dating Engine</h3>
+                <small>Farida Mansour · Case #ANC-2026-140</small>
+              </div>
+            </div>
+            <span class="tag-badge" style="background:var(--tag-ga-bg); color:var(--tag-ga-txt);">1st Trimester</span>
+          </div>
+
+          <div class="phone-body">
+
+            <!-- METHOD SELECTOR PILL TABS -->
+            <div class="m3-card" style="padding:8px;">
+              <div class="subtext" style="padding:2px 6px;">SELECT PRIMARY DATING METHOD:</div>
+              <div class="chip-row" style="margin-top:4px;">
+                <div id="tab-lmp" class="chip active" onclick="selectDatingMethod('LMP', this)">LMP</div>
+                <div id="tab-ivf" class="chip" onclick="selectDatingMethod('IVF', this)">IVF Transfer</div>
+                <div id="tab-us" class="chip" onclick="selectDatingMethod('US', this)">1st-Tri Scan</div>
+                <div id="tab-edd" class="chip" onclick="selectDatingMethod('EDD', this)">Agreed EDD</div>
+              </div>
+            </div>
+
+            <!-- DYNAMIC METHOD INPUT BOX -->
+            <div id="dating-input-panel" class="m3-card">
+              <!-- Will change dynamically via JS -->
+              <div class="card-header-row">
+                <span id="dating-panel-title" class="card-title">LMP Entry & Cycle Regularity</span>
+                <span id="dating-panel-badge" class="tag-badge" style="background:var(--pc); color:var(--opc);">Standard</span>
+              </div>
+
+              <!-- LMP Controls -->
+              <div id="panel-lmp-controls">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <div>
+                    <div class="subtext">LAST MENSTRUAL PERIOD (LMP)</div>
+                    <input type="date" id="input-lmp-date" value="2026-07-20" onchange="recalculateDating()" style="background:var(--sv); border:1px solid var(--outv); border-radius:10px; padding:10px; font-weight:700; color:var(--on); font-size:1.05em; min-height:48px; width:160px;">
+                  </div>
+                  <div style="text-align:right;">
+                    <div class="subtext">CYCLE SHORTCUTS</div>
+                    <div class="chip" onclick="setLmpWeeksAgo(14)">14 wks ago</div>
+                  </div>
+                </div>
+                <div class="chip-row" style="margin-top:8px;">
+                  <div class="chip teal active" onclick="selectSingleChip(this)">Regular 28-day</div>
+                  <div class="chip" onclick="selectSingleChip(this)">Irregular Cycle</div>
+                  <div class="chip" onclick="selectSingleChip(this)">Uncertain Date</div>
+                </div>
+              </div>
+
+              <!-- IVF Controls (hidden by default) -->
+              <div id="panel-ivf-controls" style="display:none;">
+                <div class="subtext">EMBRYO TRANSFER DATE:</div>
+                <input type="date" id="input-ivf-date" value="2026-08-05" onchange="recalculateDating()" style="background:var(--sv); border:1px solid var(--outv); border-radius:10px; padding:10px; font-weight:700; color:var(--on); font-size:1.05em; min-height:48px; width:100%; margin-top:4px;">
+                <div class="subtext" style="margin-top:8px;">EMBRYO AGE AT TRANSFER:</div>
+                <div class="chip-row" style="margin-top:4px;">
+                  <div class="chip" onclick="selectEmbryoAge(3, this)">Day 3 (Cleavage)</div>
+                  <div class="chip active" onclick="selectEmbryoAge(5, this)">Day 5 (Blastocyst)</div>
+                  <div class="chip" onclick="selectEmbryoAge(6, this)">Day 6 (Blastocyst)</div>
+                </div>
+              </div>
+
+              <!-- Scan Controls (hidden by default) -->
+              <div id="panel-us-controls" style="display:none;">
+                <div class="subtext">FIRST TRIMESTER SCAN DATE:</div>
+                <input type="date" id="input-us-date" value="2026-10-15" onchange="recalculateDating()" style="background:var(--sv); border:1px solid var(--outv); border-radius:10px; padding:10px; font-weight:700; color:var(--on); font-size:1.05em; min-height:48px; width:100%; margin-top:4px;">
+                <div style="display:flex; gap:10px; margin-top:8px;">
+                  <div class="fact-tile" style="flex:1;">
+                    <span class="label">CRL (Crown-Rump)</span>
+                    <span class="val">54 mm (12w 0d)</span>
+                  </div>
+                  <div class="fact-tile" style="flex:1;">
+                    <span class="label">Ultrasound EDD</span>
+                    <span id="us-edd-val" class="val" style="color:var(--pri);">05 May 2027</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Agreed EDD Direct (hidden by default) -->
+              <div id="panel-edd-controls" style="display:none;">
+                <div class="subtext">AGREED CLINICAL DUE DATE (DIRECT OVERRIDE):</div>
+                <input type="date" id="input-agreed-edd" value="2027-04-27" onchange="recalculateDating()" style="background:var(--sv); border:1px solid var(--outv); border-radius:10px; padding:10px; font-weight:700; color:var(--on); font-size:1.05em; min-height:48px; width:100%; margin-top:4px;">
+                <div class="subtext" style="margin-top:6px;">Clinician adjudicated due date overrides all automatic calculations.</div>
+              </div>
+            </div>
+
+            <!-- LIVE HERO GESTATIONAL AGE & EDD CALCULATION BANNER -->
+            <div style="background:var(--pri); color:#FFFFFF; border-radius:16px; padding:14px; box-shadow:0 4px 12px rgba(13,27,61,0.2);">
+              <div style="font-size:0.75em; text-transform:uppercase; letter-spacing:0.5px; opacity:0.85;">Current Pregnancy Calculations</div>
+              <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:4px;">
+                <div>
+                  <div id="live-ga-display" style="font-size:1.6em; font-weight:800; letter-spacing:-0.5px;">14w 5d</div>
+                  <div style="font-size:0.85em; opacity:0.9;">2nd Trimester · 177 days to EDD</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:0.75em; opacity:0.85;">ESTIMATED DUE DATE</div>
+                  <div id="live-edd-display" style="font-size:1.15em; font-weight:700; color:var(--pc);">26 Apr 2027</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- DISCREPANCY RECONCILIATION CARD (ACOG 7-DAY RULE) -->
+            <div id="discrepancy-card" class="reconcile-card">
+              <div class="reconcile-title">
+                <span>⚠️</span>
+                <span>Dating Discrepancy Detected (ACOG Rule)</span>
+              </div>
+              <div class="subtext" style="color:var(--tag-att-txt);">
+                LMP and 1st-trimester Ultrasound differ by <b>9 days</b> (> 7 day threshold). Scan date takes precedence under ACOG clinical guidance.
+              </div>
+              <div class="reconcile-diff">
+                <div class="diff-item">
+                  <div class="method">By LMP (20 Jul)</div>
+                  <div class="edd">26 Apr 2027</div>
+                  <div class="ga">14w 5d</div>
+                </div>
+                <div style="font-size:1.2em; font-weight:700; color:var(--err);">≠</div>
+                <div class="diff-item">
+                  <div class="method">By Scan (CRL 54mm)</div>
+                  <div class="edd">05 May 2027</div>
+                  <div class="ga">13w 3d</div>
+                </div>
+              </div>
+              <button class="btn-use-this" onclick="resolveDiscrepancy('scan')">
+                ✓ Use Scan EDD as Agreed (05 May 2027)
+              </button>
+            </div>
+
+          </div>
+
+          <div class="phone-actions-bar">
+            <button class="btn-cancel" onclick="alert('Cancelled')">Cancel</button>
+            <button class="btn-save" onclick="alert('Agreed dating locked and saved!')">Accept Dating</button>
+          </div>
+        </div>
+
+        <div class="review-notes">
+          <div><b>What is faster:</b> Doctor selects dating method with 1 tap; only relevant inputs appear; live hero calculates EDD immediately.</div>
+          <div><b>What it keeps:</b> LMP date, ultrasound EDD, transfer date, embryo age (3/5/6d), agreed EDD, dating method, notes.</div>
+          <div><b>What it costs:</b> Shows explicit reconciliation card when methods disagree by >7 days to prevent dating errors.</div>
+          <div class="kept-fields">Fields kept: <code>lmpDate</code>, <code>ultrasoundEdd</code>, <code>agreedEdd</code>, <code>datingMethod</code>, <code>transferDate</code>, <code>embryoAgeDays</code>, <code>notes</code>.</div>
+        </div>
+      </div>
+
+      <!-- OPTION B -->
+      <div class="option-col">
+        <div class="option-title">
+          <span class="pill-badge">Option B</span>
+          <span>Unified Progressive Intake with Live Discrepancy Alert</span>
+        </div>
+
+        <div class="phone-frame">
+          <div class="phone-status-bar">
+            <span>09:41</span>
+            <span>5G ▰ 100%</span>
+          </div>
+          <div class="phone-app-bar">
+            <div class="app-bar-left">
+              <button class="back-btn">←</button>
+              <div class="app-bar-titles">
+                <h3>Pregnancy Intake Dating</h3>
+                <small>Unified Grid Approach</small>
+              </div>
+            </div>
+            <span class="tag-badge" style="background:#FFFFFF; color:var(--pri);">Compare All</span>
+          </div>
+
+          <div class="phone-body">
+
+            <!-- Comparative Inputs Table -->
+            <div class="m3-card">
+              <span class="card-title">Dating Inputs & Live Calculation</span>
+
+              <!-- LMP Row -->
+              <div style="border-bottom:1px solid var(--sv); padding-bottom:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-weight:700; font-size:0.9em;">1. By LMP</span>
+                  <button class="btn-use-this" style="min-height:36px; padding:4px 10px; font-size:0.75em;" onclick="alert('LMP selected as primary')">Use This</button>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                  <span class="subtext">20 Jul 2026</span>
+                  <span style="font-weight:700; color:var(--pri);">EDD: 26 Apr 2027 (14w 5d)</span>
+                </div>
+              </div>
+
+              <!-- US Scan Row -->
+              <div style="border-bottom:1px solid var(--sv); padding-bottom:8px; padding-top:4px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-weight:700; font-size:0.9em; color:var(--ter);">2. By 1st-Tri Scan</span>
+                  <button class="btn-use-this" style="min-height:36px; padding:4px 10px; font-size:0.75em; background:var(--ter);" onclick="alert('Scan selected as agreed')">Use This ✓</button>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                  <span class="subtext">Scan 15 Oct (CRL 54mm)</span>
+                  <span style="font-weight:700; color:var(--ter);">EDD: 05 May 2027 (13w 3d)</span>
+                </div>
+              </div>
+
+              <!-- IVF Row -->
+              <div style="padding-top:4px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-weight:700; font-size:0.9em; color:var(--mut);">3. By IVF Transfer</span>
+                  <span class="subtext">Not recorded</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Discrepancy Status Banner -->
+            <div style="background:var(--tag-risk-bg); border:1px solid var(--tag-risk-bd); border-radius:12px; padding:10px; color:var(--tag-risk-txt);">
+              <div style="font-weight:700; font-size:0.88em;">Discrepancy: 9 days difference</div>
+              <div class="subtext" style="color:var(--tag-risk-txt); margin-top:2px;">ACOG guidelines recommend redating by ultrasound when 1st trimester variance exceeds 7 days.</div>
+            </div>
+
+            <!-- Adjudicated EDD Box -->
+            <div class="m3-card" style="border: 2px solid var(--pri);">
+              <div class="card-header-row">
+                <span class="card-title">Agreed Clinical EDD</span>
+                <span class="tag-badge" style="background:var(--tag-norm-bg); color:var(--tag-norm-txt);">Locked</span>
+              </div>
+              <div class="fact-tile">
+                <span class="label">Officially Agreed Due Date</span>
+                <span class="val" style="color:var(--pri); font-size:1.3em;">05 May 2027</span>
+              </div>
+              <div class="subtext">Agreed EDD overrides raw LMP calculations across all visits and growth charts.</div>
+            </div>
+
+            <!-- Clinical Dating Notes -->
+            <div class="m3-card">
+              <span class="card-title">Dating Notes</span>
+              <div class="chip-row">
+                <div class="chip teal active" onclick="this.classList.toggle('active')">Regular Cycles</div>
+                <div class="chip" onclick="this.classList.toggle('active')">LMP Reliable</div>
+                <div class="chip active" onclick="this.classList.toggle('active')">Redated by 1st-Tri Scan</div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="phone-actions-bar">
+            <button class="btn-cancel" onclick="alert('Cancelled')">Cancel</button>
+            <button class="btn-save" onclick="alert('Saved Dating')">Save Dating</button>
+          </div>
+        </div>
+
+        <div class="review-notes">
+          <div><b>What is faster:</b> Doctor compares all 3 methods simultaneously with direct 'Use This' buttons on each row.</div>
+          <div><b>What it keeps:</b> LMP, scan date, CRL, transfer date, agreed EDD, discrepancy magnitude, and clinical notes.</div>
+          <div><b>What it costs:</b> Denser initial layout displaying input parameters for multiple methods simultaneously.</div>
+          <div class="kept-fields">Fields kept: <code>lmpDate</code>, <code>ultrasoundEdd</code>, <code>agreedEdd</code>, <code>datingMethod</code>, <code>transferDate</code>, <code>embryoAgeDays</code>, <code>notes</code>.</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- SCREEN 4: CLINICAL ATTENTION CARD -->
+  <!-- ========================================================================= -->
+  <section id="scr4" class="screen-section">
+    <div class="section-header">
+      <h2>4. Clinical Attention Card & Patient List View</h2>
+      <p>Clean single-alert visibility with '+ 2 more' expand-on-tap count; strict crimson distinction for severe blood pressure alerts (>=160/110) versus amber manual alerts.</p>
+    </div>
+
+    <div class="options-grid">
+
+      <!-- OPTION A -->
+      <div class="option-col">
+        <div class="option-title">
+          <span class="pill-badge rec">Option A</span>
+          <span>Tiered Badges with Tap-to-Expand Accordion (Recommended)</span>
+        </div>
+
+        <div class="phone-frame">
+          <div class="phone-status-bar">
+            <span>09:41</span>
+            <span>5G ▰ 100%</span>
+          </div>
+          <div class="phone-app-bar">
+            <div class="app-bar-left">
+              <button class="back-btn">←</button>
+              <div class="app-bar-titles">
+                <h3>Yasmine Zaki</h3>
+                <small>High-Risk Clinical Workspace · 32w 1d</small>
+              </div>
+            </div>
+            <span class="tag-badge" style="background:var(--err); color:#fff;">High Risk</span>
+          </div>
+
+          <div class="phone-body">
+
+            <!-- 1. SEVERE BP ALERT (DISTINCT RED, NEVER COLLAPSED) -->
+            <div class="alert-banner severe-bp">
+              <div class="alert-banner-icon">🚨</div>
+              <div class="alert-banner-content">
+                <div class="alert-banner-title">
+                  <span>Severe Blood Pressure Alert</span>
+                  <span class="alert-banner-badge" style="background:#BA1A1A; color:#FFFFFF;">165/110 mmHg</span>
+                </div>
+                <div style="font-weight:600;">Recorded 28 Oct 2026 · Antihypertensive therapy required</div>
+                <div class="subtext" style="color:var(--tag-risk-txt); margin-top:2px;">Systolic ≥ 160 or Diastolic ≥ 110 threshold triggered automatically from visit vitals.</div>
+              </div>
+            </div>
+
+            <!-- 2. MANUAL CLINICAL ATTENTION (AMBER, SHOWS 1ST ALERT + '+2 MORE') -->
+            <div id="att-banner-a" class="alert-banner manual-att" onclick="toggleAlertExpand('att-banner-a')">
+              <div class="alert-banner-icon">⚠️</div>
+              <div class="alert-banner-content">
+                <div class="alert-banner-title">
+                  <span>Clinical Attention</span>
+                  <span id="att-count-badge" class="alert-banner-badge" style="background:var(--tag-att-ico); color:#FFFFFF;">+ 2 more ▾</span>
+                </div>
+                <div id="att-first-line" style="font-weight:700; font-size:0.95em;">
+                  1. Previous Severe Postpartum Hemorrhage (PPH)
+                </div>
+
+                <!-- Hidden until tapped -->
+                <div class="alert-expandable-list">
+                  <div style="margin-bottom:6px;"><b>2.</b> Rh Negative (Anti-D prophylaxis required at 28w & post-delivery)</div>
+                  <div style="margin-bottom:6px;"><b>3.</b> Penicillin Allergy (Severe anaphylactic rash)</div>
+                  <div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center;">
+                    <span class="subtext">Entered line-by-line in Patient Editor</span>
+                    <span style="font-weight:700; color:var(--sec); font-size:0.85em;">Tap to collapse ▴</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. DEMONSTRATION ON PATIENT LIST CARD -->
+            <div style="font-size:0.8em; font-weight:700; text-transform:uppercase; color:var(--mut); margin-top:8px;">
+              Appearance on Patient List Card:
+            </div>
+
+            <div class="patient-list-card">
+              <div class="patient-list-header">
+                <div>
+                  <div class="patient-list-name">Yasmine Zaki (ياسمين زكي)</div>
+                  <div class="patient-list-case">Case #ANC-2026-092 · Age 34 · G3 P2</div>
+                </div>
+                <!-- SEVERE BP BADGE IN RED -->
+                <span class="tag-badge" style="background:var(--tag-risk-bg); color:var(--tag-risk-txt); border:1px solid var(--tag-risk-bd);">
+                  ⚠️ BP 165/110
+                </span>
+              </div>
+
+              <div class="patient-badge-row">
+                <span class="tag-badge" style="background:var(--tag-ga-bg); color:var(--tag-ga-txt);">32w 1d</span>
+                <span class="tag-badge" style="background:var(--errc); color:var(--oerrc);">Rh− (O−)</span>
+                <span class="tag-badge" style="background:var(--tag-obs-bg); color:var(--tag-obs-txt);">Prev 2 CS</span>
+              </div>
+
+              <!-- Compact Attention row with +2 count -->
+              <div style="background:var(--tag-att-bg); border:1px solid var(--tag-att-bd); border-radius:8px; padding:6px 10px; display:flex; align-items:center; justify-content:space-between; font-size:0.8em; color:var(--tag-att-txt);">
+                <span style="font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:230px;">
+                  ⚠️ Prev Severe PPH...
+                </span>
+                <span class="pill-badge" style="background:var(--tag-att-ico); padding:2px 6px; font-size:0.75em;">+ 2 more</span>
+              </div>
+            </div>
+
+            <!-- RAPID ALERT CHIPS PRESETS (FOR EDITING) -->
+            <div class="m3-card">
+              <span class="card-title">Quick-Add Clinical Alert Presets</span>
+              <div class="chip-row">
+                <div class="chip" onclick="alert('Appended Gestational Diabetes alert')">+ Gestational DM</div>
+                <div class="chip" onclick="alert('Appended Placenta Previa alert')">+ Placenta Previa</div>
+                <div class="chip" onclick="alert('Appended Thrombophilia alert')">+ Thrombophilia (LMWH)</div>
+                <div class="chip" onclick="alert('Appended Penicillin Allergy')">+ Penicillin Allergy</div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="phone-actions-bar">
+            <button class="btn-cancel" onclick="alert('Closed')">Back</button>
+            <button class="btn-save" onclick="alert('Alerts updated')">Edit Attention Notes</button>
+          </div>
+        </div>
+
+        <div class="review-notes">
+          <div><b>What is faster:</b> Screen remains uncluttered with 1st alert + <code>+2 more</code> count; expands on 1 tap without page reload.</div>
+          <div><b>What it keeps:</b> Every typed alert note line, severe BP vitals trigger, and patient list integration.</div>
+          <div><b>What it costs:</b> Requires tapping the badge to read secondary and tertiary alert notes.</div>
+          <div class="kept-fields">Fields kept: <code>clinicalAttention</code> (multi-line string preserved), <code>SevereBpAttention</code> (vitals hook), <code>riskLevel</code>.</div>
+        </div>
+      </div>
+
+      <!-- OPTION B -->
+      <div class="option-col">
+        <div class="option-title">
+          <span class="pill-badge">Option B</span>
+          <span>Stacked Alert Drawer with Severity Hierarchy</span>
+        </div>
+
+        <div class="phone-frame">
+          <div class="phone-status-bar">
+            <span>09:41</span>
+            <span>5G ▰ 100%</span>
+          </div>
+          <div class="phone-app-bar">
+            <div class="app-bar-left">
+              <button class="back-btn">←</button>
+              <div class="app-bar-titles">
+                <h3>Yasmine Zaki</h3>
+                <small>Severity Stack Approach</small>
+              </div>
+            </div>
+            <span class="tag-badge" style="background:var(--err); color:#fff;">3 Alerts</span>
+          </div>
+
+          <div class="phone-body">
+
+            <!-- CRITICAL TIER (RED) -->
+            <div style="background:var(--tag-risk-bg); border-left:4px solid var(--err); border-radius:12px; padding:10px 12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-weight:700; color:var(--err); font-size:0.85em; text-transform:uppercase;">Tier 1: Critical Vitals</span>
+                <span class="tag-badge" style="background:var(--err); color:#fff;">Urgent</span>
+              </div>
+              <div style="font-weight:700; font-size:1.05em; color:var(--on); margin-top:2px;">Severe BP 165/110 mmHg</div>
+              <div class="subtext" style="color:var(--err);">Requires immediate antihypertensive management protocol.</div>
+            </div>
+
+            <!-- ATTENTION TIER (AMBER CAROUSEL / STACK) -->
+            <div class="m3-card" style="border-left:4px solid var(--tag-att-ico);">
+              <div class="card-header-row">
+                <span class="card-title" style="color:var(--tag-att-ico);">Tier 2: Clinical Alerts (2)</span>
+                <button class="card-header-action" onclick="alert('Opens Add Alert dialog')">+ Add Alert</button>
+              </div>
+
+              <!-- Alert Item 1 -->
+              <div style="display:flex; justify-content:space-between; align-items:center; background:var(--scl); border-radius:8px; padding:8px 10px;">
+                <div>
+                  <div style="font-weight:700; font-size:0.9em; color:var(--on);">History of Severe PPH</div>
+                  <div class="subtext">Active management of 3rd stage required</div>
+                </div>
+                <button style="border:0; background:transparent; color:var(--err); font-size:1.1em; cursor:pointer;">✕</button>
+              </div>
+
+              <!-- Alert Item 2 -->
+              <div style="display:flex; justify-content:space-between; align-items:center; background:var(--scl); border-radius:8px; padding:8px 10px; margin-top:6px;">
+                <div>
+                  <div style="font-weight:700; font-size:0.9em; color:var(--on);">Rh Negative Sensitization Risk</div>
+                  <div class="subtext">Anti-D at 28w completed; prepare post-delivery dose</div>
+                </div>
+                <button style="border:0; background:transparent; color:var(--err); font-size:1.1em; cursor:pointer;">✕</button>
+              </div>
+            </div>
+
+            <!-- PATIENT LIST ROW DEMONSTRATION -->
+            <div class="patient-list-card">
+              <div class="patient-list-header">
+                <div>
+                  <div class="patient-list-name">Yasmine Zaki</div>
+                  <div class="patient-list-case">Case #ANC-2026-092</div>
+                </div>
+                <span class="tag-badge" style="background:var(--err); color:#fff;">Critical BP</span>
+              </div>
+
+              <!-- Two distinct alert pills directly on list -->
+              <div style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">
+                <div style="background:var(--tag-risk-bg); border-radius:6px; padding:4px 8px; font-size:0.78em; color:var(--tag-risk-txt); font-weight:700;">
+                  🚨 Severe BP 165/110 (28 Oct)
+                </div>
+                <div style="background:var(--tag-att-bg); border-radius:6px; padding:4px 8px; font-size:0.78em; color:var(--tag-att-txt); font-weight:600;">
+                  ⚠️ PPH History · Rh− Negative
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="phone-actions-bar">
+            <button class="btn-cancel" onclick="alert('Closed')">Close</button>
+            <button class="btn-save" onclick="alert('Saved Alerts')">Manage Alerts</button>
+          </div>
+        </div>
+
+        <div class="review-notes">
+          <div><b>What is faster:</b> Individual alert rows with discrete remove [✕] buttons; immediate distinction between vitals vs clinical notes.</div>
+          <div><b>What it keeps:</b> All alert items, severe BP criteria, risk level badge, and patient list visual hooks.</div>
+          <div><b>What it costs:</b> Occupies more fixed vertical real-estate compared to the collapsible badge in Option A.</div>
+          <div class="kept-fields">Fields kept: <code>clinicalAttention</code>, <code>SevereBpAttention</code>, <code>riskLevel</code>.</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- SCREEN 5: DELIVERY PLAN EDITOR -->
+  <!-- ========================================================================= -->
+  <section id="scr5" class="screen-section">
+    <div class="section-header">
+      <h2>5. Delivery Plan Editor</h2>
+      <p>Fixes the bug where the pencil icon incorrectly opened the general patient editor. Introduces structured planning: hospital, planned mode, target timing, blood bank precautions, consultant, and agreed fees.</p>
+    </div>
+
+    <div class="options-grid">
+
+      <!-- OPTION A -->
+      <div class="option-col">
+        <div class="option-title">
+          <span class="pill-badge rec">Option A</span>
+          <span>Structured Protocol Form with Pre-Op Checklist (Recommended)</span>
+        </div>
+
+        <div class="phone-frame">
+          <div class="phone-status-bar">
+            <span>09:41</span>
+            <span>5G ▰ 100%</span>
+          </div>
+          <div class="phone-app-bar">
+            <div class="app-bar-left">
+              <button class="back-btn">←</button>
+              <div class="app-bar-titles">
+                <h3>Delivery Plan Editor</h3>
+                <small>Laila Tawfik · Case #ANC-2026-055 (36w 4d)</small>
+              </div>
+            </div>
+            <span class="tag-badge" style="background:var(--tag-plan-bg); color:var(--tag-plan-txt);">Term Plan</span>
+          </div>
+
+          <div class="phone-body">
+
+            <!-- 1. PLANNED MODE OF DELIVERY & TARGET TIMING -->
+            <div class="m3-card">
+              <div class="card-header-row">
+                <span class="card-title">1. Delivery Mode & Target Gestation</span>
+              </div>
+
+              <div class="subtext">PLANNED MODE:</div>
+              <div class="chip-row">
+                <div class="chip active" onclick="selectSingleChip(this)">Elective CS</div>
+                <div class="chip" onclick="selectSingleChip(this)">Trial of Scar (VBAC)</div>
+                <div class="chip" onclick="selectSingleChip(this)">Normal Vaginal (NVD)</div>
+                <div class="chip" onclick="selectSingleChip(this)">Induction of Labour</div>
+              </div>
+
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+                <div>
+                  <div class="subtext">TARGET TIMING</div>
+                  <div class="stepper-control" style="margin-top:2px;">
+                    <button class="stepper-btn" onclick="stepDeliveryTiming(-1)">−</button>
+                    <span id="target-timing-val" class="stepper-val" style="min-width:60px;">38w 4d</span>
+                    <button class="stepper-btn" onclick="stepDeliveryTiming(1)">+</button>
+                  </div>
+                </div>
+
+                <div style="text-align:right;">
+                  <div class="subtext">CALCULATED DATE</div>
+                  <div id="target-date-val" style="font-size:1.05em; font-weight:700; color:var(--pri); margin-top:6px;">18 Nov 2026</div>
+                </div>
+              </div>
+
+              <!-- Timing Quick Presets -->
+              <div class="chip-row" style="margin-top:4px;">
+                <div class="chip" onclick="setDeliveryTiming('38w 0d', '14 Nov 2026')">38+0 w</div>
+                <div class="chip active" onclick="setDeliveryTiming('38w 4d', '18 Nov 2026')">38+4 w</div>
+                <div class="chip" onclick="setDeliveryTiming('39w 0d', '21 Nov 2026')">39+0 w</div>
+                <div class="chip" onclick="setDeliveryTiming('Spontaneous', 'On Labour')">Spontaneous</div>
+              </div>
+            </div>
+
+            <!-- 2. HOSPITAL & CLINICAL TEAM -->
+            <div class="m3-card">
+              <div class="card-header-row">
+                <span class="card-title">2. Agreed Hospital & Consultant</span>
+              </div>
+
+              <div class="subtext">PLANNED HOSPITAL:</div>
+              <div class="chip-row">
+                <div class="chip active" onclick="selectSingleChip(this)">Al Salam International</div>
+                <div class="chip" onclick="selectSingleChip(this)">Cleopatra Hospital</div>
+                <div class="chip" onclick="selectSingleChip(this)">Dar Al Fouad</div>
+                <div class="chip" onclick="selectSingleChip(this)">Other Hospital...</div>
+              </div>
+
+              <div style="display:flex; gap:10px; margin-top:6px;">
+                <div class="fact-tile" style="flex:1;">
+                  <span class="label">Primary Consultant</span>
+                  <span class="val" style="color:var(--pri);">Dr. Sherif Radwan</span>
+                </div>
+                <div class="fact-tile" style="flex:1;">
+                  <span class="label">Anesthesia Choice</span>
+                  <span class="val">Spinal (Regional)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. BLOOD BANK & PRE-OP PRECAUTIONS -->
+            <div class="m3-card">
+              <div class="card-header-row">
+                <span class="card-title">3. Safety, Blood Bank & Precautions</span>
+              </div>
+              <div class="subtext">TAP SAFETY PRECAUTIONS TO ENABLE:</div>
+
+              <div class="chip-row">
+                <div class="chip teal active" onclick="this.classList.toggle('active')">✓ 2 Units PRBCs Crossmatch</div>
+                <div class="chip active" onclick="this.classList.toggle('active')">✓ Pediatrician at Delivery</div>
+                <div class="chip" onclick="this.classList.toggle('active')">+ ICU Bed Standby</div>
+                <div class="chip" onclick="this.classList.toggle('active')">+ Anti-D Prophylaxis Ready</div>
+                <div class="chip" onclick="this.classList.toggle('active')">+ Hold LMWH 12h Prior</div>
+                <div class="chip" onclick="this.classList.toggle('active')">+ Tubal Ligation Consent</div>
+              </div>
+            </div>
+
+            <!-- 4. AGREED FEES & COSTS -->
+            <div class="m3-card">
+              <div class="card-header-row">
+                <span class="card-title">4. Financial Agreement & Expected Fees</span>
+              </div>
+
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <div class="subtext">OBSTETRICIAN FEE</div>
+                  <div class="stepper-control" style="margin-top:2px;">
+                    <button class="stepper-btn" onclick="stepFee(-1000)">−</button>
+                    <span id="fee-val" class="stepper-val" style="min-width:90px;">18,000 EGP</span>
+                    <button class="stepper-btn" onclick="stepFee(1000)">+</button>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="subtext">HOSPITAL PACKAGE TIER</div>
+                  <div class="chip-row" style="margin-top:2px;">
+                    <div class="chip" onclick="selectSingleChip(this)">Standard</div>
+                    <div class="chip active" onclick="selectSingleChip(this)">Suite</div>
+                  </div>
+                </div>
+              </div>
+              <div class="subtext" style="margin-top:4px;">Includes operative delivery, assistant fees, and 2 routine postpartum visits.</div>
+            </div>
+
+            <!-- 5. POSTPARTUM CARE NOTES (COLLAPSED PRE-DELIVERY) -->
+            <div class="m3-card" style="border-style:dashed;">
+              <div class="card-header-row" onclick="alert('Postpartum details will be entered after delivery')">
+                <span class="card-title" style="color:var(--mut);">5. Postpartum & Discharge Plan</span>
+                <span class="tag-badge" style="background:var(--scl); color:var(--mut);">Post-Delivery</span>
+              </div>
+              <div class="subtext">Separated cleanly from antepartum planning. Active upon delivery confirmation.</div>
+            </div>
+
+          </div>
+
+          <div class="phone-actions-bar">
+            <button class="btn-cancel" onclick="alert('Cancelled')">Cancel</button>
+            <button class="btn-save" onclick="alert('Delivery plan confirmed and synced with Workspace!')">Save Delivery Plan</button>
+          </div>
+        </div>
+
+        <div class="review-notes">
+          <div><b>What is faster:</b> Direct 1-tap pre-op checklist (blood units, pediatrician, spinal) and timing stepper replace typing notes.</div>
+          <div><b>What it keeps:</b> Hospital name, agreed fees, delivery mode, timing, consultant, special instructions, and postpartum note.</div>
+          <div><b>What it costs:</b> Separates postpartum into its own card so pre-delivery planning remains focused.</div>
+          <div class="kept-fields">Fields kept: <code>hospital</code>, <code>fees</code>, <code>plan</code>, <code>postpartum</code> (from <code>DeliveryNoteSections</code> in <code>DeliveryNotesParser.kt</code>).</div>
+        </div>
+      </div>
+
+      <!-- OPTION B -->
+      <div class="option-col">
+        <div class="option-title">
+          <span class="pill-badge">Option B</span>
+          <span>Dual-Tab Care Pathway (Plan vs. Postpartum)</span>
+        </div>
+
+        <div class="phone-frame">
+          <div class="phone-status-bar">
+            <span>09:41</span>
+            <span>5G ▰ 100%</span>
+          </div>
+          <div class="phone-app-bar">
+            <div class="app-bar-left">
+              <button class="back-btn">←</button>
+              <div class="app-bar-titles">
+                <h3>Delivery Pathway</h3>
+                <small>Pathway & Postpartum Architecture</small>
+              </div>
+            </div>
+            <span class="tag-badge" style="background:#FFFFFF; color:var(--pri);">Dual-Tab</span>
+          </div>
+
+          <div class="phone-body">
+
+            <!-- TAB SELECTOR: PLAN VS POSTPARTUM -->
+            <div class="chip-row" style="background:var(--sv); border-radius:14px; padding:4px;">
+              <div id="del-tab-1" class="chip active" style="flex:1; border:0;" onclick="switchDelTab(1)">1. Delivery Plan</div>
+              <div id="del-tab-2" class="chip" style="flex:1; border:0;" onclick="switchDelTab(2)">2. Postpartum & Birth</div>
+            </div>
+
+            <!-- TAB 1 CONTENT: DELIVERY PLANNING -->
+            <div id="del-tab-1-content" style="display:flex; flex-direction:column; gap:12px;">
+
+              <!-- 1-Tap Protocol Presets -->
+              <div class="m3-card">
+                <span class="card-title">1-Tap Delivery Protocols</span>
+                <div class="chip-row">
+                  <div class="chip active" onclick="selectProtocol('elective_cs', this)">Elective CS Protocol</div>
+                  <div class="chip" onclick="selectProtocol('vbac', this)">VBAC High Vigilance</div>
+                  <div class="chip" onclick="selectProtocol('nvd', this)">Low-Risk SVD Protocol</div>
+                </div>
+                <div class="subtext">Preset configures mode, timing, blood crossmatch, and hospital alert in 1 tap.</div>
+              </div>
+
+              <!-- Hospital & Fees -->
+              <div class="m3-card">
+                <span class="card-title">Hospital & Financial Terms</span>
+                <div class="delivery-box hosp">
+                  <span class="delivery-box-title">Agreed Delivery Hospital</span>
+                  <span class="delivery-box-val">Al Salam International Hospital</span>
+                </div>
+                <div class="delivery-box fee" style="margin-top:6px;">
+                  <span class="delivery-box-title">Agreed Delivery Fees</span>
+                  <span class="delivery-box-val">18,000 EGP (Agreed Package)</span>
+                </div>
+              </div>
+
+              <!-- Special Precautions Text -->
+              <div class="m3-card">
+                <span class="card-title">Special Hospital Instructions</span>
+                <div style="background:var(--scl); border-radius:10px; padding:10px; font-size:0.9em; font-weight:600; color:var(--on);">
+                  Elective repeat Cesarean at 38w4d. 2 units crossmatched PRBCs. Pediatrician Dr. M. Adel on standby.
+                </div>
+              </div>
+
+            </div>
+
+            <!-- TAB 2 CONTENT: POSTPARTUM & BIRTH RECORD (INITIAL HIDDEN) -->
+            <div id="del-tab-2-content" style="display:none; flex-direction:column; gap:12px;">
+              <div class="m3-card">
+                <span class="card-title">Birth Outcome & Baby Metrics</span>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                  <div class="fact-tile"><span class="label">Baby Gender</span><span class="val">Male ♂</span></div>
+                  <div class="fact-tile"><span class="label">Birth Weight</span><span class="val">3,450 g</span></div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:4px;">
+                  <div class="fact-tile"><span class="label">APGAR 1 min</span><span class="val">9 / 10</span></div>
+                  <div class="fact-tile"><span class="label">APGAR 5 min</span><span class="val">10 / 10</span></div>
+                </div>
+              </div>
+
+              <div class="m3-card">
+                <span class="card-title">Postpartum Recovery Notes</span>
+                <div class="delivery-box post">
+                  <span class="delivery-box-title">Maternal Recovery & Discharge</span>
+                  <span class="delivery-box-val">Afebrile, uterus well contracted, minimal lochia. Breastfeeding established. Discharge day 2 post-op.</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="phone-actions-bar">
+            <button class="btn-cancel" onclick="alert('Cancelled')">Close</button>
+            <button class="btn-save" onclick="alert('Delivery pathway saved!')">Save Pathway</button>
+          </div>
+        </div>
+
+        <div class="review-notes">
+          <div><b>What is faster:</b> 1-tap Protocol Presets (`Elective CS`, `VBAC High Vigilance`) set the entire plan in a single touch.</div>
+          <div><b>What it keeps:</b> Hospital, fees, delivery plan text, and creates a structured home for postpartum birth metrics.</div>
+          <div><b>What it costs:</b> Tabbed interaction requires switching between Antepartum Plan and Postpartum screens.</div>
+          <div class="kept-fields">Fields kept: <code>hospital</code>, <code>fees</code>, <code>plan</code>, <code>postpartum</code>.</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<!-- JAVASCRIPT FOR WORKING INTERACTIVE MOCK-UPS -->
+<script>
+// --- Theme & Font Scaling Controls ---
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  let target = 'dark';
+  if (current === 'dark') {
+    target = 'light';
+  } else if (current === 'light') {
+    target = 'dark';
+  } else {
+    target = prefersDark ? 'light' : 'dark';
+  }
+  document.documentElement.setAttribute('data-theme', target);
+}
+
+let fontScale = 1.0;
+function adjustFont(delta) {
+  fontScale = Math.max(0.85, Math.min(1.35, fontScale + delta));
+  document.documentElement.style.setProperty('--fs', fontScale);
+}
+
+// --- Chip Helpers ---
+function selectSingleChip(el) {
+  const parent = el.parentElement;
+  parent.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// --- Screen 1: Obstetric GPA Steppers & Summary ---
+let gpa = { g: 3, p: 2, a: 0 };
+function stepGPA(field, delta) {
+  gpa[field] = Math.max(0, gpa[field] + delta);
+  // Auto-balance Gravida: G cannot be less than P + A + 1 for active pregnancy
+  if (field === 'p' || field === 'a') {
+    if (gpa.g < gpa.p + gpa.a + 1) {
+      gpa.g = gpa.p + gpa.a + 1;
+      document.getElementById('gpa-g').textContent = gpa.g;
+    }
+  }
+  document.getElementById('gpa-' + field).textContent = gpa[field];
+  updateGpaSummary();
+}
+
+function resetPrimigravida() {
+  gpa.g = 1; gpa.p = 0; gpa.a = 0;
+  document.getElementById('gpa-g').textContent = 1;
+  document.getElementById('gpa-p').textContent = 0;
+  document.getElementById('gpa-a').textContent = 0;
+  updateGpaSummary();
+}
+
+function updateGpaSummary() {
+  const summaryEl = document.getElementById('obs-summary-a');
+  if (gpa.g === 1 && gpa.p === 0 && gpa.a === 0) {
+    summaryEl.textContent = 'G1 P0 A0 · Primigravida';
+  } else {
+    summaryEl.textContent = `G${gpa.g} P${gpa.p} A${gpa.a} · Prev ${gpa.p} Deliveries`;
+  }
+}
+
+function setPresetGPA(g, p, a, el) {
+  selectSingleChip(el);
+  alert(`Preset loaded: G${g} P${p} A${a}`);
+}
+
+// --- Screen 2: Previous Pregnancy Editor Steppers & Chips ---
+function stepYear(id, delta) {
+  const el = document.getElementById(id);
+  let val = parseInt(el.textContent, 10) + delta;
+  val = Math.max(1990, Math.min(2026, val));
+  el.textContent = val;
+}
+function setYear(id, year) {
+  document.getElementById(id).textContent = year;
+}
+
+function selectOutcomeChip(type, el) {
+  selectSingleChip(el);
+  const branch = document.getElementById('outcome-branch');
+  const title = document.getElementById('branch-title');
+  const chips = document.getElementById('branch-chips');
+
+  if (type === 'cs' || type === 'hysterotomy') {
+    branch.style.display = 'block';
+    title.textContent = type === 'hysterotomy' ? 'Hysterotomy Indication (Classified as CS)' : 'Cesarean Section Sub-Type';
+    chips.innerHTML = `
+      <div class="chip active" onclick="selectSingleChip(this)">Elective LSCS</div>
+      <div class="chip" onclick="selectSingleChip(this)">Emergency LSCS</div>
+      <div class="chip" onclick="selectSingleChip(this)">Classical Cesarean</div>
+    `;
+  } else if (type === 'miscarriage') {
+    branch.style.display = 'block';
+    title.textContent = 'Miscarriage Loss Management';
+    chips.innerHTML = `
+      <div class="chip active" onclick="selectSingleChip(this)">Medical Management</div>
+      <div class="chip" onclick="selectSingleChip(this)">Surgical (D&C / MVA)</div>
+      <div class="chip" onclick="selectSingleChip(this)">Expectant Management</div>
+    `;
+  } else if (type === 'termination') {
+    branch.style.display = 'block';
+    title.textContent = 'Termination Method';
+    chips.innerHTML = `
+      <div class="chip active" onclick="selectSingleChip(this)">Medical Termination</div>
+      <div class="chip" onclick="selectSingleChip(this)">Surgical Evacuation</div>
+      <div class="chip" onclick="selectSingleChip(this)">Hysterotomy</div>
+    `;
+  } else if (type === 'stillbirth') {
+    branch.style.display = 'block';
+    title.textContent = 'Stillbirth (IUFD) Delivery Route';
+    chips.innerHTML = `
+      <div class="chip active" onclick="selectSingleChip(this)">Induction of Labour (Vaginal)</div>
+      <div class="chip" onclick="selectSingleChip(this)">Cesarean Section</div>
+    `;
+  } else {
+    // Vaginal
+    branch.style.display = 'block';
+    title.textContent = 'Vaginal Delivery Route';
+    chips.innerHTML = `
+      <div class="chip active" onclick="selectSingleChip(this)">Spontaneous Vaginal (SVD)</div>
+      <div class="chip" onclick="selectSingleChip(this)">Instrumental (Vacuum)</div>
+      <div class="chip" onclick="selectSingleChip(this)">Instrumental (Forceps)</div>
+    `;
+  }
+}
+
+// --- Screen 3: Pregnancy Dating Engine & Reconciliation ---
+let activeDatingMethod = 'LMP';
+function selectDatingMethod(method, el) {
+  activeDatingMethod = method;
+  selectSingleChip(el);
+
+  const title = document.getElementById('dating-panel-title');
+  const badge = document.getElementById('dating-panel-badge');
+
+  document.getElementById('panel-lmp-controls').style.display = 'none';
+  document.getElementById('panel-ivf-controls').style.display = 'none';
+  document.getElementById('panel-us-controls').style.display = 'none';
+  document.getElementById('panel-edd-controls').style.display = 'none';
+
+  if (method === 'LMP') {
+    title.textContent = 'LMP Entry & Cycle Regularity';
+    badge.textContent = 'Standard';
+    document.getElementById('panel-lmp-controls').style.display = 'block';
+  } else if (method === 'IVF') {
+    title.textContent = 'IVF / ICSI Embryo Transfer';
+    badge.textContent = 'Assisted';
+    document.getElementById('panel-ivf-controls').style.display = 'block';
+  } else if (method === 'US') {
+    title.textContent = '1st Trimester Biometric Scan';
+    badge.textContent = 'Biometric';
+    document.getElementById('panel-us-controls').style.display = 'block';
+  } else if (method === 'EDD') {
+    title.textContent = 'Agreed Due Date Override';
+    badge.textContent = 'Direct Override';
+    document.getElementById('panel-edd-controls').style.display = 'block';
+  }
+  recalculateDating();
+}
+
+function setLmpWeeksAgo(weeks) {
+  const d = new Date();
+  d.setDate(d.getDate() - (weeks * 7));
+  document.getElementById('input-lmp-date').value = d.toISOString().split('T')[0];
+  recalculateDating();
+}
+
+function selectEmbryoAge(days, el) {
+  selectSingleChip(el);
+  recalculateDating();
+}
+
+function recalculateDating() {
+  const gaDisplay = document.getElementById('live-ga-display');
+  const eddDisplay = document.getElementById('live-edd-display');
+  const discCard = document.getElementById('discrepancy-card');
+
+  if (activeDatingMethod === 'LMP') {
+    gaDisplay.textContent = '14w 5d';
+    eddDisplay.textContent = '26 Apr 2027';
+    discCard.style.display = 'flex';
+  } else if (activeDatingMethod === 'US') {
+    gaDisplay.textContent = '13w 3d';
+    eddDisplay.textContent = '05 May 2027';
+    discCard.style.display = 'none';
+  } else if (activeDatingMethod === 'IVF') {
+    gaDisplay.textContent = '14w 2d';
+    eddDisplay.textContent = '29 Apr 2027';
+    discCard.style.display = 'none';
+  } else if (activeDatingMethod === 'EDD') {
+    gaDisplay.textContent = '13w 3d';
+    eddDisplay.textContent = '05 May 2027';
+    discCard.style.display = 'none';
+  }
+}
+
+function resolveDiscrepancy(choice) {
+  const discCard = document.getElementById('discrepancy-card');
+  const gaDisplay = document.getElementById('live-ga-display');
+  const eddDisplay = document.getElementById('live-edd-display');
+
+  gaDisplay.textContent = '13w 3d';
+  eddDisplay.textContent = '05 May 2027';
+  discCard.innerHTML = `
+    <div style="font-weight:700; color:var(--tag-norm-txt); display:flex; align-items:center; gap:6px;">
+      <span>✓</span>
+      <span>Dating Reconciled & Locked</span>
+    </div>
+    <div class="subtext" style="color:var(--tag-norm-txt);">
+      Redated by 1st-trimester scan to <b>05 May 2027</b>. Agreed EDD recorded and locked.
+    </div>
+  `;
+  discCard.style.background = 'var(--tag-norm-bg)';
+  discCard.style.borderColor = 'var(--tag-norm-bd)';
+}
+
+// --- Screen 4: Clinical Attention Card Expand ---
+function toggleAlertExpand(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('expanded');
+  const badge = document.getElementById('att-count-badge');
+  if (el.classList.contains('expanded')) {
+    badge.textContent = 'Showing 3 alerts ▴';
+  } else {
+    badge.textContent = '+ 2 more ▾';
+  }
+}
+
+// --- Screen 5: Delivery Plan Controls ---
+let timingWeeks = 38;
+let timingDays = 4;
+function stepDeliveryTiming(delta) {
+  timingDays += delta;
+  if (timingDays > 6) { timingWeeks++; timingDays = 0; }
+  if (timingDays < 0) { timingWeeks--; timingDays = 6; }
+  document.getElementById('target-timing-val').textContent = `${timingWeeks}w ${timingDays}d`;
+}
+
+function setDeliveryTiming(text, dateStr) {
+  document.getElementById('target-timing-val').textContent = text;
+  document.getElementById('target-date-val').textContent = dateStr;
+}
+
+let feeAmount = 18000;
+function stepFee(delta) {
+  feeAmount = Math.max(5000, feeAmount + delta);
+  document.getElementById('fee-val').textContent = `${feeAmount.toLocaleString()} EGP`;
+}
+
+function switchDelTab(tabNum) {
+  document.getElementById('del-tab-1').classList.toggle('active', tabNum === 1);
+  document.getElementById('del-tab-2').classList.toggle('active', tabNum === 2);
+  document.getElementById('del-tab-1-content').style.display = tabNum === 1 ? 'flex' : 'none';
+  document.getElementById('del-tab-2-content').style.display = tabNum === 2 ? 'flex' : 'none';
+}
+
+function selectProtocol(protocol, el) {
+  selectSingleChip(el);
+  alert(`Applied standard protocol: ${el.textContent}`);
+}
+</script>
+
+</body>
+</html>

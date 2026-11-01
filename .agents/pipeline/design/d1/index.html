@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ANC EMR · Entry screens · design mock-ups (Laboratory, Ultrasound, Medication)</title>
+<style>
+:root{color-scheme:light dark;
+--bg:#FBF8F5;--sf:#fff;--sv:#F3E9E7;--sc:#F4EFEA;--sch:#EFE9E4;--on:#0D1B3D;--onv:#4C3F43;--mut:#6B6166;--out:#79747E;--outv:#CAC4D0;
+--pri:#0D1B3D;--onpri:#fff;--pc:#D6DFFF;--opc:#041334;--sec:#934F5B;--secc:#FFD9DE;--osecc:#3B0815;--ter:#176B70;--terc:#AFECEE;--oterc:#002021;
+--err:#BA1A1A;--errc:#FFDAD6;--gB:#DCFCE7;--gT:#166534;--rB:#FEE2E2;--rT:#B91C1C;--bB:#E0F2FE;--bT:#0369A1;--aB:#FEF3C7;--aT:#92400E;
+--abg:#0D1B3D;--aon:#fff;--page:#E9E4DF;--shadow:0 1px 2px rgba(13,27,61,.12);--rose:#D49AA0}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+--bg:#0E121B;--sf:#1A202E;--sv:#262E40;--sc:#1E2638;--sch:#283248;--on:#E2E2EA;--onv:#CDC3C6;--mut:#A79EA4;--out:#8E95A5;--outv:#3A4459;
+--pri:#B4C5FF;--onpri:#002A78;--pc:#183F91;--opc:#DCE1FF;--sec:#FFB2BC;--secc:#762E3B;--osecc:#FFD9DE;--ter:#70D7D9;--terc:#004F50;--oterc:#8CF3F5;
+--err:#FFB4AB;--errc:#5C141D;--gB:#052E16;--gT:#86EFAC;--rB:#450A0A;--rT:#FCA5A5;--bB:#082F49;--bT:#BAE6FD;--aB:#451A03;--aT:#FDE68A;
+--abg:#141924;--aon:#E2E2EA;--page:#07090E;--shadow:0 1px 2px rgba(0,0,0,.5)}}
+:root[data-theme=dark]{
+--bg:#0E121B;--sf:#1A202E;--sv:#262E40;--sc:#1E2638;--sch:#283248;--on:#E2E2EA;--onv:#CDC3C6;--mut:#A79EA4;--out:#8E95A5;--outv:#3A4459;
+--pri:#B4C5FF;--onpri:#002A78;--pc:#183F91;--opc:#DCE1FF;--sec:#FFB2BC;--secc:#762E3B;--osecc:#FFD9DE;--ter:#70D7D9;--terc:#004F50;--oterc:#8CF3F5;
+--err:#FFB4AB;--errc:#5C141D;--gB:#052E16;--gT:#86EFAC;--rB:#450A0A;--rT:#FCA5A5;--bB:#082F49;--bT:#BAE6FD;--aB:#451A03;--aT:#FDE68A;
+--abg:#141924;--aon:#E2E2EA;--page:#07090E;--shadow:0 1px 2px rgba(0,0,0,.5)}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+body{margin:0;background:var(--page);color:var(--on);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--fs:1}
+nav{position:sticky;top:0;z-index:50;background:#0D1B3D;color:#fff;display:flex;gap:4px;align-items:center;flex-wrap:wrap;padding:4px 10px}
+nav b{margin-right:8px;font-size:.95em}
+nav a,nav button{color:#fff;text-decoration:none;padding:0 14px;min-height:48px;display:inline-flex;align-items:center;border-radius:24px;font:inherit;font-weight:600;background:transparent;border:0;cursor:pointer;white-space:nowrap}
+nav a:hover,nav button:hover{background:rgba(255,255,255,.16)}
+nav .sp{flex:1}
+nav button{border:1.5px solid rgba(255,255,255,.4)}
+header.top,section.scr{max-width:1000px;margin:0 auto;padding:16px 10px}
+h1{font-size:1.5em;margin:8px 0}
+h2{font-size:1.35em;margin:0 0 6px}
+.lead{color:var(--onv);margin:4px 0 14px;max-width:70ch}
+.pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(390px,100%),1fr));gap:28px;justify-items:center;align-items:start}
+.opt{width:min(390px,100%)}
+.opt h3{margin:0 0 8px;font-size:1.05em}
+.opt h3 span{background:var(--sec);color:var(--sf);border-radius:12px;padding:2px 10px;margin-right:6px}
+ul.nt{margin:12px 0 0;padding:12px 14px 12px 30px;background:var(--sf);border:1px solid var(--outv);border-radius:14px;font-size:.92em;color:var(--onv)}
+ul.nt li{margin:3px 0}
+ul.nt b{color:var(--on)}
+hr.sep{border:0;border-top:2px dashed var(--outv);margin:34px 0}
+/* ---------- phone ---------- */
+.phone{position:relative;width:min(390px,100%);height:800px;background:var(--bg);border:1px solid var(--outv);border-radius:26px;overflow:hidden;box-shadow:0 8px 28px rgba(13,27,61,.2);font-size:calc(14px*var(--fs));color:var(--on);line-height:1.35}
+.inner{display:flex;flex-direction:column;height:100%}
+.appbar{display:flex;align-items:center;gap:6px;background:var(--abg);color:var(--aon);padding:6px 8px;min-height:56px}
+.appbar .x{width:48px;height:48px;border:0;background:transparent;color:inherit;font-size:1.3em;cursor:pointer;flex:0 0 48px}
+.appbar b{display:block;font-size:1.1em}
+.appbar small{display:block;opacity:.8;font-size:.82em}
+.scroll{flex:1;overflow:auto;padding:0 12px 24px;overscroll-behavior:contain}
+.foot{display:flex;gap:8px;flex-wrap:wrap;padding:8px 12px;background:var(--sf);border-top:1px solid var(--outv)}
+.toast{position:absolute;left:12px;right:12px;bottom:84px;background:#0D1B3D;color:#fff;border-radius:14px;padding:6px 8px 6px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20;border:1px solid rgba(255,255,255,.25)}
+.toast.show{opacity:1;pointer-events:auto}
+.toast button{min-height:48px;border:0;background:transparent;color:#FFB2BC;font:inherit;font-weight:800;cursor:pointer;padding:0 12px}
+button{font-family:inherit}
+.btn{min-height:48px;min-width:max-content;padding:0 18px;border-radius:24px;border:1.5px solid var(--outv);background:var(--sf);color:var(--on);font:inherit;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.btn.pri{background:var(--pri);color:var(--onpri);border-color:var(--pri)}
+.btn.sec{background:var(--secc);color:var(--osecc);border-color:transparent}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--sec);padding:0 10px}
+.btn.danger{color:var(--err)}
+.btn.grow{flex:1 1 9em}
+.btn.full{width:100%}
+.btn:disabled{opacity:.45}
+/* sections: header sits on the page, card below */
+.sec{margin:16px 0 0}
+.sh{display:flex;align-items:center;gap:8px;margin:0 2px 6px;min-height:34px;font-size:.78em;letter-spacing:.1em;text-transform:uppercase;color:var(--sec);font-weight:800;border-left:4px solid var(--sec);padding-left:8px;width:100%;background:none;border-top:0;border-right:0;border-bottom:0;text-align:left;font-family:inherit}
+button.sh{cursor:pointer;min-height:48px}
+.sh em{margin-left:auto;font-style:normal;text-transform:none;letter-spacing:0;font-weight:500;color:var(--mut);text-align:right}
+.card{background:var(--sf);border:1px solid var(--outv);border-radius:16px;padding:12px;box-shadow:var(--shadow)}
+.card+.card{margin-top:10px}
+.lab{display:block;font-size:.74em;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);margin:12px 0 6px}
+.lab:first-child{margin-top:0}
+small,.sub{color:var(--mut);font-size:.82em;font-weight:400}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{position:relative;min-height:44px;padding:6px 14px;border-radius:22px;border:1.5px solid var(--outv);background:var(--sf);color:var(--on);font:inherit;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;max-width:100%;text-align:left}
+.chip::after{content:"";position:absolute;inset:-3px}
+.chip.on{background:var(--pc);border-color:var(--pri);color:var(--opc)}
+.chip .ck{font-style:normal;font-weight:800}
+.chip .cn{background:var(--sch);color:var(--on);border-radius:10px;padding:0 7px;font-size:.85em}
+.chip.on .cn{background:var(--sf)}
+.chip.warn.on{background:var(--rB);color:var(--rT);border-color:var(--rT)}
+.chip.ok.on{background:var(--gB);color:var(--gT);border-color:var(--gT)}
+.txt{width:100%;min-height:48px;border:1.5px solid var(--outv);border-radius:12px;padding:8px 12px;background:var(--sf);color:var(--on);font:inherit}
+textarea.txt{min-height:72px;resize:vertical}
+.search{width:100%;min-height:48px;border:1.5px solid var(--outv);border-radius:24px;padding:0 16px;background:var(--sf);color:var(--on);font:inherit}
+input:focus,textarea:focus,button:focus-visible{outline:3px solid var(--ter);outline-offset:1px}
+.num{width:5.4em;min-height:48px;text-align:center;font-weight:800;font-size:1.15em;border:1.5px solid var(--outv);border-radius:12px;background:var(--sc);color:var(--on);font-family:inherit}
+.num.wide{width:9em;font-size:1em}
+.pill{display:inline-block;padding:3px 10px;border-radius:12px;font-weight:700;font-size:.82em;white-space:nowrap}
+.p-g{background:var(--gB);color:var(--gT)}.p-r{background:var(--rB);color:var(--rT)}.p-b{background:var(--bB);color:var(--bT)}.p-n{background:var(--sc);color:var(--mut)}.p-a{background:var(--aB);color:var(--aT)}
+.fb{min-height:48px;min-width:48px;background:transparent;border:0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
+/* batch bar */
+.batch{position:sticky;top:0;z-index:5;margin:0 -12px;padding:8px 12px;background:var(--bg);border-bottom:1px solid var(--outv)}
+.batch .b1{width:100%;min-height:48px;display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap;background:var(--sf);border:1.5px solid var(--outv);border-radius:14px;padding:6px 12px;color:var(--on);font:inherit;text-align:left;cursor:pointer}
+.batch .b1 .edit{margin-left:auto;color:var(--sec);font-weight:700}
+.batch .box{background:var(--sf);border:1.5px solid var(--pri);border-radius:14px;padding:12px}
+.dpick{min-height:48px;border:1.5px solid var(--outv);border-radius:22px;padding:0 10px;background:var(--sf);color:var(--on);font:inherit}
+/* list rows (lab A) */
+.lrow{padding:8px 0;border-top:1px solid var(--outv)}
+.lrow:first-child{border-top:0}
+.lr1{display:flex;align-items:center;gap:8px}
+.lname{flex:1 1 auto;min-width:0;background:none;border:0;padding:4px 0;text-align:left;cursor:pointer;color:var(--on);font:inherit;min-height:48px}
+.lname b{display:block;font-size:1em}
+.lname small{display:block}
+.lrow .chips{margin:2px 0 4px}
+.det{background:var(--sc);border-radius:12px;padding:10px 12px;margin-top:6px}
+.hl{background:linear-gradient(0deg,var(--secc),var(--secc)) no-repeat;background-size:4px 100%}
+/* steppers */
+.stp{display:flex;align-items:center;gap:4px;flex:0 0 auto}
+.stp button{width:48px;height:48px;border-radius:50%;border:1.5px solid var(--outv);background:var(--sf);font-size:1.5em;font-weight:700;color:var(--pri);cursor:pointer;touch-action:manipulation;line-height:1;padding:0}
+.stp input{width:3.9em;border:0;border-bottom:2px solid var(--outv);background:transparent;font:inherit;font-weight:800;font-size:1.25em;text-align:center;color:var(--on);min-height:44px}
+.stp .un{color:var(--mut);font-size:.82em;min-width:2.3em}
+.brow{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--outv)}
+.brow:first-of-type{border-top:0}
+.brow .bl{flex:1 1 7.5em;min-width:0}
+.brow .bl b{display:block}
+/* choice cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(6.6em,1fr));gap:8px}
+.cc{position:relative;min-height:84px;border:1.5px solid var(--outv);border-radius:14px;background:var(--sf);color:var(--on);font:inherit;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px 4px;cursor:pointer;overflow-wrap:anywhere;text-align:center;line-height:1.15}
+.cc svg{width:40px;height:40px;flex:none}
+.cc.on{background:var(--pc);border-color:var(--pri);color:var(--opc)}
+.cc .tick{position:absolute;top:3px;right:7px;font-style:normal;font-weight:800}
+svg .pl{stroke:var(--sec);stroke-width:5;stroke-linecap:round;fill:none}
+svg .fl{fill:currentColor;stroke:none;opacity:.85}
+svg .os{fill:var(--ter);stroke:none}
+svg{stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.gac{background:var(--pc);color:var(--opc);border-radius:12px;padding:8px 12px;margin-top:10px}
+.gac p{margin:4px 0}
+.ga2{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.warnbox{background:var(--aB);color:var(--aT);border-radius:10px;padding:8px 10px;margin:8px 0 0}
+/* focus pager (lab B) */
+.tabs{display:flex;gap:6px;margin:10px 0}
+.tabs .chip{flex:1 1 auto;justify-content:center}
+.segs{display:flex;gap:3px;margin:4px 0 10px}
+.segs button{flex:1;min-height:48px;border:0;background:transparent;padding:0;cursor:pointer;display:flex;align-items:center}
+.segs i{display:block;width:100%;height:8px;border-radius:4px;background:var(--outv)}
+.segs .d i{background:var(--ter)}.segs .dh i{background:var(--rT)}.segs .dl i{background:var(--bT)}.segs .cur i{background:var(--pri);height:12px}
+.big{font-size:2.6em;font-weight:800;text-align:center;min-height:1.4em;letter-spacing:.02em}
+.big small{font-size:.4em}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}
+.keys button{min-height:54px;border-radius:14px;border:1.5px solid var(--outv);background:var(--sf);color:var(--on);font:inherit;font-size:1.5em;font-weight:700;cursor:pointer}
+.opt-big{display:flex;width:100%;min-height:56px;align-items:center;justify-content:space-between;gap:8px;border:1.5px solid var(--outv);border-radius:14px;background:var(--sf);color:var(--on);font:inherit;font-weight:700;padding:8px 16px;margin:6px 0;cursor:pointer;text-align:left}
+.opt-big.on{background:var(--pc);border-color:var(--pri);color:var(--opc)}
+.navr{display:flex;gap:8px;margin-top:10px}
+.navr .btn{flex:1 1 auto}
+.rv{display:flex;align-items:center;gap:8px;width:100%;min-height:56px;background:none;border:0;border-top:1px solid var(--outv);padding:6px 0;text-align:left;cursor:pointer;color:var(--on);font:inherit}
+.rv:first-child{border-top:0}
+.rv .a{flex:1;min-width:0}.rv .a b{display:block}
+.rv .v{font-weight:800}
+.pcard{padding:10px 0;border-top:1px solid var(--outv);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pcard:first-child{border-top:0}
+.pcard .a{flex:1 1 10em}
+.pcard .a b{display:block}
+/* ultrasound B rows */
+.live{position:sticky;top:0;z-index:5;margin:0 -12px;padding:8px 12px;background:var(--bg);border-bottom:1px solid var(--outv)}
+.live .box{background:var(--pri);color:var(--onpri);border-radius:14px;padding:8px 12px;font-size:.92em}
+.live .box small{color:inherit;opacity:.75;display:block;font-size:.72em;letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+.frow{border-top:1px solid var(--outv)}
+.frow:first-child{border-top:0}
+.fh{width:100%;min-height:56px;display:flex;align-items:center;gap:10px;background:none;border:0;padding:4px 0;cursor:pointer;color:var(--on);font:inherit;text-align:left}
+.fh svg{width:30px;height:30px;flex:none;color:var(--onv)}
+.fh .t{flex:1;min-width:0}
+.fh .t small{display:block;text-transform:uppercase;letter-spacing:.07em;font-weight:700;font-size:.7em}
+.fh .val{font-weight:800}
+.fh .val.unset{color:var(--sec);border:1.5px dashed var(--sec);border-radius:14px;padding:4px 12px;font-weight:600}
+.fbody{padding:2px 0 12px}
+input[type=range]{width:100%;min-height:48px;accent-color:var(--sec)}
+.mini{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+/* medication */
+.mrow{display:flex;align-items:center;gap:4px;padding:8px 0;border-top:1px solid var(--outv);flex-wrap:wrap}
+.mrow:first-child{border-top:0}
+.mrow .mm{flex:1 1 9em;min-width:0}
+.mrow .mm b{display:block}
+.ib{min-height:48px;min-width:48px;padding:0 10px;border-radius:24px;border:0;background:transparent;color:var(--pri);font:inherit;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap}
+.ib.stop{color:var(--err)}
+.rx{border:2px solid var(--pri);border-radius:16px;padding:12px;background:var(--sf);margin-top:10px}
+.rx .rh{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+.rx .rh b{flex:1;font-size:1.15em}
+.tile{display:flex;align-items:center;gap:8px;min-height:56px;border:1.5px solid var(--outv);border-radius:14px;background:var(--sf);color:var(--on);font:inherit;padding:6px 8px 6px 12px;cursor:pointer;text-align:left}
+.tile .a{flex:1;min-width:0}.tile b{display:block}
+.tile .plus{font-style:normal;font-size:1.5em;color:var(--sec);font-weight:700;width:30px;text-align:center}
+.tile.has{background:var(--sc)}
+.tile.has .plus{color:var(--ter)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(11em,1fr));gap:8px}
+.mcard{border:1.5px solid var(--outv);border-radius:16px;background:var(--sf);padding:10px 10px 8px;margin-top:10px}
+.mcard.fresh{border-color:var(--ter);box-shadow:0 0 0 3px var(--terc)}
+.mcard.stopped{opacity:.65;background:var(--sc)}
+.mh{display:flex;align-items:center;gap:4px}
+.mh b{flex:1;min-width:0;font-size:1.05em}
+.toks{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 6px}
+.tok{position:relative;min-height:44px;border:1.5px solid var(--outv);border-radius:22px;background:var(--sc);color:var(--on);font:inherit;font-weight:700;padding:4px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.tok::after{content:"";position:absolute;inset:-2px}
+.tok i{font-style:normal;color:var(--mut);font-size:.8em}
+.tok.on{background:var(--pc);border-color:var(--pri);color:var(--opc)}
+.tok.pro.on2{background:var(--gB);color:var(--gT);border-color:var(--gT)}
+.panelx{background:var(--sc);border-radius:12px;padding:10px;margin:2px 0 6px}
+.tag{display:inline-block;margin:2px 4px 0 0;padding:1px 8px;border-radius:10px;font-size:.76em;font-weight:700;background:var(--gB);color:var(--gT)}
+.tag.r{background:var(--rB);color:var(--rT)}
+.empty{color:var(--mut);padding:8px 2px}
+@media (max-width:430px){header.top,section.scr{padding:12px 6px}.phone{height:calc(100vh - 80px);min-height:620px}}
+</style>
+</head>
+<body>
+<nav aria-label="Screens">
+<b>ANC EMR · mock-ups</b>
+<a href="#lab">Laboratory</a><a href="#us">Ultrasound</a><a href="#med">Medication</a>
+<span class="sp"></span>
+<button id="bFs" type="button" aria-label="Change text size">Text 100%</button>
+<button id="bTh" type="button" aria-label="Change colour mode">Mode: auto</button>
+</nav>
+
+<header class="top">
+<h1>Entry screens · two designs each</h1>
+<p class="lead">Every phone below is live: tap chips, press +/−, open rows, add and remove. All data is made-up sample data (patient <b>Mona Hassan</b>, dated by LMP 19 Apr 2026, so today 1 Nov 2026 is <b>28w 0d</b>). Nothing here is saved anywhere. Use <b>Text</b> in the top bar to test large font (130% and 160%) and <b>Mode</b> to test light and dark.</p>
+</header>
+
+<section class="scr" id="lab">
+<h2>1 · Laboratory entry</h2>
+<p class="lead">Both options: pick a panel and every test of it is added; date and lab are set once for the whole batch; the flag (Normal / High / Low) is worked out from the reference range, and you only touch it to override. Try: tap a panel you have not used yet, type a result such as 16 in the haemoglobin row, or search “ferritin”.</p>
+<div class="pair">
+<div class="opt"><h3><span>A</span>One list, type in place</h3><div class="phone" id="labA"><div class="inner"></div><div class="toast"></div></div>
+<ul class="nt">
+<li><b>Faster:</b> the whole panel is on one screen; numbers are typed straight into the row; qualitative tests are two taps at most; no “Save and add another” loop.</li>
+<li><b>Keeps:</b> every current field: test name, category, result, unit, reference range, abnormal flag, notes, lab name, date.</li>
+<li><b>Costs:</b> the phone keyboard opens and closes row by row; a long panel (8 rows) needs scrolling.</li>
+</ul></div>
+<div class="opt"><h3><span>B</span>One test at a time, number keypad</h3><div class="phone" id="labB"><div class="inner"></div><div class="toast"></div></div>
+<ul class="nt">
+<li><b>Faster:</b> the keypad stays on screen, so no keyboard flicker; qualitative results move on by themselves after one tap.</li>
+<li><b>Keeps:</b> same fields as A; flag override and note sit under “Flag / note”; the full list is one tap away in Review.</li>
+<li><b>Costs:</b> you see one test at a time (Review tab shows all); typing a decimal value needs the keypad’s own dot key.</li>
+</ul></div>
+</div>
+</section>
+
+<hr class="sep">
+
+<section class="scr" id="us">
+<h2>2 · Ultrasound entry</h2>
+<p class="lead">Both options use the same entry style for every finding (tap a picture card or press +/−, never a big text box). Try: raise <b>GA weeks</b> four times to see the dating hint; tap “From my choices” in the impression.</p>
+<div class="pair">
+<div class="opt"><h3><span>A</span>Picture cards and steppers</h3><div class="phone" id="usA"><div class="inner"></div><div class="toast"></div></div>
+<ul class="nt">
+<li><b>Faster:</b> every choice is one tap on a picture card; every number is a stepper that starts at the typical value for the GA; the impression can be drafted from the choices.</li>
+<li><b>Keeps:</b> all current fields: date, GA weeks/days, linked visit, number, presentation, placenta, liquor, FHR, BPD, HC, AC, FL, EFW, photos, impression.</li>
+<li><b>Costs:</b> longest scroll of the two; the sections can be collapsed to a one-line summary.</li>
+</ul></div>
+<div class="opt"><h3><span>B</span>Start from a normal scan, one finding at a time</h3><div class="phone" id="usB"><div class="inner"></div><div class="toast"></div></div>
+<ul class="nt">
+<li><b>Faster:</b> “Fill normal scan” answers the usual findings in one tap; after each answer the next finding opens by itself; the report line on top updates live.</li>
+<li><b>Keeps:</b> same fields as A; date/GA/hint in the top strip; photos and “link to visit” under More.</li>
+<li><b>Costs:</b> pictures are small; numbers are on a slider with +/− (finer typing is possible only by the value box); a pre-filled “normal” must be checked by the doctor before saving.</li>
+</ul></div>
+</div>
+</section>
+
+<hr class="sep">
+
+<section class="scr" id="med">
+<h2>3 · Medication entry</h2>
+<p class="lead">Both options: search or pick a common/recent drug, dose / route / frequency as chips, start date defaults to today, prophylaxis toggle, notes only on request, and a list of today’s medications with quick Stop and Edit. Try: add Low-Dose Aspirin, stop Labetalol, then press Undo.</p>
+<div class="pair">
+<div class="opt"><h3><span>A</span>Build one prescription card</h3><div class="phone" id="medA"><div class="inner"></div><div class="toast"></div></div>
+<ul class="nt">
+<li><b>Faster:</b> pick a drug, its usual dose, route and frequency are already selected; change only what differs, then one “Add” button.</li>
+<li><b>Keeps:</b> name, dose, route, frequency, start date, end date, status, prophylaxis, non-compliance, side effects, notes.</li>
+<li><b>Costs:</b> two taps minimum per drug (pick, Add); the card is taller than B’s one-tap add.</li>
+</ul></div>
+<div class="opt"><h3><span>B</span>One tap to add, fix it in the list</h3><div class="phone" id="medB"><div class="inner"></div><div class="toast"></div></div>
+<ul class="nt">
+<li><b>Faster:</b> one tap on a drug adds it with its usual dose and today’s date; chips on the new line change anything, with Undo.</li>
+<li><b>Keeps:</b> same fields as A; end date, status, non-compliance, side effects and notes sit under “⋯ More” on each line.</li>
+<li><b>Costs:</b> a drug can be added with the default dose by a stray tap (Undo is shown for a few seconds); no single review screen before adding.</li>
+</ul></div>
+</div>
+</section>
+
+<script>
+'use strict';
+/* ================= shared helpers ================= */
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const TODAY='2026-11-01',YEST='2026-10-31';
+const fd=d=>{if(!d)return '';const p=d.split('-');return (+p[2])+' '+MON[+p[1]-1]+' '+p[0]};
+const fds=d=>{if(!d)return '';const p=d.split('-');return (+p[2])+' '+MON[+p[1]-1]};
+const LMP=Date.UTC(2026,3,19);
+const gaT=d=>{const p=d.split('-').map(Number);return Math.round((Date.UTC(p[0],p[1]-1,p[2])-LMP)/864e5)};
+const gaS=t=>Math.floor(t/7)+'w '+(t%7)+'d';
+const redThr=g=>g<=62?5:g<=111?7:g<=153?10:g<=195?14:21;
+const chip=(label,on,a,data,cls)=>'<button type="button" class="chip'+(on?' on':'')+(cls?' '+cls:'')+'" data-a="'+a+'" '+(data||'')+' aria-pressed="'+(!!on)+'">'+(on?'<i class="ck">✓</i>':'')+esc(label)+'</button>';
+const dat=o=>Object.keys(o).map(k=>'data-'+k+'="'+esc(o[k])+'"').join(' ');
+const shell=(title,sub,body,foot)=>'<div class="appbar"><button class="x" data-a="cancel" aria-label="Close">✕</button><div><b>'+title+'</b><small>'+sub+'</small></div></div><div class="scroll">'+body+'</div><div class="foot">'+foot+'</div>';
+const sec=(n,title,sum,body)=>'<section class="sec"><h4 class="sh" style="margin-bottom:6px"><span>'+n+' · '+title+'</span><em>'+(sum||'')+'</em></h4><div class="card">'+body+'</div></section>';
+function mount(id,st,render,act,inp){
+  const el=document.getElementById(id),inner=el.querySelector('.inner'),tt=el.querySelector('.toast');
+  const c={st,el,render,
+    r(){const o=inner.querySelector('.scroll'),t=o?o.scrollTop:0;inner.innerHTML=render(c);const n=inner.querySelector('.scroll');if(n)n.scrollTop=t;},
+    top(){const n=inner.querySelector('.scroll');if(n)n.scrollTop=0;},
+    q(s){return inner.querySelector(s)},
+    toast(m,undo){tt.innerHTML='<span>'+esc(m)+'</span>'+(undo?'<button type="button" data-a="undo">Undo</button>':'');tt.classList.add('show');clearTimeout(c.tt);c.tt=setTimeout(()=>tt.classList.remove('show'),undo?5000:2600)},
+    act:(a,d,t)=>act(c,a,d||{},t),inp:(i,d,v,t)=>inp&&inp(c,i,d||{},v,t)};
+  el.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t||!el.contains(t))return;if(t.hasAttribute('data-hold')&&e.detail!==0)return;c.act(t.dataset.a,t.dataset,t)});
+  el.addEventListener('input',e=>{const t=e.target.closest('[data-i]');if(t)c.inp(t.dataset.i,t.dataset,t.value,t)});
+  el.addEventListener('pointerdown',e=>{const t=e.target.closest('[data-hold]');if(!t||!el.contains(t))return;e.preventDefault();c.act(t.dataset.a,t.dataset,t);clearTimeout(c.ht);clearInterval(c.hi);c.ht=setTimeout(()=>{c.hi=setInterval(()=>c.act(t.dataset.a,t.dataset,t),90)},450)});
+  const stop=()=>{clearTimeout(c.ht);clearInterval(c.hi)};
+  window.addEventListener('pointerup',stop);window.addEventListener('pointercancel',stop);
+  c.r();return c;
+}
+
+/* ================= 1. LABORATORY ================= */
+const T={
+ cbc:{n:'Complete Blood Count (CBC)',c:'Hematology',u:'g/dL',lo:11,hi:15,ref:'11.0 – 15.0'},
+ abo:{n:'Blood Grouping & Rh Factor',c:'Hematology',q:['A+','A−','B+','B−','AB+','AB−','O+','O−'],ref:''},
+ fbs:{n:'Fasting Blood Sugar (FBS)',c:'Biochemistry',u:'mg/dL',lo:70,hi:95,ref:'70 – 95'},
+ ogtt:{n:'Oral Glucose Tolerance Test (OGTT 75g)',c:'Biochemistry',u:'mg/dL',hi:140,hiEx:true,ref:'< 140'},
+ urine:{n:'Urine Routine & Microscopic',c:'Biochemistry',q:['Nil albumin, nil sugar','Albumin +','Sugar +','Pus cells ↑'],norm:'Nil albumin, nil sugar',ref:'Nil albumin, nil sugar'},
+ hbsag:{n:'Hepatitis B Surface Antigen (HBsAg)',c:'Serology',q:['Negative','Positive'],norm:'Negative',ref:'Negative'},
+ hiv:{n:'HIV 1 & 2 Antibody',c:'Serology',q:['Non-reactive','Reactive'],norm:'Non-reactive',ref:'Non-reactive'},
+ vdrl:{n:'Syphilis Serology (VDRL)',c:'Serology',q:['Non-reactive','Reactive'],norm:'Non-reactive',ref:'Non-reactive'},
+ rubella:{n:'Rubella Antibody IgG',c:'Serology',q:['Positive (Immune)','Negative'],norm:'Positive (Immune)',ref:'Positive (Immune)'},
+ tsh:{n:'Thyroid Stimulating Hormone (TSH)',c:'Biochemistry',u:'mIU/L',lo:0.2,hi:2.5,ref:'0.2 – 2.5'},
+ ferritin:{n:'Serum Ferritin',c:'Hematology',u:'ng/mL',lo:30,hi:150,ref:'30 – 150'},
+ creat:{n:'Serum Creatinine',c:'Biochemistry',u:'mg/dL',lo:0.5,hi:0.9,ref:'0.5 – 0.9'},
+ uric:{n:'Serum Uric Acid',c:'Biochemistry',u:'mg/dL',lo:2.5,hi:5.5,ref:'2.5 – 5.5'},
+ alt:{n:'Alanine Aminotransferase (ALT)',c:'Biochemistry',u:'U/L',lo:7,hi:35,ref:'7 – 35'},
+ ast:{n:'Aspartate Aminotransferase (AST)',c:'Biochemistry',u:'U/L',lo:10,hi:35,ref:'10 – 35'},
+ ucult:{n:'Urine Culture & Sensitivity',c:'Urinalysis',q:['No growth after 48 hrs','Growth – see note'],norm:'No growth after 48 hrs',ref:'No growth after 48 hrs'}
+};
+const PANELS=[
+ {id:'ft',n:'First Trimester Routine Booking',t:['cbc','abo','fbs','urine','hbsag','hiv','rubella','tsh']},
+ {id:'pe',n:'Preeclampsia Workup',t:['cbc','creat','uric','alt','ast','urine']},
+ {id:'gdm',n:'GDM Screening (24-28 W)',t:['fbs','ogtt','urine']},
+ {id:'an',n:'Anemia Workup & Iron Stores',t:['cbc','ferritin']},
+ {id:'inf',n:'Infection & Serology Screening',t:['hbsag','hiv','vdrl','rubella']}
+];
+const LABS=['Al Borg Labs','El Mokhtabar','Hospital Lab','Alfa Labs'];
+const CATS=['Hematology','Urinalysis','Biochemistry','Serology','Other'];
+let customN=0;
+function labState(idx){return {date:TODAY,lab:'Al Borg Labs',labOther:false,bo:false,
+  rows:['cbc','abo','fbs','urine','hbsag','hiv','rubella','tsh'],
+  v:{cbc:'10.2',abo:'O+',fbs:'88',hbsag:'Negative'},ov:{},note:{},open:null,q:'',keep:{},tab:'enter',idx:idx||0,fo:false,nt:false}}
+function flagOf(s,id){const t=T[id],v=s.v[id];
+  if(v===undefined||v==='')return null;
+  if(s.ov[id])return {f:s.ov[id],o:true};
+  if(t.q){if(!t.norm)return {f:'none'};return {f:v===t.norm?'normal':'abnormal'}}
+  const x=parseFloat(String(v).replace(',','.'));if(isNaN(x)||(t.lo===undefined&&t.hi===undefined))return {f:'none'};
+  let f='normal';if(t.lo!==undefined&&x<t.lo)f='low';if(t.hi!==undefined&&(t.hiEx?x>=t.hi:x>t.hi))f='high';return {f}}
+function pill(fl){if(!fl||fl.f==='none')return '<span class="pill p-n">—</span>';
+  const m={normal:['p-g','Normal ✓'],high:['p-r','High ▲'],low:['p-b','Low ▼'],abnormal:['p-r','Abnormal ▲']}[fl.f];
+  return '<span class="pill '+m[0]+'">'+m[1]+(fl.o?' ✎':'')+'</span>'}
+const filled=s=>s.rows.filter(id=>s.v[id]!==undefined&&s.v[id]!=='').length;
+function addIds(s,ids){const add=ids.filter(i=>!s.rows.includes(i));s.rows=s.rows.concat(add);return add}
+function batchBar(c){const s=c.st;
+  if(!s.bo)return '<div class="batch"><button type="button" class="b1" data-a="bo"><span><b>'+fd(s.date)+'</b> <small>GA '+gaS(gaT(s.date))+'</small></span><span><b>'+esc(s.lab||'No lab')+'</b></span><span class="edit">Change ▾</span></button></div>';
+  return '<div class="batch"><div class="box"><span class="lab">Date for all tests</span><div class="chips">'+chip('Today',s.date===TODAY,'date','data-v="'+TODAY+'"')+chip('Yesterday',s.date===YEST,'date','data-v="'+YEST+'"')+'<input type="date" class="dpick" data-i="date" value="'+s.date+'" aria-label="Pick date"></div><small>Calculated GA on this date: '+gaS(gaT(s.date))+'</small>'+
+   '<span class="lab">Laboratory for all tests</span><div class="chips">'+LABS.map(l=>chip(l,s.lab===l&&!s.labOther,'lab','data-v="'+esc(l)+'"')).join('')+chip('Other…',s.labOther,'labother')+'</div>'+
+   (s.labOther?'<input class="txt" style="margin-top:8px" data-i="labtxt" value="'+esc(s.lab)+'" placeholder="Lab name" aria-label="Lab name">':'')+
+   '<div style="margin-top:10px"><button type="button" class="btn pri full" data-a="bo">Done</button></div></div></div>'}
+function panelChips(s){return PANELS.map(p=>{const have=p.t.filter(t=>s.rows.includes(t)).length,all=have===p.t.length;
+  return '<button type="button" class="chip'+(all?' on':'')+'" data-a="panel" data-id="'+p.id+'">'+(all?'<i class="ck">✓</i>':'<i class="ck">＋</i>')+esc(p.n)+' <b class="cn">'+p.t.length+'</b></button>'}).join('')}
+function suggHtml(s){const q=s.q.trim().toLowerCase();let ids;
+  if(!q){ids=Object.keys(T).filter(i=>!s.rows.includes(i)).slice(0,4);
+    return ids.length?'<span class="lab">Often added</span><div class="chips">'+ids.map(i=>chip(T[i].n.replace(/ \(.*/,''),false,'addone','data-id="'+i+'"')).join('')+'</div>':''}
+  ids=Object.keys(T).filter(i=>!s.rows.includes(i)&&T[i].n.toLowerCase().includes(q)).slice(0,5);
+  return '<div style="margin-top:6px">'+ids.map(i=>'<button type="button" class="rv" data-a="addone" data-id="'+i+'"><span class="a"><b>'+esc(T[i].n)+'</b><small>'+esc([T[i].u,T[i].ref?'ref '+T[i].ref:T[i].c].filter(Boolean).join(' · '))+'</small></span><span class="pill p-n">＋ Add</span></button>').join('')+
+   '<button type="button" class="rv" data-a="addnew"><span class="a"><b>Add “'+esc(s.q.trim())+'” as a new test</b><small>you can set unit and range afterwards</small></span><span class="pill p-n">＋ New</span></button></div>'}
+function updSugg(c){const n=c.q('#sugg');if(n)n.innerHTML=suggHtml(c.st)}
+function subOf(t){return esc([t.u,t.ref?'ref '+t.ref:''].filter(Boolean).join(' · ')||t.c)}
+function overrideChips(s,id){const t=T[id],cur=s.ov[id]||'';const opts=t.q?[['','Auto'],['normal','Normal'],['abnormal','Abnormal']]:[['','Auto'],['normal','Normal'],['high','High'],['low','Low']];
+  return opts.map(o=>chip(o[1],cur===o[0],'ov','data-id="'+id+'" data-v="'+o[0]+'"')).join('')}
+function detailsHtml(s,id){const t=T[id];
+  return '<div class="det"><span class="lab">Flag (automatic from the range — change only if needed)</span><div class="chips">'+overrideChips(s,id)+'</div>'+
+   '<span class="lab">Note</span><input class="txt" data-i="note" data-id="'+id+'" value="'+esc(s.note[id]||'')+'" placeholder="Optional note" aria-label="Note">'+
+   '<span class="lab">Category</span><div class="chips">'+CATS.map(k=>chip(k,t.c===k,'cat','data-id="'+id+'" data-v="'+k+'"')).join('')+'</div>'+
+   (t.custom?'<span class="lab">Unit</span><input class="txt" data-i="unit" data-id="'+id+'" value="'+esc(t.u||'')+'" placeholder="e.g. g/dL" aria-label="Unit"><span class="lab">Reference range</span><input class="txt" data-i="ref" data-id="'+id+'" value="'+esc(t.ref||'')+'" placeholder="e.g. 11 - 15 or < 140" aria-label="Reference range"><div class="chips" style="margin-top:10px">'+chip('Save to my test list',!!s.keep[id],'keep','data-id="'+id+'"')+'</div>':'')+
+   '<div style="margin-top:8px"><button type="button" class="btn ghost danger" data-a="remove" data-id="'+id+'">Remove from this batch</button></div></div>'}
+function rowA(c,id){const s=c.st,t=T[id],v=s.v[id]||'',open=s.open===id;
+  return '<div class="lrow" id="r-'+id+'"><div class="lr1"><button type="button" class="lname" data-a="open" data-id="'+id+'"><b>'+esc(t.n)+'</b><small>'+subOf(t)+'</small></button>'+
+   (t.q?'':'<input class="num'+(t.custom?' wide':'')+'" '+(t.custom?'':'inputmode="decimal" ')+'data-i="val" data-id="'+id+'" value="'+esc(v)+'" placeholder="—" aria-label="Result for '+esc(t.n)+'">')+
+   '<button type="button" class="fb" data-a="open" data-id="'+id+'" aria-label="Flag for '+esc(t.n)+'"><span id="fl-'+id+'">'+pill(flagOf(s,id))+'</span></button></div>'+
+   (t.q?'<div class="chips">'+t.q.map(o=>chip(o,v===o,'pick','data-id="'+id+'" data-v="'+esc(o)+'"')).join('')+'</div>':'')+
+   (open?detailsHtml(s,id):'')+'</div>'}
+function footLab(c){const s=c.st,n=filled(s);return '<button type="button" class="btn" data-a="cancel">Cancel</button><button type="button" class="btn pri grow" data-a="save" id="saveb">Save '+n+' result'+(n===1?'':'s')+'</button>'}
+function updFoot(c){const s=c.st,n=filled(s),b=c.q('#saveb');if(b)b.textContent='Save '+n+' result'+(n===1?'':'s');const k=c.q('#cnt');if(k)k.textContent=n+' of '+s.rows.length+' filled'}
+function pendingNormal(s){return s.rows.filter(id=>T[id].norm&&(s.v[id]===undefined||s.v[id]===''))}
+function labA(c){const s=c.st,pn=pendingNormal(s);
+  return shell('Laboratory results','Mona Hassan · GA '+gaS(gaT(s.date)),
+   batchBar(c)+
+   sec(1,'Add tests','tap a panel = all its tests','<div class="chips">'+panelChips(s)+'</div><span class="lab">Or add a single test</span><input class="search" data-i="q" value="'+esc(s.q)+'" placeholder="Search a test, e.g. ferritin" aria-label="Search tests"><div id="sugg">'+suggHtml(s)+'</div>')+
+   sec(2,'Results','<span id="cnt">'+filled(s)+' of '+s.rows.length+' filled</span>',
+     (s.rows.length?s.rows.map(id=>rowA(c,id)).join(''):'<div class="empty">No tests yet. Tap a panel above.</div>')+
+     (pn.length?'<div style="margin-top:8px"><button type="button" class="btn sec full" data-a="allnormal">Mark the '+pn.length+' empty yes/no tests as normal</button></div>':''))+
+   '<p class="sub" style="text-align:center">Empty rows are not saved.</p>',footLab(c))}
+function labAct(c,a,d){const s=c.st,mode=c.mode;
+  switch(a){
+  case 'bo':s.bo=!s.bo;c.r();break;
+  case 'date':s.date=d.v;c.r();break;
+  case 'lab':s.lab=d.v;s.labOther=false;c.r();break;
+  case 'labother':s.labOther=true;s.lab='';c.r();break;
+  case 'panel':{const p=PANELS.find(x=>x.id===d.id),add=addIds(s,p.t);
+    c.toast(add.length?'Added '+add.length+' test'+(add.length>1?'s':'')+(add.length<p.t.length?' ('+(p.t.length-add.length)+' already listed)':'')+' · '+p.n:'All '+p.t.length+' tests are already in the list');
+    if(add.length&&mode==='B'){s.tab='enter';s.idx=s.rows.indexOf(add[0])}
+    c.r();break}
+  case 'addone':{const add=addIds(s,[d.id]);s.q='';c.toast('Added '+T[d.id].n);if(mode==='B'){s.tab='enter';s.idx=s.rows.indexOf(d.id)}else s.open=null;c.r();
+    if(mode==='A'){const r=c.q('#r-'+d.id);if(r)r.scrollIntoView({block:'center'})}break}
+  case 'addnew':{const id='c'+(++customN);T[id]={n:s.q.trim(),c:'Other',u:'',ref:'',custom:true};s.rows.push(id);s.q='';c.toast('Added new test — set unit and range in its details');
+    if(mode==='B'){s.tab='enter';s.idx=s.rows.indexOf(id)}else s.open=id;c.r();break}
+  case 'open':s.open=s.open===d.id?null:d.id;c.r();break;
+  case 'pick':s.v[d.id]=s.v[d.id]===d.v?'':d.v;
+    if(mode==='B'){c.r();if(s.v[d.id]){clearTimeout(c.adv);c.adv=setTimeout(()=>{if(s.idx<s.rows.length-1)s.idx++;else s.tab='review';c.r()},260)}}else{c.r();updFoot(c)}break;
+  case 'ov':if(d.v)s.ov[d.id]=d.v;else delete s.ov[d.id];c.r();break;
+  case 'cat':T[d.id].c=d.v;c.r();break;
+  case 'keep':s.keep[d.id]=!s.keep[d.id];c.r();break;
+  case 'remove':{const i=s.rows.indexOf(d.id);s.rows.splice(i,1);delete s.v[d.id];delete s.ov[d.id];s.open=null;if(s.idx>=s.rows.length)s.idx=Math.max(0,s.rows.length-1);c.toast('Removed '+T[d.id].n);c.r();break}
+  case 'allnormal':pendingNormal(s).forEach(id=>s.v[id]=T[id].norm);c.toast('Marked as normal — check before saving');c.r();break;
+  case 'tab':s.tab=d.v;c.r();break;
+  case 'goto':s.idx=+d.i;s.tab='enter';c.r();break;
+  case 'key':{const id=s.rows[s.idx];let v=s.v[id]||'';if(d.k==='b')v=v.slice(0,-1);else if(d.k==='.'){if(!v.includes('.'))v=(v||'0')+'.'}else if(v.length<6)v+=d.k;s.v[id]=v;c.r();break}
+  case 'next':if(s.idx<s.rows.length-1)s.idx++;else s.tab='review';c.r();break;
+  case 'back':if(s.idx>0)s.idx--;c.r();break;
+  case 'fo':s.fo=!s.fo;c.r();break;
+  case 'nt':s.nt=!s.nt;c.r();break;
+  case 'save':c.toast('Saved '+filled(s)+' results (demo only)');break;
+  case 'cancel':c.toast('Cancelled (demo only)');break;
+  }}
+function labInp(c,i,d,v){const s=c.st;
+  if(i==='date'){s.date=v||TODAY;c.r()}
+  else if(i==='labtxt')s.lab=v;
+  else if(i==='q'){s.q=v;updSugg(c)}
+  else if(i==='val'){s.v[d.id]=v;const f=c.q('#fl-'+d.id);if(f)f.innerHTML=pill(flagOf(s,d.id));updFoot(c)}
+  else if(i==='note')s.note[d.id]=v;
+  else if(i==='unit'){T[d.id].u=v}
+  else if(i==='ref'){const t=T[d.id];t.ref=v;t.lo=t.hi=undefined;t.hiEx=false;let m=v.match(/^\s*([\d.]+)\s*[-–]\s*([\d.]+)\s*$/);
+    if(m){t.lo=+m[1];t.hi=+m[2]}else if((m=v.match(/^\s*<\s*([\d.]+)\s*$/))){t.hi=+m[1];t.hiEx=true}
+    const f=c.q('#fl-'+d.id);if(f)f.innerHTML=pill(flagOf(s,d.id))}
+}
+/* Lab B */
+function segs(s){return '<div class="segs" role="group" aria-label="Progress">'+s.rows.map((id,i)=>{const f=flagOf(s,id),cls=(i===s.idx?'cur ':'')+(f?(f.f==='high'||f.f==='abnormal'?'dh':f.f==='low'?'dl':'d'):(s.v[id]?'d':''));
+  return '<button type="button" class="'+cls+'" data-a="goto" data-i="'+i+'" aria-label="Test '+(i+1)+': '+esc(T[id].n)+'"><i></i></button>'}).join('')+'</div>'}
+function enterB(c){const s=c.st;if(!s.rows.length)return '<div class="empty">No tests yet. Use the “Add” tab.</div>';
+  const id=s.rows[s.idx],t=T[id],v=s.v[id]||'',fl=flagOf(s,id);
+  let body='<small class="lab" style="margin-top:0">Test '+(s.idx+1)+' of '+s.rows.length+' · '+esc(t.c)+'</small><h3 style="margin:0 0 2px;font-size:1.2em">'+esc(t.n)+'</h3><div class="sub">'+subOf(t)+'</div>';
+  if(t.q)body+='<div style="margin-top:10px">'+t.q.map(o=>'<button type="button" class="opt-big'+(v===o?' on':'')+'" data-a="pick" data-id="'+id+'" data-v="'+esc(o)+'" aria-pressed="'+(v===o)+'"><span>'+esc(o)+'</span>'+(v===o?'<span>✓</span>':'')+'</button>').join('')+'</div>';
+  else body+='<div class="big">'+(v?esc(v):'<span style="color:var(--outv)">—</span>')+(t.u?' <small>'+esc(t.u)+'</small>':'')+'</div><div style="text-align:center;min-height:30px">'+(v?pill(fl):'')+'</div><div class="keys">'+['7','8','9','4','5','6','1','2','3','.','0','b'].map(k=>'<button type="button" data-a="key" data-k="'+k+'" aria-label="'+(k==='b'?'Backspace':k)+'">'+(k==='b'?'⌫':k)+'</button>').join('')+'</div>';
+  body+='<div class="chips" style="margin-top:6px">'+chip('Flag'+(s.ov[id]?' · changed':' · auto'),s.fo,'fo')+chip('Note'+(s.note[id]?' ✓':''),s.nt,'nt')+'</div>';
+  if(s.fo)body+='<div class="det"><span class="lab">Flag (automatic — change only if needed)</span><div class="chips">'+overrideChips(s,id)+'</div></div>';
+  if(s.nt)body+='<div class="det"><input class="txt" data-i="note" data-id="'+id+'" value="'+esc(s.note[id]||'')+'" placeholder="Optional note" aria-label="Note"></div>';
+  body+='<div class="navr"><button type="button" class="btn" data-a="back"'+(s.idx===0?' disabled':'')+'>◀ Back</button><button type="button" class="btn pri" data-a="next">'+(s.idx===s.rows.length-1?'Review ▶':(v||t.q?'Next ▶':'Skip ▶'))+'</button></div>';
+  return segs(s)+'<div class="card">'+body+'</div>'}
+function reviewB(c){const s=c.st,pn=pendingNormal(s);
+  return '<div class="card">'+s.rows.map((id,i)=>{const t=T[id],v=s.v[id];return '<button type="button" class="rv" data-a="goto" data-i="'+i+'"><span class="a"><b>'+esc(t.n)+'</b><small>'+subOf(t)+'</small></span><span class="v">'+(v?esc(v):'<span class="pill p-a">pending</span>')+'</span>'+(v?pill(flagOf(s,id)):'')+'</button>'}).join('')+'</div>'+
+   (pn.length?'<div style="margin-top:8px"><button type="button" class="btn sec full" data-a="allnormal">Mark the '+pn.length+' empty yes/no tests as normal</button></div>':'')}
+function addB(c){const s=c.st;
+  return '<div class="card">'+PANELS.map(p=>{const nw=p.t.filter(t=>!s.rows.includes(t)).length;return '<div class="pcard"><div class="a"><b>'+esc(p.n)+'</b><small>'+p.t.length+' tests'+(nw<p.t.length?' · '+nw+' new':'')+'</small></div><button type="button" class="btn'+(nw?' pri':'')+'" data-a="panel" data-id="'+p.id+'">'+(nw?'＋ Add '+nw:'✓ Added')+'</button></div>'}).join('')+
+   '</div><section class="sec"><h4 class="sh"><span>Add a single test</span></h4><div class="card"><input class="search" data-i="q" value="'+esc(s.q)+'" placeholder="Search a test, e.g. ferritin" aria-label="Search tests"><div id="sugg">'+suggHtml(s)+'</div></div></section>'}
+function labB(c){const s=c.st;
+  const tabs='<div class="tabs" role="tablist">'+chip('Enter',s.tab==='enter','tab','data-v="enter"')+chip('Review ('+filled(s)+'/'+s.rows.length+')',s.tab==='review','tab','data-v="review"')+chip('＋ Add',s.tab==='add','tab','data-v="add"')+'</div>';
+  return shell('Laboratory results','Mona Hassan · GA '+gaS(gaT(s.date)),batchBar(c)+tabs+(s.tab==='enter'?enterB(c):s.tab==='review'?reviewB(c):addB(c)),footLab(c))}
+const lA=mount('labA',labState(),labA,labAct,labInp);lA.mode='A';
+const lB=mount('labB',labState(2),labB,labAct,labInp);lB.mode='B';
+function labInpB(){}
+
+/* ================= 2. ULTRASOUND ================= */
+const SVGO='<svg viewBox="0 0 40 40" aria-hidden="true">';
+const UT='<path d="M20 5C31 5 35 14 33 23C31 31 26 35 20 35C14 35 9 31 7 23C5 14 9 5 20 5Z"/>';
+const ICO={
+ 'Anterior':SVGO+UT+'<path class="pl" d="M10 12C7 18 8 26 12 31"/></svg>',
+ 'Posterior':SVGO+UT+'<path class="pl" d="M30 12C33 18 32 26 28 31"/></svg>',
+ 'Fundal':SVGO+UT+'<path class="pl" d="M13 9C17 5 23 5 27 9"/></svg>',
+ 'Lateral':SVGO+UT+'<path class="pl" d="M31 13C33 17 33 21 31 25"/><path d="M14 20h6M17 17l3 3-3 3"/></svg>',
+ 'Low-lying':SVGO+UT+'<path class="pl" d="M10 24C11 28 13 31 16 32"/><circle class="os" cx="20" cy="37" r="2"/></svg>',
+ 'Previa':SVGO+UT+'<path class="pl" d="M12 32C16 36 24 36 28 32"/><circle class="os" cx="20" cy="36" r="2"/></svg>',
+ 'Normal':SVGO+'<ellipse cx="20" cy="20" rx="14" ry="16"/><circle cx="20" cy="20" r="6.5" class="fl"/></svg>',
+ 'Polyhydramnios':SVGO+'<ellipse cx="20" cy="20" rx="17" ry="17"/><circle cx="20" cy="20" r="4.5" class="fl"/><path d="M6 12q3-3 6 0M28 28q3 3 6 0M30 10q3-2 5 1"/></svg>',
+ 'Oligohydramnios':SVGO+'<ellipse cx="20" cy="20" rx="10" ry="14"/><circle cx="20" cy="20" r="7.5" class="fl"/></svg>',
+ 'Cephalic':SVGO+'<ellipse cx="20" cy="14" rx="7" ry="9"/><circle cx="20" cy="30" r="6" class="fl"/><path d="M20 38v-1"/></svg>',
+ 'Breech':SVGO+'<circle cx="20" cy="10" r="6" class="fl"/><ellipse cx="20" cy="26" rx="7" ry="9"/></svg>',
+ 'Transverse':SVGO+'<circle cx="9" cy="20" r="6" class="fl"/><ellipse cx="25" cy="20" rx="10" ry="7"/></svg>',
+ 'Variable':SVGO+'<path d="M10 22a10 10 0 0 1 17-8M30 18a10 10 0 0 1-17 8"/><path d="M27 8v6h-6M13 32v-6h6"/></svg>',
+ 'Singleton':SVGO+'<circle cx="20" cy="20" r="9" class="fl"/></svg>',
+ 'Twins':SVGO+'<circle cx="12" cy="20" r="7" class="fl"/><circle cx="28" cy="20" r="7" class="fl"/></svg>',
+ 'Higher order':SVGO+'<circle cx="20" cy="11" r="6" class="fl"/><circle cx="11" cy="28" r="6" class="fl"/><circle cx="29" cy="28" r="6" class="fl"/></svg>'
+};
+const USF={
+ fn:{l:'Fetuses',o:['Singleton','Twins','Higher order']},
+ pr:{l:'Presentation',o:['Cephalic','Breech','Transverse','Variable']},
+ pl:{l:'Placenta',o:['Anterior','Posterior','Fundal','Lateral','Low-lying','Previa']},
+ lq:{l:'Liquor',o:['Normal','Polyhydramnios','Oligohydramnios']}
+};
+const NUM={
+ fhr:{l:'Fetal heart rate',u:'bpm',step:1,start:145,min:60,max:220,typ:'typical 110 – 160',dec:0},
+ bpd:{l:'BPD',u:'cm',step:0.1,start:7.3,min:1,max:12,typ:'typical at 28w 6.9 – 7.7',dec:1},
+ hc:{l:'HC',u:'cm',step:0.1,start:26.4,min:5,max:40,typ:'typical at 28w 25.0 – 27.8',dec:1},
+ ac:{l:'AC',u:'cm',step:0.1,start:23.7,min:5,max:40,typ:'typical at 28w 22.2 – 25.2',dec:1},
+ fl:{l:'FL',u:'cm',step:0.1,start:5.3,min:1,max:9,typ:'typical at 28w 5.0 – 5.7',dec:1},
+ efw:{l:'Estimated fetal weight',u:'g',step:10,start:1210,min:100,max:5500,typ:'typical at 28w 1000 – 1400',dec:0}
+};
+const IMPS=['Single live fetus, cephalic, normal liquor & placenta','Normal fetal growth & biometry for dates','Breech presentation, normal amniotic fluid','Placenta previa suspected, follow-up scan advised'];
+const VISITS=[['v3','21 Oct'],['v2','7 Oct'],['v1','19 Sep']];
+function usState(){return {date:TODAY,gaT:198,fn:'Singleton',pr:'Cephalic',pl:'Anterior',lq:'Normal',fhr:'',bpd:'7.3',hc:'26.4',ac:'',fl:'',efw:'',imp:'',ph:['p1'],lk:'',
+  open:{1:true,2:true,3:true,4:true,5:true},more:false,ex:'fn',auto:true,top:false}}
+const fmtN=(k,x)=>NUM[k].dec?(Math.round(x*10)/10).toFixed(1):String(Math.round(x));
+function stepNum(c,k,dir){const s=c.st,m=NUM[k],cur=parseFloat(s[k]);
+  let v=isNaN(cur)?m.start:cur+dir*m.step;v=Math.min(m.max,Math.max(m.min,v));s[k]=fmtN(k,v);
+  const i=c.q('[data-val="'+k+'"]');if(i)i.value=s[k];const r=c.q('[data-rng="'+k+'"]');if(r)r.value=s[k];if(c.mode==='B'){const l=c.q('#live');if(l)l.innerHTML=liveTxt(s)}}
+function gaBlock(c){const s=c.st,cg=gaT(s.date),w=Math.floor(s.gaT/7),dd=s.gaT%7,diff=s.gaT-cg,thr=redThr(cg);
+  return '<span class="lab">Scan date</span><div class="chips">'+chip('Today',s.date===TODAY,'date','data-v="'+TODAY+'"')+chip('Yesterday',s.date===YEST,'date','data-v="'+YEST+'"')+'<input type="date" class="dpick" data-i="date" value="'+s.date+'" aria-label="Pick scan date"></div>'+
+   '<span class="lab">GA by this scan</span><div class="ga2"><div class="stp"><button type="button" data-a="gaw" data-d="-1" data-hold aria-label="Weeks minus">−</button><span style="min-width:3.2em;text-align:center"><b style="font-size:1.25em">'+w+'</b> <span class="un">weeks</span></span><button type="button" data-a="gaw" data-d="1" data-hold aria-label="Weeks plus">+</button></div>'+
+   '<div class="stp"><button type="button" data-a="gad" data-d="-1" data-hold aria-label="Days minus">−</button><span style="min-width:3.2em;text-align:center"><b style="font-size:1.25em">'+dd+'</b> <span class="un">days</span></span><button type="button" data-a="gad" data-d="1" data-hold aria-label="Days plus">+</button></div></div>'+
+   '<div class="gac" id="gac"><p><b>Calculated GA: '+gaS(cg)+'</b> <span class="sub" style="color:inherit;opacity:.8">from dating</span></p>'+
+   (Math.abs(diff)>thr?'<p>Scan GA differs from the current dating by '+Math.abs(diff)+' days (more than '+thr+'). Consider using the scan due date in Dating.</p>':'')+
+   (s.gaT!==cg?'<button type="button" class="btn full" style="margin-top:4px" data-a="applyga">Apply calculated GA ('+gaS(cg)+')</button>':'')+'</div>'}
+function cardsHtml(s,k,cols){return '<div class="cards">'+USF[k].o.map(o=>'<button type="button" class="cc'+(s[k]===o?' on':'')+'" data-a="set" data-k="'+k+'" data-v="'+esc(o)+'" aria-pressed="'+(s[k]===o)+'">'+(ICO[o]||'')+'<span>'+esc(o)+'</span>'+(s[k]===o?'<i class="tick">✓</i>':'')+'</button>').join('')+'</div>'}
+function stepRow(s,k){const m=NUM[k];
+  return '<div class="brow"><div class="bl"><b>'+m.l+'</b><small>'+m.typ+'</small></div><div class="stp"><button type="button" data-a="step" data-k="'+k+'" data-dir="-1" data-hold aria-label="'+m.l+' minus">−</button><input data-i="num" data-k="'+k+'" data-val="'+k+'" inputmode="decimal" value="'+esc(s[k])+'" placeholder="—" aria-label="'+m.l+'"><span class="un">'+m.u+'</span><button type="button" data-a="step" data-k="'+k+'" data-dir="1" data-hold aria-label="'+m.l+' plus">+</button></div></div>'}
+function impText(s){const fn={Singleton:'Single live fetus',Twins:'Twin pregnancy',['Higher order']:'Higher-order multiple pregnancy'}[s.fn]||'',pr=s.pr?s.pr.toLowerCase()+' presentation':'',pl=s.pl?s.pl.toLowerCase()+' placenta':'',lq=s.lq?s.lq.toLowerCase()+' liquor':'';
+  let t=[fn,pr,pl,lq].filter(Boolean).join(', ');if(s.fhr)t+='. FHR '+s.fhr+' bpm';return t?t+'.':''}
+function liveTxt(s){const t=[s.fn,s.pr,s.pl&&s.pl+' placenta',s.lq&&s.lq+' liquor',s.fhr&&'FHR '+s.fhr,s.bpd&&'BPD '+s.bpd,s.efw&&'EFW '+s.efw+' g'].filter(Boolean);return t.length?esc(t.join(' · ')):'Nothing entered yet'}
+function impBlock(c){const s=c.st;
+  return '<div class="chips">'+chip('✨ From my choices',false,'buildimp','','ok')+IMPS.map((t,i)=>chip(t,s.imp.includes(t),'imp','data-i="'+i+'"')).join('')+'</div><span class="lab">Impression (edit freely)</span><textarea class="txt" data-i="imp" aria-label="Impression" placeholder="Tap a phrase above or type">'+esc(s.imp)+'</textarea>'}
+function photoBlock(s){return '<div class="chips">'+s.ph.map((p,i)=>'<span class="chip" style="padding-right:4px">📷 Photo '+(i+1)+'<button type="button" class="fb" data-a="phx" data-i="'+i+'" aria-label="Remove photo '+(i+1)+'" style="color:var(--err);font-weight:800">✕</button></span>').join('')+(s.ph.length?'':'<span class="empty">No photos attached</span>')+'</div><div class="chips" style="margin-top:10px"><button type="button" class="btn" data-a="ph">📷 Take photo</button><button type="button" class="btn" data-a="ph">Choose image</button></div>'}
+function linkBlock(s){return '<div class="chips">'+chip('None',!s.lk,'link','data-v=""')+VISITS.map(v=>chip(v[1],s.lk===v[0],'link','data-v="'+v[0]+'"')).join('')+'</div>'}
+function usFoot(){return '<button type="button" class="btn" data-a="cancel">Cancel</button><button type="button" class="btn pri grow" data-a="save">Save scan</button>'}
+function secH(c,n,title,sum){const s=c.st,o=s.open[n];return '<button type="button" class="sh" data-a="tog" data-n="'+n+'" aria-expanded="'+o+'"><span>'+n+' · '+title+'</span><em>'+(o?'▲':esc(sum)+' ▼')+'</em></button>'}
+function usA(c){const s=c.st;
+  const S=(n,t,sum,body)=>'<section class="sec">'+secH(c,n,t,sum)+(s.open[n]?'<div class="card">'+body+'</div>':'')+'</section>';
+  return shell('Ultrasound scan','Mona Hassan · Dating GA '+gaS(gaT(s.date)),
+   S(1,'Scan date & GA',fd(s.date)+' · '+gaS(s.gaT),gaBlock(c))+
+   S(2,'Fetus',[s.fn,s.pr].filter(Boolean).join(' · '),'<span class="lab">Number of fetuses</span>'+cardsHtml(s,'fn')+'<span class="lab">Presentation</span>'+cardsHtml(s,'pr'))+
+   S(3,'Placenta & liquor',[s.pl,s.lq].filter(Boolean).join(' · '),'<span class="lab">Placental site</span>'+cardsHtml(s,'pl')+'<span class="lab">Amniotic fluid (liquor)</span>'+cardsHtml(s,'lq'))+
+   S(4,'Heart rate & biometry',['fhr','bpd','hc','ac','fl','efw'].filter(k=>s[k]).length+' of 6 entered','<small>Press + once to start at the typical value for 28w; hold to repeat; tap the number to type.</small>'+['fhr','bpd','hc','ac','fl','efw'].map(k=>stepRow(s,k)).join(''))+
+   S(5,'Impression',s.imp?'written':'empty',impBlock(c))+
+   S(6,'Scan photos',s.ph.length+' attached',photoBlock(s))+
+   '<section class="sec"><button type="button" class="sh" data-a="more" aria-expanded="'+s.more+'"><span>More</span><em>link to visit '+(s.more?'▲':'▼')+'</em></button>'+(s.more?'<div class="card"><span class="lab">Link to visit</span>'+linkBlock(s)+'</div>':'')+'</section>',usFoot())}
+function rowVal(s,k){return s[k]?esc(s[k]):null}
+const BIO=['fhr','bpd','hc','ac','fl','efw'];
+function fRow(c,key,label,ico,val,body){const s=c.st,o=s.ex===key;
+  return '<div class="frow"><button type="button" class="fh" data-a="ex" data-k="'+key+'" aria-expanded="'+o+'">'+ico+'<span class="t"><small>'+label+'</small></span>'+(val?'<span class="val">'+val+'</span>':'<span class="val unset">Select</span>')+'<span aria-hidden="true">'+(o?'▲':'▼')+'</span></button>'+(o?'<div class="fbody">'+body+'</div>':'')+'</div>'}
+function usB(c){const s=c.st,H='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 33C8 25 6 17 10 12C14 8 19 10 20 14C21 10 26 8 30 12C34 17 32 25 20 33Z"/></svg>';
+  const R='<svg viewBox="0 0 40 40" aria-hidden="true"><rect x="5" y="14" width="30" height="12" rx="2"/><path d="M11 14v5M17 14v7M23 14v5M29 14v7"/></svg>';
+  const bio=BIO.map(k=>{const m=NUM[k];return '<div class="brow"><div class="bl"><b>'+m.l+'</b><small>'+m.typ+'</small></div><div class="stp"><button type="button" data-a="step" data-k="'+k+'" data-dir="-1" data-hold aria-label="'+m.l+' minus">−</button><input data-i="num" data-k="'+k+'" data-val="'+k+'" inputmode="decimal" value="'+esc(s[k])+'" placeholder="—" aria-label="'+m.l+'"><span class="un">'+m.u+'</span><button type="button" data-a="step" data-k="'+k+'" data-dir="1" data-hold aria-label="'+m.l+' plus">+</button></div><input type="range" style="flex:1 1 100%" data-i="rng" data-k="'+k+'" data-rng="'+k+'" min="'+m.min+'" max="'+m.max+'" step="'+m.step+'" value="'+(s[k]||m.start)+'" aria-label="'+m.l+' slider"></div>'}).join('');
+  const nb=BIO.filter(k=>s[k]).length;
+  const choice=(k,ico)=>fRow(c,k,USF[k].l,ico,s[k]?esc(s[k]):'','<div class="chips">'+USF[k].o.map(o=>chip(o,s[k]===o,'setadv','data-k="'+k+'" data-v="'+esc(o)+'"')).join('')+'</div>');
+  return shell('Ultrasound scan','Mona Hassan · Dating GA '+gaS(gaT(s.date)),
+   '<div class="live"><div class="box"><small>Report so far</small><span id="live">'+liveTxt(s)+'</span></div></div>'+
+   '<section class="sec" style="margin-top:12px"><button type="button" class="b1 batchx" data-a="top" style="width:100%;min-height:48px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:var(--sf);border:1.5px solid var(--outv);border-radius:14px;padding:6px 12px;color:var(--on);font:inherit;text-align:left;cursor:pointer"><span><b>'+fd(s.date)+'</b></span><span>Scan GA <b>'+gaS(s.gaT)+'</b> <small>(dating '+gaS(gaT(s.date))+')</small></span><span style="margin-left:auto;color:var(--sec);font-weight:700">'+(s.top?'Close ▲':'Edit ▾')+'</span></button>'+(s.top?'<div class="card" style="margin-top:8px">'+gaBlock(c)+'</div>':'')+'</section>'+
+   '<div class="chips" style="margin-top:12px"><button type="button" class="btn sec" data-a="normal">✓ Fill normal scan</button><button type="button" class="btn ghost" data-a="clear">Clear findings</button>'+chip('Auto-next',s.auto,'auto')+'</div>'+
+   '<section class="sec"><h4 class="sh"><span>1 · Findings</span><em>'+['fn','pr','pl','lq'].filter(k=>s[k]).length+' of 4 · '+nb+' of 6 numbers</em></h4><div class="card" style="padding:4px 12px">'+
+   choice('fn',ICO[s.fn||'Singleton'])+choice('pr',ICO[s.pr||'Cephalic'])+choice('pl',ICO[s.pl||'Anterior'])+choice('lq',ICO[s.lq||'Normal'])+
+   fRow(c,'fhr','Fetal heart rate',H,s.fhr?esc(s.fhr)+' bpm':'','<div class="brow" style="border:0"><div class="bl"><small>'+NUM.fhr.typ+'</small></div><div class="stp"><button type="button" data-a="step" data-k="fhr" data-dir="-1" data-hold aria-label="FHR minus">−</button><input data-i="num" data-k="fhr" data-val="fhr" inputmode="decimal" value="'+esc(s.fhr)+'" placeholder="—" aria-label="Fetal heart rate"><span class="un">bpm</span><button type="button" data-a="step" data-k="fhr" data-dir="1" data-hold aria-label="FHR plus">+</button></div><input type="range" style="flex:1 1 100%" data-i="rng" data-k="fhr" data-rng="fhr" min="60" max="220" step="1" value="'+(s.fhr||145)+'" aria-label="FHR slider"></div>')+
+   fRow(c,'bio','Biometry · BPD HC AC FL EFW',R,nb?nb+' of 5 set'.replace(/\d+ of 5/,(BIO.filter(k=>k!=='fhr'&&s[k]).length)+' of 5'):'',bio.replace(/^[\s\S]*?(<div class="brow">)/,'$1').split('</div><div class="brow">').filter((x,i)=>i>0).map((x,i)=>(i?'<div class="brow">':'<div class="brow">')+x).join('').replace(/<div class="brow"><div class="brow">/g,'<div class="brow">') )+
+   '</div></section>'+
+   '<section class="sec"><h4 class="sh"><span>2 · Impression</span></h4><div class="card">'+impBlock(c)+'</div></section>'+
+   '<section class="sec"><button type="button" class="sh" data-a="more" aria-expanded="'+s.more+'"><span>More</span><em>photos ('+s.ph.length+') · link to visit '+(s.more?'▲':'▼')+'</em></button>'+(s.more?'<div class="card"><span class="lab">Scan photos</span>'+photoBlock(s)+'<span class="lab">Link to visit</span>'+linkBlock(s)+'</div>':'')+'</section>',usFoot())}
+function usAct(c,a,d){const s=c.st;
+  switch(a){
+  case 'tog':s.open[d.n]=!s.open[d.n];c.r();break;
+  case 'more':s.more=!s.more;c.r();break;
+  case 'top':s.top=!s.top;c.r();break;
+  case 'date':s.date=d.v;c.r();break;
+  case 'gaw':s.gaT=Math.max(0,s.gaT+7*(+d.d));c.r();break;
+  case 'gad':s.gaT=Math.max(0,s.gaT+(+d.d));c.r();break;
+  case 'applyga':s.gaT=gaT(s.date);c.r();break;
+  case 'set':s[d.k]=d.v;c.r();break;
+  case 'setadv':{s[d.k]=d.v;if(s.auto){const order=['fn','pr','pl','lq','fhr','bio'];const nx=order[order.indexOf(d.k)+1];s.ex=nx||null}else s.ex=null;c.r();break}
+  case 'ex':s.ex=s.ex===d.k?null:d.k;c.r();break;
+  case 'auto':s.auto=!s.auto;c.r();break;
+  case 'normal':s.fn='Singleton';s.pr='Cephalic';s.lq='Normal';s.ex='pl';c.toast('Filled: singleton, cephalic, normal liquor. Placenta and numbers are still yours to set.');c.r();break;
+  case 'clear':['fn','pr','pl','lq'].forEach(k=>s[k]='');BIO.forEach(k=>s[k]='');s.ex='fn';c.r();break;
+  case 'step':stepNum(c,d.k,+d.dir);if(c.mode==='B'){const f=c.q('[data-a="ex"][data-k="'+(d.k==='fhr'?'fhr':'bio')+'"] .val');if(f){f.classList.remove('unset');f.textContent=d.k==='fhr'?s.fhr+' bpm':BIO.filter(k=>k!=='fhr'&&s[k]).length+' of 5 set'}}break;
+  case 'buildimp':s.imp=impText(s);c.toast('Drafted from your choices — edit if needed');c.r();break;
+  case 'imp':{const t=IMPS[+d.i];s.imp=s.imp.includes(t)?s.imp.replace(t,'').trim():(s.imp?s.imp.trim()+' ':'')+t;c.r();break}
+  case 'ph':s.ph.push('p'+(s.ph.length+1));c.toast('Photo added (demo)');c.r();break;
+  case 'phx':s.ph.splice(+d.i,1);c.r();break;
+  case 'link':s.lk=d.v;c.r();break;
+  case 'save':c.toast('Scan saved (demo only)');break;
+  case 'cancel':c.toast('Cancelled (demo only)');break;
+  }}
+function usInp(c,i,d,v){const s=c.st;
+  if(i==='date'){s.date=v||TODAY;c.r()}
+  else if(i==='num'){s[d.k]=v;if(c.mode==='B'){const l=c.q('#live');if(l)l.innerHTML=liveTxt(s)}}
+  else if(i==='rng'){s[d.k]=fmtN(d.k,+v);const n=c.q('[data-val="'+d.k+'"]');if(n)n.value=s[d.k];const l=c.q('#live');if(l)l.innerHTML=liveTxt(s)}
+  else if(i==='imp')s.imp=v;
+}
+const uA=mount('usA',usState(),usA,usAct,usInp);uA.mode='A';
+const sB=usState();sB.fn='';sB.pr='';sB.pl='';sB.lq='';sB.bpd='';sB.hc='';sB.ex='fn';
+const uB=mount('usB',sB,usB,usAct,usInp);uB.mode='B';
+
+/* ================= 3. MEDICATION ================= */
+const FREQ=['Once daily','Twice daily','Three times daily','At bedtime','As needed (PRN)'];
+const ROUTES=['Oral','IM','IV','Topical','Subcutaneous'];
+const DRUGS=[
+ {id:'folic',n:'Folic Acid',d:'5 mg',r:'Oral',f:'Once daily',p:1,doses:['400 mcg','5 mg']},
+ {id:'iron',n:'Ferrous Sulfate',d:'200 mg',r:'Oral',f:'Once daily',p:1,doses:['100 mg','200 mg']},
+ {id:'calc',n:'Calcium Carbonate + D3',d:'500 mg / 400 IU',r:'Oral',f:'Twice daily',p:1,doses:['500 mg / 400 IU','1000 mg / 800 IU']},
+ {id:'mvi',n:'Prenatal Multivitamins',d:'1 tablet',r:'Oral',f:'Once daily',p:1,doses:['1 tablet']},
+ {id:'asa',n:'Low-Dose Aspirin',d:'150 mg',r:'Oral',f:'At bedtime',p:1,doses:['75 mg','150 mg']},
+ {id:'para',n:'Paracetamol',d:'500 mg',r:'Oral',f:'As needed (PRN)',p:0,doses:['500 mg','1 g']},
+ {id:'prog',n:'Micronized Progesterone',d:'200 mg',r:'Oral',f:'At bedtime',p:1,doses:['200 mg','400 mg']},
+ {id:'enox',n:'Enoxaparin (LMWH)',d:'40 mg (4000 IU)',r:'Subcutaneous',f:'Once daily',p:1,doses:['20 mg','40 mg (4000 IU)','60 mg']},
+ {id:'labet',n:'Labetalol',d:'100 mg',r:'Oral',f:'Twice daily',p:0,doses:['100 mg','200 mg','400 mg']},
+ {id:'meth',n:'Methyldopa',d:'250 mg',r:'Oral',f:'Three times daily',p:0,doses:['250 mg','500 mg']},
+ {id:'cefu',n:'Cefuroxime',d:'500 mg',r:'Oral',f:'Twice daily',p:0,doses:['250 mg','500 mg'],recentOnly:true}
+];
+const RECENT=['prog','calc','para','cefu'];
+const drug=id=>DRUGS.find(x=>x.id===id);
+let medN=10;
+function medState(){return {list:[
+  {id:'m1',dr:'folic',n:'Folic Acid',d:'5 mg',r:'Oral',f:'Once daily',s:'2026-05-10',p:1,status:'Active',end:'',nc:false,adv:'',note:''},
+  {id:'m2',dr:'iron',n:'Ferrous Sulfate',d:'200 mg',r:'Oral',f:'Once daily',s:'2026-08-02',p:1,status:'Active',end:'',nc:false,adv:'',note:''},
+  {id:'m3',dr:'asa',n:'Low-Dose Aspirin',d:'150 mg',r:'Oral',f:'At bedtime',s:'2026-07-12',p:1,status:'Active',end:'',nc:false,adv:'',note:''},
+  {id:'m4',dr:'labet',n:'Labetalol',d:'100 mg',r:'Oral',f:'Twice daily',s:'2026-10-18',p:0,status:'Active',end:'',nc:false,adv:'',note:''}],
+  q:'',cur:null,editing:null,stopping:null,all:false,more:false,noteOpen:false,otherDose:false,chg:0,last:null,tab:'common',edit:null,ex:null,fresh:null}}
+const dfrom=(dr,over)=>Object.assign({id:'m'+(++medN),dr:dr.id,n:dr.n,d:dr.d,r:dr.r,f:dr.f,s:TODAY,p:dr.p,status:'Active',end:'',nc:false,adv:'',note:''},over||{});
+const detail=m=>[m.d,m.r,m.f,m.s===TODAY?'from today':'since '+fds(m.s)].join(' · ');
+const tags=m=>(m.p?'<span class="tag">Prophylaxis</span>':'')+(m.nc?'<span class="tag r">Non-compliant</span>':'')+(m.adv?'<span class="tag r">Side effects noted</span>':'');
+function matches(s){const q=s.q.trim().toLowerCase();return DRUGS.filter(x=>x.n.toLowerCase().includes(q))}
+function medSugg(s,mode){const q=s.q.trim();if(!q)return '';const m=matches(s);
+  return '<div style="margin-top:6px">'+m.map(x=>'<button type="button" class="rv" data-a="'+(mode==='A'?'pick':'quick')+'" data-id="'+x.id+'"><span class="a"><b>'+esc(x.n)+'</b><small>'+esc(x.d+' · '+x.r+' · '+x.f)+'</small></span><span class="pill p-n">'+(mode==='A'?'Select':'＋ Add')+'</span></button>').join('')+
+   '<button type="button" class="rv" data-a="'+(mode==='A'?'pick':'quick')+'" data-id="new"><span class="a"><b>Add “'+esc(q)+'” as a new drug</b><small>set dose and frequency yourself</small></span><span class="pill p-n">＋ New</span></button></div>'}
+function updMedSugg(c){const n=c.q('#msugg');if(n)n.innerHTML=medSugg(c.st,c.mode)}
+function startChips(cur,act,extra){return chip('Today',cur.s===TODAY,act,extra+' data-v="'+TODAY+'"')+chip('Yesterday',cur.s===YEST,act,extra+' data-v="'+YEST+'"')+'<input type="date" class="dpick" data-i="'+act+'" '+extra+' value="'+cur.s+'" aria-label="Pick start date">'}
+function medFoot(s){return '<button type="button" class="btn" data-a="cancel">Cancel</button><button type="button" class="btn pri grow" data-a="save">Save'+(s.chg?' · '+s.chg+' change'+(s.chg>1?'s':''):'')+'</button>'}
+function todayList(c,modeB){const s=c.st,act=s.list.filter(m=>m.status==='Active'),stp=s.list.filter(m=>m.status!=='Active');
+  const one=m=>{
+    if(!modeB){
+      return '<div class="mrow"><div class="mm"><b>'+esc(m.n)+'</b><small>'+esc(detail(m))+'</small><div>'+tags(m)+'</div></div><button type="button" class="ib" data-a="edit" data-id="'+m.id+'" aria-label="Edit '+esc(m.n)+'">✎ Edit</button><button type="button" class="ib stop" data-a="stop" data-id="'+m.id+'" aria-label="Stop '+esc(m.n)+'">⏹ Stop</button>'+
+       (s.stopping===m.id?'<div class="panelx" style="flex:1 1 100%"><span class="lab">Stop today because…</span><div class="chips">'+chip('Completed',false,'stopas','data-id="'+m.id+'" data-v="Completed"')+chip('Discontinued',false,'stopas','data-id="'+m.id+'" data-v="Discontinued"')+chip('Keep it',false,'stop','data-id="'+m.id+'"')+'</div></div>':'')+'</div>'}
+    return medCardB(c,m)};
+  return (act.length?act.map(one).join(''):'<div class="empty">No active medication.</div>')+
+   (stp.length?'<span class="lab" style="margin-top:14px">Stopped in this session</span>'+stp.map(m=>'<div class="mrow" style="opacity:.75"><div class="mm"><b>'+esc(m.n)+'</b><small>'+esc(m.status)+' · '+esc(m.d+' · '+m.f)+' · ended today</small></div><button type="button" class="ib" data-a="restart" data-id="'+m.id+'">↺ Undo</button></div>').join(''):'')}
+function rxCard(c){const s=c.st,cu=s.cur,dr=cu.dr&&drug(cu.dr),doses=dr?dr.doses.slice():[];if(cu.d&&!doses.includes(cu.d)&&cu.d!=='')doses.push(cu.d);
+  return '<div class="rx"><div class="rh"><b>'+esc(cu.n)+'</b><button type="button" class="fb" data-a="clearcur" aria-label="Clear">✕</button></div>'+
+   '<small>'+(s.editing?'Editing a medication already on the list':dr?'Usual dose, route and frequency are pre-selected':'New drug — choose or type the dose')+'</small>'+
+   '<span class="lab">Dose</span><div class="chips">'+doses.map(x=>chip(x,cu.d===x&&!s.otherDose,'cd','data-v="'+esc(x)+'"')).join('')+chip('Other…',s.otherDose,'cdother')+'</div>'+
+   (s.otherDose||!doses.length?'<input class="txt" style="margin-top:8px" data-i="dose" value="'+esc(cu.d)+'" placeholder="e.g. 250 mg" aria-label="Dose">':'')+
+   '<span class="lab">Route</span><div class="chips">'+ROUTES.map(x=>chip(x,cu.r===x,'cr','data-v="'+x+'"')).join('')+'</div>'+
+   '<span class="lab">Frequency</span><div class="chips">'+FREQ.map(x=>chip(x,cu.f===x,'cf','data-v="'+x+'"')).join('')+'</div>'+
+   '<span class="lab">Start</span><div class="chips">'+startChips(cu,'cs','')+'</div>'+
+   '<div class="chips" style="margin-top:12px">'+chip('Prophylaxis',!!cu.p,'cp','','ok')+chip(s.noteOpen||cu.note?'Note ✓':'＋ Add a note',s.noteOpen,'cnote')+chip('More options',s.more,'cmore')+'</div>'+
+   (s.noteOpen?'<textarea class="txt" style="margin-top:8px" data-i="cnote" placeholder="Note" aria-label="Note">'+esc(cu.note)+'</textarea>':'')+
+   (s.more?'<div class="panelx" style="margin-top:8px"><span class="lab">End date</span><input type="date" class="dpick" data-i="cend" value="'+cu.end+'" aria-label="End date"><span class="lab">Status</span><div class="chips">'+['Active','Completed','Discontinued'].map(x=>chip(x,cu.status===x,'cst','data-v="'+x+'"')).join('')+'</div><div class="chips" style="margin-top:10px">'+chip('Patient non-compliant',cu.nc,'cnc','','warn')+'</div><span class="lab">Side effects &amp; patient notes</span><textarea class="txt" data-i="cadv" aria-label="Side effects" placeholder="Optional">'+esc(cu.adv)+'</textarea></div>':'')+
+   '<div style="margin-top:12px"><button type="button" class="btn pri full" data-a="addcur">'+(s.editing?'Update medication':'Add to today’s list')+'</button></div></div>'}
+function medA(c){const s=c.st,recent=RECENT.map(drug),common=DRUGS.filter(x=>!x.recentOnly),shown=s.all?common:common.slice(0,6);
+  return shell('Medication','Mona Hassan · '+s.list.filter(m=>m.status==='Active').length+' active today',
+   sec(1,'Add a medication','pick or search',
+    '<input class="search" data-i="mq" value="'+esc(s.q)+'" placeholder="Search or type a drug name" aria-label="Search drugs"><div id="msugg">'+medSugg(s,'A')+'</div>'+
+    '<span class="lab">Recent for this patient</span><div class="chips">'+recent.map(x=>chip(x.n,s.cur&&s.cur.dr===x.id,'pick','data-id="'+x.id+'"')).join('')+'</div>'+
+    '<span class="lab">Common</span><div class="chips">'+shown.map(x=>chip(x.n,s.cur&&s.cur.dr===x.id,'pick','data-id="'+x.id+'"')).join('')+chip(s.all?'Fewer ▲':'All '+common.length+' ▼',false,'all')+'</div>'+
+    (s.cur?rxCard(c):''))+
+   sec(2,'Today’s medications',s.list.filter(m=>m.status==='Active').length+' active',todayList(c,false)),medFoot(s))}
+function medCardB(c,m){const s=c.st,e=s.edit&&s.edit.id===m.id?s.edit.k:null,dr=m.dr&&drug(m.dr),doses=dr?dr.doses.slice():[];if(m.d&&!doses.includes(m.d))doses.push(m.d);
+  const tk=(k,label)=>'<button type="button" class="tok'+(e===k?' on':'')+'" data-a="tok" data-id="'+m.id+'" data-k="'+k+'" aria-expanded="'+(e===k)+'">'+esc(label)+' <i>▾</i></button>';
+  let panel='';
+  if(e==='d')panel='<div class="chips">'+doses.map(x=>chip(x,m.d===x,'md','data-id="'+m.id+'" data-v="'+esc(x)+'"')).join('')+'</div><input class="txt" style="margin-top:8px" data-i="mdose" data-id="'+m.id+'" value="'+esc(m.d)+'" placeholder="Other dose" aria-label="Dose">';
+  if(e==='r')panel='<div class="chips">'+ROUTES.map(x=>chip(x,m.r===x,'mr','data-id="'+m.id+'" data-v="'+x+'"')).join('')+'</div>';
+  if(e==='f')panel='<div class="chips">'+FREQ.map(x=>chip(x,m.f===x,'mf','data-id="'+m.id+'" data-v="'+x+'"')).join('')+'</div>';
+  if(e==='s')panel='<div class="chips">'+startChips(m,'ms','data-id="'+m.id+'"')+'</div>';
+  if(e==='more')panel='<span class="lab">End date</span><input type="date" class="dpick" data-i="mend" data-id="'+m.id+'" value="'+m.end+'" aria-label="End date"><span class="lab">Status</span><div class="chips">'+['Active','Completed','Discontinued'].map(x=>chip(x,m.status===x,'mst','data-id="'+m.id+'" data-v="'+x+'"')).join('')+'</div><div class="chips" style="margin-top:10px">'+chip('Patient non-compliant',m.nc,'mnc','data-id="'+m.id+'"','warn')+'</div><span class="lab">Side effects &amp; patient notes</span><textarea class="txt" data-i="madv" data-id="'+m.id+'" aria-label="Side effects">'+esc(m.adv)+'</textarea><span class="lab">Note</span><textarea class="txt" data-i="mnote" data-id="'+m.id+'" aria-label="Note">'+esc(m.note)+'</textarea>';
+  return '<div class="mcard'+(s.fresh===m.id?' fresh':'')+'"><div class="mh"><b>'+esc(m.n)+'</b><button type="button" class="ib'+(e==='more'?' on':'')+'" data-a="tok" data-id="'+m.id+'" data-k="more" aria-label="More for '+esc(m.n)+'">⋯ More</button><button type="button" class="ib stop" data-a="stop" data-id="'+m.id+'" aria-label="Stop '+esc(m.n)+'">⏹ Stop</button></div>'+
+   '<div class="toks">'+tk('d',m.d||'Dose?')+tk('r',m.r)+tk('f',m.f)+tk('s',m.s===TODAY?'from today':'since '+fds(m.s))+'<button type="button" class="tok pro'+(m.p?' on2':'')+'" data-a="mp" data-id="'+m.id+'" aria-pressed="'+(!!m.p)+'">'+(m.p?'✓ ':'')+'Prophylaxis</button></div>'+
+   (m.nc||m.adv?'<div>'+tags({p:0,nc:m.nc,adv:m.adv})+'</div>':'')+
+   (s.fresh===m.id&&!e?'<small>Added with the usual settings — tap a chip to change it.</small>':'')+
+   (panel?'<div class="panelx">'+panel+'</div>':'')+
+   (s.stopping===m.id?'<div class="panelx"><span class="lab">Stop today because…</span><div class="chips">'+chip('Completed',false,'stopas','data-id="'+m.id+'" data-v="Completed"')+chip('Discontinued',false,'stopas','data-id="'+m.id+'" data-v="Discontinued"')+chip('Keep it',false,'stop','data-id="'+m.id+'"')+'</div></div>':'')+'</div>'}
+function medB(c){const s=c.st,common=DRUGS.filter(x=>!x.recentOnly),lst=s.tab==='recent'?RECENT.map(drug):common,q=s.q.trim(),on=id=>s.list.some(m=>m.dr===id&&m.status==='Active');
+  const tile=x=>'<button type="button" class="tile'+(on(x.id)?' has':'')+'" data-a="quick" data-id="'+x.id+'"><span class="a"><b>'+esc(x.n)+'</b><small>'+esc(x.d+' · '+x.r+' · '+x.f)+'</small></span><i class="plus" aria-hidden="true">'+(on(x.id)?'✓':'＋')+'</i></button>';
+  return shell('Medication','Mona Hassan · '+s.list.filter(m=>m.status==='Active').length+' active today',
+   sec(1,'Tap to add','usual dose, today',
+    '<input class="search" data-i="mq" value="'+esc(s.q)+'" placeholder="Search or type a drug name" aria-label="Search drugs"><div id="msugg">'+medSugg(s,'B')+'</div>'+
+    '<div class="chips" style="margin:10px 0 8px">'+chip('Common',s.tab==='common','mtab','data-v="common"')+chip('Recent for this patient',s.tab==='recent','mtab','data-v="recent"')+'</div>'+
+    (q?'':'<div class="tiles">'+lst.map(tile).join('')+'</div>'))+
+   sec(2,'Today’s medications',s.list.filter(m=>m.status==='Active').length+' active',todayList(c,true)),medFoot(s))}
+function medAct(c,a,d){const s=c.st,mode=c.mode;const find=id=>s.list.find(m=>m.id===id);
+  const chg=()=>{s.chg++};
+  switch(a){
+  case 'pick':{if(d.id==='new'){s.cur={id:null,dr:null,n:s.q.trim(),d:'',r:'Oral',f:'Once daily',s:TODAY,p:0,status:'Active',end:'',nc:false,adv:'',note:''};s.otherDose=true}
+    else{const x=drug(d.id);s.cur=dfrom(x);s.otherDose=false}
+    s.editing=null;s.q='';s.more=false;s.noteOpen=false;c.r();const r=c.q('.rx');if(r)r.scrollIntoView({block:'center'});break}
+  case 'all':s.all=!s.all;c.r();break;
+  case 'clearcur':s.cur=null;s.editing=null;c.r();break;
+  case 'cd':s.cur.d=d.v;s.otherDose=false;c.r();break;
+  case 'cdother':s.otherDose=true;c.r();break;
+  case 'cr':s.cur.r=d.v;c.r();break;
+  case 'cf':s.cur.f=d.v;c.r();break;
+  case 'cs':s.cur.s=d.v;c.r();break;
+  case 'cp':s.cur.p=s.cur.p?0:1;c.r();break;
+  case 'cnote':s.noteOpen=!s.noteOpen;c.r();break;
+  case 'cmore':s.more=!s.more;c.r();break;
+  case 'cst':s.cur.status=d.v;c.r();break;
+  case 'cnc':s.cur.nc=!s.cur.nc;c.r();break;
+  case 'addcur':{const cu=s.cur;if(!cu.d){c.toast('Choose or type a dose first');break}
+    if(s.editing){const m=find(s.editing);Object.assign(m,cu,{id:m.id});c.toast('Updated '+m.n)}
+    else{const m=Object.assign({},cu,{id:'m'+(++medN)});s.list.unshift(m);c.toast('Added '+m.n,true);s.last={t:'add',id:m.id}}
+    chg();s.cur=null;s.editing=null;s.noteOpen=false;s.more=false;c.r();break}
+  case 'edit':{const m=find(d.id);s.cur=Object.assign({},m);s.editing=m.id;s.otherDose=!!m.d&&!(m.dr&&drug(m.dr).doses.includes(m.d));s.more=!!(m.end||m.adv||m.nc);s.noteOpen=!!m.note;s.stopping=null;c.r();c.top();break}
+  case 'stop':s.stopping=s.stopping===d.id?null:d.id;c.r();break;
+  case 'stopas':{const m=find(d.id);m.status=d.v;m.end=TODAY;s.stopping=null;chg();s.last={t:'stop',id:m.id};c.toast(m.n+' marked '+d.v.toLowerCase(),true);c.r();break}
+  case 'restart':{const m=find(d.id);m.status='Active';m.end='';s.chg=Math.max(0,s.chg-1);c.r();break}
+  case 'undo':{const l=s.last;if(!l)break;if(l.t==='add'){s.list=s.list.filter(m=>m.id!==l.id);s.chg=Math.max(0,s.chg-1);s.fresh=null}else{const m=find(l.id);m.status='Active';m.end='';s.chg=Math.max(0,s.chg-1)}s.last=null;c.toast('Undone');c.r();break}
+  case 'mtab':s.tab=d.v;c.r();break;
+  case 'quick':{let x;if(d.id==='new'){x={id:null,n:s.q.trim(),d:'',r:'Oral',f:'Once daily',p:0};}else{x=drug(d.id);
+      if(s.list.some(m=>m.dr===x.id&&m.status==='Active')){c.toast(x.n+' is already on today’s list');break}}
+    const m=dfrom(x.id?x:{id:null,n:x.n,d:'',r:'Oral',f:'Once daily',p:0});m.dr=x.id||null;s.list.unshift(m);s.fresh=m.id;s.last={t:'add',id:m.id};chg();s.q='';s.edit=d.id==='new'?{id:m.id,k:'d'}:null;c.toast('Added '+m.n+' · '+(m.d||'set dose'),true);c.r();c.top();break}
+  case 'tok':s.edit=(s.edit&&s.edit.id===d.id&&s.edit.k===d.k)?null:{id:d.id,k:d.k};s.fresh=s.fresh===d.id?d.id:s.fresh;c.r();break;
+  case 'md':{const m=find(d.id);m.d=d.v;s.edit=null;chg();c.r();break}
+  case 'mr':{const m=find(d.id);m.r=d.v;s.edit=null;chg();c.r();break}
+  case 'mf':{const m=find(d.id);m.f=d.v;s.edit=null;chg();c.r();break}
+  case 'ms':{const m=find(d.id);m.s=d.v;s.edit=null;chg();c.r();break}
+  case 'mp':{const m=find(d.id);m.p=m.p?0:1;chg();c.r();break}
+  case 'mst':{const m=find(d.id);m.status=d.v;if(d.v!=='Active'&&!m.end)m.end=TODAY;chg();c.r();break}
+  case 'mnc':{const m=find(d.id);m.nc=!m.nc;chg();c.r();break}
+  case 'save':c.toast('Medication list saved (demo only)');break;
+  case 'cancel':c.toast('Cancelled (demo only)');break;
+  }}
+function medInp(c,i,d,v){const s=c.st;const find=id=>s.list.find(m=>m.id===id);
+  if(i==='mq'){s.q=v;updMedSugg(c);if(c.mode==='B')c.r2&&0}
+  else if(i==='dose')s.cur.d=v;
+  else if(i==='cnote')s.cur.note=v;
+  else if(i==='cend')s.cur.end=v;
+  else if(i==='cadv')s.cur.adv=v;
+  else if(i==='cs'){s.cur.s=v||TODAY;c.r()}
+  else if(i==='mdose')find(d.id).d=v;
+  else if(i==='ms'){find(d.id).s=v||TODAY;s.edit=null;c.r()}
+  else if(i==='mend')find(d.id).end=v;
+  else if(i==='madv')find(d.id).adv=v;
+  else if(i==='mnote')find(d.id).note=v;
+}
+const mA=mount('medA',medState(),medA,medAct,medInp);mA.mode='A';
+const mB=mount('medB',medState(),medB,medAct,medInp);mB.mode='B';
+
+/* ================= page controls ================= */
+(function(){const fsv=[1,1.3,1.6];let fi=0;const b=document.getElementById('bFs');
+ b.onclick=()=>{fi=(fi+1)%3;document.body.style.setProperty('--fs',fsv[fi]);b.textContent='Text '+Math.round(fsv[fi]*100)+'%'};
+ const th=['auto','light','dark'];let ti=0;const t=document.getElementById('bTh');
+ t.onclick=()=>{ti=(ti+1)%3;if(th[ti]==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',th[ti]);t.textContent='Mode: '+th[ti]}})();
+</script>
+</body>
+</html>

@@ -30,7 +30,6 @@ data class ClinicalMedPreset(
     val dosage: String,
     val route: String,
     val frequency: String,
-    val isProphylaxis: Boolean,
 )
 
 val COMMON_MEDICATION_FREQUENCIES = listOf("Once daily", "Twice daily", "Three times daily", "At bedtime", "As needed (PRN)")
@@ -60,12 +59,12 @@ object ClinicalPresets {
     )
 
     val commonMedPresets = listOf(
-        ClinicalMedPreset("Folic Acid 5mg", "Folic Acid", "5 mg", "Oral", "Once daily", true),
-        ClinicalMedPreset("Iron / Ferrous 200mg", "Ferrous Sulfate", "200 mg", "Oral", "Once daily", true),
-        ClinicalMedPreset("Calcium 500mg + D3", "Calcium + Vitamin D3", "500 mg / 400 IU", "Oral", "Twice daily", true),
-        ClinicalMedPreset("Prenatal Multivitamins", "Prenatal Multivitamins", "1 tablet", "Oral", "Once daily", true),
-        ClinicalMedPreset("Aspirin 150mg", "Low-Dose Aspirin", "150 mg", "Oral", "Once daily at bedtime", true),
-        ClinicalMedPreset("Paracetamol 500mg", "Paracetamol", "500 mg", "Oral", "As needed (PRN)", false),
+        ClinicalMedPreset("Folic Acid 5mg", "Folic Acid", "5 mg", "Oral", "Once daily"),
+        ClinicalMedPreset("Iron / Ferrous 200mg", "Ferrous Sulfate", "200 mg", "Oral", "Once daily"),
+        ClinicalMedPreset("Calcium 500mg + D3", "Calcium + Vitamin D3", "500 mg / 400 IU", "Oral", "Twice daily"),
+        ClinicalMedPreset("Prenatal Multivitamins", "Prenatal Multivitamins", "1 tablet", "Oral", "Once daily"),
+        ClinicalMedPreset("Aspirin 150mg", "Low-Dose Aspirin", "150 mg", "Oral", "Once daily at bedtime"),
+        ClinicalMedPreset("Paracetamol 500mg", "Paracetamol", "500 mg", "Oral", "As needed (PRN)"),
     )
 
     val commonUltrasoundImpressions = listOf(

@@ -8,7 +8,9 @@ import com.sherifradwan.ancnative.model.DemoPatientDating
 import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.model.DemoVisit
+import com.sherifradwan.ancnative.model.MEDICATION_STATUS_NON_COMPLIANT
 import com.sherifradwan.ancnative.model.PatientValidationError
+import com.sherifradwan.ancnative.model.effectiveMedicationStatus
 import com.sherifradwan.ancnative.storage.ClinicalRecordKind
 import com.sherifradwan.ancnative.storage.VaultState
 
@@ -131,7 +133,6 @@ enum class MedicationDraftField {
     END_DATE,
     STATUS,
     NOTES,
-    IS_NON_COMPLIANT,
     ADVERSE_NOTES,
 }
 
@@ -515,7 +516,6 @@ sealed interface AncEvent {
     data class LabDraftChanged(val field: LabDraftField, val value: String) : AncEvent
     data class LabAbnormalChanged(val isAbnormal: Boolean) : AncEvent
     data class MedicationDraftChanged(val field: MedicationDraftField, val value: String) : AncEvent
-    data class MedicationProphylaxisChanged(val isProphylaxis: Boolean) : AncEvent
     data object SubmitDating : AncEvent
     data object SubmitUltrasound : AncEvent
     data object SubmitLab : AncEvent
@@ -604,7 +604,6 @@ object AncReducer {
         is AncEvent.LabDraftChanged,
         is AncEvent.LabAbnormalChanged,
         is AncEvent.MedicationDraftChanged,
-        is AncEvent.MedicationProphylaxisChanged,
         is AncEvent.ScanPhotoImported -> true
         else -> false
     }
@@ -642,7 +641,6 @@ object AncReducer {
             is AncEvent.LabDraftChanged -> updateLabDraft(state, event)
             is AncEvent.LabAbnormalChanged -> updateLabAbnormal(state, event.isAbnormal)
             is AncEvent.MedicationDraftChanged -> updateMedicationDraft(state, event)
-            is AncEvent.MedicationProphylaxisChanged -> updateMedicationProphylaxis(state, event.isProphylaxis)
             is AncEvent.StatusReasonChanged -> state.copy(
                 statusDraft = state.statusDraft?.copy(reason = event.value, errors = emptySet()),
                 savePhase = SavePhase.IDLE,
@@ -1115,22 +1113,14 @@ object AncReducer {
             MedicationDraftField.FREQUENCY -> draft.values.copy(frequency = event.value)
             MedicationDraftField.START_DATE -> draft.values.copy(startDate = event.value)
             MedicationDraftField.END_DATE -> draft.values.copy(endDate = event.value)
-            MedicationDraftField.STATUS -> draft.values.copy(status = event.value)
+            MedicationDraftField.STATUS -> draft.values.copy(
+                status = event.value.ifBlank { "Active" },
+                isNonCompliant = (event.value == MEDICATION_STATUS_NON_COMPLIANT),
+            )
             MedicationDraftField.NOTES -> draft.values.copy(notes = event.value)
-            MedicationDraftField.IS_NON_COMPLIANT -> draft.values.copy(isNonCompliant = event.value.toBooleanStrictOrNull() ?: false)
             MedicationDraftField.ADVERSE_NOTES -> draft.values.copy(adverseNotes = event.value)
         }
         return state.copy(medicationDraft = draft.copy(values = values, errors = emptySet()), savePhase = SavePhase.IDLE, saveError = null)
-    }
-
-    private fun updateMedicationProphylaxis(state: AncState, isProphylaxis: Boolean): AncState {
-        if (state.savePhase.blocksEditing()) return state
-        val draft = state.medicationDraft ?: return state
-        return state.copy(
-            medicationDraft = draft.copy(values = draft.values.copy(isProphylaxis = isProphylaxis), errors = emptySet()),
-            savePhase = SavePhase.IDLE,
-            saveError = null,
-        )
     }
 
     private fun validationFailed(state: AncState, event: AncEvent.PatientValidationFailed): AncState = when (event.editor) {
@@ -1276,19 +1266,22 @@ object AncReducer {
         labName = labName.orEmpty(),
     )
 
-    private fun DemoMedicationRecord.toDraftValues() = MedicationDraftValues(
-        name = name,
-        dosage = dosage,
-        route = route,
-        frequency = frequency,
-        startDate = startDate,
-        endDate = endDate.orEmpty(),
-        status = status,
-        isProphylaxis = isProphylaxis,
-        notes = notes.orEmpty(),
-        isNonCompliant = isNonCompliant,
-        adverseNotes = adverseNotes.orEmpty(),
-    )
+    private fun DemoMedicationRecord.toDraftValues(): MedicationDraftValues {
+        val effStatus = effectiveMedicationStatus(status, isNonCompliant)
+        return MedicationDraftValues(
+            name = name,
+            dosage = dosage,
+            route = route,
+            frequency = frequency,
+            startDate = startDate,
+            endDate = endDate.orEmpty(),
+            status = effStatus.ifBlank { "Active" },
+            isProphylaxis = isProphylaxis,
+            notes = notes.orEmpty(),
+            isNonCompliant = (effStatus == MEDICATION_STATUS_NON_COMPLIANT),
+            adverseNotes = adverseNotes.orEmpty(),
+        )
+    }
 
     private fun AncState.canAccept(token: PendingSaveToken): Boolean =
         (savePhase == SavePhase.IDLE || savePhase == SavePhase.ERROR) && activeEditorSessionId(this) == token.editorSessionId

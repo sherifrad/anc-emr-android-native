@@ -87,11 +87,13 @@ object ClinicalSummaryGenerator {
             sb.appendLine("No medications recorded.")
         } else {
             patient.medications.forEach { m ->
-                val kind = if (m.isProphylaxis) "[Prophylaxis] " else "[Therapeutic] "
-                sb.append("• $kind${m.name} ${m.dosage}")
+                sb.append("• ${m.name} ${m.dosage}")
                 if (!m.route.isNullOrBlank()) sb.append(" via ${m.route}")
                 if (!m.frequency.isNullOrBlank()) sb.append(" (${m.frequency})")
-                sb.append(" - Status: ${m.status}")
+                val status = effectiveMedicationStatus(m.status, m.isNonCompliant)
+                if (status != "Active") {
+                    sb.append(" ($status)")
+                }
                 sb.appendLine()
             }
         }

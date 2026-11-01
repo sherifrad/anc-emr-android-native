@@ -113,7 +113,7 @@ class PatientPrintHtmlEscapeTest {
     private fun med() = DemoMedicationRecord(
         id = "q93-m", patientId = "q93", name = MARKER, dosage = MARKER,
         route = MARKER, frequency = MARKER, startDate = "2026-01-01",
-        endDate = null, status = "active", notes = MARKER, isProphylaxis = true,
+        endDate = null, status = "Active", notes = MARKER, isProphylaxis = true,
     )
 
     private fun prevPreg() = DemoPreviousPregnancy(
@@ -284,7 +284,7 @@ class PatientPrintHtmlEscapeTest {
         assertTrue(countOf("""<table class="clinical-table">""") >= 3)
         assertTrue(html.contains("""<table class="clinical-table mini-table">"""))
         assertTrue(html.contains("""<span class="badge badge-success">Normal Risk</span>"""))
-        assertTrue(html.contains("""<span class="badge badge-teal">Prophylaxis</span>"""))
+        assertTrue(html.contains("""<span class="badge badge-teal">Active</span>"""))
         assertTrue(html.contains("""<div class="photo-badge">📷 1 scan photos attached</div>"""))
         assertTrue(html.contains("""<div class="logo-fallback">DR</div>"""))
         assertTrue(html.contains("""CLINICAL RECORD</div>"""))

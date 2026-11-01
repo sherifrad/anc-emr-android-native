@@ -218,7 +218,7 @@
     <string name="add_medication">Add Medication</string>
     <string name="edit_medication">Edit Medication</string>
     <string name="medication_editor">Medication Record</string>
-    <string name="medication_editor_notice">Medication details and prophylaxis status are tracked explicitly.</string>
+    <string name="medication_editor_notice">Medication details and status are tracked explicitly.</string>
     <string name="medication_name">Medication name</string>
     <string name="dosage">Dosage</string>
     <string name="route">Route</string>
@@ -226,9 +226,6 @@
     <string name="start_date">Start date</string>
     <string name="end_date">End date</string>
     <string name="status">Status</string>
-    <string name="is_prophylaxis">Prophylaxis</string>
-    <string name="prophylaxis_badge">PROPHYLAXIS</string>
-    <string name="therapeutic_badge">THERAPEUTIC</string>
     <string name="clinical_summary">Clinical Summary</string>
     <string name="copy_clinical_summary">Copy Clinical Summary</string>
     <string name="summary_copied">Clinical summary copied to clipboard.</string>
@@ -261,7 +258,6 @@
     <string name="detailed_biometry_toggle">Fetal biometry &amp; heart rate</string>
     <string name="lab_name">Laboratory name</string>
     <string name="add_another_test">Add investigation (+)</string>
-    <string name="patient_non_compliant">Patient non-compliant with medication</string>
     <string name="adverse_effects">Side effects &amp; patient notes</string>
     <string name="add_another_medication">Add medication (+)</string>
     <string name="clinical_attention">Clinical Attention</string>
@@ -286,7 +282,6 @@
     <string name="save_and_add_another_med">+ Save &amp; Add another medication</string>
     <string name="advanced_med_options">Route &amp; End date (optional)</string>
     <string name="patient_previous_meds">Patient\'s previous prescriptions</string>
-    <string name="non_compliant_badge">NON-COMPLIANT</string>
     <string name="days_remaining">%1$d days remaining</string>
     <string name="due_today">Due today</string>
     <string name="days_past_edd">%1$d days past EDD</string>

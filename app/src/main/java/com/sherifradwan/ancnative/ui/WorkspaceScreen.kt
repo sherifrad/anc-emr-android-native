@@ -98,6 +98,8 @@ import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
 import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoMedicationRecord
+import com.sherifradwan.ancnative.model.effectiveMedicationStatus
+import com.sherifradwan.ancnative.model.isOngoingMedication
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
@@ -1357,7 +1359,7 @@ private fun EpisodeOverviewContent(patient: DemoPatient, onEvent: (AncEvent) -> 
                 val latestScan = patient.ultrasoundScans.maxByOrNull { it.date }
                 FactRow(R.string.latest_scan, latestScan?.let { "${it.date} (${it.presentation ?: "Presentation unrecorded"})" })
                 FactRow(R.string.laboratory, "${patient.labInvestigations.size} recorded (${patient.labInvestigations.count { it.isAbnormal }} abnormal)")
-                FactRow(R.string.medications, "${patient.medications.count { it.status == "Active" }} active (${patient.medications.count { it.isProphylaxis }} prophylaxis)")
+                FactRow(R.string.medications, "${patient.medications.count { isOngoingMedication(it.status, it.isNonCompliant) }} active")
 
                 Button(
                     onClick = {
@@ -2132,36 +2134,13 @@ private fun MedicationCard(med: DemoMedicationRecord, canEdit: Boolean, onEdit: 
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(med.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    if (med.isNonCompliant) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.errorContainer,
-                            shape = RoundedCornerShape(4.dp),
-                        ) {
-                            Text(
-                                text = stringResource(R.string.non_compliant_badge),
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            )
-                        }
-                    }
-                    val badgeText = if (med.isProphylaxis) stringResource(R.string.prophylaxis_badge) else stringResource(R.string.therapeutic_badge)
-                    Text(
-                        text = badgeText,
-                        color = if (med.isProphylaxis) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
+                MedicationStatusBadge(effectiveMedicationStatus(med.status, med.isNonCompliant))
             }
             FactRow(R.string.dosage, med.dosage)
             FactRow(R.string.route, med.route)
             FactRow(R.string.frequency, med.frequency)
             FactRow(R.string.start_date, med.startDate)
             FactRow(R.string.end_date, med.endDate)
-            FactRow(R.string.status, med.status)
             if (!med.adverseNotes.isNullOrBlank()) {
                 FactRow(R.string.adverse_effects, med.adverseNotes)
             }

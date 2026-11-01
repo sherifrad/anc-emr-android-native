@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.BpLevel
 import com.sherifradwan.ancnative.model.bpLevel
+import com.sherifradwan.ancnative.model.MEDICATION_STATUS_NON_COMPLIANT
 
 @Composable
 private fun isDarkSurface(): Boolean = MaterialTheme.colorScheme.surface.luminance() < 0.5f
@@ -260,6 +261,39 @@ fun ClinicalRiskBadge(isHighRisk: Boolean, modifier: Modifier = Modifier) {
             showWarningIcon = false,
             isError = false,
             modifier = modifier,
+        )
+    }
+}
+
+/**
+ * Medication status badge (Q205):
+ * Active: teal (tertiaryContainer / onTertiaryContainer)
+ * Completed: neutral grey (surfaceVariant / onSurfaceVariant)
+ * Discontinued: rose (secondaryContainer / onSecondaryContainer)
+ * Patient non-compliant: error (errorContainer / onErrorContainer)
+ * Uses theme tokens only; contrast >= 4.5:1 in light and dark.
+ */
+@Composable
+fun MedicationStatusBadge(status: String, modifier: Modifier = Modifier) {
+    val (containerColor, contentColor) = when (status) {
+        "Active" -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
+        "Completed" -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
+        "Discontinued" -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
+        MEDICATION_STATUS_NON_COMPLIANT -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
+        else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Surface(
+        shape = RoundedCornerShape(6.dp),
+        color = containerColor,
+        modifier = modifier.testTag("medicationStatusBadge"),
+    ) {
+        Text(
+            text = status,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = contentColor,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
         )
     }
 }

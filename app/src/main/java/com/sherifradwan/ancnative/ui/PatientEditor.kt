@@ -502,6 +502,7 @@ internal fun ChoiceGroup(
     enabled: Boolean,
     tagPrefix: String,
     onSelected: (String) -> Unit,
+    includeUnknown: Boolean = true,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(label, style = MaterialTheme.typography.titleMedium)
@@ -509,7 +510,7 @@ internal fun ChoiceGroup(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            listOf("").plus(choices).forEachIndexed { index, value ->
+            (if (includeUnknown) listOf("").plus(choices) else choices).forEachIndexed { index, value ->
                 FilterChip(
                     selected = selected == value,
                     onClick = { onSelected(value) },

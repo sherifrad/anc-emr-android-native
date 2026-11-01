@@ -1,7 +1,6 @@
 package com.sherifradwan.ancnative.ui
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,7 +23,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -48,6 +46,7 @@ import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.ClinicalVocabulary
 import com.sherifradwan.ancnative.model.codex.ClinicalCodexRepository
 import com.sherifradwan.ancnative.model.codex.MedicationCodexItem
+import com.sherifradwan.ancnative.model.effectiveMedicationStatus
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
@@ -71,8 +70,8 @@ fun MedicationEditor(
     var showAdvanced by remember {
         mutableStateOf(
             draft.values.endDate.isNotEmpty() ||
-                (draft.values.route.isNotEmpty() && draft.values.route != "Oral") ||
-                (draft.values.status.isNotEmpty() && draft.values.status != "Active"),
+                draft.values.adverseNotes.isNotEmpty() ||
+                draft.values.notes.isNotEmpty(),
         )
     }
 
@@ -88,7 +87,7 @@ fun MedicationEditor(
         val codexRepo = remember { ClinicalCodexRepository.getInstance(context) }
         val codexMedItems by codexRepo.medicationCodexItems.collectAsState()
 
-        // CARD 1: MEDICATION SELECTION, DOSAGE & TIMING
+        // SINGLE CARD: MEDICATION (Design B)
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -101,7 +100,7 @@ fun MedicationEditor(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "1. Medication Details, Dosage & Timing",
+                    text = "Medication",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -118,7 +117,6 @@ fun MedicationEditor(
                             onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.DOSAGE, preset.dosage))
                             onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ROUTE, preset.route))
                             onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.FREQUENCY, preset.frequency))
-                            onEvent(AncEvent.MedicationProphylaxisChanged(preset.isProphylaxis))
                             if (draft.values.startDate.isEmpty()) {
                                 onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.START_DATE, java.time.LocalDate.now().toString()))
                             }
@@ -127,7 +125,7 @@ fun MedicationEditor(
                     tagPrefix = "medPreset",
                 )
 
-                // Save current medication to Codex if it's new and not in Codex
+                // Save current medication to my list if it's new
                 val trimmedMedName = draft.values.name.trim()
                 val isAlreadyInMedCodex = codexMedItems.any { it.name.equals(trimmedMedName, ignoreCase = true) }
                 if (trimmedMedName.isNotBlank() && !isAlreadyInMedCodex) {
@@ -142,7 +140,7 @@ fun MedicationEditor(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                text = "New medication: Save to Clinic Medication Codex?",
+                                text = "New medication: add to my medication list?",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                             )
@@ -154,12 +152,12 @@ fun MedicationEditor(
                                             dosage = draft.values.dosage.trim(),
                                             route = draft.values.route.ifBlank { "Oral" },
                                             frequency = draft.values.frequency.ifBlank { "Once daily" },
-                                            isProphylaxis = draft.values.isProphylaxis,
+                                            isProphylaxis = false,
                                             isCustom = true,
                                         ),
                                     )
                                 },
-                                modifier = Modifier.testTag("saveToMedCodexButton"),
+                                modifier = Modifier.minimumTouchTarget().testTag("saveToMedCodexButton"),
                             ) {
                                 Icon(
                                     Icons.Default.Add,
@@ -167,7 +165,7 @@ fun MedicationEditor(
                                     modifier = Modifier.size(16.dp),
                                 )
                                 Spacer(Modifier.width(4.dp))
-                                Text("Save to Codex")
+                                Text("Add to my list")
                             }
                         }
                     }
@@ -187,9 +185,8 @@ fun MedicationEditor(
                                 onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.DOSAGE, prior.dosage))
                                 onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.FREQUENCY, prior.frequency))
                                 onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ROUTE, prior.route))
-                                onEvent(AncEvent.MedicationProphylaxisChanged(prior.isProphylaxis))
-                                // Safety Reset Rule: Wipes non-compliance, adverse notes, end date, and notes
-                                onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.IS_NON_COMPLIANT, "false"))
+                                // Safety Reset Rule: sets status "Active", wipes adverse notes, end date, and notes
+                                onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, "Active"))
                                 onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ADVERSE_NOTES, ""))
                                 onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.END_DATE, ""))
                                 onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.NOTES, ""))
@@ -235,39 +232,17 @@ fun MedicationEditor(
                     }
                 }
 
-                // Side-by-side: Frequency & Start Date
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Box(modifier = Modifier.weight(1.1f)) {
-                        EditorField(
-                            value = draft.values.frequency,
-                            onValueChange = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.FREQUENCY, it)) },
-                            label = stringResource(R.string.frequency),
-                            tag = "medFrequency",
-                            enabled = enabled,
-                            modifier = Modifier.focusRequester(frequencyFocusRequester),
-                            error = draft.errors.contains(ClinicalValidationError.REQUIRED_FREQUENCY),
-                            singleLine = true,
-                            keyboardType = KeyboardType.Text,
-                        )
-                    }
-                    Box(modifier = Modifier.weight(1f)) {
-                        ClinicalDateField(
-                            value = draft.values.startDate,
-                            onValueChange = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.START_DATE, it)) },
-                            label = stringResource(R.string.start_date),
-                            tag = "medStartDate",
-                            enabled = enabled,
-                            error = draft.errors.contains(ClinicalValidationError.REQUIRED_DATE) ||
-                                draft.errors.contains(ClinicalValidationError.INVALID_DATE),
-                            showTodayButton = true,
-                        )
-                    }
-                }
+                // Route Choice
+                ChoiceGroup(
+                    label = stringResource(R.string.route),
+                    selected = draft.values.route.ifEmpty { "Oral" },
+                    choices = ClinicalVocabulary.medicationRoutes.toList(),
+                    enabled = enabled,
+                    tagPrefix = "medRouteChoice",
+                    onSelected = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ROUTE, it)) },
+                )
 
-                // Frequency shortcuts
+                // Frequency presets & custom input
                 QuickPresetChips(
                     title = stringResource(R.string.frequency),
                     items = COMMON_MEDICATION_FREQUENCIES,
@@ -275,29 +250,43 @@ fun MedicationEditor(
                     onSelect = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.FREQUENCY, it)) },
                     tagPrefix = "freqPreset",
                 )
-            }
-        }
 
-        // CARD 2: ROUTE, ADVANCED OPTIONS & ADHERENCE
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(
-                    text = "2. Administration Route & Adherence Options",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
+                EditorField(
+                    value = draft.values.frequency,
+                    onValueChange = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.FREQUENCY, it)) },
+                    label = stringResource(R.string.frequency),
+                    tag = "medFrequency",
+                    enabled = enabled,
+                    modifier = Modifier.focusRequester(frequencyFocusRequester),
+                    error = draft.errors.contains(ClinicalValidationError.REQUIRED_FREQUENCY),
+                    singleLine = true,
+                    keyboardType = KeyboardType.Text,
                 )
 
-                // Collapsible Advanced Section: Route (default Oral), End Date, Status (default Active)
+                // Start date with today button
+                ClinicalDateField(
+                    value = draft.values.startDate,
+                    onValueChange = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.START_DATE, it)) },
+                    label = stringResource(R.string.start_date),
+                    tag = "medStartDate",
+                    enabled = enabled,
+                    error = draft.errors.contains(ClinicalValidationError.REQUIRED_DATE) ||
+                        draft.errors.contains(ClinicalValidationError.INVALID_DATE),
+                    showTodayButton = true,
+                )
+
+                // Status ChoiceGroup showing exactly the four statuses
+                ChoiceGroup(
+                    label = stringResource(R.string.status),
+                    selected = effectiveMedicationStatus(draft.values.status.ifEmpty { "Active" }, draft.values.isNonCompliant),
+                    choices = ClinicalVocabulary.medicationStatuses,
+                    enabled = enabled,
+                    tagPrefix = "medStatusChoice",
+                    onSelected = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, it)) },
+                    includeUnknown = false,
+                )
+
+                // Collapsible "More" section
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
@@ -310,25 +299,19 @@ fun MedicationEditor(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                text = stringResource(R.string.advanced_med_options) + if (!showAdvanced) " (Route: ${draft.values.route.ifEmpty { "Oral" }})" else "",
+                                text = "More (End date, Adverse effects & Notes)",
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.primary,
                             )
-                            TextButton(onClick = { showAdvanced = !showAdvanced }) {
+                            TextButton(
+                                onClick = { showAdvanced = !showAdvanced },
+                                modifier = Modifier.minimumTouchTarget(),
+                            ) {
                                 Text(if (showAdvanced) "▲" else "▼")
                             }
                         }
 
                         if (showAdvanced) {
-                            ChoiceGroup(
-                                label = stringResource(R.string.route),
-                                selected = draft.values.route.ifEmpty { "Oral" },
-                                choices = ClinicalVocabulary.medicationRoutes.toList(),
-                                enabled = enabled,
-                                tagPrefix = "medRouteChoice",
-                                onSelected = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ROUTE, it)) },
-                            )
-
                             ClinicalDateField(
                                 value = draft.values.endDate,
                                 onValueChange = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.END_DATE, it)) },
@@ -339,127 +322,26 @@ fun MedicationEditor(
                                 showTodayButton = false,
                             )
 
-                            ChoiceGroup(
-                                label = stringResource(R.string.status),
-                                selected = draft.values.status.ifEmpty { "Active" },
-                                choices = ClinicalVocabulary.medicationStatuses.toList(),
+                            EditorField(
+                                value = draft.values.adverseNotes,
+                                onValueChange = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ADVERSE_NOTES, it)) },
+                                label = stringResource(R.string.adverse_effects),
+                                tag = "medAdverseNotes",
                                 enabled = enabled,
-                                tagPrefix = "medStatusChoice",
-                                onSelected = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, it)) },
+                                singleLine = false,
+                            )
+
+                            EditorField(
+                                value = draft.values.notes,
+                                onValueChange = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.NOTES, it)) },
+                                label = stringResource(R.string.notes),
+                                tag = "medNotes",
+                                enabled = enabled,
+                                singleLine = false,
                             )
                         }
                     }
                 }
-
-                // Prophylaxis Switch Card
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(enabled = enabled) { onEvent(AncEvent.MedicationProphylaxisChanged(!draft.values.isProphylaxis)) },
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (draft.values.isProphylaxis) {
-                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-                        } else {
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-                        },
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp).fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.is_prophylaxis),
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = if (draft.values.isProphylaxis) FontWeight.Bold else FontWeight.Normal,
-                        )
-                        Switch(
-                            checked = draft.values.isProphylaxis,
-                            onCheckedChange = { onEvent(AncEvent.MedicationProphylaxisChanged(it)) },
-                            enabled = enabled,
-                            modifier = Modifier.testTag("medProphylaxis"),
-                        )
-                    }
-                }
-
-                // Compliance Switch Card
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(enabled = enabled) {
-                            onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.IS_NON_COMPLIANT, (!draft.values.isNonCompliant).toString()))
-                        },
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (draft.values.isNonCompliant) {
-                            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
-                        } else {
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-                        },
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp).fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.patient_non_compliant),
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = if (draft.values.isNonCompliant) FontWeight.Bold else FontWeight.Normal,
-                            color = if (draft.values.isNonCompliant) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-                        )
-                        Switch(
-                            checked = draft.values.isNonCompliant,
-                            onCheckedChange = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.IS_NON_COMPLIANT, it.toString())) },
-                            enabled = enabled,
-                            modifier = Modifier.testTag("medNonCompliant"),
-                        )
-                    }
-                }
-            }
-        }
-
-        // CARD 3: ADVERSE EFFECTS & CLINICAL NOTES
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(
-                    text = "3. Adverse Effects & Clinical Notes",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-
-                // Adverse effects & reported side notes
-                EditorField(
-                    value = draft.values.adverseNotes,
-                    onValueChange = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ADVERSE_NOTES, it)) },
-                    label = stringResource(R.string.adverse_effects),
-                    tag = "medAdverseNotes",
-                    enabled = enabled,
-                    singleLine = false,
-                )
-
-                // General notes
-                EditorField(
-                    value = draft.values.notes,
-                    onValueChange = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.NOTES, it)) },
-                    label = stringResource(R.string.notes),
-                    tag = "medNotes",
-                    enabled = enabled,
-                    singleLine = false,
-                )
             }
         }
 

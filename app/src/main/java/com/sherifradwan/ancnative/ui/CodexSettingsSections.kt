@@ -738,7 +738,7 @@ fun MedicationCodexSettingsSection(
         ) {
             Column(modifier = Modifier.weight(1f, fill = false)) {
                 Text(
-                    text = "Medication Codex & Protocols",
+                    text = "My medication list",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -785,7 +785,7 @@ fun MedicationCodexSettingsSection(
                 ) {
                     Text(
                         text = if (searchQuery.isNotBlank()) "No matching results for: $searchQuery"
-                        else "Medication Codex directory is currently empty.",
+                        else "Medication list is currently empty.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -839,20 +839,6 @@ fun MedicationCodexSettingsSection(
                                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                         )
                                     }
-
-                                    if (med.isProphylaxis) {
-                                        Surface(
-                                            shape = RoundedCornerShape(6.dp),
-                                            color = MaterialTheme.colorScheme.tertiaryContainer,
-                                        ) {
-                                            Text(
-                                                text = "Prophylactic",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                            )
-                                        }
-                                    }
                                 }
 
                                 if (med.instructions.isNotBlank()) {
@@ -888,7 +874,7 @@ fun MedicationCodexSettingsSection(
         ) {
             Icon(Icons.Default.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(4.dp))
-            Text("Reset Clinic Medication Codex to Defaults")
+            Text("Reset medication list to defaults")
         }
     }
 
@@ -931,7 +917,7 @@ fun MedicationCodexSettingsSection(
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
-            title = { Text("Reset to Default Medication Codex") },
+            title = { Text("Reset to default medications") },
             text = { Text("This will restore the medication catalog to standard clinical maternal care guidelines.") },
             confirmButton = {
                 Button(
@@ -961,13 +947,12 @@ private fun AddMedicationDialog(
     var dosage by remember { mutableStateOf("") }
     var selectedRoute by remember { mutableStateOf(ClinicalVocabulary.medicationRoutes.first()) }
     var frequency by remember { mutableStateOf("Once daily") }
-    var isProphylaxis by remember { mutableStateOf(true) }
     var instructions by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add New Medication to Codex") },
+        title = { Text("Add new medication") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(
@@ -1028,21 +1013,6 @@ private fun AddMedicationDialog(
                     }
                 }
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(
-                        text = "Pregnancy Prophylactic",
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    Switch(
-                        checked = isProphylaxis,
-                        onCheckedChange = { isProphylaxis = it },
-                    )
-                }
-
                 OutlinedTextField(
                     value = instructions,
                     onValueChange = { instructions = it },
@@ -1074,7 +1044,7 @@ private fun AddMedicationDialog(
                                 dosage = dosage.trim(),
                                 route = selectedRoute,
                                 frequency = frequency.trim(),
-                                isProphylaxis = isProphylaxis,
+                                isProphylaxis = false,
                                 instructions = instructions.trim(),
                                 isCustom = true,
                             )
@@ -1083,7 +1053,7 @@ private fun AddMedicationDialog(
                 },
                 modifier = Modifier.testTag("saveMedCodexConfirmBtn"),
             ) {
-                Text("Save to Codex")
+                Text("Add to my list")
             }
         },
         dismissButton = {

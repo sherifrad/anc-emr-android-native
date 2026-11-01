@@ -1,0 +1,20 @@
+[
+ {
+  "spec": "claude:claude-sonnet-5-5",
+  "status": "failed",
+  "seconds": 594.9,
+  "chars": 59,
+  "ok": false,
+  "why": "relay status failed: []",
+  "quota": false
+ },
+ {
+  "spec": "agy:gemini-3.8-flash-medium",
+  "status": "failed",
+  "seconds": 458.5,
+  "chars": 0,
+  "ok": false,
+  "why": "relay status failed: ule under permissions.allow in settings.json (e.g. write_file(<target>)). Alternatively, re-run with --dangerously-skip-permissions to auto-approve all tools.']",
+  "quota": false
+ }
+]

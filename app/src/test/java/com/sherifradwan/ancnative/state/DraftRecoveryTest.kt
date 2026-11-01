@@ -244,7 +244,6 @@ class DraftRecoveryTest {
 
         val medState = withPrompt(medication(), mapOf("name" to "stored"))
         assertEquals(medState, AncReducer.reduce(medState, AncEvent.MedicationDraftChanged(MedicationDraftField.NAME, "typed")))
-        assertEquals(medState, AncReducer.reduce(medState, AncEvent.MedicationProphylaxisChanged(true)))
     }
 
     @Test

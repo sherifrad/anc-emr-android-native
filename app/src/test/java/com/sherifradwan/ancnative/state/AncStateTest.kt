@@ -313,9 +313,7 @@ class AncStateTest {
 
         state = state.reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.NAME, "Folic Acid"))
         state = state.reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.DOSAGE, "400 mcg"))
-        state = state.reduce(AncEvent.MedicationProphylaxisChanged(true))
         assertTrue(state.medicationDraft?.isDirty == true)
-        assertTrue(state.medicationDraft?.values?.isProphylaxis == true)
         assertEquals("Folic Acid", state.medicationDraft?.values?.name)
 
         val discardMed = state.reduce(AncEvent.Back)
@@ -442,7 +440,7 @@ class AncStateTest {
             .reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.NAME, "Ferrous Sulfate"))
             .reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.DOSAGE, "200 mg"))
             .reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.FREQUENCY, "Once daily"))
-            .reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.IS_NON_COMPLIANT, "true"))
+            .reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, "Patient non-compliant"))
             .reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.ADVERSE_NOTES, "Causes nausea"))
 
         assertTrue(updated.medicationDraft!!.isDirty)

@@ -1,0 +1,46 @@
+### UI/UX Design Mock-ups Complete (Lane D2)
+
+All requested clickable HTML mock-ups and clinical review notes have been generated and saved directly in `.agents/pipeline/design/d2/`:
+- [index.html](file:///Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/design/d2/index.html) *(101 KB, self-contained, inline CSS/JS, 48 dp touch targets, system fonts, light & dark mode)*
+- [NOTES.md](file:///Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/design/d2/NOTES.md) *(Comparative review table, field audit matrix, and clinical questions)*
+
+---
+
+### 1. List of Screens Completed
+
+1. **Obstetric History Section** ([`ProfileScreen.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt#L660-L775), [`WorkspaceScreen.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt), [`ObstetricHistory.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/model/ObstetricHistory.kt))
+   - **Option A:** Interactive Chronological Timeline with direct `+` / `−` GPA steppers and 1-tap "Primigravida" reset.
+   - **Option B:** Modular Clinical Cards with common GPA preset chips (`G1P0`, `G2P1`, `G3P2`) and a card per prior pregnancy.
+
+2. **Previous Pregnancies List & Rapid Editor** ([`PreviousPregnancyEditor.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/PreviousPregnancyEditor.kt))
+   - **Option A:** Outcome-Driven Tap Matrix: 6 primary outcome chips (`Live Birth - CS`, `Live Birth - Vaginal`, `Miscarriage`, `Stillbirth`, `Termination`, `Hysterotomy`), dynamic sub-branches, and year stepper.
+   - **Option B:** Hierarchical 3-Step Flow with high-contrast label/value hierarchy and 1-tap complication tags (`Uneventful`, `+ PPH`, `+ Pre-eclampsia`).
+
+3. **New Patient Form: Pregnancy Dating Engine** ([`DatingEditor.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt), [`IntakeDatingRule.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt), [`GestationalAgeEngine.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt))
+   - **Option A:** Multi-Method Comparator: prominent tabs for LMP, IVF (day 3/5/6 embryo), 1st-trimester scan (CRL mm), or Agreed EDD; live Gestational Age & EDD calculation banner; side-by-side discrepancy reconciliation with a 1-tap "Use Scan as Agreed" button.
+   - **Option B:** Unified Grid Intake showing all methods side-by-side with direct "Use this one" action stamps on every row.
+
+4. **Clinical Attention Card** ([`ProfileScreen.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt#L445-L476), [`PatientListScreen.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt#L801-L852))
+   - **Option A:** Tiered Badges with Tap-to-Expand Accordion: displays first alert + `+ 2 more ▾` chip; un-collapsible crimson banner for Severe BP (`≥ 160/110`); compact list card chip.
+   - **Option B:** Stacked Alert Drawer separating Critical Vitals (Tier 1, Red) from Clinical Attention Notes (Tier 2, Amber) with individual delete buttons.
+
+5. **Delivery Plan Editor** ([`WorkspaceScreen.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt#L1385-L1500), [`DeliveryNotesParser.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/DeliveryNotesParser.kt))
+   - **Option A:** Structured Protocol Form: fixes the pencil button bug; mode chips, target gestation stepper (`38w 4d`), hospital selector, pre-op safety checklist (2 Units PRBCs, Pediatrician, Spinal), consultant, and fee stepper.
+   - **Option B:** Dual-Tab Care Pathway separating Antepartum Planning from Postpartum Metrics (birth weight, APGAR scores, recovery lochia notes).
+
+---
+
+### 2. Anything Could Not Do
+**None.** All 5 assigned screens, both Option A and Option B, all existing clinical fields, interactive components, responsive styling, and review notes were fully completed without modifying any production application source code.
+
+---
+
+### 3. Recommended Options & Clinical Rationale
+
+| Screen | Recommended | Clinical Rationale for Dr. Sherif Radwan |
+| :--- | :---: | :--- |
+| **1. Obstetric History** | **Option A** | Obstetricians evaluate prior history chronologically; the interactive timeline provides delivery years, routes, and weights at a glance while direct `+`/`−` steppers eliminate keyboard typing during intake. |
+| **2. Prior Pregnancies Editor** | **Option A** | Outcome drives 95% of clinical documentation. Selecting `Live Birth (CS)` sets both outcome and delivery route in a single touch, while selecting `Miscarriage` opens loss management chips without showing irrelevant infant fields. |
+| **3. Pregnancy Dating Engine** | **Option A** | Progressive disclosure presents only the inputs relevant to the chosen dating method. When LMP and ultrasound disagree by >7 days, the side-by-side reconciliation card and 1-tap "Use Scan as Agreed" button prevent dating errors without manual arithmetic. |
+| **4. Clinical Attention Card** | **Option A** | Prevents visual fatigue by showing the primary alert with a clean `+ 2 more` expansion badge, while keeping life-threatening severe blood pressure (crimson) visually distinct from routine clinical attention notes (amber). |
+| **5. Delivery Plan Editor** | **Option A** | Solves the navigation bug with a dedicated pre-operative protocol form. Standardizing blood crossmatch units, pediatrician standby, target gestation, and hospital fees into rapid chips ensures patient safety without text-entry exhaustion. |

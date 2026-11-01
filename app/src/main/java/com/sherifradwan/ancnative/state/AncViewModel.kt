@@ -904,7 +904,6 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
         is AncEvent.LabDraftChanged,
         is AncEvent.LabAbnormalChanged,
         is AncEvent.MedicationDraftChanged,
-        is AncEvent.MedicationProphylaxisChanged,
         is AncEvent.StartDatingEditor,
         is AncEvent.StartUltrasoundEditor,
         is AncEvent.StartLabEditor,
