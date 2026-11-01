@@ -189,6 +189,12 @@
     <string name="ultrasound_saved">Ultrasound scan saved.</string>
     <string name="ultrasound_editor">Ultrasound scan editor</string>
     <string name="ultrasound_editor_notice">Ultrasound findings are recorded factually. Controlled clinical vocabularies are enforced.</string>
+    <string name="ultrasound_report_so_far">Report so far</string>
+    <string name="ultrasound_nothing_chosen_yet">Nothing chosen yet</string>
+    <string name="fill_normal_scan">Fill normal scan</string>
+    <string name="clear_findings">Clear findings</string>
+    <string name="impression_from_choices">From my choices</string>
+    <string name="ultrasound_section_fetus_placenta_liquor">2. Fetus, Placenta &amp; Amniotic Fluid</string>
     <string name="active_pregnancy_episode">Active pregnancy episode</string>
     <string name="milestones">Clinical milestones</string>
     <string name="first_trimester">First trimester (&lt; 14w)</string>

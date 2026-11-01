@@ -1,0 +1,2 @@
+ROLE: CORE BUILDER for ROUND 4b. Implement Q210, Q211, Q212. ALLOWED files: app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt.
+Add the two functions and the three constants once, in ClinicalModels.kt.  Do NOT delete commonUltrasoundImpressions (the UI lane does). Smallest edits; no tests or checks. Run ./gradlew --offline :app:compileDebugKotlin, the new unit test when it exists, python3 .agents/checks/check_r4b.py (UI-dependent S may fail). Report real results.

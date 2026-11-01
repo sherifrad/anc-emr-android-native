@@ -45,7 +45,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.ui.platform.LocalContext
 import com.sherifradwan.ancnative.model.ClinicalVocabulary
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
+import com.sherifradwan.ancnative.model.NORMAL_AMNIOTIC_FLUID
+import com.sherifradwan.ancnative.model.NORMAL_FETAL_NUMBER
+import com.sherifradwan.ancnative.model.NORMAL_PRESENTATION
+import com.sherifradwan.ancnative.model.mergeImpression
 import com.sherifradwan.ancnative.model.redatingAdvice
+import com.sherifradwan.ancnative.model.ultrasoundImpressionFromChoices
 import kotlin.math.abs
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
@@ -91,6 +96,78 @@ fun UltrasoundEditor(
         tag = "ultrasoundEditor",
     ) {
         GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
+
+        // CARD 0: REPORT SO FAR / LIVE SUMMARY
+        val liveReport = ultrasoundImpressionFromChoices(
+            draft.values.fetalNumber,
+            draft.values.presentation,
+            draft.values.placentalSite,
+            draft.values.amnioticFluid,
+        )
+        val reportDisplayText = liveReport.ifBlank { stringResource(R.string.ultrasound_nothing_chosen_yet) }
+
+        Card(
+            modifier = Modifier.fillMaxWidth().testTag("ultrasoundLiveSummary"),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.ultrasound_report_so_far),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    text = reportDisplayText,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (liveReport.isBlank()) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                )
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            if (draft.values.fetalNumber.isBlank()) {
+                                onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.FETAL_NUMBER, NORMAL_FETAL_NUMBER))
+                            }
+                            if (draft.values.presentation.isBlank()) {
+                                onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.PRESENTATION, NORMAL_PRESENTATION))
+                            }
+                            if (draft.values.amnioticFluid.isBlank()) {
+                                onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.AMNIOTIC_FLUID, NORMAL_AMNIOTIC_FLUID))
+                            }
+                        },
+                        enabled = enabled,
+                        modifier = Modifier.minimumTouchTarget().testTag("fillNormalScan"),
+                    ) {
+                        Text(stringResource(R.string.fill_normal_scan))
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.FETAL_NUMBER, ""))
+                            onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.PRESENTATION, ""))
+                            onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.PLACENTAL_SITE, ""))
+                            onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.AMNIOTIC_FLUID, ""))
+                        },
+                        enabled = enabled,
+                        modifier = Modifier.minimumTouchTarget().testTag("clearFindings"),
+                    ) {
+                        Text(stringResource(R.string.clear_findings))
+                    }
+                }
+            }
+        }
 
         // CARD 1: SCAN TIMING & GESTATIONAL AGE
         Card(
@@ -292,7 +369,7 @@ fun UltrasoundEditor(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "2. Fetus, Placenta & Amniotic Fluid",
+                    text = stringResource(R.string.ultrasound_section_fetus_placenta_liquor),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -597,13 +674,25 @@ fun UltrasoundEditor(
                     singleLine = false,
                 )
 
-                QuickPresetChips(
-                    title = stringResource(R.string.scan_impression),
-                    items = ClinicalPresets.commonUltrasoundImpressions,
-                    enabled = enabled,
-                    onSelect = { onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.IMPRESSION, it)) },
-                    tagPrefix = "impressionPreset",
+                val generatedImpression = ultrasoundImpressionFromChoices(
+                    draft.values.fetalNumber,
+                    draft.values.presentation,
+                    draft.values.placentalSite,
+                    draft.values.amnioticFluid,
                 )
+
+                OutlinedButton(
+                    onClick = {
+                        val merged = mergeImpression(draft.values.impression, generatedImpression)
+                        onEvent(AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.IMPRESSION, merged))
+                    },
+                    enabled = enabled && generatedImpression.isNotBlank(),
+                    modifier = Modifier
+                        .minimumTouchTarget()
+                        .testTag("impressionFromChoices"),
+                ) {
+                    Text(stringResource(R.string.impression_from_choices))
+                }
             }
         }
 

@@ -1144,6 +1144,27 @@
         "app/src/test/**/MedicationStatusDraftTest.kt"
       ],
       "covers": ["Q200", "Q201", "Q202", "Q203", "Q204", "Q205", "Q206", "Q207", "Q208"]
+    },
+    {
+      "id": "STATIC-r4b",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r4b.py",
+      "deps": [
+        "app/src/main/**/*.kt",
+        "app/src/test/**/*.kt",
+        ".agents/checks/check_r4b.py"
+      ],
+      "covers": ["S120", "S121", "S122"]
+    },
+    {
+      "id": "UNIT-r4b",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.model.UltrasoundImpressionTest'",
+      "deps": [
+        "app/src/main/**/model/ClinicalModels.kt",
+        "app/src/test/**/UltrasoundImpressionTest.kt"
+      ],
+      "covers": ["Q210", "Q211", "Q212", "Q213", "Q214"]
     }
   ]
 }

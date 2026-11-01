@@ -4,6 +4,9 @@ import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
 const val MEDICATION_STATUS_NON_COMPLIANT = "Patient non-compliant"
+const val NORMAL_FETAL_NUMBER = "Singleton"
+const val NORMAL_PRESENTATION = "Cephalic"
+const val NORMAL_AMNIOTIC_FLUID = "Normal"
 
 fun effectiveMedicationStatus(status: String, isNonCompliant: Boolean = false): String {
     return if (status == "Active" && isNonCompliant) {
@@ -16,6 +19,57 @@ fun effectiveMedicationStatus(status: String, isNonCompliant: Boolean = false): 
 fun isOngoingMedication(status: String, isNonCompliant: Boolean = false): Boolean {
     val effective = effectiveMedicationStatus(status, isNonCompliant)
     return effective == "Active" || effective == MEDICATION_STATUS_NON_COMPLIANT
+}
+
+fun ultrasoundImpressionFromChoices(
+    fetalNumber: String? = "",
+    presentation: String? = "",
+    placentalSite: String? = "",
+    amnioticFluid: String? = "",
+): String {
+    val fn = fetalNumber?.trim().orEmpty()
+    val fnPhrase = when {
+        fn.equals("Singleton", ignoreCase = true) -> "singleton pregnancy"
+        fn.equals("Twins", ignoreCase = true) -> "twin pregnancy"
+        fn.equals("Higher order", ignoreCase = true) -> "higher-order multiple pregnancy"
+        else -> null
+    }
+
+    val pres = presentation?.trim().orEmpty()
+    val presPhrase = if (ClinicalVocabulary.fetalPresentations.any { it.equals(pres, ignoreCase = true) }) {
+        "${pres.lowercase()} presentation"
+    } else null
+
+    val site = placentalSite?.trim().orEmpty()
+    val sitePhrase = when {
+        !ClinicalVocabulary.placentalSites.any { it.equals(site, ignoreCase = true) } -> null
+        site.equals("Previa", ignoreCase = true) -> "placenta previa"
+        else -> "${site.lowercase()} placenta"
+    }
+
+    val fluid = amnioticFluid?.trim().orEmpty()
+    val fluidPhrase = when {
+        !ClinicalVocabulary.amnioticFluids.any { it.equals(fluid, ignoreCase = true) } -> null
+        fluid.equals("Normal", ignoreCase = true) -> "normal amniotic fluid"
+        fluid.equals("Oligohydramnios", ignoreCase = true) -> "oligohydramnios"
+        fluid.equals("Polyhydramnios", ignoreCase = true) -> "polyhydramnios"
+        else -> null
+    }
+
+    val phrases = listOfNotNull(fnPhrase, presPhrase, sitePhrase, fluidPhrase)
+    if (phrases.isEmpty()) return ""
+
+    val joined = phrases.joinToString(", ")
+    return joined.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() } + "."
+}
+
+fun mergeImpression(existing: String?, generated: String?): String {
+    val ext = existing.orEmpty()
+    val gen = generated.orEmpty()
+    if (gen.isBlank()) return ext
+    if (ext.isBlank()) return gen
+    if (ext.contains(gen)) return ext
+    return ext.trimEnd() + "\n" + gen
 }
 
 data class DemoPatientDating(

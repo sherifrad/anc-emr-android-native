@@ -66,13 +66,6 @@ object ClinicalPresets {
         ClinicalMedPreset("Aspirin 150mg", "Low-Dose Aspirin", "150 mg", "Oral", "Once daily at bedtime"),
         ClinicalMedPreset("Paracetamol 500mg", "Paracetamol", "500 mg", "Oral", "As needed (PRN)"),
     )
-
-    val commonUltrasoundImpressions = listOf(
-        "Single live fetus, cephalic, normal liquor & placenta",
-        "Normal fetal growth & biometry for dates",
-        "Breech presentation, normal amniotic fluid",
-        "Placenta previa suspected, follow-up scan advised",
-    )
 }
 
 @Composable
