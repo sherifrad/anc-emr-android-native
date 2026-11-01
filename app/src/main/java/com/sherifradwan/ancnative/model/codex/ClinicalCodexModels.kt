@@ -43,6 +43,34 @@ data class LabItemEdit(
     val groups: List<LabCategoryGroup>,
 )
 
+data class LabPanelResolution(
+    val tests: List<LabCodexItem>,
+    val missing: List<String>,
+)
+
+fun resolveLabPanel(
+    panel: LabCategoryGroup,
+    items: List<LabCodexItem>,
+): LabPanelResolution {
+    val tests = mutableListOf<LabCodexItem>()
+    val missing = mutableListOf<String>()
+    val seenItemIds = mutableSetOf<String>()
+
+    for (rawName in panel.testNames) {
+        val trimmedName = rawName.trim()
+        val matchedItem = items.firstOrNull { it.testName.trim().equals(trimmedName, ignoreCase = true) }
+        if (matchedItem != null) {
+            if (seenItemIds.add(matchedItem.id)) {
+                tests.add(matchedItem)
+            }
+        } else {
+            missing.add(rawName)
+        }
+    }
+
+    return LabPanelResolution(tests = tests, missing = missing)
+}
+
 fun applyLabItemEdit(
     items: List<LabCodexItem>,
     groups: List<LabCategoryGroup>,

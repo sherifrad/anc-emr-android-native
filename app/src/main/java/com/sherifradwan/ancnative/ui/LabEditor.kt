@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -20,7 +22,9 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -28,8 +32,10 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -47,14 +53,61 @@ import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.ClinicalVocabulary
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
+import com.sherifradwan.ancnative.model.LabResultFlag
 import com.sherifradwan.ancnative.model.codex.ClinicalCodexRepository
 import com.sherifradwan.ancnative.model.codex.LabCodexItem
+import com.sherifradwan.ancnative.model.codex.resolveLabPanel
+import com.sherifradwan.ancnative.model.labResultFlag
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.ClinicalValidationError
 import com.sherifradwan.ancnative.state.LabDraftField
 import com.sherifradwan.ancnative.state.SavePhase
+
+private fun loadLabItemIntoDraft(item: LabCodexItem, onEvent: (AncEvent) -> Unit) {
+    onEvent(AncEvent.LabDraftChanged(LabDraftField.CATEGORY, item.category))
+    onEvent(AncEvent.LabDraftChanged(LabDraftField.NAME, item.testName))
+    onEvent(AncEvent.LabDraftChanged(LabDraftField.RESULT, item.defaultResult))
+    onEvent(AncEvent.LabDraftChanged(LabDraftField.UNIT, item.unit))
+    onEvent(AncEvent.LabDraftChanged(LabDraftField.REFERENCE_RANGE, item.referenceRange))
+    val flag = labResultFlag(item.defaultResult, item.referenceRange)
+    onEvent(AncEvent.LabAbnormalChanged(flag != LabResultFlag.UNKNOWN && flag != LabResultFlag.NORMAL))
+}
+
+@Composable
+private fun LabResultFlagPill(flag: LabResultFlag, modifier: Modifier = Modifier) {
+    if (flag == LabResultFlag.UNKNOWN) return
+    val isNormal = flag == LabResultFlag.NORMAL
+    val containerColor = if (isNormal) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else {
+        MaterialTheme.colorScheme.errorContainer
+    }
+    val contentColor = if (isNormal) {
+        MaterialTheme.colorScheme.onPrimaryContainer
+    } else {
+        MaterialTheme.colorScheme.onErrorContainer
+    }
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        color = containerColor,
+    ) {
+        Text(
+            text = when (flag) {
+                LabResultFlag.NORMAL -> "Normal"
+                LabResultFlag.HIGH -> "High"
+                LabResultFlag.LOW -> "Low"
+                LabResultFlag.UNKNOWN -> ""
+            },
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = contentColor,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+        )
+    }
+}
 
 @Composable
 fun LabEditor(
@@ -68,10 +121,105 @@ fun LabEditor(
     val testNameFocusRequester = remember { FocusRequester() }
     val resultFocusRequester = remember { FocusRequester() }
 
+    // Panel Queue State
+    var panelQueue by remember { mutableStateOf<List<LabCodexItem>>(emptyList()) }
+    var panelTotalCount by remember { mutableIntStateOf(0) }
+    var currentPanelIndex by remember { mutableIntStateOf(0) }
+    var currentPanelItem by remember { mutableStateOf<LabCodexItem?>(null) }
+    var currentLabId by remember { mutableStateOf(draft.labId) }
+
+    // Codex repo and groups
+    val context = LocalContext.current
+    val codexRepo = remember { ClinicalCodexRepository.getInstance(context) }
+    val codexLabItems by codexRepo.labCodexItems.collectAsState()
+    val codexGroups by codexRepo.labCategoryGroups.collectAsState()
+    var selectedGroupName by remember { mutableStateOf<String?>(null) }
+
+    // Unit & Reference Range visibility state
+    var showEditUnitAndRange by remember(draft.labId) { mutableStateOf(false) }
+
+    // Result flag calculation
+    val resultFlag = labResultFlag(draft.values.result, draft.values.referenceRange)
+
+    var previousResult by remember(draft.labId) { mutableStateOf(draft.values.result) }
+    var previousRefRange by remember(draft.labId) { mutableStateOf(draft.values.referenceRange) }
+
+    // Automatic abnormal flag setting when result or reference range changes
+    LaunchedEffect(draft.labId, draft.values.result, draft.values.referenceRange) {
+        val currentResult = draft.values.result
+        val currentRange = draft.values.referenceRange
+        if (currentResult != previousResult || currentRange != previousRefRange) {
+            previousResult = currentResult
+            previousRefRange = currentRange
+            val flag = labResultFlag(currentResult, currentRange)
+            if (flag != LabResultFlag.UNKNOWN) {
+                val shouldBeAbnormal = (flag != LabResultFlag.NORMAL)
+                if (draft.values.isAbnormal != shouldBeAbnormal) {
+                    onEvent(AncEvent.LabAbnormalChanged(shouldBeAbnormal))
+                }
+            }
+        }
+    }
+
+    // Advance panel queue after a successful chained save
+    LaunchedEffect(draft.labId) {
+        if (draft.labId != currentLabId) {
+            currentLabId = draft.labId
+            if (panelQueue.isNotEmpty()) {
+                val nextItem = panelQueue.first()
+                panelQueue = panelQueue.drop(1)
+                currentPanelIndex += 1
+                currentPanelItem = nextItem
+                loadLabItemIntoDraft(nextItem, onEvent)
+                showEditUnitAndRange = false
+            } else {
+                panelTotalCount = 0
+                currentPanelIndex = 0
+                currentPanelItem = null
+            }
+        }
+    }
+
     EditorPage(
         title = stringResource(R.string.lab_editor),
         subtitle = "${patient.displayName} · Laboratory Investigations & Diagnostic Results",
         tag = "labEditor",
+        bottomBar = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedButton(
+                    onClick = { onEvent(AncEvent.CancelEditor) },
+                    enabled = enabled,
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                    modifier = Modifier.weight(1f).minimumTouchTarget().testTag("cancelLab"),
+                ) {
+                    Text(stringResource(R.string.cancel), maxLines = 1, softWrap = false)
+                }
+                OutlinedButton(
+                    onClick = { onEvent(AncEvent.SubmitLabAndAddAnother) },
+                    enabled = enabled,
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                    modifier = Modifier.weight(1.5f).minimumTouchTarget().testTag("addAnotherLab"),
+                ) {
+                    Text(
+                        if (panelQueue.isNotEmpty()) "Save and next test" else "+ " + stringResource(R.string.add_another_test),
+                        maxLines = 1,
+                        softWrap = false,
+                    )
+                }
+                Button(
+                    onClick = { onEvent(AncEvent.SubmitLab) },
+                    enabled = enabled,
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                    modifier = Modifier.weight(1f).minimumTouchTarget().testTag("saveLab"),
+                ) {
+                    Text(stringResource(R.string.save), maxLines = 1, softWrap = false)
+                }
+            }
+        },
     ) {
         GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
 
@@ -173,12 +321,36 @@ fun LabEditor(
             }
         }
 
-        // Quick ANC Lab Panels Presets from Codex Delegate
-        val context = LocalContext.current
-        val codexRepo = remember { ClinicalCodexRepository.getInstance(context) }
-        val codexLabItems by codexRepo.labCodexItems.collectAsState()
-        val codexGroups by codexRepo.labCategoryGroups.collectAsState()
-        var selectedGroupName by remember { mutableStateOf<String?>(null) }
+        // Panel Queue Progress Card (when queue is active)
+        if (panelTotalCount > 0 && currentPanelIndex in 1..panelTotalCount) {
+            val currentTestName = draft.values.testName.ifBlank { currentPanelItem?.testName.orEmpty() }
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)),
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = "Test $currentPanelIndex of $panelTotalCount: $currentTestName",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
+                    val progressFraction = (currentPanelIndex.toFloat() / panelTotalCount.toFloat()).coerceIn(0f, 1f)
+                    LinearProgressIndicator(
+                        progress = { progressFraction },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(4.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    )
+                }
+            }
+        }
 
         // CARD 2: LAB PANELS & TEST SELECTION
         Card(
@@ -214,17 +386,47 @@ fun LabEditor(
                             modifier = Modifier.fillMaxWidth(),
                         ) {
                             val labItemCount = codexLabItems.size
-                            androidx.compose.material3.FilterChip(
+                            FilterChip(
                                 selected = selectedGroupName == null,
-                                onClick = { selectedGroupName = null },
+                                onClick = {
+                                    selectedGroupName = null
+                                    panelQueue = emptyList()
+                                    panelTotalCount = 0
+                                    currentPanelIndex = 0
+                                    currentPanelItem = null
+                                },
                                 label = { Text("All Tests ($labItemCount)") },
                                 modifier = Modifier.testTag("allLabTestsChip"),
                             )
                             codexGroups.forEach { grp ->
-                                androidx.compose.material3.FilterChip(
+                                FilterChip(
                                     selected = selectedGroupName == grp.name,
                                     onClick = {
-                                        selectedGroupName = if (selectedGroupName == grp.name) null else grp.name
+                                        if (selectedGroupName == grp.name) {
+                                            selectedGroupName = null
+                                            panelQueue = emptyList()
+                                            panelTotalCount = 0
+                                            currentPanelIndex = 0
+                                            currentPanelItem = null
+                                        } else {
+                                            selectedGroupName = grp.name
+                                            val resolution = resolveLabPanel(grp, codexLabItems)
+                                            val tests = resolution.tests
+                                            if (tests.isNotEmpty()) {
+                                                panelTotalCount = tests.size
+                                                currentPanelIndex = 1
+                                                currentPanelItem = tests.first()
+                                                panelQueue = tests.drop(1)
+                                                currentLabId = draft.labId
+                                                loadLabItemIntoDraft(tests.first(), onEvent)
+                                                showEditUnitAndRange = false
+                                            } else {
+                                                panelTotalCount = 0
+                                                currentPanelIndex = 0
+                                                currentPanelItem = null
+                                                panelQueue = emptyList()
+                                            }
+                                        }
                                     },
                                     label = { Text("${grp.name} (${grp.testNames.size})") },
                                     modifier = Modifier.testTag("labGroupChip-${grp.id}"),
@@ -237,7 +439,7 @@ fun LabEditor(
                 val displayedItems = remember(codexLabItems, codexGroups, selectedGroupName) {
                     val grp = codexGroups.firstOrNull { it.name == selectedGroupName }
                     if (grp != null) {
-                        codexLabItems.filter { it.testName in grp.testNames }
+                        resolveLabPanel(grp, codexLabItems).tests
                     } else {
                         codexLabItems
                     }
@@ -248,19 +450,21 @@ fun LabEditor(
                     items = displayedItems.map { it.testName },
                     enabled = enabled,
                     onSelect = { selectedName ->
-                        val item = codexLabItems.firstOrNull { it.testName == selectedName }
+                        // Tapping a single test chip still loads just that test (and clears the queue)
+                        panelQueue = emptyList()
+                        panelTotalCount = 0
+                        currentPanelIndex = 0
+                        currentPanelItem = null
+                        val item = codexLabItems.firstOrNull { it.testName.equals(selectedName, ignoreCase = true) }
                         if (item != null) {
-                            onEvent(AncEvent.LabDraftChanged(LabDraftField.CATEGORY, item.category))
-                            onEvent(AncEvent.LabDraftChanged(LabDraftField.NAME, item.testName))
-                            if (item.defaultResult.isNotEmpty()) onEvent(AncEvent.LabDraftChanged(LabDraftField.RESULT, item.defaultResult))
-                            if (item.unit.isNotEmpty()) onEvent(AncEvent.LabDraftChanged(LabDraftField.UNIT, item.unit))
-                            if (item.referenceRange.isNotEmpty()) onEvent(AncEvent.LabDraftChanged(LabDraftField.REFERENCE_RANGE, item.referenceRange))
+                            loadLabItemIntoDraft(item, onEvent)
+                            showEditUnitAndRange = false
                         }
                     },
                     tagPrefix = "labPreset",
                 )
 
-                // Save current test to Lab Codex if it's new and not already in Codex
+                // Save current test to list if it's new and not already present
                 val trimmedTestName = draft.values.testName.trim()
                 val isAlreadyInCodex = codexLabItems.any { it.testName.equals(trimmedTestName, ignoreCase = true) }
                 if (trimmedTestName.isNotBlank() && !isAlreadyInCodex) {
@@ -332,10 +536,11 @@ fun LabEditor(
                     color = MaterialTheme.colorScheme.primary,
                 )
 
-                // Paired Test Name & Result with Focus Traversal
+                // Paired Test Name & Result with Pill
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(modifier = Modifier.weight(1f)) {
                         EditorField(
@@ -352,19 +557,28 @@ fun LabEditor(
                             keyboardActions = KeyboardActions(onNext = { resultFocusRequester.requestFocus() }),
                         )
                     }
-                    Box(modifier = Modifier.weight(1f)) {
-                        EditorField(
-                            value = draft.values.result,
-                            onValueChange = { onEvent(AncEvent.LabDraftChanged(LabDraftField.RESULT, it)) },
-                            label = stringResource(R.string.test_result),
-                            tag = "labResult",
-                            enabled = enabled,
-                            modifier = Modifier.focusRequester(resultFocusRequester),
-                            error = draft.errors.contains(ClinicalValidationError.REQUIRED_RESULT),
-                            singleLine = true,
-                            keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Next,
-                        )
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            EditorField(
+                                value = draft.values.result,
+                                onValueChange = { onEvent(AncEvent.LabDraftChanged(LabDraftField.RESULT, it)) },
+                                label = stringResource(R.string.test_result),
+                                tag = "labResult",
+                                enabled = enabled,
+                                modifier = Modifier.focusRequester(resultFocusRequester),
+                                error = draft.errors.contains(ClinicalValidationError.REQUIRED_RESULT),
+                                singleLine = true,
+                                keyboardType = KeyboardType.Text,
+                                imeAction = ImeAction.Next,
+                            )
+                        }
+                        if (resultFlag != LabResultFlag.UNKNOWN) {
+                            LabResultFlagPill(flag = resultFlag)
+                        }
                     }
                 }
 
@@ -376,67 +590,96 @@ fun LabEditor(
                     tagPrefix = "labResultPreset",
                 )
 
-                // Paired Unit & Reference Range
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        EditorField(
-                            value = draft.values.unit,
-                            onValueChange = { onEvent(AncEvent.LabDraftChanged(LabDraftField.UNIT, it)) },
-                            label = stringResource(R.string.unit),
-                            tag = "labUnit",
-                            enabled = enabled,
-                            singleLine = true,
-                            keyboardType = KeyboardType.Text,
-                        )
+                // Unit & Reference Range: Light line when set, revealed fields when editing or empty
+                val unitText = draft.values.unit.trim()
+                val refText = draft.values.referenceRange.trim()
+                val bothEmpty = unitText.isEmpty() && refText.isEmpty()
+                LaunchedEffect(bothEmpty, showEditUnitAndRange) {
+                    if (bothEmpty) showEditUnitAndRange = true
+                }
+                val showFields = showEditUnitAndRange || bothEmpty
+                val unitAndRangeSummary = when {
+                    unitText.isNotEmpty() && refText.isNotEmpty() -> "$unitText · ref $refText"
+                    unitText.isNotEmpty() -> unitText
+                    refText.isNotEmpty() -> "ref $refText"
+                    else -> ""
+                }
+
+                if (showFields) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            EditorField(
+                                value = draft.values.unit,
+                                onValueChange = { onEvent(AncEvent.LabDraftChanged(LabDraftField.UNIT, it)) },
+                                label = stringResource(R.string.unit),
+                                tag = "labUnit",
+                                enabled = enabled,
+                                singleLine = true,
+                                keyboardType = KeyboardType.Text,
+                            )
+                        }
+                        Box(modifier = Modifier.weight(1f)) {
+                            EditorField(
+                                value = draft.values.referenceRange,
+                                onValueChange = { onEvent(AncEvent.LabDraftChanged(LabDraftField.REFERENCE_RANGE, it)) },
+                                label = stringResource(R.string.reference_range),
+                                tag = "labRefRange",
+                                enabled = enabled,
+                                singleLine = true,
+                                keyboardType = KeyboardType.Text,
+                            )
+                        }
                     }
-                    Box(modifier = Modifier.weight(1f)) {
-                        EditorField(
-                            value = draft.values.referenceRange,
-                            onValueChange = { onEvent(AncEvent.LabDraftChanged(LabDraftField.REFERENCE_RANGE, it)) },
-                            label = stringResource(R.string.reference_range),
-                            tag = "labRefRange",
-                            enabled = enabled,
-                            singleLine = true,
-                            keyboardType = KeyboardType.Text,
-                        )
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (unitAndRangeSummary.isNotEmpty()) {
+                            Text(
+                                text = unitAndRangeSummary,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        } else {
+                            Spacer(Modifier.width(1.dp))
+                        }
+                        TextButton(
+                            onClick = { showEditUnitAndRange = true },
+                        ) {
+                            Text(
+                                text = "Edit unit and range",
+                                style = MaterialTheme.typography.labelSmall,
+                            )
+                        }
                     }
                 }
 
-                // Abnormal Result Switch
-                Card(
+                // Compact Abnormal Result Switch (one line)
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable(enabled = enabled) { onEvent(AncEvent.LabAbnormalChanged(!draft.values.isAbnormal)) },
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (draft.values.isAbnormal) {
-                            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
-                        } else {
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                        },
-                    ),
-                    shape = RoundedCornerShape(12.dp),
+                        .clickable(enabled = enabled) { onEvent(AncEvent.LabAbnormalChanged(!draft.values.isAbnormal)) }
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp).fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.is_abnormal),
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = if (draft.values.isAbnormal) FontWeight.Bold else FontWeight.Normal,
-                            color = if (draft.values.isAbnormal) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-                        )
-                        Switch(
-                            checked = draft.values.isAbnormal,
-                            onCheckedChange = { onEvent(AncEvent.LabAbnormalChanged(it)) },
-                            enabled = enabled,
-                            modifier = Modifier.testTag("labAbnormal"),
-                        )
-                    }
+                    Text(
+                        text = stringResource(R.string.is_abnormal),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = if (draft.values.isAbnormal) FontWeight.Bold else FontWeight.Normal,
+                        color = if (draft.values.isAbnormal) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                    )
+                    Switch(
+                        checked = draft.values.isAbnormal,
+                        onCheckedChange = { onEvent(AncEvent.LabAbnormalChanged(it)) },
+                        enabled = enabled,
+                        modifier = Modifier.testTag("labAbnormal"),
+                    )
                 }
 
                 EditorField(
@@ -468,35 +711,6 @@ fun LabEditor(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        }
-
-        // Actions: Cancel, Save & Add Another Test, Save
-        FlowRow(
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            OutlinedButton(
-                onClick = { onEvent(AncEvent.CancelEditor) },
-                enabled = enabled,
-                modifier = Modifier.minimumTouchTarget().testTag("cancelLab"),
-            ) {
-                Text(stringResource(R.string.cancel))
-            }
-            OutlinedButton(
-                onClick = { onEvent(AncEvent.SubmitLabAndAddAnother) },
-                enabled = enabled,
-                modifier = Modifier.minimumTouchTarget().testTag("addAnotherLab"),
-            ) {
-                Text("+ " + stringResource(R.string.add_another_test))
-            }
-            Button(
-                onClick = { onEvent(AncEvent.SubmitLab) },
-                enabled = enabled,
-                modifier = Modifier.minimumTouchTarget().testTag("saveLab"),
-            ) {
-                Text(stringResource(R.string.save))
-            }
         }
     }
 }

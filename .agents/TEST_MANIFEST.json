@@ -1186,6 +1186,28 @@
         "app/src/test/**/LabItemEditTest.kt"
       ],
       "covers": ["Q220", "Q221", "Q222", "Q223"]
+    },
+    {
+      "id": "STATIC-r4d",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r4d.py",
+      "deps": [
+        "app/src/main/**/*.kt",
+        ".agents/checks/check_r4d.py"
+      ],
+      "covers": ["S140", "S141", "S142"]
+    },
+    {
+      "id": "UNIT-r4d",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.model.LabResultFlagTest' --tests 'com.sherifradwan.ancnative.model.codex.LabPanelResolveTest'",
+      "deps": [
+        "app/src/main/**/model/LabResultFlag.kt",
+        "app/src/main/**/model/codex/*.kt",
+        "app/src/test/**/LabResultFlagTest.kt",
+        "app/src/test/**/LabPanelResolveTest.kt"
+      ],
+      "covers": ["Q240", "Q241", "Q242", "Q243", "Q244", "Q245"]
     }
   ]
 }

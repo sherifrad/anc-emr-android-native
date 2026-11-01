@@ -16,7 +16,7 @@ ap.add_argument("--root", default=str(HOME / "anc-emr-android-native"))
 ap.add_argument("--plan", action="store_true")
 ap.add_argument("--skip-review", action="store_true")
 ap.add_argument("--ui-only", action="store_true", help="tests and core already green: run only the UI lane, cache check and review")
-ap.add_argument("--round", default="r1", choices=["r1", "r2", "r3", "r3b", "r3c", "r3c2", "r3c3", "r3d", "r3e", "r3f1", "r3f2", "r3f3", "r3g", "r3h", "r3i", "r3j", "r3k", "r3l", "r3m", "r3n", "r3o", "r3p", "r3q", "r3r", "r3s", "r3t", "r3u", "r3v", "r3w", "r3x", "r3y", "r3z", "r4a", "r4b", "r4c"], help="r2: SPEC_FIX_R2 briefs in pipeline/r2, round-2 file lists")
+ap.add_argument("--round", default="r1", choices=["r1", "r2", "r3", "r3b", "r3c", "r3c2", "r3c3", "r3d", "r3e", "r3f1", "r3f2", "r3f3", "r3g", "r3h", "r3i", "r3j", "r3k", "r3l", "r3m", "r3n", "r3o", "r3p", "r3q", "r3r", "r3s", "r3t", "r3u", "r3v", "r3w", "r3x", "r3y", "r3z", "r4a", "r4b", "r4c", "r4d"], help="r2: SPEC_FIX_R2 briefs in pipeline/r2, round-2 file lists")
 ap.add_argument("--resume-tests", metavar="NOTE", help="tests lane timed out after writing tests: send a short finish-up request (NOTE), then continue")
 ap.add_argument("--from-core", metavar="RED_RUN_DIR", help="tests already written and red-checked in RED_RUN_DIR: start at the core lane")
 ap.add_argument("--skip-ui", action="store_true", help="no UI work this round: skip the UI lane, still run the full gate")
@@ -284,7 +284,12 @@ if args.round == "r4c":
     ALLOW = {"tests": TEST_GLOBS, "core": [M + "model/codex/ClinicalCodexModels.kt", M + "model/codex/ClinicalCodexRepository.kt"],
              "ui": [UI + "CodexSettingsSections.kt", UI + "SecuritySettingsDialog.kt", UI + "LabEditor.kt", UI + "MedicationEditor.kt",
                     "app/src/main/res/values/strings.xml"], "review": []}
-BRIEFS = PIPE / args.round if args.round in ("r2", "r3", "r3b", "r3c", "r3c2", "r3c3", "r3d", "r3e", "r3f1", "r3f2", "r3f3", "r3g", "r3h", "r3i", "r3j", "r3k", "r3l", "r3m", "r3n", "r3o", "r3p", "r3q", "r3r", "r3s", "r3t", "r3u", "r3v", "r3w", "r3x", "r3y", "r3z", "r4a", "r4b", "r4c") else PIPE
+if args.round == "r4d":
+    M = "app/src/main/java/com/sherifradwan/ancnative/"; ST = "app/src/test/java/com/sherifradwan/ancnative/"
+    TEST_GLOBS = [".agents/checks/check_r4d.py", ".agents/TEST_MANIFEST.json", ST + "model/LabResultFlagTest.kt", ST + "model/codex/LabPanelResolveTest.kt"]
+    ALLOW = {"tests": TEST_GLOBS, "core": [M + "model/LabResultFlag.kt", M + "model/codex/ClinicalCodexModels.kt"],
+             "ui": [UI + "LabEditor.kt", UI + "PatientEditor.kt", "app/src/main/res/values/strings.xml"], "review": []}
+BRIEFS = PIPE / args.round if args.round in ("r2", "r3", "r3b", "r3c", "r3c2", "r3c3", "r3d", "r3e", "r3f1", "r3f2", "r3f3", "r3g", "r3h", "r3i", "r3j", "r3k", "r3l", "r3m", "r3n", "r3o", "r3p", "r3q", "r3r", "r3s", "r3t", "r3u", "r3v", "r3w", "r3x", "r3y", "r3z", "r4a", "r4b", "r4c", "r4d") else PIPE
 # Tests that reference functions the core lane has not written yet; parked during the behavioural red check.
 NEW_API_TESTS = {"r2": [T + "ClinicalFormatR2Test.kt"], "r3": ["app/src/test/java/com/sherifradwan/ancnative/state/IntakeDatingRuleTest.kt"],
                  "r3b": ["app/src/test/java/com/sherifradwan/ancnative/storage/" + n for n in ("RecordAnomaliesTest.kt", "VaultAutoActionTest.kt", "VaultCleanupRuleTest.kt")],
@@ -298,6 +303,7 @@ NEW_API_TESTS = {"r2": [T + "ClinicalFormatR2Test.kt"], "r3": ["app/src/test/jav
                  "r3u": ["app/src/test/java/com/sherifradwan/ancnative/storage/DraftCodecTest.kt"],
                  "r3z": ["app/src/test/java/com/sherifradwan/ancnative/model/FormatIsoDateTest.kt", "app/src/test/java/com/sherifradwan/ancnative/state/SaveUiErrorTextTest.kt", "app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalFormatTest.kt", "app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalPresetsTest.kt"],
                  "r4b": ["app/src/test/java/com/sherifradwan/ancnative/model/UltrasoundImpressionTest.kt"],
+                 "r4d": ["app/src/test/java/com/sherifradwan/ancnative/model/LabResultFlagTest.kt", "app/src/test/java/com/sherifradwan/ancnative/model/codex/LabPanelResolveTest.kt"],
                  "r4c": ["app/src/test/java/com/sherifradwan/ancnative/model/codex/LabItemEditTest.kt"],
                  "r4a": ["app/src/test/java/com/sherifradwan/ancnative/model/MedicationStatusTest.kt", "app/src/test/java/com/sherifradwan/ancnative/state/MedicationStatusDraftTest.kt"],
                  "r3x": ["app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintLayoutTest.kt"],
@@ -400,6 +406,7 @@ if args.round == "r3f1": CORE_GATE |= {"UNIT-all"}
 if args.round == "r3f2": CORE_GATE |= {"UNIT-photo-quality"}
 if args.round == "r3f3": CORE_GATE |= {"UNIT-bounded-bitmap"}
 if args.round == "r4b": CORE_GATE |= {"UNIT-r4b", "UNIT-all"}
+if args.round == "r4d": CORE_GATE |= {"UNIT-r4d", "UNIT-all"}
 if args.round == "r4c": CORE_GATE |= {"UNIT-r4c", "UNIT-all"}
 if args.round == "r4a": CORE_GATE |= {"UNIT-r4a", "UNIT-all"}   # STATIC-r4a and LINT-errors span the UI lane
 if args.round == "r3z": CORE_GATE |= {"UNIT-r3z-small", "UNIT-all"}   # STATIC-r3z and LINT-errors span the UI lane
