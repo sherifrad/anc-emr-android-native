@@ -1275,6 +1275,17 @@
         "app/src/test/**/IntakeDatingRuleTest.kt"
       ],
       "covers": ["Q270", "Q271", "Q272", "Q273", "Q274", "Q275"]
+    },
+    {
+      "id": "STATIC-r5a",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r5a.py",
+      "deps": [
+        "app/src/main/**/*.kt",
+        "app/src/main/res/values/strings.xml",
+        ".agents/checks/check_r5a.py"
+      ],
+      "covers": ["S200", "S201", "S202", "S203"]
     }
   ]
 }
