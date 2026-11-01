@@ -50,3 +50,6 @@ Block B (about 15 min, orchestrator drives): items 12, 13, 19 and 10 (restore co
 Block C (about 15 min, OWNER hands needed): item 9 fingerprint unlock and item 22 (needs your finger), item 8 TalkBack walk-through (TalkBack is a phone system setting: you switch it on and off), item 5 large font scale 1.3 (display setting: you change it, then set it back).
 Block D (about 15 min): item 16 release build: install the signed release build next to the QA copy, check first start (PIN setup, no demo patients, screenshot allowed), then uninstall it. Not on the clinic app.
 Rules kept: QA copy only (com.sherifradwan.anc.qa, PIN 121212), demo data, never the clinic app, no changes to phone settings by me, personal apps never opened, discard screenshots I did not need.
+
+## Parked emulator failure (owner 2026-11-01, see D23)
+6. Settings dialog (top bar settings button) after a PIN unlock on a real phone: the title "Clinic & System Settings" and the Auto-Lock text are fully visible, no part of the dialog is pushed above the screen, "Lock now" works. The emulator test securitySettingsDialogDisplaysFixedAutoLockTimeoutAndAllowsManualLock fails on API 26 only because the soft keyboard pans the dialog up.
