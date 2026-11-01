@@ -1,6 +1,5 @@
 package com.sherifradwan.ancnative.ui
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,7 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -20,11 +19,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -50,6 +46,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.ClinicalVocabulary
@@ -65,6 +62,7 @@ import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.ClinicalValidationError
 import com.sherifradwan.ancnative.state.LabDraftField
+import com.sherifradwan.ancnative.state.LabDraftValues
 import com.sherifradwan.ancnative.state.SavePhase
 
 private fun loadLabItemIntoDraft(item: LabCodexItem, onEvent: (AncEvent) -> Unit) {
@@ -116,6 +114,15 @@ private val StringListSaver = listSaver<List<String>, String>(
     restore = { it },
 )
 
+private data class LabOpenOnEntry(val editDetails: Boolean, val flag: Boolean, val note: Boolean, val addTests: Boolean)
+
+private fun labOpenOnEntry(values: LabDraftValues, panelCount: Int) = LabOpenOnEntry(
+    editDetails = values.testName.isBlank() || (values.unit.isBlank() && values.referenceRange.isBlank()),
+    flag = values.isAbnormal,
+    note = values.notes.isNotBlank(),
+    addTests = values.testName.isBlank() && panelCount <= 1,
+)
+
 @Composable
 fun LabEditor(
     state: AncState,
@@ -142,8 +149,12 @@ fun LabEditor(
     val codexLabItems by codexRepo.labCodexItems.collectAsState()
     val codexGroups by codexRepo.labCategoryGroups.collectAsState()
 
-    // Unit & Reference Range visibility state
-    var showEditUnitAndRange by remember(draft.labId) { mutableStateOf(false) }
+    // Open-on-entry rememberSaveable booleans
+    val initialOpen = labOpenOnEntry(draft.values, panelTotalCount)
+    var editDetailsOpen by rememberSaveable { mutableStateOf(initialOpen.editDetails) }
+    var flagSectionOpen by rememberSaveable { mutableStateOf(initialOpen.flag) }
+    var noteSectionOpen by rememberSaveable { mutableStateOf(initialOpen.note) }
+    var addTestsOpen by rememberSaveable { mutableStateOf(initialOpen.addTests) }
 
     // Result flag calculation
     val resultFlag = labResultFlag(draft.values.result, draft.values.referenceRange)
@@ -172,6 +183,11 @@ fun LabEditor(
     LaunchedEffect(draft.labId) {
         if (draft.labId != currentLabId) {
             currentLabId = draft.labId
+            val reopened = labOpenOnEntry(draft.values, panelTotalCount)
+            editDetailsOpen = reopened.editDetails
+            flagSectionOpen = reopened.flag
+            noteSectionOpen = reopened.note
+            addTestsOpen = reopened.addTests
             if (panelRemainingIds.isNotEmpty()) {
                 val step = nextLabPanelTest(panelRemainingIds, codexLabItems)
                 if (step.item != null) {
@@ -179,7 +195,7 @@ fun LabEditor(
                     currentPanelIndex += 1
                     currentPanelItemId = step.item.id
                     loadLabItemIntoDraft(step.item, onEvent)
-                    showEditUnitAndRange = false
+                    editDetailsOpen = step.item.unit.isBlank() && step.item.referenceRange.isBlank()
                 } else {
                     panelRemainingIds = emptyList()
                     panelTotalCount = 0
@@ -239,388 +255,171 @@ fun LabEditor(
 
         val isChainedHeader = route.isNew && (draft.values.date.isNotBlank() || !draft.values.labName.isNullOrBlank())
 
-        // CARD 1: LABORATORY & DATE
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        // CARD 1: LABORATORY & DATE (Header Strip - L302)
+        SectionCard(
+            title = "1. Laboratory Details & Date",
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
+            if (isChainedHeader) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End,
                 ) {
-                    Text(
-                        text = "1. Laboratory Details & Date",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.weight(1f, fill = false),
-                    )
-                    if (isChainedHeader) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.secondaryContainer,
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.testTag("pinnedLabHeaderTag"),
-                        ) {
-                            Text(
-                                text = "📌 Chained Batch",
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            )
-                        }
-                    }
-                }
-
-                // Laboratory name field with presets
-                EditorField(
-                    value = draft.values.labName,
-                    onValueChange = { onEvent(AncEvent.LabDraftChanged(LabDraftField.LAB_NAME, it)) },
-                    label = stringResource(R.string.lab_name),
-                    tag = "labNameField",
-                    enabled = enabled,
-                    singleLine = true,
-                    keyboardType = KeyboardType.Text,
-                )
-
-                QuickPresetChips(
-                    title = stringResource(R.string.lab_name),
-                    items = ClinicalVocabulary.labNamePresets,
-                    enabled = enabled,
-                    onSelect = { onEvent(AncEvent.LabDraftChanged(LabDraftField.LAB_NAME, it)) },
-                    tagPrefix = "labNamePreset",
-                )
-
-                // Date selection
-                ClinicalDateField(
-                    value = draft.values.date,
-                    onValueChange = { onEvent(AncEvent.LabDraftChanged(LabDraftField.DATE, it)) },
-                    label = stringResource(R.string.test_date),
-                    tag = "labDate",
-                    enabled = enabled,
-                    error = draft.errors.contains(ClinicalValidationError.REQUIRED_DATE) ||
-                        draft.errors.contains(ClinicalValidationError.INVALID_DATE),
-                    showTodayButton = true,
-                )
-
-                // Auto-calculated Gestational Age for the lab test date
-                val calculatedGa = GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, draft.values.date)
-                if (calculatedGa != null && calculatedGa.isPostConception) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth().testTag("labCalculatedGaCard"),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                        shape = RoundedCornerShape(10.dp),
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = stringResource(R.string.calculated_ga_at_visit, calculatedGa.displayText),
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        // Panel Queue Progress Card (when queue is active)
-        if (panelTotalCount > 0 && currentPanelIndex in 1..panelTotalCount) {
-            val currentPanelItem = currentPanelItemId?.let { id -> codexLabItems.firstOrNull { it.id == id } }
-            val currentTestName = draft.values.testName.ifBlank { currentPanelItem?.testName.orEmpty() }
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)),
-            ) {
-                Column(
-                    modifier = Modifier.padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        text = "Test $currentPanelIndex of $panelTotalCount: $currentTestName",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    )
-                    val progressFraction = (currentPanelIndex.toFloat() / panelTotalCount.toFloat()).coerceIn(0f, 1f)
-                    LinearProgressIndicator(
-                        progress = { progressFraction },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(4.dp),
-                        color = MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                    )
-                }
-            }
-        }
-
-        // CARD 2: LAB PANELS & TEST SELECTION
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(
-                    text = "2. Investigation Panels & Test Selection",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-
-                // Category Groups / Clinical Panels Selection
-                if (codexGroups.isNotEmpty()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                        Text(
-                            text = "📦 Diagnostic Panels:",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            val labItemCount = codexLabItems.size
-                            FilterChip(
-                                selected = selectedGroupName == null,
-                                onClick = {
-                                    selectedGroupName = null
-                                    panelRemainingIds = emptyList()
-                                    panelTotalCount = 0
-                                    currentPanelIndex = 0
-                                    currentPanelItemId = null
-                                },
-                                label = { Text("All Tests ($labItemCount)") },
-                                modifier = Modifier.testTag("allLabTestsChip"),
-                            )
-                            codexGroups.forEach { grp ->
-                                FilterChip(
-                                    selected = selectedGroupName == grp.name,
-                                    onClick = {
-                                        if (selectedGroupName == grp.name) {
-                                            selectedGroupName = null
-                                            panelRemainingIds = emptyList()
-                                            panelTotalCount = 0
-                                            currentPanelIndex = 0
-                                            currentPanelItemId = null
-                                        } else {
-                                            selectedGroupName = grp.name
-                                            val resolution = resolveLabPanel(grp, codexLabItems)
-                                            val step = nextLabPanelTest(resolution.tests.map { it.id }, codexLabItems)
-                                            if (step.item != null) {
-                                                panelTotalCount = resolution.tests.size
-                                                currentPanelIndex = 1
-                                                currentPanelItemId = step.item.id
-                                                panelRemainingIds = step.remainingIds
-                                                currentLabId = draft.labId
-                                                loadLabItemIntoDraft(step.item, onEvent)
-                                                showEditUnitAndRange = false
-                                            } else {
-                                                panelTotalCount = 0
-                                                currentPanelIndex = 0
-                                                currentPanelItemId = null
-                                                panelRemainingIds = emptyList()
-                                            }
-                                        }
-                                    },
-                                    label = { Text("${grp.name} (${grp.testNames.size})") },
-                                    modifier = Modifier.testTag("labGroupChip-${grp.id}"),
-                                )
-                            }
-                        }
-                    }
-                }
-
-                val displayedItems = remember(codexLabItems, codexGroups, selectedGroupName) {
-                    val grp = codexGroups.firstOrNull { it.name == selectedGroupName }
-                    if (grp != null) {
-                        resolveLabPanel(grp, codexLabItems).tests
-                    } else {
-                        codexLabItems
-                    }
-                }
-
-                QuickPresetChips(
-                    title = if (selectedGroupName != null) "Panel Tests: $selectedGroupName" else stringResource(R.string.common_tests),
-                    items = displayedItems.map { it.testName },
-                    enabled = enabled,
-                    onSelect = { selectedName ->
-                        // Tapping a single test chip still loads just that test (and clears the queue)
-                        panelRemainingIds = emptyList()
-                        panelTotalCount = 0
-                        currentPanelIndex = 0
-                        currentPanelItemId = null
-                        val item = codexLabItems.firstOrNull { it.testName.equals(selectedName, ignoreCase = true) }
-                        if (item != null) {
-                            loadLabItemIntoDraft(item, onEvent)
-                            showEditUnitAndRange = false
-                        }
-                    },
-                    tagPrefix = "labPreset",
-                )
-
-                // Save current test to list if it's new and not already present
-                val trimmedTestName = draft.values.testName.trim()
-                val isAlreadyInCodex = codexLabItems.any { it.testName.equals(trimmedTestName, ignoreCase = true) }
-                if (trimmedTestName.isNotBlank() && !isAlreadyInCodex) {
                     Surface(
-                        modifier = Modifier.fillMaxWidth().testTag("saveToLabCodexBanner"),
-                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                        color = MaterialTheme.colorScheme.secondaryContainer,
                         shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.testTag("pinnedLabHeaderTag"),
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp).fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = "New test: add it to your lab test list?",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            )
-                            TextButton(
-                                onClick = {
-                                    codexRepo.addLabCodexItem(
-                                        LabCodexItem(
-                                            testName = trimmedTestName,
-                                            category = draft.values.testCategory.ifBlank { "Hematology" },
-                                            unit = draft.values.unit.trim(),
-                                            referenceRange = draft.values.referenceRange.trim(),
-                                            defaultResult = draft.values.result.trim(),
-                                            isCustom = true,
-                                        ),
-                                    )
-                                },
-                                modifier = Modifier.testTag("saveToLabCodexButton"),
-                            ) {
-                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Add to list")
-                            }
-                        }
-                    }
-                }
-
-                ChoiceGroup(
-                    label = stringResource(R.string.test_category),
-                    selected = draft.values.testCategory,
-                    choices = ClinicalVocabulary.testCategories.toList(),
-                    enabled = enabled,
-                    tagPrefix = "labCategoryChoice",
-                    onSelected = { onEvent(AncEvent.LabDraftChanged(LabDraftField.CATEGORY, it)) },
-                )
-            }
-        }
-
-        // CARD 3: TEST RESULT, REFERENCE RANGE & CLINICAL NOTES
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(
-                    text = "3. Result, Units & Reference Range",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-
-                // Paired Test Name & Result with Pill
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        EditorField(
-                            value = draft.values.testName,
-                            onValueChange = { onEvent(AncEvent.LabDraftChanged(LabDraftField.NAME, it)) },
-                            label = stringResource(R.string.test_name),
-                            tag = "labName",
-                            enabled = enabled,
-                            modifier = Modifier.focusRequester(testNameFocusRequester),
-                            error = draft.errors.contains(ClinicalValidationError.REQUIRED_NAME),
-                            singleLine = true,
-                            keyboardType = KeyboardType.Text,
-                            imeAction = ImeAction.Next,
-                            keyboardActions = KeyboardActions(onNext = { resultFocusRequester.requestFocus() }),
+                        Text(
+                            text = "📌 Chained Batch",
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         )
                     }
+                }
+            }
+
+            // Laboratory name field with presets
+            EditorField(
+                value = draft.values.labName,
+                onValueChange = { onEvent(AncEvent.LabDraftChanged(LabDraftField.LAB_NAME, it)) },
+                label = stringResource(R.string.lab_name),
+                tag = "labNameField",
+                enabled = enabled,
+                singleLine = true,
+                keyboardType = KeyboardType.Text,
+            )
+
+            QuickPresetChips(
+                title = stringResource(R.string.lab_name),
+                items = ClinicalVocabulary.labNamePresets,
+                enabled = enabled,
+                onSelect = { onEvent(AncEvent.LabDraftChanged(LabDraftField.LAB_NAME, it)) },
+                tagPrefix = "labNamePreset",
+            )
+
+            // Date selection
+            ClinicalDateField(
+                value = draft.values.date,
+                onValueChange = { onEvent(AncEvent.LabDraftChanged(LabDraftField.DATE, it)) },
+                label = stringResource(R.string.test_date),
+                tag = "labDate",
+                enabled = enabled,
+                error = draft.errors.contains(ClinicalValidationError.REQUIRED_DATE) ||
+                    draft.errors.contains(ClinicalValidationError.INVALID_DATE),
+                showTodayButton = true,
+            )
+
+            // Auto-calculated Gestational Age for the lab test date
+            val calculatedGa = GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, draft.values.date)
+            if (calculatedGa != null && calculatedGa.isPostConception) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth().testTag("labCalculatedGaCard"),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = RoundedCornerShape(10.dp),
+                ) {
                     Row(
-                        modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Box(modifier = Modifier.weight(1f)) {
-                            EditorField(
-                                value = draft.values.result,
-                                onValueChange = { onEvent(AncEvent.LabDraftChanged(LabDraftField.RESULT, it)) },
-                                label = stringResource(R.string.test_result),
-                                tag = "labResult",
-                                enabled = enabled,
-                                modifier = Modifier.focusRequester(resultFocusRequester),
-                                error = draft.errors.contains(ClinicalValidationError.REQUIRED_RESULT),
-                                singleLine = true,
-                                keyboardType = KeyboardType.Text,
-                                imeAction = ImeAction.Next,
-                            )
-                        }
-                        if (resultFlag != LabResultFlag.UNKNOWN) {
-                            LabResultFlagPill(flag = resultFlag)
-                        }
+                        Text(
+                            text = stringResource(R.string.calculated_ga_at_visit, calculatedGa.displayText),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
                     }
                 }
+            }
+        }
 
-                QuickPresetChips(
-                    title = stringResource(R.string.test_result),
-                    items = listOf("Negative", "Non-reactive", "Normal", "Positive"),
-                    enabled = enabled,
-                    onSelect = { onEvent(AncEvent.LabDraftChanged(LabDraftField.RESULT, it)) },
-                    tagPrefix = "labResultPreset",
+        // CARD 2: TEST CARD (L302, L303, L304, L305, L306)
+        SectionCard(
+            title = "",
+            tag = "labTestCard",
+        ) {
+            // L303. Progress line
+            val progressText = when {
+                panelTotalCount > 1 -> {
+                    if (draft.values.testCategory.isNotBlank()) {
+                        stringResource(R.string.lab_test_progress_category, currentPanelIndex, panelTotalCount, draft.values.testCategory)
+                    } else {
+                        stringResource(R.string.lab_test_progress, currentPanelIndex, panelTotalCount)
+                    }
+                }
+                draft.values.testCategory.isNotBlank() -> draft.values.testCategory
+                else -> ""
+            }
+            if (progressText.isNotBlank()) {
+                Text(
+                    text = progressText,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.testTag("labTestProgress"),
                 )
+            }
 
-                // Unit & Reference Range: Light line when set, revealed fields when editing or empty
-                val unitText = draft.values.unit.trim()
-                val refText = draft.values.referenceRange.trim()
-                val bothEmpty = unitText.isEmpty() && refText.isEmpty()
-                LaunchedEffect(bothEmpty, showEditUnitAndRange) {
-                    if (bothEmpty) showEditUnitAndRange = true
-                }
-                val showFields = showEditUnitAndRange || bothEmpty
-                val unitAndRangeSummary = when {
-                    unitText.isNotEmpty() && refText.isNotEmpty() -> "$unitText · ref $refText"
-                    unitText.isNotEmpty() -> unitText
-                    refText.isNotEmpty() -> "ref $refText"
-                    else -> ""
-                }
+            // L303. Test name as large title
+            val testTitle = draft.values.testName.ifBlank { stringResource(R.string.new_test) }
+            Text(
+                text = testTitle,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.testTag("labTestTitle"),
+            )
 
-                if (showFields) {
+            // L303. Light unit/reference-range summary line
+            val unitText = draft.values.unit.trim()
+            val refText = draft.values.referenceRange.trim()
+            val unitAndRangeSummary = when {
+                unitText.isNotEmpty() && refText.isNotEmpty() -> "$unitText · ref $refText"
+                unitText.isNotEmpty() -> unitText
+                refText.isNotEmpty() -> "ref $refText"
+                else -> ""
+            }
+            if (unitAndRangeSummary.isNotEmpty()) {
+                Text(
+                    text = unitAndRangeSummary,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            // L304. Editing details toggle button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start,
+            ) {
+                TextButton(
+                    onClick = { editDetailsOpen = !editDetailsOpen },
+                    modifier = Modifier.minimumTouchTarget().testTag("labEditDetailsToggle"),
+                ) {
+                    Text(stringResource(R.string.edit_test_details))
+                }
+            }
+
+            // L304. Details group
+            if (editDetailsOpen) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    EditorField(
+                        value = draft.values.testName,
+                        onValueChange = { onEvent(AncEvent.LabDraftChanged(LabDraftField.NAME, it)) },
+                        label = stringResource(R.string.test_name),
+                        tag = "labName",
+                        enabled = enabled,
+                        modifier = Modifier.focusRequester(testNameFocusRequester),
+                        error = draft.errors.contains(ClinicalValidationError.REQUIRED_NAME),
+                        singleLine = true,
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Next,
+                        keyboardActions = KeyboardActions(onNext = { resultFocusRequester.requestFocus() }),
+                    )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -648,36 +447,80 @@ fun LabEditor(
                             )
                         }
                     }
-                } else {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        if (unitAndRangeSummary.isNotEmpty()) {
-                            Text(
-                                text = unitAndRangeSummary,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        } else {
-                            Spacer(Modifier.width(1.dp))
-                        }
-                        TextButton(
-                            onClick = { showEditUnitAndRange = true },
-                        ) {
-                            Text(
-                                text = "Edit unit and range",
-                                style = MaterialTheme.typography.labelSmall,
-                            )
-                        }
-                    }
                 }
+            }
 
-                // Compact Abnormal Result Switch (one line)
+            // L305. Result field (full width) + flag pill directly under it
+            EditorField(
+                value = draft.values.result,
+                onValueChange = { onEvent(AncEvent.LabDraftChanged(LabDraftField.RESULT, it)) },
+                label = stringResource(R.string.test_result),
+                tag = "labResult",
+                enabled = enabled,
+                modifier = Modifier.focusRequester(resultFocusRequester),
+                error = draft.errors.contains(ClinicalValidationError.REQUIRED_RESULT),
+                singleLine = true,
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Next,
+            )
+
+            if (resultFlag != LabResultFlag.UNKNOWN) {
+                LabResultFlagPill(flag = resultFlag)
+            }
+
+            // L305. Big preset choice buttons (one per row)
+            val resultPresets = listOf("Negative", "Non-reactive", "Normal", "Positive")
+            val presetLabels = listOf(
+                stringResource(R.string.lab_preset_negative),
+                stringResource(R.string.lab_preset_non_reactive),
+                stringResource(R.string.lab_preset_normal),
+                stringResource(R.string.lab_preset_positive),
+            )
+            resultPresets.forEachIndexed { index, preset ->
+                BigChoiceButton(
+                    label = presetLabels[index],
+                    selected = draft.values.result == preset,
+                    tag = "labResultPreset-$index",
+                    enabled = enabled,
+                    onClick = { onEvent(AncEvent.LabDraftChanged(LabDraftField.RESULT, preset)) },
+                )
+            }
+
+            // L306. Two toggle chips in one row: labFlagToggle & labNoteToggle
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                FilterChip(
+                    selected = flagSectionOpen,
+                    onClick = { flagSectionOpen = !flagSectionOpen },
+                    label = {
+                        Text(
+                            if (draft.values.isAbnormal) stringResource(R.string.flag_abnormal) else stringResource(R.string.flag),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    },
+                    modifier = Modifier.weight(1f).minimumTouchTarget().testTag("labFlagToggle"),
+                )
+                FilterChip(
+                    selected = noteSectionOpen,
+                    onClick = { noteSectionOpen = !noteSectionOpen },
+                    label = {
+                        val noteLabel = if (draft.values.notes.isNotBlank()) stringResource(R.string.note_filled) else stringResource(R.string.note)
+                        Text(noteLabel, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    },
+                    modifier = Modifier.weight(1f).minimumTouchTarget().testTag("labNoteToggle"),
+                )
+            }
+
+            // L306. Flag section
+            if (flagSectionOpen) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .heightIn(min = 48.dp)
                         .clickable(enabled = enabled) { onEvent(AncEvent.LabAbnormalChanged(!draft.values.isAbnormal)) }
                         .padding(horizontal = 4.dp, vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -696,7 +539,10 @@ fun LabEditor(
                         modifier = Modifier.testTag("labAbnormal"),
                     )
                 }
+            }
 
+            // L306. Note section
+            if (noteSectionOpen) {
                 EditorField(
                     value = draft.values.notes,
                     onValueChange = { onEvent(AncEvent.LabDraftChanged(LabDraftField.NOTES, it)) },
@@ -704,6 +550,167 @@ fun LabEditor(
                     tag = "labNotes",
                     enabled = enabled,
                     singleLine = false,
+                )
+            }
+        }
+
+        // CARD 3: ADD TESTS CARD (L302, L307)
+        SectionCard(
+            title = "",
+            tag = "labAddTestsCard",
+        ) {
+            SummaryRow(
+                label = stringResource(R.string.add_tests),
+                value = if (addTestsOpen) stringResource(R.string.more_close) else stringResource(R.string.more_open),
+                tag = "labAddTestsToggle",
+                onClick = { addTestsOpen = !addTestsOpen },
+            )
+
+            if (addTestsOpen) {
+                // Category Groups / Clinical Panels Selection
+                if (codexGroups.isNotEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                        Text(
+                            text = "📦 Diagnostic Panels:",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            val labItemCount = codexLabItems.size
+                            FilterChip(
+                                selected = selectedGroupName == null,
+                                onClick = {
+                                    selectedGroupName = null
+                                    panelRemainingIds = emptyList()
+                                    panelTotalCount = 0
+                                    currentPanelIndex = 0
+                                    currentPanelItemId = null
+                                },
+                                label = { Text("All Tests ($labItemCount)") },
+                                modifier = Modifier.minimumTouchTarget().testTag("allLabTestsChip"),
+                            )
+                            codexGroups.forEach { grp ->
+                                FilterChip(
+                                    selected = selectedGroupName == grp.name,
+                                    onClick = {
+                                        if (selectedGroupName == grp.name) {
+                                            selectedGroupName = null
+                                            panelRemainingIds = emptyList()
+                                            panelTotalCount = 0
+                                            currentPanelIndex = 0
+                                            currentPanelItemId = null
+                                        } else {
+                                            selectedGroupName = grp.name
+                                            val resolution = resolveLabPanel(grp, codexLabItems)
+                                            val step = nextLabPanelTest(resolution.tests.map { it.id }, codexLabItems)
+                                            if (step.item != null) {
+                                                panelTotalCount = resolution.tests.size
+                                                currentPanelIndex = 1
+                                                currentPanelItemId = step.item.id
+                                                panelRemainingIds = step.remainingIds
+                                                currentLabId = draft.labId
+                                                loadLabItemIntoDraft(step.item, onEvent)
+                                                editDetailsOpen = step.item.unit.isBlank() && step.item.referenceRange.isBlank()
+                                            } else {
+                                                panelTotalCount = 0
+                                                currentPanelIndex = 0
+                                                currentPanelItemId = null
+                                                panelRemainingIds = emptyList()
+                                            }
+                                        }
+                                    },
+                                    label = { Text("${grp.name} (${grp.testNames.size})") },
+                                    modifier = Modifier.minimumTouchTarget().testTag("labGroupChip-${grp.id}"),
+                                )
+                            }
+                        }
+                    }
+                }
+
+                val displayedItems = remember(codexLabItems, codexGroups, selectedGroupName) {
+                    val grp = codexGroups.firstOrNull { it.name == selectedGroupName }
+                    if (grp != null) {
+                        resolveLabPanel(grp, codexLabItems).tests
+                    } else {
+                        codexLabItems
+                    }
+                }
+
+                QuickPresetChips(
+                    title = if (selectedGroupName != null) "Panel Tests: $selectedGroupName" else stringResource(R.string.common_tests),
+                    items = displayedItems.map { it.testName },
+                    enabled = enabled,
+                    onSelect = { selectedName ->
+                        panelRemainingIds = emptyList()
+                        panelTotalCount = 0
+                        currentPanelIndex = 0
+                        currentPanelItemId = null
+                        val item = codexLabItems.firstOrNull { it.testName.equals(selectedName, ignoreCase = true) }
+                        if (item != null) {
+                            loadLabItemIntoDraft(item, onEvent)
+                            editDetailsOpen = item.unit.isBlank() && item.referenceRange.isBlank()
+                        }
+                    },
+                    tagPrefix = "labPreset",
+                )
+
+                // Save current test to list if it's new and not already present
+                val trimmedTestName = draft.values.testName.trim()
+                val isAlreadyInCodex = codexLabItems.any { it.testName.equals(trimmedTestName, ignoreCase = true) }
+                if (trimmedTestName.isNotBlank() && !isAlreadyInCodex) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth().testTag("saveToLabCodexBanner"),
+                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(8.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp).fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "New test: add it to your lab test list?",
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            )
+                            TextButton(
+                                onClick = {
+                                    codexRepo.addLabCodexItem(
+                                        LabCodexItem(
+                                            testName = trimmedTestName,
+                                            category = draft.values.testCategory.ifBlank { "Hematology" },
+                                            unit = draft.values.unit.trim(),
+                                            referenceRange = draft.values.referenceRange.trim(),
+                                            defaultResult = draft.values.result.trim(),
+                                            isCustom = true,
+                                        ),
+                                    )
+                                },
+                                modifier = Modifier.minimumTouchTarget().testTag("saveToLabCodexButton"),
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Add to list")
+                            }
+                        }
+                    }
+                }
+
+                ChoiceGroup(
+                    label = stringResource(R.string.test_category),
+                    selected = draft.values.testCategory,
+                    choices = ClinicalVocabulary.testCategories.toList(),
+                    enabled = enabled,
+                    tagPrefix = "labCategoryChoice",
+                    onSelected = { onEvent(AncEvent.LabDraftChanged(LabDraftField.CATEGORY, it)) },
                 )
             }
         }

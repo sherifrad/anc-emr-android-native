@@ -378,4 +378,17 @@
     <string name="ultrasound_more">More: photos and visit link</string>
     <string name="more_open">Open</string>
     <string name="more_close">Close</string>
+    <string name="new_test">New test</string>
+    <string name="edit_test_details">Edit test details</string>
+    <string name="flag">Flag</string>
+    <string name="flag_abnormal">Flag · abnormal</string>
+    <string name="note">Note</string>
+    <string name="add_tests">Add tests</string>
+    <string name="note_filled">Note ✓</string>
+    <string name="lab_test_progress">Test %1$d of %2$d</string>
+    <string name="lab_test_progress_category">Test %1$d of %2$d · %3$s</string>
+    <string name="lab_preset_negative">Negative</string>
+    <string name="lab_preset_non_reactive">Non-reactive</string>
+    <string name="lab_preset_normal">Normal</string>
+    <string name="lab_preset_positive">Positive</string>
 </resources>

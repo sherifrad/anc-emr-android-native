@@ -39,3 +39,32 @@ T202 Fill normal scan on an empty draft: `findingOpen-placenta` is open, and fet
 T203 Tapping `findingRow-fetalNumber` after that opens it and `findingOpen-placenta` is gone.
 T204 With a linked visit or a photo in the draft, `ultrasoundMoreSection` exists on entry; with neither it does not, and tapping `ultrasoundMoreToggle` shows it.
 T205 Report card text still follows the choices (existing `ultrasoundLiveSummary`).
+
+## Round 5b: laboratory entry screen (mock-up section 1, option B; decisions D20, D21)
+Design only. Uses today's per-test draft and panel queue unchanged (no batch state). Assumption (owner has not decided D7): the phone's own keyboard is used for the result, not an on-screen keypad. NOT built here, because each needs logic first: a Review tab listing every pending test, "mark empty yes/no tests as normal", and a Back button between panel tests.
+
+L300. `ui/DesignSystem.kt` gains one shared piece, defined once: `BigChoiceButton(label: String, selected: Boolean, tag: String, onClick: () -> Unit, enabled: Boolean = true)`: full-width outlined button, 56 dp minimum height, check mark and primary-tinted container when selected, theme colours only.
+L301. `LabEditor.kt` has no direct `Card(` call: every card is `SectionCard`. Look, spacing and every existing testTag unchanged unless a spec item below says otherwise.
+L302. Card order: header strip (lab name + date + GA hint; tags `pinnedLabHeaderTag`, `labCalculatedGaCard`, `labDate` kept), test card (tag `labTestCard`), add-tests card (tag `labAddTestsCard`), vault indicator. The pinned action bar (`cancelLab`, `addAnotherLab`, `saveLab`) is unchanged.
+L303. Test card top: a progress line (tag `labTestProgress`): "Test {i} of {n} · {category}" while a panel queue is running (panel count above 1), otherwise just the category when it is not blank (nothing when blank). Then the test name as a large title (tag `labTestTitle`; "New test" string when the name is blank), then the existing light unit/reference-range summary line.
+L304. Editing details: a toggle (tag `labEditDetailsToggle`, text button "Edit test details") reveals, together, the existing name (`labName`), unit (`labUnit`) and reference range (`labRefRange`) fields. Open on entry exactly when the name is blank or both unit and range are blank (today's rule), otherwise closed; `rememberSaveable`. The old per-field "Edit unit and range" button goes away.
+L305. Result: the existing `labResult` field stays, full width, keyboard unchanged, with the existing flag pill shown directly under it when the flag is known. The four preset results (Negative, Non-reactive, Normal, Positive) become `BigChoiceButton`s, one per row, selected when the result equals the preset, tags unchanged in form (`labResultPreset-<index>`, same index order as today), tapping sends the existing `LabDraftChanged(RESULT, value)`.
+L306. Below the result, two toggle chips in one row: `labFlagToggle` ("Flag", with "· abnormal" appended when isAbnormal) and `labNoteToggle` ("Note", with a check mark when notes are non-blank). Flag section (the existing Switch with tag `labAbnormal` and its label) is open on entry exactly when isAbnormal; note section (the existing `labNotes` field) is open on entry exactly when notes are non-blank. `rememberSaveable`. Automatic abnormal flag logic (the LaunchedEffect) is untouched.
+L307. Add-tests card: title via a `SummaryRow` (tag `labAddTestsToggle`, label "Add tests", value Open/Close). Expanded: the existing panel chips, common tests, "Save to my list" banner and category field with every existing tag (`allLabTestsChip`, `labGroupChip-*`, `saveToLabCodexBanner`, `saveToLabCodexButton`). Open on entry exactly when the test name is blank and no panel queue is running; `rememberSaveable`.
+L308. 48 dp touch targets (56 dp for `BigChoiceButton`); theme colours only; works at 160% font scale; no new library; English only.
+L309. Strings: add only what L303-L307 need, each once; delete none.
+
+### Static check (S210-S213, `.agents/checks/check_r5b.py`)
+S210 `DesignSystem.kt` defines `BigChoiceButton` once; `SectionCard`/`SummaryRow` still defined once; no other file defines any of them.
+S211 `LabEditor.kt` calls `SectionCard(`, `SummaryRow(` and `BigChoiceButton(`, has no direct `Card(`.
+S212 All tags named in L302-L307 (and the kept ones `labName`, `labResult`, `labUnit`, `labRefRange`, `labNotes`, `labAbnormal`, `labResultPreset`) appear in `LabEditor.kt`.
+S213 No file under model/, state/ or storage/ changed against HEAD.
+
+### UI tests (independent author, `androidTest/UltrasoundGuidedFlow`-style, file `LabEntryDesignTest.kt`)
+T300 New lab (blank name): `labEditDetailsToggle` exists, `labName` and `labResult` are displayed, `labAddTestsToggle` shows the add-tests content (`allLabTestsChip` exists).
+T301 With a loaded test (name "Hemoglobin", unit "g/dL", range "11-14"): `labTestTitle` shows the name, details closed (`labName` does not exist), `labAddTestsCard` content closed.
+T302 Tapping `labEditDetailsToggle` shows `labName`, `labUnit`, `labRefRange`.
+T303 Tapping preset button `labResultPreset-<index of Positive>` sets the result (the `labResult` field contains "Positive").
+T304 Result "9" with range "11-14" shows the flag as abnormal: the `labAbnormal` switch is on after opening `labFlagToggle`.
+T305 `labNoteToggle` opens `labNotes`; text typed there reaches the draft.
+T306 Existing: `saveLab`, `cancelLab` still displayed.

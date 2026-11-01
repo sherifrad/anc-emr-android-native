@@ -1286,6 +1286,17 @@
         ".agents/checks/check_r5a.py"
       ],
       "covers": ["S200", "S201", "S202", "S203"]
+    },
+    {
+      "id": "STATIC-r5b",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r5b.py",
+      "deps": [
+        "app/src/main/**/*.kt",
+        "app/src/main/res/values/strings.xml",
+        ".agents/checks/check_r5b.py"
+      ],
+      "covers": ["S210", "S211", "S212", "S213"]
     }
   ]
 }
