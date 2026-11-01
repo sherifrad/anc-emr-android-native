@@ -1,6 +1,7 @@
 package com.sherifradwan.ancnative.storage
 
 import com.sherifradwan.ancnative.model.ClinicalVocabulary
+import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.ClinicalValidationError
@@ -441,7 +442,7 @@ data class SaveMedicationCommand(
                 errors.add(ClinicalValidationError.INVALID_DATE)
             }
 
-            val status = draft.values.status.trim().ifEmpty { "Active" }
+            val status = draft.values.status.trim().ifEmpty { MEDICATION_STATUS_ACTIVE }
             if (status !in ClinicalVocabulary.medicationStatuses) {
                 errors.add(ClinicalValidationError.INVALID_STATUS)
             }

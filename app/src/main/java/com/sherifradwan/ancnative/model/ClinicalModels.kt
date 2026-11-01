@@ -3,13 +3,14 @@ package com.sherifradwan.ancnative.model
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
+const val MEDICATION_STATUS_ACTIVE = "Active"
 const val MEDICATION_STATUS_NON_COMPLIANT = "Patient non-compliant"
 const val NORMAL_FETAL_NUMBER = "Singleton"
 const val NORMAL_PRESENTATION = "Cephalic"
 const val NORMAL_AMNIOTIC_FLUID = "Normal"
 
 fun effectiveMedicationStatus(status: String, isNonCompliant: Boolean = false): String {
-    return if (status == "Active" && isNonCompliant) {
+    return if (status == MEDICATION_STATUS_ACTIVE && isNonCompliant) {
         MEDICATION_STATUS_NON_COMPLIANT
     } else {
         status
@@ -18,7 +19,7 @@ fun effectiveMedicationStatus(status: String, isNonCompliant: Boolean = false): 
 
 fun isOngoingMedication(status: String, isNonCompliant: Boolean = false): Boolean {
     val effective = effectiveMedicationStatus(status, isNonCompliant)
-    return effective == "Active" || effective == MEDICATION_STATUS_NON_COMPLIANT
+    return effective == MEDICATION_STATUS_ACTIVE || effective == MEDICATION_STATUS_NON_COMPLIANT
 }
 
 fun ultrasoundImpressionFromChoices(
@@ -177,7 +178,8 @@ object ClinicalVocabulary {
     val amnioticFluids = setOf("Normal", "Oligohydramnios", "Polyhydramnios")
     val testCategories = setOf("Hematology", "Urinalysis", "Biochemistry", "Serology", "Other")
     val medicationRoutes = setOf("Oral", "IM", "IV", "Topical", "Subcutaneous")
-    val medicationStatuses = listOf("Active", "Completed", "Discontinued", MEDICATION_STATUS_NON_COMPLIANT)
+    val medicationStatuses = listOf(MEDICATION_STATUS_ACTIVE, "Completed", "Discontinued", MEDICATION_STATUS_NON_COMPLIANT)
+    val labNamePresets = listOf("Al Borg Labs", "El Mokhtabar", "Hospital Lab", "Alfa Labs")
 
     fun isValidIsoDate(value: String?): Boolean {
         if (value.isNullOrBlank()) return true

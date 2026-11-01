@@ -35,9 +35,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,6 +57,7 @@ import com.sherifradwan.ancnative.model.GestationalAgeEngine
 import com.sherifradwan.ancnative.model.LabResultFlag
 import com.sherifradwan.ancnative.model.codex.ClinicalCodexRepository
 import com.sherifradwan.ancnative.model.codex.LabCodexItem
+import com.sherifradwan.ancnative.model.codex.nextLabPanelTest
 import com.sherifradwan.ancnative.model.codex.resolveLabPanel
 import com.sherifradwan.ancnative.model.labResultFlag
 import com.sherifradwan.ancnative.state.AncEvent
@@ -109,6 +111,11 @@ private fun LabResultFlagPill(flag: LabResultFlag, modifier: Modifier = Modifier
     }
 }
 
+private val StringListSaver = listSaver<List<String>, String>(
+    save = { it },
+    restore = { it },
+)
+
 @Composable
 fun LabEditor(
     state: AncState,
@@ -121,19 +128,19 @@ fun LabEditor(
     val testNameFocusRequester = remember { FocusRequester() }
     val resultFocusRequester = remember { FocusRequester() }
 
-    // Panel Queue State
-    var panelQueue by remember { mutableStateOf<List<LabCodexItem>>(emptyList()) }
-    var panelTotalCount by remember { mutableIntStateOf(0) }
-    var currentPanelIndex by remember { mutableIntStateOf(0) }
-    var currentPanelItem by remember { mutableStateOf<LabCodexItem?>(null) }
-    var currentLabId by remember { mutableStateOf(draft.labId) }
+    // Panel Queue State (Q254)
+    var panelRemainingIds by rememberSaveable(stateSaver = StringListSaver) { mutableStateOf(emptyList<String>()) }
+    var panelTotalCount by rememberSaveable { mutableStateOf(0) }
+    var currentPanelIndex by rememberSaveable { mutableStateOf(0) }
+    var currentPanelItemId by rememberSaveable { mutableStateOf<String?>(null) }
+    var currentLabId by rememberSaveable { mutableStateOf(draft.labId) }
+    var selectedGroupName by rememberSaveable { mutableStateOf<String?>(null) }
 
     // Codex repo and groups
     val context = LocalContext.current
     val codexRepo = remember { ClinicalCodexRepository.getInstance(context) }
     val codexLabItems by codexRepo.labCodexItems.collectAsState()
     val codexGroups by codexRepo.labCategoryGroups.collectAsState()
-    var selectedGroupName by remember { mutableStateOf<String?>(null) }
 
     // Unit & Reference Range visibility state
     var showEditUnitAndRange by remember(draft.labId) { mutableStateOf(false) }
@@ -165,17 +172,24 @@ fun LabEditor(
     LaunchedEffect(draft.labId) {
         if (draft.labId != currentLabId) {
             currentLabId = draft.labId
-            if (panelQueue.isNotEmpty()) {
-                val nextItem = panelQueue.first()
-                panelQueue = panelQueue.drop(1)
-                currentPanelIndex += 1
-                currentPanelItem = nextItem
-                loadLabItemIntoDraft(nextItem, onEvent)
-                showEditUnitAndRange = false
+            if (panelRemainingIds.isNotEmpty()) {
+                val step = nextLabPanelTest(panelRemainingIds, codexLabItems)
+                if (step.item != null) {
+                    panelRemainingIds = step.remainingIds
+                    currentPanelIndex += 1
+                    currentPanelItemId = step.item.id
+                    loadLabItemIntoDraft(step.item, onEvent)
+                    showEditUnitAndRange = false
+                } else {
+                    panelRemainingIds = emptyList()
+                    panelTotalCount = 0
+                    currentPanelIndex = 0
+                    currentPanelItemId = null
+                }
             } else {
                 panelTotalCount = 0
                 currentPanelIndex = 0
-                currentPanelItem = null
+                currentPanelItemId = null
             }
         }
     }
@@ -205,7 +219,7 @@ fun LabEditor(
                     modifier = Modifier.weight(1.5f).minimumTouchTarget().testTag("addAnotherLab"),
                 ) {
                     Text(
-                        if (panelQueue.isNotEmpty()) "Save and next test" else "+ " + stringResource(R.string.add_another_test),
+                        if (panelRemainingIds.isNotEmpty()) "Save and next test" else "+ " + stringResource(R.string.add_another_test),
                         maxLines = 1,
                         softWrap = false,
                     )
@@ -279,7 +293,7 @@ fun LabEditor(
 
                 QuickPresetChips(
                     title = stringResource(R.string.lab_name),
-                    items = listOf("Al Borg Labs", "El Mokhtabar", "Hospital Lab", "Alfa Labs"),
+                    items = ClinicalVocabulary.labNamePresets,
                     enabled = enabled,
                     onSelect = { onEvent(AncEvent.LabDraftChanged(LabDraftField.LAB_NAME, it)) },
                     tagPrefix = "labNamePreset",
@@ -323,6 +337,7 @@ fun LabEditor(
 
         // Panel Queue Progress Card (when queue is active)
         if (panelTotalCount > 0 && currentPanelIndex in 1..panelTotalCount) {
+            val currentPanelItem = currentPanelItemId?.let { id -> codexLabItems.firstOrNull { it.id == id } }
             val currentTestName = draft.values.testName.ifBlank { currentPanelItem?.testName.orEmpty() }
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -390,10 +405,10 @@ fun LabEditor(
                                 selected = selectedGroupName == null,
                                 onClick = {
                                     selectedGroupName = null
-                                    panelQueue = emptyList()
+                                    panelRemainingIds = emptyList()
                                     panelTotalCount = 0
                                     currentPanelIndex = 0
-                                    currentPanelItem = null
+                                    currentPanelItemId = null
                                 },
                                 label = { Text("All Tests ($labItemCount)") },
                                 modifier = Modifier.testTag("allLabTestsChip"),
@@ -404,27 +419,27 @@ fun LabEditor(
                                     onClick = {
                                         if (selectedGroupName == grp.name) {
                                             selectedGroupName = null
-                                            panelQueue = emptyList()
+                                            panelRemainingIds = emptyList()
                                             panelTotalCount = 0
                                             currentPanelIndex = 0
-                                            currentPanelItem = null
+                                            currentPanelItemId = null
                                         } else {
                                             selectedGroupName = grp.name
                                             val resolution = resolveLabPanel(grp, codexLabItems)
-                                            val tests = resolution.tests
-                                            if (tests.isNotEmpty()) {
-                                                panelTotalCount = tests.size
+                                            val step = nextLabPanelTest(resolution.tests.map { it.id }, codexLabItems)
+                                            if (step.item != null) {
+                                                panelTotalCount = resolution.tests.size
                                                 currentPanelIndex = 1
-                                                currentPanelItem = tests.first()
-                                                panelQueue = tests.drop(1)
+                                                currentPanelItemId = step.item.id
+                                                panelRemainingIds = step.remainingIds
                                                 currentLabId = draft.labId
-                                                loadLabItemIntoDraft(tests.first(), onEvent)
+                                                loadLabItemIntoDraft(step.item, onEvent)
                                                 showEditUnitAndRange = false
                                             } else {
                                                 panelTotalCount = 0
                                                 currentPanelIndex = 0
-                                                currentPanelItem = null
-                                                panelQueue = emptyList()
+                                                currentPanelItemId = null
+                                                panelRemainingIds = emptyList()
                                             }
                                         }
                                     },
@@ -451,10 +466,10 @@ fun LabEditor(
                     enabled = enabled,
                     onSelect = { selectedName ->
                         // Tapping a single test chip still loads just that test (and clears the queue)
-                        panelQueue = emptyList()
+                        panelRemainingIds = emptyList()
                         panelTotalCount = 0
                         currentPanelIndex = 0
-                        currentPanelItem = null
+                        currentPanelItemId = null
                         val item = codexLabItems.firstOrNull { it.testName.equals(selectedName, ignoreCase = true) }
                         if (item != null) {
                             loadLabItemIntoDraft(item, onEvent)

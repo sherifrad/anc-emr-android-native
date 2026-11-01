@@ -75,8 +75,9 @@ def check_s110():
     else:
         if match.group(1) not in ("listOf", "persistentListOf"):
             problems.append("medicationStatuses must be an ordered list, found " + match.group(1) + "(...)")
-        tokens = re.findall(r'"([^"]*)"|\b(MEDICATION_STATUS_NON_COMPLIANT)\b', match.group(2))
-        listed = [a or "Patient non-compliant" for a, _ in tokens]
+        tokens = re.findall(r'"([^"]*)"|\b(MEDICATION_STATUS_NON_COMPLIANT|MEDICATION_STATUS_ACTIVE)\b', match.group(2))
+        names = {"MEDICATION_STATUS_NON_COMPLIANT": "Patient non-compliant", "MEDICATION_STATUS_ACTIVE": "Active"}
+        listed = [a or names[b] for a, b in tokens]
         if listed != expected:
             problems.append("medicationStatuses is " + str(listed))
     n = joined.count('"Patient non-compliant"')

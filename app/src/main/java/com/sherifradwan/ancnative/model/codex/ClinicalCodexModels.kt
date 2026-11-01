@@ -71,6 +71,25 @@ fun resolveLabPanel(
     return LabPanelResolution(tests = tests, missing = missing)
 }
 
+data class LabPanelStep(
+    val item: LabCodexItem?,
+    val remainingIds: List<String>,
+)
+
+fun nextLabPanelTest(
+    remainingIds: List<String>,
+    items: List<LabCodexItem>,
+): LabPanelStep {
+    for (i in remainingIds.indices) {
+        val id = remainingIds[i]
+        val match = items.firstOrNull { it.id == id }
+        if (match != null) {
+            return LabPanelStep(item = match, remainingIds = remainingIds.drop(i + 1))
+        }
+    }
+    return LabPanelStep(item = null, remainingIds = emptyList())
+}
+
 fun applyLabItemEdit(
     items: List<LabCodexItem>,
     groups: List<LabCategoryGroup>,

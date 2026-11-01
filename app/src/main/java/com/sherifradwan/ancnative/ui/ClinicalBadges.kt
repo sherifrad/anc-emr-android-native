@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.BpLevel
 import com.sherifradwan.ancnative.model.bpLevel
+import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
 import com.sherifradwan.ancnative.model.MEDICATION_STATUS_NON_COMPLIANT
 
 @Composable
@@ -276,7 +277,7 @@ fun ClinicalRiskBadge(isHighRisk: Boolean, modifier: Modifier = Modifier) {
 @Composable
 fun MedicationStatusBadge(status: String, modifier: Modifier = Modifier) {
     val (containerColor, contentColor) = when (status) {
-        "Active" -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
+        MEDICATION_STATUS_ACTIVE -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
         "Completed" -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
         "Discontinued" -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
         MEDICATION_STATUS_NON_COMPLIANT -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer

@@ -91,7 +91,7 @@ object ClinicalSummaryGenerator {
                 if (!m.route.isNullOrBlank()) sb.append(" via ${m.route}")
                 if (!m.frequency.isNullOrBlank()) sb.append(" (${m.frequency})")
                 val status = effectiveMedicationStatus(m.status, m.isNonCompliant)
-                if (status != "Active") {
+                if (status != MEDICATION_STATUS_ACTIVE) {
                     sb.append(" ($status)")
                 }
                 sb.appendLine()

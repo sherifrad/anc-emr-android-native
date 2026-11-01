@@ -8,6 +8,7 @@ import com.sherifradwan.ancnative.model.DemoPatientDating
 import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.model.DemoVisit
+import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
 import com.sherifradwan.ancnative.model.MEDICATION_STATUS_NON_COMPLIANT
 import com.sherifradwan.ancnative.model.PatientValidationError
 import com.sherifradwan.ancnative.model.effectiveMedicationStatus
@@ -938,7 +939,7 @@ object AncReducer {
         val defaultStart = event.defaultStartDate.ifEmpty { java.time.LocalDate.now().toString() }
         val values = med?.toDraftValues() ?: MedicationDraftValues(
             route = "Oral",
-            status = "Active",
+            status = MEDICATION_STATUS_ACTIVE,
             startDate = defaultStart,
         )
         val medicationId = med?.id ?: event.newMedicationId
@@ -1114,7 +1115,7 @@ object AncReducer {
             MedicationDraftField.START_DATE -> draft.values.copy(startDate = event.value)
             MedicationDraftField.END_DATE -> draft.values.copy(endDate = event.value)
             MedicationDraftField.STATUS -> draft.values.copy(
-                status = event.value.ifBlank { "Active" },
+                status = event.value.ifBlank { MEDICATION_STATUS_ACTIVE },
                 isNonCompliant = (event.value == MEDICATION_STATUS_NON_COMPLIANT),
             )
             MedicationDraftField.NOTES -> draft.values.copy(notes = event.value)
@@ -1275,7 +1276,7 @@ object AncReducer {
             frequency = frequency,
             startDate = startDate,
             endDate = endDate.orEmpty(),
-            status = effStatus.ifBlank { "Active" },
+            status = effStatus.ifBlank { MEDICATION_STATUS_ACTIVE },
             isProphylaxis = isProphylaxis,
             notes = notes.orEmpty(),
             isNonCompliant = (effStatus == MEDICATION_STATUS_NON_COMPLIANT),

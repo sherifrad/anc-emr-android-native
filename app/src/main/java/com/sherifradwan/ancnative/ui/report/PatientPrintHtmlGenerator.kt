@@ -8,6 +8,7 @@ import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.BpLevel
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
+import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
 import com.sherifradwan.ancnative.model.MEDICATION_STATUS_NON_COMPLIANT
 import com.sherifradwan.ancnative.model.bpLevel
 import com.sherifradwan.ancnative.model.effectiveMedicationStatus
@@ -210,7 +211,7 @@ object PatientPrintHtmlGenerator {
             val rows = displayedMeds.map { m ->
                 val statusText = effectiveMedicationStatus(m.status, m.isNonCompliant)
                 val badgeClass = when (statusText) {
-                    "Active" -> "badge badge-teal"
+                    MEDICATION_STATUS_ACTIVE -> "badge badge-teal"
                     MEDICATION_STATUS_NON_COMPLIANT -> "badge badge-danger"
                     else -> "badge"
                 }

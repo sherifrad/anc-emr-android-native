@@ -44,6 +44,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.ClinicalVocabulary
+import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
 import com.sherifradwan.ancnative.model.codex.ClinicalCodexRepository
 import com.sherifradwan.ancnative.model.codex.MedicationCodexItem
 import com.sherifradwan.ancnative.model.effectiveMedicationStatus
@@ -186,7 +187,7 @@ fun MedicationEditor(
                                 onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.FREQUENCY, prior.frequency))
                                 onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ROUTE, prior.route))
                                 // Safety Reset Rule: sets status "Active", wipes adverse notes, end date, and notes
-                                onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, "Active"))
+                                onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, MEDICATION_STATUS_ACTIVE))
                                 onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ADVERSE_NOTES, ""))
                                 onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.END_DATE, ""))
                                 onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.NOTES, ""))
@@ -278,7 +279,7 @@ fun MedicationEditor(
                 // Status ChoiceGroup showing exactly the four statuses
                 ChoiceGroup(
                     label = stringResource(R.string.status),
-                    selected = effectiveMedicationStatus(draft.values.status.ifEmpty { "Active" }, draft.values.isNonCompliant),
+                    selected = effectiveMedicationStatus(draft.values.status.ifEmpty { MEDICATION_STATUS_ACTIVE }, draft.values.isNonCompliant),
                     choices = ClinicalVocabulary.medicationStatuses,
                     enabled = enabled,
                     tagPrefix = "medStatusChoice",
