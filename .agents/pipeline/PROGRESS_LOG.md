@@ -13,3 +13,7 @@ Keeps the history from the handoff until Claude returns after its quota reset. F
 - New owner requirements recorded in HANDOFF_AGY.md: small-screen (Honor 400) sizing, bounded A-/A+ text size in the app and the mocks (90-130 percent, one-line labels never cut), light default, add-your-own values saved for later patients, clinical attention entry field.
 - Mocks verified in a browser at 360 px at 90-130 percent text (no wrapped labels, no console errors). NOT verified: a real device, dark mode visually.
 - Owed next: custom-choices logic round, medication round r5c, text-size control, then the screens in HANDOFF_AGY.md section 2.5. Also owed: reviews listed in section 1.
+
+## 2026-11-02 (stop point)
+- Medication entry design (r5c) built, reviewed, fixed, emulator-tested (7 new tests + workflow tests pass), committed f4b264a.
+- Collapsible medication list in the chart (r5d, owner request): spec, check, briefs, independent tests written; agy build was still running when the owner stopped. Uncommitted partial edits in WorkspaceScreen.kt, strings.xml and MedicationListCollapseTest.kt. Next: if the run did not finish, re-run `python3 .agents/pipeline/run_pipeline.py --round r5d --ui-only` (after `set -a; source .agents/pipeline/LANES.env; set +a`), then read reviewer outputs, run the gate and the emulator tests, commit.

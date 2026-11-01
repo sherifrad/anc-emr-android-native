@@ -1308,6 +1308,17 @@
         ".agents/checks/check_r5c.py"
       ],
       "covers": ["S220", "S221", "S222", "S223"]
+    },
+    {
+      "id": "STATIC-r5d",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r5d.py",
+      "deps": [
+        "app/src/main/**/*.kt",
+        "app/src/main/res/values/strings.xml",
+        ".agents/checks/check_r5d.py"
+      ],
+      "covers": ["S230", "S231", "S232"]
     }
   ]
 }

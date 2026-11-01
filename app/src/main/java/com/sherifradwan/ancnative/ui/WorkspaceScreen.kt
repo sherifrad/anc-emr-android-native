@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -28,6 +29,8 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import com.sherifradwan.ancnative.model.LongitudinalTimelineProjection
 import com.sherifradwan.ancnative.model.LongitudinalTimelineEvent
 import com.sherifradwan.ancnative.model.TimelineEventKind
@@ -69,6 +72,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalDensity
 import com.sherifradwan.ancnative.state.PatientDraftField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -779,17 +783,20 @@ private fun LazyListScope.workspaceContentItems(
         if (patient.medications.isEmpty()) {
             item { Text(stringResource(R.string.no_medications_recorded)) }
         } else {
-            items(patient.medications, key = { it.id }) { med ->
-                MedicationCard(med, patient.status != "archived") {
-                    onEvent(
-                        AncEvent.StartMedicationEditor(
-                            patientId = patient.id,
-                            medicationId = med.id,
-                            newMedicationId = med.id,
-                            editorSessionId = UUID.randomUUID().toString(),
-                        ),
-                    )
-                }
+            item {
+                MedicationsListContent(
+                    patient = patient,
+                    onEditMedication = { med ->
+                        onEvent(
+                            AncEvent.StartMedicationEditor(
+                                patientId = patient.id,
+                                medicationId = med.id,
+                                newMedicationId = med.id,
+                                editorSessionId = UUID.randomUUID().toString(),
+                            ),
+                        )
+                    },
+                )
             }
         }
     } else if (section == WorkspaceSection.EPISODE_OVERVIEW) {
@@ -2121,37 +2128,213 @@ private fun AttachmentsSectionCard(
     }
 }
 
+private val StringSetSaver = listSaver<Set<String>, String>(
+    save = { it.toList() },
+    restore = { it.toSet() },
+)
+
 @Composable
-private fun MedicationCard(med: DemoMedicationRecord, canEdit: Boolean, onEdit: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().testTag("medication-${med.id}"),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+private fun MedicationsListContent(
+    patient: DemoPatient,
+    onEditMedication: (DemoMedicationRecord) -> Unit,
+) {
+    val medications = patient.medications
+    val canEdit = patient.status != "archived"
+
+    var expandedIds by rememberSaveable(
+        patient.id,
+        stateSaver = StringSetSaver,
     ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        mutableStateOf(
+            if (medications.size <= 3) {
+                medications.map { it.id }.toSet()
+            } else {
+                emptySet()
+            }
+        )
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (medications.size > 3) {
+            val allExpanded = medications.isNotEmpty() && medications.all { it.id in expandedIds }
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.End,
             ) {
-                Text(med.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                MedicationStatusBadge(effectiveMedicationStatus(med.status, med.isNonCompliant))
+                TextButton(
+                    onClick = {
+                        expandedIds = if (allExpanded) {
+                            emptySet()
+                        } else {
+                            medications.map { it.id }.toSet()
+                        }
+                    },
+                    modifier = Modifier
+                        .minimumTouchTarget()
+                        .testTag("medicationsToggleAll"),
+                ) {
+                    Text(
+                        text = stringResource(if (allExpanded) R.string.collapse_all else R.string.expand_all),
+                    )
+                }
             }
-            FactRow(R.string.dosage, med.dosage)
-            FactRow(R.string.route, med.route)
-            FactRow(R.string.frequency, med.frequency)
-            FactRow(R.string.start_date, med.startDate)
-            FactRow(R.string.end_date, med.endDate)
-            if (!med.adverseNotes.isNullOrBlank()) {
-                FactRow(R.string.adverse_effects, med.adverseNotes)
+        }
+
+        medications.forEach { med ->
+            val isExpanded = med.id in expandedIds
+            MedicationCard(
+                med = med,
+                isExpanded = isExpanded,
+                canEdit = canEdit,
+                onToggle = {
+                    expandedIds = if (isExpanded) {
+                        expandedIds - med.id
+                    } else {
+                        expandedIds + med.id
+                    }
+                },
+                onEdit = { onEditMedication(med) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun MedicationCard(
+    med: DemoMedicationRecord,
+    isExpanded: Boolean,
+    canEdit: Boolean,
+    onToggle: () -> Unit,
+    onEdit: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("medication-${med.id}"),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+    ) {
+        if (isExpanded) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .minimumTouchTarget()
+                        .testTag("medicationToggle-${med.id}")
+                        .clickable(onClick = onToggle),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowUp,
+                            contentDescription = stringResource(R.string.hide_details),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp),
+                        )
+                        Text(med.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    }
+                    MedicationStatusBadge(effectiveMedicationStatus(med.status, med.isNonCompliant))
+                }
+                FactRow(R.string.dosage, med.dosage)
+                FactRow(R.string.route, med.route)
+                FactRow(R.string.frequency, med.frequency)
+                FactRow(R.string.start_date, med.startDate)
+                FactRow(R.string.end_date, med.endDate)
+                if (!med.adverseNotes.isNullOrBlank()) {
+                    FactRow(R.string.adverse_effects, med.adverseNotes)
+                }
+                FactRow(R.string.notes, med.notes)
+                if (canEdit) {
+                    PencilEditButton(
+                        contentDescription = stringResource(R.string.edit_medication),
+                        tag = "editMedication-${med.id}",
+                        onClick = onEdit,
+                    )
+                }
             }
-            FactRow(R.string.notes, med.notes)
-            if (canEdit) {
-                PencilEditButton(
-                    contentDescription = stringResource(R.string.edit_medication),
-                    tag = "editMedication-${med.id}",
-                    onClick = onEdit,
-                )
+        } else {
+            val summaryText = listOfNotNull(
+                med.dosage?.takeIf { it.isNotBlank() },
+                med.frequency?.takeIf { it.isNotBlank() },
+            ).joinToString(" · ")
+
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .minimumTouchTarget()
+                        .testTag("medicationToggle-${med.id}")
+                        .clickable(onClick = onToggle)
+                        .padding(
+                            start = 16.dp,
+                            end = if (canEdit) 52.dp else 16.dp,
+                            top = 8.dp,
+                            bottom = 8.dp,
+                        ),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    CollapsedMedicationRow(
+                        name = med.name,
+                        status = effectiveMedicationStatus(med.status, med.isNonCompliant),
+                        summaryText = summaryText,
+                    )
+                }
+                if (canEdit) {
+                    PencilEditButton(
+                        contentDescription = stringResource(R.string.edit_medication),
+                        tag = "editMedication-${med.id}",
+                        onClick = onEdit,
+                    )
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun CollapsedMedicationRow(
+    name: String,
+    status: String,
+    summaryText: String,
+    modifier: Modifier = Modifier,
+) {
+    // The summary is dropped first: if the name cannot fit with it, hide it for good.
+    var summaryHidden by remember(name, summaryText, LocalDensity.current.fontScale) { mutableStateOf(false) }
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Default.KeyboardArrowDown,
+            contentDescription = stringResource(R.string.show_details),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp),
+        )
+        Text(
+            text = name,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            onTextLayout = { if (it.hasVisualOverflow && summaryText.isNotBlank()) summaryHidden = true },
+            modifier = Modifier.weight(1f, fill = false),
+        )
+        MedicationStatusBadge(status)
+        if (summaryText.isNotBlank() && !summaryHidden) {
+            Text(
+                text = summaryText,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Clip,
+            )
         }
     }
 }

@@ -394,4 +394,8 @@
     <string name="medication">Medication</string>
     <string name="medication_dose_and_schedule">Dose and schedule</string>
     <string name="medication_more">More: end date, adverse effects and notes</string>
+    <string name="show_details">Show details</string>
+    <string name="hide_details">Hide details</string>
+    <string name="collapse_all">Collapse all</string>
+    <string name="expand_all">Expand all</string>
 </resources>

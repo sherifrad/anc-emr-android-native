@@ -99,3 +99,13 @@ T402 Tapping `medRow-frequency` opens it (`medOpen-frequency` exists) and `medOp
 T403 Exactly four `medStatusChoice-*` buttons exist; none says Prophylaxis; tapping the fourth sets the draft status so that Patient non-compliant is selected.
 T404 With an end date or adverse note in the draft, `medMoreSection` exists on entry; with none it does not, and tapping `medMoreToggle` shows it.
 T405 `saveMedication`, `cancelMedication` and `addAnotherMedication` are displayed.
+
+## Round 5d: collapsible medication list in the patient chart (owner request 2026-11-02)
+Why: a long list of medication cards makes the doctor scroll the whole chart. Design only; no model/state/storage change.
+C500. In `WorkspaceScreen.kt`, section MEDICATIONS: each `MedicationCard` can collapse. Collapsed shows ONE row: name, status badge, and a single-line summary "dose · frequency" (skip empty parts), plus the edit pencil when editing is allowed. Expanded shows today's full card unchanged.
+C501. The whole collapsed row is the toggle (tag `medicationToggle-<id>`, 48 dp minimum, chevron icon up/down, content description from new strings "Show details"/"Hide details"). The edit pencil keeps tag `editMedication-<id>` and works while collapsed.
+C502. Default: expanded when the patient has 3 or fewer medications; all collapsed when more than 3. Per-card state is `rememberSaveable` keyed on the medication id. Existing tag `medication-<id>` stays on the card in both states.
+C503. Above the list, when there are more than 3 medications, one text button tagged `medicationsToggleAll` ("Collapse all"/"Expand all") that sets every card; the state is one place (a rememberSaveable set of expanded ids) used by the cards and this button.
+C504. Summary text is one line (maxLines=1, ellipsis not allowed for name+status: shorten by dropping the summary first); 48 dp targets; theme colours; works at 160% font; English; new strings only for the four labels above, defined once.
+S230 WorkspaceScreen.kt carries tags `medicationToggle-`, `medicationsToggleAll`, `medication-`, `editMedication-`. S231 strings.xml defines the four new labels once. S232 no model/state/storage file changed against HEAD.
+T500 With 2 medications both cards show full details (a FactRow label such as Dosage visible). T501 With 4 medications all are collapsed (no Dosage label), the toggle-all button exists; tapping `medicationToggle-<id>` expands only that card. T502 Tapping `medicationsToggleAll` expands all, tapping it again collapses all. T503 `editMedication-<id>` exists and is displayed while collapsed.
