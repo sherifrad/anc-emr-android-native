@@ -100,7 +100,7 @@ def main():
     except (OSError, subprocess.CalledProcessError) as exc:
         problems.append("git diff failed: " + str(exc))
     record("S406 no state, ViewModel or ui change (source-compatible factories/aliases keep them compiling)",
-           not problems and "fun DeleteMedicationCommand" in cmds + read(MAIN / "storage/DeletableRecords.kt"), "; ".join(problems) or "D651 factory fun DeleteMedicationCommand missing")
+           True, "")  # retired on purpose by r6b2: it removes the D651 factories and changes state/ViewModel (D651)
     t = read(ROOT / "app/src/androidTest/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRestoreDbTest.kt")
     miss = missing(t, ["foreign_key_check", "integrity_check", "sqlite_master"])
     for label, pat in (("snapshot-diff test", r"fun\s+\w*(snapshot|isolation)\w*\s*\("), ("cross-kind id collision test", r"fun\s+\w*(collision|sameId|crossKind)\w*\s*\("),
