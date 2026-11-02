@@ -263,4 +263,24 @@ class DeletableRegistryTest {
         val sameFields = lab.delete(recordId = "med-1", hash = med.goldenHash)
         assertNotEquals(med.delete().computeFingerprint(), sameFields.computeFingerprint())
     }
+
+    @Test
+    fun everyDeletableTypeValueHasAFullyDescribedAdapter() {
+        val tags = mutableListOf<String>()
+        val kinds = mutableListOf<String>()
+        val validKinds = ClinicalRecordKind.values().map { it.name }.toSet()
+        DeletableType.values().forEach { type ->
+            val adapter = DeletableRegistry.of<DeletableRecord>(type) // throws when no adapter is registered
+            assertEquals(type, adapter.type)
+            assertTrue("$type tag", adapter.fingerprintTag.isNotBlank())
+            assertTrue("$type delete kind", adapter.deleteReceiptKind in validKinds)
+            assertTrue("$type restore kind", adapter.restoreReceiptKind in validKinds)
+            assertNotEquals("$type", adapter.deleteReceiptKind, adapter.restoreReceiptKind)
+            assertEquals("$type notices must be distinct", 3, setOf(adapter.deletedNotice, adapter.restoredNotice, adapter.saveUndoneNotice).size)
+            tags += adapter.fingerprintTag
+            kinds += listOf(adapter.deleteReceiptKind, adapter.restoreReceiptKind)
+        }
+        assertEquals("fingerprintTag must be distinct", tags.size, tags.toSet().size)
+        assertEquals("receipt kinds must be distinct", kinds.size, kinds.toSet().size)
+    }
 }

@@ -864,7 +864,8 @@ object AncReducer {
                 ClinicalRecordKind.ULTRASOUND_CREATE, ClinicalRecordKind.ULTRASOUND_UPDATE -> state.copy(ultrasoundDraft = state.ultrasoundDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
                 ClinicalRecordKind.LAB_CREATE, ClinicalRecordKind.LAB_UPDATE -> state.copy(labDraft = state.labDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
                 ClinicalRecordKind.MEDICATION_CREATE, ClinicalRecordKind.MEDICATION_UPDATE -> state.copy(medicationDraft = state.medicationDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
-                ClinicalRecordKind.MEDICATION_DELETE, ClinicalRecordKind.MEDICATION_RESTORE, ClinicalRecordKind.LAB_DELETE, ClinicalRecordKind.LAB_RESTORE -> state
+                // Delete and restore commands (every deletable kind) have no draft, so there is nothing to mark.
+                else -> state
             }
             is AncEvent.PatientValidationFailed -> validationFailed(state, event)
             is AncEvent.SaveStarted -> if (state.canAccept(event.token)) {
