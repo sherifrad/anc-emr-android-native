@@ -30,7 +30,9 @@ def main():
     cmds = read(MAIN / "storage/ClinicalCommands.kt")
     miss = has_all(cmds, ["DeleteMedicationCommand", "RestoreMedicationCommand", "DeleteLabInvestigationCommand",
                           "RestoreLabInvestigationCommand", "MEDICATION_DELETE", "MEDICATION_RESTORE", "LAB_DELETE",
-                          "LAB_RESTORE", "medicationContentHash", "labContentHash"])
+                          "LAB_RESTORE"])
+    # the content hashes moved to storage/DeletableRecords.kt in round 6b1
+    miss += has_all(read(MAIN / "storage/DeletableRecords.kt"), ["medicationContentHash", "labContentHash"])
     record("S300 delete and restore commands, kinds and hashes defined", not miss, "missing " + ", ".join(miss))
     dao = read(MAIN / "storage/RecordsDao.kt")
     miss = has_all(dao, ["deleteMedication", "deleteLabInvestigation", "latestClinicalReceiptForRecord"])
