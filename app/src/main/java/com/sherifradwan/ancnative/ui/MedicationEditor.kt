@@ -168,6 +168,8 @@ fun MedicationEditor(
                     }
                 },
                 tagPrefix = "medPreset",
+                collapseAfter = PRESAVED_COLLAPSE_AFTER,
+                toggleTag = "presavedToggle",
             )
 
             // Save current medication to my list if it's new
@@ -239,6 +241,7 @@ fun MedicationEditor(
                         }
                     },
                     tagPrefix = "patientPrevMed",
+                    collapseAfter = PRESAVED_COLLAPSE_AFTER,
                 )
             }
         }

@@ -11,9 +11,9 @@ object LabDeleteAdapter : DeletableRecordAdapter<DemoLabInvestigation> {
     override val deleteReceiptKind: String = "LAB_DELETE"
     override val restoreReceiptKind: String = "LAB_RESTORE"
     override val section: WorkspaceSection = WorkspaceSection.LABORATORY
-    override val deletedNotice: SavedNotice = SavedNotice.LABORATORY
-    override val restoredNotice: SavedNotice = SavedNotice.LABORATORY
-    override val saveUndoneNotice: SavedNotice = SavedNotice.LABORATORY
+    override val deletedNotice: SavedNotice = SavedNotice.LAB_DELETED
+    override val restoredNotice: SavedNotice = SavedNotice.LAB_RESTORED
+    override val saveUndoneNotice: SavedNotice = SavedNotice.LAB_SAVE_UNDONE
 
     override fun label(record: DemoLabInvestigation): String = record.testName
 

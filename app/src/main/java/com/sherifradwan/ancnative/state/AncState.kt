@@ -205,6 +205,31 @@ enum class SavedNotice {
     ULTRASOUND,
     LABORATORY,
     MEDICATIONS,
+    MEDICATION_DELETED,
+    MEDICATION_RESTORED,
+    MEDICATION_SAVE_UNDONE,
+    LAB_DELETED,
+    LAB_RESTORED,
+    LAB_SAVE_UNDONE,
+}
+fun SavedNotice?.stringRes(): Int = when (this) {
+    SavedNotice.PATIENT -> R.string.patient_saved
+    SavedNotice.PATIENT_DATING_NOT_UPDATED -> R.string.patient_saved_dating_not_updated
+    SavedNotice.HISTORIES -> R.string.histories_saved
+    SavedNotice.PREGNANCY -> R.string.pregnancy_saved
+    SavedNotice.ARCHIVED -> R.string.patient_archived_notice
+    SavedNotice.UNARCHIVED -> R.string.patient_unarchived_notice
+    SavedNotice.DATING -> R.string.dating_saved
+    SavedNotice.ULTRASOUND -> R.string.ultrasound_saved
+    SavedNotice.LABORATORY -> R.string.lab_saved
+    SavedNotice.MEDICATIONS -> R.string.medication_saved
+    SavedNotice.MEDICATION_DELETED -> R.string.medication_deleted
+    SavedNotice.MEDICATION_RESTORED -> R.string.medication_restored
+    SavedNotice.MEDICATION_SAVE_UNDONE -> R.string.medication_save_undone
+    SavedNotice.LAB_DELETED -> R.string.lab_deleted
+    SavedNotice.LAB_RESTORED -> R.string.lab_restored
+    SavedNotice.LAB_SAVE_UNDONE -> R.string.lab_save_undone
+    SavedNotice.VISIT, null -> R.string.visit_saved
 }
 enum class PatientEditorKind { PROFILE, HISTORIES, PREGNANCY, STATUS }
 

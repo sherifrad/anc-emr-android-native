@@ -114,7 +114,8 @@ import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.WorkspaceSection
-import com.sherifradwan.ancnative.state.SavedNotice
+import com.sherifradwan.ancnative.state.stringRes
+import com.sherifradwan.ancnative.storage.DeletableType
 import java.time.LocalDate
 import java.util.UUID
 
@@ -529,7 +530,7 @@ private fun LazyListScope.workspaceContentItems(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text(stringResource(state.noticeResource()), color = MaterialTheme.colorScheme.tertiary)
+                    Text(stringResource(state.notice.stringRes()), color = MaterialTheme.colorScheme.tertiary)
                     TextButton(onClick = { onEvent(AncEvent.DismissNotice) }) {
                         Text(stringResource(R.string.close), maxLines = 1, softWrap = false)
                     }
@@ -746,6 +747,7 @@ private fun LazyListScope.workspaceContentItems(
                     lab = lab,
                     patient = patient,
                     canEdit = patient.status != "archived",
+                    onDelete = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.LAB, lab.id)) },
                 ) {
                     onEvent(
                         AncEvent.StartLabEditor(
@@ -786,6 +788,9 @@ private fun LazyListScope.workspaceContentItems(
             item {
                 MedicationsListContent(
                     patient = patient,
+                    onDeleteMedication = { med ->
+                        onEvent(AncEvent.RequestDelete(patient.id, DeletableType.MEDICATION, med.id))
+                    },
                     onEditMedication = { med ->
                         onEvent(
                             AncEvent.StartMedicationEditor(
@@ -1513,6 +1518,7 @@ private fun LabCard(
     lab: DemoLabInvestigation,
     patient: DemoPatient,
     canEdit: Boolean,
+    onDelete: () -> Unit,
     onEdit: () -> Unit,
 ) {
     Card(
@@ -1558,6 +1564,7 @@ private fun LabCard(
                     contentDescription = stringResource(R.string.edit_lab),
                     tag = "editLab-${lab.id}",
                     onClick = onEdit,
+                    trailing = { DeleteIconButton(DeletableType.LAB, lab.id, onDelete) },
                 )
             }
         }
@@ -2136,6 +2143,7 @@ private val StringSetSaver = listSaver<Set<String>, String>(
 @Composable
 private fun MedicationsListContent(
     patient: DemoPatient,
+    onDeleteMedication: (DemoMedicationRecord) -> Unit,
     onEditMedication: (DemoMedicationRecord) -> Unit,
 ) {
     val medications = patient.medications
@@ -2194,6 +2202,7 @@ private fun MedicationsListContent(
                     }
                 },
                 onEdit = { onEditMedication(med) },
+                onDelete = { onDeleteMedication(med) },
             )
         }
     }
@@ -2206,6 +2215,7 @@ private fun MedicationCard(
     canEdit: Boolean,
     onToggle: () -> Unit,
     onEdit: () -> Unit,
+    onDelete: () -> Unit,
 ) {
     Card(
         modifier = Modifier
@@ -2252,6 +2262,7 @@ private fun MedicationCard(
                         contentDescription = stringResource(R.string.edit_medication),
                         tag = "editMedication-${med.id}",
                         onClick = onEdit,
+                        trailing = { DeleteIconButton(DeletableType.MEDICATION, med.id, onDelete) },
                     )
                 }
             }
@@ -2273,7 +2284,7 @@ private fun MedicationCard(
                         .clickable(onClick = onToggle)
                         .padding(
                             start = 16.dp,
-                            end = if (canEdit) 52.dp else 16.dp,
+                            end = if (canEdit) 100.dp else 16.dp,
                             top = 8.dp,
                             bottom = 8.dp,
                         ),
@@ -2290,6 +2301,7 @@ private fun MedicationCard(
                         contentDescription = stringResource(R.string.edit_medication),
                         tag = "editMedication-${med.id}",
                         onClick = onEdit,
+                        trailing = { DeleteIconButton(DeletableType.MEDICATION, med.id, onDelete) },
                     )
                 }
             }
@@ -2339,20 +2351,6 @@ private fun CollapsedMedicationRow(
     }
 }
 
-private fun AncState.noticeResource(): Int = when (notice) {
-    SavedNotice.PATIENT -> R.string.patient_saved
-    SavedNotice.PATIENT_DATING_NOT_UPDATED -> R.string.patient_saved_dating_not_updated
-    SavedNotice.HISTORIES -> R.string.histories_saved
-    SavedNotice.PREGNANCY -> R.string.pregnancy_saved
-    SavedNotice.ARCHIVED -> R.string.patient_archived_notice
-    SavedNotice.UNARCHIVED -> R.string.patient_unarchived_notice
-    SavedNotice.DATING -> R.string.dating_saved
-    SavedNotice.ULTRASOUND -> R.string.ultrasound_saved
-    SavedNotice.LABORATORY -> R.string.lab_saved
-    SavedNotice.MEDICATIONS -> R.string.medication_saved
-    SavedNotice.VISIT, null -> R.string.visit_saved
-}
-
 @StringRes
 fun WorkspaceSection.labelResource(): Int = when (this) {
     WorkspaceSection.OBSTETRIC_HISTORY -> R.string.obstetric_history
@@ -2373,8 +2371,10 @@ internal fun PencilEditButton(
     contentDescription: String,
     tag: String,
     onClick: () -> Unit,
+    trailing: (@Composable () -> Unit)? = null,
 ) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+        trailing?.invoke()
         IconButton(onClick = onClick, modifier = Modifier.testTag(tag)) {
             Icon(
                 Icons.Default.Edit,

@@ -211,30 +211,33 @@ fun AncApp(
                         }
                     }
                 }
-                when (val route = state.route) {
-                    AncRoute.PatientList -> PatientListScreen(state, onEvent)
-                    is AncRoute.Workspace -> WorkspaceScreen(
-                        state = state,
-                        route = route,
-                        onEvent = onEvent,
-                        onStartVisit = onStartVisit,
-                    )
-                    is AncRoute.Profile -> ProfileScreen(state, route, onEvent)
-                    is AncRoute.VisitEditor -> VisitEditor(
-                        state = state,
-                        route = route,
-                        onEvent = onEvent,
-                        onSave = onSaveVisit,
-                    )
-                    is AncRoute.PatientEditor -> PatientEditor(state, route, onEvent)
-                    is AncRoute.OtherHistoriesEditor -> OtherHistoriesEditor(state, route, onEvent)
-                    is AncRoute.PreviousPregnancyEditor -> PreviousPregnancyEditor(state, route, onEvent)
-                    is AncRoute.StatusEditor -> PatientStatusEditor(state, route, onEvent)
-                    is AncRoute.DatingEditor -> DatingEditor(state, route, onEvent)
-                    is AncRoute.UltrasoundEditor -> UltrasoundEditor(state, route, onEvent)
-                    is AncRoute.LabEditor -> LabEditor(state, route, onEvent)
-                    is AncRoute.MedicationEditor -> MedicationEditor(state, route, onEvent)
+                Box(Modifier.weight(1f).fillMaxWidth()) {
+                    when (val route = state.route) {
+                        AncRoute.PatientList -> PatientListScreen(state, onEvent)
+                        is AncRoute.Workspace -> WorkspaceScreen(
+                            state = state,
+                            route = route,
+                            onEvent = onEvent,
+                            onStartVisit = onStartVisit,
+                        )
+                        is AncRoute.Profile -> ProfileScreen(state, route, onEvent)
+                        is AncRoute.VisitEditor -> VisitEditor(
+                            state = state,
+                            route = route,
+                            onEvent = onEvent,
+                            onSave = onSaveVisit,
+                        )
+                        is AncRoute.PatientEditor -> PatientEditor(state, route, onEvent)
+                        is AncRoute.OtherHistoriesEditor -> OtherHistoriesEditor(state, route, onEvent)
+                        is AncRoute.PreviousPregnancyEditor -> PreviousPregnancyEditor(state, route, onEvent)
+                        is AncRoute.StatusEditor -> PatientStatusEditor(state, route, onEvent)
+                        is AncRoute.DatingEditor -> DatingEditor(state, route, onEvent)
+                        is AncRoute.UltrasoundEditor -> UltrasoundEditor(state, route, onEvent)
+                        is AncRoute.LabEditor -> LabEditor(state, route, onEvent)
+                        is AncRoute.MedicationEditor -> MedicationEditor(state, route, onEvent)
+                    }
                 }
+                UndoBarHost(state, onEvent)
             }
         }
     }
@@ -266,6 +269,10 @@ fun AncApp(
                 }
             },
         )
+    }
+
+    if (unlocked && !isAppLocked && securitySettings?.needsPinSetup != true) {
+        DeleteConfirmDialog(state, onEvent)
     }
 
     if (unlocked && !isAppLocked && securitySettings?.needsPinSetup != true && state.showDiscardDialog) {

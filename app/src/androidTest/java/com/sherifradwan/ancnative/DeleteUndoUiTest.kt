@@ -1,0 +1,343 @@
+package com.sherifradwan.ancnative
+
+import androidx.activity.compose.setContent
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.sherifradwan.ancnative.model.DemoFixtures
+import com.sherifradwan.ancnative.model.DemoLabInvestigation
+import com.sherifradwan.ancnative.model.DemoMedicationRecord
+import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
+import com.sherifradwan.ancnative.model.codex.ClinicalCodexRepository
+import com.sherifradwan.ancnative.state.AncEvent
+import com.sherifradwan.ancnative.state.AncReducer
+import com.sherifradwan.ancnative.state.AncRoute
+import com.sherifradwan.ancnative.state.AncState
+import com.sherifradwan.ancnative.state.UndoCoordinator
+import com.sherifradwan.ancnative.state.WorkspaceSection
+import com.sherifradwan.ancnative.storage.ClinicalCommand
+import com.sherifradwan.ancnative.storage.ClinicalCommandOutcome
+import com.sherifradwan.ancnative.storage.ClinicalCommandReceipt
+import com.sherifradwan.ancnative.storage.DeletableType
+import com.sherifradwan.ancnative.storage.DeleteRecordCommand
+import com.sherifradwan.ancnative.storage.RecordSnapshot
+import com.sherifradwan.ancnative.storage.RecordUndoCommand
+import com.sherifradwan.ancnative.storage.RestoreRecordCommand
+import com.sherifradwan.ancnative.storage.VaultState
+import com.sherifradwan.ancnative.ui.AncApp
+import com.sherifradwan.ancnative.ui.AncTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+/**
+ * The global delete / Undo UI (DeleteConfirmDialog, UndoBarHost, DeleteIconButton) mounted through the real AncApp,
+ * driven by the real reducer and the real UndoCoordinator on an in-memory store (no vault, no PIN).
+ */
+@RunWith(AndroidJUnit4::class)
+class DeleteUndoUiTest {
+    @get:Rule
+    val compose = createAndroidComposeRule<MainActivity>()
+
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private var state by mutableStateOf(AncState(patients = emptyList()))
+    private lateinit var coordinator: UndoCoordinator
+
+    @After
+    fun tearDown() {
+        coordinator.clear()
+        scope.cancel()
+    }
+
+    private class Kind(val type: DeletableType, val section: WorkspaceSection, val card: String, val id: String)
+
+    private val med = Kind(DeletableType.MEDICATION, WorkspaceSection.MEDICATIONS, "medication-", "ui-med-1")
+    private val lab = Kind(DeletableType.LAB, WorkspaceSection.LABORATORY, "lab-", "ui-lab-1")
+
+    private fun medication(patientId: String, n: Int) = DemoMedicationRecord(
+        id = "ui-med-$n", patientId = patientId, name = "UiDrug $n", dosage = "${n}00 mg", route = "Oral",
+        frequency = "Twice daily", startDate = "2026-03-01", endDate = null, status = MEDICATION_STATUS_ACTIVE,
+        notes = null, isProphylaxis = false, revision = 1,
+    )
+
+    private fun labResult(patientId: String, n: Int) = DemoLabInvestigation(
+        id = "ui-lab-$n", patientId = patientId, date = "2026-03-02", testCategory = "Hematology", testName = "UiTest $n",
+        result = "1$n", unit = "g/dL", referenceRange = null, isAbnormal = false, notes = null, revision = 1,
+    )
+
+    private val base = DemoFixtures.patients.first()
+    private val patientA = base.copy(
+        medications = listOf(medication(base.id, 1), medication(base.id, 2)),
+        labInvestigations = listOf(labResult(base.id, 1), labResult(base.id, 2)),
+        status = "active",
+    )
+    private val patientB = DemoFixtures.patients[1].copy(
+        medications = listOf(medication(DemoFixtures.patients[1].id, 1)),
+        labInvestigations = listOf(labResult(DemoFixtures.patients[1].id, 1)),
+    )
+
+    /** In-memory stand-in for the vault: applies a delete/restore command to `state` and returns the receipt. */
+    private fun commit(cmd: ClinicalCommand): ClinicalCommandOutcome {
+        val undo = cmd as RecordUndoCommand
+        val patient = state.patient(undo.patientId)!!
+        val updated = when (undo) {
+            is DeleteRecordCommand -> when (undo.type) {
+                DeletableType.MEDICATION -> patient.copy(medications = patient.medications.filterNot { it.id == undo.recordId })
+                DeletableType.LAB -> patient.copy(labInvestigations = patient.labInvestigations.filterNot { it.id == undo.recordId })
+            }
+            is RestoreRecordCommand -> when (val record = undo.record) {
+                is DemoMedicationRecord -> patient.copy(medications = patient.medications + record)
+                is DemoLabInvestigation -> patient.copy(labInvestigations = patient.labInvestigations + record)
+                else -> error("unexpected record ${record::class}")
+            }
+        }.copy(revision = patient.revision + 1)
+        val receipt = ClinicalCommandReceipt(
+            operationUuid = undo.operationUuid,
+            patientId = undo.patientId,
+            recordKind = undo.recordKind.name,
+            recordId = undo.recordId,
+            committedRevision = 1,
+            committedPatientRevision = updated.revision,
+            fingerprint = undo.computeFingerprint(),
+        )
+        return ClinicalCommandOutcome.Committed(
+            RecordSnapshot(state.patients.map { if (it.id == patient.id) updated else it }),
+            receipt,
+        )
+    }
+
+    private fun host(route: AncRoute, patients: List<com.sherifradwan.ancnative.model.DemoPatient> = listOf(patientA, patientB)) {
+        state = AncState(
+            patients = patients,
+            vaultState = VaultState.Unlocked(sessionEpoch = 6600L),
+            route = route,
+        )
+        coordinator = UndoCoordinator(
+            scope = scope,
+            execute = { cmd, _ -> commit(cmd) },
+            reduce = { state = AncReducer.reduce(state, it) },
+            currentState = { state },
+            snapshot = { RecordSnapshot(state.patients) },
+        )
+        val onEvent: (AncEvent) -> Unit = { event ->
+            when (event) {
+                AncEvent.ConfirmDelete -> {
+                    val pending = state.deleteConfirmation
+                    state = AncReducer.reduce(state, event)
+                    if (pending != null && state.deleteConfirmation == null) {
+                        coordinator.beginDelete(pending.type, pending.patientId, pending.recordId)
+                    }
+                }
+                is AncEvent.UndoRequested -> coordinator.request(event.token)
+                else -> state = AncReducer.reduce(state, event)
+            }
+        }
+        compose.activityRule.scenario.onActivity { activity ->
+            activity.setContent {
+                AncTheme {
+                    AncApp(
+                        state = state,
+                        onEvent = onEvent,
+                        onStartVisit = { _, _ -> },
+                        onSaveVisit = {},
+                        onInitialize = {},
+                        onUnlock = {},
+                        onLock = {},
+                        onRetryStorage = {},
+                    )
+                }
+            }
+        }
+        compose.waitForIdle()
+    }
+
+    private fun workspace(kind: Kind) = host(AncRoute.Workspace(patientA.id, kind.section))
+
+    private fun scrollTo(tag: String) {
+        compose.onNodeWithTag("workspaceList", useUnmergedTree = true).performScrollToNode(hasTestTag(tag))
+    }
+
+    private fun exists(tag: String) = compose.onNodeWithTag(tag, useUnmergedTree = true).assertExists()
+    private fun missing(tag: String) = compose.onNodeWithTag(tag, useUnmergedTree = true).assertDoesNotExist()
+    private fun click(tag: String) {
+        compose.onNodeWithTag(tag, useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+    }
+
+    private fun deleteTag(kind: Kind) = "delete-${kind.type.name.lowercase()}-${kind.id}"
+
+    private fun openDialog(kind: Kind) {
+        scrollTo(deleteTag(kind))
+        click(deleteTag(kind))
+        exists("deleteConfirmDialog")
+    }
+
+    private fun deleteConfirmsRemovesCardAndShowsUndoBar(kind: Kind) {
+        workspace(kind)
+        scrollTo(kind.card + kind.id)
+        exists(kind.card + kind.id)
+        missing("undoBar")
+        openDialog(kind)
+        click("deleteConfirm")
+        compose.waitUntil(5_000) { compose.onAllNodes(hasTestTag("undoBar"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        missing("deleteConfirmDialog")
+        missing(kind.card + kind.id)
+        compose.onNodeWithTag("undoBar", useUnmergedTree = true).assertIsDisplayed()
+        exists("undoButton")
+    }
+
+    private fun cancelKeepsTheCard(kind: Kind) {
+        workspace(kind)
+        openDialog(kind)
+        click("deleteCancel")
+        missing("deleteConfirmDialog")
+        missing("undoBar")
+        scrollTo(kind.card + kind.id)
+        exists(kind.card + kind.id)
+    }
+
+    private fun undoRestoresTheCard(kind: Kind) {
+        deleteConfirmsRemovesCardAndShowsUndoBar(kind)
+        click("undoButton")
+        compose.waitUntil(5_000) { compose.onAllNodes(hasTestTag("undoBar"), useUnmergedTree = true).fetchSemanticsNodes().isEmpty() }
+        scrollTo(kind.card + kind.id)
+        exists(kind.card + kind.id)
+    }
+
+    private fun barDisappearsAfterAboutEightSeconds(kind: Kind) {
+        deleteConfirmsRemovesCardAndShowsUndoBar(kind)
+        // The 8 s timer runs on the coordinator's real-time scope; wait for real.
+        compose.waitUntil(15_000) { compose.onAllNodes(hasTestTag("undoBar"), useUnmergedTree = true).fetchSemanticsNodes().isEmpty() }
+        missing(kind.card + kind.id)
+    }
+
+    @Test
+    fun medication_deleteConfirmRemovesCardAndShowsUndoBar() = deleteConfirmsRemovesCardAndShowsUndoBar(med)
+
+    @Test
+    fun medication_cancelKeepsTheCard() = cancelKeepsTheCard(med)
+
+    @Test
+    fun medication_undoRestoresTheCard() = undoRestoresTheCard(med)
+
+    @Test
+    fun medication_barDisappearsAfterAboutEightSeconds() = barDisappearsAfterAboutEightSeconds(med)
+
+    @Test
+    fun lab_deleteConfirmRemovesCardAndShowsUndoBar() = deleteConfirmsRemovesCardAndShowsUndoBar(lab)
+
+    @Test
+    fun lab_cancelKeepsTheCard() = cancelKeepsTheCard(lab)
+
+    @Test
+    fun lab_undoRestoresTheCard() = undoRestoresTheCard(lab)
+
+    @Test
+    fun lab_barDisappearsAfterAboutEightSeconds() = barDisappearsAfterAboutEightSeconds(lab)
+
+    @Test
+    fun deletingAMedicationLeavesLabsAndTheOtherPatientUntouched() {
+        workspace(med)
+        openDialog(med)
+        click("deleteConfirm")
+        compose.waitUntil(5_000) { compose.onAllNodes(hasTestTag("undoBar"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        val a = state.patient(patientA.id)!!
+        assertEquals(listOf("ui-med-2"), a.medications.map { it.id })
+        assertEquals(patientA.labInvestigations, a.labInvestigations)
+        assertEquals(patientB, state.patient(patientB.id))
+    }
+
+    @Test
+    fun deleteNoticeSaysDeletedNotSaved() {
+        workspace(med)
+        openDialog(med)
+        click("deleteConfirm")
+        compose.waitUntil(5_000) { state.savedNotice }
+        compose.onNodeWithTag("workspaceList", useUnmergedTree = true)
+            .performScrollToNode(hasText("Medication deleted."))
+        compose.onAllNodes(hasText("Medication record saved."), useUnmergedTree = true).assertCountEquals(0)
+    }
+
+    @Test
+    fun archivedPatientHasNoDeleteIcons() {
+        val archived = patientA.copy(status = "archived")
+        host(AncRoute.Workspace(archived.id, med.section), listOf(archived, patientB))
+        scrollTo(med.card + med.id)
+        missing(deleteTag(med))
+    }
+
+    @Test
+    fun undoBarShowsOverBlankMedicationEditorWithoutCoveringTheFormButtons() {
+        host(AncRoute.Workspace(patientA.id, med.section))
+        compose.runOnIdle {
+            state = AncReducer.reduce(
+                state,
+                AncEvent.StartMedicationEditor(
+                    patientId = patientA.id,
+                    medicationId = null,
+                    newMedicationId = "ui-med-new",
+                    editorSessionId = "ui-session",
+                    keepSavedNotice = true,
+                ),
+            )
+            val saved = patientA.medications.first()
+            coordinator.offerSaveUndo(
+                type = DeletableType.MEDICATION,
+                patientId = patientA.id,
+                recordId = saved.id,
+                receipt = ClinicalCommandReceipt("op", patientA.id, "MEDICATION_CREATE", saved.id, 1, patientA.revision + 1, "fp"),
+                savedRecord = saved,
+            )
+        }
+        compose.waitForIdle()
+        exists("medName")
+        compose.onNodeWithTag("undoBar", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithTag("undoButton", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithTag("addAnotherMedication", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("saveMedication", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        val barTop = compose.onNodeWithTag("undoBar", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot.top
+        val buttonBottom = compose.onNodeWithTag("saveMedication", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot.bottom
+        assertTrue("bar ($barTop) must not cover the Save button (bottom $buttonBottom)", buttonBottom <= barTop + 1f)
+    }
+
+    @Test
+    fun longPresavedMedicationListCollapsesToFiveWithAShowAllToggle() {
+        host(AncRoute.Workspace(patientA.id, med.section))
+        compose.runOnIdle {
+            state = AncReducer.reduce(
+                state,
+                AncEvent.StartMedicationEditor(patientA.id, null, "ui-med-new", "ui-session"),
+            )
+        }
+        compose.waitForIdle()
+        val total = ClinicalCodexRepository.getInstance(compose.activity).medicationCodexItems.value.size
+        if (total > 5) {
+            compose.onNodeWithTag("presavedToggle", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+            exists("medPreset-4")
+            missing("medPreset-5")
+            click("presavedToggle")
+            exists("medPreset-${total - 1}")
+            click("presavedToggle")
+            missing("medPreset-5")
+        } else {
+            missing("presavedToggle")
+        }
+    }
+}

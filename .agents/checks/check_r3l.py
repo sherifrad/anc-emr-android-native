@@ -183,8 +183,10 @@ def check_s66():
     if ws is None:
         problems.append("ui/WorkspaceScreen.kt missing")
     else:
-        if "SavedNotice.PATIENT_DATING_NOT_UPDATED" not in strip_comments(ws):
-            problems.append("WorkspaceScreen.kt does not handle SavedNotice.PATIENT_DATING_NOT_UPDATED")
+        # r6b3 moved the notice -> string mapping to SavedNotice?.stringRes() in state/AncState.kt (JVM-testable).
+        mapping = strip_comments(ws) + strip_comments(read(MAIN / "state/AncState.kt") or "")
+        if "SavedNotice.PATIENT_DATING_NOT_UPDATED" not in mapping:
+            problems.append("neither WorkspaceScreen.kt nor AncState.kt handles SavedNotice.PATIENT_DATING_NOT_UPDATED")
 
     strings = read(RES / "strings.xml")
     if strings is None:

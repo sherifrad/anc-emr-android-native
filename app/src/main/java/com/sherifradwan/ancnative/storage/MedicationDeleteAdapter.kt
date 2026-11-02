@@ -11,9 +11,9 @@ object MedicationDeleteAdapter : DeletableRecordAdapter<DemoMedicationRecord> {
     override val deleteReceiptKind: String = "MEDICATION_DELETE"
     override val restoreReceiptKind: String = "MEDICATION_RESTORE"
     override val section: WorkspaceSection = WorkspaceSection.MEDICATIONS
-    override val deletedNotice: SavedNotice = SavedNotice.MEDICATIONS
-    override val restoredNotice: SavedNotice = SavedNotice.MEDICATIONS
-    override val saveUndoneNotice: SavedNotice = SavedNotice.MEDICATIONS
+    override val deletedNotice: SavedNotice = SavedNotice.MEDICATION_DELETED
+    override val restoredNotice: SavedNotice = SavedNotice.MEDICATION_RESTORED
+    override val saveUndoneNotice: SavedNotice = SavedNotice.MEDICATION_SAVE_UNDONE
 
     override fun label(record: DemoMedicationRecord): String = record.name
 
