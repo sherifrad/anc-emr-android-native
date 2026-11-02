@@ -107,3 +107,5 @@ Owner decisions: delete asks for confirmation, then removes the record at once a
 - NEXT: (1) Opus review of the medication commits; (2) design and build "Today's list" / tap grid / Stop with Undo (Claude's choice of design, owner delegated); (3) Part B for lab and ultrasound: simplify each section, compare 360 dp screenshots to the mock `.agents/pipeline/design/d4/`; pending owner decisions lab keypad (d17), ultrasound reference values (d18), print title rename (l04), delivery-plan field list (w04).
 - Tracker artifact https://claude.ai/artifact/PaLVQNoN83bLDb5HzZ2Nss still needs: medication redo status, the owed reviews, the decisions above (not updated by Claude).
 - Reminder: anything run twice becomes a script in `.agents/scripts/` (README lists them).
+
+### Gemini start (2026-11-02): read `.agents/pipeline/design/GEMINI_START_PROMPT.md` first, then `.agents/pipeline/design/REDESIGN_SPECS.md` (fixed specs from the approved mocks; owner overrides listed there beat the mock).
