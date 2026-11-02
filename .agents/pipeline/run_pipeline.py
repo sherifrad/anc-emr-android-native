@@ -350,6 +350,7 @@ NEW_API_TESTS = {"r2": [T + "ClinicalFormatR2Test.kt"], "r3": ["app/src/test/jav
                  "r3j": ["app/src/test/java/com/sherifradwan/ancnative/ui/AttachmentDisplayTitleTest.kt"],
                  "r3u": ["app/src/test/java/com/sherifradwan/ancnative/storage/DraftCodecTest.kt"],
                  "r3z": ["app/src/test/java/com/sherifradwan/ancnative/model/FormatIsoDateTest.kt", "app/src/test/java/com/sherifradwan/ancnative/state/SaveUiErrorTextTest.kt", "app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalFormatTest.kt", "app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalPresetsTest.kt"],
+                 "r6a": ["app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt", "app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt", "app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt"],
                  "r4b": ["app/src/test/java/com/sherifradwan/ancnative/model/UltrasoundImpressionTest.kt"],
                  "r4g": ["app/src/test/java/com/sherifradwan/ancnative/model/EddFromScanTest.kt", "app/src/test/java/com/sherifradwan/ancnative/state/PatientDatingDraftTest.kt", "app/src/test/java/com/sherifradwan/ancnative/state/IntakeDatingRuleTest.kt"],
                  "r4f": ["app/src/test/java/com/sherifradwan/ancnative/model/DueDatesByMethodTest.kt", "app/src/test/java/com/sherifradwan/ancnative/state/DatingDraftRuleTest.kt"],

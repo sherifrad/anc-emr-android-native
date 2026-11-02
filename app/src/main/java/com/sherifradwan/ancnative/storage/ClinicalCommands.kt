@@ -1,6 +1,8 @@
 package com.sherifradwan.ancnative.storage
 
 import com.sherifradwan.ancnative.model.ClinicalVocabulary
+import com.sherifradwan.ancnative.model.DemoLabInvestigation
+import com.sherifradwan.ancnative.model.DemoMedicationRecord
 import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
@@ -17,6 +19,10 @@ enum class ClinicalRecordKind {
     LAB_UPDATE,
     MEDICATION_CREATE,
     MEDICATION_UPDATE,
+    MEDICATION_DELETE,
+    MEDICATION_RESTORE,
+    LAB_DELETE,
+    LAB_RESTORE,
 }
 
 enum class ClinicalCommandFailure {
@@ -471,6 +477,124 @@ data class SaveMedicationCommand(
             return ClinicalCommandPreparation.Ready(command)
         }
     }
+}
+
+private val HEX_64_REGEX = Regex("^[0-9a-f]{64}$")
+
+internal fun canonicalMedication(record: DemoMedicationRecord): String =
+    "${record.patientId}|${record.id}|${record.name}|${record.dosage}|${record.route}|${record.frequency}|${record.startDate}|${record.endDate}|${record.status}|${record.notes}|${record.isProphylaxis}|${record.isNonCompliant}|${record.adverseNotes}"
+
+internal fun canonicalLab(record: DemoLabInvestigation): String =
+    "${record.patientId}|${record.id}|${record.date}|${record.testCategory}|${record.testName}|${record.result}|${record.unit}|${record.referenceRange}|${record.isAbnormal}|${record.notes}|${record.labName}"
+
+fun medicationContentHash(record: DemoMedicationRecord): String = sha256(canonicalMedication(record))
+
+fun labContentHash(record: DemoLabInvestigation): String = sha256(canonicalLab(record))
+
+data class DeleteMedicationCommand(
+    override val editorSessionId: String = "",
+    override val operationUuid: String,
+    override val patientId: String,
+    override val expectedPatientRevision: Long,
+    val medicationId: String,
+    val expectedMedicationRevision: Long,
+    val deletedContentHash: String,
+) : ClinicalCommand {
+    override val recordKind = ClinicalRecordKind.MEDICATION_DELETE
+    override val recordId = medicationId
+
+    override fun destination(): AncRoute = AncRoute.Workspace(patientId, WorkspaceSection.MEDICATIONS)
+    override fun savedNotice(): SavedNotice = SavedNotice.MEDICATION_DELETED
+
+    override fun isStructurallyValid(): Boolean {
+        if (!isValidUuid(operationUuid) || patientId.isBlank() || medicationId.isBlank()) return false
+        if (expectedPatientRevision < 1 || expectedMedicationRevision < 1) return false
+        if (!deletedContentHash.matches(HEX_64_REGEX)) return false
+        return true
+    }
+
+    override fun computeFingerprint(): String = sha256(
+        "MED_DEL|$operationUuid|$patientId|$expectedPatientRevision|$medicationId|$expectedMedicationRevision|$deletedContentHash",
+    )
+}
+
+data class RestoreMedicationCommand(
+    override val editorSessionId: String = "",
+    override val operationUuid: String,
+    override val patientId: String,
+    override val expectedPatientRevision: Long,
+    val record: DemoMedicationRecord,
+    val sourceDelete: DeleteMedicationCommand,
+) : ClinicalCommand {
+    override val recordKind = ClinicalRecordKind.MEDICATION_RESTORE
+    override val recordId: String get() = record.id
+
+    override fun destination(): AncRoute = AncRoute.Workspace(patientId, WorkspaceSection.MEDICATIONS)
+    override fun savedNotice(): SavedNotice = SavedNotice.MEDICATION_RESTORED
+
+    override fun isStructurallyValid(): Boolean {
+        if (!isValidUuid(operationUuid) || patientId.isBlank() || record.id.isBlank()) return false
+        if (expectedPatientRevision < 1) return false
+        if (!sourceDelete.isStructurallyValid()) return false
+        return true
+    }
+
+    override fun computeFingerprint(): String = sha256(
+        "MED_RES|$operationUuid|$patientId|$expectedPatientRevision|${sourceDelete.computeFingerprint()}|${canonicalMedication(record)}",
+    )
+}
+
+data class DeleteLabInvestigationCommand(
+    override val editorSessionId: String = "",
+    override val operationUuid: String,
+    override val patientId: String,
+    override val expectedPatientRevision: Long,
+    val labId: String,
+    val expectedLabRevision: Long,
+    val deletedContentHash: String,
+) : ClinicalCommand {
+    override val recordKind = ClinicalRecordKind.LAB_DELETE
+    override val recordId = labId
+
+    override fun destination(): AncRoute = AncRoute.Workspace(patientId, WorkspaceSection.LABORATORY)
+    override fun savedNotice(): SavedNotice = SavedNotice.LAB_DELETED
+
+    override fun isStructurallyValid(): Boolean {
+        if (!isValidUuid(operationUuid) || patientId.isBlank() || labId.isBlank()) return false
+        if (expectedPatientRevision < 1 || expectedLabRevision < 1) return false
+        if (!deletedContentHash.matches(HEX_64_REGEX)) return false
+        return true
+    }
+
+    override fun computeFingerprint(): String = sha256(
+        "LAB_DEL|$operationUuid|$patientId|$expectedPatientRevision|$labId|$expectedLabRevision|$deletedContentHash",
+    )
+}
+
+data class RestoreLabInvestigationCommand(
+    override val editorSessionId: String = "",
+    override val operationUuid: String,
+    override val patientId: String,
+    override val expectedPatientRevision: Long,
+    val record: DemoLabInvestigation,
+    val sourceDelete: DeleteLabInvestigationCommand,
+) : ClinicalCommand {
+    override val recordKind = ClinicalRecordKind.LAB_RESTORE
+    override val recordId: String get() = record.id
+
+    override fun destination(): AncRoute = AncRoute.Workspace(patientId, WorkspaceSection.LABORATORY)
+    override fun savedNotice(): SavedNotice = SavedNotice.LAB_RESTORED
+
+    override fun isStructurallyValid(): Boolean {
+        if (!isValidUuid(operationUuid) || patientId.isBlank() || record.id.isBlank()) return false
+        if (expectedPatientRevision < 1) return false
+        if (!sourceDelete.isStructurallyValid()) return false
+        return true
+    }
+
+    override fun computeFingerprint(): String = sha256(
+        "LAB_RES|$operationUuid|$patientId|$expectedPatientRevision|${sourceDelete.computeFingerprint()}|${canonicalLab(record)}",
+    )
 }
 
 private fun isValidUuid(raw: String): Boolean = try {

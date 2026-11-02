@@ -28,6 +28,16 @@ import com.sherifradwan.ancnative.storage.SaveUltrasoundScanCommand
 import com.sherifradwan.ancnative.storage.SaveVisitCommand
 import com.sherifradwan.ancnative.storage.VaultController
 import com.sherifradwan.ancnative.storage.VaultState
+import com.sherifradwan.ancnative.model.DemoMedicationRecord
+import com.sherifradwan.ancnative.storage.DeleteLabInvestigationCommand
+import com.sherifradwan.ancnative.storage.DeleteMedicationCommand
+import com.sherifradwan.ancnative.storage.RestoreLabInvestigationCommand
+import com.sherifradwan.ancnative.storage.RestoreMedicationCommand
+import com.sherifradwan.ancnative.storage.RecordSnapshot
+import com.sherifradwan.ancnative.storage.medicationContentHash
+import com.sherifradwan.ancnative.storage.labContentHash
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import java.time.Instant
 import java.util.UUID
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -66,6 +76,32 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
 
     private var pendingChainedLab: PendingChainedLab? = null
     private var pendingChainedMedication: PendingChainedMedication? = null
+
+    private data class PendingUndo(
+        val token: String,
+        val command: ClinicalCommand,
+    )
+
+    private var pendingUndo: PendingUndo? = null
+    private var undoJob: Job? = null
+
+    private fun sessionStillCurrent(epoch: Long): Boolean =
+        (_state.value.vaultState as? VaultState.Unlocked)?.sessionEpoch == epoch
+
+    private fun startUndoExpiry(token: String) {
+        undoJob?.cancel()
+        undoJob = viewModelScope.launch {
+            delay(8_000L)
+            if (pendingUndo?.token == token) pendingUndo = null
+            undoJob = null
+            dispatch(AncEvent.UndoExpired(token))
+        }
+    }
+
+    private fun armUndo(token: String, command: ClinicalCommand) {
+        pendingUndo = PendingUndo(token, command)
+        startUndoExpiry(token)
+    }
 
     private val draftStore = object : DraftStore {
         override suspend fun save(record: DraftRecord): Boolean = controller.saveDraft(record)
@@ -168,8 +204,18 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
             AncEvent.SubmitUltrasound -> saveUltrasound()
             AncEvent.SubmitLab -> saveLab(isChained = false)
             AncEvent.SubmitLabAndAddAnother -> saveLab(isChained = true)
-            AncEvent.SubmitMedication -> saveMedication(isChained = false)
-            AncEvent.SubmitMedicationAndAddAnother -> saveMedication(isChained = true)
+            AncEvent.SubmitMedication -> {
+                if (_state.value.undoOffer?.phase != UndoPhase.RUNNING) {
+                    saveMedication(isChained = false)
+                }
+            }
+            AncEvent.SubmitMedicationAndAddAnother -> {
+                if (_state.value.undoOffer?.phase != UndoPhase.RUNNING) {
+                    saveMedication(isChained = true)
+                }
+            }
+            AncEvent.ConfirmDelete -> confirmDelete()
+            is AncEvent.UndoRequested -> requestUndo(event.token)
             is AncEvent.AddAttachment -> addAttachment(event)
             is AncEvent.ImportScanPhoto -> importScanPhoto(event)
             is AncEvent.DeleteAttachment -> deleteAttachment(event)
@@ -693,6 +739,45 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
                     }
                     pendingChainedMedication = null
                     if (chainedMed != null) {
+                        if (command is SaveMedicationCommand && command.expectedMedicationRevision == null &&
+                            sessionStillCurrent(sessionEpoch)
+                        ) {
+                            val token = UUID.randomUUID().toString()
+                            val savedMed = DemoMedicationRecord(
+                                id = command.medicationId,
+                                patientId = command.patientId,
+                                name = command.name,
+                                dosage = command.dosage,
+                                route = command.route,
+                                frequency = command.frequency,
+                                startDate = command.startDate,
+                                endDate = command.endDate,
+                                status = command.status,
+                                notes = command.notes,
+                                isProphylaxis = command.isProphylaxis,
+                                isNonCompliant = command.isNonCompliant,
+                                adverseNotes = command.adverseNotes,
+                                revision = result.receipt.committedRevision,
+                            )
+                            val undoDelete = DeleteMedicationCommand(
+                                editorSessionId = "",
+                                operationUuid = UUID.randomUUID().toString(),
+                                patientId = command.patientId,
+                                expectedPatientRevision = result.receipt.committedPatientRevision,
+                                medicationId = command.medicationId,
+                                expectedMedicationRevision = result.receipt.committedRevision,
+                                deletedContentHash = medicationContentHash(savedMed),
+                            )
+                            val offer = UndoOffer(
+                                token = token,
+                                patientId = command.patientId,
+                                kind = UndoKind.SAVE_MED,
+                                label = command.name,
+                                phase = UndoPhase.READY,
+                            )
+                            armUndo(token, undoDelete)
+                            updateState { it.copy(undoOffer = offer) }
+                        }
                         dispatch(
                             AncEvent.StartMedicationEditor(
                                 patientId = command.patientId,
@@ -822,6 +907,10 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
         frozenClinicalCommand = null
         pendingChainedLab = null
         pendingChainedMedication = null
+        undoJob?.cancel()
+        undoJob = null
+        pendingUndo = null
+        _state.update { it.copy(deleteConfirmation = null, undoOffer = null) }
     }
 
     private fun PatientCommand.destination(): AncRoute = when (this) {
@@ -898,6 +987,181 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
         AncEvent.ConfirmDiscard,
         -> true
         else -> false
+    }
+
+    private fun confirmDelete() {
+        val current = _state.value
+        val pending = current.deleteConfirmation ?: return
+        val unlocked = current.vaultState as? VaultState.Unlocked ?: return
+        updateState { AncReducer.reduce(it, AncEvent.ConfirmDelete) }
+        if (_state.value.deleteConfirmation != null) return // reducer ignored it (dirty draft or saving)
+        val patient = current.patient(pending.patientId) ?: return
+
+        when (pending.kind) {
+            DeletionKind.MED -> {
+                val med = patient.medications.firstOrNull { it.id == pending.recordId } ?: return
+                val cmd = DeleteMedicationCommand(
+                    operationUuid = UUID.randomUUID().toString(),
+                    patientId = patient.id,
+                    expectedPatientRevision = patient.revision,
+                    medicationId = med.id,
+                    expectedMedicationRevision = med.revision,
+                    deletedContentHash = medicationContentHash(med),
+                )
+                viewModelScope.launch {
+                    val result = controller.execute(cmd, unlocked.sessionEpoch) {}
+                    when (result) {
+                        is ClinicalCommandOutcome.Committed -> {
+                            val token = UUID.randomUUID().toString()
+                            val restoreCmd = RestoreMedicationCommand(
+                                operationUuid = UUID.randomUUID().toString(),
+                                patientId = patient.id,
+                                expectedPatientRevision = result.receipt.committedPatientRevision,
+                                record = med,
+                                sourceDelete = cmd,
+                            )
+                            if (!sessionStillCurrent(unlocked.sessionEpoch)) return@launch
+                            armUndo(token, restoreCmd)
+                            val offer = UndoOffer(
+                                token = token,
+                                patientId = patient.id,
+                                kind = UndoKind.DELETE_MED,
+                                label = med.name,
+                                phase = UndoPhase.READY,
+                            )
+                            dispatch(
+                                AncEvent.DeleteCommitted(
+                                    patients = result.snapshot.patients,
+                                    offer = offer,
+                                    notice = SavedNotice.MEDICATION_DELETED,
+                                ),
+                            )
+                        }
+                        is ClinicalCommandOutcome.Rejected -> {
+                            dispatch(AncEvent.DeleteFailed(result.failure.toUiError()))
+                        }
+                        ClinicalCommandOutcome.Ambiguous,
+                        ClinicalCommandOutcome.Obsolete -> {
+                            dispatch(AncEvent.DeleteFailed(SaveUiError.STORAGE_ERROR))
+                        }
+                    }
+                }
+            }
+            DeletionKind.LAB -> {
+                val lab = patient.labInvestigations.firstOrNull { it.id == pending.recordId } ?: return
+                val cmd = DeleteLabInvestigationCommand(
+                    operationUuid = UUID.randomUUID().toString(),
+                    patientId = patient.id,
+                    expectedPatientRevision = patient.revision,
+                    labId = lab.id,
+                    expectedLabRevision = lab.revision,
+                    deletedContentHash = labContentHash(lab),
+                )
+                viewModelScope.launch {
+                    val result = controller.execute(cmd, unlocked.sessionEpoch) {}
+                    when (result) {
+                        is ClinicalCommandOutcome.Committed -> {
+                            val token = UUID.randomUUID().toString()
+                            val restoreCmd = RestoreLabInvestigationCommand(
+                                operationUuid = UUID.randomUUID().toString(),
+                                patientId = patient.id,
+                                expectedPatientRevision = result.receipt.committedPatientRevision,
+                                record = lab,
+                                sourceDelete = cmd,
+                            )
+                            if (!sessionStillCurrent(unlocked.sessionEpoch)) return@launch
+                            armUndo(token, restoreCmd)
+                            val offer = UndoOffer(
+                                token = token,
+                                patientId = patient.id,
+                                kind = UndoKind.DELETE_LAB,
+                                label = lab.testName,
+                                phase = UndoPhase.READY,
+                            )
+                            dispatch(
+                                AncEvent.DeleteCommitted(
+                                    patients = result.snapshot.patients,
+                                    offer = offer,
+                                    notice = SavedNotice.LAB_DELETED,
+                                ),
+                            )
+                        }
+                        is ClinicalCommandOutcome.Rejected -> {
+                            dispatch(AncEvent.DeleteFailed(result.failure.toUiError()))
+                        }
+                        ClinicalCommandOutcome.Ambiguous,
+                        ClinicalCommandOutcome.Obsolete -> {
+                            dispatch(AncEvent.DeleteFailed(SaveUiError.STORAGE_ERROR))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun requestUndo(token: String) {
+        val current = _state.value
+        val unlocked = current.vaultState as? VaultState.Unlocked ?: return
+        val offer = current.undoOffer?.takeIf { it.token == token } ?: return
+        val pending = pendingUndo?.takeIf { it.token == token } ?: return
+        undoJob?.cancel()
+        undoJob = null
+        updateState { AncReducer.reduce(it, AncEvent.UndoRequested(token)) }
+
+        viewModelScope.launch {
+            val currentPatient = _state.value.patient(pending.command.patientId)
+            if (currentPatient == null) {
+                failUndo(token, SaveUiError.STORAGE_ERROR)
+                return@launch
+            }
+            var cmd = pending.command.withPatientRevision(currentPatient.revision)
+            var result = controller.execute(cmd, unlocked.sessionEpoch) {}
+            if (result is ClinicalCommandOutcome.Rejected && result.failure == ClinicalCommandFailure.STALE_PATIENT_REVISION) {
+                val snapshot = controller.view.value.snapshot ?: _state.value.let { RecordSnapshot(it.patients) }
+                val freshPatient = snapshot.patients.firstOrNull { it.id == cmd.patientId }
+                if (freshPatient != null && freshPatient.revision != cmd.expectedPatientRevision) {
+                    cmd = cmd.withPatientRevision(freshPatient.revision)
+                    result = controller.execute(cmd, unlocked.sessionEpoch) {}
+                }
+            }
+            if (!sessionStillCurrent(unlocked.sessionEpoch)) return@launch
+            when (result) {
+                is ClinicalCommandOutcome.Committed -> {
+                    if (pendingUndo?.token == token) {
+                        pendingUndo = null
+                        undoJob?.cancel()
+                        undoJob = null
+                    }
+                    val notice = when (offer.kind) {
+                        UndoKind.SAVE_MED -> SavedNotice.MEDICATION_SAVE_UNDONE
+                        UndoKind.DELETE_MED -> SavedNotice.MEDICATION_RESTORED
+                        UndoKind.DELETE_LAB -> SavedNotice.LAB_RESTORED
+                    }
+                    dispatch(AncEvent.UndoCommitted(token = token, patients = result.snapshot.patients, notice = notice))
+                }
+                is ClinicalCommandOutcome.Rejected -> {
+                    failUndo(token, result.failure.toUiError())
+                }
+                ClinicalCommandOutcome.Ambiguous,
+                ClinicalCommandOutcome.Obsolete -> {
+                    failUndo(token, SaveUiError.STORAGE_ERROR)
+                }
+            }
+        }
+    }
+
+    private fun failUndo(token: String, error: SaveUiError) {
+        dispatch(AncEvent.UndoFailed(token, error))
+        // Back to READY: keep the Undo available for a fresh 8 s window (only if it is still the live offer).
+        if (pendingUndo?.token == token && _state.value.undoOffer?.token == token) startUndoExpiry(token)
+    }
+
+    private fun ClinicalCommand.withPatientRevision(rev: Long): ClinicalCommand = when (this) {
+        is DeleteMedicationCommand -> copy(expectedPatientRevision = rev)
+        is RestoreMedicationCommand -> copy(expectedPatientRevision = rev)
+        is DeleteLabInvestigationCommand -> copy(expectedPatientRevision = rev)
+        is RestoreLabInvestigationCommand -> copy(expectedPatientRevision = rev)
+        else -> this
     }
 
     private fun AncEvent.clearsFrozenClinical(): Boolean = when (this) {

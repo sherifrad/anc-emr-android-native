@@ -192,8 +192,58 @@ fun SaveUiError?.stringRes(): Int = when (this) {
     SaveUiError.OUTCOME_UNRESOLVED -> R.string.save_unresolved
     SaveUiError.STORAGE_ERROR, null -> R.string.save_storage_error
 }
-enum class SavedNotice { VISIT, PATIENT, PATIENT_DATING_NOT_UPDATED, HISTORIES, PREGNANCY, ARCHIVED, UNARCHIVED, DATING, ULTRASOUND, LABORATORY, MEDICATIONS }
+enum class SavedNotice {
+    VISIT,
+    PATIENT,
+    PATIENT_DATING_NOT_UPDATED,
+    HISTORIES,
+    PREGNANCY,
+    ARCHIVED,
+    UNARCHIVED,
+    DATING,
+    ULTRASOUND,
+    LABORATORY,
+    MEDICATIONS;
+
+    companion object {
+        val MEDICATION_DELETED = MEDICATIONS
+        val LAB_DELETED = LABORATORY
+        val MEDICATION_RESTORED = MEDICATIONS
+        val LAB_RESTORED = LABORATORY
+        val MEDICATION_SAVE_UNDONE = MEDICATIONS
+    }
+}
 enum class PatientEditorKind { PROFILE, HISTORIES, PREGNANCY, STATUS }
+
+enum class DeletionKind {
+    MED,
+    LAB,
+}
+
+data class PendingDeletion(
+    val patientId: String,
+    val kind: DeletionKind,
+    val recordId: String,
+)
+
+enum class UndoKind {
+    DELETE_MED,
+    DELETE_LAB,
+    SAVE_MED,
+}
+
+enum class UndoPhase {
+    READY,
+    RUNNING,
+}
+
+data class UndoOffer(
+    val token: String,
+    val patientId: String,
+    val kind: UndoKind,
+    val label: String,
+    val phase: UndoPhase = UndoPhase.READY,
+)
 
 data class PendingSaveToken(
     val operationUuid: String,
@@ -443,6 +493,8 @@ data class AncState(
     val pendingSave: PendingSaveToken? = null,
     val attachmentError: AttachmentError? = null,
     val draftRecoveryPrompt: DraftRecoveryPrompt? = null,
+    val deleteConfirmation: PendingDeletion? = null,
+    val undoOffer: UndoOffer? = null,
 ) {
     fun patient(patientId: String): DemoPatient? = patients.firstOrNull { it.id == patientId }
 
@@ -595,6 +647,24 @@ sealed interface AncEvent {
     data class DraftRecoveryFound(val prompt: DraftRecoveryPrompt) : AncEvent
     data object AcceptDraftRecovery : AncEvent
     data object DiscardDraftRecovery : AncEvent
+    data class RequestDeleteMedication(val patientId: String, val medicationId: String) : AncEvent
+    data class RequestDeleteLab(val patientId: String, val labId: String) : AncEvent
+    data object CancelDelete : AncEvent
+    data object ConfirmDelete : AncEvent
+    data class DeleteCommitted(
+        val patients: List<DemoPatient>,
+        val offer: UndoOffer? = null,
+        val notice: SavedNotice? = null,
+    ) : AncEvent
+    data class DeleteFailed(val error: SaveUiError? = null) : AncEvent
+    data class UndoRequested(val token: String) : AncEvent
+    data class UndoCommitted(
+        val token: String,
+        val patients: List<DemoPatient>,
+        val notice: SavedNotice? = null,
+    ) : AncEvent
+    data class UndoFailed(val token: String, val error: SaveUiError? = null) : AncEvent
+    data class UndoExpired(val token: String) : AncEvent
 }
 
 object AncReducer {
@@ -682,6 +752,7 @@ object AncReducer {
                 ClinicalRecordKind.ULTRASOUND_CREATE, ClinicalRecordKind.ULTRASOUND_UPDATE -> state.copy(ultrasoundDraft = state.ultrasoundDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
                 ClinicalRecordKind.LAB_CREATE, ClinicalRecordKind.LAB_UPDATE -> state.copy(labDraft = state.labDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
                 ClinicalRecordKind.MEDICATION_CREATE, ClinicalRecordKind.MEDICATION_UPDATE -> state.copy(medicationDraft = state.medicationDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
+                ClinicalRecordKind.MEDICATION_DELETE, ClinicalRecordKind.MEDICATION_RESTORE, ClinicalRecordKind.LAB_DELETE, ClinicalRecordKind.LAB_RESTORE -> state
             }
             is AncEvent.PatientValidationFailed -> validationFailed(state, event)
             is AncEvent.SaveStarted -> if (state.canAccept(event.token)) {
@@ -753,6 +824,103 @@ object AncReducer {
                 applyDraftRecord(state, prompt.record).copy(draftRecoveryPrompt = null)
             }
             AncEvent.DiscardDraftRecovery -> state.copy(draftRecoveryPrompt = null)
+            is AncEvent.RequestDeleteMedication -> {
+                val patient = state.patient(event.patientId)
+                if (patient == null || patient.status == "archived" || state.hasDirtyDraft || state.savePhase.blocksEditing()) {
+                    state
+                } else {
+                    state.copy(
+                        deleteConfirmation = PendingDeletion(
+                            patientId = event.patientId,
+                            kind = DeletionKind.MED,
+                            recordId = event.medicationId,
+                        ),
+                    )
+                }
+            }
+            is AncEvent.RequestDeleteLab -> {
+                val patient = state.patient(event.patientId)
+                if (patient == null || patient.status == "archived" || state.hasDirtyDraft || state.savePhase.blocksEditing()) {
+                    state
+                } else {
+                    state.copy(
+                        deleteConfirmation = PendingDeletion(
+                            patientId = event.patientId,
+                            kind = DeletionKind.LAB,
+                            recordId = event.labId,
+                        ),
+                    )
+                }
+            }
+            AncEvent.CancelDelete -> state.copy(deleteConfirmation = null)
+            AncEvent.ConfirmDelete -> {
+                val pending = state.deleteConfirmation ?: return state
+                if (state.hasDirtyDraft || state.savePhase.blocksEditing()) return state
+                var next = state.copy(deleteConfirmation = null)
+                if (pending.kind == DeletionKind.MED && state.medicationDraft?.medicationId == pending.recordId) {
+                    next = next.copy(
+                        medicationDraft = null,
+                        route = if (state.route is AncRoute.MedicationEditor) {
+                            AncRoute.Workspace(pending.patientId, WorkspaceSection.MEDICATIONS)
+                        } else state.route,
+                    )
+                } else if (pending.kind == DeletionKind.LAB && state.labDraft?.labId == pending.recordId) {
+                    next = next.copy(
+                        labDraft = null,
+                        route = if (state.route is AncRoute.LabEditor) {
+                            AncRoute.Workspace(pending.patientId, WorkspaceSection.LABORATORY)
+                        } else state.route,
+                    )
+                }
+                next
+            }
+            is AncEvent.DeleteCommitted -> state.copy(
+                patients = event.patients,
+                undoOffer = event.offer,
+                deleteConfirmation = null,
+                savedNotice = event.notice != null,
+                notice = event.notice ?: state.notice,
+            )
+            is AncEvent.DeleteFailed -> state.copy(
+                deleteConfirmation = null,
+                saveError = event.error,
+            )
+            is AncEvent.UndoRequested -> {
+                if (state.undoOffer?.token == event.token) {
+                    state.copy(undoOffer = state.undoOffer.copy(phase = UndoPhase.RUNNING))
+                } else {
+                    state
+                }
+            }
+            is AncEvent.UndoCommitted -> {
+                var nextDraft = state.medicationDraft
+                if (nextDraft != null && nextDraft.baseMedicationRevision == null && !nextDraft.isDirty) {
+                    val p = event.patients.firstOrNull { it.id == nextDraft.patientId }
+                    if (p != null) {
+                        nextDraft = nextDraft.copy(basePatientRevision = p.revision)
+                    }
+                }
+                state.copy(
+                    patients = event.patients,
+                    undoOffer = if (state.undoOffer?.token == event.token) null else state.undoOffer,
+                    medicationDraft = nextDraft,
+                    savedNotice = event.notice != null,
+                    notice = event.notice ?: state.notice,
+                )
+            }
+            is AncEvent.UndoFailed -> {
+                if (state.undoOffer?.token == event.token) {
+                    state.copy(
+                        undoOffer = state.undoOffer.copy(phase = UndoPhase.READY),
+                        saveError = event.error,
+                    )
+                } else {
+                    state
+                }
+            }
+            is AncEvent.UndoExpired -> {
+                if (state.undoOffer?.token == event.token) state.copy(undoOffer = null) else state
+            }
         }
     }
 

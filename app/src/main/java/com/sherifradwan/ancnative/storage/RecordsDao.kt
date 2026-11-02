@@ -279,6 +279,15 @@ interface RecordsDao {
     @Query("SELECT * FROM clinical_command_receipts WHERE operation_uuid = :operationUuid LIMIT 1")
     suspend fun clinicalCommandReceipt(operationUuid: String): ClinicalCommandReceiptEntity?
 
+    @Query("SELECT * FROM clinical_command_receipts WHERE patient_id = :patientId AND record_id = :recordId ORDER BY committed_patient_revision DESC LIMIT 1")
+    suspend fun latestClinicalReceiptForRecord(patientId: String, recordId: String): ClinicalCommandReceiptEntity?
+
+    @Query("DELETE FROM medication_records WHERE id = :id AND patient_id = :patientId AND revision = :expectedRevision")
+    suspend fun deleteMedication(id: String, patientId: String, expectedRevision: Long): Int
+
+    @Query("DELETE FROM lab_investigations WHERE id = :id AND patient_id = :patientId AND revision = :expectedRevision")
+    suspend fun deleteLabInvestigation(id: String, patientId: String, expectedRevision: Long): Int
+
     @Query("SELECT COUNT(*) FROM patient_dating")
     suspend fun patientDatingCount(): Int
 
