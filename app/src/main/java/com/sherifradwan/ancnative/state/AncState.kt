@@ -580,6 +580,8 @@ sealed interface AncEvent {
         val newMedicationId: String,
         val editorSessionId: String,
         val defaultStartDate: String = "",
+        /** "Save and add another": open the blank editor but keep the just-shown saved notice. */
+        val keepSavedNotice: Boolean = false,
     ) : AncEvent
     data class DatingDraftChanged(val field: DatingDraftField, val value: String) : AncEvent
     data class UltrasoundDraftChanged(val field: UltrasoundDraftField, val value: String) : AncEvent
@@ -829,7 +831,7 @@ object AncReducer {
             AncEvent.DiscardDraftRecovery -> state.copy(draftRecoveryPrompt = null)
             is AncEvent.RequestDelete -> {
                 val patient = state.patient(event.patientId)
-                if (patient == null || patient.status == "archived" || state.hasDirtyDraft || state.savePhase.blocksEditing()) {
+                if (patient == null || patient.status == "archived" || state.hasDirtyDraft || state.savePhase.blocksEditing() || state.undoRunning) {
                     state
                 } else {
                     state.copy(
@@ -844,7 +846,7 @@ object AncReducer {
             AncEvent.CancelDelete -> state.copy(deleteConfirmation = null)
             AncEvent.ConfirmDelete -> {
                 val pending = state.deleteConfirmation ?: return state
-                if (state.hasDirtyDraft || state.savePhase.blocksEditing()) return state
+                if (state.hasDirtyDraft || state.savePhase.blocksEditing() || state.undoRunning) return state
                 val hook = EditorHooks.of(pending.type)
                 val next = if (hook != null && hook.isOpenFor(state, pending.recordId)) {
                     hook.closeEditor(state, pending.patientId)
@@ -1112,8 +1114,8 @@ object AncReducer {
                 original = values,
                 values = values,
             ),
-            savedNotice = false,
-            notice = null,
+            savedNotice = if (event.keepSavedNotice) state.savedNotice else false,
+            notice = if (event.keepSavedNotice) state.notice else null,
         )
     }
 

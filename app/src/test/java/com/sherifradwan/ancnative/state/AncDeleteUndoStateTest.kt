@@ -50,8 +50,7 @@ class AncDeleteUndoStateTest {
             draftBasePatientRevision = { it.labDraft?.basePatientRevision },
             draftValues = { it.labDraft?.values },
             submit = AncEvent.SubmitLab,
-            // Frozen behaviour: today only the medication create draft follows the patient revision after an undo.
-            rebasedPatientRevision = 5L,
+            rebasedPatientRevision = 7L,
             label = "Hb r1",
         ),
     )
@@ -248,6 +247,33 @@ class AncDeleteUndoStateTest {
             assertTrue(kind.type.name, running.undoRunning)
             assertEquals(kind.type.name, running, reduce(running, kind.submit))
         }
+    }
+
+    @Test
+    fun deleteRequestAndConfirmIgnoredWhileUndoRunning() {
+        for (kind in kinds) {
+            val running = reduce(withOffer(kind, base(), "t1"), AncEvent.UndoRequested("t1"))
+            assertTrue(kind.type.name, running.undoRunning)
+            assertEquals(kind.type.name, running, requestDelete(kind, running, "r2"))
+            val pending = running.copy(deleteConfirmation = PendingDeletion("p1", kind.type, "r2"))
+            assertEquals(kind.type.name, pending, reduce(pending, AncEvent.ConfirmDelete))
+        }
+    }
+
+    @Test
+    fun saveAndAddAnotherKeepsSavedNoticeAndUndoOfferWhileOpeningBlankEditor() {
+        val offer = offer(kinds[0], "t1", "Iron saved")
+        var s = base().copy(savedNotice = true, notice = SavedNotice.VISIT)
+        s = reduce(s, AncEvent.UndoOffered(offer))
+        s = reduce(s, AncEvent.StartMedicationEditor("p1", null, "new-id", "session-2", keepSavedNotice = true))
+        assertTrue(s.route is AncRoute.MedicationEditor)
+        assertEquals("new-id", s.medicationDraft?.medicationId)
+        assertTrue(s.savedNotice)
+        assertEquals(SavedNotice.VISIT, s.notice)
+        assertEquals(offer, s.undoOffer)
+        val plain = reduce(base().copy(savedNotice = true, notice = SavedNotice.VISIT), AncEvent.StartMedicationEditor("p1", null, "n2", "s3"))
+        assertEquals(false, plain.savedNotice)
+        assertNull(plain.notice)
     }
 
     @Test

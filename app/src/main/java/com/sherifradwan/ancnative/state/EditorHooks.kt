@@ -49,8 +49,16 @@ object LabEditorHook : EditorHook {
             },
         )
 
-    override fun rebaseCreateDraft(state: AncState, patients: List<DemoPatient>): AncState =
-        state
+    override fun rebaseCreateDraft(state: AncState, patients: List<DemoPatient>): AncState {
+        var nextDraft = state.labDraft
+        if (nextDraft != null && nextDraft.baseLabRevision == null) {
+            val p = patients.firstOrNull { it.id == nextDraft.patientId }
+            if (p != null) {
+                nextDraft = nextDraft.copy(basePatientRevision = p.revision)
+            }
+        }
+        return state.copy(labDraft = nextDraft)
+    }
 }
 
 object EditorHooks {
