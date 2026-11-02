@@ -1329,6 +1329,28 @@
         ".agents/checks/check_r6a.py"
       ],
       "covers": ["S300", "S301", "S302", "S303"]
+    },
+    {
+      "id": "STATIC-r6b1",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r6b1.py",
+      "deps": [
+        "app/src/main/**/*.kt",
+        "app/src/androidTest/**/*.kt",
+        "app/src/test/**/*.kt",
+        ".agents/checks/check_r6b1.py"
+      ],
+      "covers": ["S400", "S401", "S402", "S403", "S404", "S405", "S406", "S407"]
+    },
+    {
+      "id": "STATIC-r6b2",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r6b2.py",
+      "deps": [
+        "app/src/main/**/*.kt",
+        ".agents/checks/check_r6b2.py"
+      ],
+      "covers": ["S410", "S411", "S412", "S413", "S414", "S415", "S416"]
     }
   ]
 }
