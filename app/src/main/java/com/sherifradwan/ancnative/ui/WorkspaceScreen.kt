@@ -504,38 +504,26 @@ private fun LazyListScope.workspaceContentItems(
     }
     state.attachmentError?.let { error ->
         item {
-            Card(modifier = Modifier.fillMaxWidth().testTag("attachment_error_banner")) {
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth().padding(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    val message = when (error) {
+            NoticeCard(
+                message = stringResource(
+                    when (error) {
                         AttachmentError.SAVE_FAILED -> R.string.attachment_save_failed
                         AttachmentError.DELETE_FAILED -> R.string.attachment_delete_failed
-                    }
-                    Text(stringResource(message), color = MaterialTheme.colorScheme.error)
-                    TextButton(onClick = { onEvent(AncEvent.DismissAttachmentError) }) {
-                        Text(stringResource(R.string.close), maxLines = 1, softWrap = false)
-                    }
-                }
-            }
+                    },
+                ),
+                onClose = { onEvent(AncEvent.DismissAttachmentError) },
+                modifier = Modifier.testTag("attachment_error_banner"),
+                messageColor = MaterialTheme.colorScheme.error,
+            )
         }
     }
     if (state.savedNotice) {
         item {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth().padding(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(stringResource(state.notice.stringRes()), color = MaterialTheme.colorScheme.tertiary)
-                    TextButton(onClick = { onEvent(AncEvent.DismissNotice) }) {
-                        Text(stringResource(R.string.close), maxLines = 1, softWrap = false)
-                    }
-                }
-            }
+            NoticeCard(
+                message = stringResource(state.notice.stringRes()),
+                onClose = { onEvent(AncEvent.DismissNotice) },
+                messageColor = MaterialTheme.colorScheme.tertiary,
+            )
         }
     }
     if (section == WorkspaceSection.VISITS) {
@@ -2217,136 +2205,79 @@ private fun MedicationCard(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
+    val status = effectiveMedicationStatus(med.status, med.isNonCompliant)
+    val summaryText = listOfNotNull(
+        med.dosage?.takeIf { it.isNotBlank() },
+        med.frequency?.takeIf { it.isNotBlank() },
+    ).joinToString(" · ")
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("medication-${med.id}"),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        if (isExpanded) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.padding(bottom = if (isExpanded) 12.dp else 0.dp)) {
+            // Header: toggle area (name, status, summary) takes the free width; delete and edit keep 48 dp targets.
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Row(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .minimumTouchTarget()
-                        .testTag("medicationToggle-${med.id}")
-                        .clickable(onClick = onToggle),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.KeyboardArrowUp,
-                            contentDescription = stringResource(R.string.hide_details),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp),
-                        )
-                        Text(med.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    }
-                    MedicationStatusBadge(effectiveMedicationStatus(med.status, med.isNonCompliant))
-                }
-                FactRow(R.string.dosage, med.dosage)
-                FactRow(R.string.route, med.route)
-                FactRow(R.string.frequency, med.frequency)
-                FactRow(R.string.start_date, med.startDate)
-                FactRow(R.string.end_date, med.endDate)
-                if (!med.adverseNotes.isNullOrBlank()) {
-                    FactRow(R.string.adverse_effects, med.adverseNotes)
-                }
-                FactRow(R.string.notes, med.notes)
-                if (canEdit) {
-                    PencilEditButton(
-                        contentDescription = stringResource(R.string.edit_medication),
-                        tag = "editMedication-${med.id}",
-                        onClick = onEdit,
-                        trailing = { DeleteIconButton(DeletableType.MEDICATION, med, onDelete) },
-                    )
-                }
-            }
-        } else {
-            val summaryText = listOfNotNull(
-                med.dosage?.takeIf { it.isNotBlank() },
-                med.frequency?.takeIf { it.isNotBlank() },
-            ).joinToString(" · ")
-
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.CenterStart,
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
+                        .weight(1f)
                         .minimumTouchTarget()
                         .testTag("medicationToggle-${med.id}")
                         .clickable(onClick = onToggle)
-                        .padding(
-                            start = 16.dp,
-                            end = if (canEdit) 100.dp else 16.dp,
-                            top = 8.dp,
-                            bottom = 8.dp,
-                        ),
+                        .padding(start = 12.dp, top = 8.dp, bottom = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    CollapsedMedicationRow(
-                        name = med.name,
-                        status = effectiveMedicationStatus(med.status, med.isNonCompliant),
-                        summaryText = summaryText,
+                    Icon(
+                        imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                        contentDescription = stringResource(if (isExpanded) R.string.hide_details else R.string.show_details),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp),
                     )
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        // A drug name is never cut: it wraps to a second line instead.
+                        Text(med.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        MedicationStatusBadge(status)
+                        if (!isExpanded && summaryText.isNotBlank()) {
+                            Text(
+                                text = summaryText,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                 }
                 if (canEdit) {
-                    PencilEditButton(
-                        contentDescription = stringResource(R.string.edit_medication),
-                        tag = "editMedication-${med.id}",
-                        onClick = onEdit,
-                        trailing = { DeleteIconButton(DeletableType.MEDICATION, med, onDelete) },
-                    )
+                    DeleteIconButton(DeletableType.MEDICATION, med, onDelete)
+                    IconButton(onClick = onEdit, modifier = Modifier.testTag("editMedication-${med.id}")) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = stringResource(R.string.edit_medication),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                } else {
+                    Spacer(Modifier.width(12.dp))
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun CollapsedMedicationRow(
-    name: String,
-    status: String,
-    summaryText: String,
-    modifier: Modifier = Modifier,
-) {
-    // The summary is dropped first: if the name cannot fit with it, hide it for good.
-    var summaryHidden by remember(name, summaryText, LocalDensity.current.fontScale) { mutableStateOf(false) }
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Icon(
-            imageVector = Icons.Default.KeyboardArrowDown,
-            contentDescription = stringResource(R.string.show_details),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(20.dp),
-        )
-        Text(
-            text = name,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            onTextLayout = { if (it.hasVisualOverflow && summaryText.isNotBlank()) summaryHidden = true },
-            modifier = Modifier.weight(1f, fill = false),
-        )
-        MedicationStatusBadge(status)
-        if (summaryText.isNotBlank() && !summaryHidden) {
-            Text(
-                text = summaryText,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Clip,
-            )
+            if (isExpanded) {
+                Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    FactRow(R.string.dosage, med.dosage)
+                    FactRow(R.string.route, med.route)
+                    FactRow(R.string.frequency, med.frequency)
+                    FactRow(R.string.start_date, med.startDate)
+                    FactRow(R.string.end_date, med.endDate)
+                    if (!med.adverseNotes.isNullOrBlank()) {
+                        FactRow(R.string.adverse_effects, med.adverseNotes)
+                    }
+                    FactRow(R.string.notes, med.notes)
+                }
+            }
         }
     }
 }

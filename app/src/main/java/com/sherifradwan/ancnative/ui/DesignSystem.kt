@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -22,6 +23,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -170,3 +173,46 @@ fun BigChoiceButton(
     }
 }
 
+
+/**
+ * Shared notice / message card: the message and its Close button sit in ONE aligned row
+ * (text takes the free width, Close keeps a 48 dp target on one line, never wrapped).
+ */
+@Composable
+fun NoticeCard(
+    message: String,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+    messageColor: Color = MaterialTheme.colorScheme.onSurface,
+    closeTag: String? = null,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth().then(modifier),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = messageColor,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(
+                onClick = onClose,
+                modifier = Modifier
+                    .heightIn(min = 48.dp)
+                    .widthIn(min = 48.dp)
+                    .let { if (closeTag != null) it.testTag(closeTag) else it },
+            ) {
+                Text(stringResource(R.string.close), maxLines = 1, softWrap = false)
+            }
+        }
+    }
+}

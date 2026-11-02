@@ -2,10 +2,10 @@ package com.sherifradwan.ancnative.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -190,6 +190,7 @@ fun MedicationEditor(
                             text = "New medication: add to my medication list?",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.weight(1f),
                         )
                         TextButton(
                             onClick = {
@@ -212,7 +213,7 @@ fun MedicationEditor(
                                 modifier = Modifier.size(16.dp),
                             )
                             Spacer(Modifier.width(4.dp))
-                            Text("Add to my list")
+                            Text("Add to my list", maxLines = 1, softWrap = false)
                         }
                     }
                 }
@@ -467,32 +468,31 @@ fun MedicationEditor(
             )
         }
 
-        // Actions: Cancel, Save & Add Another Medication, Save
-        FlowRow(
+        // Actions: Save first and full width (48 dp or more), then the two secondary actions, one label per line.
+        Column(
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            OutlinedButton(
-                onClick = { onEvent(AncEvent.CancelEditor) },
+            Button(
+                onClick = { onEvent(AncEvent.SubmitMedication) },
                 enabled = enabled,
-                modifier = Modifier.minimumTouchTarget().testTag("cancelMedication"),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag("saveMedication"),
             ) {
-                Text(stringResource(R.string.cancel))
+                Text(stringResource(R.string.save), maxLines = 1, softWrap = false)
             }
             OutlinedButton(
                 onClick = { onEvent(AncEvent.SubmitMedicationAndAddAnother) },
                 enabled = enabled,
-                modifier = Modifier.minimumTouchTarget().testTag("addAnotherMedication"),
+                modifier = Modifier.fillMaxWidth().minimumTouchTarget().testTag("addAnotherMedication"),
             ) {
-                Text(stringResource(R.string.save_and_add_another_med))
+                Text(stringResource(R.string.save_and_add_another_med), maxLines = 1, softWrap = false)
             }
-            Button(
-                onClick = { onEvent(AncEvent.SubmitMedication) },
+            OutlinedButton(
+                onClick = { onEvent(AncEvent.CancelEditor) },
                 enabled = enabled,
-                modifier = Modifier.minimumTouchTarget().testTag("saveMedication"),
+                modifier = Modifier.fillMaxWidth().minimumTouchTarget().testTag("cancelMedication"),
             ) {
-                Text(stringResource(R.string.save))
+                Text(stringResource(R.string.cancel), maxLines = 1, softWrap = false)
             }
         }
     }

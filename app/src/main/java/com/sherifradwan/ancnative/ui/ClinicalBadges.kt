@@ -32,7 +32,6 @@ import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.BpLevel
 import com.sherifradwan.ancnative.model.bpLevel
-import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
 import com.sherifradwan.ancnative.model.MEDICATION_STATUS_NON_COMPLIANT
 
 @Composable
@@ -268,25 +267,21 @@ fun ClinicalRiskBadge(isHighRisk: Boolean, modifier: Modifier = Modifier) {
 
 /**
  * Medication status badge (Q205):
- * Active: teal (tertiaryContainer / onTertiaryContainer)
- * Completed: neutral grey (surfaceVariant / onSurfaceVariant)
- * Discontinued: rose (secondaryContainer / onSecondaryContainer)
- * Patient non-compliant: error (errorContainer / onErrorContainer)
+ * Design language: only the risk badge is coloured, so Active, Completed and Discontinued are neutral
+ * (surfaceContainerHigh / onSurface, outlined). Patient non-compliant stays error-coloured: it is a safety flag.
  * Uses theme tokens only; contrast >= 4.5:1 in light and dark.
  */
 @Composable
 fun MedicationStatusBadge(status: String, modifier: Modifier = Modifier) {
     val (containerColor, contentColor) = when (status) {
-        MEDICATION_STATUS_ACTIVE -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
-        "Completed" -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
-        "Discontinued" -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
         MEDICATION_STATUS_NON_COMPLIANT -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
-        else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
+        else -> MaterialTheme.colorScheme.surfaceContainerHigh to MaterialTheme.colorScheme.onSurface
     }
 
     Surface(
         shape = RoundedCornerShape(6.dp),
         color = containerColor,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = modifier.testTag("medicationStatusBadge"),
     ) {
         Text(
@@ -294,6 +289,8 @@ fun MedicationStatusBadge(status: String, modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
             color = contentColor,
+            maxLines = 1,
+            softWrap = false,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
         )
     }

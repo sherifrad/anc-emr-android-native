@@ -59,7 +59,8 @@ fun QuickPresetChips(
         )
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+            // Each chip already carries a 48 dp touch area, so no extra row gap.
+            verticalArrangement = Arrangement.spacedBy(0.dp),
             modifier = Modifier.fillMaxWidth(),
         ) {
             items.forEachIndexed { index, item ->

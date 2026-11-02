@@ -11,3 +11,5 @@ Rule (owner, 2026-11-02): any command sequence run twice becomes a script here, 
 | take_device_screenshot.sh `<serial>` `<png>` | adb screenshot |
 | launch_opus_review.sh `<prompt>` `<out>` | detached read-only Opus review |
 | qa_package_suffix.init.gradle | adds the .qa applicationId suffix |
+| tap_text_on_device.sh `<serial>` `<text>` | taps a node by text / content-desc / testTag (resource-id); leading `=` = exact match |
+| qa_open_medication_tab.sh `<serial>` | emulator: launch .qa, enter PIN 121212, open workspace Medications tab (needs wm 1080x2400, density 480 = 360 dp) |
