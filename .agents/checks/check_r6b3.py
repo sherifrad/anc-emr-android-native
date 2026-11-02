@@ -72,7 +72,8 @@ def main():
     ws = read(MAIN / "ui/WorkspaceScreen.kt")
     wired = len(re.findall(r"RequestDelete\s*\(\s*patient\.id\s*,\s*DeletableType\.(MEDICATION|LAB)", ws))
     icons = len(re.findall(r"DeleteIconButton\s*\(\s*DeletableType\.(MEDICATION|LAB)", ws))
-    record("S424 WorkspaceScreen wires RequestDelete and DeleteIconButton for medications (cards) and labs", wired >= 2 and icons >= 3 and
+    # medication card now has ONE header row (collapsed and expanded share it): medication 1 + lab 1 = 2 icons
+    record("S424 WorkspaceScreen wires RequestDelete and DeleteIconButton for medications (cards) and labs", wired >= 2 and icons >= 2 and
            "DeletableType.MEDICATION" in ws and "DeletableType.LAB" in ws, "RequestDelete=%d DeleteIconButton=%d" % (wired, icons))
 
     strings = read(RES / "values/strings.xml")
