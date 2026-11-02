@@ -245,6 +245,21 @@ data class UndoOffer(
     val phase: UndoPhase = UndoPhase.READY,
 )
 
+/** A failed Undo may restart its 8 s window at most this many times. */
+const val MAX_UNDO_RESTARTS = 1
+
+fun undoMayRestart(failuresSoFar: Int): Boolean = failuresSoFar <= MAX_UNDO_RESTARTS - 1
+
+/** True only for the live READY offer with this token (a RUNNING offer ignores further taps). */
+fun AncState.canRequestUndo(token: String): Boolean =
+    undoOffer?.let { it.token == token && it.phase == UndoPhase.READY } == true
+
+/** Medication saves are blocked while an Undo is in flight. */
+val AncState.undoRunning: Boolean get() = undoOffer?.phase == UndoPhase.RUNNING
+
+/** What a vault lock does to the delete/undo UI state. */
+fun AncState.clearedForLock(): AncState = copy(deleteConfirmation = null, undoOffer = null)
+
 data class PendingSaveToken(
     val operationUuid: String,
     val editorSessionId: String,
@@ -886,15 +901,17 @@ object AncReducer {
                 saveError = event.error,
             )
             is AncEvent.UndoRequested -> {
-                if (state.undoOffer?.token == event.token) {
-                    state.copy(undoOffer = state.undoOffer.copy(phase = UndoPhase.RUNNING))
+                if (state.canRequestUndo(event.token)) {
+                    state.copy(undoOffer = state.undoOffer!!.copy(phase = UndoPhase.RUNNING))
                 } else {
                     state
                 }
             }
             is AncEvent.UndoCommitted -> {
                 var nextDraft = state.medicationDraft
-                if (nextDraft != null && nextDraft.baseMedicationRevision == null && !nextDraft.isDirty) {
+                // A create draft has no record revision of its own, so it follows the patient revision
+                // whether blank or already edited; drafts of existing records are left untouched.
+                if (nextDraft != null && nextDraft.baseMedicationRevision == null) {
                     val p = event.patients.firstOrNull { it.id == nextDraft.patientId }
                     if (p != null) {
                         nextDraft = nextDraft.copy(basePatientRevision = p.revision)

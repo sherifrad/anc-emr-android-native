@@ -122,23 +122,54 @@ class AncDeleteUndoStateTest {
     }
 
     @Test
-    fun submitMedicationIgnoredWhileUndoRunning() {
+    fun undoCommittedRebasesDirtyCreateDraftKeepingTypedContent() {
         val blank = reduce(base(), AncEvent.StartMedicationEditor("p1", null, "new-med", "session-2"))
-        val running = reduce(withOffer(blank, "t1"), AncEvent.UndoRequested("t1"))
-        assertEquals(UndoPhase.RUNNING, running.undoOffer?.phase)
-        assertEquals(running, reduce(running, AncEvent.SubmitMedication))
-        assertEquals(running, reduce(running, AncEvent.SubmitMedicationAndAddAnother))
-        assertEquals(SavePhase.IDLE, running.savePhase)
+        val dirty = reduce(blank, AncEvent.MedicationDraftChanged(MedicationDraftField.NAME, "Typed"))
+        assertTrue(dirty.medicationDraft!!.isDirty)
+        val running = reduce(withOffer(dirty, "t1"), AncEvent.UndoRequested("t1"))
+        val committed = reduce(running, AncEvent.UndoCommitted("t1", listOf(patient(revision = 7))))
+        assertEquals(7L, committed.medicationDraft?.basePatientRevision)
+        assertEquals(dirty.medicationDraft?.values, committed.medicationDraft?.values)
     }
 
     @Test
-    fun lockResetClearsUndoOffer() {
+    fun undoCommittedDoesNotRebaseDraftOfExistingRecord() {
+        val editing = reduce(base(), AncEvent.StartMedicationEditor("p1", "m2", "m2", "session-1"))
+        val before = editing.medicationDraft
+        val running = reduce(withOffer(editing, "t1"), AncEvent.UndoRequested("t1"))
+        val committed = reduce(running, AncEvent.UndoCommitted("t1", listOf(patient(revision = 7))))
+        assertEquals(before, committed.medicationDraft)
+    }
+
+    @Test
+    fun runningUndoIsDetectedAndIgnoresSecondRequest() {
+        val ready = withOffer(base(), "t1")
+        assertTrue(ready.canRequestUndo("t1"))
+        assertEquals(false, ready.canRequestUndo("other"))
+        assertEquals(false, ready.undoRunning)
+        val running = reduce(ready, AncEvent.UndoRequested("t1"))
+        assertTrue(running.undoRunning)
+        assertEquals(false, running.canRequestUndo("t1"))
+        assertEquals(running, reduce(running, AncEvent.UndoRequested("t1")))
+        assertEquals(false, base().undoRunning)
+    }
+
+    @Test
+    fun lockClearsUndoOfferAndDeleteConfirmation() {
         val state = withOffer(requestDeleteM1(base()), "t1")
         assertNotNull(state.undoOffer)
         assertNotNull(state.deleteConfirmation)
-        val locked = AncState(patients = emptyList(), vaultState = VaultState.Locked)
+        val locked = state.clearedForLock()
         assertNull(locked.undoOffer)
         assertNull(locked.deleteConfirmation)
+        assertEquals(state.patients, locked.patients)
+    }
+
+    @Test
+    fun failedUndoMayRestartItsWindowOnlyOnce() {
+        assertTrue(undoMayRestart(0))
+        assertEquals(false, undoMayRestart(1))
+        assertEquals(false, undoMayRestart(2))
     }
 
     @Test

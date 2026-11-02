@@ -80,6 +80,9 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
     private data class PendingUndo(
         val token: String,
         val command: ClinicalCommand,
+        /** The exact command of an attempt that came back Ambiguous; retries must replay it unchanged. */
+        val ambiguous: Boolean = false,
+        val failures: Int = 0,
     )
 
     private var pendingUndo: PendingUndo? = null
@@ -205,12 +208,12 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
             AncEvent.SubmitLab -> saveLab(isChained = false)
             AncEvent.SubmitLabAndAddAnother -> saveLab(isChained = true)
             AncEvent.SubmitMedication -> {
-                if (_state.value.undoOffer?.phase != UndoPhase.RUNNING) {
+                if (!_state.value.undoRunning) {
                     saveMedication(isChained = false)
                 }
             }
             AncEvent.SubmitMedicationAndAddAnother -> {
-                if (_state.value.undoOffer?.phase != UndoPhase.RUNNING) {
+                if (!_state.value.undoRunning) {
                     saveMedication(isChained = true)
                 }
             }
@@ -910,7 +913,7 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
         undoJob?.cancel()
         undoJob = null
         pendingUndo = null
-        _state.update { it.copy(deleteConfirmation = null, undoOffer = null) }
+        _state.update { it.clearedForLock() }
     }
 
     private fun PatientCommand.destination(): AncRoute = when (this) {
@@ -1102,7 +1105,8 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
     private fun requestUndo(token: String) {
         val current = _state.value
         val unlocked = current.vaultState as? VaultState.Unlocked ?: return
-        val offer = current.undoOffer?.takeIf { it.token == token } ?: return
+        if (!current.canRequestUndo(token)) return
+        val offer = current.undoOffer ?: return
         val pending = pendingUndo?.takeIf { it.token == token } ?: return
         undoJob?.cancel()
         undoJob = null
@@ -1111,12 +1115,14 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val currentPatient = _state.value.patient(pending.command.patientId)
             if (currentPatient == null) {
-                failUndo(token, SaveUiError.STORAGE_ERROR)
+                failUndo(token, SaveUiError.STORAGE_ERROR, pending.command, pending.ambiguous)
                 return@launch
             }
-            var cmd = pending.command.withPatientRevision(currentPatient.revision)
+            // After an Ambiguous attempt, replay the exact same command (same operationUuid and revision)
+            // so a committed restore returns its stored receipt; only a fresh restore is rebased.
+            var cmd = if (pending.ambiguous) pending.command else pending.command.withPatientRevision(currentPatient.revision)
             var result = controller.execute(cmd, unlocked.sessionEpoch) {}
-            if (result is ClinicalCommandOutcome.Rejected && result.failure == ClinicalCommandFailure.STALE_PATIENT_REVISION) {
+            if (!pending.ambiguous && result is ClinicalCommandOutcome.Rejected && result.failure == ClinicalCommandFailure.STALE_PATIENT_REVISION) {
                 val snapshot = controller.view.value.snapshot ?: _state.value.let { RecordSnapshot(it.patients) }
                 val freshPatient = snapshot.patients.firstOrNull { it.id == cmd.patientId }
                 if (freshPatient != null && freshPatient.revision != cmd.expectedPatientRevision) {
@@ -1140,20 +1146,31 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
                     dispatch(AncEvent.UndoCommitted(token = token, patients = result.snapshot.patients, notice = notice))
                 }
                 is ClinicalCommandOutcome.Rejected -> {
-                    failUndo(token, result.failure.toUiError())
+                    failUndo(token, result.failure.toUiError(), cmd, ambiguous = false)
                 }
-                ClinicalCommandOutcome.Ambiguous,
+                ClinicalCommandOutcome.Ambiguous -> {
+                    failUndo(token, SaveUiError.STORAGE_ERROR, cmd, ambiguous = true)
+                }
                 ClinicalCommandOutcome.Obsolete -> {
-                    failUndo(token, SaveUiError.STORAGE_ERROR)
+                    failUndo(token, SaveUiError.STORAGE_ERROR, cmd, ambiguous = false)
                 }
             }
         }
     }
 
-    private fun failUndo(token: String, error: SaveUiError) {
+    private fun failUndo(token: String, error: SaveUiError, attempted: ClinicalCommand, ambiguous: Boolean) {
         dispatch(AncEvent.UndoFailed(token, error))
-        // Back to READY: keep the Undo available for a fresh 8 s window (only if it is still the live offer).
-        if (pendingUndo?.token == token && _state.value.undoOffer?.token == token) startUndoExpiry(token)
+        val pending = pendingUndo?.takeIf { it.token == token }
+        if (pending == null || _state.value.undoOffer?.token != token) return
+        if (undoMayRestart(pending.failures)) {
+            // Back to READY: one fresh 8 s window, keeping the exact attempted command if it was ambiguous.
+            pendingUndo = pending.copy(command = attempted, ambiguous = ambiguous, failures = pending.failures + 1)
+            startUndoExpiry(token)
+        } else {
+            // Second failure: do not keep the record in memory past the stated window.
+            pendingUndo = null
+            dispatch(AncEvent.UndoExpired(token))
+        }
     }
 
     private fun ClinicalCommand.withPatientRevision(rev: Long): ClinicalCommand = when (this) {
