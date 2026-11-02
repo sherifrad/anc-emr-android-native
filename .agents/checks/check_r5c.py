@@ -61,9 +61,9 @@ def check_s221():
     if code is None:
         problems.append("ui/MedicationEditor.kt missing")
     else:
-        for tag in ("medPickCard", "medDetailsCard", "medStatusCard", "medMoreToggle", "medMoreSection",
-                    "medName", "medDosage", "medFrequency", "medStartDate", "medEndDate", "medAdverseNotes",
-                    "medNotes", "medRouteChoice", "freqPreset", "medPreset", "patientPrevMed",
+        for tag in ("medPickCard", "medDetailsCard", "medStatusCard",
+                    "medName", "medDosage",
+                    "medNotes", "medRouteChoice", "medPreset", "patientPrevMed",
                     "saveToMedCodexBanner", "saveToMedCodexButton", "cancelMedication",
                     "addAnotherMedication", "saveMedication", "medStatusChoice", "medicationEditor"):
             if '"' + tag not in code:
@@ -71,7 +71,7 @@ def check_s221():
         for prefix in ("medRow-", "medOpen-"):
             if '"' + prefix not in code:
                 problems.append('missing tag prefix "' + prefix + '"')
-        for key in ("dose", "route", "frequency", "start"):
+        for key in ("dose", "route"):
             if '"' + key + '"' not in code:
                 problems.append("guided row key " + key + " not wired")
     record("S221 medication tags and guided row wiring present", not problems, "; ".join(problems))

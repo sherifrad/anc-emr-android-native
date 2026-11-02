@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -30,6 +31,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.state.AncEvent
@@ -177,11 +179,17 @@ private fun DeleteMessageBar(message: DeleteMessage, onEvent: (AncEvent) -> Unit
 @Composable
 private fun UndoOfferBar(offer: UndoOffer, deleteRunning: Boolean, onEvent: (AncEvent) -> Unit) {
     val running = offer.phase == UndoPhase.RUNNING
-    val typeLabel = stringResource(offer.type.labelResource())
-    val message = when (offer.action) {
-        UndoAction.DELETE -> stringResource(R.string.undo_message_deleted, typeLabel, offer.label, patientClause(offer.patientName))
-        UndoAction.SAVE -> stringResource(R.string.undo_message_saved, typeLabel, offer.label, patientClause(offer.patientName))
+    // One short line: "Deleted <record> - <patient>". The record name is cut first, so the patient stays visible.
+    val patientName = offer.patientName.trim()
+    val head = when (offer.action) {
+        UndoAction.DELETE -> stringResource(R.string.undo_message_deleted_no_patient, offer.label)
+        UndoAction.SAVE -> stringResource(R.string.undo_message_saved_no_patient, offer.label)
     }
+    val spoken = when (offer.action) {
+        UndoAction.DELETE -> if (patientName.isEmpty()) head else stringResource(R.string.undo_message_deleted, offer.label, patientName)
+        UndoAction.SAVE -> if (patientName.isEmpty()) head else stringResource(R.string.undo_message_saved, offer.label, patientName)
+    }
+    val tail = if (patientName.isEmpty()) "" else stringResource(R.string.undo_message_patient_tail, patientName)
     val progressDescription = stringResource(R.string.undo_in_progress)
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
@@ -200,11 +208,27 @@ private fun UndoOfferBar(offer: UndoOffer, deleteRunning: Boolean, onEvent: (Anc
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.weight(1f),
-            )
+            Row(
+                modifier = Modifier.weight(1f).semantics { contentDescription = spoken },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = head,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (tail.isNotEmpty()) {
+                    Text(
+                        text = tail,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.widthIn(max = 130.dp),
+                    )
+                }
+            }
             if (running) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(20.dp).semantics { contentDescription = progressDescription },

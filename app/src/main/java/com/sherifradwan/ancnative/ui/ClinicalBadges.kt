@@ -32,7 +32,6 @@ import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.BpLevel
 import com.sherifradwan.ancnative.model.bpLevel
-import com.sherifradwan.ancnative.model.MEDICATION_STATUS_NON_COMPLIANT
 
 @Composable
 private fun isDarkSurface(): Boolean = MaterialTheme.colorScheme.surface.luminance() < 0.5f
@@ -273,10 +272,8 @@ fun ClinicalRiskBadge(isHighRisk: Boolean, modifier: Modifier = Modifier) {
  */
 @Composable
 fun MedicationStatusBadge(status: String, modifier: Modifier = Modifier) {
-    val (containerColor, contentColor) = when (status) {
-        MEDICATION_STATUS_NON_COMPLIANT -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
-        else -> MaterialTheme.colorScheme.surfaceContainerHigh to MaterialTheme.colorScheme.onSurface
-    }
+    val containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    val contentColor = MaterialTheme.colorScheme.onSurface
 
     Surface(
         shape = RoundedCornerShape(6.dp),

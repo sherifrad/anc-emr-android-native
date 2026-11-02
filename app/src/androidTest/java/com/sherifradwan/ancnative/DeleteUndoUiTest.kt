@@ -367,6 +367,8 @@ class DeleteUndoUiTest {
             missing("medPreset-5")
             click("presavedToggle")
             exists("medPreset-${total - 1}")
+            // The editor has a pinned action bar, so the shorter form area needs a scroll before the click.
+            compose.onNodeWithTag("presavedToggle", useUnmergedTree = true).performScrollTo()
             click("presavedToggle")
             missing("medPreset-5")
         } else {

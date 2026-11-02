@@ -2,6 +2,7 @@ package com.sherifradwan.ancnative.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,11 +38,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.ClinicalVocabulary
 import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
+import com.sherifradwan.ancnative.model.MedicationOnOff
+import com.sherifradwan.ancnative.model.medicationEditorChoice
+import com.sherifradwan.ancnative.model.medicationStatusAfterChoice
 import com.sherifradwan.ancnative.model.codex.ClinicalCodexRepository
 import com.sherifradwan.ancnative.model.codex.MedicationCodexItem
 import com.sherifradwan.ancnative.model.effectiveMedicationStatus
@@ -53,16 +58,9 @@ import com.sherifradwan.ancnative.state.MedicationDraftField
 import com.sherifradwan.ancnative.state.SavePhase
 import java.time.LocalDate
 
-private fun firstBlankRow(
-    dosage: String,
-    route: String,
-    frequency: String,
-    startDate: String,
-): String? {
+private fun firstBlankRow(dosage: String, route: String): String? {
     if (dosage.isBlank()) return "dose"
     if (route.isBlank()) return "route"
-    if (frequency.isBlank()) return "frequency"
-    if (startDate.isBlank()) return "start"
     return null
 }
 
@@ -77,27 +75,20 @@ fun MedicationEditor(
     val enabled = state.savePhase == SavePhase.IDLE || state.savePhase == SavePhase.ERROR
 
     val dosageFocusRequester = remember { FocusRequester() }
-    val frequencyFocusRequester = remember { FocusRequester() }
     // Row key whose field should take focus once that row has been composed (IME Next only).
     var pendingFocusKey by remember(draft.medicationId) { mutableStateOf<String?>(null) }
 
     var openRowKey by rememberSaveable(draft.medicationId) {
         mutableStateOf(
-            firstBlankRow(
-                draft.values.dosage,
-                draft.values.route,
-                draft.values.frequency,
-                draft.values.startDate,
-            ),
+            firstBlankRow(draft.values.dosage, draft.values.route),
         )
     }
 
     LaunchedEffect(openRowKey, pendingFocusKey) {
         val target = pendingFocusKey
-        if ((target == "dose" || target == "frequency") && target == openRowKey) {
-            val requester = if (target == "dose") dosageFocusRequester else frequencyFocusRequester
+        if (target == "dose" && target == openRowKey) {
             try {
-                requester.requestFocus()
+                dosageFocusRequester.requestFocus()
             } catch (_: IllegalStateException) {
                 // Field not attached (row closed or not composed yet): skip programmatic focus.
             }
@@ -105,18 +96,42 @@ fun MedicationEditor(
         pendingFocusKey = null
     }
 
-    var showAdvanced by rememberSaveable(draft.medicationId) {
-        mutableStateOf(
-            draft.values.endDate.isNotEmpty() ||
-                draft.values.adverseNotes.isNotEmpty() ||
-                draft.values.notes.isNotEmpty(),
-        )
-    }
-
     EditorPage(
         title = stringResource(R.string.medication_editor),
         subtitle = "${patient.displayName} · Pregnancy Medication Management & Prescription",
         tag = "medicationEditor",
+        bottomBar = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedButton(
+                    onClick = { onEvent(AncEvent.CancelEditor) },
+                    enabled = enabled,
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                    modifier = Modifier.weight(1f).minimumTouchTarget().testTag("cancelMedication"),
+                ) {
+                    Text(stringResource(R.string.cancel), maxLines = 1, softWrap = false)
+                }
+                Button(
+                    onClick = { onEvent(AncEvent.SubmitMedication) },
+                    enabled = enabled,
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                    modifier = Modifier.weight(1f).minimumTouchTarget().testTag("saveMedication"),
+                ) {
+                    Text(stringResource(R.string.save), maxLines = 1, softWrap = false)
+                }
+                OutlinedButton(
+                    onClick = { onEvent(AncEvent.SubmitMedicationAndAddAnother) },
+                    enabled = enabled,
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                    modifier = Modifier.weight(1.6f).minimumTouchTarget().testTag("addAnotherMedication"),
+                ) {
+                    Text(stringResource(R.string.save_and_add_another_med), maxLines = 2, textAlign = TextAlign.Center, style = MaterialTheme.typography.labelLarge)
+                }
+            }
+        },
     ) {
         GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
 
@@ -141,7 +156,7 @@ fun MedicationEditor(
                 keyboardType = KeyboardType.Text,
                 imeAction = ImeAction.Next,
                 keyboardActions = KeyboardActions(onNext = {
-                    openRowKey = firstBlankRow(draft.values.dosage, draft.values.route, draft.values.frequency, draft.values.startDate)
+                    openRowKey = firstBlankRow(draft.values.dosage, draft.values.route)
                     pendingFocusKey = openRowKey
                 }),
             )
@@ -157,14 +172,11 @@ fun MedicationEditor(
                         onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.DOSAGE, preset.dosage))
                         onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ROUTE, preset.route))
                         onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.FREQUENCY, preset.frequency))
-                        val newStartDate = if (draft.values.startDate.isEmpty()) {
-                            val today = LocalDate.now().toString()
-                            onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.START_DATE, today))
-                            today
-                        } else {
-                            draft.values.startDate
+                        // The start date is not asked for; a new entry starts today.
+                        if (draft.values.startDate.isEmpty()) {
+                            onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.START_DATE, LocalDate.now().toString()))
                         }
-                        openRowKey = firstBlankRow(preset.dosage, preset.route, preset.frequency, newStartDate)
+                        openRowKey = firstBlankRow(preset.dosage, preset.route)
                     }
                 },
                 tagPrefix = "medPreset",
@@ -199,7 +211,7 @@ fun MedicationEditor(
                                         name = trimmedMedName,
                                         dosage = draft.values.dosage.trim(),
                                         route = draft.values.route.ifBlank { "Oral" },
-                                        frequency = draft.values.frequency.ifBlank { "Once daily" },
+                                        frequency = draft.values.frequency.trim(),
                                         isProphylaxis = false,
                                         isCustom = true,
                                     ),
@@ -238,7 +250,7 @@ fun MedicationEditor(
                             onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ADVERSE_NOTES, ""))
                             onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.END_DATE, ""))
                             onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.NOTES, ""))
-                            openRowKey = firstBlankRow(prior.dosage, prior.route, prior.frequency, draft.values.startDate)
+                            openRowKey = firstBlankRow(prior.dosage, prior.route)
                         }
                     },
                     tagPrefix = "patientPrevMed",
@@ -247,7 +259,7 @@ fun MedicationEditor(
             }
         }
 
-        // CARD 2: DOSE AND SCHEDULE (M402, tag medDetailsCard)
+        // CARD 2: DOSE AND ROUTE (M402, tag medDetailsCard)
         SectionCard(
             title = stringResource(R.string.medication_dose_and_schedule),
             tag = "medDetailsCard",
@@ -270,7 +282,7 @@ fun MedicationEditor(
                         keyboardType = KeyboardType.Text,
                         imeAction = ImeAction.Next,
                         keyboardActions = KeyboardActions(onNext = {
-                            openRowKey = firstBlankRow(draft.values.dosage, draft.values.route, draft.values.frequency, draft.values.startDate)
+                            openRowKey = firstBlankRow(draft.values.dosage, draft.values.route)
                             pendingFocusKey = openRowKey
                         }),
                     )
@@ -296,9 +308,10 @@ fun MedicationEditor(
                         choices = ClinicalVocabulary.medicationRoutes.toList(),
                         enabled = enabled,
                         tagPrefix = "medRouteChoice",
+                        rowGap = 0.dp,
                         onSelected = { selectedRoute ->
                             onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ROUTE, selectedRoute))
-                            openRowKey = firstBlankRow(draft.values.dosage, selectedRoute, draft.values.frequency, draft.values.startDate)
+                            openRowKey = firstBlankRow(draft.values.dosage, selectedRoute)
                         },
                     )
                 }
@@ -310,78 +323,9 @@ fun MedicationEditor(
                     onClick = { openRowKey = "route" },
                 )
             }
-
-            // Row 3: frequency
-            if (openRowKey == "frequency") {
-                Column(
-                    modifier = Modifier.fillMaxWidth().testTag("medOpen-frequency"),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    QuickPresetChips(
-                        title = stringResource(R.string.frequency),
-                        items = COMMON_MEDICATION_FREQUENCIES,
-                        enabled = enabled,
-                        onSelect = { selectedFreq ->
-                            onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.FREQUENCY, selectedFreq))
-                            openRowKey = firstBlankRow(draft.values.dosage, draft.values.route, selectedFreq, draft.values.startDate)
-                        },
-                        tagPrefix = "freqPreset",
-                    )
-
-                    EditorField(
-                        value = draft.values.frequency,
-                        onValueChange = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.FREQUENCY, it)) },
-                        label = stringResource(R.string.frequency),
-                        tag = "medFrequency",
-                        enabled = enabled,
-                        modifier = Modifier.focusRequester(frequencyFocusRequester),
-                        error = draft.errors.contains(ClinicalValidationError.REQUIRED_FREQUENCY),
-                        singleLine = true,
-                        keyboardType = KeyboardType.Text,
-                    )
-                }
-            } else {
-                SummaryRow(
-                    label = stringResource(R.string.frequency),
-                    value = draft.values.frequency,
-                    tag = "medRow-frequency",
-                    onClick = { openRowKey = "frequency" },
-                )
-            }
-
-            // Row 4: start
-            if (openRowKey == "start") {
-                Column(
-                    modifier = Modifier.fillMaxWidth().testTag("medOpen-start"),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    ClinicalDateField(
-                        value = draft.values.startDate,
-                        onValueChange = { newDate ->
-                            onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.START_DATE, newDate))
-                            if (newDate == LocalDate.now().toString()) {
-                                openRowKey = firstBlankRow(draft.values.dosage, draft.values.route, draft.values.frequency, newDate)
-                            }
-                        },
-                        label = stringResource(R.string.start_date),
-                        tag = "medStartDate",
-                        enabled = enabled,
-                        error = draft.errors.contains(ClinicalValidationError.REQUIRED_DATE) ||
-                            draft.errors.contains(ClinicalValidationError.INVALID_DATE),
-                        showTodayButton = true,
-                    )
-                }
-            } else {
-                SummaryRow(
-                    label = stringResource(R.string.start_date),
-                    value = draft.values.startDate,
-                    tag = "medRow-start",
-                    onClick = { openRowKey = "start" },
-                )
-            }
         }
 
-        // CARD 3: STATUS (M403, tag medStatusCard)
+        // CARD 3: STATUS AND NOTE (M403, tag medStatusCard). The editor offers On (stored Active) and Stopped (stored Discontinued).
         SectionCard(
             title = stringResource(R.string.status),
             tag = "medStatusCard",
@@ -390,62 +334,35 @@ fun MedicationEditor(
                 draft.values.status.ifEmpty { MEDICATION_STATUS_ACTIVE },
                 draft.values.isNonCompliant,
             )
-            ClinicalVocabulary.medicationStatuses.forEachIndexed { index, status ->
-                BigChoiceButton(
-                    label = status,
-                    selected = status == currentStatus,
-                    tag = "medStatusChoice-$index",
-                    onClick = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, status)) },
-                    enabled = enabled,
-                )
-            }
-        }
-
-        // MORE (M404, tag medMoreToggle, medMoreSection)
-        SectionCard(
-            title = "",
-        ) {
-            SummaryRow(
-                label = stringResource(R.string.medication_more),
-                value = if (showAdvanced) stringResource(R.string.more_close) else stringResource(R.string.more_open),
-                tag = "medMoreToggle",
-                onClick = { showAdvanced = !showAdvanced },
-            )
-
-            if (showAdvanced) {
-                Column(
-                    modifier = Modifier.fillMaxWidth().testTag("medMoreSection"),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    ClinicalDateField(
-                        value = draft.values.endDate,
-                        onValueChange = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.END_DATE, it)) },
-                        label = stringResource(R.string.end_date),
-                        tag = "medEndDate",
+            val currentChoice = medicationEditorChoice(currentStatus)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                listOf(
+                    MedicationOnOff.ON to stringResource(R.string.medication_status_active),
+                    MedicationOnOff.STOPPED to stringResource(R.string.medication_status_stopped),
+                ).forEachIndexed { index, (choice, label) ->
+                    BigChoiceButton(
+                        label = label,
+                        selected = currentChoice == choice,
+                        tag = "medStatusChoice-$index",
+                        onClick = {
+                            val next = medicationStatusAfterChoice(currentStatus, choice)
+                            if (next != currentStatus) {
+                                onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, next))
+                            }
+                        },
                         enabled = enabled,
-                        error = draft.errors.contains(ClinicalValidationError.INVALID_DATE),
-                        showTodayButton = false,
-                    )
-
-                    EditorField(
-                        value = draft.values.adverseNotes,
-                        onValueChange = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ADVERSE_NOTES, it)) },
-                        label = stringResource(R.string.adverse_effects),
-                        tag = "medAdverseNotes",
-                        enabled = enabled,
-                        singleLine = false,
-                    )
-
-                    EditorField(
-                        value = draft.values.notes,
-                        onValueChange = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.NOTES, it)) },
-                        label = stringResource(R.string.notes),
-                        tag = "medNotes",
-                        enabled = enabled,
-                        singleLine = false,
+                        modifier = Modifier.weight(1f),
                     )
                 }
             }
+            EditorField(
+                value = draft.values.notes,
+                onValueChange = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.NOTES, it)) },
+                label = stringResource(R.string.medication_note),
+                tag = "medNotes",
+                enabled = enabled,
+                singleLine = false,
+            )
         }
 
         // Security Vault Indicator
@@ -466,34 +383,6 @@ fun MedicationEditor(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        }
-
-        // Actions: Save first and full width (48 dp or more), then the two secondary actions, one label per line.
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Button(
-                onClick = { onEvent(AncEvent.SubmitMedication) },
-                enabled = enabled,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag("saveMedication"),
-            ) {
-                Text(stringResource(R.string.save), maxLines = 1, softWrap = false)
-            }
-            OutlinedButton(
-                onClick = { onEvent(AncEvent.SubmitMedicationAndAddAnother) },
-                enabled = enabled,
-                modifier = Modifier.fillMaxWidth().minimumTouchTarget().testTag("addAnotherMedication"),
-            ) {
-                Text(stringResource(R.string.save_and_add_another_med), maxLines = 1, softWrap = false)
-            }
-            OutlinedButton(
-                onClick = { onEvent(AncEvent.CancelEditor) },
-                enabled = enabled,
-                modifier = Modifier.fillMaxWidth().minimumTouchTarget().testTag("cancelMedication"),
-            ) {
-                Text(stringResource(R.string.cancel), maxLines = 1, softWrap = false)
-            }
         }
     }
 }

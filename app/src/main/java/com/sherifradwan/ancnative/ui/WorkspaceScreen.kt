@@ -102,7 +102,8 @@ import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
 import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoMedicationRecord
-import com.sherifradwan.ancnative.model.effectiveMedicationStatus
+import com.sherifradwan.ancnative.model.medicationInstructions
+import com.sherifradwan.ancnative.model.medicationStatusLabel
 import com.sherifradwan.ancnative.model.isOngoingMedication
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
@@ -2205,11 +2206,8 @@ private fun MedicationCard(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val status = effectiveMedicationStatus(med.status, med.isNonCompliant)
-    val summaryText = listOfNotNull(
-        med.dosage?.takeIf { it.isNotBlank() },
-        med.frequency?.takeIf { it.isNotBlank() },
-    ).joinToString(" · ")
+    val status = medicationStatusLabel(med.status, med.isNonCompliant)
+    val instructions = medicationInstructions(med.dosage, med.route, med.notes)
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -2241,11 +2239,14 @@ private fun MedicationCard(
                         // A drug name is never cut: it wraps to a second line instead.
                         Text(med.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         MedicationStatusBadge(status)
-                        if (!isExpanded && summaryText.isNotBlank()) {
+                        // Instructions line (dose, route, note): lighter and smaller than the bold name, still readable.
+                        if (instructions.isNotBlank()) {
                             Text(
-                                text = summaryText,
+                                text = instructions,
                                 style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Normal,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.testTag("medicationInstructions-${med.id}"),
                             )
                         }
                     }
@@ -2269,7 +2270,6 @@ private fun MedicationCard(
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     FactRow(R.string.dosage, med.dosage)
                     FactRow(R.string.route, med.route)
-                    FactRow(R.string.frequency, med.frequency)
                     FactRow(R.string.start_date, med.startDate)
                     FactRow(R.string.end_date, med.endDate)
                     if (!med.adverseNotes.isNullOrBlank()) {

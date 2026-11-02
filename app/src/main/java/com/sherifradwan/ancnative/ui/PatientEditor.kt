@@ -54,6 +54,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.PatientValidationError
@@ -537,12 +538,14 @@ internal fun ChoiceGroup(
     tagPrefix: String,
     onSelected: (String) -> Unit,
     includeUnknown: Boolean = true,
+    /** Gap between chip rows; chips already carry a 48 dp touch area, so a tight list can pass 0.dp. */
+    rowGap: Dp = 8.dp,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(label, style = MaterialTheme.typography.titleMedium)
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(rowGap),
         ) {
             (if (includeUnknown) listOf("").plus(choices) else choices).forEachIndexed { index, value ->
                 FilterChip(

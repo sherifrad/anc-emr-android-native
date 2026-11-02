@@ -470,6 +470,18 @@ class PatientPrintHtmlGeneratorTest {
     )
 
     @Test
+    fun medicationPrintsNameThenOneInstructionsLineWithNothingInvented() {
+        val full = htmlWith { it.copy(medications = listOf(med("1 tab twice daily"))) }
+        assertTrue(full.contains("""<span class="text-muted med-instructions">5 mg · PO · 1 tab twice daily</span>"""))
+        for (v in MISSING) {
+            val html = htmlWith { it.copy(medications = listOf(med(v).copy(dosage = "", route = ""))) }
+            assertFalse("'$v'", html.contains("med-instructions"))
+            assertFalse("'$v'", html.contains("Once daily"))
+            assertTrue("'$v'", html.contains("Folic acid"))
+        }
+    }
+
+    @Test
     fun q19h_visitNotesMissing_notRecorded_noInventedCourse() {
         for (v in MISSING) {
             val html = htmlWith { it.copy(visits = listOf(visit(v, v))) }
@@ -509,23 +521,6 @@ class PatientPrintHtmlGeneratorTest {
         assertTrue(b.contains("""<td class="text-center">other</td>"""))
         val typed = htmlWith { it.copy(previousPregnancies = listOf(prevPreg("Uncomplicated", null))) }
         assertTrue(typed.contains("""<td class="text-center">Uncomplicated</td>"""))
-    }
-
-    @Test
-    fun q19j_medNotesMissing_dash_noOngoing() {
-        for (v in MISSING) {
-            val html = htmlWith { it.copy(medications = listOf(med(v))) }
-            assertTrue("'$v'", html.contains("""<td class="text-center notes-cell text-muted">-</td>"""))
-            assertFalse("'$v'", html.contains("Ongoing as prescribed"))
-        }
-    }
-
-    @Test
-    fun q19j_medNotesPresent_printed() {
-        val html = htmlWith { it.copy(medications = listOf(med("after meals"))) }
-        assertTrue(html.contains("""<td class="text-center notes-cell text-muted">after meals</td>"""))
-        val typed = htmlWith { it.copy(medications = listOf(med("Ongoing as prescribed"))) }
-        assertTrue(typed.contains("Ongoing as prescribed"))
     }
 
     @Test

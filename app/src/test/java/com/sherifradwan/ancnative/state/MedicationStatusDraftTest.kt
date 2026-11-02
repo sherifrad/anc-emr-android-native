@@ -99,4 +99,32 @@ class MedicationStatusDraftTest {
         assertFalse(values(started).isProphylaxis)
         assertEquals("Active", values(started).status)
     }
+
+    @Test
+    fun savingWithoutFrequencyOrEndDateIsAccepted() {
+        val record = med("Active", false).copy(frequency = "")
+        val cmd = prepared(editing(record))
+        assertEquals("", cmd.frequency)
+        assertEquals(null, cmd.endDate)
+        val withUuid = (SaveMedicationCommand.prepare(editing(record), java.util.UUID.randomUUID().toString(), "m1") as ClinicalCommandPreparation.Ready).command
+        assertTrue(withUuid.isStructurallyValid())
+    }
+
+    @Test
+    fun openingAndSavingWithoutTouchingStatusKeepsCompletedAndNonCompliant() {
+        assertEquals("Completed", prepared(editing(med("Completed", false))).status)
+        val nc = prepared(editing(med("Active", true)))
+        assertEquals(MEDICATION_STATUS_NON_COMPLIANT, nc.status)
+        assertTrue(nc.isNonCompliant)
+    }
+
+    @Test
+    fun hiddenFieldsSurviveAnEditorSave() {
+        val record = med("Active", false, isProphylaxis = true).copy(endDate = "2026-03-01", adverseNotes = "Rash", frequency = "Twice daily")
+        val cmd = prepared(editing(record))
+        assertEquals("Twice daily", cmd.frequency)
+        assertEquals("2026-03-01", cmd.endDate)
+        assertEquals("Rash", cmd.adverseNotes)
+        assertTrue(cmd.isProphylaxis)
+    }
 }

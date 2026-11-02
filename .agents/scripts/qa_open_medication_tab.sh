@@ -17,4 +17,4 @@ for round in 1 2; do
 done
 $T "$S" "Workspace" >/dev/null 2>&1 || true; sleep 2
 for i in 1 2 3; do adb -s "$S" shell input swipe 900 580 100 580 250; done; sleep 1
-$T "$S" "Medications" >/dev/null; sleep 2
+$T "$S" "Meds" >/dev/null; sleep 2

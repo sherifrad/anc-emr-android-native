@@ -31,7 +31,7 @@
     <string name="visits">Visits</string>
     <string name="ultrasound">Ultrasound</string>
     <string name="laboratory">Laboratory</string>
-    <string name="medications">Medications / Prescriptions</string>
+    <string name="medications">Meds</string>
     <string name="delivery">Delivery</string>
     <string name="attachments">Attachments</string>
     <string name="visit_date">Visit date (YYYY-MM-DD)</string>
@@ -285,7 +285,7 @@
     <string name="no_photos_attached">No ultrasound photos attached</string>
     <string name="remove_photo">Remove photo</string>
     <string name="fill_all_negative">Confirm all histories negative</string>
-    <string name="save_and_add_another_med">+ Save &amp; Add another medication</string>
+    <string name="save_and_add_another_med">Save &amp; add another</string>
     <string name="advanced_med_options">Route &amp; End date (optional)</string>
     <string name="patient_previous_meds">Patient\'s previous prescriptions</string>
     <string name="days_remaining">%1$d days remaining</string>
@@ -392,9 +392,11 @@
     <string name="lab_preset_normal">Normal</string>
     <string name="lab_preset_positive">Positive</string>
     <string name="medication">Medication</string>
-    <string name="medication_dose_and_schedule">Dose and schedule</string>
-    <string name="medication_more">More: end date, adverse effects and notes</string>
-    <string name="show_details">Show details</string>
+    <string name="medication_dose_and_schedule">Dose and route</string>
+    <string name="medication_status_active">Active</string>
+    <string name="medication_status_stopped">Stopped</string>
+    <string name="medication_note">Note / instructions</string>
+        <string name="show_details">Show details</string>
     <string name="hide_details">Hide details</string>
     <string name="collapse_all">Collapse all</string>
     <string name="expand_all">Expand all</string>
@@ -406,8 +408,11 @@
     <string name="delete_confirm_title">Delete this %1$s?</string>
     <string name="delete_confirm_body">\"%1$s\" will be removed from this patient\'s record. You can undo for a few seconds afterwards.</string>
     <string name="patient_clause">(patient %1$s)</string>
-    <string name="undo_message_deleted">Deleted %1$s: %2$s%3$s</string>
-    <string name="undo_message_saved">Saved %1$s: %2$s%3$s</string>
+    <string name="undo_message_deleted">Deleted %1$s - %2$s</string>
+    <string name="undo_message_patient_tail">\u0020- %1$s</string>
+    <string name="undo_message_deleted_no_patient">Deleted %1$s</string>
+    <string name="undo_message_saved">Saved %1$s - %2$s</string>
+    <string name="undo_message_saved_no_patient">Saved %1$s</string>
     <string name="undo_in_progress">Undo in progress</string>
     <string name="delete_failed_message">Could not delete %1$s \"%2$s\"%4$s. It is still in the record. %3$s</string>
     <string name="undo_failed_deleted_message">Undo failed. %1$s \"%2$s\"%4$s is still deleted. %3$s</string>

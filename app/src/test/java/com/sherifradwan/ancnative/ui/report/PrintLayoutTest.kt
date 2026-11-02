@@ -213,9 +213,9 @@ class PrintLayoutTest {
         assertFalse("lab name cell must not carry nowrap", labNameCell!!.contains("nowrap"))
 
         // Medication name cell wraps: no nowrap
-        val medRow = Regex("""<tr>\s*<td[^>]*>Drug0</td>.*?</tr>""", RegexOption.DOT_MATCHES_ALL).find(generated)?.value
+        val medRow = Regex("""<tr>\s*<td[^>]*><span class="font-bold text-navy">Drug0</span>.*?</tr>""", RegexOption.DOT_MATCHES_ALL).find(generated)?.value
         assertTrue("med row found", medRow != null)
-        val medNameCell = Regex("""<td[^>]*>Drug0</td>""").find(medRow!!)?.value
+        val medNameCell = Regex("""<td[^>]*><span class="font-bold text-navy">Drug0</span>""").find(medRow!!)?.value
         assertTrue("med name cell found", medNameCell != null)
         assertFalse("med name cell must not carry nowrap", medNameCell!!.contains("nowrap"))
 

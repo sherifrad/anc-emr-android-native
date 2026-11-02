@@ -15,7 +15,6 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sherifradwan.ancnative.model.DemoFixtures
-import com.sherifradwan.ancnative.model.MEDICATION_STATUS_NON_COMPLIANT
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncReducer
 import com.sherifradwan.ancnative.state.AncRoute
@@ -24,13 +23,16 @@ import com.sherifradwan.ancnative.state.MedicationDraftField
 import com.sherifradwan.ancnative.storage.VaultState
 import com.sherifradwan.ancnative.ui.AncTheme
 import com.sherifradwan.ancnative.ui.MedicationEditor
+import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Oracles T400-T405 of SPEC_DESIGN_R5.md (Round 5c), written from the spec only. */
+/** Medication editor oracles T400-T405, updated 2026-11-02 for the reduced editor (name, dose, route, On/Stopped, one Note). */
 @RunWith(AndroidJUnit4::class)
 class MedicationEntryDesignTest {
     @get:Rule
@@ -77,7 +79,7 @@ class MedicationEntryDesignTest {
     private fun missing(tag: String) = compose.onNodeWithTag(tag, useUnmergedTree = true).assertDoesNotExist()
 
     @Test
-    fun t400_newMedicationOpensDoseRowWithRouteOralAndOtherRowsClosed() {
+    fun t400_newMedicationOpensDoseRowWithRouteOralAndNoFrequencyOrStartRow() {
         host()
         exists("medOpen-dose")
         compose.onNodeWithTag("medDosage", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
@@ -86,8 +88,8 @@ class MedicationEntryDesignTest {
             hasText("Oral") and (hasTestTag("medRow-route") or hasAnyAncestor(hasTestTag("medRow-route"))),
             useUnmergedTree = true,
         ).assertExists()
-        exists("medRow-frequency")
-        exists("medRow-start")
+        missing("medRow-frequency")
+        missing("medRow-start")
         compose.onNode(
             hasTestTag("medName") and hasAnyAncestor(hasTestTag("medPickCard")),
             useUnmergedTree = true,
@@ -95,7 +97,7 @@ class MedicationEntryDesignTest {
     }
 
     @Test
-    fun t401_presetFillsNameAndDoseAndOpensFirstBlankRowNotDose() {
+    fun t401_presetFillsNameAndDoseAndClosesTheDoseRow() {
         host()
         compose.onNodeWithTag("medPreset-0", useUnmergedTree = true).performScrollTo().performClick()
         compose.waitForIdle()
@@ -103,74 +105,71 @@ class MedicationEntryDesignTest {
         assertTrue("preset should fill name", v.name.isNotBlank())
         assertTrue("preset should fill dose", v.dosage.isNotBlank())
         missing("medOpen-dose")
-        // First blank row in fixed order dose, route, frequency, start (all four after a preset normally filled).
-        val expected = listOf(
-            "dose" to v.dosage,
-            "route" to v.route,
-            "frequency" to v.frequency,
-            "start" to v.startDate,
-        ).firstOrNull { it.second.isBlank() }?.first
-        if (expected != null) {
-            exists("medOpen-$expected")
-        } else {
-            listOf("dose", "route", "frequency", "start").forEach { missing("medOpen-$it") }
-        }
     }
 
     @Test
-    fun t402_tappingFrequencyRowOpensItAndClosesDose() {
+    fun t402_tappingRouteRowOpensItAndClosesDose() {
         host()
         exists("medOpen-dose")
-        compose.onNodeWithTag("medRow-frequency", useUnmergedTree = true).performScrollTo().performClick()
+        compose.onNodeWithTag("medRow-route", useUnmergedTree = true).performScrollTo().performClick()
         compose.waitForIdle()
-        exists("medOpen-frequency")
+        exists("medOpen-route")
         missing("medOpen-dose")
     }
 
     @Test
-    fun t403_fourStatusButtonsNoProphylaxisFourthSelectsNonCompliant() {
+    fun t403_twoStatusButtonsOnAndStoppedNoProphylaxis() {
         host()
-        compose.onNodeWithTag("medStatusChoice-0", useUnmergedTree = true).performScrollTo()
-        assertEquals(
-            4,
-            compose.onAllNodesWithTag("medStatusChoice-0", useUnmergedTree = true).fetchSemanticsNodes().size +
-                compose.onAllNodesWithTag("medStatusChoice-1", useUnmergedTree = true).fetchSemanticsNodes().size +
-                compose.onAllNodesWithTag("medStatusChoice-2", useUnmergedTree = true).fetchSemanticsNodes().size +
-                compose.onAllNodesWithTag("medStatusChoice-3", useUnmergedTree = true).fetchSemanticsNodes().size,
-        )
-        missing("medStatusChoice-4")
+        compose.onNodeWithTag("medStatusChoice-0", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        exists("medStatusChoice-1")
+        missing("medStatusChoice-2")
+        missing("medStatusChoice-3")
         compose.onNode(hasText("Prophylaxis", substring = true, ignoreCase = true), useUnmergedTree = true)
             .assertDoesNotExist()
-        compose.onNodeWithTag("medStatusChoice-3", useUnmergedTree = true).performScrollTo().performClick()
+        compose.onNodeWithTag("medStatusChoice-1", useUnmergedTree = true).performScrollTo().performClick()
         compose.waitForIdle()
+        assertEquals("Discontinued", state.medicationDraft!!.values.status)
+        assertFalse(state.medicationDraft!!.values.isNonCompliant)
+        compose.onNodeWithTag("medStatusChoice-0", useUnmergedTree = true).performScrollTo().performClick()
+        compose.waitForIdle()
+        assertEquals("Active", state.medicationDraft!!.values.status)
+    }
+
+    @Test
+    fun t404_moreSectionFrequencyEndDateAdverseNotesAreGoneAndOneNoteFieldRemains() {
+        host { change(change(it, MedicationDraftField.END_DATE, "2026-12-01"), MedicationDraftField.ADVERSE_NOTES, "Nausea") }
+        listOf(
+            "medMoreToggle", "medMoreSection", "medFrequency", "medRow-frequency", "medOpen-frequency",
+            "freqPreset-0", "medEndDate", "medAdverseNotes", "medStartDate", "medRow-start",
+        ).forEach { missing(it) }
+        assertEquals(1, compose.onAllNodesWithTag("medNotes", useUnmergedTree = true).fetchSemanticsNodes().size)
+        // The hidden values stay in the draft untouched.
         val v = state.medicationDraft!!.values
-        assertEquals(MEDICATION_STATUS_NON_COMPLIANT, v.status)
-        assertTrue(v.isNonCompliant)
+        assertEquals("2026-12-01", v.endDate)
+        assertEquals("Nausea", v.adverseNotes)
     }
 
     @Test
-    fun t404_moreSectionOpenOnEntryOnlyWhenEndDateOrAdverseNotesPresent() {
-        host { change(it, MedicationDraftField.END_DATE, "2026-12-01") }
-        exists("medMoreSection")
-
-        host { change(it, MedicationDraftField.ADVERSE_NOTES, "Nausea") }
-        exists("medMoreSection")
-    }
-
-    @Test
-    fun t404b_moreSectionClosedByDefaultAndToggleShowsIt() {
+    fun t404b_statusButtonsAreLabelledActiveAndStopped() {
         host()
-        missing("medMoreSection")
-        compose.onNodeWithTag("medMoreToggle", useUnmergedTree = true).performScrollTo().performClick()
-        compose.waitForIdle()
-        exists("medMoreSection")
+        compose.onNode(hasText("Active") and hasAnyAncestor(hasTestTag("medStatusChoice-0")), useUnmergedTree = true).assertExists()
+        compose.onNode(hasText("Stopped") and hasAnyAncestor(hasTestTag("medStatusChoice-1")), useUnmergedTree = true).assertExists()
     }
 
     @Test
-    fun t405_actionRowButtonsAreDisplayed() {
+    fun t405_actionBarIsPinnedWithCancelSaveAndSaveAndAddAnotherAtLeast48dp() {
         host()
-        listOf("saveMedication", "cancelMedication", "addAnotherMedication").forEach {
-            compose.onNodeWithTag(it, useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        // No scrolling: the bar is visible at once and stays so with the form scrolled to the bottom.
+        listOf("cancelMedication", "saveMedication", "addAnotherMedication").forEach {
+            compose.onNodeWithTag(it, useUnmergedTree = true).assertIsDisplayed().assertHeightIsAtLeast(48.dp)
         }
+        compose.onNodeWithTag("medNotes", useUnmergedTree = true).performScrollTo()
+        listOf("cancelMedication", "saveMedication", "addAnotherMedication").forEach {
+            compose.onNodeWithTag(it, useUnmergedTree = true).assertIsDisplayed()
+        }
+        val cancel = compose.onNodeWithTag("cancelMedication", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val save = compose.onNodeWithTag("saveMedication", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val another = compose.onNodeWithTag("addAnotherMedication", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        assertTrue("order Cancel, Save, Save and add another", cancel.right <= save.left + 1f && save.right <= another.left + 1f)
     }
 }

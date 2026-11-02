@@ -80,7 +80,8 @@ import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.model.DemoVisit
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
-import com.sherifradwan.ancnative.model.effectiveMedicationStatus
+import com.sherifradwan.ancnative.model.medicationInstructions
+import com.sherifradwan.ancnative.model.medicationStatusLabel
 import com.sherifradwan.ancnative.model.isOngoingMedication
 import com.sherifradwan.ancnative.model.previousDeliverySummary
 import com.sherifradwan.ancnative.state.AncEvent
@@ -2039,7 +2040,7 @@ private fun ProfileMedicationCard(med: DemoMedicationRecord, onEdit: () -> Unit)
                     color = MaterialTheme.colorScheme.primary,
                 )
                 Text(
-                    text = "${med.dosage ?: ""} · ${med.frequency ?: "Daily"}",
+                    text = medicationInstructions(med.dosage, med.route, med.notes),
                     style = MaterialTheme.typography.bodySmall,
                 )
                 if (!med.startDate.isNullOrBlank()) {
@@ -2060,7 +2061,7 @@ private fun ProfileMedicationCard(med: DemoMedicationRecord, onEdit: () -> Unit)
                     MaterialTheme.colorScheme.surfaceContainerHigh,
             ) {
                 Text(
-                    text = effectiveMedicationStatus(med.status, med.isNonCompliant),
+                    text = medicationStatusLabel(med.status, med.isNonCompliant),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = if (ongoing)

@@ -8,10 +8,10 @@ import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.BpLevel
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
-import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
-import com.sherifradwan.ancnative.model.MEDICATION_STATUS_NON_COMPLIANT
+import com.sherifradwan.ancnative.model.MEDICATION_LABEL_ACTIVE
+import com.sherifradwan.ancnative.model.medicationInstructions
+import com.sherifradwan.ancnative.model.medicationStatusLabel
 import com.sherifradwan.ancnative.model.bpLevel
-import com.sherifradwan.ancnative.model.effectiveMedicationStatus
 import com.sherifradwan.ancnative.model.formatIsoDate
 import com.sherifradwan.ancnative.model.isEarlyLoss
 import com.sherifradwan.ancnative.model.isStillbirth
@@ -204,25 +204,20 @@ object PatientPrintHtmlGenerator {
 
         // Medications rows (Centered)
         val displayedMeds = patient.medications.take(MAX_PRINT_MEDICATIONS)
-        val moreMedsHtml = hiddenRowsHtml(patient.medications.size - MAX_PRINT_MEDICATIONS, 5)
+        val moreMedsHtml = hiddenRowsHtml(patient.medications.size - MAX_PRINT_MEDICATIONS, 2)
         val medsRowsHtml = if (patient.medications.isEmpty()) {
-            """<tr><td colspan="5" class="text-center empty-cell">No active medications or supplements recorded</td></tr>"""
+            """<tr><td colspan="2" class="text-center empty-cell">No active medications or supplements recorded</td></tr>"""
         } else {
             val rows = displayedMeds.map { m ->
-                val statusText = effectiveMedicationStatus(m.status, m.isNonCompliant)
-                val badgeClass = when (statusText) {
-                    MEDICATION_STATUS_ACTIVE -> "badge badge-teal"
-                    MEDICATION_STATUS_NON_COMPLIANT -> "badge badge-danger"
-                    else -> "badge"
-                }
+                val statusText = medicationStatusLabel(m.status, m.isNonCompliant)
+                val badgeClass = if (statusText == MEDICATION_LABEL_ACTIVE) "badge badge-teal" else "badge"
+                val instructions = medicationInstructions(m.dosage, m.route, m.notes)
+                val instructionsHtml = if (instructions.isEmpty()) "" else """<br><span class="text-muted med-instructions">${escapeHtml(instructions)}</span>"""
                 val typeBadge = """<span class="$badgeClass">${escapeHtml(statusText)}</span>"""
                 """
                 <tr>
-                    <td class="text-center font-bold text-navy">${escapeHtml(m.name)}</td>
-                    <td class="text-center font-bold">${escapeHtml(m.dosage)} (${escapeHtml(m.route)})</td>
-                    <td class="text-center">${escapeHtml(m.frequency)}</td>
+                    <td class="text-center med-cell"><span class="font-bold text-navy">${escapeHtml(m.name)}</span>$instructionsHtml</td>
                     <td class="text-center">${typeBadge}</td>
-                    <td class="text-center notes-cell text-muted">${escapeHtml(m.notes?.takeUnless(String::isBlank) ?: "-")}</td>
                 </tr>
                 """.trimIndent()
             }.joinToString("\n")
@@ -1211,11 +1206,8 @@ object PatientPrintHtmlGenerator {
                 <table class="clinical-table">
                     <thead>
                         <tr>
-                            <th style="width: 28%;">Medication</th>
-                            <th style="width: 20%;">Dosage & Route</th>
-                            <th style="width: 18%;">Frequency</th>
-                            <th style="width: 16%;">Status</th>
-                            <th style="width: 18%;">Notes</th>
+                            <th style="width: 75%;">Medication and instructions</th>
+                            <th style="width: 25%;">Status</th>
                         </tr>
                     </thead>
                     <tbody>

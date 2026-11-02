@@ -18,6 +18,43 @@ fun effectiveMedicationStatus(status: String, isNonCompliant: Boolean = false): 
     }
 }
 
+const val MEDICATION_STATUS_DISCONTINUED = "Discontinued"
+const val MEDICATION_STATUS_COMPLETED = "Completed"
+
+/** The only two statuses the UI shows. Stored values (Active, Completed, Discontinued, Patient non-compliant) are unchanged. */
+const val MEDICATION_LABEL_ACTIVE = MEDICATION_STATUS_ACTIVE
+const val MEDICATION_LABEL_STOPPED = "Stopped"
+
+fun medicationStatusLabel(status: String, isNonCompliant: Boolean = false): String =
+    if (isOngoingMedication(status, isNonCompliant)) MEDICATION_LABEL_ACTIVE else MEDICATION_LABEL_STOPPED
+
+/** The instructions line of a medication: dose, route and the Note text, joined with " · ". Blank parts are left out, nothing is invented. */
+fun medicationInstructions(dosage: String?, route: String?, notes: String?): String =
+    listOfNotNull(dosage, route, notes).map { it.trim() }.filter { it.isNotEmpty() }.joinToString(" · ")
+
+/** The two choices the medication editor offers. */
+enum class MedicationOnOff { ON, STOPPED }
+
+/**
+ * Which editor choice a stored (effective) status shows as: Active and Patient non-compliant are On,
+ * Completed and Discontinued are Stopped. Blank counts as Active. Any other value maps to null (neither is shown selected).
+ */
+fun medicationEditorChoice(status: String): MedicationOnOff? = when (status.ifBlank { MEDICATION_STATUS_ACTIVE }) {
+    MEDICATION_STATUS_ACTIVE, MEDICATION_STATUS_NON_COMPLIANT -> MedicationOnOff.ON
+    MEDICATION_STATUS_COMPLETED, MEDICATION_STATUS_DISCONTINUED -> MedicationOnOff.STOPPED
+    else -> null
+}
+
+/**
+ * Status to store after the user taps a choice. Tapping the choice that already matches the stored status
+ * keeps the stored value (Completed and Patient non-compliant are not overwritten); otherwise On stores Active
+ * and Stopped stores Discontinued.
+ */
+fun medicationStatusAfterChoice(currentStatus: String, choice: MedicationOnOff): String {
+    if (medicationEditorChoice(currentStatus) == choice) return currentStatus.ifBlank { MEDICATION_STATUS_ACTIVE }
+    return if (choice == MedicationOnOff.ON) MEDICATION_STATUS_ACTIVE else MEDICATION_STATUS_DISCONTINUED
+}
+
 fun isOngoingMedication(status: String, isNonCompliant: Boolean = false): Boolean {
     val effective = effectiveMedicationStatus(status, isNonCompliant)
     return effective == MEDICATION_STATUS_ACTIVE || effective == MEDICATION_STATUS_NON_COMPLIANT

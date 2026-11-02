@@ -75,7 +75,7 @@ def check_s141():
     if not m or not re.search(r"bottomBar\s*:\s*\(@Composable\s*\(\)\s*->\s*Unit\)\?\s*=\s*null", m.group(1)):
         problems.append("EditorPage lacks bottomBar: (@Composable () -> Unit)? = null")
     users = [p.name for p in UI.rglob("*.kt") if re.search(r"\bbottomBar\s*=", code(p))]
-    if users != [LAB.name]:
+    if sorted(users) != sorted([LAB.name, "MedicationEditor.kt"]):  # medication editor joined 2026-11-02
         problems.append("bottomBar passed by " + str(users))
     lab = code(LAB)
     pos = lab.find("bottomBar")
@@ -85,7 +85,7 @@ def check_s141():
             problems.append("%s occurs %d times" % (tag, len(hits)))
         elif pos < 0 or hits[0] < pos:
             problems.append(tag + " is not inside the bottom bar")
-    record("S141 pinned action bar slot, used only by the lab screen", not problems, "; ".join(problems))
+    record("S141 pinned action bar slot, used only by the lab and medication screens", not problems, "; ".join(problems))
 
 
 def check_s142():

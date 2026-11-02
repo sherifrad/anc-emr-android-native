@@ -257,9 +257,7 @@ class PatientPrintHtmlEscapeTest {
 
     @Test
     fun q93_medicationsSection_escapedOnce() {
-        assertTrue(html.contains("""<td class="text-center font-bold">$ESCAPED ($ESCAPED)</td>"""))
-        assertTrue(countOf("""<td class="text-center">$ESCAPED</td>""") >= 1)
-        assertTrue(html.contains("""<td class="text-center notes-cell text-muted">$ESCAPED</td>"""))
+        assertTrue(html.contains("""<span class="font-bold text-navy">$ESCAPED</span><br><span class="text-muted med-instructions">$ESCAPED · $ESCAPED · $ESCAPED</span>"""))
     }
 
     @Test

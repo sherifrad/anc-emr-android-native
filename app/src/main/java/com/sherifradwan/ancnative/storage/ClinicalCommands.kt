@@ -398,7 +398,7 @@ data class SaveMedicationCommand(
     override fun isStructurallyValid(): Boolean {
         if (!isValidUuid(operationUuid) || patientId.isBlank() || medicationId.isBlank() || expectedPatientRevision < 1) return false
         if (expectedMedicationRevision != null && expectedMedicationRevision < 1) return false
-        if (name.isBlank() || dosage.isBlank() || frequency.isBlank()) return false
+        if (name.isBlank() || dosage.isBlank()) return false
         if (route !in ClinicalVocabulary.medicationRoutes) return false
         if (status !in ClinicalVocabulary.medicationStatuses) return false
         if (!ClinicalVocabulary.isValidIsoDate(startDate) || startDate.isBlank()) return false
@@ -431,10 +431,8 @@ data class SaveMedicationCommand(
                 errors.add(ClinicalValidationError.INVALID_ROUTE)
             }
 
+            // Frequency is optional: the editor no longer asks for it. A stored value is kept; a blank one stays blank.
             val frequency = draft.values.frequency.trim()
-            if (frequency.isEmpty()) {
-                errors.add(ClinicalValidationError.REQUIRED_FREQUENCY)
-            }
 
             val startDate = draft.values.startDate.trim()
             if (startDate.isEmpty()) {
