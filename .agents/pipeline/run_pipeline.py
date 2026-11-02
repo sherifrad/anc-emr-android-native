@@ -16,7 +16,7 @@ ap.add_argument("--root", default=str(HOME / "anc-emr-android-native"))
 ap.add_argument("--plan", action="store_true")
 ap.add_argument("--skip-review", action="store_true")
 ap.add_argument("--ui-only", action="store_true", help="tests and core already green: run only the UI lane, cache check and review")
-ap.add_argument("--round", default="r1", choices=["r1", "r2", "r3", "r3b", "r3c", "r3c2", "r3c3", "r3d", "r3e", "r3f1", "r3f2", "r3f3", "r3g", "r3h", "r3i", "r3j", "r3k", "r3l", "r3m", "r3n", "r3o", "r3p", "r3q", "r3r", "r3s", "r3t", "r3u", "r3v", "r3w", "r3x", "r3y", "r3z", "r4a", "r4b", "r4c", "r4d", "r4e", "r4f", "r4g", "r5a", "r5b", "r5c", "r5d"], help="r2: SPEC_FIX_R2 briefs in pipeline/r2, round-2 file lists")
+ap.add_argument("--round", default="r1", choices=["r1", "r2", "r3", "r3b", "r3c", "r3c2", "r3c3", "r3d", "r3e", "r3f1", "r3f2", "r3f3", "r3g", "r3h", "r3i", "r3j", "r3k", "r3l", "r3m", "r3n", "r3o", "r3p", "r3q", "r3r", "r3s", "r3t", "r3u", "r3v", "r3w", "r3x", "r3y", "r3z", "r4a", "r4b", "r4c", "r4d", "r4e", "r4f", "r4g", "r5a", "r5b", "r5c", "r5d", "r6a"], help="r2: SPEC_FIX_R2 briefs in pipeline/r2, round-2 file lists")
 ap.add_argument("--resume-tests", metavar="NOTE", help="tests lane timed out after writing tests: send a short finish-up request (NOTE), then continue")
 ap.add_argument("--from-core", metavar="RED_RUN_DIR", help="tests already written and red-checked in RED_RUN_DIR: start at the core lane")
 ap.add_argument("--skip-ui", action="store_true", help="no UI work this round: skip the UI lane, still run the full gate")
@@ -324,6 +324,12 @@ if args.round == "r5d":
     TEST_GLOBS = [".agents/checks/check_r5d.py", ".agents/TEST_MANIFEST.json", "app/src/androidTest/java/com/sherifradwan/ancnative/MedicationListCollapseTest.kt"]
     ALLOW = {"tests": TEST_GLOBS, "core": [],
              "ui": [UIDIR + "WorkspaceScreen.kt", "app/src/main/res/values/strings.xml"], "review": []}
+if args.round == "r6a":
+    M = "app/src/main/java/com/sherifradwan/ancnative/"; ST = "app/src/test/java/com/sherifradwan/ancnative/"
+    TEST_GLOBS = [".agents/checks/check_r6a.py", ".agents/TEST_MANIFEST.json", ST + "storage/ClinicalCommandsTest.kt", ST + "state/AncDeleteUndoStateTest.kt", ST + "storage/ClinicalDeleteRuleTest.kt"]
+    ALLOW = {"tests": TEST_GLOBS,
+             "core": [M + "storage/ClinicalCommands.kt", M + "storage/RecordsRepository.kt", M + "storage/RecordsDao.kt", M + "storage/ClinicalDeleteRule.kt", M + "state/AncState.kt", M + "state/AncViewModel.kt", M + "model/ClinicalModels.kt"],
+             "ui": [], "review": []}
 if args.round == "r4g":
     M = "app/src/main/java/com/sherifradwan/ancnative/"; ST = "app/src/test/java/com/sherifradwan/ancnative/"
     TEST_GLOBS = [".agents/checks/check_r4g.py", ".agents/TEST_MANIFEST.json", ST + "model/EddFromScanTest.kt", ST + "state/PatientDatingDraftTest.kt", ST + "state/IntakeDatingRuleTest.kt"]
@@ -331,7 +337,7 @@ if args.round == "r4g":
              "core": [M + "model/IsoDates.kt", M + "state/AncState.kt", M + "state/DraftMapping.kt", M + "state/IntakeDatingRule.kt", M + "state/AncViewModel.kt"],
              "ui": [UI + "PatientEditor.kt", M + "model/GestationalAgeEngine.kt"],
              "review": []}
-BRIEFS = PIPE / args.round if args.round in ("r2", "r3", "r3b", "r3c", "r3c2", "r3c3", "r3d", "r3e", "r3f1", "r3f2", "r3f3", "r3g", "r3h", "r3i", "r3j", "r3k", "r3l", "r3m", "r3n", "r3o", "r3p", "r3q", "r3r", "r3s", "r3t", "r3u", "r3v", "r3w", "r3x", "r3y", "r3z", "r4a", "r4b", "r4c", "r4d", "r4e", "r4f", "r4g", "r5a", "r5b", "r5c", "r5d") else PIPE
+BRIEFS = PIPE / args.round if args.round in ("r2", "r3", "r3b", "r3c", "r3c2", "r3c3", "r3d", "r3e", "r3f1", "r3f2", "r3f3", "r3g", "r3h", "r3i", "r3j", "r3k", "r3l", "r3m", "r3n", "r3o", "r3p", "r3q", "r3r", "r3s", "r3t", "r3u", "r3v", "r3w", "r3x", "r3y", "r3z", "r4a", "r4b", "r4c", "r4d", "r4e", "r4f", "r4g", "r5a", "r5b", "r5c", "r5d", "r6a") else PIPE
 # Tests that reference functions the core lane has not written yet; parked during the behavioural red check.
 NEW_API_TESTS = {"r2": [T + "ClinicalFormatR2Test.kt"], "r3": ["app/src/test/java/com/sherifradwan/ancnative/state/IntakeDatingRuleTest.kt"],
                  "r3b": ["app/src/test/java/com/sherifradwan/ancnative/storage/" + n for n in ("RecordAnomaliesTest.kt", "VaultAutoActionTest.kt", "VaultCleanupRuleTest.kt")],
@@ -453,7 +459,7 @@ if args.round == "r3f3": CORE_GATE |= {"UNIT-bounded-bitmap"}
 if args.round == "r4b": CORE_GATE |= {"UNIT-r4b", "UNIT-all"}
 if args.round == "r4g": CORE_GATE |= {"UNIT-r4g", "UNIT-all"}
 if args.round == "r5a": CORE_GATE |= {"UNIT-all"}   # STATIC-r5a spans the UI lane
-if args.round in ("r5b", "r5c", "r5d"): CORE_GATE |= {"UNIT-all"}   # STATIC-r5b spans the UI lane
+if args.round in ("r5b", "r5c", "r5d", "r6a"): CORE_GATE |= {"UNIT-all"}   # STATIC-r5b spans the UI lane
 if args.round == "r4f": CORE_GATE |= {"UNIT-r4f", "UNIT-all"}
 if args.round == "r4e": CORE_GATE |= {"UNIT-r4e", "UNIT-all"}
 if args.round == "r4d": CORE_GATE |= {"UNIT-r4d", "UNIT-all"}

@@ -1319,6 +1319,16 @@
         ".agents/checks/check_r5d.py"
       ],
       "covers": ["S230", "S231", "S232"]
+    },
+    {
+      "id": "STATIC-r6a",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r6a.py",
+      "deps": [
+        "app/src/main/**/*.kt",
+        ".agents/checks/check_r6a.py"
+      ],
+      "covers": ["S300", "S301", "S302", "S303"]
     }
   ]
 }
