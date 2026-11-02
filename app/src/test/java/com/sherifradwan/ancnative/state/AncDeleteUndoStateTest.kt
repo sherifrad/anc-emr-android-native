@@ -351,4 +351,143 @@ class AncDeleteUndoStateTest {
             assertEquals(kind.type.name, dirty, reduce(dirty, AncEvent.ConfirmDelete))
         }
     }
+
+    private fun saveOffer(kind: Kind, token: String, recordId: String) = UndoOffer(
+        token = token, patientId = "p1", type = kind.type, action = UndoAction.SAVE, label = kind.label,
+        phase = UndoPhase.READY, patientName = "Patient One", recordId = recordId,
+    )
+
+    @Test
+    fun deleteFailedShowsAVisibleMessageForThatPatientAndKeepsTheRecord() {
+        for (kind in kinds) {
+            val running = reduce(requestDelete(kind, base()), AncEvent.ConfirmDelete).let { reduce(it, AncEvent.DeleteStarted) }
+            assertTrue(running.deleteRunning)
+            val failed = reduce(running, AncEvent.DeleteFailed(SaveUiError.STALE_OR_CONFLICT, "p1", kind.type, kind.label))
+            val message = failed.deleteMessage
+            assertNotNull(kind.type.name, message)
+            assertEquals(DeleteMessageKind.DELETE_FAILED, message!!.kind)
+            assertEquals("p1", message.patientId)
+            assertEquals(kind.label, message.label)
+            assertEquals(false, failed.deleteRunning)
+            assertEquals(base().patients, failed.patients)
+            assertNull(reduce(failed, AncEvent.DismissDeleteMessage).deleteMessage)
+        }
+    }
+
+    @Test
+    fun failedUndoSaysTheRecordIsStillDeletedAndStaysUntilDismissed() {
+        for (kind in kinds) {
+            val running = withOffer(kind, base(), "t1", UndoPhase.RUNNING)
+            val failed = reduce(running, AncEvent.UndoFailed("t1", SaveUiError.STORAGE_ERROR))
+            val message = failed.deleteMessage!!
+            assertEquals(DeleteMessageKind.UNDO_FAILED, message.kind)
+            assertEquals(UndoAction.DELETE, message.action)
+            assertEquals(kind.label, message.label)
+            // The offer's window ending does not hide the message.
+            assertNotNull(reduce(failed, AncEvent.UndoExpired("t1")).deleteMessage)
+            // A fresh Undo attempt clears it.
+            assertNull(reduce(failed, AncEvent.UndoRequested("t1")).deleteMessage)
+        }
+    }
+
+    @Test
+    fun openingAnotherPatientDropsOfferMessageAndNoticeOfTheFirst() {
+        for (kind in kinds) {
+            val inWorkspace = base().copy(route = AncRoute.Workspace("p1", WorkspaceSection.MEDICATIONS))
+            val state = reduce(withOffer(kind, inWorkspace, "t1"), AncEvent.UndoCommitted("zz", listOf(patient()), SavedNotice.MEDICATION_RESTORED, "p1"))
+                .copy(deleteMessage = DeleteMessage(DeleteMessageKind.UNDO_FAILED, "p1", kind.type, kind.label, UndoAction.DELETE))
+            assertNotNull(state.undoOffer)
+            assertEquals("p1", state.noticePatientId)
+            val sameLaterPatient = reduce(state, AncEvent.OpenWorkspace("p1"))
+            assertNotNull(kind.type.name, sameLaterPatient.undoOffer)
+            val other = reduce(state, AncEvent.OpenWorkspace("p2"))
+            assertNull(kind.type.name, other.undoOffer)
+            assertNull(kind.type.name, other.deleteMessage)
+            assertEquals(false, other.savedNotice)
+            assertNull(other.noticePatientId)
+        }
+    }
+
+    @Test
+    fun noticeOfALateCommitNeverShowsOnAnotherPatient() {
+        for (kind in kinds) {
+            val onOther = base().copy(route = AncRoute.Workspace("p2", WorkspaceSection.MEDICATIONS))
+            val next = reduce(withOffer(kind, onOther, "t1", UndoPhase.RUNNING), AncEvent.UndoCommitted("t1", listOf(patient()), SavedNotice.MEDICATION_RESTORED, "p1"))
+            assertEquals(false, next.savedNotice)
+            assertNull(next.noticePatientId)
+        }
+    }
+
+    @Test
+    fun undoOfSaveClosesACleanEditorOnThatRecordFirst() {
+        for (kind in kinds) {
+            val editing = kind.startEditor(base(), "r1", "r1", "session-1")
+            assertTrue(kind.isEditorRoute(editing))
+            val running = reduce(editing.copy(undoOffer = saveOffer(kind, "t1", "r1")), AncEvent.UndoRequested("t1"))
+            assertTrue(kind.type.name, running.canRunUndo("t1"))
+            assertNull(kind.type.name, kind.openRecordId(running))
+            assertEquals(false, kind.isEditorRoute(running))
+        }
+    }
+
+    @Test
+    fun undoOfSaveIsRefusedWithAMessageWhenThatRecordHasUnsavedEdits() {
+        for (kind in kinds) {
+            val dirty = kind.makeDirty(kind.startEditor(base(), "r1", "r1", "session-1"))
+            val refused = reduce(dirty.copy(undoOffer = saveOffer(kind, "t1", "r1")), AncEvent.UndoRequested("t1"))
+            assertEquals(false, refused.canRunUndo("t1"))
+            assertEquals(UndoPhase.READY, refused.undoOffer?.phase)
+            assertEquals(DeleteMessageKind.UNDO_BLOCKED, refused.deleteMessage?.kind)
+            assertEquals("r1", kind.openRecordId(refused))
+        }
+    }
+
+    @Test
+    fun undoOfSaveLeavesAnEditorOnAnotherRecordAlone() {
+        for (kind in kinds) {
+            val editing = kind.makeDirty(kind.startEditor(base(), "r2", "r2", "session-1"))
+            val running = reduce(editing.copy(undoOffer = saveOffer(kind, "t1", "r1")), AncEvent.UndoRequested("t1"))
+            assertTrue(kind.type.name, running.canRunUndo("t1"))
+            assertEquals("r2", kind.openRecordId(running))
+        }
+    }
+
+    @Test
+    fun deleteRequestAndConfirmIgnoredWhileADeleteRuns() {
+        for (kind in kinds) {
+            val asked = requestDelete(kind, base())
+            val running = reduce(asked, AncEvent.DeleteStarted)
+            assertEquals(kind.type.name, running, requestDelete(kind, running, "r2"))
+            val pending = running.copy(deleteConfirmation = PendingDeletion("p1", kind.type, "r2"))
+            assertEquals(kind.type.name, pending, reduce(pending, AncEvent.ConfirmDelete))
+            val done = reduce(running, AncEvent.DeleteCommitted(listOf(patient(revision = 6)), offer(kind, "t1"), null, "p1"))
+            assertEquals(false, done.deleteRunning)
+            assertNotNull(requestDelete(kind, done, "r2").deleteConfirmation)
+        }
+    }
+
+    @Test
+    fun confirmationForARecordThatIsGoneIsClosed() {
+        for (kind in kinds) {
+            val asked = requestDelete(kind, base())
+            val gone = patient().copy(
+                medications = patient().medications.filterNot { it.id == "r1" },
+                labInvestigations = patient().labInvestigations.filterNot { it.id == "r1" },
+                revision = 6,
+            )
+            val next = reduce(asked, AncEvent.UndoCommitted("none", listOf(gone)))
+            assertNull(kind.type.name, next.deleteConfirmation)
+        }
+    }
+
+    @Test
+    fun lockClearsTheNewDeleteUiState() {
+        val locked = base().copy(
+            deleteRunning = true, noticePatientId = "p1",
+            deleteMessage = DeleteMessage(DeleteMessageKind.DELETE_FAILED, "p1", DeletableType.LAB, "x"),
+        ).clearedForLock()
+        assertEquals(false, locked.deleteRunning)
+        assertNull(locked.deleteMessage)
+        assertNull(locked.noticePatientId)
+    }
 }

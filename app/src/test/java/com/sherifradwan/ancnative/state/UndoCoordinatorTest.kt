@@ -261,7 +261,7 @@ class UndoCoordinatorTest {
             assertEquals(UndoPhase.READY, offer.phase)
             assertEquals(labelOf(a), offer.label)
             assertTrue(type.name, !offer.toString().contains("SECRET"))
-            assertTrue(type.name, fx.events.all { it is AncEvent.DeleteCommitted })
+            assertTrue(type.name, fx.events.all { it is AncEvent.DeleteStarted || it is AncEvent.DeleteCommitted })
         }
     }
 
@@ -568,7 +568,7 @@ class UndoCoordinatorTest {
             assertNull(type.name, fx.state.undoOffer)
             assertTrue(type.name, fx.events.none { it is AncEvent.DeleteCommitted })
             fx.time.advanceBy(30_000)
-            assertTrue(type.name, fx.events.isEmpty())
+            assertTrue(type.name, fx.events.all { it is AncEvent.DeleteStarted })
             assertEquals(type.name, 1, fx.calls.size)
         }
     }
@@ -601,9 +601,10 @@ class UndoCoordinatorTest {
                 fx.script += { outcome }
                 fx.begin(type, "p1", "x1")
                 assertNull(type.name, fx.state.undoOffer)
-                assertTrue(type.name, fx.events.single() is AncEvent.DeleteFailed)
+                assertEquals(type.name, listOf(AncEvent.DeleteStarted), fx.events.filterIsInstance<AncEvent.DeleteStarted>())
+                assertTrue(type.name, fx.events.last() is AncEvent.DeleteFailed)
                 fx.time.advanceBy(30_000)
-                assertEquals(type.name, 1, fx.events.size)
+                assertEquals(type.name, 2, fx.events.size)
             }
         }
     }

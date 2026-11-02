@@ -74,6 +74,7 @@ class UndoCoordinator(
             expectedRecordRevision = record.revision,
             deletedContentHash = contentHash(record),
         )
+        reduce(AncEvent.DeleteStarted)
         scope.launch {
             if (!sessionStillCurrent(epoch)) return@launch
             val result = execute(cmd, epoch)
@@ -97,21 +98,24 @@ class UndoCoordinator(
                         action = UndoAction.DELETE,
                         label = adapter.label(record),
                         phase = UndoPhase.READY,
+                        patientName = patient.displayName,
+                        recordId = record.id,
                     )
                     reduce(
                         AncEvent.DeleteCommitted(
                             patients = result.snapshot.patients,
                             offer = offer,
                             notice = adapter.deletedNotice,
+                            patientId = patient.id,
                         ),
                     )
                 }
                 is ClinicalCommandOutcome.Rejected -> {
-                    reduce(AncEvent.DeleteFailed(result.failure.toUiError()))
+                    reduce(AncEvent.DeleteFailed(result.failure.toUiError(), patient.id, type, adapter.label(record)))
                 }
                 ClinicalCommandOutcome.Ambiguous,
                 ClinicalCommandOutcome.Obsolete -> {
-                    reduce(AncEvent.DeleteFailed(SaveUiError.STORAGE_ERROR))
+                    reduce(AncEvent.DeleteFailed(SaveUiError.STORAGE_ERROR, patient.id, type, adapter.label(record)))
                 }
             }
         }
@@ -127,6 +131,7 @@ class UndoCoordinator(
         val state = currentState()
         if (state.vaultState !is VaultState.Unlocked) return
         val adapter = DeletableRegistry.of<DeletableRecord>(type)
+        val patientName = state.patient(patientId)?.displayName.orEmpty()
         val token = UUID.randomUUID().toString()
         val undoDelete = DeleteRecordCommand(
             type = type,
@@ -145,6 +150,8 @@ class UndoCoordinator(
             action = UndoAction.SAVE,
             label = adapter.label(savedRecord),
             phase = UndoPhase.READY,
+            patientName = patientName,
+            recordId = recordId,
         )
         armUndo(token, undoDelete)
         reduce(AncEvent.UndoOffered(offer))
@@ -158,9 +165,11 @@ class UndoCoordinator(
         val pending = pendingUndo?.takeIf { it.token == token } ?: return
         val epoch = pending.epoch
         if (!sessionStillCurrent(epoch)) return
+        reduce(AncEvent.UndoRequested(token))
+        // The reducer refuses (and says why) when the record is being edited with unsaved changes.
+        if (!currentState().canRunUndo(token)) return
         undoJob?.cancel()
         undoJob = null
-        reduce(AncEvent.UndoRequested(token))
 
         scope.launch {
             val currentPatient = currentState().patient(pending.command.patientId)
@@ -191,7 +200,7 @@ class UndoCoordinator(
                     }
                     val adapter = DeletableRegistry.of<DeletableRecord>(offer.type)
                     val notice = if (offer.action == UndoAction.SAVE) adapter.saveUndoneNotice else adapter.restoredNotice
-                    reduce(AncEvent.UndoCommitted(token = token, patients = result.snapshot.patients, notice = notice))
+                    reduce(AncEvent.UndoCommitted(token = token, patients = result.snapshot.patients, notice = notice, patientId = offer.patientId))
                 }
                 is ClinicalCommandOutcome.Rejected -> {
                     failUndo(token, result.failure.toUiError(), cmd, ambiguous = false, failures = pending.failures)
@@ -209,7 +218,11 @@ class UndoCoordinator(
     private fun failUndo(token: String, error: SaveUiError, attempted: ClinicalCommand, ambiguous: Boolean, failures: Int) {
         reduce(AncEvent.UndoFailed(token, error))
         val pending = pendingUndo?.takeIf { it.token == token }
-        if (pending == null || currentState().undoOffer?.token != token) return
+        if (pending == null) return
+        if (currentState().undoOffer?.token != token) {
+            pendingUndo = null
+            return
+        }
         // A failed Undo may restart its window at most MAX_UNDO_RESTARTS times.
         if (undoMayRestart(failures)) {
             pendingUndo = pending.copy(command = attempted, ambiguous = ambiguous, failures = failures + 1)

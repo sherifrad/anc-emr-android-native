@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -26,6 +27,7 @@ import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.UndoCoordinator
 import com.sherifradwan.ancnative.state.WorkspaceSection
 import com.sherifradwan.ancnative.storage.ClinicalCommand
+import com.sherifradwan.ancnative.storage.ClinicalCommandFailure
 import com.sherifradwan.ancnative.storage.ClinicalCommandOutcome
 import com.sherifradwan.ancnative.storage.ClinicalCommandReceipt
 import com.sherifradwan.ancnative.storage.DeletableType
@@ -94,7 +96,10 @@ class DeleteUndoUiTest {
     )
 
     /** In-memory stand-in for the vault: applies a delete/restore command to `state` and returns the receipt. */
+    private var failAll = false
+
     private fun commit(cmd: ClinicalCommand): ClinicalCommandOutcome {
+        if (failAll) return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.RECORD_NOT_FOUND)
         val undo = cmd as RecordUndoCommand
         val patient = state.patient(undo.patientId)!!
         val updated = when (undo) {
@@ -339,5 +344,56 @@ class DeleteUndoUiTest {
         } else {
             missing("presavedToggle")
         }
+    }
+
+    @Test
+    fun deleteIconDescriptionNamesTheRecord() {
+        workspace(med)
+        scrollTo(deleteTag(med))
+        compose.onNodeWithTag(deleteTag(med), useUnmergedTree = true).assertExists()
+        compose.onAllNodes(hasContentDescription("Delete medication: UiDrug 1", substring = true), useUnmergedTree = true)
+            .assertCountEquals(1)
+    }
+
+    @Test
+    fun undoBarNamesThePatient() {
+        deleteConfirmsRemovesCardAndShowsUndoBar(med)
+        compose.onNodeWithTag("undoBar", useUnmergedTree = true).assertIsDisplayed()
+        compose.onAllNodes(hasText(patientA.displayName, substring = true), useUnmergedTree = true)
+            .fetchSemanticsNodes().let { assertTrue(it.isNotEmpty()) }
+    }
+
+    @Test
+    fun failedDeleteShowsAMessageAndKeepsTheCard() {
+        workspace(med)
+        failAll = true
+        openDialog(med)
+        click("deleteConfirm")
+        compose.waitUntil(5_000) { compose.onAllNodes(hasTestTag("deleteMessage"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        missing("undoBar")
+        compose.onNodeWithTag("deleteMessage", useUnmergedTree = true).assertIsDisplayed()
+        scrollTo(med.card + med.id)
+        exists(med.card + med.id)
+        click("deleteMessageDismiss")
+        missing("deleteMessage")
+    }
+
+    @Test
+    fun failedUndoSaysTheRecordIsStillDeleted() {
+        deleteConfirmsRemovesCardAndShowsUndoBar(med)
+        failAll = true
+        click("undoButton")
+        compose.waitUntil(5_000) { compose.onAllNodes(hasTestTag("deleteMessage"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        compose.onAllNodes(hasText("is still deleted", substring = true), useUnmergedTree = true)
+            .fetchSemanticsNodes().let { assertTrue(it.isNotEmpty()) }
+        missing(med.card + med.id)
+    }
+
+    @Test
+    fun undoBarDisappearsWhenAnotherPatientIsOpened() {
+        deleteConfirmsRemovesCardAndShowsUndoBar(med)
+        compose.runOnIdle { state = AncReducer.reduce(state, AncEvent.OpenWorkspace(patientB.id)) }
+        compose.waitForIdle()
+        missing("undoBar")
     }
 }

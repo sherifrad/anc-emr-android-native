@@ -111,6 +111,7 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
                 recoveredSessionId = activeEditorSessionId(a)
                 isAcceptingRecovery = false
             }
+            if (a.undoOffer == null) undoCoordinator.clear()
             autosaver.onStateChanged(b, a)
             checkEditorSessionChanged(b, a)
         }

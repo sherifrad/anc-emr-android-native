@@ -13,6 +13,8 @@ import com.sherifradwan.ancnative.model.MEDICATION_STATUS_NON_COMPLIANT
 import com.sherifradwan.ancnative.model.PatientValidationError
 import com.sherifradwan.ancnative.model.effectiveMedicationStatus
 import com.sherifradwan.ancnative.storage.ClinicalRecordKind
+import com.sherifradwan.ancnative.storage.DeletableRecord
+import com.sherifradwan.ancnative.storage.DeletableRegistry
 import com.sherifradwan.ancnative.storage.DeletableType
 import com.sherifradwan.ancnative.storage.VaultState
 
@@ -256,7 +258,46 @@ data class UndoOffer(
     val action: UndoAction,
     val label: String,
     val phase: UndoPhase = UndoPhase.READY,
+    val patientName: String = "",
+    val recordId: String = "",
 )
+
+enum class DeleteMessageKind {
+    /** The delete was rejected; the record is still there. */
+    DELETE_FAILED,
+
+    /** An Undo failed; the record is still in the state it had before the Undo (deleted, or saved). */
+    UNDO_FAILED,
+
+    /** Undo of a save was refused because that record is being edited. */
+    UNDO_BLOCKED,
+}
+
+/** A visible failure message for the shared delete/Undo layer. Only shown for the patient it belongs to. */
+data class DeleteMessage(
+    val kind: DeleteMessageKind,
+    val patientId: String,
+    val type: DeletableType,
+    val label: String,
+    val action: UndoAction? = null,
+    val error: SaveUiError? = null,
+)
+
+/** The patient a route belongs to, or null for the patient list. */
+fun AncRoute.patientIdOrNull(): String? = when (this) {
+    AncRoute.PatientList -> null
+    is AncRoute.Workspace -> patientId
+    is AncRoute.Profile -> patientId
+    is AncRoute.VisitEditor -> patientId
+    is AncRoute.PatientEditor -> patientId
+    is AncRoute.OtherHistoriesEditor -> patientId
+    is AncRoute.PreviousPregnancyEditor -> patientId
+    is AncRoute.StatusEditor -> patientId
+    is AncRoute.DatingEditor -> patientId
+    is AncRoute.UltrasoundEditor -> patientId
+    is AncRoute.LabEditor -> patientId
+    is AncRoute.MedicationEditor -> patientId
+}
 
 /** A failed Undo may restart its 8 s window at most this many times. */
 const val MAX_UNDO_RESTARTS = 1
@@ -267,11 +308,40 @@ fun undoMayRestart(failuresSoFar: Int): Boolean = failuresSoFar <= MAX_UNDO_REST
 fun AncState.canRequestUndo(token: String): Boolean =
     undoOffer?.let { it.token == token && it.phase == UndoPhase.READY } == true
 
+/** True when the offer with this token is the live RUNNING one (the reducer accepted the request). */
+fun AncState.canRunUndo(token: String): Boolean =
+    undoOffer?.let { it.token == token && it.phase == UndoPhase.RUNNING } == true
+
 /** Medication saves are blocked while an Undo is in flight. */
 val AncState.undoRunning: Boolean get() = undoOffer?.phase == UndoPhase.RUNNING
 
 /** What a vault lock does to the delete/undo UI state. */
-fun AncState.clearedForLock(): AncState = copy(deleteConfirmation = null, undoOffer = null)
+fun AncState.clearedForLock(): AncState =
+    copy(deleteConfirmation = null, undoOffer = null, deleteRunning = false, deleteMessage = null, noticePatientId = null)
+
+/**
+ * Keeps the delete/Undo UI state tied to what is on screen: a dialog for a record that is gone closes, and the
+ * offer, failure message and delete/restore notice of one patient never follow the clinician to another patient.
+ */
+internal fun AncState.withDeleteUiConsistent(): AncState {
+    var next = this
+    val open = route.patientIdOrNull()
+    val offer = next.undoOffer
+    if (open != null && offer != null && offer.patientId != open) next = next.copy(undoOffer = null)
+    val message = next.deleteMessage
+    if (open != null && message != null && message.patientId != open) next = next.copy(deleteMessage = null)
+    val noticeOwner = next.noticePatientId
+    if (noticeOwner != null && open != null && noticeOwner != open) {
+        next = next.copy(savedNotice = false, notice = null, noticePatientId = null)
+    }
+    val pending = next.deleteConfirmation
+    if (pending != null) {
+        val exists = next.patient(pending.patientId)
+            ?.let { DeletableRegistry.of<DeletableRecord>(pending.type).record(it, pending.recordId) } != null
+        if (!exists) next = next.copy(deleteConfirmation = null)
+    }
+    return next
+}
 
 data class PendingSaveToken(
     val operationUuid: String,
@@ -523,6 +593,9 @@ data class AncState(
     val draftRecoveryPrompt: DraftRecoveryPrompt? = null,
     val deleteConfirmation: PendingDeletion? = null,
     val undoOffer: UndoOffer? = null,
+    val deleteRunning: Boolean = false,
+    val deleteMessage: DeleteMessage? = null,
+    val noticePatientId: String? = null,
 ) {
     fun patient(patientId: String): DemoPatient? = patients.firstOrNull { it.id == patientId }
 
@@ -680,18 +753,27 @@ sealed interface AncEvent {
     data class RequestDelete(val patientId: String, val type: DeletableType, val recordId: String) : AncEvent
     data object CancelDelete : AncEvent
     data object ConfirmDelete : AncEvent
+    data object DeleteStarted : AncEvent
+    data object DismissDeleteMessage : AncEvent
     data class DeleteCommitted(
         val patients: List<DemoPatient>,
         val offer: UndoOffer? = null,
         val notice: SavedNotice? = null,
+        val patientId: String? = null,
     ) : AncEvent
-    data class DeleteFailed(val error: SaveUiError? = null) : AncEvent
+    data class DeleteFailed(
+        val error: SaveUiError? = null,
+        val patientId: String = "",
+        val type: DeletableType? = null,
+        val label: String = "",
+    ) : AncEvent
     data class UndoOffered(val offer: UndoOffer) : AncEvent
     data class UndoRequested(val token: String) : AncEvent
     data class UndoCommitted(
         val token: String,
         val patients: List<DemoPatient>,
         val notice: SavedNotice? = null,
+        val patientId: String? = null,
     ) : AncEvent
     data class UndoFailed(val token: String, val error: SaveUiError? = null) : AncEvent
     data class UndoExpired(val token: String) : AncEvent
@@ -699,7 +781,7 @@ sealed interface AncEvent {
 
 object AncReducer {
     fun reduce(state: AncState, event: AncEvent): AncState {
-        val next = reduceInternal(state, event)
+        val next = reduceInternal(state, event).withDeleteUiConsistent()
         val prompt = next.draftRecoveryPrompt
         return if (prompt != null && activeEditorSessionId(next) != prompt.editorSessionId) {
             next.copy(draftRecoveryPrompt = null)
@@ -856,7 +938,7 @@ object AncReducer {
             AncEvent.DiscardDraftRecovery -> state.copy(draftRecoveryPrompt = null)
             is AncEvent.RequestDelete -> {
                 val patient = state.patient(event.patientId)
-                if (patient == null || patient.status == "archived" || state.hasDirtyDraft || state.savePhase.blocksEditing() || state.undoRunning) {
+                if (patient == null || patient.status == "archived" || state.hasDirtyDraft || state.savePhase.blocksEditing() || state.undoRunning || state.deleteRunning) {
                     state
                 } else {
                     state.copy(
@@ -865,13 +947,14 @@ object AncReducer {
                             type = event.type,
                             recordId = event.recordId,
                         ),
+                        deleteMessage = null,
                     )
                 }
             }
             AncEvent.CancelDelete -> state.copy(deleteConfirmation = null)
             AncEvent.ConfirmDelete -> {
                 val pending = state.deleteConfirmation ?: return state
-                if (state.hasDirtyDraft || state.savePhase.blocksEditing() || state.undoRunning) return state
+                if (state.hasDirtyDraft || state.savePhase.blocksEditing() || state.undoRunning || state.deleteRunning) return state
                 val hook = EditorHooks.of(pending.type)
                 val next = if (hook != null && hook.isOpenFor(state, pending.recordId)) {
                     hook.closeEditor(state, pending.patientId)
@@ -880,23 +963,56 @@ object AncReducer {
                 }
                 next.copy(deleteConfirmation = null)
             }
+            AncEvent.DeleteStarted -> state.copy(deleteRunning = true)
+            AncEvent.DismissDeleteMessage -> state.copy(deleteMessage = null)
             is AncEvent.DeleteCommitted -> state.copy(
                 patients = event.patients,
                 undoOffer = event.offer,
                 deleteConfirmation = null,
+                deleteRunning = false,
+                deleteMessage = null,
                 savedNotice = event.notice != null,
                 notice = event.notice ?: state.notice,
+                noticePatientId = if (event.notice != null) event.patientId else state.noticePatientId,
             )
             is AncEvent.DeleteFailed -> state.copy(
                 deleteConfirmation = null,
+                deleteRunning = false,
                 saveError = event.error,
+                deleteMessage = event.type?.let {
+                    DeleteMessage(
+                        kind = DeleteMessageKind.DELETE_FAILED,
+                        patientId = event.patientId,
+                        type = it,
+                        label = event.label,
+                        action = UndoAction.DELETE,
+                        error = event.error,
+                    )
+                },
             )
-            is AncEvent.UndoOffered -> state.copy(undoOffer = event.offer)
+            is AncEvent.UndoOffered -> state.copy(undoOffer = event.offer, deleteMessage = null)
             is AncEvent.UndoRequested -> {
-                if (state.canRequestUndo(event.token)) {
-                    state.copy(undoOffer = state.undoOffer!!.copy(phase = UndoPhase.RUNNING))
-                } else {
+                val offer = state.undoOffer
+                if (offer == null || !state.canRequestUndo(event.token)) {
                     state
+                } else {
+                    val hook = EditorHooks.of(offer.type)
+                    val editorOpen = offer.action == UndoAction.SAVE && hook != null && hook.isOpenFor(state, offer.recordId)
+                    if (editorOpen && (state.hasDirtyDraft || state.savePhase.blocksEditing())) {
+                        // Undoing this save would delete a record that has unsaved edits open: refuse and say so.
+                        state.copy(
+                            deleteMessage = DeleteMessage(
+                                kind = DeleteMessageKind.UNDO_BLOCKED,
+                                patientId = offer.patientId,
+                                type = offer.type,
+                                label = offer.label,
+                                action = offer.action,
+                            ),
+                        )
+                    } else {
+                        val closed = if (editorOpen && hook != null) hook.closeEditor(state, offer.patientId) else state
+                        closed.copy(undoOffer = offer.copy(phase = UndoPhase.RUNNING), deleteMessage = null)
+                    }
                 }
             }
             is AncEvent.UndoCommitted -> {
@@ -909,13 +1025,23 @@ object AncReducer {
                     undoOffer = if (nextState.undoOffer?.token == event.token) null else nextState.undoOffer,
                     savedNotice = event.notice != null,
                     notice = event.notice ?: nextState.notice,
+                    noticePatientId = if (event.notice != null) event.patientId else nextState.noticePatientId,
                 )
             }
             is AncEvent.UndoFailed -> {
-                if (state.undoOffer?.token == event.token) {
+                val offer = state.undoOffer
+                if (offer != null && offer.token == event.token) {
                     state.copy(
-                        undoOffer = state.undoOffer.copy(phase = UndoPhase.READY),
+                        undoOffer = offer.copy(phase = UndoPhase.READY),
                         saveError = event.error,
+                        deleteMessage = DeleteMessage(
+                            kind = DeleteMessageKind.UNDO_FAILED,
+                            patientId = offer.patientId,
+                            type = offer.type,
+                            label = offer.label,
+                            action = offer.action,
+                            error = event.error,
+                        ),
                     )
                 } else {
                     state
