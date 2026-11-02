@@ -171,7 +171,6 @@ fun MedicationEditor(
                         onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.NAME, preset.name))
                         onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.DOSAGE, preset.dosage))
                         onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ROUTE, preset.route))
-                        onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.FREQUENCY, preset.frequency))
                         // The start date is not asked for; a new entry starts today.
                         if (draft.values.startDate.isEmpty()) {
                             onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.START_DATE, LocalDate.now().toString()))
@@ -243,7 +242,6 @@ fun MedicationEditor(
                         if (prior != null) {
                             onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.NAME, prior.name))
                             onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.DOSAGE, prior.dosage))
-                            onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.FREQUENCY, prior.frequency))
                             onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ROUTE, prior.route))
                             // Safety Reset Rule: sets status "Active", wipes adverse notes, end date, and notes
                             onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, MEDICATION_STATUS_ACTIVE))
