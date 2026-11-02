@@ -1,5 +1,6 @@
 package com.sherifradwan.ancnative.storage
 
+import android.database.Cursor
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.sherifradwan.ancnative.model.DemoFixtures
@@ -21,6 +22,9 @@ import org.junit.runners.Parameterized
  * Real RecordsRepository on a real (encrypted, on-device) Room database, demo data only.
  * Covers D600-D613 for BOTH medications and lab investigations (parameterised: "medication", "lab").
  */
+private typealias Row = Map<String, String?>
+private typealias Dump = Map<String, List<Row>>
+
 @RunWith(Parameterized::class)
 class ClinicalDeleteRestoreDbTest(private val kindName: String) {
     companion object {
@@ -45,6 +49,7 @@ class ClinicalDeleteRestoreDbTest(private val kindName: String) {
         fun del(op: String, patientId: String, patientRevision: Long, id: String, revision: Long, hash: String): ClinicalCommand
         fun res(op: String, patientId: String, patientRevision: Long, domain: Any, source: ClinicalCommand): ClinicalCommand
         suspend fun insertRaw(dao: RecordsDao, domain: Any)
+        val table: String
         val deleteKind: ClinicalRecordKind
         val restoreKind: ClinicalRecordKind
     }
@@ -84,15 +89,17 @@ class ClinicalDeleteRestoreDbTest(private val kindName: String) {
         override fun changed(domain: Any) = (domain as DemoMedicationRecord).copy(notes = "tampered")
         override fun withRevision(domain: Any, revision: Long) = (domain as DemoMedicationRecord).copy(revision = revision)
         override fun del(op: String, patientId: String, patientRevision: Long, id: String, revision: Long, hash: String) =
-            DeleteMedicationCommand(
-                operationUuid = op, patientId = patientId, expectedPatientRevision = patientRevision,
-                medicationId = id, expectedMedicationRevision = revision, deletedContentHash = hash,
+            DeleteRecordCommand(
+                type = DeletableType.MEDICATION, operationUuid = op, patientId = patientId,
+                expectedPatientRevision = patientRevision, recordId = id, expectedRecordRevision = revision,
+                deletedContentHash = hash,
             )
 
         override fun res(op: String, patientId: String, patientRevision: Long, domain: Any, source: ClinicalCommand) =
-            RestoreMedicationCommand(
-                operationUuid = op, patientId = patientId, expectedPatientRevision = patientRevision,
-                record = domain as DemoMedicationRecord, sourceDelete = source as DeleteMedicationCommand,
+            RestoreRecordCommand(
+                type = DeletableType.MEDICATION, operationUuid = op, patientId = patientId,
+                expectedPatientRevision = patientRevision, record = domain as DemoMedicationRecord,
+                sourceDelete = source as DeleteRecordCommand,
             )
 
         override suspend fun insertRaw(dao: RecordsDao, domain: Any) {
@@ -107,6 +114,7 @@ class ClinicalDeleteRestoreDbTest(private val kindName: String) {
             )
         }
 
+        override val table = "medication_records"
         override val deleteKind = ClinicalRecordKind.MEDICATION_DELETE
         override val restoreKind = ClinicalRecordKind.MEDICATION_RESTORE
     }
@@ -144,15 +152,17 @@ class ClinicalDeleteRestoreDbTest(private val kindName: String) {
         override fun changed(domain: Any) = (domain as DemoLabInvestigation).copy(notes = "tampered")
         override fun withRevision(domain: Any, revision: Long) = (domain as DemoLabInvestigation).copy(revision = revision)
         override fun del(op: String, patientId: String, patientRevision: Long, id: String, revision: Long, hash: String) =
-            DeleteLabInvestigationCommand(
-                operationUuid = op, patientId = patientId, expectedPatientRevision = patientRevision,
-                labId = id, expectedLabRevision = revision, deletedContentHash = hash,
+            DeleteRecordCommand(
+                type = DeletableType.LAB, operationUuid = op, patientId = patientId,
+                expectedPatientRevision = patientRevision, recordId = id, expectedRecordRevision = revision,
+                deletedContentHash = hash,
             )
 
         override fun res(op: String, patientId: String, patientRevision: Long, domain: Any, source: ClinicalCommand) =
-            RestoreLabInvestigationCommand(
-                operationUuid = op, patientId = patientId, expectedPatientRevision = patientRevision,
-                record = domain as DemoLabInvestigation, sourceDelete = source as DeleteLabInvestigationCommand,
+            RestoreRecordCommand(
+                type = DeletableType.LAB, operationUuid = op, patientId = patientId,
+                expectedPatientRevision = patientRevision, record = domain as DemoLabInvestigation,
+                sourceDelete = source as DeleteRecordCommand,
             )
 
         override suspend fun insertRaw(dao: RecordsDao, domain: Any) {
@@ -166,11 +176,13 @@ class ClinicalDeleteRestoreDbTest(private val kindName: String) {
             )
         }
 
+        override val table = "lab_investigations"
         override val deleteKind = ClinicalRecordKind.LAB_DELETE
         override val restoreKind = ClinicalRecordKind.LAB_RESTORE
     }
 
     private val kind: Kind get() = if (kindName == "medication") MedKind else LabKind
+    private val otherKind: Kind get() = if (kindName == "medication") LabKind else MedKind
 
     // ---- harness ---------------------------------------------------------------------------------------------
 
@@ -201,9 +213,10 @@ class ClinicalDeleteRestoreDbTest(private val kindName: String) {
 
     private suspend fun Env.patientRev(id: String = patientA): Long = dao.patient(id)!!.revision
 
-    private suspend fun Env.create(patientId: String, tag: String): String {
-        val id = UUID.randomUUID().toString()
-        val outcome = repo.execute(kind.save(patientId, patientRev(patientId), id, tag))
+    private suspend fun Env.create(patientId: String, tag: String): String = createOf(kind, patientId, UUID.randomUUID().toString(), tag)
+
+    private suspend fun Env.createOf(of: Kind, patientId: String, id: String, tag: String): String {
+        val outcome = repo.execute(of.save(patientId, patientRev(patientId), id, tag))
         assertTrue("setup save must commit but was $outcome", outcome is ClinicalCommandOutcome.Committed)
         return id
     }
@@ -592,5 +605,259 @@ class ClinicalDeleteRestoreDbTest(private val kindName: String) {
         assertEquals(siblingsBefore, listOf(sibling1, sibling2, other).map { kind.row(dao, it) })
         assertEquals(otherPatientBefore, dao.patient(patientB))
         assertNotNull(kind.row(dao, target))
+    }
+
+    // ---- 8. isolation and database integrity (D654): whole-database snapshot diffs --------------------------
+
+    private class TableDiff(val removed: List<Row>, val added: List<Row>)
+
+    private fun cellText(c: Cursor, i: Int): String? = when (c.getType(i)) {
+        Cursor.FIELD_TYPE_NULL -> null
+        Cursor.FIELD_TYPE_BLOB -> c.getBlob(i).joinToString("") { "%02x".format(it) }
+        else -> c.getString(i)
+    }
+
+    /** Every table found in sqlite_master, so a table added later is covered without touching this test. */
+    private fun Env.dump(): Dump {
+        val sdb = db.openHelper.writableDatabase
+        val tables = sdb.query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").use { c ->
+            buildList { while (c.moveToNext()) add(c.getString(0)) }
+        }
+        return tables.associateWith { table ->
+            sdb.query("SELECT * FROM \"$table\"").use { c ->
+                buildList<Row> {
+                    while (c.moveToNext()) add((0 until c.columnCount).associate { c.getColumnName(it) to cellText(c, it) })
+                }.sortedBy { it.toString() }
+            }
+        }
+    }
+
+    private fun diff(before: Dump, after: Dump): Map<String, TableDiff> {
+        assertEquals("tables appeared or vanished", before.keys, after.keys)
+        return before.keys.mapNotNull { table ->
+            val removed = before.getValue(table).toMutableList()
+            val added = after.getValue(table).toMutableList()
+            before.getValue(table).forEach { added.remove(it) }
+            after.getValue(table).forEach { removed.remove(it) }
+            if (removed.isEmpty() && added.isEmpty()) null else table to TableDiff(removed, added)
+        }.toMap()
+    }
+
+    private fun Env.assertIntegrity() {
+        val sdb = db.openHelper.writableDatabase
+        sdb.query("PRAGMA foreign_key_check").use { assertEquals("foreign_key_check must return no rows", 0, it.count) }
+        sdb.query("PRAGMA integrity_check").use {
+            assertEquals(1, it.count)
+            assertTrue(it.moveToFirst())
+            assertEquals("ok", it.getString(0))
+        }
+    }
+
+    private fun Dump.row(table: String, id: String): Row = getValue(table).single { it["id"] == id }
+
+    /** Rows that belong to one patient in any table (patient_id column, or the patients row itself). */
+    private fun Dump.rowsOfPatient(patientId: String): Map<String, List<Row>> =
+        mapValues { (table, rows) -> rows.filter { it["patient_id"] == patientId || (table == "patients" && it["id"] == patientId) } }
+
+    private suspend fun Env.assertRejectedWithoutTrace(expected: ClinicalCommandFailure?, cmd: ClinicalCommand) {
+        val before = dump()
+        val outcome = repo.execute(cmd)
+        if (expected != null) {
+            assertRejected(expected, outcome)
+        } else {
+            assertTrue("expected Rejected but was $outcome", outcome is ClinicalCommandOutcome.Rejected)
+        }
+        assertEquals("a failed attempt must change no table", emptySet<String>(), diff(before, dump()).keys)
+        assertIntegrity()
+    }
+
+    /** A committed delete or restore changes exactly: the target row, the patient revision (+1) and one new receipt. */
+    private fun assertOnlyTargetChanged(
+        before: Dump,
+        after: Dump,
+        cmd: ClinicalCommand,
+        receiptKind: ClinicalRecordKind,
+        committedRevision: Long,
+        removedRow: Row?,
+        addedRow: Row?,
+    ) {
+        val d = diff(before, after)
+        assertEquals(setOf(kind.table, "patients", "clinical_command_receipts"), d.keys)
+        assertEquals(listOfNotNull(removedRow), d.getValue(kind.table).removed)
+        assertEquals(listOfNotNull(addedRow), d.getValue(kind.table).added)
+
+        val oldPatient = before.row("patients", cmd.patientId)
+        val newRevision = oldPatient.getValue("revision")!!.toLong() + 1
+        assertEquals(listOf(oldPatient), d.getValue("patients").removed)
+        assertEquals(listOf(oldPatient + ("revision" to newRevision.toString())), d.getValue("patients").added)
+
+        assertTrue(d.getValue("clinical_command_receipts").removed.isEmpty())
+        val receipt = d.getValue("clinical_command_receipts").added.single()
+        assertEquals(cmd.operationUuid, receipt["operation_uuid"])
+        assertEquals(cmd.patientId, receipt["patient_id"])
+        assertEquals(receiptKind.name, receipt["record_kind"])
+        assertEquals(cmd.recordId, receipt["record_id"])
+        assertEquals(committedRevision.toString(), receipt["committed_revision"])
+        assertEquals(newRevision.toString(), receipt["committed_patient_revision"])
+    }
+
+    @Test
+    fun snapshotDiffShowsOnlyTargetRowPatientRevisionAndReceipt() = withEnv {
+        val id = create(patientA, "target")
+        create(patientA, "sibling")
+        createOf(otherKind, patientA, UUID.randomUUID().toString(), "other kind")
+        val idB = create(patientB, "other patient")
+        assertTrue(
+            dump().keys.containsAll(
+                listOf("patients", "medication_records", "lab_investigations", "patient_attachments", "clinical_command_receipts"),
+            ),
+        )
+        assertIntegrity()
+        val original = kind.domain(dao, id)!!
+        val r = kind.revisionOf(original)
+
+        // failed deletes change nothing at all
+        assertRejectedWithoutTrace(ClinicalCommandFailure.STALE_REVISION, kind.del(UUID.randomUUID().toString(), patientA, patientRev(), id, r + 1, kind.hash(original)))
+        assertRejectedWithoutTrace(ClinicalCommandFailure.STALE_PATIENT_REVISION, kind.del(UUID.randomUUID().toString(), patientA, patientRev() + 1, id, r, kind.hash(original)))
+        assertRejectedWithoutTrace(ClinicalCommandFailure.STALE_REVISION, kind.del(UUID.randomUUID().toString(), patientA, patientRev(), id, r, kind.hash(kind.changed(original))))
+        assertRejectedWithoutTrace(ClinicalCommandFailure.CROSS_PATIENT_WRITE, kind.del(UUID.randomUUID().toString(), patientB, patientRev(patientB), id, r, kind.hash(original)))
+
+        // the delete
+        val beforeDelete = dump()
+        val del = deleteCmd(id)
+        committed(repo.execute(del))
+        val afterDelete = dump()
+        assertOnlyTargetChanged(beforeDelete, afterDelete, del, kind.deleteKind, r + 1, removedRow = beforeDelete.row(kind.table, id), addedRow = null)
+        assertIntegrity()
+
+        // failed restores change nothing at all
+        assertRejectedWithoutTrace(ClinicalCommandFailure.INVALID_COMMAND, kind.res(UUID.randomUUID().toString(), patientA, patientRev(), kind.changed(original), del))
+        assertRejectedWithoutTrace(ClinicalCommandFailure.STALE_PATIENT_REVISION, kind.res(UUID.randomUUID().toString(), patientA, patientRev() - 1, original, del))
+        assertRejectedWithoutTrace(ClinicalCommandFailure.INVALID_COMMAND, kind.res(UUID.randomUUID().toString(), patientB, patientRev(patientB), original, del))
+
+        // the restore
+        val restore = kind.res(UUID.randomUUID().toString(), patientA, patientRev(), original, del)
+        committed(repo.execute(restore))
+        val afterRestore = dump()
+        val restoredRow = beforeDelete.row(kind.table, id) + ("revision" to (r + 2).toString())
+        assertOnlyTargetChanged(afterDelete, afterRestore, restore, kind.restoreKind, r + 2, removedRow = null, addedRow = restoredRow)
+        assertIntegrity()
+
+        // replaying the committed restore changes nothing
+        committed(repo.execute(restore))
+        assertEquals(emptySet<String>(), diff(afterRestore, dump()).keys)
+
+        // delete again, then a newer row appears out of band: a fresh restore is refused and nothing changes
+        val del2 = deleteCmd(id)
+        committed(repo.execute(del2))
+        val newer = kind.withRevision(kind.changed(original), r + 9)
+        kind.insertRaw(dao, newer)
+        assertRejectedWithoutTrace(ClinicalCommandFailure.RECORD_CONFLICT, kind.res(UUID.randomUUID().toString(), patientA, patientRev(), original, del2))
+        assertEquals(newer, kind.domain(dao, id))
+
+        // archived patient
+        assertEquals(1, dao.archivePatient(patientB, patientRev(patientB), "2026-10-30", "demo archive"))
+        val domainB = kind.domain(dao, idB)!!
+        assertRejectedWithoutTrace(
+            ClinicalCommandFailure.PATIENT_ARCHIVED,
+            kind.del(UUID.randomUUID().toString(), patientB, patientRev(patientB), idB, kind.revisionOf(domainB), kind.hash(domainB)),
+        )
+    }
+
+    @Test
+    fun crossKindSameIdCollisionLeavesTheOtherKindUntouched() = withEnv {
+        val shared = UUID.randomUUID().toString()
+        createOf(kind, patientA, shared, "target")
+        createOf(otherKind, patientA, shared, "bystander")
+        val original = kind.domain(dao, shared)!!
+        val bystander = otherKind.domain(dao, shared)!!
+        val bystanderRow = dump().row(otherKind.table, shared)
+        val r = kind.revisionOf(original)
+        assertIntegrity()
+
+        // the other kind's content hash must not authorise a delete of this kind's record
+        assertRejectedWithoutTrace(
+            ClinicalCommandFailure.STALE_REVISION,
+            kind.del(UUID.randomUUID().toString(), patientA, patientRev(), shared, r, otherKind.hash(bystander)),
+        )
+
+        val beforeDelete = dump()
+        val del = deleteCmd(shared)
+        committed(repo.execute(del))
+        val afterDelete = dump()
+        assertOnlyTargetChanged(beforeDelete, afterDelete, del, kind.deleteKind, r + 1, removedRow = beforeDelete.row(kind.table, shared), addedRow = null)
+        assertEquals(bystanderRow, afterDelete.row(otherKind.table, shared))
+        assertEquals(bystander, otherKind.domain(dao, shared))
+        assertNull(kind.row(dao, shared))
+        assertIntegrity()
+
+        val restore = kind.res(UUID.randomUUID().toString(), patientA, patientRev(), original, del)
+        committed(repo.execute(restore))
+        val afterRestore = dump()
+        assertOnlyTargetChanged(
+            afterDelete, afterRestore, restore, kind.restoreKind, r + 2,
+            removedRow = null, addedRow = beforeDelete.row(kind.table, shared) + ("revision" to (r + 2).toString()),
+        )
+        assertEquals(bystanderRow, afterRestore.row(otherKind.table, shared))
+        assertEquals(bystander, otherKind.domain(dao, shared))
+        assertIntegrity()
+    }
+
+    @Test
+    fun twoPatientsWithSameLookingRecordsStayIsolated() = withEnv {
+        val a = create(patientA, "same")
+        val b = create(patientB, "same")
+        val originalA = kind.domain(dao, a)!!
+        val originalB = kind.domain(dao, b)!!
+        val patientBBefore = dump().rowsOfPatient(patientB)
+        assertIntegrity()
+
+        val del = deleteCmd(a)
+        committed(repo.execute(del))
+        assertEquals("patient B changed by a delete for patient A", patientBBefore, dump().rowsOfPatient(patientB))
+        assertIntegrity()
+
+        committed(repo.execute(kind.res(UUID.randomUUID().toString(), patientA, patientRev(), originalA, del)))
+        assertEquals("patient B changed by a restore for patient A", patientBBefore, dump().rowsOfPatient(patientB))
+        assertEquals(originalB, kind.domain(dao, b))
+        assertIntegrity()
+
+        // A's record id with B's patient id: refused, nothing changes
+        val restoredA = kind.domain(dao, a)!!
+        assertRejectedWithoutTrace(
+            ClinicalCommandFailure.CROSS_PATIENT_WRITE,
+            kind.del(UUID.randomUUID().toString(), patientB, patientRev(patientB), a, kind.revisionOf(restoredA), kind.hash(restoredA)),
+        )
+        // B's own record with the hash of A's same-looking record: refused, nothing changes
+        assertRejectedWithoutTrace(
+            ClinicalCommandFailure.STALE_REVISION,
+            kind.del(UUID.randomUUID().toString(), patientB, patientRev(patientB), b, kind.revisionOf(originalB), kind.hash(originalA)),
+        )
+
+        // a restore of A's deleted record carrying B's patient id: refused, nothing changes
+        val del2 = deleteCmd(a)
+        committed(repo.execute(del2))
+        assertRejectedWithoutTrace(ClinicalCommandFailure.INVALID_COMMAND, kind.res(UUID.randomUUID().toString(), patientB, patientRev(patientB), originalA, del2))
+        assertEquals(patientBBefore, dump().rowsOfPatient(patientB))
+        assertNull(kind.row(dao, a))
+    }
+
+    @Test
+    fun restoreReinsertsIntoTheSameTableForTheSamePatientOnly() = withEnv {
+        val id = create(patientA, "target")
+        createOf(otherKind, patientA, UUID.randomUUID().toString(), "other kind")
+        create(patientB, "other patient")
+        val original = kind.domain(dao, id)!!
+        val del = deleteCmd(id)
+        committed(repo.execute(del))
+        assertTrue(dump().none { (_, rows) -> rows.any { it["id"] == id } })
+
+        committed(repo.execute(kind.res(UUID.randomUUID().toString(), patientA, patientRev(), original, del)))
+
+        val after = dump()
+        assertEquals(setOf(kind.table), after.filterValues { rows -> rows.any { it["id"] == id } }.keys)
+        assertEquals(patientA, after.row(kind.table, id)["patient_id"])
+        assertEquals(1, after.getValue(kind.table).count { it["id"] == id })
+        assertIntegrity()
     }
 }

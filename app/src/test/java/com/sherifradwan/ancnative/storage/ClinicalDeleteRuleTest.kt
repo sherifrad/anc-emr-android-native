@@ -1,159 +1,154 @@
 package com.sherifradwan.ancnative.storage
 
-import com.sherifradwan.ancnative.model.DemoLabInvestigation
-import com.sherifradwan.ancnative.model.DemoMedicationRecord
+import java.util.UUID
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import java.util.UUID
 
+/** The restore guard chain, run once per deletable type (see DeleteFixtures for the hard-coded expectations). */
 class ClinicalDeleteRuleTest {
-    private val record = DemoMedicationRecord(
-        id = "med-1", patientId = "patient-1", name = "Ferrous Sulfate", dosage = "200 mg", route = "Oral",
-        frequency = "Once daily", startDate = "2026-03-15", endDate = null, status = "Active",
-        notes = null, isProphylaxis = false, revision = 3,
-    )
+    private fun eachType(block: (DeleteFixture) -> Unit) = DeleteFixtures.all.forEach(block)
 
-    private val delete = DeleteMedicationCommand(
-        operationUuid = UUID.randomUUID().toString(),
-        patientId = "patient-1",
-        expectedPatientRevision = 4,
-        medicationId = "med-1",
-        expectedMedicationRevision = 3,
-        deletedContentHash = medicationContentHash(record),
-    )
-
-    private val restore = RestoreMedicationCommand(
-        operationUuid = UUID.randomUUID().toString(),
-        patientId = "patient-1",
-        expectedPatientRevision = 5,
-        record = record,
-        sourceDelete = delete,
-    )
-
-    private val deleteReceipt = ClinicalCommandReceipt(
-        operationUuid = delete.operationUuid,
-        patientId = "patient-1",
-        recordKind = ClinicalRecordKind.MEDICATION_DELETE.name,
-        recordId = "med-1",
-        committedRevision = 4,
-        committedPatientRevision = 5,
-        fingerprint = delete.computeFingerprint(),
-    )
+    private fun assertConflict(name: String, receipt: ClinicalCommandReceipt?, latest: ClinicalCommandReceipt?, row: Any?, cmd: ClinicalCommand) =
+        assertEquals(name, ClinicalCommandFailure.RECORD_CONFLICT, ClinicalDeleteRule.evaluateRestore(receipt, latest, row, cmd))
 
     @Test
-    fun matchingLatestDeleteReceiptWithAbsentRowAllowsRestore() {
-        assertNull(ClinicalDeleteRule.evaluateRestore(deleteReceipt, deleteReceipt, null, restore))
+    fun matchingLatestDeleteReceiptWithAbsentRowAllowsRestore() = eachType { f ->
+        val receipt = f.deleteReceipt()
+        assertNull(f.type.name, ClinicalDeleteRule.evaluateRestore(receipt, receipt, null, f.restore()))
     }
 
     @Test
-    fun wrongReceiptKindIsRecordConflict() {
-        val update = deleteReceipt.copy(recordKind = ClinicalRecordKind.MEDICATION_UPDATE.name)
-        assertEquals(ClinicalCommandFailure.RECORD_CONFLICT, ClinicalDeleteRule.evaluateRestore(update, update, null, restore))
-        val lab = deleteReceipt.copy(recordKind = ClinicalRecordKind.LAB_DELETE.name)
-        assertEquals(ClinicalCommandFailure.RECORD_CONFLICT, ClinicalDeleteRule.evaluateRestore(lab, lab, null, restore))
+    fun missingReceiptIsRecordConflict() = eachType { f ->
+        assertConflict(f.type.name, null, null, null, f.restore())
     }
 
     @Test
-    fun receiptForAnotherPatientOrRecordIsRecordConflict() {
-        val otherPatient = deleteReceipt.copy(patientId = "patient-2")
-        assertEquals(
-            ClinicalCommandFailure.RECORD_CONFLICT,
-            ClinicalDeleteRule.evaluateRestore(otherPatient, otherPatient, null, restore),
-        )
-        val otherRecord = deleteReceipt.copy(recordId = "med-2")
-        assertEquals(
-            ClinicalCommandFailure.RECORD_CONFLICT,
-            ClinicalDeleteRule.evaluateRestore(otherRecord, otherRecord, null, restore),
-        )
+    fun wrongReceiptKindIsRecordConflict() = eachType { f ->
+        listOf(f.updateKind, f.restoreKind, f.otherDeleteKind).forEach { kind ->
+            val wrong = f.deleteReceipt().copy(recordKind = kind.name)
+            assertConflict("${f.type.name} $kind", wrong, wrong, null, f.restore())
+        }
     }
 
     @Test
-    fun fingerprintMismatchIsRecordConflict() {
-        val tampered = deleteReceipt.copy(fingerprint = delete.copy(expectedMedicationRevision = 9).computeFingerprint())
-        assertEquals(
-            ClinicalCommandFailure.RECORD_CONFLICT,
-            ClinicalDeleteRule.evaluateRestore(tampered, tampered, null, restore),
-        )
+    fun receiptForAnotherPatientIsRecordConflict() = eachType { f ->
+        val receipt = f.deleteReceipt().copy(patientId = "patient-2")
+        assertConflict(f.type.name, receipt, receipt, null, f.restore())
     }
 
     @Test
-    fun deleteReceiptThatIsNotTheLatestIsRecordConflict() {
-        val later = deleteReceipt.copy(
+    fun receiptForAnotherRecordIsRecordConflict() = eachType { f ->
+        val receipt = f.deleteReceipt().copy(recordId = f.otherRecordId)
+        assertConflict(f.type.name, receipt, receipt, null, f.restore())
+    }
+
+    @Test
+    fun fingerprintMismatchIsRecordConflict() = eachType { f ->
+        val tampered = f.deleteReceipt().copy(fingerprint = f.delete(recordRevision = 9).computeFingerprint())
+        assertConflict(f.type.name, tampered, tampered, null, f.restore())
+    }
+
+    @Test
+    fun deleteReceiptThatIsNotTheLatestIsRecordConflict() = eachType { f ->
+        val receipt = f.deleteReceipt()
+        val later = receipt.copy(
             operationUuid = UUID.randomUUID().toString(),
-            recordKind = ClinicalRecordKind.MEDICATION_RESTORE.name,
+            recordKind = f.restoreKind.name,
             committedRevision = 5,
             committedPatientRevision = 6,
         )
+        assertConflict(f.type.name, receipt, later, null, f.restore())
+        assertConflict("${f.type.name} no latest", receipt, null, null, f.restore())
+    }
+
+    @Test
+    fun existingRowIsRecordConflict() = eachType { f ->
+        val receipt = f.deleteReceipt()
+        assertConflict(f.type.name, receipt, receipt, f.recordOf(5), f.restore())
+    }
+
+    @Test
+    fun recordHashDifferingFromDeletedHashIsInvalidCommand() = eachType { f ->
+        val receipt = f.deleteReceipt()
+        f.fieldVariants.filter { it.id == f.recordId && it.patientId == "patient-1" }.forEach { edited ->
+            assertEquals(
+                f.type.name,
+                ClinicalCommandFailure.INVALID_COMMAND,
+                ClinicalDeleteRule.evaluateRestore(receipt, receipt, null, f.restore(record = edited)),
+            )
+        }
+    }
+
+    @Test
+    fun revisionDifferenceAloneDoesNotBlockRestore() = eachType { f ->
+        val receipt = f.deleteReceipt()
+        assertNull(f.type.name, ClinicalDeleteRule.evaluateRestore(receipt, receipt, null, f.restore(record = f.recordOf(77))))
+    }
+
+    @Test
+    fun aCommandThatIsNotARestoreIsInvalidCommand() = eachType { f ->
+        val receipt = f.deleteReceipt()
         assertEquals(
-            ClinicalCommandFailure.RECORD_CONFLICT,
-            ClinicalDeleteRule.evaluateRestore(deleteReceipt, later, null, restore),
+            f.type.name,
+            ClinicalCommandFailure.INVALID_COMMAND,
+            ClinicalDeleteRule.evaluateRestore(receipt, receipt, null, f.delete()),
         )
     }
 
     @Test
-    fun existingRowIsRecordConflict() {
-        assertEquals(
-            ClinicalCommandFailure.RECORD_CONFLICT,
-            ClinicalDeleteRule.evaluateRestore(deleteReceipt, deleteReceipt, record.copy(revision = 5), restore),
+    fun aSaveCommandIsInvalidCommand() {
+        val save = SaveMedicationCommand(
+            operationUuid = UUID.randomUUID().toString(), patientId = "patient-1", expectedPatientRevision = 4,
+            medicationId = "med-1", expectedMedicationRevision = null, name = "Ferrous Sulfate", dosage = "200 mg",
+            route = "Oral", frequency = "Once daily", startDate = "2026-03-15", endDate = null, status = "Active",
+            notes = null, isProphylaxis = false,
         )
-    }
-
-    @Test
-    fun recordHashDifferingFromDeletedHashIsInvalidCommand() {
-        val edited = restore.copy(record = record.copy(dosage = "400 mg"))
+        val receipt = DeleteFixtures.medication.deleteReceipt()
         assertEquals(
             ClinicalCommandFailure.INVALID_COMMAND,
-            ClinicalDeleteRule.evaluateRestore(deleteReceipt, deleteReceipt, null, edited),
+            ClinicalDeleteRule.evaluateRestore(receipt, receipt, null, save),
         )
     }
 
+    private fun otherOf(f: DeleteFixture) = DeleteFixtures.all.first { it.type != f.type }
+
     @Test
-    fun revisionDifferenceAloneDoesNotBlockRestore() {
-        val sameContent = restore.copy(record = record.copy(revision = 77))
-        assertNull(ClinicalDeleteRule.evaluateRestore(deleteReceipt, deleteReceipt, null, sameContent))
+    fun recordFromAnotherPatientIsInvalidCommandAndNeverRestorable() = eachType { f ->
+        val receipt = f.deleteReceipt()
+        val foreign = f.fieldVariants.firstOrNull { it.patientId != "patient-1" } ?: f.recordOf(3).let { rec ->
+            when (rec) {
+                is com.sherifradwan.ancnative.model.DemoMedicationRecord -> rec.copy(patientId = "patient-2")
+                is com.sherifradwan.ancnative.model.DemoLabInvestigation -> rec.copy(patientId = "patient-2")
+                else -> error("unknown record")
+            }
+        }
+        val cmd = f.restore(record = foreign)
+        assertEquals(f.type.name, false, cmd.isStructurallyValid())
+        assertEquals(f.type.name, ClinicalCommandFailure.INVALID_COMMAND, ClinicalDeleteRule.evaluateRestore(receipt, receipt, null, cmd))
+        // and the command's own patient differing from the record's is refused the same way
+        val cmd2 = f.restore(patientId = "patient-2")
+        assertEquals(f.type.name, ClinicalCommandFailure.INVALID_COMMAND, ClinicalDeleteRule.evaluateRestore(receipt, receipt, null, cmd2))
     }
 
     @Test
-    fun labRestoreFollowsTheSameRules() {
-        val lab = DemoLabInvestigation(
-            id = "lab-1", patientId = "patient-1", date = "2026-02-10", testCategory = "Hematology",
-            testName = "Hemoglobin", result = "11.2", unit = "g/dL", referenceRange = null, isAbnormal = false,
-            notes = null, revision = 3,
+    fun everyTypeMismatchIsInvalidCommandAndNeverThrows() = eachType { f ->
+        val o = otherOf(f)
+        val receipt = f.deleteReceipt()
+        val cases = mapOf(
+            "cmd type differs from record and source" to f.restore().copy(type = o.type),
+            "source type differs from cmd and record" to f.restore(source = f.delete().copy(type = o.type)),
+            "record differs from cmd and source" to f.restore(record = o.recordOf(3)),
+            "cmd and source agree, record differs" to f.restore(source = f.delete().copy(type = o.type)).copy(type = o.type),
+            "cmd and record agree, source differs" to o.restore(record = o.recordOf(3), source = f.delete()),
         )
-        val labDelete = DeleteLabInvestigationCommand(
-            operationUuid = UUID.randomUUID().toString(),
-            patientId = "patient-1",
-            expectedPatientRevision = 4,
-            labId = "lab-1",
-            expectedLabRevision = 3,
-            deletedContentHash = labContentHash(lab),
-        )
-        val labRestore = RestoreLabInvestigationCommand(
-            operationUuid = UUID.randomUUID().toString(),
-            patientId = "patient-1",
-            expectedPatientRevision = 5,
-            record = lab,
-            sourceDelete = labDelete,
-        )
-        val receipt = ClinicalCommandReceipt(
-            operationUuid = labDelete.operationUuid,
-            patientId = "patient-1",
-            recordKind = ClinicalRecordKind.LAB_DELETE.name,
-            recordId = "lab-1",
-            committedRevision = 4,
-            committedPatientRevision = 5,
-            fingerprint = labDelete.computeFingerprint(),
-        )
-        assertNull(ClinicalDeleteRule.evaluateRestore(receipt, receipt, null, labRestore))
-        val wrongKind = receipt.copy(recordKind = ClinicalRecordKind.MEDICATION_DELETE.name)
-        assertEquals(
-            ClinicalCommandFailure.RECORD_CONFLICT,
-            ClinicalDeleteRule.evaluateRestore(wrongKind, wrongKind, null, labRestore),
-        )
-        assertEquals(
-            ClinicalCommandFailure.INVALID_COMMAND,
-            ClinicalDeleteRule.evaluateRestore(receipt, receipt, null, labRestore.copy(record = lab.copy(result = "5.0"))),
-        )
+        cases.forEach { (name, cmd) ->
+            assertEquals("${f.type.name} $name", false, cmd.isStructurallyValid())
+            assertEquals(
+                "${f.type.name} $name",
+                ClinicalCommandFailure.INVALID_COMMAND,
+                ClinicalDeleteRule.evaluateRestore(receipt, receipt, null, cmd),
+            )
+        }
     }
 }

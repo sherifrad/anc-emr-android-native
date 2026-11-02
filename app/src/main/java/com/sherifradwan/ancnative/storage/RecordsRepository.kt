@@ -344,10 +344,8 @@ internal class RecordsRepository(
                     is SaveUltrasoundScanCommand -> saveUltrasoundScan(command)
                     is SaveLabInvestigationCommand -> saveLabInvestigation(command)
                     is SaveMedicationCommand -> saveMedication(command)
-                    is DeleteMedicationCommand -> deleteMedication(command)
-                    is RestoreMedicationCommand -> restoreMedication(command)
-                    is DeleteLabInvestigationCommand -> deleteLabInvestigation(command)
-                    is RestoreLabInvestigationCommand -> restoreLabInvestigation(command)
+                    is DeleteRecordCommand -> deleteRecord(command)
+                    is RestoreRecordCommand -> restoreRecord(command)
                 }
             }
         } catch (abort: ClinicalCommandAbort) {
@@ -1382,27 +1380,28 @@ internal class RecordsRepository(
         return null
     }
 
-    private suspend fun deleteMedication(command: DeleteMedicationCommand): ClinicalCommandOutcome {
+    private suspend fun deleteRecord(command: DeleteRecordCommand): ClinicalCommandOutcome {
         deleteRestoreGuardFailure(command.patientId, command.expectedPatientRevision)?.let {
             return ClinicalCommandOutcome.Rejected(it)
         }
 
-        val existing = dao.medication(command.medicationId)
+        val adapter = DeletableRegistry.of<DeletableRecord>(command.type)
+        val existing = adapter.load(dao, command.recordId)
             ?: return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.RECORD_NOT_FOUND)
         if (existing.patientId != command.patientId) {
             return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.CROSS_PATIENT_WRITE)
         }
-        if (existing.revision != command.expectedMedicationRevision) {
+        if (existing.revision != command.expectedRecordRevision) {
             return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_REVISION)
         }
-        if (medicationContentHash(existing.toDomain()) != command.deletedContentHash) {
+        if (contentHash(existing) != command.deletedContentHash) {
             return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_REVISION)
         }
         if (existing.revision >= Long.MAX_VALUE - 1) {
             return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.REVISION_EXHAUSTED)
         }
 
-        val deleted = dao.deleteMedication(command.medicationId, command.patientId, command.expectedMedicationRevision)
+        val deleted = adapter.deleteRow(dao, command.recordId, command.patientId, command.expectedRecordRevision)
         if (deleted != 1) return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_REVISION)
 
         val patientUpdated = dao.incrementPatientRevision(command.patientId, command.expectedPatientRevision)
@@ -1422,14 +1421,15 @@ internal class RecordsRepository(
         return ClinicalCommandOutcome.Committed(snapshot, receipt.toDomain())
     }
 
-    private suspend fun restoreMedication(command: RestoreMedicationCommand): ClinicalCommandOutcome {
+    private suspend fun restoreRecord(command: RestoreRecordCommand): ClinicalCommandOutcome {
         deleteRestoreGuardFailure(command.patientId, command.expectedPatientRevision)?.let {
             return ClinicalCommandOutcome.Rejected(it)
         }
 
+        val adapter = DeletableRegistry.of<DeletableRecord>(command.type)
         val sourceReceipt = dao.clinicalCommandReceipt(command.sourceDelete.operationUuid)
         val latestReceipt = dao.latestClinicalReceiptForRecord(command.patientId, command.recordId)
-        val existing = dao.medication(command.recordId)
+        val existing = adapter.load(dao, command.recordId)
 
         val failure = ClinicalDeleteRule.evaluateRestore(
             receipt = sourceReceipt?.toDomain(),
@@ -1444,120 +1444,7 @@ internal class RecordsRepository(
             return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.REVISION_EXHAUSTED)
         }
 
-        dao.insertMedication(
-            MedicationEntity(
-                id = command.record.id,
-                patientId = command.patientId,
-                name = command.record.name,
-                dosage = command.record.dosage,
-                route = command.record.route,
-                frequency = command.record.frequency,
-                startDate = command.record.startDate,
-                endDate = command.record.endDate,
-                status = command.record.status,
-                notes = command.record.notes,
-                isProphylaxis = command.record.isProphylaxis,
-                isNonCompliant = command.record.isNonCompliant,
-                adverseEffects = command.record.adverseNotes,
-                revision = tombstoneRevision + 1,
-            ),
-        )
-
-        val patientUpdated = dao.incrementPatientRevision(command.patientId, command.expectedPatientRevision)
-        if (patientUpdated != 1) throw ClinicalCommandAbort(ClinicalCommandFailure.STALE_PATIENT_REVISION)
-
-        val receipt = ClinicalCommandReceiptEntity(
-            operationUuid = command.operationUuid,
-            patientId = command.patientId,
-            recordKind = command.recordKind.name,
-            recordId = command.recordId,
-            committedRevision = tombstoneRevision + 1,
-            committedPatientRevision = command.expectedPatientRevision + 1,
-            fingerprint = command.computeFingerprint(),
-        )
-        dao.insertClinicalCommandReceipt(receipt)
-        val snapshot = loadSnapshot()
-        return ClinicalCommandOutcome.Committed(snapshot, receipt.toDomain())
-    }
-
-    private suspend fun deleteLabInvestigation(command: DeleteLabInvestigationCommand): ClinicalCommandOutcome {
-        deleteRestoreGuardFailure(command.patientId, command.expectedPatientRevision)?.let {
-            return ClinicalCommandOutcome.Rejected(it)
-        }
-
-        val existing = dao.labInvestigation(command.labId)
-            ?: return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.RECORD_NOT_FOUND)
-        if (existing.patientId != command.patientId) {
-            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.CROSS_PATIENT_WRITE)
-        }
-        if (existing.revision != command.expectedLabRevision) {
-            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_REVISION)
-        }
-        if (labContentHash(existing.toDomain()) != command.deletedContentHash) {
-            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_REVISION)
-        }
-        if (existing.revision >= Long.MAX_VALUE - 1) {
-            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.REVISION_EXHAUSTED)
-        }
-
-        val deleted = dao.deleteLabInvestigation(command.labId, command.patientId, command.expectedLabRevision)
-        if (deleted != 1) return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_REVISION)
-
-        val patientUpdated = dao.incrementPatientRevision(command.patientId, command.expectedPatientRevision)
-        if (patientUpdated != 1) throw ClinicalCommandAbort(ClinicalCommandFailure.STALE_PATIENT_REVISION)
-
-        val receipt = ClinicalCommandReceiptEntity(
-            operationUuid = command.operationUuid,
-            patientId = command.patientId,
-            recordKind = command.recordKind.name,
-            recordId = command.recordId,
-            committedRevision = existing.revision + 1,
-            committedPatientRevision = command.expectedPatientRevision + 1,
-            fingerprint = command.computeFingerprint(),
-        )
-        dao.insertClinicalCommandReceipt(receipt)
-        val snapshot = loadSnapshot()
-        return ClinicalCommandOutcome.Committed(snapshot, receipt.toDomain())
-    }
-
-    private suspend fun restoreLabInvestigation(command: RestoreLabInvestigationCommand): ClinicalCommandOutcome {
-        deleteRestoreGuardFailure(command.patientId, command.expectedPatientRevision)?.let {
-            return ClinicalCommandOutcome.Rejected(it)
-        }
-
-        val sourceReceipt = dao.clinicalCommandReceipt(command.sourceDelete.operationUuid)
-        val latestReceipt = dao.latestClinicalReceiptForRecord(command.patientId, command.recordId)
-        val existing = dao.labInvestigation(command.recordId)
-
-        val failure = ClinicalDeleteRule.evaluateRestore(
-            receipt = sourceReceipt?.toDomain(),
-            latestReceipt = latestReceipt?.toDomain(),
-            existingRow = existing,
-            cmd = command,
-        )
-        if (failure != null) return ClinicalCommandOutcome.Rejected(failure)
-
-        val tombstoneRevision = sourceReceipt!!.committedRevision
-        if (tombstoneRevision >= Long.MAX_VALUE) {
-            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.REVISION_EXHAUSTED)
-        }
-
-        dao.insertLabInvestigation(
-            LabInvestigationEntity(
-                id = command.record.id,
-                patientId = command.patientId,
-                date = command.record.date,
-                testCategory = command.record.testCategory,
-                testName = command.record.testName,
-                result = command.record.result,
-                unit = command.record.unit,
-                referenceRange = command.record.referenceRange,
-                isAbnormal = command.record.isAbnormal,
-                notes = command.record.notes,
-                labName = command.record.labName,
-                revision = tombstoneRevision + 1,
-            ),
-        )
+        adapter.insertRow(dao, command.record, tombstoneRevision + 1)
 
         val patientUpdated = dao.incrementPatientRevision(command.patientId, command.expectedPatientRevision)
         if (patientUpdated != 1) throw ClinicalCommandAbort(ClinicalCommandFailure.STALE_PATIENT_REVISION)

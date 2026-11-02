@@ -7,30 +7,19 @@ object ClinicalDeleteRule {
         existingRow: Any?,
         cmd: ClinicalCommand,
     ): ClinicalCommandFailure? {
-        val (expectedKind, expectedFingerprint, recordContentHash, sourceHash) = when (cmd) {
-            is RestoreMedicationCommand -> {
-                RestoreSource(
-                    ClinicalRecordKind.MEDICATION_DELETE.name,
-                    cmd.sourceDelete.computeFingerprint(),
-                    medicationContentHash(cmd.record),
-                    cmd.sourceDelete.deletedContentHash,
-                )
-            }
-            is RestoreLabInvestigationCommand -> {
-                RestoreSource(
-                    ClinicalRecordKind.LAB_DELETE.name,
-                    cmd.sourceDelete.computeFingerprint(),
-                    labContentHash(cmd.record),
-                    cmd.sourceDelete.deletedContentHash,
-                )
-            }
-            else -> return ClinicalCommandFailure.INVALID_COMMAND
-        }
+        val restoreCmd = cmd as? RestoreRecordCommand ?: return ClinicalCommandFailure.INVALID_COMMAND
+        if (!restoreCmd.isStructurallyValid()) return ClinicalCommandFailure.INVALID_COMMAND
+
+        val adapter = DeletableRegistry.of<DeletableRecord>(restoreCmd.type)
+        val expectedKind = adapter.deleteReceiptKind
+        val expectedFingerprint = restoreCmd.sourceDelete.computeFingerprint()
+        val recordContentHash = contentHash(restoreCmd.record)
+        val sourceHash = restoreCmd.sourceDelete.deletedContentHash
 
         if (receipt == null) return ClinicalCommandFailure.RECORD_CONFLICT
         if (receipt.recordKind != expectedKind) return ClinicalCommandFailure.RECORD_CONFLICT
-        if (receipt.patientId != cmd.patientId) return ClinicalCommandFailure.RECORD_CONFLICT
-        if (receipt.recordId != cmd.recordId) return ClinicalCommandFailure.RECORD_CONFLICT
+        if (receipt.patientId != restoreCmd.patientId) return ClinicalCommandFailure.RECORD_CONFLICT
+        if (receipt.recordId != restoreCmd.recordId) return ClinicalCommandFailure.RECORD_CONFLICT
         if (receipt.fingerprint != expectedFingerprint) return ClinicalCommandFailure.RECORD_CONFLICT
         if (latestReceipt == null || latestReceipt.operationUuid != receipt.operationUuid) {
             return ClinicalCommandFailure.RECORD_CONFLICT
@@ -40,11 +29,4 @@ object ClinicalDeleteRule {
 
         return null
     }
-
-    private data class RestoreSource(
-        val kind: String,
-        val fingerprint: String,
-        val recordContentHash: String,
-        val sourceHash: String,
-    )
 }

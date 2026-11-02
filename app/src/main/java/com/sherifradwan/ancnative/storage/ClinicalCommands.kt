@@ -481,121 +481,156 @@ data class SaveMedicationCommand(
 
 private val HEX_64_REGEX = Regex("^[0-9a-f]{64}$")
 
-internal fun canonicalMedication(record: DemoMedicationRecord): String =
-    "${record.patientId}|${record.id}|${record.name}|${record.dosage}|${record.route}|${record.frequency}|${record.startDate}|${record.endDate}|${record.status}|${record.notes}|${record.isProphylaxis}|${record.isNonCompliant}|${record.adverseNotes}"
+sealed interface RecordUndoCommand : ClinicalCommand {
+    fun withPatientRevision(rev: Long): RecordUndoCommand
+}
 
-internal fun canonicalLab(record: DemoLabInvestigation): String =
-    "${record.patientId}|${record.id}|${record.date}|${record.testCategory}|${record.testName}|${record.result}|${record.unit}|${record.referenceRange}|${record.isAbnormal}|${record.notes}|${record.labName}"
-
-fun medicationContentHash(record: DemoMedicationRecord): String = sha256(canonicalMedication(record))
-
-fun labContentHash(record: DemoLabInvestigation): String = sha256(canonicalLab(record))
-
-data class DeleteMedicationCommand(
+data class DeleteRecordCommand(
+    val type: DeletableType,
     override val editorSessionId: String = "",
     override val operationUuid: String,
     override val patientId: String,
     override val expectedPatientRevision: Long,
-    val medicationId: String,
-    val expectedMedicationRevision: Long,
+    override val recordId: String,
+    val expectedRecordRevision: Long,
     val deletedContentHash: String,
-) : ClinicalCommand {
-    override val recordKind = ClinicalRecordKind.MEDICATION_DELETE
-    override val recordId = medicationId
+) : RecordUndoCommand {
+    override val recordKind: ClinicalRecordKind
+        get() = ClinicalRecordKind.valueOf(DeletableRegistry.of<DeletableRecord>(type).deleteReceiptKind)
 
-    override fun destination(): AncRoute = AncRoute.Workspace(patientId, WorkspaceSection.MEDICATIONS)
-    override fun savedNotice(): SavedNotice = SavedNotice.MEDICATION_DELETED
+    override fun destination(): AncRoute =
+        AncRoute.Workspace(patientId, DeletableRegistry.of<DeletableRecord>(type).section)
+
+    override fun savedNotice(): SavedNotice =
+        DeletableRegistry.of<DeletableRecord>(type).deletedNotice
 
     override fun isStructurallyValid(): Boolean {
-        if (!isValidUuid(operationUuid) || patientId.isBlank() || medicationId.isBlank()) return false
-        if (expectedPatientRevision < 1 || expectedMedicationRevision < 1) return false
+        if (!isValidUuid(operationUuid) || patientId.isBlank() || recordId.isBlank()) return false
+        if (expectedPatientRevision < 1 || expectedRecordRevision < 1) return false
         if (!deletedContentHash.matches(HEX_64_REGEX)) return false
         return true
     }
 
     override fun computeFingerprint(): String = sha256(
-        "MED_DEL|$operationUuid|$patientId|$expectedPatientRevision|$medicationId|$expectedMedicationRevision|$deletedContentHash",
+        "${DeletableRegistry.of<DeletableRecord>(type).fingerprintTag}_DEL|$operationUuid|$patientId|$expectedPatientRevision|$recordId|$expectedRecordRevision|$deletedContentHash",
     )
+
+    override fun withPatientRevision(rev: Long): DeleteRecordCommand =
+        copy(expectedPatientRevision = rev)
 }
 
-data class RestoreMedicationCommand(
-    override val editorSessionId: String = "",
+data class RestoreRecordCommand(
+    val type: DeletableType,
     override val operationUuid: String,
     override val patientId: String,
     override val expectedPatientRevision: Long,
-    val record: DemoMedicationRecord,
-    val sourceDelete: DeleteMedicationCommand,
-) : ClinicalCommand {
-    override val recordKind = ClinicalRecordKind.MEDICATION_RESTORE
+    val record: DeletableRecord,
+    val sourceDelete: DeleteRecordCommand,
+) : RecordUndoCommand {
+    override val editorSessionId: String = ""
     override val recordId: String get() = record.id
 
-    override fun destination(): AncRoute = AncRoute.Workspace(patientId, WorkspaceSection.MEDICATIONS)
-    override fun savedNotice(): SavedNotice = SavedNotice.MEDICATION_RESTORED
+    override val recordKind: ClinicalRecordKind
+        get() = ClinicalRecordKind.valueOf(DeletableRegistry.of<DeletableRecord>(type).restoreReceiptKind)
+
+    override fun destination(): AncRoute =
+        AncRoute.Workspace(patientId, DeletableRegistry.of<DeletableRecord>(type).section)
+
+    override fun savedNotice(): SavedNotice =
+        DeletableRegistry.of<DeletableRecord>(type).restoredNotice
 
     override fun isStructurallyValid(): Boolean {
         if (!isValidUuid(operationUuid) || patientId.isBlank() || record.id.isBlank()) return false
         if (expectedPatientRevision < 1) return false
         if (!sourceDelete.isStructurallyValid()) return false
+        if (record.patientId != patientId) return false
+        val recordType = runCatching { DeletableRegistry.adapterFor(record).type }.getOrNull()
+        if (recordType == null || recordType != type || sourceDelete.type != type) return false
         return true
     }
 
     override fun computeFingerprint(): String = sha256(
-        "MED_RES|$operationUuid|$patientId|$expectedPatientRevision|${sourceDelete.computeFingerprint()}|${canonicalMedication(record)}",
+        "${DeletableRegistry.of<DeletableRecord>(type).fingerprintTag}_RES|$operationUuid|$patientId|$expectedPatientRevision|${sourceDelete.computeFingerprint()}|${DeletableRegistry.of<DeletableRecord>(type).canonical(record)}",
     )
+
+    override fun withPatientRevision(rev: Long): RestoreRecordCommand =
+        copy(expectedPatientRevision = rev)
 }
 
-data class DeleteLabInvestigationCommand(
-    override val editorSessionId: String = "",
-    override val operationUuid: String,
-    override val patientId: String,
-    override val expectedPatientRevision: Long,
-    val labId: String,
-    val expectedLabRevision: Long,
-    val deletedContentHash: String,
-) : ClinicalCommand {
-    override val recordKind = ClinicalRecordKind.LAB_DELETE
-    override val recordId = labId
+typealias DeleteMedicationCommand = DeleteRecordCommand
+typealias RestoreMedicationCommand = RestoreRecordCommand
+typealias DeleteLabInvestigationCommand = DeleteRecordCommand
+typealias RestoreLabInvestigationCommand = RestoreRecordCommand
 
-    override fun destination(): AncRoute = AncRoute.Workspace(patientId, WorkspaceSection.LABORATORY)
-    override fun savedNotice(): SavedNotice = SavedNotice.LAB_DELETED
+fun DeleteMedicationCommand(
+    editorSessionId: String = "",
+    operationUuid: String,
+    patientId: String,
+    expectedPatientRevision: Long,
+    medicationId: String,
+    expectedMedicationRevision: Long,
+    deletedContentHash: String,
+): DeleteRecordCommand = DeleteRecordCommand(
+    type = DeletableType.MEDICATION,
+    editorSessionId = editorSessionId,
+    operationUuid = operationUuid,
+    patientId = patientId,
+    expectedPatientRevision = expectedPatientRevision,
+    recordId = medicationId,
+    expectedRecordRevision = expectedMedicationRevision,
+    deletedContentHash = deletedContentHash,
+)
 
-    override fun isStructurallyValid(): Boolean {
-        if (!isValidUuid(operationUuid) || patientId.isBlank() || labId.isBlank()) return false
-        if (expectedPatientRevision < 1 || expectedLabRevision < 1) return false
-        if (!deletedContentHash.matches(HEX_64_REGEX)) return false
-        return true
-    }
+fun RestoreMedicationCommand(
+    editorSessionId: String = "",
+    operationUuid: String,
+    patientId: String,
+    expectedPatientRevision: Long,
+    record: DemoMedicationRecord,
+    sourceDelete: DeleteRecordCommand,
+): RestoreRecordCommand = RestoreRecordCommand(
+    type = DeletableType.MEDICATION,
+    operationUuid = operationUuid,
+    patientId = patientId,
+    expectedPatientRevision = expectedPatientRevision,
+    record = record,
+    sourceDelete = sourceDelete,
+)
 
-    override fun computeFingerprint(): String = sha256(
-        "LAB_DEL|$operationUuid|$patientId|$expectedPatientRevision|$labId|$expectedLabRevision|$deletedContentHash",
-    )
-}
+fun DeleteLabInvestigationCommand(
+    editorSessionId: String = "",
+    operationUuid: String,
+    patientId: String,
+    expectedPatientRevision: Long,
+    labId: String,
+    expectedLabRevision: Long,
+    deletedContentHash: String,
+): DeleteRecordCommand = DeleteRecordCommand(
+    type = DeletableType.LAB,
+    editorSessionId = editorSessionId,
+    operationUuid = operationUuid,
+    patientId = patientId,
+    expectedPatientRevision = expectedPatientRevision,
+    recordId = labId,
+    expectedRecordRevision = expectedLabRevision,
+    deletedContentHash = deletedContentHash,
+)
 
-data class RestoreLabInvestigationCommand(
-    override val editorSessionId: String = "",
-    override val operationUuid: String,
-    override val patientId: String,
-    override val expectedPatientRevision: Long,
-    val record: DemoLabInvestigation,
-    val sourceDelete: DeleteLabInvestigationCommand,
-) : ClinicalCommand {
-    override val recordKind = ClinicalRecordKind.LAB_RESTORE
-    override val recordId: String get() = record.id
-
-    override fun destination(): AncRoute = AncRoute.Workspace(patientId, WorkspaceSection.LABORATORY)
-    override fun savedNotice(): SavedNotice = SavedNotice.LAB_RESTORED
-
-    override fun isStructurallyValid(): Boolean {
-        if (!isValidUuid(operationUuid) || patientId.isBlank() || record.id.isBlank()) return false
-        if (expectedPatientRevision < 1) return false
-        if (!sourceDelete.isStructurallyValid()) return false
-        return true
-    }
-
-    override fun computeFingerprint(): String = sha256(
-        "LAB_RES|$operationUuid|$patientId|$expectedPatientRevision|${sourceDelete.computeFingerprint()}|${canonicalLab(record)}",
-    )
-}
+fun RestoreLabInvestigationCommand(
+    editorSessionId: String = "",
+    operationUuid: String,
+    patientId: String,
+    expectedPatientRevision: Long,
+    record: DemoLabInvestigation,
+    sourceDelete: DeleteRecordCommand,
+): RestoreRecordCommand = RestoreRecordCommand(
+    type = DeletableType.LAB,
+    operationUuid = operationUuid,
+    patientId = patientId,
+    expectedPatientRevision = expectedPatientRevision,
+    record = record,
+    sourceDelete = sourceDelete,
+)
 
 private fun isValidUuid(raw: String): Boolean = try {
     UUID.fromString(raw)

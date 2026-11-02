@@ -1,5 +1,6 @@
 package com.sherifradwan.ancnative.model
 
+import com.sherifradwan.ancnative.storage.DeletableRecord
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
@@ -120,8 +121,8 @@ data class DemoUltrasoundScan(
 )
 
 data class DemoLabInvestigation(
-    val id: String,
-    val patientId: String,
+    override val id: String,
+    override val patientId: String,
     val date: String,
     val testCategory: String,
     val testName: String,
@@ -131,12 +132,12 @@ data class DemoLabInvestigation(
     val isAbnormal: Boolean,
     val notes: String?,
     val labName: String? = null,
-    val revision: Long = 1,
-)
+    override val revision: Long = 1,
+) : DeletableRecord
 
 data class DemoMedicationRecord(
-    val id: String,
-    val patientId: String,
+    override val id: String,
+    override val patientId: String,
     val name: String,
     val dosage: String,
     val route: String,
@@ -148,8 +149,8 @@ data class DemoMedicationRecord(
     val isProphylaxis: Boolean,
     val isNonCompliant: Boolean = false,
     val adverseNotes: String? = null,
-    val revision: Long = 1,
-)
+    override val revision: Long = 1,
+) : DeletableRecord
 
 data class DemoAttachment(
     val id: String,

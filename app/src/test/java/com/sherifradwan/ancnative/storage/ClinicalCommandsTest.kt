@@ -1,7 +1,5 @@
 package com.sherifradwan.ancnative.storage
 
-import com.sherifradwan.ancnative.model.DemoLabInvestigation
-import com.sherifradwan.ancnative.model.DemoMedicationRecord
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -570,51 +568,9 @@ class ClinicalCommandsTest {
 
     private val hex64 = Regex("[0-9a-f]{64}")
 
-    private fun med(revision: Long = 3) = DemoMedicationRecord(
-        id = "med-1", patientId = "patient-1", name = "Ferrous Sulfate", dosage = "200 mg", route = "Oral",
-        frequency = "Once daily", startDate = "2026-03-15", endDate = "2026-06-15", status = "Active",
-        notes = "With juice", isProphylaxis = false, isNonCompliant = false, adverseNotes = "Nausea", revision = revision,
-    )
+    private fun med(revision: Long = 3) = DeleteFixtures.med(revision)
 
-    private fun lab(revision: Long = 3) = DemoLabInvestigation(
-        id = "lab-1", patientId = "patient-1", date = "2026-02-10", testCategory = "Hematology", testName = "Hemoglobin",
-        result = "11.2", unit = "g/dL", referenceRange = "11-14", isAbnormal = false, notes = "Fasting",
-        labName = "Central Lab", revision = revision,
-    )
-
-    private fun deleteMed() = DeleteMedicationCommand(
-        operationUuid = UUID.randomUUID().toString(),
-        patientId = "patient-1",
-        expectedPatientRevision = 4,
-        medicationId = "med-1",
-        expectedMedicationRevision = 3,
-        deletedContentHash = medicationContentHash(med()),
-    )
-
-    private fun deleteLab() = DeleteLabInvestigationCommand(
-        operationUuid = UUID.randomUUID().toString(),
-        patientId = "patient-1",
-        expectedPatientRevision = 4,
-        labId = "lab-1",
-        expectedLabRevision = 3,
-        deletedContentHash = labContentHash(lab()),
-    )
-
-    private fun restoreMed(source: DeleteMedicationCommand = deleteMed()) = RestoreMedicationCommand(
-        operationUuid = UUID.randomUUID().toString(),
-        patientId = "patient-1",
-        expectedPatientRevision = 5,
-        record = med(),
-        sourceDelete = source,
-    )
-
-    private fun restoreLab(source: DeleteLabInvestigationCommand = deleteLab()) = RestoreLabInvestigationCommand(
-        operationUuid = UUID.randomUUID().toString(),
-        patientId = "patient-1",
-        expectedPatientRevision = 5,
-        record = lab(),
-        sourceDelete = source,
-    )
+    private fun lab(revision: Long = 3) = DeleteFixtures.lab(revision)
 
     private fun assertAllDistinct(base: String, variants: List<String>) {
         assertEquals(variants.size, variants.toSet().size)
@@ -622,138 +578,90 @@ class ClinicalCommandsTest {
     }
 
     @Test
-    fun deleteMedicationCommandValidatesRevisionAndHash() {
-        val valid = deleteMed()
-        assertTrue(valid.isStructurallyValid())
-        assertEquals(ClinicalRecordKind.MEDICATION_DELETE, valid.recordKind)
-        assertEquals("med-1", valid.recordId)
-        assertEquals("", valid.editorSessionId)
+    fun deleteCommandsValidateRevisionIdAndHashForEveryType() {
+        DeleteFixtures.all.forEach { f ->
+            val name = f.type.name
+            val valid = f.delete()
+            assertTrue(name, valid.isStructurallyValid())
+            assertEquals(name, f.deleteKind, valid.recordKind)
+            assertEquals(name, f.recordId, valid.recordId)
+            assertEquals(name, "", valid.editorSessionId)
 
-        assertFalse(valid.copy(expectedPatientRevision = 0).isStructurallyValid())
-        assertFalse(valid.copy(expectedMedicationRevision = 0).isStructurallyValid())
-        assertFalse(valid.copy(operationUuid = "not-a-uuid").isStructurallyValid())
-        assertFalse(valid.copy(patientId = " ").isStructurallyValid())
-        assertFalse(valid.copy(medicationId = "").isStructurallyValid())
-        assertFalse(valid.copy(deletedContentHash = "abc").isStructurallyValid())
-        assertFalse(valid.copy(deletedContentHash = "z".repeat(64)).isStructurallyValid())
-        assertFalse(valid.copy(deletedContentHash = "a".repeat(65)).isStructurallyValid())
+            assertFalse(name, valid.copy(expectedPatientRevision = 0).isStructurallyValid())
+            assertFalse(name, valid.copy(expectedRecordRevision = 0).isStructurallyValid())
+            assertFalse(name, valid.copy(operationUuid = "not-a-uuid").isStructurallyValid())
+            assertFalse(name, valid.copy(patientId = " ").isStructurallyValid())
+            assertFalse(name, valid.copy(patientId = "").isStructurallyValid())
+            assertFalse(name, valid.copy(recordId = "").isStructurallyValid())
+            assertFalse(name, valid.copy(recordId = " ").isStructurallyValid())
+            assertFalse(name, valid.copy(deletedContentHash = "abc").isStructurallyValid())
+            assertFalse(name, valid.copy(deletedContentHash = "z".repeat(64)).isStructurallyValid())
+            assertFalse(name, valid.copy(deletedContentHash = "a".repeat(65)).isStructurallyValid())
+        }
     }
 
     @Test
-    fun deleteLabInvestigationCommandValidatesRevisionAndHash() {
-        val valid = deleteLab()
-        assertTrue(valid.isStructurallyValid())
-        assertEquals(ClinicalRecordKind.LAB_DELETE, valid.recordKind)
-        assertEquals("lab-1", valid.recordId)
-
-        assertFalse(valid.copy(expectedPatientRevision = 0).isStructurallyValid())
-        assertFalse(valid.copy(expectedLabRevision = 0).isStructurallyValid())
-        assertFalse(valid.copy(operationUuid = "not-a-uuid").isStructurallyValid())
-        assertFalse(valid.copy(patientId = "").isStructurallyValid())
-        assertFalse(valid.copy(labId = " ").isStructurallyValid())
-        assertFalse(valid.copy(deletedContentHash = "abc").isStructurallyValid())
-        assertFalse(valid.copy(deletedContentHash = "z".repeat(64)).isStructurallyValid())
+    fun deleteFingerprintsBindEveryFieldForEveryType() {
+        DeleteFixtures.all.forEach { f ->
+            val cmd = f.delete()
+            assertEquals(f.type.name, cmd.computeFingerprint(), cmd.copy().computeFingerprint())
+            assertAllDistinct(
+                cmd.computeFingerprint(),
+                listOf(
+                    cmd.copy(operationUuid = UUID.randomUUID().toString()),
+                    cmd.copy(patientId = "patient-2"),
+                    cmd.copy(expectedPatientRevision = 5),
+                    cmd.copy(recordId = f.otherRecordId),
+                    cmd.copy(expectedRecordRevision = 4),
+                    cmd.copy(deletedContentHash = "b".repeat(64)),
+                ).map { it.computeFingerprint() },
+            )
+        }
     }
 
     @Test
-    fun deleteFingerprintsBindEveryField() {
-        val med = deleteMed()
-        assertEquals(med.computeFingerprint(), med.copy().computeFingerprint())
-        assertAllDistinct(
-            med.computeFingerprint(),
-            listOf(
-                med.copy(operationUuid = UUID.randomUUID().toString()),
-                med.copy(patientId = "patient-2"),
-                med.copy(expectedPatientRevision = 5),
-                med.copy(medicationId = "med-2"),
-                med.copy(expectedMedicationRevision = 4),
-                med.copy(deletedContentHash = "b".repeat(64)),
-            ).map { it.computeFingerprint() },
-        )
-        val lab = deleteLab()
-        assertEquals(lab.computeFingerprint(), lab.copy().computeFingerprint())
-        assertAllDistinct(
-            lab.computeFingerprint(),
-            listOf(
-                lab.copy(operationUuid = UUID.randomUUID().toString()),
-                lab.copy(patientId = "patient-2"),
-                lab.copy(expectedPatientRevision = 5),
-                lab.copy(labId = "lab-2"),
-                lab.copy(expectedLabRevision = 4),
-                lab.copy(deletedContentHash = "b".repeat(64)),
-            ).map { it.computeFingerprint() },
-        )
+    fun restoreFingerprintBindsSourceDeleteAndPayloadForEveryType() {
+        DeleteFixtures.all.forEach { f ->
+            val name = f.type.name
+            val source = f.delete()
+            val restore = f.restore(source)
+            assertTrue(name, restore.isStructurallyValid())
+            assertEquals(name, f.restoreKind, restore.recordKind)
+            assertEquals(name, f.recordId, restore.recordId)
+            assertEquals(name, restore.computeFingerprint(), restore.copy().computeFingerprint())
+
+            assertAllDistinct(
+                restore.computeFingerprint(),
+                (
+                    listOf(
+                        restore.copy(operationUuid = UUID.randomUUID().toString()),
+                        restore.copy(patientId = "patient-2"),
+                        restore.copy(expectedPatientRevision = 6),
+                        restore.copy(sourceDelete = source.copy(operationUuid = UUID.randomUUID().toString())),
+                        restore.copy(sourceDelete = source.copy(expectedRecordRevision = 9)),
+                    ) + f.fieldVariants.map { restore.copy(record = it) }
+                    ).map { it.computeFingerprint() },
+            )
+            assertFalse(name, restore.copy(expectedPatientRevision = 0).isStructurallyValid())
+            assertFalse(name, restore.copy(operationUuid = "not-a-uuid").isStructurallyValid())
+            assertFalse(name, restore.copy(patientId = " ").isStructurallyValid())
+            assertFalse(name, restore.copy(sourceDelete = source.copy(deletedContentHash = "abc")).isStructurallyValid())
+        }
     }
 
     @Test
-    fun restoreFingerprintBindsSourceDeleteAndPayload() {
-        val source = deleteMed()
-        val restore = restoreMed(source)
-        assertTrue(restore.isStructurallyValid())
-        assertEquals(ClinicalRecordKind.MEDICATION_RESTORE, restore.recordKind)
-        assertEquals("med-1", restore.recordId)
-        assertEquals(restore.computeFingerprint(), restore.copy().computeFingerprint())
-
-        val record = restore.record
-        assertAllDistinct(
-            restore.computeFingerprint(),
-            listOf(
-                restore.copy(operationUuid = UUID.randomUUID().toString()),
-                restore.copy(patientId = "patient-2"),
-                restore.copy(expectedPatientRevision = 6),
-                restore.copy(sourceDelete = source.copy(operationUuid = UUID.randomUUID().toString())),
-                restore.copy(sourceDelete = source.copy(expectedMedicationRevision = 9)),
-                restore.copy(record = record.copy(id = "med-2")),
-                restore.copy(record = record.copy(patientId = "patient-2")),
-                restore.copy(record = record.copy(name = "Other")),
-                restore.copy(record = record.copy(dosage = "400 mg")),
-                restore.copy(record = record.copy(route = "IV")),
-                restore.copy(record = record.copy(frequency = "Twice daily")),
-                restore.copy(record = record.copy(startDate = "2026-03-16")),
-                restore.copy(record = record.copy(endDate = null)),
-                restore.copy(record = record.copy(status = "Completed")),
-                restore.copy(record = record.copy(notes = null)),
-                restore.copy(record = record.copy(isProphylaxis = true)),
-                restore.copy(record = record.copy(isNonCompliant = true)),
-                restore.copy(record = record.copy(adverseNotes = null)),
-            ).map { it.computeFingerprint() },
-        )
-        assertFalse(restore.copy(expectedPatientRevision = 0).isStructurallyValid())
-        assertFalse(restore.copy(operationUuid = "not-a-uuid").isStructurallyValid())
+    fun deleteAndRestoreFingerprintsMatchTheGoldenCommit19c36fcStrings() {
+        DeleteFixtures.all.forEach { f ->
+            assertEquals(f.type.name, f.goldenDeleteFingerprint, f.delete().computeFingerprint())
+            assertEquals(f.type.name, f.goldenRestoreFingerprint, f.restore().computeFingerprint())
+        }
     }
 
     @Test
-    fun labRestoreFingerprintBindsSourceDeleteAndPayload() {
-        val source = deleteLab()
-        val restore = restoreLab(source)
-        assertTrue(restore.isStructurallyValid())
-        assertEquals(ClinicalRecordKind.LAB_RESTORE, restore.recordKind)
-        assertEquals("lab-1", restore.recordId)
-        assertEquals(restore.computeFingerprint(), restore.copy().computeFingerprint())
-
-        val record = restore.record
-        assertAllDistinct(
-            restore.computeFingerprint(),
-            listOf(
-                restore.copy(operationUuid = UUID.randomUUID().toString()),
-                restore.copy(patientId = "patient-2"),
-                restore.copy(expectedPatientRevision = 6),
-                restore.copy(sourceDelete = source.copy(operationUuid = UUID.randomUUID().toString())),
-                restore.copy(sourceDelete = source.copy(expectedLabRevision = 9)),
-                restore.copy(record = record.copy(id = "lab-2")),
-                restore.copy(record = record.copy(patientId = "patient-2")),
-                restore.copy(record = record.copy(date = "2026-02-11")),
-                restore.copy(record = record.copy(testCategory = "Serology")),
-                restore.copy(record = record.copy(testName = "Ferritin")),
-                restore.copy(record = record.copy(result = "9.9")),
-                restore.copy(record = record.copy(unit = null)),
-                restore.copy(record = record.copy(referenceRange = null)),
-                restore.copy(record = record.copy(isAbnormal = true)),
-                restore.copy(record = record.copy(notes = null)),
-                restore.copy(record = record.copy(labName = null)),
-            ).map { it.computeFingerprint() },
-        )
-        assertFalse(restore.copy(expectedPatientRevision = 0).isStructurallyValid())
+    fun contentHashesMatchTheGoldenCommit19c36fcValues() {
+        DeleteFixtures.all.forEach { f ->
+            assertEquals(f.type.name, f.goldenHash, f.contentHash(f.recordOf(3)))
+        }
     }
 
     @Test
