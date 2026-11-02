@@ -1,0 +1,13 @@
+# .agents/scripts
+
+Rule (owner, 2026-11-02): any command sequence run twice becomes a script here, with a proper name, so it is never retyped.
+
+| Script | Does |
+|---|---|
+| run_build_gate.sh | unit tests, lint, release compile, androidTest compile |
+| run_static_checks.sh | all .agents/checks/check_r*.py, FAIL lines only |
+| run_emulator_test_class.sh `<class>` `[serial]` | one instrumented class on the .qa package, prints counts |
+| install_qa_build_on_device.sh `<serial>` | installs com.sherifradwan.anc.qa only |
+| take_device_screenshot.sh `<serial>` `<png>` | adb screenshot |
+| launch_opus_review.sh `<prompt>` `<out>` | detached read-only Opus review |
+| qa_package_suffix.init.gradle | adds the .qa applicationId suffix |

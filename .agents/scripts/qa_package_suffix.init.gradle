@@ -1,0 +1,6 @@
+// Side-by-side QA install: com.sherifradwan.anc.qa. Never touches the installed clinic app.
+allprojects {
+    pluginManager.withPlugin('com.android.application') {
+        android { buildTypes { debug { applicationIdSuffix '.qa'; versionNameSuffix '-qa' } } }
+    }
+}
