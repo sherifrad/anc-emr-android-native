@@ -391,7 +391,7 @@ class AncDeleteUndoStateTest {
     }
 
     @Test
-    fun openingAnotherPatientDropsOfferMessageAndNoticeOfTheFirst() {
+    fun openingAnotherPatientDropsOfferAndNoticeOfTheFirstButKeepsItsFailureMessage() {
         for (kind in kinds) {
             val inWorkspace = base().copy(route = AncRoute.Workspace("p1", WorkspaceSection.MEDICATIONS))
             val state = reduce(withOffer(kind, inWorkspace, "t1"), AncEvent.UndoCommitted("zz", listOf(patient()), SavedNotice.MEDICATION_RESTORED, "p1"))
@@ -402,7 +402,8 @@ class AncDeleteUndoStateTest {
             assertNotNull(kind.type.name, sameLaterPatient.undoOffer)
             val other = reduce(state, AncEvent.OpenWorkspace("p2"))
             assertNull(kind.type.name, other.undoOffer)
-            assertNull(kind.type.name, other.deleteMessage)
+            // A failure message names its patient and so stays; only the offer and the notice are patient-scoped.
+            assertNotNull(kind.type.name, other.deleteMessage)
             assertEquals(false, other.savedNotice)
             assertNull(other.noticePatientId)
         }
@@ -489,5 +490,66 @@ class AncDeleteUndoStateTest {
         assertEquals(false, locked.deleteRunning)
         assertNull(locked.deleteMessage)
         assertNull(locked.noticePatientId)
+    }
+
+    @Test
+    fun failureMessagesSurviveAPatientSwitchAndNameThePatient() {
+        for (kind in kinds) {
+            val inWorkspace = base().copy(route = AncRoute.Workspace("p1", WorkspaceSection.MEDICATIONS))
+            val failed = reduce(
+                reduce(inWorkspace, AncEvent.DeleteStarted),
+                AncEvent.DeleteFailed(SaveUiError.STORAGE_ERROR, "p1", kind.type, kind.label, "Patient One"),
+            )
+            val other = reduce(failed, AncEvent.OpenWorkspace("p2"))
+            assertEquals(kind.type.name, DeleteMessageKind.DELETE_FAILED, other.deleteMessage?.kind)
+            assertEquals("Patient One", other.deleteMessage?.patientName)
+            assertNull(reduce(other, AncEvent.DismissDeleteMessage).deleteMessage)
+            // The refusal "finish your edits" is about the open screen only and does not follow the clinician.
+            val blocked = failed.copy(deleteMessage = failed.deleteMessage!!.copy(kind = DeleteMessageKind.UNDO_BLOCKED))
+            assertNull(reduce(blocked, AncEvent.OpenWorkspace("p2")).deleteMessage)
+        }
+    }
+
+    @Test
+    fun undoFailureStillShownWhenItsOfferWasAlreadyDropped() {
+        for (kind in kinds) {
+            val onOther = base().copy(route = AncRoute.Workspace("p2", WorkspaceSection.MEDICATIONS))
+            val lost = offer(kind, "t1", phase = UndoPhase.RUNNING).copy(patientName = "Patient One")
+            val failed = reduce(onOther, AncEvent.UndoFailed("t1", SaveUiError.STORAGE_ERROR, lost))
+            val message = failed.deleteMessage!!
+            assertEquals(DeleteMessageKind.UNDO_FAILED, message.kind)
+            assertEquals("p1", message.patientId)
+            assertEquals("Patient One", message.patientName)
+            assertEquals(kind.label, message.label)
+            assertNull(failed.undoOffer)
+            // Without the offer details a stale token is still ignored.
+            assertEquals(onOther, reduce(onOther, AncEvent.UndoFailed("t1", SaveUiError.STORAGE_ERROR)))
+        }
+    }
+
+    @Test
+    fun undoRequestRefusedWhileADeleteRuns() {
+        for (kind in kinds) {
+            val state = reduce(withOffer(kind, base(), "t1"), AncEvent.DeleteStarted)
+            val next = reduce(state, AncEvent.UndoRequested("t1"))
+            assertEquals(false, next.canRunUndo("t1"))
+            assertEquals(state, next)
+            val done = reduce(state, AncEvent.DeleteCommitted(listOf(patient(revision = 6)), offer(kind, "t2"), null, "p1"))
+            assertTrue(reduce(done, AncEvent.UndoRequested("t2")).canRunUndo("t2"))
+        }
+    }
+
+    @Test
+    fun editorOfARecordIsNotOpenedWhileItsUndoRuns() {
+        for (kind in kinds) {
+            val running = base().copy(undoOffer = saveOffer(kind, "t1", "r1").copy(phase = UndoPhase.RUNNING))
+            val tapped = kind.startEditor(running, "r1", "n1", "s1")
+            assertEquals(running, tapped)
+            // Another record of the same kind can still be edited.
+            assertEquals("r2", kind.openRecordId(kind.startEditor(running, "r2", "n2", "s2")))
+            // Once the Undo is no longer running the record opens as before.
+            val ready = base().copy(undoOffer = saveOffer(kind, "t1", "r1"))
+            assertEquals("r1", kind.openRecordId(kind.startEditor(ready, "r1", "n1", "s1")))
+        }
     }
 }

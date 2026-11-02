@@ -281,7 +281,14 @@ data class DeleteMessage(
     val label: String,
     val action: UndoAction? = null,
     val error: SaveUiError? = null,
+    val patientName: String = "",
 )
+
+/**
+ * A failure report must not vanish because the clinician moved on: it names the patient and the record, so it stays
+ * through a patient switch until dismissed or replaced. A "finish your edits" refusal is only about the open screen.
+ */
+val DeleteMessageKind.survivesPatientSwitch: Boolean get() = this != DeleteMessageKind.UNDO_BLOCKED
 
 /** The patient a route belongs to, or null for the patient list. */
 fun AncRoute.patientIdOrNull(): String? = when (this) {
@@ -312,6 +319,10 @@ fun AncState.canRequestUndo(token: String): Boolean =
 fun AncState.canRunUndo(token: String): Boolean =
     undoOffer?.let { it.token == token && it.phase == UndoPhase.RUNNING } == true
 
+/** True while an Undo that would remove or restore this record is in flight: the record must not be opened for edit. */
+fun AncState.undoRunningFor(recordId: String): Boolean =
+    undoOffer?.let { it.phase == UndoPhase.RUNNING && it.recordId == recordId } == true
+
 /** Medication saves are blocked while an Undo is in flight. */
 val AncState.undoRunning: Boolean get() = undoOffer?.phase == UndoPhase.RUNNING
 
@@ -329,7 +340,7 @@ internal fun AncState.withDeleteUiConsistent(): AncState {
     val offer = next.undoOffer
     if (open != null && offer != null && offer.patientId != open) next = next.copy(undoOffer = null)
     val message = next.deleteMessage
-    if (open != null && message != null && message.patientId != open) next = next.copy(deleteMessage = null)
+    if (open != null && message != null && message.patientId != open && !message.kind.survivesPatientSwitch) next = next.copy(deleteMessage = null)
     val noticeOwner = next.noticePatientId
     if (noticeOwner != null && open != null && noticeOwner != open) {
         next = next.copy(savedNotice = false, notice = null, noticePatientId = null)
@@ -766,6 +777,7 @@ sealed interface AncEvent {
         val patientId: String = "",
         val type: DeletableType? = null,
         val label: String = "",
+        val patientName: String = "",
     ) : AncEvent
     data class UndoOffered(val offer: UndoOffer) : AncEvent
     data class UndoRequested(val token: String) : AncEvent
@@ -775,7 +787,12 @@ sealed interface AncEvent {
         val notice: SavedNotice? = null,
         val patientId: String? = null,
     ) : AncEvent
-    data class UndoFailed(val token: String, val error: SaveUiError? = null) : AncEvent
+    data class UndoFailed(
+        val token: String,
+        val error: SaveUiError? = null,
+        /** The offer the coordinator ran, so the failure is still reported if the UI has dropped it. */
+        val offer: UndoOffer? = null,
+    ) : AncEvent
     data class UndoExpired(val token: String) : AncEvent
 }
 
@@ -988,13 +1005,14 @@ object AncReducer {
                         label = event.label,
                         action = UndoAction.DELETE,
                         error = event.error,
+                        patientName = event.patientName,
                     )
                 },
             )
             is AncEvent.UndoOffered -> state.copy(undoOffer = event.offer, deleteMessage = null)
             is AncEvent.UndoRequested -> {
                 val offer = state.undoOffer
-                if (offer == null || !state.canRequestUndo(event.token)) {
+                if (offer == null || !state.canRequestUndo(event.token) || state.deleteRunning) {
                     state
                 } else {
                     val hook = EditorHooks.of(offer.type)
@@ -1042,6 +1060,22 @@ object AncReducer {
                             label = offer.label,
                             action = offer.action,
                             error = event.error,
+                            patientName = offer.patientName,
+                        ),
+                    )
+                } else if (event.offer != null) {
+                    // The offer was dropped (another patient opened, or a new offer replaced it): still say so.
+                    val lost = event.offer
+                    state.copy(
+                        saveError = event.error,
+                        deleteMessage = DeleteMessage(
+                            kind = DeleteMessageKind.UNDO_FAILED,
+                            patientId = lost.patientId,
+                            type = lost.type,
+                            label = lost.label,
+                            action = lost.action,
+                            error = event.error,
+                            patientName = lost.patientName,
                         ),
                     )
                 } else {
@@ -1220,6 +1254,7 @@ object AncReducer {
 
     private fun startLabEditor(state: AncState, event: AncEvent.StartLabEditor): AncState {
         if (state.savePhase.blocksEditing() || state.hasDirtyDraft) return state
+        if (event.labId != null && state.undoRunningFor(event.labId)) return state
         val patient = state.patient(event.patientId)?.takeIf { it.status != "archived" } ?: return state
         val lab = event.labId?.let { id -> patient.labInvestigations.firstOrNull { it.id == id } }
         if (event.labId != null && lab == null) return state
@@ -1246,6 +1281,7 @@ object AncReducer {
 
     private fun startMedicationEditor(state: AncState, event: AncEvent.StartMedicationEditor): AncState {
         if (state.savePhase.blocksEditing() || state.hasDirtyDraft) return state
+        if (event.medicationId != null && state.undoRunningFor(event.medicationId)) return state
         val patient = state.patient(event.patientId)?.takeIf { it.status != "archived" } ?: return state
         val med = event.medicationId?.let { id -> patient.medications.firstOrNull { it.id == id } }
         val defaultStart = event.defaultStartDate.ifEmpty { java.time.LocalDate.now().toString() }

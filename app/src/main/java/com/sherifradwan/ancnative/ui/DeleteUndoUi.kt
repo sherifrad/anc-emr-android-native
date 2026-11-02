@@ -51,20 +51,28 @@ internal fun DeletableType.labelResource(): Int = when (this) {
     DeletableType.LAB -> R.string.deletable_type_lab
 }
 
-/** Global delete affordance: a trash icon with a 48dp touch target, tagged `delete-<type>-<id>`. */
+/** " (patient Name)", or nothing when the name is blank: the UI never shows "(patient )". */
+@Composable
+internal fun patientClause(patientName: String): String =
+    if (patientName.isBlank()) "" else " " + stringResource(R.string.patient_clause, patientName.trim())
+
+/**
+ * Global delete affordance: a trash icon with a 48dp touch target, tagged `delete-<type>-<id>`.
+ * Its spoken name comes from the registry label, the same one the confirm dialog and Undo bar use.
+ */
 @Composable
 internal fun DeleteIconButton(
     type: DeletableType,
-    recordId: String,
-    label: String,
+    record: DeletableRecord,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val label = DeletableRegistry.of<DeletableRecord>(type).label(record)
     IconButton(
         onClick = onClick,
         modifier = modifier
             .minimumTouchTarget()
-            .testTag("delete-${type.name.lowercase()}-$recordId"),
+            .testTag("delete-${type.name.lowercase()}-${record.id}"),
     ) {
         Icon(
             Icons.Default.Delete,
@@ -128,12 +136,13 @@ fun UndoBarHost(state: AncState, onEvent: (AncEvent) -> Unit) {
 private fun DeleteMessageBar(message: DeleteMessage, onEvent: (AncEvent) -> Unit) {
     val typeLabel = stringResource(message.type.labelResource())
     val reason = stringResource(message.error.stringRes())
+    val patient = patientClause(message.patientName)
     val text = when (message.kind) {
-        DeleteMessageKind.DELETE_FAILED -> stringResource(R.string.delete_failed_message, typeLabel, message.label, reason)
+        DeleteMessageKind.DELETE_FAILED -> stringResource(R.string.delete_failed_message, typeLabel, message.label, reason, patient)
         DeleteMessageKind.UNDO_FAILED -> if (message.action == UndoAction.SAVE) {
-            stringResource(R.string.undo_failed_saved_message, typeLabel, message.label, reason)
+            stringResource(R.string.undo_failed_saved_message, typeLabel, message.label, reason, patient)
         } else {
-            stringResource(R.string.undo_failed_deleted_message, typeLabel, message.label, reason)
+            stringResource(R.string.undo_failed_deleted_message, typeLabel, message.label, reason, patient)
         }
         DeleteMessageKind.UNDO_BLOCKED -> stringResource(R.string.undo_blocked_message, typeLabel, message.label)
     }
@@ -168,8 +177,8 @@ private fun UndoOfferBar(offer: UndoOffer, onEvent: (AncEvent) -> Unit) {
     val running = offer.phase == UndoPhase.RUNNING
     val typeLabel = stringResource(offer.type.labelResource())
     val message = when (offer.action) {
-        UndoAction.DELETE -> stringResource(R.string.undo_message_deleted, typeLabel, offer.label, offer.patientName)
-        UndoAction.SAVE -> stringResource(R.string.undo_message_saved, typeLabel, offer.label, offer.patientName)
+        UndoAction.DELETE -> stringResource(R.string.undo_message_deleted, typeLabel, offer.label, patientClause(offer.patientName))
+        UndoAction.SAVE -> stringResource(R.string.undo_message_saved, typeLabel, offer.label, patientClause(offer.patientName))
     }
     val progressDescription = stringResource(R.string.undo_in_progress)
     Surface(

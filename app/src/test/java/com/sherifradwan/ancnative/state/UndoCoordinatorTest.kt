@@ -763,4 +763,65 @@ class UndoCoordinatorTest {
             assertEquals(type.name, 8L, (fx.executed[2] as RestoreRecordCommand).expectedPatientRevision)
         }
     }
+
+    @Test
+    fun deleteFailureAfterSwitchingPatientIsStillReported() {
+        for (type in types) {
+            val fx = Fixture()
+            fx.script += {
+                fx.state = AncReducer.reduce(fx.state, AncEvent.OpenWorkspace("p2"))
+                ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.RECORD_CONFLICT)
+            }
+            fx.begin(type, "p1", "x1")
+            val message = fx.state.deleteMessage!!
+            assertEquals(type.name, DeleteMessageKind.DELETE_FAILED, message.kind)
+            assertEquals(type.name, "p1", message.patientId)
+            assertEquals(type.name, "Patient p1", message.patientName)
+        }
+    }
+
+    @Test
+    fun undoFailureAfterSwitchingPatientIsStillReported() {
+        for (type in types) {
+            val fx = Fixture()
+            val token = fx.begin(type, "p1", "x1")!!
+            fx.script += {
+                // Opening another patient drops the offer while the Undo runs.
+                fx.state = AncReducer.reduce(fx.state, AncEvent.OpenWorkspace("p2"))
+                ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.RECORD_CONFLICT)
+            }
+            fx.request(token)
+            assertNull(type.name, fx.state.undoOffer)
+            val message = fx.state.deleteMessage!!
+            assertEquals(type.name, DeleteMessageKind.UNDO_FAILED, message.kind)
+            assertEquals(type.name, "p1", message.patientId)
+            assertEquals(type.name, "Patient p1", message.patientName)
+            assertEquals(type.name, UndoAction.DELETE, message.action)
+        }
+    }
+
+    @Test
+    fun undoRequestWhileADeleteRunsExecutesNothing() {
+        for (type in types) {
+            val fx = Fixture()
+            val token = fx.begin(type, "p1", "x1")!!
+            fx.state = AncReducer.reduce(fx.state, AncEvent.DeleteStarted)
+            val calls = fx.calls.size
+            fx.request(token)
+            assertEquals(type.name, calls, fx.calls.size)
+            assertEquals(type.name, UndoPhase.READY, fx.state.undoOffer?.phase)
+        }
+    }
+
+    @Test
+    fun offerForAPatientWithoutANameCarriesNoName() {
+        val fx = Fixture()
+        fx.state = fx.state.copy(patients = fx.state.patients.map { if (it.id == "p1") it.copy(displayName = "  ") else it })
+        fx.coordinator.offerSaveUndo(
+            DeletableType.MEDICATION, "p1", "x1",
+            ClinicalCommandReceipt("op", "p1", "MEDICATION", "x1", 1, 6, "fp"),
+            originals[0],
+        )
+        assertEquals("", fx.state.undoOffer!!.patientName)
+    }
 }

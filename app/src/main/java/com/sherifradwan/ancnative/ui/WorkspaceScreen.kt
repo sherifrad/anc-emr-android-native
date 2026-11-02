@@ -1564,7 +1564,7 @@ private fun LabCard(
                     contentDescription = stringResource(R.string.edit_lab),
                     tag = "editLab-${lab.id}",
                     onClick = onEdit,
-                    trailing = { DeleteIconButton(DeletableType.LAB, lab.id, lab.testName, onDelete) },
+                    trailing = { DeleteIconButton(DeletableType.LAB, lab, onDelete) },
                 )
             }
         }
@@ -2262,7 +2262,7 @@ private fun MedicationCard(
                         contentDescription = stringResource(R.string.edit_medication),
                         tag = "editMedication-${med.id}",
                         onClick = onEdit,
-                        trailing = { DeleteIconButton(DeletableType.MEDICATION, med.id, med.name, onDelete) },
+                        trailing = { DeleteIconButton(DeletableType.MEDICATION, med, onDelete) },
                     )
                 }
             }
@@ -2301,7 +2301,7 @@ private fun MedicationCard(
                         contentDescription = stringResource(R.string.edit_medication),
                         tag = "editMedication-${med.id}",
                         onClick = onEdit,
-                        trailing = { DeleteIconButton(DeletableType.MEDICATION, med.id, med.name, onDelete) },
+                        trailing = { DeleteIconButton(DeletableType.MEDICATION, med, onDelete) },
                     )
                 }
             }

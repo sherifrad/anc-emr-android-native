@@ -38,6 +38,7 @@ import com.sherifradwan.ancnative.storage.RestoreRecordCommand
 import com.sherifradwan.ancnative.storage.VaultState
 import com.sherifradwan.ancnative.ui.AncApp
 import com.sherifradwan.ancnative.ui.AncTheme
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -98,6 +99,9 @@ class DeleteUndoUiTest {
     /** In-memory stand-in for the vault: applies a delete/restore command to `state` and returns the receipt. */
     private var failAll = false
 
+    /** While set, storage answers only after the test completes it (lets a test act while a command is in flight). */
+    private var gate: CompletableDeferred<Unit>? = null
+
     private fun commit(cmd: ClinicalCommand): ClinicalCommandOutcome {
         if (failAll) return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.RECORD_NOT_FOUND)
         val undo = cmd as RecordUndoCommand
@@ -136,7 +140,10 @@ class DeleteUndoUiTest {
         )
         coordinator = UndoCoordinator(
             scope = scope,
-            execute = { cmd, _ -> commit(cmd) },
+            execute = { cmd, _ ->
+                gate?.await()
+                commit(cmd)
+            },
             reduce = { state = AncReducer.reduce(state, it) },
             currentState = { state },
             snapshot = { RecordSnapshot(state.patients) },
@@ -395,5 +402,52 @@ class DeleteUndoUiTest {
         compose.runOnIdle { state = AncReducer.reduce(state, AncEvent.OpenWorkspace(patientB.id)) }
         compose.waitForIdle()
         missing("undoBar")
+    }
+
+    @Test
+    fun deleteFailureIsStillShownAfterAnotherPatientIsOpened() {
+        workspace(med)
+        failAll = true
+        val held = CompletableDeferred<Unit>()
+        gate = held
+        openDialog(med)
+        click("deleteConfirm")
+        compose.runOnIdle { state = AncReducer.reduce(state, AncEvent.OpenWorkspace(patientB.id)) }
+        compose.waitForIdle()
+        held.complete(Unit)
+        compose.waitUntil(5_000) { compose.onAllNodes(hasTestTag("deleteMessage"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("deleteMessage", useUnmergedTree = true).assertIsDisplayed()
+        compose.onAllNodes(hasText(patientA.displayName, substring = true), useUnmergedTree = true)
+            .fetchSemanticsNodes().let { assertTrue(it.isNotEmpty()) }
+        compose.onAllNodes(hasText("still in the record", substring = true), useUnmergedTree = true)
+            .fetchSemanticsNodes().let { assertTrue(it.isNotEmpty()) }
+        click("deleteMessageDismiss")
+        missing("deleteMessage")
+    }
+
+    @Test
+    fun medicationEditorDoesNotOpenWhileItsSaveIsBeingUndone() {
+        host(AncRoute.Workspace(patientA.id, med.section))
+        val saved = patientA.medications.first()
+        compose.runOnIdle {
+            coordinator.offerSaveUndo(
+                type = DeletableType.MEDICATION,
+                patientId = patientA.id,
+                recordId = saved.id,
+                receipt = ClinicalCommandReceipt("op", patientA.id, "MEDICATION_CREATE", saved.id, 1, patientA.revision + 1, "fp"),
+                savedRecord = saved,
+            )
+        }
+        compose.waitForIdle()
+        val held = CompletableDeferred<Unit>()
+        gate = held
+        click("undoButton")
+        scrollTo("editMedication-${saved.id}")
+        click("editMedication-${saved.id}")
+        missing("medName")
+        assertTrue(state.route is AncRoute.Workspace)
+        held.complete(Unit)
+        compose.waitUntil(5_000) { compose.onAllNodes(hasTestTag("undoBar"), useUnmergedTree = true).fetchSemanticsNodes().isEmpty() }
+        assertTrue(state.route is AncRoute.Workspace)
     }
 }

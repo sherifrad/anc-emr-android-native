@@ -98,7 +98,7 @@ class UndoCoordinator(
                         action = UndoAction.DELETE,
                         label = adapter.label(record),
                         phase = UndoPhase.READY,
-                        patientName = patient.displayName,
+                        patientName = patient.displayName.trim(),
                         recordId = record.id,
                     )
                     reduce(
@@ -111,11 +111,11 @@ class UndoCoordinator(
                     )
                 }
                 is ClinicalCommandOutcome.Rejected -> {
-                    reduce(AncEvent.DeleteFailed(result.failure.toUiError(), patient.id, type, adapter.label(record)))
+                    reduce(AncEvent.DeleteFailed(result.failure.toUiError(), patient.id, type, adapter.label(record), patient.displayName))
                 }
                 ClinicalCommandOutcome.Ambiguous,
                 ClinicalCommandOutcome.Obsolete -> {
-                    reduce(AncEvent.DeleteFailed(SaveUiError.STORAGE_ERROR, patient.id, type, adapter.label(record)))
+                    reduce(AncEvent.DeleteFailed(SaveUiError.STORAGE_ERROR, patient.id, type, adapter.label(record), patient.displayName))
                 }
             }
         }
@@ -131,7 +131,7 @@ class UndoCoordinator(
         val state = currentState()
         if (state.vaultState !is VaultState.Unlocked) return
         val adapter = DeletableRegistry.of<DeletableRecord>(type)
-        val patientName = state.patient(patientId)?.displayName.orEmpty()
+        val patientName = state.patient(patientId)?.displayName?.trim().orEmpty()
         val token = UUID.randomUUID().toString()
         val undoDelete = DeleteRecordCommand(
             type = type,
@@ -174,7 +174,7 @@ class UndoCoordinator(
         scope.launch {
             val currentPatient = currentState().patient(pending.command.patientId)
             if (currentPatient == null) {
-                failUndo(token, SaveUiError.STORAGE_ERROR, pending.command, pending.ambiguous, pending.failures)
+                failUndo(token, offer, SaveUiError.STORAGE_ERROR, pending.command, pending.ambiguous, pending.failures)
                 return@launch
             }
             var cmd = if (pending.ambiguous) {
@@ -203,20 +203,20 @@ class UndoCoordinator(
                     reduce(AncEvent.UndoCommitted(token = token, patients = result.snapshot.patients, notice = notice, patientId = offer.patientId))
                 }
                 is ClinicalCommandOutcome.Rejected -> {
-                    failUndo(token, result.failure.toUiError(), cmd, ambiguous = false, failures = pending.failures)
+                    failUndo(token, offer, result.failure.toUiError(), cmd, ambiguous = false, failures = pending.failures)
                 }
                 ClinicalCommandOutcome.Ambiguous -> {
-                    failUndo(token, SaveUiError.STORAGE_ERROR, cmd, ambiguous = true, failures = pending.failures)
+                    failUndo(token, offer, SaveUiError.STORAGE_ERROR, cmd, ambiguous = true, failures = pending.failures)
                 }
                 ClinicalCommandOutcome.Obsolete -> {
-                    failUndo(token, SaveUiError.STORAGE_ERROR, cmd, ambiguous = false, failures = pending.failures)
+                    failUndo(token, offer, SaveUiError.STORAGE_ERROR, cmd, ambiguous = false, failures = pending.failures)
                 }
             }
         }
     }
 
-    private fun failUndo(token: String, error: SaveUiError, attempted: ClinicalCommand, ambiguous: Boolean, failures: Int) {
-        reduce(AncEvent.UndoFailed(token, error))
+    private fun failUndo(token: String, offer: UndoOffer, error: SaveUiError, attempted: ClinicalCommand, ambiguous: Boolean, failures: Int) {
+        reduce(AncEvent.UndoFailed(token, error, offer))
         val pending = pendingUndo?.takeIf { it.token == token }
         if (pending == null) return
         if (currentState().undoOffer?.token != token) {
