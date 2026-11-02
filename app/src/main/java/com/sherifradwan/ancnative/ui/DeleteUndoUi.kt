@@ -67,12 +67,13 @@ internal fun DeleteIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val recordId = record.id
     val label = DeletableRegistry.of<DeletableRecord>(type).label(record)
     IconButton(
         onClick = onClick,
         modifier = modifier
             .minimumTouchTarget()
-            .testTag("delete-${type.name.lowercase()}-${record.id}"),
+            .testTag("delete-${type.name.lowercase()}-$recordId"),
     ) {
         Icon(
             Icons.Default.Delete,
