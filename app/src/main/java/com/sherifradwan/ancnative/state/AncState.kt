@@ -290,6 +290,14 @@ data class DeleteMessage(
  */
 val DeleteMessageKind.survivesPatientSwitch: Boolean get() = this != DeleteMessageKind.UNDO_BLOCKED
 
+/**
+ * The message left on screen after an unrelated success (new offer, new confirmation, committed delete, started Undo)
+ * for [patientId]. A failure that belongs to another patient is never wiped by it: it goes only by dismiss or by
+ * another failure. A message of this patient, or a "finish your edits" refusal, is cleared as before.
+ */
+internal fun AncState.deleteMessageAfterSuccessFor(patientId: String): DeleteMessage? =
+    deleteMessage?.takeIf { it.patientId != patientId && it.kind.survivesPatientSwitch }
+
 /** The patient a route belongs to, or null for the patient list. */
 fun AncRoute.patientIdOrNull(): String? = when (this) {
     AncRoute.PatientList -> null
@@ -876,12 +884,15 @@ object AncReducer {
                 savePhase = SavePhase.IDLE,
                 saveError = null,
             )
-            is AncEvent.ClinicalValidationFailed -> when (event.recordKind) {
+            is AncEvent.ClinicalValidationFailed -> if (DeletableRegistry.isDeleteOrRestoreKind(event.recordKind)) {
+                // Delete and restore commands (every deletable kind) have no draft, so there is nothing to mark.
+                state
+            } else when (event.recordKind) {
                 ClinicalRecordKind.DATING -> state.copy(datingDraft = state.datingDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
                 ClinicalRecordKind.ULTRASOUND_CREATE, ClinicalRecordKind.ULTRASOUND_UPDATE -> state.copy(ultrasoundDraft = state.ultrasoundDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
                 ClinicalRecordKind.LAB_CREATE, ClinicalRecordKind.LAB_UPDATE -> state.copy(labDraft = state.labDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
                 ClinicalRecordKind.MEDICATION_CREATE, ClinicalRecordKind.MEDICATION_UPDATE -> state.copy(medicationDraft = state.medicationDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
-                // Delete and restore commands (every deletable kind) have no draft, so there is nothing to mark.
+                // Only delete/restore kinds reach here (handled above); a test fails if a new kind is neither.
                 else -> state
             }
             is AncEvent.PatientValidationFailed -> validationFailed(state, event)
@@ -965,7 +976,7 @@ object AncReducer {
                             type = event.type,
                             recordId = event.recordId,
                         ),
-                        deleteMessage = null,
+                        deleteMessage = state.deleteMessageAfterSuccessFor(event.patientId),
                     )
                 }
             }
@@ -988,7 +999,7 @@ object AncReducer {
                 undoOffer = event.offer,
                 deleteConfirmation = null,
                 deleteRunning = false,
-                deleteMessage = null,
+                deleteMessage = state.deleteMessageAfterSuccessFor(event.patientId ?: event.offer?.patientId ?: ""),
                 savedNotice = event.notice != null,
                 notice = event.notice ?: state.notice,
                 noticePatientId = if (event.notice != null) event.patientId else state.noticePatientId,
@@ -1009,7 +1020,7 @@ object AncReducer {
                     )
                 },
             )
-            is AncEvent.UndoOffered -> state.copy(undoOffer = event.offer, deleteMessage = null)
+            is AncEvent.UndoOffered -> state.copy(undoOffer = event.offer, deleteMessage = state.deleteMessageAfterSuccessFor(event.offer.patientId))
             is AncEvent.UndoRequested -> {
                 val offer = state.undoOffer
                 if (offer == null || !state.canRequestUndo(event.token) || state.deleteRunning) {
@@ -1030,7 +1041,7 @@ object AncReducer {
                         )
                     } else {
                         val closed = if (editorOpen && hook != null) hook.closeEditor(state, offer.patientId) else state
-                        closed.copy(undoOffer = offer.copy(phase = UndoPhase.RUNNING), deleteMessage = null)
+                        closed.copy(undoOffer = offer.copy(phase = UndoPhase.RUNNING), deleteMessage = state.deleteMessageAfterSuccessFor(offer.patientId))
                     }
                 }
             }
@@ -1049,7 +1060,10 @@ object AncReducer {
             }
             is AncEvent.UndoFailed -> {
                 val offer = state.undoOffer
-                if (offer != null && offer.token == event.token) {
+                if (state.vaultState !is VaultState.Unlocked) {
+                    // A late failure after a lock must not write into the locked state.
+                    state
+                } else if (offer != null && offer.token == event.token) {
                     state.copy(
                         undoOffer = offer.copy(phase = UndoPhase.READY),
                         saveError = event.error,
@@ -1066,8 +1080,8 @@ object AncReducer {
                 } else if (event.offer != null) {
                     // The offer was dropped (another patient opened, or a new offer replaced it): still say so.
                     val lost = event.offer
+                    // saveError belongs to the open screen's own editor: do not overwrite it with another patient's failure.
                     state.copy(
-                        saveError = event.error,
                         deleteMessage = DeleteMessage(
                             kind = DeleteMessageKind.UNDO_FAILED,
                             patientId = lost.patientId,

@@ -5,6 +5,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasContentDescription
@@ -263,6 +265,25 @@ class DeleteUndoUiTest {
 
     @Test
     fun lab_barDisappearsAfterAboutEightSeconds() = barDisappearsAfterAboutEightSeconds(lab)
+
+    @Test
+    fun undoButtonIsDisabledWhileADeleteRuns() {
+        workspace(med)
+        compose.runOnIdle {
+            state = state.copy(
+                undoOffer = com.sherifradwan.ancnative.state.UndoOffer(
+                    token = "ui-t1", patientId = patientA.id, type = DeletableType.LAB,
+                    action = com.sherifradwan.ancnative.state.UndoAction.DELETE, label = "UiTest 1",
+                    phase = com.sherifradwan.ancnative.state.UndoPhase.READY,
+                ),
+            )
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag("undoButton", useUnmergedTree = true).assertIsEnabled()
+        compose.runOnIdle { state = state.copy(deleteRunning = true) }
+        compose.waitForIdle()
+        compose.onNodeWithTag("undoButton", useUnmergedTree = true).assertIsNotEnabled()
+    }
 
     @Test
     fun deletingAMedicationLeavesLabsAndTheOtherPatientUntouched() {

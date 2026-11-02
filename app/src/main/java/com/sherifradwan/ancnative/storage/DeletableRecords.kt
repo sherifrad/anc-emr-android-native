@@ -46,6 +46,16 @@ object DeletableRegistry {
     fun <T : DeletableRecord> of(type: DeletableType): DeletableRecordAdapter<T> =
         (adapters[type] ?: throw IllegalArgumentException("No adapter registered for $type")) as DeletableRecordAdapter<T>
 
+    /** True for the receipt kinds of every registered delete and restore command (they have no draft). */
+    fun isDeleteOrRestoreKind(kind: ClinicalRecordKind): Boolean =
+        adapters.values.any { it.deleteReceiptKind == kind.name || it.restoreReceiptKind == kind.name }
+
+    /** The record's label, or null when [record] is not of [type]: a mismatch can never throw. */
+    fun labelOrNull(type: DeletableType, record: DeletableRecord): String? {
+        val adapter = adapterFor(record)
+        return if (adapter.type == type) adapter.label(record) else null
+    }
+
     @Suppress("UNCHECKED_CAST")
     fun adapterFor(record: DeletableRecord): DeletableRecordAdapter<DeletableRecord> = when (record) {
         is DemoMedicationRecord -> of(DeletableType.MEDICATION)

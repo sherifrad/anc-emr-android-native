@@ -283,4 +283,24 @@ class DeletableRegistryTest {
         assertEquals("fingerprintTag must be distinct", tags.size, tags.toSet().size)
         assertEquals("receipt kinds must be distinct", kinds.size, kinds.toSet().size)
     }
+
+    @Test
+    fun deleteAndRestoreKindsAreExactlyTheRegistryReceiptKinds() {
+        val expected = DeletableRegistry.all().flatMap { listOf(it.deleteReceiptKind, it.restoreReceiptKind) }.toSet()
+        val actual = ClinicalRecordKind.values().filter { DeletableRegistry.isDeleteOrRestoreKind(it) }.map { it.name }.toSet()
+        assertEquals(expected, actual)
+        // Every other kind is an edit kind the validation-failed branch names; DATING and the *_CREATE / *_UPDATE kinds.
+        ClinicalRecordKind.values().filter { it.name !in expected }.forEach {
+            assertTrue(it.name, it == ClinicalRecordKind.DATING || it.name.endsWith("_CREATE") || it.name.endsWith("_UPDATE"))
+        }
+    }
+
+    @Test
+    fun labelOfARecordOfAnotherTypeIsNullInsteadOfThrowing() {
+        val med = DeleteFixtures.med()
+        val lab = DeleteFixtures.lab()
+        assertTrue(DeletableRegistry.labelOrNull(DeletableType.MEDICATION, med) != null)
+        assertEquals(null, DeletableRegistry.labelOrNull(DeletableType.LAB, med))
+        assertEquals(null, DeletableRegistry.labelOrNull(DeletableType.MEDICATION, lab))
+    }
 }

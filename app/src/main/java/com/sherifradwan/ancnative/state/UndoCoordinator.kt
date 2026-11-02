@@ -174,6 +174,7 @@ class UndoCoordinator(
         scope.launch {
             val currentPatient = currentState().patient(pending.command.patientId)
             if (currentPatient == null) {
+                if (!sessionStillCurrent(epoch)) return@launch
                 failUndo(token, offer, SaveUiError.STORAGE_ERROR, pending.command, pending.ambiguous, pending.failures)
                 return@launch
             }

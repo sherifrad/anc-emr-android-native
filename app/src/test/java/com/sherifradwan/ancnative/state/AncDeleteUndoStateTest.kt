@@ -527,6 +527,51 @@ class AncDeleteUndoStateTest {
         }
     }
 
+    private fun failureOfP1(kind: Kind) = DeleteMessage(
+        DeleteMessageKind.DELETE_FAILED, "p1", kind.type, kind.label, UndoAction.DELETE, SaveUiError.STORAGE_ERROR, "Patient One",
+    )
+
+    @Test
+    fun anotherPatientsFailureSurvivesUnrelatedSuccessesAndOnlyDismissOrAFailureClearsIt() {
+        for (kind in kinds) {
+            val onP2 = base().copy(route = AncRoute.Workspace("p2", WorkspaceSection.MEDICATIONS), deleteMessage = failureOfP1(kind))
+            val p2offer = offer(kind, "t9").copy(patientId = "p2")
+            assertEquals(kind.type.name, failureOfP1(kind), reduce(onP2, AncEvent.UndoOffered(p2offer)).deleteMessage)
+            assertEquals(failureOfP1(kind), reduce(onP2.copy(patients = listOf(patient().copy(id = "p2"))), AncEvent.RequestDelete("p2", kind.type, "r1")).deleteMessage)
+            assertEquals(failureOfP1(kind), reduce(onP2, AncEvent.DeleteCommitted(onP2.patients, p2offer, null, "p2")).deleteMessage)
+            val withOffer = onP2.copy(undoOffer = p2offer)
+            assertEquals(failureOfP1(kind), reduce(withOffer, AncEvent.UndoRequested("t9")).deleteMessage)
+            // The message of the open patient, and a "finish your edits" refusal, are still cleared by a success.
+            val own = onP2.copy(deleteMessage = failureOfP1(kind).copy(patientId = "p2"))
+            assertNull(reduce(own, AncEvent.UndoOffered(p2offer)).deleteMessage)
+            val blocked = onP2.copy(deleteMessage = failureOfP1(kind).copy(kind = DeleteMessageKind.UNDO_BLOCKED))
+            assertNull(reduce(blocked, AncEvent.UndoOffered(p2offer)).deleteMessage)
+            assertNull(reduce(onP2, AncEvent.DismissDeleteMessage).deleteMessage)
+        }
+    }
+
+    @Test
+    fun undoFailureIsIgnoredWhileTheVaultIsLocked() {
+        for (kind in kinds) {
+            val locked = base().copy(vaultState = VaultState.Locked)
+            val lost = offer(kind, "t1", phase = UndoPhase.RUNNING)
+            assertEquals(locked, reduce(locked, AncEvent.UndoFailed("t1", SaveUiError.STORAGE_ERROR, lost)))
+            val withOffer = locked.copy(undoOffer = lost)
+            assertEquals(withOffer, reduce(withOffer, AncEvent.UndoFailed("t1", SaveUiError.STORAGE_ERROR)))
+        }
+    }
+
+    @Test
+    fun droppedOfferUndoFailureDoesNotOverwriteTheOpenScreensSaveError() {
+        for (kind in kinds) {
+            val onOther = base().copy(route = AncRoute.Workspace("p2", WorkspaceSection.MEDICATIONS), saveError = SaveUiError.CASE_ID_CONFLICT)
+            val lost = offer(kind, "t1", phase = UndoPhase.RUNNING)
+            val failed = reduce(onOther, AncEvent.UndoFailed("t1", SaveUiError.STORAGE_ERROR, lost))
+            assertEquals(SaveUiError.CASE_ID_CONFLICT, failed.saveError)
+            assertEquals(DeleteMessageKind.UNDO_FAILED, failed.deleteMessage?.kind)
+        }
+    }
+
     @Test
     fun undoRequestRefusedWhileADeleteRuns() {
         for (kind in kinds) {

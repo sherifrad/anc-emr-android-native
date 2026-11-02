@@ -68,7 +68,8 @@ internal fun DeleteIconButton(
     modifier: Modifier = Modifier,
 ) {
     val recordId = record.id
-    val label = DeletableRegistry.of<DeletableRecord>(type).label(record)
+    // A type/record mismatch draws nothing instead of throwing while the screen is composed.
+    val label = DeletableRegistry.labelOrNull(type, record) ?: return
     IconButton(
         onClick = onClick,
         modifier = modifier
@@ -129,7 +130,7 @@ fun UndoBarHost(state: AncState, onEvent: (AncEvent) -> Unit) {
     if (message == null && offer == null) return
     Column {
         if (message != null) DeleteMessageBar(message, onEvent)
-        if (offer != null) UndoOfferBar(offer, onEvent)
+        if (offer != null) UndoOfferBar(offer, state.deleteRunning, onEvent)
     }
 }
 
@@ -174,7 +175,7 @@ private fun DeleteMessageBar(message: DeleteMessage, onEvent: (AncEvent) -> Unit
 }
 
 @Composable
-private fun UndoOfferBar(offer: UndoOffer, onEvent: (AncEvent) -> Unit) {
+private fun UndoOfferBar(offer: UndoOffer, deleteRunning: Boolean, onEvent: (AncEvent) -> Unit) {
     val running = offer.phase == UndoPhase.RUNNING
     val typeLabel = stringResource(offer.type.labelResource())
     val message = when (offer.action) {
@@ -212,7 +213,7 @@ private fun UndoOfferBar(offer: UndoOffer, onEvent: (AncEvent) -> Unit) {
             }
             TextButton(
                 onClick = { onEvent(AncEvent.UndoRequested(offer.token)) },
-                enabled = !running,
+                enabled = !running && !deleteRunning,
                 modifier = Modifier.minimumTouchTarget().testTag("undoButton"),
             ) {
                 Text(stringResource(R.string.undo))
