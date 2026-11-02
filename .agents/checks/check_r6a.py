@@ -28,8 +28,7 @@ def has_all(src, names):
 
 def main():
     cmds = read(MAIN / "storage/ClinicalCommands.kt")
-    miss = has_all(cmds, ["DeleteMedicationCommand", "RestoreMedicationCommand", "DeleteLabInvestigationCommand",
-                          "RestoreLabInvestigationCommand", "MEDICATION_DELETE", "MEDICATION_RESTORE", "LAB_DELETE",
+    miss = has_all(cmds, ["DeleteRecordCommand", "RestoreRecordCommand", "MEDICATION_DELETE", "MEDICATION_RESTORE", "LAB_DELETE",
                           "LAB_RESTORE"])
     # the content hashes moved to storage/DeletableRecords.kt in round 6b1
     miss += has_all(read(MAIN / "storage/DeletableRecords.kt"), ["medicationContentHash", "labContentHash"])
@@ -37,8 +36,8 @@ def main():
     dao = read(MAIN / "storage/RecordsDao.kt")
     miss = has_all(dao, ["deleteMedication", "deleteLabInvestigation", "latestClinicalReceiptForRecord"])
     record("S301 DAO delete and latest-receipt queries present", not miss, "missing " + ", ".join(miss))
-    st = read(MAIN / "state/AncState.kt") + read(MAIN / "state/AncViewModel.kt")
-    miss = has_all(st, ["RequestDeleteMedication", "RequestDeleteLab", "ConfirmDelete", "UndoRequested", "UndoExpired",
+    st = read(MAIN / "state/AncState.kt") + read(MAIN / "state/AncViewModel.kt") + read(MAIN / "state/UndoCoordinator.kt")
+    miss = has_all(st, ["RequestDelete", "ConfirmDelete", "UndoRequested", "UndoExpired",
                         "undoOffer", "deleteConfirmation", "8_000"])
     record("S302 delete/undo events, state fields and 8 s timer present", not miss, "missing " + ", ".join(miss))
     problems = []

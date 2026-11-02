@@ -13,6 +13,7 @@ import com.sherifradwan.ancnative.model.MEDICATION_STATUS_NON_COMPLIANT
 import com.sherifradwan.ancnative.model.PatientValidationError
 import com.sherifradwan.ancnative.model.effectiveMedicationStatus
 import com.sherifradwan.ancnative.storage.ClinicalRecordKind
+import com.sherifradwan.ancnative.storage.DeletableType
 import com.sherifradwan.ancnative.storage.VaultState
 
 enum class AttachmentError { SAVE_FAILED, DELETE_FAILED }
@@ -203,33 +204,19 @@ enum class SavedNotice {
     DATING,
     ULTRASOUND,
     LABORATORY,
-    MEDICATIONS;
-
-    companion object {
-        val MEDICATION_DELETED = MEDICATIONS
-        val LAB_DELETED = LABORATORY
-        val MEDICATION_RESTORED = MEDICATIONS
-        val LAB_RESTORED = LABORATORY
-        val MEDICATION_SAVE_UNDONE = MEDICATIONS
-    }
+    MEDICATIONS,
 }
 enum class PatientEditorKind { PROFILE, HISTORIES, PREGNANCY, STATUS }
 
-enum class DeletionKind {
-    MED,
-    LAB,
-}
-
 data class PendingDeletion(
     val patientId: String,
-    val kind: DeletionKind,
+    val type: DeletableType,
     val recordId: String,
 )
 
-enum class UndoKind {
-    DELETE_MED,
-    DELETE_LAB,
-    SAVE_MED,
+enum class UndoAction {
+    DELETE,
+    SAVE,
 }
 
 enum class UndoPhase {
@@ -240,7 +227,8 @@ enum class UndoPhase {
 data class UndoOffer(
     val token: String,
     val patientId: String,
-    val kind: UndoKind,
+    val type: DeletableType,
+    val action: UndoAction,
     val label: String,
     val phase: UndoPhase = UndoPhase.READY,
 )
@@ -662,8 +650,7 @@ sealed interface AncEvent {
     data class DraftRecoveryFound(val prompt: DraftRecoveryPrompt) : AncEvent
     data object AcceptDraftRecovery : AncEvent
     data object DiscardDraftRecovery : AncEvent
-    data class RequestDeleteMedication(val patientId: String, val medicationId: String) : AncEvent
-    data class RequestDeleteLab(val patientId: String, val labId: String) : AncEvent
+    data class RequestDelete(val patientId: String, val type: DeletableType, val recordId: String) : AncEvent
     data object CancelDelete : AncEvent
     data object ConfirmDelete : AncEvent
     data class DeleteCommitted(
@@ -672,6 +659,7 @@ sealed interface AncEvent {
         val notice: SavedNotice? = null,
     ) : AncEvent
     data class DeleteFailed(val error: SaveUiError? = null) : AncEvent
+    data class UndoOffered(val offer: UndoOffer) : AncEvent
     data class UndoRequested(val token: String) : AncEvent
     data class UndoCommitted(
         val token: String,
@@ -839,7 +827,7 @@ object AncReducer {
                 applyDraftRecord(state, prompt.record).copy(draftRecoveryPrompt = null)
             }
             AncEvent.DiscardDraftRecovery -> state.copy(draftRecoveryPrompt = null)
-            is AncEvent.RequestDeleteMedication -> {
+            is AncEvent.RequestDelete -> {
                 val patient = state.patient(event.patientId)
                 if (patient == null || patient.status == "archived" || state.hasDirtyDraft || state.savePhase.blocksEditing()) {
                     state
@@ -847,22 +835,8 @@ object AncReducer {
                     state.copy(
                         deleteConfirmation = PendingDeletion(
                             patientId = event.patientId,
-                            kind = DeletionKind.MED,
-                            recordId = event.medicationId,
-                        ),
-                    )
-                }
-            }
-            is AncEvent.RequestDeleteLab -> {
-                val patient = state.patient(event.patientId)
-                if (patient == null || patient.status == "archived" || state.hasDirtyDraft || state.savePhase.blocksEditing()) {
-                    state
-                } else {
-                    state.copy(
-                        deleteConfirmation = PendingDeletion(
-                            patientId = event.patientId,
-                            kind = DeletionKind.LAB,
-                            recordId = event.labId,
+                            type = event.type,
+                            recordId = event.recordId,
                         ),
                     )
                 }
@@ -871,23 +845,13 @@ object AncReducer {
             AncEvent.ConfirmDelete -> {
                 val pending = state.deleteConfirmation ?: return state
                 if (state.hasDirtyDraft || state.savePhase.blocksEditing()) return state
-                var next = state.copy(deleteConfirmation = null)
-                if (pending.kind == DeletionKind.MED && state.medicationDraft?.medicationId == pending.recordId) {
-                    next = next.copy(
-                        medicationDraft = null,
-                        route = if (state.route is AncRoute.MedicationEditor) {
-                            AncRoute.Workspace(pending.patientId, WorkspaceSection.MEDICATIONS)
-                        } else state.route,
-                    )
-                } else if (pending.kind == DeletionKind.LAB && state.labDraft?.labId == pending.recordId) {
-                    next = next.copy(
-                        labDraft = null,
-                        route = if (state.route is AncRoute.LabEditor) {
-                            AncRoute.Workspace(pending.patientId, WorkspaceSection.LABORATORY)
-                        } else state.route,
-                    )
+                val hook = EditorHooks.of(pending.type)
+                val next = if (hook != null && hook.isOpenFor(state, pending.recordId)) {
+                    hook.closeEditor(state, pending.patientId)
+                } else {
+                    state
                 }
-                next
+                next.copy(deleteConfirmation = null)
             }
             is AncEvent.DeleteCommitted -> state.copy(
                 patients = event.patients,
@@ -900,6 +864,7 @@ object AncReducer {
                 deleteConfirmation = null,
                 saveError = event.error,
             )
+            is AncEvent.UndoOffered -> state.copy(undoOffer = event.offer)
             is AncEvent.UndoRequested -> {
                 if (state.canRequestUndo(event.token)) {
                     state.copy(undoOffer = state.undoOffer!!.copy(phase = UndoPhase.RUNNING))
@@ -908,21 +873,15 @@ object AncReducer {
                 }
             }
             is AncEvent.UndoCommitted -> {
-                var nextDraft = state.medicationDraft
-                // A create draft has no record revision of its own, so it follows the patient revision
-                // whether blank or already edited; drafts of existing records are left untouched.
-                if (nextDraft != null && nextDraft.baseMedicationRevision == null) {
-                    val p = event.patients.firstOrNull { it.id == nextDraft.patientId }
-                    if (p != null) {
-                        nextDraft = nextDraft.copy(basePatientRevision = p.revision)
-                    }
+                var nextState = state
+                for (hook in EditorHooks.all()) {
+                    nextState = hook.rebaseCreateDraft(nextState, event.patients)
                 }
-                state.copy(
+                nextState.copy(
                     patients = event.patients,
-                    undoOffer = if (state.undoOffer?.token == event.token) null else state.undoOffer,
-                    medicationDraft = nextDraft,
+                    undoOffer = if (nextState.undoOffer?.token == event.token) null else nextState.undoOffer,
                     savedNotice = event.notice != null,
-                    notice = event.notice ?: state.notice,
+                    notice = event.notice ?: nextState.notice,
                 )
             }
             is AncEvent.UndoFailed -> {

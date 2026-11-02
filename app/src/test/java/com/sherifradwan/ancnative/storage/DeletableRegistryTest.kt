@@ -257,38 +257,6 @@ class DeletableRegistryTest {
     }
 
     @Test
-    fun sourceCompatibleFactoriesBuildTheGenericCommands() {
-        val med = DeleteFixtures.medication
-        val medDelete = DeleteMedicationCommand(
-            editorSessionId = "s1", operationUuid = DeleteFixtures.DELETE_OP, patientId = "patient-1",
-            expectedPatientRevision = 4, medicationId = "med-1", expectedMedicationRevision = 3,
-            deletedContentHash = med.goldenHash,
-        )
-        assertEquals(med.delete().copy(editorSessionId = "s1"), medDelete)
-        assertEquals(med.goldenDeleteFingerprint, medDelete.computeFingerprint())
-        val medRestore = RestoreMedicationCommand(
-            operationUuid = DeleteFixtures.RESTORE_OP, patientId = "patient-1", expectedPatientRevision = 5,
-            record = DeleteFixtures.med(), sourceDelete = medDelete,
-        )
-        assertEquals(med.restore(source = medDelete), medRestore)
-        assertEquals(med.goldenRestoreFingerprint, medRestore.computeFingerprint())
-
-        val lab = DeleteFixtures.laboratory
-        val labDelete = DeleteLabInvestigationCommand(
-            operationUuid = DeleteFixtures.DELETE_OP, patientId = "patient-1", expectedPatientRevision = 4,
-            labId = "lab-1", expectedLabRevision = 3, deletedContentHash = lab.goldenHash,
-        )
-        assertEquals(lab.delete(), labDelete)
-        assertEquals(lab.goldenDeleteFingerprint, labDelete.computeFingerprint())
-        val labRestore = RestoreLabInvestigationCommand(
-            operationUuid = DeleteFixtures.RESTORE_OP, patientId = "patient-1", expectedPatientRevision = 5,
-            record = DeleteFixtures.lab(), sourceDelete = labDelete,
-        )
-        assertEquals(lab.restore(source = labDelete), labRestore)
-        assertEquals(lab.goldenRestoreFingerprint, labRestore.computeFingerprint())
-    }
-
-    @Test
     fun commandsOfDifferentTypesNeverShareAFingerprint() {
         val med = DeleteFixtures.medication
         val lab = DeleteFixtures.laboratory
