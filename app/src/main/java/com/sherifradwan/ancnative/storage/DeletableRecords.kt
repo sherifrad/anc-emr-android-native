@@ -4,6 +4,7 @@ import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoMedicationRecord
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
+import com.sherifradwan.ancnative.model.DemoVisit
 import com.sherifradwan.ancnative.state.SavedNotice
 import com.sherifradwan.ancnative.state.WorkspaceSection
 
@@ -11,6 +12,7 @@ enum class DeletableType {
     MEDICATION,
     LAB,
     ULTRASOUND,
+    VISIT,
 }
 
 interface DeletableRecord {
@@ -41,6 +43,7 @@ object DeletableRegistry {
         MedicationDeleteAdapter,
         LabDeleteAdapter,
         UltrasoundDeleteAdapter,
+        VisitDeleteAdapter,
     ).associateBy { it.type }
 
     fun all(): List<DeletableRecordAdapter<*>> = adapters.values.toList()
@@ -64,6 +67,7 @@ object DeletableRegistry {
         is DemoMedicationRecord -> of(DeletableType.MEDICATION)
         is DemoLabInvestigation -> of(DeletableType.LAB)
         is DemoUltrasoundScan -> of(DeletableType.ULTRASOUND)
+        is DemoVisit -> of(DeletableType.VISIT)
         else -> throw IllegalArgumentException("Unknown record kind: ${record::class}")
     }
 }
@@ -76,3 +80,5 @@ fun medicationContentHash(record: DemoMedicationRecord): String = contentHash(re
 fun labContentHash(record: DemoLabInvestigation): String = contentHash(record)
 
 fun ultrasoundContentHash(record: DemoUltrasoundScan): String = contentHash(record)
+
+fun visitContentHash(record: DemoVisit): String = contentHash(record)

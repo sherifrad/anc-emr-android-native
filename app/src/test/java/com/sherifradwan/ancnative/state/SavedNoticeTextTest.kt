@@ -30,6 +30,9 @@ class SavedNoticeTextTest {
         SavedNotice.ULTRASOUND_DELETED to R.string.ultrasound_deleted,
         SavedNotice.ULTRASOUND_RESTORED to R.string.ultrasound_restored,
         SavedNotice.ULTRASOUND_SAVE_UNDONE to R.string.ultrasound_save_undone,
+        SavedNotice.VISIT_DELETED to R.string.visit_deleted,
+        SavedNotice.VISIT_RESTORED to R.string.visit_restored,
+        SavedNotice.VISIT_SAVE_UNDONE to R.string.visit_save_undone,
     )
 
     @Test
@@ -47,7 +50,7 @@ class SavedNoticeTextTest {
 
     @Test
     fun deleteRestoreAndSaveUndoNeverReadAsASave() {
-        val saved = setOf(R.string.medication_saved, R.string.lab_saved, R.string.ultrasound_saved)
+        val saved = setOf(R.string.medication_saved, R.string.lab_saved, R.string.ultrasound_saved, R.string.visit_saved)
         for (type in DeletableType.values()) {
             val adapter = DeletableRegistry.of<com.sherifradwan.ancnative.storage.DeletableRecord>(type)
             val three = listOf(adapter.deletedNotice, adapter.restoredNotice, adapter.saveUndoneNotice)
@@ -57,6 +60,7 @@ class SavedNoticeTextTest {
                 assertNotEquals(type.name, SavedNotice.MEDICATIONS, n)
                 assertNotEquals(type.name, SavedNotice.LABORATORY, n)
                 assertNotEquals(type.name, SavedNotice.ULTRASOUND, n)
+                assertNotEquals(type.name, SavedNotice.VISIT, n)
             }
         }
     }

@@ -93,7 +93,7 @@ data class SaveVisitCommand(
             val patient = state.patient(draft.patientId)
                 ?: return SavePreparation.Rejected(setOf(DraftError.SAVE_FAILED))
             val existing = draft.visitId?.let { id -> patient.visits.firstOrNull { it.id == id } }
-            if (draft.visitId != null && (existing == null || existing.revision != draft.baseRevision)) {
+            if (draft.visitId != null && (existing == null || existing.revision != draft.baseRevision?.toLong())) {
                 return SavePreparation.Rejected(setOf(DraftError.STALE_REVISION))
             }
 
@@ -213,6 +213,7 @@ internal class SaveCoordinator(
 internal fun DemoPatient.withCommittedVisit(command: SaveVisitCommand, revision: Int): DemoPatient {
     val visit = DemoVisit(
         id = command.visitId,
+        patientId = command.patientId,
         date = command.date,
         bloodPressure = command.bloodPressure,
         weight = command.weight,

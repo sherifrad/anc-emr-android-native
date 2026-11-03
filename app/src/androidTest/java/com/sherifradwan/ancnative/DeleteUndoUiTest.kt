@@ -21,6 +21,7 @@ import com.sherifradwan.ancnative.model.DemoFixtures
 import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoMedicationRecord
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
+import com.sherifradwan.ancnative.model.DemoVisit
 import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
 import com.sherifradwan.ancnative.model.codex.ClinicalCodexRepository
 import com.sherifradwan.ancnative.state.AncEvent
@@ -77,6 +78,7 @@ class DeleteUndoUiTest {
     private val med = Kind(DeletableType.MEDICATION, WorkspaceSection.MEDICATIONS, "medication-", "ui-med-1")
     private val lab = Kind(DeletableType.LAB, WorkspaceSection.LABORATORY, "lab-", "ui-lab-1")
     private val us = Kind(DeletableType.ULTRASOUND, WorkspaceSection.ULTRASOUND, "ultrasound-", "ui-us-1")
+    private val visitKind = Kind(DeletableType.VISIT, WorkspaceSection.VISITS, "visit-", "ui-visit-1")
 
     private fun medication(patientId: String, n: Int) = DemoMedicationRecord(
         id = "ui-med-$n", patientId = patientId, name = "UiDrug $n", dosage = "${n}00 mg", route = "Oral",
@@ -98,17 +100,24 @@ class DeleteUndoUiTest {
         imageUris = emptyList(), revision = 1,
     )
 
+    private fun visitRecord(patientId: String, n: Int) = DemoVisit(
+        id = "ui-visit-$n", patientId = patientId, date = "2026-03-0$n", bloodPressure = "120/80",
+        weight = "65 kg", findings = "Visit $n", notes = null, linkedUltrasoundId = null, revision = 1,
+    )
+
     private val base = DemoFixtures.patients.first()
     private val patientA = base.copy(
         medications = listOf(medication(base.id, 1), medication(base.id, 2)),
         labInvestigations = listOf(labResult(base.id, 1), labResult(base.id, 2)),
         ultrasoundScans = listOf(ultrasound(base.id, 1), ultrasound(base.id, 2)),
+        visits = listOf(visitRecord(base.id, 1), visitRecord(base.id, 2)),
         status = "active",
     )
     private val patientB = DemoFixtures.patients[1].copy(
         medications = listOf(medication(DemoFixtures.patients[1].id, 1)),
         labInvestigations = listOf(labResult(DemoFixtures.patients[1].id, 1)),
         ultrasoundScans = listOf(ultrasound(DemoFixtures.patients[1].id, 1)),
+        visits = listOf(visitRecord(DemoFixtures.patients[1].id, 1)),
     )
 
     /** In-memory stand-in for the vault: applies a delete/restore command to `state` and returns the receipt. */
@@ -126,11 +135,13 @@ class DeleteUndoUiTest {
                 DeletableType.MEDICATION -> patient.copy(medications = patient.medications.filterNot { it.id == undo.recordId })
                 DeletableType.LAB -> patient.copy(labInvestigations = patient.labInvestigations.filterNot { it.id == undo.recordId })
                 DeletableType.ULTRASOUND -> patient.copy(ultrasoundScans = patient.ultrasoundScans.filterNot { it.id == undo.recordId })
+                DeletableType.VISIT -> patient.copy(visits = patient.visits.filterNot { it.id == undo.recordId })
             }
             is RestoreRecordCommand -> when (val record = undo.record) {
                 is DemoMedicationRecord -> patient.copy(medications = patient.medications + record)
                 is DemoLabInvestigation -> patient.copy(labInvestigations = patient.labInvestigations + record)
                 is DemoUltrasoundScan -> patient.copy(ultrasoundScans = patient.ultrasoundScans + record)
+                is DemoVisit -> patient.copy(visits = patient.visits + record)
                 else -> error("unexpected record ${record::class}")
             }
         }.copy(revision = patient.revision + 1)
@@ -292,6 +303,18 @@ class DeleteUndoUiTest {
 
     @Test
     fun ultrasound_barDisappearsAfterAboutEightSeconds() = barDisappearsAfterAboutEightSeconds(us)
+
+    @Test
+    fun visit_deleteConfirmRemovesCardAndShowsUndoBar() = deleteConfirmsRemovesCardAndShowsUndoBar(visitKind)
+
+    @Test
+    fun visit_cancelKeepsTheCard() = cancelKeepsTheCard(visitKind)
+
+    @Test
+    fun visit_undoRestoresTheCard() = undoRestoresTheCard(visitKind)
+
+    @Test
+    fun visit_barDisappearsAfterAboutEightSeconds() = barDisappearsAfterAboutEightSeconds(visitKind)
 
     @Test
     fun undoButtonIsDisabledWhileADeleteRuns() {

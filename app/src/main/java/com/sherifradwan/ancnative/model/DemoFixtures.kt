@@ -56,6 +56,7 @@ object DemoFixtures {
             visits = listOf(
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000101",
+                    patientId = "10000000-0000-4000-8000-000000000001",
                     date = "2026-03-07",
                     bloodPressure = "110/70",
                     weight = "63 kg",
@@ -66,6 +67,7 @@ object DemoFixtures {
                 ),
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000102",
+                    patientId = "10000000-0000-4000-8000-000000000001",
                     date = "2026-04-04",
                     bloodPressure = "112/72",
                     weight = "64 kg",
@@ -77,6 +79,7 @@ object DemoFixtures {
                 ),
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000103",
+                    patientId = "10000000-0000-4000-8000-000000000001",
                     date = "2026-05-02",
                     bloodPressure = "114/72",
                     weight = "65.5 kg",
@@ -87,6 +90,7 @@ object DemoFixtures {
                 ),
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000104",
+                    patientId = "10000000-0000-4000-8000-000000000001",
                     date = "2026-05-30",
                     bloodPressure = "115/74",
                     weight = "67.5 kg",
@@ -98,6 +102,7 @@ object DemoFixtures {
                 ),
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000105",
+                    patientId = "10000000-0000-4000-8000-000000000001",
                     date = "2026-06-27",
                     bloodPressure = "118/76",
                     weight = "69.5 kg",
@@ -108,6 +113,7 @@ object DemoFixtures {
                 ),
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000106",
+                    patientId = "10000000-0000-4000-8000-000000000001",
                     date = "2026-07-25",
                     bloodPressure = "120/78",
                     weight = "71.5 kg",
@@ -118,6 +124,7 @@ object DemoFixtures {
                 ),
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000107",
+                    patientId = "10000000-0000-4000-8000-000000000001",
                     date = "2026-08-22",
                     bloodPressure = "122/80",
                     weight = "73.5 kg",
@@ -129,6 +136,7 @@ object DemoFixtures {
                 ),
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000108",
+                    patientId = "10000000-0000-4000-8000-000000000001",
                     date = "2026-09-19",
                     bloodPressure = "120/78",
                     weight = "75.0 kg",
@@ -139,6 +147,7 @@ object DemoFixtures {
                 ),
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000109",
+                    patientId = "10000000-0000-4000-8000-000000000001",
                     date = "2026-10-03",
                     bloodPressure = "124/80",
                     weight = "76.2 kg",
@@ -150,6 +159,7 @@ object DemoFixtures {
                 ),
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000110",
+                    patientId = "10000000-0000-4000-8000-000000000001",
                     date = "2026-10-12",
                     bloodPressure = "120/78",
                     weight = "74.5 kg",
@@ -429,6 +439,7 @@ object DemoFixtures {
             visits = listOf(
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000002",
+                    patientId = "10000000-0000-4000-8000-000000000002",
                     date = "2026-04-10",
                     bloodPressure = "110/70",
                     weight = "62 kg",
@@ -439,6 +450,7 @@ object DemoFixtures {
                 ),
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000003",
+                    patientId = "10000000-0000-4000-8000-000000000002",
                     date = "2026-05-08",
                     bloodPressure = "115/72",
                     weight = "63.5 kg",
@@ -450,6 +462,7 @@ object DemoFixtures {
                 ),
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000004",
+                    patientId = "10000000-0000-4000-8000-000000000002",
                     date = "2026-07-03",
                     bloodPressure = "118/75",
                     weight = "66 kg",
@@ -461,6 +474,7 @@ object DemoFixtures {
                 ),
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000005",
+                    patientId = "10000000-0000-4000-8000-000000000002",
                     date = "2026-08-28",
                     bloodPressure = "122/78",
                     weight = "70 kg",
@@ -471,6 +485,7 @@ object DemoFixtures {
                 ),
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000006",
+                    patientId = "10000000-0000-4000-8000-000000000002",
                     date = "2026-10-10",
                     bloodPressure = "125/80",
                     weight = "73 kg",
@@ -726,6 +741,7 @@ object DemoFixtures {
             visits = listOf(
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000007",
+                    patientId = "10000000-0000-4000-8000-000000000003",
                     date = "2026-10-01",
                     bloodPressure = null,
                     weight = null,
@@ -849,6 +865,7 @@ object DemoFixtures {
             visits = listOf(
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000008",
+                    patientId = "10000000-0000-4000-8000-000000000004",
                     date = "2026-03-22",
                     bloodPressure = "118/74",
                     weight = "64 kg",
@@ -860,6 +877,7 @@ object DemoFixtures {
                 ),
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000009",
+                    patientId = "10000000-0000-4000-8000-000000000004",
                     date = "2026-04-26",
                     bloodPressure = "120/76",
                     weight = "65.5 kg",
@@ -871,6 +889,7 @@ object DemoFixtures {
                 ),
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000010",
+                    patientId = "10000000-0000-4000-8000-000000000004",
                     date = "2026-05-24",
                     bloodPressure = "122/78",
                     weight = "67 kg",
@@ -882,6 +901,7 @@ object DemoFixtures {
                 ),
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000011",
+                    patientId = "10000000-0000-4000-8000-000000000004",
                     date = "2026-06-21",
                     bloodPressure = "124/80",
                     weight = "69 kg",
@@ -893,6 +913,7 @@ object DemoFixtures {
                 ),
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000012",
+                    patientId = "10000000-0000-4000-8000-000000000004",
                     date = "2026-07-19",
                     bloodPressure = "126/82",
                     weight = "71.5 kg",
@@ -904,6 +925,7 @@ object DemoFixtures {
                 ),
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000013",
+                    patientId = "10000000-0000-4000-8000-000000000004",
                     date = "2026-08-16",
                     bloodPressure = "128/82",
                     weight = "74 kg",
@@ -915,6 +937,7 @@ object DemoFixtures {
                 ),
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000014",
+                    patientId = "10000000-0000-4000-8000-000000000004",
                     date = "2026-09-13",
                     bloodPressure = "130/84",
                     weight = "76.5 kg",
@@ -926,6 +949,7 @@ object DemoFixtures {
                 ),
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000015",
+                    patientId = "10000000-0000-4000-8000-000000000004",
                     date = "2026-10-04",
                     bloodPressure = "132/85",
                     weight = "78 kg",
@@ -937,6 +961,7 @@ object DemoFixtures {
                 ),
                 DemoVisit(
                     id = "20000000-0000-4000-8000-000000000016",
+                    patientId = "10000000-0000-4000-8000-000000000004",
                     date = "2026-10-18",
                     bloodPressure = "130/84",
                     weight = "79.5 kg",

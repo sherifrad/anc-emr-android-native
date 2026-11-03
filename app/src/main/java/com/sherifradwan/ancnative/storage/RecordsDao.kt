@@ -291,6 +291,12 @@ interface RecordsDao {
     @Query("DELETE FROM ultrasound_scans WHERE id = :id AND patient_id = :patientId AND revision = :expectedRevision")
     suspend fun deleteUltrasoundScan(id: String, patientId: String, expectedRevision: Long): Int
 
+    @Query("DELETE FROM save_receipts WHERE visit_id = :visitId")
+    suspend fun deleteSaveReceiptsForVisit(visitId: String): Int
+
+    @Query("DELETE FROM visits WHERE id = :id AND patient_id = :patientId AND revision = :expectedRevision")
+    suspend fun deleteVisit(id: String, patientId: String, expectedRevision: Long): Int
+
     @Query("SELECT COUNT(*) FROM patient_dating")
     suspend fun patientDatingCount(): Int
 

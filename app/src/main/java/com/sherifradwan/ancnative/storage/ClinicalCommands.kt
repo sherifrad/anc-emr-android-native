@@ -25,6 +25,8 @@ enum class ClinicalRecordKind {
     LAB_RESTORE,
     ULTRASOUND_DELETE,
     ULTRASOUND_RESTORE,
+    VISIT_DELETE,
+    VISIT_RESTORE,
 }
 
 enum class ClinicalCommandFailure {

@@ -7,6 +7,7 @@ import com.sherifradwan.ancnative.model.DemoFixtures
 import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoMedicationRecord
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
+import com.sherifradwan.ancnative.model.DemoVisit
 import java.security.SecureRandom
 import java.util.UUID
 import kotlinx.coroutines.runBlocking
@@ -31,7 +32,7 @@ class ClinicalDeleteRestoreDbTest(private val kindName: String) {
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun kinds(): List<String> = listOf("medication", "lab", "ultrasound")
+        fun kinds(): List<String> = listOf("medication", "lab", "ultrasound", "visit")
     }
 
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
@@ -40,6 +41,10 @@ class ClinicalDeleteRestoreDbTest(private val kindName: String) {
 
     private interface Kind {
         fun save(patientId: String, patientRevision: Long, id: String, tag: String): ClinicalCommand
+        suspend fun create(repo: RecordsRepository, patientId: String, patientRevision: Long, id: String, tag: String) {
+            val outcome = repo.execute(save(patientId, patientRevision, id, tag))
+            assertTrue("setup save must commit but was $outcome", outcome is ClinicalCommandOutcome.Committed)
+        }
         suspend fun row(dao: RecordsDao, id: String): Any?
         suspend fun domain(dao: RecordsDao, id: String): Any?
         fun revisionOf(domain: Any): Long
@@ -256,16 +261,84 @@ class ClinicalDeleteRestoreDbTest(private val kindName: String) {
         override val restoreKind = ClinicalRecordKind.ULTRASOUND_RESTORE
     }
 
+    private object VisitKind : Kind {
+        override fun save(patientId: String, patientRevision: Long, id: String, tag: String): ClinicalCommand =
+            error("Use create()")
+
+        override suspend fun create(repo: RecordsRepository, patientId: String, patientRevision: Long, id: String, tag: String) {
+            val cmd = SaveVisitCommand(
+                operationUuid = UUID.randomUUID().toString(),
+                editorSessionId = "del-test",
+                patientId = patientId,
+                visitId = id,
+                expectedRevision = null,
+                date = "2026-10-30",
+                bloodPressure = "120/80",
+                weight = "65 kg",
+                findings = "Normal $tag",
+                notes = "Visit notes $tag",
+                fingerprint = "",
+            )
+            val outcome = repo.save(cmd.copy(fingerprint = cmd.canonicalFingerprint()))
+            assertTrue("setup save must commit but was $outcome", outcome is SaveOutcome.Committed)
+        }
+
+        override suspend fun row(dao: RecordsDao, id: String): Any? = dao.visit(id)
+        override suspend fun domain(dao: RecordsDao, id: String): Any? = dao.visit(id)?.let {
+            DemoVisit(
+                id = it.id, patientId = it.patientId, date = it.date, bloodPressure = it.bloodPressure,
+                weight = it.weight, findings = it.findings, notes = it.notes, linkedUltrasoundId = it.linkedUltrasoundId,
+                revision = it.revision.toLong(), isSyntheticEdit = it.isSyntheticEdit,
+            )
+        }
+
+        override fun revisionOf(domain: Any) = (domain as DemoVisit).revision
+        override fun patientOf(domain: Any) = (domain as DemoVisit).patientId
+        override fun hash(domain: Any) = visitContentHash(domain as DemoVisit)
+        override fun changed(domain: Any) = (domain as DemoVisit).copy(notes = "tampered")
+        override fun withRevision(domain: Any, revision: Long) = (domain as DemoVisit).copy(revision = revision)
+        override fun del(op: String, patientId: String, patientRevision: Long, id: String, revision: Long, hash: String) =
+            DeleteRecordCommand(
+                type = DeletableType.VISIT, operationUuid = op, patientId = patientId,
+                expectedPatientRevision = patientRevision, recordId = id, expectedRecordRevision = revision,
+                deletedContentHash = hash,
+            )
+
+        override fun res(op: String, patientId: String, patientRevision: Long, domain: Any, source: ClinicalCommand) =
+            RestoreRecordCommand(
+                type = DeletableType.VISIT, operationUuid = op, patientId = patientId,
+                expectedPatientRevision = patientRevision, record = domain as DemoVisit,
+                sourceDelete = source as DeleteRecordCommand,
+            )
+
+        override suspend fun insertRaw(dao: RecordsDao, domain: Any) {
+            val r = domain as DemoVisit
+            dao.insertVisit(
+                VisitEntity(
+                    id = r.id, patientId = r.patientId, date = r.date, bloodPressure = r.bloodPressure,
+                    weight = r.weight, findings = r.findings, notes = r.notes, linkedUltrasoundId = r.linkedUltrasoundId,
+                    revision = r.revision.toInt(), isSyntheticEdit = r.isSyntheticEdit,
+                ),
+            )
+        }
+
+        override val table = "visits"
+        override val deleteKind = ClinicalRecordKind.VISIT_DELETE
+        override val restoreKind = ClinicalRecordKind.VISIT_RESTORE
+    }
+
     private val kind: Kind get() = when (kindName) {
         "medication" -> MedKind
         "lab" -> LabKind
         "ultrasound" -> UltrasoundKind
+        "visit" -> VisitKind
         else -> throw IllegalArgumentException("Unknown kind $kindName")
     }
     private val otherKind: Kind get() = when (kindName) {
         "medication" -> LabKind
         "lab" -> UltrasoundKind
-        "ultrasound" -> MedKind
+        "ultrasound" -> VisitKind
+        "visit" -> MedKind
         else -> throw IllegalArgumentException("Unknown kind $kindName")
     }
 
@@ -301,8 +374,7 @@ class ClinicalDeleteRestoreDbTest(private val kindName: String) {
     private suspend fun Env.create(patientId: String, tag: String): String = createOf(kind, patientId, UUID.randomUUID().toString(), tag)
 
     private suspend fun Env.createOf(of: Kind, patientId: String, id: String, tag: String): String {
-        val outcome = repo.execute(of.save(patientId, patientRev(patientId), id, tag))
-        assertTrue("setup save must commit but was $outcome", outcome is ClinicalCommandOutcome.Committed)
+        of.create(repo, patientId, patientRev(patientId), id, tag)
         return id
     }
 
@@ -767,7 +839,16 @@ class ClinicalDeleteRestoreDbTest(private val kindName: String) {
         addedRow: Row?,
     ) {
         val d = diff(before, after)
-        assertEquals(setOf(kind.table, "patients", "clinical_command_receipts"), d.keys)
+        val expectedKeys = if (kind.table == "visits") {
+            if (receiptKind == ClinicalRecordKind.VISIT_DELETE && before.containsKey("save_receipts") && before.getValue("save_receipts").any { it["visit_id"] == cmd.recordId }) {
+                setOf(kind.table, "patients", "clinical_command_receipts", "save_receipts")
+            } else {
+                setOf(kind.table, "patients", "clinical_command_receipts")
+            }
+        } else {
+            setOf(kind.table, "patients", "clinical_command_receipts")
+        }
+        assertEquals(expectedKeys, d.keys)
         assertEquals(listOfNotNull(removedRow), d.getValue(kind.table).removed)
         assertEquals(listOfNotNull(addedRow), d.getValue(kind.table).added)
 
@@ -944,5 +1025,31 @@ class ClinicalDeleteRestoreDbTest(private val kindName: String) {
         assertEquals(patientA, after.row(kind.table, id)["patient_id"])
         assertEquals(1, after.getValue(kind.table).count { it["id"] == id })
         assertIntegrity()
+    }
+
+    @Test
+    fun replaySaveOfDeletedVisitIsRejected() = withEnv {
+        if (kind.table != "visits") return@withEnv
+        val id = create(patientA, "target")
+        val del = deleteCmd(id)
+        committed(repo.execute(del))
+        val replayCmd = SaveVisitCommand(
+            operationUuid = UUID.randomUUID().toString(),
+            editorSessionId = "replay-test",
+            patientId = patientA,
+            visitId = id,
+            expectedRevision = null,
+            date = "2026-10-30",
+            bloodPressure = "120/80",
+            weight = "65 kg",
+            findings = "Replay",
+            notes = "Replay notes",
+            fingerprint = "",
+        )
+        val outcome = repo.save(replayCmd.copy(fingerprint = replayCmd.canonicalFingerprint()))
+        assertTrue(
+            "replaying save of deleted visit must reject with VISIT_CONFLICT but was $outcome",
+            outcome is SaveOutcome.Rejected && outcome.failure == SaveFailure.VISIT_CONFLICT,
+        )
     }
 }

@@ -573,6 +573,7 @@ private fun LazyListScope.workspaceContentItems(
                                     onEdit = { onStartVisit(patient.id, visit.id) },
                                     onViewPhotos = onViewPhotos,
                                     onEvent = onEvent,
+                                    onDelete = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.VISIT, visit.id)) },
                                     linkIntegrityWarning = event.linkIntegrityWarning,
                                 )
                             }
@@ -597,6 +598,8 @@ private fun LazyListScope.workspaceContentItems(
                                     onViewPhotos = onViewPhotos,
                                     onDelete = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.ULTRASOUND, scan.id)) },
                                     linkIntegrityWarning = event.linkIntegrityWarning,
+                                    cardTag = "timelineUltrasound-${scan.id}",
+                                    deleteTag = "delete-timelineUltrasound-${scan.id}",
                                 )
                             }
                         }
@@ -840,6 +843,7 @@ private fun VisitCard(
     onEdit: () -> Unit,
     onViewPhotos: (DemoUltrasoundScan, Int) -> Unit = { _, _ -> },
     onEvent: (AncEvent) -> Unit,
+    onDelete: () -> Unit = {},
     linkIntegrityWarning: String? = null,
 ) {
     Card(
@@ -1014,6 +1018,7 @@ private fun VisitCard(
                     contentDescription = stringResource(R.string.edit_visit),
                     tag = "editVisit-${visit.id}",
                     onClick = onEdit,
+                    trailing = { DeleteIconButton(DeletableType.VISIT, visit, onDelete) },
                 )
             }
         }
@@ -1159,9 +1164,11 @@ private fun UltrasoundCard(
     onViewPhotos: (DemoUltrasoundScan, Int) -> Unit = { _, _ -> },
     onDelete: () -> Unit = {},
     linkIntegrityWarning: String? = null,
+    cardTag: String = "ultrasound-${scan.id}",
+    deleteTag: String = "delete-ultrasound-${scan.id}",
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth().testTag("ultrasound-${scan.id}"),
+        modifier = Modifier.fillMaxWidth().testTag(cardTag),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -1280,7 +1287,7 @@ private fun UltrasoundCard(
                     contentDescription = stringResource(R.string.edit_ultrasound),
                     tag = "editUltrasound-${scan.id}",
                     onClick = onEdit,
-                    trailing = { DeleteIconButton(DeletableType.ULTRASOUND, scan, onDelete) },
+                    trailing = { DeleteIconButton(DeletableType.ULTRASOUND, scan, onDelete, tag = deleteTag) },
                 )
             }
         }

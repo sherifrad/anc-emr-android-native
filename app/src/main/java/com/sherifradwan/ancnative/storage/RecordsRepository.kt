@@ -201,6 +201,10 @@ internal class RecordsRepository(
                         }
                         return@withTransaction SaveOutcome.Rejected(failure)
                     }
+                    val latestReceipt = dao.latestClinicalReceiptForRecord(command.patientId, command.visitId)
+                    if (latestReceipt != null && latestReceipt.recordKind.endsWith("_DELETE")) {
+                        return@withTransaction SaveOutcome.Rejected(SaveFailure.VISIT_CONFLICT)
+                    }
                     dao.insertVisit(command.toEntity(revision = 1))
                     1
                 } else {
@@ -703,7 +707,7 @@ internal class RecordsRepository(
         findings = findings,
         notes = notes,
         linkedUltrasoundId = linkedUltrasoundId,
-        revision = revision,
+        revision = revision.toInt(),
         isSyntheticEdit = isSyntheticEdit,
     )
 
@@ -889,13 +893,14 @@ internal class RecordsRepository(
 
     internal fun VisitEntity.toDomain() = DemoVisit(
         id = id,
+        patientId = patientId,
         date = date,
         bloodPressure = bloodPressure,
         weight = weight,
         findings = findings,
         notes = notes,
         linkedUltrasoundId = linkedUltrasoundId,
-        revision = revision,
+        revision = revision.toLong(),
         isSyntheticEdit = isSyntheticEdit,
     )
 
@@ -1518,8 +1523,8 @@ internal class RecordsRepository(
         )
     }
 
-    private class PatientCommandAbort(val failure: PatientCommandFailure) : RuntimeException()
-    private class ClinicalCommandAbort(val failure: ClinicalCommandFailure) : RuntimeException()
+    internal class PatientCommandAbort(val failure: PatientCommandFailure) : RuntimeException()
+    internal class ClinicalCommandAbort(val failure: ClinicalCommandFailure) : RuntimeException()
 }
 
 internal sealed interface RepositoryOpenResult {

@@ -52,6 +52,7 @@ internal fun DeletableType.labelResource(): Int = when (this) {
     DeletableType.MEDICATION -> R.string.deletable_type_medication
     DeletableType.LAB -> R.string.deletable_type_lab
     DeletableType.ULTRASOUND -> R.string.deletable_type_ultrasound
+    DeletableType.VISIT -> R.string.deletable_type_visit
 }
 
 /** " (patient Name)", or nothing when the name is blank: the UI never shows "(patient )". */
@@ -69,6 +70,7 @@ internal fun DeleteIconButton(
     record: DeletableRecord,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    tag: String? = null,
 ) {
     val recordId = record.id
     // A type/record mismatch draws nothing instead of throwing while the screen is composed.
@@ -77,7 +79,7 @@ internal fun DeleteIconButton(
         onClick = onClick,
         modifier = modifier
             .minimumTouchTarget()
-            .testTag("delete-${type.name.lowercase()}-$recordId"),
+            .testTag(tag ?: "delete-${type.name.lowercase()}-$recordId"),
     ) {
         Icon(
             Icons.Default.Delete,

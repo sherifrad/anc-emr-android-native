@@ -3,6 +3,7 @@ package com.sherifradwan.ancnative.storage
 import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoMedicationRecord
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
+import com.sherifradwan.ancnative.model.DemoVisit
 import java.security.MessageDigest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -112,6 +113,19 @@ internal object DeleteFixtures {
         revision = revision,
     )
 
+    fun visit(revision: Long = 3) = DemoVisit(
+        id = "visit-1",
+        patientId = "patient-1",
+        date = "2026-03-25",
+        bloodPressure = "120/80",
+        weight = "65.5",
+        findings = "Normal fetal heart tones audible",
+        notes = "Next visit in 4 weeks",
+        linkedUltrasoundId = "us-1",
+        revision = revision,
+        isSyntheticEdit = false,
+    )
+
     val medication = DeleteFixture(
         type = DeletableType.MEDICATION,
         tag = "MED",
@@ -218,7 +232,36 @@ internal object DeleteFixtures {
         defaultPatientRevision = 5,
     )
 
-    val all = listOf(medication, laboratory, ultrasound)
+    val visit = DeleteFixture(
+        type = DeletableType.VISIT,
+        tag = "VIS",
+        deleteKind = ClinicalRecordKind.VISIT_DELETE,
+        restoreKind = ClinicalRecordKind.VISIT_RESTORE,
+        updateKind = ClinicalRecordKind.DATING,
+        otherDeleteKind = ClinicalRecordKind.MEDICATION_DELETE,
+        recordId = "visit-1",
+        otherRecordId = "visit-2",
+        goldenCanonical = "patient-1|visit-1|2026-03-25|120/80|65.5|Normal fetal heart tones audible|Next visit in 4 weeks|us-1",
+        goldenHash = "782418d369e77fd29e07ff9ee7abb72732a2023185600ba6a56cc11336466caa",
+        goldenDeleteFingerprint = "3dcc3fe77968f999b113258d02e18829adec80916d144edb1bd45118bc9f9a76",
+        goldenRestoreFingerprint = "03305bde8f66de6db1f5982454c3b507d83fa2fde1e1f9b85982c7b436de5d4e",
+        recordOf = { visit(it) },
+        fieldVariants = visit().let { base ->
+            listOf(
+                base.copy(id = "visit-2"),
+                base.copy(patientId = "patient-2"),
+                base.copy(date = "2026-03-26"),
+                base.copy(bloodPressure = "130/85"),
+                base.copy(weight = "66.0"),
+                base.copy(findings = "Different findings"),
+                base.copy(notes = null),
+                base.copy(linkedUltrasoundId = null),
+            )
+        },
+        contentHash = { visitContentHash(it as DemoVisit) },
+    )
+
+    val all = listOf(medication, laboratory, ultrasound, visit)
 }
 
 class DeletableRegistryTest {
@@ -259,12 +302,15 @@ class DeletableRegistryTest {
         assertEquals("MED", adapterOf(DeleteFixtures.medication).fingerprintTag)
         assertEquals("LAB", adapterOf(DeleteFixtures.laboratory).fingerprintTag)
         assertEquals("US", adapterOf(DeleteFixtures.ultrasound).fingerprintTag)
+        assertEquals("VIS", adapterOf(DeleteFixtures.visit).fingerprintTag)
         assertEquals("MEDICATION_DELETE", adapterOf(DeleteFixtures.medication).deleteReceiptKind)
         assertEquals("MEDICATION_RESTORE", adapterOf(DeleteFixtures.medication).restoreReceiptKind)
         assertEquals("LAB_DELETE", adapterOf(DeleteFixtures.laboratory).deleteReceiptKind)
         assertEquals("LAB_RESTORE", adapterOf(DeleteFixtures.laboratory).restoreReceiptKind)
         assertEquals("ULTRASOUND_DELETE", adapterOf(DeleteFixtures.ultrasound).deleteReceiptKind)
         assertEquals("ULTRASOUND_RESTORE", adapterOf(DeleteFixtures.ultrasound).restoreReceiptKind)
+        assertEquals("VISIT_DELETE", adapterOf(DeleteFixtures.visit).deleteReceiptKind)
+        assertEquals("VISIT_RESTORE", adapterOf(DeleteFixtures.visit).restoreReceiptKind)
     }
 
     @Test
@@ -367,11 +413,14 @@ class DeletableRegistryTest {
         val med = DeleteFixtures.med()
         val lab = DeleteFixtures.lab()
         val us = DeleteFixtures.us()
+        val v = DeleteFixtures.visit()
         assertTrue(DeletableRegistry.labelOrNull(DeletableType.MEDICATION, med) != null)
         assertEquals(null, DeletableRegistry.labelOrNull(DeletableType.LAB, med))
         assertEquals(null, DeletableRegistry.labelOrNull(DeletableType.MEDICATION, lab))
         assertEquals(null, DeletableRegistry.labelOrNull(DeletableType.ULTRASOUND, med))
         assertEquals(null, DeletableRegistry.labelOrNull(DeletableType.MEDICATION, us))
         assertTrue(DeletableRegistry.labelOrNull(DeletableType.ULTRASOUND, us) != null)
+        assertEquals(null, DeletableRegistry.labelOrNull(DeletableType.VISIT, med))
+        assertTrue(DeletableRegistry.labelOrNull(DeletableType.VISIT, v) != null)
     }
 }

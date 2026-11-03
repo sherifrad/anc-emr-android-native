@@ -231,6 +231,9 @@ enum class SavedNotice {
     ULTRASOUND_DELETED,
     ULTRASOUND_RESTORED,
     ULTRASOUND_SAVE_UNDONE,
+    VISIT_DELETED,
+    VISIT_RESTORED,
+    VISIT_SAVE_UNDONE,
 }
 fun SavedNotice?.stringRes(): Int = when (this) {
     SavedNotice.PATIENT -> R.string.patient_saved
@@ -252,6 +255,9 @@ fun SavedNotice?.stringRes(): Int = when (this) {
     SavedNotice.ULTRASOUND_DELETED -> R.string.ultrasound_deleted
     SavedNotice.ULTRASOUND_RESTORED -> R.string.ultrasound_restored
     SavedNotice.ULTRASOUND_SAVE_UNDONE -> R.string.ultrasound_save_undone
+    SavedNotice.VISIT_DELETED -> R.string.visit_deleted
+    SavedNotice.VISIT_RESTORED -> R.string.visit_restored
+    SavedNotice.VISIT_SAVE_UNDONE -> R.string.visit_save_undone
     SavedNotice.VISIT, null -> R.string.visit_saved
 }
 enum class PatientEditorKind { PROFILE, HISTORIES, PREGNANCY, STATUS }
@@ -1141,6 +1147,7 @@ object AncReducer {
         if (state.savePhase.blocksEditing()) return state
         val patient = state.patient(event.patientId) ?: return state
         if (patient.status == "archived") return state
+        if (event.visitId != null && state.undoRunningFor(event.visitId)) return state
         val visit = event.visitId?.let { id -> patient.visits.firstOrNull { it.id == id } }
         if (event.visitId != null && visit == null) return state
         if (state.hasDirtyDraft) {
@@ -1156,7 +1163,7 @@ object AncReducer {
                 editorSessionId = event.editorSessionId,
                 patientId = event.patientId,
                 visitId = visit?.id,
-                baseRevision = visit?.revision,
+                baseRevision = visit?.revision?.toInt(),
                 original = values,
                 values = values,
             ),

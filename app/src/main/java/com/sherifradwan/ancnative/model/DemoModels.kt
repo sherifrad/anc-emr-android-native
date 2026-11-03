@@ -34,16 +34,41 @@ data class DemoPatient(
 )
 
 data class DemoVisit(
-    val id: String,
+    override val id: String,
+    override val patientId: String = "",
     val date: String,
     val bloodPressure: String?,
     val weight: String?,
     val findings: String?,
     val notes: String?,
-    val revision: Int,
-    val isSyntheticEdit: Boolean,
+    override val revision: Long = 1,
+    val isSyntheticEdit: Boolean = false,
     val linkedUltrasoundId: String? = null,
-)
+) : com.sherifradwan.ancnative.storage.DeletableRecord {
+    constructor(
+        id: String,
+        patientId: String = "",
+        date: String,
+        bloodPressure: String?,
+        weight: String?,
+        findings: String?,
+        notes: String?,
+        revision: Int,
+        isSyntheticEdit: Boolean = false,
+        linkedUltrasoundId: String? = null,
+    ) : this(
+        id = id,
+        patientId = patientId,
+        date = date,
+        bloodPressure = bloodPressure,
+        weight = weight,
+        findings = findings,
+        notes = notes,
+        revision = revision.toLong(),
+        isSyntheticEdit = isSyntheticEdit,
+        linkedUltrasoundId = linkedUltrasoundId,
+    )
+}
 
 data class DemoPreviousPregnancy(
     val id: String,

@@ -23,13 +23,13 @@ def read(path):
         return ""
 
 
-KIND = r"(?:MEDICATION|LAB|ULTRASOUND)"
+KIND = r"(?:MEDICATION|LAB|ULTRASOUND|VISIT)"
 # A kind is "named" by any of these forms.
 NAMED = re.compile(r"DeletableType\.%s\b|SavedNotice\.%s_(?:DELETED|RESTORED|SAVE_UNDONE)\b|ClinicalRecordKind\.%s_(?:DELETE|RESTORE)\b|"
-                   r"\b%s_(?:DELETE|RESTORE|DELETED|RESTORED|SAVE_UNDONE)\b|\b(?:Medication|Lab|Ultrasound)DeleteAdapter\b" % ((KIND,) * 4))
+                   r"\b%s_(?:DELETE|RESTORE|DELETED|RESTORED|SAVE_UNDONE)\b|\b(?:Medication|Lab|Ultrasound|Visit)DeleteAdapter\b" % ((KIND,) * 4))
 
 # Files that may name a kind freely: the per-kind adapters, the registry, the receipt-kind enum, the editor-hook registry.
-FREE = {"storage/MedicationDeleteAdapter.kt", "storage/LabDeleteAdapter.kt", "storage/UltrasoundDeleteAdapter.kt", "storage/DeletableRecords.kt",
+FREE = {"storage/MedicationDeleteAdapter.kt", "storage/LabDeleteAdapter.kt", "storage/UltrasoundDeleteAdapter.kt", "storage/VisitDeleteAdapter.kt", "storage/DeletableRecords.kt",
         "storage/ClinicalCommands.kt", "state/EditorHooks.kt"}
 # Files that may name a kind only on lines of the stated shape (strings table, call sites).
 LINE_OK = {

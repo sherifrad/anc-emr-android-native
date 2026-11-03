@@ -87,11 +87,29 @@ object UltrasoundEditorHook : EditorHook {
     }
 }
 
+object VisitEditorHook : EditorHook {
+    override fun isOpenFor(state: AncState, recordId: String): Boolean =
+        state.draft?.visitId == recordId
+
+    override fun closeEditor(state: AncState, patientId: String): AncState =
+        state.copy(
+            draft = null,
+            route = if (state.route is AncRoute.VisitEditor) {
+                AncRoute.Workspace(patientId, WorkspaceSection.VISITS)
+            } else {
+                state.route
+            },
+        )
+
+    override fun rebaseCreateDraft(state: AncState, patients: List<DemoPatient>): AncState = state
+}
+
 object EditorHooks {
     private val hooks: Map<DeletableType, EditorHook> = mapOf(
         DeletableType.MEDICATION to MedicationEditorHook,
         DeletableType.LAB to LabEditorHook,
         DeletableType.ULTRASOUND to UltrasoundEditorHook,
+        DeletableType.VISIT to VisitEditorHook,
     )
 
     fun of(type: DeletableType): EditorHook? = hooks[type]
