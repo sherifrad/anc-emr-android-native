@@ -237,6 +237,9 @@ enum class SavedNotice {
     PREVIOUS_PREGNANCY_DELETED,
     PREVIOUS_PREGNANCY_RESTORED,
     PREVIOUS_PREGNANCY_SAVE_UNDONE,
+    ATTACHMENT_DELETED,
+    ATTACHMENT_RESTORED,
+    ATTACHMENT_SAVE_UNDONE,
 }
 fun SavedNotice?.stringRes(): Int = when (this) {
     SavedNotice.PATIENT -> R.string.patient_saved
@@ -264,6 +267,9 @@ fun SavedNotice?.stringRes(): Int = when (this) {
     SavedNotice.PREVIOUS_PREGNANCY_DELETED -> R.string.previous_pregnancy_deleted
     SavedNotice.PREVIOUS_PREGNANCY_RESTORED -> R.string.previous_pregnancy_restored
     SavedNotice.PREVIOUS_PREGNANCY_SAVE_UNDONE -> R.string.previous_pregnancy_save_undone
+    SavedNotice.ATTACHMENT_DELETED -> R.string.attachment_deleted
+    SavedNotice.ATTACHMENT_RESTORED -> R.string.attachment_restored
+    SavedNotice.ATTACHMENT_SAVE_UNDONE -> R.string.attachment_save_undone
     SavedNotice.VISIT, null -> R.string.visit_saved
 }
 enum class PatientEditorKind { PROFILE, HISTORIES, PREGNANCY, STATUS }

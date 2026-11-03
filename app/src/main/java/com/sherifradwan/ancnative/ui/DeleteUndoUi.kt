@@ -54,6 +54,7 @@ internal fun DeletableType.labelResource(): Int = when (this) {
     DeletableType.ULTRASOUND -> R.string.deletable_type_ultrasound
     DeletableType.VISIT -> R.string.deletable_type_visit
     DeletableType.PREVIOUS_PREGNANCY -> R.string.deletable_type_previous_pregnancy
+    DeletableType.ATTACHMENT -> R.string.deletable_type_attachment
 }
 
 /** " (patient Name)", or nothing when the name is blank: the UI never shows "(patient )". */

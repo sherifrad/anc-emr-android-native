@@ -29,6 +29,8 @@ enum class ClinicalRecordKind {
     VISIT_RESTORE,
     PREVIOUS_PREGNANCY_DELETE,
     PREVIOUS_PREGNANCY_RESTORE,
+    ATTACHMENT_DELETE,
+    ATTACHMENT_RESTORE,
 }
 
 enum class ClinicalCommandFailure {

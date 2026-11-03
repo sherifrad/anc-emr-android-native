@@ -191,7 +191,7 @@ data class DemoMedicationRecord(
 
 data class DemoAttachment(
     override val id: String,
-    val patientId: String,
+    override val patientId: String,
     val fileName: String,
     val filePath: String,
     val category: String,
@@ -204,7 +204,7 @@ data class DemoAttachment(
     val syncStatus: String = "LOCAL_ONLY",
     val cloudUrl: String? = null,
     val cloudSyncedAt: String? = null,
-    val revision: Long = 1,
+    override val revision: Long = 1,
 ) : DeletableRecord
 
 object ClinicalVocabulary {
