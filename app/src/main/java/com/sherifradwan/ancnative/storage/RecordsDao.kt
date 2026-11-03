@@ -489,6 +489,9 @@ interface RecordsDao {
     @Query("DELETE FROM patient_attachments WHERE id = :attachmentId AND patient_id = :patientId")
     suspend fun deleteAttachment(attachmentId: String, patientId: String): Int
 
+    @Query("DELETE FROM patient_attachments WHERE id = :attachmentId AND patient_id = :patientId AND revision = :expectedRevision")
+    suspend fun deleteAttachmentRevision(attachmentId: String, patientId: String, expectedRevision: Long): Int
+
     @Query("SELECT COUNT(*) FROM patient_attachments")
     suspend fun attachmentCount(): Int
 

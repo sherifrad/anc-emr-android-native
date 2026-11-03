@@ -196,8 +196,8 @@ object PatientAttachmentVault {
      * Deletes an attachment file after ensuring patient boundary ownership.
      */
     fun deleteAttachment(context: Context, patientId: String, fileName: String): Boolean {
-        val file = resolveAttachmentFile(context, patientId, fileName) ?: return false
-        return file.delete()
+        val file = resolveAttachmentFile(context, patientId, fileName) ?: return true // missing = success (idempotent)
+        return try { file.delete() } catch (e: SecurityException) { false }
     }
 
     /**

@@ -11,7 +11,7 @@ Attachments (patient_attachments) have a revision column (DemoAttachment.revisio
 - PayloadFileAdapter members:
   - val hasPayloadFile = true
   - suspend fun finalizeDelete(record: DemoAttachment, context: Context): FinalizeResult — removes the encrypted file (via PatientAttachmentVault.deleteAttachment) after the Undo window closes. Idempotent: missing file counts as success. Retry once on failure (finalize retry failure), then log and let unlock-time orphan sweep pick it up. Context MUST be application context to avoid Activity leak.
-- FinalizeResult sealed class: Success, AlreadyGone, Failed(reason: String).
+- FinalizeResult sealed class: Success, Failed(reason: String). (AlreadyGone merged into Success — vault returns Boolean, missing = true = success.)
 - DeletableRecordAdapter needs a `fun record(patient: DemoPatient, id: String): T?` branch for DemoAttachment in DeletableRegistry. Add `is DemoAttachment` branch to contentHash and labelOrNull.
 
 ### Vault change
@@ -25,10 +25,10 @@ Attachments (patient_attachments) have a revision column (DemoAttachment.revisio
 - Add ATTACHMENT_DELETE and ATTACHMENT_RESTORE values.
 
 ### SavedNotice
-- Add ATTACHMENT_DELETED, ATTACHMENT_RESTORED, ATTACHMENT_SAVE_UNDONE.
+- Add ATTACHMENT_DELETED, ATTACHMENT_RESTORED. (ATTACHMENT_SAVE_UNDONE omitted — no save-undo flow for attachments.)
 
 ### WorkspaceSection
-- Add ATTACHMENTS section (new, not reuse existing).
+- WorkspaceSection.ATTACHMENTS already exists (AncState.kt:35). Reuse it.
 
 ### Adapter flow
 - deleteRow: deletes the patient_attachments row (revision-guarded) + writes receipt. File stays on disk during Undo window.
@@ -37,8 +37,8 @@ Attachments (patient_attachments) have a revision column (DemoAttachment.revisio
 - Finalize skipped on successful Undo (Committed path).
 
 ### UndoCoordinator changes
-- "Ambiguous" = the restore command was submitted but its outcome (success/failure) is not yet known (e.g., in-flight coroutine, pending DB transaction).
-- PendingUndo must capture the DemoAttachment record at beginDelete (before the row is gone) so finalizeIfNeeded has the fileName.
+- "Ambiguous" = the restore command was submitted but its outcome (success/failure) is not yet known (e.g., in-flight coroutine, pending DB transaction). Reconcile with PendingUndo.ambiguous field which uses the same term.
+- PendingUndo already holds the record via RestoreRecordCommand.record. No additional capture needed at beginDelete.
 - UndoCoordinator needs application Context injection (constructor) for finalizeDelete.
 - Single private finalizeIfNeeded(pending) function called from expiry, failed-undo (undo operation failure), replacement, and lock-clear paths.
 - finalizeIfNeeded under the mutex re-checks that the row is absent (by id and patient) before deleting the file. If the row exists (restore committed), skip file delete. This prevents deleting a file behind a live row.
@@ -48,19 +48,20 @@ Attachments (patient_attachments) have a revision column (DemoAttachment.revisio
 - Finalize must NOT be gated by sessionStillCurrent — it must run even when the epoch has changed (lock-clear case). Add rule: finalizeIfNeeded ignores the epoch check.
 
 ### Existing delete path removal (r6b6 scope)
-- AncEvent.DeleteAttachment (AncState.kt:762 data class, AncState.kt:982 reducer branch, AncViewModel.kt:201 dispatch, AncViewModel.kt:333 handler) currently deletes file immediately with no undo. This event and all its references MUST be removed entirely in r6b6. The only delete path becomes beginDelete(ATTACHMENT, ...).
+- AncEvent.DeleteAttachment (AncState.kt:768 data class, AncState.kt:988 reducer branch, AncViewModel.kt:201 dispatch, AncViewModel.kt:333 handler) currently deletes file immediately with no undo. This event and all its references MUST be removed entirely in r6b6. The only delete path becomes beginDelete(ATTACHMENT, ...).
 - VaultController.deleteAttachment (line 477): deprecate — keep for orphan sweep only, remove from all UI paths.
 - RecordsRepository.deleteAttachment (line 887): deprecate — keep for orphan sweep only.
 - ClinicalAttachmentViewerDialog deleteAttachmentBtn (ui/ClinicalAttachmentViewerDialog.kt): reroute to dispatch(AncEvent.RequestDelete(pid, ATTACHMENT, id)).
+- Save-failure rollback at AncViewModel.kt:315 calls PatientAttachmentVault.deleteAttachment — stays on idempotent vault delete (no undo).
 - WorkspaceScreen.kt:275 dispatches DeleteAttachment — must be rerouted to RequestDelete.
 
 ### Crash recovery (orphan sweep)
 - UndoCoordinator holds pending undo only in memory. A process kill during the Undo window orphans the file.
 - Mitigation: unlock-time orphan sweep that removes encrypted files with no corresponding patient_attachments row, scoped per patient.
-- Age check: only sweep files older than 60 seconds (to avoid deleting in-progress imports/captures). Files younger than 60s are left for the next sweep. Age is measured by file creation time (app-recorded), not filesystem mtime, to avoid preserved-timestamp imports.
+- Age check: only sweep files older than 60 seconds (to avoid deleting in-progress imports/captures). Files younger than 60s are left for the next sweep. Age measured by filesystem mtime (file creation on device).
 - Import/capture must hold the same per-patient mutex across "write file, then insert row" so the sweep (which also takes the mutex) cannot see a half-written file.
 - A delete that survives a crash (undo was open at kill time) is purged by the sweep as an orphan — this is INTENDED; the undo cannot be restored after process death.
-- Failed finalize (retry exhausted) needs a persisted marker (row in a pending_finalize table or a flag on the row before deletion) so the next unlock sweep picks it up even for patients not opened in that session. The sweep scans all patients, not just opened ones.
+- Failed finalize (retry exhausted): rely on unlock-time sweep scanning all patients (no persisted marker needed — sweep checks file existence vs row existence for all patients).
 - Owner: new function in PatientAttachmentVault or RecordsRepository, called from VaultController on unlock.
 - Sweep takes the same mutex as restore/finalize to avoid deleting a file being restored. Mutex owner: per-patient mutex in RecordsRepository. If sweep holds mutex while finalize waits, finalize blocks until sweep completes (no deadlock — finalize acquires mutex after sweep releases).
 - Needs its own tests: simulated kill, orphan cleanup, no false positives on in-progress imports.

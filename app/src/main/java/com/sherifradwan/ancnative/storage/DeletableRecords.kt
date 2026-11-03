@@ -3,6 +3,7 @@ package com.sherifradwan.ancnative.storage
 import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoMedicationRecord
 import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.model.DemoAttachment
 import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.model.DemoVisit
@@ -48,6 +49,7 @@ object DeletableRegistry {
         UltrasoundDeleteAdapter,
         VisitDeleteAdapter,
         PreviousPregnancyDeleteAdapter,
+        AttachmentDeleteAdapter,
     ).associateBy { it.type }
 
     fun all(): List<DeletableRecordAdapter<*>> = adapters.values.toList()
