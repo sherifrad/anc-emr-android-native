@@ -1,0 +1,24 @@
+Compiling Kotlin for debug, release, and androidTest targets in the background...
+Running the unit test suite in the background...
+Running `lintDebug` in the background...
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalPresets.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/MedicationEditor.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt
+
+Work done per oracle:
+- Q250: Deleted ClinicalLabPreset, ClinicalMedPreset, commonLabPresets, and commonMedPresets from ClinicalPresets.kt.
+- Q251 (UI): Replaced "Active" literals with MEDICATION_STATUS_ACTIVE in ClinicalBadges.kt, PatientPrintHtmlGenerator.kt, and MedicationEditor.kt.
+- Q252 (UI): Replaced hardcoded lab names in LabEditor.kt with ClinicalVocabulary.labNamePresets.
+- Q254: Stored panel queue state (panelRemainingIds, panelTotalCount, currentPanelIndex, currentPanelItemId, currentLabId, selectedGroupName) using rememberSaveable with listSaver, resolved current item by id from live list, and advanced queue via nextLabPanelTest in LabEditor.kt. All testTags kept.
+
+Assumptions: None. Safe behavior preserved with no layout, color, or wording changes.
+Limitations: Screen rotation tested via contract and compilation/unit tests; device rotation on physical phone not run directly.
+
+Verification results:
+- ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin :app:compileDebugAndroidTestKotlin: PASSED
+- ./gradlew --offline testDebugUnitTest: PASSED
+- ./gradlew --offline :app:lintDebug: PASSED (0 errors)
+- python3 .agents/checks/check_r4e.py: PASSED (S150, S151, S152, S153)

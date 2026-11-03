@@ -1,0 +1,986 @@
+commit 19c36fc07c9ac66067da1ddbc1153e16bc8ab930
+Author: sherifrad <23216006+sherifrad@users.noreply.github.com>
+Date:   Mon Nov 2 08:39:25 2026 +0200
+
+    feat(logic): permanent delete with Undo for medications and lab results, Undo for Save and next (commands, repository, reducer, view model)
+    
+    Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt b/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+index bd307e0..ed2c289 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+@@ -192,9 +192,59 @@ fun SaveUiError?.stringRes(): Int = when (this) {
+     SaveUiError.OUTCOME_UNRESOLVED -> R.string.save_unresolved
+     SaveUiError.STORAGE_ERROR, null -> R.string.save_storage_error
+ }
+-enum class SavedNotice { VISIT, PATIENT, PATIENT_DATING_NOT_UPDATED, HISTORIES, PREGNANCY, ARCHIVED, UNARCHIVED, DATING, ULTRASOUND, LABORATORY, MEDICATIONS }
++enum class SavedNotice {
++    VISIT,
++    PATIENT,
++    PATIENT_DATING_NOT_UPDATED,
++    HISTORIES,
++    PREGNANCY,
++    ARCHIVED,
++    UNARCHIVED,
++    DATING,
++    ULTRASOUND,
++    LABORATORY,
++    MEDICATIONS;
++
++    companion object {
++        val MEDICATION_DELETED = MEDICATIONS
++        val LAB_DELETED = LABORATORY
++        val MEDICATION_RESTORED = MEDICATIONS
++        val LAB_RESTORED = LABORATORY
++        val MEDICATION_SAVE_UNDONE = MEDICATIONS
++    }
++}
+ enum class PatientEditorKind { PROFILE, HISTORIES, PREGNANCY, STATUS }
+ 
++enum class DeletionKind {
++    MED,
++    LAB,
++}
++
++data class PendingDeletion(
++    val patientId: String,
++    val kind: DeletionKind,
++    val recordId: String,
++)
++
++enum class UndoKind {
++    DELETE_MED,
++    DELETE_LAB,
++    SAVE_MED,
++}
++
++enum class UndoPhase {
++    READY,
++    RUNNING,
++}
++
++data class UndoOffer(
++    val token: String,
++    val patientId: String,
++    val kind: UndoKind,
++    val label: String,
++    val phase: UndoPhase = UndoPhase.READY,
++)
++
+ data class PendingSaveToken(
+     val operationUuid: String,
+     val editorSessionId: String,
+@@ -443,6 +493,8 @@ data class AncState(
+     val pendingSave: PendingSaveToken? = null,
+     val attachmentError: AttachmentError? = null,
+     val draftRecoveryPrompt: DraftRecoveryPrompt? = null,
++    val deleteConfirmation: PendingDeletion? = null,
++    val undoOffer: UndoOffer? = null,
+ ) {
+     fun patient(patientId: String): DemoPatient? = patients.firstOrNull { it.id == patientId }
+ 
+@@ -595,6 +647,24 @@ sealed interface AncEvent {
+     data class DraftRecoveryFound(val prompt: DraftRecoveryPrompt) : AncEvent
+     data object AcceptDraftRecovery : AncEvent
+     data object DiscardDraftRecovery : AncEvent
++    data class RequestDeleteMedication(val patientId: String, val medicationId: String) : AncEvent
++    data class RequestDeleteLab(val patientId: String, val labId: String) : AncEvent
++    data object CancelDelete : AncEvent
++    data object ConfirmDelete : AncEvent
++    data class DeleteCommitted(
++        val patients: List<DemoPatient>,
++        val offer: UndoOffer? = null,
++        val notice: SavedNotice? = null,
++    ) : AncEvent
++    data class DeleteFailed(val error: SaveUiError? = null) : AncEvent
++    data class UndoRequested(val token: String) : AncEvent
++    data class UndoCommitted(
++        val token: String,
++        val patients: List<DemoPatient>,
++        val notice: SavedNotice? = null,
++    ) : AncEvent
++    data class UndoFailed(val token: String, val error: SaveUiError? = null) : AncEvent
++    data class UndoExpired(val token: String) : AncEvent
+ }
+ 
+ object AncReducer {
+@@ -682,6 +752,7 @@ object AncReducer {
+                 ClinicalRecordKind.ULTRASOUND_CREATE, ClinicalRecordKind.ULTRASOUND_UPDATE -> state.copy(ultrasoundDraft = state.ultrasoundDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
+                 ClinicalRecordKind.LAB_CREATE, ClinicalRecordKind.LAB_UPDATE -> state.copy(labDraft = state.labDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
+                 ClinicalRecordKind.MEDICATION_CREATE, ClinicalRecordKind.MEDICATION_UPDATE -> state.copy(medicationDraft = state.medicationDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
++                ClinicalRecordKind.MEDICATION_DELETE, ClinicalRecordKind.MEDICATION_RESTORE, ClinicalRecordKind.LAB_DELETE, ClinicalRecordKind.LAB_RESTORE -> state
+             }
+             is AncEvent.PatientValidationFailed -> validationFailed(state, event)
+             is AncEvent.SaveStarted -> if (state.canAccept(event.token)) {
+@@ -753,6 +824,103 @@ object AncReducer {
+                 applyDraftRecord(state, prompt.record).copy(draftRecoveryPrompt = null)
+             }
+             AncEvent.DiscardDraftRecovery -> state.copy(draftRecoveryPrompt = null)
++            is AncEvent.RequestDeleteMedication -> {
++                val patient = state.patient(event.patientId)
++                if (patient == null || patient.status == "archived" || state.hasDirtyDraft || state.savePhase.blocksEditing()) {
++                    state
++                } else {
++                    state.copy(
++                        deleteConfirmation = PendingDeletion(
++                            patientId = event.patientId,
++                            kind = DeletionKind.MED,
++                            recordId = event.medicationId,
++                        ),
++                    )
++                }
++            }
++            is AncEvent.RequestDeleteLab -> {
++                val patient = state.patient(event.patientId)
++                if (patient == null || patient.status == "archived" || state.hasDirtyDraft || state.savePhase.blocksEditing()) {
++                    state
++                } else {
++                    state.copy(
++                        deleteConfirmation = PendingDeletion(
++                            patientId = event.patientId,
++                            kind = DeletionKind.LAB,
++                            recordId = event.labId,
++                        ),
++                    )
++                }
++            }
++            AncEvent.CancelDelete -> state.copy(deleteConfirmation = null)
++            AncEvent.ConfirmDelete -> {
++                val pending = state.deleteConfirmation ?: return state
++                if (state.hasDirtyDraft || state.savePhase.blocksEditing()) return state
++                var next = state.copy(deleteConfirmation = null)
++                if (pending.kind == DeletionKind.MED && state.medicationDraft?.medicationId == pending.recordId) {
++                    next = next.copy(
++                        medicationDraft = null,
++                        route = if (state.route is AncRoute.MedicationEditor) {
++                            AncRoute.Workspace(pending.patientId, WorkspaceSection.MEDICATIONS)
++                        } else state.route,
++                    )
++                } else if (pending.kind == DeletionKind.LAB && state.labDraft?.labId == pending.recordId) {
++                    next = next.copy(
++                        labDraft = null,
++                        route = if (state.route is AncRoute.LabEditor) {
++                            AncRoute.Workspace(pending.patientId, WorkspaceSection.LABORATORY)
++                        } else state.route,
++                    )
++                }
++                next
++            }
++            is AncEvent.DeleteCommitted -> state.copy(
++                patients = event.patients,
++                undoOffer = event.offer,
++                deleteConfirmation = null,
++                savedNotice = event.notice != null,
++                notice = event.notice ?: state.notice,
++            )
++            is AncEvent.DeleteFailed -> state.copy(
++                deleteConfirmation = null,
++                saveError = event.error,
++            )
++            is AncEvent.UndoRequested -> {
++                if (state.undoOffer?.token == event.token) {
++                    state.copy(undoOffer = state.undoOffer.copy(phase = UndoPhase.RUNNING))
++                } else {
++                    state
++                }
++            }
++            is AncEvent.UndoCommitted -> {
++                var nextDraft = state.medicationDraft
++                if (nextDraft != null && nextDraft.baseMedicationRevision == null && !nextDraft.isDirty) {
++                    val p = event.patients.firstOrNull { it.id == nextDraft.patientId }
++                    if (p != null) {
++                        nextDraft = nextDraft.copy(basePatientRevision = p.revision)
++                    }
++                }
++                state.copy(
++                    patients = event.patients,
++                    undoOffer = if (state.undoOffer?.token == event.token) null else state.undoOffer,
++                    medicationDraft = nextDraft,
++                    savedNotice = event.notice != null,
++                    notice = event.notice ?: state.notice,
++                )
++            }
++            is AncEvent.UndoFailed -> {
++                if (state.undoOffer?.token == event.token) {
++                    state.copy(
++                        undoOffer = state.undoOffer.copy(phase = UndoPhase.READY),
++                        saveError = event.error,
++                    )
++                } else {
++                    state
++                }
++            }
++            is AncEvent.UndoExpired -> {
++                if (state.undoOffer?.token == event.token) state.copy(undoOffer = null) else state
++            }
+         }
+     }
+ 
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt b/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
+index 36d5d09..8f857e4 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
+@@ -28,6 +28,16 @@ import com.sherifradwan.ancnative.storage.SaveUltrasoundScanCommand
+ import com.sherifradwan.ancnative.storage.SaveVisitCommand
+ import com.sherifradwan.ancnative.storage.VaultController
+ import com.sherifradwan.ancnative.storage.VaultState
++import com.sherifradwan.ancnative.model.DemoMedicationRecord
++import com.sherifradwan.ancnative.storage.DeleteLabInvestigationCommand
++import com.sherifradwan.ancnative.storage.DeleteMedicationCommand
++import com.sherifradwan.ancnative.storage.RestoreLabInvestigationCommand
++import com.sherifradwan.ancnative.storage.RestoreMedicationCommand
++import com.sherifradwan.ancnative.storage.RecordSnapshot
++import com.sherifradwan.ancnative.storage.medicationContentHash
++import com.sherifradwan.ancnative.storage.labContentHash
++import kotlinx.coroutines.Job
++import kotlinx.coroutines.delay
+ import java.time.Instant
+ import java.util.UUID
+ import kotlinx.coroutines.flow.MutableStateFlow
+@@ -67,6 +77,32 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
+     private var pendingChainedLab: PendingChainedLab? = null
+     private var pendingChainedMedication: PendingChainedMedication? = null
+ 
++    private data class PendingUndo(
++        val token: String,
++        val command: ClinicalCommand,
++    )
++
++    private var pendingUndo: PendingUndo? = null
++    private var undoJob: Job? = null
++
++    private fun sessionStillCurrent(epoch: Long): Boolean =
++        (_state.value.vaultState as? VaultState.Unlocked)?.sessionEpoch == epoch
++
++    private fun startUndoExpiry(token: String) {
++        undoJob?.cancel()
++        undoJob = viewModelScope.launch {
++            delay(8_000L)
++            if (pendingUndo?.token == token) pendingUndo = null
++            undoJob = null
++            dispatch(AncEvent.UndoExpired(token))
++        }
++    }
++
++    private fun armUndo(token: String, command: ClinicalCommand) {
++        pendingUndo = PendingUndo(token, command)
++        startUndoExpiry(token)
++    }
++
+     private val draftStore = object : DraftStore {
+         override suspend fun save(record: DraftRecord): Boolean = controller.saveDraft(record)
+         override suspend fun delete(slot: DraftSlot) {
+@@ -168,8 +204,18 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
+             AncEvent.SubmitUltrasound -> saveUltrasound()
+             AncEvent.SubmitLab -> saveLab(isChained = false)
+             AncEvent.SubmitLabAndAddAnother -> saveLab(isChained = true)
+-            AncEvent.SubmitMedication -> saveMedication(isChained = false)
+-            AncEvent.SubmitMedicationAndAddAnother -> saveMedication(isChained = true)
++            AncEvent.SubmitMedication -> {
++                if (_state.value.undoOffer?.phase != UndoPhase.RUNNING) {
++                    saveMedication(isChained = false)
++                }
++            }
++            AncEvent.SubmitMedicationAndAddAnother -> {
++                if (_state.value.undoOffer?.phase != UndoPhase.RUNNING) {
++                    saveMedication(isChained = true)
++                }
++            }
++            AncEvent.ConfirmDelete -> confirmDelete()
++            is AncEvent.UndoRequested -> requestUndo(event.token)
+             is AncEvent.AddAttachment -> addAttachment(event)
+             is AncEvent.ImportScanPhoto -> importScanPhoto(event)
+             is AncEvent.DeleteAttachment -> deleteAttachment(event)
+@@ -693,6 +739,45 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
+                     }
+                     pendingChainedMedication = null
+                     if (chainedMed != null) {
++                        if (command is SaveMedicationCommand && command.expectedMedicationRevision == null &&
++                            sessionStillCurrent(sessionEpoch)
++                        ) {
++                            val token = UUID.randomUUID().toString()
++                            val savedMed = DemoMedicationRecord(
++                                id = command.medicationId,
++                                patientId = command.patientId,
++                                name = command.name,
++                                dosage = command.dosage,
++                                route = command.route,
++                                frequency = command.frequency,
++                                startDate = command.startDate,
++                                endDate = command.endDate,
++                                status = command.status,
++                                notes = command.notes,
++                                isProphylaxis = command.isProphylaxis,
++                                isNonCompliant = command.isNonCompliant,
++                                adverseNotes = command.adverseNotes,
++                                revision = result.receipt.committedRevision,
++                            )
++                            val undoDelete = DeleteMedicationCommand(
++                                editorSessionId = "",
++                                operationUuid = UUID.randomUUID().toString(),
++                                patientId = command.patientId,
++                                expectedPatientRevision = result.receipt.committedPatientRevision,
++                                medicationId = command.medicationId,
++                                expectedMedicationRevision = result.receipt.committedRevision,
++                                deletedContentHash = medicationContentHash(savedMed),
++                            )
++                            val offer = UndoOffer(
++                                token = token,
++                                patientId = command.patientId,
++                                kind = UndoKind.SAVE_MED,
++                                label = command.name,
++                                phase = UndoPhase.READY,
++                            )
++                            armUndo(token, undoDelete)
++                            updateState { it.copy(undoOffer = offer) }
++                        }
+                         dispatch(
+                             AncEvent.StartMedicationEditor(
+                                 patientId = command.patientId,
+@@ -822,6 +907,10 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
+         frozenClinicalCommand = null
+         pendingChainedLab = null
+         pendingChainedMedication = null
++        undoJob?.cancel()
++        undoJob = null
++        pendingUndo = null
++        _state.update { it.copy(deleteConfirmation = null, undoOffer = null) }
+     }
+ 
+     private fun PatientCommand.destination(): AncRoute = when (this) {
+@@ -900,6 +989,181 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
+         else -> false
+     }
+ 
++    private fun confirmDelete() {
++        val current = _state.value
++        val pending = current.deleteConfirmation ?: return
++        val unlocked = current.vaultState as? VaultState.Unlocked ?: return
++        updateState { AncReducer.reduce(it, AncEvent.ConfirmDelete) }
++        if (_state.value.deleteConfirmation != null) return // reducer ignored it (dirty draft or saving)
++        val patient = current.patient(pending.patientId) ?: return
++
++        when (pending.kind) {
++            DeletionKind.MED -> {
++                val med = patient.medications.firstOrNull { it.id == pending.recordId } ?: return
++                val cmd = DeleteMedicationCommand(
++                    operationUuid = UUID.randomUUID().toString(),
++                    patientId = patient.id,
++                    expectedPatientRevision = patient.revision,
++                    medicationId = med.id,
++                    expectedMedicationRevision = med.revision,
++                    deletedContentHash = medicationContentHash(med),
++                )
++                viewModelScope.launch {
++                    val result = controller.execute(cmd, unlocked.sessionEpoch) {}
++                    when (result) {
++                        is ClinicalCommandOutcome.Committed -> {
++                            val token = UUID.randomUUID().toString()
++                            val restoreCmd = RestoreMedicationCommand(
++                                operationUuid = UUID.randomUUID().toString(),
++                                patientId = patient.id,
++                                expectedPatientRevision = result.receipt.committedPatientRevision,
++                                record = med,
++                                sourceDelete = cmd,
++                            )
++                            if (!sessionStillCurrent(unlocked.sessionEpoch)) return@launch
++                            armUndo(token, restoreCmd)
++                            val offer = UndoOffer(
++                                token = token,
++                                patientId = patient.id,
++                                kind = UndoKind.DELETE_MED,
++                                label = med.name,
++                                phase = UndoPhase.READY,
++                            )
++                            dispatch(
++                                AncEvent.DeleteCommitted(
++                                    patients = result.snapshot.patients,
++                                    offer = offer,
++                                    notice = SavedNotice.MEDICATION_DELETED,
++                                ),
++                            )
++                        }
++                        is ClinicalCommandOutcome.Rejected -> {
++                            dispatch(AncEvent.DeleteFailed(result.failure.toUiError()))
++                        }
++                        ClinicalCommandOutcome.Ambiguous,
++                        ClinicalCommandOutcome.Obsolete -> {
++                            dispatch(AncEvent.DeleteFailed(SaveUiError.STORAGE_ERROR))
++                        }
++                    }
++                }
++            }
++            DeletionKind.LAB -> {
++                val lab = patient.labInvestigations.firstOrNull { it.id == pending.recordId } ?: return
++                val cmd = DeleteLabInvestigationCommand(
++                    operationUuid = UUID.randomUUID().toString(),
++                    patientId = patient.id,
++                    expectedPatientRevision = patient.revision,
++                    labId = lab.id,
++                    expectedLabRevision = lab.revision,
++                    deletedContentHash = labContentHash(lab),
++                )
++                viewModelScope.launch {
++                    val result = controller.execute(cmd, unlocked.sessionEpoch) {}
++                    when (result) {
++                        is ClinicalCommandOutcome.Committed -> {
++                            val token = UUID.randomUUID().toString()
++                            val restoreCmd = RestoreLabInvestigationCommand(
++                                operationUuid = UUID.randomUUID().toString(),
++                                patientId = patient.id,
++                                expectedPatientRevision = result.receipt.committedPatientRevision,
++                                record = lab,
++                                sourceDelete = cmd,
++                            )
++                            if (!sessionStillCurrent(unlocked.sessionEpoch)) return@launch
++                            armUndo(token, restoreCmd)
++                            val offer = UndoOffer(
++                                token = token,
++                                patientId = patient.id,
++                                kind = UndoKind.DELETE_LAB,
++                                label = lab.testName,
++                                phase = UndoPhase.READY,
++                            )
++                            dispatch(
++                                AncEvent.DeleteCommitted(
++                                    patients = result.snapshot.patients,
++                                    offer = offer,
++                                    notice = SavedNotice.LAB_DELETED,
++                                ),
++                            )
++                        }
++                        is ClinicalCommandOutcome.Rejected -> {
++                            dispatch(AncEvent.DeleteFailed(result.failure.toUiError()))
++                        }
++                        ClinicalCommandOutcome.Ambiguous,
++                        ClinicalCommandOutcome.Obsolete -> {
++                            dispatch(AncEvent.DeleteFailed(SaveUiError.STORAGE_ERROR))
++                        }
++                    }
++                }
++            }
++        }
++    }
++
++    private fun requestUndo(token: String) {
++        val current = _state.value
++        val unlocked = current.vaultState as? VaultState.Unlocked ?: return
++        val offer = current.undoOffer?.takeIf { it.token == token } ?: return
++        val pending = pendingUndo?.takeIf { it.token == token } ?: return
++        undoJob?.cancel()
++        undoJob = null
++        updateState { AncReducer.reduce(it, AncEvent.UndoRequested(token)) }
++
++        viewModelScope.launch {
++            val currentPatient = _state.value.patient(pending.command.patientId)
++            if (currentPatient == null) {
++                failUndo(token, SaveUiError.STORAGE_ERROR)
++                return@launch
++            }
++            var cmd = pending.command.withPatientRevision(currentPatient.revision)
++            var result = controller.execute(cmd, unlocked.sessionEpoch) {}
++            if (result is ClinicalCommandOutcome.Rejected && result.failure == ClinicalCommandFailure.STALE_PATIENT_REVISION) {
++                val snapshot = controller.view.value.snapshot ?: _state.value.let { RecordSnapshot(it.patients) }
++                val freshPatient = snapshot.patients.firstOrNull { it.id == cmd.patientId }
++                if (freshPatient != null && freshPatient.revision != cmd.expectedPatientRevision) {
++                    cmd = cmd.withPatientRevision(freshPatient.revision)
++                    result = controller.execute(cmd, unlocked.sessionEpoch) {}
++                }
++            }
++            if (!sessionStillCurrent(unlocked.sessionEpoch)) return@launch
++            when (result) {
++                is ClinicalCommandOutcome.Committed -> {
++                    if (pendingUndo?.token == token) {
++                        pendingUndo = null
++                        undoJob?.cancel()
++                        undoJob = null
++                    }
++                    val notice = when (offer.kind) {
++                        UndoKind.SAVE_MED -> SavedNotice.MEDICATION_SAVE_UNDONE
++                        UndoKind.DELETE_MED -> SavedNotice.MEDICATION_RESTORED
++                        UndoKind.DELETE_LAB -> SavedNotice.LAB_RESTORED
++                    }
++                    dispatch(AncEvent.UndoCommitted(token = token, patients = result.snapshot.patients, notice = notice))
++                }
++                is ClinicalCommandOutcome.Rejected -> {
++                    failUndo(token, result.failure.toUiError())
++                }
++                ClinicalCommandOutcome.Ambiguous,
++                ClinicalCommandOutcome.Obsolete -> {
++                    failUndo(token, SaveUiError.STORAGE_ERROR)
++                }
++            }
++        }
++    }
++
++    private fun failUndo(token: String, error: SaveUiError) {
++        dispatch(AncEvent.UndoFailed(token, error))
++        // Back to READY: keep the Undo available for a fresh 8 s window (only if it is still the live offer).
++        if (pendingUndo?.token == token && _state.value.undoOffer?.token == token) startUndoExpiry(token)
++    }
++
++    private fun ClinicalCommand.withPatientRevision(rev: Long): ClinicalCommand = when (this) {
++        is DeleteMedicationCommand -> copy(expectedPatientRevision = rev)
++        is RestoreMedicationCommand -> copy(expectedPatientRevision = rev)
++        is DeleteLabInvestigationCommand -> copy(expectedPatientRevision = rev)
++        is RestoreLabInvestigationCommand -> copy(expectedPatientRevision = rev)
++        else -> this
++    }
++
+     private fun AncEvent.clearsFrozenClinical(): Boolean = when (this) {
+         is AncEvent.DatingDraftChanged,
+         is AncEvent.UltrasoundDraftChanged,
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt b/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt
+index 82b6507..feadacf 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt
+@@ -1,6 +1,8 @@
+ package com.sherifradwan.ancnative.storage
+ 
+ import com.sherifradwan.ancnative.model.ClinicalVocabulary
++import com.sherifradwan.ancnative.model.DemoLabInvestigation
++import com.sherifradwan.ancnative.model.DemoMedicationRecord
+ import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
+ import com.sherifradwan.ancnative.state.AncRoute
+ import com.sherifradwan.ancnative.state.AncState
+@@ -17,6 +19,10 @@ enum class ClinicalRecordKind {
+     LAB_UPDATE,
+     MEDICATION_CREATE,
+     MEDICATION_UPDATE,
++    MEDICATION_DELETE,
++    MEDICATION_RESTORE,
++    LAB_DELETE,
++    LAB_RESTORE,
+ }
+ 
+ enum class ClinicalCommandFailure {
+@@ -473,6 +479,124 @@ data class SaveMedicationCommand(
+     }
+ }
+ 
++private val HEX_64_REGEX = Regex("^[0-9a-f]{64}$")
++
++internal fun canonicalMedication(record: DemoMedicationRecord): String =
++    "${record.patientId}|${record.id}|${record.name}|${record.dosage}|${record.route}|${record.frequency}|${record.startDate}|${record.endDate}|${record.status}|${record.notes}|${record.isProphylaxis}|${record.isNonCompliant}|${record.adverseNotes}"
++
++internal fun canonicalLab(record: DemoLabInvestigation): String =
++    "${record.patientId}|${record.id}|${record.date}|${record.testCategory}|${record.testName}|${record.result}|${record.unit}|${record.referenceRange}|${record.isAbnormal}|${record.notes}|${record.labName}"
++
++fun medicationContentHash(record: DemoMedicationRecord): String = sha256(canonicalMedication(record))
++
++fun labContentHash(record: DemoLabInvestigation): String = sha256(canonicalLab(record))
++
++data class DeleteMedicationCommand(
++    override val editorSessionId: String = "",
++    override val operationUuid: String,
++    override val patientId: String,
++    override val expectedPatientRevision: Long,
++    val medicationId: String,
++    val expectedMedicationRevision: Long,
++    val deletedContentHash: String,
++) : ClinicalCommand {
++    override val recordKind = ClinicalRecordKind.MEDICATION_DELETE
++    override val recordId = medicationId
++
++    override fun destination(): AncRoute = AncRoute.Workspace(patientId, WorkspaceSection.MEDICATIONS)
++    override fun savedNotice(): SavedNotice = SavedNotice.MEDICATION_DELETED
++
++    override fun isStructurallyValid(): Boolean {
++        if (!isValidUuid(operationUuid) || patientId.isBlank() || medicationId.isBlank()) return false
++        if (expectedPatientRevision < 1 || expectedMedicationRevision < 1) return false
++        if (!deletedContentHash.matches(HEX_64_REGEX)) return false
++        return true
++    }
++
++    override fun computeFingerprint(): String = sha256(
++        "MED_DEL|$operationUuid|$patientId|$expectedPatientRevision|$medicationId|$expectedMedicationRevision|$deletedContentHash",
++    )
++}
++
++data class RestoreMedicationCommand(
++    override val editorSessionId: String = "",
++    override val operationUuid: String,
++    override val patientId: String,
++    override val expectedPatientRevision: Long,
++    val record: DemoMedicationRecord,
++    val sourceDelete: DeleteMedicationCommand,
++) : ClinicalCommand {
++    override val recordKind = ClinicalRecordKind.MEDICATION_RESTORE
++    override val recordId: String get() = record.id
++
++    override fun destination(): AncRoute = AncRoute.Workspace(patientId, WorkspaceSection.MEDICATIONS)
++    override fun savedNotice(): SavedNotice = SavedNotice.MEDICATION_RESTORED
++
++    override fun isStructurallyValid(): Boolean {
++        if (!isValidUuid(operationUuid) || patientId.isBlank() || record.id.isBlank()) return false
++        if (expectedPatientRevision < 1) return false
++        if (!sourceDelete.isStructurallyValid()) return false
++        return true
++    }
++
++    override fun computeFingerprint(): String = sha256(
++        "MED_RES|$operationUuid|$patientId|$expectedPatientRevision|${sourceDelete.computeFingerprint()}|${canonicalMedication(record)}",
++    )
++}
++
++data class DeleteLabInvestigationCommand(
++    override val editorSessionId: String = "",
++    override val operationUuid: String,
++    override val patientId: String,
++    override val expectedPatientRevision: Long,
++    val labId: String,
++    val expectedLabRevision: Long,
++    val deletedContentHash: String,
++) : ClinicalCommand {
++    override val recordKind = ClinicalRecordKind.LAB_DELETE
++    override val recordId = labId
++
++    override fun destination(): AncRoute = AncRoute.Workspace(patientId, WorkspaceSection.LABORATORY)
++    override fun savedNotice(): SavedNotice = SavedNotice.LAB_DELETED
++
++    override fun isStructurallyValid(): Boolean {
++        if (!isValidUuid(operationUuid) || patientId.isBlank() || labId.isBlank()) return false
++        if (expectedPatientRevision < 1 || expectedLabRevision < 1) return false
++        if (!deletedContentHash.matches(HEX_64_REGEX)) return false
++        return true
++    }
++
++    override fun computeFingerprint(): String = sha256(
++        "LAB_DEL|$operationUuid|$patientId|$expectedPatientRevision|$labId|$expectedLabRevision|$deletedContentHash",
++    )
++}
++
++data class RestoreLabInvestigationCommand(
++    override val editorSessionId: String = "",
++    override val operationUuid: String,
++    override val patientId: String,
++    override val expectedPatientRevision: Long,
++    val record: DemoLabInvestigation,
++    val sourceDelete: DeleteLabInvestigationCommand,
++) : ClinicalCommand {
++    override val recordKind = ClinicalRecordKind.LAB_RESTORE
++    override val recordId: String get() = record.id
++
++    override fun destination(): AncRoute = AncRoute.Workspace(patientId, WorkspaceSection.LABORATORY)
++    override fun savedNotice(): SavedNotice = SavedNotice.LAB_RESTORED
++
++    override fun isStructurallyValid(): Boolean {
++        if (!isValidUuid(operationUuid) || patientId.isBlank() || record.id.isBlank()) return false
++        if (expectedPatientRevision < 1) return false
++        if (!sourceDelete.isStructurallyValid()) return false
++        return true
++    }
++
++    override fun computeFingerprint(): String = sha256(
++        "LAB_RES|$operationUuid|$patientId|$expectedPatientRevision|${sourceDelete.computeFingerprint()}|${canonicalLab(record)}",
++    )
++}
++
+ private fun isValidUuid(raw: String): Boolean = try {
+     UUID.fromString(raw)
+     true
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRule.kt b/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRule.kt
+new file mode 100644
+index 0000000..0d856df
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRule.kt
+@@ -0,0 +1,50 @@
++package com.sherifradwan.ancnative.storage
++
++object ClinicalDeleteRule {
++    fun evaluateRestore(
++        receipt: ClinicalCommandReceipt?,
++        latestReceipt: ClinicalCommandReceipt?,
++        existingRow: Any?,
++        cmd: ClinicalCommand,
++    ): ClinicalCommandFailure? {
++        val (expectedKind, expectedFingerprint, recordContentHash, sourceHash) = when (cmd) {
++            is RestoreMedicationCommand -> {
++                RestoreSource(
++                    ClinicalRecordKind.MEDICATION_DELETE.name,
++                    cmd.sourceDelete.computeFingerprint(),
++                    medicationContentHash(cmd.record),
++                    cmd.sourceDelete.deletedContentHash,
++                )
++            }
++            is RestoreLabInvestigationCommand -> {
++                RestoreSource(
++                    ClinicalRecordKind.LAB_DELETE.name,
++                    cmd.sourceDelete.computeFingerprint(),
++                    labContentHash(cmd.record),
++                    cmd.sourceDelete.deletedContentHash,
++                )
++            }
++            else -> return ClinicalCommandFailure.INVALID_COMMAND
++        }
++
++        if (receipt == null) return ClinicalCommandFailure.RECORD_CONFLICT
++        if (receipt.recordKind != expectedKind) return ClinicalCommandFailure.RECORD_CONFLICT
++        if (receipt.patientId != cmd.patientId) return ClinicalCommandFailure.RECORD_CONFLICT
++        if (receipt.recordId != cmd.recordId) return ClinicalCommandFailure.RECORD_CONFLICT
++        if (receipt.fingerprint != expectedFingerprint) return ClinicalCommandFailure.RECORD_CONFLICT
++        if (latestReceipt == null || latestReceipt.operationUuid != receipt.operationUuid) {
++            return ClinicalCommandFailure.RECORD_CONFLICT
++        }
++        if (existingRow != null) return ClinicalCommandFailure.RECORD_CONFLICT
++        if (recordContentHash != sourceHash) return ClinicalCommandFailure.INVALID_COMMAND
++
++        return null
++    }
++
++    private data class RestoreSource(
++        val kind: String,
++        val fingerprint: String,
++        val recordContentHash: String,
++        val sourceHash: String,
++    )
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt b/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt
+index c41b483..d43dc35 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt
+@@ -279,6 +279,15 @@ interface RecordsDao {
+     @Query("SELECT * FROM clinical_command_receipts WHERE operation_uuid = :operationUuid LIMIT 1")
+     suspend fun clinicalCommandReceipt(operationUuid: String): ClinicalCommandReceiptEntity?
+ 
++    @Query("SELECT * FROM clinical_command_receipts WHERE patient_id = :patientId AND record_id = :recordId ORDER BY committed_patient_revision DESC LIMIT 1")
++    suspend fun latestClinicalReceiptForRecord(patientId: String, recordId: String): ClinicalCommandReceiptEntity?
++
++    @Query("DELETE FROM medication_records WHERE id = :id AND patient_id = :patientId AND revision = :expectedRevision")
++    suspend fun deleteMedication(id: String, patientId: String, expectedRevision: Long): Int
++
++    @Query("DELETE FROM lab_investigations WHERE id = :id AND patient_id = :patientId AND revision = :expectedRevision")
++    suspend fun deleteLabInvestigation(id: String, patientId: String, expectedRevision: Long): Int
++
+     @Query("SELECT COUNT(*) FROM patient_dating")
+     suspend fun patientDatingCount(): Int
+ 
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt b/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt
+index 42ca661..7df9fd9 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt
+@@ -344,6 +344,10 @@ internal class RecordsRepository(
+                     is SaveUltrasoundScanCommand -> saveUltrasoundScan(command)
+                     is SaveLabInvestigationCommand -> saveLabInvestigation(command)
+                     is SaveMedicationCommand -> saveMedication(command)
++                    is DeleteMedicationCommand -> deleteMedication(command)
++                    is RestoreMedicationCommand -> restoreMedication(command)
++                    is DeleteLabInvestigationCommand -> deleteLabInvestigation(command)
++                    is RestoreLabInvestigationCommand -> restoreLabInvestigation(command)
+                 }
+             }
+         } catch (abort: ClinicalCommandAbort) {
+@@ -1366,6 +1370,212 @@ internal class RecordsRepository(
+         return ClinicalCommandOutcome.Committed(snapshot, receipt.toDomain())
+     }
+ 
++    /**
++     * D613 Documented limits: receipts store a fingerprint, not content, so nothing clinical remains after the window;
++     * backups taken before the delete still contain the row; attachments linked to a deleted lab become unlinked (UI must treat a missing link as unlinked).
++     */
++    private suspend fun deleteRestoreGuardFailure(patientId: String, expectedPatientRevision: Long): ClinicalCommandFailure? {
++        val patient = dao.patient(patientId) ?: return ClinicalCommandFailure.PATIENT_NOT_FOUND
++        if (patient.status == "archived") return ClinicalCommandFailure.PATIENT_ARCHIVED
++        if (patient.revision != expectedPatientRevision) return ClinicalCommandFailure.STALE_PATIENT_REVISION
++        if (patient.revision == Long.MAX_VALUE) return ClinicalCommandFailure.REVISION_EXHAUSTED
++        return null
++    }
++
++    private suspend fun deleteMedication(command: DeleteMedicationCommand): ClinicalCommandOutcome {
++        deleteRestoreGuardFailure(command.patientId, command.expectedPatientRevision)?.let {
++            return ClinicalCommandOutcome.Rejected(it)
++        }
++
++        val existing = dao.medication(command.medicationId)
++            ?: return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.RECORD_NOT_FOUND)
++        if (existing.patientId != command.patientId) {
++            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.CROSS_PATIENT_WRITE)
++        }
++        if (existing.revision != command.expectedMedicationRevision) {
++            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_REVISION)
++        }
++        if (medicationContentHash(existing.toDomain()) != command.deletedContentHash) {
++            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_REVISION)
++        }
++        if (existing.revision >= Long.MAX_VALUE - 1) {
++            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.REVISION_EXHAUSTED)
++        }
++
++        val deleted = dao.deleteMedication(command.medicationId, command.patientId, command.expectedMedicationRevision)
++        if (deleted != 1) return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_REVISION)
++
++        val patientUpdated = dao.incrementPatientRevision(command.patientId, command.expectedPatientRevision)
++        if (patientUpdated != 1) throw ClinicalCommandAbort(ClinicalCommandFailure.STALE_PATIENT_REVISION)
++
++        val receipt = ClinicalCommandReceiptEntity(
++            operationUuid = command.operationUuid,
++            patientId = command.patientId,
++            recordKind = command.recordKind.name,
++            recordId = command.recordId,
++            committedRevision = existing.revision + 1,
++            committedPatientRevision = command.expectedPatientRevision + 1,
++            fingerprint = command.computeFingerprint(),
++        )
++        dao.insertClinicalCommandReceipt(receipt)
++        val snapshot = loadSnapshot()
++        return ClinicalCommandOutcome.Committed(snapshot, receipt.toDomain())
++    }
++
++    private suspend fun restoreMedication(command: RestoreMedicationCommand): ClinicalCommandOutcome {
++        deleteRestoreGuardFailure(command.patientId, command.expectedPatientRevision)?.let {
++            return ClinicalCommandOutcome.Rejected(it)
++        }
++
++        val sourceReceipt = dao.clinicalCommandReceipt(command.sourceDelete.operationUuid)
++        val latestReceipt = dao.latestClinicalReceiptForRecord(command.patientId, command.recordId)
++        val existing = dao.medication(command.recordId)
++
++        val failure = ClinicalDeleteRule.evaluateRestore(
++            receipt = sourceReceipt?.toDomain(),
++            latestReceipt = latestReceipt?.toDomain(),
++            existingRow = existing,
++            cmd = command,
++        )
++        if (failure != null) return ClinicalCommandOutcome.Rejected(failure)
++
++        val tombstoneRevision = sourceReceipt!!.committedRevision
++        if (tombstoneRevision >= Long.MAX_VALUE) {
++            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.REVISION_EXHAUSTED)
++        }
++
++        dao.insertMedication(
++            MedicationEntity(
++                id = command.record.id,
++                patientId = command.patientId,
++                name = command.record.name,
++                dosage = command.record.dosage,
++                route = command.record.route,
++                frequency = command.record.frequency,
++                startDate = command.record.startDate,
++                endDate = command.record.endDate,
++                status = command.record.status,
++                notes = command.record.notes,
++                isProphylaxis = command.record.isProphylaxis,
++                isNonCompliant = command.record.isNonCompliant,
++                adverseEffects = command.record.adverseNotes,
++                revision = tombstoneRevision + 1,
++            ),
++        )
++
++        val patientUpdated = dao.incrementPatientRevision(command.patientId, command.expectedPatientRevision)
++        if (patientUpdated != 1) throw ClinicalCommandAbort(ClinicalCommandFailure.STALE_PATIENT_REVISION)
++
++        val receipt = ClinicalCommandReceiptEntity(
++            operationUuid = command.operationUuid,
++            patientId = command.patientId,
++            recordKind = command.recordKind.name,
++            recordId = command.recordId,
++            committedRevision = tombstoneRevision + 1,
++            committedPatientRevision = command.expectedPatientRevision + 1,
++            fingerprint = command.computeFingerprint(),
++        )
++        dao.insertClinicalCommandReceipt(receipt)
++        val snapshot = loadSnapshot()
++        return ClinicalCommandOutcome.Committed(snapshot, receipt.toDomain())
++    }
++
++    private suspend fun deleteLabInvestigation(command: DeleteLabInvestigationCommand): ClinicalCommandOutcome {
++        deleteRestoreGuardFailure(command.patientId, command.expectedPatientRevision)?.let {
++            return ClinicalCommandOutcome.Rejected(it)
++        }
++
++        val existing = dao.labInvestigation(command.labId)
++            ?: return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.RECORD_NOT_FOUND)
++        if (existing.patientId != command.patientId) {
++            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.CROSS_PATIENT_WRITE)
++        }
++        if (existing.revision != command.expectedLabRevision) {
++            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_REVISION)
++        }
++        if (labContentHash(existing.toDomain()) != command.deletedContentHash) {
++            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_REVISION)
++        }
++        if (existing.revision >= Long.MAX_VALUE - 1) {
++            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.REVISION_EXHAUSTED)
++        }
++
++        val deleted = dao.deleteLabInvestigation(command.labId, command.patientId, command.expectedLabRevision)
++        if (deleted != 1) return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_REVISION)
++
++        val patientUpdated = dao.incrementPatientRevision(command.patientId, command.expectedPatientRevision)
++        if (patientUpdated != 1) throw ClinicalCommandAbort(ClinicalCommandFailure.STALE_PATIENT_REVISION)
++
++        val receipt = ClinicalCommandReceiptEntity(
++            operationUuid = command.operationUuid,
++            patientId = command.patientId,
++            recordKind = command.recordKind.name,
++            recordId = command.recordId,
++            committedRevision = existing.revision + 1,
++            committedPatientRevision = command.expectedPatientRevision + 1,
++            fingerprint = command.computeFingerprint(),
++        )
++        dao.insertClinicalCommandReceipt(receipt)
++        val snapshot = loadSnapshot()
++        return ClinicalCommandOutcome.Committed(snapshot, receipt.toDomain())
++    }
++
++    private suspend fun restoreLabInvestigation(command: RestoreLabInvestigationCommand): ClinicalCommandOutcome {
++        deleteRestoreGuardFailure(command.patientId, command.expectedPatientRevision)?.let {
++            return ClinicalCommandOutcome.Rejected(it)
++        }
++
++        val sourceReceipt = dao.clinicalCommandReceipt(command.sourceDelete.operationUuid)
++        val latestReceipt = dao.latestClinicalReceiptForRecord(command.patientId, command.recordId)
++        val existing = dao.labInvestigation(command.recordId)
++
++        val failure = ClinicalDeleteRule.evaluateRestore(
++            receipt = sourceReceipt?.toDomain(),
++            latestReceipt = latestReceipt?.toDomain(),
++            existingRow = existing,
++            cmd = command,
++        )
++        if (failure != null) return ClinicalCommandOutcome.Rejected(failure)
++
++        val tombstoneRevision = sourceReceipt!!.committedRevision
++        if (tombstoneRevision >= Long.MAX_VALUE) {
++            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.REVISION_EXHAUSTED)
++        }
++
++        dao.insertLabInvestigation(
++            LabInvestigationEntity(
++                id = command.record.id,
++                patientId = command.patientId,
++                date = command.record.date,
++                testCategory = command.record.testCategory,
++                testName = command.record.testName,
++                result = command.record.result,
++                unit = command.record.unit,
++                referenceRange = command.record.referenceRange,
++                isAbnormal = command.record.isAbnormal,
++                notes = command.record.notes,
++                labName = command.record.labName,
++                revision = tombstoneRevision + 1,
++            ),
++        )
++
++        val patientUpdated = dao.incrementPatientRevision(command.patientId, command.expectedPatientRevision)
++        if (patientUpdated != 1) throw ClinicalCommandAbort(ClinicalCommandFailure.STALE_PATIENT_REVISION)
++
++        val receipt = ClinicalCommandReceiptEntity(
++            operationUuid = command.operationUuid,
++            patientId = command.patientId,
++            recordKind = command.recordKind.name,
++            recordId = command.recordId,
++            committedRevision = tombstoneRevision + 1,
++            committedPatientRevision = command.expectedPatientRevision + 1,
++            fingerprint = command.computeFingerprint(),
++        )
++        dao.insertClinicalCommandReceipt(receipt)
++        val snapshot = loadSnapshot()
++        return ClinicalCommandOutcome.Committed(snapshot, receipt.toDomain())
++    }
++
+     suspend fun saveDraft(draft: DraftRecord): Boolean {
+         val payload = encodeDraftFields(draft.fields) ?: return false
+         val entity = DraftEntity(

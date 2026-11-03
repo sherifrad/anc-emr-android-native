@@ -1,0 +1,16 @@
+# Shared brief prefix (identical for every role; stable text first, role part last)
+You are one lane in a MACA (multi-agent collaborative audit) fleet, ROUND 4f. An orchestrator planned the work and will verify it independently. Rules:
+1. Work only from the written spec: .agents/pipeline/SPEC_FIX_R4.md (section "Round 4f": oracles Q260-Q264, S160-S163) and .agents/pipeline/OWNER_DECISIONS.md. Earlier oracles still hold. If the spec is ambiguous choose the SAFE behaviour (never overwrite the doctor's text, never invent a clinical finding) and write the assumption in your final message.
+2. Touch ONLY the files in your ALLOWED list. Everything else is read-only. A change outside the list is reverted automatically and counted against you.
+3. Do not run git commit, git push, git checkout, git stash or any command that deletes files. Do not edit build files, gradle properties, or any test file you do not own.
+4. NEVER write dead code, extra XML/files or comments only to satisfy a static check or a test; if a check looks wrong, implement the spec and say so. REUSE PRINCIPLE: one function per rule; call the existing helper, never write a second copy. Simplest thing that meets the spec. No new libraries, no speculative abstractions, no refactors outside scope. Do not change any clinical threshold, wording or colour not named in the spec. Keep every existing testTag.
+5. Do not read .agents/maca-run-*/, .agents/fleet-runs/, .agents/backup-*, .agents/pipeline/runs/ or .agents/pipeline/SCORECARD.md.
+6. Final message (plain text, <= 25 lines): files you changed, what you did per oracle (Q number), assumptions, anything you could not do or verify. Never claim a test passed unless you ran it and saw it pass; say "not run" otherwise.
+Project facts: Kotlin, Jetpack Compose, JUnit4 unit tests under app/src/test. Unit tests: ./gradlew --offline :app:testDebugUnitTest --tests '<Class>'.
+--- ROLE-SPECIFIC PART BELOW ---
+
+ROLE: CORE BUILDER for ROUND 4f. Implement Q260, Q261, Q262, Q263 and the AncState part of Q264. ALLOWED files: app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt, app/src/main/java/com/sherifradwan/ancnative/state/DatingDraftRule.kt (NEW), app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt.
+Refactor the engine so the per-method due date exists once (`dueDateForMethod`) and both `calculateEstimatedDueDate` and `calculate` use it; results must stay identical for every existing case (existing GestationalAgeEngineTest, IvfDatingTest, GestationalDisplayTest must pass unchanged). Add DueDatesByMethod/dueDatesByMethod. Create DatingDraftRule.kt with the three internal functions; make `updateDatingDraft` in AncState.kt call `applyDatingChange` (keep its save-phase guard, errors reset and savePhase handling exactly as they are). Do not touch the dating screen (UI lane), storage, the save command, or any other function. Run ./gradlew --offline :app:compileDebugKotlin, the existing engine unit tests, the new unit tests when they exist, python3 .agents/checks/check_r4f.py (S163's DatingEditor part may fail until the UI lane). Report real results.
+
+
+ALLOWED (machine-enforced): app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt, app/src/main/java/com/sherifradwan/ancnative/state/DatingDraftRule.kt, app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt

@@ -1,0 +1,24 @@
+INDEPENDENT REVIEW: Round 4e (Logic cleanup)
+
+Result: VERIFIED (No hard blockers, no should-fix issues).
+
+Findings by checklist item:
+1. Behavior & Wording: Unchanged. MEDICATION_STATUS_ACTIVE evaluates to "Active" (ClinicalModels.kt:6). Stored values and draft defaults remain exactly "Active".
+2. Constant vs Literal: All medication status "Active" occurrences in main sources correctly use MEDICATION_STATUS_ACTIVE. No non-status literals were wrongly replaced (e.g., PatientPrintHtmlGenerator.kt:1208 `<span>Active Medications</span>` kept intact).
+3. Deleted Code: ClinicalLabPreset, ClinicalMedPreset, commonLabPresets, commonMedPresets deleted from ClinicalPresets.kt with zero remaining usages across the project.
+4. Queue Logic Duplication: None. LabEditor.kt delegates cleanly to nextLabPanelTest both on panel selection (line 429) and on chained advance (line 176).
+5. rememberSaveable Queue & Rotation:
+   - Crash on restore: Safe; StringListSaver (LabEditor.kt:114) and primitive State types bundle cleanly.
+   - Stale IDs: nextLabPanelTest skips unresolvable IDs (ClinicalCodexModels.kt:85).
+   - Failed save: Advance is keyed on LaunchedEffect(draft.labId); failed save does not alter labId, preventing spurious advance.
+   - Date & lab name: Chained save event preserves defaultDate and defaultLabName; draft loading leaves them intact.
+6. TestTags: All existing testTags intact; none renamed or removed.
+7. Scope & Allowed Files: All modifications strictly within assigned lane boundaries; check_r4e static checks pass (S150-S153).
+
+Nits:
+- Nit: app/src/main/java/com/sherifradwan/ancnative/ui/MedicationEditor.kt:189: Comment contains literal "Active" (`// Safety Reset Rule: sets status "Active"`), benign.
+- Nit: app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt:271: KDoc comment contains literal "Active", benign.
+
+Tests:
+- Static checks: S150, S151, S152, S153 PASSED (python3 .agents/checks/check_r4e.py).
+- JVM unit tests: not run (Gradle daemon IPC blocked by sandbox; logic verified by static audit and review).

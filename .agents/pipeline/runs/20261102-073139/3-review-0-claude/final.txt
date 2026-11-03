@@ -1,0 +1,35 @@
+**Verdict: not mergeable.** There are 3 Hard Blockers. The storage layer is mostly sound. The ViewModel and reducer are not. I only read the code; I ran no tests and no `git diff`.
+
+**Hard Blockers**
+1. **`AncState.kt:913-921`: `UndoExpired` fabricates an offer.** The branch `if (state.undoOffer == null) { val p = state.patients.firstOrNull(); val med = p?.medications?.firstOrNull() ... undoOffer = UndoOffer(token = event.token, ... label = med.name ...) }` creates an Undo bar from an unknown token. The offer names the first medication of the first patient, who may be unrelated, which leaks PHI into `AncState`. It breaks the spec rule that a stale or unknown token is a no-op (D612, item 5). `AncDeleteUndoStateTest.kt:100` asserts this behaviour: `assertEquals(state, reduce(base(), AncEvent.UndoExpired("t1")))` only passes because of the hack. Delete the branch and fix the test.
+2. **`AncViewModel.kt:724-766`: undo of "Save and next" can delete a medication that existed before the save.** The condition is only `command is SaveMedicationCommand`, with no check that `expectedMedicationRevision == null`. If the user edits an existing medication and taps Save and next, the offer's `DeleteMedicationCommand` matches the new revision and hash. Tapping Undo then removes the whole pre-existing record instead of reverting the edit. Offer SAVE_MED only for `MEDICATION_CREATE`.
+3. **`AncViewModel.kt:1127` and `1133`: an older undo finishing wipes a newer offer.** `confirmDelete` and the chained save don't block while an undo is RUNNING. When the old undo commits, it sets `pendingUndo = null` and dispatches `UndoCommitted`, which sets `undoOffer = null`. The newer delete is then no longer undoable, and the bar disappears early. Guard on the token, or block new offers while RUNNING.
+
+**Should-fix**
+- **`AncViewModel.kt:909` and `1105`: the undo timer is never restarted after `UndoFailed`.** `requestUndo` cancels `undoJob`. On failure the phase returns to READY, but `pendingUndo` stays and nothing expires it. The Undo stays available indefinitely, against "8 s then gone for good".
+- **`AncViewModel.kt:1000-1030` and `1055-1085`: no epoch or lock check before publishing.** `pendingUndo`, `undoJob` and the offer (including the medication or test name) are set after `controller.execute` returns. If the vault locked in between, `clearFrozenCommands` has already run and this publishes a fresh offer into the locked state. Re-check `vaultState` and `sessionEpoch` first.
+- **`AncState.kt:855-872`: `ConfirmDelete` doesn't re-check `hasDirtyDraft` or `savePhase.blocksEditing()`.** The reducer sets `medicationDraft = null` for the same record regardless. Only `RequestDelete` checks, and the draft can change before confirm. The spec says "clean editor" (D612).
+- **`AncViewModel.kt:1115-1122`: after an Ambiguous first attempt, the retry changes `expectedPatientRevision`.** That changes the fingerprint, so a replay returns `DUPLICATE_OPERATION_MISMATCH` instead of a clean replay. It fails closed, which is acceptable, but the user sees a wrong error.
+- **`RecordsRepository.kt:1377-1613`: four near-identical ~50-line functions plus the D613 comment copied four times.** This breaks the "one function per rule" principle. The guard block (patient, archived, revision, exhausted) could be shared, and the D613 text belongs on one declaration.
+- **`RecordsRepository.kt:341`: replaying a delete op after a later restore returns Committed** while the row exists again. Consider a presence check for delete and restore replays.
+
+**Nits**
+- **`ClinicalDeleteRule.kt:8`: `existingRow: Any?` loses type safety.** The private `Quadruple` is only there to destructure a tuple, and `else -> INVALID_COMMAND` at line 27 is unreachable.
+- **`AncViewModel.kt:1118`:** the `?: _state.value.let { RecordSnapshot(...) }` fallback is unexplained.
+- **`.agents/pipeline/run_pipeline.py` shows as modified in git status.** Confirm that is the orchestrator's edit and not a lane's.
+
+**Checked and OK**
+- **Delete guards (`RecordsRepository.kt:1377-1423`):**
+  - The `PATIENT_NOT_FOUND`, `PATIENT_ARCHIVED`, `STALE_PATIENT_REVISION` and `REVISION_EXHAUSTED` guards are present.
+  - The row's patient must equal `command.patientId`, otherwise `CROSS_PATIENT_WRITE`.
+  - The revision and `medicationContentHash` must match, and the DAO delete is keyed on id, `patient_id` and revision. Together these rule out a wrong-record or cross-patient delete.
+- **Restore (`ClinicalDeleteRule.kt:30-39` and `RecordsRepository.kt:1429-1493`):**
+  - It requires the source receipt (kind, patient, record, fingerprint), the latest receipt for the record, an absent row, and a record hash equal to `deletedContentHash`. That blocks restoring something never deleted, a conflicting newer record, or different content.
+  - The revision is tombstone+1, i.e. r+2.
+- **Transactions:** all four branches run inside `database.withTransaction`. The patient-revision increment throws `ClinicalCommandAbort` on 0 rows, which rolls the transaction back, and the receipt is written in the same transaction.
+- **Room schema:** `RecordsDatabase.kt` is not in the modified files and `version = 6` is unchanged. I haven't compared it against HEAD.
+- **Lock handling:** `clearFrozenCommands` cancels `undoJob` and clears `pendingUndo` and the offer on lock.
+- **Stale tokens:** `requestUndo` rejects tokens that don't match the offer or `pendingUndo`.
+- **Undo window:** `SubmitMedication*` is ignored while the undo is RUNNING.
+
+**Not verified:** whether the UI exposes Save and next on an edit editor. This is the reachability of blocker 2, and the fix is needed either way. I also didn't inspect the DAO test coverage or the instrumented tests.

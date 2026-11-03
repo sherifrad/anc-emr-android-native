@@ -1,0 +1,5 @@
+PASS S59 KeyFactTile label Text allows two lines (maxLines = 2)
+PASS S60 chip FlowRow ends with spacedBy(8.dp, Alignment.End); card background uses lerp(
+PASS S61 Prior Pregnancies summary and outcome Texts are not siblings of a Row with SpaceBetween
+PASS S62 formatWeightKg is the one weight rule; ProfileScreen uses it and no raw visit.weight kg literal
+PASS S63 top bar subtitle Text allows two lines (maxLines = 2)

@@ -1,0 +1,5 @@
+PASS S67 VisitVitals.kt is the ONE parser with bpLevel and no android import
+PASS S68 SaveVisitCommand validates through the one parser, DraftError gained the 3 values
+PASS S69 no second blood-pressure parser outside VisitVitals.kt
+PASS S70 VisitEditor shows the new errors and live BP hint, strings defined
+PASS S71 visits show the alert via ONE BpAlertLabel in ClinicalBadges

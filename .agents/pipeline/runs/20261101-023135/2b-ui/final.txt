@@ -1,0 +1,14 @@
+Files changed: app/src/main/java/com/sherifradwan/ancnative/ui/{MedicationEditor.kt, WorkspaceScreen.kt, ClinicalBadges.kt, CodexSettingsSections.kt, report/PatientPrintHtmlGenerator.kt}, app/src/main/res/values/strings.xml
+Q204: Replaced multi-card MedicationEditor with single-card Design B with presets, inline chips for route/frequency/start date, status ChoiceGroup (4 statuses), collapsible More section for endDate/adverseNotes/notes; removed prophylaxis and compliance switches; updated banner and button to "New medication: add to my medication list?" and "Add to my list" (isProphylaxis=false); previous-medication safety reset sets status "Active".
+Q205: Added MedicationStatusBadge in ClinicalBadges.kt (Active: teal tertiaryContainer, Completed: neutral grey surfaceVariant, Discontinued: rose secondaryContainer, Patient non-compliant: errorContainer; theme tokens only, contrast >= 4.5:1).
+Q206: Replaced non-compliant/prophylaxis badges and status FactRow in MedicationCard with MedicationStatusBadge(effectiveMedicationStatus(...)); updated overview count to "N active" via isOngoingMedication; updated medication_editor_notice.
+Q207: In PatientPrintHtmlGenerator.kt, replaced Prophylaxis badge with effectiveMedicationStatus badge; section title and comments updated to "Active Medications", column header set to "Status".
+Q208: In CodexSettingsSections.kt, removed prophylaxis badge and switch; saving sets isProphylaxis=false; removed "Codex" from visible medication wording ("My medication list", "Add to my list", "Reset to default medications").
+Strings added: None.
+Strings deleted: is_prophylaxis, prophylaxis_badge, therapeutic_badge, patient_non_compliant, non_compliant_badge.
+Assumptions: Preserved all required test tags and 48dp minimumTouchTarget across UI components; ChoiceGroup uses effectiveMedicationStatus.
+Verification results:
+- python3 .agents/checks/check_r4a.py: PASS (S110, S111, S112, S113, S114)
+- ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin :app:compileDebugAndroidTestKotlin: BUILD SUCCESSFUL
+- ./gradlew --offline :app:testDebugUnitTest: BUILD SUCCESSFUL (all unit tests passed)
+- ./gradlew --offline :app:lintDebug: BUILD SUCCESSFUL (0 errors)

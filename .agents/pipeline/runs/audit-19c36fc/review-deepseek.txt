@@ -1,0 +1,430 @@
+[0m
+> build · deepseek-v4.1-flash-free
+I'll start by reading the spec and the diff, then the full files under review.
+[0m⚙ [0mexecute {"code":"const r = await tools.bash ? null : null;\nconst res = await Promise.all([\n  search({query: \"read file\"}),\n]);\nreturn JSON.stringify(res);"} 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead .agents/pipeline/SPEC_LOGIC_R6.md 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead .agents/pipeline/runs/audit-19c36fc/diff.patch 
+> build · deepseek-v4.1-flash-free
+[0m$ [0mwc -l .agents/pipeline/runs/audit-19c36fc/diff.patch; git -C . log --oneline -3
+986 .agents/pipeline/runs/audit-19c36fc/diff.patch
+19c36fc feat(logic): permanent delete with Undo for medications and lab results, Undo for Save and next (commands, repository, reducer, view model)
+9aeba59 docs(logic): round 6a spec for delete and undo of medications and lab results, checks and briefs
+a8e6235 feat(chart): collapsible medication list (collapsed rows with summary, collapse/expand all above three medications)
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && wc -l app/src/main/java/com/sherifradwan/ancnative/storage/{RecordsRepository.kt,ClinicalCommands.kt,RecordsDao.kt,ClinicalDeleteRule.kt,ClinicalCommandController.kt} app/src/main/java/com/sherifradwan/ancnative/state/{AncViewModel.kt,AncState.kt} 2>&1 | tail -20
+wc: app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommandController.kt: open: No such file or directory
+    1641 app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt
+     607 app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt
+     516 app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt
+      50 app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRule.kt
+    1199 app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
+    1473 app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+    5486 total
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt [90m[limit=460][0m
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -n "private suspend fun saveMedication" -A 80 app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt
+1288:    private suspend fun saveMedication(command: SaveMedicationCommand): ClinicalCommandOutcome {
+1289-        val patient = dao.patient(command.patientId)
+1290-            ?: return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.PATIENT_NOT_FOUND)
+1291-        if (patient.status == "archived") {
+1292-            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.PATIENT_ARCHIVED)
+1293-        }
+1294-        if (patient.revision != command.expectedPatientRevision) {
+1295-            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_PATIENT_REVISION)
+1296-        }
+1297-        if (patient.revision == Long.MAX_VALUE) {
+1298-            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.REVISION_EXHAUSTED)
+1299-        }
+1300-
+1301-        val committedRevision = if (command.expectedMedicationRevision == null) {
+1302-            val existing = dao.medication(command.medicationId)
+1303-            if (existing != null) {
+1304-                val failure = if (existing.patientId == command.patientId) {
+1305-                    ClinicalCommandFailure.RECORD_CONFLICT
+1306-                } else {
+1307-                    ClinicalCommandFailure.CROSS_PATIENT_WRITE
+1308-                }
+1309-                return ClinicalCommandOutcome.Rejected(failure)
+1310-            }
+1311-            dao.insertMedication(
+1312-                MedicationEntity(
+1313-                    id = command.medicationId,
+1314-                    patientId = command.patientId,
+1315-                    name = command.name,
+1316-                    dosage = command.dosage,
+1317-                    route = command.route,
+1318-                    frequency = command.frequency,
+1319-                    startDate = command.startDate,
+1320-                    endDate = command.endDate,
+1321-                    status = command.status,
+1322-                    notes = command.notes,
+1323-                    isProphylaxis = command.isProphylaxis,
+1324-                    isNonCompliant = command.isNonCompliant,
+1325-                    adverseEffects = command.adverseNotes,
+1326-                    revision = 1,
+1327-                ),
+1328-            )
+1329-            1L
+1330-        } else {
+1331-            val existing = dao.medication(command.medicationId)
+1332-                ?: return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.RECORD_NOT_FOUND)
+1333-            if (existing.patientId != command.patientId) {
+1334-                return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.CROSS_PATIENT_WRITE)
+1335-            }
+1336-            val updated = dao.updateMedication(
+1337-                medicationId = command.medicationId,
+1338-                patientId = command.patientId,
+1339-                expectedRevision = command.expectedMedicationRevision,
+1340-                name = command.name,
+1341-                dosage = command.dosage,
+1342-                route = command.route,
+1343-                frequency = command.frequency,
+1344-                startDate = command.startDate,
+1345-                endDate = command.endDate,
+1346-                status = command.status,
+1347-                notes = command.notes,
+1348-                isProphylaxis = command.isProphylaxis,
+1349-                isNonCompliant = command.isNonCompliant,
+1350-                adverseEffects = command.adverseNotes,
+1351-            )
+1352-            if (updated != 1) return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_REVISION)
+1353-            command.expectedMedicationRevision + 1
+1354-        }
+1355-
+1356-        val patientUpdated = dao.incrementPatientRevision(command.patientId, command.expectedPatientRevision)
+1357-        if (patientUpdated != 1) throw ClinicalCommandAbort(ClinicalCommandFailure.STALE_PATIENT_REVISION)
+1358-
+1359-        val receipt = ClinicalCommandReceiptEntity(
+1360-            operationUuid = command.operationUuid,
+1361-            patientId = command.patientId,
+1362-            recordKind = command.recordKind.name,
+1363-            recordId = command.recordId,
+1364-            committedRevision = committedRevision,
+1365-            committedPatientRevision = command.expectedPatientRevision + 1,
+1366-            fingerprint = command.computeFingerprint(),
+1367-        )
+1368-        dao.insertClinicalCommandReceipt(receipt)
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "replay" app/src/main/java/com/sherifradwan/ancnative/storage/*.kt | head -40
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:179:                if (priorReceipt != null) return@withTransaction priorReceipt.replay(command)
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:265:            receipt.replay(command)
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:286:                if (priorReceipt != null) return@withTransaction priorReceipt.replay(command)
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:320:            receipt.replay(command)
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:341:                if (priorReceipt != null) return@withTransaction priorReceipt.replay(command)
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:375:            receipt.replay(command)
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:562:    private suspend fun SaveReceiptEntity.replay(command: SaveVisitCommand): SaveOutcome {
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:578:    private suspend fun PatientCommandReceiptEntity.replay(command: PatientCommand): PatientCommandOutcome {
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1019:    private suspend fun ClinicalCommandReceiptEntity.replay(
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt [90m[offset=550, limit=70][0m
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt [90m[limit=60, offset=1015][0m
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt [90m[offset=1, limit=330][0m
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt [90m[limit=360, offset=600][0m
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -n "class MedicationEntity" -A 30 app/src/main/java/com/sherifradwan/ancnative/storage/*.kt; grep -n "class LabInvestigationEntity" -A 25 app/src/main/java/com/sherifradwan/ancnative/storage/*.kt
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt:280:data class MedicationEntity(
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-281-    @PrimaryKey val id: String,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-282-    @ColumnInfo(name = "patient_id") val patientId: String,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-283-    val name: String,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-284-    val dosage: String,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-285-    val route: String,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-286-    val frequency: String,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-287-    @ColumnInfo(name = "start_date") val startDate: String,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-288-    @ColumnInfo(name = "end_date") val endDate: String?,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-289-    val status: String,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-290-    val notes: String?,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-291-    @ColumnInfo(name = "is_prophylaxis") val isProphylaxis: Boolean,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-292-    @ColumnInfo(name = "is_non_compliant", defaultValue = "0") val isNonCompliant: Boolean = false,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-293-    @ColumnInfo(name = "adverse_effects") val adverseEffects: String? = null,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-294-    val revision: Long,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-295-)
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-296-
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-297-@Entity(
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-298-    tableName = "clinical_command_receipts",
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-299-    foreignKeys = [
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-300-        ForeignKey(
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-301-            entity = PatientEntity::class,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-302-            parentColumns = ["id"],
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-303-            childColumns = ["patient_id"],
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-304-            onDelete = ForeignKey.RESTRICT,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-305-            onUpdate = ForeignKey.RESTRICT,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-306-        ),
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-307-    ],
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-308-    indices = [
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-309-        Index(value = ["patient_id"]),
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-310-        Index(value = ["record_kind", "record_id"]),
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt:249:data class LabInvestigationEntity(
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-250-    @PrimaryKey val id: String,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-251-    @ColumnInfo(name = "patient_id") val patientId: String,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-252-    @ColumnInfo(name = "test_date") val date: String,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-253-    @ColumnInfo(name = "test_category") val testCategory: String,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-254-    @ColumnInfo(name = "test_name") val testName: String,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-255-    val result: String,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-256-    val unit: String?,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-257-    @ColumnInfo(name = "reference_range") val referenceRange: String?,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-258-    @ColumnInfo(name = "is_abnormal") val isAbnormal: Boolean,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-259-    val notes: String?,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-260-    @ColumnInfo(name = "lab_name") val labName: String? = null,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-261-    val revision: Long,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-262-)
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-263-
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-264-@Entity(
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-265-    tableName = "medication_records",
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-266-    foreignKeys = [
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-267-        ForeignKey(
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-268-            entity = PatientEntity::class,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-269-            parentColumns = ["id"],
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-270-            childColumns = ["patient_id"],
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-271-            onDelete = ForeignKey.RESTRICT,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-272-            onUpdate = ForeignKey.RESTRICT,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-273-        ),
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-274-    ],
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -n "fun medication\|fun labInvestigation\|fun incrementPatientRevision\|fun insertMedication\|fun insertLabInvestigation\|fun clinicalCommandReceipt\|fun insertClinicalCommandReceipt" -A 3 app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt
+224:    suspend fun incrementPatientRevision(patientId: String, expectedRevision: Long): Int
+225-
+226-    @Query(
+227-        """
+--
+274:    suspend fun labInvestigation(labId: String): LabInvestigationEntity?
+275-
+276-    @Query("SELECT * FROM medication_records WHERE id = :medicationId LIMIT 1")
+277:    suspend fun medication(medicationId: String): MedicationEntity?
+278-
+279-    @Query("SELECT * FROM clinical_command_receipts WHERE operation_uuid = :operationUuid LIMIT 1")
+280:    suspend fun clinicalCommandReceipt(operationUuid: String): ClinicalCommandReceiptEntity?
+281-
+282-    @Query("SELECT * FROM clinical_command_receipts WHERE patient_id = :patientId AND record_id = :recordId ORDER BY committed_patient_revision DESC LIMIT 1")
+283-    suspend fun latestClinicalReceiptForRecord(patientId: String, recordId: String): ClinicalCommandReceiptEntity?
+--
+298:    suspend fun labInvestigationCount(): Int
+299-
+300-    @Query("SELECT COUNT(*) FROM medication_records")
+301:    suspend fun medicationCount(): Int
+302-
+303-    @Query("SELECT COUNT(*) FROM clinical_command_receipts")
+304:    suspend fun clinicalCommandReceiptCount(): Int
+305-
+306-    @Insert(onConflict = OnConflictStrategy.ABORT)
+307-    suspend fun insertPatientDating(dating: PatientDatingEntity)
+--
+313:    suspend fun insertLabInvestigation(lab: LabInvestigationEntity)
+314-
+315-    @Insert(onConflict = OnConflictStrategy.ABORT)
+316:    suspend fun insertMedication(medication: MedicationEntity)
+317-
+318-    @Insert(onConflict = OnConflictStrategy.ABORT)
+319:    suspend fun insertClinicalCommandReceipt(receipt: ClinicalCommandReceiptEntity)
+320-
+321-    @Query(
+322-        """
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "class DemoLabInvestigation\|class DemoMedicationRecord" -A 22 app/src/main/java/com/sherifradwan/ancnative/model/*.kt | head -60
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt:122:data class DemoLabInvestigation(
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-123-    val id: String,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-124-    val patientId: String,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-125-    val date: String,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-126-    val testCategory: String,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-127-    val testName: String,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-128-    val result: String,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-129-    val unit: String?,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-130-    val referenceRange: String?,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-131-    val isAbnormal: Boolean,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-132-    val notes: String?,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-133-    val labName: String? = null,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-134-    val revision: Long = 1,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-135-)
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-136-
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt:137:data class DemoMedicationRecord(
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-138-    val id: String,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-139-    val patientId: String,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-140-    val name: String,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-141-    val dosage: String,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-142-    val route: String,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-143-    val frequency: String,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-144-    val startDate: String,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-145-    val endDate: String?,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-146-    val status: String,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-147-    val notes: String?,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-148-    val isProphylaxis: Boolean,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-149-    val isNonCompliant: Boolean = false,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-150-    val adverseNotes: String? = null,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-151-    val revision: Long = 1,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-152-)
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-153-
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-154-data class DemoAttachment(
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-155-    val id: String,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-156-    val patientId: String,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-157-    val fileName: String,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-158-    val filePath: String,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt-159-    val category: String,
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -n "entity = \|childColumns" app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt
+45:            entity = PatientEntity::class,
+47:            childColumns = ["patient_id"],
+80:            entity = PatientEntity::class,
+82:            childColumns = ["patient_id"],
+87:            entity = VisitEntity::class,
+89:            childColumns = ["visit_id"],
+109:            entity = PatientEntity::class,
+111:            childColumns = ["patient_id"],
+146:            entity = PatientEntity::class,
+148:            childColumns = ["patient_id"],
+173:            entity = PatientEntity::class,
+175:            childColumns = ["patient_id"],
+199:            entity = PatientEntity::class,
+201:            childColumns = ["patient_id"],
+237:            entity = PatientEntity::class,
+239:            childColumns = ["patient_id"],
+268:            entity = PatientEntity::class,
+270:            childColumns = ["patient_id"],
+301:            entity = PatientEntity::class,
+303:            childColumns = ["patient_id"],
+328:            entity = PatientEntity::class,
+330:            childColumns = ["patient_id"],
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt [90m[limit=140, offset=1][0m
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -n "hasDirtyDraft\|val isDirty\|fun blocksEditing\|class MedicationDraft\|class LabDraft\|baseMedicationRevision\|savePhase" app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt | head -50
+125:enum class LabDraftField {
+135:enum class MedicationDraftField {
+271:    val isDirty: Boolean get() = values != original
+307:    val isDirty: Boolean get() = values != original
+325:    val isDirty: Boolean get() = values != original
+353:    val isDirty: Boolean get() = values != original
+364:    val isDirty: Boolean get() = reason.isNotEmpty()
+385:    val isDirty: Boolean get() = values != original
+417:    val isDirty: Boolean get() = values != original
+420:data class LabDraftValues(
+432:data class LabDraft(
+442:    val isDirty: Boolean get() = values != original
+445:data class MedicationDraftValues(
+459:data class MedicationDraft(
+464:    val baseMedicationRevision: Long?,
+469:    val isDirty: Boolean get() = values != original
+491:    val savePhase: SavePhase = SavePhase.IDLE,
+512:    val hasDirtyDraft: Boolean
+583:    data class LabDraftChanged(val field: LabDraftField, val value: String) : AncEvent
+585:    data class MedicationDraftChanged(val field: MedicationDraftField, val value: String) : AncEvent
+731:                savePhase = SavePhase.IDLE,
+747:                savePhase = SavePhase.IDLE,
+751:                ClinicalRecordKind.DATING -> state.copy(datingDraft = state.datingDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
+752:                ClinicalRecordKind.ULTRASOUND_CREATE, ClinicalRecordKind.ULTRASOUND_UPDATE -> state.copy(ultrasoundDraft = state.ultrasoundDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
+753:                ClinicalRecordKind.LAB_CREATE, ClinicalRecordKind.LAB_UPDATE -> state.copy(labDraft = state.labDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
+754:                ClinicalRecordKind.MEDICATION_CREATE, ClinicalRecordKind.MEDICATION_UPDATE -> state.copy(medicationDraft = state.medicationDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
+760:                    savePhase = SavePhase.PENDING,
+768:                state.copy(savePhase = SavePhase.RECONCILING, saveError = null)
+772:                    savePhase = if (event.unresolved) SavePhase.UNRESOLVED else SavePhase.ERROR,
+783:                    savePhase = SavePhase.IDLE,
+794:                    savePhase = SavePhase.IDLE,
+829:                if (patient == null || patient.status == "archived" || state.hasDirtyDraft || state.savePhase.blocksEditing()) {
+843:                if (patient == null || patient.status == "archived" || state.hasDirtyDraft || state.savePhase.blocksEditing()) {
+858:                if (state.hasDirtyDraft || state.savePhase.blocksEditing()) return state
+897:                if (nextDraft != null && nextDraft.baseMedicationRevision == null && !nextDraft.isDirty) {
+928:        if (state.savePhase.blocksEditing()) return state
+929:        return if (state.hasDirtyDraft) {
+937:        if (state.savePhase.blocksEditing()) return state
+942:        if (state.hasDirtyDraft) {
+965:        if (state.savePhase.blocksEditing() || state.hasDirtyDraft) return state
+990:        if (state.savePhase.blocksEditing() || state.hasDirtyDraft) return state
+1007:        if (state.savePhase.blocksEditing() || state.hasDirtyDraft) return state
+1031:        if (state.savePhase.blocksEditing() || state.hasDirtyDraft) return state
+1051:        if (state.savePhase.blocksEditing() || state.hasDirtyDraft) return state
+1069:        if (state.savePhase.blocksEditing() || state.hasDirtyDraft) return state
+1092:        if (state.savePhase.blocksEditing() || state.hasDirtyDraft) return state
+1118:        if (state.savePhase.blocksEditing() || state.hasDirtyDraft) return state
+1135:                baseMedicationRevision = med?.revision,
+1145:        if (state.savePhase.blocksEditing()) return state
+1155:        return state.copy(draft = draft.copy(values = values, errors = emptySet()), savePhase = SavePhase.IDLE, saveError = null)
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt [90m[limit=130, offset=255][0m
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt [90m[limit=180, offset=385][0m
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt [90m[limit=330, offset=690][0m
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt [90m[limit=80, offset=1140][0m
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt [90m[limit=120, offset=1000][0m
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && ls app/src/main/java/com/sherifradwan/ancnative/storage/ && grep -rn "suspend fun execute\|fun execute(" app/src/main/java/com/sherifradwan/ancnative/storage/Vault*.kt | head
+AndroidVaultKeys.kt
+AttachmentSyncManager.kt
+BoundedBitmap.kt
+CameraCaptureHelper.kt
+ClinicalCommands.kt
+ClinicalDeleteRule.kt
+DraftCodec.kt
+DraftRecord.kt
+EncryptedBackupManager.kt
+Hashing.kt
+PatientAttachmentVault.kt
+PatientCommands.kt
+PhotoQuality.kt
+RecordAnomalies.kt
+RecordEntities.kt
+RecordsDao.kt
+RecordsDatabase.kt
+RecordsMigration.kt
+RecordsRepository.kt
+SaveVisitCommand.kt
+ScanPhotoRef.kt
+VaultAutoAction.kt
+VaultCleanupRule.kt
+VaultController.kt
+VaultFiles.kt
+VaultState.kt
+app/src/main/java/com/sherifradwan/ancnative/storage/VaultController.kt:385:    suspend fun execute(
+app/src/main/java/com/sherifradwan/ancnative/storage/VaultController.kt:421:    suspend fun execute(
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/storage/VaultController.kt [90m[limit=120, offset=370][0m
+> build · deepseek-v4.1-flash-free
+[0m✗ [0mRead app/src/main/java/com/sherifgamalradwan/ancnative/state/AncState.kt failed
+[91m[1mError: [0mFile not found: /Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifgamalradwan/ancnative/state/AncState.kt
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt [90m[limit=140, offset=1100][0m
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -n "fun clearDrafts" -A 25 app/src/main/java/com/sherifgamalradwan/ancnative/state/AncState.kt; grep -n "enum class SavePhase" -A 20 app/src/main/java/com/sherifgamalradwan/ancnative/state/AncState.kt
+grep: app/src/main/java/com/sherifgamalradwan/ancnative/state/AncState.kt: No such file or directory
+grep: app/src/main/java/com/sherifgamalradwan/ancnative/state/AncState.kt: No such file or directory
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && pwd && ls app/src/main/java/com/sherifradwan/ancnative/state/ | head
+/Users/sherifgamalradwan/anc-emr-android-native
+AncState.kt
+AncViewModel.kt
+DatingDraftRule.kt
+DraftAutosaver.kt
+DraftMapping.kt
+DraftRecovery.kt
+IntakeDatingRule.kt
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -n "fun clearDrafts" -A 25 app/src/main/java/com/sherifgamalradwan/ancnative/state/AncState.kt
+grep: app/src/main/java/com/sherifgamalradwan/ancnative/state/AncState.kt: No such file or directory
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -n "clearDrafts" app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt | head
+778:                state.clearDrafts().copy(
+789:                state.clearDrafts().copy(
+932:            state.clearDrafts().copy(route = destination, savedNotice = false, notice = null)
+949:        return state.clearDrafts().copy(
+974:        return state.clearDrafts().copy(
+998:        return state.clearDrafts().copy(
+1013:        return state.clearDrafts().copy(
+1037:        return state.clearDrafts().copy(
+1054:        return state.clearDrafts().copy(
+1075:        return state.clearDrafts().copy(
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "fun AncState.clearDrafts\|fun clearDrafts" app/src/main/java/
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:1352:    private fun AncState.clearDrafts(): AncState = copy(
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt [90m[limit=50, offset=1340][0m
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/DraftAutosaver.kt 
+> build · deepseek-v4.1-flash-free

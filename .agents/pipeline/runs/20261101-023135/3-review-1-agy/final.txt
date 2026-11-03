@@ -1,0 +1,24 @@
+ROUND 4a INDEPENDENT REVIEW (Read-only)
+
+Status: PASS with findings (no Hard Blockers, 1 Should-fix, 2 Nits).
+
+Static checks:
+- S110-S114 passed (.agents/checks/check_r4a.py: S110 four ordered statuses, S111 removed events/tags gone, S112 stored isProphylaxis preserved, S113 MedicationStatusBadge defined once, S114 old codex wording removed).
+- Unit tests: not run (Gradle daemon socket binding blocked in sandbox).
+
+Findings:
+1. [Should-fix] MedicationEditor.kt:282 / PatientEditor.kt:511:
+   `listOf("").plus(choices).forEachIndexed` in `ChoiceGroup` prepends `""` ("Unknown"), so `medStatusChoice` displays 5 choices ("Unknown", "Active", "Completed", "Discontinued", "Patient non-compliant") rather than "exactly the four statuses" specified by Q204 and D22. Selecting "Unknown" sets draft status to `""`.
+2. [Nit] PatientPrintHtmlGenerator.kt:201:
+   `val displayedMeds = patient.medications.take(MAX_PRINT_MEDICATIONS)`
+   Does not filter using `isOngoingMedication`; Completed and Discontinued medications are included under the "Active Medications" printed report section (with their respective status badges).
+3. [Nit] MedicationEditor.kt:282:
+   `ChoiceGroup` uses standard M3 `FilterChip` styling rather than theme container colours matching `MedicationStatusBadge` as referenced in Q204 ("Colours come from Q205").
+
+Verification checklist:
+- Active + old non-compliant flag: handled correctly in workspace count (`isOngoingMedication`), card badge (`MedicationStatusBadge`), summary, print, and draft loading (`effectiveMedicationStatus`).
+- Data loss: `isProphylaxis` and `isNonCompliant` preserved in DB schemas, Room entities, Dao, commands, backup/restore, and DraftMapping.
+- Editor: preset selection no longer touches prophylaxis; previous medication reset resets to "Active" and clears adverse/notes/dates; More section auto-expands when end date, notes, or adverse effects are present; testTags and 48dp touch targets preserved.
+- Badges & tokens: `MedicationStatusBadge` uses M3 container/onContainer token pairs with >= 4.5:1 contrast in light and dark themes.
+- Wording: "Codex" and "Prophylaxis" removed from visible UI, print badges, and summary prefixes.
+- Cleanliness: deleted strings (`is_prophylaxis`, `prophylaxis_badge`, `therapeutic_badge`, `patient_non_compliant`, `non_compliant_badge`) verified unused across main, test, androidTest, and res. No touched files outside ALLOW list.

@@ -1,0 +1,414 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt
+index 1fe2ca8..db67a71 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt
+@@ -783,31 +783,6 @@ private fun PatientClinicalRow(
+     }
+ }
+ 
+-@Composable
+-private fun PatientAgeBadge(ageText: String?) {
+-    if (ageText.isNullOrBlank()) return
+-    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+-    val (bgColor, borderColor, textColor) = if (isDark) {
+-        Triple(TagAgeDarkBg, TagAgeDarkBorder, TagAgeDarkText)
+-    } else {
+-        Triple(TagAgeBg, TagAgeBorder, TagAgeText)
+-    }
+-
+-    Surface(
+-        shape = RoundedCornerShape(6.dp),
+-        color = bgColor,
+-        border = BorderStroke(1.dp, borderColor),
+-    ) {
+-        Text(
+-            text = "$ageText yrs",
+-            style = MaterialTheme.typography.labelSmall,
+-            fontWeight = FontWeight.SemiBold,
+-            color = textColor,
+-            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+-        )
+-    }
+-}
+-
+ @Composable
+ private fun BloodGroupBadge(
+     bloodGroup: String?,
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt
+index d9cc069..d6f30c6 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt
+@@ -328,13 +328,8 @@ private fun ProfileHeroIdentityCard(
+                         modifier = Modifier.fillMaxWidth().semantics { heading() },
+                     )
+                     if (patient.ageText != null) {
+-                        Text(
+-                            text = "${patient.ageText} yrs",
+-                            style = MaterialTheme.typography.bodyMedium,
+-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+-                            textAlign = if (isArabic) TextAlign.End else TextAlign.Start,
+-                            modifier = Modifier.fillMaxWidth(),
+-                        )
++                        Spacer(Modifier.height(6.dp))
++                        PatientAgeBadge(ageText = patient.ageText, large = true)
+                     }
+                 }
+ 
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt
+index 001d2be..558bb24 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt
+@@ -60,9 +60,26 @@ val TagNormalRiskBg = Color(0xFFDCFCE7)
+ val TagNormalRiskBorder = Color(0xFF86EFAC)
+ val TagNormalRiskText = Color(0xFF166534)
+ 
+-val TagAgeBg = Color(0xFFF1F5F9)
+-val TagAgeBorder = Color(0xFFCBD5E1)
+-val TagAgeText = Color(0xFF334155)
++// Dedicated maternal-age identity (indigo) — distinct from GA (sky), obstetric (purple), risk (red/green)
++val TagAgeBg = Color(0xFFE0E7FF)
++val TagAgeBorder = Color(0xFFA5B4FC)
++val TagAgeText = Color(0xFF3730A3)
++val TagAgeLabelBg = Color(0xFF4F46E5)
++val TagAgeLabelText = Color(0xFFFFFFFF)
++
++// Delivery section identities
++val DeliveryHospitalBg = Color(0xFFF3E8FF)
++val DeliveryHospitalBorder = Color(0xFFD8B4FE)
++val DeliveryHospitalText = Color(0xFF6B21A8)
++val DeliveryFeeBg = Color(0xFFDCFCE7)
++val DeliveryFeeBorder = Color(0xFF86EFAC)
++val DeliveryFeeText = Color(0xFF166534)
++val DeliveryPlanBg = Color(0xFFE0F2FE)
++val DeliveryPlanBorder = Color(0xFF7DD3FC)
++val DeliveryPlanText = Color(0xFF075985)
++val DeliveryPostpartumBg = Color(0xFFFCE7F3)
++val DeliveryPostpartumBorder = Color(0xFFF9A8D4)
++val DeliveryPostpartumText = Color(0xFF9D174D)
+ 
+ // Dark Mode Clinical Badge Tokens (Deep rich containers, luminous text)
+ val TagObstetricDarkBg = Color(0xFF2E1065)
+@@ -98,9 +115,23 @@ val TagNormalRiskDarkBg = Color(0xFF052E16)
+ val TagNormalRiskDarkBorder = Color(0xFF166534)
+ val TagNormalRiskDarkText = Color(0xFF86EFAC)
+ 
+-val TagAgeDarkBg = Color(0xFF1E293B)
+-val TagAgeDarkBorder = Color(0xFF334155)
+-val TagAgeDarkText = Color(0xFFE2E8F0)
++val TagAgeDarkBg = Color(0xFF1E1B4B)
++val TagAgeDarkBorder = Color(0xFF3730A3)
++val TagAgeDarkText = Color(0xFFC7D2FE)
++val TagAgeLabelDarkBg = Color(0xFF6366F1)
++
++val DeliveryHospitalDarkBg = Color(0xFF2E1065)
++val DeliveryHospitalDarkBorder = Color(0xFF6B21A8)
++val DeliveryHospitalDarkText = Color(0xFFE9D5FF)
++val DeliveryFeeDarkBg = Color(0xFF052E16)
++val DeliveryFeeDarkBorder = Color(0xFF166534)
++val DeliveryFeeDarkText = Color(0xFF86EFAC)
++val DeliveryPlanDarkBg = Color(0xFF082F49)
++val DeliveryPlanDarkBorder = Color(0xFF075985)
++val DeliveryPlanDarkText = Color(0xFFBAE6FD)
++val DeliveryPostpartumDarkBg = Color(0xFF500724)
++val DeliveryPostpartumDarkBorder = Color(0xFF9D174D)
++val DeliveryPostpartumDarkText = Color(0xFFFBCFE8)
+ 
+ private val LightColors = lightColorScheme(
+     primary = ClinicalNavy,
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt
+index 9430618..44827f0 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt
+@@ -956,12 +956,11 @@ private fun VisitCard(
+             }
+ 
+             if (canEdit) {
+-                OutlinedButton(
++                PencilEditButton(
++                    contentDescription = stringResource(R.string.edit_visit),
++                    tag = "editVisit-${visit.id}",
+                     onClick = onEdit,
+-                    modifier = Modifier.minimumTouchTarget().testTag("editVisit-${visit.id}"),
+-                ) {
+-                    Text(stringResource(R.string.edit_visit), maxLines = 1, softWrap = false)
+-                }
++                )
+             }
+         }
+     }
+@@ -1005,12 +1004,11 @@ private fun PreviousPregnancyCard(
+             FactRow(R.string.termination_method, pregnancy.terminationMethod)
+             FactRow(R.string.clinician_id, pregnancy.clinicianId)
+             if (canEdit) {
+-                OutlinedButton(
++                PencilEditButton(
++                    contentDescription = stringResource(R.string.correct_previous_pregnancy),
++                    tag = "editPregnancy-${pregnancy.id}",
+                     onClick = onEdit,
+-                    modifier = Modifier.minimumTouchTarget().testTag("editPregnancy-${pregnancy.id}"),
+-                ) {
+-                    Text(stringResource(R.string.correct_previous_pregnancy))
+-                }
++                )
+             }
+         }
+     }
+@@ -1207,12 +1205,11 @@ private fun UltrasoundCard(
+                 }
+             }
+             if (canEdit) {
+-                OutlinedButton(
++                PencilEditButton(
++                    contentDescription = stringResource(R.string.edit_ultrasound),
++                    tag = "editUltrasound-${scan.id}",
+                     onClick = onEdit,
+-                    modifier = Modifier.minimumTouchTarget().testTag("editUltrasound-${scan.id}"),
+-                ) {
+-                    Text(stringResource(R.string.edit_ultrasound))
+-                }
++                )
+             }
+         }
+     }
+@@ -1323,19 +1320,54 @@ private fun EpisodeOverviewContent(patient: DemoPatient, onEvent: (AncEvent) ->
+     }
+ }
+ 
++internal data class DeliveryNoteSections(
++    val hospital: String?,
++    val fees: String?,
++    val plan: String?,
++    val postpartum: String?,
++)
++
++/** Splits free-text obstetric notes into the four delivery subsections by keyword. */
++internal fun parseDeliveryNotes(notes: String?): DeliveryNoteSections {
++    val lines = notes?.lines()?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty()
++    fun String.stripPrefix(): String = substringAfter(":", this).trim().ifBlank { this }
++    val postpartum = lines.filter {
++        it.contains("postpartum", true) || it.contains("delivered", true) || it.contains("discharged", true)
++    }
++    val fees = lines.filter {
++        it !in postpartum && (it.contains("fee", true) || it.contains("EGP", true) || it.contains("cost", true) || it.contains("package", true))
++    }
++    val rest = lines - postpartum.toSet() - fees.toSet()
++    val hospitalLine = rest.firstOrNull { it.contains("hospital", true) }
++    val hospital = hospitalLine?.let { line ->
++        val idx = line.lastIndexOf(" at ", ignoreCase = true)
++        (if (idx >= 0) line.substring(idx + 4) else line.stripPrefix()).trim().trimEnd('.')
++    }
++    return DeliveryNoteSections(
++        hospital = hospital,
++        fees = fees.joinToString("\n") { it.stripPrefix() }.ifBlank { null },
++        plan = rest.joinToString("\n").ifBlank { null },
++        postpartum = postpartum.joinToString("\n") { it.stripPrefix() }.ifBlank { null },
++    )
++}
++
+ @Composable
+ private fun DeliveryPlanningCard(
+     patient: DemoPatient,
+     onEditPatient: () -> Unit,
+ ) {
++    val sections = remember(patient.obstetricNotes) { parseDeliveryNotes(patient.obstetricNotes) }
++    val latestScan = patient.ultrasoundScans.maxByOrNull { it.date }
++    val isRhNegative = patient.bloodGroupText?.trim()?.endsWith("-") == true ||
++        patient.bloodGroupText?.contains("neg", ignoreCase = true) == true
++
+     Card(
+         modifier = Modifier.fillMaxWidth().testTag("deliveryPlanningCard"),
+         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+     ) {
+-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
++        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+             Row(
+                 modifier = Modifier.fillMaxWidth(),
+-                horizontalArrangement = Arrangement.SpaceBetween,
+                 verticalAlignment = Alignment.CenterVertically,
+             ) {
+                 Text(
+@@ -1343,48 +1375,94 @@ private fun DeliveryPlanningCard(
+                     style = MaterialTheme.typography.titleMedium,
+                     fontWeight = FontWeight.Bold,
+                     color = MaterialTheme.colorScheme.primary,
++                    modifier = Modifier.weight(1f).semantics { heading() },
+                 )
+-                OutlinedButton(
++                IconButton(
+                     onClick = onEditPatient,
+-                    modifier = Modifier.minimumTouchTarget(),
++                    modifier = Modifier.testTag("editDeliveryPlan"),
+                 ) {
+-                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+-                    Spacer(Modifier.width(4.dp))
+-                    Text("Edit Delivery Plan")
++                    Icon(
++                        Icons.Default.Edit,
++                        contentDescription = "Edit Delivery Plan",
++                        tint = MaterialTheme.colorScheme.primary,
++                        modifier = Modifier.size(20.dp),
++                    )
+                 }
+             }
+-            Text(
+-                text = stringResource(R.string.delivery_planning_notice),
+-                color = MaterialTheme.colorScheme.tertiary,
+-                style = MaterialTheme.typography.bodyMedium,
+-            )
+-            FactRow(R.string.blood_group, patient.bloodGroupText)
+-            FactRow(R.string.agreed_edd, patient.dating?.agreedEdd ?: patient.dating?.ultrasoundEdd)
+-            FactRow(R.string.current_gestational_age, patient.dating?.calculateGestationalAge())
+-            FactRow(R.string.manual_risk, patient.riskLevel)
+-            val latestScan = patient.ultrasoundScans.maxByOrNull { it.date }
+-            FactRow(R.string.fetal_presentation, latestScan?.presentation)
+-            FactRow(R.string.placental_site, latestScan?.placentalSite)
+ 
+-            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
++            // Key clinical facts: label above, bold value, each in its own tile
++            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
++                KeyFactTile(
++                    label = stringResource(R.string.blood_group),
++                    value = patient.bloodGroupText?.let { "🩸 $it" },
++                    emphasize = isRhNegative,
++                    modifier = Modifier.weight(1f),
++                )
++                KeyFactTile(
++                    label = "Current GA",
++                    value = patient.dating?.calculateGestationalAge(),
++                    modifier = Modifier.weight(1f),
++                )
++            }
++            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
++                KeyFactTile(
++                    label = "Agreed EDD",
++                    value = patient.dating?.agreedEdd ?: patient.dating?.ultrasoundEdd,
++                    modifier = Modifier.weight(1f),
++                )
++                KeyFactTile(
++                    label = "Risk",
++                    value = patient.riskLevel,
++                    emphasize = patient.riskLevel?.contains("High", ignoreCase = true) == true,
++                    modifier = Modifier.weight(1f),
++                )
++            }
++            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
++                KeyFactTile(
++                    label = "Presentation",
++                    value = latestScan?.presentation,
++                    modifier = Modifier.weight(1f),
++                )
++                KeyFactTile(
++                    label = "Placenta",
++                    value = latestScan?.placentalSite,
++                    modifier = Modifier.weight(1f),
++                )
++            }
+ 
+-            // Financial Agreement & Delivery Fee Section
+-            Text(
+-                text = "Delivery Fee & Financial Agreement",
+-                style = MaterialTheme.typography.titleSmall,
+-                fontWeight = FontWeight.Bold,
+-                color = MaterialTheme.colorScheme.primary,
+-            )
+-            val feeInfo = patient.obstetricNotes?.lineSequence()
+-                ?.firstOrNull { it.contains("fee", ignoreCase = true) || it.contains("agreement", ignoreCase = true) || it.contains("cost", ignoreCase = true) }
++            HorizontalDivider()
+ 
+-            FactRow(
+-                label = "Agreed Delivery Fee & Hospital",
+-                value = feeInfo ?: "To be agreed at clinic based on hospital and delivery mode (NVD / CS)",
++            DeliverySectionBox(
++                title = "Agreed Delivery Hospital",
++                icon = "🏥",
++                value = sections.hospital,
++                tone = DeliveryTone.HOSPITAL,
++                placeholder = "Hospital not agreed yet",
++                modifier = Modifier.testTag("deliveryHospital"),
+             )
+-            FactRow(
+-                label = "Delivery Plan & Clinical Notes",
+-                value = patient.obstetricNotes?.takeIf { it.isNotBlank() } ?: "No additional notes recorded yet",
++            DeliverySectionBox(
++                title = "Agreed Delivery Fees",
++                icon = "💵",
++                value = sections.fees,
++                tone = DeliveryTone.FEE,
++                placeholder = "To be agreed based on hospital and delivery mode (NVD / CS)",
++                modifier = Modifier.testTag("deliveryFees"),
++            )
++            DeliverySectionBox(
++                title = "Delivery Plan",
++                icon = "📋",
++                value = sections.plan,
++                tone = DeliveryTone.PLAN,
++                placeholder = "No delivery plan recorded yet",
++                modifier = Modifier.testTag("deliveryPlan"),
++            )
++            DeliverySectionBox(
++                title = "Postpartum Note",
++                icon = "👶",
++                value = sections.postpartum,
++                tone = DeliveryTone.POSTPARTUM,
++                placeholder = "No postpartum note recorded yet",
++                modifier = Modifier.testTag("deliveryPostpartum"),
+             )
+         }
+     }
+@@ -1436,12 +1514,11 @@ private fun LabCard(
+             FactRow(R.string.reference_range, lab.referenceRange)
+             FactRow(R.string.notes, lab.notes)
+             if (canEdit) {
+-                OutlinedButton(
++                PencilEditButton(
++                    contentDescription = stringResource(R.string.edit_lab),
++                    tag = "editLab-${lab.id}",
+                     onClick = onEdit,
+-                    modifier = Modifier.minimumTouchTarget().testTag("editLab-${lab.id}"),
+-                ) {
+-                    Text(stringResource(R.string.edit_lab))
+-                }
++                )
+             }
+         }
+     }
+@@ -2025,12 +2102,11 @@ private fun MedicationCard(med: DemoMedicationRecord, canEdit: Boolean, onEdit:
+             }
+             FactRow(R.string.notes, med.notes)
+             if (canEdit) {
+-                OutlinedButton(
++                PencilEditButton(
++                    contentDescription = stringResource(R.string.edit_medication),
++                    tag = "editMedication-${med.id}",
+                     onClick = onEdit,
+-                    modifier = Modifier.minimumTouchTarget().testTag("editMedication-${med.id}"),
+-                ) {
+-                    Text(stringResource(R.string.edit_medication))
+-                }
++                )
+             }
+         }
+     }
+@@ -2062,3 +2138,22 @@ fun WorkspaceSection.labelResource(): Int = when (this) {
+     WorkspaceSection.DELIVERY -> R.string.delivery
+     WorkspaceSection.ATTACHMENTS -> R.string.attachments
+ }
++
++/** Global compact edit affordance: a right-aligned pencil icon button. */
++@Composable
++internal fun PencilEditButton(
++    contentDescription: String,
++    tag: String,
++    onClick: () -> Unit,
++) {
++    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
++        IconButton(onClick = onClick, modifier = Modifier.testTag(tag)) {
++            Icon(
++                Icons.Default.Edit,
++                contentDescription = contentDescription,
++                tint = MaterialTheme.colorScheme.primary,
++                modifier = Modifier.size(20.dp),
++            )
++        }
++    }
++}

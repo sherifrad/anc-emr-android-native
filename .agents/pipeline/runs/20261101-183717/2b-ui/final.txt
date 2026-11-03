@@ -1,0 +1,30 @@
+I have started the Kotlin compilation task (`:app:compileDebugKotlin`, `:app:compileReleaseKotlin`, and `:app:compileDebugAndroidTestKotlin`) and am waiting for it to finish.
+I am waiting for `:app:lintDebug` to finish analyzing.
+Files changed:
+app/src/main/java/com/sherifradwan/ancnative/ui/DesignSystem.kt (new)
+app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt
+app/src/main/res/values/strings.xml
+
+Strings added: finding_not_set ("Not set"), ultrasound_more ("More: photos and visit link"), more_open ("Open"), more_close ("Close").
+
+Implementation summary:
+U200: Defined SectionCard (16dp rounded shape, 1dp border, 16dp padding, 12dp spacing, bold primary title) and SummaryRow (48dp min height, clickable, onSurfaceVariant for not set, down chevron) in DesignSystem.kt.
+U201: Refactored UltrasoundEditor.kt to replace direct Card( calls with SectionCard and Surface.
+U210: Enforced card order: live summary/report, date strip, findings, biometry, impression, More.
+U211: Consolidated scan date, calculated GA / redating hints, and GA weeks/days into SectionCard; moved visit linkage to More.
+U212: Implemented guided findings card (fetalNumber, presentation, placenta, liquor) showing ChoiceGroup in findingOpen-<key> for the active finding and SummaryRow in findingRow-<key> for closed findings. Wired nextBlankFinding helper across selection, Fill normal scan, Clear findings, and rememberSaveable initial state.
+U213: Preserved biometryCard, toggleBiometry, and all biometry/FHR/EFW fields without reference alterations.
+U214: Created More section toggled by ultrasoundMoreToggle SummaryRow, initially expanded when visit or photos are attached, enclosing scanAttachmentsCard and linkedVisitCard inside ultrasoundMoreSection.
+U215: Placed impression field, impressionFromChoices, and vault security badge into their own SectionCard.
+U216: Adhered to 48dp minimum touch targets, Material 3 theme colors, and font-scale safe wrapping.
+U217: Added only required English strings without deletions.
+
+Assumptions: ultrasoundMoreToggle displays "Close" when expanded and "Open" when collapsed.
+
+Verifications:
+- ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin :app:compileDebugAndroidTestKotlin: passed
+- ./gradlew --offline :app:testDebugUnitTest: passed (all unit tests passed)
+- ./gradlew --offline :app:lintDebug: passed (0 errors)
+- python3 .agents/checks/check_r5a.py: passed (S200, S201, S202, S203 PASS)
+- All other .agents/checks/check_r*.py: passed
+- Device tests (T200-T205 in androidTest): not run (no device/emulator attached in this environment)

@@ -1,0 +1,21 @@
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt
+- app/src/main/java/com/sherifradwan/ancnative/model/ClinicalSummaryGenerator.kt
+- app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+- app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalPresets.kt
+
+Work done per oracle:
+- Q200: Added MEDICATION_STATUS_NON_COMPLIANT constant and defined ClinicalVocabulary.medicationStatuses as ordered listOf("Active", "Completed", "Discontinued", MEDICATION_STATUS_NON_COMPLIANT).
+- Q201: Added effectiveMedicationStatus and isOngoingMedication in ClinicalModels.kt.
+- Q202: In AncState.kt, toDraftValues uses effectiveMedicationStatus and sets isNonCompliant accordingly; MedicationDraftField.STATUS updates isNonCompliant in the same step; removed MedicationProphylaxisChanged, its reducer handling, and updateMedicationProphylaxis; removed MedicationProphylaxisChanged from AncViewModel.kt clearsFrozenClinical; preserved isProphylaxis in MedicationDraftValues and toDraftValues.
+- Q203: Removed isProphylaxis property from ClinicalMedPreset and cleaned commonMedPresets in ClinicalPresets.kt.
+- Q207 (summary part): Removed [Prophylaxis]/[Therapeutic] prefixes and added " (<status>)" suffix only when effectiveMedicationStatus is not "Active".
+
+Checks and verification:
+- python3 .agents/checks/check_r4a.py: PASS S110. S111-S114 failed as expected solely due to files owned by the UI and report lanes (MedicationEditor.kt, WorkspaceScreen.kt, strings.xml, ClinicalBadges.kt, PatientPrintHtmlGenerator.kt, CodexSettingsSections.kt).
+- ./gradlew --offline :app:compileDebugKotlin: failed as expected only in MedicationEditor.kt referencing removed MedicationProphylaxisChanged. All 5 edited files compiled cleanly.
+- Unit tests: not run (blocked by compileDebugKotlin failure in MedicationEditor.kt pending the UI lane).
+
+Assumptions:
+- Stored isProphylaxis and isNonCompliant data fields remain preserved; isNonCompliant in draft mirrors the effective status.

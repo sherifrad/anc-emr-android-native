@@ -1,0 +1,33 @@
+I wrote all the test changes, but none of it has been compiled or run. The new unit tests need the core lane's production code, and the DB test needs an emulator.
+
+**Files changed** (only those on the allowed list)
+- `DeletableRegistryTest.kt` (new) also holds shared fixtures, `DeleteFixture` and `DeleteFixtures`, with hard-coded golden values. I computed the sha256 values outside the production code, with a standalone Python script.
+- `ClinicalCommandsTest.kt`: the medication and lab delete/restore command cases are now loops over the fixtures, using `DeleteRecordCommand` and `RestoreRecordCommand`. Every old assertion is kept. The two per-kind content-hash tests are unchanged apart from where `med()` and `lab()` come from. I added golden-string tests for the `MED_DEL`, `MED_RES`, `LAB_DEL` and `LAB_RES` fingerprints and for the content hashes.
+- `ClinicalDeleteRuleTest.kt`: same `evaluateRestore(receipt, latest, row, cmd)` call shape. The cases run for both types: success, missing receipt, wrong kind (update, restore and the other type's delete), wrong patient, wrong record id, fingerprint mismatch, not latest, row present, hash mismatch, revision-only difference. A delete command and a save command both still return `INVALID_COMMAND`.
+- `DeletableRegistryTest` checks:
+  - Every `DeletableType` is registered once and has a fixture.
+  - Tags and receipt kinds are unique and are the exact stored strings.
+  - Canonical strings and content hashes equal the hard-coded values, including that revision is ignored.
+  - `withPatientRevision` changes only `expectedPatientRevision` on both commands.
+  - The D651 factories equal the generic commands.
+- `ClinicalDeleteRestoreDbTest.kt`:
+  - **Existing tests:** the 23 test bodies are untouched. I rewrote only the delete/restore command builders to produce generic commands. I added a `table` field to the kind helper and a `createOf` helper (`create` now calls it).
+  - **New tests (per kind):** four new tests cover the D654 oracles.
+    - The snapshot-diff test dumps every table found in `sqlite_master` before and after each step.
+    - The cross-kind test uses the same id string in both kinds.
+    - The two-patient test uses same-looking records.
+    - The last test checks restore re-inserts only into the same table for the same patient.
+  - **Integrity checks:** `PRAGMA foreign_key_check` and `integrity_check` run after each step.
+
+**check_r6b1.py** (unmodified): S400–S404 and S406 FAIL on today's code, as required. S405 PASSES because nothing forbidden has changed. It is a guard that must stay green. S407 PASSES now because the DB test and `DeletableRegistryTest.kt` exist.
+
+**Assumptions the core lane must meet**
+- `DeletableRegistry.all()` returns a collection of adapters, and `of<T>(type)` is callable as `of<DeletableRecord>(type)`.
+- `DeleteRecordCommand` and `RestoreRecordCommand` are data classes, so `copy` works, with the spec's parameter names.
+- `DemoMedicationRecord` and `DemoLabInvestigation` implement `DeletableRecord`.
+- `medicationContentHash` and `labContentHash` stay as delegates. The spec doesn't give the signature of the generic `contentHash`, so I test through the delegates.
+- For a restore carrying another patient's id I only assert `Rejected`, not a specific code, because the spec doesn't fix one.
+
+**Not run:** unit tests, because they won't compile until the core lane lands. The DB test has no emulator here.
+
+**Observation:** `latestClinicalReceiptForRecord(patientId, recordId)` doesn't include the record kind. Take a medication and a lab with the same id string, delete both, then restore the medication. The latest receipt for that id is then the lab delete, so the restore should fail with `RECORD_CONFLICT`. That fails closed, but it is a cross-kind coupling. I didn't assert it because it isn't pinned by the spec.

@@ -1,0 +1,3 @@
+FAIL S140 one flag rule and one panel rule, called by the lab screen: labResultFlag defined in []; resolveLabPanel defined in []; LabEditor.kt never calls labResultFlag(; LabEditor.kt never calls resolveLabPanel(
+FAIL S141 pinned action bar slot, used only by the lab screen: EditorPage lacks bottomBar: (@Composable () -> Unit)? = null; bottomBar passed by []; cancelLab is not inside the bottom bar; addAnotherLab is not inside the bottom bar; saveLab is not inside the bottom bar
+PASS S142 lab screen keeps its tags, no Codex wording

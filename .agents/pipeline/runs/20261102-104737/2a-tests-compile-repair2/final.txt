@@ -1,0 +1,8 @@
+I made no changes. The compile failure isn't caused by my test files, and the file that breaks it is outside my allowed list.
+
+- **Cause:** all four errors are in `app/src/test/java/com/sherifradwan/ancnative/storage/DeletableRegistryTest.kt` (lines 262, 269, 277, 283). The test `sourceCompatibleFactoriesBuildTheGenericCommands` still calls `DeleteMedicationCommand`, `RestoreMedicationCommand`, `DeleteLabInvestigationCommand` and `RestoreLabInvestigationCommand`.
+- **Why they're missing:** the core lane has already removed those factories from `ClinicalCommands.kt`, as D651 requires. My grep finds no other references under `app/src`.
+- **My files:** `AncDeleteUndoStateTest.kt` and `UndoCoordinatorTest.kt` produce no compiler errors in the output. The compiler may report them only after this file compiles, so I can't rule that out yet.
+- **Why I didn't edit it:** `DeletableRegistryTest.kt` isn't one of my four allowed files, and changes outside the list are reverted and counted against me.
+
+**Needed from you:** a lane that is allowed to touch `DeletableRegistryTest.kt` has to fix it. One option is to delete `sourceCompatibleFactoriesBuildTheGenericCommands`. Another is to rewrite it to build `DeleteRecordCommand` and `RestoreRecordCommand` directly, which `med.delete()` and `med.restore(source = ...)` already do. Once that compiles, I can re-run the compile and fix anything it then reports in my two files. I have not run any unit tests, or `check_r6b2.py`, in this round.

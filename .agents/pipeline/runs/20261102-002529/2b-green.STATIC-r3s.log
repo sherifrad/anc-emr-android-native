@@ -1,0 +1,2 @@
+PASS S84 model/ObstetricHistory.kt defines PreviousDeliveryCounts, previousDeliveryCounts, previousDeliverySummary and has no android. import
+PASS S85 PatientListScreen, ProfileScreen, PatientPrintHtmlGenerator call previousDeliverySummary and no file has inline delivery counting comparisons

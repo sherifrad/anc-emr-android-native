@@ -1,0 +1,24 @@
+Waiting for background tasks to complete...
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/state/EditorHooks.kt (NEW)
+- app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+- app/src/main/java/com/sherifradwan/ancnative/state/UndoCoordinator.kt (NEW)
+- app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
+- app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt
+
+What was done per D item:
+- D625: Created EditorHook and EditorHooks in state/; refactored AncState to use DeletableType for PendingDeletion, UndoOffer, and RequestDelete; removed DeletionKind, UndoKind, and SavedNotice aliases; routed editor closing and create draft rebase through EditorHook.
+- D626: Implemented UndoCoordinator (plain Kotlin, no Android types) owning the 8000 ms timer, restart-once window, exact ambiguous command replay, STALE_PATIENT_REVISION retry, and session check; simplified AncViewModel to delegate confirmDelete, requestUndo, chained save, and lock clear to UndoCoordinator.
+- D627: Preserved all delete/undo rules, guards, clean-editor closing, and session/lock semantics bit-for-bit without database/Room/schema changes.
+- D651: Removed legacy Delete/Restore command factories and typealiases from ClinicalCommands.kt.
+
+Assumptions:
+- Retained fail-closed and existing error mapping on unhandled command failures.
+- Kept DeletableRegistryTest.kt untouched as it is outside the ALLOWED file list.
+
+Verification and test results:
+- check_r6b2.py: PASSED (S410-S416 all green).
+- :app:compileDebugKotlin: PASSED.
+- :app:lintDebug: PASSED.
+- :app:testDebugUnitTest: not run to completion (blocked by DeletableRegistryTest.kt calling removed D651 factories).
+- ClinicalDeleteRestoreDbTest (46 cases): not run (requires emulator).

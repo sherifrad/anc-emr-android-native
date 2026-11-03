@@ -1,0 +1,24 @@
+Files changed:
+- `.agents/checks/check_r3z.py` (new)
+- `.agents/TEST_MANIFEST.json` (added `STATIC-r3z` and `UNIT-r3z-small`)
+- `app/src/test/.../model/FormatIsoDateTest.kt` (new)
+- `app/src/test/.../state/SaveUiErrorTextTest.kt` (new)
+- `app/src/test/.../ui/ClinicalPresetsTest.kt` (new)
+- `app/src/test/.../ui/ClinicalFormatTest.kt` (existing file, extended)
+
+**Mistake I made and fixed:** `ClinicalFormatTest.kt` already existed in git with the P6/P7/P8 tests, although the brief called it NEW. My first write replaced it. I restored the original from HEAD with `git show` and appended the three `formatFetalMetrics` tests. The diff against HEAD is now 17 added lines and nothing removed.
+
+**Per oracle:**
+- **S101 and S102:** `check_r3z.py` follows the spec and the `check_r3x.py` style. I ran it and it printed FAIL for both checks on today's code, with exit 1. The failure lists include every missing definition, old copy and string the spec names.
+- **Q120:** `FormatIsoDateTest` covers an ordinary date, a leap day and both year boundaries.
+- **Q121:** `SaveUiErrorTextTest` checks every `SaveUiError` value and `null` against its `R.string` id, and that the values are distinct.
+- **Q122:** `ClinicalFormatTest` covers both values present, each one missing, and both missing.
+- **Q123:** `ClinicalPresetsTest` checks the five frequencies in order.
+- **Manifest:** `UNIT-r3z-small` runs the four classes and lists Q120-Q125 and S101-S102 in `covers`. `TEST_MANIFEST.json` still parses as JSON.
+
+**Assumptions:**
+- **FHR literal:** `ProfileScreen.kt:1413` has `"FHR: ${scan.fetalHeartRate} bpm"`, which is a different string. I only flag lines that contain both `FHR: ` and `EFW:`, so the check won't reject that line.
+- **"Three times daily":** `model/codex/ClinicalCodexRepository.kt:440` has it as medication seed data. The literal rule is scoped to `ui/` sources so that data doesn't fail the check forever.
+- **Strings.xml:** S102 also scans `.kt`, `.xml` and `.java` under `app/src` for the two unused strings. It excludes `app/build` and does not scan other file types.
+
+**Not run:** none of the four unit test classes. They need the production functions, which don't exist yet, so they won't compile until the production lanes land. I didn't run Gradle.

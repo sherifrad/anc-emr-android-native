@@ -1,0 +1,18 @@
+Changed files:
+- app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt
+- app/src/main/java/com/sherifradwan/ancnative/model/ClinicalSummaryGenerator.kt
+- app/src/main/java/com/sherifradwan/ancnative/model/codex/ClinicalCodexModels.kt
+- app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+- app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt
+
+Changes by Oracle:
+- Q251: Defined `const val MEDICATION_STATUS_ACTIVE = "Active"` in ClinicalModels.kt; replaced medication-status "Active" string literals with MEDICATION_STATUS_ACTIVE across ClinicalModels.kt, ClinicalSummaryGenerator.kt, ClinicalCommands.kt, and AncState.kt.
+- Q252: Added `val labNamePresets = listOf("Al Borg Labs", "El Mokhtabar", "Hospital Lab", "Alfa Labs")` in `ClinicalVocabulary` (ClinicalModels.kt).
+- Q253: Added `LabPanelStep` and pure function `nextLabPanelTest` in ClinicalCodexModels.kt.
+
+Assumptions: UI lane handles UI files (MedicationEditor.kt, ClinicalBadges.kt, PatientPrintHtmlGenerator.kt, LabEditor.kt, ClinicalPresets.kt) per role boundary and file allowlist.
+
+Verification results:
+- `./gradlew --offline :app:compileDebugKotlin`: PASSED.
+- `./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.model.ClinicalConstantsTest' --tests 'com.sherifradwan.ancnative.model.codex.LabPanelQueueTest'`: PASSED.
+- `python3 .agents/checks/check_r4e.py`: Reported expected UI-dependent failures (S150 ClinicalPresets.kt, S151 UI literals, S152/S153 LabEditor.kt); model-side definitions all validated. Emulator tests: not run (orchestrator responsibility).

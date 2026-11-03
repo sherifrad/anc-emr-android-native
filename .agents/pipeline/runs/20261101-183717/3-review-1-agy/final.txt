@@ -1,0 +1,16 @@
+# Round 5a Independent Review: Ultrasound Entry Redesign (Option B)
+
+### Status: APPROVED (No Hard Blockers; 2 Should-fix, 2 Nits)
+
+### Findings
+1. **Should-fix** (`UltrasoundEditor.kt:408`): `var biometryExpanded by remember { mutableStateOf(hasBiometry) }` uses `remember` instead of `rememberSaveable`. If the user expands biometry prior to entering values (`hasBiometry == false`) and rotates the device, the card collapses.
+2. **Should-fix** (`UltrasoundEditor.kt:579-585`): Card 5 hand-rolls card styling via `Surface(shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, ...), tonalElevation = 1.dp)` to wrap `SummaryRow` instead of using `SectionCard`, bypassing U201 ("every card goes through SectionCard").
+3. **Nit** (`UltrasoundEditor.kt:113`): `var showCamera by remember { mutableStateOf(false) }` uses `remember` instead of `rememberSaveable`; rotating while the camera dialog is active dismisses it.
+4. **Nit** (`UltrasoundEditor.kt:207`): `openFindingKey = nextBlankFinding("", "", "", "")` in Clear findings recalculates the blank finding instead of explicitly setting `"fetalNumber"` per U212 ("Clear findings keeps its behaviour, then opens fetalNumber").
+
+### Verification Against Spec & Risks
+- **Fields, Tags & Events (U211-U215)**: All tags preserved (`scanCalculatedGaCard`, `redatingHint`, `applyScanGa`, `biometryCard`, `toggleBiometry`, `scanAttachmentsCard`, `linkedVisitCard`, `ultrasoundLiveSummary`, `impressionFromChoices`). All biometry fields, photos, and linked visit flows intact.
+- **Guided Logic (U212)**: At most one finding open at a time; closed findings reopen on click; "Fill normal scan" fills only fetal number, presentation, and liquor (never placenta); Clear resets all findings.
+- **Design System & Strings (U200, U216-U217)**: `SectionCard` and `SummaryRow` defined once in `DesignSystem.kt`; no hard-coded colours; >= 48 dp touch targets; valid layout at 160% font scale; only approved strings added (`finding_not_set`, `ultrasound_more`, `more_open`, `more_close`).
+- **Scope (S203)**: Zero edits to `model/`, `state/`, or `storage/`.
+- **Test execution**: S200-S203 static check passed (`check_r5a.py`). Runtime unit/device tests not run (local sandbox restricts daemon sockets).

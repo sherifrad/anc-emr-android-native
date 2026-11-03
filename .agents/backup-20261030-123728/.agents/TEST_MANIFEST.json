@@ -1,0 +1,112 @@
+{
+  "_comment": "Copy of skills template shape (~/skills/multi-agent-collaborative-audit/resources/templates/TEST_MANIFEST.template.json). One entry per test. deps = globs of every file whose change could alter the result (code under test, the test itself). Round-1 oracles P1-P10 from .agents/pipeline/SPEC_FIX.md; round-2 oracles Q1-Q7 and U1-U6 from .agents/pipeline/SPEC_FIX_R2.md. Tier 1 = fast local (unit/static), tier 2 = build gate. R2: 'always' flags removed from all tier-1 entries (run on dep change); deps made precise to the exercised production file(s) plus the test file itself.",
+  "tests": [
+    {
+      "id": "UNIT-parse",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.ui.ParseDeliveryNotesSpecTest'",
+      "deps": [
+        "app/src/main/**/ui/DeliveryNotesParser.kt",
+        "app/src/test/**/ParseDeliveryNotesSpecTest.kt"
+      ],
+      "covers": ["P1", "P2", "P3", "P4", "P5", "Q1", "Q2", "Q3", "Q4"]
+    },
+    {
+      "id": "UNIT-parse-legacy",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*DeliveryNotesParserTest'",
+      "deps": [
+        "app/src/main/**/ui/DeliveryNotesParser.kt",
+        "app/src/test/**/DeliveryNotesParserTest.kt"
+      ],
+      "covers": ["P5", "Q4"]
+    },
+    {
+      "id": "UNIT-format",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.ui.ClinicalFormatTest'",
+      "deps": [
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/test/**/ClinicalFormatTest.kt"
+      ],
+      "covers": ["P6", "P7", "P8", "Q5"]
+    },
+    {
+      "id": "UNIT-format-r2",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*ClinicalFormatR2Test'",
+      "deps": [
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/test/**/ClinicalFormatR2Test.kt"
+      ],
+      "covers": ["Q5", "Q6"]
+    },
+    {
+      "id": "UNIT-print",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*PatientPrintHtmlGeneratorTest'",
+      "deps": [
+        "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/test/**/PatientPrintHtmlGeneratorTest.kt"
+      ],
+      "covers": ["Q17", "Q7"]
+    },
+    {
+      "id": "UNIT-contrast",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.ui.ThemeContrastTest'",
+      "deps": [
+        "app/src/main/**/ui/Theme.kt",
+        "app/src/main/**/ui/ClinicalBadges.kt",
+        "app/src/test/**/ThemeContrastTest.kt"
+      ],
+      "covers": ["P9"]
+    },
+    {
+      "id": "STATIC-ui",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_ui_static.py",
+      "deps": [
+        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/main/**/ui/ClinicalBadges.kt",
+        ".agents/checks/check_ui_static.py"
+      ],
+      "covers": ["P10"]
+    },
+    {
+      "id": "STATIC-ui-r2",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_ui_static_r2.py",
+      "deps": [
+        "app/src/main/**/ui/ProfileScreen.kt",
+        "app/src/main/**/ui/PatientListScreen.kt",
+        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/main/**/ui/ClinicalBadges.kt",
+        ".agents/checks/check_ui_static_r2.py"
+      ],
+      "covers": ["U1", "U2", "U3", "U4", "U5", "U6", "Q7"]
+    },
+    {
+      "id": "UNIT-all",
+      "tier": 2,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest",
+      "deps": [
+        "app/src/main/**/*.kt",
+        "app/src/test/**/*.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "COMPILE-app",
+      "tier": 2,
+      "cmd": "./gradlew --offline :app:compileDebugKotlin",
+      "deps": [
+        "app/src/main/**/*.kt",
+        "app/src/test/**/*.kt",
+        "app/build.gradle*"
+      ],
+      "covers": ["G2"]
+    }
+  ]
+}

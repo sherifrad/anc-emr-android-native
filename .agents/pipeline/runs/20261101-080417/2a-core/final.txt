@@ -1,0 +1,14 @@
+Files changed:
+- [ClinicalModels.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt)
+
+What was done:
+- Q210: Added pure function [`ultrasoundImpressionFromChoices`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt#L24) generating an ordered, capitalized sentence ending with a period from the four choices, skipping blank or unknown values and returning empty string when all choices are blank.
+- Q211: Added pure function [`mergeImpression`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt#L66) to merge existing text and generated text without overwriting doctor notes, keeping idempotence.
+- Q212: Added constants [`NORMAL_FETAL_NUMBER`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt#L7), [`NORMAL_PRESENTATION`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt#L8), [`NORMAL_AMNIOTIC_FLUID`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt#L9).
+
+Assumptions: Choice inputs are validated against `ClinicalVocabulary` sets case-insensitively, skipping unknown values without inventing clinical findings.
+
+Verification & Results:
+- `./gradlew --offline :app:compileDebugKotlin`: PASSED.
+- `./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.model.UltrasoundImpressionTest'`: PASSED (all 14 unit tests passed).
+- `python3 .agents/checks/check_r4b.py`: Reported expected failures for S120, S121, S122 due to pending UI lane edits (`commonUltrasoundImpressions` cleanup and `UltrasoundEditor.kt` wiring); core function definitions and wording in `ClinicalModels.kt` matched successfully.

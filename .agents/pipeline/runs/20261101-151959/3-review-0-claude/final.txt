@@ -1,0 +1,24 @@
+Status: the review is nearly done. I read the spec, the engine, the new rule file, both new tests and the `AncState` and `DatingEditor` call sites. I have no Bash tool in this session, so I couldn't run `git diff` or the tests. Anything about "identical to the old engine" is therefore unverified.
+
+**Hard Blockers**
+- None found.
+
+**Should-fix**
+1. **Likely dead code.** `GestationalAgeEngine.kt:86` `fun calculateForIvf(...)` has no caller in main or test (grep count is 1, the definition). If the old `calculate` called it and this round removed that call, it is now orphaned. It also carries a second copy of the IVF rule (`ivfGaDaysAtTransfer` plus the 0..320 range). Delete it, or confirm it was already unused before this round. `calculateForLmp` is still used by `PatientEditor.kt:183`, so it stays.
+2. **Legacy stale agreed dates stay stale.** `isManualAgreedEdd` (`DatingDraftRule.kt:27`: `parsedAgreed != methodEdd`) treats any stored agreed date that differs from the method date as manual. So records already saved with the old bug (LMP edited, agreed date never updated) will not follow later LMP or IVF edits until the doctor clears the agreed field. This is the safe choice and matches Q263, so it is not a blocker. Put it in the "honest limit" note.
+
+**Nits**
+- `DatingDraftRule.kt:26-30`: `if (parsedAgreed != null) {...} else { true }` could be `parsedAgreed == null || parsedAgreed != methodEdd`.
+- `DatingDraftRule.kt:23` and `:57` both build `datingDraftToDating("", values.copy(agreedEdd = ""))` and call `dueDateForMethod`. That is the same rule written twice. Pull out a private `methodDueDate(values)`.
+- A draft with an empty embryo day uses day 5 (`GestationalAgeEngine.kt:36`). So clearing the field while retyping briefly moves a following agreed date to the day-5 date. Save still rejects an empty embryo day (`ClinicalCommands.kt:128`), so it is harmless.
+
+**Checks against your list**
+1. **Existing records:** `calculateEstimatedDueDate` still puts the agreed date first (`GestationalAgeEngine.kt:103-105`). Stored data is untouched, because the new code only runs on draft edits. The blank and "Clinical" fallback, the invalid embryo day (null) and the 0..320 range in `calculateForEdd` all read correctly. I couldn't diff against the old engine. Please confirm that the old `else` branch really was "scan, then LMP".
+2. **`applyDatingChange`:** a manual agreed date is returned untouched (`:54-55`). A following one is re-pointed or cleared to `""` when the method date is null, so there is no stale value. Typing in `AGREED_EDD` or `NOTES` only sets the field.
+3. **Second copy of the per-method date logic:** none in UI, state, print or summary. `eddFromLmp` and `ivfEddFromTransfer` are each called once in the engine. The other `eddFromLmp` callers are `IntakeDatingRule.kt:22` and `PatientEditor.kt:182`. Both predate this round and belong to new-patient intake, which is out of scope. `WorkspaceScreen` and `ProfileScreen` only choose which inputs to display and compute no dates.
+4. **Crash on half-typed dates:** `parseIsoDateOrNull` is used throughout and `toIntOrNull` for the embryo day. `halfTypedDateGivesBlankAgreedWithoutCrash` covers it.
+5. **Save and draft recovery:** `DraftMapping.kt` and `ClinicalCommands.kt` are unchanged. The agreed value is saved as before, but it is now pre-filled while the draft is edited. That is the intended behaviour.
+6. **Scope:** the modified main files are `GestationalAgeEngine.kt`, `AncState.kt` (the one call at `:1043`) and `DatingEditor.kt`, plus the new `DatingDraftRule.kt`. `DatingEditor.kt:54` uses `datingDraftToDating` and no longer builds `DemoPatientDating(`. Still to confirm: the `.agents/*` changes in git status (`TEST_MANIFEST.json`, `run_pipeline.py`, `SPEC_FIX_R4.md`) look like orchestrator files and are not in the lane's allowed list.
+7. **Tests:** both new tests use a fixed `asOf` and have no `LocalDate.now()`. They call production helpers and copy no logic. They cover the spec cases: 7-day GA shift, embryo day 3→5→6 giving 19→17→16, method switch, manual date kept, clear then follow, half-typed date, and notes. Not run, so there is no pass claim.
+
+**DatingEditor preview:** `LocalDate.now()` at `DatingEditor.kt:60` is the existing live preview, which is fine in UI code. The preview uses `calculateEstimatedDueDate`, so it now follows the auto-filled agreed date. That is the intended effect of the round.

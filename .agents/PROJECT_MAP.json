@@ -1,0 +1,3295 @@
+{
+ "version": 1,
+ "rules_version": 2,
+ "unmapped_default": 2,
+ "git": "ok",
+ "summary": {
+  "total_files": 542,
+  "level_3_files": 96,
+  "by_level": {
+   "1": 311,
+   "0": 106,
+   "3": 96,
+   "2": 29
+  }
+ },
+ "entries": {
+  ".DS_Store": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1793223822,
+   "size": 10244
+  },
+  ".gitignore": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1793094760,
+   "size": 110
+  },
+  "FIX_PIPELINE.command": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1793231126,
+   "size": 244
+  },
+  "LICENSE": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1792086919,
+   "size": 1076
+  },
+  "README.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1793483456,
+   "size": 4749
+  },
+  "build.gradle.kts": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791531623,
+   "size": 287
+  },
+  "gradle.properties": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791487238,
+   "size": 137
+  },
+  "gradlew": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791487520,
+   "size": 8752
+  },
+  "gradlew.bat": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791487520,
+   "size": 2966
+  },
+  "local.properties": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1791487238,
+   "size": 54
+  },
+  "settings.gradle.kts": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791487238,
+   "size": 336
+  },
+  ".claude/settings.local.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1793231473,
+   "size": 130
+  },
+  "app/.DS_Store": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1793223822,
+   "size": 6148
+  },
+  "app/build.gradle.kts": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1793390781,
+   "size": 3443
+  },
+  "app/proguard-rules.pro": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791487238,
+   "size": 49
+  },
+  "app/schemas/com.sherifradwan.ancnative.storage.RecordsDatabase/1.json": {
+   "aspect": "data_schema",
+   "crit": 3,
+   "mtime": 1791543136,
+   "size": 8291
+  },
+  "app/schemas/com.sherifradwan.ancnative.storage.RecordsDatabase/2.json": {
+   "aspect": "data_schema",
+   "crit": 3,
+   "mtime": 1791673060,
+   "size": 18661
+  },
+  "app/schemas/com.sherifradwan.ancnative.storage.RecordsDatabase/3.json": {
+   "aspect": "data_schema",
+   "crit": 3,
+   "mtime": 1791711257,
+   "size": 35111
+  },
+  "app/schemas/com.sherifradwan.ancnative.storage.RecordsDatabase/4.json": {
+   "aspect": "data_schema",
+   "crit": 3,
+   "mtime": 1791730928,
+   "size": 36697
+  },
+  "app/schemas/com.sherifradwan.ancnative.storage.RecordsDatabase/5.json": {
+   "aspect": "data_schema",
+   "crit": 3,
+   "mtime": 1791878044,
+   "size": 41217
+  },
+  "app/schemas/com.sherifradwan.ancnative.storage.RecordsDatabase/6.json": {
+   "aspect": "data_schema",
+   "crit": 3,
+   "mtime": 1793459333,
+   "size": 43183
+  },
+  "app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793474896,
+   "size": 46012
+  },
+  "app/src/androidTest/java/com/sherifradwan/ancnative/DraftRecoveryDialogTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793464039,
+   "size": 5792
+  },
+  "app/src/androidTest/java/com/sherifradwan/ancnative/SecurityWorkflowTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793478057,
+   "size": 5742
+  },
+  "app/src/androidTest/java/com/sherifradwan/ancnative/storage/ClinicalSaveAtomicityTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793406604,
+   "size": 4696
+  },
+  "app/src/androidTest/java/com/sherifradwan/ancnative/storage/DraftPersistenceIntegrationTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793474802,
+   "size": 13213
+  },
+  "app/src/androidTest/java/com/sherifradwan/ancnative/storage/EncryptedRecordsTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793458867,
+   "size": 57678
+  },
+  "app/src/androidTest/java/com/sherifradwan/ancnative/storage/VaultIntegrationTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793473456,
+   "size": 23455
+  },
+  "app/src/debug/AndroidManifest.xml": {
+   "aspect": "manifest_permissions",
+   "crit": 2,
+   "mtime": 1791503705,
+   "size": 655
+  },
+  "app/src/main/AndroidManifest.xml": {
+   "aspect": "manifest_permissions",
+   "crit": 2,
+   "mtime": 1791882485,
+   "size": 1473
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/MainActivity.kt": {
+   "aspect": "core_logic",
+   "crit": 3,
+   "mtime": 1793450522,
+   "size": 5213,
+   "git": "4 fix commits in 180 days"
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1793436875,
+   "size": 3629
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/model/ClinicalSummaryGenerator.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1791715897,
+   "size": 5239
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793114532,
+   "size": 63126
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "by": "content",
+   "mtime": 1791877752,
+   "size": 6780
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1793454801,
+   "size": 6395
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt": {
+   "aspect": "core_logic",
+   "crit": 2,
+   "mtime": 1793476598,
+   "size": 896
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/model/LongitudinalTimelineProjection.kt": {
+   "aspect": "core_logic",
+   "crit": 2,
+   "mtime": 1793399926,
+   "size": 4641
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/model/ObstetricHistory.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1793453866,
+   "size": 3456
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/model/Redating.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1793436907,
+   "size": 717
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/model/VisitVitals.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1793447854,
+   "size": 2000
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/model/codex/ClinicalCodexModels.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1791915648,
+   "size": 2230
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/model/codex/ClinicalCodexRepository.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1793111735,
+   "size": 19440
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/security/AppLockPolicy.kt": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1793369173,
+   "size": 315
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/security/BiometricAuthManager.kt": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1793477357,
+   "size": 2750
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/security/PinPolicy.kt": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1793369173,
+   "size": 1358
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/security/SecuritySettingsRepository.kt": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1793387519,
+   "size": 9958
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "by": "content",
+   "mtime": 1793476598,
+   "size": 57241
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "by": "content",
+   "mtime": 1793466422,
+   "size": 42676
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/state/DraftAutosaver.kt": {
+   "aspect": "core_logic",
+   "crit": 2,
+   "mtime": 1793466314,
+   "size": 6812
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "by": "content",
+   "mtime": 1793466277,
+   "size": 23247
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/state/DraftRecovery.kt": {
+   "aspect": "core_logic",
+   "crit": 2,
+   "mtime": 1793466231,
+   "size": 2189
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1793406725,
+   "size": 1166
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/AndroidVaultKeys.kt": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1791805261,
+   "size": 8214
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/AttachmentSyncManager.kt": {
+   "aspect": "core_logic",
+   "crit": 2,
+   "mtime": 1793375654,
+   "size": 2383
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/BoundedBitmap.kt": {
+   "aspect": "core_logic",
+   "crit": 2,
+   "mtime": 1793393081,
+   "size": 3730
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/CameraCaptureHelper.kt": {
+   "aspect": "core_logic",
+   "crit": 2,
+   "mtime": 1793399683,
+   "size": 3244
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1793436896,
+   "size": 21940
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/DraftCodec.kt": {
+   "aspect": "core_logic",
+   "crit": 2,
+   "mtime": 1793460636,
+   "size": 1543
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/DraftRecord.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "by": "content",
+   "mtime": 1793459147,
+   "size": 578
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/EncryptedBackupManager.kt": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "by": "content",
+   "mtime": 1793057582,
+   "size": 32402
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/Hashing.kt": {
+   "aspect": "core_logic",
+   "crit": 2,
+   "mtime": 1793387466,
+   "size": 766
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/PatientAttachmentVault.kt": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1793390998,
+   "size": 7661
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1791730730,
+   "size": 17598
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/PhotoQuality.kt": {
+   "aspect": "core_logic",
+   "crit": 2,
+   "mtime": 1793390958,
+   "size": 390
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/RecordAnomalies.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "by": "content",
+   "mtime": 1793366608,
+   "size": 2327
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "by": "content",
+   "mtime": 1793459170,
+   "size": 15409
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "by": "content",
+   "mtime": 1793459185,
+   "size": 17301
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDatabase.kt": {
+   "aspect": "data_access",
+   "crit": 2,
+   "mtime": 1793459196,
+   "size": 3988
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/RecordsMigration.kt": {
+   "aspect": "data_schema",
+   "crit": 3,
+   "mtime": 1793460644,
+   "size": 26647
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "by": "content",
+   "mtime": 1793460656,
+   "size": 62539
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/SaveVisitCommand.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "by": "content",
+   "mtime": 1793408213,
+   "size": 7257
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/ScanPhotoRef.kt": {
+   "aspect": "core_logic",
+   "crit": 2,
+   "mtime": 1793395990,
+   "size": 595
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/VaultAutoAction.kt": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1793377481,
+   "size": 431
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/VaultCleanupRule.kt": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1793387502,
+   "size": 612
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/VaultController.kt": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1793461810,
+   "size": 35875
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/VaultFiles.kt": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1793366608,
+   "size": 11230
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/storage/VaultState.kt": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1791532201,
+   "size": 1504
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/AddAttachmentDialog.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793402523,
+   "size": 19175
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793465134,
+   "size": 17123
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/AncDatePicker.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793399944,
+   "size": 5522
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/AppLockScreen.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793473964,
+   "size": 20968
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1793403079,
+   "size": 14638
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1793477165,
+   "size": 10163
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1793476598,
+   "size": 4188
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalPresets.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1793476598,
+   "size": 4558
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/CodexSettingsSections.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793477173,
+   "size": 48464
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793477200,
+   "size": 7475
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1793477603,
+   "size": 16715
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/DeliveryNotesParser.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793353655,
+   "size": 14873
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1793456115,
+   "size": 9927
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/InAppCameraDialog.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793393287,
+   "size": 13251
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793477603,
+   "size": 25211
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/MedicationEditor.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1793477173,
+   "size": 26878
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/OtherHistoriesEditor.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793477603,
+   "size": 12184
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1793477610,
+   "size": 26890
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1793477165,
+   "size": 43409
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/PreviousPregnancyEditor.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1793477603,
+   "size": 11793
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt": {
+   "aspect": "ui_view",
+   "crit": 2,
+   "mtime": 1793477173,
+   "size": 100522,
+   "git": "4 fix commits in 180 days"
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1793375841,
+   "size": 46700
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt": {
+   "aspect": "ui_view",
+   "crit": 2,
+   "mtime": 1793377556,
+   "size": 10103,
+   "git": "3 fix commits in 180 days"
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/TimelineSpine.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791881126,
+   "size": 3039
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793477603,
+   "size": 33685
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793396076,
+   "size": 13192
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/VaultGateScreen.kt": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1793111616,
+   "size": 10216
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/VisitEditor.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793477200,
+   "size": 23389
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt": {
+   "aspect": "ui_view",
+   "crit": 2,
+   "mtime": 1793477173,
+   "size": 102735,
+   "git": "6 fix commits in 180 days"
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/report/HtmlEscape.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793440104,
+   "size": 300
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1793477918,
+   "size": 50355
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintManager.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1793111807,
+   "size": 1808
+  },
+  "app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1793441816,
+   "size": 10082
+  },
+  "app/src/main/res/drawable/clinic_logo_foreground.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791786901,
+   "size": 37225
+  },
+  "app/src/main/res/drawable/clinic_logo_mark.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791783885,
+   "size": 464057
+  },
+  "app/src/main/res/drawable/ic_launcher_background.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1793045849,
+   "size": 323
+  },
+  "app/src/main/res/drawable-nodpi/clinic_logo_foreground.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791786901,
+   "size": 37225
+  },
+  "app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791783863,
+   "size": 268
+  },
+  "app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791783863,
+   "size": 268
+  },
+  "app/src/main/res/mipmap-hdpi/ic_launcher.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791786901,
+   "size": 5696
+  },
+  "app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791786901,
+   "size": 8174
+  },
+  "app/src/main/res/mipmap-hdpi/ic_launcher_round.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791786901,
+   "size": 5696
+  },
+  "app/src/main/res/mipmap-mdpi/ic_launcher.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791786901,
+   "size": 3319
+  },
+  "app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791786901,
+   "size": 4431
+  },
+  "app/src/main/res/mipmap-mdpi/ic_launcher_round.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791786901,
+   "size": 3319
+  },
+  "app/src/main/res/mipmap-xhdpi/ic_launcher.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791786901,
+   "size": 8772
+  },
+  "app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791786901,
+   "size": 12739
+  },
+  "app/src/main/res/mipmap-xhdpi/ic_launcher_round.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791786901,
+   "size": 8772
+  },
+  "app/src/main/res/mipmap-xxhdpi/ic_launcher.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791786901,
+   "size": 15274
+  },
+  "app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791786901,
+   "size": 23510
+  },
+  "app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791786901,
+   "size": 15274
+  },
+  "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791786901,
+   "size": 21771
+  },
+  "app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791786901,
+   "size": 37225
+  },
+  "app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791786901,
+   "size": 21771
+  },
+  "app/src/main/res/values/ic_launcher_background.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791783875,
+   "size": 121
+  },
+  "app/src/main/res/values/plurals.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1793403079,
+   "size": 206
+  },
+  "app/src/main/res/values/strings.xml": {
+   "aspect": "other",
+   "crit": 2,
+   "mtime": 1793477173,
+   "size": 26996,
+   "git": "4 fix commits in 180 days"
+  },
+  "app/src/main/res/values/themes.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1793473946,
+   "size": 408
+  },
+  "app/src/main/res/values-v31/themes.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1793473951,
+   "size": 581
+  },
+  "app/src/main/res/xml/backup_rules.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791487238,
+   "size": 294
+  },
+  "app/src/main/res/xml/data_extraction_rules.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791487238,
+   "size": 671
+  },
+  "app/src/main/res/xml/file_paths.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1793375654,
+   "size": 206
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/NegativeControlAndClinicalValidationTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793387230,
+   "size": 10477
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/model/ClinicalValidationTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791756928,
+   "size": 5987
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/model/DemoFixturesVerificationTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793060603,
+   "size": 6757
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/model/FormatIsoDateTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793476178,
+   "size": 624
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/model/GestationalAgeEngineTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791731911,
+   "size": 6525
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/model/GestationalDisplayTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793454199,
+   "size": 4874
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/model/IsoDatesTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793399837,
+   "size": 1168
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/model/IvfDatingTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793436689,
+   "size": 4812
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/model/LongitudinalTimelineProjectionTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791756469,
+   "size": 7897
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/model/ObstetricHistoryTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793453884,
+   "size": 22840
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/model/PatientValidationTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791704623,
+   "size": 2593
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/model/PreviousPregnancyValidationTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791704775,
+   "size": 2721
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/model/RedatingTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793436671,
+   "size": 1718
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/model/SevereBpAttentionTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793447506,
+   "size": 6341
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/model/VisitVitalsTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793409669,
+   "size": 5175
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/model/codex/ClinicalCodexRepositoryTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791915853,
+   "size": 6412
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/security/AppLockPolicyTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793369063,
+   "size": 1152
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/security/FakeSharedPreferences.kt": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1793387320,
+   "size": 2656
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/security/PinPolicyTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793369061,
+   "size": 3826
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/security/SecuritySettingsRepositoryTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793387341,
+   "size": 6194
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/state/AncStateTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793113961,
+   "size": 25634
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/state/AttachmentErrorStateTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793387346,
+   "size": 2377
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/state/DraftAutosaverTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793466565,
+   "size": 12480
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/state/DraftMappingTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793463036,
+   "size": 18889
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/state/DraftRecoveryTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793466674,
+   "size": 12431
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/state/IntakeDatingRuleTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793364931,
+   "size": 2970
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/state/ProfileSavedNoticeTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793406551,
+   "size": 1024
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/state/SaveUiErrorTextTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793476181,
+   "size": 1357
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/state/ScanPhotoImportStateTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793395909,
+   "size": 1971
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/storage/BackupVaultIntegrationAndZeroDataLossTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793060640,
+   "size": 11107
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/storage/BoundedBitmapTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793393038,
+   "size": 3365
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/storage/CameraCaptureSweepTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793395904,
+   "size": 1378
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/storage/CaptureTempFileTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793399641,
+   "size": 3484
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791733141,
+   "size": 25213
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/storage/DraftCodecTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793458818,
+   "size": 5045
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/storage/EncryptedBackupTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793114001,
+   "size": 12681
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/storage/HashingTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793387236,
+   "size": 2514
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/storage/PatientAttachmentVaultTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791879762,
+   "size": 5287
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/storage/PatientCommandsTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791704641,
+   "size": 6533
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/storage/PhotoQualityPresetTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793390891,
+   "size": 1703
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/storage/RecordAnomaliesTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793366530,
+   "size": 7428
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/storage/RecordsMappingRoundTripTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791878038,
+   "size": 4964
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/storage/SaveCoordinatorTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791532624,
+   "size": 4072
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/storage/SaveVisitValidationTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793408000,
+   "size": 6057
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/storage/ScanPhotoRefTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793395901,
+   "size": 1130
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/storage/VaultAutoActionTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793377431,
+   "size": 1527
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/storage/VaultCleanupRuleTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793387314,
+   "size": 4606
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/storage/VaultStateTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791532624,
+   "size": 1153
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/storage/VisitSyntheticFlagTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793406541,
+   "size": 3200
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/ui/AttachmentDisplayTitleTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793401980,
+   "size": 2603
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalFormatR2Test.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793306431,
+   "size": 6415
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalFormatTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793476194,
+   "size": 5270
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalPresetsTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793476184,
+   "size": 380
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/ui/DeliveryNotesParserTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793117041,
+   "size": 1405
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/ui/FormatWeightKgTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793404373,
+   "size": 1364
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793456161,
+   "size": 5800
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/ui/ParseDeliveryNotesSpecTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793353518,
+   "size": 37490
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/ui/ThemeContrastTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793377439,
+   "size": 7279
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793440478,
+   "size": 11963
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793375795,
+   "size": 23455
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintBpAlertTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793447517,
+   "size": 3886
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintLayoutTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793472344,
+   "size": 12214
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintObstetricSummaryTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793452535,
+   "size": 7677
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintSampleDumpTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793467100,
+   "size": 4914
+  },
+  "app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintSectionTitlesTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793442069,
+   "size": 6390
+  },
+  "docs/AI_HANDOFF.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1791724777,
+   "size": 6572
+  },
+  "docs/CODEX_REVIEW_BRIEF.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1791729136,
+   "size": 4275
+  },
+  "docs/CODEX_STEP2_REVIEW_BRIEF.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1791731015,
+   "size": 2570
+  },
+  "docs/FINAL_STABILIZATION.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1793451570,
+   "size": 4936
+  },
+  "docs/GEMINI_CLINICAL_AUDIT_REPORT.md": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1793043743,
+   "size": 20365
+  },
+  "docs/GO_LIVE_CHECKLIST.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1793483456,
+   "size": 2395
+  },
+  "docs/IMPLEMENTATION_PLAN.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1791503889,
+   "size": 13786
+  },
+  "docs/P2_STORAGE_PLAN.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1791582606,
+   "size": 27977
+  },
+  "docs/P2_VALIDATION.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1791586189,
+   "size": 14865
+  },
+  "docs/P3_VALIDATION.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1791710664,
+   "size": 5514
+  },
+  "docs/P4_CLINICAL_WORKFLOWS_PLAN.md": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1791710469,
+   "size": 7492
+  },
+  "docs/P4_VALIDATION.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1791713941,
+   "size": 6718
+  },
+  "docs/P5_VALIDATION.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1791715336,
+   "size": 6737
+  },
+  "docs/P6_VALIDATION.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1791716794,
+   "size": 7148
+  },
+  "docs/STEP1_CODEX_REPORT.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1791729831,
+   "size": 2006
+  },
+  "docs/VALIDATION.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1791503889,
+   "size": 5338
+  },
+  "docs/assets/anc_app_tour.gif": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1792086887,
+   "size": 328853
+  },
+  "docs/assets/anc_app_tour.mp4": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1792086881,
+   "size": 255392
+  },
+  "evidence/.DS_Store": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1793223822,
+   "size": 8196
+  },
+  "evidence/capture_all_screens.py": {
+   "aspect": "core_logic",
+   "crit": 2,
+   "mtime": 1793048922,
+   "size": 4460
+  },
+  "evidence/capture_clean_screens.py": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "by": "content",
+   "mtime": 1793054564,
+   "size": 5058
+  },
+  "evidence/audit_screenshots/01_patient_list.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793056349,
+   "size": 50578
+  },
+  "evidence/audit_screenshots/01_patient_list_dark.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793056352,
+   "size": 50646
+  },
+  "evidence/audit_screenshots/02_patient_profile.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793056367,
+   "size": 36146
+  },
+  "evidence/audit_screenshots/03_patient_report_preview.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793056934,
+   "size": 52376
+  },
+  "evidence/audit_screenshots/04_workspace_overview.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793056370,
+   "size": 29283
+  },
+  "evidence/audit_screenshots/05_workspace_ultrasound.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793056375,
+   "size": 18467
+  },
+  "evidence/audit_screenshots/06_workspace_laboratory.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793056385,
+   "size": 40438
+  },
+  "evidence/audit_screenshots/07_workspace_medications.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793056390,
+   "size": 40438
+  },
+  "evidence/audit_screenshots/08_workspace_delivery.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793056395,
+   "size": 40443
+  },
+  "evidence/audit_screenshots/09_workspace_attachments.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793056398,
+   "size": 40443
+  },
+  "evidence/audit_screenshots/10_patient_editor.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793056416,
+   "size": 40440
+  },
+  "evidence/audit_screenshots/11_patient_editor_custom_case_id.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793046792,
+   "size": 192384
+  },
+  "evidence/audit_screenshots/12_security_settings.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793057965,
+   "size": 49681
+  },
+  "evidence/audit_screenshots/13_add_ultrasound.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793056379,
+   "size": 40315
+  },
+  "evidence/audit_screenshots/14_add_visit.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1793054506,
+   "size": 38707
+  },
+  "evidence/final/honor-final-verification.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791725580,
+   "size": 1542
+  },
+  "evidence/p1/apk-signature.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791503831,
+   "size": 343
+  },
+  "evidence/p1/arabic-phone-editor-actions-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502778,
+   "size": 49054
+  },
+  "evidence/p1/arabic-phone-editor-actions-final.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791502778,
+   "size": 12557
+  },
+  "evidence/p1/arabic-phone-editor-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502772,
+   "size": 56152
+  },
+  "evidence/p1/arabic-phone-editor-final.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791502772,
+   "size": 11152
+  },
+  "evidence/p1/arabic-phone-patients-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502759,
+   "size": 92496
+  },
+  "evidence/p1/arabic-phone-patients-final.xml": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1791502759,
+   "size": 13469
+  },
+  "evidence/p1/arabic-phone-workspace-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502765,
+   "size": 90990
+  },
+  "evidence/p1/arabic-phone-workspace-final.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791502765,
+   "size": 16777
+  },
+  "evidence/p1/build.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791502560,
+   "size": 2895
+  },
+  "evidence/p1/compiled-manifest.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791503831,
+   "size": 2834
+  },
+  "evidence/p1/dark-phone-editor-actions-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502755,
+   "size": 50698
+  },
+  "evidence/p1/dark-phone-editor-actions-final.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791502755,
+   "size": 12456
+  },
+  "evidence/p1/dark-phone-editor-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502749,
+   "size": 53363
+  },
+  "evidence/p1/dark-phone-editor-final.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791502749,
+   "size": 11046
+  },
+  "evidence/p1/dark-phone-patients-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502736,
+   "size": 92470
+  },
+  "evidence/p1/dark-phone-patients-final.xml": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1791502736,
+   "size": 15121
+  },
+  "evidence/p1/dark-phone-workspace-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502742,
+   "size": 92138
+  },
+  "evidence/p1/dark-phone-workspace-final.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791502742,
+   "size": 16612
+  },
+  "evidence/p1/final-gates.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791503743,
+   "size": 5053
+  },
+  "evidence/p1/instrumentation.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791502594,
+   "size": 4155
+  },
+  "evidence/p1/landscape-large-font-editor-actions-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502691,
+   "size": 47035
+  },
+  "evidence/p1/landscape-large-font-editor-actions-final.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791502691,
+   "size": 6683
+  },
+  "evidence/p1/landscape-large-font-editor-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502679,
+   "size": 59300
+  },
+  "evidence/p1/landscape-large-font-editor-final.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791502679,
+   "size": 5664
+  },
+  "evidence/p1/landscape-large-font-patients-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502658,
+   "size": 57455
+  },
+  "evidence/p1/landscape-large-font-patients-final.xml": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1791502658,
+   "size": 6728
+  },
+  "evidence/p1/landscape-large-font-workspace-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502667,
+   "size": 67724
+  },
+  "evidence/p1/landscape-large-font-workspace-final.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791502667,
+   "size": 9618
+  },
+  "evidence/p1/large-font-editor-actions-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502655,
+   "size": 58851
+  },
+  "evidence/p1/large-font-editor-actions-final.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791502655,
+   "size": 9559
+  },
+  "evidence/p1/large-font-editor-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502648,
+   "size": 77151
+  },
+  "evidence/p1/large-font-editor-final.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791502648,
+   "size": 8174
+  },
+  "evidence/p1/large-font-patients-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502633,
+   "size": 94229
+  },
+  "evidence/p1/large-font-patients-final.xml": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1791502633,
+   "size": 8905
+  },
+  "evidence/p1/large-font-workspace-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502640,
+   "size": 99980
+  },
+  "evidence/p1/large-font-workspace-final.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791502640,
+   "size": 10727
+  },
+  "evidence/p1/layout-matrix.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791502778,
+   "size": 1165
+  },
+  "evidence/p1/manifest-attempt-failed.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791503317,
+   "size": 8313
+  },
+  "evidence/p1/named-removal-attempt-failed.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791503535,
+   "size": 7766
+  },
+  "evidence/p1/phone-large-font-initial.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791487686,
+   "size": 103423
+  },
+  "evidence/p1/phone-large-font-initial.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791487686,
+   "size": 9280
+  },
+  "evidence/p1/phone-patients-initial.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791487655,
+   "size": 152791
+  },
+  "evidence/p1/phone-patients-initial.xml": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1791487657,
+   "size": 15892
+  },
+  "evidence/p1/phone-patients.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791488120,
+   "size": 153163
+  },
+  "evidence/p1/phone-patients.xml": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1791488120,
+   "size": 15889
+  },
+  "evidence/p1/phone-profile.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791488129,
+   "size": 153351
+  },
+  "evidence/p1/phone-profile.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791488129,
+   "size": 14201
+  },
+  "evidence/p1/phone-workspace-initial.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791487880,
+   "size": 155633
+  },
+  "evidence/p1/phone-workspace-initial.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791487880,
+   "size": 19575
+  },
+  "evidence/p1/phone-workspace.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791488125,
+   "size": 156700
+  },
+  "evidence/p1/phone-workspace.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791488125,
+   "size": 19574
+  },
+  "evidence/p1/process-death-after.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502834,
+   "size": 156203
+  },
+  "evidence/p1/process-death-after.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791502834,
+   "size": 19572
+  },
+  "evidence/p1/process-death-before.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502824,
+   "size": 184233
+  },
+  "evidence/p1/process-death-before.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791502824,
+   "size": 21819
+  },
+  "evidence/p1/process-death-reopened.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502830,
+   "size": 152751
+  },
+  "evidence/p1/process-death-reopened.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791502830,
+   "size": 15887
+  },
+  "evidence/p1/process-death.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791502834,
+   "size": 213
+  },
+  "evidence/p1/selector-attempt-failed.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791503729,
+   "size": 1638
+  },
+  "evidence/p1/small-phone-editor-actions-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502630,
+   "size": 49028
+  },
+  "evidence/p1/small-phone-editor-actions-final.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791502630,
+   "size": 12456
+  },
+  "evidence/p1/small-phone-editor-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502624,
+   "size": 51730
+  },
+  "evidence/p1/small-phone-editor-final.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791502624,
+   "size": 11046
+  },
+  "evidence/p1/small-phone-patients-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502611,
+   "size": 90210
+  },
+  "evidence/p1/small-phone-patients-final.xml": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1791502611,
+   "size": 15121
+  },
+  "evidence/p1/small-phone-workspace-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502617,
+   "size": 91036
+  },
+  "evidence/p1/small-phone-workspace-final.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791502617,
+   "size": 16612
+  },
+  "evidence/p1/tablet-editor-actions-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502712,
+   "size": 66494
+  },
+  "evidence/p1/tablet-editor-actions-final.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791502712,
+   "size": 13263
+  },
+  "evidence/p1/tablet-editor-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502708,
+   "size": 66494
+  },
+  "evidence/p1/tablet-editor-final.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791502708,
+   "size": 13263
+  },
+  "evidence/p1/tablet-landscape-editor-actions-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502732,
+   "size": 65076
+  },
+  "evidence/p1/tablet-landscape-editor-actions-final.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791502732,
+   "size": 13262
+  },
+  "evidence/p1/tablet-landscape-editor-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502728,
+   "size": 65076
+  },
+  "evidence/p1/tablet-landscape-editor-final.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791502728,
+   "size": 13262
+  },
+  "evidence/p1/tablet-landscape-patients-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502715,
+   "size": 103494
+  },
+  "evidence/p1/tablet-landscape-patients-final.xml": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1791502715,
+   "size": 15893
+  },
+  "evidence/p1/tablet-landscape-workspace-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502722,
+   "size": 109278
+  },
+  "evidence/p1/tablet-landscape-workspace-final.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791502722,
+   "size": 23991
+  },
+  "evidence/p1/tablet-patients-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502695,
+   "size": 103597
+  },
+  "evidence/p1/tablet-patients-final.xml": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1791502695,
+   "size": 15885
+  },
+  "evidence/p1/tablet-workspace-final.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502701,
+   "size": 109344
+  },
+  "evidence/p1/tablet-workspace-final.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791502701,
+   "size": 23964
+  },
+  "evidence/p1/verification.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791503831,
+   "size": 6776
+  },
+  "evidence/p2/android-test-compile-first.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791543627,
+   "size": 3217
+  },
+  "evidence/p2/compatibility-offline.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791531635,
+   "size": 535
+  },
+  "evidence/p2/compatibility-online.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791531797,
+   "size": 2378
+  },
+  "evidence/p2/connected-api26-receipt.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791564012,
+   "size": 733
+  },
+  "evidence/p2/connected-api26-repaired-receipt.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791564321,
+   "size": 733
+  },
+  "evidence/p2/connected-api26-repaired.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791564321,
+   "size": 4414
+  },
+  "evidence/p2/connected-api26-verifier-receipt.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791564447,
+   "size": 823
+  },
+  "evidence/p2/connected-api26.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791564012,
+   "size": 5486
+  },
+  "evidence/p2/connected-api36-honor-scope-receipt.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791585931,
+   "size": 2090
+  },
+  "evidence/p2/connected-api36-honor-scope.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791585931,
+   "size": 4425
+  },
+  "evidence/p2/connected-api36-receipt.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791564613,
+   "size": 735
+  },
+  "evidence/p2/connected-api36.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791564613,
+   "size": 4341
+  },
+  "evidence/p2/honor-device-install.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791582989,
+   "size": 1084
+  },
+  "evidence/p2/honor-device-preflight.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791582980,
+   "size": 304
+  },
+  "evidence/p2/honor-device-start.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791582989,
+   "size": 22995
+  },
+  "evidence/p2/honor-device-start.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791582989,
+   "size": 6731
+  },
+  "evidence/p2/honor-engineering-adjudication.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791586077,
+   "size": 3220
+  },
+  "evidence/p2/host-gates-first.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791543153,
+   "size": 3116
+  },
+  "evidence/p2/host-gates-honor-scope.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791582704,
+   "size": 5316
+  },
+  "evidence/p2/host-gates-repair.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791545474,
+   "size": 4889
+  },
+  "evidence/p2/host-gates-scroll-repair.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791563788,
+   "size": 5158
+  },
+  "evidence/p2/host-gates-test-integrity.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791546467,
+   "size": 5218
+  },
+  "evidence/p2/initialization-api26-after.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791564437,
+   "size": 6509
+  },
+  "evidence/p2/initialization-api26-before.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791564437,
+   "size": 6638
+  },
+  "evidence/p2/initialization-api26.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791564437,
+   "size": 618
+  },
+  "evidence/p2/initialization-api36-after.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791564720,
+   "size": 6599
+  },
+  "evidence/p2/initialization-api36-before.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791564720,
+   "size": 6727
+  },
+  "evidence/p2/initialization-api36.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791564720,
+   "size": 390
+  },
+  "evidence/p2/layout-api26-dark.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791565059,
+   "size": 6509
+  },
+  "evidence/p2/layout-api26-landscape.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791565056,
+   "size": 6509
+  },
+  "evidence/p2/layout-api26-large-font.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791565054,
+   "size": 6494
+  },
+  "evidence/p2/layout-api26-small-phone.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791565051,
+   "size": 6488
+  },
+  "evidence/p2/layout-api26-tablet.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791565058,
+   "size": 6505
+  },
+  "evidence/p2/layout-api26.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791565288,
+   "size": 1655
+  },
+  "evidence/p2/layout-api36-arabic.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791565619,
+   "size": 332
+  },
+  "evidence/p2/layout-api36-arabic.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791565619,
+   "size": 6835
+  },
+  "evidence/p2/layout-api36-honor-arabic-rtl.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791583897,
+   "size": 6843
+  },
+  "evidence/p2/layout-api36-honor-dark.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791583891,
+   "size": 6602
+  },
+  "evidence/p2/layout-api36-honor-first-attempt.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791583809,
+   "size": 872
+  },
+  "evidence/p2/layout-api36-honor-honor-phone.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791583876,
+   "size": 6602
+  },
+  "evidence/p2/layout-api36-honor-landscape.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791583886,
+   "size": 6609
+  },
+  "evidence/p2/layout-api36-honor-large-font.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791583881,
+   "size": 6604
+  },
+  "evidence/p2/layout-api36-honor-observed.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791583897,
+   "size": 2743
+  },
+  "evidence/p2/layout-final-lint.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791585760,
+   "size": 1794
+  },
+  "evidence/p2/layout-test-assembly-insets-repaired.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791585560,
+   "size": 5766
+  },
+  "evidence/p2/layout-test-assembly-repaired.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791584059,
+   "size": 5766
+  },
+  "evidence/p2/layout-test-assembly-scroll-import-repaired.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791585192,
+   "size": 5766
+  },
+  "evidence/p2/layout-test-assembly-scroll-repaired.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791585055,
+   "size": 4145
+  },
+  "evidence/p2/layout-test-assembly-touch-repaired.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791584621,
+   "size": 5766
+  },
+  "evidence/p2/layout-test-assembly-units-banner-repaired.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791584389,
+   "size": 5766
+  },
+  "evidence/p2/layout-test-assembly.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791583980,
+   "size": 3956
+  },
+  "evidence/p2/layout-ui-class-api36-receipt.json": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791585579,
+   "size": 898
+  },
+  "evidence/p2/layout-ui-class-api36.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791585579,
+   "size": 80
+  },
+  "evidence/p2/no-credential-api26-corrected.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791563802,
+   "size": 1195
+  },
+  "evidence/p2/no-credential-api26-hierarchy.xml": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1791563920,
+   "size": 6519
+  },
+  "evidence/p2/no-credential-api26-observed.json": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1791563920,
+   "size": 299
+  },
+  "evidence/p2/no-credential-api26.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791546491,
+   "size": 243
+  },
+  "evidence/p2/no-credential-api36-hierarchy.xml": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1791563927,
+   "size": 6607
+  },
+  "evidence/p2/no-credential-api36-honor-current.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791585838,
+   "size": 3934
+  },
+  "evidence/p2/no-credential-api36-observed.json": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1791563927,
+   "size": 299
+  },
+  "evidence/p2/runtime-api26-compatible.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791564863,
+   "size": 3967
+  },
+  "evidence/p2/runtime-api26-dialog-corrected.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791565831,
+   "size": 6331
+  },
+  "evidence/p2/runtime-api26-first.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791564462,
+   "size": 3802
+  },
+  "evidence/p2/runtime-api26-input-corrected.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791566331,
+   "size": 8307
+  },
+  "evidence/p2/runtime-api26-process-corrected.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791566983,
+   "size": 10380
+  },
+  "evidence/p2/runtime-api26-rotation-identity.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791582260,
+   "size": 18551
+  },
+  "evidence/p2/runtime-api26-ui-corrected.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791565360,
+   "size": 5845
+  },
+  "evidence/p2/runtime-api36-honor-ime-repaired.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791583315,
+   "size": 18880
+  },
+  "evidence/p2/runtime-api36-honor-scope.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791582830,
+   "size": 5523
+  },
+  "evidence/p2/verification-api26-emulator-5584.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791582260,
+   "size": 18551
+  },
+  "evidence/p2/verification-api36-emulator-5582.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791583315,
+   "size": 18880
+  },
+  "evidence/p2/verification-api36-emulator-5586.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791585838,
+   "size": 3934
+  },
+  "evidence/p2/verification.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791585838,
+   "size": 3934
+  },
+  "evidence/p2/baseline/app-debug-p1.apk": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791503318,
+   "size": 11845115
+  },
+  "evidence/p2/baseline/p1-verification.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791503831,
+   "size": 6776
+  },
+  "evidence/p2/baseline/source-hashes.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791531589,
+   "size": 4193
+  },
+  "evidence/p2/baseline/source/.gitignore": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791487238,
+   "size": 64
+  },
+  "evidence/p2/baseline/source/README.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1791487475,
+   "size": 1675
+  },
+  "evidence/p2/baseline/source/build.gradle.kts": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791487238,
+   "size": 219
+  },
+  "evidence/p2/baseline/source/gradle.properties": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791487238,
+   "size": 137
+  },
+  "evidence/p2/baseline/source/gradlew": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791487520,
+   "size": 8752
+  },
+  "evidence/p2/baseline/source/gradlew.bat": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791487520,
+   "size": 2966
+  },
+  "evidence/p2/baseline/source/local.properties": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1791487238,
+   "size": 54
+  },
+  "evidence/p2/baseline/source/settings.gradle.kts": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791487238,
+   "size": 336
+  },
+  "evidence/p2/baseline/source/app/build.gradle.kts": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791487820,
+   "size": 1913
+  },
+  "evidence/p2/baseline/source/app/proguard-rules.pro": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791487238,
+   "size": 49
+  },
+  "evidence/p2/baseline/source/app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791488059,
+   "size": 5135
+  },
+  "evidence/p2/baseline/source/app/src/debug/AndroidManifest.xml": {
+   "aspect": "manifest_permissions",
+   "crit": 2,
+   "mtime": 1791503705,
+   "size": 655
+  },
+  "evidence/p2/baseline/source/app/src/main/AndroidManifest.xml": {
+   "aspect": "manifest_permissions",
+   "crit": 2,
+   "mtime": 1791487238,
+   "size": 821
+  },
+  "evidence/p2/baseline/source/app/src/main/java/com/sherifradwan/ancnative/MainActivity.kt": {
+   "aspect": "core_logic",
+   "crit": 2,
+   "mtime": 1791487334,
+   "size": 1077
+  },
+  "evidence/p2/baseline/source/app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791487308,
+   "size": 1753
+  },
+  "evidence/p2/baseline/source/app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt": {
+   "aspect": "data_access",
+   "crit": 2,
+   "mtime": 1791487308,
+   "size": 461
+  },
+  "evidence/p2/baseline/source/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "by": "content",
+   "mtime": 1791487772,
+   "size": 10731
+  },
+  "evidence/p2/baseline/source/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "by": "content",
+   "mtime": 1791487308,
+   "size": 859
+  },
+  "evidence/p2/baseline/source/app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791502505,
+   "size": 3636
+  },
+  "evidence/p2/baseline/source/app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791487334,
+   "size": 3959
+  },
+  "evidence/p2/baseline/source/app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1791487933,
+   "size": 5139
+  },
+  "evidence/p2/baseline/source/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791487978,
+   "size": 4802
+  },
+  "evidence/p2/baseline/source/app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791487874,
+   "size": 1838
+  },
+  "evidence/p2/baseline/source/app/src/main/java/com/sherifradwan/ancnative/ui/VisitEditor.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791488027,
+   "size": 6261
+  },
+  "evidence/p2/baseline/source/app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791487965,
+   "size": 8185
+  },
+  "evidence/p2/baseline/source/app/src/main/res/values/strings.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791487261,
+   "size": 3367
+  },
+  "evidence/p2/baseline/source/app/src/main/res/values/themes.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791487238,
+   "size": 410
+  },
+  "evidence/p2/baseline/source/app/src/main/res/values-ar/strings.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791487261,
+   "size": 4202
+  },
+  "evidence/p2/baseline/source/app/src/main/res/xml/backup_rules.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791487238,
+   "size": 294
+  },
+  "evidence/p2/baseline/source/app/src/main/res/xml/data_extraction_rules.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791487238,
+   "size": 671
+  },
+  "evidence/p2/baseline/source/app/src/test/java/com/sherifradwan/ancnative/state/AncStateTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791487795,
+   "size": 10648
+  },
+  "evidence/p2/baseline/source/docs/IMPLEMENTATION_PLAN.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1791503889,
+   "size": 13786
+  },
+  "evidence/p2/baseline/source/docs/P2_STORAGE_PLAN.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1791504855,
+   "size": 26165
+  },
+  "evidence/p2/baseline/source/docs/P2_VALIDATION.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1791504855,
+   "size": 3411
+  },
+  "evidence/p2/baseline/source/docs/VALIDATION.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1791503889,
+   "size": 5338
+  },
+  "evidence/p2/baseline/source/gradle/wrapper/gradle-wrapper.jar": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791487520,
+   "size": 43705
+  },
+  "evidence/p2/baseline/source/gradle/wrapper/gradle-wrapper.properties": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791487520,
+   "size": 251
+  },
+  "evidence/p2/connected-api26-first/TEST-anc-native-p2-api26-20261009(AVD) - 8.0.0-_app-.xml": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791564054,
+   "size": 4632
+  },
+  "evidence/p2/connected-api26-repaired/TEST-anc-native-p2-api26-20261009(AVD) - 8.0.0-_app-.xml": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791564321,
+   "size": 3793
+  },
+  "evidence/p2/connected-api36/TEST-anc-native-p2-api36-20261009(AVD) - 16-_app-.xml": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791564612,
+   "size": 3785
+  },
+  "evidence/p2/honor-baseline/app-debug-p2-honor-androidTest.apk": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791585560,
+   "size": 2578262
+  },
+  "evidence/p2/honor-baseline/app-debug-p2-honor.apk": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791582695,
+   "size": 38327283
+  },
+  "evidence/p2/honor-baseline/honor-engineering-adjudication.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791586077,
+   "size": 3220
+  },
+  "evidence/p2/honor-baseline/source-hashes.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791586360,
+   "size": 6143
+  },
+  "evidence/p2/honor-baseline/sources/README.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1791533097,
+   "size": 3106
+  },
+  "evidence/p2/honor-baseline/sources/build.gradle.kts": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791531623,
+   "size": 287
+  },
+  "evidence/p2/honor-baseline/sources/app/build.gradle.kts": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791582568,
+   "size": 2275
+  },
+  "evidence/p2/honor-baseline/sources/app/schemas/com.sherifradwan.ancnative.storage.RecordsDatabase/1.json": {
+   "aspect": "data_schema",
+   "crit": 3,
+   "mtime": 1791543136,
+   "size": 8291
+  },
+  "evidence/p2/honor-baseline/sources/app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791585465,
+   "size": 26709
+  },
+  "evidence/p2/honor-baseline/sources/app/src/androidTest/java/com/sherifradwan/ancnative/storage/EncryptedRecordsTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791546422,
+   "size": 14174
+  },
+  "evidence/p2/honor-baseline/sources/app/src/androidTest/java/com/sherifradwan/ancnative/storage/VaultIntegrationTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791564073,
+   "size": 22835
+  },
+  "evidence/p2/honor-baseline/sources/app/src/main/AndroidManifest.xml": {
+   "aspect": "manifest_permissions",
+   "crit": 2,
+   "mtime": 1791532489,
+   "size": 893
+  },
+  "evidence/p2/honor-baseline/sources/app/src/main/java/com/sherifradwan/ancnative/MainActivity.kt": {
+   "aspect": "core_logic",
+   "crit": 2,
+   "mtime": 1791544219,
+   "size": 8320
+  },
+  "evidence/p2/honor-baseline/sources/app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791487308,
+   "size": 1753
+  },
+  "evidence/p2/honor-baseline/sources/app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt": {
+   "aspect": "data_access",
+   "crit": 2,
+   "mtime": 1791487308,
+   "size": 461
+  },
+  "evidence/p2/honor-baseline/sources/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "by": "content",
+   "mtime": 1791533025,
+   "size": 11927
+  },
+  "evidence/p2/honor-baseline/sources/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "by": "content",
+   "mtime": 1791544088,
+   "size": 5861
+  },
+  "evidence/p2/honor-baseline/sources/app/src/main/java/com/sherifradwan/ancnative/storage/AndroidVaultKeys.kt": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1791544814,
+   "size": 8075
+  },
+  "evidence/p2/honor-baseline/sources/app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "by": "content",
+   "mtime": 1791532228,
+   "size": 2836
+  },
+  "evidence/p2/honor-baseline/sources/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "by": "content",
+   "mtime": 1791532228,
+   "size": 2424
+  },
+  "evidence/p2/honor-baseline/sources/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDatabase.kt": {
+   "aspect": "data_access",
+   "crit": 2,
+   "mtime": 1791544088,
+   "size": 2507
+  },
+  "evidence/p2/honor-baseline/sources/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "by": "content",
+   "mtime": 1791544714,
+   "size": 11205
+  },
+  "evidence/p2/honor-baseline/sources/app/src/main/java/com/sherifradwan/ancnative/storage/SaveVisitCommand.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "by": "content",
+   "mtime": 1791544937,
+   "size": 6175
+  },
+  "evidence/p2/honor-baseline/sources/app/src/main/java/com/sherifradwan/ancnative/storage/VaultController.kt": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1791544722,
+   "size": 27071
+  },
+  "evidence/p2/honor-baseline/sources/app/src/main/java/com/sherifradwan/ancnative/storage/VaultFiles.kt": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1791544722,
+   "size": 10952
+  },
+  "evidence/p2/honor-baseline/sources/app/src/main/java/com/sherifradwan/ancnative/storage/VaultState.kt": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1791532201,
+   "size": 1504
+  },
+  "evidence/p2/honor-baseline/sources/app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791533733,
+   "size": 4708
+  },
+  "evidence/p2/honor-baseline/sources/app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1791487933,
+   "size": 5139
+  },
+  "evidence/p2/honor-baseline/sources/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791487978,
+   "size": 4802
+  },
+  "evidence/p2/honor-baseline/sources/app/src/main/java/com/sherifradwan/ancnative/ui/VaultGateScreen.kt": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1791546853,
+   "size": 6273
+  },
+  "evidence/p2/honor-baseline/sources/app/src/main/java/com/sherifradwan/ancnative/ui/VisitEditor.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791532534,
+   "size": 8401
+  },
+  "evidence/p2/honor-baseline/sources/app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791487965,
+   "size": 8185
+  },
+  "evidence/p2/honor-baseline/sources/app/src/main/res/values/strings.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791544226,
+   "size": 9198
+  },
+  "evidence/p2/honor-baseline/sources/app/src/main/res/values-ar/strings.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791544226,
+   "size": 11936
+  },
+  "evidence/p2/honor-baseline/sources/app/src/test/java/com/sherifradwan/ancnative/state/AncStateTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791533260,
+   "size": 12375
+  },
+  "evidence/p2/honor-baseline/sources/app/src/test/java/com/sherifradwan/ancnative/storage/SaveCoordinatorTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791532624,
+   "size": 4072
+  },
+  "evidence/p2/honor-baseline/sources/app/src/test/java/com/sherifradwan/ancnative/storage/VaultStateTest.kt": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1791532624,
+   "size": 1153
+  },
+  "evidence/p2/honor-baseline/sources/docs/P2_STORAGE_PLAN.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1791582606,
+   "size": 27977
+  },
+  "evidence/p2/honor-baseline/sources/docs/P2_VALIDATION.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1791586189,
+   "size": 14865
+  },
+  "evidence/p2/honor-baseline/sources/tools/verify_p2.py": {
+   "aspect": "core_logic",
+   "crit": 2,
+   "mtime": 1791582898,
+   "size": 97100
+  },
+  "evidence/p2/layout-failure-history/first-receipt.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791584109,
+   "size": 898
+  },
+  "evidence/p2/layout-failure-history/first.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791584109,
+   "size": 2240
+  },
+  "evidence/p2/layout-failure-history/fourth-receipt.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791585207,
+   "size": 899
+  },
+  "evidence/p2/layout-failure-history/fourth.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791585207,
+   "size": 1320
+  },
+  "evidence/p2/layout-failure-history/second-receipt.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791584401,
+   "size": 900
+  },
+  "evidence/p2/layout-failure-history/second.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791584401,
+   "size": 1207
+  },
+  "evidence/p2/layout-failure-history/third-receipt.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791584636,
+   "size": 900
+  },
+  "evidence/p2/layout-failure-history/third.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791584635,
+   "size": 1326
+  },
+  "evidence/p2/pre-honor-scope/app-debug-androidTest.apk": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791564306,
+   "size": 1139117
+  },
+  "evidence/p2/pre-honor-scope/app-debug.apk": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791563779,
+   "size": 20347631
+  },
+  "evidence/p2/pre-layout/app-debug-androidTest.apk": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791582693,
+   "size": 2512197
+  },
+  "evidence/p2/reviews/initial-cancel-agy.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791533075,
+   "size": 4490
+  },
+  "evidence/p2/reviews/initial-cancel-agy.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1791533075,
+   "size": 3456
+  },
+  "evidence/p2/reviews/initial-cancel-proposal.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1791533026,
+   "size": 3733
+  },
+  "evidence/p3/connected-api36-after-selector.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791705851,
+   "size": 8089
+  },
+  "evidence/p3/connected-api36-first-attempt.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791705735,
+   "size": 5926
+  },
+  "evidence/p3/connected-api36.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791707786,
+   "size": 5085
+  },
+  "evidence/p3/honor-device-install.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791710654,
+   "size": 1130
+  },
+  "evidence/p3/host-gates-before-workspace-details.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791704968,
+   "size": 7640
+  },
+  "evidence/p3/host-gates.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791707822,
+   "size": 2176
+  },
+  "evidence/p4/connected-api36.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791713909,
+   "size": 7155
+  },
+  "evidence/p4/connected-results.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791713909,
+   "size": 5600
+  },
+  "evidence/p4/honor-device-install.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791713905,
+   "size": 1300
+  },
+  "evidence/p4/host-gates.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791713895,
+   "size": 2055
+  },
+  "evidence/p5/connected-api36.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791715324,
+   "size": 2547
+  },
+  "evidence/p5/connected-results.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791715317,
+   "size": 5913
+  },
+  "evidence/p5/honor-device-install.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791715308,
+   "size": 1265
+  },
+  "evidence/p5/host-gates.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791715311,
+   "size": 5036
+  },
+  "evidence/p6/connected-api36.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791716311,
+   "size": 2611
+  },
+  "evidence/p6/connected-results.xml": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791716293,
+   "size": 6068
+  },
+  "evidence/p6/honor-device-install.json": {
+   "aspect": "config",
+   "crit": 1,
+   "mtime": 1791716786,
+   "size": 1265
+  },
+  "evidence/p6/host-gates.log": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791716301,
+   "size": 5011
+  },
+  "evidence/ui_eval/emulator_patients.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791724020,
+   "size": 12504
+  },
+  "evidence/ui_eval/physical_honor400.png": {
+   "aspect": "ui_view",
+   "crit": 1,
+   "mtime": 1791716999,
+   "size": 50
+  },
+  "gradle/wrapper/gradle-wrapper.jar": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1791487520,
+   "size": 43705
+  },
+  "gradle/wrapper/gradle-wrapper.properties": {
+   "aspect": "other",
+   "crit": 1,
+   "mtime": 1791487520,
+   "size": 251
+  },
+  "keystore/anc-v3-release-password": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1791801959,
+   "size": 44
+  },
+  "keystore/anc-v3-release.jks": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1791801959,
+   "size": 4440
+  },
+  "keystore/keystore.properties": {
+   "aspect": "auth_security",
+   "crit": 3,
+   "mtime": 1791801965,
+   "size": 179
+  },
+  "release/ANC_EMR_v1.0.0_Release.apk": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1792086828,
+   "size": 55666266
+  },
+  "retry/style/attempt-0-opencode-openai_gpt-6-luna/result.json": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1793375229,
+   "size": 917
+  },
+  "retry/style/attempt-0-opencode-openai_gpt-6-luna/stdout.txt": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1793375229,
+   "size": 421
+  },
+  "retry/style/attempt-1-claude-claude-sonnet-5-5/result.json": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1793375261,
+   "size": 1610
+  },
+  "retry/style/attempt-1-claude-claude-sonnet-5-5/stdout.txt": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1793375261,
+   "size": 1178
+  },
+  "retry/style/attempt-2-opencode-omniroute_nvidia_nvidia_nemotron-3-ultra-550b-a55b/result.json": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1793375573,
+   "size": 5880
+  },
+  "retry/style/attempt-2-opencode-omniroute_nvidia_nvidia_nemotron-3-ultra-550b-a55b/stdout.txt": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1793375573,
+   "size": 9635
+  },
+  "retry/tests/attempt-0-opencode-omniroute_nvidia_nvidia_nemotron-3-ultra-550b-a55b/result.json": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1793375597,
+   "size": 5937
+  },
+  "retry/tests/attempt-0-opencode-omniroute_nvidia_nvidia_nemotron-3-ultra-550b-a55b/stdout.txt": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1793375597,
+   "size": 7842
+  },
+  "retry/ui/attempt-0-claude-claude-sonnet-5-5/result.json": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1793375301,
+   "size": 4482
+  },
+  "retry/ui/attempt-0-claude-claude-sonnet-5-5/stdout.txt": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1793375301,
+   "size": 5796
+  },
+  "retry/ui/attempt-1-opencode-openai_gpt-6-luna/result.json": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1793375324,
+   "size": 2990
+  },
+  "retry/ui/attempt-1-opencode-openai_gpt-6-luna/stdout.txt": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1793375324,
+   "size": 1448
+  },
+  "retry/ui/attempt-2-opencode-omniroute_nvidia_nvidia_nemotron-3-ultra-550b-a55b/result.json": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1793375629,
+   "size": 5941
+  },
+  "retry/ui/attempt-2-opencode-omniroute_nvidia_nvidia_nemotron-3-ultra-550b-a55b/stdout.txt": {
+   "aspect": "artifact",
+   "crit": 0,
+   "mtime": 1793375629,
+   "size": 7385
+  },
+  "tasks/current_task.md": {
+   "aspect": "docs",
+   "crit": 0,
+   "mtime": 1793046828,
+   "size": 3988
+  },
+  "tests/maestro/clinical_audit_flow.yaml": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1793042565,
+   "size": 759
+  },
+  "tests/maestro/clinical_audit_screenshots.yaml": {
+   "aspect": "clinical_safety",
+   "crit": 3,
+   "mtime": 1793046674,
+   "size": 1930
+  },
+  "tests/maestro/test_screenshot.yaml": {
+   "aspect": "tests",
+   "crit": 1,
+   "mtime": 1793043432,
+   "size": 129
+  },
+  "tools/verify_p2.py": {
+   "aspect": "core_logic",
+   "crit": 2,
+   "mtime": 1791582898,
+   "size": 97100
+  }
+ }
+}

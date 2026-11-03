@@ -1,0 +1,11 @@
+I didn't change anything, because the fix isn't in a file I'm allowed to edit.
+
+**What's failing.** All four compile errors are in `app/src/test/java/com/sherifradwan/ancnative/storage/DeletableRegistryTest.kt`, in the test `sourceCompatibleFactoriesBuildTheGenericCommands` (lines 262, 269, 277 and 283). It calls `DeleteMedicationCommand`, `RestoreMedicationCommand`, `DeleteLabInvestigationCommand` and `RestoreLabInvestigationCommand`. The core lane removed those factories from `ClinicalCommands.kt`, as D651 requires. That test exists to check the old factories still build the generic commands, so it can't compile once they're gone.
+
+**My test files aren't the cause.** A grep of `app/src` shows no removed identifier in `AncDeleteUndoStateTest.kt` or `UndoCoordinatorTest.kt`. `DeletableRegistryTest.kt` is the only file that references them. I also haven't compiled my two test files, because `compileDebugUnitTestKotlin` stops on this file first.
+
+**Why I didn't edit it.** The brief says changes outside my four allowed files are reverted automatically and counted against me. `DeletableRegistryTest.kt` isn't one of them.
+
+**Suggested fix, for whoever owns that file.** Delete `sourceCompatibleFactoriesBuildTheGenericCommands`. The behaviour it checks, that each factory builds the generic command, no longer exists after D651. Golden fingerprints and equality for the generic commands should already be covered by the neighbouring tests, such as the one ending at line 255. Rewriting the test against `DeleteRecordCommand`/`RestoreRecordCommand` directly would only repeat those, so removal looks right.
+
+**Next step.** Once that test is removed, or the file is added to my allowed list, I can rerun `./gradlew --offline :app:testDebugUnitTest --tests '*UndoCoordinatorTest' --tests '*AncDeleteUndoStateTest'` and fix anything my files then show. I haven't run `check_r6b2.py` or any unit tests in this repair round.

@@ -1,0 +1,1125 @@
+{
+  "_comment": "Copy of skills template shape (~/skills/multi-agent-collaborative-audit/resources/templates/TEST_MANIFEST.template.json). One entry per test. deps = globs of every file whose change could alter the result (code under test, the test itself). Round-1 oracles P1-P10 from .agents/pipeline/SPEC_FIX.md; round-2 oracles Q1-Q7 and U1-U6 from .agents/pipeline/SPEC_FIX_R2.md. Tier 1 = fast local (unit/static), tier 2 = build gate. R2: 'always' flags removed from all tier-1 entries (run on dep change); deps made precise to the exercised production file(s) plus the test file itself.",
+  "tests": [
+    {
+      "id": "UNIT-parse",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.ui.ParseDeliveryNotesSpecTest'",
+      "deps": [
+        "app/src/main/**/ui/DeliveryNotesParser.kt",
+        "app/src/test/**/ParseDeliveryNotesSpecTest.kt"
+      ],
+      "covers": ["P1", "P2", "P3", "P4", "P5", "Q1", "Q2", "Q3", "Q4"]
+    },
+    {
+      "id": "UNIT-parse-legacy",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*DeliveryNotesParserTest'",
+      "deps": [
+        "app/src/main/**/ui/DeliveryNotesParser.kt",
+        "app/src/test/**/DeliveryNotesParserTest.kt"
+      ],
+      "covers": ["P5", "Q4"]
+    },
+    {
+      "id": "UNIT-format",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.ui.ClinicalFormatTest'",
+      "deps": [
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/test/**/ClinicalFormatTest.kt"
+      ],
+      "covers": ["P6", "P7", "P8", "Q5"]
+    },
+    {
+      "id": "UNIT-format-r2",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*ClinicalFormatR2Test'",
+      "deps": [
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/test/**/ClinicalFormatR2Test.kt"
+      ],
+      "covers": ["Q5", "Q6"]
+    },
+    {
+      "id": "UNIT-print",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*PatientPrintHtmlGeneratorTest'",
+      "deps": [
+        "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/main/**/ui/DeliveryNotesParser.kt",
+        "app/src/test/**/PatientPrintHtmlGeneratorTest.kt"
+      ],
+      "covers": ["Q17", "Q7", "Q19", "Q18"]
+    },
+    {
+      "id": "UNIT-contrast",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.ui.ThemeContrastTest'",
+      "deps": [
+        "app/src/main/**/ui/Theme.kt",
+        "app/src/main/**/ui/ClinicalBadges.kt",
+        "app/src/test/**/ThemeContrastTest.kt"
+      ],
+      "covers": ["P9"]
+    },
+    {
+      "id": "STATIC-ui",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_ui_static.py",
+      "deps": [
+        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/main/**/ui/ClinicalBadges.kt",
+        ".agents/checks/check_ui_static.py"
+      ],
+      "covers": ["P10"]
+    },
+    {
+      "id": "STATIC-ui-r2",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_ui_static_r2.py",
+      "deps": [
+        "app/src/main/**/ui/ProfileScreen.kt",
+        "app/src/main/**/ui/PatientListScreen.kt",
+        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/main/**/ui/ClinicalBadges.kt",
+        ".agents/checks/check_ui_static_r2.py"
+      ],
+      "covers": ["U1", "U2", "U3", "U4", "U5", "U6", "Q7"]
+    },
+    {
+      "id": "UNIT-intake-dating",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*IntakeDatingRuleTest'",
+      "deps": [
+        "app/src/main/**/state/IntakeDatingRule.kt",
+        "app/src/test/**/IntakeDatingRuleTest.kt"
+      ],
+      "covers": ["Q20"]
+    },
+    {
+      "id": "STATIC-r3",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3.py",
+      "deps": [
+        "app/src/main/**/state/AncViewModel.kt",
+        "app/src/main/**/storage/RecordsRepository.kt",
+        "app/src/main/**/storage/VaultController.kt",
+        "app/build.gradle.kts",
+        ".agents/checks/check_r3.py"
+      ],
+      "covers": ["S1", "S2", "S3", "S4", "Q20", "Q21"]
+    },
+    {
+      "id": "UNIT-anomalies",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*RecordAnomaliesTest'",
+      "deps": [
+        "app/src/main/**/storage/RecordAnomalies.kt",
+        "app/src/test/**/RecordAnomaliesTest.kt"
+      ],
+      "covers": ["Q22"]
+    },
+    {
+      "id": "UNIT-vault-auto",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*VaultAutoActionTest'",
+      "deps": [
+        "app/src/main/**/storage/VaultAutoAction.kt",
+        "app/src/test/**/VaultAutoActionTest.kt"
+      ],
+      "covers": ["Q23"]
+    },
+    {
+      "id": "UNIT-vault-cleanup",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*VaultCleanupRuleTest'",
+      "deps": [
+        "app/src/main/**/storage/VaultCleanupRule.kt",
+        "app/src/test/**/VaultCleanupRuleTest.kt"
+      ],
+      "covers": ["Q24", "Q49", "Q53"]
+    },
+    {
+      "id": "STATIC-r3b",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3b.py",
+      "deps": [
+        "app/src/main/**/MainActivity.kt",
+        "app/src/main/**/storage/VaultController.kt",
+        "app/src/main/**/storage/VaultFiles.kt",
+        "app/src/main/**/storage/VaultCleanupRule.kt",
+        ".agents/checks/check_r3b.py",
+        ".agents/checks/check_r3f1.py"
+      ],
+      "covers": ["S5", "S6", "S7"]
+    },
+    {
+      "id": "UNIT-pin-policy",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*PinPolicyTest'",
+      "deps": [
+        "app/src/main/**/security/PinPolicy.kt",
+        "app/src/test/**/security/PinPolicyTest.kt"
+      ],
+      "covers": ["Q25"]
+    },
+    {
+      "id": "UNIT-lock-policy",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*AppLockPolicyTest'",
+      "deps": [
+        "app/src/main/**/security/AppLockPolicy.kt",
+        "app/src/test/**/security/AppLockPolicyTest.kt"
+      ],
+      "covers": ["Q26"]
+    },
+    {
+      "id": "STATIC-r3c",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3c.py",
+      "deps": [
+        "app/src/main/**/security/SecuritySettingsRepository.kt",
+        "app/src/main/**/security/BiometricAuthManager.kt",
+        "app/src/main/**/MainActivity.kt",
+        ".agents/checks/check_r3c.py"
+      ],
+      "covers": ["S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16"]
+    },
+    {
+      "id": "STATIC-r3d",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3d.py",
+      "deps": [
+        "app/src/main/res/xml/file_paths.xml",
+        "app/src/main/**/MainActivity.kt",
+        "app/src/main/**/security/SecuritySettingsRepository.kt",
+        "app/src/main/**/ui/report/PatientTwoPageReportDialog.kt",
+        "app/src/main/**/ui/SecuritySettingsDialog.kt",
+        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/main/**/ui/PatientEditor.kt",
+        "app/src/main/**/storage/AttachmentSyncManager.kt",
+        ".agents/checks/check_r3d.py"
+      ],
+      "covers": ["S17", "S18", "S19", "S20", "S21", "S22"]
+    },
+    {
+      "id": "STATIC-r3e",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3e.py",
+      "deps": [
+        "app/src/main/**/storage/VaultAutoAction.kt",
+        "app/src/main/**/state/AncViewModel.kt",
+        "app/src/main/**/MainActivity.kt",
+        "app/src/main/**/ui/AppLockScreen.kt",
+        "app/src/main/**/ui/UltrasoundPhotoViewerDialog.kt",
+        "app/src/main/**/ui/ClinicalAttachmentViewerDialog.kt",
+        "app/src/main/**/ui/PatientListScreen.kt",
+        "app/src/main/**/ui/ProfileScreen.kt",
+        "app/src/main/**/ui/AddAttachmentDialog.kt",
+        ".agents/checks/check_r3e.py"
+      ],
+      "covers": ["S23", "S24", "S25", "S26", "S27", "S28"]
+    },
+    {
+      "id": "STATIC-r3f1",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3f1.py",
+      "deps": [
+        "app/src/main/**/storage/Hashing.kt",
+        "app/src/main/**/storage/BoundedBitmap.kt",
+        "app/src/main/**/storage/VaultController.kt",
+        "app/src/main/**/storage/VaultCleanupRule.kt",
+        "app/src/main/**/security/SecuritySettingsRepository.kt",
+        "app/src/main/**/state/AncViewModel.kt",
+        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/main/res/values/strings.xml",
+        "app/src/test/**/NegativeControlAndClinicalValidationTest.kt",
+        ".agents/checks/check_r3f1.py"
+      ],
+      "covers": ["S29", "S30", "S31", "S32", "S33", "S34", "S35"]
+    },
+    {
+      "id": "STATIC-r3f3",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3f3.py",
+      "deps": [
+        "app/src/main/**/storage/BoundedBitmap.kt",
+        "app/src/main/**/ui/InAppCameraDialog.kt",
+        "app/src/main/**/ui/AddAttachmentDialog.kt",
+        ".agents/checks/check_r3f3.py"
+      ],
+      "covers": ["S43", "S44"]
+    },
+    {
+      "id": "STATIC-r3f2",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3f2.py",
+      "deps": [
+        "app/build.gradle.kts",
+        "app/src/main/AndroidManifest.xml",
+        "app/src/main/**/ui/AddAttachmentDialog.kt",
+        "app/src/main/**/ui/UltrasoundEditor.kt",
+        "app/src/main/**/ui/InAppCameraDialog.kt",
+        "app/src/main/**/storage/PhotoQuality.kt",
+        "app/src/main/**/storage/PatientAttachmentVault.kt",
+        "app/src/main/**/storage/CameraCaptureHelper.kt",
+        "app/src/main/**/state/AncViewModel.kt",
+        "app/src/main/res/values/strings.xml",
+        ".agents/checks/check_r3f2.py"
+      ],
+      "covers": ["S37", "S38", "S39", "S40", "S41", "S42"]
+    },
+    {
+      "id": "UNIT-photo-quality",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*PhotoQualityPresetTest'",
+      "deps": [
+        "app/src/main/**/storage/PhotoQuality.kt",
+        "app/src/test/**/PhotoQualityPresetTest.kt"
+      ],
+      "covers": ["Q54"]
+    },
+    {
+      "id": "UNIT-hashing",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*HashingTest'",
+      "deps": [
+        "app/src/main/**/storage/Hashing.kt",
+        "app/src/test/**/HashingTest.kt"
+      ],
+      "covers": ["Q47", "Q53"]
+    },
+    {
+      "id": "UNIT-bounded-bitmap",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*BoundedBitmapTest'",
+      "deps": [
+        "app/src/main/**/storage/BoundedBitmap.kt",
+        "app/src/test/**/BoundedBitmapTest.kt"
+      ],
+      "covers": ["Q48", "Q53", "Q61"]
+    },
+    {
+      "id": "UNIT-security-settings",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*SecuritySettingsRepositoryTest'",
+      "deps": [
+        "app/src/main/**/security/SecuritySettingsRepository.kt",
+        "app/src/main/**/security/PinPolicy.kt",
+        "app/src/main/**/storage/Hashing.kt",
+        "app/src/test/**/SecuritySettingsRepositoryTest.kt",
+        "app/src/test/**/FakeSharedPreferences.kt"
+      ],
+      "covers": ["Q50", "Q53"]
+    },
+    {
+      "id": "UNIT-attachment-error",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*AttachmentErrorStateTest'",
+      "deps": [
+        "app/src/main/**/state/AncState.kt",
+        "app/src/test/**/AttachmentErrorStateTest.kt"
+      ],
+      "covers": ["Q51", "Q53"]
+    },
+    {
+      "id": "UNIT-negative-control",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*NegativeControlAndClinicalValidationTest'",
+      "deps": [
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/main/**/model/GestationalAgeEngine.kt",
+        "app/src/main/**/model/ClinicalModels.kt",
+        "app/src/main/**/state/AncState.kt",
+        "app/src/test/**/NegativeControlAndClinicalValidationTest.kt"
+      ],
+      "covers": ["Q53", "G1"]
+    },
+    {
+      "id": "UNIT-clinical-validation",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*.model.ClinicalValidationTest'",
+      "deps": [
+        "app/src/main/**/model/ClinicalModels.kt",
+        "app/src/test/**/model/ClinicalValidationTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-demo-fixtures",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*DemoFixturesVerificationTest'",
+      "deps": [
+        "app/src/main/**/model/DemoFixtures.kt",
+        "app/src/main/**/model/DemoModels.kt",
+        "app/src/test/**/DemoFixturesVerificationTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-gestational-age",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*GestationalAgeEngineTest'",
+      "deps": [
+        "app/src/main/**/model/GestationalAgeEngine.kt",
+        "app/src/test/**/GestationalAgeEngineTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-timeline-projection",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*LongitudinalTimelineProjectionTest'",
+      "deps": [
+        "app/src/main/**/model/LongitudinalTimelineProjection.kt",
+        "app/src/test/**/LongitudinalTimelineProjectionTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-patient-validation",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*.model.PatientValidationTest'",
+      "deps": [
+        "app/src/main/**/model/ClinicalModels.kt",
+        "app/src/main/**/model/DemoModels.kt",
+        "app/src/test/**/model/PatientValidationTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-previous-pregnancy-validation",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*PreviousPregnancyValidationTest'",
+      "deps": [
+        "app/src/main/**/model/ClinicalModels.kt",
+        "app/src/test/**/PreviousPregnancyValidationTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-codex-repository",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*ClinicalCodexModelsTest'",
+      "deps": [
+        "app/src/main/**/model/codex/*.kt",
+        "app/src/test/**/ClinicalCodexRepositoryTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-anc-state",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*.state.AncStateTest'",
+      "deps": [
+        "app/src/main/**/state/AncState.kt",
+        "app/src/test/**/state/AncStateTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-backup-vault",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*BackupVaultIntegrationAndZeroDataLossTest'",
+      "deps": [
+        "app/src/main/**/storage/EncryptedBackupManager.kt",
+        "app/src/main/**/storage/RecordsRepository.kt",
+        "app/src/main/**/storage/PatientAttachmentVault.kt",
+        "app/src/test/**/BackupVaultIntegrationAndZeroDataLossTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-clinical-commands",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*ClinicalCommandsTest'",
+      "deps": [
+        "app/src/main/**/storage/ClinicalCommands.kt",
+        "app/src/main/**/storage/SaveVisitCommand.kt",
+        "app/src/test/**/ClinicalCommandsTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-encrypted-backup",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*EncryptedBackupTest'",
+      "deps": [
+        "app/src/main/**/storage/EncryptedBackupManager.kt",
+        "app/src/test/**/EncryptedBackupTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-attachment-vault",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*PatientAttachmentVaultTest'",
+      "deps": [
+        "app/src/main/**/storage/PatientAttachmentVault.kt",
+        "app/src/main/**/storage/Hashing.kt",
+        "app/src/main/**/storage/BoundedBitmap.kt",
+        "app/src/test/**/PatientAttachmentVaultTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-patient-commands",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*PatientCommandsTest'",
+      "deps": [
+        "app/src/main/**/storage/PatientCommands.kt",
+        "app/src/test/**/PatientCommandsTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-records-mapping",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*RecordsMappingRoundTripTest'",
+      "deps": [
+        "app/src/main/**/storage/RecordEntities.kt",
+        "app/src/main/**/storage/RecordsRepository.kt",
+        "app/src/test/**/RecordsMappingRoundTripTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-save-coordinator",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*SaveCoordinatorTest'",
+      "deps": [
+        "app/src/main/**/storage/SaveVisitCommand.kt",
+        "app/src/main/**/storage/RecordsRepository.kt",
+        "app/src/test/**/SaveCoordinatorTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-vault-state",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*VaultStateTest'",
+      "deps": [
+        "app/src/main/**/storage/VaultState.kt",
+        "app/src/test/**/VaultStateTest.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "UNIT-gestational-banner",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*GestationalBannerLogicTest'",
+      "deps": [
+        "app/src/main/**/ui/GestationalBanner.kt",
+        "app/src/main/**/model/GestationalAgeEngine.kt",
+        "app/src/test/**/GestationalBannerLogicTest.kt"
+      ],
+      "covers": ["G1", "Q106"]
+    },
+    {
+      "id": "STATIC-r3g",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3g.py",
+      "deps": [
+        "app/src/main/**/storage/ScanPhotoRef.kt",
+        "app/src/main/**/storage/CameraCaptureHelper.kt",
+        "app/src/main/**/state/AncState.kt",
+        "app/src/main/**/state/AncViewModel.kt",
+        "app/src/main/**/ui/UltrasoundEditor.kt",
+        "app/src/main/**/ui/UltrasoundPhotoViewerDialog.kt",
+        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/main/**/ui/ProfileScreen.kt",
+        ".agents/checks/check_r3g.py"
+      ],
+      "covers": ["S45", "S46", "S47", "S48", "S49"]
+    },
+    {
+      "id": "UNIT-scan-photo-ref",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*ScanPhotoRefTest'",
+      "deps": [
+        "app/src/main/**/storage/ScanPhotoRef.kt",
+        "app/src/test/**/ScanPhotoRefTest.kt"
+      ],
+      "covers": ["Q63"]
+    },
+    {
+      "id": "UNIT-camera-sweep",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*CameraCaptureSweepTest'",
+      "deps": [
+        "app/src/main/**/storage/CameraCaptureHelper.kt",
+        "app/src/test/**/CameraCaptureSweepTest.kt"
+      ],
+      "covers": ["Q64"]
+    },
+    {
+      "id": "UNIT-scan-photo-import",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*ScanPhotoImportStateTest'",
+      "deps": [
+        "app/src/main/**/state/AncState.kt",
+        "app/src/test/**/ScanPhotoImportStateTest.kt"
+      ],
+      "covers": ["Q65"]
+    },
+    {
+      "id": "STATIC-r3h",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3h.py",
+      "deps": [
+        "app/src/main/**/storage/CameraCaptureHelper.kt",
+        ".agents/checks/check_r3h.py"
+      ],
+      "covers": ["S50"]
+    },
+    {
+      "id": "UNIT-capture-temp-file",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*CaptureTempFileTest'",
+      "deps": [
+        "app/src/main/**/storage/CameraCaptureHelper.kt",
+        "app/src/test/**/CaptureTempFileTest.kt"
+      ],
+      "covers": ["Q68"]
+    },
+    {
+      "id": "STATIC-r3i",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3i.py",
+      "deps": [
+        "app/src/main/**/model/IsoDates.kt",
+        "app/src/main/**/model/DemoFixtures.kt",
+        "app/src/main/**/ui/PatientEditor.kt",
+        "app/src/main/**/state/IntakeDatingRule.kt",
+        "app/src/main/**/ui/GestationalBanner.kt",
+        "app/src/main/**/*.kt",
+        ".agents/checks/check_r3i.py"
+      ],
+      "covers": ["S51", "S52", "S53", "S54"]
+    },
+    {
+      "id": "STATIC-r3j",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3j.py",
+      "deps": [
+        "app/src/main/**/ui/UltrasoundEditor.kt",
+        "app/src/main/res/values/plurals.xml",
+        "app/src/main/res/values/strings.xml",
+        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/main/**/ui/ProfileScreen.kt",
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/main/**/ui/AddAttachmentDialog.kt",
+        ".agents/checks/check_r3j.py"
+      ],
+      "covers": ["S55", "S56", "S57", "S58"]
+    },
+    {
+      "id": "STATIC-r3k",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3k.py",
+      "deps": [
+        "app/src/main/**/ui/ClinicalBadges.kt",
+        "app/src/main/**/ui/PatientListScreen.kt",
+        "app/src/main/**/ui/ProfileScreen.kt",
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/main/**/ui/AncApp.kt",
+        ".agents/checks/check_r3k.py"
+      ],
+      "covers": ["S59", "S60", "S61", "S62", "S63"]
+    },
+    {
+      "id": "UNIT-format-weight",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*FormatWeightKgTest'",
+      "deps": [
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/test/**/FormatWeightKgTest.kt"
+      ],
+      "covers": ["Q78"]
+    },
+    {
+      "id": "UNIT-attachment-title",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.ui.AttachmentDisplayTitleTest'",
+      "deps": [
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/test/**/ui/AttachmentDisplayTitleTest.kt"
+      ],
+      "covers": ["Q73"]
+    },
+    {
+      "id": "UNIT-iso-dates",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*IsoDatesTest'",
+      "deps": [
+        "app/src/main/**/model/IsoDates.kt",
+        "app/src/test/**/IsoDatesTest.kt"
+      ],
+      "covers": ["Q69", "Q70"]
+    },
+    {
+      "id": "UNIT-profile-saved-notice",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*ProfileSavedNoticeTest'",
+      "deps": [
+        "app/src/main/**/state/IntakeDatingRule.kt",
+        "app/src/main/**/state/AncState.kt",
+        "app/src/test/**/state/ProfileSavedNoticeTest.kt"
+      ],
+      "covers": ["Q83"]
+    },
+    {
+      "id": "UNIT-visit-synthetic-flag",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*VisitSyntheticFlagTest'",
+      "deps": [
+        "app/src/main/**/storage/SaveVisitCommand.kt",
+        "app/src/test/**/storage/VisitSyntheticFlagTest.kt"
+      ],
+      "covers": ["Q82"]
+    },
+    {
+      "id": "STATIC-r3l",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3l.py",
+      "deps": [
+        "app/src/main/**/storage/RecordsRepository.kt",
+        "app/src/main/**/storage/SaveVisitCommand.kt",
+        "app/src/main/**/state/AncViewModel.kt",
+        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/main/res/values/strings.xml",
+        ".agents/checks/check_r3l.py"
+      ],
+      "covers": ["S64", "S65", "S66"]
+    },
+    {
+      "id": "STATIC-r3m",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3m.py",
+      "deps": [
+        "app/src/main/**/model/VisitVitals.kt",
+        "app/src/main/**/storage/SaveVisitCommand.kt",
+        "app/src/main/**/state/AncState.kt",
+        "app/src/main/**/ui/VisitEditor.kt",
+        "app/src/main/**/ui/ClinicalBadges.kt",
+        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/main/**/ui/ProfileScreen.kt",
+        "app/src/main/res/values/strings.xml",
+        ".agents/checks/check_r3m.py"
+      ],
+      "covers": ["S67", "S68", "S69", "S70", "S71"]
+    },
+    {
+      "id": "UNIT-visit-vitals",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*VisitVitalsTest'",
+      "deps": [
+        "app/src/main/**/model/VisitVitals.kt",
+        "app/src/test/**/model/VisitVitalsTest.kt"
+      ],
+      "covers": ["Q84"]
+    },
+    {
+      "id": "UNIT-save-visit-validation",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*SaveVisitValidationTest'",
+      "deps": [
+        "app/src/main/**/model/VisitVitals.kt",
+        "app/src/main/**/storage/SaveVisitCommand.kt",
+        "app/src/main/**/state/AncState.kt",
+        "app/src/main/**/model/DemoFixtures.kt",
+        "app/src/test/**/storage/SaveVisitValidationTest.kt"
+      ],
+      "covers": ["Q85"]
+    },
+    {
+      "id": "STATIC-r3n",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3n.py",
+      "deps": [
+        "app/src/main/**/model/IsoDates.kt",
+        "app/src/main/**/model/ClinicalModels.kt",
+        "app/src/main/**/model/GestationalAgeEngine.kt",
+        "app/src/main/**/model/Redating.kt",
+        "app/src/main/**/storage/ClinicalCommands.kt",
+        "app/src/main/**/ui/DatingEditor.kt",
+        "app/src/main/**/ui/UltrasoundEditor.kt",
+        "app/src/main/res/values/strings.xml",
+        ".agents/checks/check_r3n.py"
+      ],
+      "covers": ["S72", "S73", "S74", "S75"]
+    },
+    {
+      "id": "UNIT-ivf-dating",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*IvfDatingTest'",
+      "deps": [
+        "app/src/main/**/model/IsoDates.kt",
+        "app/src/main/**/model/ClinicalModels.kt",
+        "app/src/main/**/model/GestationalAgeEngine.kt",
+        "app/src/main/**/storage/ClinicalCommands.kt",
+        "app/src/main/**/state/AncState.kt",
+        "app/src/test/**/model/IvfDatingTest.kt"
+      ],
+      "covers": ["Q88"]
+    },
+    {
+      "id": "UNIT-redating",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*RedatingTest'",
+      "deps": [
+        "app/src/main/**/model/Redating.kt",
+        "app/src/test/**/model/RedatingTest.kt"
+      ],
+      "covers": ["Q89"]
+    },
+    {
+      "id": "STATIC-r3o",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3o.py",
+      "deps": [
+        "app/src/main/**/ui/report/HtmlEscape.kt",
+        "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
+        "app/src/main/**/*.kt",
+        ".agents/checks/check_r3o.py"
+      ],
+      "covers": ["S76", "S77"]
+    },
+    {
+      "id": "UNIT-print-escape",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*PatientPrintHtmlEscapeTest'",
+      "deps": [
+        "app/src/main/**/ui/report/HtmlEscape.kt",
+        "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
+        "app/src/main/**/ui/DeliveryNotesParser.kt",
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/main/**/model/GestationalAgeEngine.kt",
+        "app/src/main/**/model/DemoModels.kt",
+        "app/src/main/**/model/ClinicalModels.kt",
+        "app/src/main/**/security/SecuritySettingsRepository.kt",
+        "app/src/test/**/ui/report/PatientPrintHtmlEscapeTest.kt"
+      ],
+      "covers": ["Q92", "Q93"]
+    },
+    {
+      "id": "STATIC-r3p",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3p.py",
+      "deps": [
+        "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
+        "app/src/main/**/ui/report/PatientTwoPageReportDialog.kt",
+        ".agents/checks/check_r3p.py"
+      ],
+      "covers": ["S78", "S79"]
+    },
+    {
+      "id": "UNIT-print-titles",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*PrintSectionTitlesTest'",
+      "deps": [
+        "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
+        "app/src/main/**/ui/report/HtmlEscape.kt",
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/main/**/ui/DeliveryNotesParser.kt",
+        "app/src/main/**/model/DemoModels.kt",
+        "app/src/test/**/ui/report/PrintSectionTitlesTest.kt"
+      ],
+      "covers": ["Q94"]
+    },
+    {
+      "id": "STATIC-r3q",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3q.py",
+      "deps": [
+        "app/src/main/**/model/VisitVitals.kt",
+        "app/src/main/**/ui/PatientListScreen.kt",
+        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/main/res/values/strings.xml",
+        "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
+        ".agents/checks/check_r3q.py"
+      ],
+      "covers": ["S80", "S81", "S82"]
+    },
+    {
+      "id": "UNIT-severe-bp",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*SevereBpAttentionTest'",
+      "deps": [
+        "app/src/main/**/model/VisitVitals.kt",
+        "app/src/main/**/model/DemoModels.kt",
+        "app/src/test/**/model/SevereBpAttentionTest.kt"
+      ],
+      "covers": ["Q96"]
+    },
+    {
+      "id": "UNIT-print-bp-alert",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*PrintBpAlertTest'",
+      "deps": [
+        "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
+        "app/src/main/**/model/VisitVitals.kt",
+        "app/src/main/**/model/DemoModels.kt",
+        "app/src/test/**/ui/report/PrintBpAlertTest.kt"
+      ],
+      "covers": ["Q99"]
+    },
+    {
+      "id": "STATIC-r3r",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3r.py",
+      "deps": [
+        "app/src/main/**/MainActivity.kt",
+        ".agents/checks/check_r3r.py"
+      ],
+      "covers": ["S83"]
+    },
+    {
+      "id": "STATIC-r3s",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3s.py",
+      "deps": [
+        "app/src/main/**/model/ObstetricHistory.kt",
+        "app/src/main/**/ui/PatientListScreen.kt",
+        "app/src/main/**/ui/ProfileScreen.kt",
+        "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
+        ".agents/checks/check_r3s.py"
+      ],
+      "covers": ["S84", "S85"]
+    },
+    {
+      "id": "UNIT-obstetric-history",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*ObstetricHistoryTest'",
+      "deps": [
+        "app/src/main/**/model/ObstetricHistory.kt",
+        "app/src/main/**/model/DemoModels.kt",
+        "app/src/test/**/model/ObstetricHistoryTest.kt"
+      ],
+      "covers": ["Q102"]
+    },
+    {
+      "id": "UNIT-print-obstetric",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*PrintObstetricSummaryTest'",
+      "deps": [
+        "app/src/main/**/model/ObstetricHistory.kt",
+        "app/src/main/**/ui/PatientListScreen.kt",
+        "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
+        "app/src/main/**/model/DemoModels.kt",
+        "app/src/test/**/ui/report/PrintObstetricSummaryTest.kt"
+      ],
+      "covers": ["Q102", "Q103"]
+    },
+    {
+      "id": "STATIC-r3u",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3u.py",
+      "deps": [
+        "app/src/main/**/storage/RecordsDatabase.kt",
+        "app/src/main/**/storage/RecordsMigration.kt",
+        "app/src/main/**/storage/RecordsRepository.kt",
+        "app/src/main/**/storage/RecordEntities.kt",
+        "app/src/main/**/storage/DraftCodec.kt",
+        "app/src/main/**/storage/DraftRecord.kt",
+        "app/src/main/**/storage/EncryptedBackupManager.kt",
+        "app/src/main/**/storage/VaultController.kt",
+        ".agents/checks/check_r3u.py"
+      ],
+      "covers": ["S89", "S90", "S91"]
+    },
+    {
+      "id": "UNIT-draft-codec",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*DraftCodecTest'",
+      "deps": [
+        "app/src/main/**/storage/DraftCodec.kt",
+        "app/src/main/**/storage/DraftRecord.kt",
+        "app/src/test/**/storage/DraftCodecTest.kt"
+      ],
+      "covers": ["Q107"]
+    },
+    {
+      "id": "STATIC-r3t",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3t.py",
+      "deps": [
+        "app/src/main/**/model/GestationalAgeEngine.kt",
+        "app/src/main/**/ui/GestationalBanner.kt",
+        "app/src/main/**/ui/PatientListScreen.kt",
+        "app/src/main/**/ui/ProfileScreen.kt",
+        "app/src/test/**/ui/GestationalBannerLogicTest.kt",
+        ".agents/checks/check_r3t.py"
+      ],
+      "covers": ["S86", "S87", "S88"]
+    },
+    {
+      "id": "UNIT-gestational-display",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*GestationalDisplayTest'",
+      "deps": [
+        "app/src/main/**/model/GestationalAgeEngine.kt",
+        "app/src/test/**/model/GestationalDisplayTest.kt"
+      ],
+      "covers": ["Q104"]
+    },
+    {
+      "id": "STATIC-r3v",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3v.py",
+      "deps": [
+        "app/src/main/**/state/DraftMapping.kt",
+        "app/src/main/**/state/DraftAutosaver.kt",
+        "app/src/main/**/state/AncViewModel.kt",
+        "app/src/main/**/storage/VaultController.kt",
+        "app/src/main/**/storage/EncryptedBackupManager.kt",
+        "app/src/main/**/ui/**/*.kt",
+        ".agents/checks/check_r3v.py"
+      ],
+      "covers": ["S92", "S93"]
+    },
+    {
+      "id": "STATIC-r3x",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3x.py",
+      "deps": [
+        "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
+        ".agents/checks/check_r3x.py"
+      ],
+      "covers": ["S97", "S98"]
+    },
+    {
+      "id": "UNIT-print-layout",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*PrintLayoutTest'",
+      "deps": [
+        "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
+        "app/src/test/**/ui/report/PrintLayoutTest.kt"
+      ],
+      "covers": ["Q115", "Q116", "Q117", "S97", "S98"]
+    },
+    {
+      "id": "UNIT-draft-sync",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*DraftMappingTest' --tests '*DraftAutosaverTest'",
+      "deps": [
+        "app/src/main/**/state/DraftMapping.kt",
+        "app/src/main/**/state/DraftAutosaver.kt",
+        "app/src/main/**/state/AncState.kt",
+        "app/src/main/**/storage/DraftRecord.kt",
+        "app/src/main/**/storage/DraftCodec.kt",
+        "app/src/test/**/state/DraftMappingTest.kt",
+        "app/src/test/**/state/DraftAutosaverTest.kt"
+      ],
+      "covers": ["Q109", "Q110", "Q111"]
+    },
+    {
+      "id": "STATIC-r3w",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3w.py",
+      "deps": [
+        "app/src/main/**/state/DraftRecovery.kt",
+        "app/src/main/**/state/AncState.kt",
+        "app/src/main/**/state/DraftAutosaver.kt",
+        "app/src/main/**/state/AncViewModel.kt",
+        "app/src/main/**/ui/**/*.kt",
+        "app/src/main/res/values/strings.xml",
+        ".agents/checks/check_r3w.py"
+      ],
+      "covers": ["S94", "S95", "S96"]
+    },
+    {
+      "id": "UNIT-draft-recovery",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*DraftRecoveryTest' --tests '*DraftAutosaverTest'",
+      "deps": [
+        "app/src/main/**/state/DraftRecovery.kt",
+        "app/src/main/**/state/DraftMapping.kt",
+        "app/src/main/**/state/DraftAutosaver.kt",
+        "app/src/main/**/state/AncState.kt",
+        "app/src/main/**/storage/DraftRecord.kt",
+        "app/src/test/**/state/DraftRecoveryTest.kt",
+        "app/src/test/**/state/DraftAutosaverTest.kt"
+      ],
+      "covers": ["Q112", "Q113", "Q114", "S94", "S95", "S96"]
+    },
+    {
+      "id": "UNIT-all",
+      "tier": 2,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest",
+      "deps": [
+        "app/src/main/**/*.kt",
+        "app/src/test/**/*.kt"
+      ],
+      "covers": ["G1"]
+    },
+    {
+      "id": "COMPILE-app",
+      "tier": 2,
+      "cmd": "./gradlew --offline :app:compileDebugKotlin",
+      "deps": [
+        "app/src/main/**/*.kt",
+        "app/src/test/**/*.kt",
+        "app/build.gradle*"
+      ],
+      "covers": ["G2"]
+    },
+    {
+      "id": "STATIC-r3y",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3y.py",
+      "deps": [
+        "app/src/main/res/**",
+        "app/src/main/**/security/BiometricAuthManager.kt",
+        "app/src/main/**/ui/AppLockScreen.kt",
+        "app/src/androidTest/**/*.kt",
+        ".agents/checks/check_r3y.py"
+      ],
+      "covers": ["S99", "S100"]
+    },
+    {
+      "id": "STATIC-r3z",
+      "tier": 1,
+      "cmd": "python3 .agents/checks/check_r3z.py",
+      "deps": [
+        "app/src/main/**/*.kt",
+        "app/src/main/res/values/strings.xml",
+        "app/src/androidTest/**/*.kt",
+        ".agents/checks/check_r3z.py"
+      ],
+      "covers": ["S101", "S102"]
+    },
+    {
+      "id": "UNIT-r3z-small",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.model.FormatIsoDateTest' --tests 'com.sherifradwan.ancnative.state.SaveUiErrorTextTest' --tests 'com.sherifradwan.ancnative.ui.ClinicalFormatTest' --tests 'com.sherifradwan.ancnative.ui.ClinicalPresetsTest'",
+      "deps": [
+        "app/src/main/**/model/IsoDates.kt",
+        "app/src/main/**/state/AncState.kt",
+        "app/src/main/**/ui/ClinicalFormat.kt",
+        "app/src/main/**/ui/ClinicalPresets.kt",
+        "app/src/main/res/values/strings.xml",
+        "app/src/test/**/FormatIsoDateTest.kt",
+        "app/src/test/**/SaveUiErrorTextTest.kt",
+        "app/src/test/**/ClinicalFormatTest.kt",
+        "app/src/test/**/ClinicalPresetsTest.kt"
+      ],
+      "covers": ["Q120", "Q121", "Q122", "Q123", "Q124", "Q125", "S101", "S102"]
+    },
+    {
+      "id": "LINT-errors",
+      "tier": 2,
+      "cmd": "./gradlew --offline :app:lintDebug",
+      "deps": [
+        "app/src/main/**/*.kt",
+        "app/src/main/res/**",
+        "app/src/main/AndroidManifest.xml",
+        "app/build.gradle*"
+      ],
+      "covers": ["Q118"]
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+**Round 4e review: no Hard Blockers, 1 Should-fix, 2 Nits.**
+
+I couldn't run `git diff` (no Bash), so I compared the current files against the spec. Nothing was compiled or run, and I haven't seen the `check_r4e.py` output.
+
+**Hard Blockers**
+- None found.
+
+**Should-fix**
+- `LabEditor.kt:172-195`: the queue advances whenever `draft.labId` changes, not on an explicit "chained save succeeded" signal. In practice `AncViewModel.kt:673-690` only creates a new draft with a new `labId` after a successful chained save, so a failed save keeps the same `labId` and does not advance. I checked this by reading the code, not by running it. The coupling is implicit, so the owner should confirm on the phone that a failed chained save (for example an invalid date) leaves "Test X of Y" unchanged.
+- The spec says rotation is checked by the owner on the phone, since no automated test covers it. The restore path looks safe:
+  - `panelRemainingIds` uses the `StringListSaver` (`LabEditor.kt:114-117`).
+  - `currentLabId` is restored equal to `draft.labId`, so the effect does not advance on rotation.
+  - The `String?`, `Int` and `String` states use the default saver and cannot crash on restore.
+  - `currentPanelItemId` is looked up from the live list (`LabEditor.kt:340`) and falls back to `""` if the id is gone, with no NPE.
+
+**Nits**
+- `LabEditor.kt:435`: `currentLabId = draft.labId` at panel start is redundant, because the value is already equal. It is harmless but could go.
+- `LabEditor.kt:189-193`: the `else` branch (no remaining ids) repeats the same three resets that appear at lines 184-187, 408-411, 422-425 and 469-472. Spec point (4), a copy of the `nextLabPanelTest` logic left in LabEditor, is clean. These duplicated resets are only state clearing. A small local `clearPanelQueue()` would follow the reuse principle, but it was not requested.
+
+**Per your checklist**
+1. **Behaviour and wording:** I saw no changed wording. `MEDICATION_STATUS_ACTIVE = "Active"` (`ClinicalModels.kt:6`) is exactly the old value. `medicationStatuses` order is Active, Completed, Discontinued, Patient non-compliant (`ClinicalModels.kt:181`).
+2. **Literal vs constant:**
+   - In main sources the only remaining `"Active"` literals are the constant definition and `DemoFixtures.kt`, which the spec says to keep.
+   - `MedicationEditor.kt:189` is a comment, not code.
+   - No non-status string was replaced. The call sites I read are status checks and fallbacks: `AncState.kt:942,1118,1279`, `ClinicalCommands.kt:445`, `ClinicalSummaryGenerator.kt:94`, `ClinicalBadges.kt:280`, `PatientPrintHtmlGenerator.kt:214` and `MedicationEditor.kt:190,282`.
+   - `ClinicalSummaryGenerator.kt` needs no import because it is in the same package.
+3. **Deleted code still used:** the grep found no references to `ClinicalLabPreset`, `ClinicalMedPreset`, `commonLabPresets` or `commonMedPresets` in main or test. The kept items (`COMMON_MEDICATION_FREQUENCIES`, `ClinicalPresets` object, `QuickPresetChips`) are still present. `commonBloodPressures` and `commonVisitFindings` are not top-level declarations in the file; they may live inside the `ClinicalPresets` object, which I did not read. Please confirm.
+4. **Copy of `nextLabPanelTest` in LabEditor:** none. Both call sites (`LabEditor.kt:176` and `LabEditor.kt:429`) use the function from `ClinicalCodexModels.kt:79`. The function skips missing ids and returns `item = null` with an empty rest when nothing is left, as specified.
+5. **Queue:** there are no stale ids, because the live list is used on every advance. Date and lab name are carried by `AncViewModel`'s `defaultDate` and `defaultLabName` (`AncViewModel.kt:684-685`), and `loadLabItemIntoDraft` touches neither, so they are not lost. The `mutableStateOf<List<LabCodexItem>>` is gone.
+6. **testTags:** all the ones I saw are intact: `cancelLab`, `addAnotherLab`, `saveLab`, `allLabTestsChip`, `labGroupChip-*`, `labPreset`, `labNamePreset`, `labNameField`, `labDate`, `labCalculatedGaCard` and `saveToLabCodexBanner`.
+7. **Dead code and scope:** `labNamePresets` is defined once and used at `LabEditor.kt:296`, and there is no `"Al Borg Labs"` literal in LabEditor. The two new test files exist and match the spec's cases. I could not verify the allowed-file list because I had no `git status` or diff. The listed modified files all fall within the round's scope, but `.agents/*` changes are not mine to judge.
+
+**Not verified**
+- Compilation and all tests.
+- Unused imports in `LabEditor.kt`, which I did not check line by line.
+- Whether `.agents/checks/check_r4e.py` exists.

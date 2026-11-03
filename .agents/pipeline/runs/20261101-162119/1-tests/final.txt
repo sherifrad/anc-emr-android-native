@@ -1,0 +1,23 @@
+The three test files are written, but none of the unit tests has been compiled or run. The production code for round 4g isn't in yet, so `PatientDraftValues`, `eddFromScan` and the new `IntakeDating` fields don't exist.
+
+**Static check.** `check_r4g.py` runs and exits 1, with S170–S175 all FAIL on today's code, as intended. I did not change it or the `TEST_MANIFEST.json` entries (`STATIC-r4g`, `UNIT-r4g`).
+
+**Files**
+- `model/EddFromScanTest.kt` (new) covers Q270:
+  - 2026-03-01 at 8w3d gives 2026-10-08, and at 12w0d gives 2026-09-13.
+  - gaDays 7, weeks 43 and negatives give null.
+  - Boundary cases: weeks 42 and 0 are accepted.
+- `state/PatientDatingDraftTest.kt` (new) covers Q271 and Q272:
+  - The reducer sets each of the seven new fields and changes only the named one.
+  - The new fields default to blank.
+  - A saved draft restores all seven values onto a fresh editor.
+  - A record without the seven keys restores to the current values.
+- `state/IntakeDatingRuleTest.kt` (updated) covers Q273:
+  - All 16 existing cases are kept with the same outcomes, moved to `intakeDatingUpdate(existing, PatientDraftValues(...))`. The LMP expectations now include the note and method.
+  - New cases: blank and explicit "LMP" methods, IVF, scan, Clinical, existing patient with a non-LMP method, and `intakeDatingPreview`. The numbers are as in the spec, except the preview case below.
+
+**Spec discrepancy.** The spec says the LMP preview for LMP 2026-02-01 as of 2026-08-01 is "26w2d". That span is 181 days, which is 25 weeks 6 days. The engine's `formatGestationalDays` also writes a space ("25w 6d"). I used "25w 6d", so that test will fail if the intended answer is "26w2d". The spec value or the engine format needs the owner's decision. The format in the scan note ("8w3d", no space) is taken from the spec as written.
+
+**Assumptions**
+- IVF day 5 for 2026-03-01 gives 2026-11-17, which I checked by hand against the rule.
+- Q274 and Q275 have no unit tests, as the spec says. They are covered only by S173 and S175.

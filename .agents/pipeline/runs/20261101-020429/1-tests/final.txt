@@ -1,0 +1,27 @@
+Round 4a tests are written, but none of the unit tests have been compiled or run. They can't compile until the core lane has added the new functions, constant and ordered status list, and removed the old event.
+
+**Files changed:** the two new test classes, `.agents/checks/check_r4a.py`, `.agents/TEST_MANIFEST.json`, `AncStateTest`, `DraftRecoveryTest`, `PrintSectionTitlesTest`, `PrintLayoutTest` and `PatientPrintHtmlEscapeTest`.
+
+**By oracle:**
+- **Q200/Q201:** `model/MedicationStatusTest.kt` checks the four statuses in order. It also covers `effectiveMedicationStatus` (Active with flag, Active without, Completed and Discontinued with the old flag, already non-compliant) and `isOngoingMedication` for all four.
+- **Q202:** `state/MedicationStatusDraftTest.kt` uses `AncReducer` and `SaveMedicationCommand.prepare`.
+  - Changing status to non-compliant sets the flag, and changing back to Active clears it.
+  - An old Active record with the flag loads as "Patient non-compliant".
+  - The saved command carries a status and flag that agree.
+  - `isProphylaxis` of a loaded record survives a status change and a save, and a new draft is Active with `isProphylaxis` false.
+- **Existing tests:**
+  - The removed event is gone from `AncStateTest` and `DraftRecoveryTest`.
+  - The print title tests now expect "Active Medications" and "ACTIVE MEDICATIONS".
+  - `PatientPrintHtmlEscapeTest` now expects the badge `<span class="badge badge-teal">Active</span>`.
+  - `ClinicalPresetsTest` and `ClinicalValidationTest` needed no change, because neither references `isProphylaxis` or needs the fourth status.
+- **Q203–Q208:** only covered by the static checks and the manifest entry.
+- **Manifest:** I added `STATIC-r4a` and `UNIT-r4a`; the file is valid JSON.
+
+**Static check:** I ran `python3 .agents/checks/check_r4a.py`. S110, S111, S112, S113 and S114 all FAIL on today's code, as required. It should pass once the core lane lands.
+
+**Assumptions and deviations:**
+- **S111:** `is_prophylaxis` is also the stored DB column name (`RecordEntities`, `RecordsDao`, `RecordsMigration`), and the spec says the column stays. So for the four string keys (`prophylaxis_badge`, `therapeutic_badge`, `non_compliant_badge`, `is_prophylaxis`) the check only flags `R.string.<key>` uses and `name="<key>"` in `strings.xml`.
+- **S110:** the check accepts `MEDICATION_STATUS_NON_COMPLIANT` inside the `listOf(...)` and requires a `listOf`, not a `setOf`.
+- **S114:** for `CodexSettingsSections.kt`, "medication part" means any top-level `fun` whose text mentions medication.
+- **Escape test fixture:** I changed the medication fixture status from `"active"` to `"Active"` so the badge text matches. I assumed the generator prints the effective status text as stored.
+- **Shell:** the shell rejected some heredocs, so I created the test files with the Write tool.

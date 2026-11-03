@@ -1,0 +1,13 @@
+Files reviewed: app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt, app/src/main/res/values/strings.xml (read-only; no files changed).
+Spec review (Round 5d: C500-C504, S230-S232, T500-T503):
+- C500/C501/T503: Collapsed card displays 1 row (name, status badge, "dose · frequency" summary) and edit pencil. Expanded card preserves all FactRows and edit button. Toggle tags and content descriptions correct.
+- C502/C503/T500-T502: Single source of truth `expandedIds` (Set<String>) via `rememberSaveable` with `StringSetSaver` keyed by patient.id and med IDs. Defaults to all expanded if <=3, collapsed if >3. `medicationsToggleAll` correctly synchronizes with all cards.
+- C504: Collapsed layout drops summary first when horizontal constraint is constrained; maxLines=1; 48 dp minimum touch targets respected; theme colors used; 4 strings defined once.
+- S230-S232: Tags `medicationToggle-`, `medicationsToggleAll`, `medication-`, `editMedication-` present; strings.xml has 4 new labels once; 0 model/state/storage files modified.
+Hard Blockers: None.
+Should-fix: None.
+Nits:
+- L2340: `measurables[1].measure(Constraints())`: correctly adheres to C504 (no ellipsis), but an extraordinarily long drug name could push the badge outside bounds on narrow screens.
+- L2280: Collapsed card uses 52.dp end padding to clear the edit pencil overlay, while expanded card keeps standard 16.dp column margin.
+Assumptions: Resetting `expandedIds` to default upon medication list changes (via `medications.map { it.id }.joinToString(",")` key) is the expected behavior.
+Verification: `python3 .agents/checks/check_r5d.py` passed (S230, S231, S232). Unit and emulator tests not run (Gradle daemon unavailable in sandbox).

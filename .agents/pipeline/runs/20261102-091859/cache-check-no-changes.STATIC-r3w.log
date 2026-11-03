@@ -1,0 +1,3 @@
+PASS S94 DraftRecovery.kt has the prompt, session/revision helpers, stale and age rules and no android import; AncState has the prompt field and three events; DraftAutosaver has holdSlot and releaseSlot
+PASS S95 AncViewModel loads, holds, releases and deletes drafts; AncApp has the modal alert with both tags and no dismiss; no other ui file mentions DraftRecoveryPrompt
+PASS S96 no memory-only / discarded-on-lock wording in the strings file; recovery and screen-name strings exist

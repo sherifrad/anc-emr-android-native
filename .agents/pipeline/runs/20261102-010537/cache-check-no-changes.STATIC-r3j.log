@@ -1,0 +1,4 @@
+PASS S55 calculated-GA card stacks the Text and apply button in a Column
+PASS S56 photos_count is a plural, no string variant, four pluralStringResource call sites
+PASS S57 attachment display title is the one helper, WorkspaceScreen calls it
+PASS S58 photo-preview buttons are emoji-free Retake/Gallery string resources

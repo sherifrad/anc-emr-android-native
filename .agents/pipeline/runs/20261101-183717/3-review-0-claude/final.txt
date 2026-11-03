@@ -1,0 +1,27 @@
+**Round 5a review: no Hard Blockers found, 3 Should-fix, 4 Nits.**
+
+I read `UltrasoundEditor.kt`, `DesignSystem.kt`, `strings.xml`, `ChoiceGroup` and the spec. I had no Bash, so I could not run `git diff` or any test. I could not check that `model/`, `state/`, `storage/` and test files are untouched (point 6), or that the strings diff has no deletions. The git status snapshot lists only `UltrasoundEditor.kt` and `strings.xml` as modified in the app code, and the new `DesignSystem.kt` exists. Nothing is verified by running.
+
+**Checked and OK**
+- (1) No field, tag or event was lost. Present: `scanDate`, `gaWeeks`, `gaDays`, `fetalHeartRate`, `efw`, `biometryBpd`, `biometryHc`, `biometryAc`, `biometryFl`, `impression`, `impressionFromChoices`, `scanCalculatedGaCard`, `redatingHint`, `applyScanGa`, `toggleBiometry`, `biometryCard`, `captureScanPhotoCamera`, `addScanPhoto`, `attachmentItem-*`, `removePhoto-*`, `linkedVisitCard`, `linkVisit-*`, `unlinkVisit`, `fillNormalScan`, `clearFindings`. The four `*Choice-N` tag prefixes are kept.
+- (2) A single `openFindingKey` is the only open-state variable, so at most one finding is open. A closed row reopens through `onClick = { openFindingKey = finding.key }`.
+- (2) "Fill normal scan" writes only fetal number, presentation and liquor. Placenta is never filled, and the open finding is then the first blank one, which is placenta on an empty draft. Clear resets all four fields, and `nextBlankFinding("", "", "", "")` returns `fetalNumber`.
+- (3) `openFindingKey` and `moreExpanded` use `rememberSaveable`. `moreExpanded` starts true when there is a linked visit or a photo, so More does not hide existing content on entry.
+- (4) There is no direct `Card(` in `UltrasoundEditor.kt`. `Card(` appears only in `DesignSystem.kt`. `SectionCard` and `SummaryRow` are each defined once.
+- (5) No hard-coded colours. Touch targets are 48 dp (`heightIn(min = 48.dp)`, `minimumTouchTarget()`).
+
+**Should-fix**
+1. **Second copy of the card look.** The More toggle is wrapped in a hand-written `Surface(shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, ...outlineVariant.copy(alpha = 0.5f)), tonalElevation = 1.dp)` at `UltrasoundEditor.kt:579-594`. This duplicates the `SectionCard` look, which breaks the reuse rule and the spirit of U201. Use `SectionCard(title = "")` around the `SummaryRow`. That also lets you drop the `BorderStroke` import and the `Box` padding hack at line 586.
+2. **The "next blank finding" rule is written twice.** `nextBlankFinding` takes four positional strings plus an `afterKey` and rebuilds a `mapOf` on every call. The 4-branch `when (finding.key)` at lines 379-385 repeats the same call four times only to substitute `choice`. It is also called from three more places (lines 117, 194 and 207). Take a map or the draft values plus an override, so `onSelected` is one call. This removes the `when`, the dead `else -> null` branch and the positional-argument swap risk.
+3. **Text can run vertically at 160% font.** In `SummaryRow` (`DesignSystem.kt:87-93`) the label has `weight(1f, fill = false)` while the value `Text` (line 98) has no weight or `maxLines`. A long value such as an anterior or fundal placenta site, or a long label like "More: photos and visit link", shrinks the label to a narrow column. Give the value `Modifier.weight(1f, fill = false)` too, or let the row wrap.
+
+**Nits**
+- `DesignSystem.kt:109`: the chevron is always `KeyboardArrowDown`, even when the row is open. The More row says "Close" while the arrow points down. Also, `clickable` has no `role = Role.Button`.
+- `UltrasoundEditor.kt:410-412`: the biometry card passes `title = ""` and hand-writes the title and toggle inside. This relies on `SectionCard` silently skipping blank titles (`DesignSystem.kt:53`). That is acceptable, but it is a quiet contract.
+- `UltrasoundEditor.kt:219`, `421` and `526`: card titles are hard-coded English literals, not strings. U211 says "existing string", but no such string exists (grep found none), so the literal matches the old code. Spec wording is wrong here, not the implementation.
+- `rememberSaveable` is not keyed by `scanId`. This is fine if the route recreates the composition per scan, but I did not confirm that.
+
+**Not covered**
+- I did not check the tests (T200-T205) or `check_r5a.py`.
+- I did not check that the strings diff only adds `finding_not_set`, `ultrasound_more`, `more_open` and `more_close` (all four exist at `strings.xml:377-380`).
+- Opening a finding, or choosing "Unknown" (empty value), does not stop the flow. Choosing Unknown moves on to the next blank finding after it and does not reopen the same one. That seems the safe reading of the spec.

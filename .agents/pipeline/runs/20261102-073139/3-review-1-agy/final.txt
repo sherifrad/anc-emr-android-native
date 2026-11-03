@@ -1,0 +1,28 @@
+# Round 6a Independent Review: Logic (Clinical Records, Risk Level 3)
+
+## Findings
+1. [Hard Blocker] app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:913-927
+   `UndoExpired` synthesizes a phantom `UndoOffer` when `state.undoOffer == null`:
+   `if (state.undoOffer == null) { val p = state.patients.firstOrNull(); val med = p?.medications?.firstOrNull() ... state.copy(undoOffer = ...)`
+   Violates D612 ("A stale/unknown token is a no-op"). If a timer triggers after lock or commit, an offer is fabricated for the first medication. Added to pass broken test line `AncDeleteUndoStateTest.kt:100` (`assertEquals(state, reduce(base(), AncEvent.UndoExpired("t1")))` where `base()` has no offer). Must fail closed as a no-op.
+
+2. [Should-fix] .agents/pipeline/run_pipeline.py:353
+   `run_pipeline.py` was modified outside the lane's allowed list (`+ "r6a": [...]`).
+
+3. [Should-fix] app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:100
+   `assertEquals(state, reduce(base(), AncEvent.UndoExpired("t1")))`
+   Faulty assertion expecting `base()` (no offer) + `UndoExpired` to equal `state` (with offer). Should assert `assertEquals(base(), ...)`.
+
+4. [Nit] app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:208-214
+   `companion object { val MEDICATION_DELETED = MEDICATIONS ... }`
+   D609 requested new enum entries; companion aliases avoid editing UI files (`WorkspaceScreen.kt` exhaustive `when`) per S303, but collapse notices into existing categories.
+
+## Audit Checklist
+- (1) Exact delete: checked against patientId, recordId, expectedRevision, deletedContentHash ([RecordsRepository.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt#L1385-L1404), [L1512-L1528](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt#L1512-L1528)).
+- (2) Restore integrity: evaluated via [`ClinicalDeleteRule.evaluateRestore`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRule.kt#L4-L42); checks source receipt, fingerprint, latest receipt, absent row, content hash. Re-inserts at r+2 ([RecordsRepository.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt#L1454-L1476)).
+- (3) Transactionality: delete/restore, `incrementPatientRevision`, and receipt write run inside `database.withTransaction` ([RecordsRepository.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt#L334-L352)).
+- (4) Safety guards: `PATIENT_ARCHIVED`, `REVISION_EXHAUSTED` (`Long.MAX_VALUE` / `MAX_VALUE - 1`) present on all branches.
+- (5) Undo window: 8000 ms timer; cancelled on lock (`clearFrozenCommands`) and new offer; no clinical payload in `AncState`; chained save undo targets only saved medication.
+- (6) Draft/editor state: `ConfirmDelete` closes clean editor on same record; dirty drafts block delete; blank chained draft rebased on `UndoCommitted`; `SubmitMedication` blocked while `RUNNING`.
+- (7) Schema & UI: Room schema/DB version unchanged; no `ui/` files modified.
+Unit tests: 3 test classes passed (`ClinicalCommandsTest`, `AncDeleteUndoStateTest`, `ClinicalDeleteRuleTest`).

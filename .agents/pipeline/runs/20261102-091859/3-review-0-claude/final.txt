@@ -1,0 +1,51 @@
+**Review r6b1: verdict APPROVE, with two Should-fix items and some nits.** I found no Hard Blocker.
+
+**Limits of this review:**
+- I had no shell, so I could not run `git show 19c36fc`, `git diff` or any tests.
+- For the old-vs-new comparison I relied on the hard-coded goldens in `DeletableRegistryTest.kt:100-137`, which say they come from the 19c36fc text. I did not diff them against that commit myself.
+- The `ClinicalModels.kt` change makes both `DemoMedicationRecord` and `DemoLabInvestigation` implement `DeletableRecord`. It is outside the listed scope, and it looks required and harmless.
+
+**(1) Wrong-record and cross-patient delete: safe**
+- `deleteRecord` (`RecordsRepository.kt:1388-1405`) loads the row through the adapter for `command.type`, so only that kind's table is read. It then compares `existing.patientId` with `command.patientId` once (CROSS_PATIENT_WRITE). It also checks `existing.revision`, `contentHash(existing)` and the revision-exhausted case.
+- `deleteRow` binds id, patientId and expectedRevision in both adapters (`MedicationDeleteAdapter.kt:43`, `LabDeleteAdapter.kt:41`). The DAO queries at `RecordsDao.kt:285-289` filter on all three. There is no medication/lab copy-paste slip: each adapter calls its own DAO method and entity.
+- `restoreRecord` refuses when a same-kind row with that id exists (`evaluateRestore`, `existingRow != null`).
+- **Should-fix:** `restoreRecord` and `evaluateRestore` never compare `command.record.patientId` with `command.patientId`. The brief asks for that generic check. Today the receipt patient, receipt recordId and `contentHash(record) == sourceDelete.deletedContentHash` bind it, because the canonical string starts with `patientId|id`. That is safe but implicit. Add one explicit `record.patientId != patientId` check. The line at `ClinicalDeleteRule.kt:27` (`if (recordContentHash != sourceHash)`) is where it would sit.
+- **Should-fix:** nothing checks that `cmd.type`, `sourceDelete.type` and the record's class agree.
+  - `contentHash(record)` picks the adapter from the record's class (`DeletableRecords.kt:50`). `evaluateRestore` and `insertRow` use `cmd.type`.
+  - A mismatch gives a ClassCastException, which `execute` turns into `Ambiguous` (`RecordsRepository.kt:357`) rather than `INVALID_COMMAND`. No wrong row is written, because the exception fires before the DAO call and the receipt kind or fingerprint would not match anyway.
+  - Fix: check `sourceDelete.type == type && adapterFor(record).type == type` in `isStructurallyValid` or `evaluateRestore`.
+
+**(2) Fingerprints and hashes**
+- Delete template: `"{tag}_DEL|$operationUuid|$patientId|$expectedPatientRevision|$recordId|$expectedRecordRevision|$deletedContentHash"` matches the spec line exactly (`ClinicalCommands.kt:515`).
+- Restore template: `"{tag}_RES|op|pid|pRev|" + sourceDelete.computeFingerprint() + "|" + canonical(record)` matches the spec (`ClinicalCommands.kt:550`).
+- Medication canonical has 13 fields in the save-fingerprint order. Lab canonical has 11, and neither includes revision. Both match the golden strings in the test.
+- Hash is `sha256Hex` of the canonical string.
+- Stored kinds `MEDICATION_DELETE`, `MEDICATION_RESTORE`, `LAB_DELETE`, `LAB_RESTORE` and the `ClinicalRecordKind` names are intact. The tags are `MED` and `LAB`.
+- I could not compare against 19c36fc directly, so "identical to the old build" rests on the goldens being genuine.
+
+**(2b) D654 isolation tests: real**
+- `dump()` reads every table from `sqlite_master`. `assertRejectedWithoutTrace` asserts no table changed after each failed attempt (stale revision, stale patient revision, wrong hash, wrong patient, archived).
+- `assertOnlyTargetChanged` requires exactly three diffs: the target row, `patients.revision` +1, and one new receipt.
+- The cross-kind id-collision test, the two-patients test and the same-table restore test are present. `foreign_key_check` is empty and `integrity_check` is "ok", asserted after each step.
+- **Nit:** `ClinicalDeleteRestoreDbTest.kt:736` and `:840` pass `null` for the expected failure code, which only asserts "some Rejected". That is weak. Pin the code (RECORD_CONFLICT, from the receipt-patient mismatch).
+- **Nit:** `latestClinicalReceiptForRecord` is keyed on patient and recordId, not kind. With a cross-kind id collision, a later receipt of the other kind blocks a restore. That fails closed and is safe, and it comes from an unchanged DAO query.
+- The DB tests are androidTest-only and I did not run them.
+
+**(3) Room: no change seen**
+- `RecordsDatabase` is still `version = 6` (`RecordsDatabase.kt:26`). The DAO queries I read are unchanged. The session-start `git status` showed no changes under `app/schemas`, DAO or entities. I could not diff, so this is a confirmation by absence.
+
+**(4) Frozen behaviour**
+- Guard order in `deleteRestoreGuardFailure` is: patient exists, not archived, revision matches, not exhausted. The order in `evaluateRestore` is: receipt present, kind, patient, record, fingerprint, latest receipt, row absent, hash. Both match the brief.
+- The patient revision increment and the receipt insert happen in the same transaction, and a failed increment throws `ClinicalCommandAbort`. The D613 comment is kept once.
+- Replay goes through `priorReceipt.replay(command)` in `execute` and `reconcile`, which I did not see changed.
+
+**(5) `evaluateRestore`**
+- The signature is unchanged. The per-class `when` is gone, and a non-`RestoreRecordCommand` still returns `INVALID_COMMAND` (`ClinicalDeleteRule.kt:10`).
+
+**(6) Scope and dead code**
+- D651 holds. `AncViewModel.kt` is untouched and compiles through the typealiases and the same-named factory functions. The `is DeleteMedicationCommand` checks at `:1177-1180` now match both kinds and then `copy` the generic command, so behaviour is correct. The duplicate branches will probably trigger a compiler warning (**Nit**).
+- **Nit:** `DeletableRegistry.all()` is used only by tests, so it is test-only API in production code.
+- `label()` returns only the name. I saw no logging or persistence of clinical text.
+- State, UI and build files show no edits in what I read.
+
+**Verdict: APPROVE.** Please fix the two Should-fix items (explicit restore patient check and type-consistency check) before the next round.

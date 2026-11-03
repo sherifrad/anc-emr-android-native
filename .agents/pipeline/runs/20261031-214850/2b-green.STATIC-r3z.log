@@ -1,0 +1,2 @@
+FAIL S101 one definition per rule; old copies gone: ClinicalEditorErrorCard still exists
+PASS S102 biometric API gate is one constant; unused draft-policy strings removed

@@ -1,0 +1,32 @@
+### Independent Review: Round r6b1 (Storage Generalisation, Risk Level 3)
+
+#### 1. Cross-Patient / Wrong-Record Delete & Restore Integrity
+- **Repository check**: `RecordsRepository.kt:1391` checks `existing.patientId != command.patientId` generically returning `CROSS_PATIENT_WRITE`.
+- **Target binding**: `adapter.deleteRow` binds `(id, patientId, expectedRevision)` (`MedicationDeleteAdapter.kt:44`, `LabDeleteAdapter.kt:42`).
+- **Restore conflict**: `RecordsRepository.kt:1432` loads existing record via adapter and `ClinicalDeleteRule.kt:26` rejects with `RECORD_CONFLICT` if `existingRow != null`.
+- **Cross-patient restore**: Blocked by `ClinicalDeleteRule.kt:20` (`receipt.patientId != restoreCmd.patientId`) and `line 27` (`recordContentHash != sourceHash`, since `patientId` is part of `canonical` serialization).
+- **Findings**:
+  - `[Nit] ClinicalCommands.kt:522`: `RestoreRecordCommand.isStructurallyValid()` does not assert `record.patientId == patientId` upfront. Safe in practice because `ClinicalDeleteRule.kt:27` rejects any hash difference with `INVALID_COMMAND`, but could be checked eagerly.
+
+#### 2. Byte-Identical Fingerprints & Hashes vs Commit 19c36fc
+- **Fingerprint templates**: `"${tag}_DEL|..."` and `"${tag}_RES|..."` with tags `"MED"` and `"LAB"` are character-for-character **identical** to `19c36fc`.
+- **Canonical strings & hashes**: `canonical(record)` field order, delimiters, and SHA-256 inputs in `MedicationDeleteAdapter.kt:20-21` and `LabDeleteAdapter.kt:20-21` are **identical**.
+- **Receipt kinds**: `MEDICATION_DELETE`, `MEDICATION_RESTORE`, `LAB_DELETE`, `LAB_RESTORE` are **identical**. Golden fingerprint tests in `DeletableRegistryTest.kt` confirm exact parity.
+
+#### 2b. D654 Isolation & Database Integrity
+- `ClinicalDeleteRestoreDbTest.kt` implements `dump()` table diffs, `PRAGMA foreign_key_check` and `PRAGMA integrity_check` verification (`assertIntegrity()`).
+- New test cases verify isolation across failed attempts, cross-kind id collision (`crossKindSameIdCollisionLeavesTheOtherKindUntouched`), and multi-patient separation (`twoPatientsWithSameLookingRecordsStayIsolated`).
+
+#### 3. Room Schema and Database Version
+- Untouched: `app/schemas/`, `RecordsDatabase.kt` (v6), entities, and DAO query signatures have zero modifications.
+
+#### 4. Frozen Behaviour & Guards
+- Full guard sequence preserved in exact order: patient existence, archived check, revision check, revision exhaustion, receipt verification, latest receipt check, tombstone revision exhaustion, patient revision increment, and rollback via `ClinicalCommandAbort`.
+
+#### 5. Rule Signature & Refactoring
+- `ClinicalDeleteRule.evaluateRestore` signature is unchanged. The per-command `when` branch is eliminated; unknown command classes still fail closed with `ClinicalCommandFailure.INVALID_COMMAND`.
+
+#### 6. Scope & Compatibility
+- `state/`, `ui/`, `dao/`, and build files are untouched. D651 factory functions preserve backward compatibility. `label` exposes name only. Static check `check_r6b1.py` PASSED (S400-S407). Unit tests not run in sandbox due to Gradle daemon loopback socket restriction.
+
+**Verdict: APPROVE**

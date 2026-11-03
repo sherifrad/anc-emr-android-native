@@ -1,0 +1,4 @@
+PASS S200 SectionCard and SummaryRow defined once in DesignSystem.kt
+PASS S201 ultrasound screen uses the shared pieces, no hand-written Card(
+PASS S202 ultrasound tags and guided finding wiring present
+FAIL S203 design round touched no model/state/storage file: logic file changed: app/src/androidTest/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRestoreDbTest.kt; logic file changed: app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt; logic file changed: app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt; logic file changed: app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRule.kt; logic file changed: app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt

@@ -1,0 +1,39 @@
+**Review of Round 5b (laboratory entry screen)**
+
+I could not run `git diff` because I only had read tools. I read the final `LabEditor.kt`, `DesignSystem.kt`, `strings.xml` and the spec. I cannot confirm S213 (nothing changed under model/, state/ or storage/), what the old chips did, or whether any string was deleted. I ran no tests.
+
+**Hard Blockers**
+- None found.
+
+**Should-fix**
+1. **Open-on-entry rules are not re-applied after "Add another test".**
+   - The open flags are only set once, in `rememberSaveable { mutableStateOf(initialEditDetails) }` (lines 144–149). Line 595 and line 633 then set `editDetailsOpen = step.item.unit.isBlank() && ...`.
+   - After a loaded test is saved with "Add another", the new draft is blank. `editDetailsOpen` can still be false, so `labName` is hidden under the title "New test".
+   - `addTestsOpen`, `flagSectionOpen` and `noteSectionOpen` also keep the previous test's state.
+   - This only matters if the same composable instance survives across drafts, which the panel-queue design assumes. Re-derive the flags when `draft.labId` changes, inside the existing `LaunchedEffect(draft.labId)` at line 175.
+2. **Possible vertical text at 160% font in the flag/note chip row (lines 471–493).**
+   - The Row has no `weight` and no `maxLines`. "Flag · abnormal" plus "Note ✓" can overflow or wrap inside a chip. A `FlowRow` or `maxLines = 1` would fix it.
+3. **Same risk in the banner at lines 648–657.**
+   - The text `"New test: add it to your lab test list?"` has no `weight(1f)`, so the "Add to list" button can be squeezed into a vertical stack. Add `Modifier.weight(1f)` to the text.
+4. **Strings are hard-coded in `LabEditor.kt`, against L309 ("each once").**
+   - The affected text is `"Test $currentPanelIndex of $panelTotalCount · …"` (333), the preset labels `"Negative"`, `"Non-reactive"`, `"Normal"` and `"Positive"` (459), and `"Note ✓"` (488).
+   - Some of the other hard-coded strings may predate this round. I could not diff to tell. Examples are `"1. Laboratory Details & Date"`, `"📦 Diagnostic Panels:"` and `"Add to list"`.
+
+**Nits**
+- `testNameFocusRequester` (lines 124 and 403) is attached but never requested. If it was already there before this round, ignore it; otherwise it is dead code.
+- `SummaryRow` always shows a down arrow, so the "Open/Close" value is the only sign of state (`DesignSystem.kt:112`).
+- The flag section Row at line 501 is `clickable` without a `role`, so it is announced as a plain clickable. The Switch inside handles its own taps, so there is no double toggle.
+- `val initialAddTests = ... && panelTotalCount <= 1` (148) is always true at first composition, because `panelTotalCount` starts at 0. This is harmless but misleading.
+- `LabResultFlagPill` still uses the literals `"Normal"`, `"High"` and `"Low"`.
+
+**Checked and OK**
+- **Fields and events:**
+  - Every tag named in the spec is present: `labNameField`, `labDate`, `labName`, `labUnit`, `labRefRange`, `labResult`, `labAbnormal`, `labNotes`, `labCategoryChoice*`, `allLabTestsChip`, `labGroupChip-*`, `labPreset*`, `labNamePreset*`, `saveToLabCodexBanner`, `saveToLabCodexButton`, `cancelLab`, `addAnotherLab`, `saveLab`, `pinnedLabHeaderTag` and `labCalculatedGaCard`.
+  - Each event is still sent: `LabDraftChanged` for each field, `LabAbnormalChanged`, `SubmitLab`, `SubmitLabAndAddAnother` and `CancelEditor`.
+- **Rotation:** the panel queue (ids, total, index, current item, `currentLabId`, `selectedGroupName`) is still `rememberSaveable`, using `StringListSaver`.
+- **Progress line:** it follows the L303 rule, and the title falls back to `R.string.new_test`.
+- **Presets:** each preset sends `LabDraftChanged(RESULT, preset)`, and the `labResultPreset-<index>` order is Negative, Non-reactive, Normal, Positive. T303 clicks index 3, which is Positive.
+- **Cards and reuse:** there is no `Card(` in `LabEditor.kt`. `SectionCard` and `SummaryRow` are reused, and `BigChoiceButton` is defined once at `DesignSystem.kt:123`.
+- **Colours and touch targets:** only theme colours are used. `BigChoiceButton` has `heightIn(min = 56.dp)`. The toggles, chips and bottom bar use `minimumTouchTarget`, and `SummaryRow` and the flag row have 48 dp minimums.
+- **Old strings:** nothing references the removed "Edit unit and range" button.
+- **Existing tests:** `AncWorkflowTest` (lines 607–610) uses `labName` and `labResult` on a blank new lab. Details are open there, so it should still work.

@@ -1,0 +1,17 @@
+Files changed: I created `app/src/test/java/com/sherifradwan/ancnative/model/UltrasoundImpressionTest.kt`. I did not edit `check_r4b.py`, `TEST_MANIFEST.json` or `ClinicalPresetsTest.kt`. I found no bug in the first two, and `ClinicalPresetsTest.kt` doesn't mention the old preset names.
+
+**Static check:** I ran `python3 .agents/checks/check_r4b.py`. It exits 1, and S120, S121 and S122 all FAIL on today's code, as intended.
+- **S120:** `commonUltrasoundImpressions` and `impressionPreset` are still in `ClinicalPresets.kt` and `UltrasoundEditor.kt`. `ultrasoundImpressionFromChoices` and `mergeImpression` are not defined yet.
+- **S121:** the four new testTags and all the calls and constants are missing from `UltrasoundEditor.kt`.
+- **S122:** the impression wording is still in `ClinicalPresets.kt` and `UltrasoundEditor.kt`, and is not yet in `ClinicalModels.kt`.
+
+**Unit test:** not run. It won't compile until the core lane adds the functions and constants to `ClinicalModels.kt`. It calls the real `ultrasoundImpressionFromChoices` and `mergeImpression` and copies no production logic. It covers:
+- **Q210:** the spec example, each placental site (Anterior, Posterior, Fundal, Low-lying), the Previa wording, Twins and Higher order, every fluid value, lower-casing of the presentation, a partial choice, all blank, and an unknown value being skipped.
+- **Q211:** the four merge cases, plus merging twice leaving the text unchanged.
+- **Q212:** the three NORMAL_ constants.
+
+**Assumptions:**
+- The spec doesn't list the placental-site values. I used Anterior, Posterior, Fundal and Low-lying. If the real vocabulary differs, those assertions need adjusting.
+- I used "Breech" for the presentation test and "Quintuplets" and "Unknown" for the unknown-value test.
+- Whitespace-only input counts as blank. The spec says "blank", so this follows from that.
+- The manifest has a `UNIT-r4b` entry and `STATIC-r4b`. The `STATIC-r4b` deps cover `src/test` but not `androidTest`. S120 does scan `androidTest`, but no file there mentions the old names today.

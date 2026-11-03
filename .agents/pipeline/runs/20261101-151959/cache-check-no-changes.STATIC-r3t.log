@@ -1,0 +1,3 @@
+PASS S86 GestationalAgeEngine.kt defines isLateTerm, progressFraction, shortWeeksText, daysToEdd and calculateForEdd calls daysToEdd
+PASS S87 GestationalBanner has no ChronoUnit/weeks>=42/FULL_TERM_DAYS, screens have no hand-formatted wks and reference shortWeeksText/progressFraction/daysToEdd
+PASS S88 GestationalBannerLogicTest.kt contains no 280f, no ChronoUnit and calls progressFraction and daysToEdd

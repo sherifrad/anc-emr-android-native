@@ -1,0 +1,19 @@
+Role: INDEPENDENT REVIEWER (read-only). Files changed: none.
+
+Review of Round 4d (Q240-Q245, S140-S142):
+- (1) Pinned bar: Sits outside scroll area above `imePadding()`, pinned above keyboard; other editors default to `bottomBar = null` and render identically.
+- (2) Panel queue: Advances only on chained draft ID change; survives chained drafts; deduplicates IDs via `resolveLabPanel`; preserves date and labName; clears on chip retap/single test chip click.
+- (3) Flag rule: Pure `labResultFlag()` helper used; no UI regex, parsing, or invented clinical thresholds.
+- (4) Unknown flag: Guarded by `flag != LabResultFlag.UNKNOWN`; manual doctor switch selection is never overwritten when result is unparsable or text.
+- (5) Custom tests: `bothEmpty` immediately reveals `labUnit` and `labRefRange` fields; "Edit unit and range" unlocks existing ones.
+- (6) Test tags: All S142 testTags preserved; no visible "Codex" wording.
+- (7) A11y & theme: 48 dp `minimumTouchTarget()`, theme colors, weighted 1-row buttons with `softWrap = false`.
+- (8) Scope: No dead code or unauthorized file edits.
+
+Findings:
+- Should-fix: `PatientEditor.kt:509` `Box(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(...))` — redundant `verticalScroll` on pinned bar container may intercept vertical touch gestures.
+- Nit: `LabEditor.kt:201, 211, 221` `Text(..., maxLines = 1, softWrap = false)` — consider adding `overflow = TextOverflow.Ellipsis` for extreme font scaling.
+
+Verification:
+- `python3 .agents/checks/check_r4d.py`: PASS (S140, S141, S142).
+- Unit tests (`LabResultFlagTest`, `LabPanelResolveTest`): not run (Gradle daemon IPC blocked by sandbox).

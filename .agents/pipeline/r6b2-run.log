@@ -1,0 +1,12 @@
+MACA pipeline 20261102-104737 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('agy', 'gemini-3.8-flash-medium'), 'ui': ('agy', 'gemini-3.8-flash-medium')} review: ['claude:claude-sonnet-5-5', 'agy:gemini-3.8-flash-medium']
+  claude    /opt/homebrew/bin/claude
+  agy       /Users/sherifgamalradwan/.local/bin/agy
+[1-tests] claude completed 298.1s changed=2 violations=0
+[1b-red] ran=104 reused=0 deferred=3 not_gated=7 failed=['STATIC-r6b1', 'STATIC-r6b2']
+[2a-core] agy completed 1438.0s changed=5 violations=0
+[2a-green] ran=4 reused=0 deferred=0 not_gated=110 failed=['UNIT-parse', 'UNIT-format', 'UNIT-all']
+[2a-tests-compile-repair1] claude completed 24.7s changed=0 violations=0
+[2a-green-r1] ran=4 reused=0 deferred=0 not_gated=110 failed=['UNIT-parse', 'UNIT-format', 'UNIT-all']
+[2a-tests-compile-repair2] claude completed 17.0s changed=0 violations=0
+[2a-green-r2] ran=4 reused=0 deferred=0 not_gated=110 failed=['UNIT-parse', 'UNIT-format', 'UNIT-all']
+HALT: core logic still red after 2 repair rounds; UI lane not started. See /Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261102-104737

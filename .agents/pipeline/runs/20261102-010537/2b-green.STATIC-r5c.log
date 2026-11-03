@@ -1,0 +1,4 @@
+PASS S220 medication screen uses the shared pieces, no hand-written Card(
+PASS S221 medication tags and guided row wiring present
+PASS S222 no Prophylaxis control on the medication screen
+PASS S223 design round touched no model/state/storage file

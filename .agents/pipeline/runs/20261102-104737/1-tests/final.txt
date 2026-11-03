@@ -1,0 +1,25 @@
+I wrote both test files, but I couldn't compile or run them. They can't compile until the core lane adds `UndoCoordinator`, `UndoAction`, `RequestDelete` and the new `PendingDeletion` and `UndoOffer`. No unit test has been run.
+
+**Files changed**
+- `app/src/test/.../state/AncDeleteUndoStateTest.kt` is updated. Every old case, plus a submit-ignored-while-undo-RUNNING case, now runs for MEDICATION and LAB through the real reducer, using `RequestDelete`, `PendingDeletion` and `UndoOffer` with `type`. I also added a case that confirming a delete of one type leaves the other type's open editor with the same record id alone.
+- `app/src/test/.../state/UndoCoordinatorTest.kt` is new, with about 22 cases, each run for both types, covering every item in the brief.
+- `check_r6b2.py` and the `TEST_MANIFEST.json` entry are untouched.
+
+**check_r6b2.py, run now:**
+- S410, S411, S413, S414 and S415 FAIL on today's code, as intended.
+- S412 and S416 PASS today. S412 passes because no file has a `DeletableType` branch yet, so it is a guard rather than a red test. S416 guards things that must not change. I left both alone as instructed.
+
+**Assumptions the core lane must match, or the tests need a one-line change:**
+1. The constructor takes named arguments `scope`, `execute`, `dispatch` and `currentState`. `execute` is `(ClinicalCommand, Long) -> ClinicalCommandOutcome`. `beginDelete`, `offerSaveUndo`, `request` and `clear` are not `suspend`.
+2. The `action` enum is named `UndoAction` with values `DELETE` and `SAVE`. The spec doesn't name it.
+3. `offerSaveUndo` puts its offer into state through an existing event (`DeleteCommitted`). My fake `dispatch` applies the real `AncReducer`.
+4. The fresh snapshot for the `STALE_PATIENT_REVISION` retry comes from `currentState().patients`. A retry happens only if that revision differs from the attempted one, and at most once.
+5. `request()` doesn't execute when the vault is Locked or the session epoch changed after the offer was armed. This is from your brief. The old ViewModel instead checked the epoch after executing.
+6. If the epoch changes while a delete or restore is running, nothing is dispatched afterwards and no timer starts. This matches the old ViewModel.
+7. For LAB, the undo rebase of a chained create draft leaves the lab draft unchanged (frozen behaviour). Only the medication draft follows the patient revision. If the lab hook is meant to rebase, change `rebasedPatientRevision` for LAB in `AncDeleteUndoStateTest`.
+8. `clear()` is asserted only to stop the timer, drop the pending command and run nothing afterwards. I don't check that it dispatches anything.
+
+**Other notes**
+- `kotlinx-coroutines-test` isn't a test dependency and I can't edit build files. So `UndoCoordinatorTest` has a small virtual-time `CoroutineDispatcher` and `Delay`. It uses the `@InternalCoroutinesApi` opt-in, which is only a test dependency on an internal API.
+- I added no unit-test entries to `TEST_MANIFEST.json`.
+- The shell blocked a heredoc, so I wrote the files with the Write tool.

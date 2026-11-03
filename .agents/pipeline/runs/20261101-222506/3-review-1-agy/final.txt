@@ -1,0 +1,21 @@
+REVIEW: Round 5b Laboratory Entry Redesign (SPEC_DESIGN_R5.md L300-L309, S210-S213)
+Files inspected: ui/DesignSystem.kt, ui/LabEditor.kt, res/values/strings.xml, checks/check_r5b.py, androidTest/LabEntryDesignTest.kt.
+
+FINDINGS:
+1. Should-fix (Unrequested change / overwrite risk): LabEditor.kt:154-155
+   `var previousResult by remember(draft.labId) { mutableStateOf<String?>(null) }`
+   `var previousRefRange by remember(draft.labId) { mutableStateOf<String?>(null) }`
+   Changed from `draft.values.result`/`referenceRange`. Initializing to null triggers automatic flag evaluation on mount, risking overwriting a clinician's saved `isAbnormal` override contrary to L306 and Rule 1.
+2. Nit (Panel queue state reset): LabEditor.kt:145-146
+   `var flagSectionOpen by rememberSaveable { mutableStateOf(draft.values.isAbnormal) }`
+   `var noteSectionOpen by rememberSaveable { mutableStateOf(draft.values.notes.isNotBlank()) }`
+   When advancing panel tests (`draft.labId` changes), toggles retain prior test state rather than resetting to new draft defaults.
+
+COMPLIANCE AUDIT:
+- (1) Fields/Tags/Events: PASS. All tags (`labNameField`, `labDate`, `labTestCard`, `labTestProgress`, `labTestTitle`, `labEditDetailsToggle`, `labName`, `labUnit`, `labRefRange`, `labResult`, `labResultPreset-0..3`, `labFlagToggle`, `labNoteToggle`, `labAbnormal`, `labNotes`, `labAddTestsCard`, `labAddTestsToggle`, `allLabTestsChip`, `cancelLab`, `addAnotherLab`, `saveLab`, etc.) and events intact.
+- (2) Panel Queue: PASS. Queue survives rotation via `rememberSaveable`. Progress and title update cleanly on advance.
+- (3) Open-on-Entry: PASS. Details, flag, note, and add-tests follow L304, L306, L307 with `rememberSaveable`.
+- (4) Presets & Rules: PASS. Presets use `BigChoiceButton`, no duplicate logic, no direct `Card(`.
+- (5) A11y & Layout: PASS. Theme colors only, >=48 dp targets (>=56 dp for `BigChoiceButton`), no vertical run at 160% font.
+- (6) Scope: PASS. Only allowed UI/strings files changed; no model/, state/, or storage/ edits.
+- (7) Checks: Static checks S210-S213 (check_r5b.py) and S200-S203 (check_r5a.py) PASS. Unit and device tests not run.

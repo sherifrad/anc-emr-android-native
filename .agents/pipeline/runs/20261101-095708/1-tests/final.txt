@@ -1,0 +1,25 @@
+Files changed: I created `LabResultFlagTest.kt` and `codex/LabPanelResolveTest.kt` (paths as in the ALLOWED list). I did not touch `check_r4d.py` or `TEST_MANIFEST.json`.
+
+**Run results**
+- `python3 .agents/checks/check_r4d.py`: S140 FAIL, S141 FAIL, S142 PASS.
+  - S140 fails because neither `labResultFlag` nor `resolveLabPanel` exists yet.
+  - S141 fails because `EditorPage` has no `bottomBar` parameter.
+- The unit tests are not run. They call `labResultFlag`, `LabResultFlag` and `resolveLabPanel`, which don't exist yet, so they won't compile until the core lane has run.
+
+**S142 doesn't fail on today's code.** It is a regression guard: all the tags are present and no visible "Codex" text remains, because commit 279f095 already removed the wording. The brief says each S must fail today, but I left the check alone. Making it fail would mean inventing a condition.
+
+**Tests per oracle**
+- **Q240:** `LabResultFlagTest` covers:
+  - `a - b`: below, inside, both ends, above, en dash, extra spaces and trimming.
+  - `<`, `<=`, `>`, `>=`, including the boundary values, and decimals.
+  - UNKNOWN for a text result, empty result, a `<5` result, "5.0 g/dL", and empty or junk ranges (`normal`, `11 - `, `< abc`).
+- **Q241:** `LabPanelResolveTest` covers:
+  - Every default panel resolves with nothing missing against `defaultLabCodexItems()`, and the number of tests equals the number of `testNames`. This is the regression for the preeclampsia panel returning only TSH.
+  - Order follows the panel; matching ignores case and surrounding spaces; unknown names go to `missing` in order; the same test is never returned twice.
+  - A test renamed through `applyLabItemEdit` still resolves in its panel.
+- **Q242–Q245:** these are UI changes, so only the S checks cover them. They have no JVM tests.
+
+**Assumptions**
+- `applyLabItemEdit` returns a nullable result with `.items` and `.groups`, as `LabItemEditTest` uses it.
+- `defaultLabCodexItems()` and `defaultLabCategoryGroups()` are callable from the `ClinicalCodexRepository` companion without a `Context`. They are in the companion (`ClinicalCodexRepository.kt:354` and `:420`), and the Q241 spec names them that way.
+- Same-test dedupe: two panel names that match the same item (for example "TSH" and "tsh") return it once.

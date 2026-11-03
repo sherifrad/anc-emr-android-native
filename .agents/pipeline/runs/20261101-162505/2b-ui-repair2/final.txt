@@ -1,0 +1,16 @@
+Files changed:
+- [PatientEditor.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt)
+- [GestationalAgeEngine.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt)
+
+What was done:
+- Q275: In [PatientEditor.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt), replaced hand-written LMP preview logic (`eddFromLmp`, `calculateForLmp`, `parseIsoDateOrNull`) with `intakeDatingPreview(draft.values)`, preserving existing cards, text labels, and testTags. Removed unused imports.
+- Q275: Verified no references to `calculateForLmp` remain in `app/src`, and removed `calculateForLmp` from [GestationalAgeEngine.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt).
+
+Assumptions / Notes:
+- S54 (from Round 3i `check_r3i.py`) expects `eddFromLmp(` or `FULL_TERM_DAYS` in `PatientEditor.kt` and `IntakeDatingRule.kt`. Round 4g oracles Q273/S172 and Q275/S175 explicitly supersede this by routing intake dating through `intakeDatingPreview` and banning `eddFromLmp(` in both files. Per Rule 4, dead code was not added to satisfy the obsolete check.
+
+Verification results:
+- `./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin :app:compileDebugAndroidTestKotlin`: PASS
+- `./gradlew --offline :app:testDebugUnitTest`: PASS (whole suite passed)
+- `./gradlew --offline :app:lintDebug`: PASS (0 errors)
+- `python3 .agents/checks/check_r4g.py`: PASS (S170-S175 all PASS)

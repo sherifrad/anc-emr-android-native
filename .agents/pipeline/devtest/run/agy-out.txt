@@ -1,0 +1,25 @@
+### Device Debug & Deep Test Results
+
+**Counts**: **7 PASS** | **0 FAIL** | **2 BLOCKED** (1 partial save due to layout rule, 1 safety rule stop)
+
+---
+
+### Top Findings (10 Lines)
+1. **Visit Editor Save Button Layout**: `saveVisit` is positioned at `bounds=[653, 2434][1208, 2602]` (exclusively on right half, `x > 632`).
+2. **Layout Inconsistency**: `VisitEditor.kt:425-445` uses weighted `Row` (`Modifier.weight(1f)`), unlike `PatientEditor`, `UltrasoundEditor`, and `DatingEditor` which use `EditorActions` (`FlowRow` placing Save at `x=415 < 632`).
+3. **Missing Keyboard Save Action**: `visitNotes` in `VisitEditor.kt:418` sets `ImeAction.Done` without wiring `KeyboardActions(onDone = onSave)`.
+4. **Draft Recovery Verified**: Non-dismissable recovery alert, accurate age/screen name, 100% text restore on Continue, and draft clearance on Discard verified across Visit, Medication, and New Patient forms.
+5. **IVF Dating Accuracy**: Day 3 (+263d / 2w3d), Day 5 (+261d / 2w5d), and Day 6 (+260d / 2w6d) transfer chips compute exact clinical EDD and GA.
+6. **Ultrasound Redating Advisory**: Scan GA difference $\ge$10 days displays redating advice banner, hides when close, and never blocks clinical saving.
+7. **Report Layout & Typography**: Tables support sideways touch scrolling (`.table-scroll`), dates/values do not wrap (`.nowrap-cell`), "and N more not shown" appears on cut-offs, and "Official Stamp & Signature" renders exactly once.
+8. **HTML Escaping Integrity**: Special characters `<`, `>`, `&` in clinical notes are safely escaped via `HtmlEscape.kt` without breaking preview markup.
+9. **Concurrency & Rapid Save**: Rapid successive taps on Save (50ms interval) executed safely without crashes, ANRs, or duplicate database records (idempotent `operationUuid`).
+10. **Reopen & Performance**: Reopening after force-stop unlocked cleanly (90th percentile 8ms, 0 StrictMode violations, 0 crashes).
+
+---
+
+### Rules Stopped For
+- **Rule 4 (Taps only on left half $x < 632$)**: Stopped tapping the `saveVisit` button directly inside `VisitEditor` because its touch target begins at $x = 653 > 632$.
+- **Rules 2 & 8 (Never leave QA package / never tap controls that can leave app)**: Stopped tapping `Export Backup` (invokes `Intent.ACTION_SEND` / system share sheet) and `Restore Backup` (invokes `Intent.ACTION_GET_CONTENT` / system document picker) as both exit `com.sherifradwan.anc.qa` into Android OS chooser dialogs.
+
+*Full details, evidence screenshots (`01` through `27`), and minimal code fixes are documented in [.agents/pipeline/devtest/REPORT.md](file:///Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/devtest/REPORT.md).*

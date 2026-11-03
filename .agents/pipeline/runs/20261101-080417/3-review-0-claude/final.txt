@@ -1,0 +1,29 @@
+**Round 4b review (read-only). No Hard Blockers found.**
+
+I had no shell, so I could not run `git diff` or any test or static check. I read the final files and grepped them instead. That means I could not check which strings were deleted, which files changed outside the allowed list, or whether anything passes.
+
+**Checks passed**
+1. **Impression overwrite:** `UltrasoundEditor.kt:686` sets IMPRESSION to `mergeImpression(draft.values.impression, generatedImpression)`. The merge keeps the existing text, adds the generated line on a new line, and does nothing when the text is already present (`ClinicalModels.kt:66-73`). Fill normal (`:141-149`) and Clear (`:158-161`) never touch IMPRESSION.
+2. **Invented findings:** the function skips blank and unknown values. Presentation, site and fluid are checked against `ClinicalVocabulary`. Nothing like "live" or "normal" is added unless chosen.
+3. **Wording duplication:** "pregnancy", "amniotic fluid" and "placenta previa" appear only in `ClinicalModels.kt`. The other hits in main are existing labels or demo data. `commonUltrasoundImpressions` and `impressionPreset` appear nowhere in `app/src`.
+4. **Fill and Clear scope:** Fill writes only blank fetal number, presentation and amniotic fluid, using the three `NORMAL_` constants. Clear blanks only the four choices.
+5. **UI rules:**
+   - **Layout:** all three buttons use `minimumTouchTarget()` (48 dp).
+   - **Enabled flag:** all three buttons respect `enabled`, and From my choices also needs non-blank generated text.
+   - **Events:** every change goes through `UltrasoundDraftChanged`, so draft and autosave are still fed.
+   - **Theme and tags:** colours are theme-only, and the existing testTags are kept.
+6. **Strings:** the five new strings are all used. I could not confirm which strings were deleted, so I can't say whether any removed one was still in use.
+7. **Reuse:** the live card and the button both call `ultrasoundImpressionFromChoices`, so there is one copy of the rule.
+
+**Should-fix**
+- **Spec mismatch in signatures** (`ClinicalModels.kt:24-29`, `:66`): spec Q210/Q211 give non-null `String` parameters. The code has `String?` with `= ""` defaults, and `mergeImpression` takes `String?`. This is harmless but unrequested and looser than the spec. Quote: `fun mergeImpression(existing: String?, generated: String?)`. Revert to plain `String` unless a test needs the nullable form.
+- **Repeated input scan** (`ClinicalModels.kt:45-56`): the placenta and fluid branches check the vocabulary and then repeat a `when` over specific names. Fluid's `else -> null` can never run, because the vocabulary check already filtered. A tidier version drops the vocabulary check for fluid, as for fetal number. This is a small rule-duplication risk if the vocabulary ever changes, not a bug.
+
+**Nits**
+- `UltrasoundEditor.kt:139-168`: Fill and Clear sit inside the "Report so far" card. The spec says "two buttons" without saying where, so this is acceptable. The Clear button stays enabled when there is nothing to clear.
+- `UltrasoundEditor.kt:71`, `:95`: unchanged hard-coded English such as "Take Photo" and the section titles. That matches existing style and is not part of this change.
+- `mergeImpression` matches case-sensitively (`ext.contains(gen)`). That follows the spec, but a doctor who edits the capitalisation will get a second line when they press the button again.
+
+**Assumptions and gaps**
+- I did not open `UltrasoundImpressionTest.kt` beyond the grep lines. The tests cover the example, each site, Previa, Twins, Higher order, each fluid, partial and blank choices, and unknown values. I did not see the `mergeImpression` cases or the idempotence test.
+- I did not check the reducer to confirm that several `UltrasoundDraftChanged` events fired in a row are applied in order. The fields are different, so it should be fine.

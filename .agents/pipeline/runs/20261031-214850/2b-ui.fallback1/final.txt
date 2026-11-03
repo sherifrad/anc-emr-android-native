@@ -1,0 +1,25 @@
+I made the edits in all twelve allowed files, but none of it is compiled or tested. The sandbox blocks Gradle from writing to `~/.gradle` (`gradle-8.13-bin.zip.lck`: "Operation not permitted"), so Gradle never started. That means the three compile tasks, the unit suite and `:app:lintDebug` are all **not run**. I didn't work around the block.
+
+`check_r3z.py` gives S101 FAIL and S102 PASS. S101 fails only because `ClinicalEditorErrorCard` still exists; I'm leaving it in on purpose (details below).
+
+**Files changed:** `PatientPrintHtmlGenerator.kt`, `PatientEditor.kt`, `VisitEditor.kt`, `Components.kt`, `ClinicalBadges.kt`, `PatientListScreen.kt`, `ProfileScreen.kt`, `WorkspaceScreen.kt`, `MedicationEditor.kt`, `CodexSettingsSections.kt`, `BiometricAuthManager.kt`, `strings.xml`.
+
+**By oracle**
+- **Q120:** the print date now uses `formatIsoDate(asOfDate)`.
+- **Q121:** `patientEditorErrorResource` and the `when` in `VisitEditor.saveStatusResource` are gone and call `stringRes()`. `GenericEditorErrorCard(hasErrors, state)` is in `Components.kt`. The two old cards were identical apart from the error-set type, so the texts should be the same.
+- **Q122:** `ProfileScreen` and `WorkspaceScreen` call `formatFetalMetrics`.
+- **Q123:** `MedicationEditor` and `CodexSettingsSections` use `COMMON_MEDICATION_FREQUENCIES`. The medication entry list now includes "At bedtime".
+- **Q124 (badge):** `ClinicalRiskBadge(isHighRisk, modifier)` and `ClinicalTagBadge` moved from `PatientListScreen` to `ClinicalBadges.kt`, with a `modifier` parameter added. `SevereBpBadge` still uses `ClinicalTagBadge` (now `internal`). The profile screen uses the list-style badge.
+- **Q124 (field):** `EditorField` moved to `Components.kt` and `VisitField` is deleted. I merged the two like this:
+  - `enabled` now defaults to true.
+  - New `errorMessage: String?` shows a custom error text, as `VisitField` did.
+  - New `keyboardOptions`, defaulting to `KeyboardOptions(keyboardType, imeAction)`.
+  - `error: Boolean` keeps its fixed "correct highlighted field" text.
+  - Visit call sites now pass `errorMessage = bpError` / `weightError`.
+- **Q125:** `MIN_BIOMETRIC_API = 30` is the only API gate in `isBiometricAvailable`. The `< 28` checks are removed, and `setAllowedAuthenticators` is now called unconditionally in the builder chain. Lint may flag it as `NewApi`, which I couldn't check. I deleted `unsaved_drafts_policy` and `unsaved_drafts_editor_policy`; a grep found no other references in `app/src`.
+
+**Conflict:** `LabEditor.kt`, `UltrasoundEditor.kt` and `DatingEditor.kt` still call `ClinicalEditorErrorCard`, and `PreviousPregnancyEditor.kt` and `OtherHistoriesEditor.kt` call `EditorErrorCard`. All five are outside my allowed list. To keep the tree compiling, `PatientEditor.kt` has two one-line wrappers that delegate to `GenericEditorErrorCard`. Whoever owns those files should switch the calls to `GenericEditorErrorCard(draft.errors.isNotEmpty(), state)` and then delete both wrappers.
+
+I also didn't write the new unit tests for `formatIsoDate`, `stringRes`, `formatFetalMetrics` or the frequencies list. Test files weren't in my allowed list.
+
+Please run the compile, unit-suite and lint commands from a shell that can write to `~/.gradle`.

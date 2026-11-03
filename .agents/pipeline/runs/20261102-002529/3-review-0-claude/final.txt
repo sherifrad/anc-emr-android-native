@@ -1,0 +1,47 @@
+**Review of Round 5c, medication entry screen (read-only)**
+
+I had only Read, Grep and Glob, so I could not run `git diff`, `git status` or any test. I read `MedicationEditor.kt` as it stands and cross-checked it against the spec, `DesignSystem.kt`, `ChoiceGroup`, `ClinicalDateField` and `strings.xml`. I could not confirm S223 (no changes under model/state/storage) or check for changes outside the allowed files. The orchestrator should run the diff for those two.
+
+**Hard Blocker**
+1. **`requestFocus()` on a row that isn't open yet (likely crash).**
+   - `openRowKey = "dose"; dosageFocusRequester.requestFocus()` (lines 128-129) and `openRowKey = "frequency"; frequencyFocusRequester.requestFocus()` (lines 253-254) set the state and request focus in the same callback.
+   - The target field is only composed after recomposition, so the requester is not attached yet.
+   - `FocusRequester.requestFocus()` normally throws `IllegalStateException` in that case.
+   - Pressing Next on the dose field always hits this, because the frequency row is closed at that moment.
+   - A fix would drop the requesters and use `LaunchedEffect(openRowKey)` or `Modifier.focusRequester` plus `SideEffect` once the row is composed.
+
+**Should-fix**
+2. **IME Next breaks the fixed order and the shared rule.**
+   - Dose goes straight to `"frequency"` (line 253) and skips route. The spec order is dose, route, frequency, start.
+   - Name goes straight to `"dose"` (line 128), even when dose is already filled.
+   - Both hard-code a row key instead of calling `firstBlankRow(...)`, so M402 ("ONE function used by every case") is not met.
+3. **Open-row state is not keyed to the draft.**
+   - `rememberSaveable { ... }` at lines 81 and 92 has no key.
+   - "Save & add another" starts a new `AncRoute.MedicationEditor` with a new `medicationId`, but `AncApp.kt:236` keeps the same composable position. The old `openRowKey` and `showAdvanced` therefore carry over.
+   - The next medication would not open its first blank row, and More could stay expanded with empty fields.
+   - Fix: `rememberSaveable(route.medicationId)`.
+4. **Route summary shows a value that isn't in the draft.**
+   - Line 288 shows `draft.values.route.ifBlank { "Oral" }`, and line 275 selects `Oral` the same way. The spec asks for this.
+   - `firstBlankRow` still treats a blank route as blank. If the doctor picks the "Unknown" chip (`ChoiceGroup` has `includeUnknown = true` by default, `PatientEditor.kt:539`), the row can't close, and "Oral" stays highlighted and shown.
+   - A clinical screen should not show Oral for an empty route. Either pass `includeUnknown = false` or decide the rule with the owner.
+5. **Status tag indexes not verifiable.** M403 requires the same index order the old `ChoiceGroup` produced. If the old group used `includeUnknown = true`, the old indexes were shifted by one. I couldn't see the old file, so please check against HEAD.
+
+**Nit**
+6. Line 342 moves the open row when the start date equals today. The Today chip, a typed full date and the calendar picker all go through `onValueChange`, so the "Today button" is detected by value rather than by event. Typing today's date by hand moves the row, though only on the last keystroke. `ClinicalDateField` can't tell the cases apart without touching a shared file, so this is probably acceptable. Say so in the notes.
+7. `SummaryRow`'s value `Text` has no weight and the label has `weight(1f, fill = false)` (`DesignSystem.kt:96-111`). At 160% font, a long frequency value such as "Every 8 hours (TID)" can squeeze the label. This is not part of this diff, so I'd verify it on a device before calling it a defect.
+8. Hard-coded English strings remain: "New medication: add to my medication list?", "Add to my list", the subtitle and the vault line (lines 102, 172, 197, 445). These look carried over and not in M408 scope, so I'm not counting them against this round.
+
+**Checked and fine**
+- **Fields and tags:** every tag in S221 is present, and no field or event is lost. Cancel, Add another and Save are intact.
+- **Add-to-my-list:** the banner and button are kept, and the created item keeps `isProphylaxis = false`.
+- **Previous-medication reset:** it still sets status Active and clears adverse notes, end date and notes (lines 217-221).
+- **Cards:** no direct `Card(`. All four cards use `SectionCard`, and the More card passes an empty title, which `SectionCard` handles.
+- **Status:** it loops over `ClinicalVocabulary.medicationStatuses` (exactly four) and selects with `effectiveMedicationStatus`.
+- **Prophylaxis:** the only occurrence in the file is `isProphylaxis = false`.
+- **Open rows:** only one row can be open, because there is a single `openRowKey`.
+- **First-blank rule:** `firstBlankRow` is a single private function, apart from the IME handlers in item 2.
+- **Typing:** `onValueChange` of `medDosage` and `medFrequency` does not touch `openRowKey`.
+- **Strings:** `medication`, `medication_dose_and_schedule` and `medication_more` each appear once, and "Not set" reuses `finding_not_set` through `SummaryRow`.
+- **Dead code and colours:** I found no unused imports, dead code or hard-coded colours. Touch targets use `minimumTouchTarget`, and `BigChoiceButton` is 56 dp.
+
+**Verdict:** one Hard Blocker (item 1) and three Should-fix items (2, 3, 4). Item 5 needs a check against HEAD.

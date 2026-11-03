@@ -1,0 +1,4 @@
+FAIL S300 delete and restore commands, kinds and hashes defined: missing DeleteMedicationCommand, RestoreMedicationCommand, DeleteLabInvestigationCommand, RestoreLabInvestigationCommand, MEDICATION_DELETE, MEDICATION_RESTORE, LAB_DELETE, LAB_RESTORE, medicationContentHash, labContentHash
+FAIL S301 DAO delete and latest-receipt queries present: missing deleteMedication, deleteLabInvestigation, latestClinicalReceiptForRecord
+FAIL S302 delete/undo events, state fields and 8 s timer present: missing RequestDeleteMedication, RequestDeleteLab, ConfirmDelete, UndoRequested, UndoExpired, undoOffer, deleteConfirmation, 8_000
+PASS S303 no ui, schema or migration file changed

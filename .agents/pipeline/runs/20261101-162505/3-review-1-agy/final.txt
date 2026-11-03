@@ -1,0 +1,21 @@
+Files changed: none (read-only lane).
+
+Review Findings (Round 4g: Q270-Q275, S170-S175):
+- Hard Blockers: None.
+- Should-fix: None.
+- Nit: `app/src/test/java/com/sherifradwan/ancnative/state/IntakeDatingRuleTest.kt#L170`: test notes spec arithmetic typo ("26w2d" vs calendar 181d = "25w 6d"). Correctly asserts `"25w 6d"`.
+
+Audit Checklist:
+1. LMP intake: Unchanged; saves LMP method, baseline LMP note, EDD (LMP+280); preview matches previous EDD and GA format.
+2. Existing patient dating: Fully protected; non-LMP methods return null (`if (!isLmp) return null`), preserving existing dating and notes.
+3. Single date logic: Strict reuse of `GestationalAgeEngine.dueDateForMethod` & `IsoDates.eddFromScan`. No duplicate arithmetic.
+4. Scan arithmetic: Verified `gaWeeks in 0..42` and `gaDays in 0..6` in `eddFromScan`; rejects impossible GA and non-canonical dates.
+5. Draft save/restore: `DraftMapping.kt` falls back safely with `?: v.<field>`; old drafts without new keys restore without loss or crash.
+6. Post-save fields: Exact per method (Clinical sets lmp to null; IVF sets transfer/embryoAgeDays; Ultrasound sets ultrasoundEdd).
+7. Test suite integrity: `IntakeDatingRuleTest` keeps all previous test cases; uses fixed `asOf` date (no `LocalDate.now()` in assertions).
+8. Scope & cleanliness: No dead code; `calculateForLmp` deleted as planned; changes strictly within permitted lane files.
+
+Verification:
+- Static checks: `python3 .agents/checks/check_r4g.py` passed (S170-S175 PASS).
+- Unit tests: not run (Gradle daemon socket connection unavailable in sandboxed environment).
+Assumptions: None.

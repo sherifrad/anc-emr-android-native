@@ -1,0 +1,149 @@
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:kspDebugKotlin UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :app:kspDebugUnitTestKotlin UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :app:processDebugJavaRes UP-TO-DATE
+
+> Task :app:compileDebugUnitTestKotlin FAILED
+26 actionable tasks: 1 executed, 25 up-to-date
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:28:72 Unresolved reference 'UndoPhase'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:28:84 Unresolved reference 'UndoPhase'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:28:103 Unresolved reference 'UndoOffer'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:29:49 Unresolved reference 'UndoKind'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:34:75 Unresolved reference 'RequestDeleteMedication'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:36:66 Unresolved reference 'UndoPhase'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:36:78 Unresolved reference 'UndoPhase'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:37:20 No parameter with name 'undoOffer' found.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:42:28 Unresolved reference 'deleteConfirmation'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:44:38 Unresolved reference 'patientId'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:45:36 Unresolved reference 'recordId'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:53:52 Unresolved reference 'RequestDeleteLab'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:61:43 Unresolved reference 'deleteConfirmation'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:65:60 Unresolved reference 'deleteConfirmation'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:72:43 Unresolved reference 'CancelDelete'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:72:57 Unresolved reference 'deleteConfirmation'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:80:29 Unresolved reference 'deleteConfirmation'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:82:48 Unresolved reference 'ConfirmDelete'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:84:30 Unresolved reference 'deleteConfirmation'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:91:67 Unresolved reference 'ConfirmDelete'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:99:52 Unresolved reference 'UndoExpired'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:100:53 Unresolved reference 'UndoExpired'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:101:43 Unresolved reference 'UndoExpired'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:101:62 Unresolved reference 'undoOffer'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:107:52 Unresolved reference 'UndoRequested'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:108:22 Unresolved reference 'UndoPhase'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:108:64 Unresolved reference 'UndoRequested'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:108:85 Unresolved reference 'undoOffer'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:115:63 Unresolved reference 'UndoRequested'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:117:50 Unresolved reference 'UndoCommitted'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:121:30 Unresolved reference 'undoOffer'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:127:63 Unresolved reference 'UndoRequested'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:128:22 Unresolved reference 'UndoPhase'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:128:49 Unresolved reference 'undoOffer'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:137:29 Unresolved reference 'undoOffer'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:138:29 Unresolved reference 'deleteConfirmation'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:140:27 Unresolved reference 'undoOffer'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:141:27 Unresolved reference 'deleteConfirmation'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:146:45 Unresolved reference 'DeleteCommitted'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:147:34 Unresolved reference 'undoOffer'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:148:45 Unresolved reference 'DeleteCommitted'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:149:35 Unresolved reference 'undoOffer'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:150:40 Unresolved reference 'undoOffer'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt:151:54 Unresolved reference 'UndoExpired'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:585:31 Unresolved reference 'DeleteMedicationCommand'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:591:30 Unresolved reference 'medicationContentHash'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:594:31 Unresolved reference 'DeleteLabInvestigationCommand'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:600:30 Unresolved reference 'labContentHash'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:603:36 Unresolved reference 'DeleteMedicationCommand'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:603:77 Unresolved reference 'RestoreMedicationCommand'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:611:36 Unresolved reference 'DeleteLabInvestigationCommand'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:611:83 Unresolved reference 'RestoreLabInvestigationCommand'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:628:41 Unresolved reference 'MEDICATION_DELETE'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:646:41 Unresolved reference 'LAB_DELETE'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:664:13 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:671:15 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:671:19 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:671:24 Unresolved reference 'computeFingerprint'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:677:13 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:684:15 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:684:19 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:684:24 Unresolved reference 'computeFingerprint'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:693:41 Unresolved reference 'MEDICATION_RESTORE'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:700:13 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:719:15 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:719:19 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:719:24 Unresolved reference 'computeFingerprint'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:730:41 Unresolved reference 'LAB_RESTORE'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:737:13 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:754:15 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:754:19 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:754:24 Unresolved reference 'computeFingerprint'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:762:20 Unresolved reference 'medicationContentHash'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:764:28 Unresolved reference 'medicationContentHash'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:781:21 Unresolved reference 'medicationContentHash'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:788:20 Unresolved reference 'labContentHash'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:790:28 Unresolved reference 'labContentHash'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt:805:21 Unresolved reference 'labContentHash'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt:17:26 Unresolved reference 'DeleteMedicationCommand'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt:23:30 Unresolved reference 'medicationContentHash'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt:26:27 Unresolved reference 'RestoreMedicationCommand'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt:37:41 Unresolved reference 'MEDICATION_DELETE'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt:46:20 Unresolved reference 'ClinicalDeleteRule'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt:52:62 Unresolved reference 'ClinicalDeleteRule'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt:53:70 Unresolved reference 'LAB_DELETE'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt:54:62 Unresolved reference 'ClinicalDeleteRule'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt:62:13 Unresolved reference 'ClinicalDeleteRule'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt:67:13 Unresolved reference 'ClinicalDeleteRule'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt:76:13 Unresolved reference 'ClinicalDeleteRule'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt:84:45 Unresolved reference 'MEDICATION_RESTORE'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt:90:13 Unresolved reference 'ClinicalDeleteRule'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt:98:13 Unresolved reference 'ClinicalDeleteRule'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt:107:13 Unresolved reference 'ClinicalDeleteRule'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt:114:20 Unresolved reference 'ClinicalDeleteRule'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt:124:25 Unresolved reference 'DeleteLabInvestigationCommand'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt:130:34 Unresolved reference 'labContentHash'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt:132:26 Unresolved reference 'RestoreLabInvestigationCommand'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt:142:45 Unresolved reference 'LAB_DELETE'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt:148:20 Unresolved reference 'ClinicalDeleteRule'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt:149:70 Unresolved reference 'MEDICATION_DELETE'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt:152:13 Unresolved reference 'ClinicalDeleteRule'.
+e: file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRuleTest.kt:156:13 Unresolved reference 'ClinicalDeleteRule'.
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugUnitTestKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 445ms

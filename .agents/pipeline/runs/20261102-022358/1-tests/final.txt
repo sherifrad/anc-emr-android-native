@@ -1,0 +1,36 @@
+The three test files are written, but none of the unit tests have been compiled or run. They reference production code that doesn't exist yet, so they won't compile until the core lane has run.
+
+**Files:**
+- `ClinicalCommandsTest.kt`: added 7 cases and kept every existing one.
+- `AncDeleteUndoStateTest.kt` (new): 12 cases.
+- `ClinicalDeleteRuleTest.kt` (new): 9 cases.
+- I did not touch `check_r6a.py` or `TEST_MANIFEST.json`.
+
+**`check_r6a.py` results (real run):**
+- S300, S301 and S302 FAIL on today's code, as required.
+- S303 PASSES today. It is a "nothing forbidden changed" check, so it can't fail before any edits. It only has teeth once the other lanes have run. It also never compares the `RecordsDatabase` version against HEAD; it only checks that the word "version" appears. I left it alone.
+
+**Coverage by D item:**
+- **Commands (medication and lab twins):**
+  - Validity: revision 0, blank ids, bad uuid, and bad hash (short, long, non-hex).
+  - Fingerprints: restore fingerprints are tested against each field plus the source delete, and delete fingerprints against each of their fields.
+  - Content hash: ignores `revision` but changes with every other field, for both medication and lab.
+- **`ClinicalDeleteRule.evaluateRestore`:** returns `RECORD_CONFLICT` for a wrong kind, patient, record or fingerprint, a receipt that isn't the latest, or a row already present. It returns `INVALID_COMMAND` for a hash mismatch. Success returns null, and a revision-only difference still succeeds. It also has a lab case.
+- **State:**
+  - Delete requests are ignored for an archived patient, a dirty draft, or `savePhase` PENDING/RECONCILING/UNRESOLVED. A clean state does ask for confirmation.
+  - `CancelDelete` drops the confirmation.
+  - `ConfirmDelete` closes a clean editor on the same record and leaves one on another record open.
+  - A stale token is a no-op for both `UndoExpired` and `UndoRequested`, and a matching `UndoRequested` moves the offer to RUNNING.
+  - `UndoCommitted` rebases the blank create draft to the new patient revision.
+  - A newer offer replaces the older one.
+
+**Assumptions (the spec gives no signatures for these; fix them in one place if the core lane differs):**
+- Names: `UndoOffer(token: String, patientId, kind: UndoKind.DELETE_MED, label, phase: UndoPhase.READY/RUNNING)`.
+- Events: `UndoCommitted(patients)` and `DeleteCommitted(patients, offer)`.
+- `ClinicalDeleteRule.evaluateRestore` is called with non-null receipts and a medication or lab record as the existing row.
+- After `UndoCommitted`, `undoOffer` is expected to be null.
+
+**Weak spots:**
+- `submitMedicationIgnoredWhileUndoRunning` is trivially true at reducer level, because Submit events already return the state unchanged. The real guard lives in the ViewModel, which I can't unit-test without extra scaffolding.
+- `lockResetClearsUndoOffer` only checks that a fresh `AncState` has no offer or confirmation. That is what the ViewModel builds on lock, but it doesn't exercise `clearFrozenCommands`.
+- "success revision = tombstone+1" is a repository concern, not part of the pure guard, so it isn't tested here. It belongs in the instrumented test.

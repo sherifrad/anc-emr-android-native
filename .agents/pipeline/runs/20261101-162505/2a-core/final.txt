@@ -1,0 +1,21 @@
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt
+- app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+- app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt
+- app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt
+- app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
+
+What was done per oracle:
+- Q270: Added `eddFromScan(scanDate, gaWeeks, gaDays)` in `IsoDates.kt` returning null for `gaWeeks !in 0..42 || gaDays !in 0..6`.
+- Q271: Added 7 dating fields (defaulting to "") to `PatientDraftValues`, 7 values to `PatientDraftField`, and reducer branches in `AncState.kt`.
+- Q272: Saved the 7 fields for new patient drafts and restored them in `DraftMapping.kt` with fallback to current values on missing keys.
+- Q273: Updated `IntakeDating` and `intakeDatingUpdate` in `IntakeDatingRule.kt` to handle LMP, IVF_TRANSFER, Ultrasound, and Clinical using `dueDateForMethod` via `datingDraftToDating`; added `intakeDatingPreview`.
+- Q274: Updated post-save dating in `AncViewModel.kt` to use `IntakeDating` fields and note fallback instead of hard-coded LMP.
+
+Assumptions:
+- Intake dating fields on patient draft records are saved when `isNew` (baseRevision == null), keeping existing patient profile draft field count at 14.
+
+Verification results:
+- `./gradlew --offline :app:compileDebugKotlin`: PASSED.
+- `python3 .agents/checks/check_r4g.py`: S170-S174 PASS; S175 FAIL (depends on UI lane modifying `PatientEditor.kt`).
+- Unit tests run and PASSED: `EddFromScanTest`, `IntakeDatingRuleTest`, `PatientDatingDraftTest`, `DraftMappingTest`, all 332 tests in `model.*`/`state.*`, and full `:app:testDebugUnitTest`.

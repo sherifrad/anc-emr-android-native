@@ -1,0 +1,29 @@
+Files already in place: `EddFromScanTest.kt`, `PatientDatingDraftTest.kt`, and the updated `IntakeDatingRuleTest.kt`. I did not edit anything; I read them against the spec and the production signatures. Nothing has been compiled or run (see below).
+
+**Check script**
+- I ran `check_r4g.py`. All six checks (S170–S175) fail on today's code, as intended.
+- The script and the `STATIC-r4g` and `UNIT-r4g` manifest entries look correct, so I left them alone.
+
+**Unit tests**
+- **Q270, `EddFromScanTest`:**
+  - 2026-03-01 at 8w3d gives 2026-10-08, and at 12w0d gives 2026-09-13.
+  - Invalid inputs return null: gaDays 7, gaDays -1, weeks -1 and weeks 43.
+  - Weeks 0 and 42 are accepted.
+- **Q271 and Q272, `PatientDatingDraftTest`:**
+  - The reducer sets each of the seven new fields, and changes only the named field.
+  - The seven fields default to blank.
+  - A draft saved with `draftRecordFor` and restored with `applyDraftRecord` keeps all seven values.
+  - An old record without the seven keys restores the current values unchanged.
+- **Q273, `IntakeDatingRuleTest`:**
+  - It uses the new `intakeDatingUpdate(existing, PatientDraftValues(...))` signature and keeps every earlier case and expectation.
+  - It adds the LMP method and note, blank method equal to LMP, and existing-patient with a non-LMP method returning null.
+  - It adds IVF, scan and Clinical cases with the spec's numbers. IVF and scan each have their bad-input cases returning null. Clinical covers a bad or blank date.
+  - It adds `intakeDatingPreview` tests.
+
+**Assumption on the preview GA**
+- The spec says GA "26w2d" for LMP 2026-02-01 at asOf 2026-08-01, but that date pair is 181 days, which is 25 weeks 6 days.
+- The engine's format also has a space. The test therefore expects `"25w 6d"`, with a comment saying so. The orchestrator should confirm the spec figure.
+
+**Not verified**
+- The unit tests will not compile until the core lane adds `eddFromScan`, the new `PatientDraftValues` fields and `PatientDraftField` entries, `IntakeDating`, `intakeDatingPreview` and the DraftMapping keys.
+- I did not run any of them. The helper names (`draftRecordFor`, `applyDraftRecord`, `DraftRecord.fields`, `PatientDraft`, `AncEvent.PatientDraftChanged`) are checked against current sources only.

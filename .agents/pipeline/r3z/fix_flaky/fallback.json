@@ -1,0 +1,20 @@
+[
+ {
+  "spec": "agy:gemini-3.8-flash-medium",
+  "status": "failed",
+  "seconds": 139.5,
+  "chars": 0,
+  "ok": false,
+  "why": [
+   "jetski: no output produced \u2014 a tool required the \"write_file\" permission that headless mode cannot prompt for, so it was auto-denied. Add an allow-rule under permissions.allow in settings.json (e.g. write_file(<target>)). Alternatively, re-run with --dangerously-skip-permissions to auto-approve all tools."
+  ]
+ },
+ {
+  "spec": "claude:claude-sonnet-5-5",
+  "status": "completed",
+  "seconds": 22.6,
+  "chars": 2316,
+  "ok": true,
+  "why": ""
+ }
+]

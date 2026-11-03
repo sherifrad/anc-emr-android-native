@@ -1,0 +1,23 @@
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalPresets.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/MedicationEditor.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt
+
+Work per oracle:
+- Q250: Deleted unused duplicate presets (ClinicalLabPreset, ClinicalMedPreset, commonLabPresets, commonMedPresets) from ClinicalPresets.kt.
+- Q251 (UI side): Replaced medication status "Active" literals in ClinicalBadges.kt, PatientPrintHtmlGenerator.kt, and MedicationEditor.kt with MEDICATION_STATUS_ACTIVE.
+- Q252 (UI side): Switched LabEditor.kt to use ClinicalVocabulary.labNamePresets.
+- Q254: Kept panel queue state across rotation using rememberSaveable (remaining IDs via listSaver, counts, current item ID) in LabEditor.kt; advances with nextLabPanelTest and resolves current item by ID from live items.
+
+Assumptions:
+- S110 failure in check_r4a is an artifact of check_r4a expecting literal "Active" instead of MEDICATION_STATUS_ACTIVE in ClinicalModels.kt (owned by Core role).
+- Screen rotation preserves queue IDs and counts via Compose rememberSaveable / listSaver.
+
+Verifications:
+- ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin :app:compileDebugAndroidTestKotlin: PASSED
+- ./gradlew --offline :app:testDebugUnitTest: PASSED (whole suite)
+- ./gradlew --offline :app:lintDebug: PASSED (0 errors)
+- python3 .agents/checks/check_r4e.py: PASSED (S150-S153 all PASS)
+- Device physical screen rotation: not run (rotation rule tested via queue advance; rotation verified on phone).

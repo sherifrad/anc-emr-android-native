@@ -1,0 +1,1 @@
+PASS S83 no occurrence of FLAG_SECURE under app/src/main; MainActivity calls enableEdgeToEdge and contains setContent

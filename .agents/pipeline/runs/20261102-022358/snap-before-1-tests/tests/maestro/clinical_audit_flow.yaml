@@ -1,0 +1,39 @@
+appId: com.sherifradwan.anc
+---
+- launchApp:
+    clearState: false
+
+- assertVisible: "Patients"
+- assertVisible: "3 Patients"
+
+# Tap on patient to open Profile
+- tapOn: "نور المثال"
+
+# Verify Profile opened
+- assertVisible: "نور المثال"
+- assertVisible:
+    id: "workspaceButton"
+
+# Tap on Workspace button to open WorkspaceScreen
+- tapOn:
+    id: "workspaceButton"
+
+# Verify Workspace tabs
+- tapOn:
+    id: "section-ULTRASOUND"
+- assertVisible:
+    id: "addUltrasound"
+
+- tapOn:
+    id: "section-LABORATORY"
+- assertVisible:
+    id: "addLab"
+
+- tapOn:
+    id: "section-MEDICATIONS"
+- assertVisible:
+    id: "addMedication"
+
+# Test Back navigation (currently directly exits Workspace back to Patient List)
+- back
+- assertVisible: "Patients"

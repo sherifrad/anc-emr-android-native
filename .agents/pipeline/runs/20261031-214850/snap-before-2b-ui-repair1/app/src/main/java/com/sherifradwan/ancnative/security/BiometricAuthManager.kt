@@ -1,0 +1,70 @@
+package com.sherifradwan.ancnative.security
+
+import android.app.Activity
+import android.content.Context
+import android.hardware.biometrics.BiometricManager
+import android.hardware.biometrics.BiometricPrompt
+import android.os.CancellationSignal
+import android.os.Build
+
+object BiometricAuthManager {
+    private const val MIN_BIOMETRIC_API = 30
+
+    fun isBiometricAvailable(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT < MIN_BIOMETRIC_API) return false
+        val manager = context.getSystemService(BiometricManager::class.java) ?: return false
+        val canAuth = manager.canAuthenticate(
+            BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK,
+        )
+        return canAuth == BiometricManager.BIOMETRIC_SUCCESS
+    }
+
+    fun promptBiometric(
+        activity: Activity,
+        title: String = "Women's Health Clinic · Biometric Authentication",
+        subtitle: String = "Touch the fingerprint sensor to unlock the application",
+        onResult: (Boolean) -> Unit,
+    ): CancellationSignal? {
+        if (!isBiometricAvailable(activity)) {
+            onResult(false)
+            return null
+        }
+
+        val cancellationSignal = CancellationSignal()
+        try {
+            val builder = BiometricPrompt.Builder(activity)
+                .setTitle(title)
+                .setSubtitle(subtitle)
+                .setNegativeButton("Cancel & Use PIN", activity.mainExecutor) { _, _ ->
+                    onResult(false)
+                }
+                .setAllowedAuthenticators(
+                    BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK,
+                )
+
+            val prompt = builder.build()
+
+            prompt.authenticate(
+                cancellationSignal,
+                activity.mainExecutor,
+                object : BiometricPrompt.AuthenticationCallback() {
+                    override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult?) {
+                        onResult(true)
+                    }
+
+                    override fun onAuthenticationError(errorCode: Int, errString: CharSequence?) {
+                        onResult(false)
+                    }
+
+                    override fun onAuthenticationFailed() {
+                        // User can retry touching the sensor
+                    }
+                },
+            )
+            return cancellationSignal
+        } catch (_: Throwable) {
+            onResult(false)
+            return null
+        }
+    }
+}

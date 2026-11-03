@@ -1,0 +1,29 @@
+I have launched the compilation command (`./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin :app:compileDebugAndroidTestKotlin`) and am waiting for it to finish.
+Compilation task is running. Waiting for completion.
+Compilation command has been started. Waiting for task completion.
+Running `:app:testDebugUnitTest`. Waiting for task completion.
+Running `:app:lintDebug`. Waiting for task completion.
+Files changed:
+app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt
+app/src/main/res/values/strings.xml
+
+Per-spec implementation (C500-C504, S230-S232):
+- C500: Collapsible MedicationCard: collapsed shows one row (name, MedicationStatusBadge, summary "dose · frequency", PencilEditButton); expanded retains full card with FactRows.
+- C501: Row toggle tagged medicationToggle-<id> with 48dp minimum touch target and chevron up/down with content descriptions; editMedication-<id> pencil active in both states.
+- C502: Default expanded when <= 3 medications, collapsed when > 3; medication-<id> tag preserved.
+- C503: Added medicationsToggleAll TextButton ("Collapse all"/"Expand all") when medications > 3; shared rememberSaveable expandedIds state via StringSetSaver.
+- C504: CollapsedMedicationRow uses custom Layout dropping summary first if space is constrained; single line for summary; theme colours and 48dp targets maintained.
+- S230-S232: Passed tags (medicationToggle-, medicationsToggleAll, medication-, editMedication-), strings, and logic-file isolation.
+
+Strings added: show_details, hide_details, collapse_all, expand_all.
+
+Assumptions:
+- Header row chevron placed adjacent to title in both states to provide a consistent touch toggle anchor.
+
+Verification results:
+- ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin :app:compileDebugAndroidTestKotlin: PASS
+- ./gradlew --offline :app:testDebugUnitTest: PASS
+- ./gradlew --offline :app:lintDebug: PASS (0 errors)
+- python3 .agents/checks/check_r5d.py: PASS (S230, S231, S232)
+- All .agents/checks/check_r*.py: PASS
+- Connected device/emulator tests (MedicationListCollapseTest): not run (orchestrator / device testing phase).

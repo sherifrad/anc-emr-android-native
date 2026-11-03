@@ -1,0 +1,12 @@
+I changed nothing: every compile error is a reference to production code that doesn't exist yet, and I can't remove those errors from my test files without deleting assertions.
+
+**Cause.** The unresolved symbols are all new round-6a API: `DeleteMedicationCommand`, `RestoreMedicationCommand`, `DeleteLabInvestigationCommand`, `RestoreLabInvestigationCommand`, `MEDICATION_DELETE`, `MEDICATION_RESTORE`, `LAB_DELETE`, `LAB_RESTORE`, `medicationContentHash`, `labContentHash` and `ClinicalDeleteRule`. The only enum values `ClinicalRecordKind` has today are `DATING`, `ULTRASOUND_CREATE`, `ULTRASOUND_UPDATE`, `LAB_CREATE`, `LAB_UPDATE`, `MEDICATION_CREATE` and `MEDICATION_UPDATE`. A grep of `app/src` finds these names only in my two test files (`ClinicalDeleteRuleTest.kt` and `ClinicalCommandsTest.kt`), so no production lane has added them.
+
+**What I checked.** I compared the test code against the existing code. `ClinicalCommandReceipt` has all seven fields the tests set. `DemoLabInvestigation` and `DemoMedicationRecord` match the constructor calls, and `ClinicalCommandFailure.RECORD_CONFLICT` and `INVALID_COMMAND` exist. So none of the errors comes from a typo or a wrong signature in my files.
+
+**What I could not do.**
+- **Making the tests compile.** The only ways are to delete or park the new-API tests, which breaks your "keep every assertion unchanged" rule, or to add the production symbols myself, which is outside my allowed files. The "parked" tests still exist in the working tree (`ClinicalDeleteRuleTest.kt`, `AncDeleteUndoStateTest.kt`, and the new cases in `ClinicalCommandsTest.kt`).
+- **Running Gradle.** The sandbox blocks it, because the wrapper can't create `gradle-8.13-bin.zip.lck` ("Operation not permitted"). I got no compiler output of my own and worked from the errors you pasted. No unit test has run.
+- **Re-running `check_r6a.py`.** I didn't. The output you pasted shows S300, S301 and S302 failing, as they should on today's code, and S303 passing.
+
+**What to do next.** Run the core lane first. The test sources should compile once it adds those names with the signatures in `SPEC_LOGIC_R6.md`. If you want a compiling tree before then, tell me to park the new cases and I'll do that, but it removes assertions.

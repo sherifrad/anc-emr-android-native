@@ -1,0 +1,30 @@
+I've read the spec and the medication code, and I'm writing up the review now. I couldn't run `git diff` because I only have read tools. I checked the current file against the spec, not against HEAD.
+
+**Round 5d review (WorkspaceScreen.kt, strings.xml)**
+
+**Hard Blocker**
+- None found. The tags, the 3-or-fewer default, the single state set and the edit event path all match C500–C503. The edit callback is unchanged: `onEditMedication(med)` still sends `StartMedicationEditor` with `medicationId = med.id`.
+
+**Should-fix**
+1. **State is reset when the medication list changes.** `rememberSaveable(patient.id, medications.map { it.id }.joinToString(","), ...)` (line 2145–2148) puts the whole id list in the key. Adding or removing one medication wipes every card's expanded state, and the default is applied again. A patient who goes from 3 to 4 medications gets all cards collapsed, losing the doctor's open cards. C502 says the state is keyed on the medication id. Key on `patient.id` only. The state is already a set of ids, so stale ids are harmless. The default would then apply only on first composition.
+2. **Name, badge or both can be clipped at 160% font.** In `CollapsedMedicationRow` (line 2338–2342) the name and badge are measured with `Constraints()`, which is unconstrained. `layout(totalWidth.coerceAtMost(constraints.maxWidth), ...)` then caps the width. A long drug name plus the badge is wider than the row, so the badge is pushed past the edge and clipped. `maxLines = 1` has no effect there. C504 requires name and status to stay visible and only the summary to be dropped. Measure the name with `maxWidth - chevron - badge - 2*spacing`, or use a plain `Row` with `Modifier.weight(1f, fill = false)` on the name. The plain `Row` would also replace the custom `Layout`, which is heavy for this.
+3. **Touch-target helper not reused.** `.defaultMinSize(minHeight = 48.dp)` appears twice, at lines 2269 and 2275. The brief says to reuse `minimumTouchTarget()`. The Box and the Row also both set a minimum, so one is redundant. Keep `minimumTouchTarget()` on the Box only.
+
+**Nit**
+- Line 2239: the expanded name `Text(med.name, ...)` has no `maxLines`. This is fine for the unchanged full card. I'm noting it only because the collapsed name does have one.
+- Line 2280: `end = if (canEdit) 52.dp else 16.dp` is a hard-coded magic number tied to `IconButton`'s 48 dp. Add a comment or derive it. It is not a colour or string, so it isn't a blocker.
+- `PencilEditButton` wraps itself in `Row(fillMaxWidth)` (line 2418). In the collapsed Box that Row overlays the toggle row. It doesn't consume taps, so it works. Check this on a device.
+- The chevron `Icon` carries the "Show details" and "Hide details" content description inside a clickable Row. Make sure the merged semantics expose it, or put the description on the Row. This is not verified.
+
+**Checked and fine**
+- **Strings and colours:** the four strings are defined once (strings.xml 397–400). The code uses theme colours only, with no hard-coded colours.
+- **Single source of truth:** the toggle-all button and the cards share `expandedIds`. `allExpanded` is derived from it, not stored separately.
+- **Default:** `size <= 3` expands all, and the toggle-all button only appears when `size > 3`.
+- **Tags:** `medication-<id>` is on the Card in both states. `editMedication-<id>` is present in both states. `medicationToggle-<id>` and `medicationsToggleAll` are present.
+- **Imports:** `Layout`, `Constraints`, `listSaver`, `defaultMinSize`, `KeyboardArrowUp`, `KeyboardArrowDown` and `TextButton` are all imported.
+- **Dead code:** none seen. `StringSetSaver` is used.
+- **Scope:** I only looked at WorkspaceScreen.kt and strings.xml. I could not confirm that model/, state/ and storage/ are untouched (S232).
+
+**Not verified**
+- The expanded card's fields, tags and `isNonCompliant` handling against HEAD. They look the same as the spec's "unchanged" card, but I had no diff.
+- No tests were run. `MedicationListCollapseTest.kt` exists under androidTest, and I didn't execute it.

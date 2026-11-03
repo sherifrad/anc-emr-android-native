@@ -1,0 +1,27 @@
+Status: I've read the spec, the five UI files, the model, the repository, the new test and the S130–S132 check script. I'm writing up the review now. I had no shell, so I could not run `git diff`, the unit tests or `check_r4c.py`. All of this is from reading the files.
+
+**Hard Blockers**
+- None found.
+
+**Should-fix**
+1. `ClinicalCodexModels.kt:104`: `fun updateLabCodexItem(item: LabCodexItem): Boolean = false`. The spec says the function is added to the interface, and a default body means a delegate that forgets it silently refuses every edit. The likely reason is that the two fakes in `ClinicalCodexRepositoryTest.kt` (lines 61 and 111) don't implement it, and that file isn't owned by this lane. Better to make it abstract and add the override to those fakes, or have the orchestrator confirm the default is acceptable.
+2. `CodexSettingsSections.kt:606-614`: the edit branch of the dialog trims every field and sets `isCustom = true` before calling `onSave`. `applyLabItemEdit` already does exactly that (`ClinicalCodexModels.kt:62-70`). This is the rule copied in the UI (your point 2). Passing `initial.copy(...)` with the raw fields would be enough. The add branch does need its own trimming, so only the edit branch is affected.
+
+**Nits**
+- `ClinicalCodexModels.kt:63`: `id = oldItem.id` is a no-op, because the ids are equal by construction.
+- `ClinicalCodexModels.kt:78`: the `if (group.testNames.any {...})` pre-check repeats the same comparison as the `map` below it. The `map` alone gives the same result. Dropping the pre-check would also drop the extra `group.copy` branch.
+- `CodexSettingsSections.kt:269`: the delete button is now `.size(48.dp)`, but the medication delete button (line 917) and the panel delete button (line 335) are unchanged. I can't tell from here whether that size was already in HEAD. If not, it's an unrequested change. The spec only asks for 48 dp on the new edit button.
+- `LabEditor.kt:176` and `:263`, `MedicationEditor.kt:85`: comments still say "Codex". They aren't user-visible and S132 strips comments, so this is fine.
+
+**Checked and OK**
+- (1) `LabItemEditTest.kt` has one class and covers every case in the spec. `TEST_MANIFEST.json:1183` has a single entry for it. I did not check whether an old test name is left in a group.
+- (2) `ClinicalCodexRepository.kt:83` calls `applyLabItemEdit` once. `fun applyLabItemEdit` exists only in `ClinicalCodexModels.kt`.
+- (3) There is one `AddLabTestDialog`, used for both add (line 393) and edit (line 407). The add path (lines 392-403) still closes on success.
+- (4) No visible "Codex" string remains in the five files. I grepped every string literal containing it and only `testTag` arguments matched. All 12 old tags are present. `SettingsTab.LAB_CODEX` and `MED_CODEX` are unchanged. Banner and button wording match the spec ("New test: add it to your lab test list?", "Add to list").
+- (5) A refused update keeps the dialog open: the dialog closes only when `onSave` returns true (lines 411-415), and lines 625-632 set the error text. The error text is "Test name already used or invalid".
+- (6) The edit button is 48 dp, uses the tag `editLabCodexBtn-<id>` and the description "Edit test", and is tinted with `colorScheme.primary`. Error text uses `colorScheme.error`. I saw no hard-coded colours. `Icons.Default.Edit` is imported and used.
+- (7) I found no dead code. The medication editing the spec excludes is not added. I could not confirm the file list against the ALLOWED lists without `git diff`. `MedicationEditor.kt` isn't in the visible git status, though its wording already matches the spec.
+
+**Not verified**
+- Unit tests, `check_r4c.py`, lint and the compile gates were not run.
+- Edge case: if `initial.category` isn't in `ClinicalVocabulary.testCategories`, no chip shows as selected, but the saved value keeps the original category. That is safe.

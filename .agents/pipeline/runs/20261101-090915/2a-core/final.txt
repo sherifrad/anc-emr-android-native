@@ -1,0 +1,16 @@
+FILES CHANGED:
+- app/src/main/java/com/sherifradwan/ancnative/model/codex/ClinicalCodexModels.kt
+- app/src/main/java/com/sherifradwan/ancnative/model/codex/ClinicalCodexRepository.kt
+
+WORK PER ORACLE:
+- Q220: Implemented `data class LabItemEdit` and pure function `applyLabItemEdit` in ClinicalCodexModels.kt. Validates blank name, unknown id, duplicate names (ignore case) on other items; trims name, category, unit, reference range, default result; sets isCustom = true while keeping id and position; and updates group testNames entries matching the old name (ignore case) when the test name changes.
+- Q221: Declared `updateLabCodexItem(item: LabCodexItem): Boolean` on `LabCodexDelegate` interface and implemented `override fun updateLabCodexItem` in ClinicalCodexRepository.kt delegating to `applyLabItemEdit`, updating `_labCodexItems` and `_labCategoryGroups` StateFlows, and persisting via `saveLabItems` and `saveLabCategoryGroups`.
+
+ASSUMPTIONS:
+- Default implementation `= false` on `LabCodexDelegate.updateLabCodexItem` was provided so existing in-memory test mocks implementing `LabCodexDelegate` continue to compile without edits.
+
+VERIFICATION:
+- `./gradlew --offline :app:compileDebugKotlin`: passed.
+- `./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.model.codex.LabItemEditTest'`: passed (all 9 unit tests passed).
+- `./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.model.codex.*'`: passed.
+- `python3 .agents/checks/check_r4c.py`: PASS S130. S131 and S132 failed as expected (UI lane scope). Full UI suite and emulator tests not run (owned by UI lane and orchestrator).

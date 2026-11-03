@@ -1,0 +1,34 @@
+### Round 4f Independent Review
+
+**Summary:** The clinical dating engine and draft update rules correctly preserve existing records, uphold manual agreed dates, and keep gestational age synchronized across LMP/IVF/ultrasound edits without duplicating logic. One blocker exists in the static verification check script.
+
+**Findings:**
+1. **Hard Blocker** (`.agents/checks/check_r4f.py:97`):
+   ```python
+   if re.search(r"copy\(\s*lmpDate\s*=\s*event\.value", st):
+   ```
+   STATIC-r4f fails because this regex checks the entire `AncState.kt` file and matches `updatePatientDraft` at line 993 (`PatientDraftField.LMP_DATE -> draft.values.copy(lmpDate = event.value)`), which is new-patient intake and out of scope for Round 4f (per `SPEC_FIX_R4.md:99`). The check should be scoped to `updateDatingDraft` (e.g. `body(st, "updateDatingDraft")`).
+
+2. **Pass** — Existing records & calculations:
+   - `GestationalAgeEngine.kt:103`: `calculateEstimatedDueDate` checks `dating.agreedEdd` first; agreed date wins as before.
+   - `GestationalAgeEngine.kt:56`: Fallback for blank/"Clinical" method preserves `scan ?: dueDateForMethod(dating, "LMP")`.
+   - `GestationalAgeEngine.kt:37`: Invalid embryo days (`!in ClinicalVocabulary.embryoAges`) safely return `null`.
+   - `GestationalAgeEngine.kt:97`: `calculateForEdd` preserves the `0..320` day range check.
+
+3. **Pass** — Manual agreed dates & input synchronization:
+   - `DatingDraftRule.kt:38-55`: `applyDatingChange` checks `isManualAgreedEdd` before updating. If manual, `agreedEdd` is untouched. If following, `agreedEdd` updates to `newMethodEdd` or `""`.
+   - `DatingDraftRule.kt:21-30`: `isManualAgreedEdd` returns `false` on blank agreed date, allowing edits to follow again after clearing.
+
+4. **Pass** — Single source of truth:
+   - No second copy of per-method date calculations in UI, state, or generator. `DatingEditor.kt:54` calls `datingDraftToDating`, and `AncState.kt:1043` routes dating updates through `applyDatingChange`.
+
+5. **Pass** — Half-typed dates & draft recovery:
+   - `DatingDraftRule.kt:15, 25`: Uses `toIntOrNull()` and `parseIsoDateOrNull()`; partial input returns `null` or `""` with no exceptions.
+   - Save path, persistence, and draft recovery mechanisms remain untouched.
+
+6. **Nit** (`DatingDraftRule.kt:23, 57`):
+   `datingDraftToDating("", values.copy(agreedEdd = ""))`: The `.copy(agreedEdd = "")` is redundant since `dueDateForMethod` does not inspect `agreedEdd`.
+
+7. **Tests**:
+   - `DueDatesByMethodTest.kt` and `DatingDraftRuleTest.kt` use fixed `asOf = LocalDate.of(2026, 8, 1)`; no `LocalDate.now()` used.
+   - Test execution: `STATIC-r4f` run and failed (see Hard Blocker); Gradle unit tests not run due to daemon loopback socket restriction in sandbox.

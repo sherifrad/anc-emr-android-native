@@ -1,0 +1,6 @@
+PASS S17 file_paths.xml cache-path backups
+PASS S18 no FLAG_SECURE (D15), no VAULT_DEBUG
+PASS S19 weak-PIN setup needs proof of old PIN
+PASS S20 report WebView has no JavaScript
+PASS S21 settings dialog: no timeout picker, restore confirm
+PASS S22 false security claims removed

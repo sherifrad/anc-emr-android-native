@@ -1,0 +1,17 @@
+FILES CHANGED:
+- app/src/main/java/com/sherifradwan/ancnative/model/LabResultFlag.kt (NEW)
+- app/src/main/java/com/sherifradwan/ancnative/model/codex/ClinicalCodexModels.kt
+
+PER ORACLE:
+- Q240: Implemented enum `LabResultFlag` (NORMAL, HIGH, LOW, UNKNOWN) and pure function `labResultFlag(result, referenceRange)` supporting range forms `a - b` (including en dash and whitespace), `< x`, `<= x`, `> x`, `>= x`, with strict plain number parsing.
+- Q241: Implemented `data class LabPanelResolution` and pure function `resolveLabPanel(panel, items)` matching tests case/space-insensitively, preserving panel order, deduplicating tests, and recording unresolvable test names in `missing`.
+
+ASSUMPTIONS:
+- Ranges with `a > b` or non-numeric tokens return `LabResultFlag.UNKNOWN`.
+- Duplicate test names in a panel that resolve to an already-included item are not added again and do not count as missing.
+
+VERIFICATION:
+- `./gradlew --offline :app:compileDebugKotlin`: PASSED.
+- `./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.model.LabResultFlagTest' --tests 'com.sherifradwan.ancnative.model.codex.LabPanelResolveTest'`: PASSED.
+- Full `:app:testDebugUnitTest`: PASSED.
+- `python3 .agents/checks/check_r4d.py`: S142 PASS; S140 and S141 FAIL as expected pending UI lane wiring in LabEditor.kt/PatientEditor.kt.

@@ -1,0 +1,17 @@
+I made no changes in this repair round, and I couldn't confirm anything with a compile or a unit test.
+
+**Why there is no edit**
+- The compile errors at `IntakeDatingRuleTest.kt:170-181` come from `intakeDatingPreview` and its `dueDate` and `gestationalAge` fields. Those are new production API from the core lane (Q274/Q275).
+- Production code is still unchanged. `git diff -- app/src/main` is empty, and `IntakeDatingRule.kt` still has the old `intakeDatingUpdate(existing, draftLmp: String?)`.
+- No change in my allowed files can fix this while keeping every assertion. The only workaround would be deleting or parking the preview tests (`preview_lmp`, `preview_invalid_null`, `preview_scanUsesScanDueDate`), which changes assertions. I didn't do that, so the file still has all its cases and expected outcomes.
+- The log you sent shows only the preview errors, with the earlier lines cut off. I can't tell whether the rest of the new-API usage also failed to resolve, but the source suggests it would. This file also calls the new `intakeDatingUpdate(existing, PatientDraftValues(...))`, the new `IntakeDating` fields and the new `PatientDraftValues` fields, none of which exist yet. The new test files `EddFromScanTest.kt` and `PatientDatingDraftTest.kt` are untested for the same reason.
+
+**What I ran**
+- `./gradlew --offline :app:compileDebugUnitTestKotlin` did not run. The sandbox blocks Gradle's write to `~/.gradle/wrapper/.../gradle-8.13-bin.zip.lck`. Enabling that is a sandbox setting for you to change.
+- `python3 .agents/checks/check_r4g.py`: S170 to S175 all FAIL on today's code, as required. I made no change to the check script or the manifest, and I saw no bug in them.
+
+**Assumptions**
+- The preview test comment says 181 days is "25w 6d", with the engine's own spaced format. I left it unchanged.
+- It should compile and run once the core lane lands `IntakeDating`, `PatientDraftValues` and `intakeDatingPreview` as in SPEC_FIX_R4.md lines 130-132.
+
+**What I need from you:** run the core lane first, then rerun `./gradlew --offline :app:testDebugUnitTestKotlin` and send me any remaining compile errors, which I'll fix. Or tell me you want the three preview tests parked until then.

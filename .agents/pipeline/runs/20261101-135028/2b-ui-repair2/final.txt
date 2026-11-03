@@ -1,0 +1,22 @@
+I have launched the full unit test suite (`./gradlew --offline :app:testDebugUnitTest`) and will proceed as soon as it completes.
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalPresets.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/MedicationEditor.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt
+
+Actions per oracle:
+- Q250: Removed unused catalogs (ClinicalLabPreset, ClinicalMedPreset, commonLabPresets, commonMedPresets) from ClinicalPresets.kt.
+- Q251 (UI side): Replaced medication-status "Active" literals with MEDICATION_STATUS_ACTIVE in ClinicalBadges.kt, PatientPrintHtmlGenerator.kt, and MedicationEditor.kt.
+- Q252 (UI side): Replaced hardcoded lab names in LabEditor.kt with ClinicalVocabulary.labNamePresets.
+- Q254: Kept panel queue state (panelRemainingIds via StringListSaver, panelTotalCount, currentPanelIndex, currentPanelItemId) in rememberSaveable; advance calls nextLabPanelTest; current item resolved by ID from live codex list.
+
+Assumptions: S110 in check_r4a.py failed because its regex only matched string literals or MEDICATION_STATUS_NON_COMPLIANT for medicationStatuses before Q251 introduced MEDICATION_STATUS_ACTIVE; check_r4e.py passes.
+
+Verification results:
+- ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin :app:compileDebugAndroidTestKotlin: passed
+- ./gradlew --offline :app:testDebugUnitTest: passed (full unit test suite)
+- ./gradlew --offline :app:lintDebug: passed (0 errors)
+- python3 .agents/checks/check_r4e.py: passed (S150, S151, S152, S153 PASS)
+- Device/emulator screen rotation: not run (automated unit suite passed; rotation requires on-device manual check).

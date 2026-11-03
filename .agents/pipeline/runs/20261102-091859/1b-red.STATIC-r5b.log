@@ -1,0 +1,4 @@
+PASS S210 shared pieces defined once in DesignSystem.kt
+PASS S211 lab screen uses the shared pieces, no hand-written Card(
+PASS S212 lab tags present
+FAIL S213 design round touched no model/state/storage file: logic file changed: app/src/androidTest/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRestoreDbTest.kt

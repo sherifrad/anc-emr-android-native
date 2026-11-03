@@ -1,0 +1,4 @@
+FAIL S160 one per-method due date rule: dueDateForMethod not defined exactly once in the engine; calculateEstimatedDueDate does not call dueDateForMethod; calculate does not use calculateEstimatedDueDate; eddFromLmp called 2 times in the engine (want 1)
+FAIL S161 per-method due dates defined once: dueDatesByMethod / DueDatesByMethod missing or duplicated
+FAIL S162 dating draft rules defined once in DatingDraftRule.kt: not once in DatingDraftRule.kt: applyDatingChange, datingDraftToDating, isManualAgreedEdd
+FAIL S163 reducer and dating screen call the draft rules: AncState.kt does not call applyDatingChange; AncState.kt still sets lmpDate directly; DatingEditor.kt does not call datingDraftToDating; DatingEditor.kt still builds DemoPatientDating itself

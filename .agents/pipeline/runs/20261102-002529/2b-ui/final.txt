@@ -1,0 +1,25 @@
+Running `:app:testDebugUnitTest` in the background...
+Running `:app:lintDebug` in the background...
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/ui/MedicationEditor.kt
+- app/src/main/res/values/strings.xml
+
+What was done per spec item:
+- M400: Replaced hand-written Card( calls with SectionCard; no direct Card( in MedicationEditor.kt.
+- M401: Card 1 medPickCard ("Medication") hosts medName, medPreset chips, saveToMedCodexBanner, and patientPrevMed chips with safety reset preserved.
+- M402: Card 2 medDetailsCard ("Dose and schedule") houses 4 guided rows (dose, route, frequency, start) using SummaryRow (medRow-<key>) and open container (medOpen-<key>) controlled by ONE private firstBlankRow helper.
+- M403: Card 3 medStatusCard ("Status") implements 4 BigChoiceButtons (medStatusChoice-0 to 3) in order Active, Completed, Discontinued, Patient non-compliant via effectiveMedicationStatus.
+- M404: "More" section with medMoreToggle (SummaryRow) expands medMoreSection (medEndDate, medAdverseNotes, medNotes); state kept via rememberSaveable.
+- M405: Prophylaxis control removed; codex item creation sets isProphylaxis = false.
+- M406: Kept AES-256 GCM vault indicator and action buttons (cancelMedication, addAnotherMedication, saveMedication).
+- M407: Standard touch targets (56 dp BigChoiceButton), theme colours, single-line labels.
+- M408: Strings added: medication ("Medication"), medication_dose_and_schedule ("Dose and schedule"), medication_more ("More: end date, adverse effects and notes"). Reused finding_not_set.
+
+Assumptions: Route displays "Oral" when empty on closed SummaryRow; firstBlankRow checks empty route in draft.
+Verification:
+- ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin :app:compileDebugAndroidTestKotlin: PASSED
+- ./gradlew --offline :app:testDebugUnitTest: PASSED
+- ./gradlew --offline :app:lintDebug: PASSED (0 errors)
+- python3 .agents/checks/check_r5c.py: PASSED (S220-S223)
+- .agents/checks/check_r*.py: PASSED (all r3–r5c checks)
+- Device/emulator UI test (MedicationEntryDesignTest.kt): not run (build role).

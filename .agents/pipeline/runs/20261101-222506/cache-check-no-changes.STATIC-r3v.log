@@ -1,0 +1,2 @@
+PASS S92 DraftMapping has the four mapping functions and no android import; DraftAutosaver has the store, onStateChanged, flush, cancelPending and no Log/SharedPreferences/File
+PASS S93 VaultController draft methods use storageMutex; AncViewModel owns DraftAutosaver and flushes before lock/background; no ui file mentions DraftAutosaver; backup manager has no draft

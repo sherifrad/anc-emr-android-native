@@ -1,0 +1,1 @@
+PASS S50 captureTempFile is the pure rule, deleteIfCaptureTemp is a thin wrapper

@@ -1,0 +1,4 @@
+PASS S200 SectionCard and SummaryRow defined once in DesignSystem.kt
+PASS S201 ultrasound screen uses the shared pieces, no hand-written Card(
+PASS S202 ultrasound tags and guided finding wiring present
+PASS S203 design round touched no model/state/storage file

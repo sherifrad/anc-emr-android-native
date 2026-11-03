@@ -1,0 +1,17 @@
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt
+- app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt
+
+Work per oracle:
+- Q275: In PatientEditor.kt, replaced manual LMP preview calculation (eddFromLmp, calculateForLmp, parseIsoDateOrNull) with intakeDatingPreview(draft.values); preserved preview card, text labels, and UI structure. Cleaned up unused imports.
+- Q275: Deleted GestationalAgeEngine.calculateForLmp after verifying zero references remain in app/src.
+
+Assumptions:
+- Round 3i check S54 (requiring eddFromLmp or FULL_TERM_DAYS in PatientEditor.kt and IntakeDatingRule.kt) is superseded by SPEC_FIX_R4 Q273/Q275 and static checks S172/S175 which explicitly forbid direct eddFromLmp calls in favor of intakeDatingPreview. Per rule 4, no dead code or redundant references were added to satisfy S54.
+
+Verification:
+- python3 .agents/checks/check_r4g.py: PASS (S170-S175 all pass)
+- ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin :app:compileDebugAndroidTestKotlin: PASS
+- ./gradlew --offline :app:testDebugUnitTest: PASS (whole unit suite passed)
+- ./gradlew --offline :app:lintDebug: PASS (0 errors)
+- Emulator tests: not run (orchestrator tier)

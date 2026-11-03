@@ -1,0 +1,31 @@
+Round 4b Independent Review: PASS (No blockers)
+
+1. Doctor's typed impression preservation: PASS
+- `impressionFromChoices` calls `mergeImpression(draft.values.impression, generatedImpression)` which appends via `ext.trimEnd() + "\n" + gen` or keeps existing; doctor's notes are never overwritten (`ClinicalModels.kt:66-73`).
+- `fillNormalScan` and `clearFindings` never touch `IMPRESSION` (`UltrasoundEditor.kt:140-164`).
+
+2. Invented findings: PASS
+- `ultrasoundImpressionFromChoices` maps only valid selections from `ClinicalVocabulary`; skips blanks and unknown terms without adding unselected findings (`ClinicalModels.kt:24-64`).
+
+3. Shared clinical wording: PASS
+- Impression wording is localized solely in `ClinicalModels.kt` (verified by S122).
+
+4. Fill / clear scope: PASS
+- `fillNormalScan` only fills blank fetal number, presentation, and amniotic fluid; placenta, biometry/numbers, photos, and impression are untouched (`UltrasoundEditor.kt:140-150`).
+- `clearFindings` resets only the 4 choices; numbers, photos, and impression are untouched (`UltrasoundEditor.kt:154-159`).
+
+5. UI standards, tags & state: PASS
+- TestTags present: `impression`, `ultrasoundLiveSummary`, `fillNormalScan`, `clearFindings`, `impressionFromChoices`.
+- Touch targets: 48 dp enforced via `.minimumTouchTarget()`. Colors use `MaterialTheme.colorScheme`.
+- `enabled` flag respected across all buttons. Events dispatched via `AncEvent.UltrasoundDraftChanged`.
+
+6. Unused strings / Preset deletion: PASS
+- `commonUltrasoundImpressions` and `impressionPreset` cleanly deleted. No strings deleted from `strings.xml`.
+
+7. Findings & Scope:
+- All changes stay within Round 4b ALLOW lists.
+- Nit (`UltrasoundEditor.kt:372`): `text = stringResource(R.string.ultrasound_section_fetus_placenta_liquor)` replaces existing hardcoded section header with a string resource (clean, unrequested but safe).
+
+Verification:
+- STATIC-r4b (`check_r4b.py`): PASSED (S120, S121, S122).
+- UNIT-r4b (`UltrasoundImpressionTest`): not run (Gradle daemon IPC blocked by sandbox).

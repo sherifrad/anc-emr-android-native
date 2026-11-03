@@ -1,0 +1,8 @@
+PASS S400 DeletableRecords.kt: DeletableType, adapter interface, registry, one contentHash
+PASS S401 medication and lab adapters keep tags, receipt kinds and canonical strings byte-identical
+PASS S402 generic DeleteRecordCommand/RestoreRecordCommand, same fingerprint text, no second copy of canonical strings
+PASS S403 RecordsRepository has exactly one deleteRecord and one restoreRecord, four copies gone, guard reused
+PASS S404 ClinicalDeleteRule.evaluateRestore: signature unchanged, no per-command-class when
+PASS S405 no Room schema, database version, entity or DAO change
+FAIL S406 no state, ViewModel or ui change (source-compatible factories/aliases keep them compiling): state/ui file changed (r6b1 must not require it): app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt
+PASS S407 D654 isolation oracles: DB test has snapshot-diff, cross-kind id collision, two-patient and PRAGMA foreign_key_check/integrity_check tests

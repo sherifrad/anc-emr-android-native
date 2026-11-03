@@ -1,0 +1,53 @@
+# Review: commit 19c36fc, delete and Undo for medications and lab results (level 3)
+
+I found no Hard Blockers. The storage path does what the spec asks. Each delete or restore is one transaction that checks the expected revision, the content hash, and that the record belongs to that patient. The tombstone revision is r+1 and a restored record comes back at r+2. A restore is refused unless the delete receipt exists, is the latest receipt for that record, has a matching fingerprint, and the row is absent. A retried committed delete with the same ID gets the stored result back instead of running twice. Nothing in the code can delete or restore another patient's record: `confirmDelete` only looks for the record inside that patient's own list, and the repository returns CROSS_PATIENT_WRITE otherwise.
+
+## Should-fix
+
+1. **`state/AncState.kt:209-213`: the "deleted" notices say "saved".** `MEDICATION_DELETED`, `MEDICATION_RESTORED` and `MEDICATION_SAVE_UNDONE` are not new values; they are other names for `MEDICATIONS`. `LAB_DELETED` and `LAB_RESTORED` are other names for `LABORATORY`.
+   - Scenario: confirm a delete of "Iron". `WorkspaceScreen.kt:2352` maps the notice to `R.string.medication_saved`, so the user sees "Medication saved" right after deleting it. Lab results behave the same way.
+   - This breaks D609, which asks for new values. Because the names share one value, the UI round cannot tell deleted, restored and saved apart.
+
+2. **`state/AncState.kt:897`: after "Save and next" → Undo, a draft the user has started typing keeps an outdated patient revision.**
+   - Scenario: save medication 1 with "Save and next". Start typing medication 2, so the draft has changes. Tap Undo. Medication 1 is deleted and the patient revision goes up by one.
+   - The rebase is skipped because the draft has changes, so medication 2 still carries the old `basePatientRevision`. Saving it is rejected with STALE_PATIENT_REVISION.
+   - This follows the spec's literal wording ("blank" draft only). But typing the next medication and then tapping Undo is the normal way this will be used. A new (create) draft has no revision of its own, so rebasing it is safe whether or not it has changes. Worth a decision from the spec owner.
+
+3. **`state/AncViewModel.kt:1117` and `:1124`: the Undo restore keeps one operation ID but changes the patient revision on each tap.** That breaks the safe-retry rule for a restore that already went through.
+   - Scenario: the restore commits, but both `execute` and `reconcile` report Ambiguous (SQLite error). `failUndo` puts the offer back to READY.
+   - If any other save refreshes the snapshot before the next tap, `withPatientRevision` sends the same ID with a new revision. The fingerprint no longer matches the stored receipt, so the result is DUPLICATE_OPERATION_MISMATCH, every time.
+   - The record is actually restored, but the bar keeps saying Undo failed. No data is lost.
+   - Fix: once an attempt comes back Ambiguous, freeze the revision that attempt used. Alternatively, retry with the frozen command before rebasing.
+
+4. **Tests that pass without testing anything** (for the independent test review):
+   - `submitMedicationIgnoredWhileUndoRunning` (`AncDeleteUndoStateTest.kt:125`) runs the reducer only. The RUNNING gate lives only in `AncViewModel.dispatch` (`:207-216`). The reducer returns the state unchanged for these events anyway, so the test would pass even if the gate were removed.
+   - `lockResetClearsUndoOffer` (`:135`) only checks the defaults of a newly built `AncState()`. It never exercises `clearFrozenCommands`, `undoJob` or `pendingUndo`.
+   - No test covers the ViewModel timer, epoch or lock behaviour at all.
+
+## Nits
+
+5. **`AncViewModel.kt:1156`: a failed Undo restarts a full 8 s window, with no limit.** Repeated failures (for example PATIENT_ARCHIVED, or STALE_REVISION after the saved medication was edited) keep the restore command and record in memory past the "~8 s, then gone" rule.
+
+6. **`AncViewModel.kt:1102-1106`: `requestUndo` doesn't check `phase == READY`.** A double tap starts two restore coroutines. Today this is harmless: the second one either replays the stored result or fails against an offer that is already gone. Still, it is an unguarded duplicate write path.
+
+7. **`AncViewModel.kt:1043-1046`: a delete that stays Ambiguous after reconcile shows STORAGE_ERROR and offers no Undo.** The row may already be gone. Each confirm creates a new operation ID, so a retry returns RECORD_NOT_FOUND instead of confirming what happened.
+
+8. **`AncState.kt:884`: `DeleteFailed` sets the shared `saveError`.** A clean editor still open on a different record would show a save error it didn't cause.
+
+9. **`ClinicalCommands.kt:484`: the canonical string doesn't escape anything.** A null field and the literal text "null" hash the same, and a `|` inside a note can shift field boundaries. That technically breaks D604's "changing any field changes the hash". It doesn't matter in practice, because the record being restored is the one already checked against the database at delete time.
+
+## Checked with no defect found
+
+- **Records left in AncState or logs:** AncState holds only IDs and the medication name or lab test name as the offer label, which the spec allows. The full record stays in the ViewModel's private `pendingUndo`, and lock, background and expiry all clear it. The new code adds no log calls, and AncState is never saved to the instance state.
+- **Timer, lock, session epoch, two offers:**
+  - Old-token Commit, Fail and Expired events are no-ops.
+  - Cancelling the timer and replacing it with a new one is sound.
+  - After a lock, the session check prevents a new offer from being set up.
+  - The controller returns Obsolete when the session epoch has changed.
+- **Restore after the patient is archived:** returns PATIENT_ARCHIVED.
+- **Restore after other changes to the patient:** handled by rebasing the patient revision. The fingerprint is tied to the original delete, not the current revision.
+- **Room schema:** the new queries are DAO-only, entities are unchanged, and there is no foreign key from attachments to lab results, so deleting a lab can't cascade or be blocked.
+
+**Verdict:** no Hard Blockers. It can merge once #1 is fixed; #2 needs a call from the spec owner, and #3 and #4 should be fixed before this round is signed off.
+
+**What I could not verify:** I didn't run the unit tests or the instrumented `ClinicalDeleteRestoreDbTest` (no build, no emulator), so the real Room delete and insert SQL, and the `insertMedication` conflict strategy, are unverified. I also didn't check that `RecordsDatabase` keeps its version against HEAD, or how the UI will show a missing lab link as "unlinked".

@@ -1,0 +1,2 @@
+PASS S43 EXIF handled once in BoundedBitmap
+PASS S44 attachment dialog scrolls, preview height capped

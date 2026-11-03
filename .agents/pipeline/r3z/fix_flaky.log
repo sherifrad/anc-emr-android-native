@@ -1,0 +1,2 @@
+[fallback] agy:gemini-3.8-flash-medium: failed 139.5s 0 chars -> next
+[fallback] claude:claude-sonnet-5-5: completed 22.6s 2316 chars -> OK

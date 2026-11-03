@@ -1,0 +1,21 @@
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt
+- app/src/main/java/com/sherifradwan/ancnative/model/ClinicalSummaryGenerator.kt
+- app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+- app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalPresets.kt
+
+Work per oracle:
+- Q200: Added MEDICATION_STATUS_NON_COMPLIANT constant and updated ClinicalVocabulary.medicationStatuses to ordered listOf("Active", "Completed", "Discontinued", MEDICATION_STATUS_NON_COMPLIANT).
+- Q201: Added effectiveMedicationStatus and isOngoingMedication once in ClinicalModels.kt.
+- Q202: In AncState.kt, loading record uses effectiveMedicationStatus; setting STATUS draft field sets isNonCompliant accordingly; removed AncEvent.MedicationProphylaxisChanged and updateMedicationProphylaxis; removed MedicationProphylaxisChanged handling in AncViewModel.kt; preserved isProphylaxis in drafts.
+- Q203: Removed isProphylaxis property from ClinicalMedPreset and its presets list in ClinicalPresets.kt.
+- Q207: In ClinicalSummaryGenerator.kt, removed [Prophylaxis]/[Therapeutic] prefix and appended status suffix when effective status is not Active.
+
+Assumptions:
+- Stored isProphylaxis fields and columns are preserved across data models and drafts.
+
+Verification:
+- python3 .agents/checks/check_r4a.py: PASS S110; S111-S114 failed on files assigned to other lanes (MedicationEditor.kt, WorkspaceScreen.kt, strings.xml, CodexSettingsSections.kt, ClinicalBadges.kt).
+- ./gradlew --offline :app:compileDebugKotlin: failed only in MedicationEditor.kt (4 unresolved references to MedicationProphylaxisChanged awaiting UI lane).
+- Unit tests: not run because debug compilation is blocked pending UI lane updates to MedicationEditor.kt.

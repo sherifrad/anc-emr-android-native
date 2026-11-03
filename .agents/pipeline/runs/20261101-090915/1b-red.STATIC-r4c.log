@@ -1,0 +1,3 @@
+FAIL S130 one edit rule, wired through the repository: applyLabItemEdit defined in []; interface lacks updateLabCodexItem; repository lacks updateLabCodexItem
+FAIL S131 lab rows are editable through the one dialog: no editLabCodexBtn- tag; settings never calls updateLabCodexItem
+FAIL S132 no visible Codex wording, tags kept: CodexSettingsSections.kt "Laboratory Codex Directory"; CodexSettingsSections.kt "Lab Codex directory is currently empty."; CodexSettingsSections.kt "Reset Clinic Lab Codex to Defaults"; CodexSettingsSections.kt "Reset to Default Lab Codex"; CodexSettingsSections.kt "Add New Lab Test to Codex"; CodexSettingsSections.kt "Save to Codex"; SecuritySettingsDialog.kt "Clinic Settings, Codex & Security"; SecuritySettingsDialog.kt "Lab Codex"

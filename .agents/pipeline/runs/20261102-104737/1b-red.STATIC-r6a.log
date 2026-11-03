@@ -1,0 +1,4 @@
+PASS S300 delete and restore commands, kinds and hashes defined
+PASS S301 DAO delete and latest-receipt queries present
+PASS S302 delete/undo events, state fields and 8 s timer present
+PASS S303 no ui, schema or migration file changed

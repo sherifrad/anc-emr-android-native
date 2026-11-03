@@ -1,0 +1,5 @@
+PASS S110 four ordered statuses; one literal; one definition per rule
+PASS S111 removed event, reducer branch, tags and strings gone
+PASS S112 prophylaxis text gone; stored field kept
+PASS S113 MedicationStatusBadge defined once and used by the profile card
+PASS S114 old codex wording gone from the medication UI

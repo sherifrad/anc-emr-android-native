@@ -1,0 +1,2 @@
+PASS S99 no values-ar folder, no Locale("ar") UI-string test, check_r3w.py without values-ar
+PASS S100 biometric API 28/30 guards, splash items only in values-v31, AppLockScreen without context.getString

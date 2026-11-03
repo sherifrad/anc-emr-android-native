@@ -1,0 +1,29 @@
+I added the two unit test files. `check_r4e.py` fails on all four checks today, as it should. The unit tests are written but not compiled or run, because they depend on the core lane's code.
+
+**Files changed**
+- `app/src/test/java/com/sherifradwan/ancnative/model/ClinicalConstantsTest.kt` (new)
+- `app/src/test/java/com/sherifradwan/ancnative/model/codex/LabPanelQueueTest.kt` (new)
+- I did not touch `check_r4e.py` or `TEST_MANIFEST.json`. I read both, found no bug, and the manifest's `STATIC-r4e` and `UNIT-r4e` entries match the spec.
+
+**Static check (`python3 .agents/checks/check_r4e.py`)**
+- S150 fails: `ClinicalPresets.kt` still has all four catalog names.
+- S151 fails: the constant is not defined, and seven main files still have an "Active" literal.
+- S152 fails: `labNamePresets` is not defined, and `LabEditor.kt` still has its own list.
+- S153 fails: `nextLabPanelTest` is not defined, and `LabEditor.kt` has no `rememberSaveable` and still uses `mutableStateOf<List<LabCodexItem>>`.
+
+**Unit tests, per oracle**
+- **Q251:** `MEDICATION_STATUS_ACTIVE == "Active"`. `medicationStatuses` is exactly Active, Completed, Discontinued, Patient non-compliant, in that order. It also checks that the first and last entries are the two constants.
+- **Q252:** `labNamePresets` is exactly the four names in the spec order.
+- **Q253:** `nextLabPanelTest` has six tests:
+  - The queue order is kept across two advances.
+  - A deleted id is skipped.
+  - When all ids are gone, `item` is null and the rest is empty.
+  - The last id leaves an empty rest.
+  - Empty input returns null.
+  - A renamed test is still found by its id.
+- **Q250:** covered only by S150.
+- **Q254:** covered only by S153. The rotation itself has no automated test; the owner checks it on the phone.
+
+**Assumptions**
+- `medicationStatuses` and `labNamePresets` are tested as `ClinicalVocabulary.medicationStatuses` and `ClinicalVocabulary.labNamePresets`, since the spec puts `labNamePresets` in `ClinicalVocabulary`. If the core lane puts it elsewhere, the test won't compile and needs a one-line fix.
+- `LabPanelStep` fields are read as `.item` and `.remainingIds`, as the spec names them.

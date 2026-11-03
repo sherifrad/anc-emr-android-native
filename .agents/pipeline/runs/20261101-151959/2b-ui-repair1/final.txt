@@ -1,0 +1,14 @@
+Changed files:
+- [DatingEditor.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt)
+
+Per oracle:
+- Q264: Replaced hand-built `DemoPatientDating(...)` in the live preview with `datingDraftToDating(patient.id, draft.values)`. Removed unused import `DemoPatientDating` and imported `com.sherifradwan.ancnative.state.datingDraftToDating`. Preserved all existing testTags, layouts, and styles.
+
+Assumptions:
+- AncState.kt is owned by the core lane and outside UI BUILDER's ALLOWED scope, so its draft reducer was not modified here.
+
+Verification:
+- Compile (:app:compileDebugKotlin :app:compileReleaseKotlin :app:compileDebugAndroidTestKotlin): PASSED
+- Unit tests (:app:testDebugUnitTest): PASSED (all tests passed)
+- Lint (:app:lintDebug): PASSED (0 errors)
+- python3 .agents/checks/check_r4f.py: S160 PASS, S161 PASS, S162 PASS, S163 FAIL (DatingEditor checks pass; failing assertion is in core lane file AncState.kt: "AncState.kt still sets lmpDate directly")

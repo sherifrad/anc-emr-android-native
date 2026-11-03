@@ -1,0 +1,21 @@
+I have started running `./gradlew --offline :app:testDebugUnitTest` in the background and will review the test results as soon as it completes.
+I have started `./gradlew --offline :app:lintDebug` in the background and will review the output once it finishes.
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/storage/DeletableRecords.kt (new)
+- app/src/main/java/com/sherifradwan/ancnative/storage/MedicationDeleteAdapter.kt (new)
+- app/src/main/java/com/sherifradwan/ancnative/storage/LabDeleteAdapter.kt (new)
+- app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt
+- app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt
+- app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRule.kt
+- app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt
+
+What was done per D item:
+- D620: Added DeletableType (MEDICATION, LAB) in DeletableRecords.kt.
+- D621, D630: Added DeletableRecord marker, DeletableRecordAdapter, MedicationDeleteAdapter, and LabDeleteAdapter with byte-identical canonical strings, tags ("MED", "LAB"), stored receipt kinds, and single contentHash with thin delegates.
+- D622: Added DeletableRegistry backed by adapter map with all() and of(type).
+- D623: Added generic DeleteRecordCommand and RestoreRecordCommand implementing RecordUndoCommand with byte-identical fingerprints.
+- D624: Replaced 4 repository methods with single deleteRecord and restoreRecord using adapters and deleteRestoreGuardFailure; removed per-class when in ClinicalDeleteRule.
+- D651: Added source-compatible factories and typealiases so state/ui compile untouched.
+
+Assumptions: Fail closed on errors, exact same transaction/ClinicalCommandAbort rollback pattern preserved.
+Verifications: check_r6b1.py (S400-S407) PASS; compileDebugKotlin, testDebugUnitTest, and lintDebug all passed. ClinicalDeleteRestoreDbTest (androidTest): not run (requires emulator).

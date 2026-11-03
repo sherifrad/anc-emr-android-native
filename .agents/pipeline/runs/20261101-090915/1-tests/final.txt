@@ -1,0 +1,20 @@
+I wrote `LabItemEditTest.kt`. I haven't run it, because it can't compile until the core lane adds `applyLabItemEdit` and `LabItemEdit`.
+
+**Files changed:** only `app/src/test/java/com/sherifradwan/ancnative/model/codex/LabItemEditTest.kt` (new). I left `check_r4c.py` and `.agents/TEST_MANIFEST.json` as they were; neither needed a fix.
+
+**`check_r4c.py` run today:** all three checks FAIL on the current code, as the brief requires.
+- **S130:** `applyLabItemEdit` is not defined anywhere, and `updateLabCodexItem` is missing from the interface and the repository.
+- **S131:** there is no `editLabCodexBtn-` tag, and settings never calls `updateLabCodexItem`.
+- **S132:** the old "Codex" wording is still in the visible strings, for example "Laboratory Codex Directory" and "Clinic Settings, Codex & Security". The old testTags are all still present.
+
+**Unit test, per oracle:**
+- **Q220:** nine tests call the real `applyLabItemEdit`; none copies production logic.
+  - A rename updates the item and the group entries, matching case-insensitively.
+  - Groups the rename doesn't touch stay unchanged.
+  - Changing the unit or range keeps the id and position.
+  - A blank name, an unknown id, or a name used by another item returns null.
+  - Changing only the case of the item's own name is allowed.
+  - All values are trimmed, and `isCustom` becomes true.
+- **Q221–Q223:** the unit test doesn't cover the repository wrapper, the dialog or the wording. The static checks cover those. The `UNIT-r4c` manifest entry lists them under `covers`, but this test only exercises `applyLabItemEdit` (Q220).
+
+**Assumption:** a rename keeps the group order and replaces the matching `testNames` entry in place, matching the spec's "order kept".

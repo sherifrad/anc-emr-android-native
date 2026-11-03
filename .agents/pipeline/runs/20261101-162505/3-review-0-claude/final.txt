@@ -1,0 +1,42 @@
+**Round 4g review: no Hard Blockers, 2 Should-fix, 4 Nits.** I only read the files; I ran no tests and no `git diff` (no shell here). Anything that depends on the old code is marked unverified.
+
+**Should-fix**
+1. **Quote:** `if (embryoAge !in listOf(3, 5, 6)) return null` (`IntakeDatingRule.kt:71`).
+   - This is a second copy of the embryo-day rule, which already lives in `ClinicalVocabulary.embryoAges` (`ClinicalModels.kt:174`).
+   - `dueDateForMethod` already returns null for bad days (`GestationalAgeEngine.kt:37`), so the line can go.
+   - If it stays, use `ClinicalVocabulary.embryoAges`. This breaks the reuse rule and risks drifting if the list changes.
+2. **Quote:** `assertEquals("25w 6d", p.gestationalAge)` (`IntakeDatingRuleTest.kt:172`).
+   - The spec oracle said `"26w2d"`. The test changes the expected value and explains it in a comment.
+   - My count agrees with the test: 2026-02-01 to 2026-08-01 is 181 days, which is 25w 6d, so the spec number looks wrong.
+   - The orchestrator should confirm this and fix the spec, not silently accept it.
+
+**Nits**
+- **Draft save only for new patients.** `DraftMapping.kt:99-111` adds the seven keys only when `isNew`. The spec says they are saved with the patient draft. Existing-patient values are always blank, so this is safe, and restore uses `?: v.x`, so old drafts can't crash.
+- **Round-trip through `datingDraftToDating`.** The Ultrasound branch builds a `DemoPatientDating` just to read back the date it already has (`:97-104`). The spec asks for this, so it is fine.
+- **No upper bound on scan or transfer dates.** A future scan date, or 42w0d, is accepted. That follows the spec (`gaWeeks` 0..42), so it is not a bug, but it is worth a design-round note.
+- **Missing tests.** There is no test for the aliases `"IVF"` and `"US"`, for an existing patient with a blank-method dating row, or for `intakeDatingPreview` with a scan or IVF input at a fixed `asOf`.
+
+**Checks against your list**
+- **(1) LMP-only intake:** the code is equivalent to the old rule. It still gives LMP + 280, the note "Baseline from intake LMP (…)", method "LMP" and canonical-date validation. The new `ultrasoundEdd`, `transferDate` and `embryoAgeDays` stay null. The preview now goes through `intakeDatingUpdate(null, …)` and `calculateForEdd`. I could not diff against the old `PatientEditor` or view-model code, so whether the old preview accepted non-canonical dates is unverified.
+- **(2) Existing patient:** the guards are the old ones. Any non-LMP method, an existing scan EDD, transfer, embryo day or non-LMP method, and an unchanged LMP all return null (`:27-37`). The old cases are kept. No dating row is created with the patient, so new-patient IVF, scan and Clinical saves are not blocked by the `existing != null` branch.
+- **(3) Second copy of date logic:** none beyond Should-fix 1. LMP, IVF and Ultrasound dates come from `dueDateForMethod`. `eddFromScan` is defined once (`IsoDates.kt:9`). Clinical only echoes the typed canonical date, as the spec says.
+- **(4) Scan arithmetic:**
+  - `plusDays(FULL_TERM_DAYS - (w*7L + d))` is correct.
+  - I verified the test numbers by hand: 8w3d gives 2026-10-08 and 12w0d gives 2026-09-13.
+  - Weeks 43 and days 7 or below 0 are rejected.
+- **(5) Draft restore:** missing keys fall back to the current value. `oldRecordWithoutTheKeysRestoresUnchanged` covers this. The reducer handles all seven fields (`AncState.kt:1008-1014`).
+- **(6) Post-save write (`AncViewModel.kt:463-477`):** the fields pass straight through from `IntakeDating`.
+  - Clinical: `lmpDate` null.
+  - IVF: `transferDate` and `embryoAgeDays` set.
+  - Scan: `ultrasoundEdd` set.
+  - Methods are the canonical names accepted by `ClinicalVocabulary.datingMethods` (`ClinicalModels.kt:173`), even when the draft used an alias like "IVF" or "US".
+  - `notes = committedPatient?.dating?.notes ?: datingUpdate.note` keeps existing notes.
+- **(7) Tests:**
+  - No old `IntakeDatingRuleTest` case was dropped or weakened. They were only adapted to the new signature.
+  - The new tests use fixed dates and an explicit `asOf`, with no `LocalDate.now()`, and don't copy production logic.
+  - The only change to an expectation is the "25w 6d" one in Should-fix 2.
+- **(8) Dead code and scope:**
+  - `calculateForLmp` is gone (no match in main sources).
+  - `eddFromLmp` is still used by the engine's LMP branch and by `IsoDatesTest`, which is fine.
+  - In the files I read, I saw no unrequested edits.
+  - Not verified: the full file list against the allowed lists, since I had no `git diff`. `GestationalAgeEngine.kt`, `IsoDates.kt`, `AncViewModel.kt` and `PatientEditor.kt` should only show the Q270, Q274 and Q275 changes.

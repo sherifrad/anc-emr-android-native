@@ -1,0 +1,16 @@
+Files changed:
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt
+
+What was done (Q264):
+- Replaced hand-built DemoPatientDating(...) in live preview with datingDraftToDating(patient.id, draft.values).
+- Imported datingDraftToDating and removed unused DemoPatientDating import.
+- Preserved all layouts, colours, copy, behavior, and existing testTags.
+
+Assumptions:
+- AncState.kt is owned by the core lane and left untouched per ALLOWED list enforcement.
+
+Verification results:
+- ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin :app:compileDebugAndroidTestKotlin: PASS (BUILD SUCCESSFUL)
+- ./gradlew --offline :app:testDebugUnitTest (whole suite): PASS (BUILD SUCCESSFUL)
+- ./gradlew --offline :app:lintDebug: PASS (0 errors)
+- python3 .agents/checks/check_r4f.py: S160 PASS, S161 PASS, S162 PASS; S163 FAIL due to core file AncState.kt setting lmpDate directly (DatingEditor.kt assertions in S163 pass).

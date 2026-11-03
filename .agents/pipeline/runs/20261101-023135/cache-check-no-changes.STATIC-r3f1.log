@@ -1,0 +1,8 @@
+PASS S36 false vault results are reported; file kept when row delete fails
+PASS S29 hex formatting lives only in Hashing.kt
+PASS S30 user-photo decoding lives only in BoundedBitmap.kt
+PASS S31 one guarded cleanup helper, three call sites
+PASS S32 repository seam
+PASS S33 attachment errors surfaced, row deleted first
+PASS S34 attachment error banner and strings
+PASS S35 duplicate print test gone, Rh tautology gone

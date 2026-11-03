@@ -1,0 +1,27 @@
+Running `lintDebug` in the background and waiting for it to finish.
+Files changed:
+- app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/MedicationEditor.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt
+- app/src/main/java/com/sherifradwan/ancnative/ui/CodexSettingsSections.kt
+- app/src/main/res/values/strings.xml
+
+What was done per oracle:
+- Q204: Replaced Prophylaxis and non-compliant switches in single-card MedicationEditor; wired status ChoiceGroup to 4 statuses; updated list banner/button copy.
+- Q205: Added MedicationStatusBadge with theme color scheme tokens (Active teal, Completed grey, Discontinued rose, Non-compliant error).
+- Q206: MedicationCard uses MedicationStatusBadge with effectiveMedicationStatus; active medication count uses isOngoingMedication; removed old badges/status FactRow.
+- Q207: PatientPrintHtmlGenerator uses effective status badge, "Active Medications" header, and S77-compliant typeBadge variable.
+- Q208: Removed prophylaxis switch/badge from medication settings; default isProphylaxis=false; removed "Codex" user-facing wording.
+- S77/S110-S114: Re-verified S77 expression allow-list and all round 4a static constraints.
+
+Strings added: None.
+Strings deleted: is_prophylaxis, prophylaxis_badge, therapeutic_badge, non_compliant_badge, patient_non_compliant.
+
+Assumptions: Retained existing testTags; kept stored isProphylaxis data intact without UI presence.
+Verification results:
+- compileDebugKotlin, compileReleaseKotlin, compileDebugAndroidTestKotlin: PASSED
+- :app:testDebugUnitTest (whole suite): PASSED
+- :app:lintDebug: PASSED (0 errors)
+- python3 .agents/checks/check_r4a.py: PASSED (S110-S114)
+- python3 .agents/checks/check_r3o.py: PASSED (S76-S77)

@@ -1,0 +1,14 @@
+MACA pipeline 20261102-091859 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('agy', 'gemini-3.8-flash-medium'), 'ui': ('agy', 'gemini-3.8-flash-medium')} review: ['claude:claude-sonnet-5-5', 'agy:gemini-3.8-flash-medium']
+  claude    /opt/homebrew/bin/claude
+  agy       /Users/sherifgamalradwan/.local/bin/agy
+[1-tests] claude completed 320.9s changed=4 violations=0
+[1b-red] ran=104 reused=0 deferred=3 not_gated=7 failed=['UNIT-clinical-commands', 'STATIC-r5a', 'STATIC-r5b', 'STATIC-r5c', 'STATIC-r5d', 'STATIC-r6b1', 'STATIC-r6b2']
+[2a-core] agy completed 1009.6s changed=7 violations=0
+[2a-green] ran=4 reused=0 deferred=0 not_gated=110 failed=[]
+[2b-green] ran=114 reused=0 deferred=0 not_gated=0 failed=['STATIC-r5a', 'STATIC-r5b', 'STATIC-r5c', 'STATIC-r5d', 'STATIC-r6a', 'STATIC-r6b2']
+[cache-check-no-changes] ran=114 reused=0 deferred=0 not_gated=0 failed=['STATIC-r5a', 'STATIC-r5b', 'STATIC-r5c', 'STATIC-r5d', 'STATIC-r6a', 'STATIC-r6b2']
+[3-review-0-claude] claude completed 95.5s changed=0 violations=0
+[3-review-1-agy] agy completed 623.3s changed=0 violations=0
+
+UI GATE STILL RED: ['STATIC-r5a', 'STATIC-r5b', 'STATIC-r5c', 'STATIC-r5d', 'STATIC-r6a', 'STATIC-r6b2'] Metrics: /Users/sherifgamalradwan/anc-emr-android-native/.agents/pipeline/runs/20261102-091859/metrics.json 
+Tell Claude: pipeline finished.

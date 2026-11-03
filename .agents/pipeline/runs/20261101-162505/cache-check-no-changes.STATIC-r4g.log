@@ -1,0 +1,6 @@
+PASS S170 one scan due-date function
+PASS S171 new-patient draft carries the dating choice fields
+PASS S172 intake dating goes through the engine rule
+PASS S173 post-save dating write uses the rule result
+PASS S174 new fields saved and restored with the patient draft
+PASS S175 form calls the preview; LMP-only engine function gone

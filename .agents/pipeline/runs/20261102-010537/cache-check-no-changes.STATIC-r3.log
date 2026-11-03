@@ -1,0 +1,7 @@
+PASS S1a AncViewModel.kt calls intakeDatingUpdate(
+PASS S1b AncViewModel.kt has no plusDays(280)
+PASS S2a seed function has includeDemoPatients: Boolean
+PASS S2b seed body has an `if (includeDemoPatients)` guard
+PASS S2c every non-metadata insert is inside the guard
+PASS S3 VaultController.kt passes BuildConfig.DEBUG
+PASS S4 build.gradle.kts has buildConfig = true

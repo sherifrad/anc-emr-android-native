@@ -1,0 +1,28 @@
+I read the spec, `LabEditor.kt`, `EditorPage`, `LabResultFlag.kt`, `resolveLabPanel` and the chained-save path. I did not run `git diff`, any tests or lint, so the findings below come from reading the code only.
+
+**Hard Blocker**
+1. **Unit and range fields vanish while the doctor types (Q245).** `LabEditor.kt:599`: `val showFields = showEditUnitAndRange || bothEmpty`. For a custom test, both fields start empty and are shown. After the first character in `labUnit`, `unitText` is non-empty, so `bothEmpty` becomes false. `showEditUnitAndRange` is only set by the button at line 651, so both fields are replaced by the summary line. The field loses focus and the doctor cannot finish typing a unit or range. Fix: latch `showEditUnitAndRange = true` once the fields are shown, or base `bothEmpty` on the state when the draft opened.
+
+**Should-fix**
+2. **Stale values carry over between tests (Q244, `LabEditor.kt:68-77`).** `loadLabItemIntoDraft` writes result, unit and range only when the new item's value is non-empty. Tapping a second test chip, or the first panel test over a half-filled draft, keeps the previous test's result, unit and range under the new test name. The abnormal switch is also left as it was (case 4). This puts one test's result under another test's name. Clear or replace all three fields on load. Chained drafts start empty, so they are unaffected.
+3. **Abnormal choice carries over on an UNKNOWN flag (Q245).** `LabEditor.kt:75-77` and `157-162` skip the update when the flag is UNKNOWN, as the spec says. On a chip load that means "Negative" or "Non-reactive" inherits `isAbnormal=true` from the previous test. Your question 4 asks whether the abnormal choice is overwritten when the flag is UNKNOWN. It is not overwritten, which matches the spec. I suggest resetting it to false when a new test is loaded, but that is your decision.
+4. **Middle button likely clips at 130% font (Q243, `LabEditor.kt:207-213`).** Weights are 1 / 1.8 / 1 with `maxLines = 1, softWrap = false`. On a 360 dp phone the middle button gets about 148 dp. "Save and next test" at 130% font is roughly 150 dp plus 16 dp padding, so it will clip. Please check this on the emulator at 130%.
+5. **Queue state is lost on rotation (Q244, `LabEditor.kt:127-131`).** It lives in `remember`, not `rememberSaveable`. If the activity is recreated, the "Test X of Y" card and the remaining tests disappear while the doctor is mid-batch. Check whether the manifest handles `configChanges`.
+6. **Chained-draft edits can be dropped silently.** `AncState.kt:612` returns the state unchanged for `LabDraftChanged` and `LabAbnormalChanged` while `draftRecoveryPrompt` is non-null. The queue has already advanced at line 172, so the next test never loads into the draft. This is rare, but the queue state and the draft then disagree.
+7. **Duplicated title and subtitle block in `EditorPage` (`PatientEditor.kt:484-499` and `526-541`).** This breaks the "one function per rule" principle. Extract it to a small composable that both branches call. The `else` branch is byte-identical to before for other editors, which is good.
+
+**Nit**
+8. "Normal" / "High" / "Low" (`LabEditor.kt:101-103`), "Save and next test" and "Edit unit and range" are hard-coded English, not string resources. The rest of the file does the same, so this is not a regression.
+9. The extra `verticalScroll` around the bar (`PatientEditor.kt:510`) is unrequested. It is harmless and does protect against an oversized bar at large font.
+10. `selectedGroupName` stays set after a single test chip clears the queue, so the panel chip still looks selected. Tapping it then deselects without loading anything.
+11. The "Normal" pill uses `primaryContainer`, not a clinical-safe colour. This is theme-consistent and the word is always shown, so it is acceptable.
+
+**Checked, no finding**
+- **Pinned bar:** it sits outside the scrolling column, below a divider, on a `Surface`. `safeDrawing` is already applied in `AncApp.kt:101`, so the keyboard cannot cover the bar. A null `bottomBar` leaves the old layout unchanged.
+- **Panel queue:** it advances only when `draft.labId` changes, which happens only after a successful save. A failed or rejected save keeps the same `labId`, so it does not advance. Date and lab name come from `PendingChainedLab`. Re-tapping the panel chip clears the queue.
+- **Flag rule:** the UI calls `labResultFlag` at lines 74, 144 and 156. There is no regex in `ui/` and no invented threshold. `resolveLabPanel` is called at lines 415 and 444. Both helpers are defined once.
+- **Test tags:** `cancelLab`, `addAnotherLab`, `saveLab`, `labAbnormal`, `labGroupChip-`, `labPreset`, `allLabTestsChip` and the others in S142 are present. I could not diff for removals.
+- **Touch targets:** all three bar buttons use `minimumTouchTarget`. I did not check the 48 dp size of the `TextButton` "Edit unit and range" or the pill.
+- **Files outside the allowed lists:** I could not check this without git.
+
+**Verdict:** Blocker 1 must be fixed before the owner sees the lab screen. Fix 2 and 3 together in `loadLabItemIntoDraft`.

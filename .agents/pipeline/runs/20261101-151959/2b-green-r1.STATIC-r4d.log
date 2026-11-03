@@ -1,0 +1,3 @@
+PASS S140 one flag rule and one panel rule, called by the lab screen
+PASS S141 pinned action bar slot, used only by the lab screen
+PASS S142 lab screen keeps its tags, no Codex wording

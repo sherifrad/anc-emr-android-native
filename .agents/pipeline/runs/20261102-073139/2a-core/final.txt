@@ -1,0 +1,31 @@
+I am waiting for `:app:lintDebug` to finish running in the background.
+I will wait for the lint execution to complete.
+Files changed:
+- [ClinicalCommands.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt)
+- [RecordsDao.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt)
+- [ClinicalDeleteRule.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRule.kt) (new)
+- [RecordsRepository.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt)
+- [AncState.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt)
+- [AncViewModel.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt)
+
+What was done per D item:
+- D600: Added MEDICATION_DELETE, MEDICATION_RESTORE, LAB_DELETE, LAB_RESTORE to [`ClinicalRecordKind`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt#L12-L24).
+- D601-D603: Implemented [`DeleteMedicationCommand`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt#L490-L515), [`RestoreMedicationCommand`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt#L517-L542), [`DeleteLabInvestigationCommand`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt#L544-L569), [`RestoreLabInvestigationCommand`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt#L571-L596) with required validation and fingerprints.
+- D604: Added [`medicationContentHash`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt#L484-L485) and [`labContentHash`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt#L486-L487) covering all fields except revision.
+- D605-D606: Implemented pure guard [`ClinicalDeleteRule.evaluateRestore`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRule.kt#L4-L43) and repository execution branches enforcing revision increment, deletion/restoration invariants, and receipts.
+- D607: Added [`deleteMedication`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt#L286-L287), [`deleteLabInvestigation`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt#L289-L290), and [`latestClinicalReceiptForRecord`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt#L283-L284) queries to [`RecordsDao`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt).
+- D608-D609: Added deleteConfirmation, undoOffer, UndoPhase, UndoKind, DeletionKind to [`AncState`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt#L457-L495) and 10 delete/undo events to [`AncEvent`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt#L644-L661).
+- D610: Added private `pendingUndo` and `undoJob` with 8000 ms expiration in [`AncViewModel`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt), cleared on vault lock.
+- D611: Chained medication saves publish an UndoOffer(kind=SAVE_MED) with target DeleteMedicationCommand.
+- D612: Implemented reducer edge rules (guarding dirty drafts/archived patients, closing clean editor on same record, rebasing blank chained draft, blocking SubmitMedication while undo running).
+- D613: Added documented limits comments in [`RecordsRepository`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt).
+
+Assumptions:
+- In [`AncState.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt#L195-L216), mapped the 5 new SavedNotice values via companion object constants to preserve compile compatibility with read-only WorkspaceScreen.kt without touching UI files.
+
+Verification:
+- `./gradlew --offline :app:compileDebugKotlin`: passed.
+- `./gradlew --offline :app:testDebugUnitTest`: passed (all unit tests, including ClinicalCommandsTest, ClinicalDeleteRuleTest, AncDeleteUndoStateTest).
+- `./gradlew --offline :app:lintDebug`: passed.
+- `python3 .agents/checks/check_r6a.py`: passed (S300-S303).
+- Instrumented tests on emulator: not run.

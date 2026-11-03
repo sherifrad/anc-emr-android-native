@@ -1,0 +1,26 @@
+I added the four functions, but I couldn't compile or run any tests. Gradle won't start in this sandbox. The wrapper can't write its lock file under `~/.gradle`, and calling the cached Gradle 8.13 directly fails to load its native library. I didn't try to work around the sandbox.
+
+**Files changed**
+- `model/IsoDates.kt`
+- `state/AncState.kt`
+- `ui/ClinicalFormat.kt`
+- `ui/ClinicalPresets.kt`
+
+**What I added**
+- **Q120:** `formatIsoDate(date: LocalDate): String` returns `date.toString()`, which is the ISO yyyy-MM-dd text. This is the same text `DateTimeFormatter.ofPattern("yyyy-MM-dd")` produces for years 0000–9999.
+- **Q121:** `fun SaveUiError?.stringRes(): Int` in `AncState.kt`, plus the `R` import it needs. The mapping is copied from the two existing copies, and null and `STORAGE_ERROR` both give `save_storage_error`.
+- **Q122:** `internal fun formatFetalMetrics(fhr: String?, efw: String?)` returns `FHR: <fhr or -> bpm · EFW: <efw or -> g`. It sits in `ClinicalFormat.kt` next to the other `internal` helpers.
+- **Q123:** top-level `val COMMON_MEDICATION_FREQUENCIES` in `ClinicalPresets.kt`, with the five values in the spec's order.
+
+**Assumptions**
+- **Q120:** I used `toString()` rather than a formatter, so there is no second copy of the pattern.
+- **Q123:** I used a top-level val, which matches the spec's literal form. The file also has an `object ClinicalPresets`, so this is the other option you allowed.
+- **Q122:** An empty string shows as empty rather than `-`, the same as the existing inline code.
+
+**Checks**
+- **Compile, unit tests, full suite:** not run, for the Gradle reason above.
+- **`check_r3z.py`:** S101 and S102 both fail, as expected before the UI lane switches the callers and deletes the old copies. I didn't check the "defined exactly once" items separately.
+- **Still failing in S101:** `GenericEditorErrorCard`, the print generator's `ofPattern`, `patientEditorErrorResource`, `VisitField`, `ClinicalEditorErrorCard`, the "FHR: " literals in `ProfileScreen.kt` and `WorkspaceScreen.kt`, and "Three times daily" in `MedicationEditor.kt` and `CodexSettingsSections.kt`.
+- **Still failing in S102:** the biometric gate and the two unused draft-policy strings (Q125).
+
+The orchestrator needs to run the compile and tests where Gradle works.

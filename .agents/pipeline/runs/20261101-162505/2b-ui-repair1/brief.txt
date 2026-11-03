@@ -1,0 +1,22 @@
+# Shared brief prefix (identical for every role; stable text first, role part last)
+You are one lane in a MACA (multi-agent collaborative audit) fleet, ROUND 4g. An orchestrator planned the work and will verify it independently. Rules:
+1. Work only from the written spec: .agents/pipeline/SPEC_FIX_R4.md (section "Round 4g": oracles Q270-Q275, S170-S175) and .agents/pipeline/OWNER_DECISIONS.md. Earlier oracles still hold. If the spec is ambiguous choose the SAFE behaviour (never overwrite the doctor's text, never invent a clinical finding) and write the assumption in your final message.
+2. Touch ONLY the files in your ALLOWED list. Everything else is read-only. A change outside the list is reverted automatically and counted against you.
+3. Do not run git commit, git push, git checkout, git stash or any command that deletes files. Do not edit build files, gradle properties, or any test file you do not own.
+4. NEVER write dead code, extra XML/files or comments only to satisfy a static check or a test; if a check looks wrong, implement the spec and say so. REUSE PRINCIPLE: one function per rule; call the existing helper, never write a second copy. Simplest thing that meets the spec. No new libraries, no speculative abstractions, no refactors outside scope. Do not change any clinical threshold, wording or colour not named in the spec. Keep every existing testTag.
+5. Do not read .agents/maca-run-*/, .agents/fleet-runs/, .agents/backup-*, .agents/pipeline/runs/ or .agents/pipeline/SCORECARD.md.
+6. Final message (plain text, <= 25 lines): files you changed, what you did per oracle (Q number), assumptions, anything you could not do or verify. Never claim a test passed unless you ran it and saw it pass; say "not run" otherwise.
+Project facts: Kotlin, Jetpack Compose, JUnit4 unit tests under app/src/test. Unit tests: ./gradlew --offline :app:testDebugUnitTest --tests '<Class>'.
+--- ROLE-SPECIFIC PART BELOW ---
+
+ROLE: UI BUILDER for ROUND 4g. Implement Q275. ALLOWED files: app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt and app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt.
+No visible change. In PatientEditor.kt replace the hand-written estimated-due-date and gestational-age lines of the LMP preview (eddFromLmp, calculateForLmp, parseIsoDateOrNull on the LMP) with a call to `intakeDatingPreview(draft.values)` (core lane added it in state/IntakeDatingRule.kt; import it). The preview card, texts ("Estimated Due Date: ...", "Current GA: ...") and tags stay exactly as they are, shown only when the preview is not null. Remove only imports that become unused. Then delete `GestationalAgeEngine.calculateForLmp` from the engine once nothing in main or test sources calls it (grep app/src first; if a test still calls it, leave it and report). Keep every testTag. Run ./gradlew --offline :app:compileDebugKotlin :app:compileReleaseKotlin :app:compileDebugAndroidTestKotlin, the whole unit suite, ./gradlew --offline :app:lintDebug (0 errors), python3 .agents/checks/check_r4g.py. Report real results.
+
+
+ALLOWED (machine-enforced): app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt, app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt
+
+REPAIR ROUND: these checks still fail.
+PASS S51 LocalDate.parse( only in IsoDates.kt and DemoFixtures.kt
+PASS S52 no hard-coded 280 for gestation outside IsoDates.kt
+PASS S53 IsoDates.kt defines the four Q69 names
+FAIL S54 editor and dating rule use the shared due-date rule: ui/PatientEditor.kt references neither eddFromLmp( nor FULL_TERM_DAYS; state/IntakeDatingRule.kt references neither eddFromLmp( nor FULL_TERM_DAYS

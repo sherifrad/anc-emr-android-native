@@ -1,0 +1,33 @@
+Files changed: I created `app/src/test/java/com/sherifradwan/ancnative/model/DueDatesByMethodTest.kt` and `.../state/DatingDraftRuleTest.kt`. I did not change `check_r4f.py` or `TEST_MANIFEST.json`. I read both and found no bug in them. The manifest already has the `STATIC-r4f` and `UNIT-r4f` entries.
+
+**Check results (`python3 .agents/checks/check_r4f.py`):**
+- S160, S161, S162 and S163 all FAIL on today's code, as required. Each failure names the missing production piece.
+
+**Unit tests:** not run. They can't compile until the core lane adds `dueDateForMethod`, `dueDatesByMethod`, and the three functions in `state/DatingDraftRule.kt`.
+
+**What each test file covers, by oracle:**
+- **Q260/Q261, `DueDatesByMethodTest` (10 tests):**
+  - Each method is filled from its own inputs, and a missing input gives null.
+  - The IVF dates are 2026-11-19, 17 and 16 for embryo day 3, 5 and 6 from a 2026-03-01 transfer. No embryo day defaults to day 5, and an invalid day gives null.
+  - Method names are case-insensitive.
+  - A blank or "Clinical" method falls back to the scan date, then LMP.
+  - The agreed date wins in `calculateEstimatedDueDate`.
+  - GA from `calculate` equals GA from the same due date, with `asOf` fixed at 2026-08-01.
+- **Q262/Q263, `DatingDraftRuleTest` (13 tests):**
+  - `datingDraftToDating` turns blanks into null and parses the embryo day.
+  - An LMP edit of 2026-02-01 to 2026-02-08 gives agreed 2026-11-15 and a GA change of exactly 7 days, with the agreed date blank or following.
+  - Embryo day 3, 5 and 6 moves agreed 2026-11-19, 17 and 16, and GA by the same 2 and 1 days.
+  - Transfer-date, scan-date and method-switch edits re-point a following agreed date.
+  - A manual agreed date of 2026-12-01 survives LMP and IVF edits, and `isManualAgreedEdd` is true for it and false for a following one.
+  - Clearing the agreed date makes the next LMP edit follow again.
+  - Typing an agreed date only sets that field.
+  - A half-typed LMP "2026-02-" gives agreed "" without crashing.
+  - A notes edit never changes agreed.
+- **Q264:** covered only by S163. There is no unit test for the reducer or the editor.
+
+**Assumptions:**
+- The spec says "GA grows by exactly 7 days" for an LMP edit to a later date. A later LMP lowers GA, so I assert that GA before minus GA after equals 7.
+- The method-switch case sets `transferDate` and `embryoAgeDays` on the draft first, so the IVF date exists.
+- The test builds `DemoPatientDating` only through a local helper with its own named arguments. It does not copy any production rule.
+
+The shell blocked my first heredoc attempt, so I wrote both files with the Write tool.

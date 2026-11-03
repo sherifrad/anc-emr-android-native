@@ -1,0 +1,6 @@
+FAIL S170 one scan due-date function: eddFromScan not defined exactly once in IsoDates.kt
+FAIL S171 new-patient draft carries the dating choice fields: PatientDraftValues lacks datingMethod; PatientDraftValues lacks transferDate; PatientDraftValues lacks embryoAgeDays; PatientDraftValues lacks agreedEdd; PatientDraftValues lacks scanDate; PatientDraftValues lacks scanGaWeeks
+FAIL S172 intake dating goes through the engine rule: intakeDatingUpdate does not take PatientDraftValues; does not use dueDateForMethod; does not use eddFromScan; still calls eddFromLmp(; intakeDatingPreview not defined once in IntakeDatingRule.kt
+FAIL S173 post-save dating write uses the rule result: hard-coded LMP method; passes only the LMP to the rule
+FAIL S174 new fields saved and restored with the patient draft: not saved and restored: scanDate, scanGaWeeks, scanGaDays
+FAIL S175 form calls the preview; LMP-only engine function gone: PatientEditor.kt does not call intakeDatingPreview; PatientEditor.kt still calls eddFromLmp(; PatientEditor.kt still calls calculateForLmp(; calculateForLmp still exists in main sources

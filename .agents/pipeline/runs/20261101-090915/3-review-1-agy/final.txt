@@ -1,0 +1,23 @@
+MACA Round 4c — Independent Review Report
+
+Review of Round 4c changes against SPEC_FIX_R4.md (Q220-Q223, S130-S132) and HEAD:
+
+CHECKLIST VERIFICATION:
+1. Test duplicate/loss: PASSED. `applyLabItemEdit` replaces by id at the original index; groups map old test names (case-insensitive) to trimmed new name without dropping or duplicating entries.
+2. Rule reuse: PASSED. `ClinicalCodexRepository.updateLabCodexItem` directly delegates to `applyLabItemEdit`.
+3. Single dialog & add path: PASSED. Single `AddLabTestDialog` reused with `initial: LabCodexItem? = null`. Add path preserved and now handles duplicate failure safely.
+4. Identifiers, testTags & Codex wording: PASSED. All existing tags preserved, `editLabCodexBtn-<id>` added. Zero visible "Codex" strings in settings, dialogs, editors, or strings.xml.
+5. Refused updates: PASSED. Blank name and duplicate name set error messages and keep dialog open (`onSave` returns false or is not invoked).
+6. Touch targets & theme colours: PASSED. `editLabCodexBtn-<id>` is 48 dp, uses `Icons.Default.Edit`, content description "Edit test", and theme tokens.
+7. Scope & allowed files: PASSED. Changes restricted to allowed files for Round 4c.
+
+FINDINGS:
+- Nit: `app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt:216`:
+  `val labItemCount = codexLabItems.size`
+  Unrequested local val extraction outside the banner wording change (benign).
+
+VERDICT:
+- Hard Blockers: 0
+- Should-fix: 0
+- Nits: 1 (quoted above)
+STATIC-r4c passes (S130, S131, S132). Round 4c implementation adheres to specifications.

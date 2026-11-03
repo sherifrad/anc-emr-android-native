@@ -1,0 +1,4 @@
+PASS S72 one IVF rule: IsoDates helpers, embryoAges [3,5,6], engine/commands through vocabulary
+PASS S73 model/Redating.kt is the one redating rule, pure Kotlin
+PASS S74 dating editor offers the Day 6 chip, strings defined
+PASS S75 scan editor shows the suggestion-only redating hint inside the calculated-GA card

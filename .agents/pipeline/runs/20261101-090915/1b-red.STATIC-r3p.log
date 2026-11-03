@@ -1,0 +1,2 @@
+PASS S78 section titles keep their single block, capital en-sub duplicates and CSS rule gone
+PASS S79 dialog title allows two lines, report testTags kept
