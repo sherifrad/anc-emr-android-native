@@ -190,7 +190,7 @@ data class DemoMedicationRecord(
 ) : DeletableRecord
 
 data class DemoAttachment(
-    val id: String,
+    override val id: String,
     val patientId: String,
     val fileName: String,
     val filePath: String,
@@ -205,7 +205,7 @@ data class DemoAttachment(
     val cloudUrl: String? = null,
     val cloudSyncedAt: String? = null,
     val revision: Long = 1,
-)
+) : DeletableRecord
 
 object ClinicalVocabulary {
     val datingMethods = setOf("LMP", "Ultrasound", "IVF_TRANSFER", "Clinical")

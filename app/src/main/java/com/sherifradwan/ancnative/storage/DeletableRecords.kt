@@ -15,6 +15,7 @@ enum class DeletableType {
     ULTRASOUND,
     VISIT,
     PREVIOUS_PREGNANCY,
+    ATTACHMENT,
 }
 
 interface DeletableRecord {
