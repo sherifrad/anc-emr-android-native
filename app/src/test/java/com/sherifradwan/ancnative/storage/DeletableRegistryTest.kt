@@ -2,6 +2,7 @@ package com.sherifradwan.ancnative.storage
 
 import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoMedicationRecord
+import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import java.security.MessageDigest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -28,11 +29,12 @@ internal class DeleteFixture(
     val recordOf: (revision: Long) -> DeletableRecord,
     val fieldVariants: List<DeletableRecord>,
     val contentHash: (DeletableRecord) -> String,
+    val defaultPatientRevision: Long = 4,
 ) {
     fun delete(
         op: String = DeleteFixtures.DELETE_OP,
         patientId: String = "patient-1",
-        patientRevision: Long = 4,
+        patientRevision: Long = defaultPatientRevision,
         recordId: String = this.recordId,
         recordRevision: Long = 3,
         hash: String = goldenHash,
@@ -86,6 +88,28 @@ internal object DeleteFixtures {
         id = "lab-1", patientId = "patient-1", date = "2026-02-10", testCategory = "Hematology", testName = "Hemoglobin",
         result = "11.2", unit = "g/dL", referenceRange = "11-14", isAbnormal = false, notes = "Fasting",
         labName = "Central Lab", revision = revision,
+    )
+
+    fun us(revision: Long = 3) = DemoUltrasoundScan(
+        id = "us-1",
+        patientId = "patient-1",
+        date = "2026-03-20",
+        gestationalAgeWeeks = 20,
+        gestationalAgeDays = 3,
+        fetalNumber = "Single",
+        presentation = "Cephalic",
+        placentalSite = "Posterior",
+        amnioticFluid = "Normal",
+        fetalHeartRate = "142",
+        biometryBpd = "48",
+        biometryHc = "175",
+        biometryAc = "150",
+        biometryFl = "32",
+        estimatedFetalWeight = "350g",
+        impression = "Normal anatomy",
+        linkedVisitId = "v-1",
+        imageUris = emptyList(),
+        revision = revision,
     )
 
     val medication = DeleteFixture(
@@ -154,7 +178,47 @@ internal object DeleteFixtures {
         contentHash = { labContentHash(it as DemoLabInvestigation) },
     )
 
-    val all = listOf(medication, laboratory)
+    val ultrasound = DeleteFixture(
+        type = DeletableType.ULTRASOUND,
+        tag = "US",
+        deleteKind = ClinicalRecordKind.ULTRASOUND_DELETE,
+        restoreKind = ClinicalRecordKind.ULTRASOUND_RESTORE,
+        updateKind = ClinicalRecordKind.ULTRASOUND_UPDATE,
+        otherDeleteKind = ClinicalRecordKind.MEDICATION_DELETE,
+        recordId = "us-1",
+        otherRecordId = "us-2",
+        goldenCanonical = "patient-1|us-1|2026-03-20|20|3|Single|Cephalic|Posterior|Normal|142|48|175|150|32|350g|Normal anatomy|v-1|null",
+        goldenHash = "47f569aa8d8d2276d8fbd4b530e52de28195e3c853c75919bab31fb6cd0d6967",
+        goldenDeleteFingerprint = "c2fb13af17866841797b8883207daa43f8264f9d42b2ca59b4f5aa8ca6a0fb33",
+        goldenRestoreFingerprint = "824630e871a347d62666d205f8e2816894026c605d8d61f84d169bdf09a27f81",
+        recordOf = { us(it) },
+        fieldVariants = us().let { base ->
+            listOf(
+                base.copy(id = "us-2"),
+                base.copy(patientId = "patient-2"),
+                base.copy(date = "2026-03-21"),
+                base.copy(gestationalAgeWeeks = 21),
+                base.copy(gestationalAgeDays = 4),
+                base.copy(fetalNumber = "Twins"),
+                base.copy(presentation = "Breech"),
+                base.copy(placentalSite = "Anterior"),
+                base.copy(amnioticFluid = "Oligohydramnios"),
+                base.copy(fetalHeartRate = "150"),
+                base.copy(biometryBpd = "50"),
+                base.copy(biometryHc = "180"),
+                base.copy(biometryAc = "160"),
+                base.copy(biometryFl = "35"),
+                base.copy(estimatedFetalWeight = "400g"),
+                base.copy(impression = "Variant impression"),
+                base.copy(linkedVisitId = null),
+                base.copy(imageUris = listOf("vault:photo1.jpg")),
+            )
+        },
+        contentHash = { ultrasoundContentHash(it as DemoUltrasoundScan) },
+        defaultPatientRevision = 5,
+    )
+
+    val all = listOf(medication, laboratory, ultrasound)
 }
 
 class DeletableRegistryTest {
@@ -194,10 +258,13 @@ class DeletableRegistryTest {
         }
         assertEquals("MED", adapterOf(DeleteFixtures.medication).fingerprintTag)
         assertEquals("LAB", adapterOf(DeleteFixtures.laboratory).fingerprintTag)
+        assertEquals("US", adapterOf(DeleteFixtures.ultrasound).fingerprintTag)
         assertEquals("MEDICATION_DELETE", adapterOf(DeleteFixtures.medication).deleteReceiptKind)
         assertEquals("MEDICATION_RESTORE", adapterOf(DeleteFixtures.medication).restoreReceiptKind)
         assertEquals("LAB_DELETE", adapterOf(DeleteFixtures.laboratory).deleteReceiptKind)
         assertEquals("LAB_RESTORE", adapterOf(DeleteFixtures.laboratory).restoreReceiptKind)
+        assertEquals("ULTRASOUND_DELETE", adapterOf(DeleteFixtures.ultrasound).deleteReceiptKind)
+        assertEquals("ULTRASOUND_RESTORE", adapterOf(DeleteFixtures.ultrasound).restoreReceiptKind)
     }
 
     @Test
@@ -299,8 +366,12 @@ class DeletableRegistryTest {
     fun labelOfARecordOfAnotherTypeIsNullInsteadOfThrowing() {
         val med = DeleteFixtures.med()
         val lab = DeleteFixtures.lab()
+        val us = DeleteFixtures.us()
         assertTrue(DeletableRegistry.labelOrNull(DeletableType.MEDICATION, med) != null)
         assertEquals(null, DeletableRegistry.labelOrNull(DeletableType.LAB, med))
         assertEquals(null, DeletableRegistry.labelOrNull(DeletableType.MEDICATION, lab))
+        assertEquals(null, DeletableRegistry.labelOrNull(DeletableType.ULTRASOUND, med))
+        assertEquals(null, DeletableRegistry.labelOrNull(DeletableType.MEDICATION, us))
+        assertTrue(DeletableRegistry.labelOrNull(DeletableType.ULTRASOUND, us) != null)
     }
 }

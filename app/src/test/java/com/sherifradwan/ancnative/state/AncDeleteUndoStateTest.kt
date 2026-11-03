@@ -3,6 +3,7 @@ package com.sherifradwan.ancnative.state
 import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoMedicationRecord
 import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.storage.ClinicalRecordKind
 import com.sherifradwan.ancnative.storage.DeletableRegistry
 import com.sherifradwan.ancnative.storage.DeletableType
@@ -55,6 +56,18 @@ class AncDeleteUndoStateTest {
             rebasedPatientRevision = 7L,
             label = "Hb r1",
         ),
+        Kind(
+            type = DeletableType.ULTRASOUND,
+            startEditor = { s, id, newId, session -> reduce(s, AncEvent.StartUltrasoundEditor("p1", id, newId, session)) },
+            makeDirty = { reduce(it, AncEvent.UltrasoundDraftChanged(UltrasoundDraftField.IMPRESSION, "Changed")) },
+            openRecordId = { it.ultrasoundDraft?.scanId },
+            isEditorRoute = { it.route is AncRoute.UltrasoundEditor },
+            draftBasePatientRevision = { it.ultrasoundDraft?.basePatientRevision },
+            draftValues = { it.ultrasoundDraft?.values },
+            submit = AncEvent.SubmitUltrasound,
+            rebasedPatientRevision = 7L,
+            label = "2026-01-03",
+        ),
     )
 
     private fun med(id: String) = DemoMedicationRecord(
@@ -68,12 +81,20 @@ class AncDeleteUndoStateTest {
         result = "11", unit = "g/dL", referenceRange = null, isAbnormal = false, notes = null,
     )
 
-    // Medication and lab deliberately share the record ids "r1" and "r2".
+    private fun us(id: String) = DemoUltrasoundScan(
+        id = id, patientId = "p1", date = "2026-01-03", gestationalAgeWeeks = 20, gestationalAgeDays = 3,
+        fetalNumber = "Single", presentation = "Cephalic", placentalSite = "Posterior", amnioticFluid = "Normal",
+        fetalHeartRate = "142", biometryBpd = "48", biometryHc = "175", biometryAc = "150", biometryFl = "32",
+        estimatedFetalWeight = "350g", impression = null,
+    )
+
+    // Medication, lab and ultrasound deliberately share the record ids "r1" and "r2".
     private fun patient(status: String = "active", revision: Long = 5) = DemoPatient(
         id = "p1", caseId = "P1", displayName = "Patient One", dateOfBirth = "1995-01-01",
         phone = "01000000000", visits = emptyList(), status = status,
         medications = listOf(med("r1"), med("r2")),
         labInvestigations = listOf(lab("r1"), lab("r2")),
+        ultrasoundScans = listOf(us("r1"), us("r2")),
         revision = revision,
     )
 
@@ -476,6 +497,7 @@ class AncDeleteUndoStateTest {
             val gone = patient().copy(
                 medications = patient().medications.filterNot { it.id == "r1" },
                 labInvestigations = patient().labInvestigations.filterNot { it.id == "r1" },
+                ultrasoundScans = patient().ultrasoundScans.filterNot { it.id == "r1" },
                 revision = 6,
             )
             val next = reduce(asked, AncEvent.UndoCommitted("none", listOf(gone)))

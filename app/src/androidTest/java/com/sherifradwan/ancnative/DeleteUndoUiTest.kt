@@ -20,6 +20,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sherifradwan.ancnative.model.DemoFixtures
 import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoMedicationRecord
+import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
 import com.sherifradwan.ancnative.model.codex.ClinicalCodexRepository
 import com.sherifradwan.ancnative.state.AncEvent
@@ -75,6 +76,7 @@ class DeleteUndoUiTest {
 
     private val med = Kind(DeletableType.MEDICATION, WorkspaceSection.MEDICATIONS, "medication-", "ui-med-1")
     private val lab = Kind(DeletableType.LAB, WorkspaceSection.LABORATORY, "lab-", "ui-lab-1")
+    private val us = Kind(DeletableType.ULTRASOUND, WorkspaceSection.ULTRASOUND, "ultrasound-", "ui-us-1")
 
     private fun medication(patientId: String, n: Int) = DemoMedicationRecord(
         id = "ui-med-$n", patientId = patientId, name = "UiDrug $n", dosage = "${n}00 mg", route = "Oral",
@@ -87,15 +89,26 @@ class DeleteUndoUiTest {
         result = "1$n", unit = "g/dL", referenceRange = null, isAbnormal = false, notes = null, revision = 1,
     )
 
+    private fun ultrasound(patientId: String, n: Int) = DemoUltrasoundScan(
+        id = "ui-us-$n", patientId = patientId, date = "2026-03-0$n", gestationalAgeWeeks = 20,
+        gestationalAgeDays = n, fetalNumber = "Singleton", presentation = "Cephalic",
+        placentalSite = "Posterior", amnioticFluid = "Normal", fetalHeartRate = "140",
+        biometryBpd = null, biometryHc = null, biometryAc = null, biometryFl = null,
+        estimatedFetalWeight = null, impression = "Scan $n", linkedVisitId = null,
+        imageUris = emptyList(), revision = 1,
+    )
+
     private val base = DemoFixtures.patients.first()
     private val patientA = base.copy(
         medications = listOf(medication(base.id, 1), medication(base.id, 2)),
         labInvestigations = listOf(labResult(base.id, 1), labResult(base.id, 2)),
+        ultrasoundScans = listOf(ultrasound(base.id, 1), ultrasound(base.id, 2)),
         status = "active",
     )
     private val patientB = DemoFixtures.patients[1].copy(
         medications = listOf(medication(DemoFixtures.patients[1].id, 1)),
         labInvestigations = listOf(labResult(DemoFixtures.patients[1].id, 1)),
+        ultrasoundScans = listOf(ultrasound(DemoFixtures.patients[1].id, 1)),
     )
 
     /** In-memory stand-in for the vault: applies a delete/restore command to `state` and returns the receipt. */
@@ -112,10 +125,12 @@ class DeleteUndoUiTest {
             is DeleteRecordCommand -> when (undo.type) {
                 DeletableType.MEDICATION -> patient.copy(medications = patient.medications.filterNot { it.id == undo.recordId })
                 DeletableType.LAB -> patient.copy(labInvestigations = patient.labInvestigations.filterNot { it.id == undo.recordId })
+                DeletableType.ULTRASOUND -> patient.copy(ultrasoundScans = patient.ultrasoundScans.filterNot { it.id == undo.recordId })
             }
             is RestoreRecordCommand -> when (val record = undo.record) {
                 is DemoMedicationRecord -> patient.copy(medications = patient.medications + record)
                 is DemoLabInvestigation -> patient.copy(labInvestigations = patient.labInvestigations + record)
+                is DemoUltrasoundScan -> patient.copy(ultrasoundScans = patient.ultrasoundScans + record)
                 else -> error("unexpected record ${record::class}")
             }
         }.copy(revision = patient.revision + 1)
@@ -265,6 +280,18 @@ class DeleteUndoUiTest {
 
     @Test
     fun lab_barDisappearsAfterAboutEightSeconds() = barDisappearsAfterAboutEightSeconds(lab)
+
+    @Test
+    fun ultrasound_deleteConfirmRemovesCardAndShowsUndoBar() = deleteConfirmsRemovesCardAndShowsUndoBar(us)
+
+    @Test
+    fun ultrasound_cancelKeepsTheCard() = cancelKeepsTheCard(us)
+
+    @Test
+    fun ultrasound_undoRestoresTheCard() = undoRestoresTheCard(us)
+
+    @Test
+    fun ultrasound_barDisappearsAfterAboutEightSeconds() = barDisappearsAfterAboutEightSeconds(us)
 
     @Test
     fun undoButtonIsDisabledWhileADeleteRuns() {

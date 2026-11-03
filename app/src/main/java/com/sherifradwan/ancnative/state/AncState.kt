@@ -228,6 +228,9 @@ enum class SavedNotice {
     LAB_DELETED,
     LAB_RESTORED,
     LAB_SAVE_UNDONE,
+    ULTRASOUND_DELETED,
+    ULTRASOUND_RESTORED,
+    ULTRASOUND_SAVE_UNDONE,
 }
 fun SavedNotice?.stringRes(): Int = when (this) {
     SavedNotice.PATIENT -> R.string.patient_saved
@@ -246,6 +249,9 @@ fun SavedNotice?.stringRes(): Int = when (this) {
     SavedNotice.LAB_DELETED -> R.string.lab_deleted
     SavedNotice.LAB_RESTORED -> R.string.lab_restored
     SavedNotice.LAB_SAVE_UNDONE -> R.string.lab_save_undone
+    SavedNotice.ULTRASOUND_DELETED -> R.string.ultrasound_deleted
+    SavedNotice.ULTRASOUND_RESTORED -> R.string.ultrasound_restored
+    SavedNotice.ULTRASOUND_SAVE_UNDONE -> R.string.ultrasound_save_undone
     SavedNotice.VISIT, null -> R.string.visit_saved
 }
 enum class PatientEditorKind { PROFILE, HISTORIES, PREGNANCY, STATUS }
@@ -1265,6 +1271,7 @@ object AncReducer {
 
     private fun startUltrasoundEditor(state: AncState, event: AncEvent.StartUltrasoundEditor): AncState {
         if (state.savePhase.blocksEditing() || state.hasDirtyDraft) return state
+        if (event.scanId != null && state.undoRunningFor(event.scanId)) return state
         val patient = state.patient(event.patientId)?.takeIf { it.status != "archived" } ?: return state
         val scan = event.scanId?.let { id -> patient.ultrasoundScans.firstOrNull { it.id == id } }
         if (event.scanId != null && scan == null) return state

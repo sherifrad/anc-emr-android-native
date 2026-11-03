@@ -51,6 +51,7 @@ import com.sherifradwan.ancnative.storage.DeletableType
 internal fun DeletableType.labelResource(): Int = when (this) {
     DeletableType.MEDICATION -> R.string.deletable_type_medication
     DeletableType.LAB -> R.string.deletable_type_lab
+    DeletableType.ULTRASOUND -> R.string.deletable_type_ultrasound
 }
 
 /** " (patient Name)", or nothing when the name is blank: the UI never shows "(patient )". */

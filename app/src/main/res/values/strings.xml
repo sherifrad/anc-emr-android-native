@@ -404,6 +404,7 @@
     <string name="expand_all">Expand all</string>
     <string name="deletable_type_medication">medication</string>
     <string name="deletable_type_lab">lab result</string>
+    <string name="deletable_type_ultrasound">ultrasound scan</string>
     <string name="delete">Delete</string>
     <string name="undo">Undo</string>
     <string name="delete_record_description">Delete %1$s: %2$s</string>
@@ -426,6 +427,9 @@
     <string name="lab_deleted">Laboratory investigation deleted.</string>
     <string name="lab_restored">Laboratory investigation restored.</string>
     <string name="lab_save_undone">Laboratory investigation save undone.</string>
+    <string name="ultrasound_deleted">Ultrasound scan deleted.</string>
+    <string name="ultrasound_restored">Ultrasound scan restored.</string>
+    <string name="ultrasound_save_undone">Ultrasound scan save undone.</string>
     <string name="show_all_count">Show all %1$d</string>
     <string name="show_fewer">Show fewer</string>
     <string name="tap_to_add">Tap to add</string>

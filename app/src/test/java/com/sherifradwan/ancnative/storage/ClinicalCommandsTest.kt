@@ -610,7 +610,7 @@ class ClinicalCommandsTest {
                 listOf(
                     cmd.copy(operationUuid = UUID.randomUUID().toString()),
                     cmd.copy(patientId = "patient-2"),
-                    cmd.copy(expectedPatientRevision = 5),
+                    cmd.copy(expectedPatientRevision = if (cmd.expectedPatientRevision == 5L) 6L else 5L),
                     cmd.copy(recordId = f.otherRecordId),
                     cmd.copy(expectedRecordRevision = 4),
                     cmd.copy(deletedContentHash = "b".repeat(64)),

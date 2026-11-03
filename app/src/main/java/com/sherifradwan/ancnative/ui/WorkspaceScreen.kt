@@ -595,6 +595,7 @@ private fun LazyListScope.workspaceContentItems(
                                         )
                                     },
                                     onViewPhotos = onViewPhotos,
+                                    onDelete = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.ULTRASOUND, scan.id)) },
                                     linkIntegrityWarning = event.linkIntegrityWarning,
                                 )
                             }
@@ -716,6 +717,7 @@ private fun LazyListScope.workspaceContentItems(
                         )
                     },
                     onViewPhotos = onViewPhotos,
+                    onDelete = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.ULTRASOUND, scan.id)) },
                 )
             }
         }
@@ -1155,6 +1157,7 @@ private fun UltrasoundCard(
     onStartVisit: (String, String?) -> Unit,
     onEdit: () -> Unit,
     onViewPhotos: (DemoUltrasoundScan, Int) -> Unit = { _, _ -> },
+    onDelete: () -> Unit = {},
     linkIntegrityWarning: String? = null,
 ) {
     Card(
@@ -1277,6 +1280,7 @@ private fun UltrasoundCard(
                     contentDescription = stringResource(R.string.edit_ultrasound),
                     tag = "editUltrasound-${scan.id}",
                     onClick = onEdit,
+                    trailing = { DeleteIconButton(DeletableType.ULTRASOUND, scan, onDelete) },
                 )
             }
         }

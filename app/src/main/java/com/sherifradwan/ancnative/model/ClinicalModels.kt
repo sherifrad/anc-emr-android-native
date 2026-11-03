@@ -136,8 +136,8 @@ data class DemoPatientDating(
 }
 
 data class DemoUltrasoundScan(
-    val id: String,
-    val patientId: String,
+    override val id: String,
+    override val patientId: String,
     val date: String,
     val gestationalAgeWeeks: Int?,
     val gestationalAgeDays: Int?,
@@ -154,8 +154,8 @@ data class DemoUltrasoundScan(
     val impression: String?,
     val linkedVisitId: String? = null,
     val imageUris: List<String> = emptyList(),
-    val revision: Long = 1,
-)
+    override val revision: Long = 1,
+) : DeletableRecord
 
 data class DemoLabInvestigation(
     override val id: String,

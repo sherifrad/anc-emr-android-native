@@ -3,12 +3,14 @@ package com.sherifradwan.ancnative.storage
 import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoMedicationRecord
 import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.state.SavedNotice
 import com.sherifradwan.ancnative.state.WorkspaceSection
 
 enum class DeletableType {
     MEDICATION,
     LAB,
+    ULTRASOUND,
 }
 
 interface DeletableRecord {
@@ -38,6 +40,7 @@ object DeletableRegistry {
     private val adapters: Map<DeletableType, DeletableRecordAdapter<*>> = listOf(
         MedicationDeleteAdapter,
         LabDeleteAdapter,
+        UltrasoundDeleteAdapter,
     ).associateBy { it.type }
 
     fun all(): List<DeletableRecordAdapter<*>> = adapters.values.toList()
@@ -60,6 +63,7 @@ object DeletableRegistry {
     fun adapterFor(record: DeletableRecord): DeletableRecordAdapter<DeletableRecord> = when (record) {
         is DemoMedicationRecord -> of(DeletableType.MEDICATION)
         is DemoLabInvestigation -> of(DeletableType.LAB)
+        is DemoUltrasoundScan -> of(DeletableType.ULTRASOUND)
         else -> throw IllegalArgumentException("Unknown record kind: ${record::class}")
     }
 }
@@ -70,3 +74,5 @@ fun contentHash(record: DeletableRecord): String =
 fun medicationContentHash(record: DemoMedicationRecord): String = contentHash(record)
 
 fun labContentHash(record: DemoLabInvestigation): String = contentHash(record)
+
+fun ultrasoundContentHash(record: DemoUltrasoundScan): String = contentHash(record)

@@ -6,6 +6,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.sherifradwan.ancnative.model.DemoFixtures
 import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoMedicationRecord
+import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import java.security.SecureRandom
 import java.util.UUID
 import kotlinx.coroutines.runBlocking
@@ -30,7 +31,7 @@ class ClinicalDeleteRestoreDbTest(private val kindName: String) {
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun kinds(): List<String> = listOf("medication", "lab")
+        fun kinds(): List<String> = listOf("medication", "lab", "ultrasound")
     }
 
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
@@ -181,8 +182,92 @@ class ClinicalDeleteRestoreDbTest(private val kindName: String) {
         override val restoreKind = ClinicalRecordKind.LAB_RESTORE
     }
 
-    private val kind: Kind get() = if (kindName == "medication") MedKind else LabKind
-    private val otherKind: Kind get() = if (kindName == "medication") LabKind else MedKind
+    private object UltrasoundKind : Kind {
+        override fun save(patientId: String, patientRevision: Long, id: String, tag: String) = SaveUltrasoundScanCommand(
+            editorSessionId = "del-test",
+            operationUuid = UUID.randomUUID().toString(),
+            patientId = patientId,
+            expectedPatientRevision = patientRevision,
+            scanId = id,
+            expectedScanRevision = null,
+            date = "2026-10-30",
+            gaWeeks = 20,
+            gaDays = 3,
+            fetalNumber = "Singleton",
+            presentation = "Cephalic",
+            placentalSite = "Posterior",
+            amnioticFluid = "Normal",
+            fetalHeartRate = "142",
+            biometryBpd = "48",
+            biometryHc = "175",
+            biometryAc = "150",
+            biometryFl = "32",
+            estimatedFetalWeight = "350g",
+            impression = "Normal anatomy $tag",
+        )
+
+        override suspend fun row(dao: RecordsDao, id: String): Any? = dao.ultrasoundScan(id)
+        override suspend fun domain(dao: RecordsDao, id: String): Any? = dao.ultrasoundScan(id)?.let {
+            DemoUltrasoundScan(
+                id = it.id, patientId = it.patientId, date = it.date, gestationalAgeWeeks = it.gaWeeks,
+                gestationalAgeDays = it.gaDays, fetalNumber = it.fetalNumber, presentation = it.presentation,
+                placentalSite = it.placentalSite, amnioticFluid = it.amnioticFluid, fetalHeartRate = it.fetalHeartRate,
+                biometryBpd = it.biometryBpd, biometryHc = it.biometryHc, biometryAc = it.biometryAc,
+                biometryFl = it.biometryFl, estimatedFetalWeight = it.estimatedFetalWeight, impression = it.impression,
+                linkedVisitId = it.linkedVisitId, imageUris = ImageUriCodec.deserialize(it.imageUris), revision = it.revision,
+            )
+        }
+
+        override fun revisionOf(domain: Any) = (domain as DemoUltrasoundScan).revision
+        override fun patientOf(domain: Any) = (domain as DemoUltrasoundScan).patientId
+        override fun hash(domain: Any) = ultrasoundContentHash(domain as DemoUltrasoundScan)
+        override fun changed(domain: Any) = (domain as DemoUltrasoundScan).copy(impression = "tampered")
+        override fun withRevision(domain: Any, revision: Long) = (domain as DemoUltrasoundScan).copy(revision = revision)
+        override fun del(op: String, patientId: String, patientRevision: Long, id: String, revision: Long, hash: String) =
+            DeleteRecordCommand(
+                type = DeletableType.ULTRASOUND, operationUuid = op, patientId = patientId,
+                expectedPatientRevision = patientRevision, recordId = id, expectedRecordRevision = revision,
+                deletedContentHash = hash,
+            )
+
+        override fun res(op: String, patientId: String, patientRevision: Long, domain: Any, source: ClinicalCommand) =
+            RestoreRecordCommand(
+                type = DeletableType.ULTRASOUND, operationUuid = op, patientId = patientId,
+                expectedPatientRevision = patientRevision, record = domain as DemoUltrasoundScan,
+                sourceDelete = source as DeleteRecordCommand,
+            )
+
+        override suspend fun insertRaw(dao: RecordsDao, domain: Any) {
+            val r = domain as DemoUltrasoundScan
+            dao.insertUltrasoundScan(
+                UltrasoundScanEntity(
+                    id = r.id, patientId = r.patientId, date = r.date, gaWeeks = r.gestationalAgeWeeks,
+                    gaDays = r.gestationalAgeDays, fetalNumber = r.fetalNumber, presentation = r.presentation,
+                    placentalSite = r.placentalSite, amnioticFluid = r.amnioticFluid, fetalHeartRate = r.fetalHeartRate,
+                    biometryBpd = r.biometryBpd, biometryHc = r.biometryHc, biometryAc = r.biometryAc,
+                    biometryFl = r.biometryFl, estimatedFetalWeight = r.estimatedFetalWeight, impression = r.impression,
+                    linkedVisitId = r.linkedVisitId, imageUris = ImageUriCodec.serialize(r.imageUris), revision = r.revision,
+                ),
+            )
+        }
+
+        override val table = "ultrasound_scans"
+        override val deleteKind = ClinicalRecordKind.ULTRASOUND_DELETE
+        override val restoreKind = ClinicalRecordKind.ULTRASOUND_RESTORE
+    }
+
+    private val kind: Kind get() = when (kindName) {
+        "medication" -> MedKind
+        "lab" -> LabKind
+        "ultrasound" -> UltrasoundKind
+        else -> throw IllegalArgumentException("Unknown kind $kindName")
+    }
+    private val otherKind: Kind get() = when (kindName) {
+        "medication" -> LabKind
+        "lab" -> UltrasoundKind
+        "ultrasound" -> MedKind
+        else -> throw IllegalArgumentException("Unknown kind $kindName")
+    }
 
     // ---- harness ---------------------------------------------------------------------------------------------
 

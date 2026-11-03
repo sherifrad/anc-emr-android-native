@@ -61,10 +61,37 @@ object LabEditorHook : EditorHook {
     }
 }
 
+object UltrasoundEditorHook : EditorHook {
+    override fun isOpenFor(state: AncState, recordId: String): Boolean =
+        state.ultrasoundDraft?.scanId == recordId
+
+    override fun closeEditor(state: AncState, patientId: String): AncState =
+        state.copy(
+            ultrasoundDraft = null,
+            route = if (state.route is AncRoute.UltrasoundEditor) {
+                AncRoute.Workspace(patientId, WorkspaceSection.ULTRASOUND)
+            } else {
+                state.route
+            },
+        )
+
+    override fun rebaseCreateDraft(state: AncState, patients: List<DemoPatient>): AncState {
+        var nextDraft = state.ultrasoundDraft
+        if (nextDraft != null && nextDraft.baseScanRevision == null) {
+            val p = patients.firstOrNull { it.id == nextDraft.patientId }
+            if (p != null) {
+                nextDraft = nextDraft.copy(basePatientRevision = p.revision)
+            }
+        }
+        return state.copy(ultrasoundDraft = nextDraft)
+    }
+}
+
 object EditorHooks {
     private val hooks: Map<DeletableType, EditorHook> = mapOf(
         DeletableType.MEDICATION to MedicationEditorHook,
         DeletableType.LAB to LabEditorHook,
+        DeletableType.ULTRASOUND to UltrasoundEditorHook,
     )
 
     fun of(type: DeletableType): EditorHook? = hooks[type]

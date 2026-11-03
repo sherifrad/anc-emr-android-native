@@ -3,6 +3,7 @@ package com.sherifradwan.ancnative.state
 import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoMedicationRecord
 import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.storage.ClinicalCommand
 import com.sherifradwan.ancnative.storage.ClinicalCommandFailure
 import com.sherifradwan.ancnative.storage.ClinicalCommandOutcome
@@ -76,7 +77,7 @@ class UndoCoordinatorTest {
 
     private data class Target(val type: DeletableType, val patientId: String, val recordId: String)
 
-    private val types = listOf(DeletableType.MEDICATION, DeletableType.LAB)
+    private val types = listOf(DeletableType.MEDICATION, DeletableType.LAB, DeletableType.ULTRASOUND)
 
     private fun med(patientId: String, id: String, revision: Long) = DemoMedicationRecord(
         id = id, patientId = patientId, name = "Iron $patientId-$id", dosage = "SECRET-DOSE", route = "Oral",
@@ -90,11 +91,19 @@ class UndoCoordinatorTest {
         revision = revision,
     )
 
-    // "x1" exists as a medication AND a lab, for p1 AND p2, each with its own revision; "y1" is a second p1 record.
+    private fun us(patientId: String, id: String, revision: Long) = DemoUltrasoundScan(
+        id = id, patientId = patientId, date = "2026-01-03", gestationalAgeWeeks = 20, gestationalAgeDays = 3,
+        fetalNumber = "Single", presentation = "Cephalic", placentalSite = "Posterior", amnioticFluid = "Normal",
+        fetalHeartRate = "142", biometryBpd = "48", biometryHc = "175", biometryAc = "150", biometryFl = "32",
+        estimatedFetalWeight = "350g", impression = "SECRET-IMPRESSION", revision = revision,
+    )
+
+    // "x1" exists as a medication AND a lab AND an ultrasound, for p1 AND p2, each with its own revision; "y1" is a second p1 record.
     // "onlyMed" exists only as a p1 medication.
     private val originals: List<DeletableRecord> = listOf(
         med("p1", "x1", 3), med("p1", "y1", 3), med("p1", "onlyMed", 3), med("p2", "x1", 5),
         lab("p1", "x1", 4), lab("p1", "y1", 4), lab("p2", "x1", 6),
+        us("p1", "x1", 5), us("p1", "y1", 5), us("p2", "x1", 7),
     )
 
     private fun patient(id: String, revision: Long) = DemoPatient(
@@ -102,6 +111,7 @@ class UndoCoordinatorTest {
         phone = "01000000000", visits = emptyList(), revision = revision,
         medications = originals.filterIsInstance<DemoMedicationRecord>().filter { it.patientId == id },
         labInvestigations = originals.filterIsInstance<DemoLabInvestigation>().filter { it.patientId == id },
+        ultrasoundScans = originals.filterIsInstance<DemoUltrasoundScan>().filter { it.patientId == id },
     )
 
     private fun original(target: Target): DeletableRecord? = originals.firstOrNull {
@@ -182,10 +192,12 @@ class UndoCoordinatorTest {
                 is DeleteRecordCommand -> when (undo.type) {
                     DeletableType.MEDICATION -> patient.copy(medications = patient.medications.filterNot { it.id == undo.recordId })
                     DeletableType.LAB -> patient.copy(labInvestigations = patient.labInvestigations.filterNot { it.id == undo.recordId })
+                    DeletableType.ULTRASOUND -> patient.copy(ultrasoundScans = patient.ultrasoundScans.filterNot { it.id == undo.recordId })
                 }
                 is RestoreRecordCommand -> when (val record = undo.record) {
                     is DemoMedicationRecord -> patient.copy(medications = patient.medications + record)
                     is DemoLabInvestigation -> patient.copy(labInvestigations = patient.labInvestigations + record)
+                    is DemoUltrasoundScan -> patient.copy(ultrasoundScans = patient.ultrasoundScans + record)
                     else -> error("unexpected record ${record::class}")
                 }
             }.copy(revision = patient.revision + 1)
@@ -617,7 +629,7 @@ class UndoCoordinatorTest {
             fx.begin(type, "p3", "x1")
             // p2 has no "y1" in either section; p1's "onlyMed" is a medication only.
             fx.begin(type, "p2", "y1")
-            if (type == DeletableType.LAB) fx.begin(type, "p1", "onlyMed")
+            if (type != DeletableType.MEDICATION) fx.begin(type, "p1", "onlyMed")
             assertTrue(type.name, fx.calls.isEmpty())
             assertNull(type.name, fx.state.undoOffer)
         }
