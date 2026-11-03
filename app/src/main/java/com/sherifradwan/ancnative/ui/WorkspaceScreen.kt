@@ -2246,6 +2246,8 @@ private fun MedicationCard(
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Normal,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = if (isExpanded) Int.MAX_VALUE else 2,
+                                overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.testTag("medicationInstructions-${med.id}"),
                             )
                         }
@@ -2271,7 +2273,6 @@ private fun MedicationCard(
                     FactRow(R.string.dosage, med.dosage)
                     FactRow(R.string.route, med.route)
                     FactRow(R.string.start_date, med.startDate)
-                    FactRow(R.string.end_date, med.endDate)
                     if (!med.adverseNotes.isNullOrBlank()) {
                         FactRow(R.string.adverse_effects, med.adverseNotes)
                     }
@@ -2291,7 +2292,7 @@ fun WorkspaceSection.labelResource(): Int = when (this) {
     WorkspaceSection.VISITS -> R.string.visits
     WorkspaceSection.ULTRASOUND -> R.string.ultrasound
     WorkspaceSection.LABORATORY -> R.string.laboratory
-    WorkspaceSection.MEDICATIONS -> R.string.medications
+    WorkspaceSection.MEDICATIONS -> R.string.medications_tab
     WorkspaceSection.DELIVERY -> R.string.delivery
     WorkspaceSection.ATTACHMENTS -> R.string.attachments
 }

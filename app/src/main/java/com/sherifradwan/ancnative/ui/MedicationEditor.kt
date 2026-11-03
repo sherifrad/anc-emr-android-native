@@ -125,10 +125,16 @@ fun MedicationEditor(
                 OutlinedButton(
                     onClick = { onEvent(AncEvent.SubmitMedicationAndAddAnother) },
                     enabled = enabled,
-                    contentPadding = PaddingValues(horizontal = 8.dp),
-                    modifier = Modifier.weight(1.6f).minimumTouchTarget().testTag("addAnotherMedication"),
+                    contentPadding = PaddingValues(horizontal = 4.dp),
+                    modifier = Modifier.weight(1.8f).minimumTouchTarget().testTag("addAnotherMedication"),
                 ) {
-                    Text(stringResource(R.string.save_and_add_another_med), maxLines = 2, textAlign = TextAlign.Center, style = MaterialTheme.typography.labelLarge)
+                    Text(
+                        stringResource(R.string.save_and_add_another_med),
+                        maxLines = 1,
+                        softWrap = false,
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.labelMedium,
+                    )
                 }
             }
         },

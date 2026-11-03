@@ -31,7 +31,8 @@
     <string name="visits">Visits</string>
     <string name="ultrasound">Ultrasound</string>
     <string name="laboratory">Laboratory</string>
-    <string name="medications">Meds</string>
+    <string name="medications">Medications</string>
+    <string name="medications_tab">Meds</string>
     <string name="delivery">Delivery</string>
     <string name="attachments">Attachments</string>
     <string name="visit_date">Visit date (YYYY-MM-DD)</string>
