@@ -213,6 +213,29 @@ Keeps the history from the handoff until Claude returns after its quota reset. F
     - `DeleteUndoUiTest`: 25/25 passed (including 4 new tests for ultrasound delete, cancel, undo restore, and 8s countdown).
     - Visual QA at 360 dp density: captured screenshots showing `DeleteIconButton` on ultrasound card (`ultrasound-tab-with-delete.png`), confirmation dialog (`ultrasound-delete-confirm-dialog.png`), undo bar (`ultrasound-undo-bar.png`), and restored state (`ultrasound-restored.png`).
   - Frontier review: Claude Sonnet independent review returned `PASS`.
-- NOT verified:
-  - Physical phone (Honor DNY_NX9) execution.
+- Physical phone verification: completed in deep testing session below.
 - Next: Next deletable adapter (Previous Pregnancy per `ADDING_A_DELETABLE_KIND.md`) or Part B polish.
+
+## 2026-11-03 - Physical Phone Deep Android Testing Audit (Honor DNY-NX9)
+- Target device: Honor DNY-NX9 (wireless debugging `adb-AX3C025527011668-bPKEZm._adb-tls-connect._tcp`), physical resolution 1264x2736 @ density 560 (effective layout width: 361 dp ~ 360 dp standard).
+- Scope: Deep end-to-end testing of newly implemented features on hardware:
+  - QA build installation (`com.sherifradwan.anc.qa` installed safely side-by-side via `.agents/scripts/install_qa_build_on_device.sh`).
+  - Ultrasound Delete / Confirm / Undo mechanism (`fcff3bc`).
+  - Visit Entry 4-step wizard with value steppers, findings normal fill, and live review summary (`ce296c7`).
+  - System gesture safety & 8s timer expiration.
+- Evidence captured in `.agents/pipeline/design/device-test/`:
+  - `01-workspace-overview.png`: patient directory to workspace navigation, tab row rendering.
+  - `02-phone-ultrasound-tab.png`: ultrasound section showing scan cards, 48 dp touch target `DeleteIconButton` adjacent to pencil edit button.
+  - `03-phone-ultrasound-confirm-dialog.png`: confirmation dialog with exact wording ("Delete this ultrasound scan?", "will be removed... You can undo for a few seconds afterwards").
+  - `04-phone-ultrasound-undo-bar.png`: Undo countdown bar ("Deleted 2026-11-02", "Undo" button).
+  - `05-phone-ultrasound-restored.png`: Undo interaction within timer window and status notice.
+  - `06-phone-visit-step0.png`: Visit Wizard Step 0 (Date & BP) with quick date chips, dual BP input, presets ("Same as last (120/80)", "Normal (110/70)"), "+ Add other".
+  - `07-phone-visit-step1.png`: Visit Wizard Step 1 (Weight & Fundal Height) with `ValueStepper` (+ / - 48 dp targets) and "Same as last (68.0 kg)".
+  - `08-phone-visit-step2.png`: Visit Wizard Step 2 (Findings) with "Fill normal values" banner, oedema/fetal movement/urine choices.
+  - `09-phone-visit-step3.png`: Visit Wizard Step 3 (Review & Save) with summary banner (" · BP 110/70 · Wt 68.0 kg · Oedema none · Movements good · Urine negative"), "Nothing flagged", clickable review rows for direct step jumping, and pinned "Save visit" button.
+  - `10-phone-visit-saved.png`: Post-save state in workspace showing visit count incremented from 3 to 4, newly added visit card with exact recorded vitals, and "Visit saved to encrypted clinical records." notice.
+- Hardware & Invariant Findings:
+  - Timer expiration: When the 8s Undo window expires without user intervention, the Undo bar cleanly transitions to the permanent status banner with "Close" button, and the deletion commits to the encrypted Room DB.
+  - Gesture navigation clearance: System navigation insets (Honor system gesture area frame `[0,2596][1264,2736]`) leave the action bars and Undo buttons completely unoccluded.
+  - Logcat: 0 fatal exceptions, 0 runtime errors, 0 strict mode crashes.
+- Local commits: Documentation updated, zero push rule strictly maintained.

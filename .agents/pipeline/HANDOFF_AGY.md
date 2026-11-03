@@ -178,6 +178,12 @@ Owner decisions: delete asks for confirmation, then removes the record at once a
   - Tests: `DeletableRegistryTest` (JVM), `ClinicalDeleteRestoreDbTest` (81/81 passed on emulator), `DeleteUndoUiTest` (25/25 passed on emulator).
   - Screenshots at 360 dp density: `ultrasound-tab-with-delete.png`, `ultrasound-delete-confirm-dialog.png`, `ultrasound-undo-bar.png`, `ultrasound-restored.png`.
   - Frontier review: Claude Sonnet independent review returned `PASS`.
+- 2026-11-03: Physical Phone Deep Android Testing Audit (Honor DNY-NX9):
+  - Safely installed QA build `com.sherifradwan.anc.qa` over wireless debugging.
+  - Successfully validated Ultrasound delete affordance, confirmation dialog, 8-second countdown Undo bar, and restored state on hardware.
+  - Successfully validated Visit Entry 4-step wizard: quick date chips, dual BP input, Normal BP preset ("110/70"), ValueStepper controls, "Same as last (68.0 kg)", "Fill normal values", live review summary banner, clickable review rows with direct step jumping, and clean persistence of new visit card with incremented revision in Room.
+  - 10 screenshots captured in `.agents/pipeline/design/device-test/`.
+  - Zero crashes, zero runtime exceptions in logcat.
 - NEXT:
   1. Next delete adapter: Previous Pregnancy (`DeletableType.PREVIOUS_PREGNANCY`) per `ADDING_A_DELETABLE_KIND.md`, then Visit, then Attachments.
   2. Part B: lab and ultrasound polish (4.1, 4.2), directory and chart (4.5, 4.6), history/dating/attention (4.7).
