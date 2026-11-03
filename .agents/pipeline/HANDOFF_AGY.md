@@ -127,12 +127,16 @@ Owner decisions: delete asks for confirmation, then removes the record at once a
     - `UltrasoundGuidedFlowTest`: 8/8 passed.
     Total: 56/56 passed.
   - Rendered print report sample via `PrintSampleDumpTest` and verified medication section formatting.
+- 2026-11-03 12:47 Logic round l06 completed (commit `fd8b7c5`):
+  - Created `CustomChoiceModels.kt` with `CustomChoiceList` (17 lists, dating methods strictly excluded per safety invariant), pure `validateCustomChoice`, `CustomChoicesDelegate`.
+  - Implemented thread-safe `CustomChoicesDelegate` in `ClinicalCodexRepository.kt` with SharedPreferences persistence, duplicate prevention on Undo, and validated import/export.
+  - Extended `EncryptedBackupManager.kt` & `VaultController.kt` to serialize/restore custom choices with fault tolerance and schemaVersion 3 backwards compatibility.
+  - Verification: `CustomChoicesLogicTest` unit tests (10/10 passed), `CustomChoicesStoreInstrumentedTest` on `emulator-5554` (1/1 passed), build gate `GATE OK`, static checks `STATIC CHECKS OK`. Frontier Opus review (`review_l06_custom_choices.out.txt`) verdict `PASS WITH NITS` (all should-fix resolved).
 - NOT verified:
-  - Physical phone (Honor 400) tap testing (owner must unlock and clear chat bubbles).
+  - Physical phone (Honor 400) execution.
   - Dark mode and RTL visually.
 - NEXT:
-  1. Logic round l06: custom choices store for "+ Add other" (one store per list in codex/settings, backup/restore, validation function, rename/remove in Settings with Undo; unit tests first).
-  2. Design round: medication "Today's list" per REDESIGN_SPECS 4.3.
-  3. Logic l08 then design d28: visit entry rules and screen (4.4).
-  4. Part B: lab and ultrasound polish (4.1, 4.2), directory and chart (4.5, 4.6), history/dating/attention (4.7).
-  5. Delete adapters for ultrasound, previous pregnancy, visit, attachments.
+  1. Design round: medication "Today's list" per REDESIGN_SPECS 4.3 (mock d1 section 3 + overrides in section 1: one-tap add drug from grid with usual dose/route and today's date; chips to change dose/route on line; Stop control on each line; shared Undo bar).
+  2. Logic l08 then design d28: visit entry rules and screen (4.4).
+  3. Part B: lab and ultrasound polish (4.1, 4.2), directory and chart (4.5, 4.6), history/dating/attention (4.7).
+  4. Delete adapters for ultrasound, previous pregnancy, visit, attachments.

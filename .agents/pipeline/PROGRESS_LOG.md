@@ -61,3 +61,34 @@ Keeps the history from the handoff until Claude returns after its quota reset. F
   - Real device (Honor 400) tap testing (owner must unlock and clear chat bubbles).
   - Dark mode and RTL visually.
 - Next: Logic round l06 (custom choices store for "+ Add other"), then design round for medication "Today's list" (REDESIGN_SPECS 4.3).
+
+## 2026-11-03 12:47 Logic round l06 (custom choices store for "+ Add other")
+- Commit: `fd8b7c5`
+- Implemented core custom choices store and validation per Section 2.3 & REDESIGN_SPECS:
+  - `CustomChoiceModels.kt`:
+    - `CustomChoiceList` enum (17 lists covering medications, labs, ultrasound findings, previous pregnancy, clinical attention, and visit vitals).
+    - Clinical safety invariant: dating methods (LMP, IVF, Scan, Clinical) strictly excluded.
+    - Pure validation function `validateCustomChoice`: rejects control characters (C0, C1, NUL, tabs, newlines, Unicode separators), rejects blank/whitespace, enforces length limits (140 for attention phrases, 80 default), case-insensitive duplicate check.
+    - `CustomChoicesDelegate` interface with `addCustomChoice`, `renameCustomChoice`, `removeCustomChoice`, `restoreCustomChoice` (returning `RemovedCustomChoice` with `originalIndex` for precise Undo).
+  - `ClinicalCodexRepository.kt`:
+    - Implemented `CustomChoicesDelegate` backed by SharedPreferences per list.
+    - Full synchronization on `customChoicesLock` preventing lost-update races between background restore and main-thread UI mutations.
+    - Duplicate protection on Undo: prevents duplicate entry if matching label was re-added before tapping Undo.
+    - Export / restore functions: `exportCustomChoicesForBackup()` and `restoreCustomChoicesFromBackup()` with validation on import.
+  - `EncryptedBackupManager.kt` & `VaultController.kt`:
+    - Backup envelope carries optional `customChoices` payload while preserving `schemaVersion = 3`.
+    - Non-fatal custom choice parsing: custom choice parse error never fails or blocks patient record restore.
+    - Legacy backups without `customChoices` continue to parse cleanly without error.
+  - Reusable scripts added to `.agents/scripts/`:
+    - `run_unit_test.sh`: run individual test classes offline.
+    - `set_emulator_360dp.sh` & `reset_emulator_density.sh`: configure and restore 360 dp display density.
+- Verification:
+  - Unit tests: `CustomChoicesLogicTest` (10/10 passed, testing validation, dating safety, store reload from FakeSharedPreferences, undo duplicate prevention, backup roundtrip).
+  - Independent test review: confirmed tests fail without implementation.
+  - Frontier review: Opus review (`.agents/pipeline/review_l06_custom_choices.out.txt`) verdict `PASS WITH NITS`; all should-fix items addressed (lock synchronization, undo duplicate check, control-character validation, real repository tests).
+  - Real Android OS test on `emulator-5554`: `CustomChoicesStoreInstrumentedTest` (1/1 passed).
+  - `run_build_gate.sh`: GATE OK.
+  - `run_static_checks.sh`: STATIC CHECKS OK.
+- NOT verified:
+  - Physical phone (Honor 400) execution.
+- Next: Design round for medication "Today's list" (REDESIGN_SPECS 4.3).
