@@ -28,3 +28,36 @@ Keeps the history from the handoff until Claude returns after its quota reset. F
 - Verified: gate green, all check_r*.py pass, DeleteUndoUiTest 20 of 20 on the emulator (re-run on the final commit), 54 real-database storage cases earlier. On the owner's phone (QA copy only): delete with confirm removes the card and shows the Undo bar naming the patient, the bar expires, the owner confirmed Undo restored the item.
 - NOT verified: lock during the countdown on the phone (owner: delete is final immediately), "Save and next" Undo on the phone (owner: not needed), Undo window vs system accessibility timeout, whether repository.execute can throw, rendering of the new failure message on a narrow screen. Opus re-review and independent test review of 0b8e380/0fba1b6 pending.
 - Lab saves do not offer Undo of a save (medication only), as requested. Next: finish review fixes, then Part B visual redo against the approved mock. Nothing pushed.
+
+## 2026-11-03 (Gemini) Medication review fixes, design nits, full verification
+- Level-3 review of medication commits (33e63cd, 2fc5e1e, 4761f3f, e6642ca, 86f5fb9): detached Opus review completed (`launch_opus_review.sh`), verdict PASS WITH NITS.
+- Independent test review confirmed: unit tests added in `MedicationStatusTest` and `AncDeleteUndoStateTest` fail without the fixes.
+- Logic fixes committed in `8f8da08`:
+  - `ClinicalSummaryGenerator`: aligned with card and print (`medicationInstructions` and `medicationStatusLabel`).
+  - `MedicationEditor`: cleared hidden fields (frequency, end date, adverse notes) on picking presets and past prescriptions.
+  - `AncViewModel`: chained medication starts today by default.
+  - `AncState`: fail-fast on unhandled edit kinds without hardcoding deletable kinds (satisfying static check R6C).
+  - Recorded owner decision D24 in `OWNER_DECISIONS.md`.
+  - Optimized `PrintLayoutTest` CSS regex to eliminate catastrophic backtracking.
+- Design nits committed in `675a4fa`:
+  - `WorkspaceScreen`: capped collapsed card instructions to 2 lines with ellipsis (full on expand).
+  - `WorkspaceScreen`: removed uneditable End date row from expanded card.
+  - `WorkspaceScreen` & `strings.xml`: separated `medications_tab` ("Meds") from `medications` ("Medications") so profile section header and overview button show "Medications" while tab displays "Meds".
+  - `MedicationEditor`: single-line action bar "Save & add another" button (`softWrap = false`, `maxLines = 1`, `labelMedium`, `weight(1.8f)`).
+- Verification:
+  - `run_build_gate.sh`: GATE OK.
+  - `run_static_checks.sh`: STATIC CHECKS OK.
+  - Emulator (`emulator-5554` API 26, 360 dp / density 480):
+    - `MedicationListCollapseTest`: 4/4 passed.
+    - `DeleteUndoUiTest`: 21/21 passed.
+    - `MedicationEntryDesignTest`: 7/7 passed.
+    - `AncWorkflowTest`: 9/9 passed.
+    - `LabEntryDesignTest`: 7/7 passed.
+    - `UltrasoundGuidedFlowTest`: 8/8 passed.
+    Total: 56/56 passed.
+  - Rendered report HTML via `PrintSampleDumpTest` and verified medication section formatting.
+  - Captured emulator screenshot of Stopped state (`.agents/pipeline/design/medication-redo2/5-stopped-state.png`).
+- NOT verified:
+  - Real device (Honor 400) tap testing (owner must unlock and clear chat bubbles).
+  - Dark mode and RTL visually.
+- Next: Logic round l06 (custom choices store for "+ Add other"), then design round for medication "Today's list" (REDESIGN_SPECS 4.3).

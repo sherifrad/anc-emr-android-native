@@ -109,3 +109,30 @@ Owner decisions: delete asks for confirmation, then removes the record at once a
 - Reminder: anything run twice becomes a script in `.agents/scripts/` (README lists them).
 
 ### Gemini start (2026-11-02): read `.agents/pipeline/design/GEMINI_START_PROMPT.md` first, then `.agents/pipeline/design/REDESIGN_SPECS.md` (fixed specs from the approved mocks; owner overrides listed there beat the mock).
+
+### Status 2026-11-03 (Gemini: medication review fixes, design nits, emulator verification)
+- DONE and committed locally (nothing pushed):
+  - Logic commit `8f8da08`: addresses Opus review findings on medication simplification (ClinicalSummaryGenerator aligned with card and print; preset / past prescription picking explicitly clears hidden fields; chained medication starts today; validation failure reducer fails fast on unhandled edit kinds without hardcoding deletable kinds; D24 recorded in OWNER_DECISIONS.md; PrintLayoutTest regex backtrack eliminated).
+  - Design commit `675a4fa`: capped instructions line to 2 lines with ellipsis (full on expand); "Save & add another" button on single line with labelMedium and weight(1.8f); removed uneditable End date row from expanded card; separated `medications_tab` ("Meds") from `medications` ("Medications") so profile section header and overview button show "Medications" while tab displays "Meds".
+  - Screenshot of Stopped state captured on emulator: `.agents/pipeline/design/medication-redo2/5-stopped-state.png`.
+- Verified:
+  - `run_build_gate.sh`: GATE OK.
+  - `run_static_checks.sh`: STATIC CHECKS OK.
+  - Re-run all 6 emulator test suites on `emulator-5554` (API 26, 360 dp / density 480):
+    - `MedicationListCollapseTest`: 4/4 passed.
+    - `DeleteUndoUiTest`: 21/21 passed.
+    - `MedicationEntryDesignTest`: 7/7 passed.
+    - `AncWorkflowTest`: 9/9 passed.
+    - `LabEntryDesignTest`: 7/7 passed.
+    - `UltrasoundGuidedFlowTest`: 8/8 passed.
+    Total: 56/56 passed.
+  - Rendered print report sample via `PrintSampleDumpTest` and verified medication section formatting.
+- NOT verified:
+  - Physical phone (Honor 400) tap testing (owner must unlock and clear chat bubbles).
+  - Dark mode and RTL visually.
+- NEXT:
+  1. Logic round l06: custom choices store for "+ Add other" (one store per list in codex/settings, backup/restore, validation function, rename/remove in Settings with Undo; unit tests first).
+  2. Design round: medication "Today's list" per REDESIGN_SPECS 4.3.
+  3. Logic l08 then design d28: visit entry rules and screen (4.4).
+  4. Part B: lab and ultrasound polish (4.1, 4.2), directory and chart (4.5, 4.6), history/dating/attention (4.7).
+  5. Delete adapters for ultrasound, previous pregnancy, visit, attachments.
