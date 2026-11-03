@@ -188,3 +188,31 @@ Keeps the history from the handoff until Claude returns after its quota reset. F
 - NOT verified:
   - Physical phone (Honor DNY_NX9) execution.
 - Next: Part B: Lab and ultrasound polish (REDESIGN_SPECS 4.1 and 4.2), or next roadmap item.
+
+## 2026-11-03 - Ultrasound Delete Adapter (committed locally as fcff3bc)
+- Scope: Implemented Ultrasound Delete Adapter according to `.agents/pipeline/ADDING_A_DELETABLE_KIND.md`.
+- Changes made:
+  - `model/ClinicalModels.kt`: `DemoUltrasoundScan` implements `DeletableRecord` (`override val id`, `override val patientId`, `override val revision = 1`).
+  - `storage/DeletableRecords.kt`: added `DeletableType.ULTRASOUND`, registered `UltrasoundDeleteAdapter` in `DeletableRegistry`, wired `is DemoUltrasoundScan` in `adapterFor`, added `ultrasoundContentHash()`.
+  - `storage/UltrasoundDeleteAdapter.kt`: implemented `DeletableRecordAdapter<DemoUltrasoundScan>` (`type = ULTRASOUND`, `fingerprintTag = "US"`, `deleteReceiptKind = "ULTRASOUND_DELETE"`, `restoreReceiptKind = "ULTRASOUND_RESTORE"`, `section = ULTRASOUND`, `canonical`, `load`, `deleteRow`, `insertRow`, `record`).
+  - `storage/RecordsDao.kt`: added query `deleteUltrasoundScan(id, patientId, expectedRevision)`.
+  - `storage/ClinicalCommands.kt`: added `ULTRASOUND_DELETE` and `ULTRASOUND_RESTORE` to `ClinicalRecordKind`.
+  - `state/AncState.kt`: added `ULTRASOUND_DELETED`, `ULTRASOUND_RESTORED`, `ULTRASOUND_SAVE_UNDONE` to `SavedNotice` and mapped in `stringRes()`; guarded `startUltrasoundEditor` with `undoRunningFor(scanId)`.
+  - `state/EditorHooks.kt`: implemented `UltrasoundEditorHook` and wired in `EditorHooks`.
+  - `values/strings.xml`: added `deletable_type_ultrasound`, `ultrasound_deleted`, `ultrasound_restored`, `ultrasound_save_undone`.
+  - `ui/DeleteUndoUi.kt`: wired `DeletableType.ULTRASOUND -> R.string.deletable_type_ultrasound` in `labelResource()`.
+  - `ui/WorkspaceScreen.kt`: updated `UltrasoundCard` with `DeleteIconButton` trailing affordance and wired `onDelete = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.ULTRASOUND, scan.id)) }` in ultrasound section and timeline standalone scan.
+  - `.agents/checks/check_r6c.py`: updated `KIND` regex and allowed `UltrasoundDeleteAdapter.kt` in `FREE`.
+  - Scripts: added `.agents/scripts/qa_open_ultrasound_tab.sh`.
+- Verification:
+  - `python3 .agents/checks/check_r6c.py`: PASS (all 7 rules R6C0-R6C6).
+  - Gate: `.agents/scripts/run_build_gate.sh` (`GATE OK`, all 915 unit tests passed).
+  - Static checks: `.agents/scripts/run_static_checks.sh` (`STATIC CHECKS OK`).
+  - Emulator (`emulator-5554` API 26):
+    - `ClinicalDeleteRestoreDbTest`: 81/81 passed (covering medication, lab, and ultrasound across all 14 integration test scenarios).
+    - `DeleteUndoUiTest`: 25/25 passed (including 4 new tests for ultrasound delete, cancel, undo restore, and 8s countdown).
+    - Visual QA at 360 dp density: captured screenshots showing `DeleteIconButton` on ultrasound card (`ultrasound-tab-with-delete.png`), confirmation dialog (`ultrasound-delete-confirm-dialog.png`), undo bar (`ultrasound-undo-bar.png`), and restored state (`ultrasound-restored.png`).
+  - Frontier review: Claude Sonnet independent review returned `PASS`.
+- NOT verified:
+  - Physical phone (Honor DNY_NX9) execution.
+- Next: Next deletable adapter (Previous Pregnancy per `ADDING_A_DELETABLE_KIND.md`) or Part B polish.

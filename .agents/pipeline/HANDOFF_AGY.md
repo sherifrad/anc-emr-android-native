@@ -166,6 +166,18 @@ Owner decisions: delete asks for confirmation, then removes the record at once a
   - Added reusable scripts `.agents/scripts/screenshot_mock_html.sh` and `qa_open_visit_editor.sh`.
   - Captured 360 dp screenshots: `visit-mock.png`, `visit-built-step0.png`, `visit-built-step1.png`, `visit-built-step2.png`, `visit-built-step3.png`.
   - Verification: `run_build_gate.sh` (`GATE OK`), `run_static_checks.sh` (`STATIC CHECKS OK`), `VisitEntryDesignTest` (5/5 passed on emulator-5554), `AncWorkflowTest` (9/9 passed on emulator-5554). Frontier review by DeepSeek.
+- 2026-11-03: Ultrasound Delete Adapter (commit `fcff3bc`):
+  - Added `DeletableType.ULTRASOUND` to the unified delete/confirm/Undo mechanism per `ADDING_A_DELETABLE_KIND.md`.
+  - Implemented `UltrasoundDeleteAdapter` with unique fingerprint tag `"US"`, receipt kinds `ULTRASOUND_DELETE` and `ULTRASOUND_RESTORE`, 18-field canonical string with stable `ImageUriCodec.serialize`, `load`, `deleteRow`, `insertRow`, and `record`.
+  - Added DAO query `deleteUltrasoundScan(id, patientId, expectedRevision)`.
+  - Added `SavedNotice` notices and localized strings.
+  - Added `UltrasoundEditorHook` and wired in `EditorHooks`.
+  - Wired trailing `DeleteIconButton` in `UltrasoundCard` with 48 dp touch target and spoken description `"Delete ultrasound scan: <date>"`.
+  - Updated `check_r6c.py` enforcing zero-leak invariants on `ULTRASOUND`.
+  - Added `.agents/scripts/qa_open_ultrasound_tab.sh`.
+  - Tests: `DeletableRegistryTest` (JVM), `ClinicalDeleteRestoreDbTest` (81/81 passed on emulator), `DeleteUndoUiTest` (25/25 passed on emulator).
+  - Screenshots at 360 dp density: `ultrasound-tab-with-delete.png`, `ultrasound-delete-confirm-dialog.png`, `ultrasound-undo-bar.png`, `ultrasound-restored.png`.
+  - Frontier review: Claude Sonnet independent review returned `PASS`.
 - NEXT:
-  1. Part B: lab and ultrasound polish (4.1, 4.2), directory and chart (4.5, 4.6), history/dating/attention (4.7).
-  2. Delete adapters for ultrasound, previous pregnancy, visit, attachments (guide ADDING_A_DELETABLE_KIND.md).
+  1. Next delete adapter: Previous Pregnancy (`DeletableType.PREVIOUS_PREGNANCY`) per `ADDING_A_DELETABLE_KIND.md`, then Visit, then Attachments.
+  2. Part B: lab and ultrasound polish (4.1, 4.2), directory and chart (4.5, 4.6), history/dating/attention (4.7).
