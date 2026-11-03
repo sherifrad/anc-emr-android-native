@@ -113,3 +113,42 @@ Keeps the history from the handoff until Claude returns after its quota reset. F
 - NOT verified:
   - Physical phone (Honor DNY_NX9) touch testing.
 - Next: Logic round l08 then design d28: visit entry rules and the visit screen (4.4).
+
+## 2026-11-03: Logic round l08 (Visit entry rules, BP flagging, normal fill, and draft persistence)
+- Commit: `a07d616`
+- Implemented core domain logic and state/draft persistence per Section 4.4, mock d4/d3, and `SPEC_LOGIC_L08_VISIT_ENTRY.md`:
+  - `VisitEntryLogic.kt`:
+    - Blood pressure evaluation: `isHighBloodPressure` delegates to canonical `bpLevel` in `VisitVitals.kt`, flagging $\ge 140/90$ (RAISED/SEVERE) and single-sided elevations.
+    - Normal fill rule: `fillNormalVisitFindings` strictly sets oedema (`None`), fetal movements (`Good`), urine protein (`Negative`), while leaving vitals untouched.
+    - Historical vitals: `resolveLastVisitVitals` pulls latest visit chronologically by ISO date (excluding active visit id when editing).
+    - Fundal height estimation: `estimateFundalHeightForGa` clamps values to 10..50 cm.
+    - Findings builder & tokenizer: `buildVisitFindings` and `parseVisitFindings` use strict `" · "` token boundaries, cleanly separating structured tokens (FH, Oedema, Movements, Urine) from narrative `additionalFindings`.
+    - Flagged findings detection: `detectFlaggedFindings` flags High BP, Marked/Mild oedema, Reduced/Absent movements, and proteinuria (Trace, +, ++).
+    - Summary formatting: `formatVisitSummary` formats vitals and findings with fallback placeholders for single-sided BP.
+  - `VisitVitals.kt`:
+    - Added `bpLevel(systolic: Int?, diastolic: Int?)` overload in the canonical vitals location, preserving single threshold source of truth (respecting check S80 and "one function per rule" principle).
+  - `CustomChoiceModels.kt`:
+    - Added `CustomChoiceList.VISIT_BP`, `VISIT_WEIGHT`, and `VISIT_FUNDAL_HEIGHT`.
+  - `AncState.kt`:
+    - Added `DraftField` entries: `SYSTOLIC`, `DIASTOLIC`, `FUNDAL_HEIGHT`, `OEDEMA`, `FETAL_MOVEMENTS`, `URINE_PROTEIN`.
+    - Added 6 structured fields to `DraftValues`.
+    - Bidirectional non-sticky sync in `AncReducer.updateDraft` between combined BP string and separate systolic/diastolic fields; clearing BP clears both components.
+    - Updated `DemoVisit.toDraftValues()` to populate structured fields via `parseVisitFindings`.
+  - `SaveVisitCommand.kt`:
+    - Structured fields are authoritative when present; composes `buildVisitFindings` while preserving `additionalFindings`.
+    - Validates partial BP (single-sided systolic/diastolic) as `BLOOD_PRESSURE_INVALID`.
+  - `DraftMapping.kt`:
+    - Encodes and decodes the 6 structured visit fields in `DraftRecord.fields` with backwards-compatible string fallback parsing.
+- Verification:
+  - Unit tests:
+    - `VisitEntryLogicTest`: 12/12 passed (testing BP flagging, normal fill, history lookup, FH estimation, token parsing, flagged findings, summaries).
+    - `VisitDraftStateAndCommandTest`: 12/12 passed (testing sync, clearing, partial BP validation, structured findings override, draft persistence).
+    - `CustomChoicesLogicTest`: 11/11 passed.
+    - `DraftMappingTest`: updated and passed.
+  - Frontier review: DeepSeek frontier review (`review_l08_visit_entry.out.txt`) verified 907 tests across 84 classes; identified 4 Hard Blockers (HB-1 findings override, HB-2 cleared BP resurrection, HB-3 regex tokenizer greediness, HB-4 draft recovery field omission) and Should-Fixes, all remediated with verified tests.
+  - `run_build_gate.sh`: GATE OK.
+  - `run_static_checks.sh`: STATIC CHECKS OK.
+  - Emulator (`emulator-5554` API 26): `AncWorkflowTest` 9/9 passed.
+- NOT verified:
+  - Physical phone (Honor DNY_NX9) execution.
+- Next: Design round d28: Visit and vitals screen redesign (REDESIGN_SPECS 4.4 and mock d4/d3).

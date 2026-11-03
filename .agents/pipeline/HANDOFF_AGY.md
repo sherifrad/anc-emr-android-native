@@ -148,7 +148,14 @@ Owner decisions: delete asks for confirmation, then removes the record at once a
   - `run_static_checks.sh`: STATIC CHECKS OK.
 - NOT verified:
   - Physical phone (Honor DNY_NX9) touch testing.
+- 2026-11-03: Logic round l08 (Visit entry rules, BP flagging, normal fill, and draft persistence, commit `a07d616`):
+  - Created `VisitEntryLogic.kt` with pure clinical domain rules: BP flagging via canonical `bpLevel`, strict normal fill isolation, historical vitals resolution, GA-estimated fundal height, `" · "` token boundary parser/builder, flagged findings detection, and single-sided BP summary formatting.
+  - Extended `VisitVitals.kt` with `bpLevel(systolic, diastolic)` preserving single threshold source of truth.
+  - Added visit presets to `CustomChoiceModels.kt` (`VISIT_BP`, `VISIT_WEIGHT`, `VISIT_FUNDAL_HEIGHT`).
+  - Extended `DraftValues`, `DraftField`, `AncReducer`, `SaveVisitCommand`, and `DraftMapping.kt` with the 6 structured fields (`systolic`, `diastolic`, `fundalHeight`, `oedema`, `fetalMovements`, `urineProtein`).
+  - Frontier review: DeepSeek reviewed; remediated 4 Hard Blockers (HB-1 findings precedence, HB-2 blank BP clearing, HB-3 token boundary matching, HB-4 draft recovery mapping).
+  - Verification: `VisitEntryLogicTest` (12/12), `VisitDraftStateAndCommandTest` (12/12), `CustomChoicesLogicTest` (11/11), `DraftMappingTest`, `AncWorkflowTest` (9/9 on emulator-5554), `run_build_gate.sh` (`GATE OK`), `run_static_checks.sh` (`STATIC CHECKS OK`).
 - NEXT:
-  1. Logic l08 then design d28: visit entry rules and screen (4.4).
+  1. Design round d28: Visit and vitals screen redesign (REDESIGN_SPECS 4.4 and mock d4/d3).
   2. Part B: lab and ultrasound polish (4.1, 4.2), directory and chart (4.5, 4.6), history/dating/attention (4.7).
   3. Delete adapters for ultrasound, previous pregnancy, visit, attachments (guide ADDING_A_DELETABLE_KIND.md).
