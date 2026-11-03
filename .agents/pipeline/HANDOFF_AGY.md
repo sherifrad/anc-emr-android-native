@@ -155,7 +155,17 @@ Owner decisions: delete asks for confirmation, then removes the record at once a
   - Extended `DraftValues`, `DraftField`, `AncReducer`, `SaveVisitCommand`, and `DraftMapping.kt` with the 6 structured fields (`systolic`, `diastolic`, `fundalHeight`, `oedema`, `fetalMovements`, `urineProtein`).
   - Frontier review: DeepSeek reviewed; remediated 4 Hard Blockers (HB-1 findings precedence, HB-2 blank BP clearing, HB-3 token boundary matching, HB-4 draft recovery mapping).
   - Verification: `VisitEntryLogicTest` (12/12), `VisitDraftStateAndCommandTest` (12/12), `CustomChoicesLogicTest` (11/11), `DraftMappingTest`, `AncWorkflowTest` (9/9 on emulator-5554), `run_build_gate.sh` (`GATE OK`), `run_static_checks.sh` (`STATIC CHECKS OK`).
+- 2026-11-03: Design round d28 (Visit and vitals screen redesign, commit `ce296c7`):
+  - Spec `SPEC_DESIGN_D28_VISIT_ENTRY.md` implemented adhering to REDESIGN_SPECS 4.4 & approved mock d4/d3 section 3.
+  - Rebuilt `VisitEditor.kt` into a 4-step wizard with `SegmentedProgressBar` (`Role.Tab`), step progress header, and pinned action bar.
+  - Step 0: Date chips ("Today", "Yesterday", picker), dual systolic/diastolic numeric inputs with `/` separator, "Same as last (sys/dia)", "Normal (110/70)", codex presets, "+ Add other", and high BP warning banner in `secondaryContainer` when BP $\ge 140/90$.
+  - Step 1: Weight & Fundal Height with `ValueStepper` (- / + buttons with 48 dp targets; decimal for weight, integer for fundal height), "Same as last", "Matches GA", codex presets, "+ Add other".
+  - Step 2: Findings with "Fill normal values" in `secondaryContainer` (fills only blank findings with None, Good, Negative), `BigChoiceButton` cards for Oedema, Fetal Movements, and Urine Protein (flagged choices highlighted in red), narrative findings field.
+  - Step 3: Review & Save with summary card, red alert badges (`detectFlaggedFindings`), 7 review rows with direct step jumping, optional notes, and pinned "Save visit" button.
+  - Closed palette compliance via `MaterialTheme.colorScheme` tokens, 48 dp touch targets, S70 compliance maintained.
+  - Added reusable scripts `.agents/scripts/screenshot_mock_html.sh` and `qa_open_visit_editor.sh`.
+  - Captured 360 dp screenshots: `visit-mock.png`, `visit-built-step0.png`, `visit-built-step1.png`, `visit-built-step2.png`, `visit-built-step3.png`.
+  - Verification: `run_build_gate.sh` (`GATE OK`), `run_static_checks.sh` (`STATIC CHECKS OK`), `VisitEntryDesignTest` (5/5 passed on emulator-5554), `AncWorkflowTest` (9/9 passed on emulator-5554). Frontier review by DeepSeek.
 - NEXT:
-  1. Design round d28: Visit and vitals screen redesign (REDESIGN_SPECS 4.4 and mock d4/d3).
-  2. Part B: lab and ultrasound polish (4.1, 4.2), directory and chart (4.5, 4.6), history/dating/attention (4.7).
-  3. Delete adapters for ultrasound, previous pregnancy, visit, attachments (guide ADDING_A_DELETABLE_KIND.md).
+  1. Part B: lab and ultrasound polish (4.1, 4.2), directory and chart (4.5, 4.6), history/dating/attention (4.7).
+  2. Delete adapters for ultrasound, previous pregnancy, visit, attachments (guide ADDING_A_DELETABLE_KIND.md).

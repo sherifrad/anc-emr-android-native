@@ -152,3 +152,39 @@ Keeps the history from the handoff until Claude returns after its quota reset. F
 - NOT verified:
   - Physical phone (Honor DNY_NX9) execution.
 - Next: Design round d28: Visit and vitals screen redesign (REDESIGN_SPECS 4.4 and mock d4/d3).
+
+## 2026-11-03: Design round d28 (Visit and vitals screen redesign)
+- Commit: `ce296c7`
+- Built & verified per Section 4.4, approved mock `d4/d3/index.html` section 3, and `SPEC_DESIGN_D28_VISIT_ENTRY.md`:
+  - `DesignSystem.kt`:
+    - `SegmentedProgressBar`: horizontal segmented step indicator with 48 dp min touch target, 4 dp height bars, primary color for current/completed steps, and `Role.Tab` accessibility semantics (`stepSegment-0`..`stepSegment-3`).
+    - `ValueStepper`: centered row with 48 dp minus/plus icon buttons, styled numeric text field supporting `keyboardType` (`Decimal` for weight, `Number` for fundal height).
+  - `VisitEditor.kt`:
+    - Rebuilt into a 4-step guided wizard (`rememberSaveable` state):
+      - Step 0 (Date & Blood Pressure): "Today" / "Yesterday" / other date picker; "Same as last (sys/dia)", "Normal (110/70)", codex presets, "+ Add other"; dual inputs (`visitSystolic`, `/`, `visitDiastolic`); high BP warning banner in `secondaryContainer` (`#FFD9DE` / `#934F5B`) when BP $\ge 140/90$.
+      - Step 1 (Weight & Fundal Height): "Same as last", codex presets, "+ Add other"; `ValueStepper` for weight (- / + 0.1 kg) and fundal height (- / + 1 cm).
+      - Step 2 (Findings): "Fill normal values" button in `secondaryContainer` with caption note; `BigChoiceButton` cards for Oedema (Marked highlighted), Fetal Movements (Reduced/Absent highlighted), Urine Protein (Trace/+/++ highlighted), codex presets, "+ Add other".
+      - Step 3 (Review & Save): Summary card (`visitSummaryCard`) displaying `formatVisitSummary`, red alert badges (`detectFlaggedFindings`), and green pill ("Nothing flagged"); 7 clickable review rows jumping directly to their wizard step; optional notes field; pinned "Save visit" button.
+    - Pinned bottom bar using `EditorPage` slot: Cancel + Next on step 0; Back + Next on steps 1-2; Back + Save visit on step 3.
+    - Closed color palette adherence using `MaterialTheme.colorScheme` tokens (`secondary`, `secondaryContainer`, `tertiary`, `tertiaryContainer`, `primary`).
+    - S70 compliance preserved (`R.string.visit_date_in_future`, `R.string.blood_pressure_invalid`, `R.string.weight_invalid`, calling `bpLevel`).
+  - Added reusable scripts in `.agents/scripts/`:
+    - `screenshot_mock_html.sh`: captures HTML mock files at specified resolutions via headless Chrome.
+    - `qa_open_visit_editor.sh`: unlocks QA app on emulator, enters PIN, and navigates to the new visit editor at 360 dp.
+  - Screenshots captured at 360 dp density:
+    - `visit-mock.png`: mock reference screenshot.
+    - `visit-built-step0.png` (Date & BP).
+    - `visit-built-step1.png` (Weight & Fundal Height).
+    - `visit-built-step2.png` (Findings & Normal Fill).
+    - `visit-built-step3.png` (Review & Save).
+- Verification:
+  - Unit tests: 915 tests across 84 suites passed.
+  - Gate: `run_build_gate.sh` (`GATE OK`).
+  - Static checks: `run_static_checks.sh` (`STATIC CHECKS OK`).
+  - Emulator (`emulator-5554` API 26):
+    - `VisitEntryDesignTest`: 5/5 passed (testing step advancement, segments jump, high BP warning box, "Same as last" presets, "Fill normal values" non-overwrite invariant, review summary and flagged alerts).
+    - `AncWorkflowTest`: 9/9 passed.
+  - Frontier review: DeepSeek reviewed; addressed all color token hardcodings, step state persistence (`rememberSaveable`), integer fundal height stepper, CTA copy alignment (`save_visit`), and unused imports.
+- NOT verified:
+  - Physical phone (Honor DNY_NX9) execution.
+- Next: Part B: Lab and ultrasound polish (REDESIGN_SPECS 4.1 and 4.2), or next roadmap item.
