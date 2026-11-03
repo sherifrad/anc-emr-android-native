@@ -2,10 +2,12 @@ package com.sherifradwan.ancnative.storage
 
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.DemoVisit
+import com.sherifradwan.ancnative.model.buildVisitFindings
 import com.sherifradwan.ancnative.model.isPlausibleBloodPressure
 import com.sherifradwan.ancnative.model.isPlausibleWeightKg
 import com.sherifradwan.ancnative.model.parseBloodPressure
 import com.sherifradwan.ancnative.model.parseCanonicalIsoDateOrNull
+import com.sherifradwan.ancnative.model.parseVisitFindings
 import com.sherifradwan.ancnative.model.parseWeightKg
 import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.DraftError
@@ -39,15 +41,45 @@ data class SaveVisitCommand(
             val draft = state.draft ?: return SavePreparation.Rejected(setOf(DraftError.SAVE_FAILED))
             val date = draft.values.date.trim()
             val parsedDate = parseCanonicalIsoDateOrNull(date)
+
+            val sysTrimmed = draft.values.systolic.trim()
+            val diaTrimmed = draft.values.diastolic.trim()
+            val isPartialBp = (sysTrimmed.isNotEmpty() && diaTrimmed.isEmpty()) ||
+                (sysTrimmed.isEmpty() && diaTrimmed.isNotEmpty())
+
+            val bloodPressureRaw = when {
+                isPartialBp -> "INVALID_PARTIAL_BP"
+                sysTrimmed.isNotEmpty() && diaTrimmed.isNotEmpty() -> "$sysTrimmed/$diaTrimmed"
+                else -> draft.values.bloodPressure.trim()
+            }
+
+            val hasStructuredFindings = draft.values.fundalHeight.isNotBlank() ||
+                draft.values.oedema.isNotBlank() ||
+                draft.values.fetalMovements.isNotBlank() ||
+                draft.values.urineProtein.isNotBlank()
+
+            val findingsRaw = if (hasStructuredFindings) {
+                val parsed = parseVisitFindings(draft.values.findings)
+                buildVisitFindings(
+                    fundalHeight = draft.values.fundalHeight,
+                    oedema = draft.values.oedema,
+                    fetalMovements = draft.values.fetalMovements,
+                    urineProtein = draft.values.urineProtein,
+                    additionalFindings = parsed.additionalFindings,
+                )
+            } else {
+                draft.values.findings
+            }
+
             val errors = buildSet {
                 when {
                     date.isEmpty() -> add(DraftError.DATE_REQUIRED)
                     parsedDate == null -> add(DraftError.INVALID_DATE)
                     parsedDate.isAfter(today) -> add(DraftError.DATE_IN_FUTURE)
                 }
-                val bloodPressure = draft.values.bloodPressure.normalized()
-                if (bloodPressure != null &&
-                    parseBloodPressure(bloodPressure)?.let(::isPlausibleBloodPressure) != true
+                val bloodPressure = bloodPressureRaw.normalized()
+                if (bloodPressure == "INVALID_PARTIAL_BP" ||
+                    (bloodPressure != null && parseBloodPressure(bloodPressure)?.let(::isPlausibleBloodPressure) != true)
                 ) {
                     add(DraftError.BLOOD_PRESSURE_INVALID)
                 }
@@ -73,9 +105,9 @@ data class SaveVisitCommand(
                 visitId = visitId,
                 expectedRevision = draft.baseRevision,
                 date = date,
-                bloodPressure = draft.values.bloodPressure.normalized(),
+                bloodPressure = bloodPressureRaw.normalized(),
                 weight = draft.values.weight.normalized(),
-                findings = draft.values.findings.normalized(),
+                findings = findingsRaw.normalized(),
                 notes = draft.values.notes.normalized(),
                 linkedUltrasoundId = draft.values.linkedUltrasoundId.normalized(),
                 fingerprint = "",

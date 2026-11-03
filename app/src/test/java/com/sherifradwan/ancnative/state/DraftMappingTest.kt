@@ -107,7 +107,10 @@ class DraftMappingTest {
         assertEquals(1234L, r.updatedAtMillis)
         assertEquals(
             mapOf(
-                "date" to "2026-10-01", "bloodPressure" to "120/80", "weight" to "70",
+                "date" to "2026-10-01", "bloodPressure" to "120/80",
+                "systolic" to "", "diastolic" to "",
+                "weight" to "70", "fundalHeight" to "",
+                "oedema" to "", "fetalMovements" to "", "urineProtein" to "",
                 "findings" to "findings", "notes" to "notes", "linkedUltrasoundId" to "u9",
             ),
             r.fields,

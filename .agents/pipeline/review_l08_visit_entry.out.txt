@@ -1,0 +1,1408 @@
+[0m
+> build · deepseek-v4.1-flash-free
+I'll start by examining the working directory changes and the spec.
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && git status --short && echo "---DIFFSTAT---" && git diff HEAD --stat
+M app/src/main/java/com/sherifradwan/ancnative/model/codex/CustomChoiceModels.kt
+ M app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+ M app/src/main/java/com/sherifradwan/ancnative/storage/SaveVisitCommand.kt
+ M app/src/test/java/com/sherifradwan/ancnative/model/codex/CustomChoicesLogicTest.kt
+?? .agents/EVIDENCE.json
+?? .agents/PROJECT_MAP.json
+?? .agents/backup-20261029-025233/
+?? .agents/backup-20261029-031001/
+?? .agents/backup-20261029-031629/
+?? .agents/backup-20261029-230415/
+?? .agents/backup-20261029-232729/
+?? .agents/backup-20261029-233138/
+?? .agents/backup-20261029-233755/
+?? .agents/backup-20261029-234257/
+?? .agents/backup-20261029-234348/
+?? .agents/backup-20261030-110956/
+?? .agents/backup-20261030-114106/
+?? .agents/backup-20261030-123728/
+?? .agents/backup-20261030-124029/
+?? .agents/backup-20261030-124141/
+?? .agents/backup-20261030-145357/
+?? .agents/backup-20261030-150323/
+?? .agents/backup-20261030-152104/
+?? .agents/backup-20261030-160322/
+?? .agents/backup-20261030-160522/
+?? .agents/backup-20261030-160822/
+?? .agents/backup-20261030-161610/
+?? .agents/backup-20261030-162108/
+?? .agents/backup-20261030-164151/
+?? .agents/backup-20261030-175143/
+?? .agents/backup-20261030-175644/
+?? .agents/backup-20261030-182233/
+?? .agents/backup-20261030-210523/
+?? .agents/backup-20261030-220718/
+?? .agents/backup-20261030-224329/
+?? .agents/backup-20261030-233105/
+?? .agents/backup-20261031-003322/
+?? .agents/backup-20261031-003640/
+?? .agents/backup-20261031-010955/
+?? .agents/backup-20261031-014856/
+?? .agents/backup-20261031-015328/
+?? .agents/backup-20261031-022337/
+?? .agents/backup-20261031-024837/
+?? .agents/backup-20261031-104624/
+?? .agents/backup-20261031-113341/
+?? .agents/backup-20261031-120803/
+?? .agents/backup-20261031-134721/
+?? .agents/backup-20261031-143752/
+?? .agents/backup-20261031-150045/
+?? .agents/backup-20261031-152448/
+?? .agents/backup-20261031-152526/
+?? .agents/backup-20261031-153956/
+?? .agents/backup-20261031-165916/
+?? .agents/backup-20261031-173757/
+?? .agents/backup-20261031-182425/
+?? .agents/backup-20261031-191652/
+?? .agents/backup-20261031-205447/
+?? .agents/backup-20261031-205500/
+?? .agents/backup-20261031-210326/
+?? .agents/backup-20261031-214850/
+?? .agents/backup-20261101-020429/
+?? .agents/backup-20261101-023101/
+?? .agents/backup-20261101-023135/
+?? .agents/backup-20261101-080417/
+?? .agents/backup-20261101-090915/
+?? .agents/backup-20261101-095708/
+?? .agents/backup-20261101-135028/
+?? .agents/backup-20261101-151959/
+?? .agents/backup-20261101-162119/
+?? .agents/backup-20261101-162505/
+?? .agents/backup-20261101-183717/
+?? .agents/backup-20261101-222506/
+?? .agents/backup-20261101-235150/
+?? .agents/backup-20261102-002529/
+?? .agents/backup-20261102-010537/
+?? .agents/backup-20261102-022358/
+?? .agents/backup-20261102-073139/
+?? .agents/backup-20261102-091859/
+?? .agents/backup-20261102-104737/
+?? .agents/fleet-runs/
+?? .agents/pipeline/SPEC_LOGIC_L08_VISIT_ENTRY.md
+?? .agents/pipeline/__pycache__/run_pipeline.cpython-39.pyc
+?? .agents/pipeline/devtest/devtest_helper.py
+?? .agents/pipeline/devtest/run.log
+?? .agents/pipeline/devtest/run/
+?? .agents/pipeline/devtest/shots/
+?? .agents/pipeline/r3z-run.log
+?? .agents/pipeline/r3z/fix_flaky.log
+?? .agents/pipeline/r3z/fix_flaky.md
+?? .agents/pipeline/r3z/fix_flaky/
+?? .agents/pipeline/r4b-run.log
+?? .agents/pipeline/r4c-run.log
+?? .agents/pipeline/r4d-run.log
+?? .agents/pipeline/r4d/fix/out/
+?? .agents/pipeline/r4e-run.log
+?? .agents/pipeline/r4f-run.log
+?? .agents/pipeline/r4g-run.log
+?? .agents/pipeline/r4g-run2.log
+?? .agents/pipeline/r5a-run1.log
+?? .agents/pipeline/r5b-run.log
+?? .agents/pipeline/r5c-run.log
+?? .agents/pipeline/r5d-run.log
+?? .agents/pipeline/r6a-run.log
+?? .agents/pipeline/r6a-run2.log
+?? .agents/pipeline/r6b1-run.log
+?? .agents/pipeline/r6b2-run.log
+?? .agents/pipeline/review_l08_visit_entry.out.txt
+?? .agents/pipeline/review_l08_visit_entry.prompt.md
+?? .agents/pipeline/runs/20261031-214850/
+?? .agents/pipeline/runs/20261101-020429/
+?? .agents/pipeline/runs/20261101-023101/
+?? .agents/pipeline/runs/20261101-023135/
+?? .agents/pipeline/runs/20261101-080417/
+?? .agents/pipeline/runs/20261101-090915/
+?? .agents/pipeline/runs/20261101-095708/
+?? .agents/pipeline/runs/20261101-135028/
+?? .agents/pipeline/runs/20261101-151959/
+?? .agents/pipeline/runs/20261101-162119/
+?? .agents/pipeline/runs/20261101-162505/
+?? .agents/pipeline/runs/20261101-183717/
+?? .agents/pipeline/runs/20261101-222506/
+?? .agents/pipeline/runs/20261101-235150/
+?? .agents/pipeline/runs/20261102-002529/
+?? .agents/pipeline/runs/20261102-010537/
+?? .agents/pipeline/runs/20261102-022358/
+?? .agents/pipeline/runs/20261102-073139/
+?? .agents/pipeline/runs/20261102-091859/
+?? .agents/pipeline/runs/20261102-104737/
+?? .agents/pipeline/runs/audit-19c36fc/
+?? .agents/work/
+?? app/src/main/java/com/sherifradwan/ancnative/model/VisitEntryLogic.kt
+?? app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt
+?? app/src/test/java/com/sherifradwan/ancnative/state/VisitDraftStateAndCommandTest.kt
+---DIFFSTAT---
+ .../ancnative/model/codex/CustomChoiceModels.kt    |  3 +
+ .../com/sherifradwan/ancnative/state/AncState.kt   | 74 +++++++++++++++++++---
+ .../ancnative/storage/SaveVisitCommand.kt          | 22 ++++++-
+ .../model/codex/CustomChoicesLogicTest.kt          |  3 +
+ 4 files changed, 89 insertions(+), 13 deletions(-)
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && git diff HEAD -- app/src/main/java/com/sherifradwan/ancnative/model/codex/CustomChoiceModels.kt app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt app/src/main/java/com/sherifradwan/ancnative/storage/SaveVisitCommand.kt app/src/test/java/com/sherifradwan/ancnative/model/codex/CustomChoicesLogicTest.kt
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/model/codex/CustomChoiceModels.kt b/app/src/main/java/com/sherifradwan/ancnative/model/codex/CustomChoiceModels.kt
+index d7237c6..5d97ea5 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/model/codex/CustomChoiceModels.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/model/codex/CustomChoiceModels.kt
+@@ -27,6 +27,9 @@ enum class CustomChoiceList(val storageKey: String, val displayName: String) {
+     VISIT_OEDEMA("custom_choice_visit_oedema", "Oedema Findings"),
+     VISIT_MOVEMENTS("custom_choice_visit_movements", "Fetal Movements"),
+     VISIT_URINE("custom_choice_visit_urine", "Urinalysis Findings"),
++    VISIT_BP("custom_choice_visit_bp", "Blood Pressure Presets"),
++    VISIT_WEIGHT("custom_choice_visit_weight", "Weight Presets"),
++    VISIT_FUNDAL_HEIGHT("custom_choice_visit_fundal_height", "Fundal Height Presets"),
+ }
+ 
+ data class CustomChoiceItem(
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt b/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+index e93449e..c068135 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+@@ -12,6 +12,8 @@ import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
+ import com.sherifradwan.ancnative.model.MEDICATION_STATUS_NON_COMPLIANT
+ import com.sherifradwan.ancnative.model.PatientValidationError
+ import com.sherifradwan.ancnative.model.effectiveMedicationStatus
++import com.sherifradwan.ancnative.model.parseBloodPressure
++import com.sherifradwan.ancnative.model.parseVisitFindings
+ import com.sherifradwan.ancnative.storage.ClinicalRecordKind
+ import com.sherifradwan.ancnative.storage.DeletableRecord
+ import com.sherifradwan.ancnative.storage.DeletableRegistry
+@@ -60,7 +62,20 @@ sealed interface PendingAction {
+     ) : PendingAction
+ }
+ 
+-enum class DraftField { DATE, BLOOD_PRESSURE, WEIGHT, FINDINGS, NOTES, LINKED_ULTRASOUND }
++enum class DraftField {
++    DATE,
++    BLOOD_PRESSURE,
++    WEIGHT,
++    FINDINGS,
++    NOTES,
++    LINKED_ULTRASOUND,
++    SYSTOLIC,
++    DIASTOLIC,
++    FUNDAL_HEIGHT,
++    OEDEMA,
++    FETAL_MOVEMENTS,
++    URINE_PROTEIN,
++}
+ enum class PatientDraftField {
+     CASE_ID,
+     DISPLAY_NAME,
+@@ -374,6 +389,12 @@ data class DraftValues(
+     val findings: String = "",
+     val notes: String = "",
+     val linkedUltrasoundId: String = "",
++    val systolic: String = "",
++    val diastolic: String = "",
++    val fundalHeight: String = "",
++    val oedema: String = "",
++    val fetalMovements: String = "",
++    val urineProtein: String = "",
+ )
+ 
+ data class VisitDraft(
+@@ -1325,11 +1346,34 @@ object AncReducer {
+         val draft = state.draft ?: return state
+         val values = when (event.field) {
+             DraftField.DATE -> draft.values.copy(date = event.value)
+-            DraftField.BLOOD_PRESSURE -> draft.values.copy(bloodPressure = event.value)
++            DraftField.BLOOD_PRESSURE -> {
++                val parsed = parseBloodPressure(event.value)
++                draft.values.copy(
++                    bloodPressure = event.value,
++                    systolic = parsed?.systolic?.toString() ?: draft.values.systolic,
++                    diastolic = parsed?.diastolic?.toString() ?: draft.values.diastolic,
++                )
++            }
+             DraftField.WEIGHT -> draft.values.copy(weight = event.value)
+             DraftField.FINDINGS -> draft.values.copy(findings = event.value)
+             DraftField.NOTES -> draft.values.copy(notes = event.value)
+             DraftField.LINKED_ULTRASOUND -> draft.values.copy(linkedUltrasoundId = event.value)
++            DraftField.SYSTOLIC -> {
++                val s = event.value
++                val d = draft.values.diastolic
++                val bp = if (s.isNotBlank() && d.isNotBlank()) "$s/$d" else draft.values.bloodPressure
++                draft.values.copy(systolic = s, bloodPressure = bp)
++            }
++            DraftField.DIASTOLIC -> {
++                val s = draft.values.systolic
++                val d = event.value
++                val bp = if (s.isNotBlank() && d.isNotBlank()) "$s/$d" else draft.values.bloodPressure
++                draft.values.copy(diastolic = d, bloodPressure = bp)
++            }
++            DraftField.FUNDAL_HEIGHT -> draft.values.copy(fundalHeight = event.value)
++            DraftField.OEDEMA -> draft.values.copy(oedema = event.value)
++            DraftField.FETAL_MOVEMENTS -> draft.values.copy(fetalMovements = event.value)
++            DraftField.URINE_PROTEIN -> draft.values.copy(urineProtein = event.value)
+         }
+         return state.copy(draft = draft.copy(values = values, errors = emptySet()), savePhase = SavePhase.IDLE, saveError = null)
+     }
+@@ -1546,14 +1590,24 @@ object AncReducer {
+         draftRecoveryPrompt = null,
+     )
+ 
+-    private fun DemoVisit.toDraftValues() = DraftValues(
+-        date = date,
+-        bloodPressure = bloodPressure.orEmpty(),
+-        weight = weight.orEmpty(),
+-        findings = findings.orEmpty(),
+-        notes = notes.orEmpty(),
+-        linkedUltrasoundId = linkedUltrasoundId.orEmpty(),
+-    )
++    private fun DemoVisit.toDraftValues(): DraftValues {
++        val parsedBp = parseBloodPressure(bloodPressure)
++        val parsedFindings = parseVisitFindings(findings)
++        return DraftValues(
++            date = date,
++            bloodPressure = bloodPressure.orEmpty(),
++            weight = weight.orEmpty(),
++            findings = findings.orEmpty(),
++            notes = notes.orEmpty(),
++            linkedUltrasoundId = linkedUltrasoundId.orEmpty(),
++            systolic = parsedBp?.systolic?.toString().orEmpty(),
++            diastolic = parsedBp?.diastolic?.toString().orEmpty(),
++            fundalHeight = parsedFindings.fundalHeight.orEmpty(),
++            oedema = parsedFindings.oedema.orEmpty(),
++            fetalMovements = parsedFindings.fetalMovements.orEmpty(),
++            urineProtein = parsedFindings.urineProtein.orEmpty(),
++        )
++    }
+ 
+     private fun DemoPatient.toPatientDraftValues() = PatientDraftValues(
+         caseId = caseId,
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/storage/SaveVisitCommand.kt b/app/src/main/java/com/sherifradwan/ancnative/storage/SaveVisitCommand.kt
+index 36761e9..148fd92 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/storage/SaveVisitCommand.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/storage/SaveVisitCommand.kt
+@@ -2,6 +2,7 @@ package com.sherifradwan.ancnative.storage
+ 
+ import com.sherifradwan.ancnative.model.DemoPatient
+ import com.sherifradwan.ancnative.model.DemoVisit
++import com.sherifradwan.ancnative.model.buildVisitFindings
+ import com.sherifradwan.ancnative.model.isPlausibleBloodPressure
+ import com.sherifradwan.ancnative.model.isPlausibleWeightKg
+ import com.sherifradwan.ancnative.model.parseBloodPressure
+@@ -39,13 +40,28 @@ data class SaveVisitCommand(
+             val draft = state.draft ?: return SavePreparation.Rejected(setOf(DraftError.SAVE_FAILED))
+             val date = draft.values.date.trim()
+             val parsedDate = parseCanonicalIsoDateOrNull(date)
++            val bloodPressureRaw = draft.values.bloodPressure.ifBlank {
++                if (draft.values.systolic.isNotBlank() && draft.values.diastolic.isNotBlank()) {
++                    "${draft.values.systolic.trim()}/${draft.values.diastolic.trim()}"
++                } else {
++                    ""
++                }
++            }
++            val findingsRaw = draft.values.findings.ifBlank {
++                buildVisitFindings(
++                    fundalHeight = draft.values.fundalHeight,
++                    oedema = draft.values.oedema,
++                    fetalMovements = draft.values.fetalMovements,
++                    urineProtein = draft.values.urineProtein,
++                )
++            }
+             val errors = buildSet {
+                 when {
+                     date.isEmpty() -> add(DraftError.DATE_REQUIRED)
+                     parsedDate == null -> add(DraftError.INVALID_DATE)
+                     parsedDate.isAfter(today) -> add(DraftError.DATE_IN_FUTURE)
+                 }
+-                val bloodPressure = draft.values.bloodPressure.normalized()
++                val bloodPressure = bloodPressureRaw.normalized()
+                 if (bloodPressure != null &&
+                     parseBloodPressure(bloodPressure)?.let(::isPlausibleBloodPressure) != true
+                 ) {
+@@ -73,9 +89,9 @@ data class SaveVisitCommand(
+                 visitId = visitId,
+                 expectedRevision = draft.baseRevision,
+                 date = date,
+-                bloodPressure = draft.values.bloodPressure.normalized(),
++                bloodPressure = bloodPressureRaw.normalized(),
+                 weight = draft.values.weight.normalized(),
+-                findings = draft.values.findings.normalized(),
++                findings = findingsRaw.normalized(),
+                 notes = draft.values.notes.normalized(),
+                 linkedUltrasoundId = draft.values.linkedUltrasoundId.normalized(),
+                 fingerprint = "",
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/model/codex/CustomChoicesLogicTest.kt b/app/src/test/java/com/sherifradwan/ancnative/model/codex/CustomChoicesLogicTest.kt
+index e5beffd..8da0e82 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/model/codex/CustomChoicesLogicTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/model/codex/CustomChoicesLogicTest.kt
+@@ -147,6 +147,9 @@ class CustomChoicesLogicTest {
+             CustomChoiceList.VISIT_OEDEMA,
+             CustomChoiceList.VISIT_MOVEMENTS,
+             CustomChoiceList.VISIT_URINE,
++            CustomChoiceList.VISIT_BP,
++            CustomChoiceList.VISIT_WEIGHT,
++            CustomChoiceList.VISIT_FUNDAL_HEIGHT,
+         )
+ 
+         assertEquals(allowedLists, CustomChoiceList.entries.toSet())
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/model/VisitEntryLogic.kt 
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "fun parseBloodPressure\|fun parseWeightKg\|fun isPlausibleBloodPressure\|fun isPlausibleWeightKg" app/src/main/java/ && echo "=== files ===" && ls app/src/main/java/com/sherifradwan/ancnative/model/
+app/src/main/java/com/sherifradwan/ancnative/model/VisitVitals.kt:10:fun parseBloodPressure(raw: String?): BloodPressure? {
+app/src/main/java/com/sherifradwan/ancnative/model/VisitVitals.kt:17:fun parseWeightKg(raw: String?): Double? {
+app/src/main/java/com/sherifradwan/ancnative/model/VisitVitals.kt:22:fun isPlausibleBloodPressure(bp: BloodPressure): Boolean =
+app/src/main/java/com/sherifradwan/ancnative/model/VisitVitals.kt:25:fun isPlausibleWeightKg(kg: Double): Boolean = kg in 30.0..250.0
+=== files ===
+ClinicalModels.kt
+ClinicalSummaryGenerator.kt
+DemoFixtures.kt
+DemoModels.kt
+GestationalAgeEngine.kt
+IsoDates.kt
+LabResultFlag.kt
+LongitudinalTimelineProjection.kt
+ObstetricHistory.kt
+Redating.kt
+VisitEntryLogic.kt
+VisitVitals.kt
+codex
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/model/VisitVitals.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/test/java/com/sherifradwan/ancnative/state/VisitDraftStateAndCommandTest.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead .agents/pipeline/SPEC_LOGIC_L08_VISIT_ENTRY.md 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/storage/SaveVisitCommand.kt 
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && echo "=== usages of new logic ===" && grep -rn "fillNormalVisitFindings\|isHighBloodPressure\|resolveLastVisitVitals\|estimateFundalHeightForGa\|buildVisitFindings\|parseVisitFindings\|detectFlaggedFindings\|formatVisitSummary\|VisitFormValues" app/src --include=*.kt | grep -v "VisitEntryLogic.kt:" 
+=== usages of new logic ===
+zsh:1: no matches found: --include=*.kt
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "fillNormalVisitFindings\|isHighBloodPressure\|resolveLastVisitVitals\|estimateFundalHeightForGa\|buildVisitFindings\|parseVisitFindings\|detectFlaggedFindings\|formatVisitSummary\|VisitFormValues" app/src | grep -v "app/src/main/java/com/sherifradwan/ancnative/model/VisitEntryLogic.kt"
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:19:        assertFalse(isHighBloodPressure(110, 70))
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:20:        assertFalse(isHighBloodPressure(120, 80))
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:21:        assertFalse(isHighBloodPressure(139, 89))
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:24:        assertTrue(isHighBloodPressure(140, 70))
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:25:        assertTrue(isHighBloodPressure(145, 85))
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:28:        assertTrue(isHighBloodPressure(120, 90))
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:29:        assertTrue(isHighBloodPressure(130, 95))
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:32:        assertTrue(isHighBloodPressure(150, 95))
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:33:        assertTrue(isHighBloodPressure(160, 110))
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:36:        assertFalse(isHighBloodPressure("118/76"))
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:37:        assertFalse(isHighBloodPressure("139/89"))
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:38:        assertTrue(isHighBloodPressure("140/80"))
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:39:        assertTrue(isHighBloodPressure("120/90"))
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:40:        assertTrue(isHighBloodPressure("150/95"))
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:41:        assertFalse(isHighBloodPressure(null))
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:42:        assertFalse(isHighBloodPressure(""))
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:51:        val initial = VisitFormValues(
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:63:        val result = fillNormalVisitFindings(initial)
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:84:        val initial = VisitFormValues(
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:93:        val result = fillNormalVisitFindings(initial)
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:103:        val initial = VisitFormValues(
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:109:        val result = fillNormalVisitFindings(initial)
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:155:        val lastForNew = resolveLastVisitVitals(listOf(v1, v2, v3), excludeVisitId = null)
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:163:        val lastForEdit = resolveLastVisitVitals(listOf(v1, v2, v3), excludeVisitId = "v3")
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:171:        val emptyLast = resolveLastVisitVitals(emptyList(), excludeVisitId = null)
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:185:        assertEquals(28, estimateFundalHeightForGa(28))
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:186:        assertEquals(34, estimateFundalHeightForGa(34))
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:187:        assertEquals(20, estimateFundalHeightForGa(20))
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:190:        assertNull(estimateFundalHeightForGa(8))
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:191:        assertNull(estimateFundalHeightForGa(52))
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:192:        assertNull(estimateFundalHeightForGa(null))
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:201:        val original = VisitFormValues(
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:208:        val serialized = buildVisitFindings(
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:216:        val parsed = parseVisitFindings(serialized)
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:227:        val parsed = parseVisitFindings(legacy)
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:240:        val flags1 = detectFlaggedFindings(
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:250:        val flagsNormal = detectFlaggedFindings(
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:260:        val flagsSysOnly = detectFlaggedFindings(
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:270:        val flagsDiaOnly = detectFlaggedFindings(
+app/src/test/java/com/sherifradwan/ancnative/model/VisitEntryLogicTest.kt:286:        val summary = formatVisitSummary(
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:16:import com.sherifradwan.ancnative.model.parseVisitFindings
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:1595:        val parsedFindings = parseVisitFindings(findings)
+app/src/main/java/com/sherifradwan/ancnative/storage/SaveVisitCommand.kt:5:import com.sherifradwan.ancnative.model.buildVisitFindings
+app/src/main/java/com/sherifradwan/ancnative/storage/SaveVisitCommand.kt:51:                buildVisitFindings(
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "version = \|@Database" app/src/main/java --include=*.kt | head -20; echo "=== schemas ==="; ls app/schemas 2>/dev/null; ls app/schemas/* 2>/dev/null | head
+zsh:1: no matches found: --include=*.kt
+=== schemas ===
+com.sherifradwan.ancnative.storage.RecordsDatabase
+1.json
+2.json
+3.json
+4.json
+5.json
+6.json
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "@Database" -A6 app/src/main/java | head -30; echo "=== git status schemas ==="; git status --short app/schemas; echo "=== entity visit ==="; grep -rn "class VisitEntity" -A25 app/src/main/java
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDatabase.kt:10:@Database(
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDatabase.kt-11-    entities = [
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDatabase.kt-12-        PatientEntity::class,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDatabase.kt-13-        VisitEntity::class,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDatabase.kt-14-        VaultMetadataEntity::class,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDatabase.kt-15-        SaveReceiptEntity::class,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDatabase.kt-16-        PreviousPregnancyEntity::class,
+=== git status schemas ===
+=== entity visit ===
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt:54:data class VisitEntity(
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-55-    @PrimaryKey val id: String,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-56-    @ColumnInfo(name = "patient_id") val patientId: String,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-57-    @ColumnInfo(name = "recorded_date") val date: String,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-58-    @ColumnInfo(name = "blood_pressure") val bloodPressure: String?,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-59-    val weight: String?,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-60-    val findings: String?,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-61-    val notes: String?,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-62-    val revision: Int,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-63-    @ColumnInfo(name = "is_synthetic_edit") val isSyntheticEdit: Boolean,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-64-    @ColumnInfo(name = "linked_ultrasound_id") val linkedUltrasoundId: String? = null,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-65-)
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-66-
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-67-@Entity(tableName = "vault_metadata")
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-68-data class VaultMetadataEntity(
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-69-    @PrimaryKey
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-70-    @ColumnInfo(name = "vault_uuid") val vaultUuid: String,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-71-    @ColumnInfo(name = "schema_version") val schemaVersion: Int,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-72-    @ColumnInfo(name = "is_synthetic") val isSynthetic: Boolean,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-73-    val initialized: Boolean,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-74-)
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-75-
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-76-@Entity(
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-77-    tableName = "save_receipts",
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-78-    foreignKeys = [
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-79-        ForeignKey(
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && sed -n '1,40p' app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDatabase.kt
+package com.sherifradwan.ancnative.storage
+
+import android.content.Context
+import androidx.room.Database
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import java.util.UUID
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
+
+@Database(
+    entities = [
+        PatientEntity::class,
+        VisitEntity::class,
+        VaultMetadataEntity::class,
+        SaveReceiptEntity::class,
+        PreviousPregnancyEntity::class,
+        PatientCommandReceiptEntity::class,
+        PatientDatingEntity::class,
+        UltrasoundScanEntity::class,
+        LabInvestigationEntity::class,
+        MedicationEntity::class,
+        ClinicalCommandReceiptEntity::class,
+        PatientAttachmentEntity::class,
+        DraftEntity::class,
+    ],
+    version = 6,
+    exportSchema = true,
+)
+abstract class RecordsDatabase : RoomDatabase() {
+    abstract fun recordsDao(): RecordsDao
+
+    companion object {
+        private val nativeLibraryLock = Any()
+        @Volatile private var nativeLibraryLoaded = false
+
+        internal fun open(
+            context: Context,
+            databasePath: String,
+            passphrase: ByteArray,
+        ): OpenedRecordsDatabase {
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "class DraftEntity" -A15 app/src/main/java; echo "=== draft persistence usage ==="; grep -rn "DraftEntity" app/src/main/java | head -20
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt:364:data class DraftEntity(
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-365-    @ColumnInfo(name = "patient_id") val patientId: String,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-366-    @ColumnInfo(name = "screen_kind") val screenKind: String,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-367-    @ColumnInfo(name = "editor_kind") val editorKind: String,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-368-    @ColumnInfo(name = "record_id") val recordId: String?,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-369-    @ColumnInfo(name = "base_revision") val baseRevision: Long?,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-370-    val payload: String,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-371-    @ColumnInfo(name = "updated_at") val updatedAt: Long,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-372-)
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-373-
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-374-data class PatientWithVisits(
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-375-    @Embedded val patient: PatientEntity,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-376-    @Relation(parentColumn = "id", entityColumn = "patient_id")
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-377-    val visits: List<VisitEntity>,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-378-    @Relation(parentColumn = "id", entityColumn = "patient_id")
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt-379-    val previousPregnancies: List<PreviousPregnancyEntity>,
+=== draft persistence usage ===
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDatabase.kt:24:        DraftEntity::class,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt:500:    suspend fun upsertDraft(draft: DraftEntity)
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt:503:    suspend fun draft(patientId: String, screenKind: String): DraftEntity?
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt:506:    suspend fun draftsForPatient(patientId: String): List<DraftEntity>
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1468:        val entity = DraftEntity(
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1498:    private fun DraftEntity.toDraftRecord(): DraftRecord? {
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt:364:data class DraftEntity(
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && sed -n '1420,1540p' app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt
+val snapshot = loadSnapshot()
+        return ClinicalCommandOutcome.Committed(snapshot, receipt.toDomain())
+    }
+
+    private suspend fun restoreRecord(command: RestoreRecordCommand): ClinicalCommandOutcome {
+        deleteRestoreGuardFailure(command.patientId, command.expectedPatientRevision)?.let {
+            return ClinicalCommandOutcome.Rejected(it)
+        }
+
+        val adapter = DeletableRegistry.of<DeletableRecord>(command.type)
+        val sourceReceipt = dao.clinicalCommandReceipt(command.sourceDelete.operationUuid)
+        val latestReceipt = dao.latestClinicalReceiptForRecord(command.patientId, command.recordId)
+        val existing = adapter.load(dao, command.recordId)
+
+        val failure = ClinicalDeleteRule.evaluateRestore(
+            receipt = sourceReceipt?.toDomain(),
+            latestReceipt = latestReceipt?.toDomain(),
+            existingRow = existing,
+            cmd = command,
+        )
+        if (failure != null) return ClinicalCommandOutcome.Rejected(failure)
+
+        val tombstoneRevision = sourceReceipt!!.committedRevision
+        if (tombstoneRevision >= Long.MAX_VALUE) {
+            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.REVISION_EXHAUSTED)
+        }
+
+        adapter.insertRow(dao, command.record, tombstoneRevision + 1)
+
+        val patientUpdated = dao.incrementPatientRevision(command.patientId, command.expectedPatientRevision)
+        if (patientUpdated != 1) throw ClinicalCommandAbort(ClinicalCommandFailure.STALE_PATIENT_REVISION)
+
+        val receipt = ClinicalCommandReceiptEntity(
+            operationUuid = command.operationUuid,
+            patientId = command.patientId,
+            recordKind = command.recordKind.name,
+            recordId = command.recordId,
+            committedRevision = tombstoneRevision + 1,
+            committedPatientRevision = command.expectedPatientRevision + 1,
+            fingerprint = command.computeFingerprint(),
+        )
+        dao.insertClinicalCommandReceipt(receipt)
+        val snapshot = loadSnapshot()
+        return ClinicalCommandOutcome.Committed(snapshot, receipt.toDomain())
+    }
+
+    suspend fun saveDraft(draft: DraftRecord): Boolean {
+        val payload = encodeDraftFields(draft.fields) ?: return false
+        val entity = DraftEntity(
+            patientId = draft.patientId,
+            screenKind = draft.screenKind.name,
+            editorKind = draft.editorKind.name,
+            recordId = draft.recordId,
+            baseRevision = draft.baseRevision,
+            payload = payload,
+            updatedAt = draft.updatedAtMillis,
+        )
+        dao.upsertDraft(entity)
+        return true
+    }
+
+    suspend fun loadDraft(patientId: String, kind: DraftScreenKind): DraftRecord? {
+        val entity = dao.draft(patientId, kind.name) ?: return null
+        return entity.toDraftRecord()
+    }
+
+    suspend fun loadDrafts(patientId: String): List<DraftRecord> {
+        return dao.draftsForPatient(patientId).mapNotNull { it.toDraftRecord() }
+    }
+
+    suspend fun deleteDraft(patientId: String, kind: DraftScreenKind) {
+        dao.deleteDraft(patientId, kind.name)
+    }
+
+    suspend fun deleteDrafts(patientId: String) {
+        dao.deleteDraftsForPatient(patientId)
+    }
+
+    private fun DraftEntity.toDraftRecord(): DraftRecord? {
+        val screenKind = runCatching { DraftScreenKind.valueOf(screenKind) }.getOrNull() ?: return null
+        val editorKind = runCatching { DraftEditorKind.valueOf(editorKind) }.getOrNull() ?: return null
+        val fields = decodeDraftFields(payload) ?: return null
+        return DraftRecord(
+            patientId = patientId,
+            screenKind = screenKind,
+            editorKind = editorKind,
+            recordId = recordId,
+            baseRevision = baseRevision,
+            fields = fields,
+            updatedAtMillis = updatedAt,
+        )
+    }
+
+    companion object {
+        const val SCHEMA_VERSION = 6
+        val PREGNANCY_KINDS = setOf(
+            PatientRecordKind.PREVIOUS_PREGNANCY_CREATE,
+            PatientRecordKind.PREVIOUS_PREGNANCY_UPDATE,
+        )
+    }
+
+    private class PatientCommandAbort(val failure: PatientCommandFailure) : RuntimeException()
+    private class ClinicalCommandAbort(val failure: ClinicalCommandFailure) : RuntimeException()
+}
+
+internal sealed interface RepositoryOpenResult {
+    data class Success(val snapshot: RecordSnapshot, val anomalies: List<RecordAnomaly> = emptyList()) : RepositoryOpenResult
+    data class Failure(val reason: VaultBlockReason) : RepositoryOpenResult
+}
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "encodeDraftFields\|decodeDraftFields\|enum class DraftFieldKey\|DraftFields" app/src/main/java | head -30
+app/src/main/java/com/sherifradwan/ancnative/storage/DraftCodec.kt:8:fun encodeDraftFields(fields: Map<String, String>): String? {
+app/src/main/java/com/sherifradwan/ancnative/storage/DraftCodec.kt:27:fun decodeDraftFields(json: String): Map<String, String>? {
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1467:        val payload = encodeDraftFields(draft.fields) ?: return false
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1501:        val fields = decodeDraftFields(payload) ?: return null
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && cat app/src/main/java/com/sherifradwan/ancnative/storage/DraftCodec.kt; echo "=== DraftRecord / fields usage ==="; grep -rn "DraftRecord(" -A15 app/src/main/java/com/sherifradwan/ancnative/storage/*.kt | head -40; echo "=== who builds draft fields map ==="; grep -rn "fields = mapOf\|fields =" app/src/main/java | grep -i draft | head -20
+package com.sherifradwan.ancnative.storage
+
+import org.json.JSONObject
+import org.json.JSONTokener
+
+const val MAX_DRAFT_PAYLOAD_BYTES = 65_536
+
+fun encodeDraftFields(fields: Map<String, String>): String? {
+    val sorted = fields.toSortedMap()
+    val sb = StringBuilder()
+    sb.append('{')
+    var first = true
+    for ((key, value) in sorted) {
+        if (!first) sb.append(',')
+        first = false
+        sb.append(JSONObject.quote(key))
+        sb.append(':')
+        sb.append(JSONObject.quote(value))
+    }
+    sb.append('}')
+    val result = sb.toString()
+    val utf8Bytes = result.toByteArray(Charsets.UTF_8)
+    if (utf8Bytes.size > MAX_DRAFT_PAYLOAD_BYTES) return null
+    return result
+}
+
+fun decodeDraftFields(json: String): Map<String, String>? {
+    val trimmed = json.trim()
+    if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) return null
+    return try {
+        val tokener = JSONTokener(trimmed)
+        val obj = when (val parsed = tokener.nextValue()) {
+            is JSONObject -> parsed
+            else -> return null
+        }
+        if (tokener.more()) {
+            val next = tokener.nextClean()
+            if (next != 0.toChar()) return null
+        }
+        val result = mutableMapOf<String, String>()
+        val keys = obj.keys()
+        while (keys.hasNext()) {
+            val key = keys.next()
+            val value = obj.opt(key)
+            if (value is String) {
+                result[key] = value
+            }
+        }
+        result
+    } catch (_: Throwable) {
+        null
+    }
+}
+=== DraftRecord / fields usage ===
+app/src/main/java/com/sherifradwan/ancnative/storage/DraftRecord.kt:22:data class DraftRecord(
+app/src/main/java/com/sherifradwan/ancnative/storage/DraftRecord.kt-23-    val patientId: String,
+app/src/main/java/com/sherifradwan/ancnative/storage/DraftRecord.kt-24-    val screenKind: DraftScreenKind,
+app/src/main/java/com/sherifradwan/ancnative/storage/DraftRecord.kt-25-    val editorKind: DraftEditorKind,
+app/src/main/java/com/sherifradwan/ancnative/storage/DraftRecord.kt-26-    val recordId: String?,
+app/src/main/java/com/sherifradwan/ancnative/storage/DraftRecord.kt-27-    val baseRevision: Long?,
+app/src/main/java/com/sherifradwan/ancnative/storage/DraftRecord.kt-28-    val fields: Map<String, String>,
+app/src/main/java/com/sherifradwan/ancnative/storage/DraftRecord.kt-29-    val updatedAtMillis: Long,
+app/src/main/java/com/sherifradwan/ancnative/storage/DraftRecord.kt-30-)
+--
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1483:        return entity.toDraftRecord()
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1484-    }
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1485-
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1486-    suspend fun loadDrafts(patientId: String): List<DraftRecord> {
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1487:        return dao.draftsForPatient(patientId).mapNotNull { it.toDraftRecord() }
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1488-    }
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1489-
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1490-    suspend fun deleteDraft(patientId: String, kind: DraftScreenKind) {
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1491-        dao.deleteDraft(patientId, kind.name)
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1492-    }
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1493-
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1494-    suspend fun deleteDrafts(patientId: String) {
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1495-        dao.deleteDraftsForPatient(patientId)
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1496-    }
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1497-
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1498:    private fun DraftEntity.toDraftRecord(): DraftRecord? {
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1499-        val screenKind = runCatching { DraftScreenKind.valueOf(screenKind) }.getOrNull() ?: return null
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1500-        val editorKind = runCatching { DraftEditorKind.valueOf(editorKind) }.getOrNull() ?: return null
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1501-        val fields = decodeDraftFields(payload) ?: return null
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1502:        return DraftRecord(
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1503-            patientId = patientId,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1504-            screenKind = screenKind,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1505-            editorKind = editorKind,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1506-            recordId = recordId,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1507-            baseRevision = baseRevision,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1508-            fields = fields,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1509-            updatedAtMillis = updatedAt,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1510-        )
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1511-    }
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt-1512-
+=== who builds draft fields map ===
+app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt:67:            fields = mapOf(
+app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt:99:        val fields = if (isNew) {
+app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt:118:            fields = fields,
+app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt:131:            fields = mapOf(
+app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt:150:            fields = mapOf(
+app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt:175:            fields = mapOf(
+app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt:191:            fields = mapOf(
+app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt:213:            fields = mapOf(
+app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt:243:            fields = mapOf(
+app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt:267:            fields = mapOf(
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1501:        val fields = decodeDraftFields(payload) ?: return null
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt [90m[limit=130][0m
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "DraftScreenKind.VISIT" app/src/main/java | head -20
+app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt:307:            DraftScreenKind.VISIT -> stringResource(R.string.draft_screen_visit)
+app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt:18:        return DraftSlot(visitDraft.patientId, DraftScreenKind.VISIT)
+app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt:63:            screenKind = DraftScreenKind.VISIT,
+app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt:293:        DraftScreenKind.VISIT -> {
+app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt:493:        DraftScreenKind.VISIT -> state.draft?.let { it.patientId == slot.patientId && it.isDirty } == true
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && sed -n '280,360p' app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt
+updatedAtMillis = nowMillis,
+        )
+    }
+
+    return null
+}
+
+fun applyDraftRecord(state: AncState, record: DraftRecord): AncState {
+    val slot = activeDraftSlot(state) ?: return state
+    if (slot != DraftSlot(record.patientId, record.screenKind)) return state
+    val newSessionId = UUID.randomUUID().toString()
+
+    return when (record.screenKind) {
+        DraftScreenKind.VISIT -> {
+            val d = state.draft ?: return state
+            val v = d.values
+            state.copy(
+                draft = d.copy(
+                    editorSessionId = newSessionId,
+                    values = v.copy(
+                        date = record.fields["date"] ?: v.date,
+                        bloodPressure = record.fields["bloodPressure"] ?: v.bloodPressure,
+                        weight = record.fields["weight"] ?: v.weight,
+                        findings = record.fields["findings"] ?: v.findings,
+                        notes = record.fields["notes"] ?: v.notes,
+                        linkedUltrasoundId = record.fields["linkedUltrasoundId"] ?: v.linkedUltrasoundId,
+                    ),
+                    errors = emptySet(),
+                ),
+            )
+        }
+        DraftScreenKind.PATIENT_PROFILE -> {
+            val d = state.patientDraft ?: return state
+            val v = d.values
+            state.copy(
+                patientDraft = d.copy(
+                    editorSessionId = newSessionId,
+                    values = v.copy(
+                        caseId = record.fields["caseId"] ?: v.caseId,
+                        displayName = record.fields["displayName"] ?: v.displayName,
+                        dateOfBirth = record.fields["dateOfBirth"] ?: v.dateOfBirth,
+                        phone = record.fields["phone"] ?: v.phone,
+                        ageText = record.fields["ageText"] ?: v.ageText,
+                        addressText = record.fields["addressText"] ?: v.addressText,
+                        bloodGroupText = record.fields["bloodGroupText"] ?: v.bloodGroupText,
+                        riskLevel = record.fields["riskLevel"] ?: v.riskLevel,
+                        gravida = record.fields["gravida"] ?: v.gravida,
+                        parity = record.fields["parity"] ?: v.parity,
+                        abortion = record.fields["abortion"] ?: v.abortion,
+                        obstetricNotes = record.fields["obstetricNotes"] ?: v.obstetricNotes,
+                        clinicalAttention = record.fields["clinicalAttention"] ?: v.clinicalAttention,
+                        lmpDate = record.fields["lmpDate"] ?: v.lmpDate,
+                        datingMethod = record.fields["datingMethod"] ?: v.datingMethod,
+                        transferDate = record.fields["transferDate"] ?: v.transferDate,
+                        embryoAgeDays = record.fields["embryoAgeDays"] ?: v.embryoAgeDays,
+                        agreedEdd = record.fields["agreedEdd"] ?: v.agreedEdd,
+                        scanDate = record.fields["scanDate"] ?: v.scanDate,
+                        scanGaWeeks = record.fields["scanGaWeeks"] ?: v.scanGaWeeks,
+                        scanGaDays = record.fields["scanGaDays"] ?: v.scanGaDays,
+                    ),
+                    errors = emptySet(),
+                ),
+            )
+        }
+        DraftScreenKind.HISTORIES -> {
+            val d = state.historiesDraft ?: return state
+            val v = d.values
+            state.copy(
+                historiesDraft = d.copy(
+                    editorSessionId = newSessionId,
+                    values = v.copy(
+                        medicalHistory = record.fields["medicalHistory"] ?: v.medicalHistory,
+                        surgicalHistory = record.fields["surgicalHistory"] ?: v.surgicalHistory,
+                        familyHistory = record.fields["familyHistory"] ?: v.familyHistory,
+                        allergyHistory = record.fields["allergyHistory"] ?: v.allergyHistory,
+                    ),
+                    errors = emptySet(),
+                ),
+            )
+        }
+        DraftScreenKind.PREVIOUS_PREGNANCY -> {
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && ls gradlew && (./gradlew --offline :app:testDebugUnitTest --tests "com.sherifradwan.ancnative.model.VisitEntryLogicTest" --tests "com.sherifradwan.ancnative.state.VisitDraftStateAndCommandTest" --tests "com.sherifradwan.ancnative.model.codex.CustomChoicesLogicTest" -q 2>&1 | tail -40)
+gradlew
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && ls -la app/build/test-results/testDebugUnitTest/ 2>/dev/null | head -20; echo "=== results ==="; grep -o 'tests="[0-9]*" skipped="[0-9]*" failures="[0-9]*" errors="[0-9]*"' app/build/test-results/testDebugUnitTest/TEST-com.sherifradwan.ancnative.model.VisitEntryLogicTest.xml app/build/test-results/testDebugUnitTest/TEST-com.sherifradwan.ancnative.state.VisitDraftStateAndCommandTest.xml app/build/test-results/testDebugUnitTest/TEST-com.sherifradwan.ancnative.model.codex.CustomChoicesLogicTest.xml 2>/dev/null
+total 24
+drwxr-xr-x@ 6 sherifgamalradwan  staff   192 Nov  3 15:32 .
+drwxr-xr-x@ 4 sherifgamalradwan  staff   128 Oct 12 14:07 ..
+-rw-r--r--@ 1 sherifgamalradwan  staff  2009 Nov  3 15:32 TEST-com.sherifradwan.ancnative.model.VisitEntryLogicTest.xml
+-rw-r--r--@ 1 sherifgamalradwan  staff  2048 Nov  3 15:32 TEST-com.sherifradwan.ancnative.model.codex.CustomChoicesLogicTest.xml
+-rw-r--r--@ 1 sherifgamalradwan  staff  1666 Nov  3 15:32 TEST-com.sherifradwan.ancnative.state.VisitDraftStateAndCommandTest.xml
+drwxr-xr-x@ 5 sherifgamalradwan  staff   160 Nov  3 15:32 binary
+=== results ===
+app/build/test-results/testDebugUnitTest/TEST-com.sherifradwan.ancnative.model.VisitEntryLogicTest.xml:tests="11" skipped="0" failures="0" errors="0"
+app/build/test-results/testDebugUnitTest/TEST-com.sherifradwan.ancnative.state.VisitDraftStateAndCommandTest.xml:tests="8" skipped="0" failures="0" errors="0"
+app/build/test-results/testDebugUnitTest/TEST-com.sherifradwan.ancnative.model.codex.CustomChoicesLogicTest.xml:tests="11" skipped="0" failures="0" errors="0"
+> build · deepseek-v4.1-flash-free
+[0m$ [0mwhich kotlinc kotlin 2>/dev/null; ls ~/.gradle/caches/modules-2/files-2.1 2>/dev/null | head -3
+kotlinc not found
+kotlin not found
+androidx.activity
+androidx.annotation
+androidx.appcompat
+> build · deepseek-v4.1-flash-free
+[0m← [0mWrite app/src/test/java/com/sherifradwan/ancnative/state/ScratchL08ReviewTest.kt
+Created file successfully: app/src/test/java/com/sherifradwan/ancnative/state/ScratchL08ReviewTest.kt
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && ./gradlew --offline :app:testDebugUnitTest --tests "com.sherifradwan.ancnative.state.ScratchL08ReviewTest" -q 2>&1 | tail -30; echo "=== PROBES ==="; grep -o 'PROBE[0-9a-z]* [^<]*' app/build/test-results/testDebugUnitTest/TEST-com.sherifradwan.ancnative.state.ScratchL08ReviewTest.xml 2>/dev/null
+=== PROBES ===
+PROBE2 bpString=150/95 sys= dia= -> 150/95
+PROBE3 result=Ready(command=SaveVisitCommand(operationUuid=op, editorSessionId=s, patientId=10000000-0000-4000-8000-000000000001, visitId=new, expectedRevision=null, date=2026-11-01, bloodPressure=null, weight=null, findings=null, notes=null, linkedUltrasoundId=null, fingerprint=ac3c0782d8c2793f42b8fdff43d0f849a8d801582b930f713b4d89f6e1a1d110))
+PROBE5a ParsedVisitFindings(fundalHeight=null, oedema=None, fetalMovements=null, urineProtein=Culture, additionalFindings=BP reviewed)
+PROBE5b ParsedVisitFindings(fundalHeight=null, oedema=Assessment, fetalMovements=null, urineProtein=Culture, additionalFindings=null)
+PROBE5c ParsedVisitFindings(fundalHeight=30, oedema=null, fetalMovements=null, urineProtein=null, additionalFindings=cephalic · good tone)
+PROBE5d rail=ParsedVisitFindings(fundalHeight=28, oedema=None, fetalMovements=Good, urineProtein=Negative, additionalFindings=Cephalic · good tone)
+PROBE6 []
+PROBE6b [Oedema marked, Movements reduced]
+PROBE1 draftFH=30 savedFindings=FH 28 cm · Oedema mild · Movements good · Urine trace savedBP=142/92
+PROBE7 keys=[date, bloodPressure, weight, findings, notes, linkedUltrasoundId]
+PROBE4 bp=null findings=null
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "DraftField.SYSTOLIC\|DraftField.DIASTOLIC\|DraftField.FUNDAL_HEIGHT\|DraftField.OEDEMA\|DraftField.FETAL_MOVEMENTS\|DraftField.URINE_PROTEIN" app/src/main/java app/src/androidTest 2>/dev/null | grep -v AncState.kt
+(no output)
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && sed -n '1,60p' app/src/main/java/com/sherifradwan/ancnative/model/codex/CustomChoiceModels.kt; echo "=== usage of CustomChoiceList ==="; grep -rn "CustomChoiceList\." app/src/main/java | grep -v "CustomChoiceModels.kt" | head -20
+package com.sherifradwan.ancnative.model.codex
+
+import kotlinx.coroutines.flow.StateFlow
+import java.util.UUID
+
+/**
+ * Enumeration of all choice lists in the ANC app that allow user-defined choices via "+ Add other".
+ *
+ * NOTE (Clinical safety, Section 2.3):
+ * Dating methods (LMP, IVF, Scan, Clinical) are strictly fixed and must NEVER be added to this enum.
+ */
+enum class CustomChoiceList(val storageKey: String, val displayName: String) {
+    MEDICATION_NAME("custom_choice_med_name", "Medication Names"),
+    MEDICATION_DOSE("custom_choice_med_dose", "Medication Dosages"),
+    MEDICATION_ROUTE("custom_choice_med_route", "Medication Routes"),
+    LAB_TEST("custom_choice_lab_test", "Lab Tests"),
+    LAB_RESULT("custom_choice_lab_result", "Lab Result Presets"),
+    LAB_CATEGORY("custom_choice_lab_category", "Lab Categories"),
+    ULTRASOUND_PRESENTATION("custom_choice_us_presentation", "Fetal Presentations"),
+    ULTRASOUND_PLACENTA("custom_choice_us_placenta", "Placenta Sites"),
+    ULTRASOUND_LIQUOR("custom_choice_us_liquor", "Amniotic Fluid / Liquor"),
+    ULTRASOUND_FINDING("custom_choice_us_finding", "Ultrasound Findings"),
+    PREVIOUS_PREGNANCY_OUTCOME("custom_choice_prev_preg_outcome", "Pregnancy Outcomes"),
+    PREVIOUS_PREGNANCY_MODE("custom_choice_prev_preg_mode", "Delivery Modes"),
+    PREVIOUS_PREGNANCY_COMPLICATION("custom_choice_prev_preg_complication", "Pregnancy Complications"),
+    CLINICAL_ATTENTION_PHRASE("custom_choice_attention_phrase", "Clinical Attention Phrases"),
+    VISIT_OEDEMA("custom_choice_visit_oedema", "Oedema Findings"),
+    VISIT_MOVEMENTS("custom_choice_visit_movements", "Fetal Movements"),
+    VISIT_URINE("custom_choice_visit_urine", "Urinalysis Findings"),
+    VISIT_BP("custom_choice_visit_bp", "Blood Pressure Presets"),
+    VISIT_WEIGHT("custom_choice_visit_weight", "Weight Presets"),
+    VISIT_FUNDAL_HEIGHT("custom_choice_visit_fundal_height", "Fundal Height Presets"),
+}
+
+data class CustomChoiceItem(
+    val id: String = UUID.randomUUID().toString(),
+    val list: CustomChoiceList,
+    val label: String,
+    val isCustom: Boolean = true,
+)
+
+sealed interface CustomChoiceValidationResult {
+    data class Valid(val sanitizedLabel: String) : CustomChoiceValidationResult
+    data class Invalid(val reason: Reason) : CustomChoiceValidationResult {
+        enum class Reason {
+            BLANK,
+            TOO_LONG,
+            DUPLICATE,
+            INVALID_CHARACTERS,
+            NOT_FOUND,
+        }
+    }
+}
+
+fun maxCustomChoiceLength(list: CustomChoiceList): Int =
+    if (list == CustomChoiceList.CLINICAL_ATTENTION_PHRASE) 140 else 80
+
+data class RemovedCustomChoice(
+    val item: CustomChoiceItem,
+    val originalIndex: Int,
+=== usage of CustomChoiceList ===
+app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt:2182:    val customChoices by codexRepo.customChoices(CustomChoiceList.MEDICATION_NAME).collectAsState(initial = emptyList())
+app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt:2430:                            list = CustomChoiceList.MEDICATION_NAME,
+app/src/main/java/com/sherifradwan/ancnative/model/codex/ClinicalCodexRepository.kt:32:        CustomChoiceList.entries.associateWith { MutableStateFlow<List<CustomChoiceItem>>(emptyList()) }
+app/src/main/java/com/sherifradwan/ancnative/model/codex/ClinicalCodexRepository.kt:66:        for (listKind in CustomChoiceList.entries) {
+app/src/main/java/com/sherifradwan/ancnative/model/codex/ClinicalCodexRepository.kt:301:        for (listKind in CustomChoiceList.entries) {
+app/src/main/java/com/sherifradwan/ancnative/model/codex/ClinicalCodexRepository.kt:311:        for (listKind in CustomChoiceList.entries) {
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && sed -n '55,90p;290,330p' app/src/main/java/com/sherifradwan/ancnative/model/codex/ClinicalCodexRepository.kt
+}
+
+        val loadedMeds = loadMedicationItems()
+        _medicationCodexItems.value = if (loadedMeds.isEmpty()) {
+            val defaults = defaultMedicationCodexItems()
+            saveMedicationItems(defaults)
+            defaults
+        } else {
+            loadedMeds
+        }
+
+        for (listKind in CustomChoiceList.entries) {
+            _customChoiceFlows[listKind]?.value = loadCustomChoices(listKind)
+        }
+    }
+
+    // ==========================================
+    // Lab Codex Delegate Implementation
+    // ==========================================
+
+    override fun addLabCodexItem(item: LabCodexItem): Boolean {
+        if (item.testName.isBlank()) return false
+        val current = _labCodexItems.value.toMutableList()
+        // Check if item with same name exists
+        val existingIndex = current.indexOfFirst { it.testName.equals(item.testName.trim(), ignoreCase = true) }
+        val finalItem = item.copy(testName = item.testName.trim(), isCustom = true)
+        if (existingIndex >= 0) {
+            current[existingIndex] = finalItem
+        } else {
+            current.add(finalItem)
+        }
+        _labCodexItems.value = current
+        saveLabItems(current)
+        return true
+    }
+
+
+    override fun restoreAllCustomChoices(data: Map<CustomChoiceList, List<CustomChoiceItem>>) = synchronized(customChoicesLock) {
+        for ((list, items) in data) {
+            val flow = _customChoiceFlows[list] ?: continue
+            flow.value = items
+            saveCustomChoices(list, items)
+        }
+    }
+
+    fun exportCustomChoicesForBackup(): Map<String, List<String>> = synchronized(customChoicesLock) {
+        val map = mutableMapOf<String, List<String>>()
+        for (listKind in CustomChoiceList.entries) {
+            val items = _customChoiceFlows[listKind]?.value.orEmpty()
+            if (items.isNotEmpty()) {
+                map[listKind.storageKey] = items.map { it.label }
+            }
+        }
+        map
+    }
+
+    fun restoreCustomChoicesFromBackup(data: Map<String, List<String>>) = synchronized(customChoicesLock) {
+        for (listKind in CustomChoiceList.entries) {
+            val labels = data[listKind.storageKey]
+            if (labels != null) {
+                val maxLen = maxCustomChoiceLength(listKind)
+                val acceptedLabels = mutableListOf<String>()
+                val items = mutableListOf<CustomChoiceItem>()
+                for (rawLabel in labels) {
+                    val validation = validateCustomChoice(rawLabel, acceptedLabels, maxLength = maxLen)
+                    if (validation is CustomChoiceValidationResult.Valid) {
+                        acceptedLabels.add(validation.sanitizedLabel)
+                        items.add(CustomChoiceItem(list = listKind, label = validation.sanitizedLabel, isCustom = true))
+                    }
+                }
+                val flow = _customChoiceFlows.getValue(listKind)
+                flow.value = items
+                saveCustomChoices(listKind, items)
+            }
+        }
+    }
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "enum class DatingMethod" -A12 app/src/main/java | head -20; echo "=== test file ==="; sed -n '120,175p' app/src/test/java/com/sherifradwan/ancnative/model/codex/CustomChoicesLogicTest.kt
+=== test file ===
+        assertTrue(r is CustomChoiceValidationResult.Valid)
+        assertEquals("Sublingual Drops", (r as CustomChoiceValidationResult.Valid).sanitizedLabel)
+    }
+
+    // -------------------------------------------------------------
+    // Oracle O2: Clinical safety - dating methods invariance
+    // -------------------------------------------------------------
+
+    @Test
+    fun datingMethods_notInCustomChoiceList() {
+        // Clinical safety rule (Section 2.3): Dating methods (LMP, IVF, Scan, Clinical)
+        // are fixed and have no "+ Add other".
+        val allowedLists = setOf(
+            CustomChoiceList.MEDICATION_NAME,
+            CustomChoiceList.MEDICATION_DOSE,
+            CustomChoiceList.MEDICATION_ROUTE,
+            CustomChoiceList.LAB_TEST,
+            CustomChoiceList.LAB_RESULT,
+            CustomChoiceList.LAB_CATEGORY,
+            CustomChoiceList.ULTRASOUND_PRESENTATION,
+            CustomChoiceList.ULTRASOUND_PLACENTA,
+            CustomChoiceList.ULTRASOUND_LIQUOR,
+            CustomChoiceList.ULTRASOUND_FINDING,
+            CustomChoiceList.PREVIOUS_PREGNANCY_OUTCOME,
+            CustomChoiceList.PREVIOUS_PREGNANCY_MODE,
+            CustomChoiceList.PREVIOUS_PREGNANCY_COMPLICATION,
+            CustomChoiceList.CLINICAL_ATTENTION_PHRASE,
+            CustomChoiceList.VISIT_OEDEMA,
+            CustomChoiceList.VISIT_MOVEMENTS,
+            CustomChoiceList.VISIT_URINE,
+            CustomChoiceList.VISIT_BP,
+            CustomChoiceList.VISIT_WEIGHT,
+            CustomChoiceList.VISIT_FUNDAL_HEIGHT,
+        )
+
+        assertEquals(allowedLists, CustomChoiceList.entries.toSet())
+        val names = CustomChoiceList.entries.map { it.name }
+        assertFalse(names.any { it.contains("DATING", ignoreCase = true) })
+        assertFalse(names.any { it.contains("LMP", ignoreCase = true) })
+        assertFalse(names.any { it.contains("IVF", ignoreCase = true) })
+    }
+
+    // -------------------------------------------------------------
+    // Oracle O3: Real Repository Tests (Persistence, Reload, Undo & Duplicate Protection)
+    // -------------------------------------------------------------
+
+    @Test
+    fun clinicalCodexRepository_fullPersistenceAndLifecycle() {
+        val fakePrefs = FakeSharedPreferences()
+        val repo1 = ClinicalCodexRepository(fakePrefs)
+
+        val listKind = CustomChoiceList.MEDICATION_ROUTE
+        assertEquals(0, repo1.customChoices(listKind).value.size)
+
+        // 1. Add valid custom choice
+        val addRes = repo1.addCustomChoice(listKind, "Sublingual", existingDefaults = listOf("Oral", "IV"))
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "DATING_METHOD\|DatingMethod" app/src/main/java | head -12
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:164:                                    onEvent(AncEvent.DatingDraftChanged(DatingDraftField.DATING_METHOD, methodKey))
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:94:    DATING_METHOD,
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:120:    DATING_METHOD,
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:1399:            PatientDraftField.DATING_METHOD -> draft.values.copy(datingMethod = event.value)
+app/src/main/java/com/sherifradwan/ancnative/state/DatingDraftRule.kt:42:        DatingDraftField.DATING_METHOD -> values.copy(datingMethod = value)
+app/src/main/java/com/sherifradwan/ancnative/state/DatingDraftRule.kt:51:        DatingDraftField.DATING_METHOD,
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "DraftField.valueOf\|DraftField.entries\|DraftField.ordinal\|DraftField::class" app/src | head -10; echo "=== exhaustive when over DraftField ==="; grep -rn "DraftField\." app/src/main/java --include="*.kt" 2>/dev/null | head; grep -rn "when (event.field)" -A22 app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt | head -30
+=== exhaustive when over DraftField ===
+app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt:325:                    onEvent(AncEvent.PatientDraftChanged(PatientDraftField.CLINICAL_ATTENTION, updatedAttention))
+app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt:2164:    if (name != null) onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.NAME, name))
+app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt:2165:    if (dosage != null) onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.DOSAGE, dosage))
+app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt:2166:    if (route != null) onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ROUTE, route))
+app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt:2167:    if (status != null) onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, status))
+app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt:2168:    if (startDate != null) onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.START_DATE, startDate))
+app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt:2169:    if (endDate != null) onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.END_DATE, endDate))
+app/src/main/java/com/sherifradwan/ancnative/ui/MedicationEditor.kt:156:                onValueChange = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.NAME, it)) },
+app/src/main/java/com/sherifradwan/ancnative/ui/MedicationEditor.kt:177:                        onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.NAME, preset.name))
+app/src/main/java/com/sherifradwan/ancnative/ui/MedicationEditor.kt:178:                        onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.DOSAGE, preset.dosage))
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:1347:        val values = when (event.field) {
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1348-            DraftField.DATE -> draft.values.copy(date = event.value)
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1349-            DraftField.BLOOD_PRESSURE -> {
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1350-                val parsed = parseBloodPressure(event.value)
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1351-                draft.values.copy(
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1352-                    bloodPressure = event.value,
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1353-                    systolic = parsed?.systolic?.toString() ?: draft.values.systolic,
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1354-                    diastolic = parsed?.diastolic?.toString() ?: draft.values.diastolic,
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1355-                )
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1356-            }
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1357-            DraftField.WEIGHT -> draft.values.copy(weight = event.value)
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1358-            DraftField.FINDINGS -> draft.values.copy(findings = event.value)
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1359-            DraftField.NOTES -> draft.values.copy(notes = event.value)
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1360-            DraftField.LINKED_ULTRASOUND -> draft.values.copy(linkedUltrasoundId = event.value)
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1361-            DraftField.SYSTOLIC -> {
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1362-                val s = event.value
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1363-                val d = draft.values.diastolic
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1364-                val bp = if (s.isNotBlank() && d.isNotBlank()) "$s/$d" else draft.values.bloodPressure
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1365-                draft.values.copy(systolic = s, bloodPressure = bp)
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1366-            }
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1367-            DraftField.DIASTOLIC -> {
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1368-                val s = draft.values.systolic
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1369-                val d = event.value
+--
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:1384:        val values = when (event.field) {
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1385-            PatientDraftField.CASE_ID -> draft.values.copy(caseId = event.value)
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1386-            PatientDraftField.DISPLAY_NAME -> draft.values.copy(displayName = event.value)
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1387-            PatientDraftField.DATE_OF_BIRTH -> draft.values.copy(dateOfBirth = event.value)
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1388-            PatientDraftField.PHONE -> draft.values.copy(phone = event.value)
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-1389-            PatientDraftField.AGE_TEXT -> draft.values.copy(ageText = event.value)
+> build · deepseek-v4.1-flash-free
+[0m← [0mEdit app/src/test/java/com/sherifradwan/ancnative/state/ScratchL08ReviewTest.kt
+Index: app/src/test/java/com/sherifradwan/ancnative/state/ScratchL08ReviewTest.kt
+===================================================================
+--- app/src/test/java/com/sherifradwan/ancnative/state/ScratchL08ReviewTest.kt
++++ app/src/test/java/com/sherifradwan/ancnative/state/ScratchL08ReviewTest.kt
+@@ -97,8 +97,21 @@
+         println("PROBE6b " + detectFlaggedFindings("", "", "Marked", "Reduced", "Trace"))
+     }
+ 
+     @Test
++    fun probe_clearBpViaBpField() {
++        var state = AncState(patients = listOf(patient))
++            .let { AncReducer.reduce(it, AncEvent.StartVisit(patient.id, null, "s")) }
++        state = AncReducer.reduce(state, AncEvent.DraftChanged(DraftField.DATE, "2026-11-01"))
++        state = AncReducer.reduce(state, AncEvent.DraftChanged(DraftField.BLOOD_PRESSURE, "150/95"))
++        // clinician decides BP was not measured and clears the BP field entirely
++        state = AncReducer.reduce(state, AncEvent.DraftChanged(DraftField.BLOOD_PRESSURE, ""))
++        val prep = SaveVisitCommand.prepare(state, "op", "new", today)
++        println("PROBE8 bpField='" + state.draft!!.values.bloodPressure + "' sys=" + state.draft!!.values.systolic +
++            " -> saved=" + (prep as? SavePreparation.Ready)?.command?.bloodPressure)
++    }
++
++    @Test
+     fun probe_draftPersistenceKeys() {
+         var state = AncState(patients = listOf(patient))
+             .let { AncReducer.reduce(it, AncEvent.StartVisit(patient.id, null, "s")) }
+         state = AncReducer.reduce(state, AncEvent.DraftChanged(DraftField.FUNDAL_HEIGHT, "30"))
+
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && ./gradlew --offline :app:testDebugUnitTest --tests "com.sherifradwan.ancnative.state.ScratchL08ReviewTest" -q 2>&1 | tail -10; grep -o 'PROBE8 [^<]*' app/build/test-results/testDebugUnitTest/TEST-com.sherifradwan.ancnative.state.ScratchL08ReviewTest.xml
+PROBE8 bpField='' sys=150 -> saved=150/95
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && rm app/src/test/java/com/sherifradwan/ancnative/state/ScratchL08ReviewTest.kt && git status --short | grep -v "^??" ; echo "--- untracked check ---"; git status --short | grep -c "ScratchL08"
+M app/src/main/java/com/sherifradwan/ancnative/model/codex/CustomChoiceModels.kt
+ M app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+ M app/src/main/java/com/sherifradwan/ancnative/storage/SaveVisitCommand.kt
+ M app/src/test/java/com/sherifradwan/ancnative/model/codex/CustomChoicesLogicTest.kt
+--- untracked check ---
+0
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && rm -f app/build/test-results/testDebugUnitTest/TEST-com.sherifradwan.ancnative.state.ScratchL08ReviewTest.xml app/build/test-results/testDebugUnitTest/binary/output.bin 2>/dev/null; grep -n "private fun DemoVisit.toDraftValues" app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt; grep -n "DraftScreenKind.VISIT -> {" app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt; sed -n '1361,1382p' app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+1593:    private fun DemoVisit.toDraftValues(): DraftValues {
+293:        DraftScreenKind.VISIT -> {
+            DraftField.SYSTOLIC -> {
+                val s = event.value
+                val d = draft.values.diastolic
+                val bp = if (s.isNotBlank() && d.isNotBlank()) "$s/$d" else draft.values.bloodPressure
+                draft.values.copy(systolic = s, bloodPressure = bp)
+            }
+            DraftField.DIASTOLIC -> {
+                val s = draft.values.systolic
+                val d = event.value
+                val bp = if (s.isNotBlank() && d.isNotBlank()) "$s/$d" else draft.values.bloodPressure
+                draft.values.copy(diastolic = d, bloodPressure = bp)
+            }
+            DraftField.FUNDAL_HEIGHT -> draft.values.copy(fundalHeight = event.value)
+            DraftField.OEDEMA -> draft.values.copy(oedema = event.value)
+            DraftField.FETAL_MOVEMENTS -> draft.values.copy(fetalMovements = event.value)
+            DraftField.URINE_PROTEIN -> draft.values.copy(urineProtein = event.value)
+        }
+        return state.copy(draft = draft.copy(values = values, errors = emptySet()), savePhase = SavePhase.IDLE, saveError = null)
+    }
+
+    private fun updatePatientDraft(state: AncState, event: AncEvent.PatientDraftChanged): AncState {
+        if (state.savePhase.blocksEditing()) return state
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rln "DATE_IN_FUTURE\|STALE_REVISION\|WEIGHT_INVALID" app/src/test | head; echo "=== counts ==="; grep -rn "DATE_IN_FUTURE" app/src/test | wc -l; grep -rn "STALE_REVISION" app/src/test | wc -l; grep -rn "WEIGHT_INVALID" app/src/test | wc -l
+app/src/test/java/com/sherifradwan/ancnative/state/UndoCoordinatorTest.kt
+app/src/test/java/com/sherifradwan/ancnative/state/AncStateTest.kt
+app/src/test/java/com/sherifradwan/ancnative/storage/SaveCoordinatorTest.kt
+app/src/test/java/com/sherifradwan/ancnative/storage/SaveVisitValidationTest.kt
+=== counts ===
+       3
+       3
+       5
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -n "DATE_IN_FUTURE\|STALE_REVISION\|WEIGHT_INVALID\|BLOOD_PRESSURE_INVALID" app/src/test/java/com/sherifradwan/ancnative/storage/SaveVisitValidationTest.kt | head -20
+56:        assertTrue(DraftError.DATE_IN_FUTURE in rejected.errors)
+74:            DraftError.BLOOD_PRESSURE_INVALID in (prepare(digitsOnly) as SavePreparation.Rejected).errors,
+79:            DraftError.BLOOD_PRESSURE_INVALID in (prepare(text) as SavePreparation.Rejected).errors,
+87:            DraftError.BLOOD_PRESSURE_INVALID in (prepare(parsedButImplausible) as SavePreparation.Rejected).errors,
+92:            DraftError.BLOOD_PRESSURE_INVALID in (prepare(inverted) as SavePreparation.Rejected).errors,
+99:        assertTrue(DraftError.WEIGHT_INVALID in (prepare(tooLow) as SavePreparation.Rejected).errors)
+102:        assertTrue(DraftError.WEIGHT_INVALID in (prepare(twoDecimals) as SavePreparation.Rejected).errors)
+105:        assertTrue(DraftError.WEIGHT_INVALID in (prepare(garbage) as SavePreparation.Rejected).errors)
+124:        assertTrue(DraftError.DATE_IN_FUTURE in rejected.errors)
+125:        assertTrue(DraftError.BLOOD_PRESSURE_INVALID in rejected.errors)
+126:        assertTrue(DraftError.WEIGHT_INVALID in rejected.errors)
+130:                DraftError.DATE_IN_FUTURE,
+131:                DraftError.BLOOD_PRESSURE_INVALID,
+132:                DraftError.WEIGHT_INVALID,
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "STALE_REVISION" app/src/test | head; echo "=== run full unit suite quickly? ==="; wc -l app/src/test/java/com/sherifradwan/ancnative/storage/SaveVisitValidationTest.kt
+app/src/test/java/com/sherifradwan/ancnative/state/UndoCoordinatorTest.kt:596:                ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_REVISION),
+app/src/test/java/com/sherifradwan/ancnative/state/AncStateTest.kt:189:        assertTrue(DraftError.STALE_REVISION in requireNotNull(rejected.draft).errors)
+app/src/test/java/com/sherifradwan/ancnative/storage/SaveCoordinatorTest.kt:55:            SaveFailure.STALE_REVISION,
+=== run full unit suite quickly? ===
+     149 app/src/test/java/com/sherifradwan/ancnative/storage/SaveVisitValidationTest.kt
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && ./gradlew --offline :app:testDebugUnitTest 2>&1 | tail -25
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :app:kspDebugKotlin
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:kspDebugUnitTestKotlin
+> Task :app:compileDebugUnitTestKotlin
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+> Task :app:testDebugUnitTest
+
+BUILD SUCCESSFUL in 26s
+28 actionable tasks: 4 executed, 24 up-to-date
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && python3 - <<'EOF'
+import glob,re
+t=f=e=s=0
+for p in glob.glob('app/build/test-results/testDebugUnitTest/TEST-*.xml'):
+    h=open(p).read(600)
+    m=re.search(r'tests="(\d+)" skipped="(\d+)" failures="(\d+)" errors="(\d+)"',h)
+    if m:
+        t+=int(m.group(1)); s+=int(m.group(2)); f+=int(m.group(3)); e+=int(m.group(4))
+print("classes",len(glob.glob('app/build/test-results/testDebugUnitTest/TEST-*.xml')),"tests",t,"skipped",s,"failures",f,"errors",e)
+EOF
+classes 84 tests 907 skipped 0 failures 0 errors 0
+> build · deepseek-v4.1-flash-free
+[0m← [0mWrite app/src/test/java/com/sherifradwan/ancnative/model/ScratchParseProbeTest.kt
+Created file successfully: app/src/test/java/com/sherifradwan/ancnative/model/ScratchParseProbeTest.kt
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && ./gradlew --offline :app:testDebugUnitTest --tests "com.sherifradwan.ancnative.model.ScratchParseProbeTest" -q 2>&1 | tail -5; grep -o 'PROBE-[A-D] [^<]*' app/build/test-results/testDebugUnitTest/TEST-com.sherifradwan.ancnative.model.ScratchParseProbeTest.xml
+PROBE-A text=FH 28 cm · Oedema marked · Movements good · Urine negative · no edema previously parsed=ParsedVisitFindings(fundalHeight=28, oedema=None, fetalMovements=Good, urineProtein=Negative, additionalFindings=null)
+PROBE-C ParsedVisitFindings(fundalHeight=10, oedema=null, fetalMovements=null, urineProtein=null, additionalFindings=null)
+PROBE-D ParsedVisitFindings(fundalHeight=8, oedema=null, fetalMovements=null, urineProtein=null, additionalFindings=null)
+PROBE-B text=Urine negative · urine culture pending parsed=ParsedVisitFindings(fundalHeight=null, oedema=null, fetalMovements=null, urineProtein=Negative, additionalFindings=null)
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && rm app/src/test/java/com/sherifradwan/ancnative/model/ScratchParseProbeTest.kt && rm -f app/build/test-results/testDebugUnitTest/TEST-com.sherifradwan.ancnative.model.ScratchParseProbeTest.xml && git status --short | grep -v "^??"
+M app/src/main/java/com/sherifradwan/ancnative/model/codex/CustomChoiceModels.kt
+ M app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+ M app/src/main/java/com/sherifradwan/ancnative/storage/SaveVisitCommand.kt
+ M app/src/test/java/com/sherifradwan/ancnative/model/codex/CustomChoicesLogicTest.kt
+> build · deepseek-v4.1-flash-free
+## 1. Executive Summary & Verdict
+
+**Verdict: FAIL**
+
+Room/persistence surface is clean (version 6, no entity or schema drift) and the pure-function predicates are internally consistent. The failure is in the **integration semantics between the new structured fields and the existing free-text `findings` / `bloodPressure` columns**: as soon as the state graph writes both, the save path silently discards what the clinician entered and can resurrect a blood pressure the clinician explicitly deleted. I verified each of these empirically by driving the real reducer + `SaveVisitCommand.prepare()` in a throwaway test (removed afterwards; working tree restored to the 4 expected modified files).
+
+Full unit suite at HEAD+diff: **84 classes / 907 tests / 0 failures** — the green build is not evidence of the invariants, because none of the failing behaviours is exercised.
+
+---
+
+## 2. Detailed Findings
+
+### Hard Blockers
+
+**HB-1 — `prepare()` prefers free-text `findings`, so every structured edit on an existing visit is silently discarded** (`app/src/main/java/com/sherifradwan/ancnative/storage/SaveVisitCommand.kt:50-57`, applied at `:94`)
+
+`findingsRaw = draft.values.findings.ifBlank { buildVisitFindings(...) }`. `DemoVisit.toDraftValues()` (`AncState.kt:1593-1610`) always seeds `findings` with the stored free text, so on **any** edit of an existing visit `findings` is non-blank and the four structured fields are dead.
+
+Measured: visit `FH 28 cm · Oedema mild · …`; reducer set `FUNDAL_HEIGHT=30`, `OEDEMA=Marked`; `prepare()` returned `findings="FH 28 cm · Oedema mild · Movements good · Urine trace"`. The wizard shows 30/marked, the record stores 28/mild. This is the primary intended flow (edit an existing visit), so it is reachable on day one of the wizard.
+
+**HB-2 — the BP mirror is sticky: a cleared or partial BP is resurrected or silently dropped** (`AncState.kt:1361-1373`, `SaveVisitCommand.kt:43-49`)
+
+The mirror only ever *writes* `bloodPressure` when both components are non-blank and never clears it; `prepare()` then prefers `bloodPressure` via `ifBlank`, and falls back to composing from `systolic`/`diastolic`.
+
+Measured:
+- Edit visit with `150/95`, clinician clears systolic **and** diastolic (BP not measured this visit) → `bloodPressure` stays `150/95` → saved `150/95`. **A measurement the clinician deleted is fabricated back into the record.**
+- New visit, BP field set to `150/95` then cleared → saved `150/95`. There is **no way to remove a BP** once entered.
+- New visit, only systolic `185` typed → `Ready(bloodPressure=null)`: the alarming value is dropped with **no error and no flag** (neither field of the pair being blank is not treated as an error).
+
+For a vitals column this is the wrong default: cleared must mean "not recorded", and a partial pair must be a validation error, not a silent discard.
+
+**HB-3 — `parseVisitFindings()` can invert and destroy clinical findings, and it seeds the edit wizard** (`app/src/main/java/com/sherifradwan/ancnative/model/VisitEntryLogic.kt:175-184`, regexes `:162-165`, token stripping `:209-219`; consumed by `AncState.kt:1595`)
+
+Legacy-phrase detection runs first and unconditionally wins over the structured token:
+- `buildVisitFindings("28","Marked","Good","Negative","no edema previously")` → `Oedema marked` is parsed back as **`None`** (occupied inversion), and the free text is lost.
+- Free text is absorbed into clinical values: `Urine culture sent` → `urineProtein="Culture"`; `oedema assessment` → `oedema="Assessment"`; `urine culture pending` disappears entirely (`additionalFindings=null`).
+- `FH 100 cm` → `fundalHeight="10"` (regex `\d{1,2}` truncation); `FH 8 cm` accepted unvalidated.
+
+Because `toDraftValues()` uses this parser, opening a legacy visit presents wrong structured findings to the clinician; if the free-text box is emptied (a natural action once the wizard replaces it), the misparsed values are then canonically written into the record by HB-1's `buildVisitFindings` path. Spec Oracle O5 ("lossless roundtrip") therefore does not hold.
+
+**HB-4 — draft persistence ignores every new structured field, both directions** (`app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt:67-74` write, `:293-312` read)
+
+The persisted visit draft payload is still exactly `[date, bloodPressure, weight, findings, notes, linkedUltrasoundId]` (measured). Consequences on draft recovery / process death:
+- `fundalHeight`, `oedema`, `fetalMovements`, `urineProtein` are **silently lost**, and `applyDraftRecord` has no code to restore them.
+- `bloodPressure` survives but `systolic`/`diastolic` do not, so the restored UI shows empty numeric BP fields while a BP is stored — and per HB-2, typing only a systolic then does nothing.
+
+Room version/schema is untouched, so this is a payload-shape bug, not a migration issue.
+
+### Should-fix
+
+- **SF-1 — isolated severe systolic is not flagged** (`VisitEntryLogic.kt:9-17`, `:251-255`). `isHighBloodPressure` returns `false` unless *both* values are non-null; `detectFlaggedFindings("185","", …)` → `[]`. A one-sided 185 mmHg entry yields no alert. Treat a null partner as "unknown but flag the known high value".
+- **SF-2 — no fundal-height plausibility on save or parse.** `SaveVisitCommand` validates BP and weight only; `FH 8`/`FH 999` save unchallenged. The 10..50 bound exists solely inside `estimateFundalHeightForGa`, i.e. it guards the convenience button, not the record.
+- **SF-3 — `detectFlaggedFindings` logic defects** (`:267-271`): the `|| equals("Trace")` branch is dead (inner `if (contains("+"))` guards the only add), and oedema flags only `Marked`, while spec §1.6 says "marked/abnormal" — `Mild` oedema is a pre-eclampsia-relevant sign and is not flagged.
+- **SF-4 — `resolveLastVisitVitals` orders by raw string date** (`:97`). Correct only for canonical ISO dates; a single non-canonical legacy row mis-orders "same as last". Same pre-existing assumption as `withCommittedVisit`, but it now feeds vitals copying.
+- **SF-5 — the whole logic module is unwired.** `fillNormalVisitFindings`, `detectFlaggedFindings`, `estimateFundalHeightForGa`, `formatVisitSummary`, `resolveLastVisitVitals`, `VisitFormValues` are referenced only by tests; no UI or reducer calls them, so none of the safety invariants is enforced in the shipping app yet. Acceptable only if recorded as pending d28 wiring — it is not stated as a deferral in the spec's outcome oracles.
+- **SF-6 — `formatVisitSummary` drops BP entirely when one component is missing** (`:295`), hiding partial data instead of surfacing it.
+
+### Nits
+
+- **N-1** `estimateFundalHeightForGa` bounds are inclusive `10..50` but 10/50 are untested; spec §1.4 prose ("1 cm/week between 20–40") contradicts the implementation (identity over 10..50).
+- **N-2** `buildVisitFindings`/`parseVisitFindings` share " · " as both delimiter and joiner, and the parser also splits on ","; a comma inside free text becomes " · " (measured) — not lossless.
+- **N-3** `isHighBloodPressure(raw)` conflates "not high" with "unparseable/not measured"; consider a tri-state (`BpLevel`/unknown) so future callers cannot read a parse failure as normal.
+- **N-4** Test-to-spec oracle numbering diverges (spec O7 = Custom Choices, O8 = Reducer/Command; test labels O7 = summary formatter, O8 = custom choices), weakening traceability.
+- **N-5** `capitalizeValue` lowercases the remainder, so free-text case is normalised (fine for presets, lossy for prose).
+
+### Verified clean
+
+- **Room untouched**: `RecordsDatabase` still `version = 6`, `app/schemas/**/6.json` unmodified, `VisitEntity` unchanged, no schema 7, no migration. Only 4 files modified; confirmed by `git status`.
+- **`CustomChoiceList` additions are additive and safe**: keyed by `storageKey`, repository iterates `entries` with missing keys → empty, backup export/restore keyed by storage key. Dating methods are structurally outside this enum (fixed `datingMethod` draft field), so the dating-method invariance is preserved by construction, not just by the name check.
+- **Reducer sync is pure, non-recursive and idempotent** (no event re-dispatch, no ordinal/`valueOf` persistence on `DraftField`) — its defect is the sticky-value semantics of HB-2, not recursion.
+- **Existing validations preserved**: `DATE_REQUIRED`/`INVALID_DATE`/`DATE_IN_FUTURE`, `BLOOD_PRESSURE_INVALID` (incl. inverted), `WEIGHT_INVALID`, and `STALE_REVISION` still fire, and pre-existing `SaveVisitValidationTest` / `AncStateTest` cover them.
+
+---
+
+## 3. Independent Test Review
+
+**Verdict: tests are valid as written and genuinely assert their stated oracles, but the oracle set is incomplete — it omits precisely the paths that fail (HB-1…HB-4, SF-1, SF-3).** The green suite is not reassuring evidence for L08.
+
+What genuinely holds up:
+- **O1 BP flagging** — real boundary coverage on both sides (139/89, 140/70, 120/90, 150/95), plus null/empty safety. Correctly asserts flag-not-block.
+- **O2 Normal fill** — asserts both the "filled" and "not filled" directions, partial fill, `filledCount`, and explicit non-overwrite of Mild/Reduced/+. Real failure detection, but see G-4.
+- **O3 Same-as-last** — newest-prior selection, `excludeVisitId` exclusion, and empty-history nulls; asserts each field individually.
+- **O5/O6/O8** — happy-path roundtrip, each abnormal flagging case, and the high-BP-accepted / inverted-BP-rejected pair are well formed and would fail on regression.
+
+Gaps (each maps to a blocker above):
+- **G-1 (HB-1)** No test edits an existing visit's structured fields and asserts the *saved* `findings`. The suite only composes on a **new** visit (`VisitDraftStateAndCommandTest:100-125`), which is exactly the case where `findings` is blank and the bug hides.
+- **G-2 (HB-2)** No clear/partial BP cases: never asserts that clearing systolic+diastolic clears the saved BP, that clearing the BP field clears it, or that a lone systolic produces `BLOOD_PRESSURE_INVALID` rather than a `Ready` with `bloodPressure=null`. Also nothing asserts the mirror *precedence* when `bloodPressure` and `systolic`/`diastolic` disagree.
+- **G-3 (HB-3)** "Lossless roundtrip" is asserted with a single benign token (`"Cephalic presentation"`). Missing adversarial cases: free text containing "no edema"/"urine"/"oedema", comma-bearing free text, 3-digit FH, out-of-range FH, contradictory legacy phrases. The legacy test asserts only the one friendly sentence.
+- **G-4 (O2 weakness)** `fillNormalVisitFindings` is tested on `VisitFormValues`, which **has no `bloodPressure` field**, so "NEVER modifies blood pressure" is unprovable by construction; the assertion set (`systolic`/`diastolic`/`weight`/`fundalHeight`) does not even include the mirror field that the reducer and `prepare()` actually use. The invariant must be asserted against `DraftValues` once wired.
+- **G-5 (HB-4)** No draft round-trip test (`draftRecordFor` → `applyDraftRecord`), so silent loss of structured fields is invisible to CI.
+- **G-6 (SF-1/SF-3)** Flagging is tested only with both BP components present and only with `Marked`/`Reduced`; no one-sided-BP case, no `Mild` oedema, no `Trace` urine assertion (leaving the dead `Trace` branch unidentified).
+- **G-7 (O1 integration)** No end-to-end assertion that a high-BP visit saved through `prepare()` is still visible to `bpLevel`/`severeBpAttention`; O1 tests the predicate in isolation only.
+- **Legitimate, not a gap:** future date, weight-invalid, multi-error and stale-revision already have coverage in pre-existing `SaveVisitValidationTest.kt` and `AncStateTest.kt:189`; the new file need not duplicate them.
+
+**Recommended minimum before re-review:** fix HB-1 (single source of truth — structured fields authoritative, `findings` kept as a derived/legacy mirror or explicit user-editable field), HB-2 (mirror clears on blank, partial pair = `BLOOD_PRESSURE_INVALID`, `bloodPressure` derived not sticky), HB-3 (token-exact parsing with structured tokens taking precedence over legacy phrases, no keyword absorption from free text), HB-4 (add the six fields to draft payload + restore). Add the six missing tests (G-1…G-6); each should fail against the current code.

@@ -12,6 +12,8 @@ import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
 import com.sherifradwan.ancnative.model.MEDICATION_STATUS_NON_COMPLIANT
 import com.sherifradwan.ancnative.model.PatientValidationError
 import com.sherifradwan.ancnative.model.effectiveMedicationStatus
+import com.sherifradwan.ancnative.model.parseBloodPressure
+import com.sherifradwan.ancnative.model.parseVisitFindings
 import com.sherifradwan.ancnative.storage.ClinicalRecordKind
 import com.sherifradwan.ancnative.storage.DeletableRecord
 import com.sherifradwan.ancnative.storage.DeletableRegistry
@@ -60,7 +62,20 @@ sealed interface PendingAction {
     ) : PendingAction
 }
 
-enum class DraftField { DATE, BLOOD_PRESSURE, WEIGHT, FINDINGS, NOTES, LINKED_ULTRASOUND }
+enum class DraftField {
+    DATE,
+    BLOOD_PRESSURE,
+    WEIGHT,
+    FINDINGS,
+    NOTES,
+    LINKED_ULTRASOUND,
+    SYSTOLIC,
+    DIASTOLIC,
+    FUNDAL_HEIGHT,
+    OEDEMA,
+    FETAL_MOVEMENTS,
+    URINE_PROTEIN,
+}
 enum class PatientDraftField {
     CASE_ID,
     DISPLAY_NAME,
@@ -374,6 +389,12 @@ data class DraftValues(
     val findings: String = "",
     val notes: String = "",
     val linkedUltrasoundId: String = "",
+    val systolic: String = "",
+    val diastolic: String = "",
+    val fundalHeight: String = "",
+    val oedema: String = "",
+    val fetalMovements: String = "",
+    val urineProtein: String = "",
 )
 
 data class VisitDraft(
@@ -1325,11 +1346,43 @@ object AncReducer {
         val draft = state.draft ?: return state
         val values = when (event.field) {
             DraftField.DATE -> draft.values.copy(date = event.value)
-            DraftField.BLOOD_PRESSURE -> draft.values.copy(bloodPressure = event.value)
+            DraftField.BLOOD_PRESSURE -> {
+                val raw = event.value.trim()
+                if (raw.isEmpty()) {
+                    draft.values.copy(
+                        bloodPressure = "",
+                        systolic = "",
+                        diastolic = "",
+                    )
+                } else {
+                    val parsed = parseBloodPressure(raw)
+                    draft.values.copy(
+                        bloodPressure = raw,
+                        systolic = parsed?.systolic?.toString() ?: draft.values.systolic,
+                        diastolic = parsed?.diastolic?.toString() ?: draft.values.diastolic,
+                    )
+                }
+            }
             DraftField.WEIGHT -> draft.values.copy(weight = event.value)
             DraftField.FINDINGS -> draft.values.copy(findings = event.value)
             DraftField.NOTES -> draft.values.copy(notes = event.value)
             DraftField.LINKED_ULTRASOUND -> draft.values.copy(linkedUltrasoundId = event.value)
+            DraftField.SYSTOLIC -> {
+                val s = event.value.trim()
+                val d = draft.values.diastolic.trim()
+                val bp = if (s.isNotEmpty() && d.isNotEmpty()) "$s/$d" else ""
+                draft.values.copy(systolic = s, bloodPressure = bp)
+            }
+            DraftField.DIASTOLIC -> {
+                val s = draft.values.systolic.trim()
+                val d = event.value.trim()
+                val bp = if (s.isNotEmpty() && d.isNotEmpty()) "$s/$d" else ""
+                draft.values.copy(diastolic = d, bloodPressure = bp)
+            }
+            DraftField.FUNDAL_HEIGHT -> draft.values.copy(fundalHeight = event.value)
+            DraftField.OEDEMA -> draft.values.copy(oedema = event.value)
+            DraftField.FETAL_MOVEMENTS -> draft.values.copy(fetalMovements = event.value)
+            DraftField.URINE_PROTEIN -> draft.values.copy(urineProtein = event.value)
         }
         return state.copy(draft = draft.copy(values = values, errors = emptySet()), savePhase = SavePhase.IDLE, saveError = null)
     }
@@ -1546,14 +1599,24 @@ object AncReducer {
         draftRecoveryPrompt = null,
     )
 
-    private fun DemoVisit.toDraftValues() = DraftValues(
-        date = date,
-        bloodPressure = bloodPressure.orEmpty(),
-        weight = weight.orEmpty(),
-        findings = findings.orEmpty(),
-        notes = notes.orEmpty(),
-        linkedUltrasoundId = linkedUltrasoundId.orEmpty(),
-    )
+    private fun DemoVisit.toDraftValues(): DraftValues {
+        val parsedBp = parseBloodPressure(bloodPressure)
+        val parsedFindings = parseVisitFindings(findings)
+        return DraftValues(
+            date = date,
+            bloodPressure = bloodPressure.orEmpty(),
+            weight = weight.orEmpty(),
+            findings = findings.orEmpty(),
+            notes = notes.orEmpty(),
+            linkedUltrasoundId = linkedUltrasoundId.orEmpty(),
+            systolic = parsedBp?.systolic?.toString().orEmpty(),
+            diastolic = parsedBp?.diastolic?.toString().orEmpty(),
+            fundalHeight = parsedFindings.fundalHeight.orEmpty(),
+            oedema = parsedFindings.oedema.orEmpty(),
+            fetalMovements = parsedFindings.fetalMovements.orEmpty(),
+            urineProtein = parsedFindings.urineProtein.orEmpty(),
+        )
+    }
 
     private fun DemoPatient.toPatientDraftValues() = PatientDraftValues(
         caseId = caseId,

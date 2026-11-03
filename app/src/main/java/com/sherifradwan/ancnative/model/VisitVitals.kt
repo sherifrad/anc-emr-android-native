@@ -24,13 +24,19 @@ fun isPlausibleBloodPressure(bp: BloodPressure): Boolean =
 
 fun isPlausibleWeightKg(kg: Double): Boolean = kg in 30.0..250.0
 
-fun bpLevel(raw: String?): BpLevel {
-    val bp = parseBloodPressure(raw) ?: return BpLevel.NORMAL
+fun bpLevel(systolic: Int?, diastolic: Int?): BpLevel {
+    val s = systolic ?: 0
+    val d = diastolic ?: 0
     return when {
-        bp.systolic >= 160 || bp.diastolic >= 110 -> BpLevel.SEVERE
-        bp.systolic >= 140 || bp.diastolic >= 90 -> BpLevel.RAISED
+        s >= 160 || d >= 110 -> BpLevel.SEVERE
+        s >= 140 || d >= 90 -> BpLevel.RAISED
         else -> BpLevel.NORMAL
     }
+}
+
+fun bpLevel(raw: String?): BpLevel {
+    val bp = parseBloodPressure(raw) ?: return BpLevel.NORMAL
+    return bpLevel(bp.systolic, bp.diastolic)
 }
 
 data class SevereBpAttention(val bloodPressure: String, val date: String)

@@ -27,6 +27,9 @@ enum class CustomChoiceList(val storageKey: String, val displayName: String) {
     VISIT_OEDEMA("custom_choice_visit_oedema", "Oedema Findings"),
     VISIT_MOVEMENTS("custom_choice_visit_movements", "Fetal Movements"),
     VISIT_URINE("custom_choice_visit_urine", "Urinalysis Findings"),
+    VISIT_BP("custom_choice_visit_bp", "Blood Pressure Presets"),
+    VISIT_WEIGHT("custom_choice_visit_weight", "Weight Presets"),
+    VISIT_FUNDAL_HEIGHT("custom_choice_visit_fundal_height", "Fundal Height Presets"),
 }
 
 data class CustomChoiceItem(

@@ -1,5 +1,7 @@
 package com.sherifradwan.ancnative.state
 
+import com.sherifradwan.ancnative.model.parseBloodPressure
+import com.sherifradwan.ancnative.model.parseVisitFindings
 import com.sherifradwan.ancnative.storage.DraftEditorKind
 import com.sherifradwan.ancnative.storage.DraftRecord
 import com.sherifradwan.ancnative.storage.DraftScreenKind
@@ -71,6 +73,12 @@ fun draftRecordFor(state: AncState, nowMillis: Long): DraftRecord? {
                 "findings" to draft.values.findings,
                 "notes" to draft.values.notes,
                 "linkedUltrasoundId" to draft.values.linkedUltrasoundId,
+                "systolic" to draft.values.systolic,
+                "diastolic" to draft.values.diastolic,
+                "fundalHeight" to draft.values.fundalHeight,
+                "oedema" to draft.values.oedema,
+                "fetalMovements" to draft.values.fetalMovements,
+                "urineProtein" to draft.values.urineProtein,
             ),
             updatedAtMillis = nowMillis,
         )
@@ -293,16 +301,26 @@ fun applyDraftRecord(state: AncState, record: DraftRecord): AncState {
         DraftScreenKind.VISIT -> {
             val d = state.draft ?: return state
             val v = d.values
+            val bp = record.fields["bloodPressure"] ?: v.bloodPressure
+            val parsedBp = parseBloodPressure(bp)
+            val findings = record.fields["findings"] ?: v.findings
+            val parsedFindings = parseVisitFindings(findings)
             state.copy(
                 draft = d.copy(
                     editorSessionId = newSessionId,
                     values = v.copy(
                         date = record.fields["date"] ?: v.date,
-                        bloodPressure = record.fields["bloodPressure"] ?: v.bloodPressure,
+                        bloodPressure = bp,
                         weight = record.fields["weight"] ?: v.weight,
-                        findings = record.fields["findings"] ?: v.findings,
+                        findings = findings,
                         notes = record.fields["notes"] ?: v.notes,
                         linkedUltrasoundId = record.fields["linkedUltrasoundId"] ?: v.linkedUltrasoundId,
+                        systolic = record.fields["systolic"] ?: (parsedBp?.systolic?.toString() ?: v.systolic),
+                        diastolic = record.fields["diastolic"] ?: (parsedBp?.diastolic?.toString() ?: v.diastolic),
+                        fundalHeight = record.fields["fundalHeight"] ?: (parsedFindings.fundalHeight ?: v.fundalHeight),
+                        oedema = record.fields["oedema"] ?: (parsedFindings.oedema ?: v.oedema),
+                        fetalMovements = record.fields["fetalMovements"] ?: (parsedFindings.fetalMovements ?: v.fetalMovements),
+                        urineProtein = record.fields["urineProtein"] ?: (parsedFindings.urineProtein ?: v.urineProtein),
                     ),
                     errors = emptySet(),
                 ),

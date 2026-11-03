@@ -147,6 +147,9 @@ class CustomChoicesLogicTest {
             CustomChoiceList.VISIT_OEDEMA,
             CustomChoiceList.VISIT_MOVEMENTS,
             CustomChoiceList.VISIT_URINE,
+            CustomChoiceList.VISIT_BP,
+            CustomChoiceList.VISIT_WEIGHT,
+            CustomChoiceList.VISIT_FUNDAL_HEIGHT,
         )
 
         assertEquals(allowedLists, CustomChoiceList.entries.toSet())
