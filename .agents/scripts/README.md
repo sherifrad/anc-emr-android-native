@@ -14,7 +14,9 @@ Rule (owner, 2026-11-02): any command sequence run twice becomes a script here, 
 | qa_package_suffix.init.gradle | adds the .qa applicationId suffix |
 | tap_text_on_device.sh `<serial>` `<text>` | taps a node by text / content-desc / testTag (resource-id); leading `=` = exact match |
 | qa_open_medication_tab.sh `<serial>` | emulator: launch .qa, enter PIN 121212, open workspace Meds tab (needs wm 1080x2400, density 480 = 360 dp) |
+| qa_open_visit_editor.sh `[serial]` | emulator: launch .qa, enter PIN 121212, open workspace Visits tab, open new visit editor (360 dp) |
 | qa_emulator_delete_first_medication.sh `<serial>` `<png>` | emulator: Meds tab, delete first card, confirm, screenshot the Undo bar (360 dp coordinates) |
 | set_emulator_360dp.sh `[serial]` | sets emulator to 360 dp (1080x2400 @ 480 dpi) |
 | reset_emulator_density.sh `[serial]` | resets emulator display size and density to default |
 | run_unit_test.sh `<test_class_or_pattern>` | runs single unit test or pattern via Gradle offline |
+| screenshot_mock_html.sh `<html_path>` `<output_png_path>` `[w]` `[h]` | screenshots an HTML mock file at a given window size using headless Chrome |

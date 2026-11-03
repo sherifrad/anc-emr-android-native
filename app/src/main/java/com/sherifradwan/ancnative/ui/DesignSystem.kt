@@ -1,18 +1,24 @@
 package com.sherifradwan.ancnative.ui
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -20,17 +26,21 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 
@@ -217,3 +227,112 @@ fun NoticeCard(
         }
     }
 }
+
+@Composable
+fun SegmentedProgressBar(
+    totalSteps: Int,
+    currentStep: Int,
+    onStepClick: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        for (i in 0 until totalSteps) {
+            val isDoneOrCurrent = i <= currentStep
+            val stepLabel = stringResource(R.string.step_n_of_m, i + 1, totalSteps)
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 48.dp)
+                    .clickable(
+                        onClick = { onStepClick(i) },
+                        onClickLabel = stepLabel,
+                        role = androidx.compose.ui.semantics.Role.Tab,
+                    )
+                    .testTag("stepSegment-$i"),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(
+                            if (isDoneOrCurrent) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                        ),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ValueStepper(
+    value: String,
+    unit: String,
+    enabled: Boolean = true,
+    keyboardType: KeyboardType = KeyboardType.Decimal,
+    onDecrease: () -> Unit,
+    onIncrease: () -> Unit,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    inputTag: String? = null,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconButton(
+            onClick = onDecrease,
+            enabled = enabled,
+            modifier = Modifier.size(48.dp),
+        ) {
+            Text(
+                text = "−",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Spacer(Modifier.width(8.dp))
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            enabled = enabled,
+            singleLine = true,
+            suffix = if (unit.isNotBlank()) {
+                { Text(unit, style = MaterialTheme.typography.bodyMedium) }
+            } else null,
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            textStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .width(140.dp)
+                .heightIn(min = 48.dp)
+                .let { if (inputTag != null) it.testTag(inputTag) else it },
+        )
+        Spacer(Modifier.width(8.dp))
+        IconButton(
+            onClick = onIncrease,
+            enabled = enabled,
+            modifier = Modifier.size(48.dp),
+        ) {
+            Text(
+                text = "+",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
