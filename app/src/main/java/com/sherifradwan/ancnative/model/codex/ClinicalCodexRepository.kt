@@ -9,13 +9,15 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
 
-class ClinicalCodexRepository private constructor(context: Context) :
-    LabCodexDelegate, MedicationCodexDelegate {
+class ClinicalCodexRepository internal constructor(
+    private val prefs: SharedPreferences,
+) : LabCodexDelegate, MedicationCodexDelegate, CustomChoicesDelegate {
 
-    private val prefs: SharedPreferences = context.applicationContext.getSharedPreferences(
-        PREFS_NAME,
-        Context.MODE_PRIVATE,
+    internal constructor(context: Context) : this(
+        context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     )
+
+    private val customChoicesLock = Any()
 
     private val _labCodexItems = MutableStateFlow<List<LabCodexItem>>(emptyList())
     override val labCodexItems: StateFlow<List<LabCodexItem>> = _labCodexItems.asStateFlow()
@@ -25,6 +27,9 @@ class ClinicalCodexRepository private constructor(context: Context) :
 
     private val _medicationCodexItems = MutableStateFlow<List<MedicationCodexItem>>(emptyList())
     override val medicationCodexItems: StateFlow<List<MedicationCodexItem>> = _medicationCodexItems.asStateFlow()
+
+    private val _customChoiceFlows: Map<CustomChoiceList, MutableStateFlow<List<CustomChoiceItem>>> =
+        CustomChoiceList.entries.associateWith { MutableStateFlow<List<CustomChoiceItem>>(emptyList()) }
 
     init {
         loadCodexData()
@@ -56,6 +61,10 @@ class ClinicalCodexRepository private constructor(context: Context) :
             defaults
         } else {
             loadedMeds
+        }
+
+        for (listKind in CustomChoiceList.entries) {
+            _customChoiceFlows[listKind]?.value = loadCustomChoices(listKind)
         }
     }
 
@@ -200,6 +209,126 @@ class ClinicalCodexRepository private constructor(context: Context) :
     }
 
     // ==========================================
+    // Custom Choices Delegate Implementation
+    // ==========================================
+
+    override fun customChoices(list: CustomChoiceList): StateFlow<List<CustomChoiceItem>> {
+        return _customChoiceFlows.getValue(list).asStateFlow()
+    }
+
+    override fun addCustomChoice(
+        list: CustomChoiceList,
+        label: String,
+        existingDefaults: Collection<String>,
+    ): CustomChoiceValidationResult = synchronized(customChoicesLock) {
+        val flow = _customChoiceFlows.getValue(list)
+        val currentLabels = flow.value.map { it.label } + existingDefaults
+        val maxLength = maxCustomChoiceLength(list)
+        val validation = validateCustomChoice(label, currentLabels, maxLength = maxLength)
+        if (validation !is CustomChoiceValidationResult.Valid) return@synchronized validation
+
+        val item = CustomChoiceItem(list = list, label = validation.sanitizedLabel, isCustom = true)
+        val updated = flow.value + item
+        flow.value = updated
+        saveCustomChoices(list, updated)
+        validation
+    }
+
+    override fun renameCustomChoice(
+        list: CustomChoiceList,
+        id: String,
+        newLabel: String,
+        existingDefaults: Collection<String>,
+    ): CustomChoiceValidationResult = synchronized(customChoicesLock) {
+        val flow = _customChoiceFlows.getValue(list)
+        val item = flow.value.find { it.id == id }
+            ?: return@synchronized CustomChoiceValidationResult.Invalid(CustomChoiceValidationResult.Invalid.Reason.NOT_FOUND)
+        val otherLabels = flow.value.filter { it.id != id }.map { it.label } + existingDefaults
+        val maxLength = maxCustomChoiceLength(list)
+        val validation = validateCustomChoice(newLabel, otherLabels, maxLength = maxLength)
+        if (validation !is CustomChoiceValidationResult.Valid) return@synchronized validation
+
+        val updated = flow.value.map { if (it.id == id) it.copy(label = validation.sanitizedLabel) else it }
+        flow.value = updated
+        saveCustomChoices(list, updated)
+        validation
+    }
+
+    override fun removeCustomChoice(list: CustomChoiceList, id: String): RemovedCustomChoice? = synchronized(customChoicesLock) {
+        val flow = _customChoiceFlows.getValue(list)
+        val index = flow.value.indexOfFirst { it.id == id }
+        if (index < 0) return@synchronized null
+        val item = flow.value[index]
+        val updated = flow.value.filterIndexed { i, _ -> i != index }
+        flow.value = updated
+        saveCustomChoices(list, updated)
+        RemovedCustomChoice(item, index)
+    }
+
+    override fun restoreCustomChoice(removed: RemovedCustomChoice): Boolean = synchronized(customChoicesLock) {
+        val flow = _customChoiceFlows.getValue(removed.item.list)
+        val current = flow.value
+        if (current.any { it.id == removed.item.id || it.label.trim().equals(removed.item.label.trim(), ignoreCase = true) }) {
+            return@synchronized false
+        }
+        val targetIndex = removed.originalIndex.coerceIn(0, current.size)
+        val updated = current.toMutableList().apply { add(targetIndex, removed.item) }
+        flow.value = updated
+        saveCustomChoices(removed.item.list, updated)
+        true
+    }
+
+    override fun clearCustomChoices(list: CustomChoiceList) = synchronized(customChoicesLock) {
+        val flow = _customChoiceFlows.getValue(list)
+        flow.value = emptyList()
+        saveCustomChoices(list, emptyList())
+    }
+
+    override fun getAllCustomChoices(): Map<CustomChoiceList, List<CustomChoiceItem>> = synchronized(customChoicesLock) {
+        _customChoiceFlows.mapValues { it.value.value }
+    }
+
+    override fun restoreAllCustomChoices(data: Map<CustomChoiceList, List<CustomChoiceItem>>) = synchronized(customChoicesLock) {
+        for ((list, items) in data) {
+            val flow = _customChoiceFlows[list] ?: continue
+            flow.value = items
+            saveCustomChoices(list, items)
+        }
+    }
+
+    fun exportCustomChoicesForBackup(): Map<String, List<String>> = synchronized(customChoicesLock) {
+        val map = mutableMapOf<String, List<String>>()
+        for (listKind in CustomChoiceList.entries) {
+            val items = _customChoiceFlows[listKind]?.value.orEmpty()
+            if (items.isNotEmpty()) {
+                map[listKind.storageKey] = items.map { it.label }
+            }
+        }
+        map
+    }
+
+    fun restoreCustomChoicesFromBackup(data: Map<String, List<String>>) = synchronized(customChoicesLock) {
+        for (listKind in CustomChoiceList.entries) {
+            val labels = data[listKind.storageKey]
+            if (labels != null) {
+                val maxLen = maxCustomChoiceLength(listKind)
+                val acceptedLabels = mutableListOf<String>()
+                val items = mutableListOf<CustomChoiceItem>()
+                for (rawLabel in labels) {
+                    val validation = validateCustomChoice(rawLabel, acceptedLabels, maxLength = maxLen)
+                    if (validation is CustomChoiceValidationResult.Valid) {
+                        acceptedLabels.add(validation.sanitizedLabel)
+                        items.add(CustomChoiceItem(list = listKind, label = validation.sanitizedLabel, isCustom = true))
+                    }
+                }
+                val flow = _customChoiceFlows.getValue(listKind)
+                flow.value = items
+                saveCustomChoices(listKind, items)
+            }
+        }
+    }
+
+    // ==========================================
     // JSON Storage Helpers
     // ==========================================
 
@@ -334,6 +463,41 @@ class ClinicalCodexRepository private constructor(context: Context) :
             jsonArray.put(obj)
         }
         prefs.edit().putString(KEY_MED_ITEMS, jsonArray.toString()).apply()
+    }
+
+    private fun loadCustomChoices(list: CustomChoiceList): List<CustomChoiceItem> {
+        val jsonString = prefs.getString(list.storageKey, null) ?: return emptyList()
+        return try {
+            val jsonArray = JSONArray(jsonString)
+            val listItems = mutableListOf<CustomChoiceItem>()
+            for (i in 0 until jsonArray.length()) {
+                val obj = jsonArray.getJSONObject(i)
+                listItems.add(
+                    CustomChoiceItem(
+                        id = obj.optString("id", UUID.randomUUID().toString()),
+                        list = list,
+                        label = obj.optString("label", ""),
+                        isCustom = obj.optBoolean("isCustom", true),
+                    )
+                )
+            }
+            listItems
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun saveCustomChoices(list: CustomChoiceList, items: List<CustomChoiceItem>) {
+        val jsonArray = JSONArray()
+        for (item in items) {
+            val obj = JSONObject().apply {
+                put("id", item.id)
+                put("label", item.label)
+                put("isCustom", item.isCustom)
+            }
+            jsonArray.put(obj)
+        }
+        prefs.edit().putString(list.storageKey, jsonArray.toString()).apply()
     }
 
     companion object {

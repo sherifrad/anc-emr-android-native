@@ -31,6 +31,7 @@ data class CanonicalBackupPayload(
     val schemaVersion: Int,
     val exportedAtEpochMs: Long,
     val patients: List<PatientWithVisits>,
+    val customChoices: Map<String, List<String>> = emptyMap(),
 )
 
 object EncryptedBackupManager {
@@ -48,11 +49,13 @@ object EncryptedBackupManager {
         patients: List<DemoPatient>,
         passphrase: CharArray,
         exportedAtEpochMs: Long = System.currentTimeMillis(),
+        customChoices: Map<String, List<String>> = emptyMap(),
     ): ByteArray {
         val envelope = canonicalEnvelope(
             vaultUuid = vaultUuid,
             exportedAtEpochMs = exportedAtEpochMs,
             patients = patients.toJsonArray { patient -> patient.toCanonicalJson() },
+            customChoices = customChoices,
         )
         return encryptEnvelope(envelope, passphrase)
     }
@@ -63,11 +66,13 @@ object EncryptedBackupManager {
         patients: List<PatientWithVisits>,
         passphrase: CharArray,
         exportedAtEpochMs: Long = System.currentTimeMillis(),
+        customChoices: Map<String, List<String>> = emptyMap(),
     ): ByteArray {
         val envelope = canonicalEnvelope(
             vaultUuid = vaultUuid,
             exportedAtEpochMs = exportedAtEpochMs,
             patients = patients.toJsonArray { patient -> patient.toCanonicalJson() },
+            customChoices = customChoices,
         )
         return encryptEnvelope(envelope, passphrase)
     }
@@ -81,11 +86,34 @@ object EncryptedBackupManager {
             if (envelope.optString("magic") != MAGIC) return null
             if (envelope.optInt("schemaVersion") != SCHEMA_VERSION) return null
             val patients = envelope.optJSONArray("patients") ?: return null
+
+            val customChoices = mutableMapOf<String, List<String>>()
+            try {
+                val customChoicesObj = envelope.optJSONObject("customChoices")
+                if (customChoicesObj != null) {
+                    val keys = customChoicesObj.keys()
+                    while (keys.hasNext()) {
+                        val key = keys.next()
+                        val arr = customChoicesObj.optJSONArray(key)
+                        if (arr != null) {
+                            val list = mutableListOf<String>()
+                            for (i in 0 until arr.length()) {
+                                list.add(arr.getString(i))
+                            }
+                            customChoices[key] = list
+                        }
+                    }
+                }
+            } catch (_: Throwable) {
+                // Non-fatal: parsing custom choices failure must never block patient database restore
+            }
+
             CanonicalBackupPayload(
                 vaultUuid = envelope.getString("vaultUuid"),
                 schemaVersion = envelope.getInt("schemaVersion"),
                 exportedAtEpochMs = envelope.getLong("exportedAtEpochMs"),
                 patients = patients.toObjectList { index -> getJSONObject(index).toPatientWithVisits() },
+                customChoices = customChoices,
             )
         } catch (_: Throwable) {
             null
@@ -121,12 +149,22 @@ object EncryptedBackupManager {
         vaultUuid: String,
         exportedAtEpochMs: Long,
         patients: JSONArray,
+        customChoices: Map<String, List<String>> = emptyMap(),
     ): JSONObject = JSONObject().apply {
         put("magic", MAGIC)
         put("vaultUuid", vaultUuid)
         put("schemaVersion", SCHEMA_VERSION)
         put("exportedAtEpochMs", exportedAtEpochMs)
         put("patients", patients)
+        if (customChoices.isNotEmpty()) {
+            val choicesObj = JSONObject()
+            for ((key, values) in customChoices) {
+                val arr = JSONArray()
+                values.forEach { arr.put(it) }
+                choicesObj.put(key, arr)
+            }
+            put("customChoices", choicesObj)
+        }
     }
 
     private fun encryptEnvelope(envelope: JSONObject, passphrase: CharArray): ByteArray {

@@ -1,0 +1,65 @@
+## 1. Executive summary and verdict
+
+**Verdict: PASS WITH NITS. Merge only after the two should-fix test items below are done.**
+
+The clinical safety and schema boundaries hold:
+- **Dating methods:** none of LMP, IVF, Scan or Clinical dating appears in `CustomChoiceList` (`CustomChoiceModels.kt:12-30`).
+- **Room:** the database stays at `version = 6` (`RecordsDatabase.kt:26`). There are no new entities and no migration.
+- **Backup format:** `SCHEMA_VERSION` stays at 3. `customChoices` is optional and is only written when it isn't empty. A legacy backup without the key parses to `emptyMap()`.
+- **Fault tolerance:** a failed custom-choice export or restore is caught and doesn't stop the patient restore (`VaultController.kt:524-528, 557-564`).
+
+The main weakness is the tests. All the store tests run against an in-memory copy written inside the test file, not the real `ClinicalCodexRepository`. So the real persistence, thread safety and backup-restore wiring have no test. There are also some real race and validation gaps, listed below.
+
+## 2. Detailed findings
+
+### Hard blockers
+None.
+
+### Should-fix
+
+1. **The store tests don't touch the real code** (`CustomChoicesLogicTest.kt:106, 201-270`). Store operations are tested against `InMemoryCustomChoicesDelegate`, which is a hand-copied version of the real logic. It even differs from it: it has no 140-character limit for `CLINICAL_ATTENTION_PHRASE` and no SharedPreferences. Nothing tests saving to SharedPreferences, reloading on init, `exportCustomChoicesForBackup`/`restoreCustomChoicesFromBackup`, or the restore wiring in `VaultController`. None of the codex tests use Robolectric. Please add a Robolectric or fake-prefs test against `ClinicalCodexRepository`.
+
+2. **Lost-update race** (`ClinicalCodexRepository.kt:215-311`). Every change reads `flow.value`, builds a new list and writes it back, with no lock. `restoreEncryptedBackup` runs on the IO dispatcher while the UI can call add, rename or remove on the main thread at the same time. Two consequences:
+   - One change can silently overwrite the other.
+   - The two `apply()` writes can land in a different order from the two flow writes, so SharedPreferences and the StateFlow end up disagreeing.
+
+   Fix: put a lock around each change and its save (for example `synchronized(this)`), or use `flow.update {}` and save what it returns.
+
+3. **Undo can create a duplicate** (`ClinicalCodexRepository.kt:262-269`). `restoreCustomChoice` only checks the item `id`. Sequence: remove "Sublingual", add "sublingual", then tap Undo. Both now exist. It also appends at the end, but spec O3 says "previous or correct place". Fix: run the case-insensitive label check again on undo, and keep the original index (return it from remove, or accept an index on restore).
+
+4. **Labels restored from a backup are not validated** (`ClinicalCodexRepository.kt:302-312`). They go straight into the store without `validateCustomChoice`. A damaged or hand-edited backup could load blank, multi-line, too-long or duplicate labels. Every label also gets a new UUID, so ids don't survive a round trip. That's harmless today, but worth documenting.
+
+5. **Validation is narrower than the spec** (`CustomChoiceModels.kt:75`). Spec O1 says "newlines or control characters". The code only rejects `\n` and `\r`. Inner `\t`, NUL, other C0/C1 control characters, `\u2028` and `\u2029` all get through. Fix: reject `it.isISOControl()` and the Unicode line/paragraph separators. Also, because the input is trimmed first, a trailing newline is quietly removed instead of rejected. That's acceptable, but it isn't tested.
+
+6. **Free text may hold patient details outside the encrypted vault.** "Labels only" is a convention, not something the code enforces. `CLINICAL_ATTENTION_PHRASE` allows 140 characters of free text. The choices are stored in plain SharedPreferences (`anc_clinical_codex_storage`), not in the encrypted vault, and they survive a vault lock or reset. `allowBackup="false"` limits the exposure, but a clinician typing something like "Mrs X – previous ectopic" ends up with patient data stored unencrypted. Either move these into encrypted storage or add a helper text in the UI saying "do not enter patient details". Please get the product owner to decide.
+
+### Nits
+
+7. **Restore merges instead of replacing.** Export leaves out empty lists (`:291-299`), and restore only touches lists present in the backup. A list that was empty when the backup was made keeps its current local entries after restore. Restoring an older backup can therefore leave newer custom entries in place. That's acceptable for "zero data loss", but it isn't an exact restore. Document it.
+
+8. **One bad custom-choice entry can block the whole restore.** If a `customChoices` entry is malformed and `getString` throws, the outer `catch (Throwable)` returns `null` for the whole payload (`EncryptedBackupManager.kt:86-116`). That blocks the patient restore too. The encryption is authenticated, so the risk is low, but parsing that section inside its own try/catch would match the "non-fatal" design.
+
+9. **Restore failures are silent** (`VaultController.kt:561-563`). The swallowed exception isn't logged and isn't shown to the user.
+
+10. **Lookup code that doesn't need to be there:**
+    - Fully qualified `com.sherifradwan...ClinicalCodexRepository.getInstance(appContext)` calls in `VaultController`. Use an import, or better, inject the repository.
+    - `renameCustomChoice` returns `Reason.BLANK` when the id isn't found, which is misleading. A `NOT_FOUND` reason would be clearer.
+    - The 80/140 max-length choice is repeated in two places (`:224, :241`). Extract it, in line with the "reuse, don't duplicate" rule.
+
+11. **Test bookkeeping:**
+    - The dating-method test (`:91-98`) only checks for the substrings DATING, LMP and IVF. That's weak, though acceptable since `CLINICAL_ATTENTION_PHRASE` legitimately contains "CLINICAL". An explicit allow-list snapshot of the enum would be stronger.
+    - `CustomChoiceModels.kt` and `CustomChoicesLogicTest.kt` are untracked (`??`). Make sure they're included in the commit.
+
+## 3. Independent test review verdict
+
+**Gaps found.** The tests are honest but not complete:
+
+| Oracle | Status |
+|---|---|
+| O1 Validation | ✅ Covers blank, null, whitespace, the 80/81 length edge, `\n`/`\r` and case-insensitive duplicates. ❌ Missing: other control characters, the 140-character limit for attention phrases, and rename-to-own-label (excluded by id). |
+| O2 Dating methods | ⚠️ Name check only (see item 11). |
+| O3 Store | ❌ Only exercises the in-memory copy in the test file. Missing: real-repository persistence and reload, undo position, undo after re-adding the same label, and concurrent changes. |
+| O4 Backup | ✅ Encrypted round trip and the no-choices case both work and check `schemaVersion == 3`. ⚠️ The "legacy" test makes a new backup with an empty map instead of using a real pre-L06 backup. The two produce the same JSON because the empty key is left out, so the test passes, but a saved fixture would make it permanent. ❌ The `VaultController` restore path and `restoreCustomChoicesFromBackup` have no test. |
+| O5 Isolation | ✅ Confirmed by reading the code (Room version 6, no schema files changed). No automated test. |
+
+Before this is called done, please add (a) a Robolectric test of `ClinicalCodexRepository` covering add, reload, undo-after-re-add and the backup export/restore round trip, and (b) control-character validation tests.

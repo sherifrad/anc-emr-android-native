@@ -521,10 +521,16 @@ class VaultController internal constructor(
             val active = session ?: return@withLock null
             val snapshot = active.repository.loadSnapshot()
             val vaultUuid = active.repository.vaultUuid
+            val customChoices = try {
+                com.sherifradwan.ancnative.model.codex.ClinicalCodexRepository.getInstance(appContext).exportCustomChoicesForBackup()
+            } catch (_: Throwable) {
+                emptyMap()
+            }
             EncryptedBackupManager.createEncryptedBackup(
                 vaultUuid = vaultUuid,
                 patients = snapshot.patients,
                 passphrase = passphrase,
+                customChoices = customChoices,
             )
         }
     }
@@ -546,6 +552,15 @@ class VaultController internal constructor(
                 active.repository.restoreCanonicalBackup(payload)
             } catch (t: Throwable) {
                 return@withLock BackupInspectionResult.Error(t.message ?: "Failed to restore database")
+            }
+
+            if (payload.customChoices.isNotEmpty()) {
+                try {
+                    com.sherifradwan.ancnative.model.codex.ClinicalCodexRepository.getInstance(appContext)
+                        .restoreCustomChoicesFromBackup(payload.customChoices)
+                } catch (_: Throwable) {
+                    // Non-fatal
+                }
             }
 
             synchronized(stateLock) {
