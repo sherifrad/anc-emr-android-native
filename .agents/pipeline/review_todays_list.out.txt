@@ -1,0 +1,54 @@
+**Verdict: FAIL.** There is one clinical-safety blocker, and it's a small fix. The rest is solid: the round stays UI-only, it keeps to D24, and every write goes through the standard reducer and ViewModel path.
+
+## 1. Executive summary
+
+- **Scope:** `git diff --stat HEAD` shows no changes under `model/`, `state/` or `storage/`. Only `WorkspaceScreen.kt` and `strings.xml` changed.
+- **D24:** The screen shows only Active and Stopped. Stop stores `Discontinued`. No frequency, end-date or prophylaxis controls are shown.
+- **How writes happen:** `dispatchMedicationDraft` sends `StartMedicationEditor`, then `MedicationDraftChanged`, then `SubmitMedication`. The ViewModel's `saveMedication` builds the same `SaveMedicationCommand` the editor uses, so the shared Undo bar applies. If the reducer refuses to start the editor (dirty draft, save in progress, or an undo running for that record), the later field changes do nothing because there is no draft. Nothing is written to the wrong record.
+- **Safe defaults:** Custom drugs, and codex drugs with no dose, open the editor instead of saving straight away (`WorkspaceScreen.kt:282`). Good.
+
+## 2. Detailed findings
+
+### Hard blocker
+
+**H1. Restart rewrites old medication history** (`WorkspaceScreen.kt:629-637`)
+- The stopped section lists every stopped or discontinued medication the patient has, not just ones stopped this session. The string even reads "Stopped medications" (`strings.xml:436`).
+- Restart sets status to Active, clears `endDate` and keeps the original `startDate`. The test asserts this on purpose (`MedicationTodayListTest.kt:172`).
+- Effect: tapping Restart on a drug stopped months ago erases its stop date. The record then claims the patient took it continuously since the first start date, with no gap.
+- Fix, either:
+  - only offer the one-tap Restart for medications stopped in this session or today, as the spec title "Stopped in this session" says; or
+  - for older stops, open the editor with today's start date instead of saving straight away.
+
+### Should-fix
+
+- **S1. `canStartEditor` doesn't check `state.undoRunning`** (`WorkspaceScreen.kt:63`). If an undo is running for a different record, a tile tap or Stop still starts the editor and fills the fields. The ViewModel then drops the submit because of `!undoRunning` (`AncViewModel.kt:187-191`). The user lands in an open editor with an unsaved "Stopped" or "add" draft. Add `!state.undoRunning` to the check.
+- **S2. Taps that are blocked fail silently** (`WorkspaceScreen.kt:275`, `:358`). When `canStartEditor` is false, tiles, Stop and Restart still look enabled but do nothing.
+  - Either pass `enabled` through or show the standard blocked notice.
+  - In the "+ Add other" dialog (`:407-425`), the custom drug name is saved to `CustomChoiceList.MEDICATION_NAME` even when no editor will open, so the user sees nothing happen.
+- **S3. "+ Add other" doesn't use the shared delegate.** The spec (§2.1.5) says to use `CustomChoicesDelegate`. Instead, the screen calls `codexRepo.addCustomChoice` directly and adds five new error strings just for drugs (`strings.xml:444-448`). This breaks the reuse rule. If l06 already has shared add-other strings or a shared dialog, reuse them.
+- **S4. Duplicate string.** The new `stopped_in_this_session` ("Stopped medications") duplicates the existing `stopped_medications` ("Stopped Medications", `strings.xml:311`), which nothing references any more. Keep one, and make its name match what it does.
+
+### Nits
+
+- Tiles don't quite match mock d1:
+  - the plus icon is tinted `primary` (navy), but the mock uses `--sec` (rose);
+  - minimum height is 48 dp, but the mock uses 56 dp.
+  - Single column is correct.
+- "Already on today's list" uses an Android `Toast` (`:277`) instead of the app's notice or snackbar.
+- Stop and Restart set the status constants directly. Calling the existing `medicationStatusAfterChoice(med.status, MedicationOnOff.STOPPED/ON)` would follow the one-function-per-rule convention.
+- `"Oral"` appears hard-coded three times (`:225`, `:288`, `:419`), and the tab keys `"common"`/`"recent"` are raw strings.
+- Unused import: `validateCustomChoice`.
+- The Recent tab only shows past drugs that are also codex or custom tiles. Past drugs entered as free text never appear there.
+
+## 3. Independent test review: valid for wiring, with gaps
+
+The tests do fail if the controls are missing or their tags break. That covers the presence parts of O1–O5, and the 48 dp checks on the tile, Stop and Edit buttons. The gaps:
+
+1. **Undo bar never checked (O1, O2).** The test host calls `AncReducer` directly, so `SubmitMedication` never reaches the ViewModel. The tests only prove the events were sent; the oracle requires the Undo bar to appear.
+2. **No check on which record was changed or in what order.** Since the reducer runs in the test, assert `state.medicationDraft?.medicationId == "med-stop-test"` and `values.status == Discontinued`, and that `StartMedicationEditor` comes before the field changes.
+3. **The add-other test is flaky** (`:223`). It writes "Calcium" into the real `ClinicalCodexRepository` singleton, which is saved to disk. On the next run without clearing app data, it returns DUPLICATE, no NAME event is sent, and the test fails. Fake or reset the repository, or use a unique name.
+4. **O6 width isn't tested.** Nothing checks the layout at 360 dp.
+5. **Not covered at all:** search filtering, the Recent tab, archived patients and blocked-tap states, and the H1 rule about restarting older stops.
+6. In `activeTileTap_doesNotDispatchSubmit`, also assert that no `StartMedicationEditor` was sent.
+
+I didn't run the tests; this review is from reading the code.

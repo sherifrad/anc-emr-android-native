@@ -427,4 +427,25 @@
     <string name="lab_save_undone">Laboratory investigation save undone.</string>
     <string name="show_all_count">Show all %1$d</string>
     <string name="show_fewer">Show fewer</string>
+    <string name="tap_to_add">Tap to add</string>
+    <string name="tap_to_add_sub">usual dose, today</string>
+    <string name="todays_list">Today\'s list</string>
+    <string name="search_drugs_placeholder">Search or type a drug name</string>
+    <string name="tab_common">Common</string>
+    <string name="tab_recent">Recent</string>
+    <string name="stopped_in_this_session">Stopped in this session</string>
+    <string name="stop_medication">Stop</string>
+    <string name="restart_medication">Restart</string>
+    <string name="already_on_todays_list">%1$s is already on today\'s list</string>
+    <string name="add_other_choice">+ Add other</string>
+    <string name="custom_drug_title">Add Custom Medication</string>
+    <string name="custom_drug_label">Drug name</string>
+    <string name="active_count_summary">%1$d active</string>
+    <string name="custom_drug_blank_error">Name cannot be blank</string>
+    <string name="custom_drug_duplicate_error">Medication already exists</string>
+    <string name="custom_drug_too_long_error">Name is too long</string>
+    <string name="custom_drug_invalid_chars_error">Name contains invalid characters</string>
+    <string name="custom_drug_not_found_error">Item not found</string>
+    <string name="no_recent_medications">No past medications recorded for this patient</string>
+    <string name="set_dose_in_editor">Set dose in editor</string>
 </resources>

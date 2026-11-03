@@ -46,6 +46,16 @@ import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.runtime.collectAsState
+import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
+import com.sherifradwan.ancnative.model.MEDICATION_STATUS_DISCONTINUED
+import com.sherifradwan.ancnative.model.codex.ClinicalCodexRepository
+import com.sherifradwan.ancnative.model.codex.CustomChoiceList
+import com.sherifradwan.ancnative.model.codex.CustomChoiceValidationResult
+import com.sherifradwan.ancnative.model.codex.validateCustomChoice
+import com.sherifradwan.ancnative.state.MedicationDraftField
 import com.sherifradwan.ancnative.model.DemoAttachment
 import com.sherifradwan.ancnative.storage.AttachmentCategories
 import com.sherifradwan.ancnative.storage.AttachmentSyncManager
@@ -94,6 +104,8 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import com.sherifradwan.ancnative.model.ClinicalSummaryGenerator
+import android.widget.Toast
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -116,6 +128,7 @@ import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.WorkspaceSection
 import com.sherifradwan.ancnative.state.stringRes
+import com.sherifradwan.ancnative.state.undoRunning
 import com.sherifradwan.ancnative.storage.DeletableType
 import java.time.LocalDate
 import java.util.UUID
@@ -750,48 +763,39 @@ private fun LazyListScope.workspaceContentItems(
             }
         }
     } else if (section == WorkspaceSection.MEDICATIONS) {
-        if (patient.status != "archived") {
+        val canEdit = patient.status != "archived"
+        val isSaveBlocked = state.savePhase == com.sherifradwan.ancnative.state.SavePhase.PENDING ||
+            state.savePhase == com.sherifradwan.ancnative.state.SavePhase.RECONCILING ||
+            state.savePhase == com.sherifradwan.ancnative.state.SavePhase.UNRESOLVED
+        val canStartEditor = canEdit && !state.hasDirtyDraft && !isSaveBlocked && !state.deleteRunning && !state.undoRunning
+        if (canEdit) {
             item {
-                Button(
-                    onClick = {
-                        onEvent(
-                            AncEvent.StartMedicationEditor(
-                                patientId = patient.id,
-                                medicationId = null,
-                                newMedicationId = UUID.randomUUID().toString(),
-                                editorSessionId = UUID.randomUUID().toString(),
-                            ),
-                        )
-                    },
-                    modifier = Modifier.minimumTouchTarget().testTag("addMedication"),
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.add_medication), maxLines = 1, softWrap = false)
-                }
-            }
-        }
-        if (patient.medications.isEmpty()) {
-            item { Text(stringResource(R.string.no_medications_recorded)) }
-        } else {
-            item {
-                MedicationsListContent(
+                MedicationTapToAddSection(
                     patient = patient,
-                    onDeleteMedication = { med ->
-                        onEvent(AncEvent.RequestDelete(patient.id, DeletableType.MEDICATION, med.id))
-                    },
-                    onEditMedication = { med ->
-                        onEvent(
-                            AncEvent.StartMedicationEditor(
-                                patientId = patient.id,
-                                medicationId = med.id,
-                                newMedicationId = med.id,
-                                editorSessionId = UUID.randomUUID().toString(),
-                            ),
-                        )
-                    },
+                    canStartEditor = canStartEditor,
+                    onEvent = onEvent,
                 )
             }
+        }
+        item {
+            MedicationsListContent(
+                patient = patient,
+                canEdit = canEdit,
+                canStartEditor = canStartEditor,
+                onEvent = onEvent,
+                onDeleteMedication = { med ->
+                    onEvent(AncEvent.RequestDelete(patient.id, DeletableType.MEDICATION, med.id))
+                },
+                onEditMedication = { med ->
+                    if (canStartEditor) {
+                        dispatchMedicationDraft(
+                            onEvent = onEvent,
+                            patientId = patient.id,
+                            medicationId = med.id,
+                        )
+                    }
+                },
+            )
         }
     } else if (section == WorkspaceSection.EPISODE_OVERVIEW) {
         item {
@@ -2129,22 +2133,368 @@ private val StringSetSaver = listSaver<Set<String>, String>(
     restore = { it.toSet() },
 )
 
+private data class MedicationTileItem(
+    val id: String,
+    val name: String,
+    val dosage: String,
+    val route: String,
+    val isCustom: Boolean = false,
+)
+
+private fun dispatchMedicationDraft(
+    onEvent: (AncEvent) -> Unit,
+    patientId: String,
+    medicationId: String? = null,
+    name: String? = null,
+    dosage: String? = null,
+    route: String? = null,
+    status: String? = null,
+    startDate: String? = null,
+    endDate: String? = null,
+    submit: Boolean = false,
+) {
+    onEvent(
+        AncEvent.StartMedicationEditor(
+            patientId = patientId,
+            medicationId = medicationId,
+            newMedicationId = medicationId ?: UUID.randomUUID().toString(),
+            editorSessionId = UUID.randomUUID().toString(),
+        ),
+    )
+    if (name != null) onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.NAME, name))
+    if (dosage != null) onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.DOSAGE, dosage))
+    if (route != null) onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ROUTE, route))
+    if (status != null) onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, status))
+    if (startDate != null) onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.START_DATE, startDate))
+    if (endDate != null) onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.END_DATE, endDate))
+    if (submit) onEvent(AncEvent.SubmitMedication)
+}
+
+@Composable
+private fun MedicationTapToAddSection(
+    patient: DemoPatient,
+    canStartEditor: Boolean,
+    onEvent: (AncEvent) -> Unit,
+) {
+    val context = LocalContext.current
+    val codexRepo = remember { ClinicalCodexRepository.getInstance(context) }
+    val codexMedItems by codexRepo.medicationCodexItems.collectAsState()
+    val customChoices by codexRepo.customChoices(CustomChoiceList.MEDICATION_NAME).collectAsState(initial = emptyList())
+
+    val alreadyOnListFormat = stringResource(R.string.already_on_todays_list)
+    val blankError = stringResource(R.string.custom_drug_blank_error)
+    val tooLongError = stringResource(R.string.custom_drug_too_long_error)
+    val duplicateError = stringResource(R.string.custom_drug_duplicate_error)
+    val invalidCharsError = stringResource(R.string.custom_drug_invalid_chars_error)
+    val notFoundError = stringResource(R.string.custom_drug_not_found_error)
+
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var selectedTab by rememberSaveable { mutableStateOf("common") }
+    var showAddOtherDialog by rememberSaveable { mutableStateOf(false) }
+
+    SectionCard(
+        title = stringResource(R.string.tap_to_add),
+        tag = "medTapToAddCard",
+    ) {
+        Text(
+            text = stringResource(R.string.tap_to_add_sub),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        EditorField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            label = stringResource(R.string.search_drugs_placeholder),
+            tag = "medSearchField",
+            singleLine = true,
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            FilterChip(
+                selected = selectedTab == "common",
+                onClick = { selectedTab = "common" },
+                label = { Text(stringResource(R.string.tab_common), maxLines = 1, softWrap = false) },
+                modifier = Modifier.minimumTouchTarget().testTag("medTab-common"),
+            )
+            FilterChip(
+                selected = selectedTab == "recent",
+                onClick = { selectedTab = "recent" },
+                label = { Text(stringResource(R.string.tab_recent), maxLines = 1, softWrap = false) },
+                modifier = Modifier.minimumTouchTarget().testTag("medTab-recent"),
+            )
+        }
+
+        // HB1: Build tiles dynamically from codexRepo.medicationCodexItems, plus custom choices
+        val allTiles = remember(codexMedItems, customChoices) {
+            val codex = codexMedItems.map {
+                MedicationTileItem(
+                    id = it.id,
+                    name = it.name,
+                    dosage = it.dosage,
+                    route = it.route,
+                    isCustom = it.isCustom,
+                )
+            }
+            val custom = customChoices.map {
+                MedicationTileItem(
+                    id = "custom_${it.id}",
+                    name = it.label,
+                    dosage = "",
+                    route = "Oral",
+                    isCustom = true,
+                )
+            }
+            codex + custom
+        }
+
+        // HB2: Recent tab shows only the patient's real medication history
+        val pastMeds = remember(patient.medications) {
+            patient.medications.map { it.name.trim() }.distinctBy { it.lowercase() }
+        }
+
+        val filteredTiles = remember(searchQuery, selectedTab, allTiles, pastMeds) {
+            val q = searchQuery.trim().lowercase()
+            val baseList = if (selectedTab == "recent") {
+                val pastNames = pastMeds.map { it.lowercase() }.toSet()
+                allTiles.filter { it.name.trim().lowercase() in pastNames }
+            } else {
+                allTiles
+            }
+            if (q.isEmpty()) baseList else baseList.filter { it.name.lowercase().contains(q) }
+        }
+
+        if (selectedTab == "recent" && filteredTiles.isEmpty()) {
+            Text(
+                text = stringResource(R.string.no_recent_medications),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = 8.dp),
+            )
+        } else {
+            Column(
+                modifier = Modifier.fillMaxWidth().testTag("medTilesGrid"),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                filteredTiles.forEach { tile ->
+                    val isActive = patient.medications.any {
+                        it.name.equals(tile.name, ignoreCase = true) && isOngoingMedication(it.status, it.isNonCompliant)
+                    }
+                    val subtitleText = if (tile.dosage.isNotBlank()) {
+                        "${tile.dosage} · ${tile.route}"
+                    } else {
+                        stringResource(R.string.set_dose_in_editor)
+                    }
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .minimumTouchTarget()
+                            .testTag("medTile-${tile.id}")
+                            .clickable(role = Role.Button) {
+                                if (!canStartEditor) return@clickable
+                                if (isActive) {
+                                    Toast.makeText(
+                                        context,
+                                        String.format(alreadyOnListFormat, tile.name),
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                                } else if (tile.isCustom || tile.dosage.isBlank()) {
+                                    // HB3: Custom drug or empty dosage opens editor so clinician sets real dosage safely
+                                    dispatchMedicationDraft(
+                                        onEvent = onEvent,
+                                        patientId = patient.id,
+                                        name = tile.name,
+                                        route = tile.route.ifBlank { "Oral" },
+                                        status = MEDICATION_STATUS_ACTIVE,
+                                        startDate = LocalDate.now().toString(),
+                                        submit = false,
+                                    )
+                                } else {
+                                    // Verified codex item with standard dosage: 1-tap add
+                                    dispatchMedicationDraft(
+                                        onEvent = onEvent,
+                                        patientId = patient.id,
+                                        name = tile.name,
+                                        dosage = tile.dosage,
+                                        route = tile.route,
+                                        status = MEDICATION_STATUS_ACTIVE,
+                                        startDate = LocalDate.now().toString(),
+                                        submit = true,
+                                    )
+                                }
+                            },
+                        shape = RoundedCornerShape(14.dp),
+                        color = if (isActive) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp).fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(tile.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Text(
+                                    subtitleText,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            if (isActive) {
+                                Icon(
+                                    Icons.Default.Check,
+                                    contentDescription = stringResource(R.string.medication_status_active),
+                                    tint = MaterialTheme.colorScheme.tertiary,
+                                    modifier = Modifier.size(24.dp),
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Default.Add,
+                                    contentDescription = stringResource(R.string.add_medication),
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            OutlinedButton(
+                onClick = { showAddOtherDialog = true },
+                modifier = Modifier.minimumTouchTarget().testTag("medAddOtherChip"),
+            ) {
+                Text(stringResource(R.string.add_other_choice), maxLines = 1, softWrap = false)
+            }
+            OutlinedButton(
+                onClick = {
+                    if (canStartEditor) {
+                        dispatchMedicationDraft(
+                            onEvent = onEvent,
+                            patientId = patient.id,
+                            submit = false,
+                        )
+                    }
+                },
+                modifier = Modifier.minimumTouchTarget().testTag("addMedication"),
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(stringResource(R.string.add_medication), maxLines = 1, softWrap = false)
+            }
+        }
+    }
+
+    if (showAddOtherDialog) {
+        var customInput by rememberSaveable { mutableStateOf("") }
+        var inputError by rememberSaveable { mutableStateOf<String?>(null) }
+        AlertDialog(
+            onDismissRequest = { showAddOtherDialog = false },
+            title = { Text(stringResource(R.string.custom_drug_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    EditorField(
+                        value = customInput,
+                        onValueChange = {
+                            customInput = it
+                            inputError = null
+                        },
+                        label = stringResource(R.string.custom_drug_label),
+                        tag = "addOtherChoiceInput",
+                        error = inputError != null,
+                        singleLine = true,
+                    )
+                    if (inputError != null) {
+                        Text(
+                            text = inputError.orEmpty(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val trimmed = customInput.trim()
+                        val res = codexRepo.addCustomChoice(
+                            list = CustomChoiceList.MEDICATION_NAME,
+                            label = trimmed,
+                            existingDefaults = codexMedItems.map { it.name },
+                        )
+                        when (res) {
+                            is CustomChoiceValidationResult.Valid -> {
+                                if (canStartEditor) {
+                                    dispatchMedicationDraft(
+                                        onEvent = onEvent,
+                                        patientId = patient.id,
+                                        name = res.sanitizedLabel,
+                                        route = "Oral",
+                                        status = MEDICATION_STATUS_ACTIVE,
+                                        startDate = LocalDate.now().toString(),
+                                        submit = false,
+                                    )
+                                }
+                                showAddOtherDialog = false
+                            }
+                            is CustomChoiceValidationResult.Invalid -> {
+                                inputError = when (res.reason) {
+                                    CustomChoiceValidationResult.Invalid.Reason.BLANK -> blankError
+                                    CustomChoiceValidationResult.Invalid.Reason.TOO_LONG -> tooLongError
+                                    CustomChoiceValidationResult.Invalid.Reason.DUPLICATE -> duplicateError
+                                    CustomChoiceValidationResult.Invalid.Reason.INVALID_CHARACTERS -> invalidCharsError
+                                    CustomChoiceValidationResult.Invalid.Reason.NOT_FOUND -> notFoundError
+                                }
+                            }
+                        }
+                    },
+                    modifier = Modifier.testTag("addOtherChoiceConfirm"),
+                ) {
+                    Text(stringResource(R.string.save))
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showAddOtherDialog = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+            modifier = Modifier.testTag("addOtherChoiceDialog"),
+        )
+    }
+}
+
 @Composable
 private fun MedicationsListContent(
     patient: DemoPatient,
+    canEdit: Boolean,
+    canStartEditor: Boolean,
+    onEvent: (AncEvent) -> Unit,
     onDeleteMedication: (DemoMedicationRecord) -> Unit,
     onEditMedication: (DemoMedicationRecord) -> Unit,
 ) {
     val medications = patient.medications
-    val canEdit = patient.status != "archived"
+    val activeMeds = medications.filter { isOngoingMedication(it.status, it.isNonCompliant) }
+    val todayStr = LocalDate.now().toString()
+    val stoppedInSessionMeds = medications.filter {
+        !isOngoingMedication(it.status, it.isNonCompliant) && it.endDate == todayStr
+    }
 
     var expandedIds by rememberSaveable(
         patient.id,
         stateSaver = StringSetSaver,
     ) {
         mutableStateOf(
-            if (medications.size <= 3) {
-                medications.map { it.id }.toSet()
+            if (activeMeds.size <= 3) {
+                activeMeds.map { it.id }.toSet()
             } else {
                 emptySet()
             }
@@ -2152,47 +2502,144 @@ private fun MedicationsListContent(
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        if (medications.size > 3) {
-            val allExpanded = medications.isNotEmpty() && medications.all { it.id in expandedIds }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-            ) {
-                TextButton(
-                    onClick = {
-                        expandedIds = if (allExpanded) {
-                            emptySet()
-                        } else {
-                            medications.map { it.id }.toSet()
+        SectionCard(
+            title = stringResource(R.string.todays_list),
+            tag = "medTodayList",
+        ) {
+            if (activeMeds.isNotEmpty()) {
+                Text(
+                    text = stringResource(R.string.active_count_summary, activeMeds.size),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (activeMeds.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.no_medications_recorded),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                if (activeMeds.size > 3) {
+                    val allExpanded = activeMeds.all { it.id in expandedIds }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                    ) {
+                        TextButton(
+                            onClick = {
+                                expandedIds = if (allExpanded) {
+                                    emptySet()
+                                } else {
+                                    activeMeds.map { it.id }.toSet()
+                                }
+                            },
+                            modifier = Modifier
+                                .minimumTouchTarget()
+                                .testTag("medicationsToggleAll"),
+                        ) {
+                            Text(
+                                text = stringResource(if (allExpanded) R.string.collapse_all else R.string.expand_all),
+                            )
                         }
-                    },
-                    modifier = Modifier
-                        .minimumTouchTarget()
-                        .testTag("medicationsToggleAll"),
-                ) {
-                    Text(
-                        text = stringResource(if (allExpanded) R.string.collapse_all else R.string.expand_all),
+                    }
+                }
+
+                activeMeds.forEach { med ->
+                    val isExpanded = med.id in expandedIds
+                    MedicationCard(
+                        med = med,
+                        isExpanded = isExpanded,
+                        canEdit = canEdit,
+                        onToggle = {
+                            expandedIds = if (isExpanded) {
+                                expandedIds - med.id
+                            } else {
+                                expandedIds + med.id
+                            }
+                        },
+                        onStop = {
+                            if (canStartEditor) {
+                                dispatchMedicationDraft(
+                                    onEvent = onEvent,
+                                    patientId = patient.id,
+                                    medicationId = med.id,
+                                    status = MEDICATION_STATUS_DISCONTINUED,
+                                    endDate = LocalDate.now().toString(),
+                                    submit = true,
+                                )
+                            }
+                        },
+                        onEdit = { onEditMedication(med) },
+                        onDelete = { onDeleteMedication(med) },
                     )
                 }
             }
         }
 
-        medications.forEach { med ->
-            val isExpanded = med.id in expandedIds
-            MedicationCard(
-                med = med,
-                isExpanded = isExpanded,
-                canEdit = canEdit,
-                onToggle = {
-                    expandedIds = if (isExpanded) {
-                        expandedIds - med.id
-                    } else {
-                        expandedIds + med.id
+        if (stoppedInSessionMeds.isNotEmpty()) {
+            SectionCard(
+                title = stringResource(R.string.stopped_in_this_session),
+                tag = "medStoppedSection",
+            ) {
+                stoppedInSessionMeds.forEach { med ->
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("stoppedMedication-${med.id}"),
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp).fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    med.name,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                val details = listOfNotNull(med.dosage.takeIf { it.isNotBlank() }, med.route.takeIf { it.isNotBlank() })
+                                val detailsStr = if (details.isNotEmpty()) " · ${details.joinToString(" · ")}" else ""
+                                Text(
+                                    "${stringResource(R.string.medication_status_stopped)}$detailsStr",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            if (canEdit) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    DeleteIconButton(DeletableType.MEDICATION, med, onClick = { onDeleteMedication(med) })
+                                    TextButton(
+                                        onClick = {
+                                            if (canStartEditor) {
+                                                dispatchMedicationDraft(
+                                                    onEvent = onEvent,
+                                                    patientId = patient.id,
+                                                    medicationId = med.id,
+                                                    status = MEDICATION_STATUS_ACTIVE,
+                                                    endDate = "",
+                                                    submit = true,
+                                                )
+                                            }
+                                        },
+                                        modifier = Modifier.minimumTouchTarget().testTag("restartMedication-${med.id}"),
+                                    ) {
+                                        Text(stringResource(R.string.restart_medication), maxLines = 1, softWrap = false)
+                                    }
+                                }
+                            }
+                        }
                     }
-                },
-                onEdit = { onEditMedication(med) },
-                onDelete = { onDeleteMedication(med) },
-            )
+                }
+            }
         }
     }
 }
@@ -2203,6 +2650,7 @@ private fun MedicationCard(
     isExpanded: Boolean,
     canEdit: Boolean,
     onToggle: () -> Unit,
+    onStop: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -2254,8 +2702,24 @@ private fun MedicationCard(
                     }
                 }
                 if (canEdit) {
+                    if (isOngoingMedication(med.status, med.isNonCompliant)) {
+                        IconButton(
+                            onClick = onStop,
+                            modifier = Modifier.minimumTouchTarget().testTag("stopMedication-${med.id}"),
+                        ) {
+                            Icon(
+                                Icons.Default.Stop,
+                                contentDescription = stringResource(R.string.stop_medication),
+                                tint = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    }
                     DeleteIconButton(DeletableType.MEDICATION, med, onDelete)
-                    IconButton(onClick = onEdit, modifier = Modifier.testTag("editMedication-${med.id}")) {
+                    IconButton(
+                        onClick = onEdit,
+                        modifier = Modifier.minimumTouchTarget().testTag("editMedication-${med.id}"),
+                    ) {
                         Icon(
                             Icons.Default.Edit,
                             contentDescription = stringResource(R.string.edit_medication),
