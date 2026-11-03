@@ -104,12 +104,39 @@ object VisitEditorHook : EditorHook {
     override fun rebaseCreateDraft(state: AncState, patients: List<DemoPatient>): AncState = state
 }
 
+object PreviousPregnancyEditorHook : EditorHook {
+    override fun isOpenFor(state: AncState, recordId: String): Boolean =
+        state.pregnancyDraft?.pregnancyId == recordId
+
+    override fun closeEditor(state: AncState, patientId: String): AncState =
+        state.copy(
+            pregnancyDraft = null,
+            route = if (state.route is AncRoute.PreviousPregnancyEditor) {
+                AncRoute.Workspace(patientId, WorkspaceSection.OBSTETRIC_HISTORY)
+            } else {
+                state.route
+            },
+        )
+
+    override fun rebaseCreateDraft(state: AncState, patients: List<DemoPatient>): AncState {
+        var nextDraft = state.pregnancyDraft
+        if (nextDraft != null && nextDraft.basePregnancyRevision == null) {
+            val p = patients.firstOrNull { it.id == nextDraft.patientId }
+            if (p != null) {
+                nextDraft = nextDraft.copy(basePatientRevision = p.revision)
+            }
+        }
+        return state.copy(pregnancyDraft = nextDraft)
+    }
+}
+
 object EditorHooks {
     private val hooks: Map<DeletableType, EditorHook> = mapOf(
         DeletableType.MEDICATION to MedicationEditorHook,
         DeletableType.LAB to LabEditorHook,
         DeletableType.ULTRASOUND to UltrasoundEditorHook,
         DeletableType.VISIT to VisitEditorHook,
+        DeletableType.PREVIOUS_PREGNANCY to PreviousPregnancyEditorHook,
     )
 
     fun of(type: DeletableType): EditorHook? = hooks[type]

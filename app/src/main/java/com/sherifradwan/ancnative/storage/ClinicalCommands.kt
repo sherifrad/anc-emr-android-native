@@ -27,6 +27,8 @@ enum class ClinicalRecordKind {
     ULTRASOUND_RESTORE,
     VISIT_DELETE,
     VISIT_RESTORE,
+    PREVIOUS_PREGNANCY_DELETE,
+    PREVIOUS_PREGNANCY_RESTORE,
 }
 
 enum class ClinicalCommandFailure {

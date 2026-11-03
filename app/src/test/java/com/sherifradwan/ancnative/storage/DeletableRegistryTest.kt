@@ -2,6 +2,7 @@ package com.sherifradwan.ancnative.storage
 
 import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoMedicationRecord
+import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.model.DemoVisit
 import java.security.MessageDigest
@@ -124,6 +125,27 @@ internal object DeleteFixtures {
         linkedUltrasoundId = "us-1",
         revision = revision,
         isSyntheticEdit = false,
+    )
+
+    fun prev(revision: Long = 3) = DemoPreviousPregnancy(
+        id = "prev-1",
+        patientId = "patient-1",
+        modelVersion = 1,
+        dateText = "2024-05-12",
+        outcomeText = "Live birth at 39 weeks",
+        pregnancyType = "Singleton",
+        otherDetails = "No complications",
+        placeAndDoctor = "City Hospital, Dr. Smith",
+        deliveryBy = "Vaginal",
+        outcome = "LiveBirth",
+        birthMethod = "Spontaneous",
+        lossManagement = null,
+        terminationMethod = null,
+        provenanceKind = "CLINICAL",
+        clinicianId = "dr-smith",
+        recordedAt = "2026-01-10T10:00:00Z",
+        updatedAt = "2026-01-10T10:00:00Z",
+        revision = revision,
     )
 
     val medication = DeleteFixture(
@@ -261,7 +283,45 @@ internal object DeleteFixtures {
         contentHash = { visitContentHash(it as DemoVisit) },
     )
 
-    val all = listOf(medication, laboratory, ultrasound, visit)
+    val previousPregnancy = DeleteFixture(
+        type = DeletableType.PREVIOUS_PREGNANCY,
+        tag = "PRV",
+        deleteKind = ClinicalRecordKind.PREVIOUS_PREGNANCY_DELETE,
+        restoreKind = ClinicalRecordKind.PREVIOUS_PREGNANCY_RESTORE,
+        updateKind = ClinicalRecordKind.DATING,
+        otherDeleteKind = ClinicalRecordKind.VISIT_DELETE,
+        recordId = "prev-1",
+        otherRecordId = "prev-2",
+        goldenCanonical = "patient-1|prev-1|1|2024-05-12|Live birth at 39 weeks|Singleton|No complications|City Hospital, Dr. Smith|Vaginal|LiveBirth|Spontaneous|null|null|CLINICAL|dr-smith|2026-01-10T10:00:00Z|2026-01-10T10:00:00Z",
+        goldenHash = "353ade9dae899e18db86b3520e9c9b1e84cefdbeba7774e29f78473ef9d6ae6f",
+        goldenDeleteFingerprint = "434218cd5dc6c6fd2db15a0ff5854fdc8ac1e8e1793920370a142ca538fdac50",
+        goldenRestoreFingerprint = "5b9755e4a388dc4055ccc705780dfa16732c92119e80fa2c96816c5456bc037f",
+        recordOf = { prev(it) },
+        fieldVariants = prev().let { base ->
+            listOf(
+                base.copy(id = "prev-2"),
+                base.copy(patientId = "patient-2"),
+                base.copy(modelVersion = 2),
+                base.copy(dateText = "2024-06-01"),
+                base.copy(outcomeText = "Different outcome"),
+                base.copy(pregnancyType = "Twin"),
+                base.copy(otherDetails = "Complications"),
+                base.copy(placeAndDoctor = "Other Clinic"),
+                base.copy(deliveryBy = "CS"),
+                base.copy(outcome = "Stillbirth"),
+                base.copy(birthMethod = "Assisted"),
+                base.copy(lossManagement = "Medical"),
+                base.copy(terminationMethod = "Surgical"),
+                base.copy(provenanceKind = "HISTORICAL"),
+                base.copy(clinicianId = "dr-jones"),
+                base.copy(recordedAt = "2026-02-01T10:00:00Z"),
+                base.copy(updatedAt = "2026-02-01T10:00:00Z"),
+            )
+        },
+        contentHash = { previousPregnancyContentHash(it as DemoPreviousPregnancy) },
+    )
+
+    val all = listOf(medication, laboratory, ultrasound, visit, previousPregnancy)
 }
 
 class DeletableRegistryTest {
@@ -414,6 +474,7 @@ class DeletableRegistryTest {
         val lab = DeleteFixtures.lab()
         val us = DeleteFixtures.us()
         val v = DeleteFixtures.visit()
+        val pr = DeleteFixtures.prev()
         assertTrue(DeletableRegistry.labelOrNull(DeletableType.MEDICATION, med) != null)
         assertEquals(null, DeletableRegistry.labelOrNull(DeletableType.LAB, med))
         assertEquals(null, DeletableRegistry.labelOrNull(DeletableType.MEDICATION, lab))
@@ -422,5 +483,7 @@ class DeletableRegistryTest {
         assertTrue(DeletableRegistry.labelOrNull(DeletableType.ULTRASOUND, us) != null)
         assertEquals(null, DeletableRegistry.labelOrNull(DeletableType.VISIT, med))
         assertTrue(DeletableRegistry.labelOrNull(DeletableType.VISIT, v) != null)
+        assertEquals(null, DeletableRegistry.labelOrNull(DeletableType.PREVIOUS_PREGNANCY, med))
+        assertTrue(DeletableRegistry.labelOrNull(DeletableType.PREVIOUS_PREGNANCY, pr) != null)
     }
 }

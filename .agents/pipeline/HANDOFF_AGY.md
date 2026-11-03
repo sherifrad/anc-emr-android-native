@@ -184,6 +184,18 @@ Owner decisions: delete asks for confirmation, then removes the record at once a
   - Successfully validated Visit Entry 4-step wizard: quick date chips, dual BP input, Normal BP preset ("110/70"), ValueStepper controls, "Same as last (68.0 kg)", "Fill normal values", live review summary banner, clickable review rows with direct step jumping, and clean persistence of new visit card with incremented revision in Room.
   - 10 screenshots captured in `.agents/pipeline/design/device-test/`.
   - Zero crashes, zero runtime exceptions in logcat.
-- NEXT:
-  1. Next delete adapter: Previous Pregnancy (`DeletableType.PREVIOUS_PREGNANCY`) per `ADDING_A_DELETABLE_KIND.md`, then Visit, then Attachments.
-  2. Part B: lab and ultrasound polish (4.1, 4.2), directory and chart (4.5, 4.6), history/dating/attention (4.7).
+- 2026-11-03: Visit Delete Adapter (`DeletableType.VISIT`) — COMPLETE & COMMITTED (`d9dff55`):
+  - Fixed the user-reported bug where only ultrasound cards on the Visits tab had a delete icon while routine visit cards lacked one.
+  - Implemented `VisitDeleteAdapter` (`tag = "VIS"`, `VISIT_DELETE`, `VISIT_RESTORE`, `section = WorkspaceSection.VISITS`), `VisitEditorHook`, DAO queries (`deleteVisit`, `deleteSaveReceiptsForVisit`), tombstone replay guard in `RecordsRepository.save(SaveVisitCommand)`, and `DeleteIconButton` on `VisitCard`.
+  - Disambiguated `HorizontalPager` pre-composed timeline standalone ultrasound tags (`timelineUltrasound-${scan.id}`).
+  - Verified: `check_r6c.py` PASS, `run_build_gate.sh` `GATE OK`, `ClinicalDeleteRestoreDbTest` 112/112 PASS on emulator, `DeleteUndoUiTest` 29/29 PASS on emulator, independent Claude CLI frontier review issues resolved.
+- 2026-11-03: Previous Pregnancy Delete Adapter (`DeletableType.PREVIOUS_PREGNANCY`) — IN PROGRESS (Code & Unit Tests Complete in Working Tree):
+  - All 16 files for `DeletableType.PREVIOUS_PREGNANCY` are implemented in the working tree (`PreviousPregnancyDeleteAdapter.kt` untracked + 15 modified files).
+  - Verified: `python3 .agents/checks/check_r6c.py` PASS (R6C0–R6C6), `.agents/scripts/run_build_gate.sh` `GATE OK` (915+ JVM unit tests pass).
+  - Fixed `PreviousPregnancyKind.create` in `ClinicalDeleteRestoreDbTest.kt` to use `modelVersion = 3`, `birthMethod = "Vaginal"`, `provenanceKind = "CLINICIAN_ENTRY"` per `PatientVocabulary` validation rules.
+  - WHERE WE STOPPED (Immediate Next Steps for Incoming Agent):
+    1. Run `ClinicalDeleteRestoreDbTest` (140 parameterized tests) and `DeleteUndoUiTest` (33 tests) on `emulator-5554` using `.agents/scripts/run_emulator_test_class.sh`.
+    2. Run independent frontier review (`git diff HEAD app/src .agents/checks | claude -p ...`) on the `PREVIOUS_PREGNANCY` diff.
+    3. Stage the 16 files and commit locally (`logic(obstetric): previous pregnancy delete adapter, undo bar, and delete icon button`).
+    4. Proceed to Part B Visual Polish (Lab §4.1, Ultrasound §4.2, Directory & Chart §4.5–4.6, Obstetric History / Dating / Clinical Attention §4.7) and Attachments Delete Adapter (`r6b6`, spec addendum first).
+  - Full Deletable Report & Continuation Prompt: `.agents/pipeline/DELETABLE_REPORT_AND_HANDOFF.md`.

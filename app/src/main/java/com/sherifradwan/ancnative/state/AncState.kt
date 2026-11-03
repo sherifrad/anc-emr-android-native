@@ -234,6 +234,9 @@ enum class SavedNotice {
     VISIT_DELETED,
     VISIT_RESTORED,
     VISIT_SAVE_UNDONE,
+    PREVIOUS_PREGNANCY_DELETED,
+    PREVIOUS_PREGNANCY_RESTORED,
+    PREVIOUS_PREGNANCY_SAVE_UNDONE,
 }
 fun SavedNotice?.stringRes(): Int = when (this) {
     SavedNotice.PATIENT -> R.string.patient_saved
@@ -258,6 +261,9 @@ fun SavedNotice?.stringRes(): Int = when (this) {
     SavedNotice.VISIT_DELETED -> R.string.visit_deleted
     SavedNotice.VISIT_RESTORED -> R.string.visit_restored
     SavedNotice.VISIT_SAVE_UNDONE -> R.string.visit_save_undone
+    SavedNotice.PREVIOUS_PREGNANCY_DELETED -> R.string.previous_pregnancy_deleted
+    SavedNotice.PREVIOUS_PREGNANCY_RESTORED -> R.string.previous_pregnancy_restored
+    SavedNotice.PREVIOUS_PREGNANCY_SAVE_UNDONE -> R.string.previous_pregnancy_save_undone
     SavedNotice.VISIT, null -> R.string.visit_saved
 }
 enum class PatientEditorKind { PROFILE, HISTORIES, PREGNANCY, STATUS }
@@ -1217,6 +1223,7 @@ object AncReducer {
     private fun startPregnancyEditor(state: AncState, event: AncEvent.StartPregnancyEditor): AncState {
         if (state.savePhase.blocksEditing() || state.hasDirtyDraft) return state
         val patient = state.patient(event.patientId)?.takeIf { it.status != "archived" } ?: return state
+        if (event.pregnancyId != null && state.undoRunningFor(event.pregnancyId)) return state
         val pregnancy = event.pregnancyId?.let { id -> patient.previousPregnancies.firstOrNull { it.id == id } }
         if (event.pregnancyId != null && pregnancy == null) return state
         val values = pregnancy?.toDraftValues() ?: PreviousPregnancyDraftValues()

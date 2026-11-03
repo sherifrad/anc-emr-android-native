@@ -71,8 +71,8 @@ data class DemoVisit(
 }
 
 data class DemoPreviousPregnancy(
-    val id: String,
-    val patientId: String,
+    override val id: String,
+    override val patientId: String,
     val modelVersion: Int,
     val dateText: String?,
     val outcomeText: String?,
@@ -88,8 +88,8 @@ data class DemoPreviousPregnancy(
     val clinicianId: String,
     val recordedAt: String,
     val updatedAt: String,
-    val revision: Long,
-)
+    override val revision: Long,
+) : com.sherifradwan.ancnative.storage.DeletableRecord
 
 object PatientVocabulary {
     val bloodGroups = setOf("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-")

@@ -406,6 +406,7 @@
     <string name="deletable_type_lab">lab result</string>
     <string name="deletable_type_ultrasound">ultrasound scan</string>
     <string name="deletable_type_visit">visit</string>
+    <string name="deletable_type_previous_pregnancy">previous pregnancy</string>
     <string name="delete">Delete</string>
     <string name="undo">Undo</string>
     <string name="delete_record_description">Delete %1$s: %2$s</string>
@@ -434,6 +435,9 @@
     <string name="visit_deleted">Visit deleted.</string>
     <string name="visit_restored">Visit restored.</string>
     <string name="visit_save_undone">Visit save undone.</string>
+    <string name="previous_pregnancy_deleted">Previous pregnancy deleted.</string>
+    <string name="previous_pregnancy_restored">Previous pregnancy restored.</string>
+    <string name="previous_pregnancy_save_undone">Previous pregnancy save undone.</string>
     <string name="show_all_count">Show all %1$d</string>
     <string name="show_fewer">Show fewer</string>
     <string name="tap_to_add">Tap to add</string>

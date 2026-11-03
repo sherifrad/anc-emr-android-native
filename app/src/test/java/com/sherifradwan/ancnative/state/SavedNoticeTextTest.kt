@@ -33,6 +33,9 @@ class SavedNoticeTextTest {
         SavedNotice.VISIT_DELETED to R.string.visit_deleted,
         SavedNotice.VISIT_RESTORED to R.string.visit_restored,
         SavedNotice.VISIT_SAVE_UNDONE to R.string.visit_save_undone,
+        SavedNotice.PREVIOUS_PREGNANCY_DELETED to R.string.previous_pregnancy_deleted,
+        SavedNotice.PREVIOUS_PREGNANCY_RESTORED to R.string.previous_pregnancy_restored,
+        SavedNotice.PREVIOUS_PREGNANCY_SAVE_UNDONE to R.string.previous_pregnancy_save_undone,
     )
 
     @Test

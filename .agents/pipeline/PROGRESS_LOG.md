@@ -239,3 +239,51 @@ Keeps the history from the handoff until Claude returns after its quota reset. F
   - Gesture navigation clearance: System navigation insets (Honor system gesture area frame `[0,2596][1264,2736]`) leave the action bars and Undo buttons completely unoccluded.
   - Logcat: 0 fatal exceptions, 0 runtime errors, 0 strict mode crashes.
 - Local commits: Documentation updated, zero push rule strictly maintained.
+
+## 2026-11-03 - Visit Delete Adapter (`DeletableType.VISIT`) — COMPLETE & COMMITTED (`d9dff55`)
+- Root Cause Identified (User Bug Report): On the Visits timeline tab, standalone ultrasound cards had a delete button (`UltrasoundDeleteAdapter` was wired), whereas routine visit cards (`VisitCard`) lacked `DeleteIconButton` because `DeletableType.VISIT` had not yet been wired.
+- Changes committed locally in `d9dff55` (`logic(visit): visit delete adapter, undo bar, and delete icon button`):
+  - `model/DemoModels.kt`: made `DemoVisit` implement `DeletableRecord` (`id`, `patientId`, `revision: Long` + backwards-compatible `Int` secondary constructor).
+  - `model/DemoFixtures.kt`: populated `patientId` across all 25 `DemoVisit` seed records.
+  - `storage/DeletableRecords.kt`: added `VISIT` to `DeletableType`, registered `VisitDeleteAdapter` in `DeletableRegistry`, added `is DemoVisit -> of(DeletableType.VISIT)` in `adapterFor`, and added `visitContentHash`.
+  - `storage/VisitDeleteAdapter.kt`: implemented `DeletableRecordAdapter<DemoVisit>` (`fingerprintTag = "VIS"`, `deleteReceiptKind = "VISIT_DELETE"`, `restoreReceiptKind = "VISIT_RESTORE"`, `section = WorkspaceSection.VISITS`, notices `VISIT_DELETED`, `VISIT_RESTORED`, `VISIT_SAVE_UNDONE`, 8-field canonical string, `load`, `deleteRow` clearing `save_receipts` foreign-key references + atomic `ClinicalCommandAbort` on non-1 delete, `insertRow`, `record`).
+  - `storage/RecordsDao.kt`: added `deleteSaveReceiptsForVisit(visitId)` and `deleteVisit(id, patientId, expectedRevision)`.
+  - `storage/RecordsRepository.kt`: mapped `patientId` and `revision.toLong()` in `VisitEntity.toDomain()`, guarded `SaveVisitCommand` creation (`expectedRevision == null`) against replaying a save after a `_DELETE` tombstone in `clinical_command_receipts` (`VISIT_CONFLICT`).
+  - `storage/ClinicalCommands.kt`: added `VISIT_DELETE` and `VISIT_RESTORE` to `ClinicalRecordKind`.
+  - `state/AncState.kt`: added `VISIT_DELETED`, `VISIT_RESTORED`, `VISIT_SAVE_UNDONE` to `SavedNotice` and mapped in `stringRes()`; guarded `startVisit` with `undoRunningFor(visitId)`.
+  - `state/EditorHooks.kt`: implemented `VisitEditorHook` and registered in `EditorHooks`.
+  - `res/values/strings.xml` & `ui/DeleteUndoUi.kt`: added `deletable_type_visit`, `visit_deleted`, `visit_restored`, `visit_save_undone` and mapped in `labelResource()`.
+  - `ui/WorkspaceScreen.kt`: wired `DeleteIconButton(DeletableType.VISIT, visit, onDelete)` into `VisitCard` trailing slot; disambiguated `HorizontalPager` pre-composed timeline standalone ultrasound tags (`timelineUltrasound-${scan.id}`, `delete-timelineUltrasound-${scan.id}`).
+  - `.agents/checks/check_r6c.py`: added `VISIT` to `KIND` and `VisitDeleteAdapter.kt` to `FREE`.
+- Verification:
+  - `python3 .agents/checks/check_r6c.py`: PASS (R6C0–R6C6).
+  - `.agents/scripts/run_build_gate.sh`: `GATE OK` (915+ unit tests, lint, formatting).
+  - Emulator (`emulator-5554`):
+    - `ClinicalDeleteRestoreDbTest`: 112/112 passed (medication, lab, ultrasound, visit + replay-after-delete test).
+    - `DeleteUndoUiTest`: 29/29 passed.
+  - Independent Frontier Review (Claude CLI): Reviewed diff, identified `save_receipts` replay and non-1 abort edge cases; all 3 items fixed and verified before commit `d9dff55`.
+
+## 2026-11-03 - Previous Pregnancy Delete Adapter (`DeletableType.PREVIOUS_PREGNANCY`) — IN PROGRESS (Uncommitted in Working Tree, Ready for Device Verification & Commit)
+- All 16 code & test files for `DeletableType.PREVIOUS_PREGNANCY` are edited in the working tree:
+  - `model/DemoModels.kt`: `DemoPreviousPregnancy` implements `DeletableRecord`.
+  - `storage/DeletableRecords.kt`: added `PREVIOUS_PREGNANCY` to `DeletableType`, registered `PreviousPregnancyDeleteAdapter`, updated `adapterFor`, added `previousPregnancyContentHash`.
+  - `storage/PreviousPregnancyDeleteAdapter.kt` (NEW): `fingerprintTag = "PRV"`, `PREVIOUS_PREGNANCY_DELETE`, `PREVIOUS_PREGNANCY_RESTORE`, `section = WorkspaceSection.OBSTETRIC_HISTORY`, 17-field canonical string, `load`, `deleteRow`, `insertRow`, `record`.
+  - `storage/RecordsDao.kt`: added `deletePreviousPregnancy(id, patientId, expectedRevision)`.
+  - `storage/ClinicalCommands.kt`: added `PREVIOUS_PREGNANCY_DELETE` and `PREVIOUS_PREGNANCY_RESTORE`.
+  - `state/AncState.kt`: added `PREVIOUS_PREGNANCY_DELETED`, `PREVIOUS_PREGNANCY_RESTORED`, `PREVIOUS_PREGNANCY_SAVE_UNDONE` and guarded `startPregnancyEditor` with `undoRunningFor`.
+  - `state/EditorHooks.kt`: added `PreviousPregnancyEditorHook` and registered in `EditorHooks`.
+  - `res/values/strings.xml` & `ui/DeleteUndoUi.kt`: added strings and mapped `DeletableType.PREVIOUS_PREGNANCY`.
+  - `ui/WorkspaceScreen.kt`: wired `DeleteIconButton(DeletableType.PREVIOUS_PREGNANCY, pregnancy, onDelete)` into `PreviousPregnancyCard` and `WorkspaceSection.OBSTETRIC_HISTORY`.
+  - `.agents/checks/check_r6c.py`: added `PREVIOUS_PREGNANCY` and `PreviousPregnancyDeleteAdapter.kt`.
+  - JVM tests (`SavedNoticeTextTest.kt`, `UndoCoordinatorTest.kt`, `DeletableRegistryTest.kt`): updated and verified.
+  - Android instrumented tests (`ClinicalDeleteRestoreDbTest.kt`, `DeleteUndoUiTest.kt`): updated with `PreviousPregnancyKind` (`modelVersion = 3`, `birthMethod = "Vaginal"`, `provenanceKind = "CLINICIAN_ENTRY"`) and `prevKind`.
+- Verified so far for `PREVIOUS_PREGNANCY`:
+  - `python3 .agents/checks/check_r6c.py`: PASS (R6C0–R6C6).
+  - `.agents/scripts/run_build_gate.sh`: `GATE OK` (all JVM unit tests, lint, release compile pass).
+- Remaining before committing `PREVIOUS_PREGNANCY`:
+  1. Run `ClinicalDeleteRestoreDbTest` (140 tests) and `DeleteUndoUiTest` (33 tests) on `emulator-5554` (note: also check `assertOnlyTargetChanged` in `ClinicalDeleteRestoreDbTest.kt` if `dump()` includes `patient_command_receipts` during setup).
+  2. Run independent frontier review on the `PREVIOUS_PREGNANCY` diff.
+  3. Commit locally (`logic(obstetric): previous pregnancy delete adapter, undo bar, and delete icon button`).
+- Next after `PREVIOUS_PREGNANCY`:
+  1. Attachments delete adapter (`r6b6`, spec addendum first: files shredded only after Undo window expires).
+  2. Part B Visual Polish: Lab (§4.1), Ultrasound (§4.2), Directory & Chart (§4.5, §4.6), History/Dating/Clinical Attention (§4.7).

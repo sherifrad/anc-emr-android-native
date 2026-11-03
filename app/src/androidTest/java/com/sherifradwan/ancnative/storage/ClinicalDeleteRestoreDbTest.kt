@@ -6,6 +6,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.sherifradwan.ancnative.model.DemoFixtures
 import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoMedicationRecord
+import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.model.DemoVisit
 import java.security.SecureRandom
@@ -32,7 +33,7 @@ class ClinicalDeleteRestoreDbTest(private val kindName: String) {
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun kinds(): List<String> = listOf("medication", "lab", "ultrasound", "visit")
+        fun kinds(): List<String> = listOf("medication", "lab", "ultrasound", "visit", "previous_pregnancy")
     }
 
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
@@ -327,18 +328,103 @@ class ClinicalDeleteRestoreDbTest(private val kindName: String) {
         override val restoreKind = ClinicalRecordKind.VISIT_RESTORE
     }
 
+    private object PreviousPregnancyKind : Kind {
+        override fun save(patientId: String, patientRevision: Long, id: String, tag: String): ClinicalCommand =
+            error("Use create()")
+
+        override suspend fun create(repo: RecordsRepository, patientId: String, patientRevision: Long, id: String, tag: String) {
+            val cmd = SavePreviousPregnancyCommand(
+                operationUuid = UUID.randomUUID().toString(),
+                editorSessionId = "del-test",
+                patientId = patientId,
+                expectedPatientRevision = patientRevision,
+                pregnancyId = id,
+                expectedPregnancyRevision = null,
+                modelVersion = 3,
+                dateText = "2024-05-12",
+                outcomeText = "Live birth $tag",
+                pregnancyType = "Singleton",
+                otherDetails = "None $tag",
+                placeAndDoctor = "City Hospital",
+                deliveryBy = "Vaginal",
+                outcome = "LiveBirth",
+                birthMethod = "Vaginal",
+                lossManagement = null,
+                terminationMethod = null,
+                provenanceKind = "CLINICIAN_ENTRY",
+                clinicianId = "dr-smith",
+                recordedAt = "2026-01-10T10:00:00Z",
+                updatedAt = "2026-01-10T10:00:00Z",
+                fingerprint = "",
+            )
+            val outcome = repo.execute(cmd.withCanonicalFingerprint())
+            assertTrue("setup save must commit but was $outcome", outcome is PatientCommandOutcome.Committed)
+        }
+
+        override suspend fun row(dao: RecordsDao, id: String): Any? = dao.previousPregnancy(id)
+        override suspend fun domain(dao: RecordsDao, id: String): Any? = dao.previousPregnancy(id)?.let {
+            DemoPreviousPregnancy(
+                id = it.id, patientId = it.patientId, modelVersion = it.modelVersion, dateText = it.dateText,
+                outcomeText = it.outcomeText, pregnancyType = it.pregnancyType, otherDetails = it.otherDetails,
+                placeAndDoctor = it.placeAndDoctor, deliveryBy = it.deliveryBy, outcome = it.outcome,
+                birthMethod = it.birthMethod, lossManagement = it.lossManagement, terminationMethod = it.terminationMethod,
+                provenanceKind = it.provenanceKind, clinicianId = it.clinicianId, recordedAt = it.recordedAt,
+                updatedAt = it.updatedAt, revision = it.revision,
+            )
+        }
+
+        override fun revisionOf(domain: Any) = (domain as DemoPreviousPregnancy).revision
+        override fun patientOf(domain: Any) = (domain as DemoPreviousPregnancy).patientId
+        override fun hash(domain: Any) = previousPregnancyContentHash(domain as DemoPreviousPregnancy)
+        override fun changed(domain: Any) = (domain as DemoPreviousPregnancy).copy(outcomeText = "tampered")
+        override fun withRevision(domain: Any, revision: Long) = (domain as DemoPreviousPregnancy).copy(revision = revision)
+        override fun del(op: String, patientId: String, patientRevision: Long, id: String, revision: Long, hash: String) =
+            DeleteRecordCommand(
+                type = DeletableType.PREVIOUS_PREGNANCY, operationUuid = op, patientId = patientId,
+                expectedPatientRevision = patientRevision, recordId = id, expectedRecordRevision = revision,
+                deletedContentHash = hash,
+            )
+
+        override fun res(op: String, patientId: String, patientRevision: Long, domain: Any, source: ClinicalCommand) =
+            RestoreRecordCommand(
+                type = DeletableType.PREVIOUS_PREGNANCY, operationUuid = op, patientId = patientId,
+                expectedPatientRevision = patientRevision, record = domain as DemoPreviousPregnancy,
+                sourceDelete = source as DeleteRecordCommand,
+            )
+
+        override suspend fun insertRaw(dao: RecordsDao, domain: Any) {
+            val r = domain as DemoPreviousPregnancy
+            dao.insertPreviousPregnancy(
+                PreviousPregnancyEntity(
+                    id = r.id, patientId = r.patientId, modelVersion = r.modelVersion, dateText = r.dateText,
+                    outcomeText = r.outcomeText, pregnancyType = r.pregnancyType, otherDetails = r.otherDetails,
+                    placeAndDoctor = r.placeAndDoctor, deliveryBy = r.deliveryBy, outcome = r.outcome,
+                    birthMethod = r.birthMethod, lossManagement = r.lossManagement, terminationMethod = r.terminationMethod,
+                    provenanceKind = r.provenanceKind, clinicianId = r.clinicianId, recordedAt = r.recordedAt,
+                    updatedAt = r.updatedAt, revision = r.revision,
+                ),
+            )
+        }
+
+        override val table = "previous_pregnancies"
+        override val deleteKind = ClinicalRecordKind.PREVIOUS_PREGNANCY_DELETE
+        override val restoreKind = ClinicalRecordKind.PREVIOUS_PREGNANCY_RESTORE
+    }
+
     private val kind: Kind get() = when (kindName) {
         "medication" -> MedKind
         "lab" -> LabKind
         "ultrasound" -> UltrasoundKind
         "visit" -> VisitKind
+        "previous_pregnancy" -> PreviousPregnancyKind
         else -> throw IllegalArgumentException("Unknown kind $kindName")
     }
     private val otherKind: Kind get() = when (kindName) {
         "medication" -> LabKind
         "lab" -> UltrasoundKind
         "ultrasound" -> VisitKind
-        "visit" -> MedKind
+        "visit" -> PreviousPregnancyKind
+        "previous_pregnancy" -> MedKind
         else -> throw IllegalArgumentException("Unknown kind $kindName")
     }
 

@@ -646,16 +646,23 @@ private fun LazyListScope.workspaceContentItems(
             item { Text(stringResource(R.string.no_previous_pregnancies)) }
         } else {
             items(patient.previousPregnancies, key = { it.id }) { pregnancy ->
-                PreviousPregnancyCard(pregnancy, patient.status != "archived") {
-                    onEvent(
-                        AncEvent.StartPregnancyEditor(
-                            patientId = patient.id,
-                            pregnancyId = pregnancy.id,
-                            newPregnancyId = pregnancy.id,
-                            editorSessionId = UUID.randomUUID().toString(),
-                        ),
-                    )
-                }
+                PreviousPregnancyCard(
+                    pregnancy = pregnancy,
+                    canEdit = patient.status != "archived",
+                    onEdit = {
+                        onEvent(
+                            AncEvent.StartPregnancyEditor(
+                                patientId = patient.id,
+                                pregnancyId = pregnancy.id,
+                                newPregnancyId = pregnancy.id,
+                                editorSessionId = UUID.randomUUID().toString(),
+                            ),
+                        )
+                    },
+                    onDelete = {
+                        onEvent(AncEvent.RequestDelete(patient.id, DeletableType.PREVIOUS_PREGNANCY, pregnancy.id))
+                    },
+                )
             }
         }
     } else if (section == WorkspaceSection.DATING) {
@@ -1045,6 +1052,7 @@ private fun PreviousPregnancyCard(
     pregnancy: DemoPreviousPregnancy,
     canEdit: Boolean,
     onEdit: () -> Unit,
+    onDelete: () -> Unit = {},
 ) {
     Card(
         modifier = Modifier.fillMaxWidth().testTag("pregnancy-${pregnancy.id}"),
@@ -1063,7 +1071,12 @@ private fun PreviousPregnancyCard(
             FactRow(R.string.termination_method, pregnancy.terminationMethod)
             FactRow(R.string.clinician_id, pregnancy.clinicianId)
             if (canEdit) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    DeleteIconButton(DeletableType.PREVIOUS_PREGNANCY, pregnancy, onDelete)
                     TextButton(
                         onClick = onEdit,
                         modifier = Modifier
