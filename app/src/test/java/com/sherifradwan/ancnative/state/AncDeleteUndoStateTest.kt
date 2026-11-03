@@ -3,6 +3,8 @@ package com.sherifradwan.ancnative.state
 import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoMedicationRecord
 import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.storage.ClinicalRecordKind
+import com.sherifradwan.ancnative.storage.DeletableRegistry
 import com.sherifradwan.ancnative.storage.DeletableType
 import com.sherifradwan.ancnative.storage.VaultState
 import org.junit.Assert.assertEquals
@@ -596,5 +598,48 @@ class AncDeleteUndoStateTest {
             val ready = base().copy(undoOffer = saveOffer(kind, "t1", "r1"))
             assertEquals("r1", kind.openRecordId(kind.startEditor(ready, "r1", "n1", "s1")))
         }
+    }
+
+    @Test
+    fun allClinicalRecordKindsAreExhaustivelyHandledInClinicalValidationFailedWithoutFallingThrough() {
+        val testErrors = setOf(ClinicalValidationError.REQUIRED_NAME)
+        val baseState = base().copy(
+            datingDraft = DatingDraft(editorSessionId = "s1", patientId = "p1", basePatientRevision = 1L, original = DatingDraftValues(), values = DatingDraftValues()),
+            ultrasoundDraft = UltrasoundDraft(editorSessionId = "s1", patientId = "p1", scanId = "u1", basePatientRevision = 1L, baseScanRevision = null, original = UltrasoundDraftValues(), values = UltrasoundDraftValues()),
+            labDraft = LabDraft(editorSessionId = "s1", patientId = "p1", labId = "l1", basePatientRevision = 1L, baseLabRevision = null, original = LabDraftValues(), values = LabDraftValues()),
+            medicationDraft = MedicationDraft(editorSessionId = "s1", patientId = "p1", medicationId = "m1", basePatientRevision = 1L, baseMedicationRevision = null, original = MedicationDraftValues(), values = MedicationDraftValues()),
+        )
+        for (kind in ClinicalRecordKind.values()) {
+            val reduced = reduce(baseState, AncEvent.ClinicalValidationFailed(kind, testErrors))
+            if (DeletableRegistry.isDeleteOrRestoreKind(kind)) {
+                assertEquals(kind.name, baseState, reduced)
+            } else {
+                when (kind) {
+                    ClinicalRecordKind.DATING -> assertEquals(testErrors, reduced.datingDraft?.errors)
+                    ClinicalRecordKind.ULTRASOUND_CREATE, ClinicalRecordKind.ULTRASOUND_UPDATE -> assertEquals(testErrors, reduced.ultrasoundDraft?.errors)
+                    ClinicalRecordKind.LAB_CREATE, ClinicalRecordKind.LAB_UPDATE -> assertEquals(testErrors, reduced.labDraft?.errors)
+                    ClinicalRecordKind.MEDICATION_CREATE, ClinicalRecordKind.MEDICATION_UPDATE -> assertEquals(testErrors, reduced.medicationDraft?.errors)
+                    else -> throw AssertionError("Unhandled ClinicalRecordKind: $kind")
+                }
+                assertEquals(SavePhase.IDLE, reduced.savePhase)
+                assertNull(reduced.saveError)
+            }
+        }
+    }
+
+    @Test
+    fun chainedMedicationEditorStartsTodayByDefault() {
+        val state = base().copy(patients = listOf(patient()))
+        val reduced = reduce(
+            state,
+            AncEvent.StartMedicationEditor(
+                patientId = "p1",
+                medicationId = null,
+                newMedicationId = "new-m1",
+                editorSessionId = "sess-1",
+                keepSavedNotice = true,
+            ),
+        )
+        assertEquals(java.time.LocalDate.now().toString(), reduced.medicationDraft?.values?.startDate)
     }
 }

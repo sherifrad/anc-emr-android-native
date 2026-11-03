@@ -752,7 +752,6 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
                                 medicationId = null,
                                 newMedicationId = UUID.randomUUID().toString(),
                                 editorSessionId = UUID.randomUUID().toString(),
-                                defaultStartDate = chainedMed.startDate,
                                 keepSavedNotice = true,
                             ),
                         )

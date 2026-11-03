@@ -23,3 +23,10 @@ D20 (2026-11-01) Entry redesign: owner chose design B (from the mock-ups) for la
 D21 (2026-11-01) Laboratory B: the Next button stays in place (pinned, always reachable) whether or not the screen scrolls; also wire laboratory settings to the new design, with a way to edit test names, reference ranges and units (no "Codex" wording).
 D22 (2026-11-01) Ultrasound B: impression is built only from the doctor's choices (remove the other impression options) plus the editable text box. Medication B: remove the Prophylaxis button; statuses are exactly Active, Completed, Discontinued, Patient non-compliant. Cards shown on the patient profile stay as designed. All related functions, colours and laboratory/medication settings must be wired to the new designs.
 D23 (2026-11-01) The emulator test securitySettingsDialogDisplaysFixedAutoLockTimeoutAndAllowsManualLock is parked as a known emulator-only failure until the full device testing. Findings: on the API 26 emulator the soft keyboard stays up after the PIN entry and its target is the dialog window, which pans the window up about 330 px so the title "Clinic & System Settings" sits above the screen. Tried and reverted: card max height, hiding the keyboard in the test, clearing focus and hiding the keyboard in the dialog. Not shown to happen on a real phone. Expect 55 of 56 emulator tests to pass meanwhile.
+D24 (2026-11-02) Medication simplification (supersedes D22 status list):
+- Statuses: Active and Stopped only in the UI (Stopped is stored as Discontinued; existing DB schema and enum unchanged).
+- Medication editor fields: name, dose, route, Active/Stopped, one Note. No frequency, end date, side effects, start date in the UI.
+- Card: bold name, status badge, lighter 'dose · route · note' line. Same on print. A note is not required.
+- Presets and previous prescriptions do not copy hidden fields (frequency, end date, adverse notes cleared).
+- Tab label is 'Meds'.
+- Aim: simplify each section (fewer fields, fewer taps). No legacy or old-patient handling.

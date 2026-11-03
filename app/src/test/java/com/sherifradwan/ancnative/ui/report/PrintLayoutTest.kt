@@ -101,10 +101,12 @@ class PrintLayoutTest {
     private fun rowCount(table: String, marker: String): Int = table.split(marker).size - 1
 
     /** Bodies of every CSS rule whose selector mentions [selectorPart]. */
-    private fun cssRuleBodies(html: String, selectorPart: String): List<String> =
-        Regex("([^{}]*)\\{([^}]*)\\}").findAll(html)
+    private fun cssRuleBodies(html: String, selectorPart: String): List<String> {
+        val css = html.substringAfter("<style>", "").substringBefore("</style>", "")
+        return Regex("([^{}]+)\\{([^}]*)\\}").findAll(css)
             .filter { it.groupValues[1].contains(selectorPart) }
             .map { it.groupValues[2] }.toList()
+    }
 
     @Test
     fun q115_tableRules_noBreakWord() {

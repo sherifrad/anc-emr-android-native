@@ -892,8 +892,7 @@ object AncReducer {
                 ClinicalRecordKind.ULTRASOUND_CREATE, ClinicalRecordKind.ULTRASOUND_UPDATE -> state.copy(ultrasoundDraft = state.ultrasoundDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
                 ClinicalRecordKind.LAB_CREATE, ClinicalRecordKind.LAB_UPDATE -> state.copy(labDraft = state.labDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
                 ClinicalRecordKind.MEDICATION_CREATE, ClinicalRecordKind.MEDICATION_UPDATE -> state.copy(medicationDraft = state.medicationDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
-                // Only delete/restore kinds reach here (handled above); a test fails if a new kind is neither.
-                else -> state
+                else -> error("Unhandled non-deletable clinical record kind: ${event.recordKind}")
             }
             is AncEvent.PatientValidationFailed -> validationFailed(state, event)
             is AncEvent.SaveStarted -> if (state.canAccept(event.token)) {

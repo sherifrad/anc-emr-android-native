@@ -91,4 +91,49 @@ class MedicationStatusTest {
         assertEquals("Oral", medicationInstructions(" ", "Oral", ""))
         assertEquals("", medicationInstructions(null, null, "  "))
     }
+
+    @Test
+    fun clinicalSummaryMatchesCardAndPrintInstructionsAndStatus() {
+        val patient = DemoPatient(
+            id = "p1",
+            caseId = "ANC-001",
+            displayName = "Jane Doe",
+            dateOfBirth = "1990-01-01",
+            phone = "1234567890",
+            visits = emptyList(),
+            medications = listOf(
+                DemoMedicationRecord(
+                    id = "m1",
+                    patientId = "p1",
+                    name = "Methyldopa",
+                    dosage = "250 mg",
+                    route = "Oral",
+                    frequency = "TDS",
+                    startDate = "2026-11-02",
+                    endDate = null,
+                    status = "Active",
+                    notes = "Take with water",
+                    isProphylaxis = false,
+                ),
+                DemoMedicationRecord(
+                    id = "m2",
+                    patientId = "p1",
+                    name = "Aspirin",
+                    dosage = "75 mg",
+                    route = "Oral",
+                    frequency = "OD",
+                    startDate = "2026-11-02",
+                    endDate = null,
+                    status = "Discontinued",
+                    notes = null,
+                    isProphylaxis = false,
+                ),
+            ),
+        )
+        val summary = ClinicalSummaryGenerator.generateTextSummary(patient)
+        assertTrue(summary.contains("• Methyldopa 250 mg · Oral · Take with water"))
+        assertFalse(summary.contains("TDS"))
+        assertTrue(summary.contains("• Aspirin 75 mg · Oral (Stopped)"))
+        assertFalse(summary.contains("OD"))
+    }
 }

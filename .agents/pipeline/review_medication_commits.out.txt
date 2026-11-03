@@ -1,0 +1,67 @@
+**Verdict: PASS WITH NITS.** I found no hard blockers. The delete/Undo fixes are correct, and the tests for them would genuinely fail without the fixes. The medication simplification has four should-fix items where hidden fields or summaries can show a clinician something different from what the card and print show.
+
+## 1. Summary
+
+**Delete/Undo:**
+- **Failure messages:** a success for patient B no longer wipes patient A's failure message. Every success path now goes through the new `deleteMessageAfterSuccessFor` (`AncState.kt:298`).
+- **Undo tap while a delete runs:** the button is disabled in the UI and refused in the reducer. The coordinator then sees the offer is not running (`canRunUndo`) and stops, so a restore can never run alongside a delete.
+- **Late Undo failures:** they are ignored after a lock, both in the reducer and in the coordinator. A failure for a dropped offer no longer overwrites `saveError`.
+- **Delete icon:** `DeleteIconButton` no longer does an unchecked cast at the call site.
+
+**Medication:**
+- The stored status values and database columns are unchanged. "Stopped" is stored as `Discontinued`, and `Completed` and `Patient non-compliant` are kept unless the clinician taps the other choice.
+- The print escapes the name, the instructions line and the status. Its "dose · route · note" line uses the same function as the card.
+
+## 2. Findings
+
+### Hard blockers
+None.
+
+### Should-fix
+1. **The clinical summary disagrees with the card and the print** (`ClinicalSummaryGenerator.kt:92-96`).
+   - It still prints the hidden frequency and the full stored status, such as "(Patient non-compliant)".
+   - The card and the print now show only Active or Stopped, with no frequency. The same record reads differently depending on where it's viewed.
+   - Fix: switch the summary to `medicationStatusLabel` and `medicationInstructions`, or deliberately keep non-compliance visible everywhere.
+2. **Hidden values from the old drug carry over when you edit a record and tap a preset** (`MedicationEditor.kt:164-178`).
+   - The preset chips also appear when editing an existing record. Tapping one replaces name, dose and route only.
+   - The old record's hidden frequency, end date and side effects stay attached to the new drug.
+   - Example: edit "Methyldopa (three times daily)", tap Aspirin, save. The summary then reads "Aspirin 75 mg (three times daily)".
+   - The previous-prescription path clears end date and notes, but since 86f5fb9 it no longer resets frequency.
+   - Fix: clear frequency, end date and side effects whenever a preset or previous prescription is picked.
+3. **"Save & add another" gives the next drug the previous drug's start date, not today** (`AncViewModel.kt:755`, `defaultStartDate = chainedMed.startDate`).
+   - The start date can no longer be seen or changed in the editor, so after editing an old record the next new drug silently gets that old date.
+   - The preset code only fills in today when the start date is empty, so it doesn't catch this.
+   - This contradicts the handoff note that "a new entry gets today as start date".
+4. **The decision log still says four statuses.** `OWNER_DECISIONS.md` D22 says "exactly four statuses", while the Active/Stopped decision exists only in `HANDOFF_AGY.md`.
+   - Add a D24 entry that supersedes it, so a future lane doesn't "fix" the code back.
+   - The decision also hides non-compliance from the card and print: the badge shows "Active" and the red colour is gone (`ClinicalBadges.kt:274`). The fixture record that has the non-compliant flag set now shows as Active.
+
+### Nits
+- **`ClinicalValidationFailed` relies on a catch-all branch** (`AncState.kt:887-897`). A new edit kind, such as a future `VISIT_CREATE`, would fall into `else -> state`. Its errors would be dropped with no compile error. Listing the four delete/restore kinds explicitly and removing `else` would let the compiler enforce it.
+- **One edge case still clears a failure message:** `DeleteFailed` with `type == null` sets the message to null (`AncState.kt:1011`), which would clear another patient's failure. The coordinator always passes a type, so this can't happen today.
+- **A blocked Undo replaces another patient's failure.** `UNDO_BLOCKED` and live-offer `UndoFailed` overwrite the single message slot. That matches the stated "only another failure clears it" rule, but A's failure is lost.
+- **A record-type mismatch hides the delete icon silently** (`DeleteUndoUi.kt:72`). It's safe, but consider a debug-only log.
+- **The cast hasn't gone, it has moved.** `adapterFor` and `of` still carry `@Suppress("UNCHECKED_CAST")`, with the `labelOrNull` type check guarding them.
+- **Leftover row:** the expanded medication card still shows an End date row the clinician can't edit (`WorkspaceScreen.kt:~2279`), as the handoff already notes.
+
+## 3. Independent test review
+
+**Valid tests (each fails on the code before the fix):**
+- `anotherPatientsFailureSurvivesUnrelatedSuccessesAndOnlyDismissOrAFailureClearsIt`: the old reducer set the message to null on all four success paths. It also checks that this patient's own message and an `UNDO_BLOCKED` message are still cleared.
+- `undoFailureIsIgnoredWhileTheVaultIsLocked`: both the live-offer and dropped-offer paths wrote into the locked state before.
+- `droppedOfferUndoFailureDoesNotOverwriteTheOpenScreensSaveError`: `saveError` was overwritten before.
+- `undoButtonIsDisabledWhileADeleteRuns` (UI): the button was only `enabled = !running` before.
+- `savingWithoutFrequencyOrEndDateIsAccepted` and the updated `ClinicalCommandsTest`: the old code raised `REQUIRED_FREQUENCY`.
+- `medicationPrintsNameThenOneInstructionsLine…`: asserts "Once daily" isn't printed, so it really checks that hidden frequency stays off the print.
+- The `MedicationStatusTest` mapping tests check the stored values themselves, not just the labels.
+- `hiddenFieldsSurviveAnEditorSave` would also have passed before. It's a valid regression guard, not a test of a fix.
+
+**Gaps:**
+1. `deleteAndRestoreKindsAreExactlyTheRegistryReceiptKinds` only checks kind names. It never runs the reducer, so a new `*_CREATE` kind passes while its errors are swallowed. Better: for every `ClinicalRecordKind`, reduce on a state with all drafts present and assert that either the draft's errors are set or the kind is a delete/restore kind.
+2. No coordinator test covers the new `sessionStillCurrent` guard on the patient-not-found path in `UndoCoordinator.kt:177`.
+3. No test covers 86f5fb9: tapping a preset or previous prescription should leave frequency blank, especially when editing an existing record (should-fix 2).
+4. No test checks that a new or chained medication starts today (should-fix 3).
+5. No test checks that the summary and the print agree on status and frequency (should-fix 1).
+6. No UI test covers the mismatch case in `DeleteIconButton`; only the registry function is tested.
+
+I didn't run any tests or builds in this review; it was a read-only check of the diffs and the surrounding code. The handoff also notes the emulator classes weren't re-run after 86f5fb9.

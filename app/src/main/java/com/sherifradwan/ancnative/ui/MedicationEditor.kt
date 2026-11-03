@@ -171,6 +171,9 @@ fun MedicationEditor(
                         onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.NAME, preset.name))
                         onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.DOSAGE, preset.dosage))
                         onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ROUTE, preset.route))
+                        onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.FREQUENCY, ""))
+                        onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.END_DATE, ""))
+                        onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ADVERSE_NOTES, ""))
                         // The start date is not asked for; a new entry starts today.
                         if (draft.values.startDate.isEmpty()) {
                             onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.START_DATE, LocalDate.now().toString()))
@@ -243,8 +246,9 @@ fun MedicationEditor(
                             onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.NAME, prior.name))
                             onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.DOSAGE, prior.dosage))
                             onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ROUTE, prior.route))
-                            // Safety Reset Rule: sets status "Active", wipes adverse notes, end date, and notes
+                            // Safety Reset Rule: sets status "Active", wipes adverse notes, end date, frequency, and notes
                             onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, MEDICATION_STATUS_ACTIVE))
+                            onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.FREQUENCY, ""))
                             onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ADVERSE_NOTES, ""))
                             onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.END_DATE, ""))
                             onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.NOTES, ""))

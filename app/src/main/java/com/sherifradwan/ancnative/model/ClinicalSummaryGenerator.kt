@@ -87,11 +87,11 @@ object ClinicalSummaryGenerator {
             sb.appendLine("No medications recorded.")
         } else {
             patient.medications.forEach { m ->
-                sb.append("• ${m.name} ${m.dosage}")
-                if (!m.route.isNullOrBlank()) sb.append(" via ${m.route}")
-                if (!m.frequency.isNullOrBlank()) sb.append(" (${m.frequency})")
-                val status = effectiveMedicationStatus(m.status, m.isNonCompliant)
-                if (status != MEDICATION_STATUS_ACTIVE) {
+                sb.append("• ${m.name}")
+                val instructions = medicationInstructions(m.dosage, m.route, m.notes)
+                if (instructions.isNotBlank()) sb.append(" $instructions")
+                val status = medicationStatusLabel(m.status, m.isNonCompliant)
+                if (status != MEDICATION_LABEL_ACTIVE) {
                     sb.append(" ($status)")
                 }
                 sb.appendLine()
