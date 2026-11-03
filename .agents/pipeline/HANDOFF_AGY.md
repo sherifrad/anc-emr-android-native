@@ -135,8 +135,20 @@ Owner decisions: delete asks for confirmation, then removes the record at once a
 - NOT verified:
   - Physical phone (Honor 400) execution.
   - Dark mode and RTL visually.
+- 2026-11-03 14:13 Design round Medication "Today's list" completed (commit `e772dff`):
+  - Spec `SPEC_DESIGN_TODAYS_LIST.md` implemented adhering to REDESIGN_SPECS 4.3 & mock d1 section 3.
+  - Quick-add tiles with live binding to `ClinicalCodexRepository.medicationCodexItems` + custom drug choices from `CustomChoiceList.MEDICATION_NAME`.
+  - Recent tab filtering patient's real medication history.
+  - Safe 1-tap add for standard drugs; custom / undosed drugs route to editor for explicit dose entry.
+  - "+ Add other" integration with `FlowRow` and custom drug dialog validating via `addCustomChoice`.
+  - "Today's list" section card with active count summary, 48 dp Stop button, and "Stopped in this session" section showing medications stopped today with 1-tap Restart (clears end date, preserves original course start date).
+  - Draft dispatch safety: operations guarded by `canStartEditor` (`canEdit && !hasDirtyDraft && !isSaveBlocked && !deleteRunning && !undoRunning`).
+  - Verification: `run_build_gate.sh` (`GATE OK`), `MedicationTodayListTest` (9/9 passed on `emulator-5554`), regressions passed (`MedicationListCollapseTest` 4/4, `DeleteUndoUiTest` 21/21, `MedicationEntryDesignTest` 7/7, `AncWorkflowTest` 9/9, `LabEntryDesignTest` 7/7, `UltrasoundGuidedFlowTest` 8/8; total 65/65). Frontier reviews via `launch_opus_review.sh` addressed all clinical blockers and should-fixes.
+  - Screenshots at 360 dp density: `6-todays-list-top.png` and `7-todays-list-bottom.png`.
+  - `run_static_checks.sh`: STATIC CHECKS OK.
+- NOT verified:
+  - Physical phone (Honor DNY_NX9) touch testing.
 - NEXT:
-  1. Design round: medication "Today's list" per REDESIGN_SPECS 4.3 (mock d1 section 3 + overrides in section 1: one-tap add drug from grid with usual dose/route and today's date; chips to change dose/route on line; Stop control on each line; shared Undo bar).
-  2. Logic l08 then design d28: visit entry rules and screen (4.4).
-  3. Part B: lab and ultrasound polish (4.1, 4.2), directory and chart (4.5, 4.6), history/dating/attention (4.7).
-  4. Delete adapters for ultrasound, previous pregnancy, visit, attachments.
+  1. Logic l08 then design d28: visit entry rules and screen (4.4).
+  2. Part B: lab and ultrasound polish (4.1, 4.2), directory and chart (4.5, 4.6), history/dating/attention (4.7).
+  3. Delete adapters for ultrasound, previous pregnancy, visit, attachments (guide ADDING_A_DELETABLE_KIND.md).

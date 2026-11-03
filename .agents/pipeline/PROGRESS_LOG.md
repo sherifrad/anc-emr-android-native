@@ -92,3 +92,24 @@ Keeps the history from the handoff until Claude returns after its quota reset. F
 - NOT verified:
   - Physical phone (Honor 400) execution.
 - Next: Design round for medication "Today's list" (REDESIGN_SPECS 4.3).
+
+## 2026-11-03: Design round: Medication "Today's list" (REDESIGN_SPECS 4.3, commit e772dff)
+- Built & verified:
+  - `SPEC_DESIGN_TODAYS_LIST.md` documenting UI blocks M420 ("Tap to add" tiles, search filter, Common/Recent tabs, "+ Add other" integration), M421 ("Today's list" active cards with Stop control), M422 ("Stopped in this session" section with Restart control), and outcome oracles O1-O6.
+  - `WorkspaceScreen.kt`:
+    - `MedicationTapToAddSection`: dynamic tiles from `ClinicalCodexRepository.medicationCodexItems` + custom choices, Recent tab showing real medication history, one-tap add for standard drugs, safe editor routing for custom/undosed drugs, "+ Add other" dialog using `addCustomChoice` validation.
+    - `FlowRow` for "+ Add other" and "+ Add medication" buttons to prevent clipping at 360 dp or high font scales.
+    - Guarded draft dispatch via `canStartEditor` ensuring no operations corrupt active drafts when editing is blocked.
+    - `MedicationsListContent`: "Today's list" section card with active count summary, accessible 48 dp Stop button, and "Stopped in this session" section showing medications stopped today with 1-tap Restart (clearing end date and preserving original start date).
+    - `MedicationCard`: 48 dp minimum touch target on edit button, 2-line ellipsis on instructions line, full text on expansion.
+  - Strings in `strings.xml`: `tap_to_add`, `tap_to_add_sub`, `todays_list`, `search_drugs_placeholder`, `tab_common`, `tab_recent`, `stopped_in_this_session`, `stop_medication`, `restart_medication`, `already_on_todays_list`, `add_other_choice`, `custom_drug_title`, `custom_drug_label`, `active_count_summary`, `no_recent_medications`, `set_dose_in_editor`, custom drug validation errors.
+- Verification:
+  - `run_build_gate.sh`: GATE OK.
+  - `MedicationTodayListTest`: 9/9 passed on `emulator-5554` (verifying rendering, 1-tap add, stop dispatch, restart date preservation, session filtering, active tile prevention, custom drug editor routing, and 48 dp minimum touch targets).
+  - Regressions: `MedicationListCollapseTest` (4/4 passed), `DeleteUndoUiTest` (21/21 passed), `MedicationEntryDesignTest` (7/7 passed), `AncWorkflowTest` (9/9 passed), `LabEntryDesignTest` (7/7 passed), `UltrasoundGuidedFlowTest` (8/8 passed).
+  - Frontier review: Two rounds through `launch_opus_review.sh`. All hard blockers (codex dynamic binding, safe custom dosage, history preservation on restart, session filtering) and should-fixes addressed.
+  - Captured screenshots at 360 dp density: `6-todays-list-top.png` and `7-todays-list-bottom.png`.
+  - `run_static_checks.sh`: STATIC CHECKS OK.
+- NOT verified:
+  - Physical phone (Honor DNY_NX9) touch testing.
+- Next: Logic round l08 then design d28: visit entry rules and the visit screen (4.4).
