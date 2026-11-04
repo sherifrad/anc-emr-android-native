@@ -2,6 +2,7 @@ package com.sherifradwan.ancnative.storage
 
 import com.sherifradwan.ancnative.model.DemoAttachment
 import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -72,6 +73,83 @@ class AttachmentOrphanSweeperTest {
     fun aBlankFileNameNeverProtectsTheWholeFolder() {
         val keys = AttachmentOrphanSweeper.referencedKeys(listOf(patient("p1", listOf(" "))))
         assertTrue(keys.isEmpty())
+    }
+
+    @Test
+    fun anUltrasoundScanPhotoIsReferencedEvenWithoutAnAttachmentRow() {
+        val scanPatient = DemoPatient(
+            id = "p1",
+            caseId = "P1",
+            displayName = "Patient p1",
+            dateOfBirth = "1995-01-01",
+            phone = "01000000000",
+            visits = emptyList(),
+            ultrasoundScans = listOf(
+                DemoUltrasoundScan(
+                    id = "u1",
+                    patientId = "p1",
+                    date = "2026-10-31",
+                    gestationalAgeWeeks = 36,
+                    gestationalAgeDays = 0,
+                    fetalNumber = "Single",
+                    presentation = "Cephalic",
+                    placentalSite = "Posterior",
+                    amnioticFluid = "Normal",
+                    fetalHeartRate = "140",
+                    biometryBpd = "90",
+                    biometryHc = "320",
+                    biometryAc = "310",
+                    biometryFl = "70",
+                    estimatedFetalWeight = "2700g",
+                    impression = "Normal",
+                    imageUris = listOf("vault:att_scan.webp"),
+                ),
+            ),
+        )
+        val keys = AttachmentOrphanSweeper.referencedKeys(listOf(scanPatient))
+        assertEquals(setOf("p1/att_scan.webp"), keys)
+        val present = listOf(file("p1", "att_scan.webp", old))
+        assertTrue("a scan photo must never be an orphan", AttachmentOrphanSweeper.planOrphans(present, keys, now).isEmpty())
+    }
+
+    @Test
+    fun anExternalScanPhotoUriProtectsNothing() {
+        val external = DemoPatient(
+            id = "p1",
+            caseId = "P1",
+            displayName = "Patient p1",
+            dateOfBirth = "1995-01-01",
+            phone = "01000000000",
+            visits = emptyList(),
+            ultrasoundScans = listOf(
+                DemoUltrasoundScan(
+                    id = "u1",
+                    patientId = "p1",
+                    date = "2026-10-31",
+                    gestationalAgeWeeks = 36,
+                    gestationalAgeDays = 0,
+                    fetalNumber = "Single",
+                    presentation = "Cephalic",
+                    placentalSite = "Posterior",
+                    amnioticFluid = "Normal",
+                    fetalHeartRate = "140",
+                    biometryBpd = "90",
+                    biometryHc = "320",
+                    biometryAc = "310",
+                    biometryFl = "70",
+                    estimatedFetalWeight = "2700g",
+                    impression = "Normal",
+                    imageUris = listOf("content://media/external/images/1"),
+                ),
+            ),
+        )
+        assertTrue(AttachmentOrphanSweeper.referencedKeys(listOf(external)).isEmpty())
+    }
+
+    @Test
+    fun anUnknownModificationTimeIsNeverTreatedAsOld() {
+        val present = listOf(PayloadFile("p1", "unknown-mtime.webp", 0L))
+        assertTrue(AttachmentOrphanSweeper.planOrphans(present, emptySet(), now).isEmpty())
     }
 
     @Test

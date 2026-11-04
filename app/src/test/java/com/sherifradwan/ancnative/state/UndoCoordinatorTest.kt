@@ -22,8 +22,10 @@ import com.sherifradwan.ancnative.storage.RestoreRecordCommand
 import com.sherifradwan.ancnative.storage.VaultState
 import com.sherifradwan.ancnative.storage.contentHash
 import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Delay
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
@@ -77,6 +79,12 @@ class UndoCoordinatorTest {
         }
 
         fun runCurrent() = advanceBy(0)
+    }
+
+    /** Behaves like `Dispatchers.Main.immediate` for ordering: the block runs inline, with no event loop. */
+    private object InlineDispatcher : CoroutineDispatcher() {
+        override fun isDispatchNeeded(context: CoroutineContext): Boolean = false
+        override fun dispatch(context: CoroutineContext, block: Runnable) = block.run()
     }
 
     private data class Target(val type: DeletableType, val patientId: String, val recordId: String)
@@ -160,9 +168,9 @@ class UndoCoordinatorTest {
         fixtures.forEach { it.scope.cancel() }
     }
 
-    private inner class Fixture {
+    private inner class Fixture(immediate: Boolean = false) {
         val time = VirtualTime()
-        val scope = CoroutineScope(time + SupervisorJob())
+        val scope = CoroutineScope(if (immediate) InlineDispatcher else time + SupervisorJob())
         var state = AncState(
             patients = listOf(patient("p1", 5), patient("p2", 9)),
             vaultState = VaultState.Unlocked(1L),
@@ -172,6 +180,9 @@ class UndoCoordinatorTest {
 
         /** Each entry runs when execute is called; it may change the state and returns null for "commit". */
         val script = ArrayDeque<() -> ClinicalCommandOutcome?>()
+
+        /** When set, a restore blocks here so a test can act while the command is still in flight. */
+        var restoreGate: CompletableDeferred<Unit>? = null
 
         var snapshotOverride: (() -> RecordSnapshot?)? = null
 
@@ -183,6 +194,7 @@ class UndoCoordinatorTest {
             scope = scope,
             execute = { cmd, epoch ->
                 calls += cmd to epoch
+                if (cmd is RestoreRecordCommand) restoreGate?.await()
                 script.removeFirstOrNull()?.invoke() ?: commit(cmd)
             },
             reduce = { event ->
@@ -195,6 +207,7 @@ class UndoCoordinatorTest {
                 finalized += type to record
                 finalizeResult(record)
             },
+            ioDispatcher = if (immediate) InlineDispatcher else time,
         )
 
         init {
@@ -1054,4 +1067,39 @@ class UndoCoordinatorTest {
         assertNull(fx.state.undoOffer)
         assertTrue("an expired save offer means the save stands; its file must stay", fx.finalized.isEmpty())
     }
+    @Test
+    fun clearingDuringAnInFlightUndoNeverDeletesTheRestoredFile() {
+        val fx = Fixture()
+        val gate = CompletableDeferred<Unit>()
+        fx.restoreGate = gate
+        val token = fx.begin(DeletableType.ATTACHMENT, "p1", "x1")!!
+        fx.request(token)
+        // The restore is now suspended inside execute; a patient switch or a lock would call clear() here.
+        assertEquals(UndoPhase.RUNNING, fx.state.undoOffer?.phase)
+        fx.coordinator.clear()
+        gate.complete(Unit)
+        fx.time.runCurrent()
+        assertTrue("a restore in flight must never clean the payload", fx.finalized.isEmpty())
+        assertEquals(2, fx.calls.size)
+    }
+
+    @Test
+    fun aReplacementDeleteStillReportsItsCleanupFailureOnAnImmediateDispatcher() {
+        // Production runs the coordinator on Dispatchers.Main.immediate: the cleanup failure must not be wiped by the
+        // DeleteCommitted that follows it in the same frame.
+        val fx = Fixture(immediate = true)
+        fx.finalizeResult = { FinalizeResult.Failed("disk error") }
+        fx.begin(DeletableType.ATTACHMENT, "p1", "x1")
+        fx.begin(DeletableType.ATTACHMENT, "p1", "y1")
+        assertEquals(listOf("x1"), fx.finalizedIds())
+        assertEquals(DeleteMessageKind.CLEANUP_FAILED, fx.state.deleteMessage?.kind)
+        assertEquals("p1", fx.state.deleteMessage?.patientId)
+        // The failure must land after the commit that would wipe it: that is what the off-main-thread hop buys.
+        val order = fx.events.map { it::class.simpleName }
+        assertTrue(
+            "cleanup failure must be reduced after the commit, was $order",
+            order.lastIndexOf("PayloadCleanupFailed") > order.lastIndexOf("DeleteCommitted"),
+        )
+    }
+
 }

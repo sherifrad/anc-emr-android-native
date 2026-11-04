@@ -37,16 +37,31 @@ object AttachmentOrphanSweeper {
         nowMillis: Long,
         minAgeMillis: Long = MIN_AGE_MILLIS,
     ): List<PayloadFile> = present.filter { file ->
-        file.key !in referencedKeys && nowMillis - file.lastModifiedMillis >= minAgeMillis
+        // An unknown mtime (0) must never read as "very old": keep the file rather than guess.
+        val knownAge = file.lastModifiedMillis > 0L && nowMillis - file.lastModifiedMillis >= minAgeMillis
+        file.key !in referencedKeys && knownAge
     }
 
-    /** Every file that a patient row still owns, in the same key shape as [PayloadFile.key]. */
-    fun referencedKeys(patients: List<DemoPatient>): Set<String> = patients.flatMap { patient ->
-        val dir = PatientAttachmentVault.patientDirName(patient.id)
-        patient.attachments.mapNotNull { attachment ->
-            attachment.fileName.takeIf { it.isNotBlank() }?.let { payloadKey(dir, it) }
+    /**
+     * Every file that a row still owns, in the same key shape as [PayloadFile.key].
+     *
+     * Two things write into the same per-patient folder: attachment rows, and ultrasound scan photos. A scan photo has
+     * no attachment row — it is referenced only from `ultrasound_scans.image_uris` as a `vault:<file>` ref — so reading
+     * `patient.attachments` alone would classify every scan photo as an orphan and delete clinical images.
+     */
+    fun referencedKeys(patients: List<DemoPatient>): Set<String> = buildSet {
+        for (patient in patients) {
+            val dir = PatientAttachmentVault.patientDirName(patient.id)
+            for (attachment in patient.attachments) {
+                attachment.fileName.takeIf { it.isNotBlank() }?.let { add(payloadKey(dir, it)) }
+            }
+            for (scan in patient.ultrasoundScans) {
+                for (uri in scan.imageUris) {
+                    scanPhotoFileName(uri)?.let { add(payloadKey(dir, it)) }
+                }
+            }
         }
-    }.toSet()
+    }
 
     /**
      * Best effort by design: a sweep may never block or fail an unlock. Returns how many files were removed.

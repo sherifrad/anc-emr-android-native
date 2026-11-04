@@ -14,10 +14,13 @@ import com.sherifradwan.ancnative.storage.RestoreRecordCommand
 import com.sherifradwan.ancnative.storage.VaultState
 import com.sherifradwan.ancnative.storage.FinalizeResult
 import com.sherifradwan.ancnative.storage.contentHash
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.UUID
 
 class UndoCoordinator(
@@ -29,6 +32,8 @@ class UndoCoordinator(
     /** The storage snapshot (not the UI state), used to read the fresh patient revision on a stale retry. */
     private val snapshot: () -> RecordSnapshot?,
     private val finalizePayload: suspend (DeletableType, DeletableRecord) -> FinalizeResult = { _, _ -> FinalizeResult.Success },
+    /** Payload files are removed off the main thread; an immediate dispatcher here would stall the UI and reorder events. */
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     private data class PendingUndo(
         val token: String,
@@ -58,10 +63,12 @@ class UndoCoordinator(
         val patientId = pending.command.patientId
         val patientName = currentState().patient(patientId)?.displayName?.trim().orEmpty()
         scope.launch {
-            val result = try {
-                finalizePayload(type, record)
-            } catch (failure: Throwable) {
-                FinalizeResult.Failed(failure.message ?: "cleanup threw")
+            val result = withContext(ioDispatcher) {
+                try {
+                    finalizePayload(type, record)
+                } catch (failure: Throwable) {
+                    FinalizeResult.Failed(failure.message ?: "cleanup threw")
+                }
             }
             if (result is FinalizeResult.Failed) {
                 reduce(
@@ -132,7 +139,6 @@ class UndoCoordinator(
                         record = record,
                         sourceDelete = cmd,
                     )
-                    armUndo(token, restoreCmd, type = type, record = record)
                     val offer = UndoOffer(
                         token = token,
                         patientId = patient.id,
@@ -143,6 +149,8 @@ class UndoCoordinator(
                         patientName = patient.displayName.trim(),
                         recordId = record.id,
                     )
+                    // Commit first, then arm: arming can report a cleanup failure for a replaced record in the same
+                    // frame, and DeleteCommitted would wipe that message for this patient.
                     reduce(
                         AncEvent.DeleteCommitted(
                             patients = result.snapshot.patients,
@@ -151,6 +159,7 @@ class UndoCoordinator(
                             patientId = patient.id,
                         ),
                     )
+                    armUndo(token, restoreCmd, type = type, record = record)
                 }
                 is ClinicalCommandOutcome.Rejected -> {
                     reduce(AncEvent.DeleteFailed(result.failure.toUiError(), patient.id, type, adapter.label(record), patient.displayName))
@@ -195,8 +204,8 @@ class UndoCoordinator(
             patientName = patientName,
             recordId = recordId,
         )
-        armUndo(token, undoDelete)
         reduce(AncEvent.UndoOffered(offer))
+        armUndo(token, undoDelete)
     }
 
     fun request(token: String) {
@@ -210,6 +219,9 @@ class UndoCoordinator(
         reduce(AncEvent.UndoRequested(token))
         // The reducer refuses (and says why) when the record is being edited with unsaved changes.
         if (!currentState().canRunUndo(token)) return
+        // The restore is in flight from here on: detach the pending cleanup so a lock or a patient switch cannot
+        // delete the file of a record this restore is about to bring back.
+        pendingUndo = null
         undoJob?.cancel()
         undoJob = null
 
@@ -217,7 +229,7 @@ class UndoCoordinator(
             val currentPatient = currentState().patient(pending.command.patientId)
             if (currentPatient == null) {
                 if (!sessionStillCurrent(epoch)) return@launch
-                failUndo(token, offer, SaveUiError.STORAGE_ERROR, pending.command, pending.ambiguous, pending.failures)
+                failUndo(token, offer, SaveUiError.STORAGE_ERROR, pending.command, pending.ambiguous, pending.failures, pending)
                 return@launch
             }
             var cmd = if (pending.ambiguous) {
@@ -236,33 +248,37 @@ class UndoCoordinator(
             if (!sessionStillCurrent(epoch)) return@launch
             when (result) {
                 is ClinicalCommandOutcome.Committed -> {
-                    if (pendingUndo?.token == token) {
-                        pendingUndo = null
-                        undoJob?.cancel()
-                        undoJob = null
-                    }
+                    // Pending was detached before the restore started; the payload stays on disk.
                     val adapter = DeletableRegistry.of<DeletableRecord>(offer.type)
                     val notice = if (offer.action == UndoAction.SAVE) adapter.saveUndoneNotice else adapter.restoredNotice
                     reduce(AncEvent.UndoCommitted(token = token, patients = result.snapshot.patients, notice = notice, patientId = offer.patientId))
                 }
                 is ClinicalCommandOutcome.Rejected -> {
-                    failUndo(token, offer, result.failure.toUiError(), cmd, ambiguous = false, failures = pending.failures)
+                    failUndo(token, offer, result.failure.toUiError(), cmd, ambiguous = false, failures = pending.failures, pending = pending)
                 }
                 ClinicalCommandOutcome.Ambiguous -> {
-                    failUndo(token, offer, SaveUiError.STORAGE_ERROR, cmd, ambiguous = true, failures = pending.failures)
+                    failUndo(token, offer, SaveUiError.STORAGE_ERROR, cmd, ambiguous = true, failures = pending.failures, pending = pending)
                 }
                 ClinicalCommandOutcome.Obsolete -> {
-                    failUndo(token, offer, SaveUiError.STORAGE_ERROR, cmd, ambiguous = false, failures = pending.failures)
+                    failUndo(token, offer, SaveUiError.STORAGE_ERROR, cmd, ambiguous = false, failures = pending.failures, pending = pending)
                 }
             }
         }
     }
 
-    private fun failUndo(token: String, offer: UndoOffer, error: SaveUiError, attempted: ClinicalCommand, ambiguous: Boolean, failures: Int) {
+    private fun failUndo(
+        token: String,
+        offer: UndoOffer,
+        error: SaveUiError,
+        attempted: ClinicalCommand,
+        ambiguous: Boolean,
+        failures: Int,
+        pending: PendingUndo,
+    ) {
         reduce(AncEvent.UndoFailed(token, error, offer))
-        val pending = pendingUndo?.takeIf { it.token == token }
-        if (pending == null) return
         if (currentState().undoOffer?.token != token) {
+            // The offer is gone (another patient, a lock). The record is still deleted, so the file is an orphan the
+            // next unlock sweep will take. Never delete it here: this restore may have committed.
             pendingUndo = null
             return
         }
