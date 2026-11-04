@@ -32,7 +32,7 @@ Fixed in round 3p (2026-10-31, NOT yet seen on a device): DV-12 duplicate sectio
 Still open and needing the phone to reproduce: DV-7, DV-9, DV-11, DV-14, N-4, N-6, N-7, N-8, N-9.
 
 Seen on the phone 2026-10-31 (print preview, QA copy):
-| P-1 | Printed report, Antenatal Care Visits Log table (and the medications table header) | Narrow columns break words mid-word: "Gestati onal Age (GA)", "Blood Pressu re (BP)", "Weigh t", "120/8 0", "165/1 05", "Frequen cy", and dates ("2026-" / "10-31" on two lines, owner also noticed). Needs column widths / smaller font / no-break for values. |
-| P-2 | Printed report, attestation box | "Official Stamp & Signature" is printed twice (italic grey, then plain). Remove one. |
+| P-1 | Printed report tables | **FIXED in `c7f1031` (2026-10-31), verified 2026-11-05.** CSS no longer allows `break-word`; `word-break: normal` on tables, `white-space: nowrap` for short values. Measured in headless Chrome on the dumped sample (`app/build/print-sample/report.html`): every date / BP / number / count cell renders on exactly one line at both 794 px (A4 content) and 380 px (phone). Only the notes column uses `overflow-wrap: anywhere`, deliberately, for unbroken free text. Originally: "Gestati onal Age", "Pressu re", "Weigh t", "120/8 0", "2026- / 10-31". |
+| P-2 | Printed report, attestation box | **FIXED in `c7f1031` (2026-10-31), verified 2026-11-05.** The generated HTML contains "Official Stamp & Signature" exactly once (grep count = 1); `check_r3x.py` S97 enforces the single occurrence. |
 Round 3p verified on the phone: duplicate section titles gone, dialog title fully visible (DV-12 done).
 
