@@ -385,3 +385,13 @@ Keeps the history from the handoff until Claude returns after its quota reset. F
 - SF5 on hardware: viewer → Delete Attachment → shared dialog ("Delete this attachment?" / "Ultrasound Scan · 2026-10-30") → **Cancel** → the confirm closes and **the viewer stays open** with its Delete and Close controls, no Undo bar, payload file untouched.
 - Note: a system "Use USB to" dialog appears after each replug; it was cancelled without changing any phone setting.
 - Emulator `anc-test-api26` is left running with the window open and the QA app installed, so runs can be watched and the app re-checked without rebuilding.
+
+## 2026-11-05 — Re-review of the fix round: PASS WITH NITS, all closed (`69cdc57`)
+- Reviewer: Gemini 4 Argon via `agy`, fresh session. ZCode still unreachable (model request failed on a one-line probe). Report kept in history: `.agents/pipeline/review_attachment_cleanup_rereview_2026-11-05.md`.
+- **Verdict PASS WITH NITS — 0 blockers, 0 should-fix.** All three original blockers and SF1-SF6 marked closed, each with a file:line and the check used. The reviewer independently confirmed: the sweep's reference set now covers every persisted writer (only two callers of `saveAttachment`, drafts never persist `imageUris`), the in-flight restore cannot lose a committed payload, and `reduce(DeleteCommitted)` before `armUndo` removes the same-frame wipe on `Main.immediate`.
+- Three nits, all fixed in `69cdc57`:
+  1. `failUndo` cleared `pendingUndo` unconditionally when the offer was gone, which could drop a newer offer's pending payload in a cross-patient race; it now clears only its own token.
+  2. The immediate-dispatcher test implied it covered the IO hop; its comment now says it isolates reduce-before-arm and that the hop is uncovered by a test.
+  3. The attachment UI delete test asserted tags only; it now asserts the confirm dialog shows the human label ("Scan 1"), so a label regression fails the suite.
+- Verified after the nits: `run_build_gate.sh` GATE OK; `run_static_checks.sh` STATIC CHECKS OK; `DeleteUndoUiTest` **36/36** and `ClinicalDeleteRestoreDbTest` **168/168** on the API 26 emulator at 360 dp.
+- NOT verified: the reviewer did not run the instrumented suites itself (it compiled them and read the sources); it ran the targeted JVM tests and the three static checkers.
