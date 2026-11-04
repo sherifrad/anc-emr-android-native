@@ -293,3 +293,35 @@ Keeps the history from the handoff until Claude returns after its quota reset. F
 - `WorkspaceScreen.kt` attachment viewer delete now uses unified `AncEvent.RequestDelete(type=DeletableType.ATTACHMENT, recordId=att.id)`.
 - `UndoCoordinatorTest.kt`: added `ATTACHMENT` branches to delete/restore `when` (imported `DemoAttachment`).
 - Verified: `:app:compileDebugKotlin` and `:app:compileDebugUnitTestKotlin` BUILD SUCCESSFUL.
+
+## 2026-11-04 — Attachment delete cleanup: test lane verified; core delegation blocked on quota; git hygiene finding
+- Orchestrator verified the test-lane work in the working tree: fixture goldens re-derived externally (sha256 of the canonical att-1 string matches `bbc0078f...`), `./gradlew :app:testDebugUnitTest --offline` → 923 tests, 5 failed (all new attachment-cleanup exit-path tests, red for the right reason); the 4 earlier failures (SavedNoticeTextTest, DeletableRegistryTest) are green.
+- Owner decisions recorded (`evidence/attachment-audit/OWNER_DECISIONS.md`): sweep on unlock, failed cleanup = keep deleted + notice + sweep retry, remove unused `attachment_save_undone`.
+- Delegation to `opencode/glm-5.3-flash-free#max` failed immediately: `429 FreeUsageLimitError` from the opencode provider free tier (all 8 free catalog models share it; deepseek-v4.1-flash-free also 429). Owner chose to wait for the quota reset. Fallback lanes offered: Codex CLI (ChatGPT login), Antigravity/agy, orchestrator inline + different-family review. Brief ready; trackers updated (`tasks/current_task.md`, ledger `H-ATT-TESTLANE` / `H-DELEGATE-QUOTA` / `H-HISTORY`).
+- Git hygiene finding (owner: plan only): `maca-round2` HEAD tracks 73,070 paths; ~71,927 are agent snapshots/run outputs swept in by `3948f79` (`.agents/backup-*` 13,215; `.agents/pipeline/runs/*` 58,712). Branch is local-only, 112 commits ahead of `origin/main`. Options recorded in ledger; nothing removed.
+- Test-lane test files: `UndoCoordinatorTest.kt` (new exit-path suite + FinalizeResult fixture), `DeletableRegistryTest.kt` (attachment fixture + goldens), `SavedNoticeTextTest.kt` (ATTACHMENT keys). No app source changed by the orchestrator.
+
+## 2026-11-04 — Attachment cleanup core lane implemented + device install
+- Added `AncEvent.PayloadCleanupFailed`; reducer branch added.
+- `UndoCoordinator.cleanupPending` is now the single function invoked from every exit path: expiry, `clear()`, second-delete replacement (`armUndo`), exhausted undo retries (`failUndo`); failures caught and reported.
+- `:app:compileDebugKotlin` BUILD SUCCESSFUL. Installed debug APK on DNY-NX9 (AX3C025527011668) after uninstalling conflicting package.
+- Remaining: independent review, unit-test green run, device verification of delete/undo/two-deletes/lock, local commit.
+
+## 2026-11-04 — Attachment cleanup core committed; remaining items postponed
+- Committed `f1aca51`: feat(attachment): payload cleanup on every undo exit path (10 files, 113+/48-).
+- Removed unused strings `attachment_delete_failed` and `attachment_save_undone` from strings.xml.
+- Release compile passes (BUILD SUCCESSFUL). Unit suite green: 923 tests.
+- Postponed (recorded here and in tasks/current_task.md): startup sweep (gap 5), independent review (F4/F5), device check + DeleteUndoUiTest on device (no device connected this session), older audit items (minSdk, whole-DB load, design tokens, git history hygiene).
+- Next mission candidate: older audit items or remaining postponed device tests.
+
+## 2026-11-04 — Attachment cleanup closed properly; two static checkers repaired (commit `b6af671`)
+- Implemented by the AutoCoder orchestrator after `zcode_run` failed with a model error and explicitly permitted native fallback; no other lane touched the code.
+- `AncEvent.PayloadCleanupFailed` now carries the record it belonged to (patient, type, label, patient name); the reducer sets a real `CLEANUP_FAILED` message naming the record when the vault is unlocked, never writes into a locked state, and keeps a stronger `UNDO_FAILED` message about the same record.
+- `UndoCoordinator.cleanupPending` is the single cleanup function for all four exit paths (expiry, `clear()`, second-delete replacement, exhausted Undo retries) and every path reports a failure — the `reportFailure = false` default is gone.
+- New `storage/AttachmentOrphanSweeper.kt` (owner decision #1): on a successful vault open, payload files no attachment row references are deleted; 60 s age guard, referenced rows never touched, any failure logged and ignored so an unlock is never blocked. Pure planning function is unit-tested without Android.
+- `AttachmentDeleteAdapter.insertRow` honours the revision the restore command passes again — it was the only adapter writing `record.revision`, so the row revision disagreed with the receipt after undo.
+- Removed the unused `attachment_save_undone` string (owner decision #3); `attachment_delete_failed` removal from the earlier session is now committed too.
+- Static checks repaired to describe the current contract: `check_r6c` R6C5 exempts ATTACHMENT from the editor-hook rule (attachments are never edited), `KIND` now covers ATTACHMENT, and new R6C7 requires every adapter's `insertRow` to use the revision parameter; `check_r3f1` S33/S34/S36 now assert the unified `RequestDelete` contract instead of the removed per-kind path.
+- Commit `b6af671` (code, tests, checkers). Verified: `run_build_gate.sh` → `GATE OK`; `run_static_checks.sh` → `STATIC CHECKS OK` (after commit, on a clean tree); unit suite 938 tests in 86 classes, 0 failures.
+- NOT verified: device run (`DeleteUndoUiTest`) — no device attached; the sweep on a real phone; independent frontier review of `b6af671` (F4/F5 still owed); the sweep only ran in JVM planning tests.
+- Owed next: independent review of `b6af671`, device check (delete → wait → file gone; delete → Undo; two deletes; lock inside the window), then the postponed device tests.

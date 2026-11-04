@@ -1,15 +1,17 @@
 # AI handoff: native ANC EMR for HONOR 400
 
+> **Superseded 2026-11-04 — read this instead.** This document (2026-10-11, "46/46 tests", "Zero git commits") no longer describes the project. Current state lives in: `tasks/current_task.md` (Phase 7 attachment delete cleanup — active), `evidence/attachment-audit/NEXT_MISSION_PLAN.md` (mission plan + 2026-11-04 addendum), `.agents/pipeline/PROGRESS_LOG.md`, `.agents/AI_HANDOFF_LEDGER.md`. The repo is now a git repo on branch `maca-round2` (117 commits, 112 ahead of `origin/main`, never pushed); "Zero git by design" below is historical. Verified 2026-11-04 (AutoCoder run at commit `b6af671`): 938 unit tests in 86 classes, 0 failing; `run_build_gate.sh` → GATE OK; `run_static_checks.sh` → STATIC CHECKS OK. Still not verified: device run and the independent review of `b6af671`. The HONOR 400 safety rules below remain in force.
+
 Read this document first when resuming work. It describes current verified state and the next bounded steps; it is not a release or clinical-approval statement.
 
 ## Project and owner priorities
 
 - Native Kotlin/Jetpack Compose project: `/Users/sherifgamalradwan/anc-emr-android-native`.
 - This is separate from the ANC web/Capacitor checkout at `/Users/sherifgamalradwan/.codex/worktrees/b41b/anc-v3`; do not edit the web project for this task.
-- Owner prioritizes the connected HONOR 400 only: `DNY-NX9`, Android 16 / API 36, `arm64-v8a` (`serial AX3C025527011668`). Broad Android-version support is out of scope. Build configuration is minSdk 35, compile/target SDK 36; do not change platform/dependency/version/signing pins.
+- Owner prioritizes the connected HONOR 400 only: `DNY-NX9`, Android 16 / API 36, `arm64-v8a` (`serial AX3C025527011668`). Broad Android-version support is out of scope. Build configuration is minSdk 26, compile/target SDK 36; do not change platform/dependency/version/signing pins.
 - Synthetic-only prototype. Keep `SYNTHETIC DEMO DATA — NOT FOR CLINICAL USE` visible across all screens and dialogs. No real patient data, no guessed clinical values, no promotion to clinical use.
 - Owner wants the whole app and a stable APK eventually. Work progresses in verified, incremental phases.
-- Zero git repos/commits/branches by design.
+- Zero git repos/commits/branches by design (historical — superseded; see banner).
 
 ## Critical Physical Device Safety Rule
 
