@@ -47,7 +47,8 @@ Done so far (committed: `f1aca51` cleanup-on-every-exit-path, then `b6af671` 202
 - [x] Remove unused strings `attachment_delete_failed` and `attachment_save_undone` (removed; `f1aca51` removed the first but left the second — that was wrong, fixed in `b6af671`)
 - [ ] Independent review (different vendor family), including open F4 and F5; saved under `evidence/attachment-audit/`
 - [x] `./gradlew :app:testDebugUnitTest` fully green — 923 tests pass (2026-11-04, `f1aca51`); 938 tests in 86 classes, 0 failures after `b6af671` (gate OK, static checks OK)
-- [x] Device check on the QA copy (2026-11-04, Honor DNY-NX9, QA build of `b6af671`): delete → wait → file gone; delete → Undo → record and file intact; unlock sweep removed a planted orphan. NOT done: two deletes in a row, lock inside the window, 60 s guard on device, `DeleteUndoUiTest` (needs an emulator — no connected instrumented runs on the owner's phone)
+- [x] Device check on the QA copy (2026-11-04, Honor DNY-NX9, QA build of `b6af671`): delete → wait → file gone; delete → Undo → record and file intact; unlock sweep removed a planted orphan. NOT done on the phone: two deletes in a row, lock inside the window, 60 s guard
+- [x] Instrumented suites on a disposable emulator (2026-11-04, `anc-test-api26`, API 26, 360 dp, `.qa`): `DeleteUndoUiTest` 33/33 and `ClinicalDeleteRestoreDbTest` 140/140, 0 failures. Connected runs stay off the owner's phone
 - [x] Local commit of the verified files (never push) — `f1aca51` + `b6af671` (2026-11-04)
 
 - [x] Two defects found on the phone are fixed and retested (2026-11-04): single confirmation for attachment delete (viewer delegates to the shared dialog; check R6C8) and a human attachment label ("Ultrasound Scan · 2026-10-30" instead of `att_<uuid>.webp`)

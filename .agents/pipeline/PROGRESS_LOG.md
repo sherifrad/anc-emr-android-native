@@ -343,3 +343,12 @@ Keeps the history from the handoff until Claude returns after its quota reset. F
 - Verified: `run_build_gate.sh` GATE OK; `run_static_checks.sh` STATIC CHECKS OK; 943 unit tests in 87 classes, 0 failures.
 - NOT verified: the titled-attachment path on device (unit test only, the QA record has no title), and `DeleteUndoUiTest` still needs an emulator.
 - Evidence (git-ignored): `evidence/attachment-audit/device-2026-11-04/{single-confirm-human-label,undo-bar-human-label,retest-restored}.png`.
+
+## 2026-11-04 — Instrumented tests on a disposable emulator; viewer copy moved into strings
+- `DeleteUndoUiTest` on `emulator-5554` (AVD `anc-test-api26`, API 26, 1080x2400 @ 480 dpi = 360 dp): **33 tests, 0 failures, 0 errors**.
+- `ClinicalDeleteRestoreDbTest` on the same emulator: **140 tests, 0 failures, 0 errors**. Its `restoreAfterDeleteReinsertsIdenticalContentAtTombstonePlusOne` asserts `tombstone + 1` per kind, including attachments: this is the direct proof of the `AttachmentDeleteAdapter.insertRow` revision fix from `b6af671`.
+- Both runs used the `.qa` suffix on the emulator. The owner's phone was not involved: its QA copy kept the same `lastUpdateTime` (2026-11-04 23:41:42) throughout.
+- Strings: the attachment viewer's hardcoded copy moved to resources — integrity and vault labels, `SHA-256: %1$s`, `Saved At: %1$s`, the size/format line, and the delete/close content descriptions (`close` reuses the existing string). `"Image unavailable"` is now one shared `R.string.image_unavailable` used by both photo viewers. `check_r3e` S26 now follows the copy to the resource instead of demanding a literal in the source.
+- Verified: `run_build_gate.sh` GATE OK; `run_static_checks.sh` STATIC CHECKS OK; `check_r3e.py` PASS.
+- NOT verified: nothing outstanding in this round. `DeleteUndoUiTest` still must never run on the owner's phone (rule unchanged); the emulator is the supported path.
+- Note: the phone dropped off USB during the emulator cleanup (after all device work had finished); no phone setting was changed by this session.
