@@ -335,3 +335,11 @@ Keeps the history from the handoff until Claude returns after its quota reset. F
 - NOT verified on device: two deletes in a row (unit test only), lock inside the Undo window, the 60 s sweep age guard (unit test only), and `DeleteUndoUiTest` — connected instrumented runs are forbidden on the owner's phone, so that class still needs a disposable emulator.
 - Two defects seen on hardware, NOT fixed (owner decision, both pre-date `b6af671`): the attachment viewer still asks twice (its own "Confirm Delete Attachment" dialog, then the shared "Delete this attachment?" one), and `AttachmentDeleteAdapter.label` falls back to the internal `att_<uuid>.webp` name, so the confirm dialog and the Undo bar show a UUID instead of the scan's title/date.
 - Evidence: `evidence/attachment-audit/device-2026-11-04/attachment-restored-integrity.png` (git-ignored).
+
+## 2026-11-04 — Attachment delete UX: one confirmation, human label; retested on the phone
+- `ClinicalAttachmentViewerDialog` no longer runs its own "Confirm Delete Attachment" dialog. It dispatches `RequestDelete` and closes, so the shared `DeleteConfirmDialog` is the only confirmation. New `check_r6c` R6C8 keeps a record viewer from confirming deletes by itself.
+- `AttachmentDeleteAdapter.label` now returns the title when there is one, else `<category> · <capture date>`. The internal `att_<uuid>.webp` name (which reached the confirm dialog and the Undo bar) is gone. `AttachmentDeleteAdapterTest` covers title, blank title, missing title, unparseable date and "never the file name".
+- Retested on Honor DNY-NX9, QA build installed 23:41: the viewer closes → exactly one dialog ("Delete this attachment?" / "Ultrasound Scan · 2026-10-30") → Delete → the Undo bar reads "Deleted Ultrasound Scan · 2026-10-30" → Undo → "Attachment restored." with the payload file never removed (the same 10,626 B file). No crashes. Clinic app untouched.
+- Verified: `run_build_gate.sh` GATE OK; `run_static_checks.sh` STATIC CHECKS OK; 943 unit tests in 87 classes, 0 failures.
+- NOT verified: the titled-attachment path on device (unit test only, the QA record has no title), and `DeleteUndoUiTest` still needs an emulator.
+- Evidence (git-ignored): `evidence/attachment-audit/device-2026-11-04/{single-confirm-human-label,undo-bar-human-label,retest-restored}.png`.

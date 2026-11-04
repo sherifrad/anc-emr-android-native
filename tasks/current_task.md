@@ -50,4 +50,6 @@ Done so far (committed: `f1aca51` cleanup-on-every-exit-path, then `b6af671` 202
 - [x] Device check on the QA copy (2026-11-04, Honor DNY-NX9, QA build of `b6af671`): delete → wait → file gone; delete → Undo → record and file intact; unlock sweep removed a planted orphan. NOT done: two deletes in a row, lock inside the window, 60 s guard on device, `DeleteUndoUiTest` (needs an emulator — no connected instrumented runs on the owner's phone)
 - [x] Local commit of the verified files (never push) — `f1aca51` + `b6af671` (2026-11-04)
 
+- [x] Two defects found on the phone are fixed and retested (2026-11-04): single confirmation for attachment delete (viewer delegates to the shared dialog; check R6C8) and a human attachment label ("Ultrasound Scan · 2026-10-30" instead of `att_<uuid>.webp`)
+
 Next after that: remaining phone-session items in `.agents/pipeline/POSTPONED_DEVICE_TESTS.md`, then print preview fixes, then the older audit items (`minSdk`, whole-database load).
