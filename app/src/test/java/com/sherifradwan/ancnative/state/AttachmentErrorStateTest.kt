@@ -21,16 +21,10 @@ class AttachmentErrorStateTest {
         assertEquals(before, after.copy(attachmentError = null))
     }
 
-    @Test fun deleteFailureSetsError() {
-        val after = initialState().reduce(AncEvent.AttachmentFailed(AttachmentError.DELETE_FAILED))
-        assertEquals(AttachmentError.DELETE_FAILED, after.attachmentError)
-    }
-
     @Test fun newerFailureReplacesOlderOne() {
         val after = initialState()
             .reduce(AncEvent.AttachmentFailed(AttachmentError.SAVE_FAILED))
-            .reduce(AncEvent.AttachmentFailed(AttachmentError.DELETE_FAILED))
-        assertEquals(AttachmentError.DELETE_FAILED, after.attachmentError)
+        assertEquals(AttachmentError.SAVE_FAILED, after.attachmentError)
     }
 
     @Test fun dismissClearsErrorAndChangesNothingElse() {
@@ -46,10 +40,10 @@ class AttachmentErrorStateTest {
     }
 
     @Test fun unrelatedEventsKeepTheError() {
-        val failed = initialState().reduce(AncEvent.AttachmentFailed(AttachmentError.DELETE_FAILED))
+        val failed = initialState().reduce(AncEvent.AttachmentFailed(AttachmentError.SAVE_FAILED))
         val afterOpen = failed.reduce(AncEvent.OpenProfile(patientId))
-        assertEquals(AttachmentError.DELETE_FAILED, afterOpen.attachmentError)
+        assertEquals(AttachmentError.SAVE_FAILED, afterOpen.attachmentError)
         val afterWorkspace = afterOpen.reduce(AncEvent.OpenWorkspace(patientId))
-        assertEquals(AttachmentError.DELETE_FAILED, afterWorkspace.attachmentError)
+        assertEquals(AttachmentError.SAVE_FAILED, afterWorkspace.attachmentError)
     }
 }

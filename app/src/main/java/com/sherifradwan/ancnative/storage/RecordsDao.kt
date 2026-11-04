@@ -486,9 +486,6 @@ interface RecordsDao {
     @Query("SELECT * FROM patient_attachments WHERE id = :attachmentId LIMIT 1")
     suspend fun attachment(attachmentId: String): PatientAttachmentEntity?
 
-    @Query("DELETE FROM patient_attachments WHERE id = :attachmentId AND patient_id = :patientId")
-    suspend fun deleteAttachment(attachmentId: String, patientId: String): Int
-
     @Query("DELETE FROM patient_attachments WHERE id = :attachmentId AND patient_id = :patientId AND revision = :expectedRevision")
     suspend fun deleteAttachmentRevision(attachmentId: String, patientId: String, expectedRevision: Long): Int
 

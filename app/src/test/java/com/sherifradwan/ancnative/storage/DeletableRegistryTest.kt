@@ -1,5 +1,6 @@
 package com.sherifradwan.ancnative.storage
 
+import com.sherifradwan.ancnative.model.DemoAttachment
 import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoMedicationRecord
 import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
@@ -145,6 +146,24 @@ internal object DeleteFixtures {
         clinicianId = "dr-smith",
         recordedAt = "2026-01-10T10:00:00Z",
         updatedAt = "2026-01-10T10:00:00Z",
+        revision = revision,
+    )
+
+    fun attachment(revision: Long = 3) = DemoAttachment(
+        id = "att-1",
+        patientId = "patient-1",
+        fileName = "scan-1.webp",
+        filePath = "patient_attachments/patient-1/scan-1.webp",
+        category = "Ultrasound",
+        mimeType = "image/webp",
+        fileSizeBytes = 20480,
+        sha256Hash = "63273035318ffc02e67f64a43070044ad04426001c189eb777ff820ae8bd6afe",
+        title = "20-week scan",
+        capturedAt = "2026-03-20T09:30:00Z",
+        linkedRecordId = "us-1",
+        syncStatus = "LOCAL_ONLY",
+        cloudUrl = null,
+        cloudSyncedAt = null,
         revision = revision,
     )
 
@@ -321,7 +340,42 @@ internal object DeleteFixtures {
         contentHash = { previousPregnancyContentHash(it as DemoPreviousPregnancy) },
     )
 
-    val all = listOf(medication, laboratory, ultrasound, visit, previousPregnancy)
+    val attachmentRecord = DeleteFixture(
+        type = DeletableType.ATTACHMENT,
+        tag = "ATT",
+        deleteKind = ClinicalRecordKind.ATTACHMENT_DELETE,
+        restoreKind = ClinicalRecordKind.ATTACHMENT_RESTORE,
+        updateKind = ClinicalRecordKind.DATING,
+        otherDeleteKind = ClinicalRecordKind.VISIT_DELETE,
+        recordId = "att-1",
+        otherRecordId = "att-2",
+        goldenCanonical = "patient-1|att-1|scan-1.webp|patient_attachments/patient-1/scan-1.webp|Ultrasound|image/webp|20480|63273035318ffc02e67f64a43070044ad04426001c189eb777ff820ae8bd6afe|20-week scan|2026-03-20T09:30:00Z|us-1|LOCAL_ONLY|null|null",
+        goldenHash = "bbc0078faba918884493b4114e75c8a662bb79f75cf6775115999bcb0a2d23f2",
+        goldenDeleteFingerprint = "30275d5226aadc08501dfc734abb5af4c3f4142d5e4bb661d65dafee1ce052fd",
+        goldenRestoreFingerprint = "a698671dbe0e30576443529077987908573ad77209a5f863227b799746a6fe6c",
+        recordOf = { attachment(it) },
+        fieldVariants = attachment().let { base ->
+            listOf(
+                base.copy(id = "att-2"),
+                base.copy(patientId = "patient-2"),
+                base.copy(fileName = "scan-2.webp"),
+                base.copy(filePath = "patient_attachments/patient-1/scan-2.webp"),
+                base.copy(category = "Lab report"),
+                base.copy(mimeType = "image/jpeg"),
+                base.copy(fileSizeBytes = 20481),
+                base.copy(sha256Hash = "0".repeat(64)),
+                base.copy(title = null),
+                base.copy(capturedAt = "2026-03-21T09:30:00Z"),
+                base.copy(linkedRecordId = null),
+                base.copy(syncStatus = "SYNCED"),
+                base.copy(cloudUrl = "https://example.invalid/a"),
+                base.copy(cloudSyncedAt = "2026-04-01T00:00:00Z"),
+            )
+        },
+        contentHash = { contentHash(it) },
+    )
+
+    val all = listOf(medication, laboratory, ultrasound, visit, previousPregnancy, attachmentRecord)
 }
 
 class DeletableRegistryTest {
@@ -449,7 +503,10 @@ class DeletableRegistryTest {
             assertTrue("$type delete kind", adapter.deleteReceiptKind in validKinds)
             assertTrue("$type restore kind", adapter.restoreReceiptKind in validKinds)
             assertNotEquals("$type", adapter.deleteReceiptKind, adapter.restoreReceiptKind)
-            assertEquals("$type notices must be distinct", 3, setOf(adapter.deletedNotice, adapter.restoredNotice, adapter.saveUndoneNotice).size)
+            // A type with no save-undo flow reuses its deleted notice for saveUndoneNotice; every other type has three distinct notices.
+            val noSaveUndo = type == DeletableType.ATTACHMENT
+            assertEquals("$type notices must be distinct", if (noSaveUndo) 2 else 3, setOf(adapter.deletedNotice, adapter.restoredNotice, adapter.saveUndoneNotice).size)
+            if (noSaveUndo) assertEquals("$type", adapter.deletedNotice, adapter.saveUndoneNotice)
             tags += adapter.fingerprintTag
             kinds += listOf(adapter.deleteReceiptKind, adapter.restoreReceiptKind)
         }

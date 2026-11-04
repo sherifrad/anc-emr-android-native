@@ -474,26 +474,7 @@ class VaultController internal constructor(
         }
     }
 
-    suspend fun deleteAttachment(
-        attachmentId: String,
-        patientId: String,
-        sessionEpoch: Long,
-    ): Boolean = withContext(dispatcher) {
-        storageMutex.withLock {
-            val active = session ?: return@withLock false
-            if (_view.value.state != VaultState.Unlocked(sessionEpoch)) return@withLock false
-            val success = active.repository.deleteAttachment(attachmentId, patientId)
-            if (success) {
-                val snapshot = active.repository.loadSnapshot()
-                synchronized(stateLock) {
-                    if (_view.value.state == VaultState.Unlocked(sessionEpoch)) {
-                        _view.value = VaultSessionView(VaultState.Unlocked(sessionEpoch), snapshot)
-                    }
-                }
-            }
-            success
-        }
-    }
+
 
     suspend fun saveDraft(record: DraftRecord): Boolean = withContext(dispatcher) {
         storageMutex.withLock {

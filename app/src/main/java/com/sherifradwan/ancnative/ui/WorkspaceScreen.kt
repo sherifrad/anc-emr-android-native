@@ -522,7 +522,6 @@ private fun LazyListScope.workspaceContentItems(
                 message = stringResource(
                     when (error) {
                         AttachmentError.SAVE_FAILED -> R.string.attachment_save_failed
-                        AttachmentError.DELETE_FAILED -> R.string.attachment_delete_failed
                     },
                 ),
                 onClose = { onEvent(AncEvent.DismissAttachmentError) },

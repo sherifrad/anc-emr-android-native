@@ -884,12 +884,6 @@ internal class RecordsRepository(
         }
     }
 
-    suspend fun deleteAttachment(attachmentId: String, patientId: String): Boolean {
-        return database.withTransaction {
-            val affected = dao.deleteAttachment(attachmentId, patientId)
-            affected > 0
-        }
-    }
 
     internal fun VisitEntity.toDomain() = DemoVisit(
         id = id,

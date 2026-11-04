@@ -20,7 +20,7 @@ import com.sherifradwan.ancnative.storage.DeletableRegistry
 import com.sherifradwan.ancnative.storage.DeletableType
 import com.sherifradwan.ancnative.storage.VaultState
 
-enum class AttachmentError { SAVE_FAILED, DELETE_FAILED }
+enum class AttachmentError { SAVE_FAILED }
 
 enum class WorkspaceSection {
     OBSTETRIC_HISTORY,
@@ -840,6 +840,7 @@ sealed interface AncEvent {
         val offer: UndoOffer? = null,
     ) : AncEvent
     data class UndoExpired(val token: String) : AncEvent
+    data class PayloadCleanupFailed(val token: String, val error: SaveUiError) : AncEvent
 }
 
 object AncReducer {
@@ -1136,6 +1137,7 @@ object AncReducer {
             is AncEvent.UndoExpired -> {
                 if (state.undoOffer?.token == event.token) state.copy(undoOffer = null) else state
             }
+            is AncEvent.PayloadCleanupFailed -> state
         }
     }
 

@@ -36,6 +36,8 @@ class SavedNoticeTextTest {
         SavedNotice.PREVIOUS_PREGNANCY_DELETED to R.string.previous_pregnancy_deleted,
         SavedNotice.PREVIOUS_PREGNANCY_RESTORED to R.string.previous_pregnancy_restored,
         SavedNotice.PREVIOUS_PREGNANCY_SAVE_UNDONE to R.string.previous_pregnancy_save_undone,
+        SavedNotice.ATTACHMENT_DELETED to R.string.attachment_deleted,
+        SavedNotice.ATTACHMENT_RESTORED to R.string.attachment_restored,
     )
 
     @Test
@@ -57,7 +59,10 @@ class SavedNoticeTextTest {
         for (type in DeletableType.values()) {
             val adapter = DeletableRegistry.of<com.sherifradwan.ancnative.storage.DeletableRecord>(type)
             val three = listOf(adapter.deletedNotice, adapter.restoredNotice, adapter.saveUndoneNotice)
-            assertEquals(type.name, 3, three.toSet().size)
+            // Attachments have no save-undo flow: their saveUndoneNotice is the deleted notice, so only two are distinct.
+            val noSaveUndo = type == DeletableType.ATTACHMENT
+            assertEquals(type.name, if (noSaveUndo) 2 else 3, three.toSet().size)
+            if (noSaveUndo) assertEquals(type.name, adapter.deletedNotice, adapter.saveUndoneNotice)
             for (n in three) {
                 assertTrue("$type $n", n.stringRes() !in saved)
                 assertNotEquals(type.name, SavedNotice.MEDICATIONS, n)

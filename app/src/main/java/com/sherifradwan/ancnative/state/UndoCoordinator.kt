@@ -12,6 +12,7 @@ import com.sherifradwan.ancnative.storage.RecordSnapshot
 import com.sherifradwan.ancnative.storage.RecordUndoCommand
 import com.sherifradwan.ancnative.storage.RestoreRecordCommand
 import com.sherifradwan.ancnative.storage.VaultState
+import com.sherifradwan.ancnative.storage.FinalizeResult
 import com.sherifradwan.ancnative.storage.contentHash
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -27,6 +28,7 @@ class UndoCoordinator(
     private val currentState: () -> AncState,
     /** The storage snapshot (not the UI state), used to read the fresh patient revision on a stale retry. */
     private val snapshot: () -> RecordSnapshot?,
+    private val finalizePayload: suspend (DeletableType, DeletableRecord) -> FinalizeResult = { _, _ -> FinalizeResult.Success },
 ) {
     private data class PendingUndo(
         val token: String,
@@ -34,6 +36,8 @@ class UndoCoordinator(
         val ambiguous: Boolean = false,
         val failures: Int = 0,
         val epoch: Long,
+        val type: DeletableType? = null,
+        val record: DeletableRecord? = null,
     )
 
     private var pendingUndo: PendingUndo? = null
@@ -42,19 +46,42 @@ class UndoCoordinator(
     private fun sessionStillCurrent(epoch: Long): Boolean =
         (currentState().vaultState as? VaultState.Unlocked)?.sessionEpoch == epoch
 
+    private fun cleanupPending(pending: PendingUndo, reportFailure: Boolean = false) {
+        val t = pending.type
+        val r = pending.record
+        if (t != null && r != null) {
+            scope.launch {
+                val result = try {
+                    finalizePayload(t, r)
+                } catch (t: Throwable) {
+                    FinalizeResult.Failed(t.message ?: "cleanup threw")
+                }
+                if (result is FinalizeResult.Failed && reportFailure) {
+                    reduce(AncEvent.PayloadCleanupFailed(pending.token, SaveUiError.STORAGE_ERROR))
+                }
+            }
+        }
+    }
+
     private fun startUndoExpiry(token: String) {
         undoJob?.cancel()
         undoJob = scope.launch {
             delay(8_000L)
-            if (pendingUndo?.token == token) pendingUndo = null
+            val expired = pendingUndo?.takeIf { it.token == token }
+            if (expired != null) {
+                cleanupPending(expired, reportFailure = true)
+                pendingUndo = null
+            }
             undoJob = null
             reduce(AncEvent.UndoExpired(token))
         }
     }
 
-    private fun armUndo(token: String, command: ClinicalCommand) {
+    private fun armUndo(token: String, command: ClinicalCommand, type: DeletableType? = null, record: DeletableRecord? = null) {
         val epoch = (currentState().vaultState as? VaultState.Unlocked)?.sessionEpoch ?: return
-        pendingUndo = PendingUndo(token, command, epoch = epoch)
+        // If a previous pending undo exists, clean up its payload before replacing it.
+        pendingUndo?.let { cleanupPending(it) }
+        pendingUndo = PendingUndo(token, command, epoch = epoch, type = type, record = record)
         startUndoExpiry(token)
     }
 
@@ -90,7 +117,7 @@ class UndoCoordinator(
                         record = record,
                         sourceDelete = cmd,
                     )
-                    armUndo(token, restoreCmd)
+                    armUndo(token, restoreCmd, type = type, record = record)
                     val offer = UndoOffer(
                         token = token,
                         patientId = patient.id,
@@ -229,6 +256,7 @@ class UndoCoordinator(
             pendingUndo = pending.copy(command = attempted, ambiguous = ambiguous, failures = failures + 1)
             startUndoExpiry(token)
         } else {
+            cleanupPending(pending)
             pendingUndo = null
             reduce(AncEvent.UndoExpired(token))
         }
@@ -237,6 +265,7 @@ class UndoCoordinator(
     fun clear() {
         undoJob?.cancel()
         undoJob = null
+        pendingUndo?.let { cleanupPending(it) }
         pendingUndo = null
     }
 }

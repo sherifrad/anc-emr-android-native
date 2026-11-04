@@ -77,6 +77,13 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
         reduce = { event -> updateState { AncReducer.reduce(it, event) } },
         currentState = { _state.value },
         snapshot = { controller.view.value.snapshot },
+        finalizePayload = { type, record ->
+            val ctx = getApplication<android.app.Application>()
+            val adapter = com.sherifradwan.ancnative.storage.DeletableRegistry.of<com.sherifradwan.ancnative.storage.DeletableRecord>(type) as? com.sherifradwan.ancnative.storage.PayloadFileAdapter
+            if (adapter != null && adapter.hasPayloadFile && record is com.sherifradwan.ancnative.model.DemoAttachment) {
+                adapter.finalizeDelete(record, ctx)
+            } else com.sherifradwan.ancnative.storage.FinalizeResult.Success
+        },
     )
 
     private fun sessionStillCurrent(epoch: Long): Boolean =
