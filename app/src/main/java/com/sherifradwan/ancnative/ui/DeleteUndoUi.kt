@@ -154,6 +154,7 @@ private fun DeleteMessageBar(message: DeleteMessage, onEvent: (AncEvent) -> Unit
             stringResource(R.string.undo_failed_deleted_message, typeLabel, message.label, reason, patient)
         }
         DeleteMessageKind.UNDO_BLOCKED -> stringResource(R.string.undo_blocked_message, typeLabel, message.label)
+        DeleteMessageKind.CLEANUP_FAILED -> stringResource(R.string.cleanup_failed_message, typeLabel, message.label, patient)
     }
     Surface(
         color = MaterialTheme.colorScheme.errorContainer,

@@ -15,6 +15,7 @@ import com.sherifradwan.ancnative.storage.DeletableRecord
 import com.sherifradwan.ancnative.storage.DeletableRegistry
 import com.sherifradwan.ancnative.storage.DeletableType
 import com.sherifradwan.ancnative.storage.DeleteRecordCommand
+import com.sherifradwan.ancnative.storage.FinalizeResult
 import com.sherifradwan.ancnative.storage.RecordSnapshot
 import com.sherifradwan.ancnative.storage.RecordUndoCommand
 import com.sherifradwan.ancnative.storage.RestoreRecordCommand
@@ -174,6 +175,10 @@ class UndoCoordinatorTest {
 
         var snapshotOverride: (() -> RecordSnapshot?)? = null
 
+        /** Every payload cleanup the coordinator asked for, in order. */
+        val finalized = mutableListOf<Pair<DeletableType, DeletableRecord>>()
+        var finalizeResult: (DeletableRecord) -> FinalizeResult = { FinalizeResult.Success }
+
         val coordinator = UndoCoordinator(
             scope = scope,
             execute = { cmd, epoch ->
@@ -186,6 +191,10 @@ class UndoCoordinatorTest {
             },
             currentState = { state },
             snapshot = { snapshotOverride?.invoke() ?: RecordSnapshot(state.patients) },
+            finalizePayload = { type, record ->
+                finalized += type to record
+                finalizeResult(record)
+            },
         )
 
         init {
@@ -870,5 +879,179 @@ class UndoCoordinatorTest {
             originals[0],
         )
         assertEquals("", fx.state.undoOffer!!.patientName)
+    }
+
+    // ---- Attachment file cleanup: every exit path of a committed delete cleans the payload file exactly once ----
+
+    private val rejectConflict = { ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.RECORD_CONFLICT) }
+
+    private fun Fixture.finalizedIds(): List<String> = finalized.map { it.second.id }
+
+    @Test
+    fun cleanupRunsExactlyOnceAfterTheWindowExpires() {
+        val fx = Fixture()
+        fx.begin(DeletableType.ATTACHMENT, "p1", "x1")
+        fx.time.advanceBy(7_999)
+        assertTrue("no cleanup while Undo is still possible", fx.finalized.isEmpty())
+        fx.time.advanceBy(1)
+        assertEquals(listOf("x1"), fx.finalizedIds())
+        assertEquals(DeletableType.ATTACHMENT, fx.finalized.single().first)
+        assertEquals(original(target(DeletableType.ATTACHMENT)), fx.finalized.single().second)
+        fx.time.advanceBy(60_000)
+        assertEquals("never a second cleanup", listOf("x1"), fx.finalizedIds())
+        assertEquals("the delete stays committed", 1, fx.calls.size)
+    }
+
+    @Test
+    fun cleanupNeverRunsAfterASuccessfulUndo() {
+        val fx = Fixture()
+        val token = fx.begin(DeletableType.ATTACHMENT, "p1", "x1")!!
+        fx.time.advanceBy(3_000)
+        fx.request(token)
+        assertEquals(2, fx.calls.size)
+        fx.time.advanceBy(60_000)
+        assertTrue("the restored attachment keeps its file", fx.finalized.isEmpty())
+    }
+
+    @Test
+    fun cleanupRunsForTheFirstFileWhenASecondDeleteReplacesIt() {
+        val fx = Fixture()
+        fx.begin(DeletableType.ATTACHMENT, "p1", "x1")
+        fx.time.advanceBy(2_000)
+        fx.begin(DeletableType.ATTACHMENT, "p1", "y1")
+        fx.time.advanceBy(8_000)
+        assertEquals(listOf("x1", "y1"), fx.finalizedIds().sorted())
+        fx.time.advanceBy(60_000)
+        assertEquals("each file is cleaned exactly once", 2, fx.finalized.size)
+    }
+
+    @Test
+    fun cleanupRunsWhenClearDropsThePendingUndo() {
+        val fx = Fixture()
+        fx.begin(DeletableType.ATTACHMENT, "p1", "x1")
+        fx.time.advanceBy(1_000)
+        fx.coordinator.clear()
+        fx.time.advanceBy(60_000)
+        assertEquals(listOf("x1"), fx.finalizedIds())
+    }
+
+    @Test
+    fun clearWithNothingPendingCleansNothing() {
+        val fx = Fixture()
+        fx.coordinator.clear()
+        fx.time.advanceBy(60_000)
+        assertTrue(fx.finalized.isEmpty())
+    }
+
+    @Test
+    fun cleanupRunsOnceWhenUndoRetriesAreExhausted() {
+        val fx = Fixture()
+        val token = fx.begin(DeletableType.ATTACHMENT, "p1", "x1")!!
+        fx.script += rejectConflict
+        fx.request(token)
+        assertTrue("one failure restarts the window, the file is still needed", fx.finalized.isEmpty())
+        fx.time.advanceBy(1_000)
+        fx.script += rejectConflict
+        fx.request(token)
+        assertNull("second failure drops the offer", fx.state.undoOffer)
+        fx.time.advanceBy(60_000)
+        assertEquals(listOf("x1"), fx.finalizedIds())
+        assertEquals("the delete stays committed, no restore beyond the two failed tries", 3, fx.calls.size)
+    }
+
+    private fun Fixture.cleanupFailures(): List<AncEvent.PayloadCleanupFailed> =
+        events.filterIsInstance<AncEvent.PayloadCleanupFailed>()
+
+    @Test
+    fun failedCleanupIsReportedAndTheRowStaysDeleted() {
+        val fx = Fixture()
+        fx.finalizeResult = { FinalizeResult.Failed("disk error") }
+        fx.begin(DeletableType.ATTACHMENT, "p1", "x1")
+        fx.time.advanceBy(8_000)
+        assertEquals(listOf("x1"), fx.finalizedIds())
+        assertEquals("the failed cleanup is never retried by a restore", 1, fx.calls.size)
+        assertTrue("the attachment row stays deleted", fx.state.patient("p1")!!.attachments.none { it.id == "x1" })
+        assertNull(fx.state.undoOffer)
+        val failure = fx.cleanupFailures().single()
+        assertEquals(DeletableType.ATTACHMENT, failure.type)
+        assertEquals("p1", failure.patientId)
+        assertEquals(labelOf(target(DeletableType.ATTACHMENT)), failure.label)
+        assertEquals("Patient p1", failure.patientName)
+        // The real reducer, not just the event: the clinician must see that the file is still there.
+        assertEquals(DeleteMessageKind.CLEANUP_FAILED, fx.state.deleteMessage?.kind)
+        assertEquals("p1", fx.state.deleteMessage?.patientId)
+        assertEquals(labelOf(target(DeletableType.ATTACHMENT)), fx.state.deleteMessage?.label)
+    }
+
+    @Test
+    fun aFailedCleanupIsReportedWhenASecondDeleteReplacesTheFirst() {
+        val fx = Fixture()
+        fx.finalizeResult = { FinalizeResult.Failed("disk error") }
+        fx.begin(DeletableType.ATTACHMENT, "p1", "x1")
+        fx.time.advanceBy(2_000)
+        fx.begin(DeletableType.ATTACHMENT, "p1", "y1")
+        assertEquals("the replaced offer cleans its own file at once", listOf("x1"), fx.finalizedIds())
+        assertEquals(DeleteMessageKind.CLEANUP_FAILED, fx.state.deleteMessage?.kind)
+        fx.time.advanceBy(8_000)
+        assertEquals("each file is cleaned exactly once", listOf("x1", "y1"), fx.finalizedIds())
+        assertEquals(2, fx.cleanupFailures().size)
+    }
+
+    @Test
+    fun aFailedCleanupIsReportedWhenClearDropsThePendingUndo() {
+        val fx = Fixture()
+        fx.finalizeResult = { FinalizeResult.Failed("disk error") }
+        fx.begin(DeletableType.ATTACHMENT, "p1", "x1")
+        fx.coordinator.clear()
+        fx.time.runCurrent()
+        assertEquals(listOf("x1"), fx.finalizedIds())
+        assertEquals(1, fx.cleanupFailures().size)
+        assertEquals(DeleteMessageKind.CLEANUP_FAILED, fx.state.deleteMessage?.kind)
+    }
+
+    @Test
+    fun aFailedCleanupKeepsTheMoreImportantUndoFailureMessage() {
+        val fx = Fixture()
+        fx.finalizeResult = { FinalizeResult.Failed("disk error") }
+        val token = fx.begin(DeletableType.ATTACHMENT, "p1", "x1")!!
+        fx.script += rejectConflict
+        fx.request(token)
+        fx.time.advanceBy(1_000)
+        fx.script += rejectConflict
+        fx.request(token)
+        fx.time.advanceBy(1)
+        assertEquals("the exhausted retry still cleans the file", listOf("x1"), fx.finalizedIds())
+        assertEquals(1, fx.cleanupFailures().size)
+        assertEquals(
+            "an Undo failure about the same record is not replaced by the cleanup notice",
+            DeleteMessageKind.UNDO_FAILED,
+            fx.state.deleteMessage?.kind,
+        )
+    }
+
+    @Test
+    fun aThrowingCleanupDoesNotBreakTheCoordinator() {
+        val fx = Fixture()
+        fx.finalizeResult = { throw IllegalStateException("boom") }
+        fx.begin(DeletableType.ATTACHMENT, "p1", "x1")
+        fx.time.advanceBy(8_000)
+        assertNull(fx.state.undoOffer)
+        val token = fx.begin(DeletableType.ATTACHMENT, "p1", "y1")
+        assertNotNull("a later delete still offers Undo", token)
+    }
+
+    @Test
+    fun aSaveUndoOfferExpiringNeverDeletesTheSavedFile() {
+        val fx = Fixture()
+        val saved = original(target(DeletableType.ATTACHMENT))!!
+        fx.coordinator.offerSaveUndo(
+            DeletableType.ATTACHMENT, "p1", "x1",
+            ClinicalCommandReceipt("op", "p1", "ATTACHMENT_CREATE", "x1", 1, 6, "fp"),
+            saved,
+        )
+        fx.time.runCurrent()
+        fx.time.advanceBy(60_000)
+        assertNull(fx.state.undoOffer)
+        assertTrue("an expired save offer means the save stands; its file must stay", fx.finalized.isEmpty())
     }
 }

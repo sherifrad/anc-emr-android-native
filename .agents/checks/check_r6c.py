@@ -23,19 +23,21 @@ def read(path):
         return ""
 
 
-KIND = r"(?:MEDICATION|LAB|ULTRASOUND|VISIT|PREVIOUS_PREGNANCY)"
+KIND = r"(?:MEDICATION|LAB|ULTRASOUND|VISIT|PREVIOUS_PREGNANCY|ATTACHMENT)"
 # A kind is "named" by any of these forms.
 NAMED = re.compile(r"DeletableType\.%s\b|SavedNotice\.%s_(?:DELETED|RESTORED|SAVE_UNDONE)\b|ClinicalRecordKind\.%s_(?:DELETE|RESTORE)\b|"
                    r"\b%s_(?:DELETE|RESTORE|DELETED|RESTORED|SAVE_UNDONE)\b|\b(?:Medication|Lab|Ultrasound|Visit|PreviousPregnancy)DeleteAdapter\b" % ((KIND,) * 4))
 
 # Files that may name a kind freely: the per-kind adapters, the registry, the receipt-kind enum, the editor-hook registry.
-FREE = {"storage/MedicationDeleteAdapter.kt", "storage/LabDeleteAdapter.kt", "storage/UltrasoundDeleteAdapter.kt", "storage/VisitDeleteAdapter.kt", "storage/PreviousPregnancyDeleteAdapter.kt", "storage/DeletableRecords.kt",
+FREE = {"storage/MedicationDeleteAdapter.kt", "storage/LabDeleteAdapter.kt", "storage/UltrasoundDeleteAdapter.kt", "storage/VisitDeleteAdapter.kt", "storage/PreviousPregnancyDeleteAdapter.kt", "storage/AttachmentDeleteAdapter.kt", "storage/DeletableRecords.kt",
         "storage/ClinicalCommands.kt", "state/EditorHooks.kt"}
+# Attachment rows are never edited: there is no attachment editor, so no EditorHooks entry exists — by design.
+NO_EDITOR_HOOK = {"ATTACHMENT"}
 # Files that may name a kind only on lines of the stated shape (strings table, call sites).
 LINE_OK = {
     "state/AncState.kt": re.compile(r"^\s*(?:%s_(?:DELETED|RESTORED|SAVE_UNDONE),|SavedNotice\.%s_(?:DELETED|RESTORED|SAVE_UNDONE) -> R\.string\.\w+)\s*$" % (KIND, KIND)),
     "ui/DeleteUndoUi.kt": re.compile(r"^\s*DeletableType\.%s -> R\.string\.deletable_type_\w+\s*$" % KIND),
-    "ui/WorkspaceScreen.kt": re.compile(r"(?:RequestDelete\(.*DeletableType\.%s|DeleteIconButton\(DeletableType\.%s)" % (KIND, KIND)),
+    "ui/WorkspaceScreen.kt": re.compile(r"(?:RequestDelete\(.*DeletableType\.%s|DeleteIconButton\(DeletableType\.%s|^\s*type = DeletableType\.%s,\s*$)" % (KIND, KIND, KIND)),
     "state/AncViewModel.kt": re.compile(r"^\s*type = DeletableType\.%s,\s*$" % KIND),
 }
 
@@ -118,7 +120,7 @@ def main():
                 problems.append("%s: string deletable_type_%s missing in %s" % (t, low, scope))
         if "DeletableType.%s ->" % t not in ui:
             problems.append("%s: no labelResource branch" % t)
-        if "DeletableType.%s to" % t not in hooks:
+        if t not in NO_EDITOR_HOOK and "DeletableType.%s to" % t not in hooks:
             problems.append("%s: no EditorHooks entry" % t)
     if len(set(tags)) != len(tags):
         problems.append("fingerprintTag not distinct: %s" % tags)
@@ -130,6 +132,20 @@ def main():
     doc = read(ROOT / ".agents/pipeline/ADDING_A_DELETABLE_KIND.md")
     record("R6C6 ADDING_A_DELETABLE_KIND.md exists and names the registry, the adapter interface and the check",
            all(w in doc for w in ("DeletableRegistry", "DeletableRecordAdapter", "check_r6c.py")), "doc missing or incomplete")
+    stale_revision = []
+    for f in sorted((MAIN / "storage").glob("*DeleteAdapter.kt")):
+        src = read(f)
+        body = re.search(r"override suspend fun insertRow\b(.*?)\n    }", src, re.S)
+        if not body:
+            stale_revision.append(f.name + ": no insertRow")
+            continue
+        text = body.group(1)
+        if "record.revision" in text or not re.search(r"revision = revision\b", text):
+            # RestoreRecordCommand passes tombstone+1; an adapter that writes the old revision breaks the contract.
+            stale_revision.append(f.name)
+    record("R6C7 every adapter inserts with the revision the restore command passes", not stale_revision,
+           ", ".join(stale_revision))
+
     sys.exit(0 if all(results) else 1)
 
 

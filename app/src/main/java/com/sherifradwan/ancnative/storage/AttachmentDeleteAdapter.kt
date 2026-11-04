@@ -43,7 +43,7 @@ object AttachmentDeleteAdapter : DeletableRecordAdapter<DemoAttachment>, Payload
             fileSizeBytes = record.fileSizeBytes, sha256Hash = record.sha256Hash, title = record.title,
             capturedAt = record.capturedAt, linkedRecordId = record.linkedRecordId,
             syncStatus = record.syncStatus, cloudUrl = record.cloudUrl, cloudSyncedAt = record.cloudSyncedAt,
-            revision = record.revision,
+            revision = revision,
         ))
     }
 

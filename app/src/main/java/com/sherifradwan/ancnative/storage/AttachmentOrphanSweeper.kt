@@ -1,0 +1,75 @@
+package com.sherifradwan.ancnative.storage
+
+import android.content.Context
+import com.sherifradwan.ancnative.model.DemoPatient
+import java.io.File
+
+/** One payload file on disk, named relative to the attachments root. */
+data class PayloadFile(
+    val patientDir: String,
+    val fileName: String,
+    val lastModifiedMillis: Long,
+) {
+    val key: String get() = payloadKey(patientDir, fileName)
+}
+
+/** The single key shape used for "this row still owns this file". */
+fun payloadKey(patientDir: String, fileName: String): String = "$patientDir/$fileName"
+
+/**
+ * Removes attachment payload files that no row points at any more.
+ *
+ * A committed delete removes its file when the Undo window closes. This sweep is the safety net for the paths that
+ * cannot finish (the app was killed inside the window, the file deletion failed, or an older session left debris):
+ * the owner decided on 2026-11-04 that the next unlock heals them.
+ *
+ * Two rules keep it safe: a file that a row still references is never touched, and a file younger than
+ * [MIN_AGE_MILLIS] is left alone so a file written just before the sweep can never be mistaken for an orphan.
+ */
+object AttachmentOrphanSweeper {
+    /** A freshly written file may not yet have its row: give it a minute before it can be called an orphan. */
+    const val MIN_AGE_MILLIS = 60_000L
+
+    /** Pure planning step: which present files have no row and are old enough to go. */
+    fun planOrphans(
+        present: List<PayloadFile>,
+        referencedKeys: Set<String>,
+        nowMillis: Long,
+        minAgeMillis: Long = MIN_AGE_MILLIS,
+    ): List<PayloadFile> = present.filter { file ->
+        file.key !in referencedKeys && nowMillis - file.lastModifiedMillis >= minAgeMillis
+    }
+
+    /** Every file that a patient row still owns, in the same key shape as [PayloadFile.key]. */
+    fun referencedKeys(patients: List<DemoPatient>): Set<String> = patients.flatMap { patient ->
+        val dir = PatientAttachmentVault.patientDirName(patient.id)
+        patient.attachments.mapNotNull { attachment ->
+            attachment.fileName.takeIf { it.isNotBlank() }?.let { payloadKey(dir, it) }
+        }
+    }.toSet()
+
+    /**
+     * Best effort by design: a sweep may never block or fail an unlock. Returns how many files were removed.
+     * The caller is the vault open path, after the snapshot has been validated.
+     */
+    fun sweep(context: Context, patients: List<DemoPatient>, nowMillis: Long = System.currentTimeMillis()): Int =
+        try {
+            val root = PatientAttachmentVault.attachmentsRoot(context)
+            val doomed = planOrphans(currentFiles(root), referencedKeys(patients), nowMillis)
+            doomed.count { file -> File(File(root, file.patientDir), file.fileName).delete() }
+        } catch (failure: Throwable) {
+            android.util.Log.w("AttachmentSweep", "orphan sweep skipped: ${failure.message}")
+            0
+        }
+
+    /** Only direct children of the attachments root are candidates; nothing outside it is ever listed. */
+    private fun currentFiles(root: File): List<PayloadFile> {
+        if (!root.isDirectory) return emptyList()
+        val patientDirs = root.listFiles()?.filter { it.isDirectory } ?: return emptyList()
+        return patientDirs.flatMap { dir ->
+            dir.listFiles()?.filter { it.isFile }?.map { file ->
+                PayloadFile(dir.name, file.name, file.lastModified())
+            }.orEmpty()
+        }
+    }
+}

@@ -32,11 +32,19 @@ object PatientAttachmentVault {
      * Resolves and secures the isolated folder for a specific patient.
      * Prevents path traversal and validates directory isolation.
      */
-    fun getPatientDirectory(context: Context, patientId: String): File {
+    /** The on-disk folder name for a patient: one rule for the writer, the reader and the orphan sweep. */
+    fun patientDirName(patientId: String): String {
         require(patientId.isNotBlank()) { "patientId cannot be blank" }
+        return patientId.replace("[^a-zA-Z0-9_-]".toRegex(), "_")
+    }
+
+    /** Root of every patient attachment folder. The orphan sweep must never look outside it. */
+    fun attachmentsRoot(context: Context): File = File(context.filesDir, ATTACHMENTS_ROOT_DIR)
+
+    fun getPatientDirectory(context: Context, patientId: String): File {
         // Ensure no path traversal in patientId
-        val sanitizedPatientId = patientId.replace("[^a-zA-Z0-9_-]".toRegex(), "_")
-        val rootDir = File(context.filesDir, ATTACHMENTS_ROOT_DIR)
+        val sanitizedPatientId = patientDirName(patientId)
+        val rootDir = attachmentsRoot(context)
         val patientDir = File(rootDir, sanitizedPatientId)
 
         if (!patientDir.exists()) {

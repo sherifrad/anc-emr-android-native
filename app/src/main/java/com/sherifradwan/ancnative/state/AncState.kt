@@ -308,6 +308,9 @@ enum class DeleteMessageKind {
 
     /** Undo of a save was refused because that record is being edited. */
     UNDO_BLOCKED,
+
+    /** The record is deleted but its payload file could not be removed; the next unlock sweeps it up. */
+    CLEANUP_FAILED,
 }
 
 /** A visible failure message for the shared delete/Undo layer. Only shown for the patient it belongs to. */
@@ -840,7 +843,18 @@ sealed interface AncEvent {
         val offer: UndoOffer? = null,
     ) : AncEvent
     data class UndoExpired(val token: String) : AncEvent
-    data class PayloadCleanupFailed(val token: String, val error: SaveUiError) : AncEvent
+    /**
+     * A committed delete whose payload file could not be removed. Carries the record it belonged to, because the offer
+     * is usually gone by the time the asynchronous cleanup reports.
+     */
+    data class PayloadCleanupFailed(
+        val token: String,
+        val error: SaveUiError,
+        val patientId: String,
+        val type: DeletableType,
+        val label: String,
+        val patientName: String = "",
+    ) : AncEvent
 }
 
 object AncReducer {
@@ -1137,7 +1151,35 @@ object AncReducer {
             is AncEvent.UndoExpired -> {
                 if (state.undoOffer?.token == event.token) state.copy(undoOffer = null) else state
             }
-            is AncEvent.PayloadCleanupFailed -> state
+            is AncEvent.PayloadCleanupFailed -> {
+                if (state.vaultState !is VaultState.Unlocked) {
+                    // A late cleanup failure after a lock must not write into the locked state.
+                    state
+                } else {
+                    val shown = state.deleteMessage
+                    val sameRecordFailure = shown != null &&
+                        shown.kind == DeleteMessageKind.UNDO_FAILED &&
+                        shown.patientId == event.patientId &&
+                        shown.type == event.type &&
+                        shown.label == event.label
+                    if (sameRecordFailure) {
+                        // A failed Undo of this record is the more important message; the sweep retries the file.
+                        state
+                    } else {
+                        // The delete stands; only the payload file is still on disk. Say so and let the next sweep retry.
+                        state.copy(
+                            deleteMessage = DeleteMessage(
+                                kind = DeleteMessageKind.CLEANUP_FAILED,
+                                patientId = event.patientId,
+                                type = event.type,
+                                label = event.label,
+                                error = event.error,
+                                patientName = event.patientName,
+                            ),
+                        )
+                    }
+                }
+            }
         }
     }
 

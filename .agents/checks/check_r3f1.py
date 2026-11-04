@@ -9,8 +9,10 @@ Textual source contract only; verifies nothing at runtime.
       the helper's deleteOrphanAliases() call sits directly behind `if (!hasVaultDatabase(`, after cleanupUnpublished().
   S32 SecuritySettingsRepository: no android.util.Base64, no System.currentTimeMillis() outside the
       internal SharedPreferences constructor, internal constructor present.
-  S33 AncViewModel: row delete before file delete; AttachmentFailed( in add and delete; CancellationException rethrown in add.
-  S34 WorkspaceScreen shows the attachment error banner; strings.xml defines both messages.
+  S33 attachments are added and deleted through the shared paths: save errors surface, add rethrows CancellationException,
+      and delete goes through AncEvent.RequestDelete(DeletableType.ATTACHMENT) instead of a per-kind command.
+  S34 the attachment SAVE error banner and its string exist; the removed per-kind delete-failure string is gone and the
+      shared delete/restore notices are defined.
   S35 no stray PatientPrintHtmlGeneratorTest.kt; Rh test has no bg.contains("-").
 """
 import re
@@ -110,16 +112,18 @@ def only_in(literal, allowed_rel):
 
 
 def check_false_results():
-    """S36 the view model reports a `false` result from the vault (not only exceptions) and keeps the file when the row delete failed."""
-    import re
-    vm = code_of("state/AncViewModel.kt") or ""
-    add = vm[vm.find("fun addAttachment"):vm.find("fun deleteAttachment")]
-    dele = vm[vm.find("fun deleteAttachment"):]
-    ok_add = bool(re.search(r"if\s*\(\s*!\s*controller\.saveAttachment\(", add)) and "PatientAttachmentVault.deleteAttachment(" in add
-    m = re.search(r"val\s+(\w+)\s*=\s*controller\.deleteAttachment\(", dele)
-    ok_del = bool(re.search(r"if\s*\(\s*!\s*controller\.deleteAttachment\(", dele)) or bool(m and re.search(r"if\s*\(\s*!\s*" + m.group(1) + r"\s*\)", dele))
-    ok_del = ok_del and "return@launch" in dele
-    record("S36 false vault results are reported; file kept when row delete fails", ok_add and ok_del, "add=%s del=%s" % (ok_add, ok_del))
+    """S36 the payload file is only removed outside the DB transaction: one adapter method, called from the coordinator."""
+    problems = []
+    adapter = code_of("storage/AttachmentDeleteAdapter.kt") or ""
+    repo = code_of("storage/RecordsRepository.kt") or ""
+    coord = code_of("state/UndoCoordinator.kt") or ""
+    if "PayloadFileAdapter" not in adapter or "finalizeDelete" not in adapter:
+        problems.append("AttachmentDeleteAdapter does not implement PayloadFileAdapter.finalizeDelete")
+    if "PatientAttachmentVault.deleteAttachment(" in repo:
+        problems.append("RecordsRepository deletes payload files inside the transaction")
+    if "finalizePayload(" not in coord:
+        problems.append("UndoCoordinator never calls finalizePayload")
+    record("S36 payload files are removed outside the transaction, from every Undo exit path", not problems, "; ".join(problems))
 
 
 def main():
@@ -173,12 +177,12 @@ def main():
         record("S32 repository seam", not problems, "; ".join(problems))
 
     vm = code_of("state/AncViewModel.kt")
-    if vm is None:
-        record("S33 attachment errors surfaced, row deleted first", False, "file missing")
+    ws = code_of("ui/WorkspaceScreen.kt")
+    if vm is None or ws is None:
+        record("S33 attachments use the shared add and delete paths", False, "file missing")
     else:
         problems = []
         add = fun_body(vm, "addAttachment")
-        dele = fun_body(vm, "deleteAttachment")
         if add is None:
             problems.append("addAttachment missing")
         else:
@@ -186,31 +190,32 @@ def main():
                 problems.append("addAttachment does not dispatch AttachmentFailed(")
             if not re.search(r"catch\s*\(\s*\w+\s*:\s*(?:[\w.]*\.)?CancellationException\s*\)\s*\{[^}]*\bthrow\b", add):
                 problems.append("addAttachment does not rethrow CancellationException")
-        if dele is None:
-            problems.append("deleteAttachment missing")
-        else:
-            if "AttachmentFailed(" not in dele:
-                problems.append("deleteAttachment does not dispatch AttachmentFailed(")
-            row = dele.find("controller.deleteAttachment(")
-            file_ = dele.find("PatientAttachmentVault.deleteAttachment(")
-            if row < 0 or file_ < 0 or row > file_:
-                problems.append("controller.deleteAttachment( must come before PatientAttachmentVault.deleteAttachment(")
-        record("S33 attachment errors surfaced, row deleted first", not problems, "; ".join(problems))
+        # The per-kind delete path is gone: one RequestDelete event drives row removal and the Undo offer.
+        if fun_body(vm, "deleteAttachment") is not None:
+            problems.append("AncViewModel still has a per-kind deleteAttachment")
+        if re.search(r"AncEvent\.DeleteAttachment\b", vm + ws):
+            problems.append("legacy AncEvent.DeleteAttachment still referenced")
+        if not re.search(r"RequestDelete\([^)]*DeletableType\.ATTACHMENT", ws, re.S):
+            problems.append("WorkspaceScreen does not dispatch RequestDelete(DeletableType.ATTACHMENT")
+        record("S33 attachments use the shared add and delete paths", not problems, "; ".join(problems))
 
-    ws = code_of("ui/WorkspaceScreen.kt")
     strings = read(ROOT / "app/src/main/res/values/strings.xml")
     problems = []
     if ws is None:
         problems.append("WorkspaceScreen.kt missing")
     else:
-        for needle in ["attachment_error_banner", "DismissAttachmentError",
-                       "R.string.attachment_save_failed", "R.string.attachment_delete_failed"]:
+        for needle in ["attachment_error_banner", "DismissAttachmentError", "R.string.attachment_save_failed"]:
             if needle not in ws:
                 problems.append("WorkspaceScreen lacks " + needle)
-    for name in ["attachment_save_failed", "attachment_delete_failed"]:
+        if "R.string.attachment_delete_failed" in ws:
+            problems.append("WorkspaceScreen still uses the removed attachment_delete_failed")
+    for name in ["attachment_save_failed", "attachment_deleted", "attachment_restored"]:
         if strings is None or not re.search(r'<string\s+name="%s"' % name, strings):
             problems.append("strings.xml lacks " + name)
-    record("S34 attachment error banner and strings", not problems, "; ".join(problems))
+    # A delete failure is reported by the shared layer now; a leftover per-kind string is dead weight.
+    if strings is not None and re.search(r'<string\s+name="attachment_delete_failed"', strings):
+        problems.append("strings.xml still defines the removed attachment_delete_failed")
+    record("S34 attachment save banner and shared delete strings", not problems, "; ".join(problems))
 
     problems = []
     for path in TEST.rglob("PatientPrintHtmlGeneratorTest.kt"):

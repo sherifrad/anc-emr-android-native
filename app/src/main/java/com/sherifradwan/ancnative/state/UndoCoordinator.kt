@@ -46,19 +46,34 @@ class UndoCoordinator(
     private fun sessionStillCurrent(epoch: Long): Boolean =
         (currentState().vaultState as? VaultState.Unlocked)?.sessionEpoch == epoch
 
-    private fun cleanupPending(pending: PendingUndo, reportFailure: Boolean = false) {
-        val t = pending.type
-        val r = pending.record
-        if (t != null && r != null) {
-            scope.launch {
-                val result = try {
-                    finalizePayload(t, r)
-                } catch (t: Throwable) {
-                    FinalizeResult.Failed(t.message ?: "cleanup threw")
-                }
-                if (result is FinalizeResult.Failed && reportFailure) {
-                    reduce(AncEvent.PayloadCleanupFailed(pending.token, SaveUiError.STORAGE_ERROR))
-                }
+    /**
+     * Removes the payload file of a delete that will never be undone. Every exit path of a committed delete calls this
+     * one function, and every path reports a failure: the record is already gone, so a leftover file must be visible.
+     */
+    private fun cleanupPending(pending: PendingUndo) {
+        val type = pending.type ?: return
+        val record = pending.record ?: return
+        // A record of another kind can never be cleaned through this type: refuse instead of deleting the wrong file.
+        val label = DeletableRegistry.labelOrNull(type, record) ?: return
+        val patientId = pending.command.patientId
+        val patientName = currentState().patient(patientId)?.displayName?.trim().orEmpty()
+        scope.launch {
+            val result = try {
+                finalizePayload(type, record)
+            } catch (failure: Throwable) {
+                FinalizeResult.Failed(failure.message ?: "cleanup threw")
+            }
+            if (result is FinalizeResult.Failed) {
+                reduce(
+                    AncEvent.PayloadCleanupFailed(
+                        token = pending.token,
+                        error = SaveUiError.STORAGE_ERROR,
+                        patientId = patientId,
+                        type = type,
+                        label = label,
+                        patientName = patientName,
+                    ),
+                )
             }
         }
     }
@@ -69,7 +84,7 @@ class UndoCoordinator(
             delay(8_000L)
             val expired = pendingUndo?.takeIf { it.token == token }
             if (expired != null) {
-                cleanupPending(expired, reportFailure = true)
+                cleanupPending(expired)
                 pendingUndo = null
             }
             undoJob = null

@@ -715,6 +715,9 @@ class VaultController internal constructor(
                 }
                 is RepositoryOpenResult.Success -> {
                     openedDatabase.database.openHelper.writableDatabase.query("SELECT count(*) FROM patients").close()
+                    // Heal payload files left behind by a delete that could not finish (owner decision 2026-11-04).
+                    // Best effort: the sweep swallows its own failures so an unlock can never be blocked by it.
+                    AttachmentOrphanSweeper.sweep(appContext, validation.snapshot.patients)
                     openingHook.beforeSessionAdmission()
                     synchronized(stateLock) {
                         if (authenticationStillCurrentLocked(pending)) {

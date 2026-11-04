@@ -337,7 +337,6 @@
     <string name="photo_quality_small">Small - documents</string>
     <string name="photo_quality_standard">Standard - reports</string>
     <string name="photo_quality_detailed">Detailed - scans</string>
-    <string name="attachment_delete_failed">The attachment could not be deleted. Please try again.</string>
     <string name="attachment_retake">Retake</string>
     <string name="attachment_gallery">Gallery</string>
     <string name="visit_date_in_future">Visit date cannot be in the future.</string>
@@ -424,6 +423,7 @@
     <string name="undo_failed_deleted_message">Undo failed. %1$s \"%2$s\"%4$s is still deleted. %3$s</string>
     <string name="undo_failed_saved_message">Undo failed. %1$s \"%2$s\"%4$s is still saved. %3$s</string>
     <string name="undo_blocked_message">Finish or discard your edits to %1$s \"%2$s\" before undoing its save.</string>
+    <string name="cleanup_failed_message">The file for %1$s \"%2$s\"%3$s could not be removed. The record stays deleted; the file will be cleaned up the next time the app is unlocked.</string>
     <string name="medication_deleted">Medication deleted.</string>
     <string name="medication_restored">Medication restored.</string>
     <string name="medication_save_undone">Medication save undone.</string>
@@ -441,7 +441,6 @@
     <string name="previous_pregnancy_save_undone">Previous pregnancy save undone.</string>
     <string name="attachment_deleted">Attachment deleted.</string>
     <string name="attachment_restored">Attachment restored.</string>
-    <string name="attachment_save_undone">Attachment save undone.</string>
     <string name="show_all_count">Show all %1$d</string>
     <string name="show_fewer">Show fewer</string>
     <string name="tap_to_add">Tap to add</string>
