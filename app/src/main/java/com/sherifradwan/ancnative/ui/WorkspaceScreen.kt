@@ -1568,7 +1568,7 @@ private fun LabCard(
             FactRow(R.string.test_date, lab.date)
             val ga = GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, lab.date)
             if (ga?.isPostConception == true) {
-                FactRow(R.string.calculated_ga_at_visit, ga.displayText)
+                FactRow(R.string.calculated_ga_label, ga.displayText)
             }
             FactRow(R.string.test_category, lab.testCategory)
             val resultWithUnit = if (lab.unit.isNullOrBlank()) lab.result else "${lab.result} ${lab.unit}"

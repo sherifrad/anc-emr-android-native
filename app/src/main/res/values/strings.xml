@@ -282,6 +282,7 @@
     <string name="view_linked_ultrasound">View ultrasound</string>
     <string name="view_linked_visit">View visit</string>
     <string name="calculated_ga_at_visit">Calculated GA: %1$s</string>
+    <string name="calculated_ga_label">Calculated GA:</string>
     <string name="apply_calculated_ga">Apply calculated GA (%1$s)</string>
     <string name="simulated_photo">Ultrasound capture</string>
     <string name="no_photos_attached">No ultrasound photos attached</string>
