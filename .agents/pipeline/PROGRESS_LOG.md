@@ -287,3 +287,9 @@ Keeps the history from the handoff until Claude returns after its quota reset. F
 - Next after `PREVIOUS_PREGNANCY`:
   1. Attachments delete adapter (`r6b6`, spec addendum first: files shredded only after Undo window expires).
   2. Part B Visual Polish: Lab (§4.1), Ultrasound (§4.2), Directory & Chart (§4.5, §4.6), History/Dating/Clinical Attention (§4.7).
+
+## 2026-11-03 — attachments delete migration (slice2 r6b6 follow-up)
+- Removed legacy `AncEvent.DeleteAttachment` from `AncState.kt` and `AncViewModel.kt`.
+- `WorkspaceScreen.kt` attachment viewer delete now uses unified `AncEvent.RequestDelete(type=DeletableType.ATTACHMENT, recordId=att.id)`.
+- `UndoCoordinatorTest.kt`: added `ATTACHMENT` branches to delete/restore `when` (imported `DemoAttachment`).
+- Verified: `:app:compileDebugKotlin` and `:app:compileDebugUnitTestKotlin` BUILD SUCCESSFUL.

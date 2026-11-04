@@ -75,6 +75,7 @@ object DeletableRegistry {
         is DemoUltrasoundScan -> of(DeletableType.ULTRASOUND)
         is DemoVisit -> of(DeletableType.VISIT)
         is DemoPreviousPregnancy -> of(DeletableType.PREVIOUS_PREGNANCY)
+        is DemoAttachment -> of(DeletableType.ATTACHMENT)
         else -> throw IllegalArgumentException("Unknown record kind: ${record::class}")
     }
 }

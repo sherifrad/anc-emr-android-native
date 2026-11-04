@@ -198,7 +198,6 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
             is AncEvent.UndoRequested -> requestUndo(event.token)
             is AncEvent.AddAttachment -> addAttachment(event)
             is AncEvent.ImportScanPhoto -> importScanPhoto(event)
-            is AncEvent.DeleteAttachment -> deleteAttachment(event)
             is AncEvent.AcceptDraftRecovery -> {
                 val prompt = _state.value.draftRecoveryPrompt
                 val slot = prompt?.slot
@@ -326,33 +325,6 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
                 dispatch(AncEvent.AttachmentFailed(AttachmentError.SAVE_FAILED))
             } finally {
                 com.sherifradwan.ancnative.storage.CameraCaptureHelper.deleteIfCaptureTemp(getApplication(), event.sourceUri)
-            }
-        }
-    }
-
-    private fun deleteAttachment(event: AncEvent.DeleteAttachment) {
-        val unlocked = _state.value.vaultState as? VaultState.Unlocked ?: return
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            try {
-                val rowDeleted = controller.deleteAttachment(
-                    attachmentId = event.attachmentId,
-                    patientId = event.patientId,
-                    sessionEpoch = unlocked.sessionEpoch,
-                )
-                if (!rowDeleted) {
-                    dispatch(AncEvent.AttachmentFailed(AttachmentError.DELETE_FAILED))
-                    return@launch
-                }
-                com.sherifradwan.ancnative.storage.PatientAttachmentVault.deleteAttachment(
-                    context = getApplication(),
-                    patientId = event.patientId,
-                    fileName = event.fileName,
-                )
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                android.util.Log.e("AncViewModel", "Failed to delete attachment", e)
-                dispatch(AncEvent.AttachmentFailed(AttachmentError.DELETE_FAILED))
             }
         }
     }

@@ -18,6 +18,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sherifradwan.ancnative.model.DemoFixtures
+import com.sherifradwan.ancnative.model.DemoAttachment
 import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoMedicationRecord
 import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
@@ -150,6 +151,7 @@ class DeleteUndoUiTest {
                 DeletableType.ULTRASOUND -> patient.copy(ultrasoundScans = patient.ultrasoundScans.filterNot { it.id == undo.recordId })
                 DeletableType.VISIT -> patient.copy(visits = patient.visits.filterNot { it.id == undo.recordId })
                 DeletableType.PREVIOUS_PREGNANCY -> patient.copy(previousPregnancies = patient.previousPregnancies.filterNot { it.id == undo.recordId })
+                DeletableType.ATTACHMENT -> patient.copy(attachments = patient.attachments.filterNot { it.id == undo.recordId })
             }
             is RestoreRecordCommand -> when (val record = undo.record) {
                 is DemoMedicationRecord -> patient.copy(medications = patient.medications + record)
@@ -157,6 +159,7 @@ class DeleteUndoUiTest {
                 is DemoUltrasoundScan -> patient.copy(ultrasoundScans = patient.ultrasoundScans + record)
                 is DemoVisit -> patient.copy(visits = patient.visits + record)
                 is DemoPreviousPregnancy -> patient.copy(previousPregnancies = patient.previousPregnancies + record)
+                is DemoAttachment -> patient.copy(attachments = patient.attachments + record)
                 else -> error("unexpected record ${record::class}")
             }
         }.copy(revision = patient.revision + 1)

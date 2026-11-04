@@ -763,11 +763,6 @@ sealed interface AncEvent {
         val preset: com.sherifradwan.ancnative.storage.PhotoQualityPreset =
             com.sherifradwan.ancnative.storage.PhotoQualityPreset.defaultFor(category),
     ) : AncEvent
-    data class DeleteAttachment(
-        val patientId: String,
-        val attachmentId: String,
-        val fileName: String,
-    ) : AncEvent
     data class ImportScanPhoto(
         val patientId: String,
         val sourceUri: android.net.Uri,
@@ -983,7 +978,7 @@ object AncReducer {
             AncEvent.ConfirmDiscard -> confirmDiscard(state)
             AncEvent.KeepEditing -> state.copy(showDiscardDialog = false, pendingAction = null)
             AncEvent.DismissNotice -> state.copy(savedNotice = false, notice = null)
-            is AncEvent.AddAttachment, is AncEvent.DeleteAttachment, is AncEvent.ImportScanPhoto -> state
+            is AncEvent.AddAttachment, is AncEvent.ImportScanPhoto -> state
             is AncEvent.ScanPhotoImported -> {
                 val draft = state.ultrasoundDraft
                 if (draft == null || draft.patientId != event.patientId) state

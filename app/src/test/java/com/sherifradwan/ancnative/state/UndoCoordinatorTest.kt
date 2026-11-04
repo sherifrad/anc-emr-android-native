@@ -1,5 +1,6 @@
 package com.sherifradwan.ancnative.state
 
+import com.sherifradwan.ancnative.model.DemoAttachment
 import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoMedicationRecord
 import com.sherifradwan.ancnative.model.DemoPatient
@@ -79,7 +80,7 @@ class UndoCoordinatorTest {
 
     private data class Target(val type: DeletableType, val patientId: String, val recordId: String)
 
-    private val types = listOf(DeletableType.MEDICATION, DeletableType.LAB, DeletableType.ULTRASOUND, DeletableType.VISIT, DeletableType.PREVIOUS_PREGNANCY)
+    private val types = listOf(DeletableType.MEDICATION, DeletableType.LAB, DeletableType.ULTRASOUND, DeletableType.VISIT, DeletableType.PREVIOUS_PREGNANCY, DeletableType.ATTACHMENT)
 
     private fun med(patientId: String, id: String, revision: Long) = DemoMedicationRecord(
         id = id, patientId = patientId, name = "Iron $patientId-$id", dosage = "SECRET-DOSE", route = "Oral",
@@ -113,14 +114,21 @@ class UndoCoordinatorTest {
         updatedAt = "2026-01-01T00:00:00Z", revision = revision,
     )
 
-    // "x1" exists as a medication AND a lab AND an ultrasound AND a visit, for p1 AND p2, each with its own revision; "y1" is a second p1 record.
+    // "x1" exists as a medication AND a lab AND an ultrasound AND a visit AND an attachment, for p1 AND p2, each with its own revision; "y1" is a second p1 record.
     // "onlyMed" exists only as a p1 medication.
+    private fun att(patientId: String, id: String, revision: Long) = DemoAttachment(
+        id = id, patientId = patientId, fileName = "SECRET-$patientId-$id.webp", filePath = "attachments/$patientId/$id.webp",
+        category = "Ultrasound", fileSizeBytes = 1024, sha256Hash = "00", title = "Scan $patientId-$id",
+        capturedAt = "2026-01-05T00:00:00Z", revision = revision,
+    )
+
     private val originals: List<DeletableRecord> = listOf(
         med("p1", "x1", 3), med("p1", "y1", 3), med("p1", "onlyMed", 3), med("p2", "x1", 5),
         lab("p1", "x1", 4), lab("p1", "y1", 4), lab("p2", "x1", 6),
         us("p1", "x1", 5), us("p1", "y1", 5), us("p2", "x1", 7),
         visit("p1", "x1", 6), visit("p1", "y1", 6), visit("p2", "x1", 8),
         prev("p1", "x1", 7), prev("p1", "y1", 7), prev("p2", "x1", 9),
+        att("p1", "x1", 8), att("p1", "y1", 8), att("p2", "x1", 10),
     )
 
     private fun patient(id: String, revision: Long) = DemoPatient(
@@ -132,6 +140,7 @@ class UndoCoordinatorTest {
         medications = originals.filterIsInstance<DemoMedicationRecord>().filter { it.patientId == id },
         labInvestigations = originals.filterIsInstance<DemoLabInvestigation>().filter { it.patientId == id },
         ultrasoundScans = originals.filterIsInstance<DemoUltrasoundScan>().filter { it.patientId == id },
+        attachments = originals.filterIsInstance<DemoAttachment>().filter { it.patientId == id },
     )
 
     private fun original(target: Target): DeletableRecord? = originals.firstOrNull {
@@ -215,6 +224,7 @@ class UndoCoordinatorTest {
                     DeletableType.ULTRASOUND -> patient.copy(ultrasoundScans = patient.ultrasoundScans.filterNot { it.id == undo.recordId })
                     DeletableType.VISIT -> patient.copy(visits = patient.visits.filterNot { it.id == undo.recordId })
                     DeletableType.PREVIOUS_PREGNANCY -> patient.copy(previousPregnancies = patient.previousPregnancies.filterNot { it.id == undo.recordId })
+                    DeletableType.ATTACHMENT -> patient.copy(attachments = patient.attachments.filterNot { it.id == undo.recordId })
                 }
                 is RestoreRecordCommand -> when (val record = undo.record) {
                     is DemoMedicationRecord -> patient.copy(medications = patient.medications + record)
@@ -222,6 +232,7 @@ class UndoCoordinatorTest {
                     is DemoUltrasoundScan -> patient.copy(ultrasoundScans = patient.ultrasoundScans + record)
                     is DemoVisit -> patient.copy(visits = patient.visits + record)
                     is DemoPreviousPregnancy -> patient.copy(previousPregnancies = patient.previousPregnancies + record)
+                    is DemoAttachment -> patient.copy(attachments = patient.attachments + record)
                     else -> error("unexpected record ${record::class}")
                 }
             }.copy(revision = patient.revision + 1)

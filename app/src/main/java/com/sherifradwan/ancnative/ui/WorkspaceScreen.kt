@@ -272,10 +272,10 @@ fun WorkspaceScreen(
                 onDelete = {
                     val att = viewingAttachment ?: return@ClinicalAttachmentViewerDialog
                     onEvent(
-                        AncEvent.DeleteAttachment(
+                        AncEvent.RequestDelete(
                             patientId = patient.id,
-                            attachmentId = att.id,
-                            fileName = att.fileName,
+                            type = DeletableType.ATTACHMENT,
+                            recordId = att.id,
                         ),
                     )
                     viewingAttachment = null
