@@ -7,7 +7,8 @@ Textual source contract only; verifies nothing at runtime.
   S24 AncViewModel.kt defines lockVault; MainActivity.kt passes two args to vaultAutoAction
       and calls lockVault() inside an effect keyed on isAppLocked.
   S25 AppLockScreen.kt: biometric key clickable enabled expression contains isBiometricEnabled.
-  S26 photo viewer dialogs: no invented scan values / loading wording; both show "Image unavailable".
+  S26 photo viewer dialogs: no invented scan values / loading wording; both show the shared
+      R.string.image_unavailable fallback, which strings.xml defines as "Image unavailable".
   S27 AppLockScreen.kt: liveRegion, Role.Button, contentDescription mentioning "digits".
   S28 no IconButton with size(36.dp) in PatientListScreen, ProfileScreen, AddAttachmentDialog.
 """
@@ -138,9 +139,12 @@ for rel in ["ui/UltrasoundPhotoViewerDialog.kt", "ui/ClinicalAttachmentViewerDia
     for bad in ["3.5MHz", "GAIN", "CEPHALIC", "Loading encrypted image"]:
         if bad in c:
             problems.append(rel + " still has '" + bad + "'")
-    if "Image unavailable" not in c:
-        problems.append(rel + " lacks 'Image unavailable'")
-record("S26 no fake scan screen; Image unavailable", not problems, "; ".join(problems))
+    if "R.string.image_unavailable" not in c:
+        problems.append(rel + " does not use R.string.image_unavailable")
+strings = read(ROOT / "app/src/main/res/values/strings.xml") or ""
+if not re.search(r'<string name="image_unavailable">Image unavailable</string>', strings):
+    problems.append("strings.xml does not define image_unavailable as 'Image unavailable'")
+record("S26 no fake scan screen; shared Image unavailable string", not problems, "; ".join(problems))
 
 # S27
 if lock is None:

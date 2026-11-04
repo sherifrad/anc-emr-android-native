@@ -1,5 +1,7 @@
 package com.sherifradwan.ancnative.ui
 
+import com.sherifradwan.ancnative.R
+
 import com.sherifradwan.ancnative.storage.BoundedBitmap
 import com.sherifradwan.ancnative.storage.PatientAttachmentVault
 import com.sherifradwan.ancnative.storage.scanPhotoFileName
@@ -42,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -179,7 +182,7 @@ fun UltrasoundPhotoViewerDialog(
                         )
                     } else {
                         Text(
-                            text = "Image unavailable",
+                            text = stringResource(R.string.image_unavailable),
                             modifier = Modifier.testTag("image_unavailable"),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

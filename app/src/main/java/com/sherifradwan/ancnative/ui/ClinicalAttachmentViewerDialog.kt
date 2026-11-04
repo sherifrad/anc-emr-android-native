@@ -212,7 +212,7 @@ fun ClinicalAttachmentViewerDialog(
                                 modifier = Modifier.size(48.dp),
                             )
                             Text(
-                                text = stringResource(R.string.attachment_image_unavailable),
+                                text = stringResource(R.string.image_unavailable),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color.LightGray,
                                 modifier = Modifier.testTag("image_unavailable"),
