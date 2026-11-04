@@ -1085,8 +1085,9 @@ class UndoCoordinatorTest {
 
     @Test
     fun aReplacementDeleteStillReportsItsCleanupFailureOnAnImmediateDispatcher() {
-        // Production runs the coordinator on Dispatchers.Main.immediate: the cleanup failure must not be wiped by the
-        // DeleteCommitted that follows it in the same frame.
+        // Inline dispatchers on both the scope and the cleanup make nested launches run inline, as
+        // Dispatchers.Main.immediate does in production: the cleanup failure must not be wiped by the DeleteCommitted
+        // that follows it in the same frame. This isolates reduce-before-arm; the IO hop itself is not covered here.
         val fx = Fixture(immediate = true)
         fx.finalizeResult = { FinalizeResult.Failed("disk error") }
         fx.begin(DeletableType.ATTACHMENT, "p1", "x1")

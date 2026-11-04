@@ -277,9 +277,10 @@ class UndoCoordinator(
     ) {
         reduce(AncEvent.UndoFailed(token, error, offer))
         if (currentState().undoOffer?.token != token) {
-            // The offer is gone (another patient, a lock). The record is still deleted, so the file is an orphan the
-            // next unlock sweep will take. Never delete it here: this restore may have committed.
-            pendingUndo = null
+            // The offer is gone (another patient, a lock), and a newer offer may already own pendingUndo: clear only
+            // our own token. The record is still deleted, so the file is an orphan the next unlock sweep will take.
+            // Never delete it here: this restore may have committed.
+            if (pendingUndo?.token == token) pendingUndo = null
             return
         }
         // A failed Undo may restart its window at most MAX_UNDO_RESTARTS times.

@@ -369,6 +369,12 @@ class DeleteUndoUiTest {
         openAttachmentViewer("ui-att-1")
         click("deleteAttachmentBtn")
         exists("deleteConfirmDialog")
+        // The dialog must name the record the way a clinician reads it, never the internal file name.
+        assertTrue(
+            "the confirm dialog must show the attachment label",
+            compose.onAllNodes(hasText("Scan 1", substring = true), useUnmergedTree = true)
+                .fetchSemanticsNodes().isNotEmpty(),
+        )
         click("deleteConfirm")
         compose.waitUntil(5_000) {
             compose.onAllNodes(hasTestTag("undoBar"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
