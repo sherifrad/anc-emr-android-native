@@ -80,7 +80,7 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
         finalizePayload = { type, record ->
             val ctx = getApplication<android.app.Application>()
             val adapter = com.sherifradwan.ancnative.storage.DeletableRegistry.of<com.sherifradwan.ancnative.storage.DeletableRecord>(type) as? com.sherifradwan.ancnative.storage.PayloadFileAdapter
-            if (adapter != null && adapter.hasPayloadFile && record is com.sherifradwan.ancnative.model.DemoAttachment) {
+            if (adapter != null && adapter.hasPayloadFile) {
                 adapter.finalizeDelete(record, ctx)
             } else com.sherifradwan.ancnative.storage.FinalizeResult.Success
         },

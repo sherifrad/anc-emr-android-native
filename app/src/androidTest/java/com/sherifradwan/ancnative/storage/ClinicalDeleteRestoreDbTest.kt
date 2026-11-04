@@ -3,6 +3,7 @@ package com.sherifradwan.ancnative.storage
 import android.database.Cursor
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.sherifradwan.ancnative.model.DemoAttachment
 import com.sherifradwan.ancnative.model.DemoFixtures
 import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoMedicationRecord
@@ -33,7 +34,7 @@ class ClinicalDeleteRestoreDbTest(private val kindName: String) {
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun kinds(): List<String> = listOf("medication", "lab", "ultrasound", "visit", "previous_pregnancy")
+        fun kinds(): List<String> = listOf("medication", "lab", "ultrasound", "visit", "previous_pregnancy", "attachment")
     }
 
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
@@ -186,6 +187,80 @@ class ClinicalDeleteRestoreDbTest(private val kindName: String) {
         override val table = "lab_investigations"
         override val deleteKind = ClinicalRecordKind.LAB_DELETE
         override val restoreKind = ClinicalRecordKind.LAB_RESTORE
+    }
+
+    /**
+     * Attachments are created through `RecordsRepository.saveAttachment` (no command), so this kind overrides
+     * [create] and keeps [save] unused. Delete and restore go through the same commands as every other kind.
+     */
+    private object AttachmentKind : Kind {
+        override fun save(patientId: String, patientRevision: Long, id: String, tag: String): ClinicalCommand =
+            error("attachments are created through saveAttachment, not through a command")
+
+        override suspend fun create(repo: RecordsRepository, patientId: String, patientRevision: Long, id: String, tag: String) {
+            val ok = repo.saveAttachment(
+                DemoAttachment(
+                    id = id,
+                    patientId = patientId,
+                    fileName = "att_$id.webp",
+                    filePath = "patient_attachments/$patientId/att_$id.webp",
+                    category = AttachmentCategories.ULTRASOUND,
+                    fileSizeBytes = 1024,
+                    sha256Hash = "00",
+                    title = "Scan $tag",
+                    capturedAt = "2026-10-30T00:00:00Z",
+                    revision = 1,
+                ),
+            )
+            assertTrue("attachment setup save must commit", ok)
+        }
+
+        override suspend fun row(dao: RecordsDao, id: String): Any? = dao.attachment(id)
+        override suspend fun domain(dao: RecordsDao, id: String): Any? = dao.attachment(id)?.let {
+            DemoAttachment(
+                id = it.id, patientId = it.patientId, fileName = it.fileName, filePath = it.filePath,
+                category = it.category, mimeType = it.mimeType, fileSizeBytes = it.fileSizeBytes,
+                sha256Hash = it.sha256Hash, title = it.title, capturedAt = it.capturedAt,
+                linkedRecordId = it.linkedRecordId, syncStatus = it.syncStatus, cloudUrl = it.cloudUrl,
+                cloudSyncedAt = it.cloudSyncedAt, revision = it.revision,
+            )
+        }
+
+        override fun revisionOf(domain: Any) = (domain as DemoAttachment).revision
+        override fun patientOf(domain: Any) = (domain as DemoAttachment).patientId
+        override fun hash(domain: Any) = contentHash(domain as DemoAttachment)
+        override fun changed(domain: Any) = (domain as DemoAttachment).copy(title = "tampered")
+        override fun withRevision(domain: Any, revision: Long) = (domain as DemoAttachment).copy(revision = revision)
+        override fun del(op: String, patientId: String, patientRevision: Long, id: String, revision: Long, hash: String) =
+            DeleteRecordCommand(
+                type = DeletableType.ATTACHMENT, operationUuid = op, patientId = patientId,
+                expectedPatientRevision = patientRevision, recordId = id, expectedRecordRevision = revision,
+                deletedContentHash = hash,
+            )
+
+        override fun res(op: String, patientId: String, patientRevision: Long, domain: Any, source: ClinicalCommand) =
+            RestoreRecordCommand(
+                type = DeletableType.ATTACHMENT, operationUuid = op, patientId = patientId,
+                expectedPatientRevision = patientRevision, record = domain as DemoAttachment,
+                sourceDelete = source as DeleteRecordCommand,
+            )
+
+        override suspend fun insertRaw(dao: RecordsDao, domain: Any) {
+            val r = domain as DemoAttachment
+            dao.insertAttachment(
+                PatientAttachmentEntity(
+                    id = r.id, patientId = r.patientId, fileName = r.fileName, filePath = r.filePath,
+                    category = r.category, mimeType = r.mimeType, fileSizeBytes = r.fileSizeBytes,
+                    sha256Hash = r.sha256Hash, title = r.title, capturedAt = r.capturedAt,
+                    linkedRecordId = r.linkedRecordId, syncStatus = r.syncStatus, cloudUrl = r.cloudUrl,
+                    cloudSyncedAt = r.cloudSyncedAt, revision = r.revision,
+                ),
+            )
+        }
+
+        override val table = "patient_attachments"
+        override val deleteKind = ClinicalRecordKind.ATTACHMENT_DELETE
+        override val restoreKind = ClinicalRecordKind.ATTACHMENT_RESTORE
     }
 
     private object UltrasoundKind : Kind {
@@ -417,6 +492,7 @@ class ClinicalDeleteRestoreDbTest(private val kindName: String) {
         "ultrasound" -> UltrasoundKind
         "visit" -> VisitKind
         "previous_pregnancy" -> PreviousPregnancyKind
+        "attachment" -> AttachmentKind
         else -> throw IllegalArgumentException("Unknown kind $kindName")
     }
     private val otherKind: Kind get() = when (kindName) {
@@ -424,7 +500,8 @@ class ClinicalDeleteRestoreDbTest(private val kindName: String) {
         "lab" -> UltrasoundKind
         "ultrasound" -> VisitKind
         "visit" -> PreviousPregnancyKind
-        "previous_pregnancy" -> MedKind
+        "previous_pregnancy" -> AttachmentKind
+        "attachment" -> MedKind
         else -> throw IllegalArgumentException("Unknown kind $kindName")
     }
 

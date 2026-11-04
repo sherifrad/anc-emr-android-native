@@ -123,7 +123,16 @@ def check_false_results():
         problems.append("RecordsRepository deletes payload files inside the transaction")
     if "finalizePayload(" not in coord:
         problems.append("UndoCoordinator never calls finalizePayload")
-    record("S36 payload files are removed outside the transaction, from every Undo exit path", not problems, "; ".join(problems))
+    # A save that fails after the file was written must not leave the file behind.
+    vm = code_of("state/AncViewModel.kt") or ""
+    add = fun_body(vm, "addAttachment") or ""
+    if not re.search(r"if\s*\(\s*!\s*controller\.saveAttachment\(", add):
+        problems.append("addAttachment does not check controller.saveAttachment")
+    if "PatientAttachmentVault.deleteAttachment(" not in add:
+        problems.append("addAttachment does not delete the file when the row save fails")
+    if "deleteIfCaptureTemp(" not in add:
+        problems.append("addAttachment does not clean the camera temp file")
+    record("S36 payload files are removed outside the transaction, from every Undo exit path, and a failed save leaves no file", not problems, "; ".join(problems))
 
 
 def main():

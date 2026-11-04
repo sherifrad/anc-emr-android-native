@@ -264,10 +264,16 @@ fun WorkspaceScreen(
             )
         }
 
+        // The viewer closes only when its record is really gone: a cancelled confirmation returns to the image.
+        LaunchedEffect(patient.attachments) {
+            val open = viewingAttachment ?: return@LaunchedEffect
+            if (patient.attachments.none { it.id == open.id }) viewingAttachment = null
+        }
         if (viewingAttachment != null) {
             ClinicalAttachmentViewerDialog(
                 patient = patient,
                 attachment = viewingAttachment!!,
+                canDelete = patient.status != "archived",
                 onDismiss = { viewingAttachment = null },
                 onDelete = {
                     val att = viewingAttachment ?: return@ClinicalAttachmentViewerDialog
@@ -278,7 +284,6 @@ fun WorkspaceScreen(
                             recordId = att.id,
                         ),
                     )
-                    viewingAttachment = null
                 },
             )
         }

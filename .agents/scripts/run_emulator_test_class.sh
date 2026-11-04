@@ -4,8 +4,10 @@
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 cls="${1:?test class required}"; serial="${2:-emulator-5554}"
+# leaveApksInstalledAfterRun: the QA copy is updated in place, never uninstalled between runs (owner rule).
 ANDROID_SERIAL="$serial" ./gradlew --offline -I .agents/scripts/qa_package_suffix.init.gradle \
-  :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class="$cls" -q
+  :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class="$cls" \
+  -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true -q
 code=$?
 python3 - <<'PY'
 import glob, re

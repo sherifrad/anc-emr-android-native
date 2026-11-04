@@ -108,6 +108,13 @@ class DeleteUndoUiTest {
         weight = "65 kg", findings = "Visit $n", notes = null, linkedUltrasoundId = null, revision = 1,
     )
 
+    private fun attachment(patientId: String, n: Int) = DemoAttachment(
+        id = "ui-att-$n", patientId = patientId, fileName = "att_ui_$n.webp",
+        filePath = "patient_attachments/$patientId/att_ui_$n.webp", category = "ULTRASOUND",
+        fileSizeBytes = 1024, sha256Hash = "00", title = "Scan $n", capturedAt = "2026-03-0$n",
+        revision = 1,
+    )
+
     private fun previousPregnancy(patientId: String, n: Int) = DemoPreviousPregnancy(
         id = "ui-prev-$n", patientId = patientId, modelVersion = 1, dateText = "2024-03-0$n",
         outcomeText = "Outcome $n", pregnancyType = "Singleton", otherDetails = null,
@@ -124,6 +131,7 @@ class DeleteUndoUiTest {
         ultrasoundScans = listOf(ultrasound(base.id, 1), ultrasound(base.id, 2)),
         visits = listOf(visitRecord(base.id, 1), visitRecord(base.id, 2)),
         previousPregnancies = listOf(previousPregnancy(base.id, 1), previousPregnancy(base.id, 2)),
+        attachments = listOf(attachment(base.id, 1), attachment(base.id, 2)),
         status = "active",
     )
     private val patientB = DemoFixtures.patients[1].copy(
@@ -132,6 +140,7 @@ class DeleteUndoUiTest {
         ultrasoundScans = listOf(ultrasound(DemoFixtures.patients[1].id, 1)),
         visits = listOf(visitRecord(DemoFixtures.patients[1].id, 1)),
         previousPregnancies = listOf(previousPregnancy(DemoFixtures.patients[1].id, 1)),
+        attachments = listOf(attachment(DemoFixtures.patients[1].id, 1)),
     )
 
     /** In-memory stand-in for the vault: applies a delete/restore command to `state` and returns the receipt. */
@@ -345,6 +354,60 @@ class DeleteUndoUiTest {
 
     @Test
     fun previousPregnancy_barDisappearsAfterAboutEightSeconds() = barDisappearsAfterAboutEightSeconds(prevKind)
+
+    // Attachments delete from inside the viewer, not from a card affordance, so they need their own driver.
+
+    private fun openAttachmentViewer(id: String) {
+        scrollTo("attachmentCard-$id")
+        click("attachmentCard-$id")
+        exists("deleteAttachmentBtn")
+    }
+
+    @Test
+    fun attachment_deleteConfirmRemovesCardAndShowsUndoBar() {
+        host(AncRoute.Workspace(patientA.id, WorkspaceSection.ATTACHMENTS))
+        openAttachmentViewer("ui-att-1")
+        click("deleteAttachmentBtn")
+        exists("deleteConfirmDialog")
+        click("deleteConfirm")
+        compose.waitUntil(5_000) {
+            compose.onAllNodes(hasTestTag("undoBar"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        missing("deleteConfirmDialog")
+        missing("attachmentCard-ui-att-1")
+        missing("deleteAttachmentBtn")
+        exists("undoButton")
+    }
+
+    @Test
+    fun attachment_cancelKeepsTheViewerOpen() {
+        host(AncRoute.Workspace(patientA.id, WorkspaceSection.ATTACHMENTS))
+        openAttachmentViewer("ui-att-1")
+        click("deleteAttachmentBtn")
+        click("deleteCancel")
+        missing("deleteConfirmDialog")
+        missing("undoBar")
+        // The viewer stays: a cancelled confirmation returns the clinician to the image they were looking at.
+        exists("deleteAttachmentBtn")
+        exists("attachmentCard-ui-att-1")
+    }
+
+    @Test
+    fun attachment_undoRestoresTheCard() {
+        host(AncRoute.Workspace(patientA.id, WorkspaceSection.ATTACHMENTS))
+        openAttachmentViewer("ui-att-1")
+        click("deleteAttachmentBtn")
+        click("deleteConfirm")
+        compose.waitUntil(5_000) {
+            compose.onAllNodes(hasTestTag("undoBar"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        click("undoButton")
+        compose.waitUntil(5_000) {
+            compose.onAllNodes(hasTestTag("undoBar"), useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
+        }
+        scrollTo("attachmentCard-ui-att-1")
+        exists("attachmentCard-ui-att-1")
+    }
 
     @Test
     fun undoButtonIsDisabledWhileADeleteRuns() {

@@ -60,9 +60,10 @@ object AttachmentDeleteAdapter : DeletableRecordAdapter<DemoAttachment>, Payload
 
     override val hasPayloadFile: Boolean = true
 
-    override suspend fun finalizeDelete(record: DemoAttachment, context: android.content.Context): FinalizeResult {
+    override suspend fun finalizeDelete(record: DeletableRecord, context: android.content.Context): FinalizeResult {
+        val attachment = record as? DemoAttachment ?: return FinalizeResult.Failed("not an attachment")
         return try {
-            val ok = PatientAttachmentVault.deleteAttachment(context, record.patientId, record.fileName)
+            val ok = PatientAttachmentVault.deleteAttachment(context, attachment.patientId, attachment.fileName)
             if (ok) FinalizeResult.Success else FinalizeResult.Failed("delete returned false")
         } catch (e: Exception) {
             FinalizeResult.Failed(e.message ?: "unknown")
@@ -72,7 +73,8 @@ object AttachmentDeleteAdapter : DeletableRecordAdapter<DemoAttachment>, Payload
 
 interface PayloadFileAdapter {
     val hasPayloadFile: Boolean
-    suspend fun finalizeDelete(record: DemoAttachment, context: android.content.Context): FinalizeResult
+    /** Takes the shared record type so the view model never has to name a concrete kind. */
+    suspend fun finalizeDelete(record: DeletableRecord, context: android.content.Context): FinalizeResult
 }
 
 sealed class FinalizeResult {

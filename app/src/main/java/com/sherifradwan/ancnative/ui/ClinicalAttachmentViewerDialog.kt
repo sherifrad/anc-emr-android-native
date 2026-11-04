@@ -61,6 +61,7 @@ import com.sherifradwan.ancnative.storage.PatientAttachmentVault
 fun ClinicalAttachmentViewerDialog(
     patient: DemoPatient,
     attachment: DemoAttachment,
+    canDelete: Boolean,
     onDismiss: () -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -156,8 +157,10 @@ fun ClinicalAttachmentViewerDialog(
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconButton(
-                            // The shared DeleteConfirmDialog owns the confirmation: this viewer must not ask twice.
-                            onClick = { onDelete(); onDismiss() },
+                            // The shared DeleteConfirmDialog owns the confirmation: this viewer must not ask twice,
+                            // and it stays open until the record is really gone, so Cancel returns to the image.
+                            onClick = onDelete,
+                            enabled = canDelete,
                             modifier = Modifier.testTag("deleteAttachmentBtn"),
                         ) {
                             Icon(
