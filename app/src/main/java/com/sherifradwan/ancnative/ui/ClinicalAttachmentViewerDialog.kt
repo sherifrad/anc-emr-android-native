@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -49,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.sherifradwan.ancnative.model.DemoAttachment
+import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.storage.AttachmentCategories
 import com.sherifradwan.ancnative.storage.AttachmentSyncManager
@@ -160,7 +162,7 @@ fun ClinicalAttachmentViewerDialog(
                         ) {
                             Icon(
                                 Icons.Default.Delete,
-                                contentDescription = "Delete Attachment",
+                                contentDescription = stringResource(R.string.attachment_delete_action),
                                 tint = MaterialTheme.colorScheme.error,
                             )
                         }
@@ -170,7 +172,7 @@ fun ClinicalAttachmentViewerDialog(
                         ) {
                             Icon(
                                 Icons.Default.Close,
-                                contentDescription = "Close",
+                                contentDescription = stringResource(R.string.close),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
@@ -210,7 +212,7 @@ fun ClinicalAttachmentViewerDialog(
                                 modifier = Modifier.size(48.dp),
                             )
                             Text(
-                                text = "Image unavailable",
+                                text = stringResource(R.string.attachment_image_unavailable),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color.LightGray,
                                 modifier = Modifier.testTag("image_unavailable"),
@@ -245,14 +247,21 @@ fun ClinicalAttachmentViewerDialog(
                                     modifier = Modifier.size(16.dp),
                                 )
                                 Text(
-                                    text = if (isIntegrityVerified) "Verified Digital Integrity · SHA-256" else "Protected Medical Vault",
+                                    text = if (isIntegrityVerified) {
+                                        stringResource(R.string.attachment_integrity_verified)
+                                    } else {
+                                        stringResource(R.string.attachment_vault_protected)
+                                    },
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = if (isIntegrityVerified) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
                                 )
                             }
                             Text(
-                                text = "${AttachmentSyncManager.formatFileSize(attachment.fileSizeBytes)} · WebP",
+                                text = stringResource(
+                                    R.string.attachment_size_format,
+                                    AttachmentSyncManager.formatFileSize(attachment.fileSizeBytes),
+                                ),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -260,14 +269,14 @@ fun ClinicalAttachmentViewerDialog(
                         }
 
                         Text(
-                            text = "SHA-256: ${attachment.sha256Hash}",
+                            text = stringResource(R.string.attachment_sha256_label, attachment.sha256Hash),
                             style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace, fontSize = 9.sp),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                         )
 
                         Text(
-                            text = "Saved At: ${attachment.capturedAt}",
+                            text = stringResource(R.string.attachment_saved_at, attachment.capturedAt),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
