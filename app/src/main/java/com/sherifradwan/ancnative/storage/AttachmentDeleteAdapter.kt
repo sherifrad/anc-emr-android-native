@@ -16,8 +16,16 @@ object AttachmentDeleteAdapter : DeletableRecordAdapter<DemoAttachment>, Payload
     override val restoredNotice: SavedNotice = SavedNotice.ATTACHMENT_RESTORED
     override val saveUndoneNotice: SavedNotice = SavedNotice.ATTACHMENT_DELETED // no save-undo flow
 
-    override fun label(record: DemoAttachment): String =
-        record.title?.takeIf { it.isNotBlank() } ?: record.fileName
+    /**
+     * What the clinician sees in the confirm dialog, the Undo bar and the failure notice. Never the internal
+     * `att_<uuid>.webp` name: titles are optional, so fall back to the category and the capture date.
+     */
+    override fun label(record: DemoAttachment): String {
+        record.title?.trim()?.takeIf { it.isNotEmpty() }?.let { return it }
+        val category = AttachmentCategories.localizedName(record.category)
+        val day = record.capturedAt.take(10).takeIf { it.length == 10 && it[4] == '-' && it[7] == '-' }
+        return if (day != null) "$category · $day" else category
+    }
 
     override fun canonical(record: DemoAttachment): String =
         "${record.patientId}|${record.id}|${record.fileName}|${record.filePath}|${record.category}|${record.mimeType}|${record.fileSizeBytes}|${record.sha256Hash}|${record.title}|${record.capturedAt}|${record.linkedRecordId}|${record.syncStatus}|${record.cloudUrl}|${record.cloudSyncedAt}"

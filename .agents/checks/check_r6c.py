@@ -129,6 +129,14 @@ def main():
     record("R6C5 every kind has distinct tag and receipt kinds (real ClinicalRecordKind values), real notices, label string and editor hook",
            not problems, "; ".join(problems))
 
+    # R6C8: one confirmation for one delete. A viewer or editor that asks by itself leaves the clinician confirming twice.
+    viewer = read(MAIN / "ui/ClinicalAttachmentViewerDialog.kt")
+    double_confirm = []
+    if "AlertDialog(" in viewer or '"Confirm Delete' in viewer:
+        double_confirm.append("ui/ClinicalAttachmentViewerDialog.kt confirms deletes itself")
+    record("R6C8 the record viewer delegates delete confirmation to the shared dialog", not double_confirm,
+           "; ".join(double_confirm))
+
     doc = read(ROOT / ".agents/pipeline/ADDING_A_DELETABLE_KIND.md")
     record("R6C6 ADDING_A_DELETABLE_KIND.md exists and names the registry, the adapter interface and the check",
            all(w in doc for w in ("DeletableRegistry", "DeletableRecordAdapter", "check_r6c.py")), "doc missing or incomplete")

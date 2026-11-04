@@ -25,21 +25,15 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.VerifiedUser
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -69,7 +63,6 @@ fun ClinicalAttachmentViewerDialog(
     onDelete: () -> Unit,
 ) {
     val context = LocalContext.current
-    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     val loadedBitmap = remember(attachment.id) {
         runCatching {
@@ -161,7 +154,8 @@ fun ClinicalAttachmentViewerDialog(
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconButton(
-                            onClick = { showDeleteConfirm = true },
+                            // The shared DeleteConfirmDialog owns the confirmation: this viewer must not ask twice.
+                            onClick = { onDelete(); onDismiss() },
                             modifier = Modifier.testTag("deleteAttachmentBtn"),
                         ) {
                             Icon(
@@ -281,34 +275,5 @@ fun ClinicalAttachmentViewerDialog(
                 }
             }
         }
-    }
-
-    if (showDeleteConfirm) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Confirm Delete Attachment") },
-            text = {
-                Text(
-                    "Are you sure you want to permanently delete this attachment (${attachmentDisplayTitle(attachment.title, AttachmentCategories.localizedName(attachment.category), attachment.capturedAt)}) from patient ${patient.displayName}'s record?",
-                )
-            },
-            confirmButton = {
-                OutlinedButton(
-                    onClick = {
-                        showDeleteConfirm = false
-                        onDelete()
-                        onDismiss()
-                    },
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                ) {
-                    Text("Yes, Delete Permanently")
-                }
-            },
-            dismissButton = {
-                OutlinedButton(onClick = { showDeleteConfirm = false }) {
-                    Text("Cancel")
-                }
-            },
-        )
     }
 }
