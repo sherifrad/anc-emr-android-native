@@ -395,3 +395,8 @@ Keeps the history from the handoff until Claude returns after its quota reset. F
   3. The attachment UI delete test asserted tags only; it now asserts the confirm dialog shows the human label ("Scan 1"), so a label regression fails the suite.
 - Verified after the nits: `run_build_gate.sh` GATE OK; `run_static_checks.sh` STATIC CHECKS OK; `DeleteUndoUiTest` **36/36** and `ClinicalDeleteRestoreDbTest` **168/168** on the API 26 emulator at 360 dp.
 - NOT verified: the reviewer did not run the instrumented suites itself (it compiled them and read the sources); it ran the targeted JVM tests and the three static checkers.
+
+## 2026-11-05 — Mission closed; handoff refreshed
+- Attachment delete / confirm / Undo is complete for all six record kinds, payload files included: committed delete → 8 s window → file removed; Undo → file kept; a failed or interrupted cleanup → next unlock sweep. The independent review went FAIL (three real blockers, one data-loss) → fixes → re-review **PASS WITH NITS, 0 blockers** → nits fixed.
+- Handoff refresh: `.agents/pipeline/HANDOFF_AGY.md` gained a dated status block that **supersedes** the stale "previous pregnancy in progress" section at its end; `docs/AI_HANDOFF.md`'s banner now reports the real state (948 tests, PASS, 130 ahead); `tasks/current_task.md` closes Phase 7 and states the next four items in order.
+- Code state at the time of this entry: `752d4cb`. Verified: gate OK, static checks OK, 948 JVM tests / 87 classes, `DeleteUndoUiTest` 36/36, `ClinicalDeleteRestoreDbTest` 168/168 on the API 26 emulator at 360 dp.

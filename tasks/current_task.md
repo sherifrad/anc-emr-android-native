@@ -56,6 +56,10 @@ Done so far (committed: `f1aca51` cleanup-on-every-exit-path, then `b6af671` 202
 - [x] **Frontier review 2026-11-05 blockers 1-3 fixed in `7ac25c5`** (sweep scan refs, in-flight restore, off-main cleanup + ordering). Still open from the review: attachments missing from `kinds()`/`DeleteUndoUiTest` (SF4), viewer Cancel behaviour (SF5), checker gaps (SF6), re-review of the fix
 - [x] SF4/SF5/SF6 closed in `4adb5e0` (attachment kind in both suites, viewer keeps open on Cancel, checker gaps)
 - [x] Re-review of `7ac25c5`/`4adb5e0` (2026-11-05): **PASS WITH NITS, 0 blockers**; the three nits fixed in `69cdc57`
-- [ ] **Frontier review 2026-11-05: FAIL — original item.** (1) sweep must also treat `ultrasound_scans.image_uris` and persisted drafts as references (data loss today); (2) do not clean a pending payload while an Undo restore is in flight; (3) make the `CLEANUP_FAILED` message survive the replacement path (move payload I/O off the main thread); plus `lastModified()==0`, stranded `pendingUndo`, main-thread I/O, viewer Cancel behaviour, checker gaps, and attachment cases in `kinds()`/`DeleteUndoUiTest`
+- [x] **Frontier review 2026-11-05: FAIL → fixed → PASS WITH NITS.** All blockers (scan-photo sweep, in-flight restore, same-frame message) and SF1-SF6 closed in `7ac25c5`/`4adb5e0`/`69cdc57`; re-review 0 blockers
 
-Next after that: remaining phone-session items in `.agents/pipeline/POSTPONED_DEVICE_TESTS.md`, then print preview fixes, then the older audit items (`minSdk`, whole-database load).
+**Phase 7 is closed.** Next queue, in order:
+1. Print defects **P-1** (mid-word breaks in report tables: "Gestati onal Age", "Pressu re", "165/1 05") and **P-2** ("Official Stamp & Signature" printed twice) — owner saw both on paper.
+2. Part B design rounds: Lab §4.1, Ultrasound §4.2, Directory §4.5, Chart §4.6, History/Dating/Attention §4.7.
+3. Postponed device tests (`.agents/pipeline/POSTPONED_DEVICE_TESTS.md`, items 2, 5-11).
+4. Older audit items: `loadSnapshot()` whole-DB read, git history hygiene before any push, R8 shrink.
