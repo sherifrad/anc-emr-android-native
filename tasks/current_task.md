@@ -53,4 +53,6 @@ Done so far (committed: `f1aca51` cleanup-on-every-exit-path, then `b6af671` 202
 
 - [x] Two defects found on the phone are fixed and retested (2026-11-04): single confirmation for attachment delete (viewer delegates to the shared dialog; check R6C8) and a human attachment label ("Ultrasound Scan · 2026-10-30" instead of `att_<uuid>.webp`)
 
+- [ ] **Frontier review 2026-11-05: FAIL — fix before anything else.** (1) sweep must also treat `ultrasound_scans.image_uris` and persisted drafts as references (data loss today); (2) do not clean a pending payload while an Undo restore is in flight; (3) make the `CLEANUP_FAILED` message survive the replacement path (move payload I/O off the main thread); plus `lastModified()==0`, stranded `pendingUndo`, main-thread I/O, viewer Cancel behaviour, checker gaps, and attachment cases in `kinds()`/`DeleteUndoUiTest`
+
 Next after that: remaining phone-session items in `.agents/pipeline/POSTPONED_DEVICE_TESTS.md`, then print preview fixes, then the older audit items (`minSdk`, whole-database load).
