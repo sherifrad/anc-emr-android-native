@@ -47,7 +47,7 @@ Done so far (committed: `f1aca51` cleanup-on-every-exit-path, then `b6af671` 202
 - [x] Remove unused strings `attachment_delete_failed` and `attachment_save_undone` (removed; `f1aca51` removed the first but left the second — that was wrong, fixed in `b6af671`)
 - [ ] Independent review (different vendor family), including open F4 and F5; saved under `evidence/attachment-audit/`
 - [x] `./gradlew :app:testDebugUnitTest` fully green — 923 tests pass (2026-11-04, `f1aca51`); 938 tests in 86 classes, 0 failures after `b6af671` (gate OK, static checks OK)
-- [ ] Device check on the QA copy (delete, wait, file gone; delete then Undo; two deletes in a row; lock inside the window); `DeleteUndoUiTest` on a device
+- [x] Device check on the QA copy (2026-11-04, Honor DNY-NX9, QA build of `b6af671`): delete → wait → file gone; delete → Undo → record and file intact; unlock sweep removed a planted orphan. NOT done: two deletes in a row, lock inside the window, 60 s guard on device, `DeleteUndoUiTest` (needs an emulator — no connected instrumented runs on the owner's phone)
 - [x] Local commit of the verified files (never push) — `f1aca51` + `b6af671` (2026-11-04)
 
 Next after that: remaining phone-session items in `.agents/pipeline/POSTPONED_DEVICE_TESTS.md`, then print preview fixes, then the older audit items (`minSdk`, whole-database load).

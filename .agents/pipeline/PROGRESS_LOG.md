@@ -325,3 +325,13 @@ Keeps the history from the handoff until Claude returns after its quota reset. F
 - Commit `b6af671` (code, tests, checkers). Verified: `run_build_gate.sh` → `GATE OK`; `run_static_checks.sh` → `STATIC CHECKS OK` (after commit, on a clean tree); unit suite 938 tests in 86 classes, 0 failures.
 - NOT verified: device run (`DeleteUndoUiTest`) — no device attached; the sweep on a real phone; independent frontier review of `b6af671` (F4/F5 still owed); the sweep only ran in JVM planning tests.
 - Owed next: independent review of `b6af671`, device check (delete → wait → file gone; delete → Undo; two deletes; lock inside the window), then the postponed device tests.
+
+## 2026-11-04 — Attachment cleanup verified on the owner's phone (QA copy only, `b6af671` build)
+- Device AX3C025527011668 (USB, DNY-NX9). QA build `com.sherifradwan.anc.qa` 1.0.1-qa reinstalled at 23:28 with the `b6af671` code; the clinic app `com.sherifradwan.anc` was not touched (version 1.0.1, last update 16:55).
+- Delete → wait: the card went at once, "Attachment deleted." appeared, and the Undo bar named the file and the patient. The payload file was still on disk inside the 8 s window and was gone after it; the other attachment's file was byte-identical before and after (md5 940e7e42…).
+- Delete → Undo: "Attachment restored.", the card came back and the payload file was never removed. The restored record reopens with "Verified Digital Integrity · SHA-256" and the same hash `c8deb8cd…552` it had before the delete.
+- Unlock sweep (the new code): a deliberate orphan (`orphan-test.webp`, 2020 mtime, no row) was removed by the first unlock after a force-stop, while the referenced `att_63ec9ede….webp` stayed. The empty patient folder `819244a3…` remains: the sweep removes files, not directories.
+- Logcat: no app exception or crash during any of it.
+- NOT verified on device: two deletes in a row (unit test only), lock inside the Undo window, the 60 s sweep age guard (unit test only), and `DeleteUndoUiTest` — connected instrumented runs are forbidden on the owner's phone, so that class still needs a disposable emulator.
+- Two defects seen on hardware, NOT fixed (owner decision, both pre-date `b6af671`): the attachment viewer still asks twice (its own "Confirm Delete Attachment" dialog, then the shared "Delete this attachment?" one), and `AttachmentDeleteAdapter.label` falls back to the internal `att_<uuid>.webp` name, so the confirm dialog and the Undo bar show a UUID instead of the scan's title/date.
+- Evidence: `evidence/attachment-audit/device-2026-11-04/attachment-restored-integrity.png` (git-ignored).
