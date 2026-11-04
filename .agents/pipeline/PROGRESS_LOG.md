@@ -379,3 +379,9 @@ Keeps the history from the handoff until Claude returns after its quota reset. F
 - `run_emulator_test_class.sh` now passes `android.injected.androidTest.leaveApksInstalledAfterRun=true`: the QA app and its test APK stay installed on the emulator between runs (owner rule: update in place, never uninstall).
 - Phone: the QA copy is still the 01:00:51 build, which already contains the scan-photo sweep fix (`7ac25c5`); the newest build (SF5/SF6, no data-path change) could not be pushed because the USB link dropped again during the round. Clinic app untouched.
 - NOT done: re-review of `7ac25c5`/`4adb5e0` — still owed by the level-3 rule.
+
+## 2026-11-05 — QA copy updated on the phone; SF5 verified on hardware
+- Phone reconnected; QA copy updated **in place** (`installDebug`, same signer, no uninstall): `1.0.1-qa`, `lastUpdateTime` 01:17:16. Data preserved (the remaining attachment file is untouched); clinic app still 1.0.1 / 16:55:47.
+- SF5 on hardware: viewer → Delete Attachment → shared dialog ("Delete this attachment?" / "Ultrasound Scan · 2026-10-30") → **Cancel** → the confirm closes and **the viewer stays open** with its Delete and Close controls, no Undo bar, payload file untouched.
+- Note: a system "Use USB to" dialog appears after each replug; it was cancelled without changing any phone setting.
+- Emulator `anc-test-api26` is left running with the window open and the QA app installed, so runs can be watched and the app re-checked without rebuilding.
