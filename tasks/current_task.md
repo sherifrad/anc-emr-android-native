@@ -63,4 +63,4 @@ Done so far (committed: `f1aca51` cleanup-on-every-exit-path, then `b6af671` 202
 2. Part B design rounds: Lab §4.1, Ultrasound §4.2, Directory §4.5, Chart §4.6, History/Dating/Attention §4.7.
 3. Postponed device tests (`.agents/pipeline/POSTPONED_DEVICE_TESTS.md`, items 2, 5-11).
 4. Older audit items: `loadSnapshot()` whole-DB read, git history hygiene before any push, R8 shrink.
-5. **Lab batch (approved mock, D25)** — logic slices done: commands `fcc7a02`, undo `111056f`, draft `da6ce5c`, view-model wiring `cc32bb6`, plus the MACA audit fixes `cc6239b`/`cf89342`. Remaining: draft persistence + recovery before the screen, CBC/Urine catalogue panels, three-tab UI, and the deferred review items.
+5. **Lab batch (approved mock, D25)** — logic slices done: commands `fcc7a02`, undo `111056f`, draft `da6ce5c`, view-model wiring `cc32bb6`, plus the MACA audit fixes `cc6239b`/`cf89342`. Persistence landed in `7ccadb1` (autosaved, restore wired; prompt needs the screen). Remaining: CBC/Urine catalogue panels, three-tab UI, and the deferred review items. **Unreviewed commits `cf89342`, `cc32bb6`, `7ccadb1` — solo review blocked by a 403 on the platform endpoint.**

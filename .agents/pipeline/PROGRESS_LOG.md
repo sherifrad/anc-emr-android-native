@@ -449,3 +449,10 @@ Keeps the history from the handoff until Claude returns after its quota reset. F
 - `hasDirtyDraft` counts a batch holding any test as unsaved work, so navigation and discard prompts see it.
 - Verified: `run_build_gate.sh` GATE OK; **974** unit tests, 0 failures; `run_static_checks.sh` STATIC CHECKS OK.
 - Still owed before the B2 screen ships (from the MACA audit): batch draft persistence + recovery prompt, stale-revision rebase for the batch undo, and tests for the restore-archived and revision-branch guards.
+
+## 2026-11-05 — Laboratory batch, slice 5: draft persistence (`7ccadb1`)
+- `DraftScreenKind.LAB_BATCH`. A batch holding any test becomes the active draft slot, so the existing autosaver writes it and a lock or process death keeps the entered results (the hard blocker from review r1).
+- The row list is encoded into one field with unit/record separators; a value containing a separator is flattened, so free text can never corrupt the list. Restore rebuilds date, lab, tab, cursor and every row with a fresh editor session; the recovery prompt names it "laboratory batch".
+- Caveat: the recovery prompt still requires an open editor with that session, so nothing surfaces it until the B2 screen creates the stub. Wired, not yet reachable.
+- **Review gap:** the solo review of `cf89342` + `cc32bb6` could not run. The platform subagent endpoint returned HTTP 403 twice (no output either time), the profile approves no external vendor, and the owner chose to proceed. These two commits and `7ccadb1` are therefore **unreviewed**; the standing "review before next task" rule is recorded as blocked, not satisfied.
+- Verified: `run_build_gate.sh` GATE OK; **979** unit tests, 0 failures (5 new mapping tests); `run_static_checks.sh` STATIC CHECKS OK.
