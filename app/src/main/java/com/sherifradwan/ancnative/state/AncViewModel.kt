@@ -11,6 +11,8 @@ import com.sherifradwan.ancnative.storage.ClinicalCommand
 import com.sherifradwan.ancnative.storage.ClinicalCommandFailure
 import com.sherifradwan.ancnative.storage.ClinicalCommandOutcome
 import com.sherifradwan.ancnative.storage.ClinicalCommandPreparation
+import com.sherifradwan.ancnative.R
+import com.sherifradwan.ancnative.storage.ClinicalCommandReceipt
 import com.sherifradwan.ancnative.storage.ClinicalRecordKind
 import com.sherifradwan.ancnative.storage.DraftRecord
 import com.sherifradwan.ancnative.storage.PatientCommandOutcome
@@ -33,6 +35,7 @@ import com.sherifradwan.ancnative.storage.DeletableType
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import java.time.Instant
+import java.time.LocalDate
 import java.util.UUID
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -190,6 +193,7 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
             AncEvent.SubmitDating -> saveDating()
             AncEvent.SubmitUltrasound -> saveUltrasound()
             AncEvent.SubmitLab -> saveLab(isChained = false)
+            AncEvent.SubmitLabBatch -> saveLabBatch()
             AncEvent.SubmitLabAndAddAnother -> saveLab(isChained = true)
             AncEvent.SubmitMedication -> {
                 if (!_state.value.undoRunning) {
@@ -564,6 +568,55 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /** Opens a new laboratory batch on today's date; the screen adds the tests. */
+    fun startLabBatch(patientId: String) {
+        val patient = _state.value.patient(patientId) ?: return
+        dispatch(
+            AncEvent.StartLabBatch(
+                patientId = patientId,
+                sessionId = UUID.randomUUID().toString(),
+                basePatientRevision = patient.revision,
+                date = LocalDate.now().toString(),
+                labName = null,
+            ),
+        )
+    }
+
+    private fun saveLabBatch() {
+        val current = _state.value
+        val unlocked = current.vaultState as? VaultState.Unlocked ?: return
+        val draft = current.labBatchDraft ?: return
+        val errors = draft.validationErrors()
+        if (errors.isNotEmpty()) {
+            dispatch(AncEvent.ClinicalValidationFailed(ClinicalRecordKind.LAB_BATCH_SAVE, errors))
+            return
+        }
+        val command = draft.toSaveCommand(
+            operationUuid = UUID.randomUUID().toString(),
+            expectedPatientRevision = draft.basePatientRevision,
+        )
+        submitPreparedClinicalCommand(
+            existing = null,
+            prepared = command,
+            sessionEpoch = unlocked.sessionEpoch,
+            onCommitted = { receipt ->
+                val label = getApplication<Application>().resources.getQuantityString(
+                    R.plurals.lab_batch_results,
+                    command.entries.size,
+                    command.entries.size,
+                )
+                undoCoordinator.offerLabBatchSaveUndo(
+                    patientId = command.patientId,
+                    batchId = command.operationUuid,
+                    entries = command.entries,
+                    receipt = receipt,
+                    type = DeletableType.LAB,
+                    label = label,
+                )
+            },
+        )
+    }
+
     private fun saveLab(isChained: Boolean = false) {
         val current = _state.value
         val unlocked = current.vaultState as? VaultState.Unlocked ?: return
@@ -649,6 +702,7 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
         existing: ClinicalCommand?,
         prepared: ClinicalCommand,
         sessionEpoch: Long,
+        onCommitted: ((ClinicalCommandReceipt) -> Unit)? = null,
     ) {
         val command = existing?.takeIf { it.computeFingerprint() == prepared.computeFingerprint() } ?: prepared
         frozenClinicalCommand = command
@@ -677,6 +731,7 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
                             ),
                         )
                     }
+                    onCommitted?.invoke(result.receipt)
                     val chainedLab = pendingChainedLab?.takeIf {
                         it.operationUuid == command.operationUuid && it.editorSessionId == command.editorSessionId
                     }

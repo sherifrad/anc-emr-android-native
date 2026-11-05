@@ -139,4 +139,38 @@ class LabBatchDraftTest {
         val after = AncReducer.reduce(state, AncEvent.LabBatchItemsAdded(listOf(item("a"))))
         assertEquals(state, after)
     }
+    @Test
+    fun aBatchNeedsADateAndAResultForEveryRow() {
+        val empty = draft()
+        assertEquals(setOf(ClinicalValidationError.REQUIRED_DATE, ClinicalValidationError.REQUIRED_RESULT), empty.copy(date = "").validationErrors())
+        val noResult = draft().add(listOf(item("a")))
+        assertEquals(setOf(ClinicalValidationError.REQUIRED_RESULT), noResult.validationErrors())
+        val ready = noResult.withItem("a") { it.copy(result = "10.8") }
+        assertTrue("a dated batch with every result is valid", ready.validationErrors().isEmpty())
+        assertEquals(setOf(ClinicalValidationError.INVALID_DATE), ready.copy(date = "05/11/2026").validationErrors())
+        assertEquals(setOf(ClinicalValidationError.REQUIRED_NAME), ready.withItem("a") { it.copy(testName = " ") }.validationErrors())
+    }
+
+    @Test
+    fun theSaveCommandCarriesTheDraftAndTrimsTheLabName() {
+        val d = draft().copy(labName = "  Al Borg  ")
+            .add(listOf(item("a").copy(result = "10.8")))
+        val command = d.toSaveCommand("op-1", expectedPatientRevision = 7)
+        assertEquals("op-1", command.operationUuid)
+        assertEquals("p1", command.patientId)
+        assertEquals(7L, command.expectedPatientRevision)
+        assertEquals("2026-11-05", command.date)
+        assertEquals("Al Borg", command.labName)
+        assertEquals(1, command.entries.size)
+        assertEquals("10.8", command.entries.single().result)
+        assertEquals("an empty lab name becomes null", null, d.copy(labName = "   ").toSaveCommand("op-2", 1).labName)
+    }
+
+    @Test
+    fun aBatchWithTestsCountsAsUnsavedWork() {
+        val base = AncState(patients = emptyList(), vaultState = com.sherifradwan.ancnative.storage.VaultState.Unlocked(1L))
+        assertTrue("an empty batch is not unsaved work yet", !base.copy(labBatchDraft = draft()).hasDirtyDraft)
+        assertTrue(base.copy(labBatchDraft = draft().add(listOf(item("a")))).hasDirtyDraft)
+    }
+
 }

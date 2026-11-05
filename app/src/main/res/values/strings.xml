@@ -283,6 +283,10 @@
     <string name="view_linked_visit">View visit</string>
     <string name="calculated_ga_at_visit">Calculated GA: %1$s</string>
     <string name="calculated_ga_label">Calculated GA:</string>
+    <plurals name="lab_batch_results">
+        <item quantity="one">%d lab result</item>
+        <item quantity="other">%d lab results</item>
+    </plurals>
     <string name="apply_calculated_ga">Apply calculated GA (%1$s)</string>
     <string name="simulated_photo">Ultrasound capture</string>
     <string name="no_photos_attached">No ultrasound photos attached</string>

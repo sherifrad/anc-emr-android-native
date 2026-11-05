@@ -1,6 +1,8 @@
 package com.sherifradwan.ancnative.state
 
+import com.sherifradwan.ancnative.model.ClinicalVocabulary
 import com.sherifradwan.ancnative.storage.LabBatchEntry
+import com.sherifradwan.ancnative.storage.SaveLabBatchCommand
 
 /** Which of the three batch tabs is open. A new batch starts on Add (nothing to enter yet). */
 enum class LabBatchTab { ADD, ENTER, REVIEW }
@@ -71,4 +73,24 @@ data class LabBatchDraft(
             notes = item.notes.trim().ifBlank { null },
         )
     }
+    /** What Save would reject, so a bad date or an empty row never reaches the command. */
+    fun validationErrors(): Set<ClinicalValidationError> = buildSet {
+        if (date.isBlank()) add(ClinicalValidationError.REQUIRED_DATE)
+        else if (!ClinicalVocabulary.isValidIsoDate(date)) add(ClinicalValidationError.INVALID_DATE)
+        if (items.isEmpty()) add(ClinicalValidationError.REQUIRED_RESULT)
+        if (items.any { it.result.isBlank() }) add(ClinicalValidationError.REQUIRED_RESULT)
+        if (items.any { it.testName.isBlank() }) add(ClinicalValidationError.REQUIRED_NAME)
+        if (items.any { it.category !in ClinicalVocabulary.testCategories }) add(ClinicalValidationError.INVALID_CATEGORY)
+    }
+
+    fun toSaveCommand(operationUuid: String, expectedPatientRevision: Long): SaveLabBatchCommand =
+        SaveLabBatchCommand(
+            editorSessionId = editorSessionId,
+            operationUuid = operationUuid,
+            patientId = patientId,
+            expectedPatientRevision = expectedPatientRevision,
+            date = date,
+            labName = labName?.trim()?.ifEmpty { null },
+            entries = toEntries(),
+        )
 }

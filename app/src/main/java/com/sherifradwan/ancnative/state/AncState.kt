@@ -685,7 +685,9 @@ data class AncState(
             datingDraft?.isDirty == true ||
             ultrasoundDraft?.isDirty == true ||
             labDraft?.isDirty == true ||
-            medicationDraft?.isDirty == true
+            medicationDraft?.isDirty == true ||
+            // A batch is unsaved work from the moment it holds a test, even before a result is typed.
+            labBatchDraft?.items?.isNotEmpty() == true
 }
 
 sealed interface AncEvent {
@@ -852,6 +854,7 @@ sealed interface AncEvent {
         val labName: String?,
     ) : AncEvent
     data class LabBatchItemsAdded(val items: List<LabBatchItem>) : AncEvent
+    data object SubmitLabBatch : AncEvent
     data class LabBatchItemRemoved(val labId: String) : AncEvent
     data class LabBatchResultChanged(val labId: String, val value: String) : AncEvent
     data class LabBatchRangeChanged(val labId: String, val value: String) : AncEvent
@@ -948,6 +951,7 @@ object AncReducer {
             AncEvent.SubmitUltrasound,
             AncEvent.SubmitLab,
             AncEvent.SubmitLabAndAddAnother,
+            AncEvent.SubmitLabBatch,
             AncEvent.SubmitMedication,
             AncEvent.SubmitMedicationAndAddAnother,
             -> state
