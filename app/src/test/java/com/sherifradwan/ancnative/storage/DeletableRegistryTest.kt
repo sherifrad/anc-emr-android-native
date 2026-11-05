@@ -520,8 +520,18 @@ class DeletableRegistryTest {
         val actual = ClinicalRecordKind.values().filter { DeletableRegistry.isDeleteOrRestoreKind(it) }.map { it.name }.toSet()
         assertEquals(expected, actual)
         // Every other kind is an edit kind the validation-failed branch names; DATING and the *_CREATE / *_UPDATE kinds.
+        // A batch is one command over many rows, so it has no single-record adapter; its kinds are allow-listed.
+        val batchKinds = setOf(
+            ClinicalRecordKind.LAB_BATCH_SAVE,
+            ClinicalRecordKind.LAB_BATCH_DELETE,
+            ClinicalRecordKind.LAB_BATCH_RESTORE,
+        )
         ClinicalRecordKind.values().filter { it.name !in expected }.forEach {
-            assertTrue(it.name, it == ClinicalRecordKind.DATING || it.name.endsWith("_CREATE") || it.name.endsWith("_UPDATE"))
+            assertTrue(
+                it.name,
+                it == ClinicalRecordKind.DATING || it in batchKinds ||
+                    it.name.endsWith("_CREATE") || it.name.endsWith("_UPDATE"),
+            )
         }
     }
 

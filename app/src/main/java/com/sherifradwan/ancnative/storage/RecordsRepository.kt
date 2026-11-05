@@ -347,6 +347,9 @@ internal class RecordsRepository(
                     is SaveDatingCommand -> saveDating(command)
                     is SaveUltrasoundScanCommand -> saveUltrasoundScan(command)
                     is SaveLabInvestigationCommand -> saveLabInvestigation(command)
+                    is SaveLabBatchCommand -> saveLabBatch(command)
+                    is DeleteLabBatchCommand -> deleteLabBatch(command)
+                    is RestoreLabBatchCommand -> restoreLabBatch(command)
                     is SaveMedicationCommand -> saveMedication(command)
                     is DeleteRecordCommand -> deleteRecord(command)
                     is RestoreRecordCommand -> restoreRecord(command)
@@ -1280,6 +1283,156 @@ internal class RecordsRepository(
         dao.insertClinicalCommandReceipt(receipt)
         val snapshot = loadSnapshot()
         return ClinicalCommandOutcome.Committed(snapshot, receipt.toDomain())
+    }
+
+    /** Inserts a whole laboratory batch in one transaction and writes one receipt for it. */
+    private suspend fun saveLabBatch(command: SaveLabBatchCommand): ClinicalCommandOutcome {
+        val patient = dao.patient(command.patientId)
+            ?: return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.PATIENT_NOT_FOUND)
+        if (patient.status == "archived") {
+            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.PATIENT_ARCHIVED)
+        }
+        if (patient.revision != command.expectedPatientRevision) {
+            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_PATIENT_REVISION)
+        }
+        if (patient.revision == Long.MAX_VALUE) {
+            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.REVISION_EXHAUSTED)
+        }
+        for (entry in command.entries) {
+            val existing = dao.labInvestigation(entry.labId)
+            if (existing != null) {
+                val failure = if (existing.patientId == command.patientId) {
+                    ClinicalCommandFailure.RECORD_CONFLICT
+                } else {
+                    ClinicalCommandFailure.CROSS_PATIENT_WRITE
+                }
+                return ClinicalCommandOutcome.Rejected(failure)
+            }
+        }
+        for (entry in command.entries) {
+            dao.insertLabInvestigation(
+                LabInvestigationEntity(
+                    id = entry.labId,
+                    patientId = command.patientId,
+                    date = command.date,
+                    testCategory = entry.testCategory,
+                    testName = entry.testName,
+                    result = entry.result,
+                    unit = entry.unit,
+                    referenceRange = entry.referenceRange,
+                    isAbnormal = entry.isAbnormal,
+                    notes = entry.notes,
+                    labName = command.labName,
+                    revision = 1,
+                ),
+            )
+        }
+        val patientUpdated = dao.incrementPatientRevision(command.patientId, command.expectedPatientRevision)
+        if (patientUpdated != 1) throw ClinicalCommandAbort(ClinicalCommandFailure.STALE_PATIENT_REVISION)
+
+        val receipt = ClinicalCommandReceiptEntity(
+            operationUuid = command.operationUuid,
+            patientId = command.patientId,
+            recordKind = command.recordKind.name,
+            recordId = command.recordId,
+            committedRevision = 1,
+            committedPatientRevision = command.expectedPatientRevision + 1,
+            fingerprint = command.computeFingerprint(),
+        )
+        dao.insertClinicalCommandReceipt(receipt)
+        return ClinicalCommandOutcome.Committed(loadSnapshot(), receipt.toDomain())
+    }
+
+    /** Deletes every row of the batch, all or nothing: one stale row aborts the transaction. */
+    private suspend fun deleteLabBatch(command: DeleteLabBatchCommand): ClinicalCommandOutcome {
+        val patient = dao.patient(command.patientId)
+            ?: return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.PATIENT_NOT_FOUND)
+        if (patient.revision != command.expectedPatientRevision) {
+            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_PATIENT_REVISION)
+        }
+        if (patient.revision == Long.MAX_VALUE) {
+            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.REVISION_EXHAUSTED)
+        }
+        for (ref in command.refs) {
+            val row = dao.labInvestigation(ref.labId)
+                ?: return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.RECORD_NOT_FOUND)
+            if (row.patientId != command.patientId) {
+                return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.CROSS_PATIENT_WRITE)
+            }
+            if (row.revision != ref.revision) {
+                return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_REVISION)
+            }
+            if (labContentHash(row.toDomain()) != ref.contentHash) {
+                return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_REVISION)
+            }
+        }
+        for (ref in command.refs) {
+            val deleted = dao.deleteLabInvestigation(ref.labId, command.patientId, ref.revision)
+            if (deleted != 1) throw ClinicalCommandAbort(ClinicalCommandFailure.STALE_REVISION)
+        }
+        val patientUpdated = dao.incrementPatientRevision(command.patientId, command.expectedPatientRevision)
+        if (patientUpdated != 1) throw ClinicalCommandAbort(ClinicalCommandFailure.STALE_PATIENT_REVISION)
+
+        val receipt = ClinicalCommandReceiptEntity(
+            operationUuid = command.operationUuid,
+            patientId = command.patientId,
+            recordKind = command.recordKind.name,
+            recordId = command.recordId,
+            committedRevision = command.refs.maxOf { it.revision } + 1,
+            committedPatientRevision = command.expectedPatientRevision + 1,
+            fingerprint = command.computeFingerprint(),
+        )
+        dao.insertClinicalCommandReceipt(receipt)
+        return ClinicalCommandOutcome.Committed(loadSnapshot(), receipt.toDomain())
+    }
+
+    /** Puts every row of the batch back at [RestoreLabBatchCommand.restoredRevision], all or nothing. */
+    private suspend fun restoreLabBatch(command: RestoreLabBatchCommand): ClinicalCommandOutcome {
+        val patient = dao.patient(command.patientId)
+            ?: return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.PATIENT_NOT_FOUND)
+        if (patient.revision != command.expectedPatientRevision) {
+            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_PATIENT_REVISION)
+        }
+        if (patient.revision == Long.MAX_VALUE) {
+            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.REVISION_EXHAUSTED)
+        }
+        for (entry in command.entries) {
+            if (dao.labInvestigation(entry.labId) != null) {
+                return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.RECORD_CONFLICT)
+            }
+        }
+        for (entry in command.entries) {
+            dao.insertLabInvestigation(
+                LabInvestigationEntity(
+                    id = entry.labId,
+                    patientId = command.patientId,
+                    date = command.date,
+                    testCategory = entry.testCategory,
+                    testName = entry.testName,
+                    result = entry.result,
+                    unit = entry.unit,
+                    referenceRange = entry.referenceRange,
+                    isAbnormal = entry.isAbnormal,
+                    notes = entry.notes,
+                    labName = command.labName,
+                    revision = command.restoredRevision,
+                ),
+            )
+        }
+        val patientUpdated = dao.incrementPatientRevision(command.patientId, command.expectedPatientRevision)
+        if (patientUpdated != 1) throw ClinicalCommandAbort(ClinicalCommandFailure.STALE_PATIENT_REVISION)
+
+        val receipt = ClinicalCommandReceiptEntity(
+            operationUuid = command.operationUuid,
+            patientId = command.patientId,
+            recordKind = command.recordKind.name,
+            recordId = command.recordId,
+            committedRevision = command.restoredRevision,
+            committedPatientRevision = command.expectedPatientRevision + 1,
+            fingerprint = command.computeFingerprint(),
+        )
+        dao.insertClinicalCommandReceipt(receipt)
+        return ClinicalCommandOutcome.Committed(loadSnapshot(), receipt.toDomain())
     }
 
     private suspend fun saveMedication(command: SaveMedicationCommand): ClinicalCommandOutcome {

@@ -641,6 +641,11 @@ class AncDeleteUndoStateTest {
                     ClinicalRecordKind.ULTRASOUND_CREATE, ClinicalRecordKind.ULTRASOUND_UPDATE -> assertEquals(testErrors, reduced.ultrasoundDraft?.errors)
                     ClinicalRecordKind.LAB_CREATE, ClinicalRecordKind.LAB_UPDATE -> assertEquals(testErrors, reduced.labDraft?.errors)
                     ClinicalRecordKind.MEDICATION_CREATE, ClinicalRecordKind.MEDICATION_UPDATE -> assertEquals(testErrors, reduced.medicationDraft?.errors)
+                    // The batch draft has no field errors yet; the save must still end cleanly.
+                    ClinicalRecordKind.LAB_BATCH_SAVE,
+                    ClinicalRecordKind.LAB_BATCH_DELETE,
+                    ClinicalRecordKind.LAB_BATCH_RESTORE,
+                    -> Unit
                     else -> throw AssertionError("Unhandled ClinicalRecordKind: $kind")
                 }
                 assertEquals(SavePhase.IDLE, reduced.savePhase)

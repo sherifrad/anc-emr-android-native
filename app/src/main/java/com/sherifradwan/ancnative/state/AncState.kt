@@ -945,6 +945,12 @@ object AncReducer {
                 ClinicalRecordKind.ULTRASOUND_CREATE, ClinicalRecordKind.ULTRASOUND_UPDATE -> state.copy(ultrasoundDraft = state.ultrasoundDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
                 ClinicalRecordKind.LAB_CREATE, ClinicalRecordKind.LAB_UPDATE -> state.copy(labDraft = state.labDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
                 ClinicalRecordKind.MEDICATION_CREATE, ClinicalRecordKind.MEDICATION_UPDATE -> state.copy(medicationDraft = state.medicationDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
+                // A validation failure is not a storage error. The batch draft has no per-field error surface yet
+                // (B1 storage slice); once it exists these errors belong on it, exactly like the lab draft above.
+                ClinicalRecordKind.LAB_BATCH_SAVE,
+                ClinicalRecordKind.LAB_BATCH_DELETE,
+                ClinicalRecordKind.LAB_BATCH_RESTORE,
+                -> state.copy(savePhase = SavePhase.IDLE, saveError = null)
                 else -> error("Unhandled non-deletable clinical record kind: ${event.recordKind}")
             }
             is AncEvent.PatientValidationFailed -> validationFailed(state, event)
