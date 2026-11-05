@@ -646,6 +646,7 @@ data class AncState(
     val ultrasoundDraft: UltrasoundDraft? = null,
     val labDraft: LabDraft? = null,
     val medicationDraft: MedicationDraft? = null,
+    val labBatchDraft: LabBatchDraft? = null,
     val showDiscardDialog: Boolean = false,
     val pendingAction: PendingAction? = null,
     val showNewPatientInfo: Boolean = false,
@@ -847,6 +848,24 @@ sealed interface AncEvent {
      * A committed delete whose payload file could not be removed. Carries the record it belonged to, because the offer
      * is usually gone by the time the asynchronous cleanup reports.
      */
+    data class StartLabBatch(
+        val patientId: String,
+        val sessionId: String,
+        val basePatientRevision: Long,
+        val date: String,
+        val labName: String?,
+    ) : AncEvent
+    data class LabBatchItemsAdded(val items: List<LabBatchItem>) : AncEvent
+    data class LabBatchItemRemoved(val labId: String) : AncEvent
+    data class LabBatchResultChanged(val labId: String, val value: String) : AncEvent
+    data class LabBatchRangeChanged(val labId: String, val value: String) : AncEvent
+    data class LabBatchFlagChanged(val labId: String, val isAbnormal: Boolean) : AncEvent
+    data class LabBatchNotesChanged(val labId: String, val value: String) : AncEvent
+    data class LabBatchTabSelected(val tab: LabBatchTab) : AncEvent
+    data class LabBatchCursorMoved(val index: Int) : AncEvent
+    data class LabBatchDateChanged(val value: String) : AncEvent
+    data object CancelLabBatch : AncEvent
+
     data class PayloadCleanupFailed(
         val token: String,
         val error: SaveUiError,
@@ -1156,6 +1175,47 @@ object AncReducer {
             }
             is AncEvent.UndoExpired -> {
                 if (state.undoOffer?.token == event.token) state.copy(undoOffer = null) else state
+            }
+            is AncEvent.StartLabBatch -> state.copy(
+                labBatchDraft = LabBatchDraft(
+                    patientId = event.patientId,
+                    editorSessionId = event.sessionId,
+                    basePatientRevision = event.basePatientRevision,
+                    date = event.date,
+                    labName = event.labName,
+                ),
+            )
+            is AncEvent.LabBatchItemsAdded -> state.copy(
+                labBatchDraft = state.labBatchDraft?.add(event.items),
+            )
+            is AncEvent.LabBatchItemRemoved -> state.copy(
+                labBatchDraft = state.labBatchDraft?.remove(event.labId),
+            )
+            is AncEvent.LabBatchResultChanged -> state.copy(
+                labBatchDraft = state.labBatchDraft?.withItem(event.labId) { it.copy(result = event.value, isAbnormal = false) },
+            )
+            is AncEvent.LabBatchRangeChanged -> state.copy(
+                labBatchDraft = state.labBatchDraft?.withItem(event.labId) { it.copy(referenceRange = event.value) },
+            )
+            is AncEvent.LabBatchFlagChanged -> state.copy(
+                labBatchDraft = state.labBatchDraft?.withItem(event.labId) { it.copy(isAbnormal = event.isAbnormal) },
+            )
+            is AncEvent.LabBatchNotesChanged -> state.copy(
+                labBatchDraft = state.labBatchDraft?.withItem(event.labId) { it.copy(notes = event.value) },
+            )
+            is AncEvent.LabBatchTabSelected -> state.copy(
+                labBatchDraft = state.labBatchDraft?.copy(tab = event.tab),
+            )
+            is AncEvent.LabBatchCursorMoved -> state.copy(
+                labBatchDraft = state.labBatchDraft?.moveCursor(event.index),
+            )
+            is AncEvent.LabBatchDateChanged -> state.copy(
+                labBatchDraft = state.labBatchDraft?.copy(date = event.value),
+            )
+            is AncEvent.CancelLabBatch -> {
+                val patientId = state.labBatchDraft?.patientId ?: state.route.patientIdOrNull()
+                val cleared = state.clearDrafts()
+                if (patientId == null) cleared else cleared.copy(route = AncRoute.Workspace(patientId, WorkspaceSection.LABORATORY))
             }
             is AncEvent.PayloadCleanupFailed -> {
                 if (state.vaultState !is VaultState.Unlocked) {
@@ -1661,6 +1721,7 @@ object AncReducer {
         ultrasoundDraft = null,
         labDraft = null,
         medicationDraft = null,
+        labBatchDraft = null,
         showDiscardDialog = false,
         pendingAction = null,
         savePhase = SavePhase.IDLE,

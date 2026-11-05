@@ -1,0 +1,117 @@
+package com.sherifradwan.ancnative.state
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+/** The in-memory batch: adding, editing, cursor and the mapping to save entries. */
+class LabBatchDraftTest {
+    private fun item(id: String, name: String = "Test $id") = LabBatchItem(
+        labId = id, testName = name, category = "Hematology", unit = "g/dL",
+    )
+
+    private fun draft(items: List<LabBatchItem> = emptyList()) = LabBatchDraft(
+        patientId = "p1", editorSessionId = "s1", basePatientRevision = 3,
+        date = "2026-11-05", labName = "Al Borg", items = items,
+    )
+
+    @Test
+    fun aNewBatchStartsEmptyOnTheAddTab() {
+        val d = draft()
+        assertEquals(0, d.items.size)
+        assertEquals(LabBatchTab.ADD, d.tab)
+        assertEquals(0, d.filledCount)
+        assertNull(d.currentItem)
+    }
+
+    @Test
+    fun addingTheFirstTestsSwitchesToEnter() {
+        val d = draft().add(listOf(item("a"), item("b"), item("c")))
+        assertEquals(3, d.items.size)
+        assertEquals(LabBatchTab.ENTER, d.tab)
+        assertEquals(0, d.cursor)
+        assertEquals("Test a", d.currentItem?.testName)
+    }
+
+    @Test
+    fun addingMoreWhileAlreadyEnteringKeepsTheTab() {
+        val d = draft().add(listOf(item("a"))).copy(tab = LabBatchTab.REVIEW).add(listOf(item("b")))
+        assertEquals(LabBatchTab.REVIEW, d.tab)
+        assertEquals(2, d.items.size)
+    }
+
+    @Test
+    fun addingTheSameIdTwiceIsIgnored() {
+        val d = draft().add(listOf(item("a"))).add(listOf(item("a")))
+        assertEquals(1, d.items.size)
+    }
+
+    @Test
+    fun aResultFillsTheRowAndTheReducerClearsAStaleFlag() {
+        var state = AncState(patients = emptyList(), vaultState = com.sherifradwan.ancnative.storage.VaultState.Unlocked(1L))
+        state = AncReducer.reduce(state, AncEvent.StartLabBatch("p1", "s1", 3L, "2026-11-05", "Al Borg"))
+        state = AncReducer.reduce(state, AncEvent.LabBatchItemsAdded(listOf(item("a"))))
+        state = AncReducer.reduce(state, AncEvent.LabBatchFlagChanged("a", true))
+        assertEquals(0, state.labBatchDraft!!.filledCount)
+
+        state = AncReducer.reduce(state, AncEvent.LabBatchResultChanged("a", "10.8"))
+        val row = state.labBatchDraft!!.item("a")!!
+        assertEquals(1, state.labBatchDraft!!.filledCount)
+        assertTrue(row.isFilled)
+        assertTrue("a new value resets the manual flag", !row.isAbnormal)
+    }
+
+    @Test
+    fun removingKeepsTheCursorInsideTheList() {
+        val d = draft().add(listOf(item("a"), item("b"), item("c"))).moveCursor(2)
+        val after = d.remove("c")
+        assertEquals(2, after.items.size)
+        assertEquals(1, after.cursor)
+        assertEquals(0, after.remove("zzz").cursor.coerceAtMost(0))
+    }
+
+    @Test
+    fun theCursorCannotLeaveTheList() {
+        val d = draft().add(listOf(item("a"), item("b")))
+        assertEquals(1, d.moveCursor(99).cursor)
+        assertEquals(0, d.moveCursor(-5).cursor)
+        assertEquals(0, draft().moveCursor(4).cursor)
+    }
+
+    @Test
+    fun entriesAreBuiltFromTheDraftWithBlankOptionalFieldsRemoved() {
+        val d = draft()
+            .add(listOf(item("a").copy(result = " 10.8 ", referenceRange = "  ", notes = "")))
+            .add(listOf(item("b").copy(result = "8", unit = "", referenceRange = "11 - 15")))
+        val entries = d.toEntries()
+        assertEquals(listOf("a", "b"), entries.map { it.labId })
+        assertEquals("10.8", entries[0].result)
+        assertNull(entries[0].referenceRange)
+        assertNull(entries[0].notes)
+        assertNull(entries[1].unit)
+        assertEquals("11 - 15", entries[1].referenceRange)
+    }
+
+    @Test
+    fun theReducerStartsAClearsTheDraft() {
+        val state = AncState(patients = emptyList(), vaultState = com.sherifradwan.ancnative.storage.VaultState.Unlocked(1L))
+        val started = AncReducer.reduce(state, AncEvent.StartLabBatch("p1", "s1", 3, "2026-11-05", "Al Borg"))
+        assertEquals("p1", started.labBatchDraft?.patientId)
+        assertEquals(3L, started.labBatchDraft?.basePatientRevision)
+
+        val added = AncReducer.reduce(started, AncEvent.LabBatchItemsAdded(listOf(item("a"))))
+        assertEquals(1, added.labBatchDraft?.items?.size)
+
+        val cancelled = AncReducer.reduce(added, AncEvent.CancelLabBatch)
+        assertNull(cancelled.labBatchDraft)
+        assertEquals(AncRoute.Workspace("p1", WorkspaceSection.LABORATORY), cancelled.route)
+    }
+
+    @Test
+    fun batchEventsDoNothingWithoutADraft() {
+        val state = AncState(patients = emptyList(), vaultState = com.sherifradwan.ancnative.storage.VaultState.Unlocked(1L))
+        val after = AncReducer.reduce(state, AncEvent.LabBatchItemsAdded(listOf(item("a"))))
+        assertEquals(state, after)
+    }
+}
