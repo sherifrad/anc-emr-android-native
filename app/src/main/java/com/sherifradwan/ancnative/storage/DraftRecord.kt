@@ -12,6 +12,7 @@ enum class DraftScreenKind {
     ULTRASOUND,
     LAB,
     MEDICATION,
+    LAB_BATCH,
 }
 
 enum class DraftEditorKind {

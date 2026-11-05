@@ -367,6 +367,7 @@
     <string name="draft_screen_ultrasound">ultrasound scan</string>
     <string name="draft_screen_lab">lab result</string>
     <string name="draft_screen_medication">medication</string>
+    <string name="draft_screen_lab_batch">laboratory batch</string>
     <string name="draft_age_less_than_minute">less than a minute ago</string>
     <plurals name="draft_age_minutes">
         <item quantity="one">%d minute ago</item>

@@ -313,6 +313,7 @@ fun AncApp(
             DraftScreenKind.ULTRASOUND -> stringResource(R.string.draft_screen_ultrasound)
             DraftScreenKind.LAB -> stringResource(R.string.draft_screen_lab)
             DraftScreenKind.MEDICATION -> stringResource(R.string.draft_screen_medication)
+            DraftScreenKind.LAB_BATCH -> stringResource(R.string.draft_screen_lab_batch)
         }
         val ageText = when (val age = draftAge(System.currentTimeMillis(), recoveryPrompt.record.updatedAtMillis)) {
             is DraftAge.LessThanMinute -> stringResource(R.string.draft_age_less_than_minute)

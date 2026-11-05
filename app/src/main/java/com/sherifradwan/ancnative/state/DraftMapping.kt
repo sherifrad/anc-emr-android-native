@@ -48,6 +48,8 @@ fun activeDraftSlot(state: AncState): DraftSlot? {
     if (labDraft != null) {
         return DraftSlot(labDraft.patientId, DraftScreenKind.LAB)
     }
+    val labBatchDraft = state.labBatchDraft
+    if (labBatchDraft != null) return DraftSlot(labBatchDraft.patientId, DraftScreenKind.LAB_BATCH)
     val medicationDraft = state.medicationDraft
     if (medicationDraft != null) {
         return DraftSlot(medicationDraft.patientId, DraftScreenKind.MEDICATION)
@@ -258,6 +260,25 @@ fun draftRecordFor(state: AncState, nowMillis: Long): DraftRecord? {
                 "isAbnormal" to draft.values.isAbnormal.toString(),
                 "notes" to draft.values.notes,
                 "labName" to draft.values.labName,
+            ),
+            updatedAtMillis = nowMillis,
+        )
+    }
+
+    state.labBatchDraft?.let { draft ->
+        if (draft.items.isEmpty()) return null
+        return DraftRecord(
+            patientId = draft.patientId,
+            screenKind = DraftScreenKind.LAB_BATCH,
+            editorKind = DraftEditorKind.CREATE,
+            recordId = null,
+            baseRevision = draft.basePatientRevision,
+            fields = mapOf(
+                "date" to draft.date,
+                "labName" to draft.labName.orEmpty(),
+                "cursor" to draft.cursor.toString(),
+                "tab" to draft.tab.name,
+                "items" to encodeLabBatchItems(draft.items),
             ),
             updatedAtMillis = nowMillis,
         )
@@ -478,6 +499,20 @@ fun applyDraftRecord(state: AncState, record: DraftRecord): AncState {
                 ),
             )
         }
+        DraftScreenKind.LAB_BATCH -> {
+            val d = state.labBatchDraft ?: return state
+            state.copy(
+                labBatchDraft = d.copy(
+                    editorSessionId = newSessionId,
+                    date = record.fields["date"] ?: d.date,
+                    labName = record.fields["labName"]?.ifBlank { null } ?: d.labName,
+                    items = record.fields["items"]?.let(::decodeLabBatchItems) ?: d.items,
+                    cursor = record.fields["cursor"]?.toIntOrNull() ?: d.cursor,
+                    tab = record.fields["tab"]?.let { name -> LabBatchTab.entries.firstOrNull { it.name == name } } ?: d.tab,
+                    errors = emptySet(),
+                ),
+            )
+        }
         DraftScreenKind.MEDICATION -> {
             val d = state.medicationDraft ?: return state
             val v = d.values
@@ -520,6 +555,7 @@ private fun isSlotDirty(state: AncState, slot: DraftSlot): Boolean {
         DraftScreenKind.ULTRASOUND -> state.ultrasoundDraft?.let { it.patientId == slot.patientId && it.isDirty } == true
         DraftScreenKind.LAB -> state.labDraft?.let { it.patientId == slot.patientId && it.isDirty } == true
         DraftScreenKind.MEDICATION -> state.medicationDraft?.let { it.patientId == slot.patientId && it.isDirty } == true
+        DraftScreenKind.LAB_BATCH -> state.labBatchDraft?.let { it.patientId == slot.patientId && it.items.isNotEmpty() } == true
     }
 }
 
@@ -540,3 +576,35 @@ fun closedDraftSlot(before: AncState, after: AncState): DraftSlot? {
     }
     return null
 }
+
+// The batch carries a whole list inside one draft field. Unit/record separators keep it unambiguous; a value that
+// contains one of them is flattened rather than allowed to corrupt the list.
+private const val LAB_BATCH_FIELD_SEPARATOR = "\u001F"
+private const val LAB_BATCH_ITEM_SEPARATOR = "\n"
+
+fun encodeLabBatchItems(items: List<LabBatchItem>): String = items.joinToString(LAB_BATCH_ITEM_SEPARATOR) { item ->
+    listOf(
+        item.labId, item.testName, item.category, item.unit, item.result,
+        item.referenceRange, item.isAbnormal.toString(), item.notes,
+    ).joinToString(LAB_BATCH_FIELD_SEPARATOR) { value ->
+        value.replace(LAB_BATCH_FIELD_SEPARATOR, " ").replace(LAB_BATCH_ITEM_SEPARATOR, " ")
+    }
+}
+
+fun decodeLabBatchItems(raw: String): List<LabBatchItem> = raw
+    .split(LAB_BATCH_ITEM_SEPARATOR)
+    .filter { it.isNotBlank() }
+    .mapNotNull { line ->
+        val parts = line.split(LAB_BATCH_FIELD_SEPARATOR)
+        if (parts.size < 8) return@mapNotNull null
+        LabBatchItem(
+            labId = parts[0],
+            testName = parts[1],
+            category = parts[2],
+            unit = parts[3],
+            result = parts[4],
+            referenceRange = parts[5],
+            isAbnormal = parts[6].toBoolean(),
+            notes = parts[7],
+        )
+    }
