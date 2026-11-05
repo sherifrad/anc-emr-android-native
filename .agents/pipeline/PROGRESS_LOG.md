@@ -413,3 +413,12 @@ Keeps the history from the handoff until Claude returns after its quota reset. F
 - New `.agents/checks/check_r7a.py`: **S500** fails when a string containing `%n$s`/`%n$d` is used as a `FactRow` label, **S501** when such a string is rendered directly through `stringResource` with no arguments. Storing it in a `val` first (then `String.format`) stays allowed — that is how the two legitimate templates (`already_on_todays_list`, `filled_normal_toast`) are used, and both were false positives in a naive scan. Red before the fix, green after; `run_static_checks.sh` picks the check up automatically.
 - Verified: `run_build_gate.sh` GATE OK; `run_static_checks.sh` STATIC CHECKS OK; the emulator build shows the corrected labels; the first JVM/emulator suites are unchanged by this (single string + label).
 - NOT verified: design comparison against the mock (vision outage), fresh print/phone pass, and the phone build (USB dropped; the emulator has the new build).
+
+## 2026-11-05 — Laboratory batch, logic slice 1: save / delete / restore (`fcc7a02`)
+- Implemented against `SPEC_LOGIC_B1_LAB_BATCH.md` with the schema still at v6: no table, column or migration.
+- `LabBatchEntry` + `LabBatchRecordRef` with a stable canonical string and per-entry SHA-256.
+- `SaveLabBatchCommand` inserts N rows at revision 1 in one transaction, bumps the patient revision once and writes a single `LAB_BATCH_SAVE` receipt whose `recordId` is the batch id.
+- `DeleteLabBatchCommand` verifies every row's revision **and** content hash before deleting; one mismatch aborts the whole transaction. `RestoreLabBatchCommand` re-inserts at tombstone + 1 (revision 2). One receipt each.
+- Two "every record kind is known" invariants had to learn the batch kinds: `DeletableRegistryTest` (a batch has no single-record adapter, so its kinds are allow-listed) and the `ClinicalValidationFailed` reducer (a validation failure is not a storage error; the batch draft has no error surface yet).
+- Verified: `run_build_gate.sh` GATE OK; **957** unit tests (9 new command tests), 0 failures; `LabBatchDbTest` **4/4** on the API 26 emulator (save + one receipt, stale-reference abort, delete + restore at revision 2, cross-patient rejection).
+- NOT done yet: the batch draft in `AncState`, the one-action Undo offer in `UndoCoordinator`, the CBC/Urine catalogue entries, and the three-tab screen. Nothing calls the new commands from the UI.

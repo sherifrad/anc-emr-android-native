@@ -63,3 +63,4 @@ Done so far (committed: `f1aca51` cleanup-on-every-exit-path, then `b6af671` 202
 2. Part B design rounds: Lab §4.1, Ultrasound §4.2, Directory §4.5, Chart §4.6, History/Dating/Attention §4.7.
 3. Postponed device tests (`.agents/pipeline/POSTPONED_DEVICE_TESTS.md`, items 2, 5-11).
 4. Older audit items: `loadSnapshot()` whole-DB read, git history hygiene before any push, R8 shrink.
+5. **Lab batch (approved mock, D25)** — logic slice 1 done in `fcc7a02` (commands + repository + tests). Remaining: batch draft in `AncState`, one-action Undo offer, CBC/Urine catalogue panels, three-tab UI.
