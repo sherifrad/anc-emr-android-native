@@ -28,7 +28,7 @@ LabBatchDraft(patientId, labName, date, entries: List<LabBatchEntry>, cursor: In
 - `DeleteLabBatchCommand(operationUuid, patientId, expectedPatientRevision, entries: List<RecordRef>)`
   - Deletes exactly those rows and only if every row still matches its revision and content hash.
   - One receipt: `LAB_BATCH_DELETE`. Patient revision +1.
-- `RestoreLabBatchCommand(...)` re-inserts the same N rows, each `revision = 2` (batch tombstone + 1), one receipt: `LAB_BATCH_RESTORE`. Patient revision +1.
+- `RestoreLabBatchCommand(...)` re-inserts the same N rows at the **delete receipt's tombstone + 1** (3 for rows saved at revision 1); the revision is read from the delete receipt, never passed in. One receipt: `LAB_BATCH_RESTORE`. Patient revision +1.
 - All-or-nothing: any mismatch aborts the transaction; nothing is half-deleted.
 - No payload files, so no cleanup path is involved.
 - After the window, the batch offer disappears; the rows are deleted individually through the existing per-record delete mechanism.
@@ -53,10 +53,10 @@ Unit:
 - batch command rejects one invalid entry and writes nothing;
 - batch insert writes N rows and exactly one receipt, patient revision +1;
 - delete batch requires every hash/revision; one mismatch deletes nothing;
-- restore writes N rows at revision 2 with one receipt;
+- restore writes N rows at the delete receipt's tombstone + 1 with one receipt;
 - undo coordinator offers one batch undo and executes delete/restore as one command.
 Instrumented (emulator):
-- 11-row batch save then batch undo leaves zero rows; restore returns all 11 with revision 2;
+- 11-row batch save then batch undo leaves zero rows; restore returns all 11 at the delete tombstone + 1;
 - cross-patient batch delete is rejected;
 - a partially modified row rejects the whole delete.
 

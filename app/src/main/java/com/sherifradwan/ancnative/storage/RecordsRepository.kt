@@ -1402,6 +1402,15 @@ internal class RecordsRepository(
         if (patient.revision == Long.MAX_VALUE) {
             return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.REVISION_EXHAUSTED)
         }
+        val deleteReceipt = dao.clinicalCommandReceipt(command.deleteOperationUuid)
+            ?: return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.RECORD_NOT_FOUND)
+        if (deleteReceipt.patientId != command.patientId ||
+            deleteReceipt.recordKind != ClinicalRecordKind.LAB_BATCH_DELETE.name
+        ) {
+            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.DUPLICATE_OPERATION_MISMATCH)
+        }
+        // The rows come back at the tombstone the delete committed, plus one: the repo-wide restore rule.
+        val restoredRevision = deleteReceipt.committedRevision + 1
         for (entry in command.entries) {
             if (dao.labInvestigation(entry.labId) != null) {
                 return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.RECORD_CONFLICT)
@@ -1421,7 +1430,7 @@ internal class RecordsRepository(
                     isAbnormal = entry.isAbnormal,
                     notes = entry.notes,
                     labName = command.labName,
-                    revision = command.restoredRevision,
+                    revision = restoredRevision,
                 ),
             )
         }
@@ -1433,7 +1442,7 @@ internal class RecordsRepository(
             patientId = command.patientId,
             recordKind = command.recordKind.name,
             recordId = command.recordId,
-            committedRevision = command.restoredRevision,
+            committedRevision = restoredRevision,
             committedPatientRevision = command.expectedPatientRevision + 1,
             fingerprint = command.computeFingerprint(),
         )

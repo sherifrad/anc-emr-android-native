@@ -152,7 +152,9 @@ class LabBatchDbTest {
             ),
         )
         entries.forEach { assertNull(dao.labInvestigation(it.labId)) }
-        assertEquals(ClinicalRecordKind.LAB_BATCH_DELETE.name, dao.clinicalCommandReceipt(deleteId)!!.recordKind)
+        val deleteReceipt = dao.clinicalCommandReceipt(deleteId)!!
+        assertEquals(ClinicalRecordKind.LAB_BATCH_DELETE.name, deleteReceipt.recordKind)
+        assertEquals("the tombstone the restore must build on", 2L, deleteReceipt.committedRevision)
 
         committed(
             repo.execute(
@@ -164,7 +166,7 @@ class LabBatchDbTest {
                     date = date,
                     labName = "Al Borg",
                     entries = entries,
-                    restoredRevision = 3,
+                    deleteOperationUuid = deleteId,
                 ),
             ),
         )

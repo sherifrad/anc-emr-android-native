@@ -112,7 +112,10 @@ data class DeleteLabBatchCommand(
     )
 }
 
-/** Puts the same rows back at [restoredRevision] (the delete receipt's tombstone + 1), all or nothing. */
+/**
+ * Puts the same rows back at the delete receipt's tombstone + 1, all or nothing. The revision is not a parameter:
+ * it is read from [deleteOperationUuid]'s receipt, so it cannot disagree with what the delete committed.
+ */
 data class RestoreLabBatchCommand(
     override val editorSessionId: String = "",
     override val operationUuid: String,
@@ -122,7 +125,7 @@ data class RestoreLabBatchCommand(
     val date: String,
     val labName: String?,
     val entries: List<LabBatchEntry>,
-    val restoredRevision: Long,
+    val deleteOperationUuid: String,
 ) : ClinicalCommand {
     override val recordKind = ClinicalRecordKind.LAB_BATCH_RESTORE
     override val recordId get() = batchId
@@ -135,13 +138,13 @@ data class RestoreLabBatchCommand(
             batchIsUuid(batchId) &&
             patientId.isNotBlank() &&
             expectedPatientRevision >= 1 &&
-            restoredRevision >= 3 &&
+            batchIsUuid(deleteOperationUuid) &&
             date.isNotBlank() &&
             ClinicalVocabulary.isValidIsoDate(date) &&
             entries.structurallyValid()
 
     override fun computeFingerprint(): String = sha256Hex(
-        "LAB_BATCH_RESTORE|$operationUuid|$patientId|$expectedPatientRevision|$batchId|$date|$labName|$restoredRevision|" +
+        "LAB_BATCH_RESTORE|$operationUuid|$patientId|$expectedPatientRevision|$batchId|$date|$labName|$deleteOperationUuid|" +
             entries.joinToString(";") { it.canonical(date, labName) },
     )
 }

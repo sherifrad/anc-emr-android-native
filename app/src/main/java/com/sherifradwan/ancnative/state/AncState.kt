@@ -964,8 +964,7 @@ object AncReducer {
                 ClinicalRecordKind.ULTRASOUND_CREATE, ClinicalRecordKind.ULTRASOUND_UPDATE -> state.copy(ultrasoundDraft = state.ultrasoundDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
                 ClinicalRecordKind.LAB_CREATE, ClinicalRecordKind.LAB_UPDATE -> state.copy(labDraft = state.labDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
                 ClinicalRecordKind.MEDICATION_CREATE, ClinicalRecordKind.MEDICATION_UPDATE -> state.copy(medicationDraft = state.medicationDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
-                // A validation failure is not a storage error. The batch draft has no per-field error surface yet
-                // (B1 storage slice); once it exists these errors belong on it, exactly like the lab draft above.
+                // A validation failure is not a storage error: it belongs on the draft, like every other editor.
                 ClinicalRecordKind.LAB_BATCH_SAVE -> state.copy(
                     labBatchDraft = state.labBatchDraft?.copy(errors = event.errors),
                     savePhase = SavePhase.IDLE,

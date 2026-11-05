@@ -93,7 +93,7 @@ class LabBatchCommandTest {
     }
 
     @Test
-    fun aRestoreNeedsTombstonePlusOne() {
+    fun aRestoreNeedsTheDeleteItUndoes() {
         val restore = RestoreLabBatchCommand(
             operationUuid = UUID.randomUUID().toString(),
             patientId = "p1",
@@ -102,12 +102,12 @@ class LabBatchCommandTest {
             date = "2026-11-05",
             labName = null,
             entries = listOf(entry("l1")),
-            restoredRevision = 3,
+            deleteOperationUuid = UUID.randomUUID().toString(),
         )
         assertTrue(restore.isStructurallyValid())
-        // Revision 2 is the tombstone itself; rows come back at tombstone + 1.
-        assertFalse(restore.copy(restoredRevision = 2).isStructurallyValid())
-        assertFalse(restore.copy(restoredRevision = 1).isStructurallyValid())
+        // The revision is read from that delete's receipt; the command only needs a real delete id.
+        assertFalse(restore.copy(deleteOperationUuid = "").isStructurallyValid())
+        assertFalse(restore.copy(deleteOperationUuid = "not-a-uuid").isStructurallyValid())
         assertFalse(restore.copy(date = "").isStructurallyValid())
     }
 

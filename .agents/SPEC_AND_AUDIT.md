@@ -100,3 +100,15 @@ flowchart TD
 | `E2E-AUDIT-02` | Tap patient "نور المثال" $\to$ Tap "مساحة العمل" $\to$ Switch to Ultrasound tab. | `PatientList` $\to$ `ProfileScreen` $\to$ `WorkspaceScreen` $\to$ `TabRow` | Gestational age engine calculates `36w 3d`, trimester 3. | Patient entity and relations bound to state. | Ultrasound scan list, add ultrasound button visible. |
 | `E2E-AUDIT-03` | Switch to Labs tab $\to$ Switch to Medications tab $\to$ Back navigation. | `WorkspaceScreen` $\to$ `PrimaryScrollableTabRow` $\to$ `requestBack()` | State preserved across tab changes; back navigates cleanly. | Transaction integrity preserved; zero data mutation. | Directory restored smoothly without crashing. |
 
+## 6. Laboratory batch (B1) — outcome oracles
+
+Source: `.agents/pipeline/SPEC_LOGIC_B1_LAB_BATCH.md`, owner decisions D25, approved mock `design/rev-b/lab-batch.html`.
+
+ORACLE-B1: Saving a 3-row batch writes 3 `lab_investigations` rows at revision 1, exactly one `LAB_BATCH_SAVE` receipt, and bumps the patient revision exactly once.
+ORACLE-B2: If one row's revision or content hash no longer matches, the whole batch delete aborts: no row is removed, the patient revision is unchanged, and no receipt is written.
+ORACLE-B3: Undo of a saved batch removes every row of that batch in one action; the offer names "N lab results" and executes exactly one command.
+ORACLE-B4: Restoring an undone batch brings the same rows back at the delete receipt's tombstone + 1 with one `LAB_BATCH_RESTORE` receipt.
+ORACLE-B5: A batch addressed with another patient's id is rejected `CROSS_PATIENT_WRITE` and changes nothing.
+ORACLE-B6: A batch draft starts on Add, moves to Enter when the first tests are added, and never lets the cursor leave the list.
+ORACLE-B7: Entering a new result clears a stale manual abnormal flag on that row.
+ORACLE-B8: A batch with a blank date, a blank result, a duplicate lab id, or an invalid date is structurally invalid and cannot be executed.
