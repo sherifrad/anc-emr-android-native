@@ -11,7 +11,8 @@ Enter a whole lab batch (panels plus single tests), review it, save once, and un
 LabBatchEntry(testId, testName, category, result, unit, referenceRange, isAbnormal, notes)
 LabBatchDraft(patientId, labName, date, entries: List<LabBatchEntry>, cursor: Int)
 ```
-- The draft lives in `AncState` (like the other drafts) and is saved as a draft record so a lock does not lose it.
+- The draft lives in `AncState` (like the other drafts). **Persistence is deferred to the B2 screen slice** — this
+  slice is in-memory only, and the screen must not ship until the draft record and `hasDirtyDraft` exist (review r1, blocker 2).
 - Nothing is written to the database until Save.
 
 ## 3. Save (one command, one receipt)
@@ -60,6 +61,7 @@ Instrumented (emulator):
 - a partially modified row rejects the whole delete.
 
 ## 9. Risks
+- A batch undo cannot rebase a stale patient revision (the delete command is not a `RecordUndoCommand`); it fails closed and the window expires (review r1, S2).
 - Receipt semantics: a batch receipt has no single row, so `latestClinicalReceiptForRecord` must not be used for batch ids.
 - The existing per-record delete must keep working; batch ids never appear in `patient_attachments`-style lookups.
 - Draft size: 14 entries × fields stays well under the 64 KB draft payload limit; add a test for the largest panel.
