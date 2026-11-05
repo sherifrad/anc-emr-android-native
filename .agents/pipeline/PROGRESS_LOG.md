@@ -428,3 +428,10 @@ Keeps the history from the handoff until Claude returns after its quota reset. F
 - `check_r6c` R6C1 rejected the first version: the coordinator named `DeletableType.LAB`. The caller now supplies the type and the label, which is how every other call site works; the shared layer stays kind-free (`0e66cdd`).
 - Verified: `run_build_gate.sh` GATE OK; **959** unit tests, 0 failures (2 new coordinator tests); `run_static_checks.sh` STATIC CHECKS OK.
 - Still not wired: the ViewModel does not call the offer yet, because the batch draft and the three-tab screen do not exist. Next: batch draft in `AncState`, then the UI and the CBC/Urine panels.
+
+## 2026-11-05 — Laboratory batch, logic slice 3: the in-memory draft (`da6ce5c`)
+- `LabBatchDraft` / `LabBatchItem` in `state/LabBatchState.kt`: patient, date, one lab, rows, cursor, open tab. A new batch starts empty on **Add** and moves to **Enter** when the first tests are added; removing a row keeps the cursor inside the list.
+- Events: start, add, remove, result/range/flag/note change, tab select, cursor move, date change, cancel. They are no-ops without a draft. A new result clears a stale manual flag; the flag and range stay explicit events.
+- Cancel clears the draft and returns to the laboratory section. **No route was added**: the batch screen does not exist yet, and adding `LabBatchEditor` would have forced a placeholder branch in `AncApp`.
+- Verified: `run_build_gate.sh` GATE OK; **969** unit tests, 0 failures (10 new draft tests); `run_static_checks.sh` STATIC CHECKS OK.
+- Next: ViewModel `startLabBatch`/`saveLabBatch` (prepare the batch command, then call `offerLabBatchSaveUndo`), the CBC/Urine catalogue panels, and the three-tab screen.
