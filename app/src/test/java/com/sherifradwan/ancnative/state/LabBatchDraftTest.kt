@@ -42,9 +42,9 @@ class LabBatchDraftTest {
     }
 
     @Test
-    fun addingTheSameIdTwiceIsIgnored() {
-        val d = draft().add(listOf(item("a"))).add(listOf(item("a")))
-        assertEquals(1, d.items.size)
+    fun addingTheSameIdTwiceIsIgnoredEvenInsideOneCall() {
+        assertEquals(1, draft().add(listOf(item("a"))).add(listOf(item("a"))).items.size)
+        assertEquals(1, draft().add(listOf(item("a"), item("a"))).items.size)
     }
 
     @Test
@@ -68,7 +68,10 @@ class LabBatchDraftTest {
         val after = d.remove("c")
         assertEquals(2, after.items.size)
         assertEquals(1, after.cursor)
-        assertEquals(0, after.remove("zzz").cursor.coerceAtMost(0))
+        assertEquals("removing an unknown id changes nothing", 1, after.remove("zzz").cursor)
+        val empty = after.remove("a").remove("b")
+        assertEquals(0, empty.items.size)
+        assertEquals(0, empty.cursor)
     }
 
     @Test
@@ -106,6 +109,28 @@ class LabBatchDraftTest {
         val cancelled = AncReducer.reduce(added, AncEvent.CancelLabBatch)
         assertNull(cancelled.labBatchDraft)
         assertEquals(AncRoute.Workspace("p1", WorkspaceSection.LABORATORY), cancelled.route)
+    }
+
+    @Test
+    fun cancellingTheBatchKeepsAnUnrelatedDraft() {
+        val base = AncState(patients = emptyList(), vaultState = com.sherifradwan.ancnative.storage.VaultState.Unlocked(1L))
+        val withLabDraft = base.copy(
+            labDraft = LabDraft(editorSessionId = "s1", patientId = "p1", labId = "l1", basePatientRevision = 1L, baseLabRevision = null, original = LabDraftValues(), values = LabDraftValues()),
+        )
+        val started = AncReducer.reduce(withLabDraft, AncEvent.StartLabBatch("p1", "s1", 1L, "2026-11-05", null))
+        val cancelled = AncReducer.reduce(started, AncEvent.CancelLabBatch)
+        assertNull(cancelled.labBatchDraft)
+        assertEquals("an unrelated draft must survive", withLabDraft.labDraft, cancelled.labDraft)
+    }
+
+    @Test
+    fun aBatchValidationFailureLandsOnTheBatchDraft() {
+        val state = AncState(patients = emptyList(), vaultState = com.sherifradwan.ancnative.storage.VaultState.Unlocked(1L))
+        val started = AncReducer.reduce(state, AncEvent.StartLabBatch("p1", "s1", 1L, "2026-11-05", null))
+        val errors = setOf(ClinicalValidationError.REQUIRED_RESULT)
+        val failed = AncReducer.reduce(started, AncEvent.ClinicalValidationFailed(com.sherifradwan.ancnative.storage.ClinicalRecordKind.LAB_BATCH_SAVE, errors))
+        assertEquals(errors, failed.labBatchDraft?.errors)
+        assertEquals(SavePhase.IDLE, failed.savePhase)
     }
 
     @Test

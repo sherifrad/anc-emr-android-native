@@ -50,17 +50,20 @@ class LabBatchCommandTest {
     }
 
     @Test
-    fun aBadDateMakesTheBatchInvalid() {
-        assertFalse(
-            SaveLabBatchCommand(
-                operationUuid = UUID.randomUUID().toString(),
-                patientId = "p1",
-                expectedPatientRevision = 5,
-                date = "05/11/2026",
-                labName = null,
-                entries = listOf(entry("l1")),
-            ).isStructurallyValid(),
+    fun aBadOrMissingDateMakesTheBatchInvalid() {
+        fun withDate(value: String) = SaveLabBatchCommand(
+            operationUuid = UUID.randomUUID().toString(),
+            patientId = "p1",
+            expectedPatientRevision = 5,
+            date = value,
+            labName = null,
+            entries = listOf(entry("l1")),
         )
+        assertFalse("a non-ISO date must be rejected", withDate("05/11/2026").isStructurallyValid())
+        // isValidIsoDate accepts blank because it is written for optional dates: a batch date is required.
+        assertFalse("a blank date must be rejected", withDate("").isStructurallyValid())
+        assertFalse("a whitespace date must be rejected", withDate("   ").isStructurallyValid())
+        assertTrue(withDate("2026-11-05").isStructurallyValid())
     }
 
     @Test
@@ -90,7 +93,7 @@ class LabBatchCommandTest {
     }
 
     @Test
-    fun aRestoreNeedsRevisionTwoOrMore() {
+    fun aRestoreNeedsTombstonePlusOne() {
         val restore = RestoreLabBatchCommand(
             operationUuid = UUID.randomUUID().toString(),
             patientId = "p1",
@@ -99,10 +102,13 @@ class LabBatchCommandTest {
             date = "2026-11-05",
             labName = null,
             entries = listOf(entry("l1")),
-            restoredRevision = 2,
+            restoredRevision = 3,
         )
         assertTrue(restore.isStructurallyValid())
+        // Revision 2 is the tombstone itself; rows come back at tombstone + 1.
+        assertFalse(restore.copy(restoredRevision = 2).isStructurallyValid())
         assertFalse(restore.copy(restoredRevision = 1).isStructurallyValid())
+        assertFalse(restore.copy(date = "").isStructurallyValid())
     }
 
     @Test

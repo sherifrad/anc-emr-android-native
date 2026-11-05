@@ -1347,6 +1347,9 @@ internal class RecordsRepository(
     private suspend fun deleteLabBatch(command: DeleteLabBatchCommand): ClinicalCommandOutcome {
         val patient = dao.patient(command.patientId)
             ?: return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.PATIENT_NOT_FOUND)
+        if (patient.status == "archived") {
+            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.PATIENT_ARCHIVED)
+        }
         if (patient.revision != command.expectedPatientRevision) {
             return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_PATIENT_REVISION)
         }
@@ -1390,6 +1393,9 @@ internal class RecordsRepository(
     private suspend fun restoreLabBatch(command: RestoreLabBatchCommand): ClinicalCommandOutcome {
         val patient = dao.patient(command.patientId)
             ?: return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.PATIENT_NOT_FOUND)
+        if (patient.status == "archived") {
+            return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.PATIENT_ARCHIVED)
+        }
         if (patient.revision != command.expectedPatientRevision) {
             return ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.STALE_PATIENT_REVISION)
         }

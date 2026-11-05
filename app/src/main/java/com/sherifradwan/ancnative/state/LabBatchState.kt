@@ -46,7 +46,7 @@ data class LabBatchDraft(
     /** Adding to an empty batch moves the clinician straight to Enter, where the first test is waiting. */
     fun add(added: List<LabBatchItem>): LabBatchDraft {
         if (added.isEmpty()) return this
-        val next = items + added.filter { item -> items.none { it.labId == item.labId } }
+        val next = (items + added).distinctBy { it.labId }
         val tab = if (items.isEmpty() && next.isNotEmpty()) LabBatchTab.ENTER else tab
         return copy(items = next, cursor = cursor.coerceIn(0, (next.size - 1).coerceAtLeast(0)), tab = tab)
     }

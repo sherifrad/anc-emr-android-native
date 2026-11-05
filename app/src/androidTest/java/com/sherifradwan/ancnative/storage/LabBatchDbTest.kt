@@ -130,17 +130,20 @@ class LabBatchDbTest {
     }
 
     @Test
-    fun deleteAndRestoreKeepEveryRowAtRevisionTwo() = withEnv {
-        val entries = entries(3)
+    fun theWholeBatchDeletesAndComesBackAtTombstonePlusOne() = withEnv {
+        // Eleven rows is the size the approved mock saves in one action.
+        val entries = entries(11)
         committed(repo.execute(saveCmd(entries)))
         val refs = refsOf(entries)
         val batchId = UUID.randomUUID().toString()
         val date = "2026-11-05"
+        val deleteId = UUID.randomUUID().toString()
+        val restoreId = UUID.randomUUID().toString()
 
         committed(
             repo.execute(
                 DeleteLabBatchCommand(
-                    operationUuid = UUID.randomUUID().toString(),
+                    operationUuid = deleteId,
                     patientId = patientA,
                     expectedPatientRevision = dao.patient(patientA)!!.revision,
                     batchId = batchId,
@@ -149,22 +152,41 @@ class LabBatchDbTest {
             ),
         )
         entries.forEach { assertNull(dao.labInvestigation(it.labId)) }
+        assertEquals(ClinicalRecordKind.LAB_BATCH_DELETE.name, dao.clinicalCommandReceipt(deleteId)!!.recordKind)
 
         committed(
             repo.execute(
                 RestoreLabBatchCommand(
-                    operationUuid = UUID.randomUUID().toString(),
+                    operationUuid = restoreId,
                     patientId = patientA,
                     expectedPatientRevision = dao.patient(patientA)!!.revision,
                     batchId = batchId,
                     date = date,
                     labName = "Al Borg",
                     entries = entries,
-                    restoredRevision = 2,
+                    restoredRevision = 3,
                 ),
             ),
         )
-        entries.forEach { assertEquals(2L, dao.labInvestigation(it.labId)!!.revision) }
+        entries.forEach { assertEquals(3L, dao.labInvestigation(it.labId)!!.revision) }
+        assertEquals(ClinicalRecordKind.LAB_BATCH_RESTORE.name, dao.clinicalCommandReceipt(restoreId)!!.recordKind)
+    }
+
+    @Test
+    fun anArchivedPatientCannotHaveABatchDeleted() = withEnv {
+        val entries = entries(2)
+        committed(repo.execute(saveCmd(entries)))
+        val refs = refsOf(entries)
+        dao.archivePatient(patientA, dao.patient(patientA)!!.revision, "2026-11-05T00:00:00Z", "test")
+        val delete = DeleteLabBatchCommand(
+            operationUuid = UUID.randomUUID().toString(),
+            patientId = patientA,
+            expectedPatientRevision = dao.patient(patientA)!!.revision,
+            batchId = UUID.randomUUID().toString(),
+            refs = refs,
+        )
+        assertEquals(ClinicalCommandOutcome.Rejected(ClinicalCommandFailure.PATIENT_ARCHIVED), repo.execute(delete))
+        entries.forEach { assertNotNull(dao.labInvestigation(it.labId)) }
     }
 
     @Test

@@ -844,10 +844,6 @@ sealed interface AncEvent {
         val offer: UndoOffer? = null,
     ) : AncEvent
     data class UndoExpired(val token: String) : AncEvent
-    /**
-     * A committed delete whose payload file could not be removed. Carries the record it belonged to, because the offer
-     * is usually gone by the time the asynchronous cleanup reports.
-     */
     data class StartLabBatch(
         val patientId: String,
         val sessionId: String,
@@ -866,6 +862,10 @@ sealed interface AncEvent {
     data class LabBatchDateChanged(val value: String) : AncEvent
     data object CancelLabBatch : AncEvent
 
+    /**
+     * A committed delete whose payload file could not be removed. Carries the record it belonged to, because the offer
+     * is usually gone by the time the asynchronous cleanup reports.
+     */
     data class PayloadCleanupFailed(
         val token: String,
         val error: SaveUiError,
@@ -966,7 +966,11 @@ object AncReducer {
                 ClinicalRecordKind.MEDICATION_CREATE, ClinicalRecordKind.MEDICATION_UPDATE -> state.copy(medicationDraft = state.medicationDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
                 // A validation failure is not a storage error. The batch draft has no per-field error surface yet
                 // (B1 storage slice); once it exists these errors belong on it, exactly like the lab draft above.
-                ClinicalRecordKind.LAB_BATCH_SAVE,
+                ClinicalRecordKind.LAB_BATCH_SAVE -> state.copy(
+                    labBatchDraft = state.labBatchDraft?.copy(errors = event.errors),
+                    savePhase = SavePhase.IDLE,
+                    saveError = null,
+                )
                 ClinicalRecordKind.LAB_BATCH_DELETE,
                 ClinicalRecordKind.LAB_BATCH_RESTORE,
                 -> state.copy(savePhase = SavePhase.IDLE, saveError = null)
@@ -1213,8 +1217,9 @@ object AncReducer {
                 labBatchDraft = state.labBatchDraft?.copy(date = event.value),
             )
             is AncEvent.CancelLabBatch -> {
+                // Only the batch is discarded: cancelling it must not wipe an unrelated editor draft (D9).
                 val patientId = state.labBatchDraft?.patientId ?: state.route.patientIdOrNull()
-                val cleared = state.clearDrafts()
+                val cleared = state.copy(labBatchDraft = null, savePhase = SavePhase.IDLE, saveError = null)
                 if (patientId == null) cleared else cleared.copy(route = AncRoute.Workspace(patientId, WorkspaceSection.LABORATORY))
             }
             is AncEvent.PayloadCleanupFailed -> {

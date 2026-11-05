@@ -71,6 +71,7 @@ data class SaveLabBatchCommand(
         batchIsUuid(operationUuid) &&
             patientId.isNotBlank() &&
             expectedPatientRevision >= 1 &&
+            date.isNotBlank() &&
             ClinicalVocabulary.isValidIsoDate(date) &&
             entries.structurallyValid()
 
@@ -111,7 +112,7 @@ data class DeleteLabBatchCommand(
     )
 }
 
-/** Puts the same rows back at [restoredRevision], all or nothing. */
+/** Puts the same rows back at [restoredRevision] (the delete receipt's tombstone + 1), all or nothing. */
 data class RestoreLabBatchCommand(
     override val editorSessionId: String = "",
     override val operationUuid: String,
@@ -134,7 +135,8 @@ data class RestoreLabBatchCommand(
             batchIsUuid(batchId) &&
             patientId.isNotBlank() &&
             expectedPatientRevision >= 1 &&
-            restoredRevision >= 2 &&
+            restoredRevision >= 3 &&
+            date.isNotBlank() &&
             ClinicalVocabulary.isValidIsoDate(date) &&
             entries.structurallyValid()
 
