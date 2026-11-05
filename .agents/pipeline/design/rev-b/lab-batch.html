@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Revision B · Laboratory batch flow · slices</title>
+<style>
+:root{--bg:#FBF8F5;--sf:#fff;--sv:#F3E9E7;--on:#0D1B3D;--onv:#4C3F43;--mut:#6B6166;--outv:#CAC4D0;
+--pri:#0D1B3D;--onpri:#fff;--sec:#934F5B;--secc:#FFD9DE;--osecc:#3B0815;--ter:#176B70;--terc:#AFECEE;
+--gB:#DCFCE7;--gT:#166534;--rB:#FEE2E2;--rT:#B91C1C;--aB:#FEF3C7;--aT:#92400E;--page:#E9E4DF;
+--shadow:0 1px 2px rgba(13,27,61,.12)}
+*{box-sizing:border-box}
+body{margin:0;padding:24px 16px 60px;background:var(--page);color:var(--on);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+h1{max-width:1120px;margin:0 auto 4px;font-size:22px}
+.lead{max-width:1120px;margin:0 auto 20px;color:#4C3F43}
+.grid{display:flex;flex-wrap:wrap;gap:18px;justify-content:center;align-items:flex-start}
+.slice{width:360px}
+.slice h3{margin:0 0 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--sec)}
+.phone{position:relative;width:360px;height:720px;background:var(--bg);border:1px solid var(--outv);border-radius:22px;overflow:hidden;box-shadow:0 8px 28px rgba(13,27,61,.18);font-size:14px;line-height:1.3;color:var(--on)}
+.inner{display:flex;flex-direction:column;height:100%}
+.appbar{display:flex;align-items:center;gap:4px;background:#0D1B3D;color:#fff;padding:4px 10px 4px 4px;min-height:52px}
+.appbar .x{width:48px;height:48px;border:0;background:transparent;color:inherit;font-size:20px;flex:0 0 48px}
+.appbar b{display:block;font-size:15px}
+.appbar small{display:block;opacity:.85;font-size:12px}
+.scroll{flex:1;overflow:hidden;padding:8px 10px 12px}
+.foot{display:flex;gap:8px;padding:8px 10px;background:var(--sf);border-top:1px solid var(--outv)}
+.btn{min-height:48px;padding:0 16px;border-radius:24px;border:1.5px solid var(--outv);background:var(--sf);color:var(--on);font:inherit;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.btn.pri{background:var(--pri);color:var(--onpri);border-color:var(--pri)}
+.btn.sec{background:var(--secc);color:var(--osecc);border-color:transparent}
+.btn.grow{flex:1 1 auto}
+.btn.full{width:100%}
+.btn:disabled{opacity:.45}
+.card{background:var(--sf);border:1px solid var(--outv);border-radius:16px;padding:10px;box-shadow:var(--shadow);margin-top:8px}
+.sh{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--sec);font-weight:800;border-left:4px solid var(--sec);padding-left:8px;margin:10px 2px 4px}
+.sh em{font-style:normal;text-transform:none;letter-spacing:0;font-weight:500;color:var(--mut)}
+.lab{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin:10px 0 4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{min-height:40px;padding:0 12px;border-radius:20px;border:1.5px solid var(--outv);background:var(--sf);font-size:13px;font-weight:600;display:inline-flex;align-items:center}
+.chip.on{background:var(--secc);border-color:transparent;color:var(--osecc)}
+.tabs{display:flex;gap:6px;margin:8px 0 0}
+.tabs .chip{flex:0 0 auto}
+.batch{border:1px solid var(--outv);border-radius:14px;background:var(--sf);padding:8px 10px;display:flex;gap:8px;justify-content:space-between;align-items:center;box-shadow:var(--shadow)}
+.batch b{font-size:14px}
+.batch small{color:var(--mut);font-size:12px}
+.batch .edit{color:var(--sec);font-weight:800;font-size:12px}
+.segs{display:flex;gap:4px;margin:10px 0 0}
+.segs i{display:block;height:4px;border-radius:2px;background:var(--outv);flex:1}
+.segs .d i{background:var(--pri)}
+.segs .cur i{background:var(--sec)}
+h4{margin:0;font-size:12px;color:var(--mut);font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+h3.t{margin:0;font-size:19px;line-height:1.2}
+.sub{color:var(--mut);font-size:12.5px;margin-top:2px}
+.big{margin:12px 0 4px;text-align:center;font-size:34px;font-weight:800}
+.big small{font-size:14px;color:var(--mut);font-weight:600}
+.pillrow{display:flex;justify-content:center;min-height:26px;margin-bottom:6px}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:800}
+.p-g{background:var(--gB);color:var(--gT)}.p-r{background:var(--rB);color:var(--rT)}.p-a{background:var(--aB);color:var(--aT)}.p-n{background:var(--sv);color:var(--mut)}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.keys button{min-height:44px;border-radius:10px;border:1px solid var(--outv);background:var(--sf);font:600 18px inherit}
+.opt-big{width:100%;min-height:52px;margin-top:6px;border-radius:12px;border:1.5px solid var(--outv);background:var(--sf);font:600 15px inherit;display:flex;justify-content:space-between;align-items:center;padding:0 14px}
+.opt-big.on{border-color:var(--sec);background:var(--secc);color:var(--osecc)}
+.navr{display:flex;justify-content:space-between;gap:8px;margin-top:10px}
+.rv{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;min-height:56px;border:0;border-bottom:1px solid #EFE9E4;background:transparent;font:inherit;text-align:left;padding:6px 2px}
+.rv:last-child{border-bottom:0}
+.rv b{display:block;font-size:14px}
+.rv small{color:var(--mut);font-size:12px}
+.rv .r{display:flex;align-items:center;gap:8px}
+.rv .v{font-weight:800;font-size:14px}
+.pcard{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #EFE9E4}
+.pcard:last-child{border-bottom:0}
+.search{width:100%;min-height:46px;border-radius:12px;border:1.5px solid var(--outv);padding:0 12px;font:inherit;background:var(--sf)}
+.empty{color:var(--mut);padding:18px;text-align:center}
+.toast{position:absolute;left:10px;right:10px;bottom:76px;background:#0D1B3D;color:#fff;border-radius:14px;padding:4px 6px 4px 12px;display:flex;align-items:center;justify-content:space-between;gap:6px;border:1px solid rgba(255,255,255,.25)}
+.toast button{min-height:48px;border:0;background:transparent;color:#FFB2BC;font:inherit;font-weight:800;padding:0 12px}
+.note{max-width:1120px;margin:18px auto 0;color:#4C3F43;font-size:13px}
+</style></head><body>
+<h1>Revision B — Laboratory batch flow</h1>
+<p class="lead">Six slices of one flow: <b>enter the batch → review → one save</b>. Copy, order and sizes follow the approved d4/d1 design; values use the app's real tests. Nothing here is implemented yet — approve or mark up each slice.</p>
+<div class="grid">
+
+  <div class="slice"><h3>1 · Start here — choose tests</h3><div class="phone"><div class="inner">
+    <div class="appbar"><button class="x">‹</button><div><b>Laboratory results</b><small>Mona Hassan · GA 34w 2d</small></div></div>
+    <div class="scroll">
+      <div class="batch"><span><b>Today</b> <small>· GA 34w 2d</small></span><span><b>Al Borg</b></span><span class="edit">Change ▾</span></div>
+      <div class="tabs"><span class="chip on">＋ Add</span><span class="chip">Enter</span><span class="chip">Review 0/0</span></div>
+      <div class="card">
+        <div class="pcard"><span><b>CBC</b><small>6 elements · Hb, Hct, MCV, MCH, WBC, PLT</small></span><span style="display:flex;gap:6px"><button class="btn">Choose</button><button class="btn pri">＋ Add 6</button></span></div>
+        <div class="pcard"><span><b>Urine Routine &amp; Microscopic</b><small>8 elements · protein, glucose, ketones, blood, nitrite, LE, pus cells, RBCs</small></span><span style="display:flex;gap:6px"><button class="btn">Choose</button><button class="btn pri">＋ Add 8</button></span></div>
+        <div class="pcard"><span><b>First Trimester Booking</b><small>5 tests + CBC + urine · 7 new</small></span><button class="btn pri">＋ Add 7</button></div>
+        <div class="pcard"><span><b>Preeclampsia Workup</b><small>CBC, creatinine, uric acid, ALT, AST, urine</small></span><button class="btn pri">＋ Add 6</button></div>
+      </div>
+      <div class="sh"><span>Add a single test</span></div>
+      <div class="card"><input class="search" placeholder="Search a test, e.g. ferritin">
+        <span class="lab">Often added</span>
+        <div class="chips"><span class="chip">Ferritin</span><span class="chip">TSH</span><span class="chip">Vitamin D</span><span class="chip">＋ Add other</span></div>
+      </div>
+    </div>
+    <div class="foot"><button class="btn">Cancel</button><button class="btn pri grow" disabled>Review 0 results</button></div>
+  </div></div></div>
+
+  <div class="slice"><h3>2 · Choose which elements</h3><div class="phone"><div class="inner">
+    <div class="appbar"><button class="x">‹</button><div><b>Choose tests</b><small>CBC · 6 elements</small></div></div>
+    <div class="scroll">
+      <div class="card" style="margin-top:0">
+        <div class="rv"><span><b>Haemoglobin (Hb)</b><small>g/dL</small></span><span class="pill p-g">✓</span></div>
+        <div class="rv"><span><b>Haematocrit (Hct)</b><small>%</small></span><span class="pill p-g">✓</span></div>
+        <div class="rv"><span><b>MCV</b><small>fL</small></span><span class="pill p-g">✓</span></div>
+        <div class="rv"><span><b>MCH</b><small>pg</small></span><span class="pill p-g">✓</span></div>
+        <div class="rv"><span><b>WBC</b><small>×10³/µL</small></span><span class="pill p-g">✓</span></div>
+        <div class="rv"><span><b>Platelets (PLT)</b><small>×10³/µL</small></span><span class="pill p-g">✓</span></div>
+      </div>
+      <p class="sub" style="margin:8px 2px 0">Untick what this patient does not need today. The panel itself stays unchanged.</p>
+      <button class="btn full" style="margin-top:10px">Save this selection as a panel…</button>
+    </div>
+    <div class="foot"><button class="btn">Cancel</button><button class="btn pri grow">Add 6 selected</button></div>
+  </div></div></div>
+
+  <div class="slice"><h3>3 · Enter a CBC element</h3><div class="phone"><div class="inner">
+    <div class="appbar"><button class="x">‹</button><div><b>Laboratory results</b><small>Mona Hassan · GA 34w 2d</small></div></div>
+    <div class="scroll">
+      <div class="batch"><span><b>Today</b> <small>· GA 34w 2d</small></span><span><b>Al Borg</b></span><span class="edit">Change ▾</span></div>
+      <div class="tabs"><span class="chip">＋ Add</span><span class="chip on">Enter</span><span class="chip">Review 1/14</span></div>
+      <div class="segs"><span class="d"><i></i></span><span class="cur"><i></i></span><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i></span></div>
+      <div class="card">
+        <h4>CBC · Test 2 of 6</h4>
+        <h3 class="t">Haemoglobin (Hb)</h3>
+        <div class="sub">g/dL · range <span style="border-bottom:1px dashed #CAC4D0;padding:0 14px">&nbsp;</span> <span style="color:#934F5B;font-weight:700">from the report</span></div>
+        <div class="big">10.8 <small>g/dL</small></div>
+        <div class="pillrow"><span class="pill p-r">Low ▼</span></div>
+        <div class="keys"><button>7</button><button>8</button><button>9</button><button>4</button><button>5</button><button>6</button><button>1</button><button>2</button><button>3</button><button>.</button><button>0</button><button>⌫</button></div>
+        <div class="chips" style="margin-top:8px"><span class="chip">Flag · auto</span><span class="chip">Note</span><span class="chip">Range</span></div>
+        <div class="navr"><button class="btn">◀ Back</button><button class="btn pri">Next ▶</button></div>
+      </div>
+    </div>
+    <div class="foot"><button class="btn">Cancel</button><button class="btn pri grow">Review 1 result</button></div>
+  </div></div></div>
+
+  <div class="slice"><h3>4 · Enter a urine element</h3><div class="phone"><div class="inner">
+    <div class="appbar"><button class="x">‹</button><div><b>Laboratory results</b><small>Mona Hassan · GA 34w 2d</small></div></div>
+    <div class="scroll">
+      <div class="batch"><span><b>Today</b> <small>· GA 34w 2d</small></span><span><b>Al Borg</b></span><span class="edit">Change ▾</span></div>
+      <div class="tabs"><span class="chip">＋ Add</span><span class="chip on">Enter</span><span class="chip">Review 7/14</span></div>
+      <div class="segs"><span class="d"><i></i></span><span class="d"><i></i></span><span class="d"><i></i></span><span class="d"><i></i></span><span class="d"><i></i></span><span class="cur"><i></i></span><span><i></i></span><span><i></i></span></div>
+      <div class="card">
+        <h4>Urine · Test 6 of 8</h4>
+        <h3 class="t">Protein</h3>
+        <div class="sub">Dipstick</div>
+        <button class="opt-big">Normal</button>
+        <button class="opt-big on"><span>Trace</span><span>✓</span></button>
+        <button class="opt-big">+</button>
+        <button class="opt-big">++</button>
+        <button class="opt-big">+++</button>
+        <div class="navr"><button class="btn">◀ Back</button><button class="btn pri">Next ▶</button></div>
+      </div>
+      <p class="sub" style="margin:8px 2px 0">Pus cells and RBCs come next as small ranges (0–2, 3–5, 6–10, &gt;10 /hpf).</p>
+    </div>
+    <div class="foot"><button class="btn">Cancel</button><button class="btn pri grow">Review 6 results</button></div>
+  </div></div></div>
+
+  <div class="slice"><h3>5 · Review, grouped by panel</h3><div class="phone"><div class="inner">
+    <div class="appbar"><button class="x">‹</button><div><b>Laboratory results</b><small>Mona Hassan · GA 34w 2d</small></div></div>
+    <div class="scroll">
+      <div class="batch"><span><b>Today</b> <small>· GA 34w 2d</small></span><span><b>Al Borg</b></span><span class="edit">Change ▾</span></div>
+      <div class="tabs"><span class="chip">＋ Add</span><span class="chip">Enter</span><span class="chip on">Review 11/14</span></div>
+      <div class="sh"><span>CBC</span><em>6 elements</em></div>
+      <div class="card" style="margin-top:0">
+        <div class="rv"><span><b>Hb</b></span><span class="r"><span class="v">10.8</span><span class="pill p-r">Low ▼</span></span></div>
+        <div class="rv"><span><b>Hct</b></span><span class="r"><span class="v">33</span><span class="pill p-r">Low ▼</span></span></div>
+        <div class="rv"><span><b>MCV</b></span><span class="r"><span class="v">78</span><span class="pill p-g">Normal ✓</span></span></div>
+        <div class="rv"><span><b>MCH</b></span><span class="r"><span class="v">25</span><span class="pill p-g">Normal ✓</span></span></div>
+        <div class="rv"><span><b>WBC</b></span><span class="r"><span class="v">8.2</span><span class="pill p-g">Normal ✓</span></span></div>
+        <div class="rv"><span><b>PLT</b></span><span class="r"><span class="v">240</span><span class="pill p-g">Normal ✓</span></span></div>
+      </div>
+      <div class="sh"><span>Urine</span><em>8 elements</em></div>
+      <div class="card" style="margin-top:0">
+        <div class="rv"><span><b>Protein</b></span><span class="r"><span class="v">Trace</span><span class="pill p-r">Abnormal ▲</span></span></div>
+        <div class="rv"><span><b>Glucose</b></span><span class="r"><span class="v">Negative</span><span class="pill p-g">Normal ✓</span></span></div>
+        <div class="rv"><span><b>Ketones</b></span><span class="r"><span class="v">Negative</span><span class="pill p-g">Normal ✓</span></span></div>
+        <div class="rv"><span><b>Blood</b></span><span class="r"><span class="v">Negative</span><span class="pill p-g">Normal ✓</span></span></div>
+        <div class="rv"><span><b>Nitrite</b></span><span class="r"><span class="v">Negative</span><span class="pill p-g">Normal ✓</span></span></div>
+        <div class="rv"><span><b>Leukocyte esterase</b></span><span class="r"><span class="pill p-a">pending</span></span></div>
+        <div class="rv"><span><b>Pus cells</b></span><span class="r"><span class="pill p-a">pending</span></span></div>
+        <div class="rv"><span><b>RBCs</b></span><span class="r"><span class="pill p-a">pending</span></span></div>
+      </div>
+    </div>
+    <div class="foot"><button class="btn">Cancel</button><button class="btn pri grow">Save 11 results</button></div>
+  </div></div></div>
+
+  <div class="slice"><h3>6 · After one save</h3><div class="phone"><div class="inner">
+    <div class="appbar"><button class="x">‹</button><div><b>Laboratory</b><small>Mona Hassan · 11 results added</small></div></div>
+    <div class="scroll">
+      <div class="sh"><span>CBC</span><em>Today · Al Borg</em></div>
+      <div class="card" style="margin-top:0">
+        <div class="rv"><span><b>Hb</b><small>10.8 g/dL</small></span><span class="pill p-r">Low ▼</span></div>
+        <div class="rv"><span><b>PLT</b><small>240 ×10³/µL</small></span><span class="pill p-g">Normal ✓</span></div>
+      </div>
+      <div class="sh"><span>Urine</span><em>Today · Al Borg</em></div>
+      <div class="card" style="margin-top:0">
+        <div class="rv"><span><b>Protein</b><small>Trace</small></span><span class="pill p-r">Abnormal ▲</span></div>
+      </div>
+    </div>
+    <div class="toast"><span>11 results saved · Mona Hassan</span><button>Undo</button></div>
+    <div class="foot"><button class="btn pri grow">Add investigation</button><button class="btn">Print</button></div>
+  </div></div></div>
+
+</div>
+<p class="note"><b>Approved model:</b> CBC = Hb, Hct, MCV, MCH, WBC, PLT · Urine = protein, glucose, ketones, blood, nitrite, leukocyte esterase, pus cells, RBCs · CBC ranges left blank and typed from each lab report · panels customisable per batch, in Settings, and “save selection as panel”.<br><b>Still open:</b> does Undo remove all 11 records as one batch action, or only the last one? The mock assumes one batch undo.</p>
+</body></html>

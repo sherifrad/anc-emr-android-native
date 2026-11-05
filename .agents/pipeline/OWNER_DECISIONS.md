@@ -30,3 +30,17 @@ D24 (2026-11-02) Medication simplification (supersedes D22 status list):
 - Presets and previous prescriptions do not copy hidden fields (frequency, end date, adverse notes cleared).
 - Tab label is 'Meds'.
 - Aim: simplify each section (fewer fields, fewer taps). No legacy or old-patient handling.
+
+D25 (2026-11-05) Laboratory works in batches (supersedes the one-test-at-a-time editor):
+- Flow: choose tests (Add) -> enter -> Review -> ONE save for the whole batch.
+- A panel is a container; every element is its own row with its own unit, range and flag.
+- CBC panel = Haemoglobin, Haematocrit, MCV, MCH, WBC, Platelets (six elements). The old single
+  "Complete Blood Count (CBC)" value (unit g/dL) is wrong clinically; existing records stay as history,
+  new entries use the six elements.
+- Urine Routine & Microscopic = protein, glucose, ketones, blood, nitrite, leukocyte esterase,
+  pus cells, RBCs. Microscopy is included: the owner considers pus cells / RBCs important.
+- CBC reference ranges are left blank and typed from each lab report; no invented obstetric ranges.
+- Panels are customisable at three levels: per batch (tick a subset before adding), permanently in
+  Settings (name + elements), and "save this selection as a panel" from the Add screen.
+- OPEN: whether Undo after a batch save removes all records of the batch as one action or only the
+  last record. Mock slices assume one batch undo.
