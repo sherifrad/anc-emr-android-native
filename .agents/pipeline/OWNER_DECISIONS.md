@@ -42,5 +42,6 @@ D25 (2026-11-05) Laboratory works in batches (supersedes the one-test-at-a-time 
 - CBC reference ranges are left blank and typed from each lab report; no invented obstetric ranges.
 - Panels are customisable at three levels: per batch (tick a subset before adding), permanently in
   Settings (name + elements), and "save this selection as a panel" from the Add screen.
-- OPEN: whether Undo after a batch save removes all records of the batch as one action or only the
-  last record. Mock slices assume one batch undo.
+- Undo after a batch save removes ALL records of that batch as ONE action (owner, 2026-11-05).
+- Laboratory mocks approved 2026-11-05 (`.agents/pipeline/design/rev-b/lab-batch.html`); implementation
+  follows the frozen-schema design in `.agents/pipeline/SPEC_LOGIC_B1_LAB_BATCH.md`.
