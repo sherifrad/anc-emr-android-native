@@ -7,7 +7,11 @@ import com.sherifradwan.ancnative.storage.ClinicalCommandReceipt
 import com.sherifradwan.ancnative.storage.DeletableRecord
 import com.sherifradwan.ancnative.storage.DeletableRegistry
 import com.sherifradwan.ancnative.storage.DeletableType
+import com.sherifradwan.ancnative.storage.DeleteLabBatchCommand
 import com.sherifradwan.ancnative.storage.DeleteRecordCommand
+import com.sherifradwan.ancnative.storage.LabBatchEntry
+import com.sherifradwan.ancnative.storage.LabBatchRecordRef
+import com.sherifradwan.ancnative.storage.labContentHash
 import com.sherifradwan.ancnative.storage.RecordSnapshot
 import com.sherifradwan.ancnative.storage.RecordUndoCommand
 import com.sherifradwan.ancnative.storage.RestoreRecordCommand
@@ -206,6 +210,48 @@ class UndoCoordinator(
         )
         reduce(AncEvent.UndoOffered(offer))
         armUndo(token, undoDelete)
+    }
+
+    /**
+     * Offers one Undo for a whole laboratory batch: the pending action is a single [DeleteLabBatchCommand], so the
+     * 11 rows go together or not at all. A batch has no per-record adapter, so the label is built here.
+     */
+    fun offerLabBatchSaveUndo(
+        patientId: String,
+        batchId: String,
+        entries: List<LabBatchEntry>,
+        receipt: ClinicalCommandReceipt,
+    ) {
+        val state = currentState()
+        if (state.vaultState !is VaultState.Unlocked) return
+        val patient = state.patient(patientId) ?: return
+        val refs = entries.mapNotNull { entry ->
+            patient.labInvestigations.firstOrNull { it.id == entry.labId }?.let { record ->
+                LabBatchRecordRef(entry.labId, record.revision, labContentHash(record))
+            }
+        }
+        // Only offer it when the fresh snapshot contains exactly what was just saved.
+        if (entries.isEmpty() || refs.size != entries.size) return
+        val token = UUID.randomUUID().toString()
+        val command = DeleteLabBatchCommand(
+            operationUuid = UUID.randomUUID().toString(),
+            patientId = patientId,
+            expectedPatientRevision = receipt.committedPatientRevision,
+            batchId = batchId,
+            refs = refs,
+        )
+        val offer = UndoOffer(
+            token = token,
+            patientId = patientId,
+            type = DeletableType.LAB,
+            action = UndoAction.SAVE,
+            label = if (entries.size == 1) "1 lab result" else "${entries.size} lab results",
+            phase = UndoPhase.READY,
+            patientName = patient.displayName.trim(),
+            recordId = batchId,
+        )
+        reduce(AncEvent.UndoOffered(offer))
+        armUndo(token, command)
     }
 
     fun request(token: String) {
