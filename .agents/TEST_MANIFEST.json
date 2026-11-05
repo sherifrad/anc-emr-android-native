@@ -9,7 +9,17 @@
         "app/src/main/**/ui/DeliveryNotesParser.kt",
         "app/src/test/**/ParseDeliveryNotesSpecTest.kt"
       ],
-      "covers": ["P1", "P2", "P3", "P4", "P5", "Q1", "Q2", "Q3", "Q4"]
+      "covers": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5",
+        "Q1",
+        "Q2",
+        "Q3",
+        "Q4"
+      ]
     },
     {
       "id": "UNIT-parse-legacy",
@@ -19,7 +29,10 @@
         "app/src/main/**/ui/DeliveryNotesParser.kt",
         "app/src/test/**/DeliveryNotesParserTest.kt"
       ],
-      "covers": ["P5", "Q4"]
+      "covers": [
+        "P5",
+        "Q4"
+      ]
     },
     {
       "id": "UNIT-format",
@@ -29,7 +42,12 @@
         "app/src/main/**/ui/ClinicalFormat.kt",
         "app/src/test/**/ClinicalFormatTest.kt"
       ],
-      "covers": ["P6", "P7", "P8", "Q5"]
+      "covers": [
+        "P6",
+        "P7",
+        "P8",
+        "Q5"
+      ]
     },
     {
       "id": "UNIT-format-r2",
@@ -39,7 +57,10 @@
         "app/src/main/**/ui/ClinicalFormat.kt",
         "app/src/test/**/ClinicalFormatR2Test.kt"
       ],
-      "covers": ["Q5", "Q6"]
+      "covers": [
+        "Q5",
+        "Q6"
+      ]
     },
     {
       "id": "UNIT-print",
@@ -51,7 +72,12 @@
         "app/src/main/**/ui/DeliveryNotesParser.kt",
         "app/src/test/**/PatientPrintHtmlGeneratorTest.kt"
       ],
-      "covers": ["Q17", "Q7", "Q19", "Q18"]
+      "covers": [
+        "Q17",
+        "Q7",
+        "Q19",
+        "Q18"
+      ]
     },
     {
       "id": "UNIT-contrast",
@@ -62,7 +88,9 @@
         "app/src/main/**/ui/ClinicalBadges.kt",
         "app/src/test/**/ThemeContrastTest.kt"
       ],
-      "covers": ["P9"]
+      "covers": [
+        "P9"
+      ]
     },
     {
       "id": "STATIC-ui",
@@ -73,7 +101,9 @@
         "app/src/main/**/ui/ClinicalBadges.kt",
         ".agents/checks/check_ui_static.py"
       ],
-      "covers": ["P10"]
+      "covers": [
+        "P10"
+      ]
     },
     {
       "id": "STATIC-ui-r2",
@@ -86,7 +116,15 @@
         "app/src/main/**/ui/ClinicalBadges.kt",
         ".agents/checks/check_ui_static_r2.py"
       ],
-      "covers": ["U1", "U2", "U3", "U4", "U5", "U6", "Q7"]
+      "covers": [
+        "U1",
+        "U2",
+        "U3",
+        "U4",
+        "U5",
+        "U6",
+        "Q7"
+      ]
     },
     {
       "id": "UNIT-intake-dating",
@@ -96,7 +134,9 @@
         "app/src/main/**/state/IntakeDatingRule.kt",
         "app/src/test/**/IntakeDatingRuleTest.kt"
       ],
-      "covers": ["Q20"]
+      "covers": [
+        "Q20"
+      ]
     },
     {
       "id": "STATIC-r3",
@@ -109,7 +149,14 @@
         "app/build.gradle.kts",
         ".agents/checks/check_r3.py"
       ],
-      "covers": ["S1", "S2", "S3", "S4", "Q20", "Q21"]
+      "covers": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "Q20",
+        "Q21"
+      ]
     },
     {
       "id": "UNIT-anomalies",
@@ -119,7 +166,9 @@
         "app/src/main/**/storage/RecordAnomalies.kt",
         "app/src/test/**/RecordAnomaliesTest.kt"
       ],
-      "covers": ["Q22"]
+      "covers": [
+        "Q22"
+      ]
     },
     {
       "id": "UNIT-vault-auto",
@@ -129,7 +178,9 @@
         "app/src/main/**/storage/VaultAutoAction.kt",
         "app/src/test/**/VaultAutoActionTest.kt"
       ],
-      "covers": ["Q23"]
+      "covers": [
+        "Q23"
+      ]
     },
     {
       "id": "UNIT-vault-cleanup",
@@ -139,7 +190,11 @@
         "app/src/main/**/storage/VaultCleanupRule.kt",
         "app/src/test/**/VaultCleanupRuleTest.kt"
       ],
-      "covers": ["Q24", "Q49", "Q53"]
+      "covers": [
+        "Q24",
+        "Q49",
+        "Q53"
+      ]
     },
     {
       "id": "STATIC-r3b",
@@ -153,7 +208,11 @@
         ".agents/checks/check_r3b.py",
         ".agents/checks/check_r3f1.py"
       ],
-      "covers": ["S5", "S6", "S7"]
+      "covers": [
+        "S5",
+        "S6",
+        "S7"
+      ]
     },
     {
       "id": "UNIT-pin-policy",
@@ -163,7 +222,9 @@
         "app/src/main/**/security/PinPolicy.kt",
         "app/src/test/**/security/PinPolicyTest.kt"
       ],
-      "covers": ["Q25"]
+      "covers": [
+        "Q25"
+      ]
     },
     {
       "id": "UNIT-lock-policy",
@@ -173,7 +234,9 @@
         "app/src/main/**/security/AppLockPolicy.kt",
         "app/src/test/**/security/AppLockPolicyTest.kt"
       ],
-      "covers": ["Q26"]
+      "covers": [
+        "Q26"
+      ]
     },
     {
       "id": "STATIC-r3c",
@@ -185,7 +248,17 @@
         "app/src/main/**/MainActivity.kt",
         ".agents/checks/check_r3c.py"
       ],
-      "covers": ["S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16"]
+      "covers": [
+        "S8",
+        "S9",
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S15",
+        "S16"
+      ]
     },
     {
       "id": "STATIC-r3d",
@@ -202,7 +275,14 @@
         "app/src/main/**/storage/AttachmentSyncManager.kt",
         ".agents/checks/check_r3d.py"
       ],
-      "covers": ["S17", "S18", "S19", "S20", "S21", "S22"]
+      "covers": [
+        "S17",
+        "S18",
+        "S19",
+        "S20",
+        "S21",
+        "S22"
+      ]
     },
     {
       "id": "STATIC-r3e",
@@ -220,7 +300,14 @@
         "app/src/main/**/ui/AddAttachmentDialog.kt",
         ".agents/checks/check_r3e.py"
       ],
-      "covers": ["S23", "S24", "S25", "S26", "S27", "S28"]
+      "covers": [
+        "S23",
+        "S24",
+        "S25",
+        "S26",
+        "S27",
+        "S28"
+      ]
     },
     {
       "id": "STATIC-r3f1",
@@ -238,7 +325,15 @@
         "app/src/test/**/NegativeControlAndClinicalValidationTest.kt",
         ".agents/checks/check_r3f1.py"
       ],
-      "covers": ["S29", "S30", "S31", "S32", "S33", "S34", "S35"]
+      "covers": [
+        "S29",
+        "S30",
+        "S31",
+        "S32",
+        "S33",
+        "S34",
+        "S35"
+      ]
     },
     {
       "id": "STATIC-r3f3",
@@ -250,7 +345,10 @@
         "app/src/main/**/ui/AddAttachmentDialog.kt",
         ".agents/checks/check_r3f3.py"
       ],
-      "covers": ["S43", "S44"]
+      "covers": [
+        "S43",
+        "S44"
+      ]
     },
     {
       "id": "STATIC-r3f2",
@@ -269,7 +367,14 @@
         "app/src/main/res/values/strings.xml",
         ".agents/checks/check_r3f2.py"
       ],
-      "covers": ["S37", "S38", "S39", "S40", "S41", "S42"]
+      "covers": [
+        "S37",
+        "S38",
+        "S39",
+        "S40",
+        "S41",
+        "S42"
+      ]
     },
     {
       "id": "UNIT-photo-quality",
@@ -279,7 +384,9 @@
         "app/src/main/**/storage/PhotoQuality.kt",
         "app/src/test/**/PhotoQualityPresetTest.kt"
       ],
-      "covers": ["Q54"]
+      "covers": [
+        "Q54"
+      ]
     },
     {
       "id": "UNIT-hashing",
@@ -289,7 +396,10 @@
         "app/src/main/**/storage/Hashing.kt",
         "app/src/test/**/HashingTest.kt"
       ],
-      "covers": ["Q47", "Q53"]
+      "covers": [
+        "Q47",
+        "Q53"
+      ]
     },
     {
       "id": "UNIT-bounded-bitmap",
@@ -299,7 +409,11 @@
         "app/src/main/**/storage/BoundedBitmap.kt",
         "app/src/test/**/BoundedBitmapTest.kt"
       ],
-      "covers": ["Q48", "Q53", "Q61"]
+      "covers": [
+        "Q48",
+        "Q53",
+        "Q61"
+      ]
     },
     {
       "id": "UNIT-security-settings",
@@ -312,7 +426,10 @@
         "app/src/test/**/SecuritySettingsRepositoryTest.kt",
         "app/src/test/**/FakeSharedPreferences.kt"
       ],
-      "covers": ["Q50", "Q53"]
+      "covers": [
+        "Q50",
+        "Q53"
+      ]
     },
     {
       "id": "UNIT-attachment-error",
@@ -322,7 +439,10 @@
         "app/src/main/**/state/AncState.kt",
         "app/src/test/**/AttachmentErrorStateTest.kt"
       ],
-      "covers": ["Q51", "Q53"]
+      "covers": [
+        "Q51",
+        "Q53"
+      ]
     },
     {
       "id": "UNIT-negative-control",
@@ -335,7 +455,10 @@
         "app/src/main/**/state/AncState.kt",
         "app/src/test/**/NegativeControlAndClinicalValidationTest.kt"
       ],
-      "covers": ["Q53", "G1"]
+      "covers": [
+        "Q53",
+        "G1"
+      ]
     },
     {
       "id": "UNIT-clinical-validation",
@@ -345,7 +468,9 @@
         "app/src/main/**/model/ClinicalModels.kt",
         "app/src/test/**/model/ClinicalValidationTest.kt"
       ],
-      "covers": ["G1"]
+      "covers": [
+        "G1"
+      ]
     },
     {
       "id": "UNIT-demo-fixtures",
@@ -356,7 +481,9 @@
         "app/src/main/**/model/DemoModels.kt",
         "app/src/test/**/DemoFixturesVerificationTest.kt"
       ],
-      "covers": ["G1"]
+      "covers": [
+        "G1"
+      ]
     },
     {
       "id": "UNIT-gestational-age",
@@ -366,7 +493,9 @@
         "app/src/main/**/model/GestationalAgeEngine.kt",
         "app/src/test/**/GestationalAgeEngineTest.kt"
       ],
-      "covers": ["G1"]
+      "covers": [
+        "G1"
+      ]
     },
     {
       "id": "UNIT-timeline-projection",
@@ -376,7 +505,9 @@
         "app/src/main/**/model/LongitudinalTimelineProjection.kt",
         "app/src/test/**/LongitudinalTimelineProjectionTest.kt"
       ],
-      "covers": ["G1"]
+      "covers": [
+        "G1"
+      ]
     },
     {
       "id": "UNIT-patient-validation",
@@ -387,7 +518,9 @@
         "app/src/main/**/model/DemoModels.kt",
         "app/src/test/**/model/PatientValidationTest.kt"
       ],
-      "covers": ["G1"]
+      "covers": [
+        "G1"
+      ]
     },
     {
       "id": "UNIT-previous-pregnancy-validation",
@@ -397,7 +530,9 @@
         "app/src/main/**/model/ClinicalModels.kt",
         "app/src/test/**/PreviousPregnancyValidationTest.kt"
       ],
-      "covers": ["G1"]
+      "covers": [
+        "G1"
+      ]
     },
     {
       "id": "UNIT-codex-repository",
@@ -407,7 +542,9 @@
         "app/src/main/**/model/codex/*.kt",
         "app/src/test/**/ClinicalCodexRepositoryTest.kt"
       ],
-      "covers": ["G1"]
+      "covers": [
+        "G1"
+      ]
     },
     {
       "id": "UNIT-anc-state",
@@ -417,7 +554,9 @@
         "app/src/main/**/state/AncState.kt",
         "app/src/test/**/state/AncStateTest.kt"
       ],
-      "covers": ["G1"]
+      "covers": [
+        "G1"
+      ]
     },
     {
       "id": "UNIT-backup-vault",
@@ -429,7 +568,9 @@
         "app/src/main/**/storage/PatientAttachmentVault.kt",
         "app/src/test/**/BackupVaultIntegrationAndZeroDataLossTest.kt"
       ],
-      "covers": ["G1"]
+      "covers": [
+        "G1"
+      ]
     },
     {
       "id": "UNIT-clinical-commands",
@@ -440,7 +581,9 @@
         "app/src/main/**/storage/SaveVisitCommand.kt",
         "app/src/test/**/ClinicalCommandsTest.kt"
       ],
-      "covers": ["G1"]
+      "covers": [
+        "G1"
+      ]
     },
     {
       "id": "UNIT-encrypted-backup",
@@ -450,7 +593,9 @@
         "app/src/main/**/storage/EncryptedBackupManager.kt",
         "app/src/test/**/EncryptedBackupTest.kt"
       ],
-      "covers": ["G1"]
+      "covers": [
+        "G1"
+      ]
     },
     {
       "id": "UNIT-attachment-vault",
@@ -462,7 +607,9 @@
         "app/src/main/**/storage/BoundedBitmap.kt",
         "app/src/test/**/PatientAttachmentVaultTest.kt"
       ],
-      "covers": ["G1"]
+      "covers": [
+        "G1"
+      ]
     },
     {
       "id": "UNIT-patient-commands",
@@ -472,7 +619,9 @@
         "app/src/main/**/storage/PatientCommands.kt",
         "app/src/test/**/PatientCommandsTest.kt"
       ],
-      "covers": ["G1"]
+      "covers": [
+        "G1"
+      ]
     },
     {
       "id": "UNIT-records-mapping",
@@ -483,7 +632,9 @@
         "app/src/main/**/storage/RecordsRepository.kt",
         "app/src/test/**/RecordsMappingRoundTripTest.kt"
       ],
-      "covers": ["G1"]
+      "covers": [
+        "G1"
+      ]
     },
     {
       "id": "UNIT-save-coordinator",
@@ -494,7 +645,9 @@
         "app/src/main/**/storage/RecordsRepository.kt",
         "app/src/test/**/SaveCoordinatorTest.kt"
       ],
-      "covers": ["G1"]
+      "covers": [
+        "G1"
+      ]
     },
     {
       "id": "UNIT-vault-state",
@@ -504,7 +657,9 @@
         "app/src/main/**/storage/VaultState.kt",
         "app/src/test/**/VaultStateTest.kt"
       ],
-      "covers": ["G1"]
+      "covers": [
+        "G1"
+      ]
     },
     {
       "id": "UNIT-gestational-banner",
@@ -515,7 +670,10 @@
         "app/src/main/**/model/GestationalAgeEngine.kt",
         "app/src/test/**/GestationalBannerLogicTest.kt"
       ],
-      "covers": ["G1", "Q106"]
+      "covers": [
+        "G1",
+        "Q106"
+      ]
     },
     {
       "id": "STATIC-r3g",
@@ -532,7 +690,13 @@
         "app/src/main/**/ui/ProfileScreen.kt",
         ".agents/checks/check_r3g.py"
       ],
-      "covers": ["S45", "S46", "S47", "S48", "S49"]
+      "covers": [
+        "S45",
+        "S46",
+        "S47",
+        "S48",
+        "S49"
+      ]
     },
     {
       "id": "UNIT-scan-photo-ref",
@@ -542,7 +706,9 @@
         "app/src/main/**/storage/ScanPhotoRef.kt",
         "app/src/test/**/ScanPhotoRefTest.kt"
       ],
-      "covers": ["Q63"]
+      "covers": [
+        "Q63"
+      ]
     },
     {
       "id": "UNIT-camera-sweep",
@@ -552,7 +718,9 @@
         "app/src/main/**/storage/CameraCaptureHelper.kt",
         "app/src/test/**/CameraCaptureSweepTest.kt"
       ],
-      "covers": ["Q64"]
+      "covers": [
+        "Q64"
+      ]
     },
     {
       "id": "UNIT-scan-photo-import",
@@ -562,7 +730,9 @@
         "app/src/main/**/state/AncState.kt",
         "app/src/test/**/ScanPhotoImportStateTest.kt"
       ],
-      "covers": ["Q65"]
+      "covers": [
+        "Q65"
+      ]
     },
     {
       "id": "STATIC-r3h",
@@ -572,7 +742,9 @@
         "app/src/main/**/storage/CameraCaptureHelper.kt",
         ".agents/checks/check_r3h.py"
       ],
-      "covers": ["S50"]
+      "covers": [
+        "S50"
+      ]
     },
     {
       "id": "UNIT-capture-temp-file",
@@ -582,7 +754,9 @@
         "app/src/main/**/storage/CameraCaptureHelper.kt",
         "app/src/test/**/CaptureTempFileTest.kt"
       ],
-      "covers": ["Q68"]
+      "covers": [
+        "Q68"
+      ]
     },
     {
       "id": "STATIC-r3i",
@@ -597,7 +771,12 @@
         "app/src/main/**/*.kt",
         ".agents/checks/check_r3i.py"
       ],
-      "covers": ["S51", "S52", "S53", "S54"]
+      "covers": [
+        "S51",
+        "S52",
+        "S53",
+        "S54"
+      ]
     },
     {
       "id": "STATIC-r3j",
@@ -613,7 +792,12 @@
         "app/src/main/**/ui/AddAttachmentDialog.kt",
         ".agents/checks/check_r3j.py"
       ],
-      "covers": ["S55", "S56", "S57", "S58"]
+      "covers": [
+        "S55",
+        "S56",
+        "S57",
+        "S58"
+      ]
     },
     {
       "id": "STATIC-r3k",
@@ -627,7 +811,13 @@
         "app/src/main/**/ui/AncApp.kt",
         ".agents/checks/check_r3k.py"
       ],
-      "covers": ["S59", "S60", "S61", "S62", "S63"]
+      "covers": [
+        "S59",
+        "S60",
+        "S61",
+        "S62",
+        "S63"
+      ]
     },
     {
       "id": "UNIT-format-weight",
@@ -637,7 +827,9 @@
         "app/src/main/**/ui/ClinicalFormat.kt",
         "app/src/test/**/FormatWeightKgTest.kt"
       ],
-      "covers": ["Q78"]
+      "covers": [
+        "Q78"
+      ]
     },
     {
       "id": "UNIT-attachment-title",
@@ -648,7 +840,9 @@
         "app/src/main/**/ui/WorkspaceScreen.kt",
         "app/src/test/**/ui/AttachmentDisplayTitleTest.kt"
       ],
-      "covers": ["Q73"]
+      "covers": [
+        "Q73"
+      ]
     },
     {
       "id": "UNIT-iso-dates",
@@ -658,7 +852,10 @@
         "app/src/main/**/model/IsoDates.kt",
         "app/src/test/**/IsoDatesTest.kt"
       ],
-      "covers": ["Q69", "Q70"]
+      "covers": [
+        "Q69",
+        "Q70"
+      ]
     },
     {
       "id": "UNIT-profile-saved-notice",
@@ -669,7 +866,9 @@
         "app/src/main/**/state/AncState.kt",
         "app/src/test/**/state/ProfileSavedNoticeTest.kt"
       ],
-      "covers": ["Q83"]
+      "covers": [
+        "Q83"
+      ]
     },
     {
       "id": "UNIT-visit-synthetic-flag",
@@ -679,7 +878,9 @@
         "app/src/main/**/storage/SaveVisitCommand.kt",
         "app/src/test/**/storage/VisitSyntheticFlagTest.kt"
       ],
-      "covers": ["Q82"]
+      "covers": [
+        "Q82"
+      ]
     },
     {
       "id": "STATIC-r3l",
@@ -693,7 +894,11 @@
         "app/src/main/res/values/strings.xml",
         ".agents/checks/check_r3l.py"
       ],
-      "covers": ["S64", "S65", "S66"]
+      "covers": [
+        "S64",
+        "S65",
+        "S66"
+      ]
     },
     {
       "id": "STATIC-r3m",
@@ -710,7 +915,13 @@
         "app/src/main/res/values/strings.xml",
         ".agents/checks/check_r3m.py"
       ],
-      "covers": ["S67", "S68", "S69", "S70", "S71"]
+      "covers": [
+        "S67",
+        "S68",
+        "S69",
+        "S70",
+        "S71"
+      ]
     },
     {
       "id": "UNIT-visit-vitals",
@@ -720,7 +931,9 @@
         "app/src/main/**/model/VisitVitals.kt",
         "app/src/test/**/model/VisitVitalsTest.kt"
       ],
-      "covers": ["Q84"]
+      "covers": [
+        "Q84"
+      ]
     },
     {
       "id": "UNIT-save-visit-validation",
@@ -733,7 +946,9 @@
         "app/src/main/**/model/DemoFixtures.kt",
         "app/src/test/**/storage/SaveVisitValidationTest.kt"
       ],
-      "covers": ["Q85"]
+      "covers": [
+        "Q85"
+      ]
     },
     {
       "id": "STATIC-r3n",
@@ -750,7 +965,12 @@
         "app/src/main/res/values/strings.xml",
         ".agents/checks/check_r3n.py"
       ],
-      "covers": ["S72", "S73", "S74", "S75"]
+      "covers": [
+        "S72",
+        "S73",
+        "S74",
+        "S75"
+      ]
     },
     {
       "id": "UNIT-ivf-dating",
@@ -764,7 +984,9 @@
         "app/src/main/**/state/AncState.kt",
         "app/src/test/**/model/IvfDatingTest.kt"
       ],
-      "covers": ["Q88"]
+      "covers": [
+        "Q88"
+      ]
     },
     {
       "id": "UNIT-redating",
@@ -774,7 +996,9 @@
         "app/src/main/**/model/Redating.kt",
         "app/src/test/**/model/RedatingTest.kt"
       ],
-      "covers": ["Q89"]
+      "covers": [
+        "Q89"
+      ]
     },
     {
       "id": "STATIC-r3o",
@@ -786,7 +1010,10 @@
         "app/src/main/**/*.kt",
         ".agents/checks/check_r3o.py"
       ],
-      "covers": ["S76", "S77"]
+      "covers": [
+        "S76",
+        "S77"
+      ]
     },
     {
       "id": "UNIT-print-escape",
@@ -803,7 +1030,10 @@
         "app/src/main/**/security/SecuritySettingsRepository.kt",
         "app/src/test/**/ui/report/PatientPrintHtmlEscapeTest.kt"
       ],
-      "covers": ["Q92", "Q93"]
+      "covers": [
+        "Q92",
+        "Q93"
+      ]
     },
     {
       "id": "STATIC-r3p",
@@ -814,7 +1044,10 @@
         "app/src/main/**/ui/report/PatientTwoPageReportDialog.kt",
         ".agents/checks/check_r3p.py"
       ],
-      "covers": ["S78", "S79"]
+      "covers": [
+        "S78",
+        "S79"
+      ]
     },
     {
       "id": "UNIT-print-titles",
@@ -828,7 +1061,9 @@
         "app/src/main/**/model/DemoModels.kt",
         "app/src/test/**/ui/report/PrintSectionTitlesTest.kt"
       ],
-      "covers": ["Q94"]
+      "covers": [
+        "Q94"
+      ]
     },
     {
       "id": "STATIC-r3q",
@@ -842,7 +1077,11 @@
         "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
         ".agents/checks/check_r3q.py"
       ],
-      "covers": ["S80", "S81", "S82"]
+      "covers": [
+        "S80",
+        "S81",
+        "S82"
+      ]
     },
     {
       "id": "UNIT-severe-bp",
@@ -853,7 +1092,9 @@
         "app/src/main/**/model/DemoModels.kt",
         "app/src/test/**/model/SevereBpAttentionTest.kt"
       ],
-      "covers": ["Q96"]
+      "covers": [
+        "Q96"
+      ]
     },
     {
       "id": "UNIT-print-bp-alert",
@@ -865,7 +1106,9 @@
         "app/src/main/**/model/DemoModels.kt",
         "app/src/test/**/ui/report/PrintBpAlertTest.kt"
       ],
-      "covers": ["Q99"]
+      "covers": [
+        "Q99"
+      ]
     },
     {
       "id": "STATIC-r3r",
@@ -875,7 +1118,9 @@
         "app/src/main/**/MainActivity.kt",
         ".agents/checks/check_r3r.py"
       ],
-      "covers": ["S83"]
+      "covers": [
+        "S83"
+      ]
     },
     {
       "id": "STATIC-r3s",
@@ -888,7 +1133,10 @@
         "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
         ".agents/checks/check_r3s.py"
       ],
-      "covers": ["S84", "S85"]
+      "covers": [
+        "S84",
+        "S85"
+      ]
     },
     {
       "id": "UNIT-obstetric-history",
@@ -899,7 +1147,9 @@
         "app/src/main/**/model/DemoModels.kt",
         "app/src/test/**/model/ObstetricHistoryTest.kt"
       ],
-      "covers": ["Q102"]
+      "covers": [
+        "Q102"
+      ]
     },
     {
       "id": "UNIT-print-obstetric",
@@ -912,7 +1162,10 @@
         "app/src/main/**/model/DemoModels.kt",
         "app/src/test/**/ui/report/PrintObstetricSummaryTest.kt"
       ],
-      "covers": ["Q102", "Q103"]
+      "covers": [
+        "Q102",
+        "Q103"
+      ]
     },
     {
       "id": "STATIC-r3u",
@@ -929,7 +1182,11 @@
         "app/src/main/**/storage/VaultController.kt",
         ".agents/checks/check_r3u.py"
       ],
-      "covers": ["S89", "S90", "S91"]
+      "covers": [
+        "S89",
+        "S90",
+        "S91"
+      ]
     },
     {
       "id": "UNIT-draft-codec",
@@ -940,7 +1197,9 @@
         "app/src/main/**/storage/DraftRecord.kt",
         "app/src/test/**/storage/DraftCodecTest.kt"
       ],
-      "covers": ["Q107"]
+      "covers": [
+        "Q107"
+      ]
     },
     {
       "id": "STATIC-r3t",
@@ -954,7 +1213,11 @@
         "app/src/test/**/ui/GestationalBannerLogicTest.kt",
         ".agents/checks/check_r3t.py"
       ],
-      "covers": ["S86", "S87", "S88"]
+      "covers": [
+        "S86",
+        "S87",
+        "S88"
+      ]
     },
     {
       "id": "UNIT-gestational-display",
@@ -964,7 +1227,9 @@
         "app/src/main/**/model/GestationalAgeEngine.kt",
         "app/src/test/**/model/GestationalDisplayTest.kt"
       ],
-      "covers": ["Q104"]
+      "covers": [
+        "Q104"
+      ]
     },
     {
       "id": "STATIC-r3v",
@@ -979,7 +1244,10 @@
         "app/src/main/**/ui/**/*.kt",
         ".agents/checks/check_r3v.py"
       ],
-      "covers": ["S92", "S93"]
+      "covers": [
+        "S92",
+        "S93"
+      ]
     },
     {
       "id": "STATIC-r3x",
@@ -989,7 +1257,10 @@
         "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
         ".agents/checks/check_r3x.py"
       ],
-      "covers": ["S97", "S98"]
+      "covers": [
+        "S97",
+        "S98"
+      ]
     },
     {
       "id": "UNIT-print-layout",
@@ -999,7 +1270,13 @@
         "app/src/main/**/ui/report/PatientPrintHtmlGenerator.kt",
         "app/src/test/**/ui/report/PrintLayoutTest.kt"
       ],
-      "covers": ["Q115", "Q116", "Q117", "S97", "S98"]
+      "covers": [
+        "Q115",
+        "Q116",
+        "Q117",
+        "S97",
+        "S98"
+      ]
     },
     {
       "id": "UNIT-draft-sync",
@@ -1014,7 +1291,11 @@
         "app/src/test/**/state/DraftMappingTest.kt",
         "app/src/test/**/state/DraftAutosaverTest.kt"
       ],
-      "covers": ["Q109", "Q110", "Q111"]
+      "covers": [
+        "Q109",
+        "Q110",
+        "Q111"
+      ]
     },
     {
       "id": "STATIC-r3w",
@@ -1029,7 +1310,11 @@
         "app/src/main/res/values/strings.xml",
         ".agents/checks/check_r3w.py"
       ],
-      "covers": ["S94", "S95", "S96"]
+      "covers": [
+        "S94",
+        "S95",
+        "S96"
+      ]
     },
     {
       "id": "UNIT-draft-recovery",
@@ -1044,7 +1329,14 @@
         "app/src/test/**/state/DraftRecoveryTest.kt",
         "app/src/test/**/state/DraftAutosaverTest.kt"
       ],
-      "covers": ["Q112", "Q113", "Q114", "S94", "S95", "S96"]
+      "covers": [
+        "Q112",
+        "Q113",
+        "Q114",
+        "S94",
+        "S95",
+        "S96"
+      ]
     },
     {
       "id": "UNIT-all",
@@ -1054,7 +1346,9 @@
         "app/src/main/**/*.kt",
         "app/src/test/**/*.kt"
       ],
-      "covers": ["G1"]
+      "covers": [
+        "G1"
+      ]
     },
     {
       "id": "COMPILE-app",
@@ -1065,7 +1359,9 @@
         "app/src/test/**/*.kt",
         "app/build.gradle*"
       ],
-      "covers": ["G2"]
+      "covers": [
+        "G2"
+      ]
     },
     {
       "id": "STATIC-r3y",
@@ -1078,7 +1374,10 @@
         "app/src/androidTest/**/*.kt",
         ".agents/checks/check_r3y.py"
       ],
-      "covers": ["S99", "S100"]
+      "covers": [
+        "S99",
+        "S100"
+      ]
     },
     {
       "id": "STATIC-r3z",
@@ -1090,7 +1389,10 @@
         "app/src/androidTest/**/*.kt",
         ".agents/checks/check_r3z.py"
       ],
-      "covers": ["S101", "S102"]
+      "covers": [
+        "S101",
+        "S102"
+      ]
     },
     {
       "id": "UNIT-r3z-small",
@@ -1107,7 +1409,16 @@
         "app/src/test/**/ClinicalFormatTest.kt",
         "app/src/test/**/ClinicalPresetsTest.kt"
       ],
-      "covers": ["Q120", "Q121", "Q122", "Q123", "Q124", "Q125", "S101", "S102"]
+      "covers": [
+        "Q120",
+        "Q121",
+        "Q122",
+        "Q123",
+        "Q124",
+        "Q125",
+        "S101",
+        "S102"
+      ]
     },
     {
       "id": "LINT-errors",
@@ -1119,7 +1430,9 @@
         "app/src/main/AndroidManifest.xml",
         "app/build.gradle*"
       ],
-      "covers": ["Q118"]
+      "covers": [
+        "Q118"
+      ]
     },
     {
       "id": "STATIC-r4a",
@@ -1130,7 +1443,13 @@
         "app/src/main/res/values/strings.xml",
         ".agents/checks/check_r4a.py"
       ],
-      "covers": ["S110", "S111", "S112", "S113", "S114"]
+      "covers": [
+        "S110",
+        "S111",
+        "S112",
+        "S113",
+        "S114"
+      ]
     },
     {
       "id": "UNIT-r4a",
@@ -1143,7 +1462,17 @@
         "app/src/test/**/MedicationStatusTest.kt",
         "app/src/test/**/MedicationStatusDraftTest.kt"
       ],
-      "covers": ["Q200", "Q201", "Q202", "Q203", "Q204", "Q205", "Q206", "Q207", "Q208"]
+      "covers": [
+        "Q200",
+        "Q201",
+        "Q202",
+        "Q203",
+        "Q204",
+        "Q205",
+        "Q206",
+        "Q207",
+        "Q208"
+      ]
     },
     {
       "id": "STATIC-r4b",
@@ -1154,7 +1483,11 @@
         "app/src/test/**/*.kt",
         ".agents/checks/check_r4b.py"
       ],
-      "covers": ["S120", "S121", "S122"]
+      "covers": [
+        "S120",
+        "S121",
+        "S122"
+      ]
     },
     {
       "id": "UNIT-r4b",
@@ -1164,7 +1497,13 @@
         "app/src/main/**/model/ClinicalModels.kt",
         "app/src/test/**/UltrasoundImpressionTest.kt"
       ],
-      "covers": ["Q210", "Q211", "Q212", "Q213", "Q214"]
+      "covers": [
+        "Q210",
+        "Q211",
+        "Q212",
+        "Q213",
+        "Q214"
+      ]
     },
     {
       "id": "STATIC-r4c",
@@ -1175,7 +1514,11 @@
         "app/src/main/res/values/strings.xml",
         ".agents/checks/check_r4c.py"
       ],
-      "covers": ["S130", "S131", "S132"]
+      "covers": [
+        "S130",
+        "S131",
+        "S132"
+      ]
     },
     {
       "id": "UNIT-r4c",
@@ -1185,7 +1528,12 @@
         "app/src/main/**/model/codex/*.kt",
         "app/src/test/**/LabItemEditTest.kt"
       ],
-      "covers": ["Q220", "Q221", "Q222", "Q223"]
+      "covers": [
+        "Q220",
+        "Q221",
+        "Q222",
+        "Q223"
+      ]
     },
     {
       "id": "STATIC-r4d",
@@ -1195,7 +1543,11 @@
         "app/src/main/**/*.kt",
         ".agents/checks/check_r4d.py"
       ],
-      "covers": ["S140", "S141", "S142"]
+      "covers": [
+        "S140",
+        "S141",
+        "S142"
+      ]
     },
     {
       "id": "UNIT-r4d",
@@ -1207,7 +1559,14 @@
         "app/src/test/**/LabResultFlagTest.kt",
         "app/src/test/**/LabPanelResolveTest.kt"
       ],
-      "covers": ["Q240", "Q241", "Q242", "Q243", "Q244", "Q245"]
+      "covers": [
+        "Q240",
+        "Q241",
+        "Q242",
+        "Q243",
+        "Q244",
+        "Q245"
+      ]
     },
     {
       "id": "STATIC-r4e",
@@ -1217,7 +1576,12 @@
         "app/src/main/**/*.kt",
         ".agents/checks/check_r4e.py"
       ],
-      "covers": ["S150", "S151", "S152", "S153"]
+      "covers": [
+        "S150",
+        "S151",
+        "S152",
+        "S153"
+      ]
     },
     {
       "id": "UNIT-r4e",
@@ -1229,7 +1593,13 @@
         "app/src/test/**/ClinicalConstantsTest.kt",
         "app/src/test/**/LabPanelQueueTest.kt"
       ],
-      "covers": ["Q250", "Q251", "Q252", "Q253", "Q254"]
+      "covers": [
+        "Q250",
+        "Q251",
+        "Q252",
+        "Q253",
+        "Q254"
+      ]
     },
     {
       "id": "STATIC-r4f",
@@ -1239,7 +1609,12 @@
         "app/src/main/**/*.kt",
         ".agents/checks/check_r4f.py"
       ],
-      "covers": ["S160", "S161", "S162", "S163"]
+      "covers": [
+        "S160",
+        "S161",
+        "S162",
+        "S163"
+      ]
     },
     {
       "id": "UNIT-r4f",
@@ -1251,7 +1626,13 @@
         "app/src/test/**/DueDatesByMethodTest.kt",
         "app/src/test/**/DatingDraftRuleTest.kt"
       ],
-      "covers": ["Q260", "Q261", "Q262", "Q263", "Q264"]
+      "covers": [
+        "Q260",
+        "Q261",
+        "Q262",
+        "Q263",
+        "Q264"
+      ]
     },
     {
       "id": "STATIC-r4g",
@@ -1261,7 +1642,14 @@
         "app/src/main/**/*.kt",
         ".agents/checks/check_r4g.py"
       ],
-      "covers": ["S170", "S171", "S172", "S173", "S174", "S175"]
+      "covers": [
+        "S170",
+        "S171",
+        "S172",
+        "S173",
+        "S174",
+        "S175"
+      ]
     },
     {
       "id": "UNIT-r4g",
@@ -1274,7 +1662,14 @@
         "app/src/test/**/PatientDatingDraftTest.kt",
         "app/src/test/**/IntakeDatingRuleTest.kt"
       ],
-      "covers": ["Q270", "Q271", "Q272", "Q273", "Q274", "Q275"]
+      "covers": [
+        "Q270",
+        "Q271",
+        "Q272",
+        "Q273",
+        "Q274",
+        "Q275"
+      ]
     },
     {
       "id": "STATIC-r5a",
@@ -1285,7 +1680,12 @@
         "app/src/main/res/values/strings.xml",
         ".agents/checks/check_r5a.py"
       ],
-      "covers": ["S200", "S201", "S202", "S203"]
+      "covers": [
+        "S200",
+        "S201",
+        "S202",
+        "S203"
+      ]
     },
     {
       "id": "STATIC-r5b",
@@ -1296,7 +1696,12 @@
         "app/src/main/res/values/strings.xml",
         ".agents/checks/check_r5b.py"
       ],
-      "covers": ["S210", "S211", "S212", "S213"]
+      "covers": [
+        "S210",
+        "S211",
+        "S212",
+        "S213"
+      ]
     },
     {
       "id": "STATIC-r5c",
@@ -1307,7 +1712,12 @@
         "app/src/main/res/values/strings.xml",
         ".agents/checks/check_r5c.py"
       ],
-      "covers": ["S220", "S221", "S222", "S223"]
+      "covers": [
+        "S220",
+        "S221",
+        "S222",
+        "S223"
+      ]
     },
     {
       "id": "STATIC-r5d",
@@ -1318,7 +1728,11 @@
         "app/src/main/res/values/strings.xml",
         ".agents/checks/check_r5d.py"
       ],
-      "covers": ["S230", "S231", "S232"]
+      "covers": [
+        "S230",
+        "S231",
+        "S232"
+      ]
     },
     {
       "id": "STATIC-r6a",
@@ -1328,7 +1742,12 @@
         "app/src/main/**/*.kt",
         ".agents/checks/check_r6a.py"
       ],
-      "covers": ["S300", "S301", "S302", "S303"]
+      "covers": [
+        "S300",
+        "S301",
+        "S302",
+        "S303"
+      ]
     },
     {
       "id": "STATIC-r6b1",
@@ -1340,7 +1759,16 @@
         "app/src/test/**/*.kt",
         ".agents/checks/check_r6b1.py"
       ],
-      "covers": ["S400", "S401", "S402", "S403", "S404", "S405", "S406", "S407"]
+      "covers": [
+        "S400",
+        "S401",
+        "S402",
+        "S403",
+        "S404",
+        "S405",
+        "S406",
+        "S407"
+      ]
     },
     {
       "id": "STATIC-r6b2",
@@ -1350,7 +1778,70 @@
         "app/src/main/**/*.kt",
         ".agents/checks/check_r6b2.py"
       ],
-      "covers": ["S410", "S411", "S412", "S413", "S414", "S415", "S416"]
+      "covers": [
+        "S410",
+        "S411",
+        "S412",
+        "S413",
+        "S414",
+        "S415",
+        "S416"
+      ]
+    },
+    {
+      "id": "UNIT-labbatch-commands",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.storage.LabBatchCommandTest'",
+      "deps": [
+        "app/src/main/**/storage/LabBatchCommands.kt",
+        "app/src/test/**/LabBatchCommandTest.kt"
+      ],
+      "covers": [
+        "B8"
+      ]
+    },
+    {
+      "id": "UNIT-labbatch-draft",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.state.LabBatchDraftTest'",
+      "deps": [
+        "app/src/main/**/state/LabBatchState.kt",
+        "app/src/main/**/state/AncState.kt",
+        "app/src/test/**/LabBatchDraftTest.kt"
+      ],
+      "covers": [
+        "B6",
+        "B7"
+      ]
+    },
+    {
+      "id": "UNIT-labbatch-undo",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.state.LabBatchUndoTest'",
+      "deps": [
+        "app/src/main/**/state/UndoCoordinator.kt",
+        "app/src/test/**/LabBatchUndoTest.kt"
+      ],
+      "covers": [
+        "B3"
+      ]
+    },
+    {
+      "id": "DB-labbatch",
+      "tier": 3,
+      "cmd": "bash .agents/scripts/run_emulator_test_class.sh com.sherifradwan.ancnative.storage.LabBatchDbTest emulator-5554",
+      "deps": [
+        "app/src/main/**/storage/LabBatchCommands.kt",
+        "app/src/main/**/storage/RecordsRepository.kt",
+        "app/src/androidTest/**/LabBatchDbTest.kt"
+      ],
+      "covers": [
+        "B1",
+        "B2",
+        "B3",
+        "B4",
+        "B5"
+      ]
     }
   ]
 }
