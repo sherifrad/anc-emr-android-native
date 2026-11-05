@@ -221,6 +221,9 @@ class UndoCoordinator(
         batchId: String,
         entries: List<LabBatchEntry>,
         receipt: ClinicalCommandReceipt,
+        /** Supplied by the caller: the shared layer itself never names a record kind. */
+        type: DeletableType,
+        label: String,
     ) {
         val state = currentState()
         if (state.vaultState !is VaultState.Unlocked) return
@@ -243,9 +246,9 @@ class UndoCoordinator(
         val offer = UndoOffer(
             token = token,
             patientId = patientId,
-            type = DeletableType.LAB,
+            type = type,
             action = UndoAction.SAVE,
-            label = if (entries.size == 1) "1 lab result" else "${entries.size} lab results",
+            label = label,
             phase = UndoPhase.READY,
             patientName = patient.displayName.trim(),
             recordId = batchId,

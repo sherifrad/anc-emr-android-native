@@ -79,6 +79,8 @@ class LabBatchUndoTest {
             batchId = batchId,
             entries = listOf(entry("b1"), entry("b2"), entry("b3")),
             receipt = receipt(),
+            type = DeletableType.LAB,
+            label = "3 lab results",
         )
 
         val offer = state.undoOffer
@@ -109,6 +111,8 @@ class LabBatchUndoTest {
             batchId = batchId,
             entries = listOf(entry("b1"), entry("missing")),
             receipt = receipt(),
+            type = DeletableType.LAB,
+            label = "2 lab results",
         )
         assertNull("a partial snapshot must not offer an undo", state.undoOffer)
     }
