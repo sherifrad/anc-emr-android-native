@@ -422,3 +422,9 @@ Keeps the history from the handoff until Claude returns after its quota reset. F
 - Two "every record kind is known" invariants had to learn the batch kinds: `DeletableRegistryTest` (a batch has no single-record adapter, so its kinds are allow-listed) and the `ClinicalValidationFailed` reducer (a validation failure is not a storage error; the batch draft has no error surface yet).
 - Verified: `run_build_gate.sh` GATE OK; **957** unit tests (9 new command tests), 0 failures; `LabBatchDbTest` **4/4** on the API 26 emulator (save + one receipt, stale-reference abort, delete + restore at revision 2, cross-patient rejection).
 - NOT done yet: the batch draft in `AncState`, the one-action Undo offer in `UndoCoordinator`, the CBC/Urine catalogue entries, and the three-tab screen. Nothing calls the new commands from the UI.
+
+## 2026-11-05 — Laboratory batch, logic slice 2: one-action undo (`111056f`, `0e66cdd`)
+- `UndoCoordinator.offerLabBatchSaveUndo` builds one `DeleteLabBatchCommand` from the rows the save just produced (revision + content hash each) and arms a single offer labelled "N lab results". Requesting it executes exactly one command, so the batch goes together or not at all. No offer is made when the fresh snapshot does not hold every saved row.
+- `check_r6c` R6C1 rejected the first version: the coordinator named `DeletableType.LAB`. The caller now supplies the type and the label, which is how every other call site works; the shared layer stays kind-free (`0e66cdd`).
+- Verified: `run_build_gate.sh` GATE OK; **959** unit tests, 0 failures (2 new coordinator tests); `run_static_checks.sh` STATIC CHECKS OK.
+- Still not wired: the ViewModel does not call the offer yet, because the batch draft and the three-tab screen do not exist. Next: batch draft in `AncState`, then the UI and the CBC/Urine panels.
