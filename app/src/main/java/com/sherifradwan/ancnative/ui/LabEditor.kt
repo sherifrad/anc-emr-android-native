@@ -209,6 +209,15 @@ fun LabEditor(
     val codexLabItems by codexRepo.labCodexItems.collectAsState()
     val codexGroups by codexRepo.labCategoryGroups.collectAsState()
 
+    val displayedItems = remember(codexLabItems, codexGroups, selectedGroupName) {
+        val grp = codexGroups.firstOrNull { it.name == selectedGroupName }
+        if (grp != null) {
+            resolveLabPanel(grp, codexLabItems).tests
+        } else {
+            codexLabItems
+        }
+    }
+
     // Batch info dialog opens at once while the date is still missing
     var batchInfoOpen by rememberSaveable { mutableStateOf(draft.values.date.isBlank()) }
     var testSelectorOpen by rememberSaveable { mutableStateOf(draft.values.testName.isBlank()) }
@@ -443,6 +452,34 @@ fun LabEditor(
                 }
             }
 
+            if (testSelectorOpen) {
+                EditorField(
+                    value = draft.values.testName,
+                    onValueChange = { onEvent(AncEvent.LabDraftChanged(LabDraftField.NAME, it)) },
+                    label = stringResource(R.string.test_name),
+                    tag = "labName",
+                    enabled = enabled,
+                    error = draft.errors.contains(ClinicalValidationError.REQUIRED_NAME),
+                    singleLine = true,
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Next,
+                )
+
+                QuickPresetChips(
+                    title = if (selectedGroupName != null) "Common Tests: $selectedGroupName" else stringResource(R.string.common_tests),
+                    items = displayedItems.map { it.testName },
+                    enabled = enabled,
+                    onSelect = { selectedName ->
+                        clearPanelQueue()
+                        val item = codexLabItems.firstOrNull { it.testName.equals(selectedName, ignoreCase = true) }
+                        if (item != null) {
+                            loadLabItemIntoDraft(item, onEvent)
+                        }
+                    },
+                    tagPrefix = "labPreset",
+                )
+            }
+
             val unitText = draft.values.unit.trim()
             val refText = draft.values.referenceRange.trim()
             val subtitle = when {
@@ -452,7 +489,7 @@ fun LabEditor(
                 isDipstick -> "Dipstick"
                 else -> ""
             }
-            if (subtitle.isNotEmpty()) {
+            if (subtitle.isNotEmpty() && !testSelectorOpen) {
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
@@ -599,7 +636,7 @@ fun LabEditor(
             }
         }
 
-        // Collapsible test selector: change test, panels, quick picks, category
+        // Collapsible category filter and custom test template options
         SectionCard(
             title = "",
             tag = "labAddTestsCard",
@@ -612,22 +649,10 @@ fun LabEditor(
             )
 
             if (testSelectorOpen) {
-                EditorField(
-                    value = draft.values.testName,
-                    onValueChange = { onEvent(AncEvent.LabDraftChanged(LabDraftField.NAME, it)) },
-                    label = stringResource(R.string.test_name),
-                    tag = "labName",
-                    enabled = enabled,
-                    error = draft.errors.contains(ClinicalValidationError.REQUIRED_NAME),
-                    singleLine = true,
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Next,
-                )
-
                 if (codexGroups.isNotEmpty()) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                         Text(
-                            text = "📦 Diagnostic Panels:",
+                            text = "Filter by Category:",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary,
@@ -644,7 +669,7 @@ fun LabEditor(
                                     selectedGroupName = null
                                     clearPanelQueue()
                                 },
-                                label = { Text("All Tests ($labItemCount)") },
+                                label = { Text("All ($labItemCount)") },
                                 modifier = Modifier.minimumTouchTarget().testTag("allLabTestsChip"),
                             )
                             codexGroups.forEach { grp ->
@@ -656,21 +681,9 @@ fun LabEditor(
                                             clearPanelQueue()
                                         } else {
                                             selectedGroupName = grp.name
-                                            val resolution = resolveLabPanel(grp, codexLabItems)
-                                            val step = nextLabPanelTest(resolution.tests.map { it.id }, codexLabItems)
-                                            if (step.item != null) {
-                                                panelTotalCount = resolution.tests.size
-                                                currentPanelIndex = 1
-                                                currentPanelItemId = step.item.id
-                                                panelRemainingIds = step.remainingIds
-                                                currentLabId = draft.labId
-                                                loadLabItemIntoDraft(step.item, onEvent)
-                                            } else {
-                                                clearPanelQueue()
-                                            }
                                         }
                                     },
-                                    label = { Text("${grp.name} (${grp.testNames.size})") },
+                                    label = { Text(grp.name) },
                                     modifier = Modifier.minimumTouchTarget().testTag("labGroupChip-${grp.id}"),
                                 )
                             }
@@ -678,30 +691,7 @@ fun LabEditor(
                     }
                 }
 
-                val displayedItems = remember(codexLabItems, codexGroups, selectedGroupName) {
-                    val grp = codexGroups.firstOrNull { it.name == selectedGroupName }
-                    if (grp != null) {
-                        resolveLabPanel(grp, codexLabItems).tests
-                    } else {
-                        codexLabItems
-                    }
-                }
-
-                QuickPresetChips(
-                    title = if (selectedGroupName != null) "Panel Tests: $selectedGroupName" else stringResource(R.string.common_tests),
-                    items = displayedItems.map { it.testName },
-                    enabled = enabled,
-                    onSelect = { selectedName ->
-                        clearPanelQueue()
-                        val item = codexLabItems.firstOrNull { it.testName.equals(selectedName, ignoreCase = true) }
-                        if (item != null) {
-                            loadLabItemIntoDraft(item, onEvent)
-                        }
-                    },
-                    tagPrefix = "labPreset",
-                )
-
-                // Offer to keep a new test in the user's test list
+                // Offer to keep a new test template in the user's test list
                 val trimmedTestName = draft.values.testName.trim()
                 val isAlreadyInCodex = codexLabItems.any { it.testName.equals(trimmedTestName, ignoreCase = true) }
                 if (trimmedTestName.isNotBlank() && !isAlreadyInCodex) {
@@ -716,7 +706,7 @@ fun LabEditor(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                text = "New test: add it to your lab test list?",
+                                text = "New test template: save to app's test list?",
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.weight(1f),
@@ -740,7 +730,7 @@ fun LabEditor(
                             ) {
                                 Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(4.dp))
-                                Text("Add to list")
+                                Text("Add template")
                             }
                         }
                     }
