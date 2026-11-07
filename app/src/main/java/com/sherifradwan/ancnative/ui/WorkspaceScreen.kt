@@ -49,6 +49,11 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.CheckCircle
+import com.sherifradwan.ancnative.model.previousDeliverySummary
 import androidx.compose.runtime.collectAsState
 import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
 import com.sherifradwan.ancnative.model.MEDICATION_STATUS_DISCONTINUED
@@ -739,30 +744,29 @@ private fun LazyListScope.workspaceBedsideContentItems(
 
     when (tab) {
         WorkspaceBedsideTab.HISTORY -> {
-            // 1. Pregnancy Dating
-            item { DatingCard(patient) }
-            if (patient.status != "archived") {
-                item {
-                    PencilEditButton(
-                        contentDescription = stringResource(R.string.edit_dating),
-                        tag = "editDating",
-                        onClick = {
+            // 1. Pregnancy Dating Card
+            item {
+                DatingCard(
+                    patient = patient,
+                    onEdit = if (patient.status != "archived") {
+                        {
                             onEvent(
                                 AncEvent.StartDatingEditor(
                                     patientId = patient.id,
                                     editorSessionId = UUID.randomUUID().toString(),
                                 ),
                             )
-                        },
-                    )
-                }
+                        }
+                    } else null,
+                )
             }
 
             // 2. Obstetric History & Parity (G/P/A)
-            if (patient.status != "archived") {
-                item {
-                    Button(
-                        onClick = {
+            item {
+                ObstetricParityCard(
+                    patient = patient,
+                    onAddPregnancy = if (patient.status != "archived") {
+                        {
                             onEvent(
                                 AncEvent.StartPregnancyEditor(
                                     patientId = patient.id,
@@ -771,15 +775,20 @@ private fun LazyListScope.workspaceBedsideContentItems(
                                     editorSessionId = UUID.randomUUID().toString(),
                                 ),
                             )
-                        },
-                        modifier = Modifier.minimumTouchTarget().testTag("addPreviousPregnancy"),
-                    ) {
-                        Text(stringResource(R.string.add_previous_pregnancy))
-                    }
-                }
+                        }
+                    } else null,
+                )
             }
+
             if (patient.previousPregnancies.isEmpty()) {
-                item { Text(stringResource(R.string.no_previous_pregnancies)) }
+                item {
+                    Text(
+                        stringResource(R.string.no_previous_pregnancies),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    )
+                }
             } else {
                 items(patient.previousPregnancies, key = { it.id }) { pregnancy ->
                     PreviousPregnancyCard(
@@ -803,17 +812,15 @@ private fun LazyListScope.workspaceBedsideContentItems(
             }
 
             // 3. Medical, Surgical, Family Histories
-            item { HistoriesCard(patient) }
-            if (patient.status != "archived") {
-                item {
-                    PencilEditButton(
-                        contentDescription = stringResource(R.string.edit_other_histories),
-                        tag = "editHistories",
-                        onClick = {
+            item {
+                HistoriesCard(
+                    patient = patient,
+                    onEdit = if (patient.status != "archived") {
+                        {
                             onEvent(AncEvent.StartHistoriesEditor(patient.id, UUID.randomUUID().toString()))
-                        },
-                    )
-                }
+                        }
+                    } else null,
+                )
             }
 
             // 4. Episode Overview
@@ -1220,16 +1227,243 @@ private fun VisitCard(
 }
 
 @Composable
-private fun HistoriesCard(patient: DemoPatient) {
+private fun HistoriesCard(
+    patient: DemoPatient,
+    onEdit: (() -> Unit)? = null,
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Icon(
+                        Icons.Default.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Text(
+                        text = "Medical & Surgical History",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                if (onEdit != null) {
+                    PencilEditButton(
+                        contentDescription = stringResource(R.string.edit_other_histories),
+                        tag = "editHistories",
+                        onClick = onEdit,
+                    )
+                }
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f), thickness = 1.dp)
+
             FactRow(R.string.medical_history, patient.medicalHistory)
             FactRow(R.string.surgical_history, patient.surgicalHistory)
             FactRow(R.string.family_history, patient.familyHistory)
             FactRow(R.string.allergy_history, patient.allergyHistory)
+
+            val isNoKnownAllergies = patient.allergyHistory.isNullOrBlank() ||
+                patient.allergyHistory.contains("NKDA", ignoreCase = true) ||
+                patient.allergyHistory.contains("No known", ignoreCase = true) ||
+                patient.allergyHistory.contains("none", ignoreCase = true)
+
+            if (isNoKnownAllergies) {
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color(0xFF176B70).copy(alpha = 0.12f),
+                    border = BorderStroke(1.dp, Color(0xFF176B70).copy(alpha = 0.3f)),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = Color(0xFF176B70),
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Text(
+                            text = "No Known Drug Allergies (NKDA)",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF176B70),
+                        )
+                    }
+                }
+            } else {
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f)),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(
+                            Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Text(
+                            text = "Allergies: ${patient.allergyHistory}",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ObstetricParityCard(
+    patient: DemoPatient,
+    onAddPregnancy: (() -> Unit)? = null,
+) {
+    val g = patient.gravida ?: 1L
+    val p = patient.parity ?: 0L
+    val a = patient.abortion ?: 0L
+    val summary = previousDeliverySummary(patient)
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Icon(
+                        Icons.Default.Person,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Text(
+                        text = "Obstetric Parity",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                    ) {
+                        Text(
+                            text = "G$g P$p" + if (a > 0) " A$a" else "",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        )
+                    }
+                }
+                if (onAddPregnancy != null) {
+                    Button(
+                        onClick = onAddPregnancy,
+                        modifier = Modifier
+                            .minimumTouchTarget()
+                            .testTag("addPreviousPregnancy"),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(stringResource(R.string.add_previous_pregnancy), style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+            }
+
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 10.dp, horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("GRAVIDA", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("$g", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    }
+                    Box(Modifier.width(1.dp).height(24.dp).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)))
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("PARITY", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("$p", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    }
+                    Box(Modifier.width(1.dp).height(24.dp).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)))
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("LOSSES (A)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("$a", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+
+            Text(
+                text = summary,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            if (!patient.obstetricNotes.isNullOrBlank()) {
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(Modifier.padding(10.dp)) {
+                        Text(
+                            text = "Obstetric Notes",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        Text(
+                            text = patient.obstetricNotes,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -1242,10 +1476,44 @@ private fun PreviousPregnancyCard(
     onDelete: () -> Unit = {},
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth().testTag("pregnancy-${pregnancy.id}"),
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("pregnancy-${pregnancy.id}"),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                val headerTitle = pregnancy.outcomeText ?: pregnancy.outcome ?: pregnancy.pregnancyType ?: "Previous Pregnancy"
+                Text(
+                    text = headerTitle,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                if (!pregnancy.dateText.isNullOrBlank()) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    ) {
+                        Text(
+                            text = pregnancy.dateText,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        )
+                    }
+                }
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f), thickness = 1.dp)
+
             FactRow(R.string.entered_date_text, pregnancy.dateText)
             FactRow(R.string.entered_outcome_text, pregnancy.outcomeText)
             FactRow(R.string.pregnancy_type, pregnancy.pregnancyType)
@@ -1279,13 +1547,65 @@ private fun PreviousPregnancyCard(
 }
 
 @Composable
-private fun DatingCard(patient: DemoPatient) {
+private fun DatingCard(
+    patient: DemoPatient,
+    onEdit: (() -> Unit)? = null,
+) {
     val dating = patient.dating
     Card(
-        modifier = Modifier.fillMaxWidth().testTag("datingCard"),
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("datingCard"),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
     ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Icon(
+                        Icons.Default.DateRange,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Text(
+                        text = "Pregnancy Dating",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    if (!dating?.datingMethod.isNullOrBlank()) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                        ) {
+                            Text(
+                                text = dating?.datingMethod.orEmpty(),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            )
+                        }
+                    }
+                }
+                if (onEdit != null) {
+                    PencilEditButton(
+                        contentDescription = stringResource(R.string.edit_dating),
+                        tag = "editDating",
+                        onClick = onEdit,
+                    )
+                }
+            }
+
             if (dating == null) {
                 Text(
                     text = stringResource(R.string.no_dating_recorded),
@@ -1296,6 +1616,59 @@ private fun DatingCard(patient: DemoPatient) {
             }
 
             val ga = dating.calculateGestationalAge()
+            val edd = dating.agreedEdd ?: dating.ultrasoundEdd ?: patient.dating?.calculateEstimatedDueDate()?.toString()
+            if (!ga.isNullOrBlank() || !edd.isNullOrBlank()) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceAround,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "GESTATIONAL AGE",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                text = ga ?: "—",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .height(32.dp)
+                                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "ESTIMATED DUE DATE",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                text = edd ?: "—",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    }
+                }
+            }
+
             if (!ga.isNullOrBlank()) {
                 FactRow(R.string.current_gestational_age, ga)
             }
@@ -1502,13 +1875,16 @@ private fun EpisodeOverviewContent(patient: DemoPatient, onEvent: (AncEvent) -> 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Card(
             modifier = Modifier.fillMaxWidth().testTag("overviewMilestones"),
+            shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
         ) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
                     text = stringResource(R.string.milestones),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
                 )
                 val ga = patient.dating?.calculateGestationalAge()
                 FactRow(R.string.current_gestational_age, ga)
@@ -1519,13 +1895,16 @@ private fun EpisodeOverviewContent(patient: DemoPatient, onEvent: (AncEvent) -> 
 
         Card(
             modifier = Modifier.fillMaxWidth().testTag("overviewQuickActions"),
+            shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
         ) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = stringResource(R.string.quick_actions),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
                 )
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -1561,13 +1940,16 @@ private fun EpisodeOverviewContent(patient: DemoPatient, onEvent: (AncEvent) -> 
 
         Card(
             modifier = Modifier.fillMaxWidth().testTag("overviewClinicalSummary"),
+            shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
         ) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
                     text = stringResource(R.string.episode_overview),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
                 )
                 FactRow(R.string.total_visits, patient.visits.size.toString())
                 val latestVisit = patient.visits.maxByOrNull { it.date }
