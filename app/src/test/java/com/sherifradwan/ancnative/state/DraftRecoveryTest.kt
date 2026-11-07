@@ -61,6 +61,11 @@ class DraftRecoveryTest {
         medicationDraft = MedicationDraft(session, "p1", "m1", 9L, 4L, MedicationDraftValues(), values),
     )
 
+    private fun labBatch(session: String = "s1", basePatientRevision: Long = 5L) = base().copy(
+        route = AncRoute.LabBatchEditor("p1"),
+        labBatchDraft = LabBatchDraft("p1", session, basePatientRevision, "2026-11-05", null),
+    )
+
     private fun recordFor(state: AncState, fields: Map<String, String>): DraftRecord {
         val slot = activeDraftSlot(state)!!
         return DraftRecord(slot.patientId, slot.kind, DraftEditorKind.EDIT, null, null, fields, 1000L)
@@ -73,7 +78,7 @@ class DraftRecoveryTest {
         AncReducer.reduce(state, AncEvent.DraftRecoveryFound(prompt(state, fields)))
 
     @Test
-    fun sessionIdAndBaseRevisionForEachOfTheNineEditors() {
+    fun sessionIdAndBaseRevisionForEachOfTheTenEditors() {
         val cases = listOf(
             visit() to 3L,
             patient() to 4L,
@@ -84,6 +89,7 @@ class DraftRecoveryTest {
             ultrasound() to 2L,
             lab() to 3L,
             medication() to 4L,
+            labBatch() to 5L,
         )
         cases.forEach { (state, revision) ->
             assertEquals("s1", activeEditorSessionId(state))
@@ -105,7 +111,7 @@ class DraftRecoveryTest {
     }
 
     @Test
-    fun baseRevisionMatchesWhatTheDraftRecordStoresForAllNineScreens() {
+    fun baseRevisionMatchesWhatTheDraftRecordStoresForAllTenScreens() {
         val typed = listOf(
             visit(values = DraftValues(notes = "x")),
             patient(values = PatientDraftValues(displayName = "x")),
@@ -116,6 +122,13 @@ class DraftRecoveryTest {
             ultrasound(values = UltrasoundDraftValues(impression = "x")),
             lab(values = LabDraftValues(result = "1")),
             medication(values = MedicationDraftValues(name = "x")),
+            labBatch().let {
+                it.copy(
+                    labBatchDraft = it.labBatchDraft?.copy(
+                        items = listOf(LabBatchItem("l1", "CBC", "Hb", "12", "g/dL", "12-16", false, "")),
+                    ),
+                )
+            },
         )
         typed.forEach { state ->
             val record = draftRecordFor(state, 1L)

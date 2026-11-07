@@ -19,6 +19,7 @@ fun activeEditorSessionId(state: AncState): String? =
         ?: state.ultrasoundDraft?.editorSessionId
         ?: state.labDraft?.editorSessionId
         ?: state.medicationDraft?.editorSessionId
+        ?: state.labBatchDraft?.editorSessionId
 
 fun activeEditorBaseRevision(state: AncState): Long? {
     state.draft?.let { return it.baseRevision?.toLong() }
@@ -30,6 +31,7 @@ fun activeEditorBaseRevision(state: AncState): Long? {
     state.ultrasoundDraft?.let { return it.baseScanRevision }
     state.labDraft?.let { return it.baseLabRevision }
     state.medicationDraft?.let { return it.baseMedicationRevision }
+    state.labBatchDraft?.let { return it.basePatientRevision }
     return null
 }
 

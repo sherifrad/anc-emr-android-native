@@ -190,6 +190,8 @@ enum class ClinicalValidationError {
     SAVE_FAILED,
 }
 enum class SavePhase { IDLE, PENDING, RECONCILING, ERROR, UNRESOLVED }
+fun SavePhase.blocksEditing(): Boolean =
+    this == SavePhase.PENDING || this == SavePhase.RECONCILING || this == SavePhase.UNRESOLVED
 enum class SaveUiError {
     CONFIRMED_NOT_SAVED,
     STALE_OR_CONFLICT,
@@ -1188,16 +1190,19 @@ object AncReducer {
             is AncEvent.UndoExpired -> {
                 if (state.undoOffer?.token == event.token) state.copy(undoOffer = null) else state
             }
-            is AncEvent.StartLabBatch -> state.copy(
-                labBatchDraft = LabBatchDraft(
-                    patientId = event.patientId,
-                    editorSessionId = event.sessionId,
-                    basePatientRevision = event.basePatientRevision,
-                    date = event.date,
-                    labName = event.labName,
-                ),
-                route = AncRoute.LabBatchEditor(event.patientId),
-            )
+            is AncEvent.StartLabBatch -> {
+                if (state.savePhase.blocksEditing() || state.hasDirtyDraft) state
+                else state.copy(
+                    labBatchDraft = LabBatchDraft(
+                        patientId = event.patientId,
+                        editorSessionId = event.sessionId,
+                        basePatientRevision = event.basePatientRevision,
+                        date = event.date,
+                        labName = event.labName,
+                    ),
+                    route = AncRoute.LabBatchEditor(event.patientId),
+                )
+            }
             is AncEvent.LabBatchItemsAdded -> state.copy(
                 labBatchDraft = state.labBatchDraft?.add(event.items),
             )
@@ -1858,7 +1863,4 @@ object AncReducer {
 
     private fun AncState.canAccept(token: PendingSaveToken): Boolean =
         (savePhase == SavePhase.IDLE || savePhase == SavePhase.ERROR) && activeEditorSessionId(this) == token.editorSessionId
-
-    private fun SavePhase.blocksEditing(): Boolean =
-        this == SavePhase.PENDING || this == SavePhase.RECONCILING || this == SavePhase.UNRESOLVED
 }

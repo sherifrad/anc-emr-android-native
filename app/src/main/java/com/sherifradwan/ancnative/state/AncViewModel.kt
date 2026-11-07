@@ -571,7 +571,8 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
 
     /** Opens a new laboratory batch on today's date; the screen adds the tests. */
     fun startLabBatch(patientId: String) {
-        val patient = _state.value.patient(patientId) ?: return
+        val patient = _state.value.patient(patientId)?.takeIf { it.status != "archived" } ?: return
+        if (_state.value.savePhase.blocksEditing() || _state.value.hasDirtyDraft) return
         dispatch(
             AncEvent.StartLabBatch(
                 patientId = patientId,
