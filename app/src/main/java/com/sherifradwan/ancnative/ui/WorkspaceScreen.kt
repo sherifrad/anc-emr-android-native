@@ -2,6 +2,7 @@ package com.sherifradwan.ancnative.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.background
@@ -74,6 +75,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.PrimaryScrollableTabRow
@@ -184,8 +186,8 @@ fun WorkspaceScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = horizontalPadding, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                    .padding(horizontal = horizontalPadding, vertical = 6.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 WorkspaceTopBar(
                     patient = patient,
@@ -344,44 +346,175 @@ private fun WorkspaceTopBar(
     onOpenReport: () -> Unit,
     onOpenAttentionDialog: () -> Unit,
 ) {
-    Row(
+    val isDark = isSystemInDarkTheme()
+
+    Card(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.weight(1f),
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            IconButton(
-                onClick = { onEvent(AncEvent.Back) },
-                modifier = Modifier.minimumTouchTarget(),
+            // Row 1: Back + Patient Name & Age & GPA + Action Buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.back),
-                )
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = patient.displayName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.semantics { heading() },
-                )
-                val ga = patient.dating?.calculateGestationalAge(asOfDate)
-                if (ga != null) {
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = MaterialTheme.colorScheme.tertiaryContainer,
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.weight(1f),
+                ) {
+                    IconButton(
+                        onClick = { onEvent(AncEvent.Back) },
+                        modifier = Modifier.minimumTouchTarget(),
                     ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Text(
+                                text = patient.displayName,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.semantics { heading() },
+                            )
+                            if (formatAgeYears(patient.ageText) != null) {
+                                PatientAgeBadge(ageText = patient.ageText)
+                            }
+                        }
+                        val caseDisplay = patient.caseId.ifBlank { patient.id }
                         Text(
-                            text = ga.toString(),
-                            style = MaterialTheme.typography.labelMedium,
+                            text = caseDisplay,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    IconButton(
+                        onClick = onOpenAttentionDialog,
+                        modifier = Modifier.minimumTouchTarget().testTag("workspaceAttentionButton"),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = "Clinical Attention & Alerts",
+                            tint = if (patient.clinicalAttention.isNullOrBlank()) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
+
+                    IconButton(
+                        onClick = onOpenReport,
+                        modifier = Modifier.minimumTouchTarget().testTag("workspaceReportButton"),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Print,
+                            contentDescription = stringResource(R.string.print_patient_report),
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { onEvent(AncEvent.OpenProfile(patient.id)) },
+                        modifier = Modifier.minimumTouchTarget().testTag("workspaceProfile"),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AccountCircle,
+                            contentDescription = stringResource(R.string.profile),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
+                }
+            }
+
+            // Row 2: Metadata Strip (Risk Badge, GPA, Blood Group, GA, EDD, Allergy)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), thickness = 0.8.dp)
+
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                // 1. Risk Level Badge
+                ClinicalRiskBadge(isHighRisk = isHighRisk(patient.riskLevel))
+
+                // 2. Parity Pill (G/P/A)
+                val g = patient.gravida ?: 1L
+                val p = patient.parity ?: 0L
+                val a = patient.abortion ?: 0L
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                ) {
+                    Text(
+                        text = "G$g P$p A$a",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                }
+
+                // 2. Blood Group
+                if (!patient.bloodGroupText.isNullOrBlank()) {
+                    val isRhNeg = isRhNegative(patient.bloodGroupText)
+                    val isRhPos = isRhPositive(patient.bloodGroupText)
+                    val bgSurface = when {
+                        isRhNeg -> if (isDark) TagBloodNegativeDarkBg else TagBloodNegativeBg
+                        isRhPos -> if (isDark) TagBloodPositiveDarkBg else TagBloodPositiveBg
+                        else -> if (isDark) TagBloodNeutralDarkBg else TagBloodNeutralBg
+                    }
+                    val bgText = when {
+                        isRhNeg -> if (isDark) TagBloodNegativeDarkText else TagBloodNegativeText
+                        isRhPos -> if (isDark) TagBloodPositiveDarkText else TagBloodPositiveText
+                        else -> if (isDark) TagBloodNeutralDarkText else TagBloodNeutralText
+                    }
+                    Surface(shape = RoundedCornerShape(6.dp), color = bgSurface) {
+                        Text(
+                            text = formatBloodGroup(patient.bloodGroupText).orEmpty(),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = bgText,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        )
+                    }
+                }
+
+                // 3. Gestational Age
+                val gaResult = patient.dating?.calculateGestationalAgeResult()
+                val ga = patient.dating?.calculateGestationalAge(asOfDate)
+                val gaText = gaResult?.shortWeeksText ?: ga?.toString()
+                if (gaText != null) {
+                    Surface(shape = RoundedCornerShape(6.dp), color = MaterialTheme.colorScheme.tertiaryContainer) {
+                        Text(
+                            text = "GA $gaText",
+                            style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onTertiaryContainer,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
@@ -390,45 +523,48 @@ private fun WorkspaceTopBar(
                         )
                     }
                 }
-            }
-        }
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(
-                onClick = onOpenAttentionDialog,
-                modifier = Modifier.minimumTouchTarget().testTag("workspaceAttentionButton"),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Warning,
-                    contentDescription = "Clinical Attention & Alerts",
-                    tint = if (patient.clinicalAttention.isNullOrBlank()) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.error,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
-            IconButton(
-                onClick = onOpenReport,
-                modifier = Modifier.minimumTouchTarget().testTag("workspaceReportButton"),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Print,
-                    contentDescription = "Print 2-Page Clinical Report",
-                    tint = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
-            IconButton(
-                onClick = { onEvent(AncEvent.OpenProfile(patient.id)) },
-                modifier = Modifier.minimumTouchTarget().testTag("workspaceProfile"),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.AccountCircle,
-                    contentDescription = stringResource(R.string.profile),
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(26.dp),
-                )
+                // 4. EDD
+                val edd = patient.dating?.agreedEdd ?: patient.dating?.calculateEstimatedDueDate()?.toString()
+                if (!edd.isNullOrBlank()) {
+                    Surface(shape = RoundedCornerShape(6.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+                        Text(
+                            text = "EDD $edd",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        )
+                    }
+                }
+
+                // 5. Allergy Status
+                val allergies = patient.allergyHistory
+                val allergyClean = allergies?.trim()
+                val isNoAllergy = allergyClean.isNullOrBlank() ||
+                    allergyClean.contains("NKDA", ignoreCase = true) ||
+                    allergyClean.contains("No known", ignoreCase = true) ||
+                    allergyClean.equals("None", ignoreCase = true) ||
+                    allergyClean.equals("No", ignoreCase = true)
+                val (allergyLabel, isAlert) = if (isNoAllergy) {
+                    "NKDA" to false
+                } else {
+                    allergyClean!! to true
+                }
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = if (isAlert) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                ) {
+                    Text(
+                        text = allergyLabel,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = if (isAlert) FontWeight.Bold else FontWeight.SemiBold,
+                        color = if (isAlert) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }
@@ -1635,7 +1771,6 @@ private fun ClinicalAttentionBanner(
     severeBp: SevereBpAttention? = null,
     onEdit: () -> Unit,
 ) {
-    var isExpanded by remember { mutableStateOf(false) }
     val hasStored = !attention.isNullOrBlank()
     val (parsedLevel, narrative) = if (hasStored) {
         ClinicalAttentionLevel.parse(attention!!)
@@ -1645,165 +1780,90 @@ private fun ClinicalAttentionBanner(
     val level = if (severeBp != null) ClinicalAttentionLevel.CRITICAL else parsedLevel
     val isDark = isSystemInDarkTheme()
 
-    val (badgeRes, containerColor, contentColor) = when (level) {
-        ClinicalAttentionLevel.CRITICAL -> Triple(
-            R.string.critical_badge,
-            MaterialTheme.colorScheme.errorContainer,
-            MaterialTheme.colorScheme.onErrorContainer,
-        )
-        ClinicalAttentionLevel.ALERT -> Triple(
-            R.string.alert_badge,
-            MaterialTheme.colorScheme.tertiaryContainer,
-            MaterialTheme.colorScheme.onTertiaryContainer,
-        )
-        ClinicalAttentionLevel.NOTE -> Triple(
-            R.string.note_badge,
-            MaterialTheme.colorScheme.secondaryContainer,
-            MaterialTheme.colorScheme.onSecondaryContainer,
-        )
-    }
-
-    val items = remember(narrative) {
-        if (narrative.isBlank()) emptyList()
-        else narrative.split("\n")
-            .flatMap { it.split("•") }
-            .map { it.trim().removePrefix("-").trim() }
-            .filter { it.isNotEmpty() }
-    }
+    val containerColor = if (isDark) TagBloodNegativeDarkBg else TagBloodNegativeBg
+    val borderColor = if (isDark) TagBloodNegativeDarkBorder else TagBloodNegativeBorder
+    val accentBarColor = ActionRose
+    val textColor = if (isDark) TagBloodNegativeDarkText else TagBloodNegativeText
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("clinicalAttentionBanner"),
         colors = CardDefaults.cardColors(containerColor = containerColor),
-        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(1.dp, borderColor),
+        shape = RoundedCornerShape(12.dp),
     ) {
-        Column(
+        Row(
             modifier = Modifier
-                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .padding(12.dp)
                 .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.Top,
         ) {
-            Row(
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .then(if (hasStored) Modifier.clickable { isExpanded = !isExpanded } else Modifier),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
+                    .width(3.5.dp)
+                    .height(28.dp)
+                    .background(accentBarColor, RoundedCornerShape(2.dp)),
+            )
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.weight(1f),
                 ) {
-                    Surface(
-                        color = contentColor,
-                        shape = RoundedCornerShape(4.dp),
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = accentBarColor,
+                            modifier = Modifier.size(16.dp),
+                        )
                         Text(
-                            text = stringResource(badgeRes),
-                            color = containerColor,
+                            text = stringResource(R.string.clinical_attention).uppercase(),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            color = accentBarColor,
+                            letterSpacing = 0.8.sp,
                         )
                     }
-                    if (severeBp != null && !hasStored) {
-                        Text(
-                            text = stringResource(R.string.bp_attention_severe, severeBp.bloodPressure, severeBp.date),
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = contentColor,
-                            modifier = Modifier
-                                .weight(1f)
-                                .testTag("severeBpAttention"),
-                        )
-                    } else if (!isExpanded) {
-                        Text(
-                            text = items.firstOrNull() ?: narrative,
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = contentColor,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f),
-                        )
-                    } else {
-                        Text(
-                            text = "${items.size} clinical alerts recorded",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Bold,
-                            color = contentColor,
-                        )
-                    }
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
                     IconButton(
                         onClick = onEdit,
                         modifier = Modifier.minimumTouchTarget(),
                     ) {
                         Icon(
-                            Icons.Default.Edit,
+                            imageVector = Icons.Default.Edit,
                             contentDescription = stringResource(R.string.edit_clinical_alerts),
-                            tint = contentColor,
+                            tint = accentBarColor,
                             modifier = Modifier.size(16.dp),
                         )
                     }
-                    if (hasStored) {
-                        Icon(
-                            imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                            contentDescription = if (isExpanded) "Collapse" else "Expand",
-                            tint = contentColor,
-                            modifier = Modifier.size(20.dp),
-                        )
-                    }
                 }
-            }
 
-            if (severeBp != null && hasStored) {
-                HorizontalDivider(color = contentColor.copy(alpha = 0.2f))
-                Text(
-                    text = stringResource(R.string.bp_attention_severe, severeBp.bloodPressure, severeBp.date),
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = contentColor,
-                    modifier = Modifier.testTag("severeBpAttention"),
-                )
-            }
+                if (severeBp != null) {
+                    Text(
+                        text = stringResource(R.string.bp_attention_severe, severeBp.bloodPressure, severeBp.date),
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.testTag("severeBpAttention"),
+                    )
+                }
 
-            AnimatedVisibility(visible = isExpanded && hasStored) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    HorizontalDivider(color = contentColor.copy(alpha = 0.2f))
-                    items.forEach { alertItem ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.Top,
-                        ) {
-                            Text(
-                                text = "•",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = contentColor,
-                            )
-                            Text(
-                                text = alertItem,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = contentColor,
-                                modifier = Modifier.weight(1f),
-                            )
-                        }
-                    }
+                if (hasStored && narrative.isNotBlank()) {
+                    Text(
+                        text = narrative,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        color = textColor,
+                    )
                 }
             }
         }
