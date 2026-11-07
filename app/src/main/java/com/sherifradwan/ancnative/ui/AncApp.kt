@@ -235,6 +235,7 @@ fun AncApp(
                         is AncRoute.UltrasoundEditor -> UltrasoundEditor(state, route, onEvent)
                         is AncRoute.LabEditor -> LabEditor(state, route, onEvent)
                         is AncRoute.MedicationEditor -> MedicationEditor(state, route, onEvent)
+                        is AncRoute.LabBatchEditor -> LabBatchScreen(state, route, onEvent)
                     }
                 }
                 UndoBarHost(state, onEvent)

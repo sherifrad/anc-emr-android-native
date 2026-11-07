@@ -756,6 +756,14 @@ private fun LazyListScope.workspaceContentItems(
                     Text(stringResource(R.string.add_lab), maxLines = 1, softWrap = false)
                 }
             }
+            item {
+                OutlinedButton(
+                    onClick = { onEvent(AncEvent.StartLabBatchRequest(patient.id)) },
+                    modifier = Modifier.minimumTouchTarget().testTag("startLabBatch"),
+                ) {
+                    Text("New laboratory batch")
+                }
+            }
         }
         if (patient.labInvestigations.isEmpty()) {
             item { Text(stringResource(R.string.no_lab_recorded)) }

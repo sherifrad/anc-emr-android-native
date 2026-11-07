@@ -50,6 +50,7 @@ sealed interface AncRoute {
     data class DatingEditor(val patientId: String) : AncRoute
     data class UltrasoundEditor(val patientId: String, val scanId: String, val isNew: Boolean) : AncRoute
     data class LabEditor(val patientId: String, val labId: String, val isNew: Boolean) : AncRoute
+    data class LabBatchEditor(val patientId: String) : AncRoute
     data class MedicationEditor(val patientId: String, val medicationId: String, val isNew: Boolean) : AncRoute
 }
 
@@ -351,6 +352,7 @@ fun AncRoute.patientIdOrNull(): String? = when (this) {
     is AncRoute.DatingEditor -> patientId
     is AncRoute.UltrasoundEditor -> patientId
     is AncRoute.LabEditor -> patientId
+    is AncRoute.LabBatchEditor -> patientId
     is AncRoute.MedicationEditor -> patientId
 }
 
@@ -855,6 +857,7 @@ sealed interface AncEvent {
     ) : AncEvent
     data class LabBatchItemsAdded(val items: List<LabBatchItem>) : AncEvent
     data object SubmitLabBatch : AncEvent
+    data class StartLabBatchRequest(val patientId: String) : AncEvent
     data class LabBatchItemRemoved(val labId: String) : AncEvent
     data class LabBatchResultChanged(val labId: String, val value: String) : AncEvent
     data class LabBatchRangeChanged(val labId: String, val value: String) : AncEvent
@@ -863,6 +866,7 @@ sealed interface AncEvent {
     data class LabBatchTabSelected(val tab: LabBatchTab) : AncEvent
     data class LabBatchCursorMoved(val index: Int) : AncEvent
     data class LabBatchDateChanged(val value: String) : AncEvent
+    data class LabBatchLabNameChanged(val value: String?) : AncEvent
     data object CancelLabBatch : AncEvent
 
     /**
@@ -952,6 +956,7 @@ object AncReducer {
             AncEvent.SubmitLab,
             AncEvent.SubmitLabAndAddAnother,
             AncEvent.SubmitLabBatch,
+            is AncEvent.StartLabBatchRequest,
             AncEvent.SubmitMedication,
             AncEvent.SubmitMedicationAndAddAnother,
             -> state
@@ -1191,6 +1196,7 @@ object AncReducer {
                     date = event.date,
                     labName = event.labName,
                 ),
+                route = AncRoute.LabBatchEditor(event.patientId),
             )
             is AncEvent.LabBatchItemsAdded -> state.copy(
                 labBatchDraft = state.labBatchDraft?.add(event.items),
@@ -1218,6 +1224,9 @@ object AncReducer {
             )
             is AncEvent.LabBatchDateChanged -> state.copy(
                 labBatchDraft = state.labBatchDraft?.copy(date = event.value),
+            )
+            is AncEvent.LabBatchLabNameChanged -> state.copy(
+                labBatchDraft = state.labBatchDraft?.copy(labName = event.value),
             )
             is AncEvent.CancelLabBatch -> {
                 // Only the batch is discarded: cancelling it must not wipe an unrelated editor draft (D9).
@@ -1696,6 +1705,7 @@ object AncReducer {
             is AncRoute.DatingEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.DATING)
             is AncRoute.UltrasoundEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.ULTRASOUND)
             is AncRoute.LabEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.LABORATORY)
+            is AncRoute.LabBatchEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.LABORATORY)
             is AncRoute.MedicationEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.MEDICATIONS)
         }
         return if (state.hasDirtyDraft) {

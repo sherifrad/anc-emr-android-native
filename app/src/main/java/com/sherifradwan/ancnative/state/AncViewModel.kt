@@ -194,6 +194,7 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
             AncEvent.SubmitUltrasound -> saveUltrasound()
             AncEvent.SubmitLab -> saveLab(isChained = false)
             AncEvent.SubmitLabBatch -> saveLabBatch()
+            is AncEvent.StartLabBatchRequest -> startLabBatch(event.patientId)
             AncEvent.SubmitLabAndAddAnother -> saveLab(isChained = true)
             AncEvent.SubmitMedication -> {
                 if (!_state.value.undoRunning) {

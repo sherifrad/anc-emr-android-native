@@ -515,56 +515,92 @@ class ClinicalCodexRepository internal constructor(
             }
         }
 
+        /** CBC is six results, not one: Hb, Hct, MCV, MCH, WBC, PLT. Ranges are typed from each report. */
+        private val CBC_ELEMENTS = listOf(
+            "Haemoglobin (Hb)" to "g/dL",
+            "Haematocrit (Hct)" to "%",
+            "MCV" to "fL",
+            "MCH" to "pg",
+            "White Cell Count (WBC)" to "×10³/µL",
+            "Platelets (PLT)" to "×10³/µL",
+        )
+
+        /** Urine routine is eight results, microscopy included (owner: pus cells and RBCs matter). */
+        private val URINE_ELEMENTS = listOf(
+            "Urine Protein",
+            "Urine Glucose",
+            "Urine Ketones",
+            "Urine Blood",
+            "Urine Nitrite",
+            "Leukocyte Esterase",
+            "Pus Cells",
+            "RBCs (Urine)",
+        )
+
         fun defaultLabCategoryGroups(): List<LabCategoryGroup> = listOf(
+            LabCategoryGroup(
+                id = "group_cbc",
+                name = "CBC",
+                description = "Haemoglobin, haematocrit, MCV, MCH, WBC, platelets",
+                testNames = CBC_ELEMENTS.map { it.first },
+                isCustom = false,
+            ),
+            LabCategoryGroup(
+                id = "group_urine",
+                name = "Urine Routine & Microscopic",
+                description = "Dipstick chemistry with pus cells and RBCs",
+                testNames = URINE_ELEMENTS,
+                isCustom = false,
+            ),
             LabCategoryGroup(
                 id = "group_first_trimester",
                 name = "First Trimester Routine Booking",
                 description = "Mandatory baseline tests at initial antenatal intake",
-                testNames = listOf(
-                    "Complete Blood Count (CBC)",
-                    "Blood Grouping & Rh Factor",
-                    "Fasting Blood Sugar (FBS)",
-                    "Urine Routine & Microscopic",
-                    "Hepatitis B Surface Antigen (HBsAg)",
-                    "HIV 1 & 2 Antibody",
-                    "Rubella Antibody IgG",
-                    "Thyroid Stimulating Hormone (TSH)",
-                ),
+                testNames = buildList {
+                    addAll(CBC_ELEMENTS.map { it.first })
+                    add("Blood Grouping & Rh Factor")
+                    add("Fasting Blood Sugar (FBS)")
+                    addAll(URINE_ELEMENTS)
+                    add("Hepatitis B Surface Antigen (HBsAg)")
+                    add("HIV 1 & 2 Antibody")
+                    add("Rubella Antibody IgG")
+                    add("Thyroid Stimulating Hormone (TSH)")
+                },
                 isCustom = false,
             ),
             LabCategoryGroup(
                 id = "group_preeclampsia",
                 name = "Preeclampsia Workup",
                 description = "Renal and liver function evaluation and platelet surveillance",
-                testNames = listOf(
-                    "Complete Blood Count (CBC)",
-                    "Serum Creatinine",
-                    "Serum Uric Acid",
-                    "Alanine Aminotransferase (ALT)",
-                    "Aspartate Aminotransferase (AST)",
-                    "Urine Routine & Microscopic",
-                ),
+                testNames = buildList {
+                    addAll(CBC_ELEMENTS.map { it.first })
+                    add("Serum Creatinine")
+                    add("Serum Uric Acid")
+                    add("Alanine Aminotransferase (ALT)")
+                    add("Aspartate Aminotransferase (AST)")
+                    addAll(URINE_ELEMENTS)
+                },
                 isCustom = false,
             ),
             LabCategoryGroup(
                 id = "group_gdm",
                 name = "GDM Screening (24-28 W)",
                 description = "Oral glucose tolerance test and urinalysis at 24-28 weeks",
-                testNames = listOf(
-                    "Fasting Blood Sugar (FBS)",
-                    "Oral Glucose Tolerance Test (OGTT 75g)",
-                    "Urine Routine & Microscopic",
-                ),
+                testNames = buildList {
+                    add("Fasting Blood Sugar (FBS)")
+                    add("Oral Glucose Tolerance Test (OGTT 75g)")
+                    addAll(URINE_ELEMENTS)
+                },
                 isCustom = false,
             ),
             LabCategoryGroup(
                 id = "group_anemia",
                 name = "Anemia Workup & Iron Stores",
                 description = "Complete blood count and serum ferritin evaluation",
-                testNames = listOf(
-                    "Complete Blood Count (CBC)",
-                    "Serum Ferritin",
-                ),
+                testNames = buildList {
+                    addAll(CBC_ELEMENTS.map { it.first })
+                    add("Serum Ferritin")
+                },
                 isCustom = false,
             ),
             LabCategoryGroup(
@@ -582,11 +618,24 @@ class ClinicalCodexRepository internal constructor(
         )
 
         fun defaultLabCodexItems(): List<LabCodexItem> = listOf(
-            LabCodexItem("lab_cbc", "Complete Blood Count (CBC)", "Hematology", "g/dL", "11.0 - 15.0"),
+            // Six separate results; no default range because obstetric ranges come from each report (D25).
+            LabCodexItem("lab_cbc_hb", "Haemoglobin (Hb)", "Hematology", "g/dL", ""),
+            LabCodexItem("lab_cbc_hct", "Haematocrit (Hct)", "Hematology", "%", ""),
+            LabCodexItem("lab_cbc_mcv", "MCV", "Hematology", "fL", ""),
+            LabCodexItem("lab_cbc_mch", "MCH", "Hematology", "pg", ""),
+            LabCodexItem("lab_cbc_wbc", "White Cell Count (WBC)", "Hematology", "×10³/µL", ""),
+            LabCodexItem("lab_cbc_plt", "Platelets (PLT)", "Hematology", "×10³/µL", ""),
             LabCodexItem("lab_blood_group", "Blood Grouping & Rh Factor", "Hematology", "", ""),
             LabCodexItem("lab_fbs", "Fasting Blood Sugar (FBS)", "Biochemistry", "mg/dL", "70 - 95"),
             LabCodexItem("lab_ogtt_75", "Oral Glucose Tolerance Test (OGTT 75g)", "Biochemistry", "mg/dL", "< 140"),
-            LabCodexItem("lab_urinalysis", "Urine Routine & Microscopic", "Biochemistry", "", "", "Nil Albumin, Nil Sugar"),
+            LabCodexItem("lab_urine_protein", "Urine Protein", "Urinalysis", "", ""),
+            LabCodexItem("lab_urine_glucose", "Urine Glucose", "Urinalysis", "", ""),
+            LabCodexItem("lab_urine_ketones", "Urine Ketones", "Urinalysis", "", ""),
+            LabCodexItem("lab_urine_blood", "Urine Blood", "Urinalysis", "", ""),
+            LabCodexItem("lab_urine_nitrite", "Urine Nitrite", "Urinalysis", "", ""),
+            LabCodexItem("lab_urine_le", "Leukocyte Esterase", "Urinalysis", "", ""),
+            LabCodexItem("lab_urine_pus", "Pus Cells", "Urinalysis", "", ""),
+            LabCodexItem("lab_urine_rbc", "RBCs (Urine)", "Urinalysis", "", ""),
             LabCodexItem("lab_hbsag", "Hepatitis B Surface Antigen (HBsAg)", "Serology", "", "", "Negative"),
             LabCodexItem("lab_hiv", "HIV 1 & 2 Antibody", "Serology", "", "", "Non-reactive"),
             LabCodexItem("lab_vdrl", "Syphilis Serology (VDRL)", "Serology", "", "", "Non-reactive"),
