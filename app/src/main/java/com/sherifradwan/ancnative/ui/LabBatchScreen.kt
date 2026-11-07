@@ -185,37 +185,39 @@ fun LabBatchScreen(state: AncState, route: AncRoute.LabBatchEditor, onEvent: (An
         )
     }
 
+    val pinnedBottomBar: @Composable () -> Unit = {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            OutlinedButton(
+                onClick = { onEvent(AncEvent.CancelLabBatch) },
+                modifier = Modifier.weight(1f).heightIn(min = 48.dp).testTag("labBatchCancel"),
+            ) {
+                Text(stringResource(R.string.cancel))
+            }
+            val saveText = when (draft.filledCount) {
+                0 -> stringResource(R.string.lab_batch_review_zero_results)
+                1 -> stringResource(R.string.lab_batch_save_one)
+                else -> stringResource(R.string.lab_batch_save_n, draft.filledCount)
+            }
+            Button(
+                onClick = { onEvent(AncEvent.SubmitLabBatch) },
+                enabled = draft.filledCount > 0,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                modifier = Modifier.weight(2f).heightIn(min = 48.dp).testTag("labBatchSave"),
+            ) {
+                Text(saveText, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+
     EditorPage(
         title = stringResource(R.string.lab_batch_title),
         subtitle = subtitle,
         tag = "labBatchScreen",
-        bottomBar = {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                OutlinedButton(
-                    onClick = { onEvent(AncEvent.CancelLabBatch) },
-                    modifier = Modifier.weight(1f).heightIn(min = 48.dp).testTag("labBatchCancel"),
-                ) {
-                    Text(stringResource(R.string.cancel))
-                }
-                val saveText = when (draft.filledCount) {
-                    0 -> stringResource(R.string.lab_batch_review_zero_results)
-                    1 -> stringResource(R.string.lab_batch_save_one)
-                    else -> stringResource(R.string.lab_batch_save_n, draft.filledCount)
-                }
-                Button(
-                    onClick = { onEvent(AncEvent.SubmitLabBatch) },
-                    enabled = draft.filledCount > 0,
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                    modifier = Modifier.weight(2f).heightIn(min = 48.dp).testTag("labBatchSave"),
-                ) {
-                    Text(saveText, fontWeight = FontWeight.Bold)
-                }
-            }
-        },
+        pinnedBottomBar,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
