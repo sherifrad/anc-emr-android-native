@@ -901,8 +901,8 @@ private fun LazyListScope.workspaceBedsideContentItems(
                                         onViewPhotos = onViewPhotos,
                                         onDelete = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.ULTRASOUND, scan.id)) },
                                         linkIntegrityWarning = event.linkIntegrityWarning,
-                                        cardTag = "timelineUltrasound-${scan.id}",
-                                        deleteTag = "delete-timelineUltrasound-${scan.id}",
+                                        cardTag = "ultrasound-${scan.id}",
+                                        deleteTag = "delete-ultrasound-${scan.id}",
                                     )
                                 }
                             }
