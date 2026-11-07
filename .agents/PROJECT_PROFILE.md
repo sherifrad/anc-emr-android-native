@@ -6,3 +6,4 @@
 - Test runs: Gradle unit tests on the user's Mac. Not runnable from the sandbox (no Android SDK there).
 - Weight: Full. Model tiers: strong model for review, mid model for test design.
 - Downgrade paths: evidence/**=0, retry/**=0, docs/**=0 (human-set 2026-11-01: run output and prose; a secret-shaped value still escalates; UI paths deliberately not downgraded)
+- Approved vendors: `agy` (Gemini CLI) — owner-directed dispatch 2026-11-05 ("dispatch a reviewer"), read-only review lanes only; no patient data in any brief.

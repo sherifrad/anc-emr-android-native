@@ -456,3 +456,10 @@ Keeps the history from the handoff until Claude returns after its quota reset. F
 - Caveat: the recovery prompt still requires an open editor with that session, so nothing surfaces it until the B2 screen creates the stub. Wired, not yet reachable.
 - **Review gap:** the solo review of `cf89342` + `cc32bb6` could not run. The platform subagent endpoint returned HTTP 403 twice (no output either time), the profile approves no external vendor, and the owner chose to proceed. These two commits and `7ccadb1` are therefore **unreviewed**; the standing "review before next task" rule is recorded as blocked, not satisfied.
 - Verified: `run_build_gate.sh` GATE OK; **979** unit tests, 0 failures (5 new mapping tests); `run_static_checks.sh` STATIC CHECKS OK.
+
+## 2026-11-05 — Laboratory batch screen and split catalogue (`884be6a`)
+- `LabBatchScreen`: app bar, one date + one lab for the batch, Add/Enter/Review tabs, panels with "Add N", search-to-add, result/range/flag/note, review with pending rows and "mark empty as normal", one Save. Entry point "New laboratory batch" in the laboratory section; route `AncRoute.LabBatchEditor`.
+- Catalogue split: CBC = Hb, Hct, MCV, MCH, WBC, PLT with no default ranges; Urine = protein, glucose, ketones, blood, nitrite, leukocyte esterase, pus cells, RBCs. Panels rebuilt around the elements; CBC and Urine can be added alone.
+- Verified: GATE OK; 979 unit tests; STATIC CHECKS OK.
+- NOT verified: the screen has never been launched (no device attached when it was written); instrumented suites were not re-run after the catalogue split; no batch UI tests; the four batch/UI commits are unreviewed (subagent 403; agy run stopped before output).
+- Consultant report for an independent reviewer: `.agents/pipeline/REPORT_FOR_AGY_2026-11-05.md`.
