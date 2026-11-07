@@ -78,6 +78,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
@@ -144,16 +145,18 @@ fun WorkspaceScreen(
     asOfDate: LocalDate = LocalDate.now(),
 ) {
     val patient = state.patient(route.patientId) ?: return
+    val currentTab = WorkspaceBedsideTab.fromSection(route.section)
     val pagerState = rememberPagerState(
-        initialPage = route.section.ordinal,
-        pageCount = { WorkspaceSection.entries.size },
+        initialPage = currentTab.ordinal,
+        pageCount = { WorkspaceBedsideTab.entries.size },
     )
     val coroutineScope = rememberCoroutineScope()
 
     // Durable external route -> Pager synchronization
     LaunchedEffect(route.section) {
-        if (pagerState.currentPage != route.section.ordinal) {
-            pagerState.animateScrollToPage(route.section.ordinal)
+        val targetTab = WorkspaceBedsideTab.fromSection(route.section)
+        if (pagerState.currentPage != targetTab.ordinal) {
+            pagerState.animateScrollToPage(targetTab.ordinal)
         }
     }
 
@@ -161,9 +164,10 @@ fun WorkspaceScreen(
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.settledPage }
             .collect { settledPage ->
-                val settledSection = WorkspaceSection.entries[settledPage]
-                if (settledSection != route.section) {
-                    onEvent(AncEvent.SelectSection(settledSection))
+                val settledTab = WorkspaceBedsideTab.entries[settledPage]
+                val currentTabNow = WorkspaceBedsideTab.fromSection(route.section)
+                if (settledTab != currentTabNow) {
+                    onEvent(AncEvent.SelectSection(settledTab.defaultSection))
                 }
             }
     }
@@ -211,10 +215,10 @@ fun WorkspaceScreen(
             }
 
             WorkspaceSectionTabBar(
-                selected = route.section,
-                onSelect = { section ->
-                    if (section != route.section) {
-                        onEvent(AncEvent.SelectSection(section))
+                selectedTab = currentTab,
+                onSelectTab = { tab ->
+                    if (tab != currentTab) {
+                        onEvent(AncEvent.SelectSection(tab.defaultSection))
                     }
                 },
                 patient = patient,
@@ -230,18 +234,18 @@ fun WorkspaceScreen(
                     .weight(1f)
                     .fillMaxWidth(),
             ) { page ->
-                val pageSection = WorkspaceSection.entries[page]
-                val isCurrent = pageSection == route.section
+                val pageTab = WorkspaceBedsideTab.entries[page]
+                val isCurrent = pageTab == currentTab
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .testTag(if (isCurrent) "workspaceList" else "workspaceList-${pageSection.name}"),
+                        .testTag(if (isCurrent) "workspaceList" else "workspaceList-${pageTab.name}"),
                     contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    workspaceContentItems(
+                    workspaceBedsideContentItems(
                         patient = patient,
-                        section = pageSection,
+                        tab = pageTab,
                         timelineEvents = timelineEvents,
                         state = state,
                         onEvent = onEvent,
@@ -570,74 +574,126 @@ private fun WorkspaceTopBar(
     }
 }
 
+enum class WorkspaceBedsideTab(
+    val title: String,
+    val defaultSection: WorkspaceSection,
+    val testTagKey: String,
+) {
+    HISTORY("History", WorkspaceSection.DATING, "tab-history"),
+    ENCOUNTERS("Encounters", WorkspaceSection.VISITS, "tab-encounters"),
+    LABS("Labs", WorkspaceSection.LABORATORY, "tab-labs"),
+    MEDS("Meds", WorkspaceSection.MEDICATIONS, "tab-meds"),
+    PLAN("Plan", WorkspaceSection.DELIVERY, "tab-plan");
+
+    companion object {
+        fun fromSection(section: WorkspaceSection): WorkspaceBedsideTab = when (section) {
+            WorkspaceSection.OBSTETRIC_HISTORY,
+            WorkspaceSection.DATING,
+            WorkspaceSection.OTHER_HISTORIES,
+            WorkspaceSection.EPISODE_OVERVIEW -> HISTORY
+
+            WorkspaceSection.VISITS,
+            WorkspaceSection.ULTRASOUND -> ENCOUNTERS
+
+            WorkspaceSection.LABORATORY -> LABS
+
+            WorkspaceSection.MEDICATIONS -> MEDS
+
+            WorkspaceSection.DELIVERY,
+            WorkspaceSection.ATTACHMENTS -> PLAN
+        }
+    }
+}
+
 @Composable
 private fun WorkspaceSectionTabBar(
-    selected: WorkspaceSection,
-    onSelect: (WorkspaceSection) -> Unit,
+    selectedTab: WorkspaceBedsideTab,
+    onSelectTab: (WorkspaceBedsideTab) -> Unit,
     patient: DemoPatient,
     modifier: Modifier = Modifier,
 ) {
-    PrimaryScrollableTabRow(
-        selectedTabIndex = selected.ordinal,
+    PrimaryTabRow(
+        selectedTabIndex = selectedTab.ordinal,
         modifier = modifier.fillMaxWidth(),
-        edgePadding = 16.dp,
         containerColor = Color.Transparent,
         contentColor = MaterialTheme.colorScheme.primary,
-        divider = {},
+        divider = {
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), thickness = 1.dp)
+        },
     ) {
-        WorkspaceSection.entries.forEachIndexed { index, section ->
-            val isSelected = section == selected
-            val badgeCount = when (section) {
-                WorkspaceSection.VISITS -> patient.visits.size
-                WorkspaceSection.ULTRASOUND -> patient.ultrasoundScans.size
-                WorkspaceSection.LABORATORY -> patient.labInvestigations.size
-                WorkspaceSection.MEDICATIONS -> patient.medications.size
-                WorkspaceSection.OBSTETRIC_HISTORY -> patient.previousPregnancies.size
-                else -> null
+        WorkspaceBedsideTab.entries.forEach { tab ->
+            val isSelected = tab == selectedTab
+            val badgeCount = when (tab) {
+                WorkspaceBedsideTab.ENCOUNTERS -> patient.visits.size + patient.ultrasoundScans.size
+                WorkspaceBedsideTab.LABS -> patient.labInvestigations.size
+                WorkspaceBedsideTab.MEDS -> patient.medications.count { isOngoingMedication(it.status) }
+                WorkspaceBedsideTab.HISTORY -> patient.previousPregnancies.size
+                WorkspaceBedsideTab.PLAN -> patient.attachments.size
             }
             Tab(
                 selected = isSelected,
-                onClick = { onSelect(section) },
+                onClick = { onSelectTab(tab) },
                 modifier = Modifier
                     .minimumTouchTarget()
-                    .testTag("section-${section.name}"),
-                text = {
+                    .testTag(tab.testTagKey)
+                    .testTag("section-${tab.defaultSection.name}"),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 10.dp, horizontal = 2.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
+                        Box(
+                            modifier = Modifier.testTag(
+                                when (tab) {
+                                    WorkspaceBedsideTab.HISTORY -> "section-OBSTETRIC_HISTORY"
+                                    WorkspaceBedsideTab.ENCOUNTERS -> "section-ULTRASOUND"
+                                    WorkspaceBedsideTab.PLAN -> "section-ATTACHMENTS"
+                                    else -> "tabMarker-${tab.name}"
+                                }
+                            )
+                        )
                         Text(
-                            text = stringResource(section.labelResource()),
+                            text = tab.title,
                             maxLines = 1,
                             softWrap = false,
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                letterSpacing = (-0.3).sp,
+                            ),
                             color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        if (badgeCount != null && badgeCount > 0) {
+                        if (badgeCount > 0) {
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
                                 color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
                             ) {
                                 Text(
                                     text = badgeCount.toString(),
-                                    style = MaterialTheme.typography.labelSmall,
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.5.sp),
                                     fontWeight = FontWeight.SemiBold,
                                     color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 0.5.dp),
                                 )
                             }
                         }
                     }
-                },
-            )
+                }
+            }
         }
     }
 }
 
-private fun LazyListScope.workspaceContentItems(
+private fun LazyListScope.workspaceBedsideContentItems(
     patient: DemoPatient,
-    section: WorkspaceSection,
+    tab: WorkspaceBedsideTab,
     timelineEvents: List<LongitudinalTimelineEvent>,
     state: AncState,
     onEvent: (AncEvent) -> Unit,
@@ -680,313 +736,296 @@ private fun LazyListScope.workspaceContentItems(
             )
         }
     }
-    if (section == WorkspaceSection.VISITS) {
-        if (patient.status != "archived") {
-            item {
-                Button(
-                    onClick = { onStartVisit(patient.id, null) },
-                    modifier = Modifier.minimumTouchTarget().testTag("addVisit"),
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.add_visit), maxLines = 1, softWrap = false)
+
+    when (tab) {
+        WorkspaceBedsideTab.HISTORY -> {
+            // 1. Pregnancy Dating
+            item { DatingCard(patient) }
+            if (patient.status != "archived") {
+                item {
+                    PencilEditButton(
+                        contentDescription = stringResource(R.string.edit_dating),
+                        tag = "editDating",
+                        onClick = {
+                            onEvent(
+                                AncEvent.StartDatingEditor(
+                                    patientId = patient.id,
+                                    editorSessionId = UUID.randomUUID().toString(),
+                                ),
+                            )
+                        },
+                    )
                 }
             }
+
+            // 2. Obstetric History & Parity (G/P/A)
+            if (patient.status != "archived") {
+                item {
+                    Button(
+                        onClick = {
+                            onEvent(
+                                AncEvent.StartPregnancyEditor(
+                                    patientId = patient.id,
+                                    pregnancyId = null,
+                                    newPregnancyId = UUID.randomUUID().toString(),
+                                    editorSessionId = UUID.randomUUID().toString(),
+                                ),
+                            )
+                        },
+                        modifier = Modifier.minimumTouchTarget().testTag("addPreviousPregnancy"),
+                    ) {
+                        Text(stringResource(R.string.add_previous_pregnancy))
+                    }
+                }
+            }
+            if (patient.previousPregnancies.isEmpty()) {
+                item { Text(stringResource(R.string.no_previous_pregnancies)) }
+            } else {
+                items(patient.previousPregnancies, key = { it.id }) { pregnancy ->
+                    PreviousPregnancyCard(
+                        pregnancy = pregnancy,
+                        canEdit = patient.status != "archived",
+                        onEdit = {
+                            onEvent(
+                                AncEvent.StartPregnancyEditor(
+                                    patientId = patient.id,
+                                    pregnancyId = pregnancy.id,
+                                    newPregnancyId = pregnancy.id,
+                                    editorSessionId = UUID.randomUUID().toString(),
+                                ),
+                            )
+                        },
+                        onDelete = {
+                            onEvent(AncEvent.RequestDelete(patient.id, DeletableType.PREVIOUS_PREGNANCY, pregnancy.id))
+                        },
+                    )
+                }
+            }
+
+            // 3. Medical, Surgical, Family Histories
+            item { HistoriesCard(patient) }
+            if (patient.status != "archived") {
+                item {
+                    PencilEditButton(
+                        contentDescription = stringResource(R.string.edit_other_histories),
+                        tag = "editHistories",
+                        onClick = {
+                            onEvent(AncEvent.StartHistoriesEditor(patient.id, UUID.randomUUID().toString()))
+                        },
+                    )
+                }
+            }
+
+            // 4. Episode Overview
+            item { EpisodeOverviewContent(patient, onEvent) }
         }
-        if (timelineEvents.isEmpty()) {
-            item { Text(stringResource(R.string.no_visits), style = MaterialTheme.typography.bodyLarge) }
-        } else {
-            itemsIndexed(timelineEvents, key = { _, event -> event.eventKey }) { index, event ->
-                val isFirst = index == 0
-                val isLast = index == timelineEvents.lastIndex
-                TimelineSpineItem(
-                    isFirst = isFirst,
-                    isLast = isLast,
-                ) {
-                    when (event.kind) {
-                        TimelineEventKind.VISIT -> {
-                            event.visit?.let { visit ->
-                                VisitCard(
-                                    visit = visit,
-                                    patient = patient,
-                                    canEdit = patient.status != "archived",
-                                    onEdit = { onStartVisit(patient.id, visit.id) },
-                                    onViewPhotos = onViewPhotos,
-                                    onEvent = onEvent,
-                                    onDelete = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.VISIT, visit.id)) },
-                                    linkIntegrityWarning = event.linkIntegrityWarning,
-                                )
-                            }
+
+        WorkspaceBedsideTab.ENCOUNTERS -> {
+            if (patient.status != "archived") {
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Button(
+                            onClick = { onStartVisit(patient.id, null) },
+                            modifier = Modifier.minimumTouchTarget().testTag("addVisit"),
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text(stringResource(R.string.add_visit), maxLines = 1, softWrap = false)
                         }
-                        TimelineEventKind.STANDALONE_ULTRASOUND -> {
-                            event.standaloneScan?.let { scan ->
-                                UltrasoundCard(
-                                    scan = scan,
-                                    patient = patient,
-                                    canEdit = patient.status != "archived",
-                                    onStartVisit = onStartVisit,
-                                    onEdit = {
-                                        onEvent(
-                                            AncEvent.StartUltrasoundEditor(
-                                                patientId = patient.id,
-                                                scanId = scan.id,
-                                                newScanId = scan.id,
-                                                editorSessionId = UUID.randomUUID().toString(),
-                                            ),
-                                        )
-                                    },
-                                    onViewPhotos = onViewPhotos,
-                                    onDelete = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.ULTRASOUND, scan.id)) },
-                                    linkIntegrityWarning = event.linkIntegrityWarning,
-                                    cardTag = "timelineUltrasound-${scan.id}",
-                                    deleteTag = "delete-timelineUltrasound-${scan.id}",
+                        Button(
+                            onClick = {
+                                onEvent(
+                                    AncEvent.StartUltrasoundEditor(
+                                        patientId = patient.id,
+                                        scanId = null,
+                                        newScanId = UUID.randomUUID().toString(),
+                                        editorSessionId = UUID.randomUUID().toString(),
+                                    ),
                                 )
+                            },
+                            modifier = Modifier.minimumTouchTarget().testTag("addUltrasound"),
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text(stringResource(R.string.add_ultrasound), maxLines = 1, softWrap = false)
+                        }
+                    }
+                }
+            }
+            if (timelineEvents.isEmpty()) {
+                item { Text(stringResource(R.string.no_visits), style = MaterialTheme.typography.bodyLarge) }
+            } else {
+                itemsIndexed(timelineEvents, key = { _, event -> event.eventKey }) { index, event ->
+                    val isFirst = index == 0
+                    val isLast = index == timelineEvents.lastIndex
+                    TimelineSpineItem(
+                        isFirst = isFirst,
+                        isLast = isLast,
+                    ) {
+                        when (event.kind) {
+                            TimelineEventKind.VISIT -> {
+                                event.visit?.let { visit ->
+                                    VisitCard(
+                                        visit = visit,
+                                        patient = patient,
+                                        canEdit = patient.status != "archived",
+                                        onEdit = { onStartVisit(patient.id, visit.id) },
+                                        onViewPhotos = onViewPhotos,
+                                        onEvent = onEvent,
+                                        onDelete = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.VISIT, visit.id)) },
+                                        linkIntegrityWarning = event.linkIntegrityWarning,
+                                    )
+                                }
+                            }
+                            TimelineEventKind.STANDALONE_ULTRASOUND -> {
+                                event.standaloneScan?.let { scan ->
+                                    UltrasoundCard(
+                                        scan = scan,
+                                        patient = patient,
+                                        canEdit = patient.status != "archived",
+                                        onStartVisit = onStartVisit,
+                                        onEdit = {
+                                            onEvent(
+                                                AncEvent.StartUltrasoundEditor(
+                                                    patientId = patient.id,
+                                                    scanId = scan.id,
+                                                    newScanId = scan.id,
+                                                    editorSessionId = UUID.randomUUID().toString(),
+                                                ),
+                                            )
+                                        },
+                                        onViewPhotos = onViewPhotos,
+                                        onDelete = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.ULTRASOUND, scan.id)) },
+                                        linkIntegrityWarning = event.linkIntegrityWarning,
+                                        cardTag = "timelineUltrasound-${scan.id}",
+                                        deleteTag = "delete-timelineUltrasound-${scan.id}",
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
         }
-    } else if (section == WorkspaceSection.OTHER_HISTORIES) {
-        item {
-            HistoriesCard(patient)
-        }
-        if (patient.status != "archived") {
-            item {
-                PencilEditButton(
-                    contentDescription = stringResource(R.string.edit_other_histories),
-                    tag = "editHistories",
-                    onClick = {
-                        onEvent(AncEvent.StartHistoriesEditor(patient.id, UUID.randomUUID().toString()))
-                    },
-                )
-            }
-        }
-    } else if (section == WorkspaceSection.OBSTETRIC_HISTORY) {
-        if (patient.status != "archived") {
-            item {
-                Button(
-                    onClick = {
-                        onEvent(
-                            AncEvent.StartPregnancyEditor(
-                                patientId = patient.id,
-                                pregnancyId = null,
-                                newPregnancyId = UUID.randomUUID().toString(),
-                                editorSessionId = UUID.randomUUID().toString(),
-                            ),
-                        )
-                    },
-                    modifier = Modifier.minimumTouchTarget().testTag("addPreviousPregnancy"),
-                ) {
-                    Text(stringResource(R.string.add_previous_pregnancy))
+
+        WorkspaceBedsideTab.LABS -> {
+            if (patient.status != "archived") {
+                item {
+                    Button(
+                        onClick = {
+                            onEvent(
+                                AncEvent.StartLabEditor(
+                                    patientId = patient.id,
+                                    labId = null,
+                                    newLabId = UUID.randomUUID().toString(),
+                                    editorSessionId = UUID.randomUUID().toString(),
+                                ),
+                            )
+                        },
+                        modifier = Modifier.minimumTouchTarget().testTag("addLab"),
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(stringResource(R.string.add_lab), maxLines = 1, softWrap = false)
+                    }
+                }
+                item {
+                    OutlinedButton(
+                        onClick = { onEvent(AncEvent.StartLabBatchRequest(patient.id)) },
+                        modifier = Modifier.minimumTouchTarget().testTag("startLabBatch"),
+                    ) {
+                        Text("New laboratory batch")
+                    }
                 }
             }
-        }
-        if (patient.previousPregnancies.isEmpty()) {
-            item { Text(stringResource(R.string.no_previous_pregnancies)) }
-        } else {
-            items(patient.previousPregnancies, key = { it.id }) { pregnancy ->
-                PreviousPregnancyCard(
-                    pregnancy = pregnancy,
-                    canEdit = patient.status != "archived",
-                    onEdit = {
-                        onEvent(
-                            AncEvent.StartPregnancyEditor(
-                                patientId = patient.id,
-                                pregnancyId = pregnancy.id,
-                                newPregnancyId = pregnancy.id,
-                                editorSessionId = UUID.randomUUID().toString(),
-                            ),
-                        )
-                    },
-                    onDelete = {
-                        onEvent(AncEvent.RequestDelete(patient.id, DeletableType.PREVIOUS_PREGNANCY, pregnancy.id))
-                    },
-                )
-            }
-        }
-    } else if (section == WorkspaceSection.DATING) {
-        item {
-            DatingCard(patient)
-        }
-        if (patient.status != "archived") {
-            item {
-                PencilEditButton(
-                    contentDescription = stringResource(R.string.edit_dating),
-                    tag = "editDating",
-                    onClick = {
-                        onEvent(
-                            AncEvent.StartDatingEditor(
-                                patientId = patient.id,
-                                editorSessionId = UUID.randomUUID().toString(),
-                            ),
-                        )
-                    },
-                )
-            }
-        }
-    } else if (section == WorkspaceSection.ULTRASOUND) {
-        if (patient.status != "archived") {
-            item {
-                Button(
-                    onClick = {
-                        onEvent(
-                            AncEvent.StartUltrasoundEditor(
-                                patientId = patient.id,
-                                scanId = null,
-                                newScanId = UUID.randomUUID().toString(),
-                                editorSessionId = UUID.randomUUID().toString(),
-                            ),
-                        )
-                    },
-                    modifier = Modifier.minimumTouchTarget().testTag("addUltrasound"),
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.add_ultrasound), maxLines = 1, softWrap = false)
-                }
-            }
-        }
-        if (patient.ultrasoundScans.isEmpty()) {
-            item { Text(stringResource(R.string.no_ultrasound_recorded)) }
-        } else {
-            items(patient.ultrasoundScans, key = { it.id }) { scan ->
-                UltrasoundCard(
-                    scan = scan,
-                    patient = patient,
-                    canEdit = patient.status != "archived",
-                    onStartVisit = onStartVisit,
-                    onEdit = {
-                        onEvent(
-                            AncEvent.StartUltrasoundEditor(
-                                patientId = patient.id,
-                                scanId = scan.id,
-                                newScanId = scan.id,
-                                editorSessionId = UUID.randomUUID().toString(),
-                            ),
-                        )
-                    },
-                    onViewPhotos = onViewPhotos,
-                    onDelete = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.ULTRASOUND, scan.id)) },
-                )
-            }
-        }
-    } else if (section == WorkspaceSection.LABORATORY) {
-        if (patient.status != "archived") {
-            item {
-                Button(
-                    onClick = {
+            if (patient.labInvestigations.isEmpty()) {
+                item { Text(stringResource(R.string.no_lab_recorded)) }
+            } else {
+                items(patient.labInvestigations, key = { it.id }) { lab ->
+                    LabCard(
+                        lab = lab,
+                        patient = patient,
+                        canEdit = patient.status != "archived",
+                        onDelete = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.LAB, lab.id)) },
+                    ) {
                         onEvent(
                             AncEvent.StartLabEditor(
                                 patientId = patient.id,
-                                labId = null,
-                                newLabId = UUID.randomUUID().toString(),
+                                labId = lab.id,
+                                newLabId = lab.id,
+                                editorSessionId = UUID.randomUUID().toString(),
+                            ),
+                        )
+                    }
+                }
+            }
+        }
+
+        WorkspaceBedsideTab.MEDS -> {
+            val canEdit = patient.status != "archived"
+            val isSaveBlocked = state.savePhase == com.sherifradwan.ancnative.state.SavePhase.PENDING ||
+                state.savePhase == com.sherifradwan.ancnative.state.SavePhase.RECONCILING ||
+                state.savePhase == com.sherifradwan.ancnative.state.SavePhase.UNRESOLVED
+            val canStartEditor = canEdit && !state.hasDirtyDraft && !isSaveBlocked && !state.deleteRunning && !state.undoRunning
+            if (canEdit) {
+                item {
+                    MedicationTapToAddSection(
+                        patient = patient,
+                        canStartEditor = canStartEditor,
+                        onEvent = onEvent,
+                    )
+                }
+            }
+            item {
+                MedicationsListContent(
+                    patient = patient,
+                    canEdit = canEdit,
+                    canStartEditor = canStartEditor,
+                    onEvent = onEvent,
+                    onDeleteMedication = { med ->
+                        onEvent(AncEvent.RequestDelete(patient.id, DeletableType.MEDICATION, med.id))
+                    },
+                    onEditMedication = { med ->
+                        if (canStartEditor) {
+                            dispatchMedicationDraft(
+                                onEvent = onEvent,
+                                patientId = patient.id,
+                                medicationId = med.id,
+                            )
+                        }
+                    },
+                )
+            }
+        }
+
+        WorkspaceBedsideTab.PLAN -> {
+            item {
+                DeliveryPlanningCard(
+                    patient = patient,
+                    onEditPatient = {
+                        onEvent(
+                            AncEvent.StartPatientEditor(
+                                patientId = patient.id,
+                                newPatientId = patient.id,
                                 editorSessionId = UUID.randomUUID().toString(),
                             ),
                         )
                     },
-                    modifier = Modifier.minimumTouchTarget().testTag("addLab"),
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.add_lab), maxLines = 1, softWrap = false)
-                }
+                )
             }
             item {
-                OutlinedButton(
-                    onClick = { onEvent(AncEvent.StartLabBatchRequest(patient.id)) },
-                    modifier = Modifier.minimumTouchTarget().testTag("startLabBatch"),
-                ) {
-                    Text("New laboratory batch")
-                }
-            }
-        }
-        if (patient.labInvestigations.isEmpty()) {
-            item { Text(stringResource(R.string.no_lab_recorded)) }
-        } else {
-            items(patient.labInvestigations, key = { it.id }) { lab ->
-                LabCard(
-                    lab = lab,
+                AttachmentsSectionCard(
                     patient = patient,
-                    canEdit = patient.status != "archived",
-                    onDelete = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.LAB, lab.id)) },
-                ) {
-                    onEvent(
-                        AncEvent.StartLabEditor(
-                            patientId = patient.id,
-                            labId = lab.id,
-                            newLabId = lab.id,
-                            editorSessionId = UUID.randomUUID().toString(),
-                        ),
-                    )
-                }
-            }
-        }
-    } else if (section == WorkspaceSection.MEDICATIONS) {
-        val canEdit = patient.status != "archived"
-        val isSaveBlocked = state.savePhase == com.sherifradwan.ancnative.state.SavePhase.PENDING ||
-            state.savePhase == com.sherifradwan.ancnative.state.SavePhase.RECONCILING ||
-            state.savePhase == com.sherifradwan.ancnative.state.SavePhase.UNRESOLVED
-        val canStartEditor = canEdit && !state.hasDirtyDraft && !isSaveBlocked && !state.deleteRunning && !state.undoRunning
-        if (canEdit) {
-            item {
-                MedicationTapToAddSection(
-                    patient = patient,
-                    canStartEditor = canStartEditor,
-                    onEvent = onEvent,
+                    onAddAttachment = onAddAttachment,
+                    onViewAttachment = onViewAttachment,
+                    onViewPhotos = onViewPhotos,
                 )
             }
         }
-        item {
-            MedicationsListContent(
-                patient = patient,
-                canEdit = canEdit,
-                canStartEditor = canStartEditor,
-                onEvent = onEvent,
-                onDeleteMedication = { med ->
-                    onEvent(AncEvent.RequestDelete(patient.id, DeletableType.MEDICATION, med.id))
-                },
-                onEditMedication = { med ->
-                    if (canStartEditor) {
-                        dispatchMedicationDraft(
-                            onEvent = onEvent,
-                            patientId = patient.id,
-                            medicationId = med.id,
-                        )
-                    }
-                },
-            )
-        }
-    } else if (section == WorkspaceSection.EPISODE_OVERVIEW) {
-        item {
-            EpisodeOverviewContent(patient, onEvent)
-        }
-    } else if (section == WorkspaceSection.DELIVERY) {
-        item {
-            DeliveryPlanningCard(
-                patient = patient,
-                onEditPatient = {
-                    onEvent(
-                        AncEvent.StartPatientEditor(
-                            patientId = patient.id,
-                            newPatientId = patient.id,
-                            editorSessionId = UUID.randomUUID().toString(),
-                        ),
-                    )
-                },
-            )
-        }
-    } else if (section == WorkspaceSection.ATTACHMENTS) {
-        item {
-            AttachmentsSectionCard(
-                patient = patient,
-                onAddAttachment = onAddAttachment,
-                onViewAttachment = onViewAttachment,
-                onViewPhotos = onViewPhotos,
-            )
-        }
-    } else {
-        item { PlaceholderCard() }
     }
 }
 
