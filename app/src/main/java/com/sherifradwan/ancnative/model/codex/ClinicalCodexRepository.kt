@@ -42,7 +42,11 @@ class ClinicalCodexRepository internal constructor(
             saveLabItems(defaults)
             defaults
         } else {
-            loadedLabs
+            val defaults = defaultLabCodexItems()
+            val customLabs = loadedLabs.filter { it.isCustom }
+            val merged = defaults + customLabs
+            saveLabItems(merged)
+            merged
         }
 
         val loadedGroups = loadLabCategoryGroups()
@@ -51,7 +55,11 @@ class ClinicalCodexRepository internal constructor(
             saveLabCategoryGroups(defaults)
             defaults
         } else {
-            loadedGroups
+            val defaults = defaultLabCategoryGroups()
+            val customGroups = loadedGroups.filter { it.isCustom }
+            val merged = defaults + customGroups
+            saveLabCategoryGroups(merged)
+            merged
         }
 
         val loadedMeds = loadMedicationItems()
