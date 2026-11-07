@@ -1,11 +1,18 @@
 package com.sherifradwan.ancnative.state
 
 import com.sherifradwan.ancnative.model.ClinicalVocabulary
+import com.sherifradwan.ancnative.model.codex.LabCategoryGroup
 import com.sherifradwan.ancnative.storage.LabBatchEntry
 import com.sherifradwan.ancnative.storage.SaveLabBatchCommand
 
 /** Which of the three batch tabs is open. A new batch starts on Add (nothing to enter yet). */
 enum class LabBatchTab { ADD, ENTER, REVIEW }
+
+/** A display section of grouped items for the Review tab and summary views. */
+data class LabBatchItemGroup(
+    val title: String,
+    val items: List<LabBatchItem>,
+)
 
 /** One row of the batch while it is still in memory. Nothing here is written until Save. */
 data class LabBatchItem(
@@ -95,3 +102,32 @@ data class LabBatchDraft(
             entries = toEntries(),
         )
 }
+
+/** Pure grouping function: partitions batch items under panel headers, with leftovers grouped by category. */
+fun groupLabBatchItems(
+    items: List<LabBatchItem>,
+    groups: List<LabCategoryGroup>,
+): List<LabBatchItemGroup> {
+    if (items.isEmpty()) return emptyList()
+    val remaining = items.toMutableList()
+    val result = mutableListOf<LabBatchItemGroup>()
+
+    for (group in groups) {
+        val groupTestNames = group.testNames.map { it.trim().lowercase() }.toSet()
+        val matching = remaining.filter { it.testName.trim().lowercase() in groupTestNames }
+        if (matching.isNotEmpty()) {
+            result.add(LabBatchItemGroup(title = group.name, items = matching))
+            remaining.removeAll(matching)
+        }
+    }
+
+    if (remaining.isNotEmpty()) {
+        val byCategory = remaining.groupBy { it.category.ifBlank { "Other" } }
+        for ((cat, catItems) in byCategory) {
+            result.add(LabBatchItemGroup(title = cat, items = catItems))
+        }
+    }
+
+    return result
+}
+

@@ -173,4 +173,34 @@ class LabBatchDraftTest {
         assertTrue(base.copy(labBatchDraft = draft().add(listOf(item("a")))).hasDirtyDraft)
     }
 
+    @Test
+    fun groupingEmptyItemsReturnsEmptyList() {
+        val groups = listOf(
+            com.sherifradwan.ancnative.model.codex.LabCategoryGroup("g1", "CBC", "", listOf("Hb", "WBC"), false),
+        )
+        val grouped = groupLabBatchItems(emptyList(), groups)
+        assertTrue(grouped.isEmpty())
+    }
+
+    @Test
+    fun groupingItemsMatchesPanelNamesAndGroupsLeftoversByCategory() {
+        val groups = listOf(
+            com.sherifradwan.ancnative.model.codex.LabCategoryGroup("g1", "CBC", "", listOf("Haemoglobin (Hb)", "White Cell Count (WBC)"), false),
+            com.sherifradwan.ancnative.model.codex.LabCategoryGroup("g2", "Urine", "", listOf("Urine Protein", "Urine Glucose"), false),
+        )
+        val items = listOf(
+            LabBatchItem("1", "Haemoglobin (Hb)", "Hematology", "g/dL"),
+            LabBatchItem("2", "White Cell Count (WBC)", "Hematology", "×10³/µL"),
+            LabBatchItem("3", "Urine Protein", "Urinalysis", ""),
+            LabBatchItem("4", "Ferritin", "Biochemistry", "ng/mL"),
+        )
+        val grouped = groupLabBatchItems(items, groups)
+        assertEquals(3, grouped.size)
+        assertEquals("CBC", grouped[0].title)
+        assertEquals(listOf("1", "2"), grouped[0].items.map { it.labId })
+        assertEquals("Urine", grouped[1].title)
+        assertEquals(listOf("3"), grouped[1].items.map { it.labId })
+        assertEquals("Biochemistry", grouped[2].title)
+        assertEquals(listOf("4"), grouped[2].items.map { it.labId })
+    }
 }
