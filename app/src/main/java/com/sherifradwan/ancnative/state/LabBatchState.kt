@@ -61,7 +61,7 @@ data class LabBatchDraft(
     fun moveCursor(index: Int): LabBatchDraft =
         copy(cursor = index.coerceIn(0, (items.size - 1).coerceAtLeast(0)))
 
-    fun toEntries(): List<LabBatchEntry> = items.map { item ->
+    fun toEntries(): List<LabBatchEntry> = items.filter { it.result.isNotBlank() }.map { item ->
         LabBatchEntry(
             labId = item.labId,
             testName = item.testName,
@@ -75,12 +75,13 @@ data class LabBatchDraft(
     }
     /** What Save would reject, so a bad date or an empty row never reaches the command. */
     fun validationErrors(): Set<ClinicalValidationError> = buildSet {
-        if (date.isBlank()) add(ClinicalValidationError.REQUIRED_DATE)
-        else if (!ClinicalVocabulary.isValidIsoDate(date)) add(ClinicalValidationError.INVALID_DATE)
-        if (items.isEmpty()) add(ClinicalValidationError.REQUIRED_RESULT)
-        if (items.any { it.result.isBlank() }) add(ClinicalValidationError.REQUIRED_RESULT)
-        if (items.any { it.testName.isBlank() }) add(ClinicalValidationError.REQUIRED_NAME)
-        if (items.any { it.category !in ClinicalVocabulary.testCategories }) add(ClinicalValidationError.INVALID_CATEGORY)
+        val trimmedDate = date.trim()
+        if (trimmedDate.isBlank()) add(ClinicalValidationError.REQUIRED_DATE)
+        else if (!ClinicalVocabulary.isValidIsoDate(trimmedDate)) add(ClinicalValidationError.INVALID_DATE)
+        val filled = items.filter { it.result.isNotBlank() }
+        if (filled.isEmpty()) add(ClinicalValidationError.REQUIRED_RESULT)
+        if (filled.any { it.testName.isBlank() }) add(ClinicalValidationError.REQUIRED_NAME)
+        if (filled.any { it.category !in ClinicalVocabulary.testCategories }) add(ClinicalValidationError.INVALID_CATEGORY)
     }
 
     fun toSaveCommand(operationUuid: String, expectedPatientRevision: Long): SaveLabBatchCommand =
@@ -89,7 +90,7 @@ data class LabBatchDraft(
             operationUuid = operationUuid,
             patientId = patientId,
             expectedPatientRevision = expectedPatientRevision,
-            date = date,
+            date = date.trim(),
             labName = labName?.trim()?.ifEmpty { null },
             entries = toEntries(),
         )
