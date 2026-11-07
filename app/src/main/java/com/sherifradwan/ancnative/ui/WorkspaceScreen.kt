@@ -219,9 +219,14 @@ fun WorkspaceScreen(
                 LongitudinalTimelineProjection.build(patient)
             }
 
+            var encounterFilter by rememberSaveable { mutableStateOf(EncounterFilter.ALL) }
+
             WorkspaceSectionTabBar(
-                selectedTab = currentTab,
+                selectedTab = WorkspaceBedsideTab.entries[pagerState.currentPage],
                 onSelectTab = { tab ->
+                    coroutineScope.launch {
+                        pagerState.animateScrollToPage(tab.ordinal)
+                    }
                     if (tab != currentTab) {
                         onEvent(AncEvent.SelectSection(tab.defaultSection))
                     }
@@ -245,7 +250,7 @@ fun WorkspaceScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .testTag(if (isCurrent) "workspaceList" else "workspaceList-${pageTab.name}"),
-                    contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = 8.dp),
+                    contentPadding = PaddingValues(start = horizontalPadding, end = horizontalPadding, top = 14.dp, bottom = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     workspaceBedsideContentItems(
@@ -261,6 +266,8 @@ fun WorkspaceScreen(
                         },
                         onAddAttachment = { showAddAttachmentDialog = true },
                         onViewAttachment = { viewingAttachment = it },
+                        encounterFilter = encounterFilter,
+                        onSelectEncounterFilter = { encounterFilter = it },
                     )
                 }
             }
@@ -696,6 +703,43 @@ private fun WorkspaceSectionTabBar(
     }
 }
 
+private enum class EncounterFilter {
+    ALL,
+    VISITS,
+    SCANS,
+}
+
+@Composable
+private fun FilterPillChip(
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    tag: String,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(20.dp),
+        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+        border = BorderStroke(
+            1.dp,
+            if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        ),
+        modifier = modifier
+            .minimumTouchTarget()
+            .testTag(tag),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+            ),
+            color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+        )
+    }
+}
+
 private fun LazyListScope.workspaceBedsideContentItems(
     patient: DemoPatient,
     tab: WorkspaceBedsideTab,
@@ -706,6 +750,8 @@ private fun LazyListScope.workspaceBedsideContentItems(
     onViewPhotos: (DemoUltrasoundScan, Int) -> Unit = { _, _ -> },
     onAddAttachment: () -> Unit = {},
     onViewAttachment: (DemoAttachment) -> Unit = {},
+    encounterFilter: EncounterFilter = EncounterFilter.ALL,
+    onSelectEncounterFilter: (EncounterFilter) -> Unit = {},
 ) {
     if (patient.status == "archived") {
         item {
@@ -828,47 +874,112 @@ private fun LazyListScope.workspaceBedsideContentItems(
         }
 
         WorkspaceBedsideTab.ENCOUNTERS -> {
-            if (patient.status != "archived") {
-                item {
+            item {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    // Filter row
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Button(
-                            onClick = { onStartVisit(patient.id, null) },
-                            modifier = Modifier.minimumTouchTarget().testTag("addVisit"),
+                        val allCount = timelineEvents.size
+                        val visitsCount = patient.visits.size
+                        val scansCount = patient.ultrasoundScans.size
+
+                        FilterPillChip(
+                            label = "All ($allCount)",
+                            isSelected = encounterFilter == EncounterFilter.ALL,
+                            onClick = { onSelectEncounterFilter(EncounterFilter.ALL) },
+                            tag = "filterEncounters-all",
+                        )
+                        FilterPillChip(
+                            label = "Visits ($visitsCount)",
+                            isSelected = encounterFilter == EncounterFilter.VISITS,
+                            onClick = { onSelectEncounterFilter(EncounterFilter.VISITS) },
+                            tag = "filterEncounters-visits",
+                        )
+                        FilterPillChip(
+                            label = "Scans ($scansCount)",
+                            isSelected = encounterFilter == EncounterFilter.SCANS,
+                            onClick = { onSelectEncounterFilter(EncounterFilter.SCANS) },
+                            tag = "filterEncounters-scans",
+                        )
+                    }
+
+                    // Action buttons (if not archived)
+                    if (patient.status != "archived") {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text(stringResource(R.string.add_visit), maxLines = 1, softWrap = false)
-                        }
-                        Button(
-                            onClick = {
-                                onEvent(
-                                    AncEvent.StartUltrasoundEditor(
-                                        patientId = patient.id,
-                                        scanId = null,
-                                        newScanId = UUID.randomUUID().toString(),
-                                        editorSessionId = UUID.randomUUID().toString(),
-                                    ),
-                                )
-                            },
-                            modifier = Modifier.minimumTouchTarget().testTag("addUltrasound"),
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text(stringResource(R.string.add_ultrasound), maxLines = 1, softWrap = false)
+                            Button(
+                                onClick = { onStartVisit(patient.id, null) },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .minimumTouchTarget()
+                                    .testTag("addVisit"),
+                                shape = RoundedCornerShape(12.dp),
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text(stringResource(R.string.add_visit), maxLines = 1, softWrap = false)
+                            }
+                            OutlinedButton(
+                                onClick = {
+                                    onEvent(
+                                        AncEvent.StartUltrasoundEditor(
+                                            patientId = patient.id,
+                                            scanId = null,
+                                            newScanId = UUID.randomUUID().toString(),
+                                            editorSessionId = UUID.randomUUID().toString(),
+                                        ),
+                                    )
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .minimumTouchTarget()
+                                    .testTag("addUltrasound"),
+                                shape = RoundedCornerShape(12.dp),
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text(stringResource(R.string.add_ultrasound), maxLines = 1, softWrap = false)
+                            }
                         }
                     }
                 }
             }
-            if (timelineEvents.isEmpty()) {
-                item { Text(stringResource(R.string.no_visits), style = MaterialTheme.typography.bodyLarge) }
+
+            val displayedEvents = when (encounterFilter) {
+                EncounterFilter.ALL -> timelineEvents
+                EncounterFilter.VISITS -> timelineEvents.filter { it.kind == TimelineEventKind.VISIT }
+                EncounterFilter.SCANS -> timelineEvents.filter {
+                    it.kind == TimelineEventKind.STANDALONE_ULTRASOUND || (it.kind == TimelineEventKind.VISIT && it.linkedScan != null)
+                }
+            }
+
+            if (displayedEvents.isEmpty()) {
+                item {
+                    val emptyMessage = when (encounterFilter) {
+                        EncounterFilter.VISITS -> "No antenatal visits recorded yet"
+                        EncounterFilter.SCANS -> "No ultrasound scans recorded yet"
+                        EncounterFilter.ALL -> stringResource(R.string.no_visits)
+                    }
+                    Text(
+                        text = emptyMessage,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 16.dp),
+                    )
+                }
             } else {
-                itemsIndexed(timelineEvents, key = { _, event -> event.eventKey }) { index, event ->
+                itemsIndexed(displayedEvents, key = { _, event -> event.eventKey }) { index, event ->
                     val isFirst = index == 0
-                    val isLast = index == timelineEvents.lastIndex
+                    val isLast = index == displayedEvents.lastIndex
                     TimelineSpineItem(
                         isFirst = isFirst,
                         isLast = isLast,
@@ -1047,15 +1158,75 @@ private fun VisitCard(
     onDelete: () -> Unit = {},
     linkIntegrityWarning: String? = null,
 ) {
+    val gaAtVisit = GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, visit.date)?.displayText
+
     Card(
         modifier = Modifier.fillMaxWidth().testTag("visit-${visit.id}"),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(visit.date, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            // Header Row: Date + GA + Badges
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = visit.date,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    if (!gaAtVisit.isNullOrBlank()) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = Color(0xFF176B70).copy(alpha = 0.12f),
+                            border = BorderStroke(1.dp, Color(0xFF176B70).copy(alpha = 0.3f)),
+                        ) {
+                            Text(
+                                text = gaAtVisit,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF176B70),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            )
+                        }
+                    }
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    BpAlertLabel(visit.bloodPressure)
+
+                    if (visit.linkedUltrasoundId != null) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f)),
+                        ) {
+                            Text(
+                                text = "Scan Linked",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            )
+                        }
+                    }
+                }
+            }
+
             if (!linkIntegrityWarning.isNullOrBlank()) {
                 Surface(
                     color = MaterialTheme.colorScheme.errorContainer,
@@ -1082,9 +1253,62 @@ private fun VisitCard(
                     }
                 }
             }
-            FactRow(R.string.blood_pressure, visit.bloodPressure, isEmphasized = true)
-            BpAlertLabel(visit.bloodPressure)
-            FactRow(R.string.weight, formatWeightKg(visit.weight))
+
+            // Maternal Vitals Grid
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 10.dp, horizontal = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "BLOOD PRESSURE",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            text = visit.bloodPressure?.let { "$it mmHg" } ?: "Not recorded",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+
+                    Box(
+                        Modifier
+                            .width(1.dp)
+                            .height(28.dp)
+                            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    )
+
+                    Spacer(Modifier.width(14.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "MATERNAL WEIGHT",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            text = formatWeightKg(visit.weight) ?: "Not recorded",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
+            }
+
             FactRow(R.string.findings, visit.findings)
             FactRow(R.string.notes, visit.notes)
             if (visit.isSyntheticEdit) {
@@ -1101,20 +1325,33 @@ private fun VisitCard(
                 if (linkedScan != null) {
                     Card(
                         modifier = Modifier.fillMaxWidth().testTag("inlineLinkedScan-${visit.id}"),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.35f)),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
                     ) {
-                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Text(
-                                    text = stringResource(R.string.linked_ultrasound),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                ) {
+                                    Icon(
+                                        Icons.Default.DateRange,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.secondary,
+                                        modifier = Modifier.size(16.dp),
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.linked_ultrasound),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    )
+                                }
                                 Text(
                                     text = linkedScan.date,
                                     style = MaterialTheme.typography.labelMedium,
@@ -1176,7 +1413,8 @@ private fun VisitCard(
                                 }
                             }
                             Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 TextButton(
@@ -1742,9 +1980,11 @@ private fun UltrasoundCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth().testTag(cardTag),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
     ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (!linkIntegrityWarning.isNullOrBlank()) {
                 Surface(
                     color = MaterialTheme.colorScheme.errorContainer,
@@ -1776,7 +2016,23 @@ private fun UltrasoundCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(scan.date, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Icon(
+                        Icons.Default.DateRange,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Text(
+                        scan.date,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
                 if (scan.linkedVisitId != null) {
                     val linkedVisit = patient.visits.firstOrNull { it.id == scan.linkedVisitId }
                     if (linkedVisit != null && canEdit) {
@@ -1785,23 +2041,30 @@ private fun UltrasoundCard(
                             modifier = Modifier.testTag("openLinkedVisit-${scan.id}"),
                         ) {
                             Text(
-                                text = linkedVisit.date,
+                                text = "Visit: ${linkedVisit.date}",
                                 style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
                             )
                         }
                     } else {
                         Text(
                             text = linkedVisit?.date ?: stringResource(R.string.link_to_visit),
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.tertiary,
+                            color = MaterialTheme.colorScheme.secondary,
                         )
                     }
                 } else {
-                    Text(
-                        text = stringResource(R.string.standalone_scan),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.tertiary,
-                    )
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.standalone_scan),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        )
+                    }
                 }
             }
             val ga = when {
