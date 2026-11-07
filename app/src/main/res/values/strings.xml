@@ -306,7 +306,17 @@
     <string name="gestational_progress_cd">Gestational progress %1$s, %2$d percent</string>
     <string name="all_filter">All</string>
     <string name="high_risk_filter">High Risk</string>
+    <string name="medium_risk_filter">Medium Risk</string>
+    <string name="low_risk_filter">Low Risk</string>
     <string name="normal_risk_filter">Normal Risk</string>
+    <string name="no_clinical_attention_recorded">No clinical attention recorded</string>
+    <string name="archive_patient_subtitle">Hidden from this list; can be restored</string>
+    <string name="unarchive_patient_subtitle">Restore patient to active directory</string>
+    <string name="more_actions">More actions</string>
+    <string name="patient_age_years">%1$s y</string>
+    <string name="ga_prefix">GA %1$s</string>
+    <string name="edd_prefix">EDD %1$s</string>
+    <string name="unrecorded_risk">Unrecorded</string>
     <string name="active_patients_count">%1$d Patients</string>
     <string name="expand_details">Expand</string>
     <string name="collapse_details">Collapse</string>
