@@ -463,3 +463,7 @@ Keeps the history from the handoff until Claude returns after its quota reset. F
 - Verified: GATE OK; 979 unit tests; STATIC CHECKS OK.
 - NOT verified: the screen has never been launched (no device attached when it was written); instrumented suites were not re-run after the catalogue split; no batch UI tests; the four batch/UI commits are unreviewed (subagent 403; agy run stopped before output).
 - Consultant report for an independent reviewer: `.agents/pipeline/REPORT_FOR_AGY_2026-11-05.md`.
+
+## 2026-11-05 — Design report: approved direction, mocks and the gap to the batch mock
+- `.agents/pipeline/DESIGN_REPORT_2026-11-05.md`: the closed design direction and tokens, the mock inventory (d1/d2/d3 + rev-b), the honest screen-status table, a ten-item gap list between `LabBatchScreen` and the approved batch mock, and a ten-step path to close it (smoke first, then spec sheet, layout, review grouping, Choose sheet, qualitative buttons, strings, screenshot pair, tests, review).
+- No code changed in this entry.
