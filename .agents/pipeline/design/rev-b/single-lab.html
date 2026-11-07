@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Revision B · Single Laboratory Investigation · Approved Story Design</title>
+<style>
+:root {
+  --bg: #FBF8F5;
+  --sf: #FFFFFF;
+  --sv: #F3E9E7;
+  --on: #0D1B3D;
+  --onv: #4C3F43;
+  --mut: #6B6166;
+  --outv: #CAC4D0;
+  --pri: #0D1B3D;
+  --onpri: #FFFFFF;
+  --sec: #934F5B;
+  --secc: #FFD9DE;
+  --osecc: #3B0815;
+  --ter: #176B70;
+  --terc: #AFECEE;
+  --gB: #DCFCE7;
+  --gT: #166534;
+  --rB: #FEE2E2;
+  --rT: #B91C1C;
+  --aB: #FEF3C7;
+  --aT: #92400E;
+  --page: #E9E4DF;
+  --shadow: 0 1px 3px rgba(13,27,61,.12);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 24px 16px 60px;
+  background: var(--page);
+  color: var(--on);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+h1 { max-width: 1200px; margin: 0 auto 4px; font-size: 22px; font-weight: 800; color: var(--pri); }
+.lead { max-width: 1200px; margin: 0 auto 20px; color: var(--onv); font-size: 14px; }
+.diff-box {
+  max-width: 1200px;
+  margin: 0 auto 24px;
+  background: #fff;
+  border: 1px solid var(--outv);
+  border-radius: 14px;
+  padding: 16px 20px;
+  box-shadow: var(--shadow);
+}
+.diff-box h2 { margin: 0 0 10px; font-size: 16px; color: var(--sec); font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+.diff-box ul { margin: 0; padding-left: 20px; }
+.diff-box li { margin-bottom: 6px; font-size: 13.5px; }
+.grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; align-items: flex-start; }
+.slice { width: 360px; }
+.slice h3 { margin: 0 0 8px; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--sec); font-weight: 800; }
+.phone {
+  position: relative;
+  width: 360px;
+  height: 740px;
+  background: var(--bg);
+  border: 1px solid var(--outv);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(13,27,61,.18);
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--on);
+}
+.inner { display: flex; flex-direction: column; height: 100%; }
+.appbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--pri);
+  color: #fff;
+  padding: 6px 12px;
+  min-height: 54px;
+}
+.appbar .x {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.appbar b { display: block; font-size: 15px; font-weight: 700; }
+.appbar small { display: block; opacity: .85; font-size: 12px; }
+.scroll { flex: 1; overflow-y: auto; padding: 12px; }
+.foot {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--sf);
+  border-top: 1px solid var(--outv);
+}
+.btn {
+  min-height: 48px;
+  padding: 0 16px;
+  border-radius: 24px;
+  border: 1.5px solid var(--outv);
+  background: var(--sf);
+  color: var(--on);
+  font: inherit;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn.pri { background: var(--pri); color: var(--onpri); border-color: var(--pri); }
+.btn.sec { background: var(--secc); color: var(--osecc); border-color: transparent; }
+.btn.grow { flex: 1 1 auto; }
+.btn.full { width: 100%; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.card {
+  background: var(--sf);
+  border: 1px solid var(--outv);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: var(--shadow);
+  margin-top: 10px;
+}
+.batch {
+  border: 1px solid var(--outv);
+  border-radius: 14px;
+  background: var(--sf);
+  padding: 10px 12px;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--shadow);
+}
+.batch b { font-size: 14px; }
+.batch small { color: var(--mut); font-size: 12px; }
+.batch .edit { color: var(--sec); font-weight: 800; font-size: 12px; cursor: pointer; }
+.sh {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--sec);
+  font-weight: 800;
+  border-left: 4px solid var(--sec);
+  padding-left: 8px;
+  margin: 12px 2px 4px;
+}
+.sh em { font-style: normal; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--mut); }
+.tag-cat {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--sec);
+}
+h3.t { margin: 4px 0 2px; font-size: 20px; font-weight: 800; line-height: 1.25; }
+.sub { color: var(--mut); font-size: 12.5px; margin-bottom: 12px; }
+.big-display {
+  background: var(--sv);
+  border-radius: 14px;
+  padding: 12px;
+  text-align: center;
+  margin: 8px 0 10px;
+}
+.big-display .val { font-size: 36px; font-weight: 800; color: var(--on); line-height: 1.1; }
+.big-display .unit { font-size: 14px; font-weight: 600; color: var(--mut); margin-left: 4px; }
+.pillrow { display: flex; justify-content: center; min-height: 26px; margin: 6px 0 10px; }
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+.p-g { background: var(--gB); color: var(--gT); }
+.p-r { background: var(--rB); color: var(--rT); }
+.p-a { background: var(--aB); color: var(--aT); }
+.f-group { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+.f-group label { font-size: 11.5px; font-weight: 700; color: var(--mut); text-transform: uppercase; letter-spacing: 0.04em; }
+.inp {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 12px;
+  border: 1.5px solid var(--outv);
+  background: var(--sf);
+  padding: 0 12px;
+  font: inherit;
+  font-size: 14.5px;
+  color: var(--on);
+}
+.inp:focus { outline: none; border-color: var(--pri); }
+.inp-row { display: flex; gap: 8px; }
+.toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 4px;
+  border-top: 1px solid #EFE9E4;
+  margin-top: 12px;
+}
+.toggle-row b { font-size: 14px; }
+.switch {
+  width: 44px;
+  height: 24px;
+  background: var(--outv);
+  border-radius: 12px;
+  position: relative;
+  cursor: pointer;
+}
+.switch.on { background: var(--rT); }
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform .15s;
+}
+.switch.on::after { transform: translateX(20px); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.chip {
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 19px;
+  border: 1.5px solid var(--outv);
+  background: var(--sf);
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+.chip.on { background: var(--secc); border-color: transparent; color: var(--osecc); font-weight: 700; }
+.opt-big {
+  width: 100%;
+  min-height: 50px;
+  margin-top: 6px;
+  border-radius: 12px;
+  border: 1.5px solid var(--outv);
+  background: var(--sf);
+  font: 600 15px inherit;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 14px;
+  cursor: pointer;
+}
+.opt-big.on { border-color: var(--sec); background: var(--secc); color: var(--osecc); font-weight: 800; }
+.search {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 12px;
+  border: 1.5px solid var(--outv);
+  padding: 0 12px;
+  font: inherit;
+  background: var(--sf);
+}
+.rv {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 52px;
+  border-bottom: 1px solid #EFE9E4;
+  padding: 6px 2px;
+}
+.rv:last-child { border-bottom: 0; }
+.rv b { display: block; font-size: 14px; }
+.rv small { color: var(--mut); font-size: 12px; }
+.rv .r { display: flex; align-items: center; gap: 8px; }
+.rv .v { font-weight: 800; font-size: 14px; }
+.toast {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 74px;
+  background: #0D1B3D;
+  color: #fff;
+  border-radius: 14px;
+  padding: 4px 6px 4px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  border: 1px solid rgba(255,255,255,.25);
+  box-shadow: 0 4px 16px rgba(0,0,0,.3);
+}
+.toast button {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: #FFB2BC;
+  font: inherit;
+  font-weight: 800;
+  padding: 0 12px;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<h1>Revision B · Single Laboratory Investigation Mock</h1>
+<p class="lead">Streamlined, story-like single investigation entry correlated with the approved batch design (`rev-b/lab-batch.html`). Elimination of obsolete preset clutter ("Reactive", "Non-reactive", etc.) in favor of core clinical fields: <b>Test, Value, Unit, Reference range, and Status</b>.</p>
+
+<div class="diff-box">
+  <h2>Design Correlation &amp; Optimization Record</h2>
+  <ul>
+    <li><b>Story-like Layout:</b> Replaced the clunky numbered sections ("1. Laboratory Details &amp; Date") with the sleek <b>BatchInfoBar</b> (Date · GA, Lab Name, Change ▾).</li>
+    <li><b>Elimination of Redundant Preset Options:</b> Removed the hardcoded buttons for "Reactive", "Non-reactive", etc. Tests now cleanly present <b>Test Name, Value, Unit, and Reference range</b>.</li>
+    <li><b>Prominent Clinical Story Display:</b> Entered values appear in a large, clear clinical box (e.g. <code>10.8 g/dL</code>) accompanied by the diagnostic badge (<code>Low ▼</code>, <code>Normal ✓</code>, <code>High ▲</code>).</li>
+    <li><b>Urinalysis / Dipstick Specialization:</b> Qualitative dipstick tests (e.g. Urine Protein) present big choice buttons (<code>Normal</code>, <code>Trace</code>, <code>+</code>, <code>++</code>, <code>+++</code>) directly, matching Slice 4 of the batch mock.</li>
+    <li><b>Bottom Bar Alignment:</b> Standard <code>EditorPage</code> bottom bar with <code>Cancel</code>, <code>Save &amp; add another</code>, and primary <code>Save investigation</code>.</li>
+  </ul>
+</div>
+
+<div class="grid">
+
+  <!-- SLICE 1: Numeric Investigation Entry -->
+  <div class="slice">
+    <h3>1 · Numeric Test Entry (e.g. Haemoglobin)</h3>
+    <div class="phone">
+      <div class="inner">
+        <div class="appbar">
+          <button class="x">‹</button>
+          <div><b>Laboratory investigation</b><small>Mona Hassan · GA 34w 2d</small></div>
+        </div>
+        <div class="scroll">
+          <div class="batch">
+            <span><b>Today</b> <small>· GA 34w 2d</small></span>
+            <span><b>Al Borg</b></span>
+            <span class="edit">Change ▾</span>
+          </div>
+
+          <div class="card">
+            <div class="tag-cat">HEMATOLOGY</div>
+            <h3 class="t">Haemoglobin (Hb)</h3>
+            <div class="sub">g/dL · ref <span style="font-weight:700;color:var(--sec)">11.0 – 15.0</span> (from report)</div>
+
+            <div class="big-display">
+              <span class="val">10.8</span><span class="unit">g/dL</span>
+            </div>
+
+            <div class="pillrow">
+              <span class="pill p-r">Low ▼</span>
+            </div>
+
+            <div class="f-group">
+              <label>Result value</label>
+              <input class="inp" value="10.8" placeholder="Enter numeric result">
+            </div>
+
+            <div class="inp-row">
+              <div class="f-group" style="flex:1">
+                <label>Unit</label>
+                <input class="inp" value="g/dL">
+              </div>
+              <div class="f-group" style="flex:1.5">
+                <label>Reference range</label>
+                <input class="inp" value="11.0 – 15.0" placeholder="e.g. 11 - 15">
+              </div>
+            </div>
+
+            <div class="toggle-row">
+              <div>
+                <b>Abnormal flag</b>
+                <div style="font-size:12px;color:var(--mut)">Auto-flagged from reference range</div>
+              </div>
+              <div class="switch on"></div>
+            </div>
+
+            <div class="f-group">
+              <label>Clinical Notes (optional)</label>
+              <input class="inp" placeholder="Optional notes, e.g. repeat in 4 weeks">
+            </div>
+          </div>
+        </div>
+
+        <div class="foot">
+          <button class="btn">Cancel</button>
+          <button class="btn">Save &amp; next</button>
+          <button class="btn pri grow">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLICE 2: Selecting / Changing the Test -->
+  <div class="slice">
+    <h3>2 · Quick Test Search &amp; Selection</h3>
+    <div class="phone">
+      <div class="inner">
+        <div class="appbar">
+          <button class="x">‹</button>
+          <div><b>Select test</b><small>Mona Hassan · GA 34w 2d</small></div>
+        </div>
+        <div class="scroll">
+          <div class="batch">
+            <span><b>Today</b> <small>· GA 34w 2d</small></span>
+            <span><b>Al Borg</b></span>
+            <span class="edit">Change ▾</span>
+          </div>
+
+          <div class="sh"><span>Search or pick test</span></div>
+          <div class="card" style="margin-top:0">
+            <input class="search" placeholder="Search a test, e.g. ferritin" value="Fer">
+            <div class="rv" style="margin-top:6px">
+              <div><b>Ferritin</b><small>Biochemistry · ng/mL</small></div>
+              <button class="btn pri" style="min-height:36px;padding:0 12px;font-size:12.5px">Select</button>
+            </div>
+          </div>
+
+          <div class="sh"><span>Often added single tests</span></div>
+          <div class="card" style="margin-top:0">
+            <div class="chips">
+              <span class="chip on">Ferritin</span>
+              <span class="chip">TSH</span>
+              <span class="chip">Vitamin D</span>
+              <span class="chip">Serum Creatinine</span>
+              <span class="chip">ALT / AST</span>
+              <span class="chip">Uric Acid</span>
+              <span class="chip">Blood Group</span>
+            </div>
+          </div>
+
+          <div class="sh"><span>Or use batch mode for panels</span></div>
+          <div class="card" style="margin-top:0;background:var(--sv);border-color:transparent">
+            <b>Entering a lab report with multiple tests?</b>
+            <p style="margin:4px 0 10px;font-size:12.5px;color:var(--onv)">Batch mode allows choosing full panels (CBC, Urine, Booking) with one save and single-action undo.</p>
+            <button class="btn full" style="border-color:var(--sec);color:var(--sec)">Switch to Batch Mode</button>
+          </div>
+        </div>
+
+        <div class="foot">
+          <button class="btn grow">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLICE 3: Qualitative / Dipstick Entry -->
+  <div class="slice">
+    <h3>3 · Qualitative Urinalysis Entry</h3>
+    <div class="phone">
+      <div class="inner">
+        <div class="appbar">
+          <button class="x">‹</button>
+          <div><b>Laboratory investigation</b><small>Mona Hassan · GA 34w 2d</small></div>
+        </div>
+        <div class="scroll">
+          <div class="batch">
+            <span><b>Today</b> <small>· GA 34w 2d</small></span>
+            <span><b>Al Borg</b></span>
+            <span class="edit">Change ▾</span>
+          </div>
+
+          <div class="card">
+            <div class="tag-cat">URINALYSIS</div>
+            <h3 class="t">Urine Protein</h3>
+            <div class="sub">Dipstick</div>
+
+            <button class="opt-big"><span>Normal</span></button>
+            <button class="opt-big on"><span>Trace</span><span>✓</span></button>
+            <button class="opt-big"><span>+</span></button>
+            <button class="opt-big"><span>++</span></button>
+            <button class="opt-big"><span>+++</span></button>
+
+            <div class="toggle-row" style="margin-top:14px">
+              <div>
+                <b>Abnormal flag</b>
+                <div style="font-size:12px;color:var(--mut)">Trace / + marked abnormal</div>
+              </div>
+              <div class="switch on"></div>
+            </div>
+
+            <div class="f-group">
+              <label>Clinical Notes</label>
+              <input class="inp" placeholder="e.g. Trace protein, BP normal (110/70)">
+            </div>
+          </div>
+        </div>
+
+        <div class="foot">
+          <button class="btn">Cancel</button>
+          <button class="btn">Save &amp; next</button>
+          <button class="btn pri grow">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLICE 4: Saved Single Investigation & Undo -->
+  <div class="slice">
+    <h3>4 · Saved View &amp; Single-Action Undo</h3>
+    <div class="phone">
+      <div class="inner">
+        <div class="appbar">
+          <button class="x">‹</button>
+          <div><b>Laboratory</b><small>Mona Hassan · GA 34w 2d</small></div>
+        </div>
+        <div class="scroll">
+          <div class="sh"><span>Recent Investigations</span><em>Today · Al Borg</em></div>
+          <div class="card" style="margin-top:0">
+            <div class="rv">
+              <div>
+                <b>Haemoglobin (Hb)</b>
+                <small>Hematology · ref 11.0 – 15.0</small>
+              </div>
+              <div class="r">
+                <span class="v">10.8 g/dL</span>
+                <span class="pill p-r">Low ▼</span>
+              </div>
+            </div>
+            <div class="rv">
+              <div>
+                <b>Urine Protein</b>
+                <small>Urinalysis · Dipstick</small>
+              </div>
+              <div class="r">
+                <span class="v">Trace</span>
+                <span class="pill p-r">Abnormal ▲</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="toast">
+          <span>Haemoglobin (Hb) saved · Mona Hassan</span>
+          <button>Undo</button>
+        </div>
+
+        <div class="foot">
+          <button class="btn pri grow">Add investigation</button>
+          <button class="btn">Batch mode</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

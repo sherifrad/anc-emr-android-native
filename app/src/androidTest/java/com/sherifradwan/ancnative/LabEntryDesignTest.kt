@@ -6,12 +6,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOn
-import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -31,7 +29,11 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Oracles T300-T306 of SPEC_DESIGN_R5.md (Round 5b), written from the spec only. */
+/**
+ * Story Design Oracles for Single Laboratory Investigation Screen (LabEditor.kt).
+ * Verifies story-like layout, auto-flagging, direct clinical fields, qualitative dipstick choices,
+ * and elimination of obsolete reactive / non-reactive presets.
+ */
 @RunWith(AndroidJUnit4::class)
 class LabEntryDesignTest {
     @get:Rule
@@ -75,9 +77,15 @@ class LabEntryDesignTest {
         AncReducer.reduce(s, AncEvent.LabDraftChanged(field, value))
 
     private fun loadedHemoglobin(s: AncState): AncState {
-        var r = change(s, LabDraftField.NAME, "Hemoglobin")
+        var r = change(s, LabDraftField.CATEGORY, "Hematology")
+        r = change(r, LabDraftField.NAME, "Hemoglobin")
         r = change(r, LabDraftField.UNIT, "g/dL")
         return change(r, LabDraftField.REFERENCE_RANGE, "11-14")
+    }
+
+    private fun loadedUrineProtein(s: AncState): AncState {
+        var r = change(s, LabDraftField.CATEGORY, "Urinalysis")
+        return change(r, LabDraftField.NAME, "Urine Protein")
     }
 
     private fun exists(tag: String) = compose.onNodeWithTag(tag, useUnmergedTree = true).assertExists()
@@ -119,13 +127,13 @@ class LabEntryDesignTest {
     }
 
     @Test
-    fun t303_positivePresetSetsResult() {
-        host { loadedHemoglobin(it) }
-        // Preset order: Negative(0), Non-reactive(1), Normal(2), Positive(3).
-        compose.onNodeWithTag("labResultPreset-3", useUnmergedTree = true).performScrollTo().performClick()
+    fun t303_dipstickQualitativePresetSetsResultAndFlagsAbnormal() {
+        host { loadedUrineProtein(it) }
+        // Dipstick presets: Normal(0), Trace(1), +(2), ++(3), +++(4).
+        compose.onNodeWithTag("labResultPreset-1", useUnmergedTree = true).performScrollTo().performClick()
         compose.waitForIdle()
-        compose.onNodeWithTag("labResult", useUnmergedTree = true).performScrollTo().assertTextContains("Positive")
-        assertEquals("Positive", state.labDraft?.values?.result)
+        assertEquals("Trace", state.labDraft?.values?.result)
+        assertEquals(true, state.labDraft?.values?.isAbnormal)
     }
 
     @Test
@@ -133,19 +141,12 @@ class LabEntryDesignTest {
         host { loadedHemoglobin(it) }
         compose.onNodeWithTag("labResult", useUnmergedTree = true).performScrollTo().performTextInput("9")
         compose.waitForIdle()
-        if (compose.onAllNodesWithTag("labAbnormal", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()) {
-            compose.onNodeWithTag("labFlagToggle", useUnmergedTree = true).performScrollTo().performClick()
-            compose.waitForIdle()
-        }
         compose.onNodeWithTag("labAbnormal", useUnmergedTree = true).performScrollTo().assertIsOn()
     }
 
     @Test
-    fun t305_noteToggleOpensNotesAndTypedTextReachesDraft() {
+    fun t305_typingNotesReachesDraft() {
         host { loadedHemoglobin(it) }
-        missing("labNotes")
-        compose.onNodeWithTag("labNoteToggle", useUnmergedTree = true).performScrollTo().performClick()
-        compose.waitForIdle()
         compose.onNodeWithTag("labNotes", useUnmergedTree = true).performScrollTo().performTextInput("repeat in 4 weeks")
         compose.waitForIdle()
         assertEquals("repeat in 4 weeks", state.labDraft?.values?.notes)
@@ -156,7 +157,9 @@ class LabEntryDesignTest {
         host()
         exists("saveLab")
         exists("cancelLab")
+        exists("addAnotherLab")
         compose.onNodeWithTag("saveLab", useUnmergedTree = true).assertIsDisplayed()
         compose.onNodeWithTag("cancelLab", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithTag("addAnotherLab", useUnmergedTree = true).assertIsDisplayed()
     }
 }
