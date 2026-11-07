@@ -317,6 +317,8 @@
     <string name="ga_prefix">GA %1$s</string>
     <string name="edd_prefix">EDD %1$s</string>
     <string name="unrecorded_risk">Unrecorded</string>
+    <string name="print_pdf">Print PDF</string>
+    <string name="print_patient_report">Print Patient Report</string>
     <string name="active_patients_count">%1$d Patients</string>
     <string name="expand_details">Expand</string>
     <string name="collapse_details">Collapse</string>

@@ -5,7 +5,9 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,7 +50,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -61,18 +62,26 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import com.sherifradwan.ancnative.security.SecuritySettingsRepository
-import com.sherifradwan.ancnative.ui.report.PatientTwoPageReportDialog
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.sherifradwan.ancnative.security.SecuritySettingsRepository
+import com.sherifradwan.ancnative.ui.report.PatientTwoPageReportDialog
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoMedicationRecord
@@ -304,15 +313,18 @@ private fun ProfileHeroIdentityCard(
     onOpenReport: () -> Unit,
     onOpenWorkspace: () -> Unit,
 ) {
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // Patient Identity Row
             Row(
@@ -362,124 +374,148 @@ private fun ProfileHeroIdentityCard(
                 if (!patient.bloodGroupText.isNullOrBlank()) {
                     val isRhNeg = isRhNegative(patient.bloodGroupText)
                     val isRhPos = isRhPositive(patient.bloodGroupText)
-                    val bgContainer = when {
-                        isRhNeg -> MaterialTheme.colorScheme.errorContainer
-                        isRhPos -> MaterialTheme.colorScheme.tertiaryContainer
-                        else -> MaterialTheme.colorScheme.surfaceVariant
+                    val bgSurfaceColor = when {
+                        isRhNeg -> if (isDark) TagBloodNegativeDarkBg else TagBloodNegativeBg
+                        isRhPos -> if (isDark) TagBloodPositiveDarkBg else TagBloodPositiveBg
+                        else -> if (isDark) TagBloodNeutralDarkBg else TagBloodNeutralBg
                     }
-                    val bgText = when {
-                        isRhNeg -> MaterialTheme.colorScheme.onErrorContainer
-                        isRhPos -> MaterialTheme.colorScheme.onTertiaryContainer
-                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    val bgBorderColor = when {
+                        isRhNeg -> if (isDark) TagBloodNegativeDarkBorder else TagBloodNegativeBorder
+                        isRhPos -> if (isDark) TagBloodPositiveDarkBorder else TagBloodPositiveBorder
+                        else -> if (isDark) TagBloodNeutralDarkBorder else TagBloodNeutralBorder
                     }
+                    val bgTextColor = when {
+                        isRhNeg -> if (isDark) TagBloodNegativeDarkText else TagBloodNegativeText
+                        isRhPos -> if (isDark) TagBloodPositiveDarkText else TagBloodPositiveText
+                        else -> if (isDark) TagBloodNeutralDarkText else TagBloodNeutralText
+                    }
+
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = bgContainer,
+                        shape = RoundedCornerShape(6.dp),
+                        color = bgSurfaceColor,
+                        border = BorderStroke(1.dp, bgBorderColor),
                     ) {
                         Text(
                             text = formatBloodGroup(patient.bloodGroupText).orEmpty(),
                             style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = bgText,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                            fontWeight = if (isRhNeg) FontWeight.Bold else FontWeight.Medium,
+                            color = bgTextColor,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                         )
                     }
                 }
 
                 // 2. Gestational Age (GA)
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = RoundedCornerShape(6.dp),
+                    color = if (isDark) TagGestationalAgeDarkBg else TagGestationalAgeBg,
+                    border = BorderStroke(1.dp, if (isDark) TagGestationalAgeDarkBorder else TagGestationalAgeBorder),
                 ) {
                     Text(
-                        text = gaFormatted,
+                        text = stringResource(R.string.ga_prefix, gaFormatted),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        color = if (isDark) TagGestationalAgeDarkText else TagGestationalAgeText,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                     )
                 }
 
                 // 3. Obstetric GPA
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    shape = RoundedCornerShape(6.dp),
+                    color = if (isDark) TagObstetricDarkBg else TagObstetricBg,
+                    border = BorderStroke(1.dp, if (isDark) TagObstetricDarkBorder else TagObstetricBorder),
                 ) {
                     Text(
                         text = gpaText,
                         style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (isDark) TagObstetricDarkText else TagObstetricText,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                     )
                 }
 
                 // 4. Previous Pregnancy Summary
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(6.dp),
+                    color = if (isDark) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surfaceContainerHighest,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 ) {
                     Text(
                         text = prevSummary,
                         style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Normal,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                     )
                 }
 
                 // Phone
                 if (!patient.phone.isNullOrBlank()) {
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        shape = RoundedCornerShape(6.dp),
+                        color = if (isDark) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                     ) {
                         Text(
                             text = patient.phone,
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                         )
                     }
                 }
             }
 
-            // 4. Clinical Attention Alert Banner
+            // 4. Clinical Attention Alert Callout Box
             if (!patient.clinicalAttention.isNullOrBlank()) {
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = MaterialTheme.colorScheme.errorContainer,
-                    modifier = Modifier.fillMaxWidth(),
+                val containerColor = if (isDark) TagBloodNegativeDarkBg else TagBloodNegativeBg
+                val borderColor = if (isDark) TagBloodNegativeDarkBorder else TagBloodNegativeBorder
+                val accentBarColor = ActionRose
+                val textColor = if (isDark) TagBloodNegativeDarkText else TagBloodNegativeText
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(containerColor)
+                        .border(1.dp, borderColor, RoundedCornerShape(8.dp))
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.Top,
-                    ) {
-                        Icon(
-                            Icons.Default.Warning,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier.size(20.dp),
+                    Box(
+                        modifier = Modifier
+                            .width(3.5.dp)
+                            .height(28.dp)
+                            .background(accentBarColor, RoundedCornerShape(2.dp)),
+                    )
+
+                    Icon(
+                        Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = accentBarColor,
+                        modifier = Modifier.size(16.dp),
+                    )
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.clinical_attention),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = accentBarColor,
                         )
-                        Column {
-                            Text(
-                                text = "Clinical Attention",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onErrorContainer,
-                            )
-                            Text(
-                                text = patient.clinicalAttention,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onErrorContainer,
-                            )
-                        }
+                        Text(
+                            text = patient.clinicalAttention,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium,
+                            color = textColor,
+                        )
                     }
                 }
             }
 
-            // 5. DEDICATED FULL-WIDTH CLINICAL ACTIONS BAR (Spacious, Zero Character Wrapping!)
+            // 5. DEDICATED FULL-WIDTH CLINICAL ACTIONS BAR (48dp height, pill shapes)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -490,22 +526,23 @@ private fun ProfileHeroIdentityCard(
                     onClick = onOpenWorkspace,
                     modifier = Modifier
                         .weight(1.3f)
+                        .height(48.dp)
                         .testTag("workspaceButton"),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
                     ),
-                    shape = RoundedCornerShape(10.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
                 ) {
                     Icon(
                         imageVector = Icons.Default.EditNote,
-                        contentDescription = stringResource(R.string.open_workspace),
+                        contentDescription = null,
                         modifier = Modifier.size(20.dp),
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = "Workspace",
+                        text = stringResource(R.string.open_workspace),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -518,22 +555,23 @@ private fun ProfileHeroIdentityCard(
                     onClick = onOpenReport,
                     modifier = Modifier
                         .weight(1f)
+                        .height(48.dp)
                         .testTag("openReportButton"),
                     colors = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        containerColor = ActionRose.copy(alpha = 0.12f),
+                        contentColor = ActionRose,
                     ),
-                    shape = RoundedCornerShape(10.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
                 ) {
                     Icon(
                         imageVector = Icons.Default.Print,
-                        contentDescription = "Print Patient Report",
+                        contentDescription = null,
                         modifier = Modifier.size(18.dp),
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = "Print PDF",
+                        text = stringResource(R.string.print_pdf),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -558,6 +596,7 @@ private fun ProfileDatingCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(
@@ -569,12 +608,24 @@ private fun ProfileDatingCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = stringResource(R.string.dating),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(4.dp)
+                            .height(20.dp)
+                            .background(ActionRose, RoundedCornerShape(2.dp)),
+                    )
+                    Text(
+                        text = stringResource(R.string.dating).uppercase(),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        letterSpacing = 0.08.sp,
+                    )
+                }
                 IconButton(
                     onClick = {
                         onEvent(AncEvent.StartDatingEditor(patient.id, UUID.randomUUID().toString()))
@@ -661,6 +712,7 @@ private fun ProfileObstetricCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(
@@ -672,12 +724,24 @@ private fun ProfileObstetricCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = stringResource(R.string.obstetric_history),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(4.dp)
+                            .height(20.dp)
+                            .background(ActionRose, RoundedCornerShape(2.dp)),
+                    )
+                    Text(
+                        text = stringResource(R.string.obstetric_history).uppercase(),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        letterSpacing = 0.08.sp,
+                    )
+                }
                 IconButton(
                     onClick = {
                         onEvent(AncEvent.StartHistoriesEditor(patient.id, UUID.randomUUID().toString()))
@@ -778,6 +842,77 @@ private fun ProfileObstetricCard(
 }
 
 // ---------------------------------------------------------------------------
+// Reusable Section Header with 4dp ActionRose Bar and 48dp Toggle Target
+// ---------------------------------------------------------------------------
+@Composable
+private fun ProfileSectionHeader(
+    title: String,
+    count: Int,
+    isExpanded: Boolean,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+    trailingAction: (@Composable () -> Unit)? = null,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .weight(1f, fill = false)
+                .minimumTouchTarget()
+                .clickable { onToggle() }
+                .semantics { role = Role.Button }
+                .padding(vertical = 4.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .height(20.dp)
+                    .background(ActionRose, RoundedCornerShape(2.dp)),
+            )
+
+            Text(
+                text = title.uppercase(),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                letterSpacing = 0.8.sp,
+                modifier = Modifier.semantics { heading() },
+            )
+
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            ) {
+                Text(
+                    text = count.toString(),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                )
+            }
+
+            Icon(
+                if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                contentDescription = stringResource(if (isExpanded) R.string.collapse_details else R.string.expand_details),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+
+        if (trailingAction != null) {
+            trailingAction()
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // 4. Visits (Workspace Style with Collapsible Deep Detail)
 // ---------------------------------------------------------------------------
 @Composable
@@ -794,68 +929,41 @@ private fun ProfileVisitsSection(
         modifier = Modifier.fillMaxWidth().testTag("profileVisitsSection"),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.clickable { onToggleSection() },
-                ) {
-                    Text(
-                        text = stringResource(R.string.visits),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                    ) {
-                        Text(
-                            text = patient.visits.size.toString(),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                        )
+            ProfileSectionHeader(
+                title = stringResource(R.string.visits),
+                count = patient.visits.size,
+                isExpanded = isExpanded,
+                onToggle = onToggleSection,
+                trailingAction = if (patient.status != "archived") {
+                    {
+                        FilledTonalIconButton(
+                            onClick = {
+                                onEvent(
+                                    AncEvent.StartVisit(
+                                        patientId = patient.id,
+                                        visitId = null,
+                                        editorSessionId = UUID.randomUUID().toString(),
+                                    ),
+                                )
+                            },
+                            modifier = Modifier.minimumTouchTarget().testTag("addVisit"),
+                            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                containerColor = ActionRose.copy(alpha = 0.12f),
+                                contentColor = ActionRose,
+                            ),
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_visit), modifier = Modifier.size(22.dp))
+                        }
                     }
-                    Icon(
-                        if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                }
-
-                if (patient.status != "archived") {
-                    FilledTonalIconButton(
-                        onClick = {
-                            onEvent(
-                                AncEvent.StartVisit(
-                                    patientId = patient.id,
-                                    visitId = null,
-                                    editorSessionId = UUID.randomUUID().toString(),
-                                ),
-                            )
-                        },
-                        modifier = Modifier.minimumTouchTarget().testTag("addVisit"),
-                        colors = IconButtonDefaults.filledTonalIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        ),
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_visit), modifier = Modifier.size(22.dp))
-                    }
-                }
-            }
+                } else null,
+            )
 
             AnimatedVisibility(
                 visible = isExpanded,
@@ -1187,69 +1295,42 @@ private fun ProfileUltrasoundSection(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.clickable { onToggleSection() },
-                ) {
-                    Text(
-                        text = stringResource(R.string.recent_scans),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                    ) {
-                        Text(
-                            text = patient.ultrasoundScans.size.toString(),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                        )
+            ProfileSectionHeader(
+                title = stringResource(R.string.recent_scans),
+                count = patient.ultrasoundScans.size,
+                isExpanded = isExpanded,
+                onToggle = onToggleSection,
+                trailingAction = if (patient.status != "archived") {
+                    {
+                        FilledTonalIconButton(
+                            onClick = {
+                                onEvent(
+                                    AncEvent.StartUltrasoundEditor(
+                                        patientId = patient.id,
+                                        scanId = null,
+                                        newScanId = UUID.randomUUID().toString(),
+                                        editorSessionId = UUID.randomUUID().toString(),
+                                    ),
+                                )
+                            },
+                            modifier = Modifier.minimumTouchTarget().testTag("addUltrasound"),
+                            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                containerColor = ActionRose.copy(alpha = 0.12f),
+                                contentColor = ActionRose,
+                            ),
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_ultrasound), modifier = Modifier.size(22.dp))
+                        }
                     }
-                    Icon(
-                        if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                }
-
-                if (patient.status != "archived") {
-                    FilledTonalIconButton(
-                        onClick = {
-                            onEvent(
-                                AncEvent.StartUltrasoundEditor(
-                                    patientId = patient.id,
-                                    scanId = null,
-                                    newScanId = UUID.randomUUID().toString(),
-                                    editorSessionId = UUID.randomUUID().toString(),
-                                ),
-                            )
-                        },
-                        modifier = Modifier.minimumTouchTarget().testTag("addUltrasound"),
-                        colors = IconButtonDefaults.filledTonalIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        ),
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_ultrasound), modifier = Modifier.size(22.dp))
-                    }
-                }
-            }
+                } else null,
+            )
 
             AnimatedVisibility(
                 visible = isExpanded,
@@ -1504,69 +1585,42 @@ private fun ProfileLaboratoriesSection(
         modifier = Modifier.fillMaxWidth().testTag("profileLabsSection"),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.clickable { onToggleSection() },
-                ) {
-                    Text(
-                        text = stringResource(R.string.laboratory),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                    ) {
-                        Text(
-                            text = patient.labInvestigations.size.toString(),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                        )
+            ProfileSectionHeader(
+                title = stringResource(R.string.laboratory),
+                count = patient.labInvestigations.size,
+                isExpanded = isExpanded,
+                onToggle = onToggleSection,
+                trailingAction = if (patient.status != "archived") {
+                    {
+                        FilledTonalIconButton(
+                            onClick = {
+                                onEvent(
+                                    AncEvent.StartLabEditor(
+                                        patientId = patient.id,
+                                        labId = null,
+                                        newLabId = UUID.randomUUID().toString(),
+                                        editorSessionId = UUID.randomUUID().toString(),
+                                    ),
+                                )
+                            },
+                            modifier = Modifier.minimumTouchTarget().testTag("addLab"),
+                            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                containerColor = ActionRose.copy(alpha = 0.12f),
+                                contentColor = ActionRose,
+                            ),
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_lab), modifier = Modifier.size(22.dp))
+                        }
                     }
-                    Icon(
-                        if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                }
-
-                if (patient.status != "archived") {
-                    FilledTonalIconButton(
-                        onClick = {
-                            onEvent(
-                                AncEvent.StartLabEditor(
-                                    patientId = patient.id,
-                                    labId = null,
-                                    newLabId = UUID.randomUUID().toString(),
-                                    editorSessionId = UUID.randomUUID().toString(),
-                                ),
-                            )
-                        },
-                        modifier = Modifier.minimumTouchTarget().testTag("addLab"),
-                        colors = IconButtonDefaults.filledTonalIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        ),
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_lab), modifier = Modifier.size(22.dp))
-                    }
-                }
-            }
+                } else null,
+            )
 
             AnimatedVisibility(
                 visible = isExpanded,
@@ -1890,69 +1944,42 @@ private fun ProfileMedicationsSection(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.clickable { onToggleSection() },
-                ) {
-                    Text(
-                        text = stringResource(R.string.medications),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                    ) {
-                        Text(
-                            text = patient.medications.size.toString(),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                        )
+            ProfileSectionHeader(
+                title = stringResource(R.string.medications),
+                count = patient.medications.size,
+                isExpanded = isExpanded,
+                onToggle = onToggleSection,
+                trailingAction = if (patient.status != "archived") {
+                    {
+                        FilledTonalIconButton(
+                            onClick = {
+                                onEvent(
+                                    AncEvent.StartMedicationEditor(
+                                        patientId = patient.id,
+                                        medicationId = null,
+                                        newMedicationId = UUID.randomUUID().toString(),
+                                        editorSessionId = UUID.randomUUID().toString(),
+                                    ),
+                                )
+                            },
+                            modifier = Modifier.minimumTouchTarget().testTag("addMedication"),
+                            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                containerColor = ActionRose.copy(alpha = 0.12f),
+                                contentColor = ActionRose,
+                            ),
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_medication), modifier = Modifier.size(22.dp))
+                        }
                     }
-                    Icon(
-                        if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                }
-
-                if (patient.status != "archived") {
-                    FilledTonalIconButton(
-                        onClick = {
-                            onEvent(
-                                AncEvent.StartMedicationEditor(
-                                    patientId = patient.id,
-                                    medicationId = null,
-                                    newMedicationId = UUID.randomUUID().toString(),
-                                    editorSessionId = UUID.randomUUID().toString(),
-                                ),
-                            )
-                        },
-                        modifier = Modifier.minimumTouchTarget().testTag("addMedication"),
-                        colors = IconButtonDefaults.filledTonalIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        ),
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_medication), modifier = Modifier.size(22.dp))
-                    }
-                }
-            }
+                } else null,
+            )
 
             AnimatedVisibility(
                 visible = isExpanded,
