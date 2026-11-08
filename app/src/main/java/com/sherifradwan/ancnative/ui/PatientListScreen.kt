@@ -450,7 +450,7 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
                             )
                         }
                         .testTag("statusPatient-${p.caseId}"),
-                    color = if (p.status == "archived") MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else if (isDark) Color(0xFF3B151C) else Color(0xFFFFEBEE),
+                    color = if (p.status == "archived") MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else if (isDark) TagHighRiskDarkBg else TagHighRiskBg,
                     border = BorderStroke(1.dp, if (p.status == "archived") MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.error.copy(alpha = 0.3f)),
                     shape = RoundedCornerShape(12.dp),
                 ) {
@@ -624,8 +624,8 @@ private fun PatientDirectoryCard(
                     if (severeBp != null) {
                         Surface(
                             shape = RoundedCornerShape(6.dp),
-                            color = if (isDark) Color(0xFF4A1820) else Color(0xFFFFEAEA),
-                            border = BorderStroke(1.dp, if (isDark) Color(0xFF762E3B) else Color(0xFFE57373)),
+                            color = if (isDark) TagHighRiskDarkBg else TagHighRiskBg,
+                            border = BorderStroke(1.dp, if (isDark) TagHighRiskDarkBorder else TagHighRiskBorder),
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),

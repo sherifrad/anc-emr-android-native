@@ -85,9 +85,9 @@ fun LabResultPill(
     modifier: Modifier = Modifier,
 ) {
     val (bg, textColor) = when (status) {
-        LabResultPillStatus.NORMAL -> Color(0xFFDCFCE7) to Color(0xFF166534)
-        LabResultPillStatus.ABNORMAL -> Color(0xFFFEE2E2) to Color(0xFFB91C1C)
-        LabResultPillStatus.PENDING -> Color(0xFFFEF3C7) to Color(0xFF92400E)
+        LabResultPillStatus.NORMAL -> TagNormalRiskBg to TagNormalRiskText
+        LabResultPillStatus.ABNORMAL -> TagHighRiskBg to TagHighRiskText
+        LabResultPillStatus.PENDING -> TagAttentionBg to TagAttentionText
     }
     Surface(
         shape = RoundedCornerShape(999.dp),

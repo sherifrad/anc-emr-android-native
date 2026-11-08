@@ -1214,14 +1214,14 @@ private fun VisitCard(
                     if (!gaAtVisit.isNullOrBlank()) {
                         Surface(
                             shape = RoundedCornerShape(6.dp),
-                            color = Color(0xFF176B70).copy(alpha = 0.12f),
-                            border = BorderStroke(1.dp, Color(0xFF176B70).copy(alpha = 0.3f)),
+                            color = ClinicalTeal.copy(alpha = 0.12f),
+                            border = BorderStroke(1.dp, ClinicalTeal.copy(alpha = 0.3f)),
                         ) {
                             Text(
                                 text = gaAtVisit,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF176B70),
+                                color = ClinicalTeal,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             )
                         }
@@ -1547,8 +1547,8 @@ private fun HistoriesCard(
             if (isNoKnownAllergies) {
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = Color(0xFF176B70).copy(alpha = 0.12f),
-                    border = BorderStroke(1.dp, Color(0xFF176B70).copy(alpha = 0.3f)),
+                    color = ClinicalTeal.copy(alpha = 0.12f),
+                    border = BorderStroke(1.dp, ClinicalTeal.copy(alpha = 0.3f)),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Row(
@@ -1559,14 +1559,14 @@ private fun HistoriesCard(
                         Icon(
                             Icons.Default.CheckCircle,
                             contentDescription = null,
-                            tint = Color(0xFF176B70),
+                            tint = ClinicalTeal,
                             modifier = Modifier.size(16.dp),
                         )
                         Text(
                             text = "No Known Drug Allergies (NKDA)",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF176B70),
+                            color = ClinicalTeal,
                         )
                     }
                 }
@@ -2435,14 +2435,14 @@ private fun LabCard(
                     if (ga?.isPostConception == true) {
                         Surface(
                             shape = RoundedCornerShape(999.dp),
-                            color = Color(0xFF176B70).copy(alpha = 0.15f),
-                            border = BorderStroke(1.dp, Color(0xFF176B70).copy(alpha = 0.35f)),
+                            color = ClinicalTeal.copy(alpha = 0.15f),
+                            border = BorderStroke(1.dp, ClinicalTeal.copy(alpha = 0.35f)),
                         ) {
                             Text(
                                 text = ga.displayText,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF176B70),
+                                color = ClinicalTeal,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                             )
                         }
