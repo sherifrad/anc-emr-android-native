@@ -189,7 +189,7 @@ fun WorkspaceScreen(
         SecuritySettingsRepository.getInstance(context).settings.value
     }
 
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize().testTag("workspaceScreen")) {
         val horizontalPadding = maxOf(16.dp, (maxWidth - 840.dp) / 2)
         Column(modifier = Modifier.fillMaxSize()) {
             Column(
@@ -245,7 +245,7 @@ fun WorkspaceScreen(
                     .fillMaxWidth(),
             ) { page ->
                 val pageTab = WorkspaceBedsideTab.entries[page]
-                val isCurrent = pageTab == currentTab
+                val isCurrent = page == pagerState.currentPage
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -647,8 +647,7 @@ private fun WorkspaceSectionTabBar(
                 onClick = { onSelectTab(tab) },
                 modifier = Modifier
                     .minimumTouchTarget()
-                    .testTag(tab.testTagKey)
-                    .testTag("section-${tab.defaultSection.name}"),
+                    .testTag(tab.testTagKey),
             ) {
                 Column(
                     modifier = Modifier
@@ -662,15 +661,17 @@ private fun WorkspaceSectionTabBar(
                         horizontalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
                         Box(
-                            modifier = Modifier.testTag(
-                                when (tab) {
-                                    WorkspaceBedsideTab.HISTORY -> "section-OBSTETRIC_HISTORY"
-                                    WorkspaceBedsideTab.ENCOUNTERS -> "section-ULTRASOUND"
-                                    WorkspaceBedsideTab.PLAN -> "section-ATTACHMENTS"
-                                    else -> "tabMarker-${tab.name}"
-                                }
-                            )
+                            modifier = Modifier.testTag("section-${tab.defaultSection.name}")
                         )
+                        val extraTag = when (tab) {
+                            WorkspaceBedsideTab.HISTORY -> "section-OBSTETRIC_HISTORY"
+                            WorkspaceBedsideTab.ENCOUNTERS -> "section-ULTRASOUND"
+                            WorkspaceBedsideTab.PLAN -> "section-ATTACHMENTS"
+                            else -> null
+                        }
+                        if (extraTag != null) {
+                            Box(modifier = Modifier.testTag(extraTag))
+                        }
                         Text(
                             text = tab.title,
                             maxLines = 1,
