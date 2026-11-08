@@ -134,7 +134,6 @@ class WorkspaceScreenDesignTest {
         compose.onNodeWithTag("tab-labs").performClick()
         compose.waitForIdle()
         compose.onNodeWithTag("addLab").assertIsDisplayed()
-        compose.onNodeWithTag("startLabBatch").assertIsDisplayed()
 
         // Switch to Meds tab
         compose.onNodeWithTag("tab-meds").performClick()

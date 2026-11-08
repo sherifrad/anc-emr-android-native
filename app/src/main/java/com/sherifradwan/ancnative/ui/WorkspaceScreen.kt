@@ -897,34 +897,19 @@ private fun LazyListScope.workspaceBedsideContentItems(
         WorkspaceBedsideTab.LABS -> {
             if (patient.status != "archived") {
                 item {
-                    FlowRow(
+                    Row(
                         modifier = Modifier.fillMaxWidth().testTag("labsActionsRow"),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Button(
-                            onClick = {
-                                onEvent(
-                                    AncEvent.StartLabEditor(
-                                        patientId = patient.id,
-                                        labId = null,
-                                        newLabId = UUID.randomUUID().toString(),
-                                        editorSessionId = UUID.randomUUID().toString(),
-                                    ),
-                                )
-                            },
+                            onClick = { onEvent(AncEvent.StartLabBatchRequest(patient.id)) },
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                             modifier = Modifier.minimumTouchTarget().testTag("addLab"),
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(6.dp))
                             Text(stringResource(R.string.add_lab), maxLines = 1, softWrap = false)
-                        }
-                        OutlinedButton(
-                            onClick = { onEvent(AncEvent.StartLabBatchRequest(patient.id)) },
-                            modifier = Modifier.minimumTouchTarget().testTag("startLabBatch"),
-                        ) {
-                            Text("New laboratory batch", maxLines = 1, softWrap = false)
                         }
                     }
                 }
@@ -983,11 +968,10 @@ private fun LazyListScope.workspaceBedsideContentItems(
                         },
                         onAddTestToReport = {
                             onEvent(
-                                AncEvent.StartLabEditor(
+                                AncEvent.StartLabBatchRequest(
                                     patientId = patient.id,
-                                    labId = null,
-                                    newLabId = UUID.randomUUID().toString(),
-                                    editorSessionId = UUID.randomUUID().toString(),
+                                    date = report.date,
+                                    labName = report.labName,
                                 ),
                             )
                         },

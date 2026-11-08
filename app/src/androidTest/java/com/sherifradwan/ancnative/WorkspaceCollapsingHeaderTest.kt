@@ -132,9 +132,8 @@ class WorkspaceCollapsingHeaderTest {
         }
         compose.waitForIdle()
 
-        // Verify action buttons
+        // Verify unified action button
         compose.onNodeWithTag("addLab").assertIsDisplayed()
-        compose.onNodeWithTag("startLabBatch").assertIsDisplayed()
 
         // Ensure we scroll to the report card if it's below the fold on narrow screens
         compose.onNodeWithTag("workspaceList").performScrollToNode(hasText("Al Borg Lab", substring = true))

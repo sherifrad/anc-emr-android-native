@@ -194,7 +194,11 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
             AncEvent.SubmitUltrasound -> saveUltrasound()
             AncEvent.SubmitLab -> saveLab(isChained = false)
             AncEvent.SubmitLabBatch -> saveLabBatch()
-            is AncEvent.StartLabBatchRequest -> startLabBatch(event.patientId)
+            is AncEvent.StartLabBatchRequest -> startLabBatch(
+                patientId = event.patientId,
+                date = event.date,
+                labName = event.labName,
+            )
             AncEvent.SubmitLabAndAddAnother -> saveLab(isChained = true)
             AncEvent.SubmitMedication -> {
                 if (!_state.value.undoRunning) {
@@ -569,8 +573,8 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /** Opens a new laboratory batch on today's date; the screen adds the tests. */
-    fun startLabBatch(patientId: String) {
+    /** Opens a unified laboratory investigation flow; optional date and labName pre-fill when adding to existing report. */
+    fun startLabBatch(patientId: String, date: String? = null, labName: String? = null) {
         val patient = _state.value.patient(patientId)?.takeIf { it.status != "archived" } ?: return
         if (_state.value.savePhase.blocksEditing() || _state.value.hasDirtyDraft) return
         dispatch(
@@ -578,8 +582,8 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
                 patientId = patientId,
                 sessionId = UUID.randomUUID().toString(),
                 basePatientRevision = patient.revision,
-                date = LocalDate.now().toString(),
-                labName = null,
+                date = date ?: LocalDate.now().toString(),
+                labName = labName,
             ),
         )
     }

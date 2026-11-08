@@ -859,7 +859,11 @@ sealed interface AncEvent {
     ) : AncEvent
     data class LabBatchItemsAdded(val items: List<LabBatchItem>) : AncEvent
     data object SubmitLabBatch : AncEvent
-    data class StartLabBatchRequest(val patientId: String) : AncEvent
+    data class StartLabBatchRequest(
+        val patientId: String,
+        val date: String? = null,
+        val labName: String? = null,
+    ) : AncEvent
     data class LabBatchItemRemoved(val labId: String) : AncEvent
     data class LabBatchResultChanged(val labId: String, val value: String) : AncEvent
     data class LabBatchRangeChanged(val labId: String, val value: String) : AncEvent

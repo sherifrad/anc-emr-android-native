@@ -1600,16 +1600,7 @@ private fun ProfileLaboratoriesSection(
                 trailingAction = if (patient.status != "archived") {
                     {
                         FilledTonalIconButton(
-                            onClick = {
-                                onEvent(
-                                    AncEvent.StartLabEditor(
-                                        patientId = patient.id,
-                                        labId = null,
-                                        newLabId = UUID.randomUUID().toString(),
-                                        editorSessionId = UUID.randomUUID().toString(),
-                                    ),
-                                )
-                            },
+                            onClick = { onEvent(AncEvent.StartLabBatchRequest(patient.id)) },
                             modifier = Modifier.minimumTouchTarget().testTag("addLab"),
                             colors = IconButtonDefaults.filledTonalIconButtonColors(
                                 containerColor = ActionRose.copy(alpha = 0.12f),
