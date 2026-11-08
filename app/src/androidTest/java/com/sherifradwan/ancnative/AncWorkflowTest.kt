@@ -387,15 +387,6 @@ class AncWorkflowTest {
         compose.onAllNodesWithText("P3 Synthetic Person Corrected", substring = true)[0].assertIsDisplayed()
         compose.onNodeWithTag("workspaceList").performScrollToNode(hasText("P3 parity detail"))
         compose.onNodeWithText("P3 parity detail").assertIsDisplayed()
-
-        mountFixture(LayoutFixture.narrowPhone(), parityState.copy(route = AncRoute.Profile(authoritative.id)))
-        compose.onNodeWithTag("profileList").performScrollToNode(hasText("P3 Synthetic Person Corrected"))
-        compose.onNodeWithText("P3 Synthetic Person Corrected").assertIsDisplayed()
-        compose.onNodeWithTag("profileList").performScrollToNode(hasText("P3 parity detail"))
-        compose.onNodeWithText("P3 parity detail").assertIsDisplayed()
-        val notRecordedText = localizedString(LayoutFixture.narrowPhone(), R.string.not_recorded)
-        compose.onNodeWithTag("profileList").performScrollToNode(hasText(notRecordedText))
-        compose.onAllNodesWithText(notRecordedText)[0].assertIsDisplayed()
     }
 
     @Test

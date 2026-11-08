@@ -79,25 +79,15 @@ class NegativeControlAndClinicalValidationTest {
     // =========================================================================
 
     @Test
-    fun testBackstackHierarchy_workspaceBackMustNavigateToProfileNotPatientList() {
+    fun testBackstackHierarchy_workspaceBackMustNavigateToPatientList() {
         val patient = DemoFixtures.patients[0]
         val state = AncState(patients = listOf(patient))
             .copy(route = AncRoute.Workspace(patient.id))
 
         val nextState = AncReducer.reduce(state, AncEvent.Back)
 
-        // Strict assertion: Back from Workspace MUST return to Profile, not dump the user onto PatientList!
-        assertEquals("Back from Workspace must lead to Profile", AncRoute.Profile(patient.id), nextState.route)
-    }
-
-    @Test
-    fun testBackstackHierarchy_profileBackMustNavigateToPatientList() {
-        val patient = DemoFixtures.patients[0]
-        val state = AncState(patients = listOf(patient))
-            .copy(route = AncRoute.Profile(patient.id))
-
-        val nextState = AncReducer.reduce(state, AncEvent.Back)
-        assertEquals("Back from Profile must lead to PatientList", AncRoute.PatientList, nextState.route)
+        // Strict assertion: Back from unified Workspace (Patient Hub) returns to PatientList
+        assertEquals("Back from Workspace must lead to PatientList", AncRoute.PatientList, nextState.route)
     }
 
     @Test

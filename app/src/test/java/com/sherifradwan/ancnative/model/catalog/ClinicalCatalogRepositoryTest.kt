@@ -1,4 +1,4 @@
-package com.sherifradwan.ancnative.model.codex
+package com.sherifradwan.ancnative.model.catalog
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -6,11 +6,11 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class ClinicalCodexModelsTest {
+class ClinicalCatalogModelsTest {
 
     @Test
-    fun testLabCodexItemModelAndDisplayLabel() {
-        val labItem = LabCodexItem(
+    fun testLabCatalogItemModelAndDisplayLabel() {
+        val labItem = LabCatalogItem(
             id = "test-lab-1",
             testName = "Serum Ferritin",
             category = "Biochemistry",
@@ -29,8 +29,8 @@ class ClinicalCodexModelsTest {
     }
 
     @Test
-    fun testMedicationCodexItemModelAndDisplayLabel() {
-        val medWithDosage = MedicationCodexItem(
+    fun testMedicationCatalogItemModelAndDisplayLabel() {
+        val medWithDosage = MedicationCatalogItem(
             id = "test-med-1",
             name = "Folic Acid",
             dosage = "5 mg",
@@ -44,7 +44,7 @@ class ClinicalCodexModelsTest {
         assertEquals("Oral", medWithDosage.route)
         assertEquals("Once daily", medWithDosage.frequency)
 
-        val medWithoutDosage = MedicationCodexItem(
+        val medWithoutDosage = MedicationCatalogItem(
             id = "test-med-2",
             name = "Paracetamol",
             dosage = "",
@@ -55,25 +55,25 @@ class ClinicalCodexModelsTest {
     }
 
     @Test
-    fun testMockCodexDelegateOperations() {
+    fun testMockCatalogDelegateOperations() {
         // Test in-memory implementation of delegates
-        val labList = mutableListOf<LabCodexItem>()
-        val labDelegate = object : LabCodexDelegate {
-            override val labCodexItems = kotlinx.coroutines.flow.MutableStateFlow<List<LabCodexItem>>(emptyList())
-            override fun addLabCodexItem(item: LabCodexItem): Boolean {
+        val labList = mutableListOf<LabCatalogItem>()
+        val labDelegate = object : LabCatalogDelegate {
+            override val labCatalogItems = kotlinx.coroutines.flow.MutableStateFlow<List<LabCatalogItem>>(emptyList())
+            override fun addLabCatalogItem(item: LabCatalogItem): Boolean {
                 labList.removeAll { it.testName.equals(item.testName, ignoreCase = true) }
                 labList.add(item)
-                labCodexItems.value = labList.toList()
+                labCatalogItems.value = labList.toList()
                 return true
             }
-            override fun updateLabCodexItem(item: LabCodexItem): Boolean = false
-            override fun deleteLabCodexItem(itemId: String): Boolean {
+            override fun updateLabCatalogItem(item: LabCatalogItem): Boolean = false
+            override fun deleteLabCatalogItem(itemId: String): Boolean {
                 val removed = labList.removeIf { it.id == itemId }
-                labCodexItems.value = labList.toList()
+                labCatalogItems.value = labList.toList()
                 return removed
             }
-            override fun getLabCodexItem(itemId: String): LabCodexItem? = labList.find { it.id == itemId }
-            override fun findLabCodexItemByName(name: String): LabCodexItem? = labList.find { it.testName.equals(name, ignoreCase = true) }
+            override fun getLabCatalogItem(itemId: String): LabCatalogItem? = labList.find { it.id == itemId }
+            override fun findLabCatalogItemByName(name: String): LabCatalogItem? = labList.find { it.testName.equals(name, ignoreCase = true) }
             override val labCategoryGroups = kotlinx.coroutines.flow.MutableStateFlow<List<LabCategoryGroup>>(emptyList())
             override fun addLabCategoryGroup(group: LabCategoryGroup): Boolean = true
             override fun deleteLabCategoryGroup(groupId: String): Boolean = true
@@ -81,18 +81,18 @@ class ClinicalCodexModelsTest {
             override fun resetLabCategoryGroupDefaults() {}
             override fun resetLabDefaults() {
                 labList.clear()
-                labCodexItems.value = emptyList()
+                labCatalogItems.value = emptyList()
             }
         }
 
-        val testItem = LabCodexItem(testName = "Blood Glucose", category = "Biochemistry")
-        labDelegate.addLabCodexItem(testItem)
+        val testItem = LabCatalogItem(testName = "Blood Glucose", category = "Biochemistry")
+        labDelegate.addLabCatalogItem(testItem)
 
-        assertEquals(1, labDelegate.labCodexItems.value.size)
-        assertNotNull(labDelegate.findLabCodexItemByName("blood glucose"))
+        assertEquals(1, labDelegate.labCatalogItems.value.size)
+        assertNotNull(labDelegate.findLabCatalogItemByName("blood glucose"))
 
-        labDelegate.deleteLabCodexItem(testItem.id)
-        assertTrue(labDelegate.labCodexItems.value.isEmpty())
+        labDelegate.deleteLabCatalogItem(testItem.id)
+        assertTrue(labDelegate.labCatalogItems.value.isEmpty())
     }
 
     @Test
@@ -109,15 +109,15 @@ class ClinicalCodexModelsTest {
         assertTrue(group.isCustom)
 
         val groupsList = mutableListOf<LabCategoryGroup>()
-        val mockDelegate = object : LabCodexDelegate {
-            override val labCodexItems = kotlinx.coroutines.flow.MutableStateFlow<List<LabCodexItem>>(emptyList())
+        val mockDelegate = object : LabCatalogDelegate {
+            override val labCatalogItems = kotlinx.coroutines.flow.MutableStateFlow<List<LabCatalogItem>>(emptyList())
             override val labCategoryGroups = kotlinx.coroutines.flow.MutableStateFlow<List<LabCategoryGroup>>(emptyList())
 
-            override fun addLabCodexItem(item: LabCodexItem): Boolean = true
-            override fun updateLabCodexItem(item: LabCodexItem): Boolean = false
-            override fun deleteLabCodexItem(itemId: String): Boolean = true
-            override fun getLabCodexItem(itemId: String): LabCodexItem? = null
-            override fun findLabCodexItemByName(name: String): LabCodexItem? = null
+            override fun addLabCatalogItem(item: LabCatalogItem): Boolean = true
+            override fun updateLabCatalogItem(item: LabCatalogItem): Boolean = false
+            override fun deleteLabCatalogItem(itemId: String): Boolean = true
+            override fun getLabCatalogItem(itemId: String): LabCatalogItem? = null
+            override fun findLabCatalogItemByName(name: String): LabCatalogItem? = null
             override fun resetLabDefaults() {}
 
             override fun addLabCategoryGroup(group: LabCategoryGroup): Boolean {

@@ -2,9 +2,9 @@ package com.sherifradwan.ancnative
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.sherifradwan.ancnative.model.codex.ClinicalCodexRepository
-import com.sherifradwan.ancnative.model.codex.CustomChoiceList
-import com.sherifradwan.ancnative.model.codex.CustomChoiceValidationResult
+import com.sherifradwan.ancnative.model.catalog.ClinicalCatalogRepository
+import com.sherifradwan.ancnative.model.catalog.CustomChoiceList
+import com.sherifradwan.ancnative.model.catalog.CustomChoiceValidationResult
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -16,13 +16,13 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class CustomChoicesStoreInstrumentedTest {
 
-    private lateinit var repo: ClinicalCodexRepository
+    private lateinit var repo: ClinicalCatalogRepository
     private val testList = CustomChoiceList.MEDICATION_DOSE
 
     @Before
     fun setUp() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        repo = ClinicalCodexRepository.getInstance(context)
+        repo = ClinicalCatalogRepository.getInstance(context)
         repo.clearCustomChoices(testList)
     }
 
@@ -40,7 +40,7 @@ class CustomChoicesStoreInstrumentedTest {
 
         // 2. Clear singleton instance reflection or test persistence by reading from same context
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val repo2 = ClinicalCodexRepository.getInstance(context)
+        val repo2 = ClinicalCatalogRepository.getInstance(context)
         assertEquals(1, repo2.customChoices(testList).value.size)
         assertEquals("75 mg", repo2.customChoices(testList).value.first().label)
 

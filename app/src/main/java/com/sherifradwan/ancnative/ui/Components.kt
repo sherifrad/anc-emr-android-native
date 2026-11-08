@@ -79,11 +79,6 @@ enum class PatientCardVariant {
     STICKY_COMPACT,
 
     /**
-     * Executive hero identity card for Patient Profile screen.
-     */
-    PROFILE_HERO,
-
-    /**
      * Summary card for section/editor headers (e.g. Lab Batch, Lab Editor, Meds Editor).
      */
     EDITOR_SUMMARY,
@@ -102,7 +97,6 @@ fun ClinicalPatientCard(
     modifier: Modifier = Modifier,
     asOfDate: LocalDate = LocalDate.now(),
     onBack: (() -> Unit)? = null,
-    onOpenProfile: (() -> Unit)? = null,
     onOpenReport: (() -> Unit)? = null,
     onOpenAttentionDialog: (() -> Unit)? = null,
 ) {
@@ -186,20 +180,6 @@ fun ClinicalPatientCard(
                                         contentDescription = stringResource(R.string.print_patient_report),
                                         tint = MaterialTheme.colorScheme.secondary,
                                         modifier = Modifier.size(20.dp),
-                                    )
-                                }
-                            }
-
-                            if (onOpenProfile != null) {
-                                IconButton(
-                                    onClick = onOpenProfile,
-                                    modifier = Modifier.size(36.dp).testTag("workspaceProfile"),
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.AccountCircle,
-                                        contentDescription = stringResource(R.string.profile),
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(22.dp),
                                     )
                                 }
                             }
@@ -400,19 +380,6 @@ fun ClinicalPatientCard(
                             )
                         }
                     }
-                    if (onOpenProfile != null) {
-                        IconButton(
-                            onClick = onOpenProfile,
-                            modifier = Modifier.size(32.dp).testTag("workspaceProfile"),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.AccountCircle,
-                                contentDescription = stringResource(R.string.profile),
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp),
-                            )
-                        }
-                    }
                 }
             }
         }
@@ -519,161 +486,6 @@ fun ClinicalPatientCard(
                 }
             }
         }
-
-        PatientCardVariant.PROFILE_HERO -> {
-            Card(
-                modifier = modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        val isArabic = patient.displayName.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.ARABIC }
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            horizontalAlignment = if (isArabic) Alignment.End else Alignment.Start,
-                        ) {
-                            Text(
-                                text = patient.displayName,
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
-                                textAlign = if (isArabic) TextAlign.End else TextAlign.Start,
-                                modifier = Modifier.fillMaxWidth().semantics { heading() },
-                            )
-                            if (formatAgeYears(patient.ageText) != null) {
-                                Spacer(Modifier.height(6.dp))
-                                PatientAgeBadge(ageText = patient.ageText, large = true)
-                            }
-                        }
-
-                        ClinicalRiskBadge(isHighRisk = isHighRisk(patient.riskLevel))
-                    }
-
-                    val g = patient.gravida ?: 1L
-                    val p = patient.parity ?: 0L
-                    val a = patient.abortion ?: 0L
-                    val gpaText = "G$g P$p A$a"
-
-                    val gaResult = patient.dating?.calculateGestationalAgeResult()
-                    val gaFormatted = gaResult?.shortWeeksText ?: "—"
-
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        if (!patient.bloodGroupText.isNullOrBlank()) {
-                            val isRhNeg = isRhNegative(patient.bloodGroupText)
-                            val isRhPos = isRhPositive(patient.bloodGroupText)
-                            val bgSurfaceColor = when {
-                                isRhNeg -> if (isDark) TagBloodNegativeDarkBg else TagBloodNegativeBg
-                                isRhPos -> if (isDark) TagBloodPositiveDarkBg else TagBloodPositiveBg
-                                else -> if (isDark) TagBloodNeutralDarkBg else TagBloodNeutralBg
-                            }
-                            val bgBorderColor = when {
-                                isRhNeg -> if (isDark) TagBloodNegativeDarkBorder else TagBloodNegativeBorder
-                                isRhPos -> if (isDark) TagBloodPositiveDarkBorder else TagBloodPositiveBorder
-                                else -> if (isDark) TagBloodNeutralDarkBorder else TagBloodNeutralBorder
-                            }
-                            val bgTextColor = when {
-                                isRhNeg -> if (isDark) TagBloodNegativeDarkText else TagBloodNegativeText
-                                isRhPos -> if (isDark) TagBloodPositiveDarkText else TagBloodPositiveText
-                                else -> if (isDark) TagBloodNeutralDarkText else TagBloodNeutralText
-                            }
-
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = bgSurfaceColor,
-                                border = BorderStroke(1.dp, bgBorderColor),
-                            ) {
-                                Text(
-                                    text = formatBloodGroup(patient.bloodGroupText).orEmpty(),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = if (isRhNeg) FontWeight.Bold else FontWeight.Medium,
-                                    color = bgTextColor,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                )
-                            }
-                        }
-
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = if (isDark) TagGestationalAgeDarkBg else TagGestationalAgeBg,
-                            border = BorderStroke(1.dp, if (isDark) TagGestationalAgeDarkBorder else TagGestationalAgeBorder),
-                        ) {
-                            Text(
-                                text = stringResource(R.string.ga_prefix, gaFormatted),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = if (isDark) TagGestationalAgeDarkText else TagGestationalAgeText,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                            )
-                        }
-
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = if (isDark) TagObstetricDarkBg else TagObstetricBg,
-                            border = BorderStroke(1.dp, if (isDark) TagObstetricDarkBorder else TagObstetricBorder),
-                        ) {
-                            Text(
-                                text = gpaText,
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = if (isDark) TagObstetricDarkText else TagObstetricText,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun DemoBanner(modifier: Modifier = Modifier) {
-    Text(
-        text = stringResource(R.string.demo_banner),
-        color = Color.White,
-        style = MaterialTheme.typography.labelLarge,
-        fontWeight = FontWeight.Bold,
-        modifier = modifier
-            .fillMaxWidth()
-            .background(ClinicalNavy)
-            .padding(horizontal = 16.dp, vertical = 10.dp)
-            .semantics { heading() },
-    )
-}
-
-@Composable
-fun PatientIdentityCard(patient: DemoPatient, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = patient.displayName,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.semantics { heading() },
-            )
-            FactRow(R.string.date_of_birth, patient.dateOfBirth)
-            FactRow(R.string.phone, patient.phone)
-        }
     }
 }
 
@@ -725,28 +537,6 @@ fun FactRow(
             },
             modifier = Modifier.weight(1.3f),
         )
-    }
-}
-
-@Composable
-fun PlaceholderCard() {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Text(
-                text = stringResource(R.string.prototype_placeholder),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = stringResource(R.string.placeholder_body),
-                style = MaterialTheme.typography.bodyLarge,
-            )
-        }
     }
 }
 

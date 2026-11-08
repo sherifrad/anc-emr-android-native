@@ -25,7 +25,7 @@ import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.model.DemoVisit
 import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
-import com.sherifradwan.ancnative.model.codex.ClinicalCodexRepository
+import com.sherifradwan.ancnative.model.catalog.ClinicalCatalogRepository
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncReducer
 import com.sherifradwan.ancnative.state.AncRoute
@@ -509,7 +509,7 @@ class DeleteUndoUiTest {
             )
         }
         compose.waitForIdle()
-        val total = ClinicalCodexRepository.getInstance(compose.activity).medicationCodexItems.value.size
+        val total = ClinicalCatalogRepository.getInstance(compose.activity).medicationCatalogItems.value.size
         if (total > 5) {
             compose.onNodeWithTag("presavedToggle", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
             exists("medPreset-4")

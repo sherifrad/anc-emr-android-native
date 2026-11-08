@@ -34,8 +34,8 @@ class AncStateTest {
         assertTrue(saved.savedNotice)
         assertEquals(firstPatient.visits.size + 1, saved.patient(firstPatient.id)?.visits?.size)
         assertEquals(secondPatient.visits, saved.patient(secondPatient.id)?.visits)
-        val profileState = saved.reduce(AncEvent.OpenProfile(firstPatient.id))
-        assertEquals("Synthetic unit-test note", profileState.patient(firstPatient.id)?.visits?.find { it.id == newVisitId }?.notes)
+        val hubState = saved.reduce(AncEvent.OpenWorkspace(firstPatient.id))
+        assertEquals("Synthetic unit-test note", hubState.patient(firstPatient.id)?.visits?.find { it.id == newVisitId }?.notes)
     }
 
     @Test
@@ -74,30 +74,16 @@ class AncStateTest {
     }
 
     @Test
-    fun samePatientProfileAndWorkspaceNavigationWaitForExplicitDiscard() {
+    fun samePatientWorkspaceNavigationWaitsForExplicitDiscard() {
         val originalVisits = firstPatient.visits
         val editing = initialState()
-            .reduce(AncEvent.StartVisit(firstPatient.id, null, "editor-same-profile"))
+            .reduce(AncEvent.StartVisit(firstPatient.id, null, "editor-same-workspace"))
             .reduce(AncEvent.DraftChanged(DraftField.DATE, "2026-10-08"))
 
-        val profileRequested = editing.reduce(AncEvent.OpenProfile(firstPatient.id))
-        assertTrue(profileRequested.showDiscardDialog)
-        assertEquals(AncRoute.VisitEditor(firstPatient.id), profileRequested.route)
-        assertEquals("2026-10-08", profileRequested.draft?.values?.date)
-        assertEquals(originalVisits, profileRequested.patient(firstPatient.id)?.visits)
-
-        val profile = profileRequested.reduce(AncEvent.ConfirmDiscard)
-        assertEquals(AncRoute.Profile(firstPatient.id), profile.route)
-        assertNull(profile.draft)
-        assertEquals(originalVisits, profile.patient(firstPatient.id)?.visits)
-
-        val editingAgain = profile
-            .reduce(AncEvent.StartVisit(firstPatient.id, null, "editor-same-workspace"))
-            .reduce(AncEvent.DraftChanged(DraftField.NOTES, "Retain until Workspace discard"))
-        val workspaceRequested = editingAgain.reduce(AncEvent.OpenWorkspace(firstPatient.id))
+        val workspaceRequested = editing.reduce(AncEvent.OpenWorkspace(firstPatient.id))
         assertTrue(workspaceRequested.showDiscardDialog)
         assertEquals(AncRoute.VisitEditor(firstPatient.id), workspaceRequested.route)
-        assertEquals("Retain until Workspace discard", workspaceRequested.draft?.values?.notes)
+        assertEquals("2026-10-08", workspaceRequested.draft?.values?.date)
         assertEquals(originalVisits, workspaceRequested.patient(firstPatient.id)?.visits)
 
         val workspace = workspaceRequested.reduce(AncEvent.ConfirmDiscard)

@@ -69,7 +69,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material3.Tab
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.ui.graphics.Color
-import com.sherifradwan.ancnative.model.codex.ClinicalCodexRepository
+import com.sherifradwan.ancnative.model.catalog.ClinicalCatalogRepository
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.security.AppThemeMode
 import com.sherifradwan.ancnative.security.BiometricAuthManager
@@ -78,8 +78,8 @@ import com.sherifradwan.ancnative.security.isValidNewPin
 
 enum class SettingsTab {
     SECURITY,
-    LAB_CODEX,
-    MED_CODEX,
+    LAB_CATALOG,
+    MED_CATALOG,
 }
 
 @Composable
@@ -197,7 +197,7 @@ fun SecuritySettingsDialog(
                 }
 
                 var selectedTab by remember { mutableStateOf(SettingsTab.SECURITY) }
-                val codexRepo = remember { ClinicalCodexRepository.getInstance(context) }
+                val catalogRepo = remember { ClinicalCatalogRepository.getInstance(context) }
 
                 PrimaryTabRow(
                     selectedTabIndex = selectedTab.ordinal,
@@ -216,24 +216,24 @@ fun SecuritySettingsDialog(
                         },
                     )
                     Tab(
-                        selected = selectedTab == SettingsTab.LAB_CODEX,
-                        onClick = { selectedTab = SettingsTab.LAB_CODEX },
+                        selected = selectedTab == SettingsTab.LAB_CATALOG,
+                        onClick = { selectedTab = SettingsTab.LAB_CATALOG },
                         text = {
                             Text(
                                 "Lab tests",
-                                fontWeight = if (selectedTab == SettingsTab.LAB_CODEX) FontWeight.Bold else FontWeight.Normal,
-                                color = if (selectedTab == SettingsTab.LAB_CODEX) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = if (selectedTab == SettingsTab.LAB_CATALOG) FontWeight.Bold else FontWeight.Normal,
+                                color = if (selectedTab == SettingsTab.LAB_CATALOG) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         },
                     )
                     Tab(
-                        selected = selectedTab == SettingsTab.MED_CODEX,
-                        onClick = { selectedTab = SettingsTab.MED_CODEX },
+                        selected = selectedTab == SettingsTab.MED_CATALOG,
+                        onClick = { selectedTab = SettingsTab.MED_CATALOG },
                         text = {
                             Text(
                                 "Medications",
-                                fontWeight = if (selectedTab == SettingsTab.MED_CODEX) FontWeight.Bold else FontWeight.Normal,
-                                color = if (selectedTab == SettingsTab.MED_CODEX) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = if (selectedTab == SettingsTab.MED_CATALOG) FontWeight.Bold else FontWeight.Normal,
+                                color = if (selectedTab == SettingsTab.MED_CATALOG) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         },
                     )
@@ -241,10 +241,10 @@ fun SecuritySettingsDialog(
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-                if (selectedTab == SettingsTab.LAB_CODEX) {
-                    LabCodexSettingsSection(codexDelegate = codexRepo)
-                } else if (selectedTab == SettingsTab.MED_CODEX) {
-                    MedicationCodexSettingsSection(codexDelegate = codexRepo)
+                if (selectedTab == SettingsTab.LAB_CATALOG) {
+                    LabCatalogSettingsSection(catalogDelegate = catalogRepo)
+                } else if (selectedTab == SettingsTab.MED_CATALOG) {
+                    MedicationCatalogSettingsSection(catalogDelegate = catalogRepo)
                 } else {
                     // Section: Theme Mode (Light / Dark / System Default)
                     Card(

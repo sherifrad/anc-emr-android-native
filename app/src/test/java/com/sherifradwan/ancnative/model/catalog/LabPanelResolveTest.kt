@@ -1,19 +1,19 @@
-package com.sherifradwan.ancnative.model.codex
+package com.sherifradwan.ancnative.model.catalog
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LabPanelResolveTest {
-    private val hb = LabCodexItem(id = "a", testName = "Hemoglobin", category = "Hematology", unit = "g/dL", referenceRange = "11-14")
-    private val glucose = LabCodexItem(id = "b", testName = "Glucose", category = "Biochemistry")
-    private val tsh = LabCodexItem(id = "c", testName = "TSH", category = "Biochemistry")
+    private val hb = LabCatalogItem(id = "a", testName = "Hemoglobin", category = "Hematology", unit = "g/dL", referenceRange = "11-14")
+    private val glucose = LabCatalogItem(id = "b", testName = "Glucose", category = "Biochemistry")
+    private val tsh = LabCatalogItem(id = "c", testName = "TSH", category = "Biochemistry")
     private val items = listOf(hb, glucose, tsh)
 
     @Test
     fun everyDefaultPanelResolvesWithNothingMissing() {
-        val defaultItems = ClinicalCodexRepository.defaultLabCodexItems()
-        for (panel in ClinicalCodexRepository.defaultLabCategoryGroups()) {
+        val defaultItems = ClinicalCatalogRepository.defaultLabCatalogItems()
+        for (panel in ClinicalCatalogRepository.defaultLabCategoryGroups()) {
             val resolution = resolveLabPanel(panel, defaultItems)
             assertTrue(panel.name + " missing " + resolution.missing, resolution.missing.isEmpty())
             assertEquals(panel.name, panel.testNames.size, resolution.tests.size)

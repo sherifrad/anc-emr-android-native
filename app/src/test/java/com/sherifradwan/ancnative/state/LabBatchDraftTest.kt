@@ -176,7 +176,7 @@ class LabBatchDraftTest {
     @Test
     fun groupingEmptyItemsReturnsEmptyList() {
         val groups = listOf(
-            com.sherifradwan.ancnative.model.codex.LabCategoryGroup("g1", "CBC", "", listOf("Hb", "WBC"), false),
+            com.sherifradwan.ancnative.model.catalog.LabCategoryGroup("g1", "CBC", "", listOf("Hb", "WBC"), false),
         )
         val grouped = groupLabBatchItems(emptyList(), groups)
         assertTrue(grouped.isEmpty())
@@ -185,8 +185,8 @@ class LabBatchDraftTest {
     @Test
     fun groupingItemsMatchesPanelNamesAndGroupsLeftoversByCategory() {
         val groups = listOf(
-            com.sherifradwan.ancnative.model.codex.LabCategoryGroup("g1", "CBC", "", listOf("Haemoglobin (Hb)", "White Cell Count (WBC)"), false),
-            com.sherifradwan.ancnative.model.codex.LabCategoryGroup("g2", "Urine", "", listOf("Urine Protein", "Urine Glucose"), false),
+            com.sherifradwan.ancnative.model.catalog.LabCategoryGroup("g1", "CBC", "", listOf("Haemoglobin (Hb)", "White Cell Count (WBC)"), false),
+            com.sherifradwan.ancnative.model.catalog.LabCategoryGroup("g2", "Urine", "", listOf("Urine Protein", "Urine Glucose"), false),
         )
         val items = listOf(
             LabBatchItem("1", "Haemoglobin (Hb)", "Hematology", "g/dL"),

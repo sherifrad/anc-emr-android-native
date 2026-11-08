@@ -1,4 +1,4 @@
-package com.sherifradwan.ancnative.model.codex
+package com.sherifradwan.ancnative.model.catalog
 
 import android.content.SharedPreferences
 import com.sherifradwan.ancnative.storage.BackupInspectionResult
@@ -164,9 +164,9 @@ class CustomChoicesLogicTest {
     // -------------------------------------------------------------
 
     @Test
-    fun clinicalCodexRepository_fullPersistenceAndLifecycle() {
+    fun clinicalCatalogRepository_fullPersistenceAndLifecycle() {
         val fakePrefs = FakeSharedPreferences()
-        val repo1 = ClinicalCodexRepository(fakePrefs)
+        val repo1 = ClinicalCatalogRepository(fakePrefs)
 
         val listKind = CustomChoiceList.MEDICATION_ROUTE
         assertEquals(0, repo1.customChoices(listKind).value.size)
@@ -187,7 +187,7 @@ class CustomChoicesLogicTest {
         assertEquals("Transdermal", item2.label)
 
         // 2. Persistence check across instance reload
-        val repo2 = ClinicalCodexRepository(fakePrefs)
+        val repo2 = ClinicalCatalogRepository(fakePrefs)
         val reloaded = repo2.customChoices(listKind).value
         assertEquals(2, reloaded.size)
         assertEquals("Sublingual", reloaded[0].label)
@@ -228,9 +228,9 @@ class CustomChoicesLogicTest {
     }
 
     @Test
-    fun clinicalCodexRepository_restoreFromBackupValidatesSafely() {
+    fun clinicalCatalogRepository_restoreFromBackupValidatesSafely() {
         val fakePrefs = FakeSharedPreferences()
-        val repo = ClinicalCodexRepository(fakePrefs)
+        val repo = ClinicalCatalogRepository(fakePrefs)
 
         val backupData = mapOf(
             CustomChoiceList.VISIT_OEDEMA.storageKey to listOf(

@@ -1,6 +1,6 @@
 package com.sherifradwan.ancnative.model
 
-import com.sherifradwan.ancnative.model.codex.CustomChoiceList
+import com.sherifradwan.ancnative.model.catalog.CustomChoiceList
 import com.sherifradwan.ancnative.state.DraftValues
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

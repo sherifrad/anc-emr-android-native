@@ -1,9 +1,9 @@
-package com.sherifradwan.ancnative.model.codex
+package com.sherifradwan.ancnative.model.catalog
 
 import kotlinx.coroutines.flow.StateFlow
 import java.util.UUID
 
-data class LabCodexItem(
+data class LabCatalogItem(
     val id: String = UUID.randomUUID().toString(),
     val testName: String,
     val category: String, // Hematology, Biochemistry, Serology, Urinalysis, Other
@@ -16,7 +16,7 @@ data class LabCodexItem(
         get() = testName
 }
 
-data class MedicationCodexItem(
+data class MedicationCatalogItem(
     val id: String = UUID.randomUUID().toString(),
     val name: String,
     val dosage: String,
@@ -39,20 +39,20 @@ data class LabCategoryGroup(
 )
 
 data class LabItemEdit(
-    val items: List<LabCodexItem>,
+    val items: List<LabCatalogItem>,
     val groups: List<LabCategoryGroup>,
 )
 
 data class LabPanelResolution(
-    val tests: List<LabCodexItem>,
+    val tests: List<LabCatalogItem>,
     val missing: List<String>,
 )
 
 fun resolveLabPanel(
     panel: LabCategoryGroup,
-    items: List<LabCodexItem>,
+    items: List<LabCatalogItem>,
 ): LabPanelResolution {
-    val tests = mutableListOf<LabCodexItem>()
+    val tests = mutableListOf<LabCatalogItem>()
     val missing = mutableListOf<String>()
     val seenItemIds = mutableSetOf<String>()
 
@@ -72,13 +72,13 @@ fun resolveLabPanel(
 }
 
 data class LabPanelStep(
-    val item: LabCodexItem?,
+    val item: LabCatalogItem?,
     val remainingIds: List<String>,
 )
 
 fun nextLabPanelTest(
     remainingIds: List<String>,
-    items: List<LabCodexItem>,
+    items: List<LabCatalogItem>,
 ): LabPanelStep {
     for (i in remainingIds.indices) {
         val id = remainingIds[i]
@@ -91,9 +91,9 @@ fun nextLabPanelTest(
 }
 
 fun applyLabItemEdit(
-    items: List<LabCodexItem>,
+    items: List<LabCatalogItem>,
     groups: List<LabCategoryGroup>,
-    edited: LabCodexItem,
+    edited: LabCatalogItem,
 ): LabItemEdit? {
     val trimmedName = edited.testName.trim()
     if (trimmedName.isBlank()) return null
@@ -138,15 +138,15 @@ fun applyLabItemEdit(
     return LabItemEdit(items = newItems, groups = newGroups)
 }
 
-interface LabCodexDelegate {
-    val labCodexItems: StateFlow<List<LabCodexItem>>
+interface LabCatalogDelegate {
+    val labCatalogItems: StateFlow<List<LabCatalogItem>>
     val labCategoryGroups: StateFlow<List<LabCategoryGroup>>
 
-    fun addLabCodexItem(item: LabCodexItem): Boolean
-    fun updateLabCodexItem(item: LabCodexItem): Boolean
-    fun deleteLabCodexItem(itemId: String): Boolean
-    fun getLabCodexItem(itemId: String): LabCodexItem?
-    fun findLabCodexItemByName(name: String): LabCodexItem?
+    fun addLabCatalogItem(item: LabCatalogItem): Boolean
+    fun updateLabCatalogItem(item: LabCatalogItem): Boolean
+    fun deleteLabCatalogItem(itemId: String): Boolean
+    fun getLabCatalogItem(itemId: String): LabCatalogItem?
+    fun findLabCatalogItemByName(name: String): LabCatalogItem?
     fun resetLabDefaults()
 
     // Lab Category Groups (Panels)
@@ -156,11 +156,11 @@ interface LabCodexDelegate {
     fun resetLabCategoryGroupDefaults()
 }
 
-interface MedicationCodexDelegate {
-    val medicationCodexItems: StateFlow<List<MedicationCodexItem>>
-    fun addMedicationCodexItem(item: MedicationCodexItem): Boolean
-    fun deleteMedicationCodexItem(itemId: String): Boolean
-    fun getMedicationCodexItem(itemId: String): MedicationCodexItem?
-    fun findMedicationCodexItemByName(name: String): MedicationCodexItem?
+interface MedicationCatalogDelegate {
+    val medicationCatalogItems: StateFlow<List<MedicationCatalogItem>>
+    fun addMedicationCatalogItem(item: MedicationCatalogItem): Boolean
+    fun deleteMedicationCatalogItem(itemId: String): Boolean
+    fun getMedicationCatalogItem(itemId: String): MedicationCatalogItem?
+    fun findMedicationCatalogItemByName(name: String): MedicationCatalogItem?
     fun resetMedicationDefaults()
 }

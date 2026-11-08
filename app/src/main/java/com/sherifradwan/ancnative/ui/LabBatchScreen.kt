@@ -63,9 +63,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
-import com.sherifradwan.ancnative.model.codex.ClinicalCodexRepository
-import com.sherifradwan.ancnative.model.codex.LabCategoryGroup
-import com.sherifradwan.ancnative.model.codex.LabCodexItem
+import com.sherifradwan.ancnative.model.catalog.ClinicalCatalogRepository
+import com.sherifradwan.ancnative.model.catalog.LabCategoryGroup
+import com.sherifradwan.ancnative.model.catalog.LabCatalogItem
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
@@ -116,9 +116,9 @@ fun LabBatchScreen(state: AncState, route: AncRoute.LabBatchEditor, onEvent: (An
     val patient = state.patient(route.patientId) ?: return
     val draft = state.labBatchDraft ?: return
     val context = LocalContext.current
-    val codexRepo = remember { ClinicalCodexRepository.getInstance(context) }
-    val codexItems by codexRepo.labCodexItems.collectAsState()
-    val codexGroups by codexRepo.labCategoryGroups.collectAsState()
+    val catalogRepo = remember { ClinicalCatalogRepository.getInstance(context) }
+    val catalogItems by catalogRepo.labCatalogItems.collectAsState()
+    val catalogGroups by catalogRepo.labCategoryGroups.collectAsState()
 
     val calculatedGa = GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, draft.date)
     val gaText = calculatedGa?.displayText?.let { "GA $it" }
@@ -169,7 +169,7 @@ fun LabBatchScreen(state: AncState, route: AncRoute.LabBatchEditor, onEvent: (An
         val group = choosingGroup!!
         ChoosePanelDialog(
             group = group,
-            codexItems = codexItems,
+            catalogItems = catalogItems,
             onDismiss = { choosingGroup = null },
             onAddSelected = { selectedItems ->
                 onEvent(AncEvent.LabBatchItemsAdded(selectedItems))
@@ -183,7 +183,7 @@ fun LabBatchScreen(state: AncState, route: AncRoute.LabBatchEditor, onEvent: (An
                     testNames = testNames,
                     isCustom = true,
                 )
-                codexRepo.addLabCategoryGroup(newGroup)
+                catalogRepo.addLabCategoryGroup(newGroup)
             },
         )
     }
@@ -298,14 +298,14 @@ fun LabBatchScreen(state: AncState, route: AncRoute.LabBatchEditor, onEvent: (An
 
         when (draft.tab) {
             LabBatchTab.ADD -> AddTab(
-                groups = codexGroups,
-                codexItems = codexItems,
+                groups = catalogGroups,
+                catalogItems = catalogItems,
                 draft = draft,
                 onEvent = onEvent,
                 onChooseClick = { choosingGroup = it },
             )
             LabBatchTab.ENTER -> EnterTab(draft, onEvent)
-            LabBatchTab.REVIEW -> ReviewTab(draft, codexGroups, onEvent)
+            LabBatchTab.REVIEW -> ReviewTab(draft, catalogGroups, onEvent)
         }
     }
 }
@@ -313,7 +313,7 @@ fun LabBatchScreen(state: AncState, route: AncRoute.LabBatchEditor, onEvent: (An
 @Composable
 private fun AddTab(
     groups: List<LabCategoryGroup>,
-    codexItems: List<LabCodexItem>,
+    catalogItems: List<LabCatalogItem>,
     draft: LabBatchDraft,
     onEvent: (AncEvent) -> Unit,
     onChooseClick: (LabCategoryGroup) -> Unit,
@@ -321,7 +321,7 @@ private fun AddTab(
     var query by remember { mutableStateOf("") }
 
     fun itemsFor(names: List<String>): List<LabBatchItem> = names.mapNotNull { name ->
-        codexItems.firstOrNull { it.testName == name }?.let { item ->
+        catalogItems.firstOrNull { it.testName == name }?.let { item ->
             LabBatchItem(
                 labId = UUID.randomUUID().toString(),
                 testName = item.testName,
@@ -473,7 +473,7 @@ private fun AddTab(
                 )
 
                 if (query.isNotBlank()) {
-                    val matches = codexItems.filter { it.testName.contains(query, true) }.take(15)
+                    val matches = catalogItems.filter { it.testName.contains(query, true) }.take(15)
                     matches.forEachIndexed { index, item ->
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -516,7 +516,7 @@ private fun AddTab(
                         listOf("Ferritin", "TSH", "Vitamin D").forEach { name ->
                             SuggestionChip(
                                 onClick = {
-                                    val match = codexItems.firstOrNull { it.testName.contains(name, true) }
+                                    val match = catalogItems.firstOrNull { it.testName.contains(name, true) }
                                     val item = if (match != null) {
                                         LabBatchItem(UUID.randomUUID().toString(), match.testName, match.category, match.unit)
                                     } else {
@@ -543,7 +543,7 @@ private fun AddTab(
 @Composable
 private fun ChoosePanelDialog(
     group: LabCategoryGroup,
-    codexItems: List<LabCodexItem>,
+    catalogItems: List<LabCatalogItem>,
     onDismiss: () -> Unit,
     onAddSelected: (List<LabBatchItem>) -> Unit,
     onSaveAsCustomPanel: (String, List<String>) -> Unit,
@@ -611,7 +611,7 @@ private fun ChoosePanelDialog(
                 )
                 group.testNames.forEach { testName ->
                     val isChecked = selectedNames.contains(testName)
-                    val matchingItem = codexItems.firstOrNull { it.testName == testName }
+                    val matchingItem = catalogItems.firstOrNull { it.testName == testName }
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -650,7 +650,7 @@ private fun ChoosePanelDialog(
             Button(
                 onClick = {
                     val items = selectedNames.map { name ->
-                        val item = codexItems.firstOrNull { it.testName == name }
+                        val item = catalogItems.firstOrNull { it.testName == name }
                         LabBatchItem(
                             labId = UUID.randomUUID().toString(),
                             testName = name,

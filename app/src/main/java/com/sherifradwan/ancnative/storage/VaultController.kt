@@ -503,7 +503,7 @@ class VaultController internal constructor(
             val snapshot = active.repository.loadSnapshot()
             val vaultUuid = active.repository.vaultUuid
             val customChoices = try {
-                com.sherifradwan.ancnative.model.codex.ClinicalCodexRepository.getInstance(appContext).exportCustomChoicesForBackup()
+                com.sherifradwan.ancnative.model.catalog.ClinicalCatalogRepository.getInstance(appContext).exportCustomChoicesForBackup()
             } catch (_: Throwable) {
                 emptyMap()
             }
@@ -537,7 +537,7 @@ class VaultController internal constructor(
 
             if (payload.customChoices.isNotEmpty()) {
                 try {
-                    com.sherifradwan.ancnative.model.codex.ClinicalCodexRepository.getInstance(appContext)
+                    com.sherifradwan.ancnative.model.catalog.ClinicalCatalogRepository.getInstance(appContext)
                         .restoreCustomChoicesFromBackup(payload.customChoices)
                 } catch (_: Throwable) {
                     // Non-fatal

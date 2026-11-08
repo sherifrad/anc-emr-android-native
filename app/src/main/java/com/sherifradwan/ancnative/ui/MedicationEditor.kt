@@ -47,8 +47,8 @@ import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
 import com.sherifradwan.ancnative.model.MedicationOnOff
 import com.sherifradwan.ancnative.model.medicationEditorChoice
 import com.sherifradwan.ancnative.model.medicationStatusAfterChoice
-import com.sherifradwan.ancnative.model.codex.ClinicalCodexRepository
-import com.sherifradwan.ancnative.model.codex.MedicationCodexItem
+import com.sherifradwan.ancnative.model.catalog.ClinicalCatalogRepository
+import com.sherifradwan.ancnative.model.catalog.MedicationCatalogItem
 import com.sherifradwan.ancnative.model.effectiveMedicationStatus
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
@@ -141,10 +141,10 @@ fun MedicationEditor(
     ) {
         GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
 
-        // 1-Tap Presets from Medication Codex Delegate
+        // 1-Tap Presets from Medication Catalog Delegate
         val context = LocalContext.current
-        val codexRepo = remember { ClinicalCodexRepository.getInstance(context) }
-        val codexMedItems by codexRepo.medicationCodexItems.collectAsState()
+        val catalogRepo = remember { ClinicalCatalogRepository.getInstance(context) }
+        val catalogMedItems by catalogRepo.medicationCatalogItems.collectAsState()
 
         // CARD 1: MEDICATION (M401, tag medPickCard)
         SectionCard(
@@ -169,10 +169,10 @@ fun MedicationEditor(
 
             QuickPresetChips(
                 title = stringResource(R.string.common_medications),
-                items = codexMedItems.map { it.displayLabel },
+                items = catalogMedItems.map { it.displayLabel },
                 enabled = enabled,
                 onSelect = { selectedLabel ->
-                    val preset = codexMedItems.firstOrNull { it.displayLabel == selectedLabel }
+                    val preset = catalogMedItems.firstOrNull { it.displayLabel == selectedLabel }
                     if (preset != null) {
                         onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.NAME, preset.name))
                         onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.DOSAGE, preset.dosage))
@@ -194,8 +194,8 @@ fun MedicationEditor(
 
             // Save current medication to my list if it's new
             val trimmedMedName = draft.values.name.trim()
-            val isAlreadyInMedCodex = codexMedItems.any { it.name.equals(trimmedMedName, ignoreCase = true) }
-            if (trimmedMedName.isNotBlank() && !isAlreadyInMedCodex) {
+            val isAlreadyInMedCatalog = catalogMedItems.any { it.name.equals(trimmedMedName, ignoreCase = true) }
+            if (trimmedMedName.isNotBlank() && !isAlreadyInMedCatalog) {
                 Surface(
                     modifier = Modifier.fillMaxWidth().testTag("saveToMedCodexBanner"),
                     color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
@@ -214,8 +214,8 @@ fun MedicationEditor(
                         )
                         TextButton(
                             onClick = {
-                                codexRepo.addMedicationCodexItem(
-                                    MedicationCodexItem(
+                                catalogRepo.addMedicationCatalogItem(
+                                    MedicationCatalogItem(
                                         name = trimmedMedName,
                                         dosage = draft.values.dosage.trim(),
                                         route = draft.values.route.ifBlank { "Oral" },

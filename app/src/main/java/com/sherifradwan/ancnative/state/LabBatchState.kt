@@ -1,7 +1,7 @@
 package com.sherifradwan.ancnative.state
 
 import com.sherifradwan.ancnative.model.ClinicalVocabulary
-import com.sherifradwan.ancnative.model.codex.LabCategoryGroup
+import com.sherifradwan.ancnative.model.catalog.LabCategoryGroup
 import com.sherifradwan.ancnative.storage.LabBatchEntry
 import com.sherifradwan.ancnative.storage.SaveLabBatchCommand
 

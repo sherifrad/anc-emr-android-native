@@ -15,18 +15,18 @@ import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.storage.VaultState
 import com.sherifradwan.ancnative.ui.AncTheme
-import com.sherifradwan.ancnative.ui.ProfileScreen
+import com.sherifradwan.ancnative.ui.patienthub.PatientHubScreen
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class ProfileScreenDesignTest {
+class PatientHubDesignTest {
     @get:Rule
     val compose = createAndroidComposeRule<MainActivity>()
 
     @Test
-    fun profileScreen_rendersHeroCardAndActions() {
+    fun patientHub_rendersCanonicalHeaderAndAllSixTabs() {
         val patient = DemoFixtures.patients.first()
         val state = AncState(
             patients = listOf(patient),
@@ -36,39 +36,37 @@ class ProfileScreenDesignTest {
         compose.activity.runOnUiThread {
             compose.activity.setContent {
                 AncTheme {
-                    ProfileScreen(
+                    PatientHubScreen(
                         state = state,
-                        route = AncRoute.Profile(patient.id),
+                        route = AncRoute.Workspace(patient.id),
                         onEvent = {},
+                        onStartVisit = { _, _ -> },
                     )
                 }
             }
         }
+        compose.waitForIdle()
 
-        // Verify patient name and test tags
-        compose.onNodeWithTag("profileScreen").assertIsDisplayed()
+        // Verify Patient Hub orchestrator and patient name
+        compose.onNodeWithTag("patientHubScreen").assertIsDisplayed()
         compose.onNodeWithText(patient.displayName).assertIsDisplayed()
-        compose.onNodeWithTag("workspaceButton").assertIsDisplayed()
-        compose.onNodeWithTag("openReportButton").assertIsDisplayed()
+        compose.onNodeWithTag("hubReportButton").assertIsDisplayed()
+        compose.onNodeWithTag("hubBackButton").assertIsDisplayed()
 
-        // Verify Clinical Attention Callout if patient has it
-        if (!patient.clinicalAttention.isNullOrBlank()) {
-            compose.onNodeWithText(patient.clinicalAttention).assertIsDisplayed()
-        }
+        // Verify all 6 canonical tabs
+        compose.onNodeWithTag("tab-overview").assertIsDisplayed()
+        compose.onNodeWithTag("tab-visits").assertIsDisplayed()
+        compose.onNodeWithTag("tab-scans").assertIsDisplayed()
+        compose.onNodeWithTag("tab-labs").assertIsDisplayed()
+        compose.onNodeWithTag("tab-meds").assertIsDisplayed()
+        compose.onNodeWithTag("tab-plan").assertIsDisplayed()
 
-        // Verify collapsible sections exist via LazyColumn scrolling
-        compose.onNodeWithTag("profileList").performScrollToNode(hasTestTag("profileVisitsSection"))
-        compose.onNodeWithTag("profileVisitsSection").assertIsDisplayed()
-
-        compose.onNodeWithTag("profileList").performScrollToNode(hasTestTag("profileLabsSection"))
-        compose.onNodeWithTag("profileLabsSection").assertIsDisplayed()
-
-        compose.onNodeWithTag("profileList").performScrollToNode(hasTestTag("addVisit"))
-        compose.onNodeWithTag("addVisit").assertIsDisplayed()
+        // Default tab is OVERVIEW
+        compose.onNodeWithTag("overviewTab").assertIsDisplayed()
     }
 
     @Test
-    fun profileScreen_visitsSection_expandsAndCollapses() {
+    fun patientHub_tabNavigation_switchesTabs() {
         val patient = DemoFixtures.patients.first()
         val state = AncState(
             patients = listOf(patient),
@@ -78,26 +76,35 @@ class ProfileScreenDesignTest {
         compose.activity.runOnUiThread {
             compose.activity.setContent {
                 AncTheme {
-                    ProfileScreen(
+                    PatientHubScreen(
                         state = state,
-                        route = AncRoute.Profile(patient.id),
+                        route = AncRoute.Workspace(patient.id),
                         onEvent = {},
+                        onStartVisit = { _, _ -> },
                     )
                 }
             }
         }
-
-        // Scroll to VISITS header
-        compose.onNodeWithTag("profileList").performScrollToNode(hasTestTag("profileVisitsSection"))
-        compose.onNodeWithTag("profileVisitsSection").assertIsDisplayed()
-
-        // Click header to collapse
-        compose.onNodeWithText("VISITS").performClick()
         compose.waitForIdle()
 
-        // Click again to expand
-        compose.onNodeWithText("VISITS").performClick()
+        // Click VISITS tab
+        compose.onNodeWithTag("tab-visits").performClick()
         compose.waitForIdle()
-        compose.onNodeWithTag("addVisit").assertIsDisplayed()
+        compose.onNodeWithTag("visitsTab").assertIsDisplayed()
+
+        // Click LABS tab
+        compose.onNodeWithTag("tab-labs").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("labsTab").assertIsDisplayed()
+
+        // Click MEDS tab
+        compose.onNodeWithTag("tab-meds").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("medsTab").assertIsDisplayed()
+
+        // Click PLAN tab
+        compose.onNodeWithTag("tab-plan").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("planTab").assertIsDisplayed()
     }
 }

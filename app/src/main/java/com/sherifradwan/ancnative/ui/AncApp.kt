@@ -59,6 +59,7 @@ import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.storage.VaultState
+import com.sherifradwan.ancnative.ui.patienthub.PatientHubScreen
 
 @Composable
 fun AncApp(
@@ -214,13 +215,12 @@ fun AncApp(
                 Box(Modifier.weight(1f).fillMaxWidth()) {
                     when (val route = state.route) {
                         AncRoute.PatientList -> PatientListScreen(state, onEvent)
-                        is AncRoute.Workspace -> WorkspaceScreen(
+                        is AncRoute.Workspace -> PatientHubScreen(
                             state = state,
                             route = route,
                             onEvent = onEvent,
                             onStartVisit = onStartVisit,
                         )
-                        is AncRoute.Profile -> ProfileScreen(state, route, onEvent)
                         is AncRoute.VisitEditor -> VisitEditor(
                             state = state,
                             route = route,

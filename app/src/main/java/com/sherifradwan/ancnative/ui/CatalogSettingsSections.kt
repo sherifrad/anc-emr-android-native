@@ -48,30 +48,30 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sherifradwan.ancnative.model.ClinicalVocabulary
-import com.sherifradwan.ancnative.model.codex.LabCategoryGroup
-import com.sherifradwan.ancnative.model.codex.LabCodexDelegate
-import com.sherifradwan.ancnative.model.codex.LabCodexItem
-import com.sherifradwan.ancnative.model.codex.MedicationCodexDelegate
-import com.sherifradwan.ancnative.model.codex.MedicationCodexItem
+import com.sherifradwan.ancnative.model.catalog.LabCategoryGroup
+import com.sherifradwan.ancnative.model.catalog.LabCatalogDelegate
+import com.sherifradwan.ancnative.model.catalog.LabCatalogItem
+import com.sherifradwan.ancnative.model.catalog.MedicationCatalogDelegate
+import com.sherifradwan.ancnative.model.catalog.MedicationCatalogItem
 
-enum class LabCodexSubView {
+enum class LabCatalogSubView {
     INDIVIDUAL_TESTS,
     CATEGORY_GROUPS,
 }
 
 @Composable
-fun LabCodexSettingsSection(
-    codexDelegate: LabCodexDelegate,
+fun LabCatalogSettingsSection(
+    catalogDelegate: LabCatalogDelegate,
     modifier: Modifier = Modifier,
 ) {
-    val items by codexDelegate.labCodexItems.collectAsState()
-    val categoryGroups by codexDelegate.labCategoryGroups.collectAsState()
-    var currentSubView by remember { mutableStateOf(LabCodexSubView.INDIVIDUAL_TESTS) }
+    val items by catalogDelegate.labCatalogItems.collectAsState()
+    val categoryGroups by catalogDelegate.labCategoryGroups.collectAsState()
+    var currentSubView by remember { mutableStateOf(LabCatalogSubView.INDIVIDUAL_TESTS) }
     var searchQuery by remember { mutableStateOf("") }
     var showAddTestDialog by remember { mutableStateOf(false) }
-    var itemToEdit by remember { mutableStateOf<LabCodexItem?>(null) }
+    var itemToEdit by remember { mutableStateOf<LabCatalogItem?>(null) }
     var showAddGroupDialog by remember { mutableStateOf(false) }
-    var itemToDelete by remember { mutableStateOf<LabCodexItem?>(null) }
+    var itemToDelete by remember { mutableStateOf<LabCatalogItem?>(null) }
     var groupToDelete by remember { mutableStateOf<LabCategoryGroup?>(null) }
     var showResetDialog by remember { mutableStateOf(false) }
 
@@ -117,7 +117,7 @@ fun LabCodexSettingsSection(
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                if (currentSubView == LabCodexSubView.INDIVIDUAL_TESTS) {
+                if (currentSubView == LabCatalogSubView.INDIVIDUAL_TESTS) {
                     Button(
                         onClick = { showAddTestDialog = true },
                         modifier = Modifier.testTag("addNewLabTestBtn"),
@@ -145,14 +145,14 @@ fun LabCodexSettingsSection(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             FilterChip(
-                selected = currentSubView == LabCodexSubView.INDIVIDUAL_TESTS,
-                onClick = { currentSubView = LabCodexSubView.INDIVIDUAL_TESTS },
+                selected = currentSubView == LabCatalogSubView.INDIVIDUAL_TESTS,
+                onClick = { currentSubView = LabCatalogSubView.INDIVIDUAL_TESTS },
                 label = { Text("Individual Tests (${items.size})") },
                 modifier = Modifier.testTag("labIndividualTestsTab"),
             )
             FilterChip(
-                selected = currentSubView == LabCodexSubView.CATEGORY_GROUPS,
-                onClick = { currentSubView = LabCodexSubView.CATEGORY_GROUPS },
+                selected = currentSubView == LabCatalogSubView.CATEGORY_GROUPS,
+                onClick = { currentSubView = LabCatalogSubView.CATEGORY_GROUPS },
                 label = { Text("Panels & Profiles (${categoryGroups.size})") },
                 modifier = Modifier.testTag("labCategoryGroupsTab"),
             )
@@ -164,7 +164,7 @@ fun LabCodexSettingsSection(
             onValueChange = { searchQuery = it },
             placeholder = {
                 Text(
-                    if (currentSubView == LabCodexSubView.INDIVIDUAL_TESTS) "Search tests or categories..."
+                    if (currentSubView == LabCatalogSubView.INDIVIDUAL_TESTS) "Search tests or categories..."
                     else "Search diagnostic panels..."
                 )
             },
@@ -173,7 +173,7 @@ fun LabCodexSettingsSection(
             modifier = Modifier.fillMaxWidth().testTag("searchLabCodexField"),
         )
 
-        if (currentSubView == LabCodexSubView.INDIVIDUAL_TESTS) {
+        if (currentSubView == LabCatalogSubView.INDIVIDUAL_TESTS) {
             // Tests List
             if (filteredItems.isEmpty()) {
                 Surface(
@@ -393,7 +393,7 @@ fun LabCodexSettingsSection(
         AddLabTestDialog(
             onDismiss = { showAddTestDialog = false },
             onSave = { newItem ->
-                val success = codexDelegate.addLabCodexItem(newItem)
+                val success = catalogDelegate.addLabCatalogItem(newItem)
                 if (success) {
                     showAddTestDialog = false
                 }
@@ -408,7 +408,7 @@ fun LabCodexSettingsSection(
             initial = itemToEdit,
             onDismiss = { itemToEdit = null },
             onSave = { editedItem ->
-                val success = codexDelegate.updateLabCodexItem(editedItem)
+                val success = catalogDelegate.updateLabCatalogItem(editedItem)
                 if (success) {
                     itemToEdit = null
                 }
@@ -423,7 +423,7 @@ fun LabCodexSettingsSection(
             availableTests = items,
             onDismiss = { showAddGroupDialog = false },
             onSave = { newGroup ->
-                codexDelegate.addLabCategoryGroup(newGroup)
+                catalogDelegate.addLabCategoryGroup(newGroup)
                 showAddGroupDialog = false
             },
         )
@@ -438,7 +438,7 @@ fun LabCodexSettingsSection(
             confirmButton = {
                 Button(
                     onClick = {
-                        itemToDelete?.let { codexDelegate.deleteLabCodexItem(it.id) }
+                        itemToDelete?.let { catalogDelegate.deleteLabCatalogItem(it.id) }
                         itemToDelete = null
                     },
                 ) {
@@ -462,7 +462,7 @@ fun LabCodexSettingsSection(
             confirmButton = {
                 Button(
                     onClick = {
-                        groupToDelete?.let { codexDelegate.deleteLabCategoryGroup(it.id) }
+                        groupToDelete?.let { catalogDelegate.deleteLabCategoryGroup(it.id) }
                         groupToDelete = null
                     },
                 ) {
@@ -486,8 +486,8 @@ fun LabCodexSettingsSection(
             confirmButton = {
                 Button(
                     onClick = {
-                        codexDelegate.resetLabDefaults()
-                        codexDelegate.resetLabCategoryGroupDefaults()
+                        catalogDelegate.resetLabDefaults()
+                        catalogDelegate.resetLabCategoryGroupDefaults()
                         showResetDialog = false
                     },
                 ) {
@@ -505,9 +505,9 @@ fun LabCodexSettingsSection(
 
 @Composable
 private fun AddLabTestDialog(
-    initial: LabCodexItem? = null,
+    initial: LabCatalogItem? = null,
     onDismiss: () -> Unit,
-    onSave: (LabCodexItem) -> Boolean,
+    onSave: (LabCatalogItem) -> Boolean,
 ) {
     var testName by remember(initial) { mutableStateOf(initial?.testName ?: "") }
     var selectedCategory by remember(initial) {
@@ -612,7 +612,7 @@ private fun AddLabTestDialog(
                                 defaultResult = defaultResult,
                             )
                         } else {
-                            LabCodexItem(
+                            LabCatalogItem(
                                 testName = trimmed,
                                 category = selectedCategory,
                                 unit = unit.trim(),
@@ -646,7 +646,7 @@ private fun AddLabTestDialog(
 
 @Composable
 private fun AddLabCategoryGroupDialog(
-    availableTests: List<LabCodexItem>,
+    availableTests: List<LabCatalogItem>,
     onDismiss: () -> Unit,
     onSave: (LabCategoryGroup) -> Unit,
 ) {
@@ -770,14 +770,14 @@ private fun AddLabCategoryGroupDialog(
 }
 
 @Composable
-fun MedicationCodexSettingsSection(
-    codexDelegate: MedicationCodexDelegate,
+fun MedicationCatalogSettingsSection(
+    catalogDelegate: MedicationCatalogDelegate,
     modifier: Modifier = Modifier,
 ) {
-    val items by codexDelegate.medicationCodexItems.collectAsState()
+    val items by catalogDelegate.medicationCatalogItems.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     var showAddDialog by remember { mutableStateOf(false) }
-    var itemToDelete by remember { mutableStateOf<MedicationCodexItem?>(null) }
+    var itemToDelete by remember { mutableStateOf<MedicationCatalogItem?>(null) }
     var showResetDialog by remember { mutableStateOf(false) }
 
     val filteredItems = remember(items, searchQuery) {
@@ -946,7 +946,7 @@ fun MedicationCodexSettingsSection(
         AddMedicationDialog(
             onDismiss = { showAddDialog = false },
             onSave = { newItem ->
-                codexDelegate.addMedicationCodexItem(newItem)
+                catalogDelegate.addMedicationCatalogItem(newItem)
                 showAddDialog = false
             },
         )
@@ -961,7 +961,7 @@ fun MedicationCodexSettingsSection(
             confirmButton = {
                 Button(
                     onClick = {
-                        itemToDelete?.let { codexDelegate.deleteMedicationCodexItem(it.id) }
+                        itemToDelete?.let { catalogDelegate.deleteMedicationCatalogItem(it.id) }
                         itemToDelete = null
                     },
                 ) {
@@ -985,7 +985,7 @@ fun MedicationCodexSettingsSection(
             confirmButton = {
                 Button(
                     onClick = {
-                        codexDelegate.resetMedicationDefaults()
+                        catalogDelegate.resetMedicationDefaults()
                         showResetDialog = false
                     },
                 ) {
@@ -1004,7 +1004,7 @@ fun MedicationCodexSettingsSection(
 @Composable
 private fun AddMedicationDialog(
     onDismiss: () -> Unit,
-    onSave: (MedicationCodexItem) -> Unit,
+    onSave: (MedicationCatalogItem) -> Unit,
 ) {
     var name by remember { mutableStateOf("") }
     var dosage by remember { mutableStateOf("") }
@@ -1102,7 +1102,7 @@ private fun AddMedicationDialog(
                         errorMessage = "Please enter medication name!"
                     } else {
                         onSave(
-                            MedicationCodexItem(
+                            MedicationCatalogItem(
                                 name = name.trim(),
                                 dosage = dosage.trim(),
                                 route = selectedRoute,

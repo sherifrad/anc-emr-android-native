@@ -522,7 +522,7 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
                         .clip(RoundedCornerShape(12.dp))
                         .clickable {
                             sheetPatient = null
-                            onEvent(AncEvent.OpenProfile(p.id))
+                            onEvent(AncEvent.OpenWorkspace(p.id))
                         }
                         .testTag("profile-${p.caseId}"),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
@@ -584,7 +584,7 @@ private fun PatientDirectoryCard(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("patient-${patient.caseId}")
-            .clickable { onEvent(AncEvent.OpenProfile(patient.id)) },
+            .clickable { onEvent(AncEvent.OpenWorkspace(patient.id)) },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = rowBgColor),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
@@ -791,7 +791,7 @@ private fun PatientDirectoryCard(
                 }
 
                 IconButton(
-                    onClick = { onEvent(AncEvent.OpenProfile(patient.id)) },
+                    onClick = { onEvent(AncEvent.OpenWorkspace(patient.id)) },
                     modifier = Modifier
                         .minimumTouchTarget()
                         .testTag("profile-${patient.caseId}"),

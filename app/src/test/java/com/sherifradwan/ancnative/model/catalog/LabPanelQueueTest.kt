@@ -1,4 +1,4 @@
-package com.sherifradwan.ancnative.model.codex
+package com.sherifradwan.ancnative.model.catalog
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -7,9 +7,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LabPanelQueueTest {
-    private val hb = LabCodexItem(id = "a", testName = "Hemoglobin", category = "Hematology")
-    private val glucose = LabCodexItem(id = "b", testName = "Glucose", category = "Biochemistry")
-    private val urine = LabCodexItem(id = "c", testName = "Urine protein", category = "Urinalysis")
+    private val hb = LabCatalogItem(id = "a", testName = "Hemoglobin", category = "Hematology")
+    private val glucose = LabCatalogItem(id = "b", testName = "Glucose", category = "Biochemistry")
+    private val urine = LabCatalogItem(id = "c", testName = "Urine protein", category = "Urinalysis")
     private val items = listOf(hb, glucose, urine)
 
     @Test

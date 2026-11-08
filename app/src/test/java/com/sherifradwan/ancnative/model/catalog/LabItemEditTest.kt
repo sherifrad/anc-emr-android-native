@@ -1,4 +1,4 @@
-package com.sherifradwan.ancnative.model.codex
+package com.sherifradwan.ancnative.model.catalog
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -7,9 +7,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LabItemEditTest {
-    private val hb = LabCodexItem(id = "a", testName = "Hemoglobin", category = "Hematology", unit = "g/dL", referenceRange = "11-14")
-    private val glucose = LabCodexItem(id = "b", testName = "Glucose", category = "Biochemistry", unit = "mg/dL", referenceRange = "70-99")
-    private val urine = LabCodexItem(id = "c", testName = "Urine protein", category = "Urinalysis")
+    private val hb = LabCatalogItem(id = "a", testName = "Hemoglobin", category = "Hematology", unit = "g/dL", referenceRange = "11-14")
+    private val glucose = LabCatalogItem(id = "b", testName = "Glucose", category = "Biochemistry", unit = "mg/dL", referenceRange = "70-99")
+    private val urine = LabCatalogItem(id = "c", testName = "Urine protein", category = "Urinalysis")
     private val items = listOf(hb, glucose, urine)
 
     private val anemia = LabCategoryGroup(id = "g1", name = "Anemia", testNames = listOf("hemoglobin", "Ferritin"))

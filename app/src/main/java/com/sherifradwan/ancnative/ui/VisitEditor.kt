@@ -54,9 +54,9 @@ import com.sherifradwan.ancnative.model.GestationalAgeEngine
 import com.sherifradwan.ancnative.model.VisitFormValues
 import com.sherifradwan.ancnative.model.bpLevel
 import com.sherifradwan.ancnative.model.fhrLevel
-import com.sherifradwan.ancnative.model.codex.ClinicalCodexRepository
-import com.sherifradwan.ancnative.model.codex.CustomChoiceList
-import com.sherifradwan.ancnative.model.codex.CustomChoiceValidationResult
+import com.sherifradwan.ancnative.model.catalog.ClinicalCatalogRepository
+import com.sherifradwan.ancnative.model.catalog.CustomChoiceList
+import com.sherifradwan.ancnative.model.catalog.CustomChoiceValidationResult
 import com.sherifradwan.ancnative.model.detectFlaggedFindings
 import com.sherifradwan.ancnative.model.estimateFundalHeightForGa
 import com.sherifradwan.ancnative.model.fillNormalVisitFindings
@@ -83,7 +83,7 @@ fun VisitEditor(
     val draft = state.draft?.takeIf { it.patientId == route.patientId } ?: return
     val editingEnabled = state.savePhase == SavePhase.IDLE || state.savePhase == SavePhase.ERROR
     val context = LocalContext.current
-    val codexRepo = remember { ClinicalCodexRepository.getInstance(context) }
+    val catalogRepo = remember { ClinicalCatalogRepository.getInstance(context) }
 
     var currentStep by rememberSaveable { mutableIntStateOf(0) }
     val totalSteps = 4
@@ -137,11 +137,11 @@ fun VisitEditor(
     val customInvalidCharsError = stringResource(R.string.custom_drug_invalid_chars_error)
     val customNotFoundError = stringResource(R.string.custom_drug_not_found_error)
 
-    val bpChoices by codexRepo.customChoices(CustomChoiceList.VISIT_BP).collectAsState(emptyList())
-    val weightChoices by codexRepo.customChoices(CustomChoiceList.VISIT_WEIGHT).collectAsState(emptyList())
-    val oedemaChoices by codexRepo.customChoices(CustomChoiceList.VISIT_OEDEMA).collectAsState(emptyList())
-    val movementsChoices by codexRepo.customChoices(CustomChoiceList.VISIT_MOVEMENTS).collectAsState(emptyList())
-    val urineChoices by codexRepo.customChoices(CustomChoiceList.VISIT_URINE).collectAsState(emptyList())
+    val bpChoices by catalogRepo.customChoices(CustomChoiceList.VISIT_BP).collectAsState(emptyList())
+    val weightChoices by catalogRepo.customChoices(CustomChoiceList.VISIT_WEIGHT).collectAsState(emptyList())
+    val oedemaChoices by catalogRepo.customChoices(CustomChoiceList.VISIT_OEDEMA).collectAsState(emptyList())
+    val movementsChoices by catalogRepo.customChoices(CustomChoiceList.VISIT_MOVEMENTS).collectAsState(emptyList())
+    val urineChoices by catalogRepo.customChoices(CustomChoiceList.VISIT_URINE).collectAsState(emptyList())
 
     val pinnedBottomBar: @Composable () -> Unit = {
         if (state.savePhase != SavePhase.IDLE) {
@@ -1250,7 +1250,7 @@ fun VisitEditor(
                 Button(
                     onClick = {
                         val trimmed = customInput.trim()
-                        val res = codexRepo.addCustomChoice(list, trimmed, emptyList())
+                        val res = catalogRepo.addCustomChoice(list, trimmed, emptyList())
                         when (res) {
                             is CustomChoiceValidationResult.Valid -> {
                                 val label = res.sanitizedLabel

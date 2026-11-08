@@ -54,10 +54,10 @@ import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.ClinicalVocabulary
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
 import com.sherifradwan.ancnative.model.LabResultFlag
-import com.sherifradwan.ancnative.model.codex.ClinicalCodexRepository
-import com.sherifradwan.ancnative.model.codex.LabCodexItem
-import com.sherifradwan.ancnative.model.codex.nextLabPanelTest
-import com.sherifradwan.ancnative.model.codex.resolveLabPanel
+import com.sherifradwan.ancnative.model.catalog.ClinicalCatalogRepository
+import com.sherifradwan.ancnative.model.catalog.LabCatalogItem
+import com.sherifradwan.ancnative.model.catalog.nextLabPanelTest
+import com.sherifradwan.ancnative.model.catalog.resolveLabPanel
 import com.sherifradwan.ancnative.model.labResultFlag
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
@@ -70,7 +70,7 @@ import com.sherifradwan.ancnative.state.SavePhase
 private val DipstickChoices = listOf("Normal", "Trace", "+", "++", "+++")
 private val DipstickNameHints = listOf("protein", "glucose", "ketone")
 
-private fun loadLabItemIntoDraft(item: LabCodexItem, onEvent: (AncEvent) -> Unit) {
+private fun loadLabItemIntoDraft(item: LabCatalogItem, onEvent: (AncEvent) -> Unit) {
     onEvent(AncEvent.LabDraftChanged(LabDraftField.CATEGORY, item.category))
     onEvent(AncEvent.LabDraftChanged(LabDraftField.NAME, item.testName))
     onEvent(AncEvent.LabDraftChanged(LabDraftField.RESULT, item.defaultResult))
@@ -206,16 +206,16 @@ fun LabEditor(
 
     // Test list and groups
     val context = LocalContext.current
-    val codexRepo = remember { ClinicalCodexRepository.getInstance(context) }
-    val codexLabItems by codexRepo.labCodexItems.collectAsState()
-    val codexGroups by codexRepo.labCategoryGroups.collectAsState()
+    val catalogRepo = remember { ClinicalCatalogRepository.getInstance(context) }
+    val catalogLabItems by catalogRepo.labCatalogItems.collectAsState()
+    val catalogGroups by catalogRepo.labCategoryGroups.collectAsState()
 
-    val displayedItems = remember(codexLabItems, codexGroups, selectedGroupName) {
-        val grp = codexGroups.firstOrNull { it.name == selectedGroupName }
+    val displayedItems = remember(catalogLabItems, catalogGroups, selectedGroupName) {
+        val grp = catalogGroups.firstOrNull { it.name == selectedGroupName }
         if (grp != null) {
-            resolveLabPanel(grp, codexLabItems).tests
+            resolveLabPanel(grp, catalogLabItems).tests
         } else {
-            codexLabItems
+            catalogLabItems
         }
     }
 
@@ -258,7 +258,7 @@ fun LabEditor(
             currentLabId = draft.labId
             testSelectorOpen = draft.values.testName.isBlank()
             if (panelRemainingIds.isNotEmpty()) {
-                val step = nextLabPanelTest(panelRemainingIds, codexLabItems)
+                val step = nextLabPanelTest(panelRemainingIds, catalogLabItems)
                 if (step.item != null) {
                     panelRemainingIds = step.remainingIds
                     currentPanelIndex += 1
@@ -478,7 +478,7 @@ fun LabEditor(
                     enabled = enabled,
                     onSelect = { selectedName ->
                         clearPanelQueue()
-                        val item = codexLabItems.firstOrNull { it.testName.equals(selectedName, ignoreCase = true) }
+                        val item = catalogLabItems.firstOrNull { it.testName.equals(selectedName, ignoreCase = true) }
                         if (item != null) {
                             loadLabItemIntoDraft(item, onEvent)
                         }
@@ -656,7 +656,7 @@ fun LabEditor(
             )
 
             if (testSelectorOpen) {
-                if (codexGroups.isNotEmpty()) {
+                if (catalogGroups.isNotEmpty()) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                         Text(
                             text = "Filter by Category:",
@@ -669,7 +669,7 @@ fun LabEditor(
                             verticalArrangement = Arrangement.spacedBy(6.dp),
                             modifier = Modifier.fillMaxWidth(),
                         ) {
-                            val labItemCount = codexLabItems.size
+                            val labItemCount = catalogLabItems.size
                             FilterChip(
                                 selected = selectedGroupName == null,
                                 onClick = {
@@ -679,7 +679,7 @@ fun LabEditor(
                                 label = { Text("All ($labItemCount)") },
                                 modifier = Modifier.minimumTouchTarget().testTag("allLabTestsChip"),
                             )
-                            codexGroups.forEach { grp ->
+                            catalogGroups.forEach { grp ->
                                 FilterChip(
                                     selected = selectedGroupName == grp.name,
                                     onClick = {
@@ -700,8 +700,8 @@ fun LabEditor(
 
                 // Offer to keep a new test template in the user's test list
                 val trimmedTestName = draft.values.testName.trim()
-                val isAlreadyInCodex = codexLabItems.any { it.testName.equals(trimmedTestName, ignoreCase = true) }
-                if (trimmedTestName.isNotBlank() && !isAlreadyInCodex) {
+                val isAlreadyInCatalog = catalogLabItems.any { it.testName.equals(trimmedTestName, ignoreCase = true) }
+                if (trimmedTestName.isNotBlank() && !isAlreadyInCatalog) {
                     Surface(
                         modifier = Modifier.fillMaxWidth().testTag("saveToLabCodexBanner"),
                         color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
@@ -722,8 +722,8 @@ fun LabEditor(
                             )
                             TextButton(
                                 onClick = {
-                                    codexRepo.addLabCodexItem(
-                                        LabCodexItem(
+                                    catalogRepo.addLabCatalogItem(
+                                        LabCatalogItem(
                                             testName = trimmedTestName,
                                             category = draft.values.testCategory.ifBlank { "Hematology" },
                                             unit = draft.values.unit.trim(),

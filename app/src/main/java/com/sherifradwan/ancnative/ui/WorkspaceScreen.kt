@@ -64,10 +64,10 @@ import com.sherifradwan.ancnative.model.previousDeliverySummary
 import androidx.compose.runtime.collectAsState
 import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
 import com.sherifradwan.ancnative.model.MEDICATION_STATUS_DISCONTINUED
-import com.sherifradwan.ancnative.model.codex.ClinicalCodexRepository
-import com.sherifradwan.ancnative.model.codex.CustomChoiceList
-import com.sherifradwan.ancnative.model.codex.CustomChoiceValidationResult
-import com.sherifradwan.ancnative.model.codex.validateCustomChoice
+import com.sherifradwan.ancnative.model.catalog.ClinicalCatalogRepository
+import com.sherifradwan.ancnative.model.catalog.CustomChoiceList
+import com.sherifradwan.ancnative.model.catalog.CustomChoiceValidationResult
+import com.sherifradwan.ancnative.model.catalog.validateCustomChoice
 import com.sherifradwan.ancnative.state.MedicationDraftField
 import com.sherifradwan.ancnative.model.DemoAttachment
 import com.sherifradwan.ancnative.storage.AttachmentCategories
@@ -435,7 +435,6 @@ fun WorkspaceStickyCompactBar(
         modifier = modifier,
         asOfDate = asOfDate,
         onBack = { onEvent(AncEvent.Back) },
-        onOpenProfile = { onEvent(AncEvent.OpenProfile(patient.id)) },
         onOpenReport = onOpenReport,
     )
 }
@@ -453,7 +452,6 @@ private fun WorkspaceTopBar(
         variant = PatientCardVariant.BEDSIDE_TOP_BAR,
         asOfDate = asOfDate,
         onBack = { onEvent(AncEvent.Back) },
-        onOpenProfile = { onEvent(AncEvent.OpenProfile(patient.id)) },
         onOpenReport = onOpenReport,
         onOpenAttentionDialog = onOpenAttentionDialog,
     )
@@ -2965,141 +2963,6 @@ fun LabRowItem(
     }
 }
 
-@Composable
-private fun LabCard(
-    lab: DemoLabInvestigation,
-    patient: DemoPatient,
-    canEdit: Boolean,
-    onDelete: () -> Unit,
-    onEdit: () -> Unit,
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth().testTag("lab-${lab.id}"),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        text = lab.date,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    val ga = GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, lab.date)
-                    if (ga?.isPostConception == true) {
-                        Surface(
-                            shape = RoundedCornerShape(999.dp),
-                            color = ClinicalTeal.copy(alpha = 0.15f),
-                            border = BorderStroke(1.dp, ClinicalTeal.copy(alpha = 0.35f)),
-                        ) {
-                            Text(
-                                text = ga.displayText,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = ClinicalTeal,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                            )
-                        }
-                    }
-                }
-                if (lab.isAbnormal) {
-                    Surface(
-                        shape = RoundedCornerShape(999.dp),
-                        color = MaterialTheme.colorScheme.errorContainer,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f)),
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Warning,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(12.dp),
-                            )
-                            Text(
-                                text = stringResource(R.string.abnormal_badge),
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                            )
-                        }
-                    }
-                }
-            }
-            Text(lab.testName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            val resultWithUnit = if (lab.unit.isNullOrBlank()) lab.result else "${lab.result} ${lab.unit}"
-            Surface(
-                shape = RoundedCornerShape(10.dp),
-                color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(
-                    1.dp,
-                    if (lab.isAbnormal) MaterialTheme.colorScheme.error.copy(alpha = 0.35f) else MaterialTheme.colorScheme.outlineVariant,
-                ),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.test_result).uppercase(),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        if (!lab.referenceRange.isNullOrBlank()) {
-                            Text(
-                                text = "${stringResource(R.string.reference_range)}: ${lab.referenceRange}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                    Text(
-                        text = resultWithUnit,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = if (lab.isAbnormal) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-            }
-            if (!lab.labName.isNullOrBlank()) {
-                FactRow(R.string.lab_name, lab.labName)
-            }
-            if (!lab.testCategory.isNullOrBlank()) {
-                FactRow(R.string.test_category, lab.testCategory)
-            }
-            if (!lab.notes.isNullOrBlank()) {
-                FactRow(R.string.notes, lab.notes)
-            }
-            if (canEdit) {
-                PencilEditButton(
-                    contentDescription = stringResource(R.string.edit_lab),
-                    tag = "editLab-${lab.id}",
-                    onClick = onEdit,
-                    trailing = { DeleteIconButton(DeletableType.LAB, lab, onDelete) },
-                )
-            }
-        }
-    }
-}
 
 enum class ClinicalAttentionLevel {
     CRITICAL,
@@ -3670,9 +3533,9 @@ private fun MedicationTapToAddSection(
     onEvent: (AncEvent) -> Unit,
 ) {
     val context = LocalContext.current
-    val codexRepo = remember { ClinicalCodexRepository.getInstance(context) }
-    val codexMedItems by codexRepo.medicationCodexItems.collectAsState()
-    val customChoices by codexRepo.customChoices(CustomChoiceList.MEDICATION_NAME).collectAsState(initial = emptyList())
+    val catalogRepo = remember { ClinicalCatalogRepository.getInstance(context) }
+    val catalogMedItems by catalogRepo.medicationCatalogItems.collectAsState()
+    val customChoices by catalogRepo.customChoices(CustomChoiceList.MEDICATION_NAME).collectAsState(initial = emptyList())
 
     val alreadyOnListFormat = stringResource(R.string.already_on_todays_list)
     val blankError = stringResource(R.string.custom_drug_blank_error)
@@ -3721,9 +3584,9 @@ private fun MedicationTapToAddSection(
             )
         }
 
-        // HB1: Build tiles dynamically from codexRepo.medicationCodexItems, plus custom choices
-        val allTiles = remember(codexMedItems, customChoices) {
-            val codex = codexMedItems.map {
+        // HB1: Build tiles dynamically from catalogRepo.medicationCatalogItems, plus custom choices
+        val allTiles = remember(catalogMedItems, customChoices) {
+            val catalog = catalogMedItems.map {
                 MedicationTileItem(
                     id = it.id,
                     name = it.name,
@@ -3741,7 +3604,7 @@ private fun MedicationTapToAddSection(
                     isCustom = true,
                 )
             }
-            codex + custom
+            catalog + custom
         }
 
         // HB2: Recent tab shows only the patient's real medication history
@@ -3806,7 +3669,7 @@ private fun MedicationTapToAddSection(
                                         submit = false,
                                     )
                                 } else {
-                                    // Verified codex item with standard dosage: 1-tap add
+                                    // Verified catalog item with standard dosage: 1-tap add
                                     dispatchMedicationDraft(
                                         onEvent = onEvent,
                                         patientId = patient.id,
@@ -3919,10 +3782,10 @@ private fun MedicationTapToAddSection(
                 Button(
                     onClick = {
                         val trimmed = customInput.trim()
-                        val res = codexRepo.addCustomChoice(
+                        val res = catalogRepo.addCustomChoice(
                             list = CustomChoiceList.MEDICATION_NAME,
                             label = trimmed,
-                            existingDefaults = codexMedItems.map { it.name },
+                            existingDefaults = catalogMedItems.map { it.name },
                         )
                         when (res) {
                             is CustomChoiceValidationResult.Valid -> {

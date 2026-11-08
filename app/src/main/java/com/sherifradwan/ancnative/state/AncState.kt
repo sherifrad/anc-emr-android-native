@@ -41,7 +41,6 @@ sealed interface AncRoute {
         val patientId: String,
         val section: WorkspaceSection = WorkspaceSection.VISITS,
     ) : AncRoute
-    data class Profile(val patientId: String) : AncRoute
     data class VisitEditor(val patientId: String) : AncRoute
     data class PatientEditor(val patientId: String, val isNew: Boolean) : AncRoute
     data class OtherHistoriesEditor(val patientId: String) : AncRoute
@@ -346,7 +345,6 @@ internal fun AncState.deleteMessageAfterSuccessFor(patientId: String): DeleteMes
 fun AncRoute.patientIdOrNull(): String? = when (this) {
     AncRoute.PatientList -> null
     is AncRoute.Workspace -> patientId
-    is AncRoute.Profile -> patientId
     is AncRoute.VisitEditor -> patientId
     is AncRoute.PatientEditor -> patientId
     is AncRoute.OtherHistoriesEditor -> patientId
@@ -702,7 +700,6 @@ sealed interface AncEvent {
     data object ShowNewPatientInfo : AncEvent
     data object HideNewPatientInfo : AncEvent
     data class OpenWorkspace(val patientId: String) : AncEvent
-    data class OpenProfile(val patientId: String) : AncEvent
     data class SelectSection(val section: WorkspaceSection) : AncEvent
     data class StartVisit(val patientId: String, val visitId: String?, val editorSessionId: String) : AncEvent
     data class StartPatientEditor(
@@ -927,7 +924,6 @@ object AncReducer {
             AncEvent.ShowNewPatientInfo -> state.copy(showNewPatientInfo = true)
             AncEvent.HideNewPatientInfo -> state.copy(showNewPatientInfo = false)
             is AncEvent.OpenWorkspace -> navigate(state, AncRoute.Workspace(event.patientId))
-            is AncEvent.OpenProfile -> navigate(state, AncRoute.Profile(event.patientId))
             is AncEvent.SelectSection -> {
                 val route = state.route as? AncRoute.Workspace
                 if (route == null) state else state.copy(route = route.copy(section = event.section), savedNotice = false, notice = null)
@@ -1707,10 +1703,9 @@ object AncReducer {
         if (state.savePhase.blocksEditing()) return state
         val destination = when (val route = state.route) {
             AncRoute.PatientList -> return state
-            is AncRoute.Workspace -> AncRoute.Profile(route.patientId)
-            is AncRoute.Profile -> AncRoute.PatientList
+            is AncRoute.Workspace -> AncRoute.PatientList
             is AncRoute.VisitEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.VISITS)
-            is AncRoute.PatientEditor -> if (route.isNew) AncRoute.PatientList else AncRoute.Profile(route.patientId)
+            is AncRoute.PatientEditor -> if (route.isNew) AncRoute.PatientList else AncRoute.Workspace(route.patientId)
             is AncRoute.OtherHistoriesEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.OTHER_HISTORIES)
             is AncRoute.PreviousPregnancyEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.OBSTETRIC_HISTORY)
             is AncRoute.StatusEditor -> AncRoute.PatientList

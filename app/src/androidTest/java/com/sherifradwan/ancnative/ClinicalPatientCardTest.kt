@@ -34,7 +34,6 @@ class ClinicalPatientCardTest {
                         variant = PatientCardVariant.BEDSIDE_TOP_BAR,
                         asOfDate = LocalDate.parse("2026-11-08"),
                         onBack = { },
-                        onOpenProfile = { },
                         onOpenReport = { },
                         onOpenAttentionDialog = { },
                     )
@@ -51,7 +50,6 @@ class ClinicalPatientCardTest {
 
         // Action buttons exist
         compose.onNodeWithTag("workspaceReportButton").assertIsDisplayed()
-        compose.onNodeWithTag("workspaceProfile").assertIsDisplayed()
         compose.onNodeWithTag("workspaceTopBar").assertIsDisplayed()
     }
 
@@ -65,7 +63,6 @@ class ClinicalPatientCardTest {
                         variant = PatientCardVariant.STICKY_COMPACT,
                         asOfDate = LocalDate.parse("2026-11-08"),
                         onBack = { },
-                        onOpenProfile = { },
                         onOpenReport = { },
                     )
                 }

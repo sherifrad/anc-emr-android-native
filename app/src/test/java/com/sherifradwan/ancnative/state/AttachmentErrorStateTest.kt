@@ -41,9 +41,7 @@ class AttachmentErrorStateTest {
 
     @Test fun unrelatedEventsKeepTheError() {
         val failed = initialState().reduce(AncEvent.AttachmentFailed(AttachmentError.SAVE_FAILED))
-        val afterOpen = failed.reduce(AncEvent.OpenProfile(patientId))
-        assertEquals(AttachmentError.SAVE_FAILED, afterOpen.attachmentError)
-        val afterWorkspace = afterOpen.reduce(AncEvent.OpenWorkspace(patientId))
+        val afterWorkspace = failed.reduce(AncEvent.OpenWorkspace(patientId))
         assertEquals(AttachmentError.SAVE_FAILED, afterWorkspace.attachmentError)
     }
 }

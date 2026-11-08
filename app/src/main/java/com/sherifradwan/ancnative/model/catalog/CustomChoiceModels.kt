@@ -1,4 +1,4 @@
-package com.sherifradwan.ancnative.model.codex
+package com.sherifradwan.ancnative.model.catalog
 
 import kotlinx.coroutines.flow.StateFlow
 import java.util.UUID
