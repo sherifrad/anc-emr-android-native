@@ -1797,7 +1797,16 @@
         "app/src/test/**/LabBatchCommandTest.kt"
       ],
       "covers": [
-        "B8"
+        "ORACLE-B1",
+        "ORACLE-B2",
+        "ORACLE-B3",
+        "ORACLE-B4",
+        "ORACLE-B5",
+        "B1",
+        "B2",
+        "B3",
+        "B4",
+        "B5"
       ]
     },
     {
@@ -1810,6 +1819,8 @@
         "app/src/test/**/LabBatchDraftTest.kt"
       ],
       "covers": [
+        "ORACLE-B6",
+        "ORACLE-B7",
         "B6",
         "B7"
       ]
@@ -1823,7 +1834,10 @@
         "app/src/test/**/LabBatchUndoTest.kt"
       ],
       "covers": [
-        "B3"
+        "ORACLE-B3",
+        "ORACLE-B8",
+        "B3",
+        "B8"
       ]
     },
     {
@@ -1836,11 +1850,37 @@
         "app/src/androidTest/**/LabBatchDbTest.kt"
       ],
       "covers": [
+        "ORACLE-B1",
+        "ORACLE-B2",
+        "ORACLE-B3",
+        "ORACLE-B4",
+        "ORACLE-B5",
         "B1",
         "B2",
         "B3",
         "B4",
         "B5"
+      ]
+    },
+    {
+      "id": "UI-workspace-design",
+      "tier": 3,
+      "cmd": "bash .agents/scripts/run_emulator_test_class.sh com.sherifradwan.ancnative.WorkspaceScreenDesignTest emulator-5554",
+      "deps": [
+        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/androidTest/**/WorkspaceScreenDesignTest.kt"
+      ],
+      "covers": [
+        "ORACLE-W1",
+        "ORACLE-W2",
+        "ORACLE-W3",
+        "ORACLE-W4",
+        "ORACLE-W5",
+        "W1",
+        "W2",
+        "W3",
+        "W4",
+        "W5"
       ]
     }
   ]

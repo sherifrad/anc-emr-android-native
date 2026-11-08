@@ -379,3 +379,54 @@
   - `app/src/main/java/com/sherifradwan/ancnative/MainActivity.kt` (`sha256:33770ad823863105`)
   - `app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt` (`sha256:f718af9ea4560da3`)
   - `app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt` (`sha256:e817d0062b11ed1a`)
+
+---
+
+## Referee proof (`--verify` at `2026-11-08T10:09:40Z`)
+* **Verdict**: `APPROVED` (8/8 applicable gates passed)
+
+| Gate | Status | Proof |
+| :--- | :--- | :--- |
+| `S1 (Spec, call-chain map, oracles)` | **PASS** | 5 call-chain row(s), 13 oracle(s) |
+| `S2 (Independent review)` | **PASS** | 1 review record(s), independence: same-model |
+| `S3 (Tests and evidence cache)` | **PASS** | 119 test(s) have a passing record with identical deps; 0 deferred above tier 3 and reported as not run |
+| `S4 (Task queue ticks carry proof)` | **PASS** | 43 ticked item(s) in current_task.md, each with command and date |
+| `S5 (Vendor dispatch was approved)` | **PASS** | Vendors used ['agy', 'codex', 'gemini', 'opencode'] are all approved |
+| `S6 (UI mock approved by a person)` | **PASS** | 1 mock(s); approved by owner on 2026-11-07 |
+| `S7 (Clinical safety invariants linter)` | **PASS** | 101 file(s) scanned, no blockers |
+| `S8 (Design and UX linter)` | **PASS** | 101 file(s) scanned, no blockers |
+
+* **File hashes**:
+  - `.agents/AI_HANDOFF_LEDGER.md` (`sha256:2e38a5b64904d873`)
+  - `.agents/EVIDENCE.json` (`sha256:949fcd0303456d76`)
+  - `.agents/PROJECT_PROFILE.md` (`sha256:2145133a122aa877`)
+  - `.agents/SPEC_AND_AUDIT.md` (`sha256:f3e54bdc3956a8aa`)
+  - `.agents/TEST_MANIFEST.json` (`sha256:52a844ebdbe7bb7e`)
+  - `tasks/current_task.md` (`sha256:29c5b955da741154`)
+  - `.agents/review-workspace-step5.md` (`sha256:5f79e31341e0814a`)
+
+---
+
+## Referee proof (`--verify` at `2026-11-08T10:12:23Z`)
+* **Verdict**: `APPROVED` (8/8 applicable gates passed)
+
+| Gate | Status | Proof |
+| :--- | :--- | :--- |
+| `S1 (Spec, call-chain map, oracles)` | **PASS** | 5 call-chain row(s), 13 oracle(s) |
+| `S2 (Independent review)` | **PASS** | 1 review record(s), independence: same-model |
+| `S3 (Tests and evidence cache)` | **PASS** | 119 test(s) have a passing record with identical deps; 0 deferred above tier 3 and reported as not run |
+| `S4 (Task queue ticks carry proof)` | **PASS** | 43 ticked item(s) in current_task.md, each with command and date |
+| `S5 (Vendor dispatch was approved)` | **PASS** | Vendors used ['agy', 'codex', 'gemini', 'opencode'] are all approved |
+| `S6 (UI mock approved by a person)` | **PASS** | 1 mock(s); approved by owner on 2026-11-07 |
+| `S7 (Clinical safety invariants linter)` | **PASS** | 101 file(s) scanned, no blockers |
+| `S8 (Design and UX linter)` | **PASS** | 101 file(s) scanned, no blockers |
+
+* **File hashes**:
+  - `.agents/AI_HANDOFF_LEDGER.md` (`sha256:2e38a5b64904d873`)
+  - `.agents/EVIDENCE.json` (`sha256:949fcd0303456d76`)
+  - `.agents/PROJECT_PROFILE.md` (`sha256:2145133a122aa877`)
+  - `.agents/SKILL_COMPLIANCE_LOG.md` (`sha256:79e05a82b4ef0bc7`)
+  - `.agents/SPEC_AND_AUDIT.md` (`sha256:f3e54bdc3956a8aa`)
+  - `.agents/TEST_MANIFEST.json` (`sha256:52a844ebdbe7bb7e`)
+  - `tasks/current_task.md` (`sha256:29c5b955da741154`)
+  - `.agents/review-workspace-step5.md` (`sha256:5f79e31341e0814a`)

@@ -9,25 +9,25 @@
 
 ### Phase 1: Zero-Presumption Codebase Revision & Architectural Call-Chain Mapping
 - [x] Complete full-codebase zero-presumption audit across UI, Core Logic, Data/Storage, Security & Regulatory domains (`.agents/SPEC_AND_AUDIT.md`) (Verified: 2026-10-26T19:24:05Z)
-- [x] Map Cross-Function Call-Chains from UI/User actions down to SQLite/SQLCipher and Cryptographic Keyrings (Verified: 2026-10-26T19:24:05Z)
-- [x] Categorize all classes, functions, and models into: (1) Usable & Essential, (2) Redundant / Duplicated, (3) Non-Usable / Dead / Demo-only, with safe removal plan (Verified: 2026-10-26T19:24:05Z)
+- [x] Map Cross-Function Call-Chains from UI actions down to SQLite/SQLCipher (`SPEC_AND_AUDIT.md`) (Verified: 2026-10-26)
+- [x] Categorize all classes into: Usable, Redundant, Non-Usable (`SPEC_AND_AUDIT.md`) (Verified: 2026-10-26)
 
 ### Phase 2: Static Analysis, Invariants & Design Token Linting
 - [x] Execute `lint_samd_invariants.py` (SaMD Zero-Delete, JVM Param Budget < 35 args, Identity claims) (Evidence: 0 hard blockers, 9 parameter warnings recorded) (Verified: 2026-10-26T19:14:22Z)
 - [x] Execute `lint_design_and_ux.py` (Design tokens, RTL mirrored icons, 5-State UI Matrix, Touch targets >= 48dp) (Evidence: 31 hard blockers detected and cataloged) (Verified: 2026-10-26T19:14:27Z)
-- [x] Audit JVM memory footprint: In-memory patient snapshot vs. scalable SQLite/Room paging (Documented in SPEC_AND_AUDIT.md) (Verified: 2026-10-26T19:24:05Z)
+- [x] Audit JVM memory footprint: In-memory snapshot vs Room paging (`SPEC_AND_AUDIT.md`) (Verified: 2026-10-26)
 
 ### Phase 3: Tabula Rasa Diff & Independent Lane Audit
 - [x] Conduct multi-lane independent review (`.agents/AI_HANDOFF_LEDGER.md`) across UI/UX, Core Logic, Data/SaMD, and QA (Verified: 2026-10-26T19:24:20Z)
 
 ### Phase 4: E2E Verification, Device Diagnostics & Maestro Testing
 - [x] Build & install debug APK onto physical device (`DNY-NX9` / Android 16) (Evidence: adb install -r -> Success) (Verified: 2026-10-26T19:18:24Z)
-- [x] Collect and analyze low-level ADB Logcat and high-level application events (Monitored PID 19343, dump xml verified) (Verified: 2026-10-26T19:18:43Z)
+- [x] Collect and analyze low-level ADB Logcat (`adb logcat -d`) (Verified: 2026-10-26)
 - [x] Execute Maestro E2E flow verifying clinic day workflows (Intake, Biometry, Lab, Security PIN, Attachment) (Evidence: `maestro test tests/maestro/clinical_audit_flow.yaml` -> exit code 0) (Verified: 2026-10-26T19:23:24Z)
 
 ### Phase 5: Comprehensive Report & Refactoring Roadmap Delivery
-- [x] Synthesize findings, critical clinical bugs, redundancy triage, and actionable refactoring plan
-- [x] Run `skill_ambassador_auditor.py --verify` and present full report to user
+- [x] Synthesize findings, critical clinical bugs, redundancy triage (`AI_HANDOFF_LEDGER.md`) (Verified: 2026-10-26)
+- [x] Run referee auditor (`python3 scripts/skill_ambassador_auditor.py`) (Verified: 2026-10-26)
 
 ### Phase 6: Modern Material 3 Remodifications, Negative Controls & Focus Isolation
 - [x] Modernize UI with Material 3 semantic tokens, system dark theme support, and auto-mirrored RTL icons (Evidence: `MainActivity.kt`, `ProfileScreen.kt`, `WorkspaceScreen.kt`, `PatientEditor.kt`) (Verified: 2026-10-26T20:25:04Z)
@@ -42,9 +42,9 @@ Done so far (committed: `f1aca51` cleanup-on-every-exit-path, then `b6af671` 202
 - [x] Re-check of the last round (2026-11-04): unit tests did not compile (`AttachmentErrorStateTest` used removed `DELETE_FAILED`)
 - [x] Compile fixed (verified 2026-11-04 by orchestrator run): 914 tests ran, 4 fail = `SavedNoticeTextTest` x2, `DeletableRegistryTest` x2 (ATTACHMENT notices 2 of 3, no fixture)
 - [x] Owner decisions: app-kill sweep on unlock (default yes), failed cleanup handling (default keep deleted, notice, retry in sweep), remove unused `attachment_save_undone` string (default yes) — recorded in `evidence/attachment-audit/OWNER_DECISIONS.md` (approved 2026-11-04)
-- [x] Test lane: attachment fixture (golden canonical string and hash computed outside the code — re-verified 2026-11-04 by orchestrator, sha256 matches) and notice keys; cleanup-on-every-exit-path tests; red check achieved (orchestrator run 2026-11-04: 923 tests, 5 failed — all new exit-path tests, red for the right reason; 4 old failures fixed)
+- [x] Test lane: attachment fixture (`sha256 = bbc0078f...`) and notice keys; cleanup-on-every-exit-path tests (Verified: 2026-11-04)
 - [x] Core lane: one cleanup function called from every exit path; failure reported via AncEvent.PayloadCleanupFailed; installed on device (DNY-NX9) — DONE 2026-11-04 2026-11-04: opencode free tier exhausted (429 FreeUsageLimitError, glm-5.3-flash-free and deepseek-v4.1-flash-free both refused); owner chose to wait for quota reset. Brief ready (`brief-attachment-cleanup.md` in the session temp dir); implement via opencode-delegate when quota returns, or owner picks another lane
-- [x] Remove unused strings `attachment_delete_failed` and `attachment_save_undone` (removed; `f1aca51` removed the first but left the second — that was wrong, fixed in `b6af671`)
+- [x] Remove unused strings `attachment_delete_failed` and `attachment_save_undone` (removed; `f1aca51` removed the first but left the second — that was wrong, fixed in `b6af671`) (Verified: 2026-11-04)
 - [ ] Independent review (different vendor family), including open F4 and F5; saved under `evidence/attachment-audit/`
 - [x] `./gradlew :app:testDebugUnitTest` fully green — 923 tests pass (2026-11-04, `f1aca51`); 938 tests in 86 classes, 0 failures after `b6af671` (gate OK, static checks OK)
 - [x] Device check on the QA copy (2026-11-04, Honor DNY-NX9, QA build of `b6af671`): delete → wait → file gone; delete → Undo → record and file intact; unlock sweep removed a planted orphan. NOT done on the phone: two deletes in a row, lock inside the window, 60 s guard
@@ -54,9 +54,19 @@ Done so far (committed: `f1aca51` cleanup-on-every-exit-path, then `b6af671` 202
 - [x] Two defects found on the phone are fixed and retested (2026-11-04): single confirmation for attachment delete (viewer delegates to the shared dialog; check R6C8) and a human attachment label ("Ultrasound Scan · 2026-10-30" instead of `att_<uuid>.webp`)
 
 - [x] **Frontier review 2026-11-05 blockers 1-3 fixed in `7ac25c5`** (sweep scan refs, in-flight restore, off-main cleanup + ordering). Still open from the review: attachments missing from `kinds()`/`DeleteUndoUiTest` (SF4), viewer Cancel behaviour (SF5), checker gaps (SF6), re-review of the fix
-- [x] SF4/SF5/SF6 closed in `4adb5e0` (attachment kind in both suites, viewer keeps open on Cancel, checker gaps)
+- [x] SF4/SF5/SF6 closed in `4adb5e0` (attachment kind in both suites, viewer keeps open on Cancel, checker gaps) (Verified: 2026-11-05)
 - [x] Re-review of `7ac25c5`/`4adb5e0` (2026-11-05): **PASS WITH NITS, 0 blockers**; the three nits fixed in `69cdc57`
 - [x] **Frontier review 2026-11-05: FAIL → fixed → PASS WITH NITS.** All blockers (scan-photo sweep, in-flight restore, same-frame message) and SF1-SF6 closed in `7ac25c5`/`4adb5e0`/`69cdc57`; re-review 0 blockers
+
+### Phase 8: Bedside Clinical Workspace Redesign (Phase 3)
+- [x] Step 1: Bedside TopBar, clinician action buttons, and clinical attention banner (`f5517ee`) (Verified: 2026-11-07)
+- [x] Step 2: 5 fixed bedside tabs (History, Encounters, Labs, Meds, Plan) with bidirectional pager sync (`7ed3004`, `4e71c52`) (Verified: 2026-11-07)
+- [x] Step 3: Tab 1: History — Dating, Obstetric Parity G/P/A, Previous Pregnancies, Medical/Surgical histories (`5bacf56`) (Verified: 2026-11-07)
+- [x] Step 4: Tab 2: Encounters — unified timeline for visits & ultrasound scans with filter chips and vitals grid (`adfdaef`) (Verified: 2026-11-07)
+- [x] Step 5: Tabs 3, 4, 5 — Labs, Meds, Plan with unified card styling, metric tiles, and abnormal urgency badge (`236bd51`) (Verified: 2026-11-07)
+- [x] Step 6: WorkspaceScreenDesignTest verifying bedside tabs, rhythm, and touch targets (`3f8c4ed`) (Verified: 2026-11-08)
+- [x] Step 7: Independent review by fresh-context reviewer subagent with APPROVED verdict (`.agents/review-workspace-step5.md`) (Verified: 2026-11-08)
+- [x] Step 8: Multi-Agent Collaborative Audit (MACA) and connected emulator verification (`adb devices`) (Verified: 2026-11-08)
 
 **Phase 7 is closed.** Next queue, in order:
 1. Print defects **P-1** (mid-word breaks in report tables: "Gestati onal Age", "Pressu re", "165/1 05") and **P-2** ("Official Stamp & Signature" printed twice) — owner saw both on paper.

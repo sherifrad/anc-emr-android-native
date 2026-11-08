@@ -1,9 +1,23 @@
-# Project profile (intake, 2026-10-29)
-- Purpose: Android EMR for antenatal care in a private obstetrics clinic (Kotlin, Compose, Room/SQLCipher). Users: clinician (owner) and staff.
-- Failure severity: HIGH - wrong data could affect care. Owner (Dr. Sherif) approves clinical values.
-- Packs: core, clinical (directions only)
-- Scope of this run: uncommitted changes only (4 modified UI files, 2 new files). Mode: testing, read-only on source.
-- Test runs: Gradle unit tests on the user's Mac. Not runnable from the sandbox (no Android SDK there).
-- Weight: Full. Model tiers: strong model for review, mid model for test design.
-- Downgrade paths: evidence/**=0, retry/**=0, docs/**=0 (human-set 2026-11-01: run output and prose; a secret-shaped value still escalates; UI paths deliberately not downgraded)
-- Approved vendors: `agy` (Gemini CLI) — owner-directed dispatch 2026-11-05 ("dispatch a reviewer"), read-only review lanes only; no patient data in any brief.
+# Project Profile (intake, 2026-10-29; refreshed 2026-11-08)
+
+- **Purpose**: Android EMR for antenatal care in a private obstetrics clinic (Kotlin, Compose, Room/SQLCipher). Users: clinician (owner) and staff.
+- **Users / audience**: Clinician (Dr. Sherif) and clinical staff in private antenatal clinic.
+- **Direction**: Single-source-of-truth clinical data, zero calculation errors, zero unverified schema migrations, strict bedside usability.
+- **Domains / packs**: core, clinical, ui
+- **Risk level**: safety-critical (wrong antenatal calculation or data loss could affect patient care).
+- **Stack and commands**: Android Native (Kotlin, Jetpack Compose, Room/SQLCipher, Coroutines, Flow). Build: `./gradlew assembleDebug`; Test: `./gradlew testDebugUnitTest`, `./gradlew connectedDebugAndroidTest`.
+- **Cost preference**: thorough
+- **Model tiers**: use session default
+- **Max frontier calls**: 10
+- **Max standard calls**: 50
+- **Max rounds**: 2
+- **Risk paths**: app/src/main/java/com/sherifradwan/ancnative/storage/*, app/src/main/java/com/sherifradwan/ancnative/calculation/*
+- **Downgrade paths**: evidence/**=0, retry/**=0, docs/**=0
+- **Approvals**: owner
+- **Human approvers**: owner, Dr. Sherif
+- **Approved vendors**: agy, codex, gemini, opencode
+- **Write-lane permissions**: none
+- **Max tier ceiling without asking**: T3
+- **Unattended policy**: strict safety; no remote pushes, no schema changes without explicit clinical approval.
+- **Known constraints**: strictly local commits (no remote push), offline-first clinic environment, Room schema v6 frozen, 360dp mobile viewport support.
+- **Confirmed by / date**: Dr. Sherif / 2026-11-08

@@ -100,3 +100,15 @@ This ledger tracks asynchronous task handoffs, cross-lane critiques, call-chain 
 | `H-REVIEW-BATCH-R2` | 2026-11-05 | local subagent (fresh, same model) | orchestrator | `.agents/review-r1.md`, `.agents/EVIDENCE.json` | **FAIL (evidence) → fixed and re-recorded** | Round 2 closed B1, S1, S4, S5 and confirmed S3/S6/S7 partial. Its single blocker was procedural and correct: all four batch evidence entries predated the fix commit and hashed the parent blobs. Re-ran the four manifest entries after `cf89342` (ts 00:51:58Z–00:52:31Z, post-commit) — all pass. The same round's design points were fixed: the restore revision is now derived from the delete receipt (command carries the delete uuid), the spec and ORACLE-B4 say tombstone + 1, and the DB test asserts the delete receipt's revision. **2-round limit reached.** Still deferred/owed: batch draft persistence + `hasDirtyDraft` before the B2 screen, stale-revision rebase, `prepare()` + validation UI, restore-archived and revision-branch tests. |
 
 | `H-APPROVAL-VENDOR-AGY` | 2026-11-05 | owner (conversation) | orchestrator | `.agents/PROJECT_PROFILE.md` | Approval recorded | The platform subagent endpoint returned HTTP 403 three times, so the owner directed a further dispatch; the only working lane is the local Gemini CLI (`agy`). Recorded as `Approved vendors: agy`, read-only review lanes only, and used for `.agents/review-solo-2026-11-05.md`. |
+| `H-WORKSPACE-REDESIGN` | 2026-11-08 | AutoCoder orchestrator | Independent Reviewer | `app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt` | Approved by independent review | Bedside clinical workspace redesign complete across 5 fixed tabs (History, Encounters, Labs, Meds, Plan), responsive header, attention banner, vitals grid, filter chips, and unified cards. Verified with WorkspaceScreenDesignTest. |
+
+## 5. Formal Protocol Approvals & Reviews
+
+- APPROVAL: what=ui-mock by=owner date=2026-11-07
+- APPROVAL: what=vendor:agy by=owner date=2026-11-05
+- APPROVAL: what=vendor:gemini by=owner date=2026-11-05
+- APPROVAL: what=vendor:opencode by=owner date=2026-11-05
+- APPROVAL: what=vendor:codex by=owner date=2026-11-05
+
+- REVIEW: id=REV-WORKSPACE-PHASE3 author=orchestrator reviewer=subagent-independent-reviewer independence=same-model evidence=.agents/review-workspace-step5.md verdict=pass
+

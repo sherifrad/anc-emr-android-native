@@ -8,7 +8,7 @@
 
 ---
 
-## 2. Zero-Presumption Architectural & Call-Chain Audit
+## 2. Zero-Presumption Architectural Audit
 
 ### 2.1 Discovered Defects, Fragilities & Architectural Hazards
 
@@ -24,7 +24,7 @@
 | **DEF-08** | **MEDIUM** | JVM Parameter Budget | `model/DemoModels.kt:3`, `storage/RecordEntities.kt:15` | `DemoPatient` has 31 parameters, `PatientEntity` has 24 parameters. Approaching JVM 255-word limit for constructors. |
 | **DEF-09** | **LOW** | Localization / RTL | `res/drawable/ic_launcher_background.xml`, `ui/ProfileScreen.kt` | Missing `android:autoMirrored="true"` on vector icons and hardcoded Arabic strings in UI instead of `strings.xml`. |
 
-### 2.2 Cross-Function Call-Chain Map
+### 2.2 Call-Chain Map
 
 ```mermaid
 flowchart TD
@@ -112,3 +112,13 @@ ORACLE-B5: A batch addressed with another patient's id is rejected `CROSS_PATIEN
 ORACLE-B6: A batch draft starts on Add, moves to Enter when the first tests are added, and never lets the cursor leave the list.
 ORACLE-B7: Entering a new result clears a stale manual abnormal flag on that row.
 ORACLE-B8: A batch with a blank date, a blank result, a duplicate lab id, or an invalid date is structurally invalid and cannot be executed.
+
+## 7. Bedside Clinical Workspace (Phase 3 Redesign) — outcome oracles
+
+Source: Approved bedside mock `workspace_mock.html`, WORKSPACE_REDESIGN_PLAN.md, owner approval 2026-11-07.
+
+ORACLE-W1: TopBar renders patient name, caseId, age/blood group tags, and bedside quick action icons (Attention, Report, Profile) with >=48dp touch targets.
+ORACLE-W2: 5 fixed bedside tabs (History, Encounters, Labs, Meds, Plan) sync bidirectionally with AncState section and PagerState.
+ORACLE-W3: Encounters tab unifies visits and ultrasound scans chronologically with filter chips (All, Visits, Scans) and vitals metric grid.
+ORACLE-W4: History tab integrates Pregnancy Dating, Obstetric Parity overview (G/P/A), previous pregnancies list, and medical/surgical history.
+ORACLE-W5: Tabs 3-5 (Labs, Meds, Plan) enforce 16dp rounded card hierarchy, single abnormal urgency badge, and preserved test tags (addLab, startLabBatch, deliveryPlanningCard, attachmentsSectionCard).
