@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANC EMR - Bedside Workspace, Composite Lab Panels & MACA Audit</title>
+<style>
+  :root {
+    --clinical-teal: #176B70;
+    --clinical-teal-light: #E0F2F1;
+    --action-rose: #B83A4B;
+    --action-rose-light: #FCE8E6;
+    --action-rose-soft: #FDE8E9;
+    --surface: #FFFFFF;
+    --background: #F8F9FA;
+    --surface-variant: #F1F3F4;
+    --outline: #DDE2E5;
+    --outline-variant: #C4C7C5;
+    --text-primary: #1C1B1F;
+    --text-secondary: #49454F;
+    --text-tertiary: #79747E;
+    --tag-high-risk-bg: #FCE8E6;
+    --tag-high-risk-text: #B83A4B;
+    --tag-normal-risk-bg: #E6F4EA;
+    --tag-normal-risk-text: #137333;
+    --tag-attention-bg: #FEF7E0;
+    --tag-attention-text: #B06000;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  body { background: #16171B; color: var(--text-primary); padding: 20px 14px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+
+  .header-desc { max-width: 960px; width: 100%; color: #E0E2EC; margin-bottom: 16px; text-align: center; }
+  .header-desc h1 { font-size: 22px; font-weight: 700; color: #FFFFFF; margin-bottom: 6px; }
+  .header-desc p { font-size: 13px; color: #A6AAAF; line-height: 1.4; }
+
+  /* Mode Switcher Navigation */
+  .mode-nav { display: flex; gap: 8px; margin-bottom: 20px; background: #26272C; padding: 6px; border-radius: 999px; flex-wrap: wrap; justify-content: center; }
+  .mode-btn { background: transparent; border: none; color: #C4C7C5; padding: 8px 16px; border-radius: 999px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .mode-btn.active { background: var(--clinical-teal); color: #FFFFFF; box-shadow: 0 2px 8px rgba(23,107,112,0.4); }
+
+  /* Phone Mockup Frame */
+  .phone-frame {
+    width: 380px;
+    height: 790px;
+    background: var(--background);
+    border-radius: 40px;
+    border: 12px solid #2D2E33;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 24px 48px rgba(0,0,0,0.6);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Status Bar */
+  .status-bar {
+    height: 32px;
+    background: var(--surface);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    border-bottom: 1px solid rgba(0,0,0,0.03);
+    flex-shrink: 0;
+  }
+
+  .screen-viewport {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: var(--background);
+  }
+
+  /* Top Bar */
+  .workspace-top-bar {
+    background: var(--surface);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--outline);
+    flex-shrink: 0;
+  }
+  .icon-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: var(--clinical-teal);
+    flex-shrink: 0;
+  }
+  .top-bar-title-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .top-bar-title { font-size: 16px; font-weight: 800; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .top-bar-sub { font-size: 11px; font-weight: 600; color: var(--text-tertiary); }
+
+  /* Hero Card */
+  .bedside-card-wrap {
+    transition: all 0.3s cubic-bezier(0.2, 0.0, 0, 1);
+    background: var(--surface);
+    border-bottom: 1px solid var(--outline);
+    flex-shrink: 0;
+  }
+  .bedside-hero { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+  .hero-row-main { display: flex; justify-content: space-between; align-items: center; }
+  .hero-ga-ring {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 3px solid var(--clinical-teal);
+    background: var(--clinical-teal-light);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .hero-ga-num { font-size: 13px; font-weight: 800; color: var(--clinical-teal); line-height: 1; }
+  .hero-ga-label { font-size: 8px; font-weight: 700; color: var(--clinical-teal); text-transform: uppercase; }
+  .hero-details { flex: 1; margin-left: 10px; }
+  .hero-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
+  .chip-risk { background: var(--tag-high-risk-bg); color: var(--tag-high-risk-text); font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 6px; }
+  .chip-normal { background: var(--tag-normal-risk-bg); color: var(--tag-normal-risk-text); font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 6px; }
+  .hero-meta { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+
+  .attention-banner {
+    background: var(--tag-attention-bg);
+    border-left: 3px solid #D9381E;
+    padding: 6px 10px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--tag-attention-text);
+  }
+
+  .sticky-compact-bar {
+    height: 44px;
+    background: #E8F5E9;
+    border-bottom: 1px solid var(--outline);
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    flex-shrink: 0;
+  }
+  .sticky-compact-bar.show { display: flex; }
+  .sticky-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .sticky-name { font-size: 13px; font-weight: 800; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sticky-ga { font-size: 11px; font-weight: 700; color: var(--clinical-teal); background: #FFFFFF; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--outline); }
+
+  /* Workspace Tabs */
+  .workspace-tabs {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--outline);
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex-shrink: 0;
+  }
+  .ws-tab {
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .ws-tab.active { color: var(--clinical-teal); border-bottom-color: var(--clinical-teal); }
+
+  /* Lab Report Card */
+  .lab-report-card {
+    background: var(--surface);
+    border: 1px solid var(--outline);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+  }
+  .report-header {
+    background: #F7F9FA;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--outline);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .report-header-left { display: flex; flex-direction: column; gap: 2px; }
+  .report-date { font-size: 13px; font-weight: 800; color: var(--text-primary); }
+  .report-lab-name { font-size: 11px; color: var(--text-secondary); font-weight: 600; }
+  .btn-report-action {
+    background: var(--surface);
+    border: 1px solid var(--outline);
+    color: var(--clinical-teal);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  /* Composite Test Header & Nesting (CBC, Urine Analysis, Stool) */
+  .composite-panel-group {
+    background: #FFFFFF;
+    border-bottom: 1px solid var(--outline);
+  }
+  .composite-header-bar {
+    padding: 8px 14px;
+    background: #F8FAFB;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    border-top: 1px solid rgba(0,0,0,0.05);
+  }
+  .composite-header-left { display: flex; align-items: center; gap: 6px; }
+  .composite-title { font-size: 12px; font-weight: 800; color: var(--clinical-teal); }
+  .composite-count { font-size: 10px; color: var(--text-tertiary); font-weight: 600; }
+
+  .composite-subtests-box {
+    display: block;
+    background: #FCFDFD;
+    padding-left: 8px;
+  }
+  .composite-subtests-box.collapsed { display: none; }
+
+  .subtest-row {
+    padding: 7px 14px 7px 8px;
+    border-bottom: 1px dashed rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11.5px;
+  }
+  .subtest-row:last-child { border-bottom: none; }
+  .subtest-name { font-weight: 600; color: var(--text-primary); }
+  .subtest-ref { font-size: 10px; color: var(--text-tertiary); margin-top: 1px; }
+
+  .standalone-section-header {
+    background: #F1F3F4;
+    padding: 4px 14px;
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+  }
+
+  .report-footer-actions {
+    background: #FAFBFB;
+    border-top: 1px dashed var(--outline);
+    padding: 8px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .btn-add-to-report {
+    background: transparent;
+    border: none;
+    color: var(--clinical-teal);
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Segmented Story Progress */
+  .segmented-progress-bar {
+    display: flex;
+    gap: 4px;
+    width: 100%;
+    padding: 8px 14px 4px 14px;
+    background: var(--surface);
+  }
+  .progress-segment {
+    flex: 1;
+    height: 5px;
+    border-radius: 3px;
+    background: rgba(0,0,0,0.1);
+    transition: background 0.3s;
+  }
+  .progress-segment.completed { background: var(--clinical-teal); }
+  .progress-segment.active { background: var(--action-rose); }
+  .progress-segment.pending { background: #E0E2EC; }
+
+  .story-card {
+    background: var(--surface);
+    border: 1px solid var(--outline);
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+    overflow: hidden;
+    margin: 12px 14px;
+    display: flex;
+    flex-direction: column;
+  }
+  .story-card-top {
+    padding: 12px 14px;
+    background: #FAFBFB;
+    border-bottom: 1px solid var(--outline);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .story-step-badge {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--clinical-teal);
+    text-transform: uppercase;
+  }
+  .story-delete-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #FEECEB;
+    border: 1px solid #FCD2CF;
+    color: #D9381E;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 800;
+    transition: all 0.2s;
+  }
+  .story-delete-btn:hover { background: #D9381E; color: #FFFFFF; }
+
+  .story-card-content { padding: 16px 14px; display: flex; flex-direction: column; gap: 12px; }
+  .story-test-name { font-size: 19px; font-weight: 800; color: var(--text-primary); }
+  .story-ref-info { font-size: 12px; color: var(--text-secondary); font-weight: 500; margin-top: -8px; }
+
+  .num-input {
+    width: 100%;
+    height: 48px;
+    padding: 0 12px;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-primary);
+    border: 1.5px solid var(--outline);
+    border-radius: 10px;
+    background: #FFFFFF;
+    outline: none;
+  }
+  .num-input:focus { border-color: var(--clinical-teal); }
+
+  .abnormal-row { display: flex; justify-content: space-between; align-items: center; }
+  .toggle-switch {
+    width: 44px;
+    height: 24px;
+    background: #DDE2E5;
+    border-radius: 12px;
+    position: relative;
+    cursor: pointer;
+  }
+  .toggle-switch.on { background: var(--action-rose); }
+  .toggle-knob {
+    width: 18px;
+    height: 18px;
+    background: #FFFFFF;
+    border-radius: 50%;
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    transition: transform 0.2s;
+  }
+  .toggle-switch.on .toggle-knob { transform: translateX(20px); }
+
+  .story-nav-buttons { display: flex; gap: 10px; padding: 0 14px 14px 14px; }
+  .btn-story-prev {
+    flex: 1;
+    height: 46px;
+    background: var(--surface);
+    border: 1px solid var(--outline);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+  .btn-story-next {
+    flex: 1;
+    height: 46px;
+    background: var(--clinical-teal);
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 800;
+    color: #FFFFFF;
+    cursor: pointer;
+  }
+
+  .bottom-pinned-bar {
+    background: var(--surface);
+    border-top: 1px solid var(--outline);
+    padding: 10px 14px;
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .btn-save-batch {
+    flex: 2;
+    height: 44px;
+    background: var(--clinical-teal);
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 800;
+    color: #FFFFFF;
+    cursor: pointer;
+  }
+
+  /* Interactive Demo Control Bar */
+  .interactive-hint {
+    background: #25262B;
+    color: #F1F3F4;
+    padding: 10px 14px;
+    border-radius: 12px;
+    margin-top: 14px;
+    max-width: 380px;
+    width: 100%;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .toggle-pill-btn {
+    background: var(--clinical-teal);
+    color: #FFFFFF;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="header-desc">
+  <h1>ANC EMR: Composite Panels & Bedside Workspace Redesign</h1>
+  <p>Tests grouped under Composite Panels (CBC, Urine, Stool) • Reports with Edit & Inline Append • Story-Like Entry with '✕' • MACA Audited.</p>
+</div>
+
+<!-- Mode Switcher -->
+<div class="mode-nav">
+  <button class="mode-btn active" onclick="switchView('view-workspace-labs')">1. Workspace Labs (Composite Panels)</button>
+  <button class="mode-btn" onclick="switchView('view-story-entry')">2. Story Lab Entry (CBC Context)</button>
+  <button class="mode-btn" onclick="switchView('view-edit-report')">3. Edit Previously Saved Report</button>
+</div>
+
+<!-- Phone Device Frame -->
+<div class="phone-frame">
+  <div class="status-bar">
+    <span>09:41</span>
+    <span>ANC EMR · QA 1.0.3</span>
+  </div>
+
+  <!-- VIEW 1: Workspace Labs with Composite Panels Sub-Grouping -->
+  <div id="view-workspace-labs" class="screen-viewport">
+    <div class="workspace-top-bar">
+      <button class="icon-btn" title="Back"><svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+      <div class="top-bar-title-wrap">
+        <div class="top-bar-title">Fatima Zahra Al-Mansoor</div>
+        <div class="top-bar-sub">28w 4d · EDD 24 Nov 2026</div>
+      </div>
+      <button class="icon-btn" title="More Actions"><svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></button>
+    </div>
+
+    <!-- Collapsible Hero Card -->
+    <div id="bedside-hero" class="bedside-card-wrap">
+      <div class="bedside-hero">
+        <div class="hero-row-main">
+          <div class="hero-ga-ring"><span class="hero-ga-num">28w</span><span class="hero-ga-label">4d</span></div>
+          <div class="hero-details">
+            <div class="hero-badges"><span class="chip-risk">HIGH RISK</span><span class="chip-normal">RH NEGATIVE</span></div>
+            <div class="hero-meta">Gravida 2 · Para 1 · Living 1</div>
+          </div>
+        </div>
+        <div class="attention-banner">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+          <span>Anti-D due at 28w. Check latest Hb & Rh antibodies.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sticky Compact Bar (On Scroll) -->
+    <div id="sticky-compact" class="sticky-compact-bar">
+      <div class="sticky-left">
+        <span class="sticky-name">Fatima Zahra</span>
+        <span class="chip-risk" style="font-size:9px;">HIGH RISK</span>
+      </div>
+      <span class="sticky-ga">28w 4d</span>
+    </div>
+
+    <!-- Workspace Tabs -->
+    <div class="workspace-tabs">
+      <div class="ws-tab">Overview</div>
+      <div class="ws-tab">Timeline</div>
+      <div class="ws-tab active">Labs (2 Reports)</div>
+      <div class="ws-tab">Meds</div>
+      <div class="ws-tab">Plan</div>
+    </div>
+
+    <!-- Labs List Grouped By Reports & Composite Panels -->
+    <div style="padding:12px; overflow-y:auto; flex:1;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <span style="font-size:12px; font-weight:800; color:var(--text-secondary); text-transform:uppercase;">CLINICAL LAB REPORTS</span>
+        <button style="background:var(--clinical-teal); color:#FFF; border:none; padding:6px 12px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer;" onclick="switchView('view-story-entry')">
+          + New Report
+        </button>
+      </div>
+
+      <!-- REPORT 1: 04 Nov 2026 (CBC + Urine Analysis + Ferritin) -->
+      <div class="lab-report-card">
+        <div class="report-header">
+          <div class="report-header-left">
+            <span class="report-date">04 Nov 2026 · GA 28w 0d</span>
+            <span class="report-lab-name">Al-Borg Diagnostics (10 tests)</span>
+          </div>
+          <div class="report-header-right">
+            <span class="chip-risk" style="font-size:9px;">1 ABNORMAL</span>
+            <button class="btn-report-action" onclick="switchView('view-edit-report')">Edit</button>
+          </div>
+        </div>
+
+        <!-- Composite Group 1: Complete Blood Count (CBC) -->
+        <div class="composite-panel-group">
+          <div class="composite-header-bar" onclick="toggleSubtests('cbc-subtests')">
+            <div class="composite-header-left">
+              <span style="font-size:11px; color:var(--clinical-teal);">▾</span>
+              <span class="composite-title">Complete Blood Count (CBC)</span>
+              <span class="composite-count">(5 tests)</span>
+            </div>
+            <span class="chip-risk" style="font-size:9px;">Hb 10.1 Low ▲</span>
+          </div>
+          <div id="cbc-subtests" class="composite-subtests-box">
+            <div class="subtest-row">
+              <div><div class="subtest-name">Hemoglobin (Hb)</div><div class="subtest-ref">11.0 – 14.0 g/dL</div></div>
+              <div style="display:flex; gap:6px; align-items:center;"><span style="font-weight:800; color:var(--action-rose);">10.1 g/dL</span><span class="chip-risk" style="font-size:9px;">LOW</span></div>
+            </div>
+            <div class="subtest-row">
+              <div><div class="subtest-name">Platelet Count</div><div class="subtest-ref">150 – 450 10^3/µL</div></div>
+              <div style="display:flex; gap:6px; align-items:center;"><span style="font-weight:800;">215 10^3/µL</span><span class="chip-normal" style="font-size:9px;">OK</span></div>
+            </div>
+            <div class="subtest-row">
+              <div><div class="subtest-name">White Blood Cells (WBC)</div><div class="subtest-ref">4.0 – 11.0 10^3/µL</div></div>
+              <div style="display:flex; gap:6px; align-items:center;"><span style="font-weight:800;">8.2 10^3/µL</span><span class="chip-normal" style="font-size:9px;">OK</span></div>
+            </div>
+            <div class="subtest-row">
+              <div><div class="subtest-name">Hematocrit (Hct)</div><div class="subtest-ref">33 – 44 %</div></div>
+              <div style="display:flex; gap:6px; align-items:center;"><span style="font-weight:800; color:var(--action-rose);">31.8 %</span><span class="chip-risk" style="font-size:9px;">LOW</span></div>
+            </div>
+            <div class="subtest-row">
+              <div><div class="subtest-name">Mean Corpuscular Vol (MCV)</div><div class="subtest-ref">80 – 96 fL</div></div>
+              <div style="display:flex; gap:6px; align-items:center;"><span style="font-weight:800;">78.5 fL</span><span class="chip-risk" style="font-size:9px;">LOW</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Composite Group 2: Complete Urine Analysis -->
+        <div class="composite-panel-group">
+          <div class="composite-header-bar" onclick="toggleSubtests('urine-subtests')">
+            <div class="composite-header-left">
+              <span style="font-size:11px; color:var(--clinical-teal);">▾</span>
+              <span class="composite-title">Complete Urine Analysis</span>
+              <span class="composite-count">(4 tests)</span>
+            </div>
+            <span class="chip-normal" style="font-size:9px;">ALL NORMAL ✓</span>
+          </div>
+          <div id="urine-subtests" class="composite-subtests-box">
+            <div class="subtest-row">
+              <div><div class="subtest-name">Urine Protein</div><div class="subtest-ref">Dipstick</div></div>
+              <span class="chip-normal" style="font-size:9px;">Negative</span>
+            </div>
+            <div class="subtest-row">
+              <div><div class="subtest-name">Urine Glucose</div><div class="subtest-ref">Dipstick</div></div>
+              <span class="chip-normal" style="font-size:9px;">Negative</span>
+            </div>
+            <div class="subtest-row">
+              <div><div class="subtest-name">Pus Cells (WBC)</div><div class="subtest-ref">&lt; 5 /hpf</div></div>
+              <span style="font-weight:700;">2–4 /hpf</span>
+            </div>
+            <div class="subtest-row">
+              <div><div class="subtest-name">Red Blood Cells (RBC)</div><div class="subtest-ref">&lt; 3 /hpf</div></div>
+              <span style="font-weight:700;">0–1 /hpf</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Standalone Tests within same report -->
+        <div class="standalone-section-header">Standalone Investigations</div>
+        <div class="subtest-row" style="padding-left:14px;">
+          <div><div class="subtest-name">Serum Ferritin</div><div class="subtest-ref">Biochemistry · 15 – 150 ng/mL</div></div>
+          <div style="display:flex; gap:6px; align-items:center;"><span style="font-weight:800;">18.5 ng/mL</span><span class="chip-normal" style="font-size:9px;">OK</span></div>
+        </div>
+
+        <div class="report-footer-actions">
+          <span style="font-size:10px; color:var(--text-tertiary);">Report verified</span>
+          <button class="btn-add-to-report" onclick="switchView('view-edit-report')">
+            + Add Test to this Report
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW 2: Story Lab Entry with Composite Context (CBC) -->
+  <div id="view-story-entry" class="screen-viewport" style="display:none;">
+    <div class="workspace-top-bar">
+      <button class="icon-btn" onclick="switchView('view-workspace-labs')"><svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+      <div class="top-bar-title-wrap">
+        <div class="top-bar-title">New Lab Report</div>
+        <div class="top-bar-sub">Fatima Zahra · 08 Nov 2026</div>
+      </div>
+    </div>
+
+    <!-- Segmented Progress Bar -->
+    <div class="segmented-progress-bar">
+      <div class="progress-segment completed" title="Hb (Filled)"></div>
+      <div class="progress-segment active" title="Platelets (Current)"></div>
+      <div class="progress-segment pending" title="WBC"></div>
+      <div class="progress-segment pending" title="Hct"></div>
+    </div>
+
+    <!-- Story Card with Composite Parent Display -->
+    <div class="story-card">
+      <div class="story-card-top">
+        <span class="story-step-badge">Complete Blood Count (CBC) · Test 2 of 4</span>
+        <button class="story-delete-btn" title="Delete test from report" onclick="deleteTestDemo()">✕</button>
+      </div>
+      <div class="story-card-content">
+        <div class="story-test-name" id="demo-test-name">Platelet Count</div>
+        <div class="story-ref-info">10^3/µL · Reference: 150 – 450</div>
+
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label style="font-size:11px; font-weight:700; color:var(--text-secondary);">TEST RESULT</label>
+          <input type="text" value="215" class="num-input">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="chip-normal" style="font-size:9px;">Normal ✓</span>
+            <span style="font-size:10px; color:var(--text-tertiary);">Reported: 215 10^3/µL</span>
+          </div>
+        </div>
+
+        <div class="abnormal-row">
+          <span style="font-size:13px; font-weight:700;">Mark as Abnormal</span>
+          <div class="toggle-switch" onclick="this.classList.toggle('on')"><div class="toggle-knob"></div></div>
+        </div>
+
+        <div>
+          <label style="font-size:11px; font-weight:700; color:var(--text-secondary);">REFERENCE RANGE</label>
+          <input type="text" value="150 - 450" style="width:100%; height:36px; border:1px solid var(--outline); border-radius:8px; padding:0 10px; font-size:12px; outline:none; margin-top:4px;">
+        </div>
+      </div>
+    </div>
+
+    <!-- Inline Append Button on Story Screen -->
+    <div style="display:flex; justify-content:center; margin-bottom:8px;">
+      <button style="background:transparent; border:1px dashed var(--clinical-teal); color:var(--clinical-teal); font-size:11px; font-weight:700; padding:6px 14px; border-radius:20px; cursor:pointer;" onclick="promptAddInline()">
+        + Add Test to this Report
+      </button>
+    </div>
+
+    <div class="story-nav-buttons">
+      <button class="btn-story-prev" onclick="alert('Previous: Hemoglobin')">◀ Back</button>
+      <button class="btn-story-next" onclick="alert('Next: White Blood Cells')">Next Test ▶</button>
+    </div>
+
+    <div class="bottom-pinned-bar">
+      <button style="flex:1; height:44px; background:transparent; border:1px solid var(--outline); border-radius:10px; font-weight:700;" onclick="switchView('view-workspace-labs')">Cancel</button>
+      <button class="btn-save-batch" onclick="alert('Saved!')">Save Complete Report ✓</button>
+    </div>
+  </div>
+
+  <!-- VIEW 3: Edit Previously Saved Report -->
+  <div id="view-edit-report" class="screen-viewport" style="display:none;">
+    <div class="workspace-top-bar">
+      <button class="icon-btn" onclick="switchView('view-workspace-labs')"><svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+      <div class="top-bar-title-wrap">
+        <div class="top-bar-title">Edit Saved Report</div>
+        <div class="top-bar-sub">04 Nov 2026 · Al-Borg Diagnostics</div>
+      </div>
+    </div>
+
+    <div style="padding:12px; overflow-y:auto; flex:1;">
+      <div style="background:#E0F2F1; border:1px solid var(--clinical-teal); border-radius:10px; padding:10px 12px; margin-bottom:12px; font-size:11px; color:var(--clinical-teal); font-weight:600;">
+        💡 Modify existing results, remove unwanted tests with ✕, or append forgotten tests below.
+      </div>
+
+      <div style="font-size:11px; font-weight:800; color:var(--text-secondary); text-transform:uppercase; margin-bottom:6px;">TESTS IN THIS REPORT</div>
+
+      <div style="background:var(--surface); border:1px solid var(--outline); border-radius:10px; padding:10px 12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-weight:700; font-size:13px;">Hemoglobin (Hb)</div>
+          <div style="font-size:11px; color:var(--action-rose); font-weight:700;">10.1 g/dL [LOW]</div>
+        </div>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <button class="btn-report-action" onclick="switchView('view-story-entry')">Edit</button>
+          <button class="story-delete-btn" style="width:26px; height:26px; font-size:13px;" onclick="this.parentElement.parentElement.remove()">✕</button>
+        </div>
+      </div>
+
+      <div style="background:var(--surface); border:1px solid var(--outline); border-radius:10px; padding:10px 12px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-weight:700; font-size:13px;">Platelet Count</div>
+          <div style="font-size:11px; color:var(--text-secondary);">215 10^3/µL [OK]</div>
+        </div>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <button class="btn-report-action" onclick="switchView('view-story-entry')">Edit</button>
+          <button class="story-delete-btn" style="width:26px; height:26px; font-size:13px;" onclick="this.parentElement.parentElement.remove()">✕</button>
+        </div>
+      </div>
+
+      <button style="width:100%; height:44px; background:var(--surface); border:1.5px dashed var(--clinical-teal); color:var(--clinical-teal); border-radius:10px; font-size:12px; font-weight:800; cursor:pointer;" onclick="promptAddInline()">
+        + Append Forgotten Test (e.g. Ferritin, Blood Group)
+      </button>
+    </div>
+
+    <div class="bottom-pinned-bar">
+      <button style="flex:1; height:44px; background:transparent; border:1px solid var(--outline); border-radius:10px; font-weight:700;" onclick="switchView('view-workspace-labs')">Cancel</button>
+      <button class="btn-save-batch" onclick="alert('Updated report saved!')">Save Report Changes ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- Interactive Hint for Header Collapse -->
+<div class="interactive-hint">
+  <span><strong>Workspace Header:</strong> Test scroll collapsing</span>
+  <button class="toggle-pill-btn" onclick="toggleHeaderCollapse()">Collapse / Expand</button>
+</div>
+
+<script>
+  function switchView(viewId) {
+    document.querySelectorAll('.screen-viewport').forEach(el => el.style.display = 'none');
+    document.getElementById(viewId).style.display = 'flex';
+
+    document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+    if (viewId === 'view-workspace-labs') document.querySelectorAll('.mode-btn')[0].classList.add('active');
+    if (viewId === 'view-story-entry') document.querySelectorAll('.mode-btn')[1].classList.add('active');
+    if (viewId === 'view-edit-report') document.querySelectorAll('.mode-btn')[2].classList.add('active');
+  }
+
+  function toggleSubtests(id) {
+    const el = document.getElementById(id);
+    el.classList.toggle('collapsed');
+  }
+
+  function toggleHeaderCollapse() {
+    const hero = document.getElementById('bedside-hero');
+    const sticky = document.getElementById('sticky-compact');
+    if (hero.style.display === 'none') {
+      hero.style.display = 'block';
+      sticky.classList.remove('show');
+    } else {
+      hero.style.display = 'none';
+      sticky.classList.add('show');
+    }
+  }
+
+  function deleteTestDemo() {
+    if (confirm("Remove 'Platelet Count' from this report?")) {
+      document.getElementById('demo-test-name').innerText = "WBC Count";
+      alert("Test deleted! Progress bar segments updated.");
+    }
+  }
+
+  function promptAddInline() {
+    const t = prompt("Enter test name to append to this report:", "Serum Ferritin");
+    if (t) {
+      alert("Appended '" + t + "' to this report!");
+    }
+  }
+</script>
+</body>
+</html>

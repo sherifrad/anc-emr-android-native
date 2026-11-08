@@ -22,6 +22,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -338,38 +340,102 @@ private fun AddTab(
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
             ) {
                 Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    var expandedGroupId by remember { mutableStateOf<String?>(null) }
                     visibleGroups.forEachIndexed { index, group ->
                         val available = itemsFor(group.testNames)
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(group.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                                Text(
-                                    "${group.testNames.size} elements · ${group.testNames.take(4).joinToString(", ")}${if (group.testNames.size > 4) "..." else ""}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                OutlinedButton(
-                                    onClick = { onChooseClick(group) },
-                                    modifier = Modifier.heightIn(min = 40.dp),
-                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp),
+                        val isExpanded = expandedGroupId == group.id
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable {
+                                            expandedGroupId = if (isExpanded) null else group.id
+                                        },
                                 ) {
-                                    Text(stringResource(R.string.lab_batch_choose))
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text(group.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+                                        Icon(
+                                            imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(16.dp),
+                                        )
+                                    }
+                                    Text(
+                                        "${group.testNames.size} elements · ${group.testNames.take(4).joinToString(", ")}${if (group.testNames.size > 4) "..." else ""}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
                                 }
-                                Button(
-                                    onClick = { onEvent(AncEvent.LabBatchItemsAdded(available)) },
-                                    enabled = available.isNotEmpty(),
-                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                                    modifier = Modifier.heightIn(min = 40.dp).testTag("labBatchAdd-" + group.id),
-                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp),
+                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    OutlinedButton(
+                                        onClick = { onChooseClick(group) },
+                                        modifier = Modifier.heightIn(min = 40.dp),
+                                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp),
+                                    ) {
+                                        Text(stringResource(R.string.lab_batch_choose))
+                                    }
+                                    Button(
+                                        onClick = { onEvent(AncEvent.LabBatchItemsAdded(available)) },
+                                        enabled = available.isNotEmpty(),
+                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                        modifier = Modifier.heightIn(min = 40.dp).testTag("labBatchAdd-" + group.id),
+                                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp),
+                                    ) {
+                                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text(stringResource(R.string.lab_batch_add_n, available.size))
+                                    }
+                                }
+                            }
+
+                            if (isExpanded) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(start = 12.dp, top = 8.dp, bottom = 4.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp),
                                 ) {
-                                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(stringResource(R.string.lab_batch_add_n, available.size))
+                                    val selectedTestNames = remember(group.id) {
+                                        mutableStateListOf<String>().apply { addAll(group.testNames) }
+                                    }
+                                    group.testNames.forEach { testName ->
+                                        val isChecked = selectedTestNames.contains(testName)
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    if (isChecked) selectedTestNames.remove(testName) else selectedTestNames.add(testName)
+                                                }
+                                                .padding(vertical = 2.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                        ) {
+                                            Text(testName, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+                                            Checkbox(
+                                                checked = isChecked,
+                                                onCheckedChange = { checked ->
+                                                    if (checked) selectedTestNames.add(testName) else selectedTestNames.remove(testName)
+                                                },
+                                                modifier = Modifier.size(24.dp),
+                                            )
+                                        }
+                                    }
+                                    Button(
+                                        onClick = {
+                                            val filtered = itemsFor(selectedTestNames.toList())
+                                            onEvent(AncEvent.LabBatchItemsAdded(filtered))
+                                            expandedGroupId = null
+                                        },
+                                        enabled = selectedTestNames.isNotEmpty(),
+                                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                                    ) {
+                                        Text("Add Selected (${selectedTestNames.size} tests) ▶")
+                                    }
                                 }
                             }
                         }
@@ -643,12 +709,39 @@ private fun EnterTab(draft: LabBatchDraft, onEvent: (AncEvent) -> Unit) {
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    "${item.category.ifBlank { "Test" }} · Test ${draft.cursor + 1} of ${draft.items.size}".uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "${item.category.ifBlank { "Test" }} · Test ${draft.cursor + 1} of ${draft.items.size}".uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    IconButton(
+                        onClick = { onEvent(AncEvent.LabBatchItemRemoved(item.labId)) },
+                        modifier = Modifier
+                            .size(32.dp)
+                            .testTag("labBatchDeleteItem"),
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(999.dp),
+                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                            modifier = Modifier.size(26.dp),
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = "✕",
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.ExtraBold,
+                                )
+                            }
+                        }
+                    }
+                }
                 Text(item.testName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
 
                 val qualitativeChoices = qualitativeChoicesFor(item.testName)
@@ -765,6 +858,25 @@ private fun EnterTab(draft: LabBatchDraft, onEvent: (AncEvent) -> Unit) {
                         )
                     }
                 }
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            TextButton(
+                onClick = { onEvent(AncEvent.LabBatchTabSelected(LabBatchTab.ADD)) },
+                modifier = Modifier.testTag("labBatchAddInline"),
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    text = "+ Add Test to this Report",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
             }
         }
     }
