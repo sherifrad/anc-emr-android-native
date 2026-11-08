@@ -1033,35 +1033,59 @@ private fun LazyListScope.workspaceBedsideContentItems(
         WorkspaceBedsideTab.LABS -> {
             if (patient.status != "archived") {
                 item {
-                    Button(
-                        onClick = {
-                            onEvent(
-                                AncEvent.StartLabEditor(
-                                    patientId = patient.id,
-                                    labId = null,
-                                    newLabId = UUID.randomUUID().toString(),
-                                    editorSessionId = UUID.randomUUID().toString(),
-                                ),
-                            )
-                        },
-                        modifier = Modifier.minimumTouchTarget().testTag("addLab"),
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth().testTag("labsActionsRow"),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text(stringResource(R.string.add_lab), maxLines = 1, softWrap = false)
-                    }
-                }
-                item {
-                    OutlinedButton(
-                        onClick = { onEvent(AncEvent.StartLabBatchRequest(patient.id)) },
-                        modifier = Modifier.minimumTouchTarget().testTag("startLabBatch"),
-                    ) {
-                        Text("New laboratory batch")
+                        Button(
+                            onClick = {
+                                onEvent(
+                                    AncEvent.StartLabEditor(
+                                        patientId = patient.id,
+                                        labId = null,
+                                        newLabId = UUID.randomUUID().toString(),
+                                        editorSessionId = UUID.randomUUID().toString(),
+                                    ),
+                                )
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                            modifier = Modifier.minimumTouchTarget().testTag("addLab"),
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text(stringResource(R.string.add_lab), maxLines = 1, softWrap = false)
+                        }
+                        OutlinedButton(
+                            onClick = { onEvent(AncEvent.StartLabBatchRequest(patient.id)) },
+                            modifier = Modifier.minimumTouchTarget().testTag("startLabBatch"),
+                        ) {
+                            Text("New laboratory batch", maxLines = 1, softWrap = false)
+                        }
                     }
                 }
             }
             if (patient.labInvestigations.isEmpty()) {
-                item { Text(stringResource(R.string.no_lab_recorded)) }
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth().testTag("emptyLabsCard"),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp).fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.no_lab_recorded),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
             } else {
                 items(patient.labInvestigations, key = { it.id }) { lab ->
                     LabCard(
@@ -2255,23 +2279,37 @@ private fun DeliveryPlanningCard(
 
     Card(
         modifier = Modifier.fillMaxWidth().testTag("deliveryPlanningCard"),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = stringResource(R.string.delivery_planning),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.weight(1f).semantics { heading() },
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Text(
+                        text = stringResource(R.string.delivery_planning),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.semantics { heading() },
+                    )
+                }
                 IconButton(
                     onClick = onEditPatient,
-                    modifier = Modifier.testTag("editDeliveryPlan"),
+                    modifier = Modifier.minimumTouchTarget().testTag("editDeliveryPlan"),
                 ) {
                     Icon(
                         Icons.Default.Edit,
@@ -2372,42 +2410,120 @@ private fun LabCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth().testTag("lab-${lab.id}"),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(lab.testName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                if (lab.isAbnormal) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     Text(
-                        text = stringResource(R.string.abnormal_badge),
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.labelLarge,
+                        text = lab.date,
+                        style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    val ga = GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, lab.date)
+                    if (ga?.isPostConception == true) {
+                        Surface(
+                            shape = RoundedCornerShape(999.dp),
+                            color = Color(0xFF176B70).copy(alpha = 0.15f),
+                            border = BorderStroke(1.dp, Color(0xFF176B70).copy(alpha = 0.35f)),
+                        ) {
+                            Text(
+                                text = ga.displayText,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF176B70),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                            )
+                        }
+                    }
+                }
+                if (lab.isAbnormal) {
+                    Surface(
+                        shape = RoundedCornerShape(999.dp),
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f)),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(12.dp),
+                            )
+                            Text(
+                                text = stringResource(R.string.abnormal_badge),
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
+                    }
+                }
+            }
+            Text(lab.testName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            val resultWithUnit = if (lab.unit.isNullOrBlank()) lab.result else "${lab.result} ${lab.unit}"
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(
+                    1.dp,
+                    if (lab.isAbnormal) MaterialTheme.colorScheme.error.copy(alpha = 0.35f) else MaterialTheme.colorScheme.outlineVariant,
+                ),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.test_result).uppercase(),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        if (!lab.referenceRange.isNullOrBlank()) {
+                            Text(
+                                text = "${stringResource(R.string.reference_range)}: ${lab.referenceRange}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                    Text(
+                        text = resultWithUnit,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = if (lab.isAbnormal) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                     )
                 }
             }
             if (!lab.labName.isNullOrBlank()) {
                 FactRow(R.string.lab_name, lab.labName)
             }
-            FactRow(R.string.test_date, lab.date)
-            val ga = GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, lab.date)
-            if (ga?.isPostConception == true) {
-                FactRow(R.string.calculated_ga_label, ga.displayText)
+            if (!lab.testCategory.isNullOrBlank()) {
+                FactRow(R.string.test_category, lab.testCategory)
             }
-            FactRow(R.string.test_category, lab.testCategory)
-            val resultWithUnit = if (lab.unit.isNullOrBlank()) lab.result else "${lab.result} ${lab.unit}"
-            FactRow(
-                label = stringResource(R.string.test_result),
-                value = resultWithUnit,
-                isEmphasized = lab.isAbnormal,
-                valueColor = if (lab.isAbnormal) MaterialTheme.colorScheme.error else null,
-            )
-            FactRow(R.string.reference_range, lab.referenceRange)
-            FactRow(R.string.notes, lab.notes)
+            if (!lab.notes.isNullOrBlank()) {
+                FactRow(R.string.notes, lab.notes)
+            }
             if (canEdit) {
                 PencilEditButton(
                     contentDescription = stringResource(R.string.edit_lab),
@@ -2671,22 +2787,53 @@ private fun AttachmentsSectionCard(
     val totalBytes = remember(patient.attachments) { patient.attachments.sumOf { it.fileSizeBytes } }
     val context = LocalContext.current
 
-    Column(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("attachmentsSectionCard"),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        if (patient.status != "archived") {
-            Button(
-                onClick = onAddAttachment,
-                modifier = Modifier.minimumTouchTarget().testTag("addAttachmentBtn"),
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Add Attachment", maxLines = 1, softWrap = false)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Text(
+                        text = "Clinical Documents & Attachments",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                if (patient.status != "archived") {
+                    Button(
+                        onClick = onAddAttachment,
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                        modifier = Modifier.minimumTouchTarget().testTag("addAttachmentBtn"),
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Add Attachment", maxLines = 1, softWrap = false)
+                    }
+                }
             }
-        }
 
         if (totalCount == 0) {
             Text(
@@ -2906,6 +3053,7 @@ private fun AttachmentsSectionCard(
             }
         }
     }
+}
 }
 
 private val StringSetSaver = listSaver<Set<String>, String>(
@@ -3441,7 +3589,7 @@ private fun MedicationCard(
             .fillMaxWidth()
             .testTag("medication-${med.id}"),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Column(Modifier.padding(bottom = if (isExpanded) 12.dp else 0.dp)) {
