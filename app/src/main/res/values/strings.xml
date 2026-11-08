@@ -491,7 +491,7 @@
     <string name="set_dose_in_editor">Set dose in editor</string>
     <string name="step_n_of_m">Step %1$d of %2$d</string>
     <string name="step_date_bp">Date and blood pressure</string>
-    <string name="step_wt_fh">Weight and fundal height</string>
+    <string name="step_wt_fh">Weight and fetal heart rate</string>
     <string name="step_findings">Findings</string>
     <string name="step_review_save">Review and save</string>
     <string name="yesterday">Yesterday</string>

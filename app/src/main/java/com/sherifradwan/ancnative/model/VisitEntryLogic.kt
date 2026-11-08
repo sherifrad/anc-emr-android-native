@@ -28,6 +28,7 @@ data class VisitFormValues(
     val diastolic: String = "",
     val weight: String = "",
     val fundalHeight: String = "",
+    val fetalHeartRate: String = "",
     val oedema: String = "",
     val fetalMovements: String = "",
     val urineProtein: String = "",
@@ -91,6 +92,7 @@ data class LastVisitVitals(
     val diastolic: String? = null,
     val weightKg: String? = null,
     val fundalHeightCm: String? = null,
+    val fetalHeartRateBpm: String? = null,
 )
 
 fun resolveLastVisitVitals(visits: List<DemoVisit>, excludeVisitId: String? = null): LastVisitVitals {
@@ -112,6 +114,7 @@ fun resolveLastVisitVitals(visits: List<DemoVisit>, excludeVisitId: String? = nu
         diastolic = parsedBp?.diastolic?.toString(),
         weightKg = parsedWt?.let { String.format(Locale.US, "%.1f", it) },
         fundalHeightCm = parsedFindings.fundalHeight,
+        fetalHeartRateBpm = parsedFindings.fetalHeartRate,
     )
 }
 
@@ -130,6 +133,7 @@ fun estimateFundalHeightForGa(gaWeeks: Int?): Int? {
 
 data class ParsedVisitFindings(
     val fundalHeight: String? = null,
+    val fetalHeartRate: String? = null,
     val oedema: String? = null,
     val fetalMovements: String? = null,
     val urineProtein: String? = null,
@@ -141,12 +145,16 @@ fun buildVisitFindings(
     oedema: String?,
     fetalMovements: String?,
     urineProtein: String?,
+    fetalHeartRate: String? = null,
     additionalFindings: String? = null,
 ): String {
     val parts = mutableListOf<String>()
 
     fundalHeight?.trim()?.takeIf { it.isNotEmpty() }?.let {
         parts.add("FH $it cm")
+    }
+    fetalHeartRate?.trim()?.takeIf { it.isNotEmpty() }?.let {
+        parts.add("FHR $it bpm")
     }
     oedema?.trim()?.takeIf { it.isNotEmpty() }?.let {
         parts.add("Oedema ${it.lowercase(Locale.ROOT)}")
@@ -165,6 +173,7 @@ fun buildVisitFindings(
 }
 
 private val structuredFhRegex = Regex("""^(?:FH|Fundal height)\s*[:=]?\s*(\d{1,3})(?:\s*cm)?$""", RegexOption.IGNORE_CASE)
+private val structuredFhrRegex = Regex("""^(?:FHR|Fetal heart rate)\s*[:=]?\s*(\d{2,3})(?:\s*bpm)?$""", RegexOption.IGNORE_CASE)
 private val structuredOedemaRegex = Regex("""^(?:Oedema|Edema)\s*[:=]?\s*([A-Za-z0-9+]+(?:\s+[A-Za-z0-9+]+)?)$""", RegexOption.IGNORE_CASE)
 private val structuredMovementsRegex = Regex("""^(?:Movements|Fetal movement[s]?)\s*[:=]?\s*([A-Za-z]+)$""", RegexOption.IGNORE_CASE)
 private val structuredUrineRegex = Regex("""^(?:Urine(?:\s*protein|\s*dipstick)?)\s*[:=]?\s*([A-Za-z0-9+]+)$""", RegexOption.IGNORE_CASE)
@@ -173,11 +182,13 @@ private val legacyNoEdemaRegex = Regex("""\bno\s+o?edema\b""", RegexOption.IGNOR
 private val legacyActiveMovementsRegex = Regex("""\bactive\s+(?:fetal\s+)?movements?\b""", RegexOption.IGNORE_CASE)
 private val legacyUrineNegativeRegex = Regex("""\burine\s+(?:dipstick\s+)?negative\b""", RegexOption.IGNORE_CASE)
 private val legacyFhRegex = Regex("""(?:Fundal height|FH)\s*[:=]?\s*(\b\d{1,2}\b)\s*cm""", RegexOption.IGNORE_CASE)
+private val legacyFhrRegex = Regex("""(?:FHR|Fetal heart rate)\s*[:=]?\s*(\b\d{2,3}\b)(?:\s*bpm)?""", RegexOption.IGNORE_CASE)
 
 fun parseVisitFindings(findingsText: String?): ParsedVisitFindings {
     if (findingsText.isNullOrBlank()) return ParsedVisitFindings()
 
     var fh: String? = null
+    var fhr: String? = null
     var oed: String? = null
     var mov: String? = null
     var uri: String? = null
@@ -192,6 +203,15 @@ fun parseVisitFindings(findingsText: String?): ParsedVisitFindings {
             val num = fhMatch.groupValues[1].toIntOrNull()
             if (num != null && num in 10..50) {
                 fh = num.toString()
+                continue
+            }
+        }
+
+        val fhrMatch = structuredFhrRegex.matchEntire(token)
+        if (fhrMatch != null && fhr == null) {
+            val num = fhrMatch.groupValues[1].toIntOrNull()
+            if (num != null && num in 60..240) {
+                fhr = num.toString()
                 continue
             }
         }
@@ -220,7 +240,7 @@ fun parseVisitFindings(findingsText: String?): ParsedVisitFindings {
 
     // Only if none of the structured tokens were matched (e.g. legacy plain narrative),
     // scan for legacy narrative patterns without overwriting structured values
-    val isLegacyNarrative = fh == null && oed == null && mov == null && uri == null
+    val isLegacyNarrative = fh == null && fhr == null && oed == null && mov == null && uri == null
     if (isLegacyNarrative) {
         if (legacyNoEdemaRegex.containsMatchIn(findingsText)) {
             oed = "None"
@@ -237,12 +257,19 @@ fun parseVisitFindings(findingsText: String?): ParsedVisitFindings {
                 fh = num.toString()
             }
         }
+        legacyFhrRegex.find(findingsText)?.let {
+            val num = it.groupValues[1].toIntOrNull()
+            if (num != null && num in 60..240) {
+                fhr = num.toString()
+            }
+        }
     }
 
     val extra = if (remainingTokens.isNotEmpty()) remainingTokens.joinToString(" · ") else null
 
     return ParsedVisitFindings(
         fundalHeight = fh,
+        fetalHeartRate = fhr,
         oedema = oed,
         fetalMovements = mov,
         urineProtein = uri,
@@ -257,6 +284,54 @@ private fun capitalizeValue(str: String): String {
 }
 
 // -------------------------------------------------------------
+// Clinical Assessment & Safety Helpers
+// -------------------------------------------------------------
+
+enum class FhrLevel {
+    NORMAL,
+    BRADYCARDIA,
+    TACHYCARDIA,
+}
+
+fun fhrLevel(fhrBpm: Int?): FhrLevel? {
+    if (fhrBpm == null) return null
+    return when {
+        fhrBpm < 110 -> FhrLevel.BRADYCARDIA
+        fhrBpm > 160 -> FhrLevel.TACHYCARDIA
+        else -> FhrLevel.NORMAL
+    }
+}
+
+fun fhrLevel(raw: String?): FhrLevel? {
+    val num = raw?.trim()?.filter { it.isDigit() }?.toIntOrNull() ?: return null
+    return fhrLevel(num)
+}
+
+enum class SfhConcordance {
+    CONCORDANT,
+    DISCREPANT_LARGE,
+    DISCREPANT_SMALL,
+}
+
+fun checkSfhConcordance(sfhCm: Int?, gaWeeks: Int?): SfhConcordance? {
+    if (sfhCm == null || gaWeeks == null) return null
+    if (gaWeeks !in 20..42) return null
+    val diff = sfhCm - gaWeeks
+    return when {
+        diff > 2 -> SfhConcordance.DISCREPANT_LARGE
+        diff < -2 -> SfhConcordance.DISCREPANT_SMALL
+        else -> SfhConcordance.CONCORDANT
+    }
+}
+
+fun isPreEclampsiaWarning(systolic: Int?, diastolic: Int?, urineProtein: String?): Boolean {
+    val isElevatedBp = isHighBloodPressure(systolic, diastolic)
+    if (!isElevatedBp) return false
+    val up = urineProtein?.trim() ?: return false
+    return up.contains("+") || up.equals("Trace", ignoreCase = true)
+}
+
+// -------------------------------------------------------------
 // Flagged Findings Detector
 // -------------------------------------------------------------
 
@@ -266,6 +341,7 @@ fun detectFlaggedFindings(
     oedema: String?,
     fetalMovements: String?,
     urineProtein: String?,
+    fetalHeartRate: String? = null,
 ): List<String> {
     val flags = mutableListOf<String>()
 
@@ -273,6 +349,13 @@ fun detectFlaggedFindings(
     val dia = diastolic?.toIntOrNull()
     if (isHighBloodPressure(sys, dia)) {
         flags.add("High BP")
+    }
+
+    val fhr = fetalHeartRate?.toIntOrNull()
+    when (fhrLevel(fhr)) {
+        FhrLevel.BRADYCARDIA -> flags.add("FHR bradycardia")
+        FhrLevel.TACHYCARDIA -> flags.add("FHR tachycardia")
+        else -> Unit
     }
 
     if (oedema?.equals("Marked", ignoreCase = true) == true) {
@@ -313,6 +396,7 @@ fun formatVisitSummary(
     oedema: String?,
     fetalMovements: String?,
     urineProtein: String?,
+    fetalHeartRate: String? = null,
 ): String {
     val parts = mutableListOf<String>()
     val head = if (!gaText.isNullOrBlank()) "$dateText · $gaText" else dateText
@@ -333,6 +417,9 @@ fun formatVisitSummary(
     }
     if (!fundalHeightCm.isNullOrBlank()) {
         parts.add("FH $fundalHeightCm cm")
+    }
+    if (!fetalHeartRate.isNullOrBlank()) {
+        parts.add("FHR $fetalHeartRate bpm")
     }
     if (!oedema.isNullOrBlank()) {
         parts.add("Oedema ${oedema.lowercase(Locale.ROOT)}")

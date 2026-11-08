@@ -54,6 +54,7 @@ data class SaveVisitCommand(
             }
 
             val hasStructuredFindings = draft.values.fundalHeight.isNotBlank() ||
+                draft.values.fetalHeartRate.isNotBlank() ||
                 draft.values.oedema.isNotBlank() ||
                 draft.values.fetalMovements.isNotBlank() ||
                 draft.values.urineProtein.isNotBlank()
@@ -62,6 +63,7 @@ data class SaveVisitCommand(
                 val parsed = parseVisitFindings(draft.values.findings)
                 buildVisitFindings(
                     fundalHeight = draft.values.fundalHeight,
+                    fetalHeartRate = draft.values.fetalHeartRate,
                     oedema = draft.values.oedema,
                     fetalMovements = draft.values.fetalMovements,
                     urineProtein = draft.values.urineProtein,

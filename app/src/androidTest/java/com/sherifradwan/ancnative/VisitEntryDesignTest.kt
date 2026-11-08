@@ -43,7 +43,7 @@ class VisitEntryDesignTest {
                 date = "2026-10-15",
                 bloodPressure = "118/76",
                 weight = "74.5",
-                findings = "FH 27 cm · Oedema none · Movements good · Urine negative",
+                findings = "FHR 144 bpm · Oedema none · Movements good · Urine negative",
                 notes = "Past note",
                 revision = 1,
                 isSyntheticEdit = false,
@@ -155,10 +155,10 @@ class VisitEntryDesignTest {
         compose.waitForIdle()
         assertEquals("74.5", state.draft?.values?.weight)
 
-        // Click "Same as last (27 cm)"
-        compose.onNodeWithTag("fhPreset-sameLast").performClick()
+        // Click "Same as last (144 bpm)"
+        compose.onNodeWithTag("fhrPreset-sameLast").performClick()
         compose.waitForIdle()
-        assertEquals("27", state.draft?.values?.fundalHeight)
+        assertEquals("144", state.draft?.values?.fetalHeartRate)
     }
 
     @Test

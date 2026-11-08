@@ -449,4 +449,123 @@ class VisitEntryLogicTest {
         assertFalse(names.any { it.contains("LMP", ignoreCase = true) })
         assertFalse(names.any { it.contains("IVF", ignoreCase = true) })
     }
+
+    // -------------------------------------------------------------
+    // Oracle O9: Fetal Heart Rate (FHR) & Bedside Clinical Safety
+    // -------------------------------------------------------------
+
+    @Test
+    fun fhrRoundTrip_serializesAndParsesCorrectly() {
+        val serialized = buildVisitFindings(
+            fundalHeight = "32",
+            fetalHeartRate = "142",
+            oedema = "None",
+            fetalMovements = "Good",
+            urineProtein = "Negative",
+        )
+        assertTrue(serialized.contains("FHR 142 bpm"))
+        assertTrue(serialized.contains("FH 32 cm"))
+
+        val parsed = parseVisitFindings(serialized)
+        assertEquals("32", parsed.fundalHeight)
+        assertEquals("142", parsed.fetalHeartRate)
+        assertEquals("None", parsed.oedema)
+        assertEquals("Good", parsed.fetalMovements)
+        assertEquals("Negative", parsed.urineProtein)
+
+        // Legacy narrative parsing test
+        val legacyText = "Fundal height 30 cm, FHR 150 bpm, active fetal movements, no oedema, urine dipstick negative"
+        val parsedLegacy = parseVisitFindings(legacyText)
+        assertEquals("30", parsedLegacy.fundalHeight)
+        assertEquals("150", parsedLegacy.fetalHeartRate)
+        assertEquals("Good", parsedLegacy.fetalMovements)
+        assertEquals("None", parsedLegacy.oedema)
+        assertEquals("Negative", parsedLegacy.urineProtein)
+    }
+
+    @Test
+    fun fhrClassification_identifiesNormalAndAbnormalRanges() {
+        assertEquals(FhrLevel.NORMAL, fhrLevel(110))
+        assertEquals(FhrLevel.NORMAL, fhrLevel(140))
+        assertEquals(FhrLevel.NORMAL, fhrLevel(160))
+
+        assertEquals(FhrLevel.BRADYCARDIA, fhrLevel(105))
+        assertEquals(FhrLevel.BRADYCARDIA, fhrLevel(90))
+
+        assertEquals(FhrLevel.TACHYCARDIA, fhrLevel(165))
+        assertEquals(FhrLevel.TACHYCARDIA, fhrLevel(180))
+
+        assertNull(fhrLevel(null as Int?))
+        assertNull(fhrLevel(""))
+    }
+
+    @Test
+    fun sfhConcordance_evaluatesDiscrepanciesCorrectly() {
+        // Within +- 2 cm of GA in weeks (20..42 weeks)
+        assertEquals(SfhConcordance.CONCORDANT, checkSfhConcordance(sfhCm = 32, gaWeeks = 32))
+        assertEquals(SfhConcordance.CONCORDANT, checkSfhConcordance(sfhCm = 34, gaWeeks = 32))
+        assertEquals(SfhConcordance.CONCORDANT, checkSfhConcordance(sfhCm = 30, gaWeeks = 32))
+
+        // Large for dates (> +2 cm)
+        assertEquals(SfhConcordance.DISCREPANT_LARGE, checkSfhConcordance(sfhCm = 36, gaWeeks = 32))
+
+        // Small for dates (< -2 cm)
+        assertEquals(SfhConcordance.DISCREPANT_SMALL, checkSfhConcordance(sfhCm = 28, gaWeeks = 32))
+
+        // Out of range GA
+        assertNull(checkSfhConcordance(sfhCm = 15, gaWeeks = 14))
+    }
+
+    @Test
+    fun preEclampsiaWarning_detectsRiskWhenElevatedBpAndProteinPresent() {
+        // High BP (140/90) + Protein (+) -> Risk
+        assertTrue(isPreEclampsiaWarning(140, 90, "+"))
+        assertTrue(isPreEclampsiaWarning(150, 95, "++"))
+        assertTrue(isPreEclampsiaWarning(160, 100, "Trace"))
+
+        // High BP without protein -> No pre-eclampsia flag (just high BP)
+        assertFalse(isPreEclampsiaWarning(140, 90, "Negative"))
+        assertFalse(isPreEclampsiaWarning(145, 95, "None"))
+
+        // Normal BP with protein -> No pre-eclampsia flag
+        assertFalse(isPreEclampsiaWarning(115, 75, "+"))
+    }
+
+    @Test
+    fun normalFindingsFill_leavesFhrUntouched() {
+        val form = VisitFormValues(
+            date = "2026-11-08",
+            systolic = "120",
+            diastolic = "80",
+            weight = "68",
+            fundalHeight = "32",
+            fetalHeartRate = "144",
+            oedema = "",
+            fetalMovements = "",
+            urineProtein = "",
+        )
+        val result = fillNormalVisitFindings(form)
+        assertEquals("144", result.values.fetalHeartRate)
+        assertEquals("32", result.values.fundalHeight)
+        assertEquals("None", result.values.oedema)
+        assertEquals("Good", result.values.fetalMovements)
+        assertEquals("Negative", result.values.urineProtein)
+    }
+
+    @Test
+    fun formatVisitSummary_includesFhrWhenPresent() {
+        val summary = formatVisitSummary(
+            dateText = "8 Nov 2026",
+            gaText = "32w 4d",
+            systolic = "120",
+            diastolic = "80",
+            weightKg = "70.0",
+            fundalHeightCm = "32",
+            oedema = "None",
+            fetalMovements = "Good",
+            urineProtein = "Negative",
+            fetalHeartRate = "142",
+        )
+        assertTrue(summary.contains("FHR 142 bpm"))
+    }
 }

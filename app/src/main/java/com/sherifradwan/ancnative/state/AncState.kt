@@ -73,6 +73,7 @@ enum class DraftField {
     SYSTOLIC,
     DIASTOLIC,
     FUNDAL_HEIGHT,
+    FETAL_HEART_RATE,
     OEDEMA,
     FETAL_MOVEMENTS,
     URINE_PROTEIN,
@@ -421,6 +422,7 @@ data class DraftValues(
     val systolic: String = "",
     val diastolic: String = "",
     val fundalHeight: String = "",
+    val fetalHeartRate: String = "",
     val oedema: String = "",
     val fetalMovements: String = "",
     val urineProtein: String = "",
@@ -1536,6 +1538,7 @@ object AncReducer {
                 draft.values.copy(diastolic = d, bloodPressure = bp)
             }
             DraftField.FUNDAL_HEIGHT -> draft.values.copy(fundalHeight = event.value)
+            DraftField.FETAL_HEART_RATE -> draft.values.copy(fetalHeartRate = event.value)
             DraftField.OEDEMA -> draft.values.copy(oedema = event.value)
             DraftField.FETAL_MOVEMENTS -> draft.values.copy(fetalMovements = event.value)
             DraftField.URINE_PROTEIN -> draft.values.copy(urineProtein = event.value)
@@ -1770,6 +1773,7 @@ object AncReducer {
             systolic = parsedBp?.systolic?.toString().orEmpty(),
             diastolic = parsedBp?.diastolic?.toString().orEmpty(),
             fundalHeight = parsedFindings.fundalHeight.orEmpty(),
+            fetalHeartRate = parsedFindings.fetalHeartRate.orEmpty(),
             oedema = parsedFindings.oedema.orEmpty(),
             fetalMovements = parsedFindings.fetalMovements.orEmpty(),
             urineProtein = parsedFindings.urineProtein.orEmpty(),

@@ -126,7 +126,17 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
+import com.sherifradwan.ancnative.model.BpLevel
+import com.sherifradwan.ancnative.model.FhrLevel
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
+import com.sherifradwan.ancnative.model.SfhConcordance
+import com.sherifradwan.ancnative.model.bpLevel
+import com.sherifradwan.ancnative.model.checkSfhConcordance
+import com.sherifradwan.ancnative.model.fhrLevel
+import com.sherifradwan.ancnative.model.isPreEclampsiaWarning
+import com.sherifradwan.ancnative.model.parseBloodPressure
+import com.sherifradwan.ancnative.model.parseVisitFindings
+import com.sherifradwan.ancnative.model.parseWeightKg
 import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoMedicationRecord
 import com.sherifradwan.ancnative.model.medicationInstructions
@@ -1055,7 +1065,26 @@ private fun VisitCard(
     onDelete: () -> Unit = {},
     linkIntegrityWarning: String? = null,
 ) {
-    val gaAtVisit = GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, visit.date)?.displayText
+    val gaAtVisit = GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, visit.date)
+    val gaDisplayText = gaAtVisit?.displayText
+    val gaWeeks = gaAtVisit?.weeks
+    val parsedFindings = parseVisitFindings(visit.findings)
+    val parsedBp = parseBloodPressure(visit.bloodPressure)
+    val bpLevel = bpLevel(parsedBp?.systolic, parsedBp?.diastolic)
+    val isPreEclampsia = isPreEclampsiaWarning(parsedBp?.systolic, parsedBp?.diastolic, parsedFindings.urineProtein)
+    val sfhConcordance = checkSfhConcordance(parsedFindings.fundalHeight?.toIntOrNull(), gaWeeks)
+    val fhrLev = fhrLevel(parsedFindings.fetalHeartRate)
+
+    // Calculate weight delta relative to booking (earliest recorded visit)
+    val bookingWeightKg = patient.visits
+        .mapNotNull { parseWeightKg(it.weight) }
+        .lastOrNull()
+    val currentWeightKg = parseWeightKg(visit.weight)
+    val weightDeltaText = if (bookingWeightKg != null && currentWeightKg != null && bookingWeightKg > 0.0 && bookingWeightKg != currentWeightKg) {
+        val diff = currentWeightKg - bookingWeightKg
+        val sign = if (diff >= 0) "+" else ""
+        String.format(java.util.Locale.US, "Δ %s%.1f kg", sign, diff)
+    } else null
 
     Card(
         modifier = Modifier.fillMaxWidth().testTag("visit-${visit.id}"),
@@ -1065,7 +1094,7 @@ private fun VisitCard(
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             // Header Row: Date + GA + Badges
             Row(
@@ -1083,14 +1112,14 @@ private fun VisitCard(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
                     )
-                    if (!gaAtVisit.isNullOrBlank()) {
+                    if (!gaDisplayText.isNullOrBlank()) {
                         Surface(
                             shape = RoundedCornerShape(6.dp),
                             color = ClinicalTeal.copy(alpha = 0.12f),
                             border = BorderStroke(1.dp, ClinicalTeal.copy(alpha = 0.3f)),
                         ) {
                             Text(
-                                text = gaAtVisit,
+                                text = gaDisplayText,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.SemiBold,
                                 color = ClinicalTeal,
@@ -1151,57 +1180,300 @@ private fun VisitCard(
                 }
             }
 
-            // Maternal Vitals Grid
+            // Pre-eclampsia Screening Alert
+            if (isPreEclampsia) {
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
+                    modifier = Modifier.fillMaxWidth().testTag("preEclampsiaWarning-${visit.id}"),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(
+                            Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Column {
+                            Text(
+                                text = "Pre-eclampsia Risk Alert",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                            )
+                            Text(
+                                text = "Elevated BP (${visit.bloodPressure}) with proteinuria (${parsedFindings.urineProtein}). Clinical evaluation required.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Bedside Vitals Grid
             Surface(
                 shape = RoundedCornerShape(12.dp),
                 color = MaterialTheme.colorScheme.surface,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 10.dp, horizontal = 14.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "BLOOD PRESSURE",
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    // Row 1: Maternal Vitals (BP + Weight)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "BLOOD PRESSURE",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                text = visit.bloodPressure?.let { "$it mmHg" } ?: "Not recorded",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = when (bpLevel) {
+                                    BpLevel.SEVERE -> MaterialTheme.colorScheme.error
+                                    BpLevel.RAISED -> MaterialTheme.colorScheme.tertiary
+                                    BpLevel.NORMAL -> MaterialTheme.colorScheme.primary
+                                },
+                            )
+                            Spacer(Modifier.height(2.dp))
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = when (bpLevel) {
+                                    BpLevel.SEVERE -> MaterialTheme.colorScheme.errorContainer
+                                    BpLevel.RAISED -> MaterialTheme.colorScheme.tertiaryContainer
+                                    BpLevel.NORMAL -> ClinicalTeal.copy(alpha = 0.12f)
+                                },
+                            ) {
+                                Text(
+                                    text = when (bpLevel) {
+                                        BpLevel.SEVERE -> "Severe (160/110+) ⚠️"
+                                        BpLevel.RAISED -> "Raised (140/90+) ▲"
+                                        BpLevel.NORMAL -> "Normal ✓"
+                                    },
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                    fontWeight = FontWeight.Bold,
+                                    color = when (bpLevel) {
+                                        BpLevel.SEVERE -> MaterialTheme.colorScheme.onErrorContainer
+                                        BpLevel.RAISED -> MaterialTheme.colorScheme.onTertiaryContainer
+                                        BpLevel.NORMAL -> ClinicalTeal
+                                    },
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                                )
+                            }
+                        }
+
+                        Box(
+                            Modifier
+                                .width(1.dp)
+                                .height(46.dp)
+                                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                         )
-                        Text(
-                            text = visit.bloodPressure?.let { "$it mmHg" } ?: "Not recorded",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
+
+                        Spacer(Modifier.width(12.dp))
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "MATERNAL WEIGHT",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                text = formatWeightKg(visit.weight) ?: "Not recorded",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                            if (weightDeltaText != null) {
+                                Spacer(Modifier.height(2.dp))
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
+                                ) {
+                                    Text(
+                                        text = weightDeltaText,
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                                    )
+                                }
+                            }
+                        }
                     }
 
-                    Box(
-                        Modifier
-                            .width(1.dp)
-                            .height(28.dp)
-                            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                    )
+                    // Row 2: Fetal Assessment (FHR + optional legacy SFH)
+                    val hasFetalHeartRate = !parsedFindings.fetalHeartRate.isNullOrBlank()
+                    val hasLegacySfh = !parsedFindings.fundalHeight.isNullOrBlank()
+                    if (hasFetalHeartRate || hasLegacySfh) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
 
-                    Spacer(Modifier.width(14.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Top,
+                        ) {
+                            if (hasFetalHeartRate) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "FETAL HEART RATE",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Spacer(Modifier.height(2.dp))
+                                    Text(
+                                        text = "${parsedFindings.fetalHeartRate} bpm",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary,
+                                    )
+                                    if (fhrLev != null) {
+                                        Spacer(Modifier.height(2.dp))
+                                        val (fhrText, fhrColor, fhrBg) = when (fhrLev) {
+                                            FhrLevel.NORMAL -> Triple("110–160 normal ✓", ClinicalTeal, ClinicalTeal.copy(alpha = 0.12f))
+                                            FhrLevel.BRADYCARDIA -> Triple("Bradycardia (<110) ⚠️", MaterialTheme.colorScheme.onErrorContainer, MaterialTheme.colorScheme.errorContainer)
+                                            FhrLevel.TACHYCARDIA -> Triple("Tachycardia (>160) ⚠️", MaterialTheme.colorScheme.onErrorContainer, MaterialTheme.colorScheme.errorContainer)
+                                        }
+                                        Surface(
+                                            shape = RoundedCornerShape(4.dp),
+                                            color = fhrBg,
+                                        ) {
+                                            Text(
+                                                text = fhrText,
+                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                                fontWeight = FontWeight.Bold,
+                                                color = fhrColor,
+                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                                            )
+                                        }
+                                    }
+                                }
+                            }
 
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "MATERNAL WEIGHT",
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text(
-                            text = formatWeightKg(visit.weight) ?: "Not recorded",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
+                            if (hasFetalHeartRate && hasLegacySfh) {
+                                Box(
+                                    Modifier
+                                        .width(1.dp)
+                                        .height(46.dp)
+                                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                                )
+                                Spacer(Modifier.width(12.dp))
+                            }
+
+                            if (hasLegacySfh) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "FUNDAL HEIGHT (SFH)",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Spacer(Modifier.height(2.dp))
+                                    Text(
+                                        text = "${parsedFindings.fundalHeight} cm",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary,
+                                    )
+                                    if (sfhConcordance != null && gaWeeks != null) {
+                                        Spacer(Modifier.height(2.dp))
+                                        val (sfhText, sfhColor, sfhBg) = when (sfhConcordance) {
+                                            SfhConcordance.CONCORDANT -> Triple("Concordant (${gaWeeks}w) ✓", ClinicalTeal, ClinicalTeal.copy(alpha = 0.12f))
+                                            SfhConcordance.DISCREPANT_LARGE -> Triple("Large for GA ⚠️", MaterialTheme.colorScheme.onTertiaryContainer, MaterialTheme.colorScheme.tertiaryContainer)
+                                            SfhConcordance.DISCREPANT_SMALL -> Triple("Lagging for GA ⚠️", MaterialTheme.colorScheme.onErrorContainer, MaterialTheme.colorScheme.errorContainer)
+                                        }
+                                        Surface(
+                                            shape = RoundedCornerShape(4.dp),
+                                            color = sfhBg,
+                                        ) {
+                                            Text(
+                                                text = sfhText,
+                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                                fontWeight = FontWeight.Bold,
+                                                color = sfhColor,
+                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Bedside Observations & Screenings
+            val hasObservations = !parsedFindings.fetalMovements.isNullOrBlank() ||
+                !parsedFindings.oedema.isNullOrBlank() ||
+                !parsedFindings.urineProtein.isNullOrBlank()
+            if (hasObservations) {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    if (!parsedFindings.fetalMovements.isNullOrBlank()) {
+                        val isAbnormal = parsedFindings.fetalMovements.equals("Reduced", true) || parsedFindings.fetalMovements.equals("Absent", true)
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (isAbnormal) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant,
+                        ) {
+                            Text(
+                                text = "Movements: ${parsedFindings.fetalMovements}${if (!isAbnormal) " ✓" else " ⚠️"}",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (isAbnormal) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            )
+                        }
+                    }
+                    if (!parsedFindings.oedema.isNullOrBlank()) {
+                        val isMarked = parsedFindings.oedema.equals("Marked", true)
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (isMarked) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant,
+                        ) {
+                            Text(
+                                text = "Oedema: ${parsedFindings.oedema}${if (parsedFindings.oedema.equals("None", true)) " ✓" else ""}",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (isMarked) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            )
+                        }
+                    }
+                    if (!parsedFindings.urineProtein.isNullOrBlank()) {
+                        val isPositive = parsedFindings.urineProtein.contains("+")
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (isPositive) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                        ) {
+                            Text(
+                                text = "Urine: ${parsedFindings.urineProtein}${if (parsedFindings.urineProtein.equals("Negative", true)) " ✓" else ""}",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (isPositive) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -2615,7 +2887,7 @@ fun LabRowItem(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .testTag("labCard-${lab.id}")
+            .testTag("lab-${lab.id}")
             .clickable(enabled = canEdit, onClick = onEdit)
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,

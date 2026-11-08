@@ -49,9 +49,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.BpLevel
+import com.sherifradwan.ancnative.model.FhrLevel
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
 import com.sherifradwan.ancnative.model.VisitFormValues
 import com.sherifradwan.ancnative.model.bpLevel
+import com.sherifradwan.ancnative.model.fhrLevel
 import com.sherifradwan.ancnative.model.codex.ClinicalCodexRepository
 import com.sherifradwan.ancnative.model.codex.CustomChoiceList
 import com.sherifradwan.ancnative.model.codex.CustomChoiceValidationResult
@@ -137,7 +139,6 @@ fun VisitEditor(
 
     val bpChoices by codexRepo.customChoices(CustomChoiceList.VISIT_BP).collectAsState(emptyList())
     val weightChoices by codexRepo.customChoices(CustomChoiceList.VISIT_WEIGHT).collectAsState(emptyList())
-    val fhChoices by codexRepo.customChoices(CustomChoiceList.VISIT_FUNDAL_HEIGHT).collectAsState(emptyList())
     val oedemaChoices by codexRepo.customChoices(CustomChoiceList.VISIT_OEDEMA).collectAsState(emptyList())
     val movementsChoices by codexRepo.customChoices(CustomChoiceList.VISIT_MOVEMENTS).collectAsState(emptyList())
     val urineChoices by codexRepo.customChoices(CustomChoiceList.VISIT_URINE).collectAsState(emptyList())
@@ -230,6 +231,12 @@ fun VisitEditor(
         tag = "visitEditor",
         pinnedBottomBar,
     ) {
+        ClinicalPatientCard(
+            patient = patient,
+            variant = PatientCardVariant.EDITOR_SUMMARY,
+            modifier = Modifier.padding(bottom = 8.dp),
+        )
+
         if (DraftError.STALE_REVISION in draft.errors) {
             Card(
                 modifier = Modifier.fillMaxWidth().testTag("staleError"),
@@ -401,6 +408,29 @@ fun VisitEditor(
                                 errorMessage = dateError,
                                 showTodayButton = false,
                             )
+
+                            val gaAtSelectedDate = GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, draft.values.date)
+                            if (gaAtSelectedDate != null && gaAtSelectedDate.isPostConception) {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = ClinicalTeal.copy(alpha = 0.12f),
+                                    border = BorderStroke(1.dp, ClinicalTeal.copy(alpha = 0.3f)),
+                                    modifier = Modifier.padding(top = 2.dp),
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    ) {
+                                        Text(
+                                            text = "Gestational Age at visit: ${gaAtSelectedDate.displayText}",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = ClinicalTeal,
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -622,75 +652,75 @@ fun VisitEditor(
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             Text(
-                                text = stringResource(R.string.fundal_height),
+                                text = "Fetal heart rate (FHR)",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary,
                             )
-                            val estimatedFh = estimateFundalHeightForGa(calculatedGa?.weeks)
                             FlowRow(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
-                                if (lastVitals.fundalHeightCm != null) {
-                                    val lastFh = lastVitals.fundalHeightCm!!
+                                if (lastVitals.fetalHeartRateBpm != null) {
+                                    val lastFhr = lastVitals.fetalHeartRateBpm!!
                                     FilterChip(
-                                        selected = draft.values.fundalHeight == lastFh,
-                                        onClick = { onEvent(AncEvent.DraftChanged(DraftField.FUNDAL_HEIGHT, lastFh)) },
-                                        label = { Text(stringResource(R.string.same_as_last_fh, lastFh)) },
+                                        selected = draft.values.fetalHeartRate == lastFhr,
+                                        onClick = { onEvent(AncEvent.DraftChanged(DraftField.FETAL_HEART_RATE, lastFhr)) },
+                                        label = { Text("Same as last ($lastFhr bpm)") },
                                         enabled = editingEnabled,
-                                        modifier = Modifier.heightIn(min = 48.dp).testTag("fhPreset-sameLast"),
+                                        modifier = Modifier.heightIn(min = 48.dp).testTag("fhrPreset-sameLast"),
                                     )
                                 }
-                                if (estimatedFh != null) {
-                                    val fhStr = estimatedFh.toString()
+                                listOf("135", "140", "145", "150").forEach { preset ->
                                     FilterChip(
-                                        selected = draft.values.fundalHeight == fhStr,
-                                        onClick = { onEvent(AncEvent.DraftChanged(DraftField.FUNDAL_HEIGHT, fhStr)) },
-                                        label = { Text(stringResource(R.string.matches_ga_fh, fhStr)) },
-                                        enabled = editingEnabled,
-                                        modifier = Modifier.heightIn(min = 48.dp),
-                                    )
-                                }
-                                fhChoices.forEach { item ->
-                                    FilterChip(
-                                        selected = draft.values.fundalHeight == item.label,
-                                        onClick = { onEvent(AncEvent.DraftChanged(DraftField.FUNDAL_HEIGHT, item.label)) },
-                                        label = { Text("${item.label} cm") },
+                                        selected = draft.values.fetalHeartRate == preset,
+                                        onClick = { onEvent(AncEvent.DraftChanged(DraftField.FETAL_HEART_RATE, preset)) },
+                                        label = { Text("$preset bpm") },
                                         enabled = editingEnabled,
                                         modifier = Modifier.heightIn(min = 48.dp),
                                     )
                                 }
-                                FilterChip(
-                                    selected = false,
-                                    onClick = {
-                                        showCustomDialog = CustomChoiceList.VISIT_FUNDAL_HEIGHT
-                                        customInput = ""
-                                        customInputError = null
-                                    },
-                                    label = { Text(stringResource(R.string.add_other_choice)) },
-                                    enabled = editingEnabled,
-                                    modifier = Modifier.heightIn(min = 48.dp),
-                                )
                             }
                             ValueStepper(
-                                value = draft.values.fundalHeight,
-                                unit = "cm",
+                                value = draft.values.fetalHeartRate,
+                                unit = "bpm",
                                 enabled = editingEnabled,
                                 keyboardType = KeyboardType.Number,
                                 onDecrease = {
-                                    val cur = draft.values.fundalHeight.replace("cm", "").trim().toIntOrNull() ?: 28
-                                    val updated = maxOf(10, cur - 1).toString()
-                                    onEvent(AncEvent.DraftChanged(DraftField.FUNDAL_HEIGHT, updated))
+                                    val cur = draft.values.fetalHeartRate.replace("bpm", "").trim().toIntOrNull() ?: 140
+                                    val updated = maxOf(60, cur - 2).toString()
+                                    onEvent(AncEvent.DraftChanged(DraftField.FETAL_HEART_RATE, updated))
                                 },
                                 onIncrease = {
-                                    val cur = draft.values.fundalHeight.replace("cm", "").trim().toIntOrNull() ?: 28
-                                    val updated = minOf(50, cur + 1).toString()
-                                    onEvent(AncEvent.DraftChanged(DraftField.FUNDAL_HEIGHT, updated))
+                                    val cur = draft.values.fetalHeartRate.replace("bpm", "").trim().toIntOrNull() ?: 140
+                                    val updated = minOf(220, cur + 2).toString()
+                                    onEvent(AncEvent.DraftChanged(DraftField.FETAL_HEART_RATE, updated))
                                 },
-                                onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.FUNDAL_HEIGHT, it)) },
-                                inputTag = "visitFundalHeight",
+                                onValueChange = { onEvent(AncEvent.DraftChanged(DraftField.FETAL_HEART_RATE, it)) },
+                                inputTag = "visitFetalHeartRate",
                             )
+
+                            val fhrNum = draft.values.fetalHeartRate.toIntOrNull()
+                            val fhrLevelResult = fhrLevel(fhrNum)
+                            if (fhrLevelResult != null) {
+                                val (badgeText, badgeColor, badgeBg) = when (fhrLevelResult) {
+                                    FhrLevel.NORMAL -> Triple("Normal baseline (110–160 bpm) ✓", ClinicalTeal, ClinicalTeal.copy(alpha = 0.12f))
+                                    FhrLevel.BRADYCARDIA -> Triple("Bradycardia (<110 bpm) ⚠️", MaterialTheme.colorScheme.onErrorContainer, MaterialTheme.colorScheme.errorContainer)
+                                    FhrLevel.TACHYCARDIA -> Triple("Tachycardia (>160 bpm) ⚠️", MaterialTheme.colorScheme.onErrorContainer, MaterialTheme.colorScheme.errorContainer)
+                                }
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = badgeBg,
+                                ) {
+                                    Text(
+                                        text = badgeText,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = badgeColor,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -704,7 +734,8 @@ fun VisitEditor(
                                 systolic = draft.values.systolic,
                                 diastolic = draft.values.diastolic,
                                 weight = draft.values.weight,
-                                fundalHeight = draft.values.fundalHeight,
+                                fundalHeight = "",
+                                fetalHeartRate = draft.values.fetalHeartRate,
                                 oedema = draft.values.oedema,
                                 fetalMovements = draft.values.fetalMovements,
                                 urineProtein = draft.values.urineProtein,
@@ -930,10 +961,11 @@ fun VisitEditor(
                         systolic = draft.values.systolic,
                         diastolic = draft.values.diastolic,
                         weightKg = draft.values.weight,
-                        fundalHeightCm = draft.values.fundalHeight,
+                        fundalHeightCm = null,
                         oedema = draft.values.oedema,
                         fetalMovements = draft.values.fetalMovements,
                         urineProtein = draft.values.urineProtein,
+                        fetalHeartRate = draft.values.fetalHeartRate,
                     )
                     val flags = detectFlaggedFindings(
                         systolic = draft.values.systolic,
@@ -941,6 +973,7 @@ fun VisitEditor(
                         oedema = draft.values.oedema,
                         fetalMovements = draft.values.fetalMovements,
                         urineProtein = draft.values.urineProtein,
+                        fetalHeartRate = draft.values.fetalHeartRate,
                     )
 
                     Card(
@@ -1030,9 +1063,9 @@ fun VisitEditor(
                                 onClick = { currentStep = 1 },
                             )
                             SummaryRow(
-                                label = stringResource(R.string.fundal_height),
-                                value = if (draft.values.fundalHeight.isNotBlank()) "${draft.values.fundalHeight} cm" else "",
-                                tag = "summaryRow-fh",
+                                label = "Fetal Heart Rate",
+                                value = if (draft.values.fetalHeartRate.isNotBlank()) "${draft.values.fetalHeartRate} bpm" else "",
+                                tag = "summaryRow-fhr",
                                 onClick = { currentStep = 1 },
                             )
                             SummaryRow(
