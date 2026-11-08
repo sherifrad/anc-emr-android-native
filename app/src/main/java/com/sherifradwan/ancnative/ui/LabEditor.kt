@@ -1,5 +1,6 @@
 package com.sherifradwan.ancnative.ui
 
+import java.time.LocalDate
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -372,6 +373,12 @@ fun LabEditor(
         },
     ) {
         GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
+
+        ClinicalPatientCard(
+            patient = patient,
+            variant = PatientCardVariant.EDITOR_SUMMARY,
+            asOfDate = runCatching { LocalDate.parse(draft.values.date) }.getOrNull() ?: LocalDate.now(),
+        )
 
         // Batch info bar replaces the old numbered details card
         BatchInfoBar(

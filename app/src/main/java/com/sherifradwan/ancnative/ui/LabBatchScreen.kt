@@ -1,5 +1,6 @@
 package com.sherifradwan.ancnative.ui
 
+import java.time.LocalDate
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -221,6 +222,12 @@ fun LabBatchScreen(state: AncState, route: AncRoute.LabBatchEditor, onEvent: (An
         tag = "labBatchScreen",
         pinnedBottomBar,
     ) {
+        ClinicalPatientCard(
+            patient = patient,
+            variant = PatientCardVariant.EDITOR_SUMMARY,
+            asOfDate = runCatching { LocalDate.parse(draft.date) }.getOrNull() ?: LocalDate.now(),
+        )
+
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth(),
