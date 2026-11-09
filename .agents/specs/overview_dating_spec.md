@@ -68,3 +68,11 @@ Schema or stored-field changes, resolve or dismiss button, a flat threshold, new
 ## Review
 
 Edits under `app/src` are level 3: frontier review plus an independent test review, recorded as `REVIEW:` in the ledger.
+
+## Clarifications from test design
+
+- `differenceDays` keeps the sign `redatingAdvice` gives (scan GA minus dating GA, which equals LMP due date minus scan due date). Only its absolute value is compared to the limit.
+- Unknown method strings follow the "other method" branch of O3 for origin.
+- A malformed `agreedEdd` does not clear the alert (D5 compares parsed dates only).
+- The aliases "US" and "us" normalise to Ultrasound for D5.
+- A malformed `transferDate` with the transfer method gives `Transfer(raw, age)`; the origin does not validate the date or the age.
