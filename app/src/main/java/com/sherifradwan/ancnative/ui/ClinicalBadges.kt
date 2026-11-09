@@ -1,5 +1,6 @@
 package com.sherifradwan.ancnative.ui
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -179,6 +180,12 @@ fun KeyFactTile(
 fun BpAlertLabel(raw: String?, modifier: Modifier = Modifier) {
     val res = bpAlertResource(raw) ?: return
     val isSevere = bpLevel(raw) == BpLevel.SEVERE
+    BpAlertChip(textRes = res, isSevere = isSevere, modifier = modifier)
+}
+
+/** Single BP badge look, shared by BpAlertLabel and callers that already know the severity. */
+@Composable
+internal fun BpAlertChip(@StringRes textRes: Int, isSevere: Boolean, modifier: Modifier = Modifier) {
     val containerColor = if (isSevere) {
         MaterialTheme.colorScheme.errorContainer
     } else {
@@ -195,7 +202,7 @@ fun BpAlertLabel(raw: String?, modifier: Modifier = Modifier) {
         modifier = modifier.testTag("bpAlertLabel"),
     ) {
         Text(
-            text = stringResource(res),
+            text = stringResource(textRes),
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.SemiBold,
             color = contentColor,

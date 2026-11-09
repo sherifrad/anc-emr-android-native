@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.state.AncEvent
-import com.sherifradwan.ancnative.ui.BpAlertLabel
+import com.sherifradwan.ancnative.ui.BpAlertChip
 import com.sherifradwan.ancnative.ui.ClinicalRiskBadge
 import com.sherifradwan.ancnative.ui.PatientDashboardRowProjection
 import com.sherifradwan.ancnative.ui.PatientRiskTier
@@ -135,7 +135,7 @@ fun PatientDirectoryCard(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         if (row.isSevereBp) {
-                            BpAlertLabel("≥160/110")
+                            BpAlertChip(R.string.bp_badge_severe, isSevere = true)
                         } else if (row.isHighRisk) {
                             ClinicalRiskBadge(isHighRisk = true)
                         } else if (row.riskTier == PatientRiskTier.MEDIUM) {

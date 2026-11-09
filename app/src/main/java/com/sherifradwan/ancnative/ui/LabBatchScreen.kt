@@ -63,6 +63,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
+import com.sherifradwan.ancnative.model.parseIsoDateOrNull
 import com.sherifradwan.ancnative.model.catalog.ClinicalCatalogRepository
 import com.sherifradwan.ancnative.model.catalog.LabCategoryGroup
 import com.sherifradwan.ancnative.model.catalog.LabCatalogItem
@@ -225,7 +226,7 @@ fun LabBatchScreen(state: AncState, route: AncRoute.LabBatchEditor, onEvent: (An
         ClinicalPatientCard(
             patient = patient,
             variant = PatientCardVariant.EDITOR_SUMMARY,
-            asOfDate = runCatching { LocalDate.parse(draft.date) }.getOrNull() ?: LocalDate.now(),
+            asOfDate = parseIsoDateOrNull(draft.date) ?: LocalDate.now(),
         )
 
         Row(
