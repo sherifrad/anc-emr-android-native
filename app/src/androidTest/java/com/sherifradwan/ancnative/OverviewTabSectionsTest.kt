@@ -45,6 +45,9 @@ class OverviewTabSectionsTest {
         it.config.getOrNull(SemanticsProperties.TestTag)?.startsWith(prefix) == true
     }
 
+    /** Matches the node carrying [tag] and any of its descendants (hasAnyAncestor alone excludes the tagged node). */
+    private fun inTagged(tag: String) = hasTestTag(tag) or hasAnyAncestor(hasTestTag(tag))
+
     private fun show(
         patient: DemoPatient,
         canEdit: Boolean = true,
@@ -167,13 +170,18 @@ class OverviewTabSectionsTest {
 
     private fun assertNotEllipsized(text: String, ancestorTag: String) {
         val node = compose.onNode(
-            hasText(text, substring = true) and hasAnyAncestor(hasTestTag(ancestorTag)),
+            hasText(text, substring = true) and inTagged(ancestorTag),
             useUnmergedTree = true,
         )
         val results = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
         node.fetchSemanticsNode().config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.invoke(results)
         results.forEach { layout ->
-            assertFalse("'$text' overflowed", layout.hasVisualOverflow)
+            // hasVisualOverflow is not used: text that shrinks to its content width reports
+            // size.width < laid-out paragraph width even when nothing is clipped. Check clipping directly.
+            assertTrue("'$text' clipped vertically", layout.size.height >= layout.multiParagraph.height.toInt())
+            for (line in 0 until layout.lineCount) {
+                assertTrue("'$text' line $line clipped horizontally", layout.getLineRight(line) <= layout.size.width + 1f)
+            }
             for (line in 0 until layout.lineCount) {
                 assertFalse("'$text' ellipsized on line $line", layout.isLineEllipsized(line))
             }
@@ -197,7 +205,7 @@ class OverviewTabSectionsTest {
         compose.onNodeWithTag(extrasTag, useUnmergedTree = true).assertExists().assertIsDisplayed()
         listOf("Twin", "Expectant", "Medical").forEach { t ->
             compose.onNode(
-                hasText(t, substring = true) and hasAnyAncestor(hasTestTag(extrasTag)),
+                hasText(t, substring = true) and inTagged(extrasTag),
                 useUnmergedTree = true,
             ).assertExists("extras text '$t' missing from $extrasTag")
             assertNotEllipsized(t, extrasTag)
@@ -223,7 +231,7 @@ class OverviewTabSectionsTest {
             useUnmergedTree = true,
         ).assertExists()
         compose.onNode(
-            hasText("Medical", substring = true) and hasAnyAncestor(hasTestTag("pregnancyExtras-${row.id}")),
+            hasText("Medical", substring = true) and inTagged("pregnancyExtras-${row.id}"),
             useUnmergedTree = true,
         ).assertExists()
     }
