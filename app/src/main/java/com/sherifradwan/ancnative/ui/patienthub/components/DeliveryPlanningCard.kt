@@ -42,6 +42,7 @@ import com.sherifradwan.ancnative.ui.parseDeliveryNotes
 @Composable
 fun DeliveryPlanningCard(
     patient: DemoPatient,
+    canEdit: Boolean,
     modifier: Modifier = Modifier,
     onEditPatient: () -> Unit,
 ) {
@@ -81,18 +82,20 @@ fun DeliveryPlanningCard(
                         modifier = Modifier.semantics { heading() },
                     )
                 }
-                IconButton(
-                    onClick = onEditPatient,
-                    modifier = Modifier
-                        .minimumTouchTarget()
-                        .testTag("editDeliveryPlan"),
-                ) {
-                    Icon(
-                        Icons.Default.Edit,
-                        contentDescription = stringResource(R.string.edit_delivery_plan),
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp),
-                    )
+                if (canEdit) {
+                    IconButton(
+                        onClick = onEditPatient,
+                        modifier = Modifier
+                            .minimumTouchTarget()
+                            .testTag("editDeliveryPlan"),
+                    ) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = stringResource(R.string.edit_delivery_plan),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
                 }
             }
 

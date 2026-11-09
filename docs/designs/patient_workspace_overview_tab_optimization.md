@@ -3,246 +3,246 @@
 * **Author:** sherifrad
 * **Date:** 2026-11-09
 * **Status:** PROPOSED
+* **Reviewers:** none assigned yet
+* **Related:** the patient directory card RFC in `docs/designs/` (same visual language and "More actions" sheet)
 
 ---
 
 ## 1. Problem Statement & Background
 
 ### 1.1 The Clinical Problem
-In the native Android Antenatal Care EMR (`anc-emr-android-native`), the Patient Workspace `OverviewTab` acts as the primary landing surface when opening a maternal health chart. Currently, this screen stacks six heavy, independent vertical cards directly below the persistent `PatientHubHeader`:
-1. `GestationalDatingCard` (~180dp height)
-2. `ObstetricParityCard` (~140dp height)
-3. `MedicalHistoriesCard` (~220dp height)
-4. Prior Pregnancies timeline (`PreviousPregnancyCard` × N deliveries; ~120dp per child)
-5. `DeliveryPlanningCard` (~260dp height)
-6. `AttachmentsSectionCard` (~160dp height)
+In the native Android Antenatal Care EMR (`anc-emr-android-native`), the Patient Workspace `OverviewTab` is the landing screen when a maternal health chart opens. It stacks six bordered cards below the persistent `PatientHubHeader`. Heights below are estimates, not measurements:
+1. `GestationalDatingCard` (about 180dp)
+2. `ObstetricParityCard` (about 140dp)
+3. `MedicalHistoriesCard` (about 220dp)
+4. Prior pregnancies (`PreviousPregnancyCard` once per prior pregnancy; about 120dp each)
+5. `DeliveryPlanningCard` (about 260dp)
+6. `AttachmentsSectionCard` (about 160dp)
 
-On standard 360dp narrow mobile viewports, this architecture introduces severe clinical and usability defects:
-* **Information Duplication**: The persistent `PatientHubHeader` already displays real-time Gestational Age (`GA: 38w 3d`), EDD, Maternal Age, Gravida/Parity (`G2 P1`), Blood Group (`O+`), Allergies, and Clinical Attention flags. Stacking full Dating and Parity cards immediately below repeats these exact same metrics, consuming ~320dp of vertical viewport before novel clinical history appears.
-* **Prior Pregnancies Vertical Bloat**: For multiparous patients (e.g., G4 P3 A0), each past pregnancy is rendered in its own bordered card with full headers, borders, and dividers. This pushes subsequent clinical domains (such as planned Cesarean section details and attached laboratory PDFs) down beyond 1,200dp of scrolling.
-* **Card Fatigue & Visual Noise**: Six floating cards, each with distinct border strokes, tinted backgrounds, and separate elevations, fragment the clinical reading flow. Clinicians must visually parse multiple container boundaries rather than scanning a cohesive medical record.
+On a 360dp phone this causes three problems:
+* **Duplicated information.** `PatientHubHeader` already shows Gestational Age (expanded and collapsed), EDD, maternal age, Gravida/Parity, blood group, allergies and attention flags. The Dating and Parity cards repeat these, using about 320dp (180 + 140) before new history appears.
+* **Long prior-pregnancy stack.** Each prior pregnancy has its own bordered card. For a G4 P3 patient the three cards use about 360dp, pushing the delivery plan and attachments further down (the whole tab can pass 1,200dp, estimate).
+* **Many container boundaries.** Six cards each have a border, tint and elevation, so a clinician parses container edges while scanning the record.
 
 ---
 
 ## 2. Overview
 
-This design replaces the 6-card floating stack with a single calm, unified grouped canvas organized into four primary clinical domain sections separated by subtle semantic hairline dividers, plus a compact document gallery footer:
-1. **Pregnancy Dating & Authoritative Due Date**: Eliminates redundant hero GA badges; presents authoritative Estimated Due Date (EDD), calculation method pill, and clinician dating notes.
-2. **Obstetric Parity & Past Deliveries Timeline**: Unifies obstetric parity metrics (`G P A`) with a dual-tier, monospaced micro-tabular past delivery list (`Year · Mode · Outcome` / `GA · Weight · Doctor`), shrinking past delivery height from ~540dp to ~120dp on 360dp screens.
-3. **Medical, Surgical & Family Histories**: Features an unmissable high-contrast drug allergy callout container (`MaterialTheme.colorScheme.errorContainer`) at the section top, followed by structured medical, surgical, and family background summaries.
-4. **Delivery & Postpartum Management Plan**: Synthesizes planned delivery facility, attending clinician, intended delivery mode, and postpartum care strategy.
-5. **Documents & Attachments**: Preserves attached clinical scans and lab records as a clean thumbnail gallery at the canvas footer.
+This design replaces the first four cards (dating, parity, histories, prior pregnancies) with one continuous surface of three titled sections separated by hairline dividers. The existing `DeliveryPlanningCard` and `AttachmentsSectionCard` stay below them, unchanged, and are shared with `PlanTab.kt` (decided 2026-11-09, see §8 item 1):
+1. **Pregnancy Dating & Due Date**: Estimated Due Date (EDD) with its source, the dating method, and dating notes. GA is not repeated here because the header shows it.
+2. **Obstetric Parity & Previous Pregnancies**: parity (`G P A`) with a two-line row per previous pregnancy (`Year · Outcome · Mode` on line 1; place, doctor and recorded notes on line 2).
+3. **Medical, Surgical & Family Histories**: an allergy state at the top (recorded, explicitly none, or not recorded), then the medical, surgical and family histories.
+4. **Delivery & Postpartum Plan**: the existing `DeliveryPlanningCard`, unchanged (facility, plan, postpartum, fees, Rh alert). One implementation, shared with the Plan tab.
+5. **Documents & Attachments**: the existing `AttachmentsSectionCard`, unchanged (restyling it is out of scope).
 
 ---
 
 ## 3. Goals and Non-Goals
 
 ### 3.1 In-Scope Goals
-* **Unified Grouped Canvas**: Replace floating cards with a single continuous surface using standardized `ClinicalGroupSection` containers, domain-tinted 24dp icon capsules, and 0.75dp hairline dividers.
-* **Header De-duplication**: Strip out redundant Gestational Age calculations from the Overview tab body, reserving real-time GA strictly for the persistent header.
-* **Dual-Tier Past Deliveries Timeline**: Render prior pregnancies in a high-density, 40dp-height two-tier micro-row with monospaced tabular figures, ensuring zero horizontal text clipping on 360dp viewports.
-* **Non-Destructive Biometric Extraction**: Extract GA at delivery and birth weight safely from existing free-text fields (`otherDetails` and `outcomeText`) with clean `—` fallback, strictly preserving frozen Room database schema v6 without migrations.
-* **SAMD Safety & Touch Target Invariant**: Enforce strict $\ge 48\,\text{dp}$ touch bounding boxes for all interactive edit, delete, and add affordances.
+* **One surface instead of cards.** Sections 1 to 3 use a shared `ClinicalGroupSection` container with a 24dp icon capsule, a title, an optional action, and a 0.75dp divider.
+* **Header de-duplication.** The Overview body omits GA. `PatientHubHeader` shows GA in both its expanded and collapsed states (`PatientHubHeader.kt`). Print (`PatientPrintHtmlGenerator`) and share (`ClinicalSummaryGenerator`) are generated separately from the tab and already include GA; this design does not change them.
+* **Compact previous-pregnancy rows.** Each previous pregnancy is a two-line row with a minimum height of 48dp. Outcome and Mode are never truncated, checked by a Compose UI test at 360dp width and 1.3 font scale.
+* **Recorded text, not inferred values.** Line 2 of each row shows `placeAndDoctor` and `otherDetails` exactly as recorded. No GA or birth weight is inferred from free text (see §4.4).
+* **No loss of recorded history.** Every field the old `PreviousPregnancyCard` showed has a place in the new row or stays in the editor (see §4.3).
+* **Touch targets of at least 48dp** for every edit, delete and add control, using the existing `Modifier.minimumTouchTarget()` (`ui/Components.kt`).
 
 ### 3.2 Non-Goals (Out of Scope)
-* **Zero SQLite Migrations**: Room database schema v6 is 100% frozen; zero new columns or tables will be added to `AncDatabase`.
-* **Zero Cross-Tab Ingestion**: Overview remains scoped to maternal background, dating authority, parity, past deliveries, and plan snapshot; Visits, Scans, Labs, and Medications retain their dedicated tabs.
-* **No Backward-Compatibility Overhead**: No legacy shims or dead composables maintained (Rule 3: Zero Legacy Baggage).
+* **No database changes.** Room schema v6 is frozen: no new columns or tables without clinical sign-off (`AGENTS.md`, Core Architectural Constitution §4).
+* **No cross-tab content.** Visits, Scans, Labs and Medications keep their tabs.
+* **No compatibility shims.** Replaced composables are deleted, not kept as dead code (`AGENTS.md`, Constitution §3, Zero Legacy Baggage).
+* **No structured GA or birth weight.** Deferred 2026-11-09 by the owner: it needs a schema change and clinical sign-off. Line 2 of the previous-pregnancy row shows recorded text only. A separate change may revisit it.
+* **No restyle of the Documents card.** `AttachmentsSectionCard` is reused as is.
+* **SAMD** means Software as a Medical Device. The constraints in this document that cite it are the schema freeze, the 48dp touch targets, and the rule that clinically relevant history must be visible without an extra tap.
 
 ---
 
 ## 4. Technical Architecture & Component Hierarchy
 
+### 4.0 Existing code this design reuses
+| Need | Existing code |
+| :--- | :--- |
+| Prior-delivery counts and the "no prior deliveries" text | `previousDeliveryCounts`, `isStillbirth`, `isEarlyLoss`, `previousDeliverySummary` in `model/ObstetricHistory.kt` |
+| Rh negative test | `isRhNegative(bloodGroup: String?)` in `ui/ClinicalFormat.kt` (call it with `patient.bloodGroupText`) |
+| 48dp touch target | `Modifier.minimumTouchTarget()` in `ui/Components.kt` |
+| Parity display | `ObstetricParityBadge(gravida, parity, abortion)` |
+| Label and value rows | `FactRow` in `ui/Components.kt` |
+| Delete control | `DeleteIconButton` |
+| Documents card | `AttachmentsSectionCard` |
+| Delivery plan fields | `parseDeliveryNotes` in `ui/DeliveryNotesParser.kt` (`hospital`, `fees`, `plan`, `postpartum`) |
+
 ### 4.1 Component Architecture
-To enforce the **Rule of Reusability** and eliminate card fatigue, the UI is decomposed into modular composables under `ui/patienthub/components/`:
+New composables live under `ui/patienthub/components/`:
 
 ```mermaid
 graph TD
-    A["OverviewTab (Orchestrator)"] --> B["Section 1: PregnancyDatingSection"]
-    A --> C["Section 2: ParityAndDeliveriesSection"]
-    A --> D["Section 3: MedicalHistoriesSection"]
-    A --> E["Section 4: DeliveryPlanSection"]
-    A --> F["Section 5: AttachmentsFooterSection"]
+    A["OverviewTab (orchestrator)"] --> B["PregnancyDatingSection"]
+    A --> C["ParityAndDeliveriesSection"]
+    A --> D["MedicalHistoriesSection"]
+    A --> E["DeliveryPlanningCard (existing, shared with PlanTab)"]
+    A --> F["AttachmentsSectionCard (unchanged)"]
 
-    C --> C1["ObstetricParityBadge (G P A)"]
-    C --> C2["PastDeliveriesMicroTable"]
-    C2 --> C3["PastDeliveryMicroRow (Dual-Tier)"]
-    C3 --> C4["48dp Touch Targets (Edit / Delete)"]
+    C --> C1["ObstetricParityBadge (existing)"]
+    C --> C2["PastDeliveryMicroRow (one per previous pregnancy)"]
 
-    D --> D1["AllergyCalloutBanner (High Priority)"]
-    D --> D2["Structured History FactRows"]
+    D --> D1["Allergy state (shared function)"]
+    D --> D2["FactRows (existing)"]
 
-    E --> E1["Delivery Facility & Attending Obstetrician"]
-    E --> E2["Rh Incompatibility Alert (if Rh-)"]
 ```
 
-### 4.2 Standardized Container: `ClinicalGroupSection`
-All four sections are housed inside a canonical section container that replaces floating elevated cards with calm semantic separation:
+### 4.2 Section Container: `ClinicalGroupSection`
+Replaces the elevated cards for sections 1 to 3.
 
-```kotlin
-@Composable
-fun ClinicalGroupSection(
-    title: String,
-    icon: ImageVector,
-    iconTint: Color,
-    iconBgColor: Color,
-    actionButton: @Composable (() -> Unit)? = null,
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .background(iconBgColor, RoundedCornerShape(6.dp)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        icon,
-                        contentDescription = null,
-                        tint = iconTint,
-                        modifier = Modifier.size(15.dp),
-                    )
-                }
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-            actionButton?.invoke()
-        }
+* **Signature:** `ClinicalGroupSection(title: String, icon: ImageVector, iconTint: Color, iconBgColor: Color, actionButton: (@Composable () -> Unit)? = null, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit)`.
+* **Behaviour:**
+  * A header row: a 24dp rounded icon capsule (decorative, `contentDescription = null`), the title (`titleMedium`, bold, `Modifier.weight(1f)` so a long title wraps instead of pushing the action out), and the optional action.
+  * The title is marked `semantics { heading() }`. The action slot applies `Modifier.minimumTouchTarget()`.
+  * A 0.75dp `HorizontalDivider` (`outlineVariant`, decorative, no contrast requirement), then `content`.
+  * Callers pass the section's test tag through `modifier` (see §7.1 Phase C).
 
-        HorizontalDivider(
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
-            thickness = 0.75.dp,
-            modifier = Modifier.padding(bottom = 4.dp),
-        )
+### 4.3 Previous-Pregnancy Row (`PastDeliveryMicroRow`)
+* **Size and targets:** minimum height 48dp; it grows with content and font scale. The whole row is the edit target (`Modifier.minimumTouchTarget()`). A trailing `DeleteIconButton` is the only other control. Both are hidden when editing is not allowed (`!canEdit`), as the old card did. Line 1 may wrap to two lines. Line 2 is `maxLines = 2` with ellipsis; the full text is in the editor.
+* **Line 1:** `Year` (monospaced tabular figures; the existing typography token or font must be confirmed in Phase B), the Outcome chip, and the Mode text.
+* **Line 2:** place and doctor, then recorded notes, then any non-blank extras from the table below.
+* **Field mapping** (the implementer verifies against `PreviousPregnancyCard.kt` before coding):
 
-        content()
-    }
-}
-```
+| Row element | Source (`DemoPreviousPregnancy`) | Rule |
+| :--- | :--- | :--- |
+| Year | `dateText` | First 4-digit year in the text; if none, show `dateText` as recorded; if blank, "Date not recorded" |
+| Outcome chip | `outcome` (`LiveBirth`, `Stillbirth`, `EarlyPregnancyLoss`, `TerminationOfPregnancy`), else `outcomeText` | The label text is always shown; colour is never the only signal. Chip colour: `Stillbirth` uses `errorContainer`; `EarlyPregnancyLoss` uses `tertiaryContainer`; `LiveBirth`, `TerminationOfPregnancy` and free-text outcomes use the neutral `surfaceContainerHigh` |
+| Mode | `birthMethod`, else `deliveryBy` | Recorded text; blank is omitted. Counts elsewhere use `previousDeliveryCounts` |
+| Line 2: place and doctor | `placeAndDoctor` | As recorded |
+| Line 2: notes | `otherDetails` | As recorded |
+| Line 2: extras | `pregnancyType`, `lossManagement`, `terminationMethod` | Each shown as a labelled segment when non-blank, using the existing `PreviousPregnancyCard` labels |
+| Not shown in the row | `clinicianId`, `provenanceKind`, `recordedAt`, `updatedAt` | Unchanged in the editor |
 
-### 4.3 Dual-Tier Past Delivery Micro-Row (`PastDeliveryMicroRow`)
-To resolve the contradiction between displaying five data points and fitting inside 328dp usable width:
-
-* **Dimensions**: 40dp content height, expanded to 48dp minimum touch target with `Modifier.minimumTouchTarget()`.
-* **Visual Rhythm**:
-  * **Line 1 (Authoritative Milestones)**:
-    - `Year`: Monospaced badge (e.g., `2021`).
-    - `Outcome`: Status chip (e.g. `Live Birth` in calm green, `Early Loss` in muted rose).
-    - `Mode`: Bold label (e.g., `Cesarean Section (CS)` or `Spontaneous Vaginal (SVD)`).
-    - Trailing edit/delete action row.
-  * **Line 2 (Clinical Biometrics & Context)**:
-    - Gestational age: `GA 39w 2d` (or `—` fallback).
-    - Birth weight: `3,450g` (or `—` fallback).
-    - Place/Attending Doctor: `St. Mary's Hospital · Dr. Smith`.
-
-### 4.4 Non-Destructive Biometric Parsing
-Since schema v6 has no dedicated columns, a zero-cost utility safely extracts metrics from `otherDetails` and `outcomeText`:
-
-```kotlin
-data class ParsedDeliveryBiometrics(
-    val gaText: String?,
-    val weightText: String?,
-)
-
-fun extractDeliveryBiometrics(otherDetails: String?, outcomeText: String?): ParsedDeliveryBiometrics {
-    val combined = "${otherDetails.orEmpty()} ${outcomeText.orEmpty()}"
-    val gaMatch = Regex("""\b(\d{1,2}(?:\+\d)?\s*(?:w|wks|weeks?))\b""", RegexOption.IGNORE_CASE).find(combined)?.groupValues?.get(1)
-    val weightMatch = Regex("""\b(\d(?:\.\d{1,2})?\s*(?:kg|kilos?)|[1-5]\d{3}\s*g(?:rams?)?)\b""", RegexOption.IGNORE_CASE).find(combined)?.groupValues?.get(1)
-    return ParsedDeliveryBiometrics(
-        gaText = gaMatch,
-        weightText = weightMatch,
-    )
-}
-```
+### 4.4 No Parsing of GA or Birth Weight
+GA at delivery and birth weight have no structured fields. This design does not infer them from `otherDetails` or `outcomeText`: a text pattern cannot tell "39w" at delivery from "2 weeks postpartum" or a drug dose, and a wrong value would look like a recorded one. Line 2 shows the recorded text instead. Structured biometrics need a schema change, which is a separate proposal that requires clinical sign-off.
 
 ### 4.5 Section Breakdown & Data Mapping
 
-1. **Pregnancy Dating Section**:
-   - `agreedEdd ?: ultrasoundEdd ?: calculateEstimatedDueDate()`
-   - Method tag: `datingMethod` (Ultrasound, LMP, IVF)
-   - Underlying parameters: LMP date, IVF transfer date / embryo age
-   - Readable paragraph text: `dating.notes`
-2. **Parity & Past Deliveries Section**:
-   - `ObstetricParityBadge(g = patient.gravida, p = patient.parity, a = patient.abortion)`
-   - Nulliparous guard: If `previousPregnancies.isEmpty()`, display *"Primigravida · No prior deliveries recorded"*.
-   - Timeline: `items(patient.previousPregnancies)` rendered via `PastDeliveryMicroRow`.
-   - Notes: `patient.obstetricNotes` rendered via `FactRow` at section bottom.
-3. **Medical Histories Section**:
-   - Allergy Alert: If `!patient.allergyHistory.isNullOrBlank()`, renders high-contrast warning banner at the top of the section; otherwise displays calm *"No Known Drug Allergies (NKDA)"*.
-   - Medical History (`patient.medicalHistory`).
-   - Surgical History (`patient.surgicalHistory`).
-   - Family History (`patient.familyHistory`).
-4. **Delivery & Postpartum Plan Section**:
-   - Planned Facility (`parsed.hospital`).
-   - Attending Clinician (`parsed.doctor`).
-   - Intended Mode (`parsed.deliveryPlan`).
-   - Rh Incompatibility Warning: Elevated warning if `isRhNegative(patient.bloodGroup)`.
-   - Postpartum & Contraception notes.
-5. **Documents & Attachments Section**:
-   - Clean, compact horizontal preview strip using existing `AttachmentsSectionCard` logic, avoiding vertical card bloat.
+1. **Pregnancy Dating Section**
+   - EDD: `agreedEdd ?: ultrasoundEdd ?: calculateEstimatedDueDate()`, labelled with its source (agreed, ultrasound, or calculated).
+   - Method tag: `datingMethod` with values `LMP`, `Ultrasound`, `IVF_TRANSFER`, `Clinical` (`ClinicalModels.kt`).
+   - Parameters: LMP date; IVF transfer date and embryo age (shown when the method is `IVF_TRANSFER`).
+   - Notes: `dating.notes`.
+2. **Parity & Previous Pregnancies Section**
+   - `ObstetricParityBadge(patient.gravida, patient.parity, patient.abortion)`.
+   - If `previousPregnancies` is empty, show `previousDeliverySummary(patient)`. The word "Primigravida" appears only when `gravida` is 1 or less. If G/P/A and the list disagree, show the existing summary, not a derived label.
+   - Rows: `patient.previousPregnancies.forEach { PastDeliveryMicroRow(...) }` inside the section `Column`. There is no lazy list, because the tab is one `verticalScroll`. Expected size is at most about 10 rows.
+   - Notes: `patient.obstetricNotes` through `FactRow` at the section bottom.
+3. **Medical Histories Section**
+   - Allergy state comes from one shared function with three results: `NotRecorded` (blank), `ExplicitlyNone`, `Recorded(text)`. The function is extracted from the inline test in `ui/Components.kt` (directory card), and the directory card, `PatientHubHeader` and this section all call it.
+   - `NotRecorded` shows the existing `not_recorded` string. `ExplicitlyNone` shows the calm no-allergy line, and only when the whole entry is a negation (for example exactly "NKDA", "None", "No known drug allergies"). An entry that continues with other text ("No known allergies except penicillin") is `Recorded`. The current inline test uses `contains`, which would hide such an allergy, so the shared function is stricter. `Recorded` shows the `errorContainer` banner at the section top.
+   - Then `patient.medicalHistory`, `patient.surgicalHistory`, `patient.familyHistory`.
+4. **Delivery & Postpartum Plan**
+   - `DeliveryPlanningCard`, unchanged except the new `canEdit` gate (see §4.6), and still also used by `PlanTab.kt`. It already provides the parsed facility, plan, postpartum and fees fields, `not_recorded` for missing values, and the Rh alert through `isRhNegative(patient.bloodGroupText)`. No new composable, string or parser change.
+5. **Documents & Attachments**
+   - `AttachmentsSectionCard`, unchanged (still also used by `PlanTab.kt`).
+
+### 4.6 Signatures and Events
+* Each section composable takes plain callbacks, or `null` when `!canEdit`. `OverviewTab` keeps building the `AncEvent`s it builds today: `StartDatingEditor`, `StartPregnancyEditor`, `StartPatientEditor` and `RequestDelete`.
+* Edit gating for `DeliveryPlanningCard`: decided 2026-11-09. The card gets a `canEdit: Boolean` parameter and shows the `editDeliveryPlan` button only when it is true. `OverviewTab` and `PlanTab` (which already receives `canEdit`) both pass it. This fixes the Plan tab, which today shows the edit button for read-only and archived patients.
+* Rule 1 (one implementation per clinical entity): decided 2026-11-09. Overview and `PlanTab.kt` both call `DeliveryPlanningCard`; there is no second Delivery Plan composable.
 
 ---
 
 ## 5. Alternatives Considered
 
-| Alternative | Evaluation | Technical & Clinical Rationale |
-| :--- | :--- | :--- |
-| **Keep Floating Cards with Reduced Padding** | **Rejected by author** | Retaining individual bordered cards with adjusted padding fails to eliminate card fatigue and visual noise; container borders, separate background surfaces, and elevations consume ~96dp of useless vertical padding on mobile screens. |
-| **Strict 5-Column Single-Line Grid Table** | **Rejected by author** | Attempting to force `Year | Mode | Outcome | GA | Birth Weight` into a single horizontal row requires ~440dp width. On 360dp mobile viewports (usable width: 328dp), column text suffers critical truncation into unreadable abbreviations (`Liv...`, `Vag...`) or requires clunky horizontal scrolling. |
-| **Collapsible / Accordion Past Deliveries** | **Rejected by author** | Hiding prior pregnancies behind an expand/collapse toggle violates SAMD clinical safety principles by concealing uterine scar history (e.g., prior Cesarean sections) and previous severe obstetric complications behind required clicks. |
-| **Adding Dedicated Database Columns for GA & Birth Weight** | **Rejected by author** | Violates the frozen Room database schema v6 constitutional rule. Altering entity tables would trigger SQLite schema migrations and hash invalidation without clinical regulatory sign-off. Regex extraction from existing free-text fields achieves the same visual outcome with zero migration overhead. |
-| **Unbounded Canvas without Section Headers or Dividers** | **Rejected by author** | Removing all visual boundaries and rendering a continuous stream of text causes distinct clinical domains (Dating, Parity, Histories, Plan) to blur together into an un-scannable wall of text. Standardized `ClinicalGroupSection` containers with domain-tinted icon capsules and 0.75dp hairline dividers provide necessary visual scaffolding. |
+| Alternative | Decision and evidence |
+| :--- | :--- |
+| **Keep the cards with less padding** | Rejected. Borders, separate surfaces and elevations cost an estimated 96dp of padding and keep six container boundaries. |
+| **Single-line 5-column table** | Rejected. `Year / Mode / Outcome / GA / Birth Weight` in one row needs an estimated 440dp. At 328dp usable width the text truncates ("Liv...", "Vag...") or needs horizontal scrolling. |
+| **Collapsible previous pregnancies** | Rejected. Prior Cesarean and complication history must be visible without a tap. |
+| **Add GA and birth weight columns** | Rejected. Room validates a schema identity hash; any entity change needs a version bump and migration, which the constitution forbids without clinical sign-off. Parsing free text instead was also rejected (§4.4): it can show wrong values as fact. |
+| **Structured GA and weight entry in the pregnancy editor** | Deferred. It needs sign-off or a free-text convention that users can edit away. Revisit with the schema proposal. |
+| **Flatten the existing cards** (no border, hairline divider, duplicated fields removed) | Open (see §8). It reuses cards and their tags and `canEdit` handling, and would shrink the file list. Not yet compared with measurements. |
+| **No section headers or dividers** | Rejected. Dating, Parity, Histories and Plan run together without boundaries. |
 
 ---
 
-## 6. Detailed Implementation Plan
+## 6. Risks & Mitigations
 
-### 6.1 Single Unified Execution List
-1. **Model Layer**:
-   - Add `ParsedDeliveryBiometrics` and `extractDeliveryBiometrics(otherDetails, outcomeText)` in `model/ClinicalModels.kt`.
-   - Add unit tests in `test/java/com/sherifradwan/ancnative/model/DeliveryBiometricsParsingTest.kt` verifying pattern extraction (`39w`, `3.4kg`, `3400g`) and fallbacks.
-2. **Design System & Components**:
-   - Create `ui/patienthub/components/ClinicalGroupSection.kt`: canonical section container with 24dp domain capsule, title, action slot, hairline divider, and content.
-   - Create `ui/patienthub/components/PastDeliveryMicroRow.kt`: dual-tier past delivery micro-row with monospaced Year badge, Outcome status chip, Mode text, biometrics secondary row, and 48dp touch targets.
-   - Create `ui/patienthub/components/OverviewSections.kt`: modular section implementations for `PregnancyDatingSection`, `ParityAndDeliveriesSection`, `MedicalHistoriesSection`, and `DeliveryPlanSection`.
-3. **Screen Orchestrator Refactor**:
-   - Refactor `ui/patienthub/tabs/OverviewTab.kt`: replace the 6-card vertical stack with the unified grouped canvas using the modular sections. Keep file size under 180 lines (Rule 2: Anti-Spaghetti Invariant).
-   - Retain legacy test tags (`datingCard`, `obstetricParityCard`, `medicalHistoriesCard`, `deliveryPlanningCard`, `editDating`, `addPregnancyButton`) directly on section containers to preserve 100% test suite compatibility.
-4. **Strings & Localization**:
-   - Add string resources in `res/values/strings.xml` for `primigravida_no_prior_deliveries`, `past_deliveries_title`, `delivery_mode_label`, `birth_weight_label`.
-5. **Verification & Delivery**:
-   - Run full unit test suite `./gradlew testDebugUnitTest`.
-   - Build debug APK with `./gradlew assembleDebug`.
-   - Install on physical device (Honor DNY-NX9) via ADB.
-   - Capture live screenshots of multiparous (Maya) and nulliparous (Elena) charts to verify dual-tier layout, zero horizontal truncation, and clean visual rhythm.
+| Risk | Mitigation |
+| :--- | :--- |
+| Removed fields hide history | Field mapping in §4.3; extras shown on line 2; unchanged editor |
+| Allergy shown wrongly (red alert for "no allergy", or "none" for a blank field) | Three states from one shared function, with a unit test including "No known allergies except penicillin" |
+| Row clips at 360dp or large fonts | Minimum height, wrapping, Compose UI test at 360dp and 1.3 font scale |
+| Existing tests break | Tag table in §7.1 Phase C; instrumented tests run before and after |
+| Many previous pregnancies | Plain `Column`/`forEach`, stated expected size, same scrolling as today |
+| Wrong value shown as recorded | No inferred values (§4.4) |
+| Revert | One change set; `git revert` restores the six cards. No data or schema changes |
 
-### 6.2 Enumerated Files Touched
+---
+
+## 7. Detailed Implementation Plan
+
+### 7.1 Phases
+Each phase leaves the build green. Strings are added in Phase A because later phases use them.
+
+**Phase A: shared logic and strings**
+1. Extract the allergy-state function from `ui/Components.kt` and call it from the directory card and `PatientHubHeader` (changing their blank-as-NKDA behaviour). Add unit tests for blank, "NKDA", "None", "No known drug allergies", and "No known allergies except penicillin".
+2. Add string resources. Reuse: `previous_pregnancies`, `no_previous_pregnancies`, `no_allergy_history`, `not_recorded`, `historical_delivery_mode`, `place_and_doctor`, `other_details`, `ga_prefix`. Add, with exact English values: the three section titles, the allergy banner label, and content descriptions for edit and delete.
+3. Exit: `./gradlew testDebugUnitTest`.
+
+**Phase B: new composables, not wired**
+1. Create `ClinicalGroupSection.kt`, `PastDeliveryMicroRow.kt`, `OverviewSections.kt` (one file per section if it passes 400 lines; ceiling 1,500 lines per `AGENTS.md`). Confirm the tabular-figures font or typography token.
+2. Exit: `./gradlew assembleDebug`.
+
+**Phase C: swap and delete**
+1. Refactor `OverviewTab.kt` to the three new sections plus the existing `DeliveryPlanningCard` and `AttachmentsSectionCard`. Budget: at most 180 lines (152 today); it keeps the `AncEvent` construction.
+2. Delete `GestationalDatingCard`, `ObstetricParityCard`, `MedicalHistoriesCard` and `PreviousPregnancyCard` (grep confirmed `OverviewTab.kt` is the only caller). `DeliveryPlanningCard` and `AttachmentsSectionCard` stay because `PlanTab.kt` uses them.
+3. Keep every existing test tag:
+
+| Tag | Carried by after the change |
+| :--- | :--- |
+| `datingCard`, `obstetricParityCard`, `medicalHistoriesCard` | The matching section container, through its `modifier` |
+| `editDating`, `addPregnancyButton` | The same buttons, now in the section action slot |
+| `pregnancy-<id>` | Outer container of `PastDeliveryMicroRow` |
+| `editPregnancy-<id>` | Inner clickable content node of the row (a different node from the outer container) |
+| `delete-previous_pregnancy-<id>` | `DeleteIconButton`, unchanged |
+| `deliveryPlanningCard`, `editDeliveryPlan`, `deliveryHospital`, `deliveryFees`, `deliveryPlan`, `deliveryPostpartum` | `DeliveryPlanningCard`, unchanged |
+| `obstetricParityBadge` | `ObstetricParityBadge`, unchanged |
+| `attachmentsSectionCard`, `addAttachmentBtn` | `AttachmentsSectionCard`, unchanged |
+
+4. Add a Compose UI test for the row at 360dp width and 1.3 font scale (Outcome and Mode not truncated), and tests for the empty-list summary and the three allergy states. The Rh alert is covered by the existing card.
+5. Exit: `./gradlew testDebugUnitTest` and `./gradlew connectedDebugAndroidTest` (or `.agents/scripts/run_emulator_test_class.sh`). Instrumented tests that use these tags and must keep passing: `AncWorkflowTest` (`editDating`, `deliveryPlanningCard`) and `DeleteUndoUiTest` (`pregnancy-` prefix). `PatientHubPureModelTest` is a JVM unit test under `app/src/test/.../ui/patienthub/model/` and runs in the unit-test step. `PatientHubDesignTest` exists in `androidTest` but does not reference these tags (checked by grep); run it anyway as a regression check.
+
+**Phase D: device check (advisory)**
+1. Install the debug build on the physical device (Honor DNY-NX9) with ADB.
+2. Screenshot a seeded multiparous patient and a seeded nulliparous patient at 360dp (name the fixture ids from `DemoFixtures.kt`) and check the layout.
+
+### 7.2 Enumerated Files Touched
 
 | File Path | Action | Rationale |
 | :--- | :--- | :--- |
-| [`app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt) | **MODIFIED** | Add non-destructive `extractDeliveryBiometrics` helper to safely parse GA and weight from existing free-text fields without Room schema v6 changes. |
-| [`app/src/test/java/com/sherifradwan/ancnative/model/DeliveryBiometricsParsingTest.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/test/java/com/sherifradwan/ancnative/model/DeliveryBiometricsParsingTest.kt) | **CREATED** | Unit tests verifying regex extraction across various clinical input notations (`39w 2d`, `3.5kg`, `3500g`, empty/null). |
-| [`app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalGroupSection.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalGroupSection.kt) | **CREATED** | Canonical reusable section container with domain-tinted icon capsule, bold title, action slot, and 0.75dp hairline divider. |
-| [`app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PastDeliveryMicroRow.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PastDeliveryMicroRow.kt) | **CREATED** | Dual-tier micro-row composable displaying past delivery milestones on Tier 1 and biometrics on Tier 2 with $\ge 48\,\text{dp}$ touch targets. |
-| [`app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt) | **CREATED** | Modular domain sections for Dating, Parity & Past Deliveries, Medical Histories, and Delivery Plan. |
-| [`app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt) | **MODIFIED** | Refactored screen orchestrator consuming modular sections on a unified canvas (~150 lines, down from bloated card stack). |
-| [`app/src/main/res/values/strings.xml`](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/res/values/strings.xml) | **MODIFIED** | String resources for primigravida note, delivery labels, and section headings. |
+| `app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt` | **MODIFIED** | Extract the shared allergy-state function; directory card uses it |
+| `app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt` | **MODIFIED** | Header allergy display uses the shared function |
+| `app/src/test/java/com/sherifradwan/ancnative/ui/AllergyStateTest.kt` (proposed) | **CREATED** | Unit tests for the three allergy states |
+| `app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalGroupSection.kt` (proposed) | **CREATED** | Section container |
+| `app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PastDeliveryMicroRow.kt` (proposed) | **CREATED** | Previous-pregnancy row |
+| `app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt` (proposed) | **CREATED** | Dating, Parity and Medical Histories sections |
+| `app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt` | **MODIFIED** | Orchestrator on the new sections |
+| `app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/GestationalDatingCard.kt` | **DELETED** | No remaining callers |
+| `app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ObstetricParityCard.kt` | **DELETED** | No remaining callers |
+| `app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicalHistoriesCard.kt` | **DELETED** | No remaining callers |
+| `app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PreviousPregnancyCard.kt` | **DELETED** | No remaining callers |
+| `app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt` | **MODIFIED** | Add `canEdit` and hide `editDeliveryPlan` when false; otherwise unchanged. Reused by Overview and `PlanTab.kt` |
+| `app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt` | **MODIFIED** | Pass `canEdit` to `DeliveryPlanningCard` |
+| `app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/AttachmentsSectionCard.kt` | **UNCHANGED** | Reused by Overview and `PlanTab.kt` |
+| `app/src/androidTest/java/com/sherifradwan/ancnative/` (new Compose test for the row) | **CREATED** | 360dp, 1.3 font scale |
+| `app/src/main/res/values/strings.xml` | **MODIFIED** | New keys listed in Phase A |
+
+Paths checked on 2026-11-09: all six card files exist at the paths above. Callers (grep): the four deleted cards are called only from `OverviewTab.kt`; `DeliveryPlanningCard` from `OverviewTab.kt` and `PlanTab.kt`; `AttachmentsSectionCard` from `OverviewTab.kt` and `PlanTab.kt`.
+
+---
+
+## 8. Open Questions
+
+1. **Delivery Plan duplication.** Evidence (checked 2026-11-09): `PlanTab.kt` already renders `DeliveryPlanningCard` and `AttachmentsSectionCard` in full, and `OverviewTab.kt` renders the same two. `DeliveryPlanningCard` (173 lines) already parses `obstetricNotes` with `parseDeliveryNotes`, applies the Rh check (`isRhNegative`), and carries the tags `deliveryPlanningCard`, `editDeliveryPlan`, `deliveryHospital`, `deliveryFees`, `deliveryPlan`, `deliveryPostpartum`. A new `DeliveryPlanSection` would be a third copy of that content. **Decided 2026-11-09 by the owner: option (a).** Options were: (a) the Overview calls the existing `DeliveryPlanningCard` unchanged and the design needs no `DeliveryPlanSection` or Rh alert text; (b) a new shared composable replaces the card in both tabs; (c) the Overview drops the plan snapshot because the Plan tab has it (contradicts §3.2). This decides the file list.
+2. **Delivery Plan edit gating.** Decided 2026-11-09 by the owner: gate `onEditPatient` by `canEdit` (see §4.6).
+3. **Outcome chip colours.** Decided 2026-11-09 (accepted review proposal): `Stillbirth` uses `errorContainer`, `EarlyPregnancyLoss` uses `tertiaryContainer`, all others use the neutral `surfaceContainerHigh` (see §4.3). Both severity colours are already used in `BedsideVitalsGrid.kt` and `PatientHubHeader.kt`.
+4. **Section title.** Decided 2026-11-09: keep the existing `previous_pregnancies` string. Losses and terminations are shown by the Outcome chip.
+5. **Print or share.** Closed: print and share are separate generators that already include GA (`PatientPrintHtmlGenerator.kt:1058`, `ClinicalSummaryGenerator.kt:22-23`); the design does not change them.
+6. **Schema.** Closed 2026-11-09: structured GA and birth weight are deferred as a non-goal (see §3.2).
+7. **Documents card.** Closed: see §3 Non-Goals.

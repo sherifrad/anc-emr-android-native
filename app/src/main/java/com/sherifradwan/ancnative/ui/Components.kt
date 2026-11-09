@@ -242,17 +242,12 @@ fun ClinicalPatientCard(
                         }
 
                         // 7. Allergy Status
-                        val allergies = patient.allergyHistory
-                        val allergyClean = allergies?.trim()
-                        val isNoAllergy = allergyClean.isNullOrBlank() ||
-                            allergyClean.contains("NKDA", ignoreCase = true) ||
-                            allergyClean.contains("No known", ignoreCase = true) ||
-                            allergyClean.equals("None", ignoreCase = true) ||
-                            allergyClean.equals("No", ignoreCase = true)
-                        val (allergyLabel, isAlert) = if (isNoAllergy) {
-                            "NKDA" to false
-                        } else {
-                            allergyClean!! to true
+                        val allergy = classifyAllergy(patient.allergyHistory)
+                        val isAlert = allergy is AllergyState.Recorded
+                        val allergyLabel = when (allergy) {
+                            is AllergyState.Recorded -> allergy.text
+                            AllergyState.ExplicitlyNone -> stringResource(R.string.no_allergy_history)
+                            AllergyState.NotRecorded -> stringResource(R.string.not_recorded)
                         }
                         Surface(
                             shape = RoundedCornerShape(6.dp),

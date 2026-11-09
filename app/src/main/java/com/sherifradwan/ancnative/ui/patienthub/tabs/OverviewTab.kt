@@ -131,6 +131,7 @@ fun OverviewTab(
         // 5. Delivery Planning Card Snapshot
         DeliveryPlanningCard(
             patient = patient,
+            canEdit = canEdit,
             onEditPatient = {
                 onEvent(
                     AncEvent.StartPatientEditor(

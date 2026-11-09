@@ -44,6 +44,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
+import com.sherifradwan.ancnative.ui.AllergyState
 import com.sherifradwan.ancnative.ui.BloodGroupBadge
 import com.sherifradwan.ancnative.ui.GestationalAgeBadge
 import com.sherifradwan.ancnative.ui.ObstetricParityBadge
@@ -51,6 +52,7 @@ import com.sherifradwan.ancnative.ui.TagHighRiskBg
 import com.sherifradwan.ancnative.ui.TagHighRiskDarkBg
 import com.sherifradwan.ancnative.ui.TagHighRiskText
 import com.sherifradwan.ancnative.ui.TagHighRiskDarkText
+import com.sherifradwan.ancnative.ui.classifyAllergy
 import com.sherifradwan.ancnative.ui.isDarkTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -286,17 +288,23 @@ fun PatientHubHeader(
                         if (!patient.bloodGroupText.isNullOrBlank()) {
                             BloodGroupBadge(patient.bloodGroupText)
                         }
-                        if (!patient.allergyHistory.isNullOrBlank()) {
+                        val allergy = classifyAllergy(patient.allergyHistory)
+                        if (allergy !is AllergyState.NotRecorded) {
+                            val isAlert = allergy is AllergyState.Recorded
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
-                                color = MaterialTheme.colorScheme.errorContainer,
+                                color = if (isAlert) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
                                 modifier = Modifier.height(24.dp),
                             ) {
                                 Text(
-                                    text = "Allergy: ${patient.allergyHistory}",
+                                    text = if (allergy is AllergyState.Recorded) {
+                                        "Allergy: ${allergy.text}"
+                                    } else {
+                                        stringResource(R.string.no_allergy_history)
+                                    },
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                    color = if (isAlert) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),

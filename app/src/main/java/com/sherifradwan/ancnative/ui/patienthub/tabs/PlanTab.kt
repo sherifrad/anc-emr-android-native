@@ -37,6 +37,7 @@ fun PlanTab(
         // Full Delivery Planning Card
         DeliveryPlanningCard(
             patient = patient,
+            canEdit = canEdit,
             onEditPatient = {
                 onEvent(
                     AncEvent.StartPatientEditor(

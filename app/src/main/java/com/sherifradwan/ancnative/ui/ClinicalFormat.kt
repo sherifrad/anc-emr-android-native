@@ -13,6 +13,42 @@ internal fun isRhNegative(bloodGroup: String?): Boolean {
         Regex("\\b(neg|negative|minus)\\b").containsMatchIn(raw)
 }
 
+/** What the allergy field says: nothing entered, an explicit "none", or a real recorded allergy. */
+sealed interface AllergyState {
+    data object NotRecorded : AllergyState
+    data object ExplicitlyNone : AllergyState
+    data class Recorded(val text: String) : AllergyState
+}
+
+private val WhitespaceRun = Regex("\\s+")
+
+private val NoAllergyPhrases = setOf(
+    "nkda",
+    "nka",
+    "none",
+    "no",
+    "nil",
+    "no known allergies",
+    "no known drug allergies",
+    "no known drug allergies (nkda)",
+    "no known allergy",
+    "no allergies",
+)
+
+/**
+ * Classifies a free-text allergy entry. Only an entry that is wholly a known "no allergy" phrase is
+ * [AllergyState.ExplicitlyNone]; anything with other content stays [AllergyState.Recorded] so an
+ * allergy is never hidden.
+ */
+internal fun classifyAllergy(raw: String?): AllergyState {
+    val text = raw?.trim().orEmpty()
+    if (text.isEmpty()) return AllergyState.NotRecorded
+    val key = text.trimEnd { it == '.' || it.isWhitespace() }
+        .replace(WhitespaceRun, " ")
+        .lowercase(java.util.Locale.ROOT)
+    return if (key in NoAllergyPhrases) AllergyState.ExplicitlyNone else AllergyState.Recorded(text)
+}
+
 /** Mirror of [isRhNegative]: true only for an explicit Rh positive group; blank/null/"pending" are not. */
 internal fun isRhPositive(bloodGroup: String?): Boolean {
     val raw = bloodGroup?.trim()?.replace('\u2212', '-')?.lowercase() ?: return false
