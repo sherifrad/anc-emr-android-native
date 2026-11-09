@@ -1,0 +1,45 @@
+**Dating section review: FIX-NEEDED**
+
+The shared rule in `DatingSummary.kt` and `DatingText.kt` matches the spec. The problems are in places that still bypass it or hide data.
+
+**Blocker**
+- `ui/patienthub/components/DeliveryPlanningCard.kt:119`: this card is shown on the Overview (`OverviewTab.kt:114`) and the Plan tab, and it still computes its own EDD (`agreedEdd ?: ultrasoundEdd`), as a raw ISO date, under the label "Agreed clinical EDD". Take an LMP patient with no agreed EDD and a scan EDD that disagrees. The Dating card shows the LMP due date, while this tile shows the scan due date labelled as "agreed". That is two different due dates on one screen, one of them mislabelled. An LMP-only patient gets "Not recorded" here even though an EDD exists. This breaks U5 ("the Overview uses the shared EDD"). It was already there before this change but the change did not fix it.
+
+**Major**
+- `DeliveryPlanningCard.kt:112`: the "Current gestational age" tile on the Overview and Plan tabs has no `??` marker, so a discordant patient's current GA appears there with no warning (spec item 5).
+- `ui/report/PatientPrintHtmlGenerator.kt:1240`: "Target Delivery Timing" still reads the raw `agreedEdd`. A printed report for an LMP-only patient says "Not recorded" there while the dating box on the same page prints an EDD. This contradicts U6 ("print uses the same summary").
+- `model/DatingText.kt:29-44` and `OverviewSections.kt:866`: a scan EDD that differs from the agreed EDD is now hidden. Example: method Ultrasound, scan EDD 24/03, agreed 15/03. The card shows "EDD 15/03 · Method by ultrasound". There is no alert because D5 clears it for Ultrasound, and 24/03 appears nowhere. The old card showed an "Ultrasound EDD" row in this case. An agreed EDD that differs from the LMP or ET due date, with no scan EDD, is just as invisible. This follows the spec as written, so it needs an owner decision, not just a code fix.
+- `model/DatingSummary.kt:31,55` (rule D2): with no scans, the anchor is today, and the gap itself does not depend on the anchor date. So the tier limit widens as the pregnancy goes on. A 12-day gap alerts at day 150 (limit 10) and silently stops alerting at day 154 (limit 14), with no data change. The `??` disappears over time. This also follows the spec and needs an owner decision.
+- `model/DatingSummary.kt:34-40`: if a `transferDate` (and embryo age) is recorded but the method is not IVF (null, LMP, unknown), the transfer date is no longer shown anywhere. The old card always showed it. If the LMP is also blank, the origin becomes None and the engine's EDD falls through to null.
+- `ui/GestationalBanner.kt:38,46`: `GestationalBanner` has no callers in `app/src/main`, so the banner `??` exists only in the test. Its new `earliestScanDate = null` default quietly anchors at today. Any future caller would get a different tier from the header and list, which anchor on the earliest scan. Under the "Zero Legacy Baggage" rule it should be deleted, or the parameter made required.
+- `patientdirectory/PatientDirectoryMetricsRow.kt:55-66` (U7, not run): the GA text, `??` and "Post" badge sit in a single non-wrapping row inside a one-third-width column. At 360dp and 1.3x font scale, a post-term discordant patient may get the `??` clipped to "?" or squeezed to nothing. The only 360dp test covers the dating card, not the list row, header or sticky bar.
+- Test gap, `OverviewTabSectionsTest.kt:242-258`: the marker tests only render the unused banner. Nothing tests the `??` in the header, sticky bar, patient cards or list row, or its absence on visit and scan GA badges. The code does look right for those: `VisitsTab.kt:167` and `ScansTab.kt:160` use the default `discordant = false`.
+
+**Nit**
+- `model/DatingText.kt:21-24,31,41,43`: labels ("LMP", "Confirmed EDD", "by ultrasound", "Method") are hard-coded English and replace string resources; four string resources were deleted. There is no `values-ar` today, so this blocks future localisation and RTL but breaks nothing now.
+- `model/DatingSummary.kt:55`: if the earliest scan predates the LMP (wrong date or a scan from an earlier pregnancy), dating GA is negative and the strictest limit (5 d) applies, which can raise a false alert. If every scan is dated in the future (a typo), the 21-day limit applies and can hide real gaps. Neither case is guarded.
+- `GestationalAgeEngine.kt:34-48`: trimming the method before matching changes the EDD for stored values like `" LMP "`. They used to fall to the "other" branch (scan EDD first), and now give the LMP due date. "US" now shows as "by ultrasound" and also clears the alert under D5. Both are intended by the spec, but they are silent EDD changes. The fix for upper-casing in Turkish (`Locale.ROOT`) is an improvement.
+- `OverviewSections.kt:852` and `PatientHubHeader.kt:786`: `remember(patient) { …LocalDate.now() }` does not refresh after midnight, so a no-scan patient's alert tier can be a day stale.
+- `Components.kt:225,411` and `PatientListScreen.kt:735`: the summary is recomputed on every recomposition, and each time it scans all of the patient's scans. That is a small cost in a list. Separately, `Components.kt:226` computes GA as of "now" while the marker uses `asOfDate`; that mismatch was already there.
+- `PatientListScreen.kt:717`: `isDatingDiscordant` defaults to `false`, so any other code that builds this row silently shows no marker.
+
+**Checked and passing**
+- **Oracles:** O1–O4, E1–E2, M1 and D1–D7 all match the spec and its Clarifications. That includes keeping the sign, strictly-greater at the limit, the tier boundaries 62/63 through 195/196, a malformed agreed EDD not clearing the alert, and never throwing.
+- **Discordance maths:** the gap equals LMP due date minus scan due date, as D3 requires.
+- **Old parsers removed:** the old method parser `datingMethodLabelRes` is gone, and no second parser remains.
+- **Formatting:** dates use dd/mm/yyyy via `Locale.ROOT`. The non-breaking space is a real U+00A0 in both `DatingText.kt` and the strings resource. Print escaping is applied once and no raw method codes are printed.
+- **Accessibility and contrast:** the `??` contrast works out at about 9:1 in light mode and 7:1 in dark mode (computed from the colour tokens, not measured on a device). The marker is text with a content description, not colour alone. The alert uses an amber tone distinct from the red high-risk banner and has no button.
+- **Layout and size:**
+  - The Overview adds no lazy list inside a scroll.
+  - The print generator is 1,278 lines and every other changed UI file is under the 1,500-line ceiling.
+  - No schema change.
+
+**Not checked**
+- I did not build the app or run any tests.
+- I did not render anything at 360dp, at 1.3x, in RTL or in dark mode; all layout findings come from reading the code.
+- I did not compare against the mock visually, only its strings.
+- I read only the changed parts of `PatientPrintHtmlGenerator`, `ClinicalSummaryGenerator`, `PatientListScreen` and `PatientHubHeader`.
+- I did not check intake and editor auto-fill (`IntakeDatingRule`, `DatingDraftRule`) beyond confirming they write `agreedEdd`.
+- I did not check whether `ultrasoundScans` can include deleted scans or scans from another pregnancy, which would affect the anchor date.
+
+Verdict: **FIX-NEEDED**

@@ -76,3 +76,16 @@ Edits under `app/src` are level 3: frontier review plus an independent test revi
 - A malformed `agreedEdd` does not clear the alert (D5 compares parsed dates only).
 - The aliases "US" and "us" normalise to Ultrasound for D5.
 - A malformed `transferDate` with the transfer method gives `Transfer(raw, age)`; the origin does not validate the date or the age.
+
+## Amendments after independent review (round 1)
+
+Reviewers: Opus, DeepSeek (code), Sonnet (tests). Evidence in `.agents/fleet-runs/dating_*.txt`.
+
+- D2a. The anchor is the earliest scan whose parsed date is on or after the LMP date (when the LMP parses) and not after `today`. Malformed scan dates, scans before the LMP and scans in the future are ignored. If none remains, the anchor is `today`. Tested through `datingSummaryOf(patient, today)`.
+- D6a. `datingSummary` never throws, including for parseable but extreme dates (for example year 9999 or +999999999) in any date field. The result for such input has `edd == null` or no discordance.
+- U8. The Delivery Plan card (`DeliveryPlanningCard`) shows the shared EDD (`summary.edd`, `dd/mm/yyyy`, the shared label `EDD` or `Confirmed EDD`) and its current-GA tile carries the red `??` marker when discordant. It has no `agreedEdd ?: ultrasoundEdd` fallback.
+- U9. Print "Target Delivery Timing" uses the shared EDD in `dd/mm/yyyy` (no raw ISO, no `Not recorded` when an EDD exists).
+- U10. `GestationalBanner` and the dead `STICKY_COMPACT` card variant have no production caller and are deleted. The marker tests move to the shared GA badge and to the header and patient list surfaces.
+- U11. `DatingEditor` uses `canonicalDatingMethod` instead of its own raw string comparison for the IVF fields.
+- U12. The `??` is not clipped at 360dp and 1.3x font scale in the patient list row.
+- Open owner decisions (not built): scan EDD hidden below the limit or under the Ultrasound method; Method row when no method is recorded; transfer date recorded under a non-IVF method; tier drift when no scan exists.

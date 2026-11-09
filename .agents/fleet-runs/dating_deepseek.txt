@@ -1,0 +1,1668 @@
+[0m
+> build · deepseek-v4.1-flash-free
+I'll start by reading the spec, diff, and the key files.
+[0m⚙ [0mexecute {"code":"const r = await tools.shell ? null : null;\n"} 
+> build · deepseek-v4.1-flash-free
+[0m$ [0mwc -l .agents/fleet-runs/dating.diff .agents/specs/overview_dating_spec.md .agents/mocks/overview_tab_sections.html 2>&1
+1789 .agents/fleet-runs/dating.diff
+      78 .agents/specs/overview_dating_spec.md
+     114 .agents/mocks/overview_tab_sections.html
+    1981 total
+[0m$ [0mls -la .agents/ 2>&1
+total 1496
+drwxr-xr-x@  97 sherifgamalradwan  staff    3104 Nov  9 20:11 .
+drwxr-xr-x@  41 sherifgamalradwan  staff    1312 Nov  9 20:11 ..
+-rw-r--r--@   1 sherifgamalradwan  staff   14340 Nov  4 22:55 .DS_Store
+-rw-r--r--@   1 sherifgamalradwan  staff   23122 Nov  9 19:57 AI_HANDOFF_LEDGER.md
+-rw-r--r--@   1 sherifgamalradwan  staff    2401 Nov  8 20:45 CONSTITUTION.md
+-rw-r--r--@   1 sherifgamalradwan  staff  504569 Nov  8 12:09 EVIDENCE.json
+-rw-r--r--@   1 sherifgamalradwan  staff   80900 Nov  7 21:03 PROJECT_MAP.json
+-rw-r--r--@   1 sherifgamalradwan  staff    1657 Nov  8 12:05 PROJECT_PROFILE.md
+-rw-r--r--@   1 sherifgamalradwan  staff     270 Nov  9 20:11 ROUTING_LOG.jsonl
+-rw-r--r--@   1 sherifgamalradwan  staff   30761 Nov  8 12:12 SKILL_COMPLIANCE_LOG.md
+-rw-r--r--@   1 sherifgamalradwan  staff   11637 Nov  8 12:05 SPEC_AND_AUDIT.md
+-rw-r--r--@   1 sherifgamalradwan  staff   51895 Nov  8 12:09 TEST_MANIFEST.json
+-rw-r--r--@   1 sherifgamalradwan  staff    8841 Nov  8 13:54 UNIFIED_BEDSIDE_AND_LAB_PLAN.md
+drwxr-xr-x@   7 sherifgamalradwan  staff     224 Nov  9 20:11 backup-20261029-025233
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261029-031001
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261029-031629
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261029-230415
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261029-232729
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261029-233138
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261029-233755
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261029-234257
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261029-234348
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261030-110956
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261030-114106
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261030-123728
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261030-124029
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261030-124141
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261030-145357
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261030-150323
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261030-152104
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261030-160322
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261030-160522
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261030-160822
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261030-161610
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261030-162108
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261030-164151
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261030-175143
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261030-175644
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261030-182233
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261030-210523
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261030-220718
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261030-224329
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261030-233105
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261031-003322
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261031-003640
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261031-010955
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261031-014856
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261031-015328
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261031-022337
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261031-024837
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261031-104624
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261031-113341
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261031-120803
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261031-134721
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261031-143752
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261031-150045
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261031-152448
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261031-152526
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261031-153956
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261031-165916
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261031-173757
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261031-182425
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261031-191652
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261031-205447
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261031-205500
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261031-210326
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261031-214850
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261101-020429
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261101-023101
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261101-023135
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261101-080417
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261101-090915
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261101-095708
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261101-135028
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261101-151959
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261101-162119
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261101-162505
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261101-183717
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261101-222506
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261101-235150
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261102-002529
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261102-010537
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261102-022358
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261102-073139
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261102-091859
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  7 21:03 backup-20261102-104737
+drwxr-xr-x@   5 sherifgamalradwan  staff     160 Nov  7 21:03 briefs
+drwxr-xr-x@  49 sherifgamalradwan  staff    1568 Nov  7 21:03 checks
+drwxr-xr-x@  21 sherifgamalradwan  staff     672 Nov  9 20:15 fleet-runs
+drwxr-xr-x@  10 sherifgamalradwan  staff     320 Nov  7 21:03 maca-run-2026-10-29
+drwxr-xr-x@   5 sherifgamalradwan  staff     160 Nov  9 12:39 mocks
+drwxr-xr-x  175 sherifgamalradwan  staff    5600 Nov  7 22:52 pipeline
+-rw-r--r--@   1 sherifgamalradwan  staff    3051 Nov  7 21:03 review-r1.md
+-rw-r--r--@   1 sherifgamalradwan  staff    4783 Nov  8 12:03 review-workspace-step5.md
+drwxr-xr-x@  20 sherifgamalradwan  staff     640 Nov  7 21:03 scripts
+drwxr-xr-x@   5 sherifgamalradwan  staff     160 Nov  9 19:57 specs
+drwxr-xr-x@   6 sherifgamalradwan  staff     192 Nov  7 21:03 work
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead .agents/mocks/overview_tab_sections.html 
+[0m→ [0mRead .agents/specs/overview_dating_spec.md 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead .agents/fleet-runs/dating.diff [90m[limit=400][0m
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead .agents/fleet-runs/dating.diff [90m[offset=400, limit=450][0m
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead .agents/fleet-runs/dating.diff [90m[limit=450, offset=849][0m
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead .agents/fleet-runs/dating.diff [90m[limit=500, offset=1298][0m
+> build · deepseek-v4.1-flash-free
+Now let me read the actual files in the repo to see the applied state.
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/model/DatingSummary.kt 
+[0m$ [0mgit status --porcelain | head -50; git log --oneline -3
+?? .agents/ROUTING_LOG.jsonl
+?? .agents/fleet-runs/dating.diff
+?? .agents/fleet-runs/dating_brief.md
+?? .agents/fleet-runs/dating_deepseek.txt
+?? .agents/fleet-runs/dating_opus.txt
+?? .agents/fleet-runs/dating_testbrief.md
+?? .agents/fleet-runs/dating_testreview.txt
+?? comprehension_report.md
+?? critic_report.md
+?? goldfish_review_report.md
+?? goldfish_review_report_stage5-9.md
+?? implementation_readiness_report.md
+?? intermediate_zoom_out_report.md
+?? zoom_out_report.md
+60ea73d feat(ui): dating section rewrite, GA discordance marker, shared EDD rule in print and share
+94e43a0 feat(model): shared dating summary rule and dd/mm/yyyy formatter
+4d8f1e8 docs(design): clarify dating rule oracles
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/model/Redating.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt 
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && wc -l app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt app/src/main/java/com/sherifradwan/ancnative/model/ClinicalSummaryGenerator.kt
+1278 app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+     220 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt
+     525 app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt
+     390 app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt
+     523 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
+     438 app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt
+     152 app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt
+     105 app/src/main/java/com/sherifradwan/ancnative/model/ClinicalSummaryGenerator.kt
+    3631 total
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "calculateEstimatedDueDate\|ultrasoundEdd\|agreedEdd\|uppercase(" --include=*.kt app/src/main | sort
+zsh:1: no matches found: --include=*.kt
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "GestationalBanner(" --include=*.kt app/src | grep -v "fun GestationalBanner"; echo ---; grep -rn "datingSummaryOf\|datingSummary(\|earliestScanDate" --include=*.kt app/src | grep -v "test/" | grep -v "DatingText.kt\|DatingSummary.kt"
+zsh:1: no matches found: --include=*.kt
+---
+zsh:1: no matches found: --include=*.kt
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn --include='*.kt' "calculateEstimatedDueDate\|ultrasoundEdd\|agreedEdd\|uppercase(" app/src/main | sort
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt:117:    val ultrasoundEdd: String?,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt:118:    val agreedEdd: String?,
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt:133:    fun calculateEstimatedDueDate(): LocalDate? {
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt:134:        return GestationalAgeEngine.calculateEstimatedDueDate(this)
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalSummaryGenerator.kt:14:        if (!patient.riskLevel.isNullOrBlank()) sb.appendLine("Risk Level: ${patient.riskLevel.uppercase()}")
+app/src/main/java/com/sherifradwan/ancnative/model/DatingSummary.kt:27:        edd = GestationalAgeEngine.calculateEstimatedDueDate(dating),
+app/src/main/java/com/sherifradwan/ancnative/model/DatingSummary.kt:45:        dating.ultrasoundEdd.isNullOrBlank() &&
+app/src/main/java/com/sherifradwan/ancnative/model/DatingSummary.kt:46:        !dating.agreedEdd.isNullOrBlank()
+app/src/main/java/com/sherifradwan/ancnative/model/DatingSummary.kt:52:    val scanEdd = parseIsoDateOrNull(dating.ultrasoundEdd) ?: return null
+app/src/main/java/com/sherifradwan/ancnative/model/DatingSummary.kt:53:    if (scanEdd == parseIsoDateOrNull(dating.agreedEdd)) return null
+app/src/main/java/com/sherifradwan/ancnative/model/DatingText.kt:51:    val scanEdd = parseIsoDateOrNull(d.ultrasoundEdd) ?: return null
+app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt:28:                ultrasoundEdd = "2026-10-17",
+app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt:29:                agreedEdd = "2026-10-17",
+app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt:433:                ultrasoundEdd = "2026-11-20",
+app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt:434:                agreedEdd = "2026-11-20",
+app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt:777:                ultrasoundEdd = "2026-11-08",
+app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt:778:                agreedEdd = "2026-11-08",
+app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt:103:    fun calculateEstimatedDueDate(dating: DemoPatientDating?): LocalDate? {
+app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt:105:        if (!dating.agreedEdd.isNullOrBlank()) {
+app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt:106:            parseIsoDateOrNull(dating.agreedEdd)?.let { return it }
+app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt:36:    return when (trimmed.uppercase(Locale.ROOT)) {
+app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt:58:                if (!dating.ultrasoundEdd.isNullOrBlank()) {
+app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt:59:                    parseIsoDateOrNull(dating.ultrasoundEdd)
+app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt:69:                val scan = if (!dating.ultrasoundEdd.isNullOrBlank()) {
+app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt:70:                    parseIsoDateOrNull(dating.ultrasoundEdd)
+app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt:92:        val edd = calculateEstimatedDueDate(dating) ?: return null
+app/src/main/java/com/sherifradwan/ancnative/model/VisitEntryLogic.kt:283:    return trimmed.substring(0, 1).uppercase(Locale.ROOT) + trimmed.substring(1).lowercase(Locale.ROOT)
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:1566:            PatientDraftField.AGREED_EDD -> draft.values.copy(agreedEdd = event.value)
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:1811:        ultrasoundEdd = ultrasoundEdd.orEmpty(),
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:1812:        agreedEdd = agreedEdd.orEmpty(),
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:459:    val agreedEdd: String = "",
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:536:    val ultrasoundEdd: String = "",
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:537:    val agreedEdd: String = "",
+app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt:485:                                ultrasoundEdd = datingUpdate.ultrasoundEdd,
+app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt:486:                                agreedEdd = datingUpdate.agreedEdd,
+app/src/main/java/com/sherifradwan/ancnative/state/DatingDraftRule.kt:12:        ultrasoundEdd = values.ultrasoundEdd.ifBlank { null },
+app/src/main/java/com/sherifradwan/ancnative/state/DatingDraftRule.kt:13:        agreedEdd = values.agreedEdd.ifBlank { null },
+app/src/main/java/com/sherifradwan/ancnative/state/DatingDraftRule.kt:22:    val agreed = values.agreedEdd.trim()
+app/src/main/java/com/sherifradwan/ancnative/state/DatingDraftRule.kt:41:        DatingDraftField.ULTRASOUND_EDD -> values.copy(ultrasoundEdd = value)
+app/src/main/java/com/sherifradwan/ancnative/state/DatingDraftRule.kt:45:        DatingDraftField.AGREED_EDD -> values.copy(agreedEdd = value)
+app/src/main/java/com/sherifradwan/ancnative/state/DatingDraftRule.kt:57:                updated.copy(agreedEdd = methodDueDate(updated)?.toString() ?: "")
+app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt:114:                "agreedEdd" to draft.values.agreedEdd,
+app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt:203:                "ultrasoundEdd" to draft.values.ultrasoundEdd,
+app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt:204:                "agreedEdd" to draft.values.agreedEdd,
+app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt:374:                        agreedEdd = record.fields["agreedEdd"] ?: v.agreedEdd,
+app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt:441:                        ultrasoundEdd = record.fields["ultrasoundEdd"] ?: v.ultrasoundEdd,
+app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt:442:                        agreedEdd = record.fields["agreedEdd"] ?: v.agreedEdd,
+app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt:102:                    ultrasoundEdd = scanEdd.toString(),
+app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt:108:                agreedEdd = dueDate.toString(),
+app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt:110:                ultrasoundEdd = dueDate.toString(),
+app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt:117:            val agreed = values.agreedEdd.trim().takeIf(String::isNotEmpty) ?: return null
+app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt:121:                agreedEdd = parsedAgreed.toString(),
+app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt:123:                ultrasoundEdd = null,
+app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt:13:    val agreedEdd: String,
+app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt:140:    val parsedDue = parseIsoDateOrNull(update.agreedEdd) ?: return null
+app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt:142:    return IntakeDatingPreview(dueDate = update.agreedEdd, gestationalAge = ga)
+app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt:15:    val ultrasoundEdd: String? = null,
+app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt:33:        if (!existing.ultrasoundEdd.isNullOrBlank() ||
+app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt:46:            agreedEdd = dueDate.toString(),
+app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt:63:                agreedEdd = dueDate.toString(),
+app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt:84:                agreedEdd = dueDate.toString(),
+app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt:86:                ultrasoundEdd = null,
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:111:        if (!ClinicalVocabulary.isValidIsoDate(ultrasoundEdd)) return false
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:112:        if (!ClinicalVocabulary.isValidIsoDate(agreedEdd)) return false
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:121:        "DATING|$operationUuid|$patientId|$expectedPatientRevision|$lmpDate|$ultrasoundEdd|$agreedEdd|$datingMethod|$notes|$transferDate|$embryoAgeDays",
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:130:            val usEdd = draft.values.ultrasoundEdd.trim().ifEmpty { null }
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:131:            val agreedEdd = draft.values.agreedEdd.trim().ifEmpty { null }
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:139:            if (agreedEdd != null && !ClinicalVocabulary.isValidIsoDate(agreedEdd)) errors.add(ClinicalValidationError.INVALID_DATE)
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:156:                ultrasoundEdd = usEdd,
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:157:                agreedEdd = agreedEdd,
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:95:    val ultrasoundEdd: String? = null,
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:96:    val agreedEdd: String? = null,
+app/src/main/java/com/sherifradwan/ancnative/storage/EncryptedBackupManager.kt:346:                putNullable("edd", dating.agreedEdd ?: dating.ultrasoundEdd)
+app/src/main/java/com/sherifradwan/ancnative/storage/EncryptedBackupManager.kt:471:        putNullable("edd", agreedEdd ?: ultrasoundEdd)
+app/src/main/java/com/sherifradwan/ancnative/storage/EncryptedBackupManager.kt:638:            ultrasoundEdd = edd,
+app/src/main/java/com/sherifradwan/ancnative/storage/EncryptedBackupManager.kt:639:            agreedEdd = edd,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt:186:    @ColumnInfo(name = "ultrasound_edd") val ultrasoundEdd: String?,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt:187:    @ColumnInfo(name = "agreed_edd") val agreedEdd: String?,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt:337:            ultrasound_edd = :ultrasoundEdd,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt:338:            agreed_edd = :agreedEdd,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt:352:        ultrasoundEdd: String?,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt:353:        agreedEdd: String?,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1056:                    ultrasoundEdd = command.ultrasoundEdd,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1057:                    agreedEdd = command.agreedEdd,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1071:                ultrasoundEdd = command.ultrasoundEdd,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:1072:                agreedEdd = command.agreedEdd,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:720:        ultrasoundEdd = ultrasoundEdd,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:721:        agreedEdd = agreedEdd,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:946:        ultrasoundEdd = ultrasoundEdd,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:947:        agreedEdd = agreedEdd,
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt:115:            text = title.uppercase(),
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt:149:                text = label.uppercase(),
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:100:                    value = draft.values.ultrasoundEdd,
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:103:                    tag = "ultrasoundEdd",
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:111:                    value = draft.values.agreedEdd,
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:114:                    tag = "agreedEdd",
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:57:        GestationalAgeEngine.calculateEstimatedDueDate(currentDatingPreview)
+app/src/main/java/com/sherifradwan/ancnative/ui/DesignSystem.kt:366:                text = title.uppercase(),
+app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt:507:                        stringResource(R.string.lab_batch_often_added).uppercase(),
+app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt:725:                        "${item.category.ifBlank { "Test" }} · Test ${draft.cursor + 1} of ${draft.items.size}".uppercase(),
+app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt:420:            val categoryText = draft.values.testCategory.trim().uppercase()
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt:163:                            text = stringResource(R.string.clinical_attention).uppercase(),
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt:119:                    value = patient.dating?.agreedEdd ?: patient.dating?.ultrasoundEdd,
+app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt:1240:                                <span class="v text-navy font-bold">${escapeHtml(formatDmy(patient.dating?.agreedEdd) ?: "Not recorded")}</span>
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn --include='*.kt' "GestationalBanner(" app/src | grep -v "fun GestationalBanner"; echo ---; grep -rn --include='*.kt' "datingSummaryOf\|earliestScanDate" app/src | grep -v "test/"
+app/src/androidTest/java/com/sherifradwan/ancnative/OverviewTabSectionsTest.kt:491:                AncTheme { GestationalBanner(dating = d, asOfDate = LocalDate.of(2026, 10, 1)) }
+---
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:55:import com.sherifradwan.ancnative.model.datingSummaryOf
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:225:                        val datingSummary = datingSummaryOf(patient, asOfDate)
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:411:                            GestationalAgeBadge("GA $gaText", discordant = datingSummaryOf(patient, asOfDate).discordance != null)
+app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:42:    earliestScanDate: LocalDate? = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:45:    val summary = datingSummary(dating, earliestScanDate, asOfDate)
+app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:77:import com.sherifradwan.ancnative.model.datingSummaryOf
+app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:130:    val datingSummary = datingSummaryOf(patient, LocalDate.now())
+app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt:16:import com.sherifradwan.ancnative.model.datingSummaryOf
+app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt:71:        val datingSummary = datingSummaryOf(patient, asOfDate)
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt:76:import com.sherifradwan.ancnative.model.datingSummaryOf
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt:145:    val gaDiscordant = remember(patient) { datingSummaryOf(patient, LocalDate.now()).discordance != null }
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt:36:import com.sherifradwan.ancnative.model.datingSummaryOf
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt:67:    val summary = remember(patient) { datingSummaryOf(patient, LocalDate.now()) }
+app/src/main/java/com/sherifradwan/ancnative/model/DatingText.kt:12:fun earliestScanDate(patient: DemoPatient): LocalDate? =
+app/src/main/java/com/sherifradwan/ancnative/model/DatingText.kt:16:fun datingSummaryOf(patient: DemoPatient, today: LocalDate): DatingSummary =
+app/src/main/java/com/sherifradwan/ancnative/model/DatingText.kt:17:    datingSummary(patient.dating, earliestScanDate(patient), today)
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalSummaryGenerator.kt:26:            val summary = datingSummaryOf(patient, LocalDate.now())
+app/src/main/java/com/sherifradwan/ancnative/model/DatingSummary.kt:22:fun datingSummary(dating: DemoPatientDating?, earliestScanDate: LocalDate?, today: LocalDate): DatingSummary {
+app/src/main/java/com/sherifradwan/ancnative/model/DatingSummary.kt:30:        discordance = discordanceOf(dating, method, earliestScanDate ?: today),
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt 
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn --include='*.kt' "GestationalBanner" . | grep -v "/build/" ; echo "---DeliveryPlanningCard---"; sed -n '95,140p' app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt
+fileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261031-134721/snap-before-2b-ui/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261031-134721/snap-before-2b-ui/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/pipeline/runs/20261031-134721/snap-before-2b-ui/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261031-134721/snap-before-2a-core/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261031-134721/snap-before-2a-core/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/pipeline/runs/20261031-134721/snap-before-2a-core/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261101-222506/snap-before-3-review-1-agy/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261101-222506/snap-before-3-review-1-agy/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/pipeline/runs/20261101-222506/snap-before-3-review-1-agy/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:592:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261101-222506/snap-before-2b-ui/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261101-222506/snap-before-2b-ui/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/pipeline/runs/20261101-222506/snap-before-2b-ui/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:592:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261101-222506/snap-before-3-review-0-claude/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261101-222506/snap-before-3-review-0-claude/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/pipeline/runs/20261101-222506/snap-before-3-review-0-claude/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:592:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261031-022337/snap-before-1-tests/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261031-022337/snap-before-1-tests/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/pipeline/runs/20261031-022337/snap-before-1-tests/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261031-022337/snap-before-3-review-1-agy/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261031-022337/snap-before-3-review-1-agy/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/pipeline/runs/20261031-022337/snap-before-3-review-1-agy/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261031-022337/snap-before-3-review-0-agy/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261031-022337/snap-before-3-review-0-agy/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/pipeline/runs/20261031-022337/snap-before-3-review-0-agy/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261031-022337/snap-before-2a-core-repair1/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261031-022337/snap-before-2a-core-repair1/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/pipeline/runs/20261031-022337/snap-before-2a-core-repair1/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261031-022337/snap-before-2a-core/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261031-022337/snap-before-2a-core/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/pipeline/runs/20261031-022337/snap-before-2a-core/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261031-015328/snap-before-3-review-1-claude/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261031-015328/snap-before-3-review-1-claude/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/pipeline/runs/20261031-015328/snap-before-3-review-1-claude/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261031-015328/snap-before-3-review-0-opencode/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261031-015328/snap-before-3-review-0-opencode/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/pipeline/runs/20261031-015328/snap-before-3-review-0-opencode/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261031-015328/snap-before-2b-ui/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261031-015328/snap-before-2b-ui/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/pipeline/runs/20261031-015328/snap-before-2b-ui/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261031-015328/snap-before-2a-core/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261031-015328/snap-before-2a-core/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/pipeline/runs/20261031-015328/snap-before-2a-core/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261031-015328/snap-before-1-tests-finish/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261031-015328/snap-before-1-tests-finish/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/pipeline/runs/20261031-015328/snap-before-1-tests-finish/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261031-024837/snap-before-2b-ui-repair2/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261031-024837/snap-before-2b-ui-repair2/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/pipeline/runs/20261031-024837/snap-before-2b-ui-repair2/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261031-024837/snap-before-1-tests/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261031-024837/snap-before-1-tests/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/pipeline/runs/20261031-024837/snap-before-1-tests/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261031-024837/snap-before-3-review-1-agy/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261031-024837/snap-before-3-review-1-agy/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/pipeline/runs/20261031-024837/snap-before-3-review-1-agy/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261031-024837/snap-before-3-review-0-agy/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261031-024837/snap-before-3-review-0-agy/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/pipeline/runs/20261031-024837/snap-before-3-review-0-agy/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261031-024837/snap-before-2b-ui/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261031-024837/snap-before-2b-ui/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/pipeline/runs/20261031-024837/snap-before-2b-ui/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261031-024837/snap-before-2a-core-repair1/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261031-024837/snap-before-2a-core-repair1/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/pipeline/runs/20261031-024837/snap-before-2a-core-repair1/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261031-024837/snap-before-2b-ui-repair1/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261031-024837/snap-before-2b-ui-repair1/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/pipeline/runs/20261031-024837/snap-before-2b-ui-repair1/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261031-024837/snap-before-2a-core/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261031-024837/snap-before-2a-core/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/pipeline/runs/20261031-024837/snap-before-2a-core/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261031-165916/snap-before-1-tests/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261031-165916/snap-before-1-tests/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/pipeline/runs/20261031-165916/snap-before-1-tests/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:617:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261031-165916/snap-before-3-review-1-agy/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261031-165916/snap-before-3-review-1-agy/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/pipeline/runs/20261031-165916/snap-before-3-review-1-agy/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:617:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261031-165916/snap-before-3-review-0-claude/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261031-165916/snap-before-3-review-0-claude/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/pipeline/runs/20261031-165916/snap-before-3-review-0-claude/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:617:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261031-165916/snap-before-2a-core/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261031-165916/snap-before-2a-core/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/pipeline/runs/20261031-165916/snap-before-2a-core/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:617:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261102-104737/snap-before-2a-tests-compile-repair2/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261102-104737/snap-before-2a-tests-compile-repair2/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/pipeline/runs/20261102-104737/snap-before-2a-tests-compile-repair2/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:592:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261102-104737/snap-before-1-tests/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261102-104737/snap-before-1-tests/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/pipeline/runs/20261102-104737/snap-before-1-tests/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:592:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261102-104737/snap-before-2a-tests-compile-repair1/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261102-104737/snap-before-2a-tests-compile-repair1/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/pipeline/runs/20261102-104737/snap-before-2a-tests-compile-repair1/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:592:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261102-104737/snap-before-2a-core/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261102-104737/snap-before-2a-core/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/pipeline/runs/20261102-104737/snap-before-2a-core/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:592:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261030-175143/snap-before-2a-core-repair2/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261030-175143/snap-before-2a-core-repair2/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/pipeline/runs/20261030-175143/snap-before-2a-core-repair2/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261030-175143/snap-before-1-tests/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261030-175143/snap-before-1-tests/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/pipeline/runs/20261030-175143/snap-before-1-tests/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261030-175143/snap-before-2a-core-repair1/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261030-175143/snap-before-2a-core-repair1/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/pipeline/runs/20261030-175143/snap-before-2a-core-repair1/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261030-175143/snap-before-2a-core/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261030-175143/snap-before-2a-core/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/pipeline/runs/20261030-175143/snap-before-2a-core/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/pipeline/runs/20261030-175143/snap-before-1c-tests-repair/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/pipeline/runs/20261030-175143/snap-before-1c-tests-repair/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/pipeline/runs/20261030-175143/snap-before-1c-tests-repair/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261031-205447/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261031-205447/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261031-205447/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:617:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261030-162108/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261030-162108/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261030-162108/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261101-090915/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261101-090915/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261101-090915/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:592:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261030-150323/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261030-150323/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261030-150323/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261030-160322/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261030-160322/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261030-160322/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261101-020429/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261101-020429/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261101-020429/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:590:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261029-234348/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261029-234348/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261029-234348/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:644:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261101-151959/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261101-151959/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261101-151959/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:592:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261031-152448/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261031-152448/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/backup-20261031-152448/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261029-233138/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261029-233138/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261029-233138/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261031-143752/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261031-143752/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/backup-20261031-143752/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261030-182233/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261030-182233/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261030-182233/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261101-135028/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261101-135028/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261101-135028/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:592:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261101-162119/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261101-162119/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261101-162119/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:592:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261031-003322/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261031-003322/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261031-003322/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:647:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261030-161610/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261030-161610/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261030-161610/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261031-104624/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261031-104624/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/backup-20261031-104624/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261031-214850/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261031-214850/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261031-214850/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:617:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261101-162505/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261101-162505/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261101-162505/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:592:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261030-175644/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261030-175644/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261030-175644/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261030-164151/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261030-164151/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261030-164151/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261029-230415/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261029-230415/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261029-230415/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261030-224329/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261030-224329/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261030-224329/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261031-152526/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261031-152526/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/backup-20261031-152526/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261101-095708/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261101-095708/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261101-095708/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:592:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261030-220718/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261030-220718/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261030-220718/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261030-233105/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261030-233105/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261030-233105/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261030-123728/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261030-123728/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261030-123728/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261031-113341/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261031-113341/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/backup-20261031-113341/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261029-232729/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261029-232729/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261029-232729/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:644:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261031-150045/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261031-150045/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/backup-20261031-150045/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261102-073139/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261102-073139/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261102-073139/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:592:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261101-023135/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261101-023135/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261101-023135/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:590:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261101-183717/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261101-183717/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261101-183717/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:592:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261102-022358/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261102-022358/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261102-022358/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:592:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261101-235150/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261101-235150/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261101-235150/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:592:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261030-210523/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261030-210523/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261030-210523/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261102-002529/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261102-002529/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261102-002529/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:592:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261031-014856/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261031-014856/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/backup-20261031-014856/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261031-003640/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261031-003640/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261031-003640/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:647:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261102-091859/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261102-091859/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261102-091859/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:592:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261029-031629/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261029-031629/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261029-031629/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:644:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261030-124141/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261030-124141/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261030-124141/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261030-152104/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261030-152104/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261030-152104/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261031-205500/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261031-205500/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261031-205500/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:617:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261031-153956/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261031-153956/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/backup-20261031-153956/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:617:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261102-010537/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261102-010537/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261102-010537/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:592:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261030-160522/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261030-160522/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261030-160522/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261031-120803/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261031-120803/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/backup-20261031-120803/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:648:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261031-173757/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261031-173757/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261031-173757/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:617:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261029-233755/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261029-233755/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261029-233755/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261031-010955/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261031-010955/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:37:fun GestationalBanner(
+./.agents/backup-20261031-010955/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:647:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261031-191652/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261031-191652/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261031-191652/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:617:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261031-182425/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261031-182425/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261031-182425/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:617:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261030-124029/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261030-124029/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261030-124029/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261101-080417/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261101-080417/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261101-080417/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:592:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261030-145357/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261030-145357/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261030-145357/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261030-110956/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261030-110956/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261030-110956/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261029-025233/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261029-025233/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261029-025233/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:644:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261030-160822/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261030-160822/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261030-160822/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261031-210326/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261031-210326/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261031-210326/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:617:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261101-023101/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261101-023101/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261101-023101/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:590:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261029-031001/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261029-031001/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261029-031001/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:644:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+./.agents/backup-20261030-114106/app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+./.agents/backup-20261030-114106/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:36:fun GestationalBanner(
+./.agents/backup-20261030-114106/app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt:646:            GestationalBanner(dating = patient.dating, asOfDate = asOfDate)
+---DeliveryPlanningCard---
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
+            }
+
+            // Key clinical facts: label above, bold value, each in its own tile
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                KeyFactTile(
+                    label = stringResource(R.string.blood_group),
+                    value = formatBloodGroup(patient.bloodGroupText),
+                    emphasize = rhNegative,
+                    modifier = Modifier.weight(1f),
+                )
+                KeyFactTile(
+                    label = stringResource(R.string.current_gestational_age),
+                    value = patient.dating?.calculateGestationalAge(),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                KeyFactTile(
+                    label = stringResource(R.string.agreed_edd),
+                    value = patient.dating?.agreedEdd ?: patient.dating?.ultrasoundEdd,
+                    modifier = Modifier.weight(1f),
+                )
+                KeyFactTile(
+                    label = stringResource(R.string.manual_risk),
+                    value = patient.riskLevel,
+                    emphasize = isHighRisk(patient.riskLevel),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                KeyFactTile(
+                    label = stringResource(R.string.fetal_presentation),
+                    value = latestScan?.presentation,
+                    modifier = Modifier.weight(1f),
+                )
+                KeyFactTile(
+                    label = stringResource(R.string.placental_site),
+                    value = latestScan?.placentalSite,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+
+[showing lines 766-1113 of 1113; full output saved to /Users/sherifgamalradwan/.local/share/opencode/shell/2132aa967c9ca5efa6c3966eb81d80535e4f9b6c/sh_1c18779f6001s5cc6UaSFnIebd.out]
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && sed -n '630,665p' app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt
+sed: app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt: No such file or directory
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && sed -n '1,12p' app/src/main/java/com/sherifradwan/ancnative/model/DatingText.kt | od -c | head -20; echo "=== grep NBSP line ==="; grep -n "NBSP" app/src/main/java/com/sherifradwan/ancnative/model/DatingText.kt
+0000000    p   a   c   k   a   g   e       c   o   m   .   s   h   e   r
+0000020    i   f   r   a   d   w   a   n   .   a   n   c   n   a   t   i
+0000040    v   e   .   m   o   d   e   l  \n  \n   i   m   p   o   r   t
+0000060        j   a   v   a   .   t   i   m   e   .   L   o   c   a   l
+0000100    D   a   t   e  \n   i   m   p   o   r   t       k   o   t   l
+0000120    i   n   .   m   a   t   h   .   a   b   s  \n  \n   p   r   i
+0000140    v   a   t   e       c   o   n   s   t       v   a   l       N
+0000160    B   S   P       =       ' 302 240   '  \n  \n   /   *   *    
+0000200    O   n   e       l   a   b   e   l   l   e   d       l   i   n
+0000220    e       o   f       t   h   e       d   a   t   i   n   g    
+0000240    b   l   o   c   k   .       A       n   u   l   l       [   v
+0000260    a   l   u   e   ]       m   e   a   n   s       "   n   o   t
+0000300        r   e   c   o   r   d   e   d   "   .       *   /  \n   d
+0000320    a   t   a       c   l   a   s   s       D   a   t   i   n   g
+0000340    T   e   x   t   R   o   w   (   v   a   l       l   a   b   e
+0000360    l   :       S   t   r   i   n   g   ,       v   a   l       v
+0000400    a   l   u   e   :       S   t   r   i   n   g   ?   ,       v
+0000420    a   l       i   s   E   d   d   :       B   o   o   l   e   a
+0000440    n       =       f   a   l   s   e   )  \n  \n   /   *   *    
+0000460    E   a   r   l   i   e   s   t       p   a   r   s   e   a   b
+=== grep NBSP line ===
+6:private const val NBSP = ' '
+36:                    .joinToString("$NBSP·$NBSP"),
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/model/DatingText.kt 
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn --include='*.kt' "GestationalBanner" app/src
+app/src/androidTest/java/com/sherifradwan/ancnative/OverviewTabSectionsTest.kt:31:import com.sherifradwan.ancnative.ui.GestationalBanner
+app/src/androidTest/java/com/sherifradwan/ancnative/OverviewTabSectionsTest.kt:491:                AncTheme { GestationalBanner(dating = d, asOfDate = LocalDate.of(2026, 10, 1)) }
+app/src/test/java/com/sherifradwan/ancnative/ui/GestationalBannerLogicTest.kt:14:class GestationalBannerLogicTest {
+app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:38:fun GestationalBanner(
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt [90m[offset=190, limit=120][0m
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt [90m[offset=90, limit=180][0m
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt [90m[limit=130, offset=310][0m
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt [90m[limit=120, offset=270][0m
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt [90m[limit=80, offset=40][0m
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "dating_method_lmp\|dating_method_ultrasound\|dating_method_ivf_transfer\|dating_method_clinical\|embryo_age_days\|datingMethodLabelRes\|ivf_transfer_date\|embryo_age\b" app/src --include='*.kt' --include='*.xml' | head -40
+app/src/androidTest/java/com/sherifradwan/ancnative/storage/EncryptedRecordsTest.kt:111:                "transfer_date", "embryo_age_days", "notes", "revision",
+app/src/main/res/values/strings.xml:262:    <string name="ivf_transfer_date">Embryo transfer date (IVF)</string>
+app/src/main/res/values/strings.xml:263:    <string name="embryo_age">Embryo age</string>
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:157:                            "IVF_TRANSFER" to stringResource(R.string.ivf_transfer_date),
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:179:                        label = stringResource(R.string.ivf_transfer_date),
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:188:                            text = stringResource(R.string.embryo_age),
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsMigration.kt:264:            db.execSQL("ALTER TABLE patient_dating ADD COLUMN embryo_age_days INTEGER")
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt:341:            embryo_age_days = :embryoAgeDays,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt:191:    @ColumnInfo(name = "embryo_age_days") val embryoAgeDays: Int? = null,
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "CriticalAccent\|CriticalDarkAccent\|WarningBg\|WarningDarkBg\|WarningAccent\|WarningText" app/src/main/java/com/sherifradwan/ancnative/ui/*.kt | head -30; echo ---; grep -rn "object ClinicalCardTokens" -A40 app/src/main/java/com/sherifradwan/ancnative/ui/DesignSystem.kt | head -60
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt:385:        color = if (isDarkTheme()) ClinicalCardTokens.CriticalDarkAccent else ClinicalCardTokens.CriticalAccent,
+app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt:174:    val CriticalAccent = Color(0xFFB91C1C)
+app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt:178:    val CriticalDarkAccent = Color(0xFFFCA5A5)
+app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt:182:    val WarningBg = Color(0xFFFFFBEB)
+app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt:184:    val WarningAccent = Color(0xFFB45309)
+app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt:185:    val WarningText = Color(0xFFB45309)
+app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt:186:    val WarningDarkBg = Color(0xFF451A03)
+---
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt [90m[limit=70, offset=330][0m
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt [90m[limit=40, offset=165][0m
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "sticky\|STICKY" app/src/main/java/com/sherifradwan/ancnative/ui --include='*.kt' | head -20
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:77:     * Compact sticky bar elevated when scrolling down: Back button, patient name,
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:80:    STICKY_COMPACT,
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:274:        PatientCardVariant.STICKY_COMPACT -> {
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt:126:    val stickyAlpha: Float
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt:331:                val isStickyActive = headerState.stickyAlpha > 0.05f
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt:341:                                alpha = headerState.stickyAlpha
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt:353:                                modifier = Modifier.minimumTouchTarget().testTag("stickyBackButton"),
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt:371:                                    modifier = Modifier.minimumTouchTarget().testTag("stickyAttentionButton"),
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "calculateGestationalAge\|calculateGestationalAgeAt\|gestationalAgeText\|shortWeeksText\|ga_label\|\"GA " app/src/main/java/com/sherifradwan/ancnative/ui | grep -v ClinicalBadges.kt | head -40
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:226:                        val gaResult = patient.dating?.calculateGestationalAgeResult()
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:227:                        val ga = patient.dating?.calculateGestationalAge(asOfDate)
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:228:                        val gaText = gaResult?.shortWeeksText ?: ga?.toString()
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:230:                            GestationalAgeBadge("GA $gaText", discordant = datingSummary.discordance != null)
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:316:                    val gaResult = patient.dating?.calculateGestationalAgeResult()
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:317:                    val ga = patient.dating?.calculateGestationalAge(asOfDate)
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:318:                    val gaText = gaResult?.shortWeeksText ?: ga?.toString()
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:325:                                text = "GA $gaText",
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:407:                        val gaResult = patient.dating?.calculateGestationalAgeResult()
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:408:                        val ga = patient.dating?.calculateGestationalAge(asOfDate)
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:409:                        val gaText = gaResult?.shortWeeksText ?: ga?.toString()
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:411:                            GestationalAgeBadge("GA $gaText", discordant = datingSummaryOf(patient, asOfDate).discordance != null)
+app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:44:    val gaResult = dating?.calculateGestationalAgeResult(asOfDate)
+app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:106:    val gestationalAgeText: String,
+app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:127:    val gaResult = patient.dating?.calculateGestationalAgeResult()
+app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:128:    val gaFormatted = gaResult?.shortWeeksText ?: "-"
+app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:151:        gestationalAgeText = gaFormatted,
+app/src/main/java/com/sherifradwan/ancnative/ui/VisitEditor.kt:95:    val calculatedGa = GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, draft.values.date)
+app/src/main/java/com/sherifradwan/ancnative/ui/VisitEditor.kt:412:                            val gaAtSelectedDate = GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, draft.values.date)
+app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt:49:                    text = stringResource(R.string.ga_label),
+app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt:60:                        text = if (row.gestationalAgeText.isNotBlank() && row.gestationalAgeText != "-") row.gestationalAgeText else stringResource(R.string.pending),
+app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt:69:        val gaResult = patient.dating?.calculateGestationalAgeResult(asOfDate)
+app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt:122:                    patient.dating?.calculateGestationalAgeResult(vDate)?.formatted
+app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt:123:    val calculatedGa = GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, draft.date)
+app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt:124:    val gaText = calculatedGa?.displayText?.let { "GA $it" }
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/ScansTab.kt:132:                    GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, scan.date)
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/VisitsTab.kt:124:                    GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, visit.date)
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt:144:    val ga = patient.dating?.calculateGestationalAge()
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt:333:                    val gaCompact = patient.dating?.calculateGestationalAgeResult()?.shortWeeksText ?: ga
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/LabReportItem.kt:68:    val gaResult = patient.dating?.let { GestationalAgeEngine.calculateGestationalAgeAt(it, report.date) }
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt:112:                    value = patient.dating?.calculateGestationalAge(),
+app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt:158:                        text = "GA $gaText",
+app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt:277:    val calculatedGa = GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, draft.values.date)
+app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt:234:            val calculatedGa = GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, draft.values.date)
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt [90m[limit=60, offset=300][0m
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "PatientCardVariant\|ClinicalPatientCard(" app/src/main app/src/androidTest --include='*.kt' | head -20; echo ---; sed -n '60,100p' app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:68:enum class PatientCardVariant {
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:95:fun ClinicalPatientCard(
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:97:    variant: PatientCardVariant,
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:105:        PatientCardVariant.BEDSIDE_TOP_BAR -> {
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:274:        PatientCardVariant.STICKY_COMPACT -> {
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:350:        PatientCardVariant.EDITOR_SUMMARY -> {
+app/src/main/java/com/sherifradwan/ancnative/ui/VisitEditor.kt:234:        ClinicalPatientCard(
+app/src/main/java/com/sherifradwan/ancnative/ui/VisitEditor.kt:236:            variant = PatientCardVariant.EDITOR_SUMMARY,
+app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt:225:        ClinicalPatientCard(
+app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt:227:            variant = PatientCardVariant.EDITOR_SUMMARY,
+app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt:377:        ClinicalPatientCard(
+app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt:379:            variant = PatientCardVariant.EDITOR_SUMMARY,
+app/src/androidTest/java/com/sherifradwan/ancnative/ClinicalPatientCardTest.kt:14:import com.sherifradwan.ancnative.ui.PatientCardVariant
+app/src/androidTest/java/com/sherifradwan/ancnative/ClinicalPatientCardTest.kt:32:                    ClinicalPatientCard(
+app/src/androidTest/java/com/sherifradwan/ancnative/ClinicalPatientCardTest.kt:34:                        variant = PatientCardVariant.BEDSIDE_TOP_BAR,
+app/src/androidTest/java/com/sherifradwan/ancnative/ClinicalPatientCardTest.kt:61:                    ClinicalPatientCard(
+app/src/androidTest/java/com/sherifradwan/ancnative/ClinicalPatientCardTest.kt:63:                        variant = PatientCardVariant.STICKY_COMPACT,
+app/src/androidTest/java/com/sherifradwan/ancnative/ClinicalPatientCardTest.kt:83:                    ClinicalPatientCard(
+app/src/androidTest/java/com/sherifradwan/ancnative/ClinicalPatientCardTest.kt:85:                        variant = PatientCardVariant.EDITOR_SUMMARY,
+---
+
+/**
+ * Global Unified Clinical Patient Card Variants.
+ *
+ * Defines the presentation modes of the patient card across the application.
+ * In all variants, the patient display name is prioritized with full width and never
+ * squished or truncated by adjacent badge icons. The demo patient ID is strictly omitted.
+ */
+enum class PatientCardVariant {
+    /**
+     * Bedside workspace top bar: Dedicated Row 1 for navigation back button,
+     * patient full display name (titleLarge, bold, weight(1f)), and action buttons.
+     * Dedicated Row 2 FlowRow for clinical metadata (Risk, Age, Parity, Blood Group, GA, EDD, Allergy).
+     */
+    BEDSIDE_TOP_BAR,
+
+    /**
+     * Compact sticky bar elevated when scrolling down: Back button, patient name,
+     * ClinicalRiskBadge, Gestational Age chip, and action buttons.
+     */
+    STICKY_COMPACT,
+
+    /**
+     * Summary card for section/editor headers (e.g. Lab Batch, Lab Editor, Meds Editor).
+     */
+    EDITOR_SUMMARY,
+}
+
+/**
+ * Global Unified Patient Card component.
+ *
+ * Exported globally and styled consistently for every section according to [variant].
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun ClinicalPatientCard(
+    patient: DemoPatient,
+    variant: PatientCardVariant,
+    modifier: Modifier = Modifier,
+    asOfDate: LocalDate = LocalDate.now(),
+    onBack: (() -> Unit)? = null,
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt [90m[limit=60, offset=240][0m
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rni "banner" app/src/main/java/com/sherifradwan/ancnative/ui/patienthub --include='*.kt' | head -20; echo ---; grep -rn "DatingSection(" app/src/main app/src/test app/src/androidTest --include='*.kt'
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt:492:            .testTag("clinicalAttentionBanner")
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt:90:fun ClinicalAttentionBanner(
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt:131:            .testTag("clinicalAttentionBanner"),
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt:91:            SectionBanner(
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt:107:/** Full-width wrapping banner: warning icon plus bold text on a tinted surface. No actions. */
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt:109:private fun SectionBanner(
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt:195:            is AllergyState.Recorded -> SectionBanner(
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt:196:                text = stringResource(R.string.allergy_banner, allergy.text),
+---
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt:76:                DatingSection(
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt:60:fun DatingSection(
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/model/ClinicalSummaryGenerator.kt 
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && sed -n '60,100p' app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt; echo '=== matrix css ==='; grep -n "dating-matrix\|matrix-item\|text-rose" app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt | head -20
+settings: SecuritySettingsState? = null,
+        asOfDate: LocalDate = LocalDate.now(),
+    ): String {
+        val logoBase64 = getLogoBase64(context)
+        val clinicNameAr = settings?.clinicName ?: "Dr. Sherif Radwan Clinic"
+        val clinicNameEn = "Dr. Sherif Radwan Clinic"
+        val clinicSpecialty = "Maternal-Fetal Medicine & Advanced Obstetrics"
+        val doctorOfficialTitle = "Consultant of Obstetrics, Gynecology & Laparoscopy"
+        val printDateStr = formatIsoDate(asOfDate)
+        val gaResult = patient.dating?.calculateGestationalAgeResult(asOfDate)
+        val currentGaFormatted = gaResult?.formatted ?: "Unspecified"
+        val datingSummary = datingSummaryOf(patient, asOfDate)
+        val datingMatrixHtml = buildString {
+            datingTextRows(datingSummary).forEach { row ->
+                val valueClass = if (row.isEdd) "val text-rose" else "val"
+                append("""<div class="matrix-item"><div class="label">${escapeHtml(row.label)}</div>""")
+                append("""<div class="$valueClass">${escapeHtml(row.value ?: "Not recorded")}</div></div>""")
+            }
+            datingDiscordanceLine(patient.dating, datingSummary)?.let {
+                append("""<div class="matrix-item" style="grid-column: 1 / -1"><div class="val">${escapeHtml(it)}</div></div>""")
+            }
+        }
+
+        // Format Obstetric summary
+        val g = patient.gravida ?: "-"
+        val p = patient.parity ?: "-"
+        val a = patient.abortion ?: "-"
+        val pastDeliverySummary = previousDeliverySummary(patient)
+
+        val riskLevel = patient.riskLevel?.takeUnless(String::isBlank)
+        val isHighRisk = com.sherifradwan.ancnative.ui.isHighRisk(riskLevel)
+        val isRhNegative = com.sherifradwan.ancnative.ui.isRhNegative(patient.bloodGroupText)
+
+        // Collect ultrasound images if any
+        val attachedUltrasoundImages = patient.ultrasoundScans.flatMapIndexed { sIdx, s ->
+            s.imageUris.mapIndexed { iIdx, uri ->
+                mapOf(
+                    "uri" to uri,
+                    "date" to s.date,
+                    "label" to "Ultrasound Scan ${sIdx + 1}.${iIdx + 1} - " + s.date +
+                        (s.impression?.takeUnless(String::isBlank)?.let { " ($it)" } ?: ""),
+=== matrix css ===
+74:                val valueClass = if (row.isEdd) "val text-rose" else "val"
+75:                append("""<div class="matrix-item"><div class="label">${escapeHtml(row.label)}</div>""")
+79:                append("""<div class="matrix-item" style="grid-column: 1 / -1"><div class="val">${escapeHtml(it)}</div></div>""")
+469:            .dating-matrix {
+753:        .dating-matrix {
+760:        .matrix-item {
+767:        .matrix-item .label {
+772:        .matrix-item .val {
+869:        .text-rose { color: var(--rose-accent); }
+1038:                    <span class="data-value ${if (isRhNegative) "text-rose" else "text-navy"}">
+1060:                    <div class="dating-matrix">
+1080:                            <span class="v ${if (classifyAllergy(patient.allergyHistory) is AllergyState.Recorded) "text-rose font-bold" else ""}">${escapeHtml(patient.allergyHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
+1236:                                <span class="v text-rose font-bold">${escapeHtml(com.sherifradwan.ancnative.ui.parseDeliveryNotes(patient.obstetricNotes).plan?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt [90m[limit=70, offset=435][0m
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt 
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && ls app/src/main/res | head; echo ---; grep -n "ga_prefix\|calculated_edd\|agreed_edd\|not_recorded\|pregnancy_dating_title\|no_dating_recorded\|notes\"" app/src/main/res/values/strings.xml | head -20
+drawable
+drawable-nodpi
+mipmap-anydpi-v26
+mipmap-hdpi
+mipmap-mdpi
+mipmap-xhdpi
+mipmap-xxhdpi
+mipmap-xxxhdpi
+values
+values-v31
+---
+17:    <string name="not_recorded">Not recorded</string>
+42:    <string name="notes">Notes</string>
+120:    <string name="obstetric_notes">Obstetric notes</string>
+142:    <string name="pregnancy_dating_title">Pregnancy dating &amp; due date</string>
+144:    <string name="date_not_recorded">Date not recorded</string>
+174:    <string name="agreed_edd">Agreed clinical EDD</string>
+179:    <string name="no_dating_recorded">No dating recorded</string>
+266:    <string name="calculated_edd">Calculated EDD</string>
+327:    <string name="ga_prefix">GA %1$s</string>
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -n "^import\|fun show\|inTagged\|assertNotEllipsized\|widthDp\|fontScale\|SemanticsMatcher\|SemanticsProperties" app/src/androidTest/java/com/sherifradwan/ancnative/OverviewTabSectionsTest.kt
+3:import androidx.activity.compose.setContent
+4:import androidx.compose.foundation.layout.Box
+5:import androidx.compose.foundation.layout.width
+6:import androidx.compose.runtime.CompositionLocalProvider
+7:import androidx.compose.ui.Modifier
+8:import androidx.compose.ui.platform.LocalDensity
+9:import androidx.compose.ui.semantics.SemanticsActions
+10:import androidx.compose.ui.semantics.SemanticsProperties
+11:import androidx.compose.ui.semantics.getOrNull
+12:import androidx.compose.ui.test.SemanticsMatcher
+13:import androidx.compose.ui.test.assertCountEquals
+14:import androidx.compose.ui.test.assertIsDisplayed
+15:import androidx.compose.ui.test.getUnclippedBoundsInRoot
+16:import androidx.compose.ui.test.hasAnyAncestor
+17:import androidx.compose.ui.test.hasClickAction
+18:import androidx.compose.ui.test.hasTestTag
+19:import androidx.compose.ui.test.hasText
+20:import androidx.compose.ui.test.junit4.createAndroidComposeRule
+21:import androidx.compose.ui.test.onNodeWithTag
+22:import androidx.compose.ui.unit.Density
+23:import androidx.compose.ui.unit.dp
+24:import androidx.test.ext.junit.runners.AndroidJUnit4
+25:import com.sherifradwan.ancnative.model.DemoFixtures
+26:import com.sherifradwan.ancnative.model.DemoPatient
+27:import com.sherifradwan.ancnative.model.DemoPatientDating
+28:import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
+29:import com.sherifradwan.ancnative.model.DemoUltrasoundScan
+30:import com.sherifradwan.ancnative.ui.AncTheme
+31:import com.sherifradwan.ancnative.ui.GestationalBanner
+32:import com.sherifradwan.ancnative.ui.patienthub.tabs.OverviewTab
+33:import java.time.LocalDate
+34:import org.junit.Assert.assertEquals
+35:import org.junit.Assert.assertFalse
+36:import org.junit.Assert.assertTrue
+37:import org.junit.Rule
+38:import org.junit.Test
+39:import org.junit.runner.RunWith
+50:    private fun hasTagPrefix(prefix: String) = SemanticsMatcher("testTag starts with $prefix") {
+51:        it.config.getOrNull(SemanticsProperties.TestTag)?.startsWith(prefix) == true
+55:    private fun inTagged(tag: String) = hasTestTag(tag) or hasAnyAncestor(hasTestTag(tag))
+57:    private fun show(
+60:        widthDp: Int? = null,
+61:        fontScale: Float? = null,
+67:                    val density = if (fontScale != null) Density(base.density, fontScale) else base
+69:                        val sized = if (widthDp != null) Modifier.width(widthDp.dp) else Modifier
+152:        show(patient, widthDp = 360, fontScale = 1.3f)
+173:            assertNotEllipsized(text, rowTag)
+177:    private fun assertNotEllipsized(text: String, ancestorTag: String) {
+179:            hasText(text, substring = true) and inTagged(ancestorTag),
+209:        show(multiparous.copy(previousPregnancies = listOf(row)), widthDp = 360, fontScale = 1.3f)
+214:                hasText(t, substring = true) and inTagged(extrasTag),
+217:            assertNotEllipsized(t, extrasTag)
+240:            hasText("Medical", substring = true) and inTagged("pregnancyExtras-${row.id}"),
+336:            hasAnyAncestor(hasTestTag("datingCard")) and SemanticsMatcher.keyIsDefined(SemanticsProperties.Text),
+352:                .map { it.config[SemanticsProperties.Text].joinToString("") { t -> t.text } }
+395:        compose.onAllNodes(hasClickAction() and inTagged(alertTag), useUnmergedTree = true).assertCountEquals(0)
+473:        show(withDating(variantB), widthDp = 360, fontScale = 1.3f)
+475:        assertNotEllipsized("EDD discordance", alertTag)
+482:        compose.onAllNodes(hasClickAction() and inTagged(alertTag), useUnmergedTree = true).assertCountEquals(0)
+488:    private fun showBanner(d: DemoPatientDating) {
+505:        compose.onNode(hasText("??") and inTagged(markerTag), useUnmergedTree = true).assertExists()
+507:            inTagged(markerTag) and SemanticsMatcher.keyIsDefined(SemanticsProperties.ContentDescription),
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/androidTest/java/com/sherifradwan/ancnative/OverviewTabSectionsTest.kt [90m[limit=30, offset=175][0m
+[0m→ [0mRead app/src/androidTest/java/com/sherifradwan/ancnative/OverviewTabSectionsTest.kt [90m[limit=80, offset=40][0m
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && ls; test -f local.properties && cat local.properties; java -version 2>&1 | head -2
+AGENTS.md
+FIX_PIPELINE.command
+LICENSE
+README.md
+app
+build
+build.gradle.kts
+comprehension_report.md
+concepts_brief.md
+consolidated_review_report.md
+critic_report.md
+design_draft.md
+docs
+evidence
+goldfish_review_report.md
+goldfish_review_report_stage5-9.md
+gradle
+gradle.properties
+gradlew
+gradlew.bat
+implementation_readiness_report.md
+intermediate_zoom_out_report.md
+keystore
+local.properties
+release
+retry
+scratch
+settings.gradle.kts
+tasks
+tests
+tools
+zoom_out_report.md
+sdk.dir=/opt/homebrew/share/android-commandlinetools
+
+openjdk version "17.0.20.1" 2026-08-18
+OpenJDK Runtime Environment Homebrew (build 17.0.20.1+0)
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && ./gradlew :app:compileDebugUnitTestKotlin :app:compileDebugAndroidTestKotlin --offline -q 2>&1 | tail -40
+(no output)
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && ./gradlew :app:testDebugUnitTest --offline --tests 'com.sherifradwan.ancnative.model.Dating*' --tests 'com.sherifradwan.ancnative.model.FormatDmyTest' --tests 'com.sherifradwan.ancnative.model.ClinicalSummaryDatingTest' --tests 'com.sherifradwan.ancnative.ui.report.PatientPrintHtml*' 2>&1 | tail -30
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :app:kspDebugKotlin
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:kspDebugUnitTestKotlin
+> Task :app:compileDebugUnitTestKotlin UP-TO-DATE
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+> Task :app:testDebugUnitTest
+
+BUILD SUCCESSFUL in 3s
+28 actionable tasks: 3 executed, 25 up-to-date
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && git show --stat HEAD | head -30; echo '--- prev'; git show --stat HEAD~1 | head -20; echo '--- prev2'; git show --stat HEAD~2 | head -20
+commit 60ea73d561fa862f978cd55f2f6433c98a58d603
+Author: sherifrad <23216006+sherifrad@users.noreply.github.com>
+Date:   Mon Nov 9 20:15:19 2026 +0200
+
+    feat(ui): dating section rewrite, GA discordance marker, shared EDD rule in print and share
+    
+    Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+
+ .../ancnative/OverviewTabSectionsTest.kt           | 233 +++++++++++++++++++++
+ .../ancnative/model/ClinicalSummaryGenerator.kt    |   9 +-
+ .../com/sherifradwan/ancnative/model/DatingText.kt |  53 +++++
+ .../com/sherifradwan/ancnative/model/IsoDates.kt   |   4 +-
+ .../sherifradwan/ancnative/ui/ClinicalBadges.kt    |  46 +++-
+ .../sherifradwan/ancnative/ui/ClinicalFormat.kt    |  13 --
+ .../com/sherifradwan/ancnative/ui/Components.kt    |   9 +-
+ .../sherifradwan/ancnative/ui/GestationalBanner.kt |  28 ++-
+ .../sherifradwan/ancnative/ui/PatientListScreen.kt |  19 +-
+ .../patientdirectory/PatientDirectoryMetricsRow.kt |   2 +
+ .../ancnative/ui/patienthub/PatientHubHeader.kt    |   6 +-
+ .../ui/patienthub/components/OverviewSections.kt   | 100 +++++----
+ .../ancnative/ui/patienthub/tabs/OverviewTab.kt    |   2 +-
+ .../ui/report/PatientPrintHtmlGenerator.kt         |  30 +--
+ app/src/main/res/values/strings.xml                |   7 +-
+ .../ancnative/model/ClinicalSummaryDatingTest.kt   |  95 +++++++++
+ .../ancnative/model/DatingMethodLabelTest.kt       |  29 +++
+ .../ancnative/ui/DatingMethodLabelTest.kt          |  30 ---
+ .../ui/report/PatientPrintHtmlEscapeTest.kt        |   8 +-
+ .../ui/report/PatientPrintHtmlGeneratorTest.kt     | 118 ++++++++++-
+ 20 files changed, 701 insertions(+), 140 deletions(-)
+--- prev
+commit 94e43a0b71f946f94aa77a99d3d4daedb4c5a439
+Author: sherifrad <23216006+sherifrad@users.noreply.github.com>
+Date:   Mon Nov 9 20:01:12 2026 +0200
+
+    feat(model): shared dating summary rule and dd/mm/yyyy formatter
+    
+    Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+
+ .../sherifradwan/ancnative/model/DatingSummary.kt  |  61 ++++
+ .../ancnative/model/GestationalAgeEngine.kt        |  22 +-
+ .../com/sherifradwan/ancnative/model/IsoDates.kt   |   9 +
+ .../sherifradwan/ancnative/ui/ClinicalFormat.kt    |  14 +-
+ .../ancnative/model/DatingSummaryTest.kt           | 331 +++++++++++++++++++++
+ .../sherifradwan/ancnative/model/FormatDmyTest.kt  |  54 ++++
+ 6 files changed, 481 insertions(+), 10 deletions(-)
+--- prev2
+commit 4d8f1e8bddca213e5cd8a985bc2676158999b166
+Author: sherifrad <23216006+sherifrad@users.noreply.github.com>
+Date:   Mon Nov 9 19:58:54 2026 +0200
+
+    docs(design): clarify dating rule oracles
+    
+    Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+
+ .agents/specs/overview_dating_spec.md | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "trimester_badge\|current_gestational_age\|gestational_progress_cd" app/src/main/java --include='*.kt'; echo ---; git log --oneline -12 -- app/src/main/java/com/sherifradwan/ancnative/ui/ProfileScreen.kt | head
+app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:70:                            text = stringResource(R.string.current_gestational_age),
+app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:100:                                text = stringResource(R.string.trimester_badge, gaResult.trimester),
+app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt:140:                val cdMessage = stringResource(R.string.gestational_progress_cd, gaResult.formatted, progressPercent)
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt:111:                    label = stringResource(R.string.current_gestational_age),
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:248:                                        text = stringResource(R.string.current_gestational_age) + ":",
+---
+b46a8be feat(ui): unify workspace and profile into modular Patient Hub with smooth collapsing header
+2c5adc9 fix(labs): consolidate single unified Add Investigation entrypoint across workspace and profile
+d7706a5 refactor(ui): redesign patient chart to match approved mock (d26 phase 2)
+e6642ca design(medication): reduced editor (name, dose, route, Active/Stopped, one note), pinned action bar, instructions line on card and print, Meds tab label, one-line Undo bar
+419ccc8 feat(medication): four statuses, Prophylaxis button removed, profile and print use the new status
+787b77b refactor: one function per rule (print date, save-error text, fetal metrics line, medication frequencies, risk badge, editor field, editor error card); unused draft-policy strings removed
+c9d7049 refactor(gestation): term stage, progress, short text and days-to-EDD live in the engine; banner test calls production
+a804309 refactor(history): one rule and one text for previous caesarean/vaginal counts, used by list, profile and print
+0d401e5 feat(visits): round 3m - visit checks: no future dates, read BP and weight in one place, ACOG raised/severe BP alerts
+e419f4d fix(ui): round 3k - tile labels, chip gaps, prior-pregnancy summary, one weight unit, no inner frame, full header subtitle
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "PatientDirectoryCard" -A20 app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/*.kt | grep -n "MetricsRow\|projection\|row\." | head
+8:app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt-63-    val isArabic = row.displayName.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.ARABIC }
+12:app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt-67-        row.isSevereBp || row.isHighRisk -> ActionRose
+13:app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt-68-        row.riskTier == PatientRiskTier.MEDIUM -> ClinicalCardTokens.WarningAccent
+17:app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt-72-    val cardBgColor = if (row.isHighRisk) {
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "datingMethodText\|eddText" app/src --include='*.kt' | head -20
+app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:107:    val eddText: String?,
+app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:152:        eddText = edd,
+app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt:84:                    text = if (!row.eddText.isNullOrBlank()) "Due ${row.eddText}" else stringResource(R.string.edd_pending),
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "IVF_TRANSFER\|Ultrasound\|Clinical" app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt | head -20; echo ---; sed -n '45,75p' app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:36:import com.sherifradwan.ancnative.state.ClinicalValidationError
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:89:                ClinicalDateField(
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:95:                    error = draft.errors.contains(ClinicalValidationError.INVALID_DATE),
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:99:                ClinicalDateField(
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:105:                    error = draft.errors.contains(ClinicalValidationError.INVALID_DATE),
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:110:                ClinicalDateField(
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:116:                    error = draft.errors.contains(ClinicalValidationError.INVALID_DATE),
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:156:                            "Ultrasound" to stringResource(R.string.ultrasound),
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:157:                            "IVF_TRANSFER" to stringResource(R.string.ivf_transfer_date),
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:158:                            "Clinical" to stringResource(R.string.agreed_edd),
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:175:                if (draft.values.datingMethod.equals("IVF_TRANSFER", ignoreCase = true) || draft.values.datingMethod.equals("IVF", ignoreCase = true)) {
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:176:                    ClinicalDateField(
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:182:                        error = draft.errors.contains(ClinicalValidationError.INVALID_DATE),
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:280:                    text = "3. Clinical Notes & Observations",
+---
+    route: AncRoute.DatingEditor,
+    onEvent: (AncEvent) -> Unit,
+) {
+    val patient = state.patient(route.patientId) ?: return
+    val draft = state.datingDraft?.takeIf { it.patientId == route.patientId } ?: return
+    val enabled = state.savePhase == SavePhase.IDLE || state.savePhase == SavePhase.ERROR
+
+    // Compute live gestational age and EDD preview from current draft inputs
+    val currentDatingPreview = remember(draft.values) {
+        datingDraftToDating(patient.id, draft.values)
+    }
+    val calculatedEdd = remember(currentDatingPreview) {
+        GestationalAgeEngine.calculateEstimatedDueDate(currentDatingPreview)
+    }
+    val calculatedGa = remember(currentDatingPreview) {
+        GestationalAgeEngine.calculate(currentDatingPreview, LocalDate.now())
+    }
+
+    EditorPage(
+        title = stringResource(R.string.dating_editor),
+        subtitle = "${patient.displayName} · Gestational Age & Estimated Due Date",
+        tag = "datingEditor",
+    ) {
+        GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
+
+        // CARD 1: BASELINE DATING PARAMETERS
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "dueDatesByMethod\|dueDateForMethod" app/src/main --include='*.kt'
+app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt:43:        val dueDate = GestationalAgeEngine.dueDateForMethod(dating, "LMP") ?: return null
+app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt:60:            val dueDate = GestationalAgeEngine.dueDateForMethod(dating, "LMP") ?: return null
+app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt:81:            val dueDate = GestationalAgeEngine.dueDateForMethod(dating, "IVF_TRANSFER") ?: return null
+app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt:105:            val dueDate = GestationalAgeEngine.dueDateForMethod(dating, "Ultrasound") ?: return null
+app/src/main/java/com/sherifradwan/ancnative/state/DatingDraftRule.kt:30:    return GestationalAgeEngine.dueDateForMethod(dating, dating.datingMethod)
+app/src/main/java/com/sherifradwan/ancnative/model/DatingText.kt:50:    val lmpEdd = GestationalAgeEngine.dueDateForMethod(d, "LMP") ?: return null
+app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt:47:    fun dueDateForMethod(dating: DemoPatientDating, method: String?): LocalDate? {
+app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt:72:                scan ?: dueDateForMethod(dating, "LMP")
+app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt:77:    fun dueDatesByMethod(dating: DemoPatientDating): DueDatesByMethod {
+app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt:79:            lmp = dueDateForMethod(dating, "LMP"),
+app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt:80:            ivf = dueDateForMethod(dating, "IVF_TRANSFER"),
+app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt:81:            scan = dueDateForMethod(dating, "Ultrasound"),
+app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt:108:        return dueDateForMethod(dating, dating.datingMethod)
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -n "TagGestationalAge" app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt
+34:val TagGestationalAgeBg = Color(0xFFE0F2FE)
+35:val TagGestationalAgeBorder = Color(0xFFBAE6FD)
+36:val TagGestationalAgeText = Color(0xFF0369A1)
+89:val TagGestationalAgeDarkBg = Color(0xFF082F49)
+90:val TagGestationalAgeDarkBorder = Color(0xFF075985)
+91:val TagGestationalAgeDarkText = Color(0xFFBAE6FD)
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && sed -n '1040,1075p' app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+${if (isRhNegative) """<span class="badge badge-danger">Rh- Negative</span>""" else ""}
+                    </span>
+                </div>
+                <div class="data-point" style="align-items: flex-end;">
+                    <span class="data-label">Clinical Risk Level</span>
+                    ${when {
+                        riskLevel.isNullOrBlank() -> """<span class="badge">Risk not recorded</span>"""
+                        isHighRisk -> """<span class="badge badge-danger">High Risk</span>"""
+                        else -> """<span class="badge badge-success">Normal Risk</span>"""
+                    }}
+                </div>
+            </section>
+
+            <!-- Dating & Obstetric Profile Grid -->
+            <div class="grid-two-col">
+                <!-- Pregnancy Dating (PREGNANCY DATING without Matrix) -->
+                <div class="section-box">
+                    <div class="section-title">
+                        <span>Pregnancy Dating</span>
+                    </div>
+                    <div class="dating-matrix">
+                        $datingMatrixHtml
+                    </div>
+                    <div class="ga-highlight">
+                        Current Gestational Age (GA): $currentGaFormatted
+                    </div>
+                </div>
+
+                <!-- Obstetric Summary & History -->
+                <div class="section-box">
+                    <div class="section-title">
+                        <span>Obstetric & Medical History</span>
+                    </div>
+                    <div class="history-list">
+                        <div class="history-row">
+                            <span class="k">GPA Formula:</span>
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && sed -n '140,200p' app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt
+// Dating Method Selector (Progressive Disclosure)
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = stringResource(R.string.dating_method_select_hint),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        listOf(
+                            "LMP" to stringResource(R.string.lmp_date),
+                            "Ultrasound" to stringResource(R.string.ultrasound),
+                            "IVF_TRANSFER" to stringResource(R.string.ivf_transfer_date),
+                            "Clinical" to stringResource(R.string.agreed_edd),
+                        ).forEach { (methodKey, methodLabel) ->
+                            val isSelected = draft.values.datingMethod.equals(methodKey, ignoreCase = true)
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = {
+                                    onEvent(AncEvent.DatingDraftChanged(DatingDraftField.DATING_METHOD, methodKey))
+                                },
+                                label = { Text(methodLabel) },
+                                enabled = enabled,
+                                modifier = Modifier.testTag("datingMethod_$methodKey"),
+                            )
+                        }
+                    }
+                }
+
+                // IVF Specific inputs
+                if (draft.values.datingMethod.equals("IVF_TRANSFER", ignoreCase = true) || draft.values.datingMethod.equals("IVF", ignoreCase = true)) {
+                    ClinicalDateField(
+                        value = draft.values.transferDate,
+                        onValueChange = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.TRANSFER_DATE, it)) },
+                        label = stringResource(R.string.ivf_transfer_date),
+                        tag = "ivfTransferDate",
+                        enabled = enabled,
+                        error = draft.errors.contains(ClinicalValidationError.INVALID_DATE),
+                        showTodayButton = false,
+                    )
+
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            text = stringResource(R.string.embryo_age),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            FilterChip(
+                                selected = draft.values.embryoAgeDays == "3",
+                                onClick = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.EMBRYO_AGE_DAYS, "3")) },
+                                label = { Text(stringResource(R.string.embryo_day_3)) },
+                                enabled = enabled,
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && for s in ultrasound_edd lmp_date dating_method calculated_edd embryo_age ivf_transfer_date date_not_recorded; do printf "%s: " "$s"; grep -rn "R.string.$s\b" app/src --include='*.kt' | wc -l; done
+ultrasound_edd:        1
+lmp_date:        2
+dating_method:        0
+calculated_edd:        2
+embryo_age:        1
+ivf_transfer_date:        2
+date_not_recorded:        1
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "FUTURE\|future" app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt | head -20
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:169:    DATE_IN_FUTURE,
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "isValidIsoDate" app/src/main/java/com/sherifradwan/ancnative | head -20
+app/src/main/java/com/sherifradwan/ancnative/state/LabBatchState.kt:87:        else if (!ClinicalVocabulary.isValidIsoDate(trimmedDate)) add(ClinicalValidationError.INVALID_DATE)
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:110:        if (!ClinicalVocabulary.isValidIsoDate(lmpDate)) return false
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:111:        if (!ClinicalVocabulary.isValidIsoDate(ultrasoundEdd)) return false
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:112:        if (!ClinicalVocabulary.isValidIsoDate(agreedEdd)) return false
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:113:        if (!ClinicalVocabulary.isValidIsoDate(transferDate)) return false
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:137:            if (lmp != null && !ClinicalVocabulary.isValidIsoDate(lmp)) errors.add(ClinicalValidationError.INVALID_DATE)
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:138:            if (usEdd != null && !ClinicalVocabulary.isValidIsoDate(usEdd)) errors.add(ClinicalValidationError.INVALID_DATE)
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:139:            if (agreedEdd != null && !ClinicalVocabulary.isValidIsoDate(agreedEdd)) errors.add(ClinicalValidationError.INVALID_DATE)
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:140:            if (transfer != null && !ClinicalVocabulary.isValidIsoDate(transfer)) errors.add(ClinicalValidationError.INVALID_DATE)
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:201:        if (!ClinicalVocabulary.isValidIsoDate(date) || date.isBlank()) return false
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:223:            } else if (!ClinicalVocabulary.isValidIsoDate(date)) {
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:322:        if (!ClinicalVocabulary.isValidIsoDate(date) || date.isBlank()) return false
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:339:            } else if (!ClinicalVocabulary.isValidIsoDate(date)) {
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:415:        if (!ClinicalVocabulary.isValidIsoDate(startDate) || startDate.isBlank()) return false
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:416:        if (!ClinicalVocabulary.isValidIsoDate(endDate)) return false
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:451:            } else if (!ClinicalVocabulary.isValidIsoDate(startDate)) {
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt:456:            if (endDate != null && !ClinicalVocabulary.isValidIsoDate(endDate)) {
+app/src/main/java/com/sherifradwan/ancnative/storage/LabBatchCommands.kt:75:            ClinicalVocabulary.isValidIsoDate(date) &&
+app/src/main/java/com/sherifradwan/ancnative/storage/LabBatchCommands.kt:143:            ClinicalVocabulary.isValidIsoDate(date) &&
+app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt:222:    fun isValidIsoDate(value: String?): Boolean {
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && sed -n '455,480p;745,780p' app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+box-shadow: 0 4px 14px rgba(13, 27, 61, 0.12);
+                margin: 0 auto;
+                overflow: visible;
+            }
+        }
+
+        @media screen and (max-width: 540px) {
+            .patient-card {
+                grid-template-columns: 1fr 1fr !important;
+                gap: 8px !important;
+            }
+            .grid-two-col {
+                grid-template-columns: 1fr !important;
+            }
+            .dating-matrix {
+                grid-template-columns: 1fr 1fr 1fr !important;
+            }
+            .attestation-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .clinic-header {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 8px !important;
+            }
+            .uniform-meta {
+            border-bottom: 1.5px solid #F1F5F9;
+            padding-bottom: 4px;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dating-matrix {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+
+        .matrix-item {
+            background: #F8FAFC;
+            padding: 5px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .matrix-item .label {
+            font-size: 7.5pt;
+            color: var(--text-muted);
+        }
+
+        .matrix-item .val {
+            font-size: 9.5pt;
+            font-weight: 800;
+            color: var(--navy-primary);
+        }
+
+        .ga-highlight {
+            background: #FDF2F4;
+            border: 1px solid #FBCFE8;
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -n "EDD\|edd" app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt | head -30
+(no output)
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -ni "due date\|due-date\|edd" app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt | head -30
+74:                val valueClass = if (row.isEdd) "val text-rose" else "val"
+1240:                                <span class="v text-navy font-bold">${escapeHtml(formatDmy(patient.dating?.agreedEdd) ?: "Not recorded")}</span>
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -n "fun escapeHtml" -A12 app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt; grep -n "MARKER\|ESCAPED =" app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt | head
+30: *  - MARKER = "<b>&"'". Its escaped form is "&lt;b&gt;&amp;&quot;&#39;".
+40:    private val MARKER = "<b>&\"'"
+41:    private val ESCAPED = "&lt;b&gt;&amp;&quot;&#39;"
+83:        assertEquals(ESCAPED, escapeHtml(MARKER))
+94:        id = "q93-s", patientId = "q93", date = MARKER,
+95:        gestationalAgeWeeks = null, gestationalAgeDays = null, fetalNumber = MARKER,
+96:        presentation = MARKER, placentalSite = MARKER, amnioticFluid = MARKER,
+97:        fetalHeartRate = MARKER, biometryBpd = MARKER, biometryHc = MARKER,
+98:        biometryAc = MARKER, biometryFl = MARKER, estimatedFetalWeight = MARKER,
+99:        impression = MARKER, imageUris = listOf("content://x/1"),
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "ga_discordance_marker_cd\|dating_discordance_alert" app/src/main/res app/src/main/java --include='*.xml' --include='*.kt'
+app/src/main/res/values/strings.xml:380:    <string name="dating_discordance_alert">EDD discordance: LMP and scan differ by %1$d&#160;d (limit %2$d&#160;d)</string>
+app/src/main/res/values/strings.xml:381:    <string name="ga_discordance_marker_cd">Gestational age uncertain: LMP and scan due dates disagree</string>
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt:380:    val description = stringResource(R.string.ga_discordance_marker_cd)
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt:93:                    R.string.dating_discordance_alert,
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && sed -n '85,135p' app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt
+if (canEdit) {
+                    IconButton(
+                        onClick = onEditPatient,
+                        modifier = Modifier
+                            .minimumTouchTarget()
+                            .testTag("editDeliveryPlan"),
+                    ) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = stringResource(R.string.edit_delivery_plan),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
+            }
+
+            // Key clinical facts: label above, bold value, each in its own tile
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                KeyFactTile(
+                    label = stringResource(R.string.blood_group),
+                    value = formatBloodGroup(patient.bloodGroupText),
+                    emphasize = rhNegative,
+                    modifier = Modifier.weight(1f),
+                )
+                KeyFactTile(
+                    label = stringResource(R.string.current_gestational_age),
+                    value = patient.dating?.calculateGestationalAge(),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                KeyFactTile(
+                    label = stringResource(R.string.agreed_edd),
+                    value = patient.dating?.agreedEdd ?: patient.dating?.ultrasoundEdd,
+                    modifier = Modifier.weight(1f),
+                )
+                KeyFactTile(
+                    label = stringResource(R.string.manual_risk),
+                    value = patient.riskLevel,
+                    emphasize = isHighRisk(patient.riskLevel),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                KeyFactTile(
+                    label = stringResource(R.string.fetal_presentation),
+                    value = latestScan?.presentation,
+                    modifier = Modifier.weight(1f),
+                )
+                KeyFactTile(
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -n "EDD\|Edd\|edd" app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt | head -20
+(no output)
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && sed -n '190,235p' app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt
+val imageUris: List<String> = emptyList(),
+) : ClinicalCommand {
+    override val recordKind = if (expectedScanRevision == null) ClinicalRecordKind.ULTRASOUND_CREATE else ClinicalRecordKind.ULTRASOUND_UPDATE
+    override val recordId = scanId
+
+    override fun destination(): AncRoute = AncRoute.Workspace(patientId, WorkspaceSection.ULTRASOUND)
+    override fun savedNotice(): SavedNotice = SavedNotice.ULTRASOUND
+
+    override fun isStructurallyValid(): Boolean {
+        if (!isValidUuid(operationUuid) || patientId.isBlank() || scanId.isBlank() || expectedPatientRevision < 1) return false
+        if (expectedScanRevision != null && expectedScanRevision < 1) return false
+        if (!ClinicalVocabulary.isValidIsoDate(date) || date.isBlank()) return false
+        if (gaWeeks != null && gaWeeks !in 0..45) return false
+        if (gaDays != null && gaDays !in 0..6) return false
+        if (fetalNumber != null && fetalNumber !in ClinicalVocabulary.fetalNumbers) return false
+        if (presentation != null && presentation !in ClinicalVocabulary.fetalPresentations) return false
+        if (placentalSite != null && placentalSite !in ClinicalVocabulary.placentalSites) return false
+        if (amnioticFluid != null && amnioticFluid !in ClinicalVocabulary.amnioticFluids) return false
+        return true
+    }
+
+    override fun computeFingerprint(): String = sha256(
+        "US|$operationUuid|$patientId|$expectedPatientRevision|$scanId|$expectedScanRevision|$date|$gaWeeks|$gaDays|$fetalNumber|$presentation|$placentalSite|$amnioticFluid|$fetalHeartRate|$biometryBpd|$biometryHc|$biometryAc|$biometryFl|$estimatedFetalWeight|$impression|$linkedVisitId|${imageUris.joinToString(",")}",
+    )
+
+    companion object {
+        fun prepare(state: AncState, operationUuid: String, scanId: String): ClinicalCommandPreparation {
+            val draft = state.ultrasoundDraft
+                ?: return ClinicalCommandPreparation.Rejected(setOf(ClinicalValidationError.SAVE_FAILED))
+            val errors = mutableSetOf<ClinicalValidationError>()
+            val date = draft.values.date.trim()
+            if (date.isEmpty()) {
+                errors.add(ClinicalValidationError.REQUIRED_DATE)
+            } else if (!ClinicalVocabulary.isValidIsoDate(date)) {
+                errors.add(ClinicalValidationError.INVALID_DATE)
+            }
+
+            val gaWeeks = if (draft.values.gaWeeks.isBlank()) null else {
+                draft.values.gaWeeks.trim().toIntOrNull()?.also {
+                    if (it !in 0..45) errors.add(ClinicalValidationError.INVALID_GA_WEEKS)
+                } ?: run {
+                    errors.add(ClinicalValidationError.INVALID_GA_WEEKS)
+                    null
+                }
+            }
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && sed -n '20,35p;420,440p;765,790p' app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt; echo '--- scan dates'; grep -n "date = \"20" app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt | head -20
+familyHistory = "No history of multiple gestations or genetic anomalies",
+            allergyHistory = "No known drug allergies (NKDA)",
+            clinicalAttention = "[NOTE] Prior uncomplicated full-term vaginal delivery (2023). Current pregnancy low-risk; vertex presentation. Spontaneous vaginal delivery planned.",
+            obstetricNotes = "Agreed delivery mode: Spontaneous Vaginal Delivery (SVD) at Cleopatra Maternity Hospital.\nDelivery fee package agreed: 15,000 EGP (Full hospital stay + pediatrician attendance).\nPostpartum note: Successfully delivered healthy female infant on 2026-10-12 at 39w+2d, birth weight 3.35 kg, Apgar 9/10. Mother and neonate discharged in excellent condition.",
+            revision = 1,
+            dating = DemoPatientDating(
+                patientId = "10000000-0000-4000-8000-000000000001",
+                lmpDate = "2026-01-10",
+                ultrasoundEdd = "2026-10-17",
+                agreedEdd = "2026-10-17",
+                datingMethod = "Ultrasound",
+                notes = "12-week dating ultrasound confirmed CRL concordant with regular LMP; agreed EDD 2026-10-17.",
+                revision = 1,
+            ),
+            previousPregnancies = listOf(
+                DemoPreviousPregnancy(
+            gravida = 2L,
+            parity = 1L,
+            abortion = 0L,
+            obstetricNotes = "Previous uncomplicated full-term vaginal delivery in 2022. Current pregnancy with mild gestational anemia.",
+            clinicalAttention = "[ALERT] Mild anemia in pregnancy at 34w (Hb 10.6 g/dL, threshold < 11.0). Non-compliant with Calcium due to constipation. Low-dose aspirin 150 mg prescribed for pre-eclampsia prophylaxis (local protocol, review at 36w).",
+            medicalHistory = "No significant medical history",
+            surgicalHistory = "Appendectomy (2018)",
+            familyHistory = "Family history of Type 2 Diabetes (maternal grandmother)",
+            allergyHistory = "No known drug allergies (NKDA)",
+            revision = 1,
+            dating = DemoPatientDating(
+                patientId = "10000000-0000-4000-8000-000000000002",
+                lmpDate = "2026-02-13",
+                ultrasoundEdd = "2026-11-20",
+                agreedEdd = "2026-11-20",
+                datingMethod = "Ultrasound",
+                notes = "Ultrasound dating at 12w confirmed EDD 2026-11-20 (aligned with reported regular LMP 2026-02-13).",
+                revision = 1,
+            ),
+            visits = listOf(
+                DemoVisit(
+            parity = 1L,
+            abortion = 3L,
+            obstetricNotes = "G5 P1 A2 + 1 Stillbirth (Prior IUFD at 34w in 2021). 1 previous CS (2019). Two 1st-trimester miscarriages (2022, 2023). APS under therapeutic LMWH + Aspirin.",
+            clinicalAttention = "[CRITICAL ALERT] Prior IUFD at 34w + Primary APS + Rh-Negative. Daily Enoxaparin 4000 IU SC + Aspirin 150mg. Planned elective repeat CS at 37+4 weeks.",
+            medicalHistory = "Primary Antiphospholipid Syndrome (APS); Rh-negative alloimmunization prophylaxis active",
+            surgicalHistory = "Lower Segment Cesarean Section (2019), Diagnostic Hysteroscopy & D&C (2022)",
+            familyHistory = "Maternal systemic lupus erythematosus (SLE); familial early recurrent pregnancy losses",
+            allergyHistory = "Penicillin (moderate urticaria)",
+            revision = 1,
+            dating = DemoPatientDating(
+                patientId = "10000000-0000-4000-8000-000000000004",
+                lmpDate = "2026-02-01",
+                ultrasoundEdd = "2026-11-08",
+                agreedEdd = "2026-11-08",
+                datingMethod = "Ultrasound",
+                notes = "Early 7w viability scan confirmed CRL 11 mm with concordant EDD 2026-11-08.",
+                revision = 1,
+            ),
+            previousPregnancies = listOf(
+                DemoPreviousPregnancy(
+                    id = "40000000-0000-4000-8000-000000000002",
+                    patientId = "10000000-0000-4000-8000-000000000004",
+                    modelVersion = 3,
+                    dateText = "2019-04-12",
+                    outcomeText = "Live female infant, 3.1 kg, healthy",
+                    pregnancyType = "Singleton",
+--- scan dates
+60:                    date = "2026-03-07",
+71:                    date = "2026-04-04",
+83:                    date = "2026-05-02",
+94:                    date = "2026-05-30",
+106:                    date = "2026-06-27",
+117:                    date = "2026-07-25",
+128:                    date = "2026-08-22",
+140:                    date = "2026-09-19",
+151:                    date = "2026-10-03",
+163:                    date = "2026-10-12",
+176:                    date = "2026-04-04",
+197:                    date = "2026-05-30",
+218:                    date = "2026-08-22",
+239:                    date = "2026-10-03",
+262:                    date = "2026-03-07",
+276:                    date = "2026-03-07",
+290:                    date = "2026-03-07",
+304:                    date = "2026-07-25",
+318:                    date = "2026-07-25",
+332:                    date = "2026-09-19",
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/DatingDraftRule.kt 
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -n "agreedEdd\|calculateGestationalAge\|current_gestational_age" app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt
+111:                    label = stringResource(R.string.current_gestational_age),
+112:                    value = patient.dating?.calculateGestationalAge(),
+119:                    value = patient.dating?.agreedEdd ?: patient.dating?.ultrasoundEdd,
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "datingMethod\b" app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt | head
+(no output)
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -n "dating_method\"" app/src/main/res/values/strings.xml; grep -n "mutableStateOf\|remember(patient)" app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt
+175:    <string name="dating_method">Dating method</string>
+67:    val summary = remember(patient) { datingSummaryOf(patient, LocalDate.now()) }
+> build · deepseek-v4.1-flash-free
+## Review — `dating.diff` vs `overview_dating_spec.md` (+ Clarifications) and `overview_tab_sections.html`
+
+I read `DatingSummary.kt` and `DatingText.kt` in full, the other changed files, the spec, the mock, and the full diff. I compiled `:app:compileDebugUnitTestKotlin` + `:app:compileDebugAndroidTestKotlin` and ran the dating/print/share unit tests — all green. Schema v6 untouched.
+
+### Blocker
+
+- **`DatingSummary.kt:30` + `DatingText.kt:12-13`** — the anchor is `min(scan.date)` with no upper bound, so one scan record dated in the future (year typo, e.g. `2027-03-22` instead of `2026-03-22`, which the scan editor accepts — `ClinicalCommands.kt:201` only checks ISO validity) moves the anchor to GA 445 → tier 21, and a 10–20 d LMP-vs-scan discrepancy that *was* alerting at GA 80 (tier 7) is silently suppressed for the whole pregnancy, so both the Overview alert and the red `??` disappear on a genuinely discordant patient. D2 as written permits this, so the fix is small but the spec needs the clarifying line ("ignore scan dates after today"); a unit test for a future scan date is missing.
+
+### Major
+
+- **`DeliveryPlanningCard.kt:119` (and `:112`)** — the delivery card rendered on the *same* Overview (`OverviewTab.kt:114`) still has its own EDD fallback `agreedEdd ?: ultrasoundEdd` and shows it raw (ISO) under the label "Agreed clinical EDD", with no `??`; for an IVF record with a transfer date and a scan EDD but a blank agreed EDD, the Dating card shows the IVF EDD (e.g. 08/03/2027) while the card 40 dp below shows the scan EDD (e.g. 20/11/2026) labelled "agreed" — two conflicting due dates on one screen, and the GA tile at `:112` is the one live current-GA display left without the discordance marker.
+- **`GestationalBanner.kt:38-45`** — no production caller exists (`grep GestationalBanner app/src` → only the definition and tests; `ProfileScreen` was replaced by `PatientHubHeader`), so the U4/U5 "banner" oracle is asserted only against dead code (`OverviewTabSectionsTest.kt:491`), and the new `earliestScanDate` parameter defaults to `null`, meaning if someone wires it up it will measure at today while the Overview/header measure at the earliest scan — a banner showing a confident GA with no `??` while the Overview shows an alert.
+- **`DatingSummary.kt:50-53` + `GestationalAgeEngine.kt:103-108`** — D5 clears the alert whenever the method is Ultrasound, but E1 makes `agreedEdd` win over the scan EDD, so an ultrasound-dated patient whose agreed EDD was edited to 20/03 while the scan EDD is 24/03 gets no alert, no `??`, and nowhere in Overview/print/share is the scan EDD shown any more (the old section and old print both printed "Ultrasound EDD 24/03") — a hidden 4-day scan-vs-recorded EDD disagreement.
+
+### Minor
+
+- **`DatingText.kt:43`** — the Method row is emitted only when `methodCode != null`, so a patient with no recorded method now shows LMP/ET + EDD with no Method row at all, whereas the old `DatingSection` showed "Dating method: Not recorded" (`OverviewSections.kt:86`), leaving the provenance of the due date invisible while U1 lists Method as a row.
+- **`DatingText.kt:29-44`, `PatientPrintHtmlGenerator.kt:72-80`, `ClinicalSummaryGenerator.kt:26-28`** — when the gap is below the tier limit the ultrasound EDD is dropped everywhere (e.g. LMP EDD 15/03 vs scan EDD 18/03 → no alert, scan EDD invisible in Overview, print and share), so the record no longer carries the fact that the scan disagreed by 3 days; this is spec-mandated (U1 "no second EDD row") but is real data loss versus the old section and old print/share and should be an explicit owner decision.
+- **`PatientPrintHtmlGenerator.kt:1240`** — "Target Delivery Timing" still reads `agreedEdd` directly instead of the shared EDD, so a record with a valid LMP/scan EDD but a blank agreed EDD prints an EDD in the dating matrix and "Not recorded" for target delivery timing in the same report.
+
+### Nit
+
+- **`PatientDirectoryMetricsRow.kt:60-66`** — the `??` is drawn next to the literal "Pending" placeholder when `gestationalAgeText` is `"-"` (e.g. a future LMP, where `calculateForEdd` returns null) but a discordance is computed, i.e. a red uncertainty marker attached to no number.
+- **`DatingSummary.kt:50-54`** — D1's third condition (`dueDateForMethod(dating, "LMP")` exists) is not implemented; behaviour is identical for normal dates, but a parseable `+999999999-12-31`-class LMP overflows `eddFromLmp` inside the E1 call and `datingSummary` throws, which contradicts D6's "never throws" for the summary as a whole.
+- **`DatingEditor.kt:175`** — the editor still compares raw method strings (`equals("IVF_TRANSFER"/"IVF", ignoreCase = true)`) instead of `canonicalDatingMethod`, so a legacy `" IVF "` / padded value keeps the transfer-date and embryo-age fields hidden even though the new normaliser now dates the patient as IVF elsewhere.
+- **`DatingText.kt:20-25,31,41-43`** — all dating row labels and the method labels ("LMP", "ET", "EDD", "Confirmed EDD", "Method", "by ultrasound", "clinical") are hard-coded English in the model layer while every other dating string is a resource; they also diverge from the editor chip wording ("LMP date", "Embryo transfer date (IVF)", "Agreed clinical EDD").
+- **`strings.xml:175`** — `dating_method` is now unreferenced (the other removed/kept dating strings still have users), a dead resource.
+- **`OverviewSections.kt:67`, `PatientHubHeader.kt:145`, `PatientListScreen.kt:130`** — `LocalDate.now()` is baked in with `remember(patient)`, so the tier/`??` cannot be recomputed for an injected "as of" date (unlike `datingSummaryOf(patient, asOfDate)` in the card and print paths); harmless today, but it makes the live surfaces untestable deterministically.
+- **`Components.kt:316-332`** — the `STICKY_COMPACT` card variant still draws `GA $gaText` with no marker and no dd/mm/yyyy EDD (dead in production, same class of drift as the banner).
+
+### Verdict
+
+**FIX-NEEDED** — the maths, O/E/M/D1–D7 logic, the shared one-drawer marker, print/share formatting+escaping, and the 360 dp/1.3x alert behaviour are implemented as specified and tested; the future-scan anchor, the surviving DeliveryPlan EDD fallback, and the dead banner oracle must be resolved before merge.
+
+### What I did not check
+
+Instrumented/Compose UI tests were not executed (no emulator), so `OverviewTabSectionsTest` passes compilation but its assertions (row grouping, 360 dp/1.3x bounds, banner markers) are unverified at runtime; I did not visually verify dark mode, RTL rendering, TalkBack output or an Arabic resource set (only `values/` exists), did not run lint/lint-baseline, did not render the print HTML/PDF, and did not audit the unchanged storage/backup layer (e.g. `EncryptedBackupManager.kt:346,471` collapsing `agreedEdd ?: ultrasoundEdd` into one restored field) beyond grepping it.

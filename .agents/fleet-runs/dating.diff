@@ -1,0 +1,1789 @@
+diff --git a/app/src/androidTest/java/com/sherifradwan/ancnative/OverviewTabSectionsTest.kt b/app/src/androidTest/java/com/sherifradwan/ancnative/OverviewTabSectionsTest.kt
+index 1750e11..00509c6 100644
+--- a/app/src/androidTest/java/com/sherifradwan/ancnative/OverviewTabSectionsTest.kt
++++ b/app/src/androidTest/java/com/sherifradwan/ancnative/OverviewTabSectionsTest.kt
+@@ -14,6 +14,7 @@ import androidx.compose.ui.test.assertCountEquals
+ import androidx.compose.ui.test.assertIsDisplayed
+ import androidx.compose.ui.test.getUnclippedBoundsInRoot
+ import androidx.compose.ui.test.hasAnyAncestor
++import androidx.compose.ui.test.hasClickAction
+ import androidx.compose.ui.test.hasTestTag
+ import androidx.compose.ui.test.hasText
+ import androidx.compose.ui.test.junit4.createAndroidComposeRule
+@@ -23,9 +24,14 @@ import androidx.compose.ui.unit.dp
+ import androidx.test.ext.junit.runners.AndroidJUnit4
+ import com.sherifradwan.ancnative.model.DemoFixtures
+ import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.model.DemoPatientDating
+ import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
++import com.sherifradwan.ancnative.model.DemoUltrasoundScan
+ import com.sherifradwan.ancnative.ui.AncTheme
++import com.sherifradwan.ancnative.ui.GestationalBanner
+ import com.sherifradwan.ancnative.ui.patienthub.tabs.OverviewTab
++import java.time.LocalDate
++import org.junit.Assert.assertEquals
+ import org.junit.Assert.assertFalse
+ import org.junit.Assert.assertTrue
+ import org.junit.Rule
+@@ -282,4 +288,231 @@ class OverviewTabSectionsTest {
+         compose.onAllNodes(hasText("primigravida", substring = true, ignoreCase = true), useUnmergedTree = true)
+             .assertCountEquals(0)
+     }
++
++    // Dating section variants a to f and the discordance alert (overview_tab_sections.html).
++    private val nbsp = "\u00A0"
++    private val alertTag = "datingDiscordanceAlert"
++
++    private fun dating(
++        lmp: String? = null,
++        us: String? = null,
++        agreed: String? = null,
++        method: String? = null,
++        transfer: String? = null,
++        embryoAge: Int? = null,
++        notes: String? = null,
++    ) = DemoPatientDating(
++        patientId = multiparous.id, lmpDate = lmp, ultrasoundEdd = us, agreedEdd = agreed,
++        datingMethod = method, notes = notes, transferDate = transfer, embryoAgeDays = embryoAge,
++    )
++
++    /** One scan on 2026-08-27 (80 days after the LMP) is the earliest scan, so the discordance anchor is fixed. */
++    private fun withDating(d: DemoPatientDating): DemoPatient = multiparous.copy(
++        dating = d,
++        ultrasoundScans = listOf(
++            DemoUltrasoundScan(
++                id = "dating-anchor-scan", patientId = multiparous.id, date = "2026-08-27",
++                gestationalAgeWeeks = null, gestationalAgeDays = null, fetalNumber = null,
++                presentation = null, placentalSite = null, amnioticFluid = null,
++                fetalHeartRate = null, biometryBpd = null, biometryHc = null, biometryAc = null,
++                biometryFl = null, estimatedFetalWeight = null, impression = null,
++            ),
++        ),
++    )
++
++    private val variantA = dating(lmp = "2026-06-08", agreed = "2027-03-15", method = "LMP")
++    private val variantB = dating(lmp = "2026-06-08", us = "2027-03-24", agreed = "2027-03-15", method = "LMP")
++    private val variantC = dating(agreed = "2027-03-08", method = "IVF_TRANSFER", transfer = "2026-06-20", embryoAge = 5)
++    private val variantD = dating(agreed = "2027-03-08", method = "IVF_TRANSFER", transfer = "2026-06-20", embryoAge = null)
++    private val variantE = dating(
++        lmp = "2026-06-08", us = "2027-03-24", agreed = "2027-03-24", method = "Ultrasound",
++        notes = "Unsure LMP, relying on scan",
++    )
++    private val variantF = dating(agreed = "2027-04-02", method = "Clinical")
++
++    /** Text nodes inside the dating card grouped into visual rows, left to right, header row dropped. */
++    private fun datingRows(): List<List<String>> {
++        val nodes = compose.onAllNodes(
++            hasAnyAncestor(hasTestTag("datingCard")) and SemanticsMatcher.keyIsDefined(SemanticsProperties.Text),
++            useUnmergedTree = true,
++        ).fetchSemanticsNodes().sortedWith(compareBy({ it.boundsInRoot.top }, { it.boundsInRoot.left }))
++        val rows = mutableListOf<MutableList<androidx.compose.ui.semantics.SemanticsNode>>()
++        var rowBottom = Float.NEGATIVE_INFINITY
++        nodes.forEach { n ->
++            if (rows.isEmpty() || n.boundsInRoot.top >= rowBottom - 1f) {
++                rows.add(mutableListOf(n))
++                rowBottom = n.boundsInRoot.bottom
++            } else {
++                rows.last().add(n)
++                rowBottom = maxOf(rowBottom, n.boundsInRoot.bottom)
++            }
++        }
++        return rows.drop(1).map { row ->
++            row.sortedBy { it.boundsInRoot.left }
++                .map { it.config[SemanticsProperties.Text].joinToString("") { t -> t.text } }
++        }
++    }
++
++    private fun alertCount() =
++        compose.onAllNodes(hasTestTag(alertTag), useUnmergedTree = true).fetchSemanticsNodes().size
++
++    private fun hasConfirmedEdd() = datingRows().any { it.firstOrNull() == "Confirmed EDD" }
++
++    @Test
++    fun datingVariantA_lmpPatientNoDiscordance() {
++        show(withDating(variantA))
++        assertEquals(
++            listOf(listOf("LMP", "08/06/2026"), listOf("EDD", "15/03/2027"), listOf("Method", "LMP")),
++            datingRows(),
++        )
++        assertEquals(0, alertCount())
++        assertFalse(hasConfirmedEdd())
++    }
++
++    @Test
++    fun datingVariantB_lmpPatientWithDiscordanceAlert() {
++        show(withDating(variantB))
++        val rows = datingRows()
++        assertEquals(
++            listOf(listOf("LMP", "08/06/2026"), listOf("EDD", "15/03/2027"), listOf("Method", "LMP")),
++            rows.take(3),
++        )
++        assertEquals(4, rows.size)
++        assertEquals(1, alertCount())
++        val alertText = rows[3].single()
++        assertEquals(
++            "EDD discordance: LMP and scan differ by 9 d (limit 7 d)",
++            alertText.replace(nbsp, " "),
++        )
++        assertTrue("number and unit must be joined by a non-breaking space", alertText.contains("9${nbsp}d"))
++        assertTrue(alertText.contains("7${nbsp}d"))
++        assertFalse(hasConfirmedEdd())
++    }
++
++    @Test
++    fun datingVariantB_alertHasNoButton() {
++        show(withDating(variantB))
++        compose.onAllNodes(hasClickAction() and inTagged(alertTag), useUnmergedTree = true).assertCountEquals(0)
++    }
++
++    @Test
++    fun datingVariantC_ivfShowsEtWithEmbryoAge() {
++        show(withDating(variantC))
++        assertEquals(
++            listOf(
++                listOf("ET", "20/06/2026${nbsp}·${nbsp}D5"),
++                listOf("EDD", "08/03/2027"),
++                listOf("Method", "ET"),
++            ),
++            datingRows(),
++        )
++        assertEquals(0, alertCount())
++        assertFalse(hasConfirmedEdd())
++    }
++
++    @Test
++    fun datingVariantD_ivfWithoutEmbryoAgeHasNoD5() {
++        show(withDating(variantD))
++        assertEquals(
++            listOf(listOf("ET", "20/06/2026"), listOf("EDD", "08/03/2027"), listOf("Method", "ET")),
++            datingRows(),
++        )
++        compose.onAllNodes(hasText("D5", substring = true), useUnmergedTree = true).assertCountEquals(0)
++        assertEquals(0, alertCount())
++    }
++
++    @Test
++    fun datingVariantE_ultrasoundDatedKeepsLmpRowAndNotes() {
++        show(withDating(variantE))
++        assertEquals(
++            listOf(
++                listOf("LMP", "08/06/2026"),
++                listOf("EDD", "24/03/2027"),
++                listOf("Method", "by ultrasound"),
++                listOf("Notes", "Unsure LMP, relying on scan"),
++            ),
++            datingRows(),
++        )
++        assertEquals(0, alertCount())
++        assertFalse(hasConfirmedEdd())
++    }
++
++    @Test
++    fun datingVariantF_referredShowsConfirmedEddOnlyAndNoFirstRow() {
++        show(withDating(variantF))
++        assertEquals(
++            listOf(listOf("Confirmed EDD", "02/04/2027"), listOf("Method", "clinical")),
++            datingRows(),
++        )
++        assertEquals(0, alertCount())
++    }
++
++    @Test
++    fun datingConfirmedEddAppearsInVariantFOnly() {
++        listOf(variantA, variantB, variantC, variantD, variantE).forEach { d ->
++            show(withDating(d))
++            assertFalse("Confirmed EDD must not show for ${d.datingMethod}", hasConfirmedEdd())
++        }
++        show(withDating(variantF))
++        assertTrue(hasConfirmedEdd())
++    }
++
++    @Test
++    fun datingAlertOnlyInVariantB() {
++        listOf(variantA, variantC, variantD, variantE, variantF).forEach { d ->
++            show(withDating(d))
++            assertEquals("no alert expected for ${d.datingMethod}", 0, alertCount())
++        }
++        show(withDating(variantB))
++        assertEquals(1, alertCount())
++    }
++
++    // Longest case: variant B at 360dp and font scale 1.3.
++    @Test
++    fun datingVariantG_alertWrapsUnclippedAt360dpFontScale13() {
++        show(withDating(variantB), widthDp = 360, fontScale = 1.3f)
++        compose.onNodeWithTag(alertTag, useUnmergedTree = true).assertExists().assertIsDisplayed()
++        assertNotEllipsized("EDD discordance", alertTag)
++        val screenWidth = 360.dp
++        val card = compose.onNodeWithTag("datingCard", useUnmergedTree = true).getUnclippedBoundsInRoot()
++        val alert = compose.onNodeWithTag(alertTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
++        assertTrue("card overflows the 360dp viewport", card.right <= screenWidth)
++        assertTrue("alert starts left of the card", alert.left >= card.left)
++        assertTrue("alert overflows the card (right=${alert.right}, card=${card.right})", alert.right <= card.right)
++        compose.onAllNodes(hasClickAction() and inTagged(alertTag), useUnmergedTree = true).assertCountEquals(0)
++    }
++
++    // GA marker: red "??" beside the current GA only when discordant (shared composable).
++    private val markerTag = "gaDiscordanceMarker"
++
++    private fun showBanner(d: DemoPatientDating) {
++        compose.activity.runOnUiThread {
++            compose.activity.setContent {
++                AncTheme { GestationalBanner(dating = d, asOfDate = LocalDate.of(2026, 10, 1)) }
++            }
++        }
++        compose.waitForIdle()
++    }
++
++    // 25 d gap exceeds every tier limit (5 to 21 d), so the result does not depend on the anchor date.
++    private val discordantLmpScan = dating(lmp = "2026-06-08", us = "2027-04-09", method = "LMP")
++    private val concordantLmpScan = dating(lmp = "2026-06-08", method = "LMP")
++
++    @Test
++    fun gaMarkerShownWhenDiscordant() {
++        showBanner(discordantLmpScan)
++        compose.onAllNodes(hasTestTag(markerTag), useUnmergedTree = true).assertCountEquals(1)
++        compose.onNode(hasText("??") and inTagged(markerTag), useUnmergedTree = true).assertExists()
++        compose.onNode(
++            inTagged(markerTag) and SemanticsMatcher.keyIsDefined(SemanticsProperties.ContentDescription),
++            useUnmergedTree = true,
++        ).assertExists("marker needs a content description")
++    }
++
++    @Test
++    fun gaMarkerAbsentWhenNotDiscordant() {
++        showBanner(concordantLmpScan)
++        compose.onAllNodes(hasTestTag(markerTag), useUnmergedTree = true).assertCountEquals(0)
++        compose.onAllNodes(hasText("??", substring = true), useUnmergedTree = true).assertCountEquals(0)
++    }
+ }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/model/ClinicalSummaryGenerator.kt b/app/src/main/java/com/sherifradwan/ancnative/model/ClinicalSummaryGenerator.kt
+index 20099ba..981a74d 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/model/ClinicalSummaryGenerator.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/model/ClinicalSummaryGenerator.kt
+@@ -1,5 +1,7 @@
+ package com.sherifradwan.ancnative.model
+ 
++import java.time.LocalDate
++
+ object ClinicalSummaryGenerator {
+     fun generateTextSummary(patient: DemoPatient): String {
+         val sb = StringBuilder()
+@@ -21,10 +23,9 @@ object ClinicalSummaryGenerator {
+         if (dating != null) {
+             val ga = dating.calculateGestationalAge() ?: "Not calculated"
+             sb.appendLine("Gestational Age: $ga")
+-            if (!dating.agreedEdd.isNullOrBlank()) sb.appendLine("Agreed EDD: ${dating.agreedEdd}")
+-            if (!dating.lmpDate.isNullOrBlank()) sb.appendLine("LMP: ${dating.lmpDate}")
+-            if (!dating.ultrasoundEdd.isNullOrBlank()) sb.appendLine("Ultrasound EDD: ${dating.ultrasoundEdd}")
+-            if (!dating.datingMethod.isNullOrBlank()) sb.appendLine("Method: ${dating.datingMethod}")
++            val summary = datingSummaryOf(patient, LocalDate.now())
++            datingTextRows(summary).forEach { sb.appendLine("${it.label}: ${it.value ?: "Not recorded"}") }
++            datingDiscordanceLine(dating, summary)?.let { sb.appendLine(it) }
+         } else {
+             sb.appendLine("Dating: Not recorded")
+         }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/model/DatingSummary.kt b/app/src/main/java/com/sherifradwan/ancnative/model/DatingSummary.kt
+new file mode 100644
+index 0000000..55a596b
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/model/DatingSummary.kt
+@@ -0,0 +1,61 @@
++package com.sherifradwan.ancnative.model
++
++import java.time.LocalDate
++import java.time.temporal.ChronoUnit
++
++enum class EddLabel { PLAIN, CONFIRMED }
++
++sealed interface DatingOrigin {
++    data class Lmp(val date: String) : DatingOrigin
++    data class Transfer(val date: String, val embryoAgeDays: Int?) : DatingOrigin
++    data object None : DatingOrigin
++}
++
++data class DatingSummary(
++    val origin: DatingOrigin,
++    val edd: LocalDate?,
++    val eddLabel: EddLabel,
++    val methodCode: String?,
++    val discordance: RedatingAdvice?,
++)
++
++fun datingSummary(dating: DemoPatientDating?, earliestScanDate: LocalDate?, today: LocalDate): DatingSummary {
++    if (dating == null) return DatingSummary(DatingOrigin.None, null, EddLabel.PLAIN, null, null)
++    val method = canonicalDatingMethod(dating.datingMethod)
++    return DatingSummary(
++        origin = originOf(dating, method),
++        edd = GestationalAgeEngine.calculateEstimatedDueDate(dating),
++        eddLabel = eddLabelOf(dating),
++        methodCode = method,
++        discordance = discordanceOf(dating, method, earliestScanDate ?: today),
++    )
++}
++
++private fun originOf(dating: DemoPatientDating, method: String?): DatingOrigin = when {
++    method == IVF_TRANSFER_CODE ->
++        dating.transferDate?.takeIf { it.isNotBlank() }
++            ?.let { DatingOrigin.Transfer(it, dating.embryoAgeDays) }
++            ?: DatingOrigin.None
++    else -> dating.lmpDate?.takeIf { it.isNotBlank() }?.let { DatingOrigin.Lmp(it) } ?: DatingOrigin.None
++}
++
++private fun eddLabelOf(dating: DemoPatientDating): EddLabel {
++    val onlyAgreed = dating.lmpDate.isNullOrBlank() &&
++        dating.transferDate.isNullOrBlank() &&
++        dating.ultrasoundEdd.isNullOrBlank() &&
++        !dating.agreedEdd.isNullOrBlank()
++    return if (onlyAgreed) EddLabel.CONFIRMED else EddLabel.PLAIN
++}
++
++private fun discordanceOf(dating: DemoPatientDating, method: String?, anchor: LocalDate): RedatingAdvice? {
++    if (method == IVF_TRANSFER_CODE || method == ULTRASOUND_CODE) return null
++    val scanEdd = parseIsoDateOrNull(dating.ultrasoundEdd) ?: return null
++    if (scanEdd == parseIsoDateOrNull(dating.agreedEdd)) return null
++    val lmp = parseIsoDateOrNull(dating.lmpDate) ?: return null
++    val datingGaDays = ChronoUnit.DAYS.between(lmp, anchor)
++    val scanGaDays = FULL_TERM_DAYS - ChronoUnit.DAYS.between(anchor, scanEdd)
++    return redatingAdvice(datingGaDays, scanGaDays)
++}
++
++private const val IVF_TRANSFER_CODE = "IVF_TRANSFER"
++private const val ULTRASOUND_CODE = "Ultrasound"
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/model/DatingText.kt b/app/src/main/java/com/sherifradwan/ancnative/model/DatingText.kt
+new file mode 100644
+index 0000000..e655904
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/model/DatingText.kt
+@@ -0,0 +1,53 @@
++package com.sherifradwan.ancnative.model
++
++import java.time.LocalDate
++import kotlin.math.abs
++
++private const val NBSP = ' '
++
++/** One labelled line of the dating block. A null [value] means "not recorded". */
++data class DatingTextRow(val label: String, val value: String?, val isEdd: Boolean = false)
++
++/** Earliest parseable scan date of the patient, the anchor for the dating discordance check. */
++fun earliestScanDate(patient: DemoPatient): LocalDate? =
++    patient.ultrasoundScans.mapNotNull { parseIsoDateOrNull(it.date) }.minOrNull()
++
++/** The dating summary of a patient as of [today]; every screen builds it through here. */
++fun datingSummaryOf(patient: DemoPatient, today: LocalDate): DatingSummary =
++    datingSummary(patient.dating, earliestScanDate(patient), today)
++
++/** Short method label for a stored dating code; unknown codes are shown as typed. */
++fun datingMethodLabel(code: String?): String? = when (val canonical = canonicalDatingMethod(code)) {
++    "LMP" -> "LMP"
++    "Ultrasound" -> "by ultrasound"
++    "IVF_TRANSFER" -> "ET"
++    "Clinical" -> "clinical"
++    else -> canonical
++}
++
++/** Rows in display order: LMP or ET, EDD, Method. Dates are dd/mm/yyyy. */
++fun datingTextRows(summary: DatingSummary): List<DatingTextRow> = buildList {
++    when (val origin = summary.origin) {
++        is DatingOrigin.Lmp -> add(DatingTextRow("LMP", formatDmy(origin.date)))
++        is DatingOrigin.Transfer -> add(
++            DatingTextRow(
++                "ET",
++                listOfNotNull(formatDmy(origin.date), origin.embryoAgeDays?.let { "D$it" })
++                    .joinToString("$NBSP·$NBSP"),
++            ),
++        )
++        DatingOrigin.None -> Unit
++    }
++    val eddLabel = if (summary.eddLabel == EddLabel.CONFIRMED) "Confirmed EDD" else "EDD"
++    add(DatingTextRow(eddLabel, summary.edd?.let(::formatDmy), isEdd = true))
++    datingMethodLabel(summary.methodCode)?.let { add(DatingTextRow("Method", it)) }
++}
++
++/** "LMP EDD dd/mm/yyyy · US EDD dd/mm/yyyy · gap 9 d" when the dating is discordant, else null. */
++fun datingDiscordanceLine(dating: DemoPatientDating?, summary: DatingSummary): String? {
++    val advice = summary.discordance ?: return null
++    val d = dating ?: return null
++    val lmpEdd = GestationalAgeEngine.dueDateForMethod(d, "LMP") ?: return null
++    val scanEdd = parseIsoDateOrNull(d.ultrasoundEdd) ?: return null
++    return "LMP EDD ${formatDmy(lmpEdd)} · US EDD ${formatDmy(scanEdd)} · gap ${abs(advice.differenceDays)} d"
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt b/app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt
+index cde26c9..975396f 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt
+@@ -2,6 +2,7 @@ package com.sherifradwan.ancnative.model
+ 
+ import java.time.LocalDate
+ import java.time.temporal.ChronoUnit
++import java.util.Locale
+ 
+ fun daysToEdd(edd: LocalDate, asOf: LocalDate): Long = ChronoUnit.DAYS.between(asOf, edd)
+ 
+@@ -26,11 +27,26 @@ data class DueDatesByMethod(
+     val scan: LocalDate?,
+ )
+ 
++/**
++ * Canonical dating method code for a stored value, matched ignoring case and surrounding spaces.
++ * "IVF" and "US" are aliases. Unknown values come back trimmed, blank or null gives null.
++ */
++fun canonicalDatingMethod(method: String?): String? {
++    val trimmed = method?.trim()?.takeIf { it.isNotEmpty() } ?: return null
++    return when (trimmed.uppercase(Locale.ROOT)) {
++        "LMP" -> "LMP"
++        "ULTRASOUND", "US" -> "Ultrasound"
++        "IVF_TRANSFER", "IVF" -> "IVF_TRANSFER"
++        "CLINICAL" -> "Clinical"
++        else -> trimmed
++    }
++}
++
+ object GestationalAgeEngine {
+ 
+     fun dueDateForMethod(dating: DemoPatientDating, method: String?): LocalDate? {
+-        return when (method?.uppercase()) {
+-            "IVF_TRANSFER", "IVF" -> {
++        return when (canonicalDatingMethod(method)) {
++            "IVF_TRANSFER" -> {
+                 if (!dating.transferDate.isNullOrBlank()) {
+                     val transfer = parseIsoDateOrNull(dating.transferDate) ?: return null
+                     val embryoAge = dating.embryoAgeDays ?: 5
+@@ -38,7 +54,7 @@ object GestationalAgeEngine {
+                     ivfEddFromTransfer(transfer, embryoAge)
+                 } else null
+             }
+-            "ULTRASOUND", "US" -> {
++            "Ultrasound" -> {
+                 if (!dating.ultrasoundEdd.isNullOrBlank()) {
+                     parseIsoDateOrNull(dating.ultrasoundEdd)
+                 } else null
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt b/app/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt
+index fa3d482..61ae3b6 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt
+@@ -1,6 +1,8 @@
+ package com.sherifradwan.ancnative.model
+ 
+ import java.time.LocalDate
++import java.time.format.DateTimeFormatter
++import java.util.Locale
+ 
+ const val FULL_TERM_DAYS = 280L
+ 
+@@ -35,3 +37,12 @@ fun parseCanonicalIsoDateOrNull(value: String?): LocalDate? {
+         null
+     }
+ }
++
++private val DmyFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.ROOT)
++
++fun formatDmy(date: LocalDate): String = date.format(DmyFormatter)
++
++fun formatDmy(iso: String?): String? {
++    if (iso.isNullOrBlank()) return null
++    return parseIsoDateOrNull(iso)?.let(::formatDmy) ?: iso.trim()
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt
+index e615a5b..8ecda21 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt
+@@ -26,6 +26,8 @@ import androidx.compose.ui.platform.testTag
+ import androidx.compose.ui.res.stringResource
+ import androidx.compose.ui.semantics.clearAndSetSemantics
+ import androidx.compose.ui.semantics.contentDescription
++import androidx.compose.ui.semantics.semantics
++import androidx.compose.ui.text.TextStyle
+ import androidx.compose.ui.text.font.FontStyle
+ import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.unit.dp
+@@ -338,7 +340,7 @@ fun BloodGroupBadge(bloodGroup: String?, modifier: Modifier = Modifier) {
+  * Resolves dark mode automatically via isDarkTheme().
+  */
+ @Composable
+-fun GestationalAgeBadge(gaText: String?, modifier: Modifier = Modifier) {
++fun GestationalAgeBadge(gaText: String?, modifier: Modifier = Modifier, discordant: Boolean = false) {
+     if (gaText.isNullOrBlank()) return
+     val dark = isDarkTheme()
+     val bg = if (dark) TagGestationalAgeDarkBg else TagGestationalAgeBg
+@@ -351,18 +353,44 @@ fun GestationalAgeBadge(gaText: String?, modifier: Modifier = Modifier) {
+         border = BorderStroke(1.dp, border),
+         modifier = modifier.testTag("gestationalAgeBadge"),
+     ) {
+-        Text(
+-            text = gaText,
+-            style = MaterialTheme.typography.labelSmall,
+-            fontWeight = FontWeight.Bold,
+-            color = text,
+-            maxLines = 1,
+-            softWrap = false,
++        Row(
+             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+-        )
++            horizontalArrangement = Arrangement.spacedBy(3.dp),
++            verticalAlignment = Alignment.CenterVertically,
++        ) {
++            Text(
++                text = gaText,
++                style = MaterialTheme.typography.labelSmall,
++                fontWeight = FontWeight.Bold,
++                color = text,
++                maxLines = 1,
++                softWrap = false,
++            )
++            if (discordant) GaDiscordanceMarker()
++        }
+     }
+ }
+ 
++/** Red "??" shown after the current gestational age when the LMP and scan due dates disagree. */
++@Composable
++fun GaDiscordanceMarker(
++    modifier: Modifier = Modifier,
++    style: TextStyle = MaterialTheme.typography.labelSmall,
++) {
++    val description = stringResource(R.string.ga_discordance_marker_cd)
++    Text(
++        text = "??",
++        style = style,
++        fontWeight = FontWeight.Black,
++        color = if (isDarkTheme()) ClinicalCardTokens.CriticalDarkAccent else ClinicalCardTokens.CriticalAccent,
++        maxLines = 1,
++        softWrap = false,
++        modifier = modifier
++            .testTag("gaDiscordanceMarker")
++            .semantics { contentDescription = description },
++    )
++}
++
+ /**
+  * Canonical Obstetric Parity (GPA) Badge.
+  * Formats Gravida, Parity, Abortion (e.g. "G2 P1 A0" or "G1 P0").
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt
+index 388bd6d..8c78dce 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt
+@@ -13,19 +13,6 @@ internal fun isRhNegative(bloodGroup: String?): Boolean {
+         Regex("\\b(neg|negative|minus)\\b").containsMatchIn(raw)
+ }
+ 
+-/**
+- * String resource for a stored dating method code, matched ignoring case and surrounding spaces;
+- * "IVF" is accepted as an alias of "IVF_TRANSFER". Null for blank or unknown codes, so callers
+- * show the raw text.
+- */
+-internal fun datingMethodLabelRes(method: String?): Int? = when (method?.trim()?.uppercase(java.util.Locale.ROOT)) {
+-    "LMP" -> R.string.dating_method_lmp
+-    "ULTRASOUND" -> R.string.dating_method_ultrasound
+-    "IVF_TRANSFER", "IVF" -> R.string.dating_method_ivf_transfer
+-    "CLINICAL" -> R.string.dating_method_clinical
+-    else -> null
+-}
+-
+ /** What the allergy field says: nothing entered, an explicit "none", or a real recorded allergy. */
+ sealed interface AllergyState {
+     data object NotRecorded : AllergyState
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt
+index 5c10048..81a4b0d 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt
+@@ -52,6 +52,8 @@ import androidx.compose.ui.text.style.TextOverflow
+ import androidx.compose.ui.unit.dp
+ import com.sherifradwan.ancnative.R
+ import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.model.datingSummaryOf
++import com.sherifradwan.ancnative.model.formatDmy
+ import com.sherifradwan.ancnative.state.AncState
+ import com.sherifradwan.ancnative.state.SavePhase
+ import com.sherifradwan.ancnative.state.stringRes
+@@ -220,15 +222,16 @@ fun ClinicalPatientCard(
+                         BloodGroupBadge(patient.bloodGroupText)
+ 
+                         // 5. Gestational Age
++                        val datingSummary = datingSummaryOf(patient, asOfDate)
+                         val gaResult = patient.dating?.calculateGestationalAgeResult()
+                         val ga = patient.dating?.calculateGestationalAge(asOfDate)
+                         val gaText = gaResult?.shortWeeksText ?: ga?.toString()
+                         if (gaText != null) {
+-                            GestationalAgeBadge("GA $gaText")
++                            GestationalAgeBadge("GA $gaText", discordant = datingSummary.discordance != null)
+                         }
+ 
+                         // 6. EDD
+-                        val edd = patient.dating?.agreedEdd ?: patient.dating?.calculateEstimatedDueDate()?.toString()
++                        val edd = datingSummary.edd?.let(::formatDmy)
+                         if (!edd.isNullOrBlank()) {
+                             Surface(shape = RoundedCornerShape(6.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+                                 Text(
+@@ -405,7 +408,7 @@ fun ClinicalPatientCard(
+                         val ga = patient.dating?.calculateGestationalAge(asOfDate)
+                         val gaText = gaResult?.shortWeeksText ?: ga?.toString()
+                         if (gaText != null) {
+-                            GestationalAgeBadge("GA $gaText")
++                            GestationalAgeBadge("GA $gaText", discordant = datingSummaryOf(patient, asOfDate).discordance != null)
+                         }
+                     }
+                 }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt
+index aaef3ab..f2ba775 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt
+@@ -28,7 +28,9 @@ import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.unit.dp
+ import com.sherifradwan.ancnative.R
+ import com.sherifradwan.ancnative.model.DemoPatientDating
++import com.sherifradwan.ancnative.model.datingSummary
+ import com.sherifradwan.ancnative.model.daysToEdd
++import com.sherifradwan.ancnative.model.formatDmy
+ import java.time.LocalDate
+ 
+ @OptIn(ExperimentalLayoutApi::class)
+@@ -37,9 +39,11 @@ fun GestationalBanner(
+     dating: DemoPatientDating?,
+     asOfDate: LocalDate = LocalDate.now(),
+     modifier: Modifier = Modifier,
++    earliestScanDate: LocalDate? = null,
+ ) {
+     val gaResult = dating?.calculateGestationalAgeResult(asOfDate)
+-    val edd = dating?.calculateEstimatedDueDate()
++    val summary = datingSummary(dating, earliestScanDate, asOfDate)
++    val edd = summary.edd
+ 
+     Card(
+         modifier = modifier
+@@ -68,12 +72,20 @@ fun GestationalBanner(
+                             fontWeight = FontWeight.SemiBold,
+                             color = MaterialTheme.colorScheme.primary,
+                         )
+-                        Text(
+-                            text = gaResult.formatted,
+-                            style = MaterialTheme.typography.headlineMedium,
+-                            fontWeight = FontWeight.Bold,
+-                            modifier = Modifier.semantics { heading() },
+-                        )
++                        Row(
++                            horizontalArrangement = Arrangement.spacedBy(6.dp),
++                            verticalAlignment = Alignment.CenterVertically,
++                        ) {
++                            Text(
++                                text = gaResult.formatted,
++                                style = MaterialTheme.typography.headlineMedium,
++                                fontWeight = FontWeight.Bold,
++                                modifier = Modifier.semantics { heading() },
++                            )
++                            if (summary.discordance != null) {
++                                GaDiscordanceMarker(style = MaterialTheme.typography.headlineMedium)
++                            }
++                        }
+                     }
+ 
+                     Row(
+@@ -169,7 +181,7 @@ fun GestationalBanner(
+                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                         )
+                         Text(
+-                            text = edd.toString(),
++                            text = formatDmy(edd),
+                             style = MaterialTheme.typography.titleMedium,
+                             fontWeight = FontWeight.Bold,
+                             color = MaterialTheme.colorScheme.onSurface,
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt
+index a61d718..9efcc4d 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt
+@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.width
+ import androidx.compose.foundation.lazy.LazyColumn
+ import androidx.compose.foundation.lazy.items
+ import androidx.compose.foundation.rememberScrollState
++import java.time.LocalDate
+ import androidx.compose.foundation.shape.RoundedCornerShape
+ import androidx.compose.material.icons.Icons
+ import androidx.compose.material.icons.filled.AccountCircle
+@@ -73,6 +74,8 @@ import androidx.compose.ui.unit.sp
+ import com.sherifradwan.ancnative.R
+ import com.sherifradwan.ancnative.model.DemoPatient
+ import com.sherifradwan.ancnative.model.SevereBpAttention
++import com.sherifradwan.ancnative.model.datingSummaryOf
++import com.sherifradwan.ancnative.model.formatDmy
+ import com.sherifradwan.ancnative.model.previousDeliverySummary
+ import com.sherifradwan.ancnative.model.severeBpAttention
+ import com.sherifradwan.ancnative.state.AncEvent
+@@ -102,7 +105,7 @@ data class PatientDashboardRowProjection(
+     val obstetricSummary: String,
+     val gestationalAgeText: String,
+     val eddText: String?,
+-    val datingMethodText: String?,
++    val isDatingDiscordant: Boolean = false,
+     val bloodGroup: String?,
+     val isRhNegative: Boolean,
+     val isRhPositive: Boolean,
+@@ -124,16 +127,8 @@ fun projectDashboardRow(patient: DemoPatient): PatientDashboardRowProjection {
+     val gaResult = patient.dating?.calculateGestationalAgeResult()
+     val gaFormatted = gaResult?.shortWeeksText ?: "-"
+ 
+-    val edd = patient.dating?.calculateEstimatedDueDate()?.toString()
+-        ?: patient.dating?.ultrasoundEdd
+-        ?: patient.dating?.agreedEdd
+-
+-    val datingMethod = when {
+-        patient.dating?.agreedEdd != null -> "Agreed Clinical EDD"
+-        patient.dating?.ultrasoundEdd != null -> "Ultrasound Dating"
+-        patient.dating?.lmpDate != null -> "LMP Dating"
+-        else -> null
+-    }
++    val datingSummary = datingSummaryOf(patient, LocalDate.now())
++    val edd = datingSummary.edd?.let(::formatDmy)
+ 
+     val bg = patient.bloodGroupText?.trim()
+     val isRhNeg = isRhNegative(bg)
+@@ -155,7 +150,7 @@ fun projectDashboardRow(patient: DemoPatient): PatientDashboardRowProjection {
+         obstetricSummary = obstetricFormatted,
+         gestationalAgeText = gaFormatted,
+         eddText = edd,
+-        datingMethodText = datingMethod,
++        isDatingDiscordant = datingSummary.discordance != null,
+         bloodGroup = bg,
+         isRhNegative = isRhNeg,
+         isRhPositive = isRhPos,
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt
+index ed75077..80f3415 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt
+@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
+ import androidx.compose.ui.unit.sp
+ import com.sherifradwan.ancnative.R
+ import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.ui.GaDiscordanceMarker
+ import com.sherifradwan.ancnative.model.previousDeliverySummary
+ import com.sherifradwan.ancnative.ui.PatientDashboardRowProjection
+ import com.sherifradwan.ancnative.ui.ActionRose
+@@ -62,6 +63,7 @@ fun PatientDirectoryMetricsRow(
+                         color = MaterialTheme.colorScheme.onSurface,
+                         maxLines = 1,
+                     )
++                    if (row.isDatingDiscordant) GaDiscordanceMarker(style = MaterialTheme.typography.bodyMedium)
+                     if (row.isLateOrPostTerm) {
+                         Surface(
+                             shape = RoundedCornerShape(4.dp),
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
+index 20cd970..17a8d43 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
+@@ -73,6 +73,8 @@ import androidx.compose.ui.unit.sp
+ import com.sherifradwan.ancnative.R
+ import com.sherifradwan.ancnative.model.DemoPatient
+ import com.sherifradwan.ancnative.model.SevereBpAttention
++import com.sherifradwan.ancnative.model.datingSummaryOf
++import java.time.LocalDate
+ import com.sherifradwan.ancnative.model.isOngoingMedication
+ import com.sherifradwan.ancnative.ui.ActionRose
+ import com.sherifradwan.ancnative.ui.BpAlertLabel
+@@ -140,6 +142,7 @@ fun PatientHubHeader(
+     modifier: Modifier = Modifier,
+ ) {
+     val ga = patient.dating?.calculateGestationalAge()
++    val gaDiscordant = remember(patient) { datingSummaryOf(patient, LocalDate.now()).discordance != null }
+     val isRhNeg = isRhNegative(patient.bloodGroupText)
+     val hasAttention = !patient.clinicalAttention.isNullOrBlank() || severeBp != null
+ 
+@@ -267,6 +270,7 @@ fun PatientHubHeader(
+                             GestationalAgeBadge(
+                                 gaText = stringResource(R.string.ga_prefix, ga),
+                                 modifier = Modifier.padding(start = 8.dp),
++                                discordant = gaDiscordant,
+                             )
+                         }
+                     }
+@@ -359,7 +363,7 @@ fun PatientHubHeader(
+                                 modifier = Modifier.weight(1f),
+                             )
+                             if (!gaCompact.isNullOrBlank()) {
+-                                GestationalAgeBadge(gaCompact)
++                                GestationalAgeBadge(gaCompact, discordant = gaDiscordant)
+                             }
+                             if (hasAttention) {
+                                 IconButton(
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt
+index 2268412..c31f3ff 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt
+@@ -20,6 +20,8 @@ import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.Surface
+ import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
++import androidx.compose.runtime.remember
++import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.graphics.vector.ImageVector
+@@ -28,14 +30,18 @@ import androidx.compose.ui.res.stringResource
+ import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.unit.dp
+ import com.sherifradwan.ancnative.R
++import java.time.LocalDate
++import kotlin.math.abs
+ import com.sherifradwan.ancnative.model.DemoPatient
+-import com.sherifradwan.ancnative.model.DemoPatientDating
++import com.sherifradwan.ancnative.model.datingSummaryOf
++import com.sherifradwan.ancnative.model.datingTextRows
+ import com.sherifradwan.ancnative.model.previousDeliverySummary
+ import com.sherifradwan.ancnative.ui.AllergyState
+ import com.sherifradwan.ancnative.ui.FactRow
+ import com.sherifradwan.ancnative.ui.ObstetricParityBadge
+ import com.sherifradwan.ancnative.ui.classifyAllergy
+-import com.sherifradwan.ancnative.ui.datingMethodLabelRes
++import com.sherifradwan.ancnative.ui.ClinicalCardTokens
++import com.sherifradwan.ancnative.ui.isDarkTheme
+ import com.sherifradwan.ancnative.ui.minimumTouchTarget
+ 
+ @Composable
+@@ -52,11 +58,13 @@ private fun SectionIconAction(
+ 
+ @Composable
+ fun DatingSection(
+-    dating: DemoPatientDating?,
++    patient: DemoPatient,
+     onEdit: (() -> Unit)?,
+     modifier: Modifier = Modifier,
+ ) {
+     val scheme = MaterialTheme.colorScheme
++    val dating = patient.dating
++    val summary = remember(patient) { datingSummaryOf(patient, LocalDate.now()) }
+     ClinicalGroupSection(
+         title = stringResource(R.string.pregnancy_dating_title),
+         icon = Icons.Default.DateRange,
+@@ -75,26 +83,57 @@ fun DatingSection(
+             )
+             return@ClinicalGroupSection
+         }
+-        val agreed = dating.agreedEdd?.trim().orEmpty()
+-        val us = dating.ultrasoundEdd?.trim().orEmpty()
+-        val eddSource: Pair<Int, String?> = when {
+-            agreed.isNotEmpty() -> R.string.agreed_edd to agreed
+-            us.isNotEmpty() -> R.string.ultrasound_edd to us
+-            else -> R.string.calculated_edd to dating.calculateEstimatedDueDate()?.toString()
++        datingTextRows(summary).forEach { row ->
++            FactRow(row.label, row.value, isEmphasized = row.isEdd)
++        }
++        summary.discordance?.let { advice ->
++            val dark = isDarkTheme()
++            SectionBanner(
++                text = stringResource(
++                    R.string.dating_discordance_alert,
++                    abs(advice.differenceDays),
++                    advice.thresholdDays,
++                ),
++                container = if (dark) ClinicalCardTokens.WarningDarkBg else ClinicalCardTokens.WarningBg,
++                accent = if (dark) ClinicalCardTokens.WarningDarkAccent else ClinicalCardTokens.WarningAccent,
++                content = if (dark) ClinicalCardTokens.WarningDarkText else ClinicalCardTokens.WarningText,
++                modifier = Modifier.padding(top = 4.dp).testTag("datingDiscordanceAlert"),
++            )
+         }
+-        FactRow(eddSource.first, eddSource.second ?: stringResource(R.string.not_recorded), isEmphasized = true)
+-        if (agreed.isNotEmpty() && us.isNotEmpty() && !agreed.equals(us, ignoreCase = true)) FactRow(R.string.ultrasound_edd, us)
+-        FactRow(
+-            R.string.dating_method,
+-            datingMethodLabelRes(dating.datingMethod)?.let { stringResource(it) } ?: dating.datingMethod,
+-        )
+-        FactRow(R.string.lmp_date, dating.lmpDate)
+-        if (!dating.transferDate.isNullOrBlank()) FactRow(R.string.ivf_transfer_date, dating.transferDate)
+-        dating.embryoAgeDays?.let { FactRow(R.string.embryo_age, stringResource(R.string.embryo_age_days, it)) }
+         if (!dating.notes.isNullOrBlank()) FactRow(R.string.notes, dating.notes)
+     }
+ }
+ 
++/** Full-width wrapping banner: warning icon plus bold text on a tinted surface. No actions. */
++@Composable
++private fun SectionBanner(
++    text: String,
++    container: Color,
++    accent: Color,
++    content: Color,
++    modifier: Modifier = Modifier,
++) {
++    Surface(
++        shape = RoundedCornerShape(8.dp),
++        color = container,
++        modifier = modifier.fillMaxWidth().padding(bottom = 6.dp),
++    ) {
++        Row(
++            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
++            verticalAlignment = Alignment.CenterVertically,
++            horizontalArrangement = Arrangement.spacedBy(6.dp),
++        ) {
++            Icon(Icons.Default.Warning, contentDescription = null, tint = accent, modifier = Modifier.size(16.dp))
++            Text(
++                text = text,
++                style = MaterialTheme.typography.bodyMedium,
++                fontWeight = FontWeight.Bold,
++                color = content,
++            )
++        }
++    }
++}
++
+ @Composable
+ fun ParityPregnanciesSection(
+     patient: DemoPatient,
+@@ -153,25 +192,12 @@ fun MedicalHistoriesSection(
+         modifier = modifier.testTag("medicalHistoriesCard"),
+     ) {
+         when (val allergy = classifyAllergy(patient.allergyHistory)) {
+-            is AllergyState.Recorded -> Surface(
+-                shape = RoundedCornerShape(8.dp),
+-                color = scheme.errorContainer,
+-                modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+-            ) {
+-                Row(
+-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+-                    verticalAlignment = Alignment.CenterVertically,
+-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+-                ) {
+-                    Icon(Icons.Default.Warning, contentDescription = null, tint = scheme.error, modifier = Modifier.size(16.dp))
+-                    Text(
+-                        text = stringResource(R.string.allergy_banner, allergy.text),
+-                        style = MaterialTheme.typography.bodyMedium,
+-                        fontWeight = FontWeight.Bold,
+-                        color = scheme.onErrorContainer,
+-                    )
+-                }
+-            }
++            is AllergyState.Recorded -> SectionBanner(
++                text = stringResource(R.string.allergy_banner, allergy.text),
++                container = scheme.errorContainer,
++                accent = scheme.error,
++                content = scheme.onErrorContainer,
++            )
+             AllergyState.ExplicitlyNone -> Text(
+                 text = stringResource(R.string.no_allergy_history),
+                 style = MaterialTheme.typography.bodyMedium,
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+index 51b546a..7e57f6a 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+@@ -74,7 +74,7 @@ fun OverviewTab(
+         ) {
+             Column {
+                 DatingSection(
+-                    dating = patient.dating,
++                    patient = patient,
+                     onEdit = if (canEdit) {
+                         {
+                             onEvent(
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+index 59f4659..bf39d2e 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+@@ -12,6 +12,10 @@ import com.sherifradwan.ancnative.model.MEDICATION_LABEL_ACTIVE
+ import com.sherifradwan.ancnative.model.medicationInstructions
+ import com.sherifradwan.ancnative.model.medicationStatusLabel
+ import com.sherifradwan.ancnative.model.bpLevel
++import com.sherifradwan.ancnative.model.datingDiscordanceLine
++import com.sherifradwan.ancnative.model.datingSummaryOf
++import com.sherifradwan.ancnative.model.datingTextRows
++import com.sherifradwan.ancnative.model.formatDmy
+ import com.sherifradwan.ancnative.model.formatIsoDate
+ import com.sherifradwan.ancnative.model.isEarlyLoss
+ import com.sherifradwan.ancnative.model.isStillbirth
+@@ -64,6 +68,17 @@ object PatientPrintHtmlGenerator {
+         val printDateStr = formatIsoDate(asOfDate)
+         val gaResult = patient.dating?.calculateGestationalAgeResult(asOfDate)
+         val currentGaFormatted = gaResult?.formatted ?: "Unspecified"
++        val datingSummary = datingSummaryOf(patient, asOfDate)
++        val datingMatrixHtml = buildString {
++            datingTextRows(datingSummary).forEach { row ->
++                val valueClass = if (row.isEdd) "val text-rose" else "val"
++                append("""<div class="matrix-item"><div class="label">${escapeHtml(row.label)}</div>""")
++                append("""<div class="$valueClass">${escapeHtml(row.value ?: "Not recorded")}</div></div>""")
++            }
++            datingDiscordanceLine(patient.dating, datingSummary)?.let {
++                append("""<div class="matrix-item" style="grid-column: 1 / -1"><div class="val">${escapeHtml(it)}</div></div>""")
++            }
++        }
+ 
+         // Format Obstetric summary
+         val g = patient.gravida ?: "-"
+@@ -1043,18 +1058,7 @@ object PatientPrintHtmlGenerator {
+                         <span>Pregnancy Dating</span>
+                     </div>
+                     <div class="dating-matrix">
+-                        <div class="matrix-item">
+-                            <div class="label">LMP Date</div>
+-                            <div class="val">${escapeHtml(patient.dating?.lmpDate ?: "-")}</div>
+-                        </div>
+-                        <div class="matrix-item">
+-                            <div class="label">Ultrasound EDD</div>
+-                            <div class="val">${escapeHtml(patient.dating?.ultrasoundEdd ?: "-")}</div>
+-                        </div>
+-                        <div class="matrix-item">
+-                            <div class="label">Agreed EDD</div>
+-                            <div class="val text-rose">${escapeHtml(patient.dating?.agreedEdd ?: "-")}</div>
+-                        </div>
++                        $datingMatrixHtml
+                     </div>
+                     <div class="ga-highlight">
+                         Current Gestational Age (GA): $currentGaFormatted
+@@ -1233,7 +1237,7 @@ object PatientPrintHtmlGenerator {
+                             </div>
+                             <div class="history-row">
+                                 <span class="k">Target Delivery Timing:</span>
+-                                <span class="v text-navy font-bold">${escapeHtml(patient.dating?.agreedEdd?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
++                                <span class="v text-navy font-bold">${escapeHtml(formatDmy(patient.dating?.agreedEdd) ?: "Not recorded")}</span>
+                             </div>
+                             <div class="history-row">
+                                 <span class="k">Hospital & Blood Bank Precautions:</span>
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index b94f402..7413f3f 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -148,7 +148,6 @@
+     <string name="outcome_termination">Termination of pregnancy</string>
+     <string name="labeled_value">%1$s: %2$s</string>
+     <string name="detail_separator">" · "</string>
+-    <string name="embryo_age_days">Day %1$d</string>
+     <string name="allergy_banner">Allergy: %1$s</string>
+     <string name="previous_pregnancies">Previous pregnancies</string>
+     <string name="add_previous_pregnancy">Add previous pregnancy</string>
+@@ -174,10 +173,6 @@
+     <string name="ultrasound_edd">Ultrasound EDD</string>
+     <string name="agreed_edd">Agreed clinical EDD</string>
+     <string name="dating_method">Dating method</string>
+-    <string name="dating_method_lmp">LMP</string>
+-    <string name="dating_method_ultrasound">Ultrasound</string>
+-    <string name="dating_method_ivf_transfer">IVF embryo transfer</string>
+-    <string name="dating_method_clinical">Clinical estimate</string>
+     <string name="gestational_age">Gestational age</string>
+     <string name="current_gestational_age">Current gestational age</string>
+     <string name="dating_saved">Dating record saved.</string>
+@@ -382,6 +377,8 @@
+     <string name="bp_alert_raised">▲ Raised BP (≥140/90) · Recheck</string>
+     <string name="bp_alert_severe">▲ Severe BP (≥160/110) · Urgent</string>
+     <string name="embryo_day_6">Day 6</string>
++    <string name="dating_discordance_alert">EDD discordance: LMP and scan differ by %1$d&#160;d (limit %2$d&#160;d)</string>
++    <string name="ga_discordance_marker_cd">Gestational age uncertain: LMP and scan due dates disagree</string>
+     <string name="redating_hint">Dating delta: %1$d d (&gt;%2$d d threshold). Re-dating indicated.</string>
+     <string name="bp_badge_severe">Severe BP</string>
+     <string name="bp_attention_severe">Severe-range blood pressure at the last visit: %1$s (%2$s)</string>
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/model/ClinicalSummaryDatingTest.kt b/app/src/test/java/com/sherifradwan/ancnative/model/ClinicalSummaryDatingTest.kt
+new file mode 100644
+index 0000000..166ea33
+--- /dev/null
++++ b/app/src/test/java/com/sherifradwan/ancnative/model/ClinicalSummaryDatingTest.kt
+@@ -0,0 +1,95 @@
++package com.sherifradwan.ancnative.model
++
++import org.junit.Assert.assertFalse
++import org.junit.Assert.assertTrue
++import org.junit.Test
++
++class ClinicalSummaryDatingTest {
++    private fun patient(
++        lmp: String? = null,
++        us: String? = null,
++        agreed: String? = null,
++        method: String? = null,
++        transfer: String? = null,
++        embryoAge: Int? = null,
++        scanDate: String? = "2026-08-27",
++    ): DemoPatient {
++        val scans = listOfNotNull(
++            scanDate?.let {
++                DemoUltrasoundScan(
++                    id = "s1", patientId = "p1", date = it,
++                    gestationalAgeWeeks = null, gestationalAgeDays = null, fetalNumber = null,
++                    presentation = null, placentalSite = null, amnioticFluid = null,
++                    fetalHeartRate = null, biometryBpd = null, biometryHc = null, biometryAc = null,
++                    biometryFl = null, estimatedFetalWeight = null, impression = null,
++                )
++            },
++        )
++        return DemoPatient(
++            id = "p1", caseId = "C1", displayName = "Share Test", dateOfBirth = null, phone = null,
++            visits = emptyList(),
++            dating = DemoPatientDating(
++                patientId = "p1", lmpDate = lmp, ultrasoundEdd = us, agreedEdd = agreed,
++                datingMethod = method, notes = null, transferDate = transfer, embryoAgeDays = embryoAge,
++            ),
++            ultrasoundScans = scans,
++        )
++    }
++
++    private fun datingBlock(p: DemoPatient): String {
++        val text = ClinicalSummaryGenerator.generateTextSummary(p).replace(' ', ' ')
++        val after = text.substringAfter("--- PREGNANCY DATING ---")
++        return after.substringBefore("--- RECENT VISITS")
++    }
++
++    @Test
++    fun lmpPatientSharesLmpAndEddInDmy() {
++        val block = datingBlock(patient(lmp = "2026-06-08", agreed = "2027-03-15", method = "LMP"))
++        assertTrue(block, Regex("""LMP:? 08/06/2026""").containsMatchIn(block))
++        assertTrue(block, Regex("""EDD:? 15/03/2027""").containsMatchIn(block))
++        assertFalse(block, block.contains("2026-06-08"))
++        assertFalse(block, block.contains("Confirmed EDD"))
++    }
++
++    @Test
++    fun ivfPatientSharesEtWithTransferDateAndNeverLmp() {
++        val block = datingBlock(
++            patient(lmp = "2026-06-01", agreed = "2027-03-08", method = "IVF_TRANSFER", transfer = "2026-06-20", embryoAge = 5),
++        )
++        assertTrue(block, Regex("""ET:? 20/06/2026""").containsMatchIn(block))
++        assertFalse(block, Regex("""\bLMP\b""").containsMatchIn(block))
++        assertFalse(block, block.contains("IVF_TRANSFER"))
++        assertTrue(block, Regex("""Method:? ET\b""").containsMatchIn(block))
++    }
++
++    @Test
++    fun methodSharedAsLabelNotRawCode() {
++        val us = datingBlock(patient(lmp = "2026-06-08", us = "2027-03-24", agreed = "2027-03-24", method = "Ultrasound"))
++        assertTrue(us, Regex("""Method:? by ultrasound""").containsMatchIn(us))
++        val clinical = datingBlock(patient(agreed = "2027-04-02", method = "Clinical"))
++        assertTrue(clinical, Regex("""Method:? clinical""").containsMatchIn(clinical))
++    }
++
++    @Test
++    fun discordanceSharesBothDueDatesAndGap() {
++        val block = datingBlock(patient(lmp = "2026-06-08", us = "2027-03-24", agreed = "2027-03-15", method = "LMP"))
++        assertTrue(block, block.contains("LMP EDD 15/03/2027"))
++        assertTrue(block, block.contains("US EDD 24/03/2027"))
++        assertTrue(block, block.contains("gap 9 d"))
++    }
++
++    @Test
++    fun noDiscordanceOmitsScanEddLine() {
++        val block = datingBlock(patient(lmp = "2026-06-08", us = "2027-03-18", agreed = "2027-03-15", method = "LMP"))
++        assertFalse(block, block.contains("US EDD"))
++        assertFalse(block, block.contains("gap"))
++    }
++
++    @Test
++    fun referredPatientSharesConfirmedEddAndNoLmpOrEtRow() {
++        val block = datingBlock(patient(agreed = "2027-04-02", method = "Clinical", scanDate = null))
++        assertTrue(block, Regex("""Confirmed EDD:? 02/04/2027""").containsMatchIn(block))
++        assertFalse(block, Regex("""\bLMP\b""").containsMatchIn(block))
++        assertFalse(block, Regex("""\bET\b""").containsMatchIn(block))
++    }
++}
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/model/DatingMethodLabelTest.kt b/app/src/test/java/com/sherifradwan/ancnative/model/DatingMethodLabelTest.kt
+new file mode 100644
+index 0000000..3c5a63e
+--- /dev/null
++++ b/app/src/test/java/com/sherifradwan/ancnative/model/DatingMethodLabelTest.kt
+@@ -0,0 +1,29 @@
++package com.sherifradwan.ancnative.model
++
++import org.junit.Assert.assertEquals
++import org.junit.Assert.assertNull
++import org.junit.Test
++
++class DatingMethodLabelTest {
++    @Test
++    fun knownCodesMapToLabels() {
++        assertEquals("LMP", datingMethodLabel("LMP"))
++        assertEquals("by ultrasound", datingMethodLabel("Ultrasound"))
++        assertEquals("ET", datingMethodLabel("IVF_TRANSFER"))
++        assertEquals("clinical", datingMethodLabel("Clinical"))
++    }
++
++    @Test
++    fun matchingIgnoresCaseSpacesAndAcceptsIvfAlias() {
++        assertEquals("by ultrasound", datingMethodLabel(" ULTRASOUND "))
++        assertEquals("LMP", datingMethodLabel("lmp"))
++        assertEquals("ET", datingMethodLabel("ivf"))
++    }
++
++    @Test
++    fun unknownShownAsTypedAndBlankOrNullIsNull() {
++        assertEquals("AGREED_EDD", datingMethodLabel("AGREED_EDD"))
++        assertNull(datingMethodLabel(""))
++        assertNull(datingMethodLabel(null))
++    }
++}
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/model/DatingSummaryTest.kt b/app/src/test/java/com/sherifradwan/ancnative/model/DatingSummaryTest.kt
+new file mode 100644
+index 0000000..9bf67b4
+--- /dev/null
++++ b/app/src/test/java/com/sherifradwan/ancnative/model/DatingSummaryTest.kt
+@@ -0,0 +1,331 @@
++package com.sherifradwan.ancnative.model
++
++import java.time.LocalDate
++import org.junit.Assert.assertEquals
++import org.junit.Assert.assertNotNull
++import org.junit.Assert.assertNull
++import org.junit.Test
++
++class DatingSummaryTest {
++    private val lmp = LocalDate.of(2026, 1, 1)
++    private val lmpEdd = lmp.plusDays(FULL_TERM_DAYS)
++    private val today = LocalDate.of(2026, 6, 1)
++
++    private fun dating(
++        lmpDate: String? = null,
++        ultrasoundEdd: String? = null,
++        agreedEdd: String? = null,
++        method: String? = null,
++        transferDate: String? = null,
++        embryoAgeDays: Int? = null,
++    ) = DemoPatientDating(
++        patientId = "p1",
++        lmpDate = lmpDate,
++        ultrasoundEdd = ultrasoundEdd,
++        agreedEdd = agreedEdd,
++        datingMethod = method,
++        notes = null,
++        transferDate = transferDate,
++        embryoAgeDays = embryoAgeDays,
++    )
++
++    private fun summary(d: DemoPatientDating?, scan: LocalDate? = null) =
++        datingSummary(d, scan, today)
++
++    private fun gapPatient(
++        gapDays: Long,
++        method: String? = "LMP",
++        agreedEdd: String? = lmpEdd.toString(),
++    ) = dating(
++        lmpDate = lmp.toString(),
++        ultrasoundEdd = lmpEdd.plusDays(gapDays).toString(),
++        agreedEdd = agreedEdd,
++        method = method,
++    )
++
++    private fun discordanceAtGa(gaDays: Long, gapDays: Long, method: String? = "LMP") =
++        summary(gapPatient(gapDays, method), scan = lmp.plusDays(gaDays)).discordance
++
++    @Test
++    fun lmpMethodWithLmpOriginatesFromLmp() {
++        val s = summary(dating(lmpDate = "2026-01-01", method = "LMP"))
++        assertEquals(DatingOrigin.Lmp("2026-01-01"), s.origin)
++    }
++
++    @Test
++    fun ultrasoundPatientWithLmpOnFileStillShowsLmp() {
++        val s = summary(dating(lmpDate = "2026-01-01", ultrasoundEdd = "2026-10-10", method = "Ultrasound"))
++        assertEquals(DatingOrigin.Lmp("2026-01-01"), s.origin)
++    }
++
++    @Test
++    fun clinicalPatientWithLmpOnFileShowsLmp() {
++        val s = summary(dating(lmpDate = "2026-01-01", method = "Clinical"))
++        assertEquals(DatingOrigin.Lmp("2026-01-01"), s.origin)
++    }
++
++    @Test
++    fun nullOrBlankMethodWithLmpShowsLmp() {
++        assertEquals(DatingOrigin.Lmp("2026-01-01"), summary(dating(lmpDate = "2026-01-01", method = null)).origin)
++        assertEquals(DatingOrigin.Lmp("2026-01-01"), summary(dating(lmpDate = "2026-01-01", method = "  ")).origin)
++    }
++
++    @Test
++    fun noLmpAndNoTransferGivesNone() {
++        assertEquals(DatingOrigin.None, summary(dating(method = "LMP")).origin)
++        assertEquals(DatingOrigin.None, summary(dating(lmpDate = " ", method = null)).origin)
++    }
++
++    @Test
++    fun ivfWithTransferDateOriginatesFromTransferWithEmbryoAge() {
++        val s = summary(dating(method = "IVF_TRANSFER", transferDate = "2026-02-01", embryoAgeDays = 3))
++        assertEquals(DatingOrigin.Transfer("2026-02-01", 3), s.origin)
++    }
++
++    @Test
++    fun ivfWithNullEmbryoAgeKeepsItNull() {
++        val s = summary(dating(method = "IVF_TRANSFER", transferDate = "2026-02-01", embryoAgeDays = null))
++        assertEquals(DatingOrigin.Transfer("2026-02-01", null), s.origin)
++    }
++
++    @Test
++    fun ivfAliasAnyCaseIsTheTransferMethod() {
++        for (m in listOf("IVF", "ivf", " Ivf ", "ivf_transfer")) {
++            val s = summary(dating(method = m, transferDate = "2026-02-01", embryoAgeDays = 5))
++            assertEquals("method $m", DatingOrigin.Transfer("2026-02-01", 5), s.origin)
++        }
++    }
++
++    @Test
++    fun ivfWithoutTransferDateIsNoneEvenWithLmpOnFile() {
++        assertEquals(DatingOrigin.None, summary(dating(lmpDate = "2026-01-01", method = "IVF_TRANSFER")).origin)
++        assertEquals(
++            DatingOrigin.None,
++            summary(dating(lmpDate = "2026-01-01", method = "ivf", transferDate = "  ")).origin,
++        )
++    }
++
++    @Test
++    fun nonIvfMethodIgnoresTransferDate() {
++        val s = summary(dating(lmpDate = "2026-01-01", method = "LMP", transferDate = "2026-02-01", embryoAgeDays = 5))
++        assertEquals(DatingOrigin.Lmp("2026-01-01"), s.origin)
++    }
++
++    @Test
++    fun malformedDatesAreKeptAsGiven() {
++        assertEquals(DatingOrigin.Lmp("garbage"), summary(dating(lmpDate = "garbage", method = "LMP")).origin)
++        assertEquals(
++            DatingOrigin.Transfer("2026-13-45", 5),
++            summary(dating(method = "IVF", transferDate = "2026-13-45", embryoAgeDays = 5)).origin,
++        )
++    }
++
++    @Test
++    fun eddComesFromTheEngine() {
++        val d = dating(lmpDate = "2026-01-01", ultrasoundEdd = "2026-10-10", agreedEdd = "2026-10-05", method = "LMP")
++        assertEquals(GestationalAgeEngine.calculateEstimatedDueDate(d), summary(d).edd)
++        assertEquals(LocalDate.of(2026, 10, 5), summary(d).edd)
++    }
++
++    @Test
++    fun eddFallsBackToMethodDueDateWithoutAgreedEdd() {
++        assertEquals(lmpEdd, summary(dating(lmpDate = "2026-01-01", method = "LMP")).edd)
++    }
++
++    @Test
++    fun confirmedLabelOnlyWhenAgreedEddIsTheSoleSource() {
++        val d = dating(agreedEdd = "2026-10-05", method = "Clinical")
++        assertEquals(EddLabel.CONFIRMED, summary(d).eddLabel)
++    }
++
++    @Test
++    fun blankWhitespaceSourcesStillCountAsBlankForConfirmed() {
++        val d = dating(lmpDate = " ", ultrasoundEdd = "", agreedEdd = "2026-10-05", transferDate = "  ", method = null)
++        assertEquals(EddLabel.CONFIRMED, summary(d).eddLabel)
++    }
++
++    @Test
++    fun autoFilledAgreedEddEqualToLmpEddIsPlain() {
++        val d = dating(lmpDate = "2026-01-01", agreedEdd = lmpEdd.toString(), method = "LMP")
++        assertEquals(EddLabel.PLAIN, summary(d).eddLabel)
++    }
++
++    @Test
++    fun agreedEddWithScanEddOnlyIsPlain() {
++        val d = dating(ultrasoundEdd = "2026-10-10", agreedEdd = "2026-10-10", method = "Ultrasound")
++        assertEquals(EddLabel.PLAIN, summary(d).eddLabel)
++    }
++
++    @Test
++    fun agreedEddWithTransferDateOnlyIsPlain() {
++        val d = dating(agreedEdd = "2026-10-10", method = "IVF_TRANSFER", transferDate = "2026-02-01")
++        assertEquals(EddLabel.PLAIN, summary(d).eddLabel)
++    }
++
++    @Test
++    fun blankAgreedEddWithNoSourcesIsPlain() {
++        assertEquals(EddLabel.PLAIN, summary(dating(agreedEdd = " ", method = "Clinical")).eddLabel)
++        assertEquals(EddLabel.PLAIN, summary(dating(agreedEdd = null)).eddLabel)
++    }
++
++    @Test
++    fun knownMethodCodesAreCanonical() {
++        for (code in listOf("LMP", "Ultrasound", "IVF_TRANSFER", "Clinical")) {
++            assertEquals(code, summary(dating(method = code)).methodCode)
++        }
++    }
++
++    @Test
++    fun methodCodeIsCaseInsensitiveAndTrimmed() {
++        assertEquals("LMP", summary(dating(method = " lmp ")).methodCode)
++        assertEquals("Ultrasound", summary(dating(method = "ULTRASOUND")).methodCode)
++        assertEquals("Clinical", summary(dating(method = "clinical")).methodCode)
++        assertEquals("IVF_TRANSFER", summary(dating(method = "ivf_transfer")).methodCode)
++    }
++
++    @Test
++    fun methodAliasesMapToCanonicalCodes() {
++        assertEquals("IVF_TRANSFER", summary(dating(method = "IVF")).methodCode)
++        assertEquals("IVF_TRANSFER", summary(dating(method = "ivf")).methodCode)
++        assertEquals("Ultrasound", summary(dating(method = "US")).methodCode)
++        assertEquals("Ultrasound", summary(dating(method = "us")).methodCode)
++    }
++
++    @Test
++    fun unknownMethodIsTheTrimmedRawString() {
++        assertEquals("Quickening", summary(dating(method = "  Quickening ")).methodCode)
++    }
++
++    @Test
++    fun blankOrNullMethodHasNoCode() {
++        assertNull(summary(dating(method = null)).methodCode)
++        assertNull(summary(dating(method = "   ")).methodCode)
++    }
++
++    @Test
++    fun nullDatingGivesAnAllEmptySummary() {
++        val s = summary(null)
++        assertEquals(DatingOrigin.None, s.origin)
++        assertNull(s.edd)
++        assertEquals(EddLabel.PLAIN, s.eddLabel)
++        assertNull(s.methodCode)
++        assertNull(s.discordance)
++    }
++
++    @Test
++    fun gapAtTheLimitGivesNoAlertAndOneOverAlertsAtEveryTierBoundary() {
++        val tiers = listOf(62L to 5, 63L to 7, 111L to 7, 112L to 10, 153L to 10, 154L to 14, 195L to 14, 196L to 21)
++        for ((ga, limit) in tiers) {
++            for (sign in listOf(1L, -1L)) {
++                assertNull(
++                    "GA $ga gap ${sign * limit}",
++                    discordanceAtGa(ga, sign * limit),
++                )
++                val advice = discordanceAtGa(ga, sign * (limit + 1))
++                assertNotNull("GA $ga gap ${sign * (limit + 1)}", advice)
++                assertEquals(limit, advice!!.thresholdDays)
++                assertEquals(limit + 1, kotlin.math.abs(advice.differenceDays))
++            }
++        }
++    }
++
++    @Test
++    fun measuresAtTodayWhenThereIsNoScanDate() {
++        val d = gapPatient(gapDays = 8)
++        val atToday = datingSummary(d, null, lmp.plusDays(70)).discordance
++        assertNotNull(atToday)
++        assertEquals(7, atToday!!.thresholdDays)
++    }
++
++    @Test
++    fun noScanDateUsesTodayTierNotAnotherTier() {
++        val d = gapPatient(gapDays = 8)
++        assertNull(datingSummary(d, null, lmp.plusDays(112)).discordance)
++        assertNotNull(datingSummary(d, null, lmp.plusDays(111)).discordance)
++    }
++
++    @Test
++    fun scanDateTakesPrecedenceOverToday() {
++        val d = gapPatient(gapDays = 8)
++        assertNull(datingSummary(d, lmp.plusDays(112), lmp.plusDays(70)).discordance)
++    }
++
++    @Test
++    fun clearedWhenMethodIsUltrasound() {
++        assertNull(discordanceAtGa(70, 30, method = "Ultrasound"))
++        assertNull(discordanceAtGa(70, 30, method = "us"))
++    }
++
++    @Test
++    fun clearedWhenAgreedEddEqualsUltrasoundEdd() {
++        val scanEdd = lmpEdd.plusDays(30)
++        val d = gapPatient(gapDays = 30, agreedEdd = scanEdd.toString())
++        assertNull(summary(d, scan = lmp.plusDays(70)).discordance)
++    }
++
++    @Test
++    fun clearedWhenAgreedEddEqualsUltrasoundEddWithWhitespace() {
++        val scanEdd = lmpEdd.plusDays(30)
++        val d = gapPatient(gapDays = 30, agreedEdd = " $scanEdd ")
++        assertNull(summary(d, scan = lmp.plusDays(70)).discordance)
++    }
++
++    @Test
++    fun agreedEddDifferentFromUltrasoundEddDoesNotClear() {
++        val d = gapPatient(gapDays = 30, agreedEdd = lmpEdd.plusDays(29).toString())
++        assertNotNull(summary(d, scan = lmp.plusDays(70)).discordance)
++    }
++
++    @Test
++    fun alertFiresForClinicalNullAndBlankMethods() {
++        for (m in listOf("Clinical", null, " ")) {
++            assertNotNull("method $m", discordanceAtGa(70, 30, method = m))
++        }
++    }
++
++    @Test
++    fun neverFiresForTheIvfTransferMethod() {
++        for (m in listOf("IVF_TRANSFER", "IVF", "ivf")) {
++            val d = gapPatient(gapDays = 30, method = m).copy(transferDate = "2026-02-01", embryoAgeDays = 5)
++            assertNull("method $m", summary(d, scan = lmp.plusDays(70)).discordance)
++        }
++    }
++
++    @Test
++    fun neverFiresWithoutLmp() {
++        val d = gapPatient(gapDays = 30).copy(lmpDate = null)
++        assertNull(summary(d, scan = lmp.plusDays(70)).discordance)
++        assertNull(summary(d.copy(lmpDate = "  "), scan = lmp.plusDays(70)).discordance)
++    }
++
++    @Test
++    fun neverFiresWithoutUltrasoundEdd() {
++        val d = gapPatient(gapDays = 30).copy(ultrasoundEdd = null)
++        assertNull(summary(d, scan = lmp.plusDays(70)).discordance)
++    }
++
++    @Test
++    fun malformedOrOutOfRangeDatesGiveNullAndNeverThrow() {
++        val bad = listOf("garbage", "2026-13-45", "2026-02-30", "", "  ")
++        for (b in bad) {
++            val badLmp = gapPatient(gapDays = 30).copy(lmpDate = b)
++            assertNull("lmp $b", summary(badLmp, scan = lmp.plusDays(70)).discordance)
++            val badScan = gapPatient(gapDays = 30).copy(ultrasoundEdd = b)
++            assertNull("scan edd $b", summary(badScan, scan = lmp.plusDays(70)).discordance)
++        }
++    }
++
++    @Test
++    fun malformedAgreedEddDoesNotThrowAndDoesNotClear() {
++        val d = gapPatient(gapDays = 30, agreedEdd = "garbage")
++        assertNotNull(summary(d, scan = lmp.plusDays(70)).discordance)
++    }
++
++    @Test
++    fun summaryDiscordanceMatchesRedatingAdviceOnTheSameInputs() {
++        val anchor = lmp.plusDays(100)
++        val d = gapPatient(gapDays = 12)
++        val scanGa = FULL_TERM_DAYS - java.time.temporal.ChronoUnit.DAYS.between(anchor, lmpEdd.plusDays(12))
++        assertEquals(redatingAdvice(100, scanGa), summary(d, scan = anchor).discordance)
++    }
++}
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/model/FormatDmyTest.kt b/app/src/test/java/com/sherifradwan/ancnative/model/FormatDmyTest.kt
+new file mode 100644
+index 0000000..85941ca
+--- /dev/null
++++ b/app/src/test/java/com/sherifradwan/ancnative/model/FormatDmyTest.kt
+@@ -0,0 +1,54 @@
++package com.sherifradwan.ancnative.model
++
++import java.util.Locale
++import org.junit.Assert.assertEquals
++import org.junit.Assert.assertNull
++import org.junit.Test
++
++class FormatDmyTest {
++    @Test
++    fun nullGivesNull() {
++        assertNull(formatDmy(null))
++    }
++
++    @Test
++    fun blankGivesNull() {
++        assertNull(formatDmy(""))
++        assertNull(formatDmy("   "))
++    }
++
++    @Test
++    fun validIsoIsDayMonthYearZeroPadded() {
++        assertEquals("07/03/2026", formatDmy("2026-03-07"))
++        assertEquals("29/02/2024", formatDmy("2024-02-29"))
++    }
++
++    @Test
++    fun surroundingWhitespaceIsIgnoredForValidDates() {
++        assertEquals("05/01/2026", formatDmy("  2026-01-05 "))
++    }
++
++    @Test
++    fun malformedReturnsTrimmedRaw() {
++        assertEquals("not a date", formatDmy("  not a date "))
++        assertEquals("2026-1-5", formatDmy("2026-1-5"))
++    }
++
++    @Test
++    fun outOfRangeDateReturnsTrimmedRaw() {
++        assertEquals("2026-02-30", formatDmy(" 2026-02-30"))
++    }
++
++    @Test
++    fun defaultLocaleDoesNotChangeDigitsOrOrder() {
++        val original = Locale.getDefault()
++        try {
++            Locale.setDefault(Locale.forLanguageTag("ar-EG-u-nu-arab"))
++            assertEquals("07/03/2026", formatDmy("2026-03-07"))
++            Locale.setDefault(Locale.forLanguageTag("hi-IN-u-nu-deva"))
++            assertEquals("07/03/2026", formatDmy("2026-03-07"))
++        } finally {
++            Locale.setDefault(original)
++        }
++    }
++}
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/ui/DatingMethodLabelTest.kt b/app/src/test/java/com/sherifradwan/ancnative/ui/DatingMethodLabelTest.kt
+deleted file mode 100644
+index 21f4b88..0000000
+--- a/app/src/test/java/com/sherifradwan/ancnative/ui/DatingMethodLabelTest.kt
++++ /dev/null
+@@ -1,30 +0,0 @@
+-package com.sherifradwan.ancnative.ui
+-
+-import com.sherifradwan.ancnative.R
+-import org.junit.Assert.assertEquals
+-import org.junit.Assert.assertNull
+-import org.junit.Test
+-
+-class DatingMethodLabelTest {
+-    @Test
+-    fun knownCodesMapToLabels() {
+-        assertEquals(R.string.dating_method_lmp, datingMethodLabelRes("LMP"))
+-        assertEquals(R.string.dating_method_ultrasound, datingMethodLabelRes("Ultrasound"))
+-        assertEquals(R.string.dating_method_ivf_transfer, datingMethodLabelRes("IVF_TRANSFER"))
+-        assertEquals(R.string.dating_method_clinical, datingMethodLabelRes("Clinical"))
+-    }
+-
+-    @Test
+-    fun matchingIgnoresCaseSpacesAndAcceptsIvfAlias() {
+-        assertEquals(R.string.dating_method_ultrasound, datingMethodLabelRes(" ULTRASOUND "))
+-        assertEquals(R.string.dating_method_lmp, datingMethodLabelRes("lmp"))
+-        assertEquals(R.string.dating_method_ivf_transfer, datingMethodLabelRes("ivf"))
+-    }
+-
+-    @Test
+-    fun unknownBlankOrNullFallBackToRaw() {
+-        assertNull(datingMethodLabelRes("AGREED_EDD"))
+-        assertNull(datingMethodLabelRes(""))
+-        assertNull(datingMethodLabelRes(null))
+-    }
+-}
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt b/app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt
+index bbbdc8e..f90d1b1 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt
+@@ -210,8 +210,12 @@ class PatientPrintHtmlEscapeTest {
+ 
+     @Test
+     fun q93_datingSection_escapedOnce() {
+-        assertTrue(countOf("""<div class="val">$ESCAPED</div>""") >= 2)
+-        assertTrue(countOf("""<div class="val text-rose">$ESCAPED</div>""") >= 1)
++        val start = html.indexOf("<span>Pregnancy Dating</span>")
++        assertTrue(start >= 0)
++        val rest = html.substring(start + 1)
++        val box = rest.substring(0, rest.indexOf("""class="section-title"""").let { if (it < 0) rest.length else it })
++        assertTrue(Regex(Regex.escape(ESCAPED)).findAll(box).count() >= 2)
++        assertFalse(box.contains(MARKER))
+     }
+ 
+     @Test
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt b/app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+index de5e51f..eb00dba 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+@@ -403,7 +403,7 @@ class PatientPrintHtmlGeneratorTest {
+ 
+     @Test
+     fun q19d_agreedEddPresent_printed() {
+-        assertEquals("2026-11-08", rowValue(q19Html(dating = dating("2026-11-08")), "Target Delivery Timing:"))
++        assertEquals("08/11/2026", rowValue(q19Html(dating = dating("2026-11-08")), "Target Delivery Timing:"))
+     }
+ 
+     // (e) risk level missing
+@@ -549,4 +549,120 @@ class PatientPrintHtmlGeneratorTest {
+         val html = htmlWith { it.copy(ultrasoundScans = listOf(scanWithImage("Normal growth"))) }
+         assertTrue(html.contains("""<div class="photo-caption">Ultrasound Scan 1.1 - 2026-09-01 (Normal growth)</div>"""))
+     }
++
++    // =====================================================================
++    // Dating summary in the printed report (overview_dating_spec.md U6).
++    // Assertions read the text of the "Pregnancy Dating" box only, with tags
++    // stripped and non-breaking spaces folded, so markup stays the builder's choice.
++    // =====================================================================
++
++    private fun datingBoxText(html: String): String {
++        val start = html.indexOf("<span>Pregnancy Dating</span>")
++        assertTrue("Pregnancy Dating title must be printed", start >= 0)
++        val rest = html.substring(start + 1)
++        val end = rest.indexOf("""class="section-title"""").let { if (it < 0) rest.length else it }
++        return rest.substring(0, end)
++            .replace(Regex("<[^>]*>"), " ")
++            .replace("&nbsp;", " ")
++            .replace("\u00A0", " ")
++            .replace(Regex("\\s+"), " ")
++    }
++
++    private fun printDating(d: DemoPatientDating, scanDate: String? = "2026-08-27"): String =
++        PatientPrintHtmlGenerator.generateHtml(
++            context = null,
++            patient = patient("Low Risk", "O+").copy(
++                dating = d,
++                ultrasoundScans = listOfNotNull(scanDate?.let { scan(null, null, null).copy(date = it) }),
++            ),
++            asOfDate = AS_OF_DATE,
++        )
++
++    private fun printDatingFields(
++        lmp: String? = null,
++        us: String? = null,
++        agreed: String? = null,
++        method: String? = null,
++        transfer: String? = null,
++        embryoAge: Int? = null,
++    ) = DemoPatientDating(
++        patientId = "r2e-print-1", lmpDate = lmp, ultrasoundEdd = us, agreedEdd = agreed,
++        datingMethod = method, notes = null, transferDate = transfer, embryoAgeDays = embryoAge,
++    )
++
++    @Test
++    fun dating_lmpPatient_printsLmpRowDmyAndEdd() {
++        val html = printDating(printDatingFields(lmp = "2026-06-08", agreed = "2027-03-15", method = "LMP"))
++        val box = datingBoxText(html)
++        assertTrue(box, Regex("""LMP:? 08/06/2026""").containsMatchIn(box))
++        assertTrue(box, Regex("""EDD:? 15/03/2027""").containsMatchIn(box))
++        assertFalse(box, box.contains("2026-06-08"))
++        assertFalse(box, box.contains("Confirmed EDD"))
++        assertFalse(box, Regex("""\bET\b""").containsMatchIn(box))
++    }
++
++    @Test
++    fun dating_ivfTransferPatient_printsEtWithTransferDateAndNeverLmp() {
++        val html = printDating(
++            printDatingFields(lmp = "2026-06-01", agreed = "2027-03-08", method = "IVF_TRANSFER", transfer = "2026-06-20", embryoAge = 5),
++        )
++        val box = datingBoxText(html)
++        assertTrue(box, Regex("""ET:? 20/06/2026""").containsMatchIn(box))
++        assertFalse(box, Regex("""\bLMP\b""").containsMatchIn(box))
++        assertFalse(box, box.contains("01/06/2026"))
++        assertTrue(box, Regex("""EDD:? 08/03/2027""").containsMatchIn(box))
++    }
++
++    @Test
++    fun dating_methodPrintsAsLabelNeverTheRawCode() {
++        val ivf = printDating(
++            printDatingFields(agreed = "2027-03-08", method = "IVF_TRANSFER", transfer = "2026-06-20", embryoAge = 5),
++        )
++        assertTrue(Regex("""Method:? ET\b""").containsMatchIn(datingBoxText(ivf)))
++        assertFalse(ivf.contains("IVF_TRANSFER"))
++
++        val us = printDating(printDatingFields(lmp = "2026-06-08", us = "2027-03-24", agreed = "2027-03-24", method = "Ultrasound"))
++        assertTrue(Regex("""Method:? by ultrasound""").containsMatchIn(datingBoxText(us)))
++
++        val clinical = printDating(printDatingFields(agreed = "2027-04-02", method = "Clinical"))
++        assertTrue(Regex("""Method:? clinical""").containsMatchIn(datingBoxText(clinical)))
++    }
++
++    @Test
++    fun dating_discordance_printsBothDueDatesAndGap() {
++        val html = printDating(
++            printDatingFields(lmp = "2026-06-08", us = "2027-03-24", agreed = "2027-03-15", method = "LMP"),
++        )
++        val box = datingBoxText(html)
++        assertTrue(box, box.contains("LMP EDD 15/03/2027"))
++        assertTrue(box, box.contains("US EDD 24/03/2027"))
++        assertTrue(box, box.contains("gap 9 d"))
++        assertFalse(box, box.contains("2027-03-24"))
++    }
++
++    @Test
++    fun dating_noDiscordance_scanEddLineAbsent() {
++        val html = printDating(
++            printDatingFields(lmp = "2026-06-08", us = "2027-03-18", agreed = "2027-03-15", method = "LMP"),
++        )
++        val box = datingBoxText(html)
++        assertFalse(box, box.contains("US EDD"))
++        assertFalse(box, box.contains("gap"))
++        assertTrue(box, box.contains("15/03/2027"))
++    }
++
++    @Test
++    fun dating_referredPatient_printsConfirmedEddAndNoLmpOrEtRow() {
++        val html = printDating(printDatingFields(agreed = "2027-04-02", method = "Clinical"), scanDate = null)
++        val box = datingBoxText(html)
++        assertTrue(box, Regex("""Confirmed EDD:? 02/04/2027""").containsMatchIn(box))
++        assertFalse(box, Regex("""\bLMP\b""").containsMatchIn(box))
++        assertFalse(box, Regex("""\bET\b""").containsMatchIn(box))
++    }
++
++    @Test
++    fun dating_plainEdd_isNotLabelledConfirmed() {
++        val html = printDating(printDatingFields(lmp = "2026-06-08", method = "LMP"), scanDate = null)
++        assertFalse(datingBoxText(html).contains("Confirmed EDD"))
++    }
+ }

@@ -1,0 +1,67 @@
+**Verdict: FIX-NEEDED.** The origin, EDD label, method and discordance rules in the spec are well pinned by pure-JVM tests, so there are no blockers. The scan-anchor helper and every `??` placement except the banner have no test, so some mutations pass silently. This is a static read only.
+
+## Findings
+
+**Major**
+1. **`earliestScanDate` (DatingText.kt) is untested.** It is the D2 anchor in all UI and print paths.
+   - Every fixture has at most one scan: `OverviewTabSectionsTest.withDating`, `ClinicalSummaryDatingTest.patient`, and the print `printDating`.
+   - Nothing covers two scans, unsorted scans, a malformed scan date, or an empty list.
+   - `datingSummaryOf` ("no scan, so today") is also never tested, only the lower-level `datingSummary` is, in `DatingSummaryTest.measuresAtTodayWhenThereIsNoScanDate`.
+   - Add a JVM test for min-of-several, malformed-ignored and empty.
+2. **The `??` marker is tested only on the banner.** The sticky bar, header, list and list-card placements have no test.
+   - `gaMarkerShownWhenDiscordant` and `gaMarkerAbsentWhenNotDiscordant` call `GestationalBanner` only.
+   - The `discordant =` arguments are untested in `PatientHubHeader.kt` (expanded at line 273, compact/sticky at 366) and in `Components.kt` (lines 230 and 411).
+   - `projectDashboardRow().isDatingDiscordant` (list) and `eddText` are also untested. `PrintObstetricSummaryTest` asserts only `prevSummary`. `GestationalAgeBadge(discordant=true)` has no direct test either.
+   - `projectDashboardRow` calls `LocalDate.now()` directly, so it needs a scan-anchored fixture or an injected date to be testable.
+3. **No test for `agreedEdd` null or blank with a discordant LMP and scan EDD.**
+   - `gapPatient` always sets `agreedEdd` to `lmpEdd` by default.
+   - A mutation such as `val a = parseIsoDateOrNull(agreedEdd) ?: return null`, which clears the alert whenever there is no agreed EDD, passes every test.
+   - D5 says only an equal agreed EDD clears it. Add the null and blank case, plus one with a malformed agreed EDD alongside a blank one.
+4. **Scan before LMP is untested.** The task named this negative case.
+   - With an anchor before the LMP, `datingGaDays` goes negative and falls in the ≤62 tier. The result is unpinned, so it could alert wrongly.
+   - Add a test with `scan = lmp.minusDays(n)` that asserts the intended result (probably null) and no throw.
+5. **`GestationalBanner` has no production caller in `app/src`.** The grep finds only the definition and the androidTest.
+   - Its `earliestScanDate` parameter defaults to null, so it measures at `asOfDate` rather than the earliest scan. If it is wired in later, its `??` can disagree with the Overview alert.
+   - Either wire it through `datingSummaryOf` or confirm the banner is dead code. The test proves only the banner in isolation.
+6. **The Overview alert is proven only in androidTest.** That includes the exact wording, the `abs` on the gap, no button, and the nbsp.
+   - `datingVariantB_*` and `datingVariantG_*` need a device or emulator.
+   - The JVM suite has no test for the string-format inputs `abs(differenceDays)` and `thresholdDays` in `OverviewSections.kt`.
+
+**Nit**
+7. `FormatDmyTest.defaultLocaleDoesNotChangeDigitsOrOrder` cannot fail. `DateTimeFormatter.ofPattern("dd/MM/yyyy")` already uses ASCII digits under any default locale. The formatter is also a top-level `val`, captured once at class load. Dropping `Locale.ROOT`, or even switching to `Locale.getDefault()`, would still pass. It does no harm but proves nothing about the `Locale.ROOT` requirement.
+8. **`PatientPrintHtmlEscapeTest.q93_datingSection_escapedOnce` is weaker than before.**
+   - It was ≥2 `val` cells plus ≥1 `val text-rose` cell holding the escaped EDD.
+   - It is now ≥2 escaped markers anywhere in the box, which are only the LMP row and the Method row.
+   - With a malformed `agreedEdd`, the EDD cell shows "Not recorded", so EDD escaping and the rose emphasis are no longer asserted.
+   - If no further `section-title` follows the box, `rest.length` makes the slice swallow later sections. Check that this cannot happen. The new `dating_*` tests do not cover the rose class either.
+9. **`q19d` is not weakened.** The expected value moved to `08/11/2026`, consistent with U2 and U6. But the "Target Delivery Timing" row is not in the spec, so a note is needed. Its blank and malformed cases are untested; I did not check `q19`'s other cases.
+10. **Ultrasound and IVF never show `US EDD`/`gap` in print or share.**
+    - D5 and D7 are tested only at the `datingSummary` level.
+    - `dating_methodPrintsAsLabel` and `methodSharedAsLabel` use `agreed == us` and no gap assertion.
+    - An IVF print test with both an LMP and a US EDD would close this.
+11. **Oracles with no test at all:** U3 "tone distinct from the high-risk banner", the warning icon, U4 colour and contrast (light and dark), and a negative test that historical GA at visits, scans and labs carries no `??`.
+12. **Hardcoded English labels now live in the model layer** (`by ultrasound`, `ET`, `clinical`). The `dating_method_*` string resources were deleted. This is a design note, not a test gap.
+13. **`datingDiscordanceLine`'s `abs` is covered in one direction only.** Every fixture has the US EDD later than the LMP EDD, so `differenceDays` is negative. Dropping `abs` is caught, but a reversed-sign gap with the US EDD earlier is never shown.
+
+## Mutations
+
+| # | Mutation | Caught? |
+|---|---|---|
+| 1 | `earliestScanDate`: `minOrNull()` → `maxOrNull()` | **No.** Only single-scan fixtures exist (finding 1). |
+| 2 | `discordanceOf`: drop `|| method == ULTRASOUND_CODE` | Yes. `clearedWhenMethodIsUltrasound` covers `"Ultrasound"` and `"us"`. |
+| 3 | `PatientHubHeader` compact badge: drop `discordant = gaDiscordant` (also the list `isDatingDiscordant`) | **No.** Banner-only coverage (finding 2). |
+| 4 | Swap the sign of `scanGaDays` | Yes. The ± tier-boundary test asserts `abs(diff)` equals the limit plus one. |
+| 5 | `>` → `>=` in `redatingAdvice` | Yes. `gapAtTheLimitGivesNoAlert…` fails at all 8 tier edges. |
+| 6 | Drop `abs` in `datingDiscordanceLine` | Yes. `gap 9 d` becomes `gap -9 d` in the print and share tests. |
+
+I also confirmed these are caught: the `earliestScanDate ?: today` swap (`scanDateTakesPrecedenceOverToday`) and dropping the `agreedEdd == scanEdd` clear.
+
+## Not checked
+- I did not run any tests, and I did not open `GestationalAgeEngine.calculateEstimatedDueDate` or the `PatientPrintHtmlGenerator` section order beyond the diff.
+- I did not view the existing `AssertNotEllipsized`, `show` and `inTagged` helpers.
+- I did not check for a `values-ar` or other locale string directory affected by the deleted resources.
+- Device-only items I did not verify:
+  - the red colour and contrast of `??` in light and dark;
+  - 360dp at 1.3x font scale for the header, sticky bar, list row and the longer ET and Confirmed EDD rows;
+  - the alert tone against the high-risk banner;
+  - the `remember(patient)` plus `LocalDate.now()` staleness across midnight.
