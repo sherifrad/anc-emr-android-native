@@ -164,12 +164,26 @@ class ThemeContrastTest {
     fun clinicalCardTokens_everyTextContainerPair_meetsWcagAa_4_5() {
         val tokens = parseColorTokens()
         val pairs = listOf(
+            // Light Card Tokens
             "DatingAccent" to "DatingBg",
             "ParityAccent" to "ParityBg",
             "ScanAccent" to "ScanBg",
             "CriticalText" to "CriticalBg",
             "WarningText" to "WarningBg",
             "AllergyAccent" to "AllergyBg",
+            // Dark Card Tokens (Full Light/Dark Pairs)
+            "DatingDarkAccent" to "DatingDarkBg",
+            "DatingDarkText" to "DatingDarkBg",
+            "ParityDarkAccent" to "ParityDarkBg",
+            "ParityDarkText" to "ParityDarkBg",
+            "ScanDarkAccent" to "ScanDarkBg",
+            "ScanDarkText" to "ScanDarkBg",
+            "CriticalDarkText" to "CriticalDarkBg",
+            "CriticalDarkAccent" to "CriticalDarkBg",
+            "WarningDarkText" to "WarningDarkBg",
+            "WarningDarkAccent" to "WarningDarkBg",
+            "AllergyDarkAccent" to "AllergyDarkBg",
+            "AllergyDarkText" to "AllergyDarkBg",
         )
         val failures = mutableListOf<String>()
         for ((textToken, bgToken) in pairs) {

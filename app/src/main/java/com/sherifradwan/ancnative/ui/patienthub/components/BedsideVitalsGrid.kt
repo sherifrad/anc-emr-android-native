@@ -27,8 +27,12 @@ import androidx.compose.ui.unit.sp
 import com.sherifradwan.ancnative.model.BpLevel
 import com.sherifradwan.ancnative.model.FhrLevel
 import com.sherifradwan.ancnative.model.SfhConcordance
-import com.sherifradwan.ancnative.ui.ClinicalTeal
+import com.sherifradwan.ancnative.ui.TagNormalRiskBg
+import com.sherifradwan.ancnative.ui.TagNormalRiskDarkBg
+import com.sherifradwan.ancnative.ui.TagNormalRiskDarkText
+import com.sherifradwan.ancnative.ui.TagNormalRiskText
 import com.sherifradwan.ancnative.ui.formatWeightKg
+import com.sherifradwan.ancnative.ui.isDarkTheme
 import com.sherifradwan.ancnative.ui.patienthub.model.VitalsSnapshot
 
 @Composable
@@ -37,6 +41,10 @@ fun BedsideVitalsGrid(
     modifier: Modifier = Modifier,
     compact: Boolean = false,
 ) {
+    val isDark = isDarkTheme()
+    val normalBg = if (isDark) TagNormalRiskDarkBg else TagNormalRiskBg
+    val normalText = if (isDark) TagNormalRiskDarkText else TagNormalRiskText
+
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surface,
@@ -82,7 +90,7 @@ fun BedsideVitalsGrid(
                         color = when (vitals.bpLevel) {
                             BpLevel.SEVERE -> MaterialTheme.colorScheme.errorContainer
                             BpLevel.RAISED -> MaterialTheme.colorScheme.tertiaryContainer
-                            BpLevel.NORMAL -> ClinicalTeal.copy(alpha = 0.12f)
+                            BpLevel.NORMAL -> normalBg
                         },
                     ) {
                         Text(
@@ -96,7 +104,7 @@ fun BedsideVitalsGrid(
                             color = when (vitals.bpLevel) {
                                 BpLevel.SEVERE -> MaterialTheme.colorScheme.onErrorContainer
                                 BpLevel.RAISED -> MaterialTheme.colorScheme.onTertiaryContainer
-                                BpLevel.NORMAL -> ClinicalTeal
+                                BpLevel.NORMAL -> normalText
                             },
                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
                         )
@@ -181,7 +189,7 @@ fun BedsideVitalsGrid(
                             if (vitals.fhrLevel != null) {
                                 Spacer(Modifier.height(2.dp))
                                 val (fhrText, fhrColor, fhrBg) = when (vitals.fhrLevel) {
-                                    FhrLevel.NORMAL -> Triple("110-160 normal ✓", ClinicalTeal, ClinicalTeal.copy(alpha = 0.12f))
+                                    FhrLevel.NORMAL -> Triple("110-160 normal ✓", normalText, normalBg)
                                     FhrLevel.BRADYCARDIA -> Triple("Bradycardia (<110) ⚠️", MaterialTheme.colorScheme.onErrorContainer, MaterialTheme.colorScheme.errorContainer)
                                     FhrLevel.TACHYCARDIA -> Triple("Tachycardia (>160) ⚠️", MaterialTheme.colorScheme.onErrorContainer, MaterialTheme.colorScheme.errorContainer)
                                 }
@@ -232,7 +240,7 @@ fun BedsideVitalsGrid(
                             if (vitals.sfhConcordance != null) {
                                 Spacer(Modifier.height(2.dp))
                                 val (sfhText, sfhColor, sfhBg) = when (vitals.sfhConcordance) {
-                                    SfhConcordance.CONCORDANT -> Triple("Concordant ✓", ClinicalTeal, ClinicalTeal.copy(alpha = 0.12f))
+                                    SfhConcordance.CONCORDANT -> Triple("Concordant ✓", normalText, normalBg)
                                     SfhConcordance.DISCREPANT_LARGE -> Triple("Large for dates ▲", MaterialTheme.colorScheme.onTertiaryContainer, MaterialTheme.colorScheme.tertiaryContainer)
                                     SfhConcordance.DISCREPANT_SMALL -> Triple("Small for dates ▼", MaterialTheme.colorScheme.onErrorContainer, MaterialTheme.colorScheme.errorContainer)
                                 }

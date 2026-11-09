@@ -249,10 +249,10 @@ fun UltrasoundPhotoViewerDialog(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     if (!scan.fetalHeartRate.isNullOrBlank()) {
-                        FactBadge("💓 FHR: ${scan.fetalHeartRate} bpm")
+                        FactBadge("FHR: ${scan.fetalHeartRate} bpm")
                     }
                     if (!scan.estimatedFetalWeight.isNullOrBlank()) {
-                        FactBadge("⚖️ EFW: ${scan.estimatedFetalWeight} g")
+                        FactBadge("EFW: ${scan.estimatedFetalWeight} g")
                     }
                     if (!scan.biometryBpd.isNullOrBlank()) {
                         FactBadge("BPD: ${scan.biometryBpd} mm")

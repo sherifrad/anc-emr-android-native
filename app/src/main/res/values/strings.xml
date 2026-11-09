@@ -131,7 +131,7 @@
     <string name="archived_read_only_notice">This patient is archived. Profile and committed records remain readable; writes are blocked.</string>
     <string name="patient_saved">Patient record saved.</string>
     <string name="patient_saved_dating_not_updated">Patient saved, but the due date was not updated. Open Dating to set it.</string>
-    <string name="histories_saved">No record</string>
+    <string name="histories_saved">Medical histories record saved.</string>
     <string name="pregnancy_saved">Previous pregnancy record saved.</string>
     <string name="patient_status">Patient status</string>
     <string name="edit_other_histories">Edit other histories</string>
@@ -167,7 +167,7 @@
     <string name="gestational_age">Gestational age</string>
     <string name="current_gestational_age">Current gestational age</string>
     <string name="dating_saved">Dating record saved.</string>
-    <string name="no_dating_recorded">No dating record recorded.</string>
+    <string name="no_dating_recorded">No dating recorded</string>
     <string name="dating_editor">Dating editor</string>
     <string name="dating_editor_notice">Dating records preserved factually.</string>
     <string name="add_ultrasound">Add ultrasound scan</string>
@@ -291,6 +291,7 @@
     <string name="simulated_photo">Ultrasound capture</string>
     <string name="no_photos_attached">No ultrasound photos attached</string>
     <string name="remove_photo">Remove photo</string>
+    <string name="negative_histories_title">Explicit Negative Histories</string>
     <string name="fill_all_negative">Confirm all histories negative</string>
     <string name="save_and_add_another_med">Save &amp; add another</string>
     <string name="advanced_med_options">Route &amp; End date (optional)</string>

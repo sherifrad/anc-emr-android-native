@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.sherifradwan.ancnative.ui.minimumTouchTarget
 
 /** Canonical compact edit affordance: a right-aligned pencil icon button. */
 @Composable
@@ -30,7 +31,7 @@ fun CanonicalPencilEditButton(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         trailing?.invoke()
-        IconButton(onClick = onClick, modifier = Modifier.testTag(tag)) {
+        IconButton(onClick = onClick, modifier = Modifier.minimumTouchTarget().testTag(tag)) {
             Icon(
                 Icons.Default.Edit,
                 contentDescription = contentDescription,

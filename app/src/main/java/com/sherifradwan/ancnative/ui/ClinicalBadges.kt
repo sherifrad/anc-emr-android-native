@@ -33,9 +33,6 @@ import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.BpLevel
 import com.sherifradwan.ancnative.model.bpLevel
 
-@Composable
-private fun isDarkSurface(): Boolean = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-
 /**
  * Dedicated maternal-age badge: a solid indigo "AGE" label segment joined to
  * a soft indigo value segment, so age reads as its own clinical identity.
@@ -43,7 +40,7 @@ private fun isDarkSurface(): Boolean = MaterialTheme.colorScheme.surface.luminan
 @Composable
 fun PatientAgeBadge(ageText: String?, modifier: Modifier = Modifier, large: Boolean = false) {
     val cleanAge = formatAgeYears(ageText) ?: return
-    val dark = isDarkSurface()
+    val dark = isDarkTheme()
     val bg = if (dark) TagAgeDarkBg else TagAgeBg
     val border = if (dark) TagAgeDarkBorder else TagAgeBorder
     val text = if (dark) TagAgeDarkText else TagAgeText
@@ -85,7 +82,7 @@ private data class ToneColors(val bg: Color, val border: Color, val text: Color)
 
 @Composable
 private fun DeliveryTone.colors(): ToneColors {
-    val dark = isDarkSurface()
+    val dark = isDarkTheme()
     return when (this) {
         DeliveryTone.HOSPITAL -> if (dark) ToneColors(DeliveryHospitalDarkBg, DeliveryHospitalDarkBorder, DeliveryHospitalDarkText)
         else ToneColors(DeliveryHospitalBg, DeliveryHospitalBorder, DeliveryHospitalText)
@@ -153,7 +150,7 @@ fun KeyFactTile(label: String, value: String?, modifier: Modifier = Modifier, em
                 maxLines = 2,
             )
             Text(
-                text = value?.takeIf { it.isNotBlank() } ?: "—",
+                text = value?.takeIf { it.isNotBlank() } ?: "-",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = if (emphasize) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
@@ -202,7 +199,7 @@ internal fun ClinicalTagBadge(
     isError: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
-    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val isDark = isDarkTheme()
     val (bgColor, borderColor, textColor) = if (isError) {
         if (isDark) {
             Triple(TagHighRiskDarkBg, TagHighRiskDarkBorder, TagHighRiskDarkText)
@@ -296,12 +293,12 @@ fun MedicationStatusBadge(status: String, modifier: Modifier = Modifier) {
 /**
  * Canonical Blood Group Badge.
  * Highlights Rh-negative status prominently with TagBloodNegative tokens as a critical clinical flag.
- * Supports dark mode automatically via isDarkSurface().
+ * Supports dark mode automatically via isDarkTheme().
  */
 @Composable
 fun BloodGroupBadge(bloodGroup: String?, modifier: Modifier = Modifier) {
     val formatted = formatBloodGroup(bloodGroup) ?: return
-    val dark = isDarkSurface()
+    val dark = isDarkTheme()
     val isRhNeg = isRhNegative(bloodGroup)
     val bg = if (isRhNeg) {
         if (dark) TagBloodNegativeDarkBg else TagBloodNegativeBg
@@ -338,12 +335,12 @@ fun BloodGroupBadge(bloodGroup: String?, modifier: Modifier = Modifier) {
 /**
  * Canonical Gestational Age Badge.
  * Renders gestational age (e.g., "28w 4d") with softWrap = false to prevent 360dp text wrapping.
- * Resolves dark mode automatically via isDarkSurface().
+ * Resolves dark mode automatically via isDarkTheme().
  */
 @Composable
 fun GestationalAgeBadge(gaText: String?, modifier: Modifier = Modifier) {
     if (gaText.isNullOrBlank()) return
-    val dark = isDarkSurface()
+    val dark = isDarkTheme()
     val bg = if (dark) TagGestationalAgeDarkBg else TagGestationalAgeBg
     val border = if (dark) TagGestationalAgeDarkBorder else TagGestationalAgeBorder
     val text = if (dark) TagGestationalAgeDarkText else TagGestationalAgeText
@@ -369,7 +366,7 @@ fun GestationalAgeBadge(gaText: String?, modifier: Modifier = Modifier) {
 /**
  * Canonical Obstetric Parity (GPA) Badge.
  * Formats Gravida, Parity, Abortion (e.g. "G2 P1 A0" or "G1 P0").
- * Automatically resolves dark mode via isDarkSurface().
+ * Automatically resolves dark mode via isDarkTheme().
  */
 @Composable
 fun ObstetricParityBadge(
@@ -391,7 +388,7 @@ fun ObstetricParityBadge(
     modifier: Modifier = Modifier,
 ) {
     if (summaryText.isBlank()) return
-    val dark = isDarkSurface()
+    val dark = isDarkTheme()
     val bg = if (dark) TagObstetricDarkBg else TagObstetricBg
     val border = if (dark) TagObstetricDarkBorder else TagObstetricBorder
     val text = if (dark) TagObstetricDarkText else TagObstetricText

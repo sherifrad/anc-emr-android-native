@@ -3,7 +3,9 @@ package com.sherifradwan.ancnative.ui.patienthub.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.ui.semantics.Role
+import com.sherifradwan.ancnative.ui.isDarkTheme
+import com.sherifradwan.ancnative.ui.minimumTouchTarget
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -98,20 +100,22 @@ fun ClinicalAttentionBanner(
         ClinicalAttentionLevel.NOTE to ""
     }
     val level = if (severeBp != null) ClinicalAttentionLevel.CRITICAL else parsedLevel
-    val isDark = isSystemInDarkTheme()
+    val isDark = isDarkTheme()
 
     val (containerColor, borderColor, accentBarColor, textColor) = when (level) {
         ClinicalAttentionLevel.CRITICAL -> {
             val bg = if (isDark) ClinicalCardTokens.CriticalDarkBg else ClinicalCardTokens.CriticalBg
             val b = if (isDark) ClinicalCardTokens.CriticalDarkBorder else ClinicalCardTokens.CriticalBorder
-            val t = if (isDark) TagBloodNegativeDarkText else TagBloodNegativeText
-            listOf(bg, b, ActionRose, t)
+            val t = if (isDark) ClinicalCardTokens.CriticalDarkText else TagBloodNegativeText
+            val accent = if (isDark) ClinicalCardTokens.CriticalDarkAccent else ActionRose
+            listOf(bg, b, accent, t)
         }
         ClinicalAttentionLevel.ALERT -> {
             val bg = if (isDark) ClinicalCardTokens.WarningDarkBg else ClinicalCardTokens.WarningBg
             val b = if (isDark) ClinicalCardTokens.WarningDarkBorder else ClinicalCardTokens.WarningBorder
-            val t = if (isDark) TagAttentionDarkText else TagAttentionText
-            listOf(bg, b, ClinicalCardTokens.WarningText, t)
+            val t = if (isDark) ClinicalCardTokens.WarningDarkText else TagAttentionText
+            val accent = if (isDark) ClinicalCardTokens.WarningDarkAccent else ClinicalCardTokens.WarningAccent
+            listOf(bg, b, accent, t)
         }
         ClinicalAttentionLevel.NOTE -> {
             val bg = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainerLow
@@ -249,7 +253,11 @@ fun ClinicalAttentionDialog(
                             ),
                             modifier = Modifier
                                 .weight(1f)
-                                .clickable { selectedLevel = lvl },
+                                .minimumTouchTarget()
+                                .clickable(
+                                    role = Role.Button,
+                                    onClick = { selectedLevel = lvl },
+                                ),
                         ) {
                             Box(
                                 modifier = Modifier

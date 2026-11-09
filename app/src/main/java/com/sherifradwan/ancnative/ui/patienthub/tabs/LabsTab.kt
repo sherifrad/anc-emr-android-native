@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.storage.DeletableType
+import com.sherifradwan.ancnative.ui.minimumTouchTarget
 import com.sherifradwan.ancnative.ui.patienthub.components.LabReportItem
 import com.sherifradwan.ancnative.ui.patienthub.model.groupLabsIntoReports
 import java.util.UUID
@@ -72,7 +73,7 @@ fun LabsTab(
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(10.dp),
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                        modifier = Modifier.testTag("addInvestigationBtn"),
+                        modifier = Modifier.minimumTouchTarget().testTag("addInvestigationBtn"),
                     ) {
                         Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))

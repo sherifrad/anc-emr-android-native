@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.ui.FactRow
+import com.sherifradwan.ancnative.ui.minimumTouchTarget
 
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Surface
@@ -76,7 +77,7 @@ fun MedicalHistoriesCard(
                 if (onEdit != null) {
                     IconButton(
                         onClick = onEdit,
-                        modifier = Modifier.testTag("editMedicalHistoryButton"),
+                        modifier = Modifier.minimumTouchTarget().testTag("editMedicalHistoryButton"),
                     ) {
                         Icon(
                             Icons.Default.Edit,

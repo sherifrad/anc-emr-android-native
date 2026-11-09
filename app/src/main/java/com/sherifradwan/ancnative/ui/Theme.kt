@@ -11,6 +11,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
@@ -59,7 +60,7 @@ val TagNormalRiskBg = Color(0xFFDCFCE7)
 val TagNormalRiskBorder = Color(0xFF86EFAC)
 val TagNormalRiskText = Color(0xFF166534)
 
-// Dedicated maternal-age identity (indigo) — distinct from GA (sky), obstetric (purple), risk (red/green)
+// Dedicated maternal-age identity (indigo): distinct from GA (sky), obstetric (purple), risk (red/green)
 val TagAgeBg = Color(0xFFE0E7FF)
 val TagAgeBorder = Color(0xFFA5B4FC)
 val TagAgeText = Color(0xFF3730A3)
@@ -137,48 +138,73 @@ val DeliveryPostpartumDarkText = Color(0xFFFBCFE8)
  * Provides domain-scoped container, border, and accent colors for clinical cards and alert banners.
  */
 object ClinicalCardTokens {
-    // Pregnancy Dating Card (Sky / Cyan - WCAG AA 5.57:1)
+    // Pregnancy Dating Card (Sky / Cyan - WCAG AA >= 4.5:1)
     val DatingBg = Color(0xFFF0F9FF)
     val DatingBorder = Color(0xFFBAE6FD)
     val DatingAccent = Color(0xFF0369A1)
+    val DatingText = Color(0xFF0369A1)
     val DatingDarkBg = Color(0xFF082F49)
     val DatingDarkBorder = Color(0xFF075985)
+    val DatingDarkAccent = Color(0xFF7DD3FC)
+    val DatingDarkText = Color(0xFFBAE6FD)
 
-    // Obstetric Parity Card (Maternity Lavender / Purple - WCAG AA 6.51:1)
+    // Obstetric Parity Card (Maternity Lavender / Purple - WCAG AA >= 4.5:1)
     val ParityBg = Color(0xFFFAF5FF)
     val ParityBorder = Color(0xFFE9D5FF)
     val ParityAccent = Color(0xFF7E22CE)
+    val ParityText = Color(0xFF7E22CE)
     val ParityDarkBg = Color(0xFF2E1065)
     val ParityDarkBorder = Color(0xFF581C87)
+    val ParityDarkAccent = Color(0xFFD8B4FE)
+    val ParityDarkText = Color(0xFFE9D5FF)
 
-    // Ultrasound Biometry Card (Teal - WCAG AA 5.25:1)
+    // Ultrasound Biometry Card (Teal - WCAG AA >= 4.5:1)
     val ScanBg = Color(0xFFF0FDFA)
     val ScanBorder = Color(0xFF99F6E4)
     val ScanAccent = Color(0xFF0F766E)
+    val ScanText = Color(0xFF0F766E)
     val ScanDarkBg = Color(0xFF042F2E)
     val ScanDarkBorder = Color(0xFF115E59)
+    val ScanDarkAccent = Color(0xFF5EEAD4)
+    val ScanDarkText = Color(0xFF99F6E4)
 
-    // Critical Vitals / Alerts (Crimson / Red)
+    // Critical Vitals / Alerts (Crimson / Red - WCAG AA >= 4.5:1)
     val CriticalBg = Color(0xFFFEF2F2)
     val CriticalBorder = Color(0xFFFCA5A5)
+    val CriticalAccent = Color(0xFFB91C1C)
     val CriticalText = Color(0xFFB91C1C)
     val CriticalDarkBg = Color(0xFF450A0A)
     val CriticalDarkBorder = Color(0xFF991B1B)
+    val CriticalDarkAccent = Color(0xFFFCA5A5)
+    val CriticalDarkText = Color(0xFFFECDD3)
 
-    // Warning / Attention Alerts (Amber)
+    // Warning / Attention Alerts (Amber - WCAG AA >= 4.5:1)
     val WarningBg = Color(0xFFFFFBEB)
     val WarningBorder = Color(0xFFFDE68A)
+    val WarningAccent = Color(0xFFB45309)
     val WarningText = Color(0xFFB45309)
     val WarningDarkBg = Color(0xFF451A03)
     val WarningDarkBorder = Color(0xFF78350F)
+    val WarningDarkAccent = Color(0xFFF59E0B)
+    val WarningDarkText = Color(0xFFFDE68A)
 
-    // Allergy Warning Card (Orange)
+    // Allergy Warning Card (Orange - WCAG AA >= 4.5:1)
     val AllergyBg = Color(0xFFFFF7ED)
     val AllergyBorder = Color(0xFFFDBA74)
     val AllergyAccent = Color(0xFFC2410C)
+    val AllergyText = Color(0xFFC2410C)
     val AllergyDarkBg = Color(0xFF431407)
     val AllergyDarkBorder = Color(0xFF9A3412)
+    val AllergyDarkAccent = Color(0xFFFB923C)
+    val AllergyDarkText = Color(0xFFFDBA74)
 }
+
+/**
+ * Returns true if the ambient MaterialTheme surface is dark (luminance < 0.5f).
+ * Single canonical implementation ensuring cards adapt to active theme, not OS settings.
+ */
+@Composable
+fun isDarkTheme(): Boolean = MaterialTheme.colorScheme.surface.luminance() < 0.5f
 
 private val LightColors = lightColorScheme(
     primary = ClinicalNavy,

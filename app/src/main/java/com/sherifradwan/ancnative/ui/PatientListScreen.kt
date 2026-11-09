@@ -376,7 +376,7 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
             sheetState = sheetState,
             containerColor = MaterialTheme.colorScheme.surface,
         ) {
-            val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+            val isDark = isDarkTheme()
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -390,7 +390,7 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
                     color = MaterialTheme.colorScheme.primary,
                 )
                 Text(
-                    text = "${p.ageText ?: "—"} · G${p.gravida ?: 1} P${p.parity ?: 0}",
+                    text = "${p.ageText ?: "-"} · G${p.gravida ?: 1} P${p.parity ?: 0}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -568,7 +568,7 @@ private fun PatientDirectoryCard(
 ) {
     val severeBp = remember(patient.visits) { severeBpAttention(patient.visits) }
     val isArabic = row.displayName.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.ARABIC }
-    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val isDark = isDarkTheme()
 
     val rowBgColor = if (row.isHighRisk) {
         lerp(
@@ -768,7 +768,7 @@ private fun DirectoryClinicalAttentionBox(
     clinicalAttention: String?,
     severeBp: SevereBpAttention?,
 ) {
-    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val isDark = isDarkTheme()
     val hasContent = !clinicalAttention.isNullOrBlank() || severeBp != null
 
     if (hasContent) {

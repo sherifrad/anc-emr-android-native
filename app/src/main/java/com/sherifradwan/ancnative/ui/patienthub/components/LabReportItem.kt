@@ -3,6 +3,7 @@ package com.sherifradwan.ancnative.ui.patienthub.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -42,9 +43,14 @@ import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
 import com.sherifradwan.ancnative.ui.TagHighRiskBg
+import com.sherifradwan.ancnative.ui.TagHighRiskDarkBg
+import com.sherifradwan.ancnative.ui.TagHighRiskDarkText
 import com.sherifradwan.ancnative.ui.TagHighRiskText
 import com.sherifradwan.ancnative.ui.TagNormalRiskBg
+import com.sherifradwan.ancnative.ui.TagNormalRiskDarkBg
+import com.sherifradwan.ancnative.ui.TagNormalRiskDarkText
 import com.sherifradwan.ancnative.ui.TagNormalRiskText
+import com.sherifradwan.ancnative.ui.isDarkTheme
 import com.sherifradwan.ancnative.ui.patienthub.model.ClinicalLabReport
 import com.sherifradwan.ancnative.ui.patienthub.model.partitionReportIntoCompositeGroups
 
@@ -62,6 +68,11 @@ fun LabReportItem(
     val gaResult = patient.dating?.let { GestationalAgeEngine.calculateGestationalAgeAt(it, report.date) }
     val gaText = gaResult?.displayText?.let { " · GA $it" }.orEmpty()
     val labDisplay = report.labName?.takeIf { it.isNotBlank() } ?: "Laboratory Report"
+    val isDark = isDarkTheme()
+    val abnormalBg = if (isDark) TagHighRiskDarkBg else TagHighRiskBg
+    val abnormalText = if (isDark) TagHighRiskDarkText else TagHighRiskText
+    val normalBg = if (isDark) TagNormalRiskDarkBg else TagNormalRiskBg
+    val normalText = if (isDark) TagNormalRiskDarkText else TagNormalRiskText
 
     Card(
         modifier = modifier
@@ -103,11 +114,11 @@ fun LabReportItem(
                     if (report.isAnyAbnormal) {
                         Surface(
                             shape = RoundedCornerShape(999.dp),
-                            color = TagHighRiskBg,
+                            color = abnormalBg,
                         ) {
                             Text(
                                 text = "${report.abnormalCount} ABNORMAL ▲",
-                                color = TagHighRiskText,
+                                color = abnormalText,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.ExtraBold,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
@@ -116,11 +127,11 @@ fun LabReportItem(
                     } else {
                         Surface(
                             shape = RoundedCornerShape(999.dp),
-                            color = TagNormalRiskBg,
+                            color = normalBg,
                         ) {
                             Text(
                                 text = "ALL NORMAL ✓",
-                                color = TagNormalRiskText,
+                                color = normalText,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.ExtraBold,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
@@ -131,7 +142,7 @@ fun LabReportItem(
                     if (canEdit) {
                         TextButton(
                             onClick = onAddTestToReport,
-                            modifier = Modifier.testTag("addTestToReportBtn-${report.date}"),
+                            modifier = Modifier.minimumTouchTarget().testTag("addTestToReportBtn-${report.date}"),
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(2.dp))
@@ -161,7 +172,11 @@ fun LabReportItem(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clickable { isExpanded = !isExpanded }
+                                        .minimumTouchTarget()
+                                        .clickable(
+                                            role = Role.Button,
+                                            onClick = { isExpanded = !isExpanded },
+                                        )
                                         .padding(horizontal = 10.dp, vertical = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -190,20 +205,20 @@ fun LabReportItem(
                                     }
 
                                     if (group.isAnyAbnormal) {
-                                        Surface(shape = RoundedCornerShape(4.dp), color = TagHighRiskBg) {
+                                        Surface(shape = RoundedCornerShape(4.dp), color = abnormalBg) {
                                             Text(
                                                 text = "${group.abnormalCount} Abnormal",
-                                                color = TagHighRiskText,
+                                                color = abnormalText,
                                                 style = MaterialTheme.typography.labelSmall,
                                                 fontWeight = FontWeight.Bold,
                                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                             )
                                         }
                                     } else {
-                                        Surface(shape = RoundedCornerShape(4.dp), color = TagNormalRiskBg) {
+                                        Surface(shape = RoundedCornerShape(4.dp), color = normalBg) {
                                             Text(
                                                 text = "Normal",
-                                                color = TagNormalRiskText,
+                                                color = normalText,
                                                 style = MaterialTheme.typography.labelSmall,
                                                 fontWeight = FontWeight.Bold,
                                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
@@ -270,7 +285,10 @@ fun LabReportItem(
                         .padding(horizontal = 14.dp, vertical = 6.dp),
                     horizontalArrangement = Arrangement.End,
                 ) {
-                    TextButton(onClick = onAddTestToReport) {
+                    TextButton(
+                        onClick = onAddTestToReport,
+                        modifier = Modifier.minimumTouchTarget(),
+                    ) {
                         Text(
                             text = "+ Add Another Test to this Report",
                             style = MaterialTheme.typography.labelMedium,
@@ -292,6 +310,10 @@ fun LabRowItem(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isDark = isDarkTheme()
+    val abnormalBg = if (isDark) TagHighRiskDarkBg else TagHighRiskBg
+    val abnormalText = if (isDark) TagHighRiskDarkText else TagHighRiskText
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -331,11 +353,11 @@ fun LabRowItem(
             if (lab.isAbnormal) {
                 Surface(
                     shape = RoundedCornerShape(4.dp),
-                    color = TagHighRiskBg,
+                    color = abnormalBg,
                 ) {
                     Text(
                         text = "ABNORMAL ▲",
-                        color = TagHighRiskText,
+                        color = abnormalText,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.ExtraBold,
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),

@@ -535,7 +535,7 @@ fun LabEditor(
                     ) {
                         Row(verticalAlignment = Alignment.Bottom) {
                             Text(
-                                text = draft.values.result.trim().ifBlank { "—" },
+                                text = draft.values.result.trim().ifBlank { "-" },
                                 fontSize = 36.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = MaterialTheme.colorScheme.onSurface,

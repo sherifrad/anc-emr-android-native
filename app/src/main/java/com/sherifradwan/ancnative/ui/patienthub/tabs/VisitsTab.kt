@@ -44,8 +44,8 @@ import com.sherifradwan.ancnative.model.parseWeightKg
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.storage.DeletableType
 import com.sherifradwan.ancnative.ui.BpAlertLabel
-import com.sherifradwan.ancnative.ui.ClinicalTeal
 import com.sherifradwan.ancnative.ui.DeleteIconButton
+import com.sherifradwan.ancnative.ui.GestationalAgeBadge
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
 import com.sherifradwan.ancnative.ui.patienthub.components.BedsideVitalsGrid
 import com.sherifradwan.ancnative.ui.patienthub.model.deriveVitalsSnapshot
@@ -90,7 +90,7 @@ fun VisitsTab(
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(10.dp),
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                        modifier = Modifier.testTag("recordNewVisitBtn"),
+                        modifier = Modifier.minimumTouchTarget().testTag("recordNewVisitBtn"),
                     ) {
                         Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
@@ -164,19 +164,7 @@ fun VisitsTab(
                                     color = MaterialTheme.colorScheme.primary,
                                 )
                                 if (!gaDisplayText.isNullOrBlank()) {
-                                    Surface(
-                                        shape = RoundedCornerShape(6.dp),
-                                        color = ClinicalTeal.copy(alpha = 0.12f),
-                                        border = BorderStroke(1.dp, ClinicalTeal.copy(alpha = 0.3f)),
-                                    ) {
-                                        Text(
-                                            text = gaDisplayText,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = ClinicalTeal,
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                        )
-                                    }
+                                    GestationalAgeBadge(gaDisplayText)
                                 }
                             }
 

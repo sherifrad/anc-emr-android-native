@@ -5,7 +5,6 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -100,8 +99,6 @@ fun ClinicalPatientCard(
     onOpenReport: (() -> Unit)? = null,
     onOpenAttentionDialog: (() -> Unit)? = null,
 ) {
-    val isDark = isSystemInDarkTheme()
-
     when (variant) {
         PatientCardVariant.BEDSIDE_TOP_BAR -> {
             Card(
@@ -125,7 +122,7 @@ fun ClinicalPatientCard(
                         if (onBack != null) {
                             IconButton(
                                 onClick = onBack,
-                                modifier = Modifier.size(36.dp),
+                                modifier = Modifier.minimumTouchTarget(),
                             ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -159,7 +156,7 @@ fun ClinicalPatientCard(
                             if (hasAttention && onOpenAttentionDialog != null) {
                                 IconButton(
                                     onClick = onOpenAttentionDialog,
-                                    modifier = Modifier.size(36.dp).testTag("workspaceAttentionButton"),
+                                    modifier = Modifier.minimumTouchTarget().testTag("workspaceAttentionButton"),
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Warning,
@@ -173,7 +170,7 @@ fun ClinicalPatientCard(
                             if (onOpenReport != null) {
                                 IconButton(
                                     onClick = onOpenReport,
-                                    modifier = Modifier.size(36.dp).testTag("workspaceReportButton"),
+                                    modifier = Modifier.minimumTouchTarget().testTag("workspaceReportButton"),
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Print,
@@ -296,7 +293,7 @@ fun ClinicalPatientCard(
                     if (onBack != null) {
                         IconButton(
                             onClick = onBack,
-                            modifier = Modifier.size(32.dp),
+                            modifier = Modifier.minimumTouchTarget(),
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -338,7 +335,7 @@ fun ClinicalPatientCard(
                     if (onOpenReport != null) {
                         IconButton(
                             onClick = onOpenReport,
-                            modifier = Modifier.size(32.dp).testTag("workspaceReportButton"),
+                            modifier = Modifier.minimumTouchTarget().testTag("workspaceReportButton"),
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Print,
@@ -371,7 +368,7 @@ fun ClinicalPatientCard(
                         if (onBack != null) {
                             IconButton(
                                 onClick = onBack,
-                                modifier = Modifier.size(32.dp),
+                                modifier = Modifier.minimumTouchTarget(),
                             ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,

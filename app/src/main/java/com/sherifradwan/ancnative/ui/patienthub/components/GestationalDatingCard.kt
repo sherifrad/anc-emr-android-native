@@ -1,9 +1,9 @@
 package com.sherifradwan.ancnative.ui.patienthub.components
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -33,6 +33,7 @@ import com.sherifradwan.ancnative.model.DemoPatientDating
 import com.sherifradwan.ancnative.ui.ClinicalCardTokens
 import com.sherifradwan.ancnative.ui.ClinicalTeal
 import com.sherifradwan.ancnative.ui.FactRow
+import com.sherifradwan.ancnative.ui.isDarkTheme
 
 @Composable
 fun GestationalDatingCard(
@@ -40,10 +41,10 @@ fun GestationalDatingCard(
     onEdit: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = isDarkTheme()
     val bg = if (isDark) ClinicalCardTokens.DatingDarkBg else ClinicalCardTokens.DatingBg
     val border = if (isDark) ClinicalCardTokens.DatingDarkBorder else ClinicalCardTokens.DatingBorder
-    val accent = ClinicalCardTokens.DatingAccent
+    val accent = if (isDark) ClinicalCardTokens.DatingDarkAccent else ClinicalCardTokens.DatingAccent
 
     Card(
         modifier = modifier
@@ -114,8 +115,8 @@ fun GestationalDatingCard(
             if (dating == null) {
                 Text(
                     text = stringResource(R.string.no_dating_recorded),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.tertiary,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 return@Column
             }
@@ -129,14 +130,17 @@ fun GestationalDatingCard(
                     border = BorderStroke(1.dp, border.copy(alpha = 0.6f)),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Row(
+                    FlowRow(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(12.dp),
                         horizontalArrangement = Arrangement.SpaceAround,
-                        verticalAlignment = Alignment.CenterVertically,
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                        ) {
                             Text(
                                 text = "GESTATIONAL AGE",
                                 style = MaterialTheme.typography.labelSmall,
@@ -149,10 +153,13 @@ fun GestationalDatingCard(
                                     fontWeight = FontWeight.Bold,
                                     fontFeatureSettings = "tnum",
                                 ),
-                                color = ClinicalTeal,
+                                color = if (isDark) accent else ClinicalTeal,
                             )
                         }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                        ) {
                             Text(
                                 text = "ESTIMATED DUE DATE",
                                 style = MaterialTheme.typography.labelSmall,

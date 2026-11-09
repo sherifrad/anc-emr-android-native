@@ -1,7 +1,6 @@
 package com.sherifradwan.ancnative.ui.patienthub.components
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,6 +33,7 @@ import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.previousDeliverySummary
 import com.sherifradwan.ancnative.ui.ClinicalCardTokens
 import com.sherifradwan.ancnative.ui.FactRow
+import com.sherifradwan.ancnative.ui.isDarkTheme
 
 @Composable
 fun ObstetricParityCard(
@@ -45,10 +45,10 @@ fun ObstetricParityCard(
     val p = patient.parity ?: 0L
     val a = patient.abortion ?: 0L
     val summary = previousDeliverySummary(patient)
-    val isDark = isSystemInDarkTheme()
+    val isDark = isDarkTheme()
     val bg = if (isDark) ClinicalCardTokens.ParityDarkBg else ClinicalCardTokens.ParityBg
     val border = if (isDark) ClinicalCardTokens.ParityDarkBorder else ClinicalCardTokens.ParityBorder
-    val accent = ClinicalCardTokens.ParityAccent
+    val accent = if (isDark) ClinicalCardTokens.ParityDarkAccent else ClinicalCardTokens.ParityAccent
 
     Card(
         modifier = modifier

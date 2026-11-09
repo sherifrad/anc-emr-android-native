@@ -138,32 +138,34 @@ fun DeliveryPlanningCard(
 
             HorizontalDivider()
 
+            val defaultPlaceholder = stringResource(R.string.no_record)
+
             DeliverySectionBox(
                 title = "Agreed Delivery Hospital",
                 value = sections.hospital,
                 tone = DeliveryTone.HOSPITAL,
-                placeholder = "No records",
+                placeholder = defaultPlaceholder,
                 modifier = Modifier.testTag("deliveryHospital"),
             )
             DeliverySectionBox(
                 title = "Agreed Delivery Fees",
                 value = sections.fees,
                 tone = DeliveryTone.FEE,
-                placeholder = "pending",
+                placeholder = defaultPlaceholder,
                 modifier = Modifier.testTag("deliveryFees"),
             )
             DeliverySectionBox(
                 title = "Delivery Plan",
                 value = sections.plan,
                 tone = DeliveryTone.PLAN,
-                placeholder = "please specify",
+                placeholder = defaultPlaceholder,
                 modifier = Modifier.testTag("deliveryPlan"),
             )
             DeliverySectionBox(
                 title = "Postpartum Note",
                 value = sections.postpartum,
                 tone = DeliveryTone.POSTPARTUM,
-                placeholder = "No records",
+                placeholder = defaultPlaceholder,
                 modifier = Modifier.testTag("deliveryPostpartum"),
             )
         }

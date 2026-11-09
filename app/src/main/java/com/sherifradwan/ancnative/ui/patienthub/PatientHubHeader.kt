@@ -47,6 +47,11 @@ import androidx.compose.runtime.derivedStateOf
 import com.sherifradwan.ancnative.ui.BloodGroupBadge
 import com.sherifradwan.ancnative.ui.GestationalAgeBadge
 import com.sherifradwan.ancnative.ui.ObstetricParityBadge
+import com.sherifradwan.ancnative.ui.TagHighRiskBg
+import com.sherifradwan.ancnative.ui.TagHighRiskDarkBg
+import com.sherifradwan.ancnative.ui.TagHighRiskText
+import com.sherifradwan.ancnative.ui.TagHighRiskDarkText
+import com.sherifradwan.ancnative.ui.isDarkTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
@@ -438,16 +443,17 @@ fun PatientHubHeader(
                                     softWrap = false,
                                 )
                                 if (badgeCount != null && badgeCount > 0) {
+                                    val isDark = isDarkTheme()
                                     Surface(
                                         shape = RoundedCornerShape(999.dp),
-                                        color = if (hasTabAlert) TagHighRiskBg else MaterialTheme.colorScheme.secondaryContainer,
+                                        color = if (hasTabAlert) (if (isDark) TagHighRiskDarkBg else TagHighRiskBg) else MaterialTheme.colorScheme.secondaryContainer,
                                     ) {
                                         Text(
                                             text = if (hasTabAlert && tab == PatientHubTab.LABS) "$badgeCount▲" else "$badgeCount",
-                                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                            style = MaterialTheme.typography.labelSmall,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (hasTabAlert) TagHighRiskText else MaterialTheme.colorScheme.onSecondaryContainer,
-                                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
+                                            color = if (hasTabAlert) (if (isDark) TagHighRiskDarkText else TagHighRiskText) else MaterialTheme.colorScheme.onSecondaryContainer,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                         )
                                     }
                                 } else if (hasTabAlert) {

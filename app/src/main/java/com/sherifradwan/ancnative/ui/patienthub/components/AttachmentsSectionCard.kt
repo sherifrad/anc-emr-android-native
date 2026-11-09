@@ -225,7 +225,7 @@ fun AttachmentsSectionCard(
                                                 contentScale = ContentScale.Crop,
                                             )
                                         } else {
-                                            Text("—", fontSize = 24.sp)
+                                            Text("-", fontSize = 24.sp)
                                         }
                                     }
 

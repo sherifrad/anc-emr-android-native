@@ -36,6 +36,7 @@ import com.sherifradwan.ancnative.model.MEDICATION_STATUS_DISCONTINUED
 import com.sherifradwan.ancnative.model.isOngoingMedication
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.storage.DeletableType
+import com.sherifradwan.ancnative.ui.minimumTouchTarget
 import com.sherifradwan.ancnative.ui.patienthub.components.MedicationCard
 import com.sherifradwan.ancnative.ui.patienthub.components.MedicationTapToAddSection
 import com.sherifradwan.ancnative.ui.patienthub.components.dispatchMedicationDraft
@@ -104,7 +105,7 @@ fun MedsTab(
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(10.dp),
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                        modifier = Modifier.testTag("addCustomMedicationBtn"),
+                        modifier = Modifier.minimumTouchTarget().testTag("addCustomMedicationBtn"),
                     ) {
                         Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
