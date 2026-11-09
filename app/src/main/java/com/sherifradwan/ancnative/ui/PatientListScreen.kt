@@ -117,7 +117,7 @@ fun projectDashboardRow(patient: DemoPatient): PatientDashboardRowProjection {
     val obstetricFormatted = "G$g P$p · $prevSummary"
 
     val gaResult = patient.dating?.calculateGestationalAgeResult()
-    val gaFormatted = gaResult?.shortWeeksText ?: "—"
+    val gaFormatted = gaResult?.shortWeeksText ?: "-"
 
     val edd = patient.dating?.calculateEstimatedDueDate()?.toString()
         ?: patient.dating?.ultrasoundEdd
@@ -183,7 +183,7 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
 
         LazyColumn(
             modifier = Modifier.fillMaxSize().testTag("patientListTable"),
-            contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = 12.dp),
+            contentPadding = PaddingValues(start = horizontalPadding, top = 12.dp, end = horizontalPadding, bottom = 48.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             // Dashboard Header with Active Count & New Patient Action
@@ -596,7 +596,7 @@ private fun PatientDirectoryCard(
                 .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            // Line 1: Patient Name (Bold) + Risk Pill + Severe BP Badge (if any) + 48dp "⋯" menu button
+            // Line 1: Patient Name (Bold, up to 2 lines without crowding) + 48dp "⋯" menu button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -607,7 +607,7 @@ private fun PatientDirectoryCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = if (isArabic) TextAlign.End else TextAlign.Start,
                     modifier = Modifier.weight(1f),
@@ -615,61 +615,60 @@ private fun PatientDirectoryCard(
 
                 Spacer(Modifier.width(8.dp))
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                IconButton(
+                    onClick = onOpenMenu,
+                    modifier = Modifier
+                        .minimumTouchTarget()
+                        .testTag("patientMenu-${patient.caseId}"),
                 ) {
-                    RiskPillBadge(tier = row.riskTier, isHigh = row.isHighRisk)
-
-                    if (severeBp != null) {
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = if (isDark) TagHighRiskDarkBg else TagHighRiskBg,
-                            border = BorderStroke(1.dp, if (isDark) TagHighRiskDarkBorder else TagHighRiskBorder),
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(3.dp),
-                            ) {
-                                Icon(
-                                    Icons.Default.Warning,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.size(11.dp),
-                                )
-                                Text(
-                                    text = stringResource(R.string.bp_badge_severe),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.error,
-                                )
-                            }
-                        }
-                    }
-
-                    IconButton(
-                        onClick = onOpenMenu,
-                        modifier = Modifier
-                            .minimumTouchTarget()
-                            .testTag("patientMenu-${patient.caseId}"),
-                    ) {
-                        Icon(
-                            Icons.Default.MoreVert,
-                            contentDescription = stringResource(R.string.more_actions),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp),
-                        )
-                    }
+                    Icon(
+                        Icons.Default.MoreVert,
+                        contentDescription = stringResource(R.string.more_actions),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp),
+                    )
                 }
             }
 
-            // Line 2: Clinical tags (Obstetric GPA, Age, Blood Group) wrapped in FlowRow
+            // Line 2: Clinical tags (Risk Badge, Severe BP Alert, Obstetric GPA, Age, Blood Group) wrapped in FlowRow
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = if (isArabic) Arrangement.spacedBy(8.dp, Alignment.End) else Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
+                // Canonical Risk Badge (Rule of Reusability)
+                if (row.isHighRisk) {
+                    ClinicalRiskBadge(isHighRisk = true)
+                }
+
+                // Severe Blood Pressure Warning Badge
+                if (severeBp != null) {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = if (isDark) TagHighRiskDarkBg else TagHighRiskBg,
+                        border = BorderStroke(1.dp, if (isDark) TagHighRiskDarkBorder else TagHighRiskBorder),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(11.dp),
+                            )
+                            Text(
+                                text = stringResource(R.string.bp_badge_severe),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                    }
+                }
+
                 // Obstetric GPA & Previous Deliveries
                 ObstetricParityBadge(summaryText = row.obstetricSummary)
 
@@ -698,10 +697,11 @@ private fun PatientDirectoryCard(
                 }
             }
 
-            // Line 3: Gestational Age & EDD
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            // Line 3: Gestational Age & EDD (FlowRow so EDD never truncates)
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(
                     text = stringResource(R.string.ga_prefix, row.gestationalAgeText),
@@ -713,8 +713,6 @@ private fun PatientDirectoryCard(
                     text = " · " + stringResource(R.string.edd_prefix, row.eddText ?: stringResource(R.string.not_recorded)),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
                 )
             }
 
@@ -764,49 +762,6 @@ private fun PatientDirectoryCard(
     }
 }
 
-@Composable
-private fun RiskPillBadge(
-    tier: PatientRiskTier,
-    isHigh: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    if (tier == PatientRiskTier.UNRECORDED && !isHigh) return
-
-    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-    val (bgColor, textColor, label) = when {
-        isHigh || tier == PatientRiskTier.HIGH -> Triple(
-            if (isDark) TagHighRiskDarkBg else TagHighRiskBg,
-            if (isDark) TagHighRiskDarkText else TagHighRiskText,
-            stringResource(R.string.high_risk),
-        )
-        tier == PatientRiskTier.MEDIUM -> Triple(
-            if (isDark) TagAttentionDarkBg else TagAttentionBg,
-            if (isDark) TagAttentionDarkText else TagAttentionText,
-            stringResource(R.string.medium_risk_filter),
-        )
-        else -> Triple(
-            if (isDark) TagNormalRiskDarkBg else TagNormalRiskBg,
-            if (isDark) TagNormalRiskDarkText else TagNormalRiskText,
-            stringResource(R.string.low_risk_filter),
-        )
-    }
-
-    Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = bgColor,
-        modifier = modifier,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            color = textColor,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-            maxLines = 1,
-            softWrap = false,
-        )
-    }
-}
 
 @Composable
 private fun DirectoryClinicalAttentionBox(
@@ -854,8 +809,6 @@ private fun DirectoryClinicalAttentionBox(
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold,
                         color = textColor,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
                     )
                 }
                 if (!clinicalAttention.isNullOrBlank()) {

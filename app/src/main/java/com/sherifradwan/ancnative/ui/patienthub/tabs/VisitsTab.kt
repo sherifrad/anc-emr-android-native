@@ -3,6 +3,7 @@ package com.sherifradwan.ancnative.ui.patienthub.tabs
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -67,7 +68,7 @@ fun VisitsTab(
         modifier = modifier
             .fillMaxSize()
             .testTag("visitsTabContent"),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 48.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         // Top Action: + Record New Antenatal Visit
@@ -146,11 +147,11 @@ fun VisitsTab(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        // Header Row: Date + GA + Badges
-                        Row(
+                        // Header Row: Date + GA + Badges (FlowRow to prevent 360dp collisions)
+                        FlowRow(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,

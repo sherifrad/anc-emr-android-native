@@ -83,15 +83,14 @@ fun AttachmentsSectionCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Row(
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.weight(1f),
                 ) {
                     Icon(
                         imageVector = Icons.Default.Info,
@@ -100,7 +99,7 @@ fun AttachmentsSectionCard(
                         modifier = Modifier.size(20.dp),
                     )
                     Text(
-                        text = "Clinical Documents & Attachments",
+                        text = "Documents & Attachments",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
@@ -114,7 +113,7 @@ fun AttachmentsSectionCard(
                     ) {
                         Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Add Attachment", maxLines = 1, softWrap = false)
+                        Text("Add", maxLines = 1, softWrap = false)
                     }
                 }
             }

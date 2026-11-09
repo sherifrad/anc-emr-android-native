@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.sherifradwan.ancnative.ui.minimumTouchTarget
 import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
@@ -345,13 +346,13 @@ fun LabRowItem(
             if (canEdit) {
                 IconButton(
                     onClick = onDelete,
-                    modifier = Modifier.size(28.dp).testTag("deleteLab-${lab.id}"),
+                    modifier = Modifier.minimumTouchTarget().testTag("deleteLab-${lab.id}"),
                 ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "Delete Test",
                         tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
-                        modifier = Modifier.size(16.dp),
+                        modifier = Modifier.size(18.dp),
                     )
                 }
             }

@@ -37,6 +37,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.sherifradwan.ancnative.ui.minimumTouchTarget
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
@@ -66,7 +67,7 @@ fun ScansTab(
         modifier = modifier
             .fillMaxSize()
             .testTag("scansTabContent"),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 48.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         // Top Action: + Record Ultrasound Scan
@@ -181,6 +182,7 @@ fun ScansTab(
                                         color = MaterialTheme.colorScheme.secondaryContainer,
                                         modifier = Modifier
                                             .testTag("wsScanPhotoChip-${scan.id}-$idx")
+                                            .minimumTouchTarget()
                                             .clickable { onViewPhotos(scan, idx) },
                                     ) {
                                         Text(
@@ -188,7 +190,7 @@ fun ScansTab(
                                             style = MaterialTheme.typography.labelMedium,
                                             fontWeight = FontWeight.SemiBold,
                                             color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                                         )
                                     }
                                 }

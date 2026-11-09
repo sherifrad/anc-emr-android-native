@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -321,59 +322,71 @@ fun PatientHubHeader(
                     }
                 }
 
-                // Layer B: Collapsed Sticky Top Bar (Pinned at top, height 56dp)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .align(Alignment.TopCenter)
-                        .padding(horizontal = 8.dp)
-                        .graphicsLayer {
-                            alpha = headerState.stickyAlpha
-                        },
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.weight(1f),
+                // Layer B: Collapsed Sticky Top Bar (Composed only when active to eliminate ghost touch conflicts)
+                val isStickyActive = headerState.stickyAlpha > 0.05f
+                if (isStickyActive) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.surface,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .align(Alignment.TopCenter)
+                            .graphicsLayer {
+                                alpha = headerState.stickyAlpha
+                            },
                     ) {
-                        IconButton(onClick = onBack, modifier = Modifier.minimumTouchTarget()) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                        }
-                        Text(
-                            text = patient.displayName,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f, fill = false),
-                        )
-                        if (!ga.isNullOrBlank()) {
-                            GestationalAgeBadge(ga)
-                        }
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        if (hasAttention) {
-                            IconButton(onClick = onOpenAttentionDialog, modifier = Modifier.size(40.dp)) {
-                                Icon(
-                                    imageVector = Icons.Default.Warning,
-                                    contentDescription = "Attention Alert",
-                                    tint = ActionRose,
-                                    modifier = Modifier.size(20.dp),
-                                )
-                            }
-                        }
-                        FilledTonalIconButton(
-                            onClick = onStartVisit,
-                            modifier = Modifier.size(40.dp).testTag("stickyStartVisit"),
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = "Start Visit", modifier = Modifier.size(20.dp))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                IconButton(onClick = onBack, modifier = Modifier.minimumTouchTarget()) {
+                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                                }
+                                Text(
+                                    text = patient.displayName,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false),
+                                )
+                                if (!ga.isNullOrBlank()) {
+                                    GestationalAgeBadge(ga)
+                                }
+                            }
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                if (hasAttention) {
+                                    IconButton(
+                                        onClick = onOpenAttentionDialog,
+                                        modifier = Modifier.minimumTouchTarget().testTag("stickyAttentionButton"),
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Warning,
+                                            contentDescription = "Attention Alert",
+                                            tint = ActionRose,
+                                            modifier = Modifier.size(20.dp),
+                                        )
+                                    }
+                                }
+                                FilledTonalIconButton(
+                                    onClick = onStartVisit,
+                                    modifier = Modifier.minimumTouchTarget().testTag("stickyStartVisit"),
+                                ) {
+                                    Icon(Icons.Default.Add, contentDescription = "Start Visit", modifier = Modifier.size(20.dp))
+                                }
+                            }
                         }
                     }
                 }
@@ -503,7 +516,7 @@ fun CompactClinicalAttentionStrip(
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = contentColor,
-                maxLines = 2,
+                maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )

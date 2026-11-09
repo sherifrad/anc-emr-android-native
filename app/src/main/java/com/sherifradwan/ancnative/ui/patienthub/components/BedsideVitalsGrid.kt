@@ -5,8 +5,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -47,7 +49,9 @@ fun BedsideVitalsGrid(
         ) {
             // Row 1: Maternal Vitals (BP + Weight)
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top,
             ) {
@@ -61,7 +65,7 @@ fun BedsideVitalsGrid(
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        text = vitals.bpText?.let { "$it mmHg" } ?: "—",
+                        text = vitals.bpText?.let { "$it mmHg" } ?: "-",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
                             fontFeatureSettings = "tnum",
@@ -102,7 +106,8 @@ fun BedsideVitalsGrid(
                 Box(
                     Modifier
                         .width(1.dp)
-                        .height(46.dp)
+                        .fillMaxHeight()
+                        .padding(vertical = 4.dp)
                         .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
                 )
 
@@ -118,7 +123,7 @@ fun BedsideVitalsGrid(
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        text = formatWeightKg(vitals.weightText) ?: "—",
+                        text = formatWeightKg(vitals.weightText) ?: "-",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
                             fontFeatureSettings = "tnum",
@@ -150,7 +155,9 @@ fun BedsideVitalsGrid(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Min),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.Top,
                 ) {
@@ -174,7 +181,7 @@ fun BedsideVitalsGrid(
                             if (vitals.fhrLevel != null) {
                                 Spacer(Modifier.height(2.dp))
                                 val (fhrText, fhrColor, fhrBg) = when (vitals.fhrLevel) {
-                                    FhrLevel.NORMAL -> Triple("110–160 normal ✓", ClinicalTeal, ClinicalTeal.copy(alpha = 0.12f))
+                                    FhrLevel.NORMAL -> Triple("110-160 normal ✓", ClinicalTeal, ClinicalTeal.copy(alpha = 0.12f))
                                     FhrLevel.BRADYCARDIA -> Triple("Bradycardia (<110) ⚠️", MaterialTheme.colorScheme.onErrorContainer, MaterialTheme.colorScheme.errorContainer)
                                     FhrLevel.TACHYCARDIA -> Triple("Tachycardia (>160) ⚠️", MaterialTheme.colorScheme.onErrorContainer, MaterialTheme.colorScheme.errorContainer)
                                 }
@@ -198,7 +205,8 @@ fun BedsideVitalsGrid(
                         Box(
                             Modifier
                                 .width(1.dp)
-                                .height(46.dp)
+                                .fillMaxHeight()
+                                .padding(vertical = 4.dp)
                                 .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
                         )
                         Spacer(Modifier.width(12.dp))

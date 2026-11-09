@@ -72,12 +72,12 @@ fun BiometryGrid(
                 }
             }
 
-            // Anatomical Details (Placenta & Liquor)
+            // Anatomical Details (Placenta & Liquor) wrapped in FlowRow to avoid 360dp overflow
             if (!values.placenta.isNullOrBlank() || !values.amnioticFluid.isNullOrBlank()) {
-                Row(
+                FlowRow(
                     modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     if (!values.placenta.isNullOrBlank()) {
                         Text(

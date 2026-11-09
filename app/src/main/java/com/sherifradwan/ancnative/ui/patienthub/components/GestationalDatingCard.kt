@@ -27,6 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.sherifradwan.ancnative.ui.minimumTouchTarget
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatientDating
 import com.sherifradwan.ancnative.ui.ClinicalCardTokens
@@ -98,7 +99,7 @@ fun GestationalDatingCard(
                 if (onEdit != null) {
                     IconButton(
                         onClick = onEdit,
-                        modifier = Modifier.testTag("editDating"),
+                        modifier = Modifier.minimumTouchTarget().testTag("editDating"),
                     ) {
                         Icon(
                             Icons.Default.Edit,
@@ -143,7 +144,7 @@ fun GestationalDatingCard(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Text(
-                                text = ga ?: "—",
+                                text = ga ?: "-",
                                 style = MaterialTheme.typography.titleLarge.copy(
                                     fontWeight = FontWeight.Bold,
                                     fontFeatureSettings = "tnum",
@@ -159,7 +160,7 @@ fun GestationalDatingCard(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Text(
-                                text = edd ?: "—",
+                                text = edd ?: "-",
                                 style = MaterialTheme.typography.titleLarge.copy(
                                     fontWeight = FontWeight.Bold,
                                     fontFeatureSettings = "tnum",

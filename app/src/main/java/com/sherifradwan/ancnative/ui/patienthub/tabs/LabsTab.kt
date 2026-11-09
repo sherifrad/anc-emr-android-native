@@ -50,7 +50,7 @@ fun LabsTab(
         modifier = modifier
             .fillMaxSize()
             .testTag("labsTabContent"),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 48.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         // Top Action: + Add Investigation
