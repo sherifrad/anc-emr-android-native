@@ -13,6 +13,19 @@ internal fun isRhNegative(bloodGroup: String?): Boolean {
         Regex("\\b(neg|negative|minus)\\b").containsMatchIn(raw)
 }
 
+/**
+ * String resource for a stored dating method code, matched ignoring case and surrounding spaces;
+ * "IVF" is accepted as an alias of "IVF_TRANSFER". Null for blank or unknown codes, so callers
+ * show the raw text.
+ */
+internal fun datingMethodLabelRes(method: String?): Int? = when (method?.trim()?.uppercase(java.util.Locale.ROOT)) {
+    "LMP" -> R.string.dating_method_lmp
+    "ULTRASOUND" -> R.string.dating_method_ultrasound
+    "IVF_TRANSFER", "IVF" -> R.string.dating_method_ivf_transfer
+    "CLINICAL" -> R.string.dating_method_clinical
+    else -> null
+}
+
 /** What the allergy field says: nothing entered, an explicit "none", or a real recorded allergy. */
 sealed interface AllergyState {
     data object NotRecorded : AllergyState

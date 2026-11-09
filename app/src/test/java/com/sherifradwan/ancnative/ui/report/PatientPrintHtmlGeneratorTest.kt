@@ -358,6 +358,18 @@ class PatientPrintHtmlGeneratorTest {
         assertEquals("NKDA", rowValue(q19Html(allergy = "NKDA"), "Drug Allergies:"))
     }
 
+    @Test
+    fun q19b_nkda_isNeutralNotAlertStyled() {
+        val html = q19Html(allergy = "NKDA")
+        assertTrue(html.contains("""<span class="v ">NKDA</span>"""))
+        assertFalse(html.contains("""text-rose font-bold">NKDA"""))
+    }
+
+    @Test
+    fun q19b_allergyMixedWithNkda_keepsAlertStyle() {
+        assertTrue(q19Html(allergy = "NKDA but sulfa rash").contains("""text-rose font-bold">NKDA but sulfa rash"""))
+    }
+
     // (c) medical / surgical history
     @Test
     fun q19c_historyMissing_notRecorded_noNone() {

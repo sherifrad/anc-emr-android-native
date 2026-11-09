@@ -18,6 +18,8 @@ import com.sherifradwan.ancnative.model.isStillbirth
 import com.sherifradwan.ancnative.model.parseIsoDateOrNull
 import com.sherifradwan.ancnative.model.previousDeliverySummary
 import com.sherifradwan.ancnative.security.SecuritySettingsState
+import com.sherifradwan.ancnative.ui.AllergyState
+import com.sherifradwan.ancnative.ui.classifyAllergy
 import java.io.ByteArrayOutputStream
 import java.time.LocalDate
 
@@ -1071,7 +1073,7 @@ object PatientPrintHtmlGenerator {
                         </div>
                         <div class="history-row">
                             <span class="k">Drug Allergies:</span>
-                            <span class="v ${if (!patient.allergyHistory.isNullOrBlank()) "text-rose font-bold" else ""}">${escapeHtml(patient.allergyHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
+                            <span class="v ${if (classifyAllergy(patient.allergyHistory) is AllergyState.Recorded) "text-rose font-bold" else ""}">${escapeHtml(patient.allergyHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
                         </div>
                         <div class="history-row">
                             <span class="k">Medical History:</span>

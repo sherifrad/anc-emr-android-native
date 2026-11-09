@@ -35,6 +35,7 @@ import com.sherifradwan.ancnative.ui.AllergyState
 import com.sherifradwan.ancnative.ui.FactRow
 import com.sherifradwan.ancnative.ui.ObstetricParityBadge
 import com.sherifradwan.ancnative.ui.classifyAllergy
+import com.sherifradwan.ancnative.ui.datingMethodLabelRes
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
 
 @Composable
@@ -83,7 +84,10 @@ fun DatingSection(
         }
         FactRow(eddSource.first, eddSource.second ?: stringResource(R.string.not_recorded), isEmphasized = true)
         if (agreed.isNotEmpty() && us.isNotEmpty() && !agreed.equals(us, ignoreCase = true)) FactRow(R.string.ultrasound_edd, us)
-        FactRow(R.string.dating_method, dating.datingMethod)
+        FactRow(
+            R.string.dating_method,
+            datingMethodLabelRes(dating.datingMethod)?.let { stringResource(it) } ?: dating.datingMethod,
+        )
         FactRow(R.string.lmp_date, dating.lmpDate)
         if (!dating.transferDate.isNullOrBlank()) FactRow(R.string.ivf_transfer_date, dating.transferDate)
         dating.embryoAgeDays?.let { FactRow(R.string.embryo_age, stringResource(R.string.embryo_age_days, it)) }
