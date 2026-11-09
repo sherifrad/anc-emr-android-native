@@ -434,6 +434,39 @@ class DeleteUndoUiTest {
     }
 
     @Test
+    fun attachment_failedDeleteKeepsTheViewerAndTheCard() {
+        host(AncRoute.Workspace(patientA.id, WorkspaceSection.ATTACHMENTS))
+        openAttachmentViewer("ui-att-1")
+        failAll = true
+        click("deleteAttachmentBtn")
+        click("deleteConfirm")
+        compose.waitUntil(5_000) { compose.onAllNodes(hasTestTag("deleteMessage"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        missing("undoBar")
+        // The record is still on file, so the clinician must stay on the image they tried to delete.
+        exists("deleteAttachmentBtn")
+        exists("attachmentCard-ui-att-1")
+    }
+
+    @Test
+    fun attachment_undoDoesNotReopenTheViewer() {
+        host(AncRoute.Workspace(patientA.id, WorkspaceSection.ATTACHMENTS))
+        openAttachmentViewer("ui-att-1")
+        click("deleteAttachmentBtn")
+        click("deleteConfirm")
+        compose.waitUntil(5_000) {
+            compose.onAllNodes(hasTestTag("undoBar"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        click("undoButton")
+        compose.waitUntil(5_000) {
+            compose.onAllNodes(hasTestTag("undoBar"), useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
+        }
+        scrollTo("attachmentCard-ui-att-1")
+        exists("attachmentCard-ui-att-1")
+        // Restoring the record brings the card back only; the viewer closed with the delete and stays closed.
+        missing("deleteAttachmentBtn")
+    }
+
+    @Test
     fun undoButtonIsDisabledWhileADeleteRuns() {
         workspace(med)
         compose.runOnIdle {

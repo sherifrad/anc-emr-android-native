@@ -267,6 +267,11 @@ fun PatientHubScreen(
             )
         }
 
+        // Close only when the record is really gone; a cancelled delete confirmation keeps the viewer open.
+        LaunchedEffect(patient.attachments) {
+            val open = viewingAttachment ?: return@LaunchedEffect
+            if (patient.attachments.none { it.id == open.id }) viewingAttachment = null
+        }
         if (viewingAttachment != null) {
             ClinicalAttachmentViewerDialog(
                 patient = patient,

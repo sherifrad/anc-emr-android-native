@@ -1,0 +1,52 @@
+**Verdict: PASS.** The fix is correct. Its tests catch all three mutations you listed, but they don't cover a failed delete or Undo leaving the viewer closed. I made no edits and ran no tests.
+
+The diff (`PatientHubScreen.kt:270-274`) is the old `WorkspaceScreen.kt` block put back unchanged; only the comment wording differs.
+
+## Your checks
+
+**(1) Effect keys and stale reads.** No problem.
+- The key `patient.attachments` is compared by value, so the effect re-runs whenever a record is added or removed. An unchanged list on a re-render doesn't restart it.
+- `viewingAttachment` is a `by remember(...)` property backed by a state object. The coroutine reads its current value each time, not a captured copy.
+- `patient.attachments` inside the body is always the list that triggered the run.
+
+**(2) Undo, patient switch, archived patient.** All fine.
+- **Undo:** the viewer already closed when the delete committed, so `viewingAttachment` is null. When Undo adds the record back, the effect returns early and the viewer doesn't reopen.
+- **Patient switch:** `remember(patient.id)` (`:147`) resets the state to null for the new patient.
+- **Archived patient:** delete is turned off (`:279`), and archiving doesn't change `attachments`, so the viewer stays open.
+
+**(3) Failed delete.** The viewer stays open. Deletes don't remove the record ahead of time: `UndoCoordinator.kt:130` only sends `DeleteStarted`. `patients` is replaced only on `Committed` (`:158-165`). `DeleteFailed` (`AncState.kt:1100`) leaves `patients` alone, so the list doesn't change and the effect doesn't run.
+
+**(4) Moments where the list briefly lacks the record.** I found none.
+- The attachment list is only ever set from a full repository snapshot (`RecordsRepository.kt:123`).
+- Commit and restore swap in a complete list in one step, and nothing in the app clears or edits the list in place.
+- The ids are stable, so an edit wouldn't trigger a close either.
+
+## Findings
+
+**Major (test gap)** — `DeleteUndoUiTest.kt`: no test opens the attachment viewer, makes the delete fail (`failAll = true`), and checks that `deleteAttachmentBtn` still exists. So a mutation that closes the viewer as soon as Confirm is tapped, or on `DeleteFailed`, would pass every test. Check (3) is reasoned from the code above, not proven by a test.
+
+**Nit (test gap)** — `DeleteUndoUiTest.kt:428-433`: `attachment_undoRestoresTheCard` never checks `missing("deleteAttachmentBtn")` after Undo, so "the viewer doesn't reopen on Undo" isn't asserted. Switching patients while the viewer is open isn't tested for attachments either.
+
+**Nit** — `PatientHubScreen.kt:271-278`: because the close runs in an effect, the viewer draws one more frame showing the deleted record before it closes. Working out the open record directly during rendering would remove that frame and the effect:
+
+```kotlin
+val shownAttachment = viewingAttachment?.takeIf { a -> patient.attachments.any { it.id == a.id } }
+```
+
+**Nit (outside this fix)** — `:147`: the viewer keeps its own copy of the attachment. If the record is edited while open (same id, new revision), the viewer shows the old version.
+
+## Mutations
+
+| Mutation | Caught? | By |
+|---|---|---|
+| Remove the effect | Yes | `attachment_deleteConfirmRemovesCardAndShowsUndoBar`: `missing("deleteAttachmentBtn")` (`:394`) |
+| Key it on `Unit`, `patient.id` or `viewingAttachment` | Yes | Same assertion; the effect never re-runs after the commit |
+| Key it on `patient` or `state.undoOffer` | No | These change in the same step as the list, so they behave the same. Not a defect |
+| Close the viewer on cancel | Yes | `attachment_cancelKeepsTheViewerOpen`: `exists("deleteAttachmentBtn")` (`:415`) |
+| Close the viewer on confirm or on a failed delete | **No** | Not covered (the Major above) |
+
+## What I did not check
+
+- I didn't run the instrumented tests or the emulator, so the "caught" column is from reading the tests, not from running them.
+- I didn't read `ClinicalAttachmentViewerDialog`, so I don't know how it handles that one extra frame if the file is already gone.
+- I didn't trace vault lock while the viewer is open, the `PatientHubNavigation.kt` test helper, or the backup restore path.

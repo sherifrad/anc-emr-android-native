@@ -1,0 +1,16 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
+index 2a1776c..7b49c33 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
+@@ -267,6 +267,11 @@ fun PatientHubScreen(
+             )
+         }
+ 
++        // Close only when the record is really gone; a cancelled delete confirmation keeps the viewer open.
++        LaunchedEffect(patient.attachments) {
++            val open = viewingAttachment ?: return@LaunchedEffect
++            if (patient.attachments.none { it.id == open.id }) viewingAttachment = null
++        }
+         if (viewingAttachment != null) {
+             ClinicalAttachmentViewerDialog(
+                 patient = patient,
