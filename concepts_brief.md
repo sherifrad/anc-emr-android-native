@@ -1,61 +1,63 @@
-# High-Density Patient Directory Card & Actions Sheet Redesign
+# Overview Dating section redesign
 
 * **Author:** sherifrad
 * **Date:** 2026-11-09
 
 ## Overview
 
-The primary patient directory (`PatientListScreen`) currently displays patient records as oversized cards (~180–220dp height) with ragged `FlowRow` badge wrapping, triple-redundant click affordances, and visual zigzagging between Arabic and Latin scripts.
+The Dating section on the patient Overview tab becomes a short, fixed list of rows for clinicians on a 360dp phone screen. It shows what the pregnancy is dated from, the due date, how it was dated, and a warning when the LMP and the earliest scan disagree beyond the allowed gap. It changes no stored data and no schema.
 
-This feature redesigns the patient directory into a high-density, uniform start-aligned card (~104–112dp) with a structured 3-column clinical lockup (Gestational Age & EDD, Obstetric Parity & History, Latest Vitals & BP Alert). It replaces redundant footer icon buttons with a card-level tap to open the workspace, consolidates the "⋮" menu into a dedicated 4-action clinical bottom sheet, and standardizes visual hierarchy across all viewports starting at 360dp.
+Rows, in order:
+
+1. `LMP dd/mm/yyyy`, or `ET dd/mm/yyyy · D5` (embryo transfer date plus embryo age in days, one line) for IVF. If the embryo age is not recorded, show `ET dd/mm/yyyy` with no "· D5". IVF patients show no LMP. A patient dated by ultrasound or clinically who has an LMP on file still shows the LMP. The row is hidden when there is neither.
+2. `EDD`. The label is `Confirmed EDD` only when LMP, ET and ultrasound EDD are all blank and an agreed EDD exists (for example a patient referred in with only a due date). Otherwise `EDD`.
+3. Dating method, in the owner's wording, for example "by ultrasound". Notes the owner writes stay in the notes.
+4. An inline discordance alert, not a high-risk flag, with no button. LMP-dated patients only (not IVF).
+5. Notes last.
 
 ## Analysis
 
-### 1. Inventive Contradictions & Architectural Solutions
-* **The Density vs. Truncation Contradiction**: The user sought a tabular layout to compare patients quickly, but full tables fail on 360dp mobile viewports due to horizontal column clipping.
-  * **Solution (TRIZ Principle 1 - Columnar Segmentation)**: Retain the card envelope but segment the interior into a structured 3-column micro-grid (~100dp / ~104dp / ~100dp on 360dp screens) with fixed clinical functions rather than free-floating badge pills.
-* **The Alert Visibility vs. Clutter Contradiction**: Current cards dedicate a large salmon-tinted callout box to clinical attention notes on every patient, ballooning card height.
-  * **Solution (TRIZ Principle 13 - Inversion / Ambient Indication)**: Introduce a 3.5dp leading-edge severity accent strip (Red for Severe BP / High Risk, Amber for Medium Risk, Neutral Surface for Low/Normal Risk). This alerts peripheral vision immediately without adding vertical lines of text.
+Decided with the owner after the Goldfish review (seven lenses):
 
-### 2. Layout, Ergonomics & SAMD Clinical Safety
-* **Uniform Start-Alignment**: Arabic patient names are rendered with content-aware text direction, but the card grid itself remains strictly start-aligned (LTR). This eliminates the disorientation of jumping between opposite sides of the screen.
-* **Touch Target Ergonomics**: All interactive elements maintain $\ge 48\,\text{dp}$ touch bounds (the "⋮" menu button and the entire card container). Redundant footer buttons (`EditNote` and `AccountCircle`) are deleted.
-* **Accessibility Font Scaling**: The card container uses `Modifier.heightIn(min = 104.dp)` rather than rigid fixed height, accommodating Android 1.15x–1.3x font accessibility scaling without clipping or overflow crashes.
-* **Frozen Database Schema v6 Invariant**: Zero SQLite Room migrations. All necessary fields (`latestVitalsBp`, `latestVitalsPulse`) are projected in-memory via `PatientDashboardRowProjection` from existing visit entities.
+* **Alert rule.** It compares the LMP due date with the earliest scan's due date. It measures at the earliest scan's date, using the existing tiered limits in `model/Redating.kt` (`redatingAdvice`). It shows while the gap is beyond the limit and clears once the patient is re-dated: when the method is Ultrasound, or the agreed EDD equals the scan EDD.
+* **Red `??` marker.** Where the current gestational age is shown in the patient header, the patient list and the gestational banner, the number stays and a red `??` follows it, for example `32w 1d ??`. Historical GA at visits, scans and labs is unchanged.
+* **Print and share.** The printed form and the share text show both due dates and the gap, for example `LMP EDD dd/mm/yyyy · US EDD dd/mm/yyyy · gap 9 d`. The IVF label shows ET, not LMP.
+* **One shared rule.** A pure function in `model/` decides the EDD to use, the EDD label, the row-1 content and the discordance flag. The GA result carries the flag. The Overview section, the header, the patient list, the banner, print and share all use it. This replaces four separate EDD fallbacks (`Components.kt:231`, `PatientListScreen.kt:127`, `GestationalBanner.kt:42`, `OverviewSections.kt:83`). All gestational-age numbers already come from `GestationalAgeEngine`.
+* **Early scan** means `ultrasoundEdd` is not blank. Row 1 follows `datingMethod`: IVF_TRANSFER shows ET, every other method shows the LMP if present.
+* The reviewers raised that "Confirmed EDD" only fires on the blank-fields rule, because the editor and intake fill `agreedEdd` automatically. The label is therefore decided on LMP, ET and ultrasound EDD being blank. The owner accepted keeping the `Confirmed EDD` label.
 
 ## Goals vs. Non-Goals
 
-### In-Scope Goals
-* **Decompose `PatientDirectoryCard`**: Split monolithic rendering into `PatientDirectoryCardHeader`, `PatientDirectoryMetricsRow` (3-column grid), and `PatientActionsModalSheet`.
-* **3-Column Metric Lockup**:
-  * **Col 1 (Gestational Age & EDD)**: Bold GA (`34+2 wks`), muted EDD (`Due 14 Nov 2026`).
-  * **Col 2 (Obstetric History)**: Parity (`G3 P2 A0`), prior delivery tag (`Prev: 2x C/S`).
-  * **Col 3 (Bedside Vitals & Alert)**: Latest blood pressure (`120/80` or `160/110 mmHg (!)`) with color threshold flags.
-* **Refined Clinical Actions Bottom Sheet**: Replace the 4 redundant menu rows with:
-  1. Quick Record Visit (`onStartVisit(patient.id, null)`)
-  2. Open Chart / Workspace (`AncEvent.OpenWorkspace(patient.id)`)
-  3. Edit Demographics (`AncEvent.StartPatientEditor(patient.id, ...)`)
-  4. Archive / Restore (`AncEvent.StartStatusEditor(...)`)
-* **Leading Edge Severity Indicator**: 3.5dp accent line on the card's start border mapping directly to clinical risk tier and severe blood pressure status.
-* **File Health**: Reduce `PatientListScreen.kt` from 859 lines to $<700$ lines.
-
-### Out-of-Scope Non-Goals
-* **No Database Migrations**: No Room schema modifications or database alterations.
-* **No Table Mode on Mobile**: No horizontal-scrolling multi-column data spreadsheet on mobile phones. (Adaptive multi-column tables for desktop/tablet remain staged for wide-screen adaptive phases).
-* **No Changes to Clinical Validation Engines**: Gestational age calculations, BP classification algorithms, and codex lookups remain untouched.
+* **In-Scope Goals:**
+  * The five rows above with numeric dd/mm/yyyy dates and abbreviations.
+  * One shared rule function used by the screen, header, list, banner, print and share.
+  * The discordance alert reusing `redatingAdvice` and the existing tiered limits.
+  * Tests for the row matrix, the EDD label rule, tier boundaries, and the 360dp, 1.3x layout.
+* **Out-of-Scope Non-Goals:**
+  * Any schema change or new stored field.
+  * A resolve or dismiss button or any persisted acknowledgement.
+  * A second flat discordance threshold.
+  * New dating-method editor chips or new stored method values.
+  * A second EDD row for the ultrasound date on the Overview.
+  * The alert for IVF patients.
+  * The red `??` on historical GA at visits, scans and labs.
 
 ## Alternatives Weighed
 
-1. **Full Tabular Data Grid Across All Screens**:
-   * *Rejected by author & review*: On 360dp mobile viewports, 6+ table columns force horizontal scrolling, hiding high-risk alerts off-screen and creating accidental horizontal pan conflicts with vertical list scrolling.
-2. **Expandable Accordion Row (~64dp collapsed, ~140dp expanded)**:
-   * *Rejected in favor of Option A*: Clinicians conducting rapid rounds need to compare GA, EDD, parity, and BP across all patients at a single glance without repeatedly tapping rows to expose basic vitals.
-3. **Retaining Footer Icon Buttons**:
-   * *Rejected by review*: The footer icons duplicated `AncEvent.OpenWorkspace`, which is already triggered by tapping the card body. Removing them reclaimed ~36dp of vertical height.
+* Resolve check mark stored in a new `patient_dating` column. Rejected by author: needs a frozen-schema change.
+* Resolve state kept in local preferences. Rejected by author: not in the encrypted backup and lost on a new phone.
+* Resolve state written into the dating notes as text. Rejected by author: a clerk can edit it away and parsing it is fragile text scraping.
+* A flat discordance threshold of 10 to 14 days. Rejected by author: the existing tiered rule in `model/Redating.kt` is already used by the ultrasound editor.
+* Measuring the alert at today's date. Rejected by author: the allowed gap changes with gestational age, so the alert would appear and vanish as weeks pass.
+* Replacing the GA number with `??`. Rejected by author: a clinician needs the number.
+* A second EDD row showing the ultrasound date. Rejected by author: replaced by the alert, and print shows both dates.
 
 ## Key Decisions & Staging for Next Steps
 
-* **Decision 1**: Adopt the High-Density Structured Card (~104–112dp) with the 3.5dp leading accent line.
-* **Decision 2**: Update `PatientDashboardRowProjection` to extract latest visit blood pressure and pulse without database alterations.
-* **Decision 3**: Standardize all cards to start-alignment regardless of Latin or Arabic script.
-* **Decision 4**: Stage the consolidated actions sheet to include a direct "New Visit" action, closing the workflow loop directly from the directory.
+Still to confirm in the mock, with these defaults:
+
+* Exact method-row words for the four stored methods (LMP, Ultrasound, IVF_TRANSFER, Clinical). Default: `LMP`, `by ultrasound`, `ET`, `clinical`.
+* dd/mm/yyyy applies to the Dating section, print, share, and the header and list EDD surfaces touched by the shared rule.
+* Alert wording. Default: reuse the `redating_hint` numbers (gap in days, limit) in a short Overview variant.
+
+Build order after the mock is approved: date formatter and tests, the pure rule function and JVM test matrix, rewrite `DatingSection`, the shared GA text component with `??`, move the four screens to the shared rule, update strings, update the Overview androidTest, then print and share. Edits under `app/src` are level 3 and need a frontier review and an independent test review. The mock `.agents/mocks/overview_tab_sections.html` is updated and approved by the owner before any code.

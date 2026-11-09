@@ -115,3 +115,4 @@ This ledger tracks asynchronous task handoffs, cross-lane critiques, call-chain 
 - APPROVAL: what=ui-mock path=.agents/mocks/overview_tab_sections.html by=owner (reply "proceed" to the mock approval question) date=2026-11-09
 - REVIEW: id=REV-OVERVIEW-PHASE-BC author=claude-subagent reviewer=opencode:deepseek-v4.1-flash-free+opencode:glm-5.3-flash-free independence=multi-vendor evidence=.agents/fleet-runs/phaseBC_r2_deepseek-v4.1-flash-free.txt verdict=fix-needed-then-fixed (round 2 fixes verified by tests only, not re-reviewed)
 - REVIEW: id=REV-OVERVIEW-PHASE-A author=claude-subagent reviewer=opencode:deepseek-v4.1-flash-free+opencode:glm-5.3-flash-free independence=multi-vendor evidence=.agents/fleet-runs/phaseA_deepseek-v4.1-flash-free.txt verdict=fix-needed-then-fixed
+- APPROVAL: what=ui-mock path=.agents/mocks/overview_tab_sections.html (Dating variants a-g and GA strip, revised 2026-11-09) by=owner (reply "Approve mock") date=2026-11-09

@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Overview tab sections mock</title>
 <style>
-:root{--surface:#fdfbff;--card:#f3f1f6;--hi:#e8e6ec;--text:#1b1b1f;--muted:#5a5a63;--line:#c9c6d0;--primary:#3b5ba9;--err:#ffdad6;--onerr:#410002;--ter:#ffddb8;--onter:#2b1700;--cap:#dbe2ff}
-:root[data-theme=dark]{--surface:#121316;--card:#1d1e22;--hi:#2a2b30;--text:#e4e2e6;--muted:#aaa9b3;--line:#44464f;--primary:#b1c5ff;--err:#93000a;--onerr:#ffdad6;--ter:#5d3a00;--onter:#ffddb8;--cap:#243567}
+:root{--surface:#fdfbff;--card:#f3f1f6;--hi:#e8e6ec;--text:#1b1b1f;--muted:#5a5a63;--line:#c9c6d0;--primary:#3b5ba9;--err:#ffdad6;--onerr:#410002;--ter:#ffddb8;--onter:#2b1700;--cap:#dbe2ff;--warn:#fff0b8;--onwarn:#3a2c00;--q:#b3261e}
+:root[data-theme=dark]{--surface:#121316;--card:#1d1e22;--hi:#2a2b30;--text:#e4e2e6;--muted:#aaa9b3;--line:#44464f;--primary:#b1c5ff;--err:#93000a;--onerr:#ffdad6;--ter:#5d3a00;--onter:#ffddb8;--cap:#243567;--warn:#4a3b00;--onwarn:#ffe38f;--q:#ffb4ab}
 *{box-sizing:border-box}body{margin:0;background:#888;font:14px/1.4 system-ui,sans-serif;color:var(--text)}
 .bar{background:#222;color:#fff;padding:8px 12px;display:flex;flex-wrap:wrap;gap:8px;font-size:12px;position:sticky;top:0;z-index:5}
 .bar button{background:#444;color:#fff;border:0;padding:6px 10px;border-radius:6px;cursor:pointer}.bar button.on{background:#3b5ba9}
@@ -27,6 +27,14 @@
 .row .main{flex:1;min-width:0}.l1{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .yr{font-variant-numeric:tabular-nums;font-weight:700}.l2{color:var(--muted);font-size:.88em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .del{width:48px;height:48px;border:0;background:none;color:var(--muted);flex:none}
+.fact span:last-child{text-align:end;min-width:0}
+.warn{display:flex;gap:8px;align-items:flex-start;background:var(--warn);color:var(--onwarn);border-radius:8px;padding:8px 10px;margin:4px 0 8px;font-size:.95em;font-weight:600}
+.warn svg{flex:none;width:1.25em;height:1.25em;margin-top:.05em}
+.q{color:var(--q);font-weight:700}
+.vlab{width:360px;margin:16px auto 0;color:#fff;font-size:13px;font-weight:700}
+.vlab+.phone{min-height:0;margin-top:4px;padding-bottom:16px}
+.strip .gl{color:var(--muted);font-size:.8em;margin:8px 0 2px}
+.strip .gr{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:4px 0}
 .ex{background:var(--card);border:1px dashed var(--line);border-radius:12px;padding:12px;margin-top:12px;color:var(--muted);font-size:.9em}
 .note{max-width:700px;margin:8px auto;background:#fff;padding:10px 14px;border-radius:8px;font-size:13px;color:#222}
 </style>
@@ -37,15 +45,11 @@
  <span>Allergy:</span><button data-a="rec" class="on">Recorded</button><button data-a="none">Explicitly none</button><button data-a="nr">Not recorded</button>
  <span>View:</span><button id="rtl">RTL</button><button id="dark">Dark</button><button id="fs">Font 1.3x</button>
 </div>
-<div class="note">Mock for owner approval. Synthetic data only. 360dp width. Shows the three new sections (dating, parity + previous pregnancies, medical histories) as one surface with hairline dividers. The Delivery Plan card and Attachments card are the existing components, unchanged (placeholders below). Edit and delete targets are 48dp. Outcome chips: Stillbirth red, Early loss amber, others neutral; the label is always shown.</div>
+<div class="note">Mock for owner approval. Synthetic data only. 360dp width. Shows the three new sections (dating (variants a to g and the GA marker strip below the main phone), parity + previous pregnancies, medical histories) as one surface with hairline dividers. The Delivery Plan card and Attachments card are the existing components, unchanged (placeholders below). Edit and delete targets are 48dp. Outcome chips: Stillbirth red, Early loss amber, others neutral; the label is always shown.</div>
 <div class="phone" id="phone">
  <div class="hdr"><b>Patient header (unchanged)</b> &middot; GA 32w 2d &middot; BP 118/76 &middot; <span id="hdrAllergy"></span></div>
 
- <div class="sec"><div class="sh"><div class="cap"></div><h2>Pregnancy dating &amp; due date</h2><button class="act">Edit</button></div>
-  <div class="fact"><span>EDD (ultrasound)</span><span><b>14 Mar 2027</b></span></div>
-  <div class="fact"><span>Method</span><span><span class="chip">Ultrasound</span></span></div>
-  <div class="fact"><span>LMP</span><span>07 Jun 2026</span></div>
-  <div class="fact"><span>Notes</span><span>Dated at 9w scan</span></div></div>
+ <div class="sec" id="dating"></div>
 
  <div class="sec"><div class="sh"><div class="cap"></div><h2>Previous pregnancies</h2><button class="act">Add</button></div>
   <div class="fact"><span>Parity</span><span><b>G4 P3 A0</b></span></div>
@@ -61,6 +65,7 @@
  <div class="ex">Delivery &amp; postpartum plan: existing <code>DeliveryPlanningCard</code>, unchanged except the edit button is hidden when the patient is read-only.</div>
  <div class="ex">Documents &amp; attachments: existing <code>AttachmentsSectionCard</code>, unchanged.</div>
 </div>
+<div id="variants"></div>
 <script>
 const rowsData=[
  {y:'2023',o:'Live birth',c:'',m:'Cesarean section (CS)',l2:'Cairo Maternity Hospital, Dr. Sample. Baby 3.4 kg recorded in notes.'},
@@ -76,6 +81,29 @@ function render(){
  if(A==='none'){al.innerHTML='<div class="calm">No known drug allergies</div>';h.innerHTML='<span class="chip">No known drug allergies</span>'}
  if(A==='nr'){al.innerHTML='<div class="calm">Allergies: Not recorded</div>';h.innerHTML=''}
 }
+
+const NB=' ',D=x=>x.replace(/ /g,NB);
+const WARN='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20L12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v5M12 18v.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+const fact=(l,v,b)=>`<div class="fact"><span>${l}</span><span>${b?'<b>'+v+'</b>':v}</span></div>`;
+function dating(v){
+ let h='<div class="sh"><div class="cap"></div><h2>Pregnancy dating &amp; due date</h2><button class="act">Edit</button></div>';
+ if(v.r1)h+=fact(v.r1[0],v.r1[1]);
+ h+=fact(v.eddLabel||'EDD',v.edd,1);
+ h+=fact('Method',v.method);
+ if(v.gap)h+=`<div class="warn" role="note">${WARN}<span>EDD discordance: LMP and scan differ by ${v.gap} d (limit 7 d)</span></div>`;
+ if(v.note)h+=fact('Notes',v.note);
+ return h}
+const V={
+ a:{t:'a. LMP patient, no discordance',r1:['LMP','08/06/2026'],edd:'15/03/2027',method:'LMP'},
+ b:{t:'b. LMP patient with discordance alert',r1:['LMP','08/06/2026'],edd:'15/03/2027',method:'LMP',gap:9},
+ c:{t:'c. IVF with ET + D5',r1:['ET',D('20/06/2026 · D5')],edd:'08/03/2027',method:'ET'},
+ d:{t:'d. IVF with ET, embryo age not recorded',r1:['ET','20/06/2026'],edd:'08/03/2027',method:'ET'},
+ e:{t:'e. Dated by ultrasound, LMP still on file, with note',r1:['LMP','08/06/2026'],edd:'24/03/2027',method:'by ultrasound',note:'Unsure LMP, relying on scan'},
+ f:{t:'f. Referred, no LMP / ET / scan',eddLabel:'Confirmed EDD',edd:'02/04/2027',method:'clinical'},
+ g:{t:'g. Longest case (b) at font scale 1.3x',r1:['LMP','08/06/2026'],edd:'15/03/2027',method:'LMP',gap:9,fs:1.3}};
+document.getElementById('dating').innerHTML=dating(V.b);
+document.getElementById('variants').innerHTML=Object.values(V).map(x=>`<div class="vlab">${x.t}</div><div class="phone" style="--fs:${x.fs||1}"><div class="sec">${dating(x)}</div></div>`).join('')+
+`<div class="vlab">Current-GA marker (header, patient list, banner)</div><div class="phone strip"><div class="gl">Header</div><div class="hdr" style="margin:0"><b>Patient header</b> &middot; GA <b>32w 1d</b> <span class="q">??</span></div><div class="gl">Patient list row</div><div class="gr"><span>Sample Patient</span><span><b>32w 1d</b> <span class="q">??</span></span></div><div class="gl">Gestational banner</div><div class="hdr" style="margin:0"><b>Gestational age</b> &middot; <b>32w 1d</b> <span class="q">??</span> &middot; EDD 15/03/2027</div><div class="gl">Normal for comparison (no discordance)</div><div class="gr"><span>Sample Patient</span><span><b>32w 1d</b></span></div><div class="gl">Not marked: historical GA at visits, scans, labs</div><div class="gr"><span>Visit 12/10/2026</span><span>28w 2d</span></div></div>`;
 document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{S=b.dataset.s;document.querySelectorAll('[data-s]').forEach(x=>x.classList.toggle('on',x===b));render()});
 document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{A=b.dataset.a;document.querySelectorAll('[data-a]').forEach(x=>x.classList.toggle('on',x===b));render()});
 rtl.onclick=()=>{const d=document.documentElement;d.dir=d.dir==='rtl'?'ltr':'rtl';rtl.classList.toggle('on')};
