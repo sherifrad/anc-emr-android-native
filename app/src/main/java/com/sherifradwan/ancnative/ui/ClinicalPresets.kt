@@ -53,7 +53,7 @@ fun QuickPresetChips(
     val visibleCount = if (collapsible && !expanded) collapseAfter!! else items.size
     Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Text(
-            text = "⚡ $title",
+            text = title,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary,
         )

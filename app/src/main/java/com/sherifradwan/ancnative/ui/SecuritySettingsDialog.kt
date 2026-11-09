@@ -120,7 +120,7 @@ fun SecuritySettingsDialog(
                 pendingRestoreBytes = bytes
                 showRestoreConfirmDialog = true
             } else {
-                backupStatusMessage = "Unable to read selected backup file!"
+                backupStatusMessage = "Unable to read selected backup file."
                 isBackupError = true
             }
         }
@@ -402,7 +402,7 @@ fun SecuritySettingsDialog(
                                 onClick = {
                                     securityRepo.updateClinicBranding(editedClinicName, editedClinicSubtitle)
                                     settingsState = securityRepo.settings.value
-                                    brandingSavedMessage = "Clinic branding saved and applied successfully!"
+                                    brandingSavedMessage = "Clinic branding saved and applied."
                                 },
                                 modifier = Modifier.testTag("saveBrandingButton"),
                             ) {
@@ -511,7 +511,7 @@ fun SecuritySettingsDialog(
                                     BiometricAuthManager.promptBiometric(
                                         activity = activity,
                                         onResult = { ok ->
-                                            biometricFeedbackMessage = if (ok) "Fingerprint verified successfully! Ready for use." else "Fingerprint verification failed."
+                                            biometricFeedbackMessage = if (ok) "Fingerprint verified. Ready for use." else "Fingerprint verification failed."
                                         },
                                     )
                                 },
@@ -684,14 +684,14 @@ fun SecuritySettingsDialog(
                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             }
                             context.startActivity(Intent.createChooser(shareIntent, "Save or Share Encrypted Backup"))
-                            backupStatusMessage = "Encrypted backup created and exported successfully (${backupBytes.size} bytes)!"
+                            backupStatusMessage = "Encrypted backup created and exported (${backupBytes.size} bytes)."
                             isBackupError = false
                         } catch (e: Exception) {
                             backupStatusMessage = "Backup created but unable to open share sheet: ${e.message}"
                             isBackupError = true
                         }
                     } else {
-                        backupStatusMessage = "Failed to generate backup!"
+                        backupStatusMessage = "Failed to generate backup."
                         isBackupError = true
                     }
                 }
@@ -746,11 +746,11 @@ fun SecuritySettingsDialog(
                 onRestoreBackup(bytes, passphrase) { result ->
                     when (result) {
                         is BackupInspectionResult.Valid -> {
-                            backupStatusMessage = "Vault restored successfully (${result.patientCount} patients)!"
+                            backupStatusMessage = "Vault restored (${result.patientCount} patients)."
                             isBackupError = false
                         }
                         is BackupInspectionResult.InvalidPassphraseOrCorrupted -> {
-                            backupStatusMessage = "Decryption failed: Incorrect passphrase or corrupted backup file!"
+                            backupStatusMessage = "Decryption failed: incorrect passphrase or corrupted backup file."
                             isBackupError = true
                         }
                         is BackupInspectionResult.Error -> {
@@ -824,7 +824,7 @@ private fun ChangePinDialog(
                     if (!isValidNewPin(newPin)) {
                         errorMessage = invalidPinMessage
                     } else if (newPin != confirmPin) {
-                        errorMessage = "New PIN and confirmation do not match!"
+                        errorMessage = "New PIN and confirmation do not match."
                     } else {
                         if (securityRepo.updatePin(newPin)) onSuccess()
                     }
@@ -896,9 +896,9 @@ private fun ExportBackupDialog(
             Button(
                 onClick = {
                     if (passphrase.length < 6) {
-                        errorMessage = "Passphrase must be at least 6 characters!"
+                        errorMessage = "Passphrase must be at least 6 characters."
                     } else if (passphrase != confirmPassphrase) {
-                        errorMessage = "Passphrase and confirmation do not match!"
+                        errorMessage = "Passphrase and confirmation do not match."
                     } else {
                         onConfirm(passphrase.toCharArray())
                     }
@@ -960,7 +960,7 @@ private fun RestorePassphraseDialog(
             Button(
                 onClick = {
                     if (passphrase.isEmpty()) {
-                        errorMessage = "Please enter the passphrase!"
+                        errorMessage = "Please enter the passphrase."
                     } else {
                         onConfirm(passphrase.toCharArray())
                     }

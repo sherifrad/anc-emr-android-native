@@ -113,7 +113,7 @@
     <string name="address">Address</string>
     <string name="blood_group">Blood group</string>
     <string name="manual_risk">Manual risk level</string>
-    <string name="gpa_all_or_none">G / P / A — enter all three or leave all blank</string>
+    <string name="gpa_all_or_none">G / P / A: enter all three or leave all blank</string>
     <string name="gravida">Gravida</string>
     <string name="parity">Parity</string>
     <string name="abortion">Abortion</string>
@@ -362,8 +362,8 @@
     <string name="attachment_retake">Retake</string>
     <string name="attachment_gallery">Gallery</string>
     <string name="visit_date_in_future">Visit date cannot be in the future.</string>
-    <string name="blood_pressure_invalid">✖ Invalid (e.g. 120/80)</string>
-    <string name="weight_invalid">✖ Invalid (30 – 250)</string>
+    <string name="blood_pressure_invalid">Invalid (e.g. 120/80)</string>
+    <string name="weight_invalid">Invalid (30 – 250)</string>
     <string name="bp_alert_raised">▲ Raised BP (≥140/90) · Recheck</string>
     <string name="bp_alert_severe">▲ Severe BP (≥160/110) · Urgent</string>
     <string name="embryo_day_6">Day 6</string>

@@ -21,3 +21,4 @@ Rule (owner, 2026-11-02): any command sequence run twice becomes a script here, 
 | reset_emulator_density.sh `[serial]` | resets emulator display size and density to default |
 | run_unit_test.sh `<test_class_or_pattern>` | runs single unit test or pattern via Gradle offline |
 | screenshot_mock_html.sh `<html_path>` `<output_png_path>` `[w]` `[h]` | screenshots an HTML mock file at a given window size using headless Chrome |
+| antislop_mechanical_scan.sh `[root]` | ripgrep sweep for em dashes, emoji, unnamed icons, hardcoded UI text, oversized files |

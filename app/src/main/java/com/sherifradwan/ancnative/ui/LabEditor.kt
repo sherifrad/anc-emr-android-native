@@ -400,7 +400,7 @@ fun LabEditor(
                     modifier = Modifier.testTag("pinnedLabHeaderTag"),
                 ) {
                     Text(
-                        text = "📌 Chained Batch",
+                        text = "Chained batch",
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,

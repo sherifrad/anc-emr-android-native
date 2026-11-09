@@ -135,7 +135,7 @@ fun UltrasoundPhotoViewerDialog(
                         }
                         Column {
                             Text(
-                                text = "Ultrasound Scan — ${scan.date}",
+                                text = "Ultrasound Scan: ${scan.date}",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface,
