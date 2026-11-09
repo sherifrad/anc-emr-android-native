@@ -3,9 +3,9 @@
 
 Stdlib only. Prints PASS/FAIL per check, exits 1 if any FAIL.
 Textual source contract only; verifies nothing at runtime. Comments are stripped before matching.
-  S130 applyLabItemEdit is defined once (ClinicalCodexModels.kt); updateLabCodexItem is in the interface and the
+  S130 applyLabItemEdit is defined once (ClinicalCatalogModels.kt); updateLabCatalogItem is in the interface and the
        repository, and the repository calls applyLabItemEdit.
-  S131 lab settings has the editLabCodexBtn- tag, calls updateLabCodexItem and keeps one AddLabTestDialog.
+  S131 lab settings has the editLabCodexBtn- tag, calls updateLabCatalogItem and keeps one AddLabTestDialog.
   S132 no visible "Codex" string in the five UI files; the old testTags are all still present.
 """
 import re
@@ -14,11 +14,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 MAIN = ROOT / "app/src/main"
-CODEX = MAIN / "java/com/sherifradwan/ancnative/model/codex"
+CODEX = MAIN / "java/com/sherifradwan/ancnative/model/catalog"
 UI = MAIN / "java/com/sherifradwan/ancnative/ui"
-MODELS = CODEX / "ClinicalCodexModels.kt"
-REPO = CODEX / "ClinicalCodexRepository.kt"
-SETTINGS = UI / "CodexSettingsSections.kt"
+MODELS = CODEX / "ClinicalCatalogModels.kt"
+REPO = CODEX / "ClinicalCatalogRepository.kt"
+SETTINGS = UI / "CatalogSettingsSections.kt"
 VISIBLE = [SETTINGS, UI / "SecuritySettingsDialog.kt", UI / "LabEditor.kt", UI / "MedicationEditor.kt", MAIN / "res/values/strings.xml"]
 OLD_TAGS = ["saveToLabCodexBanner", "saveToLabCodexButton", "saveToMedCodexBanner", "saveToMedCodexButton", "searchLabCodexField",
             "searchMedCodexField", "saveLabCodexConfirmBtn", "saveMedCodexConfirmBtn", "labCodexItem-", "medCodexItem-",
@@ -53,12 +53,12 @@ def check_s130():
     homes = [p.name for p in MAIN.rglob("*.kt") for _ in re.findall(r"\bfun\s+applyLabItemEdit\s*\(", code(p))]
     if homes != [MODELS.name]:
         problems.append("applyLabItemEdit defined in " + str(homes))
-    if not re.search(r"\bfun\s+updateLabCodexItem\s*\(", code(MODELS)):
-        problems.append("interface lacks updateLabCodexItem")
+    if not re.search(r"\bfun\s+updateLabCatalogItem\s*\(", code(MODELS)):
+        problems.append("interface lacks updateLabCatalogItem")
     repo = code(REPO)
-    m = re.search(r"override\s+fun\s+updateLabCodexItem\s*\(", repo)
+    m = re.search(r"override\s+fun\s+updateLabCatalogItem\s*\(", repo)
     if not m:
-        problems.append("repository lacks updateLabCodexItem")
+        problems.append("repository lacks updateLabCatalogItem")
     elif "applyLabItemEdit(" not in repo[m.end():]:
         problems.append("repository update does not call applyLabItemEdit")
     record("S130 one edit rule, wired through the repository", not problems, "; ".join(problems))
@@ -69,8 +69,8 @@ def check_s131():
     problems = []
     if "editLabCodexBtn-" not in src:
         problems.append("no editLabCodexBtn- tag")
-    if "updateLabCodexItem(" not in src:
-        problems.append("settings never calls updateLabCodexItem")
+    if "updateLabCatalogItem(" not in src:
+        problems.append("settings never calls updateLabCatalogItem")
     n = len(re.findall(r"\bfun\s+AddLabTestDialog\s*\(", src))
     if n != 1:
         problems.append("AddLabTestDialog defined %d times" % n)

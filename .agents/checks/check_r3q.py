@@ -83,31 +83,41 @@ def check_s80():
            not problems, "; ".join(problems))
 
 
-def check_s81():
-    problems = []
-    pls = read(MAIN / "ui/PatientListScreen.kt")
-    if pls is None:
-        problems.append("ui/PatientListScreen.kt missing")
-    else:
-        code = strip_comments(pls)
-        if "severeBpAttention(" not in code:
-            problems.append("PatientListScreen.kt does not call severeBpAttention(")
-        if "R.string.bp_badge_severe" not in code:
-            problems.append("PatientListScreen.kt does not use R.string.bp_badge_severe")
-        if "R.string.bp_attention_severe" not in code:
-            problems.append("PatientListScreen.kt does not use R.string.bp_attention_severe")
+def _code(rel):
+    src = read(MAIN / rel)
+    return None if src is None else strip_comments(src)
 
-    ws = read(MAIN / "ui/WorkspaceScreen.kt")
-    if ws is None:
-        problems.append("ui/WorkspaceScreen.kt missing")
+
+def check_s81():
+    # PatientListScreen.kt now only builds the row projection; the card is ui/patientdirectory/PatientDirectoryCard.kt,
+    # and WorkspaceScreen.kt is replaced by PatientHubScreen.kt plus components/ClinicalAttentionBanner.kt.
+    problems = []
+    code = _code("ui/PatientListScreen.kt")
+    if code is None:
+        problems.append("ui/PatientListScreen.kt missing")
+    elif "severeBpAttention(" not in code:
+        problems.append("PatientListScreen.kt does not call severeBpAttention(")
+
+    code = _code("ui/patientdirectory/PatientDirectoryCard.kt")
+    if code is None:
+        problems.append("ui/patientdirectory/PatientDirectoryCard.kt missing")
+    elif "R.string.bp_badge_severe" not in code:
+        problems.append("PatientDirectoryCard.kt does not use R.string.bp_badge_severe")
+
+    code = _code("ui/patienthub/PatientHubScreen.kt")
+    if code is None:
+        problems.append("ui/patienthub/PatientHubScreen.kt missing")
+    elif "severeBpAttention(" not in code:
+        problems.append("PatientHubScreen.kt does not call severeBpAttention(")
+
+    code = _code("ui/patienthub/components/ClinicalAttentionBanner.kt")
+    if code is None:
+        problems.append("ui/patienthub/components/ClinicalAttentionBanner.kt missing")
     else:
-        code = strip_comments(ws)
-        if "severeBpAttention(" not in code:
-            problems.append("WorkspaceScreen.kt does not call severeBpAttention(")
         if "R.string.bp_attention_severe" not in code:
-            problems.append("WorkspaceScreen.kt does not use R.string.bp_attention_severe")
+            problems.append("ClinicalAttentionBanner.kt does not use R.string.bp_attention_severe")
         if 'testTag("severeBpAttention")' not in code:
-            problems.append('WorkspaceScreen.kt lacks testTag("severeBpAttention")')
+            problems.append('ClinicalAttentionBanner.kt lacks testTag("severeBpAttention")')
 
     strings = read(RES / "strings.xml")
     if strings is None:
@@ -119,7 +129,7 @@ def check_s81():
         if not re.search(r'name="bp_attention_severe"', s_code):
             problems.append('strings.xml lacks name="bp_attention_severe"')
 
-    record("S81 PatientListScreen and WorkspaceScreen show severe BP badge/attention line, strings defined",
+    record("S81 directory card and patient hub banner show severe BP badge/attention line, strings defined",
            not problems, "; ".join(problems))
 
 

@@ -9,9 +9,9 @@ Textual source contract only; verifies nothing at runtime. Comments are stripped
        strings.xml (the is_prophylaxis DB column is data and stays; only the string key is checked).
   S112 "[Prophylaxis]" and "Active Medications & Prophylaxis" are gone from main; isProphylaxis is still
        stored (RecordEntities, RecordsDao, ClinicalCommands, EncryptedBackupManager).
-  S113 MedicationStatusBadge is defined once in ClinicalBadges.kt and used in WorkspaceScreen.kt.
+  S113 MedicationStatusBadge is defined once in ClinicalBadges.kt and used in MedicationCard.kt.
   S114 "Save to Codex" and "Save to Clinic Medication Codex" are gone from MedicationEditor.kt and from
-       the medication part of CodexSettingsSections.kt.
+       the medication part of CatalogSettingsSections.kt.
 """
 import re
 import sys
@@ -139,24 +139,24 @@ def check_s113():
         problems.append("MedicationStatusBadge defined in " + str(definitions) + ", expected only ClinicalBadges.kt")
     if len(re.findall(r"\bfun\s+MedicationStatusBadge\s*\(", joined)) > 1:
         problems.append("MedicationStatusBadge defined more than once")
-    workspace = find(sources, "WorkspaceScreen.kt") or ""
-    if not re.search(r"\bMedicationStatusBadge\s*\(", workspace):
-        problems.append("MedicationStatusBadge not used in WorkspaceScreen.kt")
-    record("S113 MedicationStatusBadge defined once and used by the profile card", not problems, "; ".join(problems))
+    card = find(sources, "MedicationCard.kt") or ""
+    if not re.search(r"\bMedicationStatusBadge\s*\(", card):
+        problems.append("MedicationStatusBadge not used in MedicationCard.kt")
+    record("S113 MedicationStatusBadge defined once and used by the patient hub medication card", not problems, "; ".join(problems))
 
 
 def check_s114():
     problems = []
     sources = main_sources()
     editor = find(sources, "MedicationEditor.kt")
-    settings = find(sources, "CodexSettingsSections.kt")
+    settings = find(sources, "CatalogSettingsSections.kt")  # renamed from CodexSettingsSections.kt
     if editor is None:
         problems.append("MedicationEditor.kt missing")
     if settings is None:
-        problems.append("CodexSettingsSections.kt missing")
+        problems.append("CatalogSettingsSections.kt missing")
     scopes = {
         "MedicationEditor.kt": editor or "",
-        "CodexSettingsSections.kt (medication part)": medication_part(settings or ""),
+        "CatalogSettingsSections.kt (medication part)": medication_part(settings or ""),
     }
     for scope, code in scopes.items():
         for text in ("Save to Codex", "Save to Clinic Medication Codex"):

@@ -37,7 +37,8 @@ NO_EDITOR_HOOK = {"ATTACHMENT"}
 LINE_OK = {
     "state/AncState.kt": re.compile(r"^\s*(?:%s_(?:DELETED|RESTORED|SAVE_UNDONE),|SavedNotice\.%s_(?:DELETED|RESTORED|SAVE_UNDONE) -> R\.string\.\w+)\s*$" % (KIND, KIND)),
     "ui/DeleteUndoUi.kt": re.compile(r"^\s*DeletableType\.%s -> R\.string\.deletable_type_\w+\s*$" % KIND),
-    "ui/WorkspaceScreen.kt": re.compile(r"(?:RequestDelete\(.*DeletableType\.%s|DeleteIconButton\(DeletableType\.%s|^\s*type = DeletableType\.%s,\s*$)" % (KIND, KIND, KIND)),
+    # Call sites (ADDING_A_DELETABLE_KIND.md step 8): the patient hub tabs and components, which replaced WorkspaceScreen.kt.
+    "ui/patienthub/": re.compile(r"(?:RequestDelete\(.*DeletableType\.%s|DeleteIconButton\(DeletableType\.%s|^\s*type = DeletableType\.%s,\s*$)" % (KIND, KIND, KIND)),
     "state/AncViewModel.kt": re.compile(r"^\s*type = DeletableType\.%s,\s*$" % KIND),
 }
 
@@ -48,7 +49,7 @@ def shared_layers_name_no_kind():
         rel = f.relative_to(MAIN).as_posix()
         if rel in FREE:
             continue
-        ok_line = LINE_OK.get(rel)
+        ok_line = LINE_OK.get(rel) or next((p for k, p in LINE_OK.items() if k.endswith("/") and rel.startswith(k)), None)
         for n, line in enumerate(read(f).splitlines(), 1):
             if NAMED.search(line) and not (ok_line and ok_line.search(line)):
                 bad.append("%s:%d" % (rel, n))

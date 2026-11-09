@@ -186,7 +186,14 @@ def main():
         record("S32 repository seam", not problems, "; ".join(problems))
 
     vm = code_of("state/AncViewModel.kt")
-    ws = code_of("ui/WorkspaceScreen.kt")
+    # WorkspaceScreen.kt is gone: the patient hub files are its replacement, and the
+    # attachment error banner may live anywhere in the ui tree.
+    def _ui_code(sub):
+        files = sorted((MAIN / sub).rglob("*.kt"))
+        return "\n".join(strip_comments(f.read_text(encoding="utf-8")) for f in files) if files else None
+
+    ws = _ui_code("ui/patienthub")
+    ui_all = _ui_code("ui")
     if vm is None or ws is None:
         record("S33 attachments use the shared add and delete paths", False, "file missing")
     else:
@@ -205,19 +212,19 @@ def main():
         if re.search(r"AncEvent\.DeleteAttachment\b", vm + ws):
             problems.append("legacy AncEvent.DeleteAttachment still referenced")
         if not re.search(r"RequestDelete\([^)]*DeletableType\.ATTACHMENT", ws, re.S):
-            problems.append("WorkspaceScreen does not dispatch RequestDelete(DeletableType.ATTACHMENT")
+            problems.append("patient hub does not dispatch RequestDelete(DeletableType.ATTACHMENT")
         record("S33 attachments use the shared add and delete paths", not problems, "; ".join(problems))
 
     strings = read(ROOT / "app/src/main/res/values/strings.xml")
     problems = []
-    if ws is None:
-        problems.append("WorkspaceScreen.kt missing")
+    if ui_all is None:
+        problems.append("ui tree missing")
     else:
         for needle in ["attachment_error_banner", "DismissAttachmentError", "R.string.attachment_save_failed"]:
-            if needle not in ws:
-                problems.append("WorkspaceScreen lacks " + needle)
-        if "R.string.attachment_delete_failed" in ws:
-            problems.append("WorkspaceScreen still uses the removed attachment_delete_failed")
+            if needle not in ui_all:
+                problems.append("ui lacks " + needle)
+        if "R.string.attachment_delete_failed" in ui_all:
+            problems.append("ui still uses the removed attachment_delete_failed")
     for name in ["attachment_save_failed", "attachment_deleted", "attachment_restored"]:
         if strings is None or not re.search(r'<string\s+name="%s"' % name, strings):
             problems.append("strings.xml lacks " + name)

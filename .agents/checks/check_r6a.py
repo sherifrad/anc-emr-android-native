@@ -44,12 +44,13 @@ def main():
     try:
         out = subprocess.run(["git", "diff", "--name-only", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=True).stdout
         for line in out.splitlines():
-            if "/ancnative/ui/" in line or re.search(r"RecordsMigration|schemas/", line):
+            # The "no ui file changed in this round" half is retired (one-round condition); schema and migrations stay frozen.
+            if re.search(r"RecordsMigration|schemas/", line):
                 problems.append("forbidden file changed: " + line)
     except (OSError, subprocess.CalledProcessError) as exc:
         problems.append("git diff failed: " + str(exc))
     db = read(MAIN / "storage/RecordsDatabase.kt")
-    record("S303 no ui, schema or migration file changed", not problems and "version" in db, "; ".join(problems))
+    record("S303 no schema or migration file changed", not problems and "version" in db, "; ".join(problems))
     sys.exit(0 if all(results) else 1)
 
 

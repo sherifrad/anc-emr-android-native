@@ -14,8 +14,8 @@ Textual source contract only; verifies nothing at runtime.
   S70 ui/VisitEditor.kt uses the three new strings and calls bpLevel( or
       bpAlertResource(; strings.xml defines visit_date_in_future,
       blood_pressure_invalid, weight_invalid, bp_alert_raised, bp_alert_severe.
-  S71 ui/ClinicalBadges.kt defines fun BpAlertLabel, and WorkspaceScreen.kt and
-      ProfileScreen.kt call it via BpAlertLabel(.
+  S71 ui/ClinicalBadges.kt defines fun BpAlertLabel, and VisitsTab.kt and
+      PatientHubHeader.kt call it via BpAlertLabel(.
 """
 import re
 import sys
@@ -193,7 +193,8 @@ def check_s71():
         if not re.search(r"\bfun\s+BpAlertLabel\s*\(", strip_comments(badges)):
             problems.append("ClinicalBadges.kt lacks fun BpAlertLabel(")
 
-    for rel in ("ui/WorkspaceScreen.kt", "ui/ProfileScreen.kt"):
+    # WorkspaceScreen/ProfileScreen are gone: the visits tab and the hub header show the alert now.
+    for rel in ("ui/patienthub/tabs/VisitsTab.kt", "ui/patienthub/PatientHubHeader.kt"):
         src = read(MAIN / rel)
         if src is None:
             problems.append(rel + " missing")

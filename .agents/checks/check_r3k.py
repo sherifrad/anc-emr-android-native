@@ -109,76 +109,54 @@ def check_s59():
 
 
 def check_s60():
+    # The clinical-tag chip FlowRow of the old patient list card no longer exists (the directory card was
+    # redesigned into a header plus a three-column metrics row), so only the card background rule is kept.
     problems = []
-    src = read(MAIN / "ui/PatientListScreen.kt")
+    src = read(MAIN / "ui/patientdirectory/PatientDirectoryCard.kt")
     if src is None:
-        problems.append("ui/PatientListScreen.kt missing")
+        problems.append("ui/patientdirectory/PatientDirectoryCard.kt missing")
     else:
         src = strip_comments(src)
-        # The chip FlowRow: every FlowRow whose content lays out the clinical tags.
-        chip_rows = []
-        for m in re.finditer(r"(?<![A-Za-z])FlowRow\(", src):
-            args, args_end = call_args(src, m.start())
-            if args is None:
-                continue
-            inner_open = src.find("{", args_end + 1)
-            body = brace_body(src, inner_open) if inner_open != -1 else None
-            if body is not None and "TagObstetricBg" in body:
-                chip_rows.append(args)
-        if not chip_rows:
-            problems.append("the chip FlowRow (clinical tags, TagObstetricBg) was not found")
-        for args in chip_rows:
-            if re.search(r"\bArrangement\.End\b", args):
-                problems.append("the chip FlowRow still uses bare Arrangement.End (no 8dp gap between chips)")
-            if not re.search(r"Arrangement\.spacedBy\s*\(\s*8\.dp,\s*Alignment\.End\s*\)", args):
-                problems.append(
-                    "the chip FlowRow does not use Arrangement.spacedBy(8.dp, Alignment.End) "
-                    "(spacedBy(Dp, Alignment) is the real overload; Alignment.End, not Arrangement.End)"
-                )
         if not re.search(r"\blerp\s*\(", src):
             problems.append(
-                "the PatientCard high-risk background does not use lerp( "
+                "the PatientDirectoryCard high-risk background does not use lerp( "
                 "(androidx.compose.ui.graphics.lerp(surface, errorContainer, fraction))"
             )
         if re.search(r"errorContainer\.copy\s*\(\s*alpha", src):
             problems.append("the card background is still a translucent errorContainer.copy(alpha = ...)")
-    record("S60 chip FlowRow ends with spacedBy(8.dp, Alignment.End); card background uses lerp(", not problems, "; ".join(problems))
+    record("S60 directory card high-risk background uses lerp( (opaque blend, not a translucent errorContainer)", not problems, "; ".join(problems))
 
 
 def check_s61():
+    # The Prior Pregnancies card now renders each pregnancy with PastDeliveryMicroRow.kt.
     problems = []
-    src = read(MAIN / "ui/ProfileScreen.kt")
+    src = read(MAIN / "ui/patienthub/components/PastDeliveryMicroRow.kt")
     if src is None:
-        problems.append("ui/ProfileScreen.kt missing")
+        problems.append("ui/patienthub/components/PastDeliveryMicroRow.kt missing")
     else:
         src = strip_comments(src)
-        feed_at = src.find("prevPregnancies.forEach")
-        card_open = src.find("{", feed_at) if feed_at != -1 else -1
-        if feed_at == -1 or card_open == -1:
-            problems.append('the Prior Pregnancies card block (prevPregnancies.forEach { p ->) was not found')
-        else:
-            block = brace_body(src, card_open)
-            if block is None:
-                problems.append("the Prior Pregnancies card block is not closed")
-            else:
-                summary_at = block.find('p.dateText ?: "Prior"')
-                outcome_at = block.find("p.outcomeText")
-                if summary_at == -1 or outcome_at == -1:
-                    problems.append("the Prior Pregnancies summary/outcome Texts were not found")
-                if "Arrangement.SpaceBetween" in block:
-                    problems.append("the Prior Pregnancies block still uses Arrangement.SpaceBetween")
-                if "Column(" not in block:
-                    problems.append("the Prior Pregnancies block does not contain a Column")
-                for m in re.finditer(r"(?<![A-Za-z])Row\(", block):
-                    body = brace_body(block, m.start() + len("Row"))
-                    if body is None:
-                        continue
-                    if re.search(
-                        r'p\.dateText\s*\?:\s*"Prior"', body
-                    ) and "p.outcomeText" in body:
-                        problems.append("the summary Text and the outcome Text are still siblings of a Row")
-                        break
-    record("S61 Prior Pregnancies summary and outcome Texts are not siblings of a Row with SpaceBetween", not problems, "; ".join(problems))
+        if "Arrangement.SpaceBetween" in src:
+            problems.append("PastDeliveryMicroRow still uses Arrangement.SpaceBetween")
+        if "Column(" not in src:
+            problems.append("PastDeliveryMicroRow does not contain a Column")
+        # The year (summary) Text and the outcome Text must wrap together in a FlowRow, not sit in a plain Row.
+        flows = []
+        for m in re.finditer(r"(?<![A-Za-z])FlowRow\(", src):
+            _, args_end = call_args(src, m.start())
+            inner_open = src.find("{", args_end + 1) if args_end != -1 else -1
+            body = brace_body(src, inner_open) if inner_open != -1 else None
+            if body is not None:
+                flows.append(body)
+        if not any("yearText" in f and "outcomeText" in f for f in flows):
+            problems.append("the year Text and the outcome Text are not both inside a FlowRow")
+        for m in re.finditer(r"(?<![A-Za-z])Row\(", src):
+            _, args_end = call_args(src, m.start())
+            inner_open = src.find("{", args_end + 1) if args_end != -1 else -1
+            body = brace_body(src, inner_open) if inner_open != -1 else None
+            if body is not None and "text = yearText" in body and "text = it" in body and "FlowRow(" not in body:
+                problems.append("the year Text and the outcome Text are siblings of a plain Row")
+                break
+    record("S61 Prior Pregnancies year and outcome Texts wrap in a FlowRow, not a SpaceBetween Row", not problems, "; ".join(problems))
 
 
 def check_s62():
@@ -190,16 +168,17 @@ def check_s62():
         if not re.search(r"\binternal\s+fun\s+formatWeightKg\s*\(", strip_comments(cf)):
             problems.append("ClinicalFormat.kt lacks internal fun formatWeightKg(")
 
-    ps = read(MAIN / "ui/ProfileScreen.kt")
+    # ProfileScreen.kt is gone; the weight is shown by the bedside vitals grid in the patient hub.
+    hub = sorted((MAIN / "ui/patienthub").rglob("*.kt"))
+    ps = "\n".join(strip_comments(read(f) or "") for f in hub) if hub else None
     if ps is None:
-        problems.append("ui/ProfileScreen.kt missing")
+        problems.append("ui/patienthub missing")
     else:
-        ps = strip_comments(ps)
         if "formatWeightKg(" not in ps:
-            problems.append("ProfileScreen.kt does not call formatWeightKg(")
+            problems.append("patient hub does not call formatWeightKg(")
         if re.search(r"\$\{\s*visit\.weight\s*\}\s*kg", ps):
-            problems.append('ProfileScreen.kt still contains the "${visit.weight} kg" literal ("kg kg" bug)')
-    record("S62 formatWeightKg is the one weight rule; ProfileScreen uses it and no raw visit.weight kg literal", not problems, "; ".join(problems))
+            problems.append('patient hub still contains the "${visit.weight} kg" literal ("kg kg" bug)')
+    record("S62 formatWeightKg is the one weight rule; the patient hub uses it and no raw visit.weight kg literal", not problems, "; ".join(problems))
 
 
 def check_s63():

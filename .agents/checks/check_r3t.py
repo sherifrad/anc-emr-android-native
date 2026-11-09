@@ -19,9 +19,8 @@ ROOT = Path(__file__).resolve().parents[2]
 MAIN = ROOT / "app/src/main/java/com/sherifradwan/ancnative"
 TEST = ROOT / "app/src/test/java/com/sherifradwan/ancnative"
 ENGINE = MAIN / "model/GestationalAgeEngine.kt"
-BANNER = MAIN / "ui/GestationalBanner.kt"
 PATIENT_LIST = MAIN / "ui/PatientListScreen.kt"
-PROFILE = MAIN / "ui/ProfileScreen.kt"
+PROFILE = MAIN / "ui/patienthub/PatientHubHeader.kt"  # replaces ProfileScreen.kt
 BANNER_TEST = TEST / "ui/GestationalBannerLogicTest.kt"
 
 results = []
@@ -72,21 +71,18 @@ def check_s86():
 
 def check_s87():
     problems = []
-    banner_src = read(BANNER)
-    if banner_src is None:
-        problems.append("ui/GestationalBanner.kt missing")
-    else:
-        b_code = strip_comments(banner_src)
-        if "ChronoUnit" in b_code:
-            problems.append("GestationalBanner.kt contains ChronoUnit")
-        if re.search(r"weeks\s*>=\s*42", b_code):
-            problems.append("GestationalBanner.kt contains weeks >= 42")
-        if "FULL_TERM_DAYS" in b_code:
-            problems.append("GestationalBanner.kt contains FULL_TERM_DAYS")
-        if not re.search(r"\bprogressFraction\b", b_code):
-            problems.append("GestationalBanner.kt does not reference progressFraction")
-        if not re.search(r"\bdaysToEdd\s*\(", b_code):
-            problems.append("GestationalBanner.kt does not call daysToEdd")
+    # GestationalBanner.kt was deleted in the redesign and nothing in ui/ shows a progress bar any more,
+    # so the banner-only requirements (progressFraction/daysToEdd references) are retired. The rule
+    # "no screen computes term/progress by hand" is kept for every ui file.
+    for path in sorted((MAIN / "ui").rglob("*.kt")):
+        u_code = strip_comments(read(path) or "")
+        rel = path.relative_to(MAIN).as_posix()
+        if "ChronoUnit" in u_code:
+            problems.append(rel + " contains ChronoUnit")
+        if re.search(r"weeks\s*>=\s*42", u_code):
+            problems.append(rel + " contains weeks >= 42")
+        if "FULL_TERM_DAYS" in u_code:
+            problems.append(rel + " contains FULL_TERM_DAYS")
 
     pls_src = read(PATIENT_LIST)
     if pls_src is None:
@@ -100,15 +96,15 @@ def check_s87():
 
     prof_src = read(PROFILE)
     if prof_src is None:
-        problems.append("ui/ProfileScreen.kt missing")
+        problems.append("ui/patienthub/PatientHubHeader.kt missing")
     else:
         prof_code = strip_comments(prof_src)
         if re.search(r'\+\s*\$\{[^}]*\}\s*wks', prof_code):
-            problems.append("ProfileScreen.kt contains +${...} wks hand formatting")
+            problems.append("PatientHubHeader.kt contains +${...} wks hand formatting")
         if not re.search(r"\bshortWeeksText\b", prof_code):
-            problems.append("ProfileScreen.kt does not reference shortWeeksText")
+            problems.append("PatientHubHeader.kt does not reference shortWeeksText")
 
-    record("S87 GestationalBanner has no ChronoUnit/weeks>=42/FULL_TERM_DAYS, screens have no hand-formatted wks and reference shortWeeksText/progressFraction/daysToEdd",
+    record("S87 no ui file has ChronoUnit/weeks>=42/FULL_TERM_DAYS, list and hub header have no hand-formatted wks and reference shortWeeksText",
            not problems, "; ".join(problems))
 
 

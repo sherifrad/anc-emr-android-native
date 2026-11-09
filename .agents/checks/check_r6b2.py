@@ -12,7 +12,6 @@ results = []
 BANNED = ["DeleteMedicationCommand", "DeleteLabInvestigationCommand", "RestoreMedicationCommand", "RestoreLabInvestigationCommand",
           "DeletionKind", "RequestDeleteMedication", "RequestDeleteLab"]
 OLD_UNDO = ["UndoKind", "DELETE_MED", "DELETE_LAB", "SAVE_MED"]
-ALLOWED_UI = {"MedicationEditor.kt", "LabEditor.kt", "WorkspaceScreen.kt"}
 
 
 def record(name, ok, detail=""):
@@ -85,13 +84,11 @@ def main():
         for line in subprocess.run(["git", "diff", "--name-only", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.splitlines():
             if re.search(r"app/schemas/|RecordsMigration|RecordsDatabase\.kt|RecordsDao\.kt", line):
                 problems.append("forbidden file changed: " + line)
-            m = re.search(r"/ancnative/ui/([^/]+)$", line)
-            if m and m.group(1) not in ALLOWED_UI:
-                problems.append("ui file outside allow list: " + line)
+            # The ui allow-list (one-round condition: which ui files round 6b2 may touch) is retired.
     except (OSError, subprocess.CalledProcessError) as exc:
         problems.append("git diff failed: " + str(exc))
     db = read(MAIN / "storage/RecordsDatabase.kt")
-    record("S416 repository keeps one deleteRecord/restoreRecord; no schema, version, DAO or stray ui change",
+    record("S416 repository keeps one deleteRecord/restoreRecord; no schema, version or DAO change",
            not problems and bool(re.search(r"version\s*=\s*6\b", db)), "; ".join(problems) or "version != 6")
     sys.exit(0 if all(results) else 1)
 

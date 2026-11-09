@@ -5,7 +5,7 @@ Stdlib only. Prints PASS/FAIL per check, exits 1 if any FAIL.
 Textual source contract only; verifies nothing at runtime.
   S84 model/ObstetricHistory.kt defines PreviousDeliveryCounts, previousDeliveryCounts,
       previousDeliverySummary and has no android. import.
-  S85 PatientListScreen.kt, ProfileScreen.kt and PatientPrintHtmlGenerator.kt each call
+  S85 PatientListScreen.kt, PatientDirectoryMetricsRow.kt, OverviewSections.kt and PatientPrintHtmlGenerator.kt each call
       previousDeliverySummary( and none of the three (nor any other main file besides
       ObstetricHistory.kt) contains "Cesarean" compared to birthMethod, "CS" compared to
       deliveryBy, contains("Cesarean", contains("CS", contains("SVD" or contains("Stillbirth".
@@ -60,7 +60,7 @@ def check_s84():
 
 def check_s85():
     problems = []
-    for filename in ("ui/PatientListScreen.kt", "ui/ProfileScreen.kt", "ui/report/PatientPrintHtmlGenerator.kt"):
+    for filename in ("ui/PatientListScreen.kt", "ui/patientdirectory/PatientDirectoryMetricsRow.kt", "ui/patienthub/components/OverviewSections.kt", "ui/report/PatientPrintHtmlGenerator.kt"):
         fpath = MAIN / filename
         src = read(fpath)
         if src is None:
@@ -90,7 +90,7 @@ def check_s85():
             if contains_match:
                 problems.append(f'{path.name}:{i} contains {contains_match.group(0)}')
 
-    record("S85 PatientListScreen, ProfileScreen, PatientPrintHtmlGenerator call previousDeliverySummary and no file has inline delivery counting comparisons",
+    record("S85 PatientListScreen, directory metrics row, hub overview section, PatientPrintHtmlGenerator call previousDeliverySummary and no file has inline delivery counting comparisons",
            not problems, "; ".join(problems))
 
 

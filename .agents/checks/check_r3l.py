@@ -18,7 +18,7 @@ Textual source contract only; verifies nothing at runtime.
       bare statement controller.execute(datingCmd, sessionEpoch) {}; the list of
       patients handed to RecordCommitted comes from the dating snapshot when it
       is saved (see the spec; textual check covers the notice side);
-      ui/WorkspaceScreen.kt handles SavedNotice.PATIENT_DATING_NOT_UPDATED;
+      state/AncState.kt maps SavedNotice.PATIENT_DATING_NOT_UPDATED;
       strings.xml defines patient_saved_dating_not_updated.
 """
 import re
@@ -179,14 +179,16 @@ def check_s66():
         ):
             problems.append("AncViewModel.kt still contains the fire-and-forget statement controller.execute(datingCmd, sessionEpoch) {}")
 
-    ws = read(MAIN / "ui/WorkspaceScreen.kt")
-    if ws is None:
-        problems.append("ui/WorkspaceScreen.kt missing")
-    else:
-        # r6b3 moved the notice -> string mapping to SavedNotice?.stringRes() in state/AncState.kt (JVM-testable).
-        mapping = strip_comments(ws) + strip_comments(read(MAIN / "state/AncState.kt") or "")
-        if "SavedNotice.PATIENT_DATING_NOT_UPDATED" not in mapping:
-            problems.append("neither WorkspaceScreen.kt nor AncState.kt handles SavedNotice.PATIENT_DATING_NOT_UPDATED")
+    # The notice -> string mapping lives in SavedNotice?.stringRes() in state/AncState.kt (JVM-testable);
+    # WorkspaceScreen.kt is gone and the patient hub just renders that string.
+    st = read(MAIN / "state/AncState.kt")
+    if st is None:
+        problems.append("state/AncState.kt missing")
+    elif not re.search(
+        r"SavedNotice\.PATIENT_DATING_NOT_UPDATED\s*->\s*R\.string\.patient_saved_dating_not_updated\b",
+        strip_comments(st),
+    ):
+        problems.append("AncState.kt does not map SavedNotice.PATIENT_DATING_NOT_UPDATED to R.string.patient_saved_dating_not_updated")
 
     strings = read(RES / "strings.xml")
     if strings is None:
