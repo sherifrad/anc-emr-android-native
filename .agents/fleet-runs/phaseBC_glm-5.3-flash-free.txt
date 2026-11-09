@@ -1,0 +1,562 @@
+[0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead docs/designs/patient_workspace_overview_tab_optimization.md 
+[0m→ [0mRead .agents/fleet-runs/phaseBC.diff 
+[0m→ [0mRead .agents/specs/overview_phase_bc_spec.md 
+> build · glm-5.3-flash-free
+[0m✱ [0mGlob "app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/*.kt" [90m12 matches[0m
+[0m$ [0mgit -C /Users/sherifgamalradwan/anc-emr-android-native status --short; echo ---; git -C /Users/sherifgamalradwan/anc-emr-android-native stash list | head -3
+M .agents/AI_HANDOFF_LEDGER.md
+ A app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalGroupSection.kt
+D  app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/GestationalDatingCard.kt
+D  app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicalHistoriesCard.kt
+D  app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ObstetricParityCard.kt
+ A app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt
+ A app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PastDeliveryMicroRow.kt
+D  app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PreviousPregnancyCard.kt
+ A app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/PastDeliveryRowModel.kt
+ M app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+ M app/src/main/res/values/strings.xml
+ A app/src/test/java/com/sherifradwan/ancnative/ui/patienthub/model/PastDeliveryRowModelTest.kt
+?? .agents/ROUTING_LOG.jsonl
+?? .agents/fleet-runs/phaseA.diff
+?? .agents/fleet-runs/phaseA_brief.md
+?? .agents/fleet-runs/phaseA_deepseek-v4.1-flash-free.txt
+?? .agents/fleet-runs/phaseA_glm-5.3-flash-free.txt
+?? .agents/fleet-runs/phaseBC.diff
+?? .agents/fleet-runs/phaseBC_brief.md
+?? .agents/fleet-runs/phaseBC_deepseek-v4.1-flash-free.txt
+?? .agents/fleet-runs/phaseBC_glm-5.3-flash-free.txt
+?? .agents/mocks/overview_tab_sections.html
+?? .agents/specs/overview_phase_bc_spec.md
+?? app/src/androidTest/java/com/sherifradwan/ancnative/OverviewTabSectionsTest.kt
+?? comprehension_report.md
+?? critic_report.md
+?? goldfish_review_report.md
+?? goldfish_review_report_stage5-9.md
+?? implementation_readiness_report.md
+?? intermediate_zoom_out_report.md
+?? zoom_out_report.md
+---
+> build · glm-5.3-flash-free
+The four legacy cards are deleted in the working tree (staged), though the diff file omits them. Let me retrieve the deleted cards from git to compare fields, and inspect the shared components.
+[0m$ [0mgit -C /Users/sherifgamalradwan/anc-emr-android-native show HEAD:app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/GestationalDatingCard.kt
+package com.sherifradwan.ancnative.ui.patienthub.components
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import com.sherifradwan.ancnative.ui.minimumTouchTarget
+import com.sherifradwan.ancnative.R
+import com.sherifradwan.ancnative.model.DemoPatientDating
+import com.sherifradwan.ancnative.ui.ClinicalCardTokens
+import com.sherifradwan.ancnative.ui.ClinicalTeal
+import com.sherifradwan.ancnative.ui.FactRow
+import com.sherifradwan.ancnative.ui.isDarkTheme
+
+@Composable
+fun GestationalDatingCard(
+    dating: DemoPatientDating?,
+    onEdit: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+) {
+    val isDark = isDarkTheme()
+    val bg = if (isDark) ClinicalCardTokens.DatingDarkBg else ClinicalCardTokens.DatingBg
+    val border = if (isDark) ClinicalCardTokens.DatingDarkBorder else ClinicalCardTokens.DatingBorder
+    val accent = if (isDark) ClinicalCardTokens.DatingDarkAccent else ClinicalCardTokens.DatingAccent
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("datingCard"),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = bg),
+        border = BorderStroke(1.5.dp, border),
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Header Row: Title + Method badge + Edit affordance
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f, fill = false),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Icon(
+                        Icons.Default.DateRange,
+                        contentDescription = null,
+                        tint = accent,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Text(
+                        text = "Dating",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                    )
+                    if (!dating?.datingMethod.isNullOrBlank()) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = accent.copy(alpha = 0.15f),
+                            border = BorderStroke(1.dp, accent.copy(alpha = 0.3f)),
+                        ) {
+                            Text(
+                                text = dating?.datingMethod.orEmpty(),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = accent,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            )
+                        }
+                    }
+                }
+                if (onEdit != null) {
+                    IconButton(
+                        onClick = onEdit,
+                        modifier = Modifier.minimumTouchTarget().testTag("editDating"),
+                    ) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = stringResource(R.string.edit_dating),
+                            tint = accent,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
+            }
+
+            if (dating == null) {
+                Text(
+                    text = stringResource(R.string.no_dating_recorded),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                return@Column
+            }
+
+            val ga = dating.calculateGestationalAge()
+            val edd = dating.agreedEdd ?: dating.ultrasoundEdd ?: dating.calculateEstimatedDueDate()?.toString()
+            if (!ga.isNullOrBlank() || !edd.isNullOrBlank()) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, border.copy(alpha = 0.6f)),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    FlowRow(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceAround,
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                        ) {
+                            Text(
+                                text = "GESTATIONAL AGE",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                text = ga ?: "-",
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontFeatureSettings = "tnum",
+                                ),
+                                color = if (isDark) accent else ClinicalTeal,
+                            )
+                        }
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                        ) {
+                            Text(
+                                text = "ESTIMATED DUE DATE",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                text = edd ?: "-",
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontFeatureSettings = "tnum",
+                                ),
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Only underlying clinical parameters (LMP, IVF, or notes) - GA and Dating Method are already in hero & header
+            when (dating.datingMethod?.uppercase()) {
+                "ULTRASOUND", "US" -> {
+                    if (!dating.ultrasoundEdd.isNullOrBlank() && dating.ultrasoundEdd != edd) {
+                        FactRow(R.string.ultrasound_edd, dating.ultrasoundEdd)
+                    }
+                }
+                "LMP" -> {
+                    if (!dating.lmpDate.isNullOrBlank()) {
+                        FactRow(R.string.lmp_date, dating.lmpDate)
+                    }
+                }
+                "IVF_TRANSFER", "IVF" -> {
+                    if (!dating.transferDate.isNullOrBlank()) {
+                        FactRow(R.string.ivf_transfer_date, dating.transferDate)
+                    }
+                    dating.embryoAgeDays?.let { age ->
+                        FactRow(R.string.embryo_age, "Day $age")
+                    }
+                }
+                "CLINICAL" -> {
+                    if (!dating.agreedEdd.isNullOrBlank() && dating.agreedEdd != edd) {
+                        FactRow(R.string.agreed_edd, dating.agreedEdd)
+                    }
+                }
+                else -> {
+                    if (!dating.lmpDate.isNullOrBlank()) {
+                        FactRow(R.string.lmp_date, dating.lmpDate)
+                    }
+                    if (!dating.transferDate.isNullOrBlank()) {
+                        FactRow(R.string.ivf_transfer_date, dating.transferDate)
+                    }
+                    dating.embryoAgeDays?.let { age ->
+                        FactRow(R.string.embryo_age, "Day $age")
+                    }
+                }
+            }
+
+            if (!dating.notes.isNullOrBlank()) {
+                FactRow(R.string.notes, dating.notes)
+            }
+        }
+    }
+}
+[0m$ [0mgit -C /Users/sherifgamalradwan/anc-emr-android-native show HEAD:app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PreviousPregnancyCard.kt
+package com.sherifradwan.ancnative.ui.patienthub.components
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.sherifradwan.ancnative.R
+import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
+import com.sherifradwan.ancnative.storage.DeletableType
+import com.sherifradwan.ancnative.ui.DeleteIconButton
+import com.sherifradwan.ancnative.ui.FactRow
+import com.sherifradwan.ancnative.ui.minimumTouchTarget
+
+@Composable
+fun PreviousPregnancyCard(
+    pregnancy: DemoPreviousPregnancy,
+    canEdit: Boolean,
+    onEdit: () -> Unit,
+    modifier: Modifier = Modifier,
+    onDelete: () -> Unit = {},
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("pregnancy-${pregnancy.id}"),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                val headerTitle = pregnancy.outcomeText ?: pregnancy.outcome ?: pregnancy.pregnancyType ?: "Previous Pregnancy"
+                Text(
+                    text = headerTitle,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                if (!pregnancy.dateText.isNullOrBlank()) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    ) {
+                        Text(
+                            text = pregnancy.dateText,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        )
+                    }
+                }
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f), thickness = 1.dp)
+
+            FactRow(R.string.entered_date_text, pregnancy.dateText)
+            FactRow(R.string.entered_outcome_text, pregnancy.outcomeText)
+            FactRow(R.string.pregnancy_type, pregnancy.pregnancyType)
+            FactRow(R.string.structured_outcome, pregnancy.outcome)
+            FactRow(R.string.historical_delivery_mode, pregnancy.deliveryBy)
+            if (!pregnancy.otherDetails.isNullOrBlank()) {
+                FactRow(R.string.other_details, pregnancy.otherDetails)
+            }
+            if (!pregnancy.placeAndDoctor.isNullOrBlank()) {
+                FactRow(R.string.place_and_doctor, pregnancy.placeAndDoctor)
+            }
+            if (!pregnancy.birthMethod.isNullOrBlank()) {
+                FactRow(R.string.birth_method, pregnancy.birthMethod)
+            }
+            if (!pregnancy.lossManagement.isNullOrBlank()) {
+                FactRow(R.string.loss_management, pregnancy.lossManagement)
+            }
+            if (!pregnancy.terminationMethod.isNullOrBlank()) {
+                FactRow(R.string.termination_method, pregnancy.terminationMethod)
+            }
+            if (!pregnancy.clinicianId.isNullOrBlank()) {
+                FactRow(R.string.clinician_id, pregnancy.clinicianId)
+            }
+            if (canEdit) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    DeleteIconButton(DeletableType.PREVIOUS_PREGNANCY, pregnancy, onDelete)
+                    TextButton(
+                        onClick = onEdit,
+                        modifier = Modifier
+                            .minimumTouchTarget()
+                            .testTag("editPregnancy-${pregnancy.id}"),
+                    ) {
+                        Text(stringResource(R.string.correct_previous_pregnancy))
+                    }
+                }
+            }
+        }
+    }
+}
+> build · glm-5.3-flash-free
+Legacy cards retrieved. Now let me verify shared components, existing labels, tag wiring, and resources.
+[0m$ [0mls app/src/main/res/ | head -20; echo ---; grep -rn "Live Birth\|Stillbirth\|Miscarriage\|Therapeutic" app/src/main/res/values/strings.xml app/src/main/java/com/sherifradwan/ancnative/model/ObstetricHistory.kt 2>/dev/null | head -20
+drawable
+drawable-nodpi
+mipmap-anydpi-v26
+mipmap-hdpi
+mipmap-mdpi
+mipmap-xhdpi
+mipmap-xxhdpi
+mipmap-xxxhdpi
+values
+values-v31
+xml
+---
+app/src/main/java/com/sherifradwan/ancnative/model/ObstetricHistory.kt:13:fun isStillbirth(pregnancy: DemoPreviousPregnancy): Boolean {
+app/src/main/java/com/sherifradwan/ancnative/model/ObstetricHistory.kt:15:    return pregnancy.outcome == "Stillbirth" ||
+app/src/main/java/com/sherifradwan/ancnative/model/ObstetricHistory.kt:16:        (text != null && (text.contains("Stillbirth", ignoreCase = true) || text.contains("IUFD", ignoreCase = true)))
+app/src/main/java/com/sherifradwan/ancnative/model/ObstetricHistory.kt:22:        (text != null && (text.contains("Miscarriage", ignoreCase = true) || text.contains("Loss", ignoreCase = true)))
+app/src/main/java/com/sherifradwan/ancnative/model/ObstetricHistory.kt:53:        if (isStillbirth(p)) {
+app/src/main/java/com/sherifradwan/ancnative/model/ObstetricHistory.kt:91:        c.stillbirth > 0 -> "Prior Stillbirth (IUFD)"
+app/src/main/java/com/sherifradwan/ancnative/model/ObstetricHistory.kt:92:        c.earlyLoss > 0 -> pluralize(c.earlyLoss, "Prior Miscarriage", "Prior Miscarriages")
+[0m$ [0mgrep -rn "delete-previous_pregnancy\|fun DeleteIconButton" app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt | head; echo ---; grep -rn "isEmphasized\|fun FactRow" app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt | head -5; echo ---; grep -rn "fun ObstetricParityBadge" -A6 app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt | head -12
+---
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:418:fun FactRow(
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:421:    isEmphasized: Boolean = false,
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:427:        isEmphasized = isEmphasized,
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:433:fun FactRow(
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:436:    isEmphasized: Boolean = false,
+---
+[0m$ [0mwc -l app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt; echo ---; grep -rn "editDating\|deliveryPlanningCard\|pregnancy-\|editPregnancy\|obstetricParityBadge\|datingCard\|medicalHistoriesCard\|obstetricParityCard\|addPregnancyButton" app/src/androidTest --include=*.kt -l; echo ---; grep -rn "testTag" app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt 2>/dev/null | head -8
+105 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+---
+zsh:1: no matches found: --include=*.kt
+---
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:23:import androidx.compose.ui.platform.testTag
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:722:                                    .testTag(FIXTURE_HOST_TAG),
+> build · glm-5.3-flash-free
+[0m$ [0mgit -C /Users/sherifgamalradwan/anc-emr-android-native show HEAD:app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ObstetricParityCard.kt | grep -n "FactRow\|summary\|testTag\|Primigravida\|previousDelivery" | head -15; echo ---MEDHIST---; git -C /Users/sherifgamalradwan/anc-emr-android-native show HEAD:app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicalHistoriesCard.kt | grep -n "FactRow\|classifyAllergy\|AllergyState\|testTag\|Text(" | head -20; echo ---SUMMARY---; grep -n "fun previousDeliverySummary" -A 12 app/src/main/java/com/sherifradwan/ancnative/model/ObstetricHistory.kt
+26:import androidx.compose.ui.platform.testTag
+33:import com.sherifradwan.ancnative.model.previousDeliverySummary
+35:import com.sherifradwan.ancnative.ui.FactRow
+47:    val summary = previousDeliverySummary(patient)
+56:            .testTag("obstetricParityCard"),
+96:                        modifier = Modifier.minimumTouchTarget().testTag("addPregnancyButton"),
+115:            if (summary.isNotBlank()) {
+130:                            text = summary,
+141:                FactRow(R.string.obstetric_notes, patient.obstetricNotes)
+---MEDHIST---
+23:import androidx.compose.ui.platform.testTag
+29:import com.sherifradwan.ancnative.ui.FactRow
+49:            .testTag("medicalHistoriesCard"),
+70:                    Text(
+80:                        modifier = Modifier.minimumTouchTarget().testTag("editMedicalHistoryButton"),
+98:                    Text(
+124:                            Text(
+134:                    FactRow(R.string.medical_history, patient.medicalHistory)
+137:                    FactRow(R.string.surgical_history, patient.surgicalHistory)
+140:                    FactRow(R.string.family_history, patient.familyHistory)
+---SUMMARY---
+73:fun previousDeliverySummary(patient: DemoPatient): String {
+74-    val g = patient.gravida ?: 1L
+75-    val p = patient.parity ?: 0L
+76-    val a = patient.abortion ?: 0L
+77-    val pregnancies = patient.previousPregnancies
+78-    val c = previousDeliveryCounts(pregnancies)
+79-
+80-    return when {
+81-        g == 1L && p == 0L && a == 0L && pregnancies.isEmpty() -> "Primigravida"
+82-        p == 0L && pregnancies.isEmpty() -> "P0 · No prior deliveries"
+83-        c.cesarean > 0 || c.vaginal > 0 -> {
+84-            val parts = mutableListOf<String>()
+85-            if (c.cesarean > 0) parts.add("${c.cesarean} CS")
+[0m$ [0mgrep -rn "fun DeleteIconButton" -A 20 app/src/main/java/com/sherifradwan/ancnative/ui/ | head -30; echo ---; grep -rn "editDating\|editPregnancy\|pregnancy-\|deliveryPlanningCard\|obstetricParityBadge\|editDeliveryPlan" app/src/androidTest -r | grep -v OverviewTabSectionsTest | head -12
+app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt:70:internal fun DeleteIconButton(
+app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt-71-    type: DeletableType,
+app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt-72-    record: DeletableRecord,
+app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt-73-    onClick: () -> Unit,
+app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt-74-    modifier: Modifier = Modifier,
+app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt-75-    tag: String? = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt-76-) {
+app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt-77-    val recordId = record.id
+app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt-78-    // A type/record mismatch draws nothing instead of throwing while the screen is composed.
+app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt-79-    val label = DeletableRegistry.labelOrNull(type, record) ?: return
+app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt-80-    IconButton(
+app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt-81-        onClick = onClick,
+app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt-82-        modifier = modifier
+app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt-83-            .minimumTouchTarget()
+app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt-84-            .testTag(tag ?: "delete-${type.name.lowercase()}-$recordId"),
+app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt-85-    ) {
+app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt-86-        Icon(
+app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt-87-            Icons.Default.Delete,
+app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt-88-            contentDescription = stringResource(R.string.delete_record_description, stringResource(type.labelResource()), label),
+app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt-89-            tint = MaterialTheme.colorScheme.error,
+app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt-90-            modifier = Modifier.size(20.dp),
+---
+app/src/androidTest/java/com/sherifradwan/ancnative/storage/EncryptedRecordsTest.kt:1048:        editorSessionId = "pregnancy-editor",
+app/src/androidTest/java/com/sherifradwan/ancnative/DeleteUndoUiTest.kt:84:    private val prevKind = Kind(DeletableType.PREVIOUS_PREGNANCY, WorkspaceSection.OBSTETRIC_HISTORY, "pregnancy-", "ui-prev-1")
+app/src/androidTest/java/com/sherifradwan/ancnative/DeliveryPlanTabsEditGateTest.kt:36:        compose.onNodeWithTag("editDeliveryPlan").assertDoesNotExist()
+app/src/androidTest/java/com/sherifradwan/ancnative/DeliveryPlanTabsEditGateTest.kt:41:        compose.onNodeWithTag("editDeliveryPlan").assertExists()
+app/src/androidTest/java/com/sherifradwan/ancnative/DeliveryPlanTabsEditGateTest.kt:46:        compose.onNodeWithTag("editDeliveryPlan").assertDoesNotExist()
+app/src/androidTest/java/com/sherifradwan/ancnative/DeliveryPlanTabsEditGateTest.kt:51:        compose.onNodeWithTag("editDeliveryPlan").assertExists()
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:406:                editorSessionId = "p3-pregnancy-create",
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:429:        val createToken = PendingSaveToken(P3_PREGNANCY_CREATE_OPERATION, "p3-pregnancy-create")
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:446:                editorSessionId = "p3-pregnancy-correct",
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:479:            "p3-pregnancy-correct",
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:513:        compose.onNodeWithTag("workspaceList").performScrollToNode(hasTestTag("editDating"))
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:514:        compose.onNodeWithTag("editDating").assertIsDisplayed()
+> build · glm-5.3-flash-free
+[0m$ [0mgrep -n "calculated_edd\|dating_method\|ivf_transfer_date\|embryo_age\|lmp_date\|agreed_edd\|ultrasound_edd\|no_dating_recorded\|edit_dating\|obstetric_notes\|historical_delivery_mode" app/src/main/res/values/strings.xml
+120:    <string name="obstetric_notes">Obstetric notes</string>
+156:    <string name="historical_delivery_mode">Historical delivery mode</string>
+166:    <string name="edit_dating">Edit dating</string>
+167:    <string name="lmp_date">Last menstrual period (LMP)</string>
+168:    <string name="ultrasound_edd">Ultrasound EDD</string>
+169:    <string name="agreed_edd">Agreed clinical EDD</string>
+170:    <string name="dating_method">Dating method</string>
+174:    <string name="no_dating_recorded">No dating recorded</string>
+257:    <string name="ivf_transfer_date">Embryo transfer date (IVF)</string>
+258:    <string name="embryo_age">Embryo age</string>
+261:    <string name="calculated_edd">Calculated EDD</string>
+262:    <string name="dating_method_select_hint">Select dating method first</string>
+[0m$ [0mgrep -n "fun classifyAllergy" -A 14 app/src/main/java/com/sherifradwan/ancnative/ui/*.kt | head -20; echo ---UITEST---; grep -n "testTag\|fontScale\|360\|Primigravida\| primigravida" app/src/androidTest/java/com/sherifradwan/ancnative/OverviewTabSectionsTest.kt | head -25
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt:43:internal fun classifyAllergy(raw: String?): AllergyState {
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt-44-    val text = raw?.trim().orEmpty()
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt-45-    if (text.isEmpty()) return AllergyState.NotRecorded
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt-46-    val key = text.trimEnd { it == '.' || it.isWhitespace() }
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt-47-        .replace(WhitespaceRun, " ")
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt-48-        .lowercase(java.util.Locale.ROOT)
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt-49-    return if (key in NoAllergyPhrases) AllergyState.ExplicitlyNone else AllergyState.Recorded(text)
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt-50-}
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt-51-
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt-52-/** Mirror of [isRhNegative]: true only for an explicit Rh positive group; blank/null/"pending" are not. */
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt-53-internal fun isRhPositive(bloodGroup: String?): Boolean {
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt-54-    val raw = bloodGroup?.trim()?.replace('\u2212', '-')?.lowercase() ?: return false
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt-55-    if (raw.isEmpty() || isRhNegative(bloodGroup)) return false
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt-56-    return raw.contains('+') || Regex("\\b(pos|positive)\\b").containsMatchIn(raw)
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt-57-}
+---UITEST---
+44:    private fun hasTagPrefix(prefix: String) = SemanticsMatcher("testTag starts with $prefix") {
+52:        fontScale: Float? = null,
+58:                    val density = if (fontScale != null) Density(base.density, fontScale) else base
+124:    fun rowAt360dpAndFontScale13ShowsOutcomeAndModeUnclipped() {
+136:        show(patient, widthDp = 360, fontScale = 1.3f)
+148:            assertTrue("'$text' wider than 360dp: ${bounds.right - bounds.left}", bounds.right <= 360.dp)
+166:    fun emptyListPrimigravidaOnlyWhenGravidaAtMostOne() {
+174:    fun emptyListDoesNotSayPrimigravidaForGravida3() {
+> build · glm-5.3-flash-free
+## Adversarial Review — phaseBC.diff
+
+**Scope note:** the diff file omits the four card deletions and the new `OverviewTabSectionsTest.kt` (both present in the working tree; deletions staged). Findings below are from the full tree state.
+
+**Verified good:** `AncEvent` construction (`StartDatingEditor`, `StartPregnancyEditor` null-vs-id + UUID, `StartPatientEditor`, `RequestDelete`) and `canEdit` gating are identical to the old code (OverviewTab.kt:33-46, 79-99); all §7.1 tags survive — `datingCard`, `editDating`, `obstetricParityCard`, `addPregnancyButton`, `obstetricParityBadge`, `medicalHistoriesCard`, `editMedicalHistoryButton`, `pregnancy-<id>`/`editPregnancy-<id>` on distinct nodes, `delete-previous_pregnancy-<id>` via DeleteIconButton's default tag (DeleteUndoUi.kt:84); `overviewTabContent` kept; no lazy lists inside the `verticalScroll`; no hex colours; OverviewTab is 105/180 lines; ORACLE-B1/B2/B3 are genuinely covered by the JVM test (incl. 1900/2099 boundaries, first-of-two years, whitespace, extras order).
+
+### Findings
+
+**Major** — OverviewSections.kt:170 — with a blank/misspelled `datingMethod` and a recorded `transferDate`, the old card's `else` branch showed IVF transfer date + embryo age, the new `in setOf("IVF_TRANSFER","IVF")` gate hides both — recorded IVF data silently vanishes from Overview. Fix: show IVF FactRows whenever `transferDate`/`embryoAgeDays` are non-blank, regardless of method.
+
+**Major** — PastDeliveryRowModel.kt:30-35 — outcome labels "Live Birth"/"Stillbirth / IUFD"/"Miscarriage"/"Therapeutic Termination" are hard-coded English in the model; spec says labels must come from existing strings (none exist — the old card showed the raw enum) and forbids hard-coded strings. Fix: move to `strings.xml` + stringResource at render time.
+
+**Major** — OverviewTab.kt:83 — the three sections are separate `Column`s on the screen background, not "the three sections … inside one surface" (spec deliverable 1 / design §2); the hairline dividers now float with no container. Fix: wrap the inner Column in a `Surface`.
+
+**Nit** — OverviewSections.kt:172 — `"Day $it"` hard-coded (carried over verbatim from the old card); move to a resource.
+
+**Nit** — PastDeliveryMicroRow.kt:385-391 — at fontScale 1.3, a long `placeAndDoctor`/`otherDetails` can ellipsize away `Loss management`/`Termination method` entirely; doc-sanctioned (maxLines=2, "full text in the editor") but clinically risky for loss data. Fix: put extras on line 1 or render unbounded.
+
+**Nit** — PastDeliveryRowModel.kt:44 — when a structured outcome exists, clinician `outcomeText` (e.g. "IUFD at 34 weeks with HELLP") is dropped from the row; deliberate per §4.3 ("`outcome`, else `outcomeText`") but a perceptible regression vs the old card, which showed both.
+
+**Deliberate drops, confirmed per doc:** `clinicianId` FactRow (§4.3 table), secondary EDD display (§4.5), "Prior Pregnancies (N)" count heading (§8 item 4), `deliveryBy` when `birthMethod` set (§4.3).
+
+**Test oracles:** B-oracles proven; C-oracles (360dp/1.3 scale, primigravida gating, tag resolution) are only proven by `OverviewTabSectionsTest.kt`, which is untracked and absent from the diff under review — the diff itself proves none of ORACLE-C1…C5.
+
+**VERDICT: FIX-NEEDED**

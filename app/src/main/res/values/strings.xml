@@ -139,6 +139,17 @@
     <string name="surgical_history">Surgical history</string>
     <string name="family_history">Family history</string>
     <string name="allergy_history">Allergy history</string>
+    <string name="pregnancy_dating_title">Pregnancy dating &amp; due date</string>
+    <string name="medical_histories_title">Medical, surgical &amp; family history</string>
+    <string name="date_not_recorded">Date not recorded</string>
+    <string name="outcome_live_birth">Live birth</string>
+    <string name="outcome_stillbirth">Stillbirth / IUFD</string>
+    <string name="outcome_early_loss">Early pregnancy loss</string>
+    <string name="outcome_termination">Termination of pregnancy</string>
+    <string name="labeled_value">%1$s: %2$s</string>
+    <string name="detail_separator">" · "</string>
+    <string name="embryo_age_days">Day %1$d</string>
+    <string name="allergy_banner">Allergy: %1$s</string>
     <string name="previous_pregnancies">Previous pregnancies</string>
     <string name="add_previous_pregnancy">Add previous pregnancy</string>
     <string name="correct_previous_pregnancy">Correct previous pregnancy</string>
@@ -154,7 +165,6 @@
     <string name="birth_method">Birth method</string>
     <string name="loss_management">Loss management</string>
     <string name="termination_method">Termination method</string>
-    <string name="clinician_id">Clinician ID</string>
     <string name="clinician_id_required">Clinician ID (required for clinician entry)</string>
     <string name="outcome_method_mismatch">The selected method does not apply to the selected outcome. Clear or correct it.</string>
     <string name="save_patient_archived">This patient is archived. Only explicit unarchive is allowed.</string>

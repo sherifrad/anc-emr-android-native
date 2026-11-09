@@ -1,0 +1,333 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt
+index c002abf..5ba3cc5 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt
+@@ -13,6 +13,38 @@ internal fun isRhNegative(bloodGroup: String?): Boolean {
+         Regex("\\b(neg|negative|minus)\\b").containsMatchIn(raw)
+ }
+ 
++/** What the allergy field says: nothing entered, an explicit "none", or a real recorded allergy. */
++sealed interface AllergyState {
++    data object NotRecorded : AllergyState
++    data object ExplicitlyNone : AllergyState
++    data class Recorded(val text: String) : AllergyState
++}
++
++private val NoAllergyPhrases = setOf(
++    "nkda",
++    "nka",
++    "none",
++    "no",
++    "nil",
++    "no known allergies",
++    "no known drug allergies",
++    "no known drug allergies (nkda)",
++    "no known allergy",
++    "no allergies",
++)
++
++/**
++ * Classifies a free-text allergy entry. Only an entry that is wholly a known "no allergy" phrase is
++ * [AllergyState.ExplicitlyNone]; anything with other content stays [AllergyState.Recorded] so an
++ * allergy is never hidden.
++ */
++internal fun classifyAllergy(raw: String?): AllergyState {
++    val text = raw?.trim().orEmpty()
++    if (text.isEmpty()) return AllergyState.NotRecorded
++    val key = text.trimEnd('.', ' ').lowercase()
++    return if (key in NoAllergyPhrases) AllergyState.ExplicitlyNone else AllergyState.Recorded(text)
++}
++
+ /** Mirror of [isRhNegative]: true only for an explicit Rh positive group; blank/null/"pending" are not. */
+ internal fun isRhPositive(bloodGroup: String?): Boolean {
+     val raw = bloodGroup?.trim()?.replace('\u2212', '-')?.lowercase() ?: return false
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt
+index da9c9ba..5c10048 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt
+@@ -242,17 +242,12 @@ fun ClinicalPatientCard(
+                         }
+ 
+                         // 7. Allergy Status
+-                        val allergies = patient.allergyHistory
+-                        val allergyClean = allergies?.trim()
+-                        val isNoAllergy = allergyClean.isNullOrBlank() ||
+-                            allergyClean.contains("NKDA", ignoreCase = true) ||
+-                            allergyClean.contains("No known", ignoreCase = true) ||
+-                            allergyClean.equals("None", ignoreCase = true) ||
+-                            allergyClean.equals("No", ignoreCase = true)
+-                        val (allergyLabel, isAlert) = if (isNoAllergy) {
+-                            "NKDA" to false
+-                        } else {
+-                            allergyClean!! to true
++                        val allergy = classifyAllergy(patient.allergyHistory)
++                        val isAlert = allergy is AllergyState.Recorded
++                        val allergyLabel = when (allergy) {
++                            is AllergyState.Recorded -> allergy.text
++                            AllergyState.ExplicitlyNone -> stringResource(R.string.no_allergy_history)
++                            AllergyState.NotRecorded -> stringResource(R.string.not_recorded)
+                         }
+                         Surface(
+                             shape = RoundedCornerShape(6.dp),
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
+index 9f9d042..20cd970 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
+@@ -44,6 +44,7 @@ import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
+ import androidx.compose.runtime.Stable
+ import androidx.compose.runtime.derivedStateOf
++import com.sherifradwan.ancnative.ui.AllergyState
+ import com.sherifradwan.ancnative.ui.BloodGroupBadge
+ import com.sherifradwan.ancnative.ui.GestationalAgeBadge
+ import com.sherifradwan.ancnative.ui.ObstetricParityBadge
+@@ -51,6 +52,7 @@ import com.sherifradwan.ancnative.ui.TagHighRiskBg
+ import com.sherifradwan.ancnative.ui.TagHighRiskDarkBg
+ import com.sherifradwan.ancnative.ui.TagHighRiskText
+ import com.sherifradwan.ancnative.ui.TagHighRiskDarkText
++import com.sherifradwan.ancnative.ui.classifyAllergy
+ import com.sherifradwan.ancnative.ui.isDarkTheme
+ import androidx.compose.runtime.getValue
+ import androidx.compose.runtime.mutableFloatStateOf
+@@ -286,17 +288,23 @@ fun PatientHubHeader(
+                         if (!patient.bloodGroupText.isNullOrBlank()) {
+                             BloodGroupBadge(patient.bloodGroupText)
+                         }
+-                        if (!patient.allergyHistory.isNullOrBlank()) {
++                        val allergy = classifyAllergy(patient.allergyHistory)
++                        if (allergy !is AllergyState.NotRecorded) {
++                            val isAlert = allergy is AllergyState.Recorded
+                             Surface(
+                                 shape = RoundedCornerShape(6.dp),
+-                                color = MaterialTheme.colorScheme.errorContainer,
++                                color = if (isAlert) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                                 modifier = Modifier.height(24.dp),
+                             ) {
+                                 Text(
+-                                    text = "Allergy: ${patient.allergyHistory}",
++                                    text = if (allergy is AllergyState.Recorded) {
++                                        "Allergy: ${allergy.text}"
++                                    } else {
++                                        stringResource(R.string.no_allergy_history)
++                                    },
+                                     style = MaterialTheme.typography.labelSmall,
+                                     fontWeight = FontWeight.Bold,
+-                                    color = MaterialTheme.colorScheme.onErrorContainer,
++                                    color = if (isAlert) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                     maxLines = 1,
+                                     overflow = TextOverflow.Ellipsis,
+                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt
+index 06cd89b..241ec71 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt
+@@ -42,6 +42,7 @@ import com.sherifradwan.ancnative.ui.parseDeliveryNotes
+ @Composable
+ fun DeliveryPlanningCard(
+     patient: DemoPatient,
++    canEdit: Boolean,
+     modifier: Modifier = Modifier,
+     onEditPatient: () -> Unit,
+ ) {
+@@ -81,18 +82,20 @@ fun DeliveryPlanningCard(
+                         modifier = Modifier.semantics { heading() },
+                     )
+                 }
+-                IconButton(
+-                    onClick = onEditPatient,
+-                    modifier = Modifier
+-                        .minimumTouchTarget()
+-                        .testTag("editDeliveryPlan"),
+-                ) {
+-                    Icon(
+-                        Icons.Default.Edit,
+-                        contentDescription = stringResource(R.string.edit_delivery_plan),
+-                        tint = MaterialTheme.colorScheme.primary,
+-                        modifier = Modifier.size(20.dp),
+-                    )
++                if (canEdit) {
++                    IconButton(
++                        onClick = onEditPatient,
++                        modifier = Modifier
++                            .minimumTouchTarget()
++                            .testTag("editDeliveryPlan"),
++                    ) {
++                        Icon(
++                            Icons.Default.Edit,
++                            contentDescription = stringResource(R.string.edit_delivery_plan),
++                            tint = MaterialTheme.colorScheme.primary,
++                            modifier = Modifier.size(20.dp),
++                        )
++                    }
+                 }
+             }
+ 
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+index bf1d744..630ce70 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+@@ -131,6 +131,7 @@ fun OverviewTab(
+         // 5. Delivery Planning Card Snapshot
+         DeliveryPlanningCard(
+             patient = patient,
++            canEdit = canEdit,
+             onEditPatient = {
+                 onEvent(
+                     AncEvent.StartPatientEditor(
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt
+index 1c86cdd..4d4bbb9 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt
+@@ -37,6 +37,7 @@ fun PlanTab(
+         // Full Delivery Planning Card
+         DeliveryPlanningCard(
+             patient = patient,
++            canEdit = canEdit,
+             onEditPatient = {
+                 onEvent(
+                     AncEvent.StartPatientEditor(
+package com.sherifradwan.ancnative.ui
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+/** Spec-derived tests for classifyAllergy (ORACLE-A1..A4 and the string-level part of A5). Synthetic strings only. */
+class AllergyStateTest {
+
+    // ORACLE-A1
+    @Test
+    fun nullEmptyAndBlank_areNotRecorded() {
+        listOf(null, "", " ", "   ", "\t", "\n", " \t\n ").forEach {
+            assertEquals("input=$it", AllergyState.NotRecorded, classifyAllergy(it))
+        }
+    }
+
+    // ORACLE-A2
+    @Test
+    fun explicitNegations_areExplicitlyNone() {
+        listOf(
+            "NKDA", "nkda", "Nkda", " None ", "NKA", "nka",
+            "No known drug allergies", "No known drug allergies (NKDA)",
+            "No known allergies.", "No known allergies", "No known allergy",
+            "No allergies", "NO ALLERGIES", "no known drug allergies (nkda)",
+            "No", "no", "NO", "No.", "Nil", "nil", "NIL", "None", "none", "NONE", "None.",
+            "  NKDA.  ", "nkda.",
+        ).forEach {
+            assertEquals("input=\"$it\"", AllergyState.ExplicitlyNone, classifyAllergy(it))
+        }
+    }
+
+    // ORACLE-A3
+    @Test
+    fun plainAllergen_isRecordedWithOriginalText() {
+        assertEquals(AllergyState.Recorded("Penicillin"), classifyAllergy("Penicillin"))
+    }
+
+    @Test
+    fun recorded_preservesOriginalCasingAndTrimsWhitespace() {
+        assertEquals(AllergyState.Recorded("PENICILLIN"), classifyAllergy("PENICILLIN"))
+        assertEquals(AllergyState.Recorded("sulfa Rash"), classifyAllergy("  sulfa Rash \n"))
+        assertEquals(AllergyState.Recorded("Latex"), classifyAllergy("\tLatex  "))
+    }
+
+    // ORACLE-A4
+    @Test
+    fun negationFollowedByContent_isRecordedNeverNone() {
+        assertEquals(
+            AllergyState.Recorded("No known allergies except penicillin"),
+            classifyAllergy("No known allergies except penicillin"),
+        )
+        assertEquals(
+            AllergyState.Recorded("NKDA but sulfa rash"),
+            classifyAllergy("NKDA but sulfa rash"),
+        )
+        assertEquals(
+            AllergyState.Recorded("No known allergies except penicillin"),
+            classifyAllergy("  No known allergies except penicillin  "),
+        )
+    }
+
+    @Test
+    fun negationPrefixOrContainment_isRecorded() {
+        listOf(
+            "None, but latex",
+            "No, penicillin",
+            "Nil except peanuts",
+            "NKDA, mild rash to sulfa",
+            "No known drug allergies; shellfish",
+            "Nonsteroidal anti-inflammatory",
+            "Nilotinib",
+            "Nuts",
+            "Not sure",
+            "No known",
+        ).forEach {
+            val result = classifyAllergy(it)
+            assertTrue("input=\"$it\" got $result", result is AllergyState.Recorded)
+            assertEquals(it.trim(), (result as AllergyState.Recorded).text)
+        }
+    }
+
+    // ORACLE-A5 (string level): the fixture string must not be Recorded (red chip).
+    @Test
+    fun fixtureNkdaString_isNotRecorded() {
+        val result = classifyAllergy("No known drug allergies (NKDA)")
+        assertEquals(AllergyState.ExplicitlyNone, result)
+        assertFalse(result is AllergyState.Recorded)
+    }
+
+    @Test
+    fun trailingPeriodAndCaseVariants_ofFixtureString() {
+        assertEquals(AllergyState.ExplicitlyNone, classifyAllergy("No known drug allergies (NKDA)."))
+        assertEquals(AllergyState.ExplicitlyNone, classifyAllergy("NO KNOWN DRUG ALLERGIES (NKDA)"))
+    }
+}
+package com.sherifradwan.ancnative
+
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.sherifradwan.ancnative.model.DemoFixtures
+import com.sherifradwan.ancnative.ui.AncTheme
+import com.sherifradwan.ancnative.ui.patienthub.components.DeliveryPlanningCard
+import org.junit.Assert.assertEquals
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+/** ORACLE-A6: the editDeliveryPlan control exists only when canEdit is true. */
+@RunWith(AndroidJUnit4::class)
+class DeliveryPlanningCardEditGateTest {
+    @get:Rule
+    val compose = createComposeRule()
+
+    @Test
+    fun canEditFalse_hidesEditDeliveryPlan() {
+        val patient = DemoFixtures.patients.first()
+        compose.setContent {
+            AncTheme {
+                DeliveryPlanningCard(patient = patient, onEditPatient = {}, canEdit = false)
+            }
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag("editDeliveryPlan").assertDoesNotExist()
+    }
+
+    @Test
+    fun canEditTrue_showsEditDeliveryPlanAndInvokesCallback() {
+        val patient = DemoFixtures.patients.first()
+        var clicks = 0
+        compose.setContent {
+            AncTheme {
+                DeliveryPlanningCard(patient = patient, onEditPatient = { clicks++ }, canEdit = true)
+            }
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag("editDeliveryPlan").assertIsDisplayed()
+        compose.onNodeWithTag("editDeliveryPlan").performClick()
+        assertEquals(1, clicks)
+    }
+}

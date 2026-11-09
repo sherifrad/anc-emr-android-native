@@ -97,13 +97,14 @@ Replaces the elevated cards for sections 1 to 3.
 * **Behaviour:**
   * A header row: a 24dp rounded icon capsule (decorative, `contentDescription = null`), the title (`titleMedium`, bold, `Modifier.weight(1f)` so a long title wraps instead of pushing the action out), and the optional action.
   * The title is marked `semantics { heading() }`. The action slot applies `Modifier.minimumTouchTarget()`.
-  * A 0.75dp `HorizontalDivider` (`outlineVariant`, decorative, no contrast requirement), then `content`.
+  * Content follows the header. A 0.75dp `HorizontalDivider` (`outlineVariant`, decorative, no contrast requirement) separates one section from the next; there is no divider under the header.
   * Callers pass the section's test tag through `modifier` (see §7.1 Phase C).
 
 ### 4.3 Previous-Pregnancy Row (`PastDeliveryMicroRow`)
-* **Size and targets:** minimum height 48dp; it grows with content and font scale. The whole row is the edit target (`Modifier.minimumTouchTarget()`). A trailing `DeleteIconButton` is the only other control. Both are hidden when editing is not allowed (`!canEdit`), as the old card did. Line 1 may wrap to two lines. Line 2 is `maxLines = 2` with ellipsis; the full text is in the editor.
+* **Size and targets:** minimum height 48dp; it grows with content and font scale. The whole row is the edit target (`Modifier.minimumTouchTarget()`). A trailing `DeleteIconButton` is the only other control. Both are hidden when editing is not allowed (`!canEdit`), as the old card did. Line 1 may wrap to two lines. Line 2 (place, doctor, notes) is `maxLines = 2` with ellipsis; the full text is in the editor. Line 3 holds the extras and any clinician outcome text in their own node (tag `pregnancyExtras-<id>`), wrapping freely, so loss management, termination method and pregnancy type are never clipped.
 * **Line 1:** `Year` (monospaced tabular figures; the existing typography token or font must be confirmed in Phase B), the Outcome chip, and the Mode text.
-* **Line 2:** place and doctor, then recorded notes, then any non-blank extras from the table below.
+* **Line 2:** place and doctor, then recorded notes.
+* **Line 3 (only when present):** non-blank extras from the table below, then `outcomeText` when it differs from the structured outcome label.
 * **Field mapping** (the implementer verifies against `PreviousPregnancyCard.kt` before coding):
 
 | Row element | Source (`DemoPreviousPregnancy`) | Rule |

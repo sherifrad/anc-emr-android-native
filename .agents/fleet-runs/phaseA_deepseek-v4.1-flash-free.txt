@@ -1,0 +1,817 @@
+[0m
+> build · deepseek-v4.1-flash-free
+I'll start by reading the spec and the diff.
+[0m→ [0mRead .agents/specs/overview_phase_a_spec.md 
+[0m$ [0mwc -l /Users/sherifgamalradwan/anc-emr-android-native/.agents/fleet-runs/phaseA.diff
+333 /Users/sherifgamalradwan/anc-emr-android-native/.agents/fleet-runs/phaseA.diff
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead .agents/fleet-runs/phaseA.diff 
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "DeliveryPlanningCard(" --include=*.kt . | grep -v "^./.agents"
+zsh:1: no matches found: --include=*.kt
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && git status --porcelain && echo "---" && git log --oneline -3
+M app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt
+ M app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt
+ M app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
+ M app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt
+ M app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+ M app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt
+ M docs/designs/patient_workspace_overview_tab_optimization.md
+?? .agents/ROUTING_LOG.jsonl
+?? .agents/fleet-runs/phaseA.diff
+?? .agents/fleet-runs/phaseA_brief.md
+?? .agents/fleet-runs/phaseA_deepseek-v4.1-flash-free.txt
+?? .agents/fleet-runs/phaseA_glm-5.3-flash-free.txt
+?? .agents/specs/
+?? app/src/androidTest/java/com/sherifradwan/ancnative/DeliveryPlanningCardEditGateTest.kt
+?? app/src/test/java/com/sherifradwan/ancnative/ui/AllergyStateTest.kt
+?? comprehension_report.md
+?? critic_report.md
+?? goldfish_review_report.md
+?? goldfish_review_report_stage5-9.md
+?? implementation_readiness_report.md
+?? intermediate_zoom_out_report.md
+?? zoom_out_report.md
+---
+4d58182 docs(design): publish patient workspace overview tab optimization design document
+f7579be feat(ui): implement audited high-density patient directory card and actions modal sheet
+25966a8 docs(design): publish audited RFC for high-density patient directory card
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "DeliveryPlanningCard" app/src --include="*.kt"
+app/src/androidTest/java/com/sherifradwan/ancnative/DeliveryPlanningCardEditGateTest.kt:10:import com.sherifradwan.ancnative.ui.patienthub.components.DeliveryPlanningCard
+app/src/androidTest/java/com/sherifradwan/ancnative/DeliveryPlanningCardEditGateTest.kt:18:class DeliveryPlanningCardEditGateTest {
+app/src/androidTest/java/com/sherifradwan/ancnative/DeliveryPlanningCardEditGateTest.kt:27:                DeliveryPlanningCard(patient = patient, onEditPatient = {}, canEdit = false)
+app/src/androidTest/java/com/sherifradwan/ancnative/DeliveryPlanningCardEditGateTest.kt:40:                DeliveryPlanningCard(patient = patient, onEditPatient = { clicks++ }, canEdit = true)
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt:22:import com.sherifradwan.ancnative.ui.patienthub.components.DeliveryPlanningCard
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt:132:        DeliveryPlanningCard(
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt:17:import com.sherifradwan.ancnative.ui.patienthub.components.DeliveryPlanningCard
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt:38:        DeliveryPlanningCard(
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt:43:fun DeliveryPlanningCard(
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "allergyHistory" app/src --include="*.kt"
+app/src/androidTest/java/com/sherifradwan/ancnative/storage/EncryptedRecordsTest.kt:348:                allergyHistory = null,
+app/src/androidTest/java/com/sherifradwan/ancnative/storage/EncryptedRecordsTest.kt:1033:        allergyHistory = null,
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:336:            allergyHistory = null,
+app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt:277:            allergyHistory = allergy,
+app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintSectionTitlesTest.kt:100:        allergyHistory = "Penicillin rash",
+app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt:145:        allergyHistory = MARKER,
+app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintSampleDumpTest.kt:80:            allergyHistory = "Penicillin rash",
+app/src/test/java/com/sherifradwan/ancnative/state/DraftMappingTest.kt:157:            mapOf("medicalHistory" to "m", "surgicalHistory" to "s", "familyHistory" to "f", "allergyHistory" to "a"),
+app/src/test/java/com/sherifradwan/ancnative/state/AncStateTest.kt:458:        assertEquals("No known drug allergies", updated.historiesDraft?.values?.allergyHistory)
+app/src/test/java/com/sherifradwan/ancnative/storage/BackupVaultIntegrationAndZeroDataLossTest.kt:87:                assertEquals(original.allergyHistory, restoredPatient.allergyHistory)
+app/src/test/java/com/sherifradwan/ancnative/storage/EncryptedBackupTest.kt:83:                allergyHistory = "Penicillin",
+app/src/test/java/com/sherifradwan/ancnative/model/DemoFixturesVerificationTest.kt:32:        assertEquals("No known drug allergies (NKDA)", demo002.allergyHistory)
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:245:                        val allergy = classifyAllergy(patient.allergyHistory)
+app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt:1074:                            <span class="v ${if (!patient.allergyHistory.isNullOrBlank()) "text-rose font-bold" else ""}">${escapeHtml(patient.allergyHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt:291:                        val allergy = classifyAllergy(patient.allergyHistory)
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicalHistoriesCard.kt:44:        !patient.allergyHistory.isNullOrBlank()
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicalHistoriesCard.kt:106:                if (!patient.allergyHistory.isNullOrBlank()) {
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicalHistoriesCard.kt:125:                                text = "Allergy: ${patient.allergyHistory}",
+app/src/main/java/com/sherifradwan/ancnative/ui/OtherHistoriesEditor.kt:82:                        if (draft.values.allergyHistory.isBlank()) {
+app/src/main/java/com/sherifradwan/ancnative/ui/OtherHistoriesEditor.kt:206:                    value = draft.values.allergyHistory,
+app/src/main/java/com/sherifradwan/ancnative/ui/OtherHistoriesEditor.kt:209:                    tag = "allergyHistory",
+app/src/main/java/com/sherifradwan/ancnative/ui/OtherHistoriesEditor.kt:217:                    tagPrefix = "allergyHistoryPreset",
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:481:    val allergyHistory: String = "",
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:1346:            allergyHistory = patient.allergyHistory.orEmpty(),
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:1581:            HistoriesDraftField.ALLERGY -> draft.values.copy(allergyHistory = event.value)
+app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt:145:                "allergyHistory" to draft.values.allergyHistory,
+app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt:393:                        allergyHistory = record.fields["allergyHistory"] ?: v.allergyHistory,
+app/src/main/java/com/sherifradwan/ancnative/storage/EncryptedBackupManager.kt:260:            putNullable("allergyHistory", p.allergyHistory)
+app/src/main/java/com/sherifradwan/ancnative/storage/EncryptedBackupManager.kt:294:        putNullable("allergyHistory", allergyHistory)
+app/src/main/java/com/sherifradwan/ancnative/storage/EncryptedBackupManager.kt:568:                allergyHistory = optNullableString("allergyHistory"),
+app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt:107:    val allergyHistory: String?,
+app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt:125:                allergyHistory = draft.values.allergyHistory.normalized(),
+app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt:326:            listOf(medicalHistory, surgicalHistory, familyHistory, allergyHistory).all { it == it.normalized() }
+app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt:361:            medicalHistory, surgicalHistory, familyHistory, allergyHistory,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt:166:            allergy_history = :allergyHistory,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt:179:        allergyHistory: String?,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:443:            allergyHistory = command.allergyHistory,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:695:        allergyHistory = allergyHistory,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt:831:        allergyHistory = allergyHistory,
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt:32:    @ColumnInfo(name = "allergy_history") val allergyHistory: String? = null,
+app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt:21:            allergyHistory = "No known drug allergies (NKDA)",
+app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt:428:            allergyHistory = "No known drug allergies (NKDA)",
+app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt:772:            allergyHistory = "Penicillin (moderate urticaria)",
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt:21:    val allergyHistory: String? = null,
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "canEdit" app/src/main/java/com/sherifradwan/ancnative/ui/patienthub --include="*.kt" | head -60
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/LabsTab.kt:41:    canEdit: Boolean,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/LabsTab.kt:70:                if (canEdit && patient.status != "archived") {
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/LabsTab.kt:109:                    canEdit = canEdit,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/ScansTab.kt:61:    canEdit: Boolean,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/ScansTab.kt:86:                if (canEdit && patient.status != "archived") {
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/ScansTab.kt:201:                        if (canEdit) {
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt:32:    canEdit: Boolean,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt:49:            onEdit = if (canEdit) {
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt:64:            onAddPregnancy = if (canEdit) {
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt:81:            onEdit = if (canEdit) {
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt:107:                    canEdit = canEdit,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt:134:            canEdit = canEdit,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt:49:    canEdit: Boolean,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt:70:        if (canEdit && patient.status != "archived") {
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt:74:                    canStartEditor = canEdit,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt:93:                if (canEdit && patient.status != "archived") {
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt:141:                    canEdit = canEdit,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt:190:                    canEdit = canEdit,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/VisitsTab.kt:56:    canEdit: Boolean,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/VisitsTab.kt:87:                if (canEdit && patient.status != "archived") {
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/VisitsTab.kt:244:                        if (canEdit) {
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt:23:    canEdit: Boolean,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt:40:            canEdit = canEdit,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt:138:    val canEdit = patient.status != "archived"
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt:142:    val canModifyData = canEdit && !state.hasDirtyDraft && !isSaveBlocked && !state.deleteRunning
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt:205:                            canEdit = canModifyData,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt:214:                            canEdit = canModifyData,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt:222:                            canEdit = canModifyData,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt:233:                            canEdit = canModifyData,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt:243:                            canEdit = canModifyData,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt:250:                            canEdit = canModifyData,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PreviousPregnancyCard.kt:34:    canEdit: Boolean,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PreviousPregnancyCard.kt:101:            if (canEdit) {
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationCard.kt:49:    canEdit: Boolean,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationCard.kt:102:                if (canEdit) {
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/LabReportItem.kt:61:    canEdit: Boolean,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/LabReportItem.kt:142:                    if (canEdit) {
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/LabReportItem.kt:240:                                                canEdit = canEdit,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/LabReportItem.kt:269:                                    canEdit = canEdit,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/LabReportItem.kt:280:            if (canEdit) {
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/LabReportItem.kt:308:    canEdit: Boolean,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/LabReportItem.kt:321:            .clickable(enabled = canEdit, onClick = onEdit)
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/LabReportItem.kt:368:            if (canEdit) {
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt:45:    canEdit: Boolean,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt:85:                if (canEdit) {
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && sed -n 1,60p app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt && echo "=====OVERVIEW" && sed -n 1,80p app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt && echo "=====OVERVIEW132" && sed -n 120,150p app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+package com.sherifradwan.ancnative.ui.patienthub.tabs
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
+import com.sherifradwan.ancnative.model.DemoAttachment
+import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.state.AncEvent
+import com.sherifradwan.ancnative.ui.patienthub.components.AttachmentsSectionCard
+import com.sherifradwan.ancnative.ui.patienthub.components.DeliveryPlanningCard
+import java.util.UUID
+
+@Composable
+fun PlanTab(
+    patient: DemoPatient,
+    canEdit: Boolean,
+    onEvent: (AncEvent) -> Unit,
+    onAddAttachment: () -> Unit,
+    onViewAttachment: (DemoAttachment) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 48.dp)
+            .testTag("planTabContent"),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        // Full Delivery Planning Card
+        DeliveryPlanningCard(
+            patient = patient,
+            canEdit = canEdit,
+            onEditPatient = {
+                onEvent(
+                    AncEvent.StartPatientEditor(
+                        patientId = patient.id,
+                        newPatientId = patient.id,
+                        editorSessionId = UUID.randomUUID().toString(),
+                    ),
+                )
+            },
+        )
+
+        // Full Documents & Attachments Section
+        AttachmentsSectionCard(
+            patient = patient,
+            onAddAttachment = onAddAttachment,
+            onViewAttachment = onViewAttachment,
+        )
+    }
+}
+=====OVERVIEW
+package com.sherifradwan.ancnative.ui.patienthub.tabs
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.sherifradwan.ancnative.model.DemoAttachment
+import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
+import com.sherifradwan.ancnative.state.AncEvent
+import com.sherifradwan.ancnative.storage.DeletableType
+import com.sherifradwan.ancnative.ui.patienthub.components.AttachmentsSectionCard
+import com.sherifradwan.ancnative.ui.patienthub.components.DeliveryPlanningCard
+import com.sherifradwan.ancnative.ui.patienthub.components.GestationalDatingCard
+import com.sherifradwan.ancnative.ui.patienthub.components.MedicalHistoriesCard
+import com.sherifradwan.ancnative.ui.patienthub.components.ObstetricParityCard
+import com.sherifradwan.ancnative.ui.patienthub.components.PreviousPregnancyCard
+import java.util.UUID
+
+@Composable
+fun OverviewTab(
+    patient: DemoPatient,
+    canEdit: Boolean,
+    onEvent: (AncEvent) -> Unit,
+    onAddAttachment: () -> Unit,
+    onViewAttachment: (DemoAttachment) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 48.dp)
+            .testTag("overviewTabContent"),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        // 1. Authoritative Gestational Dating Card
+        GestationalDatingCard(
+            dating = patient.dating,
+            onEdit = if (canEdit) {
+                {
+                    onEvent(
+                        AncEvent.StartDatingEditor(
+                            patientId = patient.id,
+                            editorSessionId = UUID.randomUUID().toString(),
+                        ),
+                    )
+                }
+            } else null,
+        )
+
+        // 2. Obstetric Parity Card
+        ObstetricParityCard(
+            patient = patient,
+            onAddPregnancy = if (canEdit) {
+                {
+                    onEvent(
+                        AncEvent.StartPregnancyEditor(
+                            patientId = patient.id,
+                            pregnancyId = null,
+                            newPregnancyId = UUID.randomUUID().toString(),
+                            editorSessionId = UUID.randomUUID().toString(),
+                        ),
+                    )
+                }
+            } else null,
+        )
+
+        // 3. Medical, Surgical & Family Histories
+        MedicalHistoriesCard(
+            patient = patient,
+=====OVERVIEW132
+                            AncEvent.RequestDelete(
+                                patientId = patient.id,
+                                type = DeletableType.PREVIOUS_PREGNANCY,
+                                recordId = pregnancy.id,
+                            ),
+                        )
+                    },
+                )
+            }
+        }
+
+        // 5. Delivery Planning Card Snapshot
+        DeliveryPlanningCard(
+            patient = patient,
+            canEdit = canEdit,
+            onEditPatient = {
+                onEvent(
+                    AncEvent.StartPatientEditor(
+                        patientId = patient.id,
+                        newPatientId = patient.id,
+                        editorSessionId = UUID.randomUUID().toString(),
+                    ),
+                )
+            },
+        )
+
+        // 6. Clinical Documents & Attachments Snapshot
+        AttachmentsSectionCard(
+            patient = patient,
+            onAddAttachment = onAddAttachment,
+            onViewAttachment = onViewAttachment,
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "no_allergy_history\|not_recorded" app/src/main/res/values/strings.xml; echo "---test file imports"; sed -n 1,20p app/src/androidTest/java/com/sherifradwan/ancnative/DeliveryPlanningCardEditGateTest.kt
+app/src/main/res/values/strings.xml:17:    <string name="not_recorded">Not recorded</string>
+app/src/main/res/values/strings.xml:278:    <string name="no_allergy_history">No known drug allergies</string>
+---test file imports
+package com.sherifradwan.ancnative
+
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.sherifradwan.ancnative.model.DemoFixtures
+import com.sherifradwan.ancnative.ui.AncTheme
+import com.sherifradwan.ancnative.ui.patienthub.components.DeliveryPlanningCard
+import org.junit.Assert.assertEquals
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+/** ORACLE-A6: the editDeliveryPlan control exists only when canEdit is true. */
+@RunWith(AndroidJUnit4::class)
+class DeliveryPlanningCardEditGateTest {
+    @get:Rule
+    val compose = createComposeRule()
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "editDeliveryPlan\|deliveryPlanningCard" app/src --include="*.kt"
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:679:        compose.onNodeWithTag("workspaceList").performScrollToNode(hasTestTag("deliveryPlanningCard"))
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:680:        compose.onNodeWithTag("deliveryPlanningCard").assertIsDisplayed()
+app/src/androidTest/java/com/sherifradwan/ancnative/DeliveryPlanningCardEditGateTest.kt:16:/** ORACLE-A6: the editDeliveryPlan control exists only when canEdit is true. */
+app/src/androidTest/java/com/sherifradwan/ancnative/DeliveryPlanningCardEditGateTest.kt:31:        compose.onNodeWithTag("editDeliveryPlan").assertDoesNotExist()
+app/src/androidTest/java/com/sherifradwan/ancnative/DeliveryPlanningCardEditGateTest.kt:44:        compose.onNodeWithTag("editDeliveryPlan").assertIsDisplayed()
+app/src/androidTest/java/com/sherifradwan/ancnative/DeliveryPlanningCardEditGateTest.kt:45:        compose.onNodeWithTag("editDeliveryPlan").performClick()
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt:56:            .testTag("deliveryPlanningCard"),
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt:90:                            .testTag("editDeliveryPlan"),
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && sed -n 1,60p app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt && echo "=====BODY 100-200" && sed -n 100,200p app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt
+package com.sherifradwan.ancnative.ui.patienthub.components
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.sherifradwan.ancnative.R
+import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.ui.DeliverySectionBox
+import com.sherifradwan.ancnative.ui.DeliveryTone
+import com.sherifradwan.ancnative.ui.KeyFactTile
+import com.sherifradwan.ancnative.ui.formatBloodGroup
+import com.sherifradwan.ancnative.ui.isHighRisk
+import com.sherifradwan.ancnative.ui.isRhNegative
+import com.sherifradwan.ancnative.ui.minimumTouchTarget
+import com.sherifradwan.ancnative.ui.parseDeliveryNotes
+
+@Composable
+fun DeliveryPlanningCard(
+    patient: DemoPatient,
+    canEdit: Boolean,
+    modifier: Modifier = Modifier,
+    onEditPatient: () -> Unit,
+) {
+    val sections = remember(patient.obstetricNotes) { parseDeliveryNotes(patient.obstetricNotes) }
+    val latestScan = patient.ultrasoundScans.maxByOrNull { it.date }
+    val rhNegative = isRhNegative(patient.bloodGroupText)
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("deliveryPlanningCard"),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+=====BODY 100-200
+            }
+
+            // Key clinical facts: label above, bold value, each in its own tile
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                KeyFactTile(
+                    label = stringResource(R.string.blood_group),
+                    value = formatBloodGroup(patient.bloodGroupText),
+                    emphasize = rhNegative,
+                    modifier = Modifier.weight(1f),
+                )
+                KeyFactTile(
+                    label = stringResource(R.string.current_gestational_age),
+                    value = patient.dating?.calculateGestationalAge(),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                KeyFactTile(
+                    label = stringResource(R.string.agreed_edd),
+                    value = patient.dating?.agreedEdd ?: patient.dating?.ultrasoundEdd,
+                    modifier = Modifier.weight(1f),
+                )
+                KeyFactTile(
+                    label = stringResource(R.string.manual_risk),
+                    value = patient.riskLevel,
+                    emphasize = isHighRisk(patient.riskLevel),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                KeyFactTile(
+                    label = stringResource(R.string.fetal_presentation),
+                    value = latestScan?.presentation,
+                    modifier = Modifier.weight(1f),
+                )
+                KeyFactTile(
+                    label = stringResource(R.string.placental_site),
+                    value = latestScan?.placentalSite,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+            HorizontalDivider()
+
+            val defaultPlaceholder = stringResource(R.string.no_record)
+
+            DeliverySectionBox(
+                title = "Agreed Delivery Hospital",
+                value = sections.hospital,
+                tone = DeliveryTone.HOSPITAL,
+                placeholder = defaultPlaceholder,
+                modifier = Modifier.testTag("deliveryHospital"),
+            )
+            DeliverySectionBox(
+                title = "Agreed Delivery Fees",
+                value = sections.fees,
+                tone = DeliveryTone.FEE,
+                placeholder = defaultPlaceholder,
+                modifier = Modifier.testTag("deliveryFees"),
+            )
+            DeliverySectionBox(
+                title = "Delivery Plan",
+                value = sections.plan,
+                tone = DeliveryTone.PLAN,
+                placeholder = defaultPlaceholder,
+                modifier = Modifier.testTag("deliveryPlan"),
+            )
+            DeliverySectionBox(
+                title = "Postpartum Note",
+                value = sections.postpartum,
+                tone = DeliveryTone.POSTPARTUM,
+                placeholder = defaultPlaceholder,
+                modifier = Modifier.testTag("deliveryPostpartum"),
+            )
+        }
+    }
+}
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -n "stringResource\|import com.sherifradwan.ancnative.R\|import androidx.compose.ui.res" app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt | head -20; echo "=====COMPONENTS"; grep -n "stringResource\|import androidx.compose.ui.res\|import com.sherifradwan.ancnative.R" app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt | head -20
+68:import androidx.compose.ui.res.stringResource
+73:import com.sherifradwan.ancnative.R
+268:                                gaText = stringResource(R.string.ga_prefix, ga),
+303:                                        stringResource(R.string.no_allergy_history)
+=====COMPONENTS
+44:import androidx.compose.ui.res.stringResource
+53:import com.sherifradwan.ancnative.R
+129:                                    contentDescription = stringResource(R.string.back),
+177:                                        contentDescription = stringResource(R.string.print_patient_report),
+249:                            AllergyState.ExplicitlyNone -> stringResource(R.string.no_allergy_history)
+250:                            AllergyState.NotRecorded -> stringResource(R.string.not_recorded)
+295:                                contentDescription = stringResource(R.string.back),
+337:                                contentDescription = stringResource(R.string.print_patient_report),
+370:                                    contentDescription = stringResource(R.string.back),
+425:        label = stringResource(label),
+455:            text = value?.takeIf(String::isNotBlank) ?: stringResource(R.string.not_recorded),
+491:        supportingText = if (showError) ({ Text(errorMessage ?: stringResource(R.string.correct_highlighted_field)) }) else null,
+508:                hasErrors -> stringResource(R.string.correct_highlighted_fields)
+509:                state.savePhase == SavePhase.PENDING -> stringResource(R.string.save_pending)
+510:                state.savePhase == SavePhase.RECONCILING -> stringResource(R.string.save_reconciling)
+511:                state.savePhase == SavePhase.UNRESOLVED -> stringResource(R.string.save_unresolved)
+512:                else -> stringResource(state.saveError.stringRes())
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && sed -n 236,275p app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt; echo "=====HEADER 280-320"; sed -n 278,322p app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
+style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                )
+                            }
+                        }
+
+                        // 7. Allergy Status
+                        val allergy = classifyAllergy(patient.allergyHistory)
+                        val isAlert = allergy is AllergyState.Recorded
+                        val allergyLabel = when (allergy) {
+                            is AllergyState.Recorded -> allergy.text
+                            AllergyState.ExplicitlyNone -> stringResource(R.string.no_allergy_history)
+                            AllergyState.NotRecorded -> stringResource(R.string.not_recorded)
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = if (isAlert) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                        ) {
+                            Text(
+                                text = allergyLabel,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = if (isAlert) FontWeight.Bold else FontWeight.SemiBold,
+                                color = if (isAlert) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        PatientCardVariant.STICKY_COMPACT -> {
+            Surface(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+=====HEADER 280-320
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        ClinicalRiskBadge(isHighRisk = isHighRisk(patient.riskLevel))
+                        patient.visits.firstOrNull()?.bloodPressure?.let { bp ->
+                            BpAlertLabel(bp)
+                        }
+                        if (!patient.ageText.isNullOrBlank()) {
+                            PatientAgeBadge(ageText = patient.ageText)
+                        }
+                        ObstetricParityBadge(patient.gravida, patient.parity, patient.abortion)
+                        if (!patient.bloodGroupText.isNullOrBlank()) {
+                            BloodGroupBadge(patient.bloodGroupText)
+                        }
+                        val allergy = classifyAllergy(patient.allergyHistory)
+                        if (allergy !is AllergyState.NotRecorded) {
+                            val isAlert = allergy is AllergyState.Recorded
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = if (isAlert) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                                modifier = Modifier.height(24.dp),
+                            ) {
+                                Text(
+                                    text = if (allergy is AllergyState.Recorded) {
+                                        "Allergy: ${allergy.text}"
+                                    } else {
+                                        stringResource(R.string.no_allergy_history)
+                                    },
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isAlert) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                                )
+                            }
+                        }
+                    }
+
+                    // Compact Clinical Attention Strip (36dp min height)
+                    if (hasAttention) {
+                        CompactClinicalAttentionStrip(
+                            attention = patient.clinicalAttention,
+                            severeBp = severeBp,
+                            onOpenDialog = onOpenAttentionDialog,
+                        )
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "\"Allergy" app/src/main --include="*.kt"; echo "=====MEDICAL HISTORIES"; sed -n 95,140p app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicalHistoriesCard.kt
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt:301:                                        "Allergy: ${allergy.text}"
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicalHistoriesCard.kt:125:                                text = "Allergy: ${patient.allergyHistory}",
+=====MEDICAL HISTORIES
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = "No records",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    )
+                }
+            } else {
+                if (!patient.allergyHistory.isNullOrBlank()) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f)),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Text(
+                                text = "Allergy: ${patient.allergyHistory}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                            )
+                        }
+                    }
+                }
+                if (!patient.medicalHistory.isNullOrBlank()) {
+                    FactRow(R.string.medical_history, patient.medicalHistory)
+                }
+                if (!patient.surgicalHistory.isNullOrBlank()) {
+                    FactRow(R.string.surgical_history, patient.surgicalHistory)
+                }
+                if (!patient.familyHistory.isNullOrBlank()) {
+                    FactRow(R.string.family_history, patient.familyHistory)
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "assertDoesNotExist" app/src/androidTest --include="*.kt" | head; echo "=====DOCS DIFF"; git diff --stat docs/designs/patient_workspace_overview_tab_optimization.md; git diff docs/designs/patient_workspace_overview_tab_optimization.md | head -40
+app/src/androidTest/java/com/sherifradwan/ancnative/UltrasoundGuidedFlowTest.kt:91:        compose.onNodeWithTag(tag, useUnmergedTree = true).assertDoesNotExist()
+app/src/androidTest/java/com/sherifradwan/ancnative/DraftRecoveryDialogTest.kt:103:        compose.onNodeWithText(string(R.string.draft_recovery_stale), substring = true).assertDoesNotExist()
+app/src/androidTest/java/com/sherifradwan/ancnative/DraftRecoveryDialogTest.kt:111:        compose.onNodeWithTag("draftContinue").assertDoesNotExist()
+app/src/androidTest/java/com/sherifradwan/ancnative/DraftRecoveryDialogTest.kt:112:        compose.onNodeWithTag("draftDiscard").assertDoesNotExist()
+app/src/androidTest/java/com/sherifradwan/ancnative/SecurityWorkflowTest.kt:84:        compose.onNodeWithTag("appLockScreen").assertDoesNotExist()
+app/src/androidTest/java/com/sherifradwan/ancnative/DeleteUndoUiTest.kt:245:    private fun missing(tag: String) = compose.onNodeWithTag(tag, useUnmergedTree = true).assertDoesNotExist()
+app/src/androidTest/java/com/sherifradwan/ancnative/LabEntryDesignTest.kt:92:    private fun missing(tag: String) = compose.onNodeWithTag(tag, useUnmergedTree = true).assertDoesNotExist()
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:95:        compose.onNodeWithText("Maya Example").assertDoesNotExist()
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:96:        compose.onNodeWithText("DEMO-ANC-001").assertDoesNotExist()
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:97:        compose.onNodeWithTag("patientSearch").assertDoesNotExist()
+=====DOCS DIFF
+ .../patient_workspace_overview_tab_optimization.md | 396 ++++++++++-----------
+ 1 file changed, 198 insertions(+), 198 deletions(-)
+diff --git a/docs/designs/patient_workspace_overview_tab_optimization.md b/docs/designs/patient_workspace_overview_tab_optimization.md
+index fcbadf7..20c5cf7 100644
+--- a/docs/designs/patient_workspace_overview_tab_optimization.md
++++ b/docs/designs/patient_workspace_overview_tab_optimization.md
+@@ -3,246 +3,246 @@
+ * **Author:** sherifrad
+ * **Date:** 2026-11-09
+ * **Status:** PROPOSED
++* **Reviewers:** none assigned yet
++* **Related:** the patient directory card RFC in `docs/designs/` (same visual language and "More actions" sheet)
+ 
+ ---
+ 
+ ## 1. Problem Statement & Background
+ 
+ ### 1.1 The Clinical Problem
+-In the native Android Antenatal Care EMR (`anc-emr-android-native`), the Patient Workspace `OverviewTab` acts as the primary landing surface when opening a maternal health chart. Currently, this screen stacks six heavy, independent vertical cards directly below the persistent `PatientHubHeader`:
+-1. `GestationalDatingCard` (~180dp height)
+-2. `ObstetricParityCard` (~140dp height)
+-3. `MedicalHistoriesCard` (~220dp height)
+-4. Prior Pregnancies timeline (`PreviousPregnancyCard` × N deliveries; ~120dp per child)
+-5. `DeliveryPlanningCard` (~260dp height)
+-6. `AttachmentsSectionCard` (~160dp height)
+-
+-On standard 360dp narrow mobile viewports, this architecture introduces severe clinical and usability defects:
+-* **Information Duplication**: The persistent `PatientHubHeader` already displays real-time Gestational Age (`GA: 38w 3d`), EDD, Maternal Age, Gravida/Parity (`G2 P1`), Blood Group (`O+`), Allergies, and Clinical Attention flags. Stacking full Dating and Parity cards immediately below repeats these exact same metrics, consuming ~320dp of vertical viewport before novel clinical history appears.
+-* **Prior Pregnancies Vertical Bloat**: For multiparous patients (e.g., G4 P3 A0), each past pregnancy is rendered in its own bordered card with full headers, borders, and dividers. This pushes subsequent clinical domains (such as planned Cesarean section details and attached laboratory PDFs) down beyond 1,200dp of scrolling.
+-* **Card Fatigue & Visual Noise**: Six floating cards, each with distinct border strokes, tinted backgrounds, and separate elevations, fragment the clinical reading flow. Clinicians must visually parse multiple container boundaries rather than scanning a cohesive medical record.
++In the native Android Antenatal Care EMR (`anc-emr-android-native`), the Patient Workspace `OverviewTab` is the landing screen when a maternal health chart opens. It stacks six bordered cards below the persistent `PatientHubHeader`. Heights below are estimates, not measurements:
++1. `GestationalDatingCard` (about 180dp)
++2. `ObstetricParityCard` (about 140dp)
++3. `MedicalHistoriesCard` (about 220dp)
++4. Prior pregnancies (`PreviousPregnancyCard` once per prior pregnancy; about 120dp each)
++5. `DeliveryPlanningCard` (about 260dp)
++6. `AttachmentsSectionCard` (about 160dp)
++
++On a 360dp phone this causes three problems:
++* **Duplicated information.** `PatientHubHeader` already shows Gestational Age (expanded and collapsed), EDD, maternal age, Gravida/Parity, blood group, allergies and attention flags. The Dating and Parity cards repeat these, using about 320dp (180 + 140) before new history appears.
++* **Long prior-pregnancy stack.** Each prior pregnancy has its own bordered card. For a G4 P3 patient the three cards use about 360dp, pushing the delivery plan and attachments further down (the whole tab can pass 1,200dp, estimate).
++* **Many container boundaries.** Six cards each have a border, tint and elevation, so a clinician parses container edges while scanning the record.
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && git diff --stat app/src; echo "=== full diff of main files vs phaseA.diff check"; git diff app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt | head -20
+.../sherifradwan/ancnative/ui/ClinicalFormat.kt    | 32 ++++++++++++++++++++++
+ .../com/sherifradwan/ancnative/ui/Components.kt    | 17 ++++--------
+ .../ancnative/ui/patienthub/PatientHubHeader.kt    | 16 ++++++++---
+ .../patienthub/components/DeliveryPlanningCard.kt  | 27 ++++++++++--------
+ .../ancnative/ui/patienthub/tabs/OverviewTab.kt    |  1 +
+ .../ancnative/ui/patienthub/tabs/PlanTab.kt        |  1 +
+ 6 files changed, 67 insertions(+), 27 deletions(-)
+=== full diff of main files vs phaseA.diff check
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt
+index c002abf..5ba3cc5 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt
+@@ -13,6 +13,38 @@ internal fun isRhNegative(bloodGroup: String?): Boolean {
+         Regex("\\b(neg|negative|minus)\\b").containsMatchIn(raw)
+ }
+ 
++/** What the allergy field says: nothing entered, an explicit "none", or a real recorded allergy. */
++sealed interface AllergyState {
++    data object NotRecorded : AllergyState
++    data object ExplicitlyNone : AllergyState
++    data class Recorded(val text: String) : AllergyState
++}
++
++private val NoAllergyPhrases = setOf(
++    "nkda",
++    "nka",
++    "none",
++    "no",
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -n "import androidx.compose.ui.test" app/src/androidTest/java/com/sherifradwan/ancnative/DraftRecoveryDialogTest.kt app/src/androidTest/java/com/sherifradwan/ancnative/UltrasoundGuidedFlowTest.kt app/src/androidTest/java/com/sherifradwan/ancnative/DeliveryPlanningCardEditGateTest.kt
+app/src/androidTest/java/com/sherifradwan/ancnative/DraftRecoveryDialogTest.kt:5:import androidx.compose.ui.test.assertIsDisplayed
+app/src/androidTest/java/com/sherifradwan/ancnative/DraftRecoveryDialogTest.kt:6:import androidx.compose.ui.test.junit4.createAndroidComposeRule
+app/src/androidTest/java/com/sherifradwan/ancnative/DraftRecoveryDialogTest.kt:7:import androidx.compose.ui.test.onNodeWithTag
+app/src/androidTest/java/com/sherifradwan/ancnative/DraftRecoveryDialogTest.kt:8:import androidx.compose.ui.test.onNodeWithText
+app/src/androidTest/java/com/sherifradwan/ancnative/DraftRecoveryDialogTest.kt:9:import androidx.compose.ui.test.performClick
+app/src/androidTest/java/com/sherifradwan/ancnative/UltrasoundGuidedFlowTest.kt:7:import androidx.compose.ui.test.assertTextContains
+app/src/androidTest/java/com/sherifradwan/ancnative/UltrasoundGuidedFlowTest.kt:8:import androidx.compose.ui.test.hasTestTag
+app/src/androidTest/java/com/sherifradwan/ancnative/UltrasoundGuidedFlowTest.kt:9:import androidx.compose.ui.test.hasAnyAncestor
+app/src/androidTest/java/com/sherifradwan/ancnative/UltrasoundGuidedFlowTest.kt:10:import androidx.compose.ui.test.hasText
+app/src/androidTest/java/com/sherifradwan/ancnative/UltrasoundGuidedFlowTest.kt:11:import androidx.compose.ui.test.junit4.createAndroidComposeRule
+app/src/androidTest/java/com/sherifradwan/ancnative/UltrasoundGuidedFlowTest.kt:12:import androidx.compose.ui.test.onNodeWithTag
+app/src/androidTest/java/com/sherifradwan/ancnative/UltrasoundGuidedFlowTest.kt:13:import androidx.compose.ui.test.performClick
+app/src/androidTest/java/com/sherifradwan/ancnative/UltrasoundGuidedFlowTest.kt:14:import androidx.compose.ui.test.performScrollTo
+app/src/androidTest/java/com/sherifradwan/ancnative/DeliveryPlanningCardEditGateTest.kt:3:import androidx.compose.ui.test.junit4.createComposeRule
+app/src/androidTest/java/com/sherifradwan/ancnative/DeliveryPlanningCardEditGateTest.kt:4:import androidx.compose.ui.test.assertIsDisplayed
+app/src/androidTest/java/com/sherifradwan/ancnative/DeliveryPlanningCardEditGateTest.kt:5:import androidx.compose.ui.test.onNodeWithTag
+app/src/androidTest/java/com/sherifradwan/ancnative/DeliveryPlanningCardEditGateTest.kt:6:import androidx.compose.ui.test.performClick
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && ls app/src/test/java/com/sherifradwan/ancnative/ui/ | head -20; echo "==="; grep -rn "class ClinicalFormatTest" -A5 app/src/test --include="*.kt" | head -20
+AllergyStateTest.kt
+AttachmentDisplayTitleTest.kt
+ClinicalFormatR2Test.kt
+ClinicalFormatTest.kt
+ClinicalPresetsTest.kt
+DeliveryNotesParserTest.kt
+FormatWeightKgTest.kt
+GestationalBannerLogicTest.kt
+ParseDeliveryNotesSpecTest.kt
+PatientRiskTierTest.kt
+ThemeContrastTest.kt
+patienthub
+report
+===
+app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalFormatTest.kt:13:class ClinicalFormatTest {
+app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalFormatTest.kt-14-
+app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalFormatTest.kt-15-    private data class RhCase(val input: String?, val expect: Boolean) {
+app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalFormatTest.kt-16-        override fun toString() = "input=${input?.let { "\"$it\"" } ?: "null"}"
+app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalFormatTest.kt-17-    }
+app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalFormatTest.kt-18-
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && ./gradlew --offline compileDebugAndroidTestKotlin testDebugUnitTest --tests "com.sherifradwan.ancnative.ui.AllergyStateTest" -q 2>&1 | tail -30
+(no output)
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && ls -la app/build/test-results/testDebugUnitTest/ 2>/dev/null | head; grep -o 'tests="[0-9]*" skipped="[0-9]*" failures="[0-9]*" errors="[0-9]*"' app/build/test-results/testDebugUnitTest/TEST-com.sherifradwan.ancnative.ui.AllergyStateTest.xml 2>/dev/null
+total 8
+drwxr-xr-x@ 4 sherifgamalradwan  staff   128 Nov  9 12:31 .
+drwxr-xr-x@ 4 sherifgamalradwan  staff   128 Oct 12 14:07 ..
+-rw-r--r--@ 1 sherifgamalradwan  staff  1405 Nov  9 12:31 TEST-com.sherifradwan.ancnative.ui.AllergyStateTest.xml
+drwxr-xr-x@ 5 sherifgamalradwan  staff   160 Nov  9 12:31 binary
+tests="8" skipped="0" failures="0" errors="0"
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd /Users/sherifgamalradwan/anc-emr-android-native && grep -rn "Allergy\|NKDA" app/src/androidTest app/src/test --include="*.kt" | grep -v "AllergyStateTest\|EncryptedRecordsTest\|AncStateTest" | head -20
+app/src/test/java/com/sherifradwan/ancnative/ui/ThemeContrastTest.kt:173:            "AllergyAccent" to "AllergyBg",
+app/src/test/java/com/sherifradwan/ancnative/ui/ThemeContrastTest.kt:185:            "AllergyDarkAccent" to "AllergyDarkBg",
+app/src/test/java/com/sherifradwan/ancnative/ui/ThemeContrastTest.kt:186:            "AllergyDarkText" to "AllergyDarkBg",
+app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt:344:            assertFalse(html.contains("NKDA"))
+app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt:353:        assertFalse(html.contains("NKDA"))
+app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt:358:        assertEquals("NKDA", rowValue(q19Html(allergy = "NKDA"), "Drug Allergies:"))
+app/src/test/java/com/sherifradwan/ancnative/model/DemoFixturesVerificationTest.kt:32:        assertEquals("No known drug allergies (NKDA)", demo002.allergyHistory)
+> build · deepseek-v4.1-flash-free
+Reviewed the diff, the spec, and the live working tree; compiled `compileDebugAndroidTestKotlin` and ran `AllergyStateTest` (8/8 pass).
+
+**Findings**
+
+1. **Major** — `ui/patienthub/components/MedicalHistoriesCard.kt:106,125`: the same Overview tab still renders a red warning-icon chip "Allergy: No known drug allergies (NKDA)" for the exact fixture A5 protects, so a clinician scrolling below the header sees a false allergy alert on the same screen. Fix: route it through `classifyAllergy` now (spec defers to Phase C, but A5's user-visible intent is unmet on this tab).
+
+2. **Major** — `ui/report/PatientPrintHtmlGenerator.kt:1074`: printed/exported report colours `NKDA` rose+bold as an allergy (any non-blank string), violating the spec's one-implementation rule for the same clinical fact. Fix: classify there too, and print the neutral text.
+
+3. **Major** — `app/src/test/.../AllergyStateTest.kt` (whole file): A7 is not proven anywhere; nothing asserts `PlanTab`/`OverviewTab` forward `canEdit`, so hardcoding `canEdit = true` in either caller would still pass every test. Fix: add an androidTest opening a read-only/archived patient's Overview and Plan tabs and asserting `editDeliveryPlan` is absent.
+
+4. **Major** — `AllergyStateTest.kt:274` and `DeliveryPlanningCardEditGateTest.kt:31`: A5 is asserted only at string level, and A6 only on the card, so a chip-colour regression (`isAlert` hardcoded, or header ignoring `NotRecorded`) passes. Fix: Compose test asserting no `errorContainer`/red chip for the demo-002 fixture in header and directory card.
+
+5. **Nit** — `ui/ClinicalFormat.kt:37`: only trailing `.`/space are normalised, so `"No  known  drug  allergies"` or `"NKDA\t."` fall to `Recorded` and raise a false red allergy alert (fail-safe, but noisy). Fix: collapse internal whitespace before matching.
+
+6. **Nit** — `AllergyStateTest.kt:275`: hardcodes the fixture string instead of reading the demo-002 patient, so a fixture edit silently invalidates A5. Fix: assert against `DemoFixtures`.
+
+7. **Nit** — `.agents/fleet-runs/phaseA.diff:189,286`: both new test files are pasted without `diff --git`/`+++` headers or `+` prefixes, so the reviewed artifact cannot be applied and does not actually contain the tests. Fix: regenerate with `git add -N && git diff`.
+
+8. **Nit** — `docs/designs/patient_workspace_overview_tab_optimization.md`: an unrelated 198-line rewrite sits in the working tree, outside this diff and Phase A scope. Fix: split into its own change.
+
+Verified: `classifyAllergy` matches A1–A4 including the negative/boundary cases (no hiding path found), display rules match spec, and both `DeliveryPlanningCard` call sites are the only two and use named args.
+
+**Verdict: FIX-NEEDED**

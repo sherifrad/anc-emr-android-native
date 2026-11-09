@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Overview tab sections mock</title>
+<style>
+:root{--surface:#fdfbff;--card:#f3f1f6;--hi:#e8e6ec;--text:#1b1b1f;--muted:#5a5a63;--line:#c9c6d0;--primary:#3b5ba9;--err:#ffdad6;--onerr:#410002;--ter:#ffddb8;--onter:#2b1700;--cap:#dbe2ff}
+:root[data-theme=dark]{--surface:#121316;--card:#1d1e22;--hi:#2a2b30;--text:#e4e2e6;--muted:#aaa9b3;--line:#44464f;--primary:#b1c5ff;--err:#93000a;--onerr:#ffdad6;--ter:#5d3a00;--onter:#ffddb8;--cap:#243567}
+*{box-sizing:border-box}body{margin:0;background:#888;font:14px/1.4 system-ui,sans-serif;color:var(--text)}
+.bar{background:#222;color:#fff;padding:8px 12px;display:flex;flex-wrap:wrap;gap:8px;font-size:12px;position:sticky;top:0;z-index:5}
+.bar button{background:#444;color:#fff;border:0;padding:6px 10px;border-radius:6px;cursor:pointer}.bar button.on{background:#3b5ba9}
+.phone{width:360px;margin:12px auto;background:var(--surface);min-height:600px;padding:12px 16px 40px;font-size:calc(14px*var(--fs,1))}
+.hdr{background:var(--card);border-radius:12px;padding:8px 12px;font-size:.85em;color:var(--muted);margin-bottom:12px}
+.hdr b{color:var(--text)}
+.sec{padding:8px 0}.sec+.sec{border-top:.75px solid var(--line)}
+.sh{display:flex;align-items:center;gap:8px;min-height:48px}
+.cap{width:24px;height:24px;border-radius:8px;background:var(--cap);flex:none}
+.sh h2{margin:0;flex:1;font-size:1.05em;font-weight:700}
+.act{min-width:48px;min-height:48px;border:0;background:none;color:var(--primary);font-weight:600}
+.fact{display:flex;justify-content:space-between;gap:8px;padding:4px 0;font-size:.95em}.fact span:first-child{color:var(--muted)}
+.chip{display:inline-block;border-radius:6px;padding:2px 6px;font-size:.78em;font-weight:600;background:var(--hi);color:var(--muted)}
+.chip.err{background:var(--err);color:var(--onerr)}.chip.ter{background:var(--ter);color:var(--onter)}
+.banner{background:var(--err);color:var(--onerr);border-radius:8px;padding:8px 10px;font-weight:700;margin:4px 0 8px}
+.calm{color:var(--muted);margin:4px 0 8px}
+.row{display:flex;gap:4px;align-items:flex-start;min-height:48px;padding:6px 0}
+.row .main{flex:1;min-width:0}.l1{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.yr{font-variant-numeric:tabular-nums;font-weight:700}.l2{color:var(--muted);font-size:.88em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.del{width:48px;height:48px;border:0;background:none;color:var(--muted);flex:none}
+.ex{background:var(--card);border:1px dashed var(--line);border-radius:12px;padding:12px;margin-top:12px;color:var(--muted);font-size:.9em}
+.note{max-width:700px;margin:8px auto;background:#fff;padding:10px 14px;border-radius:8px;font-size:13px;color:#222}
+</style>
+</head>
+<body>
+<div class="bar">
+ <span>State:</span><button data-s="pop" class="on">Populated G4 P3</button><button data-s="empty">Empty (G1)</button>
+ <span>Allergy:</span><button data-a="rec" class="on">Recorded</button><button data-a="none">Explicitly none</button><button data-a="nr">Not recorded</button>
+ <span>View:</span><button id="rtl">RTL</button><button id="dark">Dark</button><button id="fs">Font 1.3x</button>
+</div>
+<div class="note">Mock for owner approval. Synthetic data only. 360dp width. Shows the three new sections (dating, parity + previous pregnancies, medical histories) as one surface with hairline dividers. The Delivery Plan card and Attachments card are the existing components, unchanged (placeholders below). Edit and delete targets are 48dp. Outcome chips: Stillbirth red, Early loss amber, others neutral; the label is always shown.</div>
+<div class="phone" id="phone">
+ <div class="hdr"><b>Patient header (unchanged)</b> &middot; GA 32w 2d &middot; BP 118/76 &middot; <span id="hdrAllergy"></span></div>
+
+ <div class="sec"><div class="sh"><div class="cap"></div><h2>Pregnancy dating &amp; due date</h2><button class="act">Edit</button></div>
+  <div class="fact"><span>EDD (ultrasound)</span><span><b>14 Mar 2027</b></span></div>
+  <div class="fact"><span>Method</span><span><span class="chip">Ultrasound</span></span></div>
+  <div class="fact"><span>LMP</span><span>07 Jun 2026</span></div>
+  <div class="fact"><span>Notes</span><span>Dated at 9w scan</span></div></div>
+
+ <div class="sec"><div class="sh"><div class="cap"></div><h2>Previous pregnancies</h2><button class="act">Add</button></div>
+  <div class="fact"><span>Parity</span><span><b>G4 P3 A0</b></span></div>
+  <div id="rows"></div>
+  <div class="fact"><span>Obstetric notes</span><span>None recorded</span></div></div>
+
+ <div class="sec"><div class="sh"><div class="cap"></div><h2>Medical, surgical &amp; family history</h2><button class="act">Edit</button></div>
+  <div id="allergy"></div>
+  <div class="fact"><span>Medical</span><span>Chronic hypertension</span></div>
+  <div class="fact"><span>Surgical</span><span>Appendectomy 2015</span></div>
+  <div class="fact"><span>Family</span><span>Diabetes (mother)</span></div></div>
+
+ <div class="ex">Delivery &amp; postpartum plan: existing <code>DeliveryPlanningCard</code>, unchanged except the edit button is hidden when the patient is read-only.</div>
+ <div class="ex">Documents &amp; attachments: existing <code>AttachmentsSectionCard</code>, unchanged.</div>
+</div>
+<script>
+const rowsData=[
+ {y:'2023',o:'Live birth',c:'',m:'Cesarean section (CS)',l2:'Cairo Maternity Hospital, Dr. Sample. Baby 3.4 kg recorded in notes.'},
+ {y:'2021',o:'Stillbirth',c:'err',m:'Vaginal delivery',l2:'Dr. Sample. IUFD at 34 weeks, cause not found.'},
+ {y:'2019',o:'Early loss',c:'ter',m:'',l2:'Medical management. Early pregnancy loss at 9 weeks.'},
+ {y:'2017',o:'Live birth',c:'',m:'Vaginal delivery',l2:'Home city clinic. No complications recorded.'}];
+let S='pop',A='rec';
+function render(){
+ const el=document.getElementById('rows');
+ el.innerHTML=S==='empty'?'<div class="calm">Primigravida. No previous pregnancies recorded.</div>':rowsData.map(r=>`<div class="row"><div class="main"><div class="l1"><span class="yr">${r.y}</span><span class="chip ${r.c}">${r.o}</span>${r.m?`<span>${r.m}</span>`:''}</div><div class="l2">${r.l2}</div></div><button class="del" aria-label="Delete">&#128465;</button></div>`).join('');
+ const al=document.getElementById('allergy'),h=document.getElementById('hdrAllergy');
+ if(A==='rec'){al.innerHTML='<div class="banner">Allergy: Penicillin (urticaria)</div>';h.innerHTML='<span class="chip err">Allergy: Penicillin</span>'}
+ if(A==='none'){al.innerHTML='<div class="calm">No known drug allergies</div>';h.innerHTML='<span class="chip">No known drug allergies</span>'}
+ if(A==='nr'){al.innerHTML='<div class="calm">Allergies: Not recorded</div>';h.innerHTML=''}
+}
+document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{S=b.dataset.s;document.querySelectorAll('[data-s]').forEach(x=>x.classList.toggle('on',x===b));render()});
+document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{A=b.dataset.a;document.querySelectorAll('[data-a]').forEach(x=>x.classList.toggle('on',x===b));render()});
+rtl.onclick=()=>{const d=document.documentElement;d.dir=d.dir==='rtl'?'ltr':'rtl';rtl.classList.toggle('on')};
+dark.onclick=()=>{const d=document.documentElement;d.dataset.theme=d.dataset.theme==='dark'?'':'dark';dark.classList.toggle('on')};
+fs.onclick=()=>{const p=document.getElementById('phone');p.style.setProperty('--fs',p.style.getPropertyValue('--fs')?'':'1.3');fs.classList.toggle('on')};
+render();
+</script>
+</body></html>

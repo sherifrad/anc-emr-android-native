@@ -1,0 +1,178 @@
+[0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead .agents/fleet-runs/phaseA.diff 
+[0m→ [0mRead .agents/specs/overview_phase_a_spec.md 
+> build · glm-5.3-flash-free
+[0m✱ [0mGrep "not_recorded|no_allergy_history" [90m100 matches[0m
+[0m✱ [0mGrep "DeliveryPlanningCard\(" [90m100 matches[0m
+[0m✱ [0mGrep "fun OverviewTab|fun PlanTab" [90m2 matches[0m
+> build · glm-5.3-flash-free
+[0m$ [0msed -n 15,40p app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt; echo ---; sed -n 15,32p app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt; echo ---; sed -n 40,60p app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt; echo ---; sed -n 18,24p app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt; echo ---; git status --porcelain | head -20; echo ---; ls app/src/test/java/com/sherifradwan/ancnative/ui/ 2>/dev/null
+import androidx.compose.ui.unit.dp
+import com.sherifradwan.ancnative.model.DemoAttachment
+import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
+import com.sherifradwan.ancnative.state.AncEvent
+import com.sherifradwan.ancnative.storage.DeletableType
+import com.sherifradwan.ancnative.ui.patienthub.components.AttachmentsSectionCard
+import com.sherifradwan.ancnative.ui.patienthub.components.DeliveryPlanningCard
+import com.sherifradwan.ancnative.ui.patienthub.components.GestationalDatingCard
+import com.sherifradwan.ancnative.ui.patienthub.components.MedicalHistoriesCard
+import com.sherifradwan.ancnative.ui.patienthub.components.ObstetricParityCard
+import com.sherifradwan.ancnative.ui.patienthub.components.PreviousPregnancyCard
+import java.util.UUID
+
+@Composable
+fun OverviewTab(
+    patient: DemoPatient,
+    canEdit: Boolean,
+    onEvent: (AncEvent) -> Unit,
+    onAddAttachment: () -> Unit,
+    onViewAttachment: (DemoAttachment) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+---
+import com.sherifradwan.ancnative.state.AncEvent
+import com.sherifradwan.ancnative.ui.patienthub.components.AttachmentsSectionCard
+import com.sherifradwan.ancnative.ui.patienthub.components.DeliveryPlanningCard
+import java.util.UUID
+
+@Composable
+fun PlanTab(
+    patient: DemoPatient,
+    canEdit: Boolean,
+    onEvent: (AncEvent) -> Unit,
+    onAddAttachment: () -> Unit,
+    onViewAttachment: (DemoAttachment) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+---
+import com.sherifradwan.ancnative.ui.parseDeliveryNotes
+
+@Composable
+fun DeliveryPlanningCard(
+    patient: DemoPatient,
+    canEdit: Boolean,
+    modifier: Modifier = Modifier,
+    onEditPatient: () -> Unit,
+) {
+    val sections = remember(patient.obstetricNotes) { parseDeliveryNotes(patient.obstetricNotes) }
+    val latestScan = patient.ultrasoundScans.maxByOrNull { it.date }
+    val rhNegative = isRhNegative(patient.bloodGroupText)
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("deliveryPlanningCard"),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+---
+            medicalHistory = "No chronic medical conditions (No HTN, No DM)",
+            surgicalHistory = "Appendectomy in 2017 (laparoscopic, uncomplicated)",
+            familyHistory = "No history of multiple gestations or genetic anomalies",
+            allergyHistory = "No known drug allergies (NKDA)",
+            clinicalAttention = "[NOTE] Prior uncomplicated full-term vaginal delivery (2023). Current pregnancy low-risk; vertex presentation. Spontaneous vaginal delivery planned.",
+            obstetricNotes = "Agreed delivery mode: Spontaneous Vaginal Delivery (SVD) at Cleopatra Maternity Hospital.\nDelivery fee package agreed: 15,000 EGP (Full hospital stay + pediatrician attendance).\nPostpartum note: Successfully delivered healthy female infant on 2026-10-12 at 39w+2d, birth weight 3.35 kg, Apgar 9/10. Mother and neonate discharged in excellent condition.",
+            revision = 1,
+---
+ M app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt
+ M app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt
+ M app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
+ M app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt
+ M app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+ M app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt
+ M docs/designs/patient_workspace_overview_tab_optimization.md
+?? .agents/ROUTING_LOG.jsonl
+?? .agents/fleet-runs/phaseA.diff
+?? .agents/fleet-runs/phaseA_brief.md
+?? .agents/fleet-runs/phaseA_deepseek-v4.1-flash-free.txt
+?? .agents/fleet-runs/phaseA_glm-5.3-flash-free.txt
+?? .agents/specs/
+?? app/src/androidTest/java/com/sherifradwan/ancnative/DeliveryPlanningCardEditGateTest.kt
+?? app/src/test/java/com/sherifradwan/ancnative/ui/AllergyStateTest.kt
+?? comprehension_report.md
+?? critic_report.md
+?? goldfish_review_report.md
+?? goldfish_review_report_stage5-9.md
+?? implementation_readiness_report.md
+---
+AllergyStateTest.kt
+AttachmentDisplayTitleTest.kt
+ClinicalFormatR2Test.kt
+ClinicalFormatTest.kt
+ClinicalPresetsTest.kt
+DeliveryNotesParserTest.kt
+FormatWeightKgTest.kt
+GestationalBannerLogicTest.kt
+ParseDeliveryNotesSpecTest.kt
+PatientRiskTierTest.kt
+ThemeContrastTest.kt
+patienthub
+report
+> build · glm-5.3-flash-free
+[0m$ [0mgrep -n "allergyClean\|allergyLabel\|isAlert\|classifyAllergy" app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt; echo ---; grep -rn "classifyAllergy\|AllergyState" app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicalHistoriesCard.kt | head -3; echo ---; grep -n "allergyHistory" app/src/main/java/com/sherifradwan/ancnative/model/*.kt | head -5
+245:                        val allergy = classifyAllergy(patient.allergyHistory)
+246:                        val isAlert = allergy is AllergyState.Recorded
+247:                        val allergyLabel = when (allergy) {
+254:                            color = if (isAlert) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+257:                                text = allergyLabel,
+259:                                fontWeight = if (isAlert) FontWeight.Bold else FontWeight.SemiBold,
+260:                                color = if (isAlert) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+---
+---
+app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt:21:            allergyHistory = "No known drug allergies (NKDA)",
+app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt:428:            allergyHistory = "No known drug allergies (NKDA)",
+app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt:772:            allergyHistory = "Penicillin (moderate urticaria)",
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt:21:    val allergyHistory: String? = null,
+> build · glm-5.3-flash-free
+[0m$ [0mgrep -rn "NKDA\|allergy\|Allergy" app/src/test/java/com/sherifradwan/ancnative/ app/src/androidTest/java/com/sherifradwan/ancnative/ --include=*.kt -l; echo ---; grep -n "NKDA\|llergy" app/src/androidTest/java/com/sherifradwan/ancnative/*.kt | grep -v EditGate | head -10
+zsh:1: no matches found: --include=*.kt
+---
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:336:            allergyHistory = null,
+> build · glm-5.3-flash-free
+[0m$ [0mgrep -rln "NKDA\|llergy" app/src/test/java app/src/androidTest/java; echo ---; grep -n "llergy" app/src/test/java/com/sherifradwan/ancnative/ui/patienthub/*.kt 2>/dev/null | head
+app/src/test/java/com/sherifradwan/ancnative/ui/ThemeContrastTest.kt
+app/src/test/java/com/sherifradwan/ancnative/ui/ParseDeliveryNotesSpecTest.kt
+app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintSectionTitlesTest.kt
+app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt
+app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintSampleDumpTest.kt
+app/src/test/java/com/sherifradwan/ancnative/ui/AllergyStateTest.kt
+app/src/test/java/com/sherifradwan/ancnative/state/DraftMappingTest.kt
+app/src/test/java/com/sherifradwan/ancnative/state/AncStateTest.kt
+app/src/test/java/com/sherifradwan/ancnative/storage/BackupVaultIntegrationAndZeroDataLossTest.kt
+app/src/test/java/com/sherifradwan/ancnative/storage/EncryptedBackupTest.kt
+app/src/test/java/com/sherifradwan/ancnative/model/DemoFixturesVerificationTest.kt
+app/src/androidTest/java/com/sherifradwan/ancnative/storage/EncryptedRecordsTest.kt
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt
+---
+zsh:1: no matches found: app/src/test/java/com/sherifradwan/ancnative/ui/patienthub/*.kt
+> build · glm-5.3-flash-free
+## Adversarial review: phaseA.diff vs overview_phase_a_spec.md
+
+**Verified correct (summary):** `classifyAllergy` implements all 10 spec phrases with whole-entry matching; `Recorded` preserves original casing/trim; negative-content cases ("No known allergies except penicillin") stay `Recorded` — no pathway hides a real allergy. Header/directory chip colors and strings match spec (`not_recorded`, `no_allergy_history` exist incl. values-ar). `canEdit` is inserted before `modifier`; grep confirms only two compiled callers (`OverviewTab.kt:132`, `PlanTab.kt:38`), both named-arg, both with `canEdit` in scope; no positional break. `MedicalHistoriesCard` untouched. No existing test asserts the old blank→"NKDA" label.
+
+### Findings
+
+1. **Major** — `.agents/fleet-runs/phaseA.diff:189,286`: both test files appear as raw package text with no `diff --git`/`new file mode` headers, so this patch applied alone silently omits the entire test suite while reviewers assume it's gated. Fix: regenerate the diff with `git add -N` + full headers for `AllergyStateTest.kt` and `DeliveryPlanningCardEditGateTest.kt` (files do exist untracked in the worktree).
+
+2. **Major** — `app/src/test/.../ui/AllergyStateTest.kt` (ORACLE-A7 gap): no test anywhere proves `PlanTab`/`OverviewTab` pass `canEdit` through or that a read-only/archived patient cannot reach `StartPatientEditor` from the Delivery Plan card; a future caller could pass `canEdit = true` unconditionally with zero test failure. Fix: add a Compose test composing each tab with a read-only patient asserting `editDeliveryPlan` does not exist.
+
+3. **Major** — `AllergyStateTest.kt:274` (ORACLE-A5 gap): the oracle demands no red chip in the header/directory card for the fixture string, but only the string-level classification is tested, and the literal is hardcoded instead of read from `DemoFixtures.patients` — a fixture edit re-introducing e.g. a stray prefix would pass tests while showing a red alert. Fix: assert on `DemoFixtures` values and add a UI test asserting chip color/text.
+
+4. **Nit** — `ClinicalFormat.kt:37`: `lowercase()` is locale-default, so on a Turkish-locale device `"NIL".lowercase()` → `"nıl"` → `Recorded`, producing a false red alert (safe direction, but wrong display). Fix: `lowercase(Locale.ROOT)`.
+
+5. **Nit** — `DeliveryPlanningCardEditGateTest.kt` (ORACLE-A6): androidTest may legitimately go "not run" per spec gates; ensure the run report states "not run" rather than implying coverage.
+
+No blockers: classification logic never hides a recorded allergy, and no patient-safety hiding path exists.
+
+**Verdict: FIX-NEEDED**

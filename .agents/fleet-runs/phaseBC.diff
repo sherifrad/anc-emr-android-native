@@ -1,0 +1,876 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalGroupSection.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalGroupSection.kt
+new file mode 100644
+index 0000000..ada0184
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalGroupSection.kt
+@@ -0,0 +1,73 @@
++package com.sherifradwan.ancnative.ui.patienthub.components
++
++import androidx.compose.foundation.background
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Box
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.ColumnScope
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.layout.size
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.material3.HorizontalDivider
++import androidx.compose.material3.Icon
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.graphics.Color
++import androidx.compose.ui.graphics.vector.ImageVector
++import androidx.compose.ui.semantics.heading
++import androidx.compose.ui.semantics.semantics
++import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.ui.minimumTouchTarget
++
++/** Flat titled section: icon capsule, wrapping heading, optional action, hairline, content. */
++@Composable
++fun ClinicalGroupSection(
++    title: String,
++    icon: ImageVector,
++    iconTint: Color,
++    iconBgColor: Color,
++    actionButton: (@Composable () -> Unit)? = null,
++    modifier: Modifier = Modifier,
++    content: @Composable ColumnScope.() -> Unit,
++) {
++    Column(modifier = modifier.fillMaxWidth().padding(vertical = 4.dp)) {
++        Row(
++            modifier = Modifier.fillMaxWidth(),
++            verticalAlignment = Alignment.CenterVertically,
++            horizontalArrangement = Arrangement.spacedBy(8.dp),
++        ) {
++            Box(
++                modifier = Modifier
++                    .size(24.dp)
++                    .background(iconBgColor, RoundedCornerShape(8.dp)),
++                contentAlignment = Alignment.Center,
++            ) {
++                Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(16.dp))
++            }
++            Text(
++                text = title,
++                style = MaterialTheme.typography.titleMedium,
++                fontWeight = FontWeight.Bold,
++                color = MaterialTheme.colorScheme.onSurface,
++                modifier = Modifier.weight(1f).semantics { heading() },
++            )
++            if (actionButton != null) {
++                Box(modifier = Modifier.minimumTouchTarget(), contentAlignment = Alignment.Center) {
++                    actionButton()
++                }
++            }
++        }
++        HorizontalDivider(
++            modifier = Modifier.padding(vertical = 6.dp),
++            thickness = 0.75.dp,
++            color = MaterialTheme.colorScheme.outlineVariant,
++        )
++        content()
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt
+new file mode 100644
+index 0000000..faf8523
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt
+@@ -0,0 +1,191 @@
++package com.sherifradwan.ancnative.ui.patienthub.components
++
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.layout.size
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.material.icons.Icons
++import androidx.compose.material.icons.filled.Add
++import androidx.compose.material.icons.filled.DateRange
++import androidx.compose.material.icons.filled.Edit
++import androidx.compose.material.icons.filled.Healing
++import androidx.compose.material.icons.filled.Person
++import androidx.compose.material.icons.filled.Warning
++import androidx.compose.material3.Icon
++import androidx.compose.material3.IconButton
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Surface
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.graphics.vector.ImageVector
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.model.DemoPatientDating
++import com.sherifradwan.ancnative.model.previousDeliverySummary
++import com.sherifradwan.ancnative.ui.AllergyState
++import com.sherifradwan.ancnative.ui.FactRow
++import com.sherifradwan.ancnative.ui.ObstetricParityBadge
++import com.sherifradwan.ancnative.ui.classifyAllergy
++import com.sherifradwan.ancnative.ui.minimumTouchTarget
++
++@Composable
++private fun SectionIconAction(
++    onClick: () -> Unit,
++    icon: ImageVector,
++    description: String,
++    tag: String,
++) {
++    IconButton(onClick = onClick, modifier = Modifier.minimumTouchTarget().testTag(tag)) {
++        Icon(icon, contentDescription = description, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
++    }
++}
++
++@Composable
++fun DatingSection(
++    dating: DemoPatientDating?,
++    onEdit: (() -> Unit)?,
++    modifier: Modifier = Modifier,
++) {
++    val scheme = MaterialTheme.colorScheme
++    ClinicalGroupSection(
++        title = stringResource(R.string.pregnancy_dating_title),
++        icon = Icons.Default.DateRange,
++        iconTint = scheme.onPrimaryContainer,
++        iconBgColor = scheme.primaryContainer,
++        actionButton = onEdit?.let {
++            { SectionIconAction(it, Icons.Default.Edit, stringResource(R.string.edit_dating), "editDating") }
++        },
++        modifier = modifier.testTag("datingCard"),
++    ) {
++        if (dating == null) {
++            Text(
++                text = stringResource(R.string.no_dating_recorded),
++                style = MaterialTheme.typography.bodyMedium,
++                color = scheme.onSurfaceVariant,
++            )
++            return@ClinicalGroupSection
++        }
++        val eddSource: Pair<Int, String?> = when {
++            !dating.agreedEdd.isNullOrBlank() -> R.string.agreed_edd to dating.agreedEdd
++            !dating.ultrasoundEdd.isNullOrBlank() -> R.string.ultrasound_edd to dating.ultrasoundEdd
++            else -> R.string.calculated_edd to dating.calculateEstimatedDueDate()?.toString()
++        }
++        FactRow(eddSource.first, eddSource.second ?: stringResource(R.string.not_recorded), isEmphasized = true)
++        FactRow(R.string.dating_method, dating.datingMethod)
++        FactRow(R.string.lmp_date, dating.lmpDate)
++        if (dating.datingMethod?.uppercase() in setOf("IVF_TRANSFER", "IVF")) {
++            FactRow(R.string.ivf_transfer_date, dating.transferDate)
++            dating.embryoAgeDays?.let { FactRow(R.string.embryo_age, "Day $it") }
++        }
++        if (!dating.notes.isNullOrBlank()) FactRow(R.string.notes, dating.notes)
++    }
++}
++
++@Composable
++fun ParityPregnanciesSection(
++    patient: DemoPatient,
++    canEdit: Boolean,
++    onAddPregnancy: (() -> Unit)?,
++    onEditPregnancy: (String) -> Unit,
++    onDeletePregnancy: (String) -> Unit,
++    modifier: Modifier = Modifier,
++) {
++    val scheme = MaterialTheme.colorScheme
++    ClinicalGroupSection(
++        title = stringResource(R.string.previous_pregnancies),
++        icon = Icons.Default.Person,
++        iconTint = scheme.onPrimaryContainer,
++        iconBgColor = scheme.primaryContainer,
++        actionButton = onAddPregnancy?.let {
++            { SectionIconAction(it, Icons.Default.Add, stringResource(R.string.add_previous_pregnancy), "addPregnancyButton") }
++        },
++        modifier = modifier.testTag("obstetricParityCard"),
++    ) {
++        ObstetricParityBadge(patient.gravida, patient.parity, patient.abortion, Modifier.testTag("obstetricParityBadge"))
++        if (patient.previousPregnancies.isEmpty()) {
++            Text(
++                text = previousDeliverySummary(patient).ifBlank { stringResource(R.string.no_previous_pregnancies) },
++                style = MaterialTheme.typography.bodyMedium,
++                color = scheme.onSurfaceVariant,
++                modifier = Modifier.padding(vertical = 6.dp),
++            )
++        } else {
++            patient.previousPregnancies.forEach { pregnancy ->
++                PastDeliveryMicroRow(
++                    pregnancy = pregnancy,
++                    canEdit = canEdit,
++                    onEdit = { onEditPregnancy(pregnancy.id) },
++                    onDelete = { onDeletePregnancy(pregnancy.id) },
++                )
++            }
++        }
++        if (!patient.obstetricNotes.isNullOrBlank()) FactRow(R.string.obstetric_notes, patient.obstetricNotes)
++    }
++}
++
++@Composable
++fun MedicalHistoriesSection(
++    patient: DemoPatient,
++    onEdit: (() -> Unit)?,
++    modifier: Modifier = Modifier,
++) {
++    val scheme = MaterialTheme.colorScheme
++    ClinicalGroupSection(
++        title = stringResource(R.string.medical_histories_title),
++        icon = Icons.Default.Healing,
++        iconTint = scheme.onPrimaryContainer,
++        iconBgColor = scheme.primaryContainer,
++        actionButton = onEdit?.let {
++            { SectionIconAction(it, Icons.Default.Edit, stringResource(R.string.edit_patient), "editMedicalHistoryButton") }
++        },
++        modifier = modifier.testTag("medicalHistoriesCard"),
++    ) {
++        when (val allergy = classifyAllergy(patient.allergyHistory)) {
++            is AllergyState.Recorded -> Surface(
++                shape = RoundedCornerShape(8.dp),
++                color = scheme.errorContainer,
++                modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
++            ) {
++                Row(
++                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
++                    verticalAlignment = Alignment.CenterVertically,
++                    horizontalArrangement = Arrangement.spacedBy(6.dp),
++                ) {
++                    Icon(Icons.Default.Warning, contentDescription = null, tint = scheme.error, modifier = Modifier.size(16.dp))
++                    Text(
++                        text = stringResource(R.string.allergy_banner, allergy.text),
++                        style = MaterialTheme.typography.bodyMedium,
++                        fontWeight = FontWeight.Bold,
++                        color = scheme.onErrorContainer,
++                    )
++                }
++            }
++            AllergyState.ExplicitlyNone -> Text(
++                text = stringResource(R.string.no_allergy_history),
++                style = MaterialTheme.typography.bodyMedium,
++                color = scheme.onSurfaceVariant,
++                modifier = Modifier.padding(bottom = 6.dp),
++            )
++            AllergyState.NotRecorded -> Text(
++                text = stringResource(R.string.not_recorded),
++                style = MaterialTheme.typography.bodyMedium,
++                color = scheme.onSurfaceVariant,
++                modifier = Modifier.padding(bottom = 6.dp),
++            )
++        }
++        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
++            if (!patient.medicalHistory.isNullOrBlank()) FactRow(R.string.medical_history, patient.medicalHistory)
++            if (!patient.surgicalHistory.isNullOrBlank()) FactRow(R.string.surgical_history, patient.surgicalHistory)
++            if (!patient.familyHistory.isNullOrBlank()) FactRow(R.string.family_history, patient.familyHistory)
++        }
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PastDeliveryMicroRow.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PastDeliveryMicroRow.kt
+new file mode 100644
+index 0000000..cfbbda4
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PastDeliveryMicroRow.kt
+@@ -0,0 +1,116 @@
++package com.sherifradwan.ancnative.ui.patienthub.components
++
++import androidx.compose.foundation.clickable
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.FlowRow
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.heightIn
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Surface
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.text.style.TextOverflow
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
++import com.sherifradwan.ancnative.storage.DeletableType
++import com.sherifradwan.ancnative.ui.DeleteIconButton
++import com.sherifradwan.ancnative.ui.minimumTouchTarget
++import com.sherifradwan.ancnative.ui.patienthub.model.OutcomeTone
++import com.sherifradwan.ancnative.ui.patienthub.model.RowExtraKind
++import com.sherifradwan.ancnative.ui.patienthub.model.pastDeliveryRow
++
++@Composable
++fun PastDeliveryMicroRow(
++    pregnancy: DemoPreviousPregnancy,
++    canEdit: Boolean,
++    onEdit: () -> Unit,
++    onDelete: () -> Unit,
++    modifier: Modifier = Modifier,
++) {
++    val row = pastDeliveryRow(pregnancy)
++    val scheme = MaterialTheme.colorScheme
++    val (chipBg, chipFg) = when (row.outcomeTone) {
++        OutcomeTone.Severe -> scheme.errorContainer to scheme.onErrorContainer
++        OutcomeTone.Caution -> scheme.tertiaryContainer to scheme.onTertiaryContainer
++        OutcomeTone.Neutral -> scheme.surfaceContainerHigh to scheme.onSurfaceVariant
++    }
++    val yearText = row.year ?: row.dateTextFallback ?: stringResource(R.string.date_not_recorded)
++    val extras = row.extras.map { (kind, value) ->
++        val label = stringResource(
++            when (kind) {
++                RowExtraKind.PregnancyType -> R.string.pregnancy_type
++                RowExtraKind.LossManagement -> R.string.loss_management
++                RowExtraKind.TerminationMethod -> R.string.termination_method
++            },
++        )
++        "$label: $value"
++    }
++    val line2 = listOfNotNull(row.placeAndDoctor, row.notes).plus(extras).joinToString(" · ")
++
++    Row(
++        modifier = modifier
++            .fillMaxWidth()
++            .heightIn(min = 48.dp)
++            .testTag("pregnancy-${pregnancy.id}"),
++        verticalAlignment = Alignment.Top,
++    ) {
++        val editClick = if (canEdit) {
++            Modifier.clickable(onClick = onEdit).minimumTouchTarget().testTag("editPregnancy-${pregnancy.id}")
++        } else {
++            Modifier
++        }
++        Column(
++            modifier = Modifier.weight(1f).then(editClick).padding(vertical = 6.dp),
++            verticalArrangement = Arrangement.spacedBy(2.dp),
++        ) {
++            FlowRow(
++                horizontalArrangement = Arrangement.spacedBy(6.dp),
++                verticalArrangement = Arrangement.spacedBy(2.dp),
++                itemVerticalAlignment = Alignment.CenterVertically,
++            ) {
++                Text(
++                    text = yearText,
++                    style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
++                    fontWeight = FontWeight.Bold,
++                    color = scheme.onSurface,
++                )
++                row.outcomeLabel?.let {
++                    Surface(shape = RoundedCornerShape(6.dp), color = chipBg) {
++                        Text(
++                            text = it,
++                            style = MaterialTheme.typography.labelMedium,
++                            fontWeight = FontWeight.SemiBold,
++                            color = chipFg,
++                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
++                        )
++                    }
++                }
++                row.mode?.let {
++                    Text(text = it, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurface)
++                }
++            }
++            if (line2.isNotEmpty()) {
++                Text(
++                    text = line2,
++                    style = MaterialTheme.typography.bodySmall,
++                    color = scheme.onSurfaceVariant,
++                    maxLines = 2,
++                    overflow = TextOverflow.Ellipsis,
++                )
++            }
++        }
++        if (canEdit) {
++            DeleteIconButton(DeletableType.PREVIOUS_PREGNANCY, pregnancy, onDelete)
++        }
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/PastDeliveryRowModel.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/PastDeliveryRowModel.kt
+new file mode 100644
+index 0000000..61c22d0
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/PastDeliveryRowModel.kt
+@@ -0,0 +1,55 @@
++package com.sherifradwan.ancnative.ui.patienthub.model
++
++import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
++
++enum class OutcomeTone { Neutral, Caution, Severe }
++
++enum class RowExtraKind { PregnancyType, LossManagement, TerminationMethod }
++
++/** Display-ready, Compose-free view of one previous pregnancy. */
++data class PastDeliveryRow(
++    val year: String?,
++    val dateTextFallback: String?,
++    val outcomeLabel: String?,
++    val outcomeTone: OutcomeTone,
++    val mode: String?,
++    val placeAndDoctor: String?,
++    val notes: String?,
++    val extras: List<Pair<RowExtraKind, String>>,
++)
++
++private val YearRegex = Regex("""(?<!\d)(?:19|20)\d{2}(?!\d)""")
++
++private fun String?.clean(): String? = this?.trim()?.takeIf { it.isNotEmpty() }
++
++private fun enumOutcomeLabel(outcome: String?): String? = when (outcome?.trim()) {
++    "LiveBirth" -> "Live Birth"
++    "Stillbirth" -> "Stillbirth / IUFD"
++    "EarlyPregnancyLoss" -> "Miscarriage"
++    "TerminationOfPregnancy" -> "Therapeutic Termination"
++    else -> null
++}
++
++fun pastDeliveryRow(p: DemoPreviousPregnancy): PastDeliveryRow {
++    val dateText = p.dateText.clean()
++    val year = dateText?.let { YearRegex.find(it)?.value }
++    val outcomeEnum = p.outcome.clean()
++    return PastDeliveryRow(
++        year = year,
++        dateTextFallback = if (year == null) dateText else null,
++        outcomeLabel = enumOutcomeLabel(outcomeEnum) ?: p.outcomeText.clean() ?: outcomeEnum,
++        outcomeTone = when (outcomeEnum) {
++            "Stillbirth" -> OutcomeTone.Severe
++            "EarlyPregnancyLoss" -> OutcomeTone.Caution
++            else -> OutcomeTone.Neutral
++        },
++        mode = p.birthMethod.clean() ?: p.deliveryBy.clean(),
++        placeAndDoctor = p.placeAndDoctor.clean(),
++        notes = p.otherDetails.clean(),
++        extras = listOfNotNull(
++            p.pregnancyType.clean()?.let { RowExtraKind.PregnancyType to it },
++            p.lossManagement.clean()?.let { RowExtraKind.LossManagement to it },
++            p.terminationMethod.clean()?.let { RowExtraKind.TerminationMethod to it },
++        ),
++    )
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+index 630ce70..6676f6b 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+@@ -6,24 +6,19 @@ import androidx.compose.foundation.layout.fillMaxSize
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.rememberScrollState
+ import androidx.compose.foundation.verticalScroll
+-import androidx.compose.material3.MaterialTheme
+-import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.platform.testTag
+-import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.unit.dp
+ import com.sherifradwan.ancnative.model.DemoAttachment
+ import com.sherifradwan.ancnative.model.DemoPatient
+-import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
+ import com.sherifradwan.ancnative.state.AncEvent
+ import com.sherifradwan.ancnative.storage.DeletableType
+ import com.sherifradwan.ancnative.ui.patienthub.components.AttachmentsSectionCard
++import com.sherifradwan.ancnative.ui.patienthub.components.DatingSection
+ import com.sherifradwan.ancnative.ui.patienthub.components.DeliveryPlanningCard
+-import com.sherifradwan.ancnative.ui.patienthub.components.GestationalDatingCard
+-import com.sherifradwan.ancnative.ui.patienthub.components.MedicalHistoriesCard
+-import com.sherifradwan.ancnative.ui.patienthub.components.ObstetricParityCard
+-import com.sherifradwan.ancnative.ui.patienthub.components.PreviousPregnancyCard
++import com.sherifradwan.ancnative.ui.patienthub.components.MedicalHistoriesSection
++import com.sherifradwan.ancnative.ui.patienthub.components.ParityPregnanciesSection
+ import java.util.UUID
+ 
+ @Composable
+@@ -35,6 +30,23 @@ fun OverviewTab(
+     onViewAttachment: (DemoAttachment) -> Unit,
+     modifier: Modifier = Modifier,
+ ) {
++    fun startPatientEditor() = onEvent(
++        AncEvent.StartPatientEditor(
++            patientId = patient.id,
++            newPatientId = patient.id,
++            editorSessionId = UUID.randomUUID().toString(),
++        ),
++    )
++
++    fun startPregnancyEditor(pregnancyId: String?) = onEvent(
++        AncEvent.StartPregnancyEditor(
++            patientId = patient.id,
++            pregnancyId = pregnancyId,
++            newPregnancyId = pregnancyId ?: UUID.randomUUID().toString(),
++            editorSessionId = UUID.randomUUID().toString(),
++        ),
++    )
++
+     Column(
+         modifier = modifier
+             .fillMaxSize()
+@@ -43,107 +55,47 @@ fun OverviewTab(
+             .testTag("overviewTabContent"),
+         verticalArrangement = Arrangement.spacedBy(14.dp),
+     ) {
+-        // 1. Authoritative Gestational Dating Card
+-        GestationalDatingCard(
+-            dating = patient.dating,
+-            onEdit = if (canEdit) {
+-                {
+-                    onEvent(
+-                        AncEvent.StartDatingEditor(
+-                            patientId = patient.id,
+-                            editorSessionId = UUID.randomUUID().toString(),
+-                        ),
+-                    )
+-                }
+-            } else null,
+-        )
+-
+-        // 2. Obstetric Parity Card
+-        ObstetricParityCard(
+-            patient = patient,
+-            onAddPregnancy = if (canEdit) {
+-                {
+-                    onEvent(
+-                        AncEvent.StartPregnancyEditor(
+-                            patientId = patient.id,
+-                            pregnancyId = null,
+-                            newPregnancyId = UUID.randomUUID().toString(),
+-                            editorSessionId = UUID.randomUUID().toString(),
+-                        ),
+-                    )
+-                }
+-            } else null,
+-        )
+-
+-        // 3. Medical, Surgical & Family Histories
+-        MedicalHistoriesCard(
+-            patient = patient,
+-            onEdit = if (canEdit) {
+-                {
+-                    onEvent(
+-                        AncEvent.StartPatientEditor(
+-                            patientId = patient.id,
+-                            newPatientId = patient.id,
+-                            editorSessionId = UUID.randomUUID().toString(),
+-                        ),
+-                    )
+-                }
+-            } else null,
+-        )
+-
+-        // 4. Prior Pregnancies Timeline
+-        val pregnancies = patient.previousPregnancies
+-        if (pregnancies.isNotEmpty()) {
+-            Text(
+-                text = "Prior Pregnancies (${pregnancies.size})",
+-                style = MaterialTheme.typography.titleMedium,
+-                fontWeight = FontWeight.Bold,
+-                color = MaterialTheme.colorScheme.primary,
+-                modifier = Modifier.padding(top = 4.dp),
+-            )
+-            pregnancies.forEach { pregnancy ->
+-                PreviousPregnancyCard(
+-                    pregnancy = pregnancy,
+-                    canEdit = canEdit,
+-                    onEdit = {
++        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
++            DatingSection(
++                dating = patient.dating,
++                onEdit = if (canEdit) {
++                    {
+                         onEvent(
+-                            AncEvent.StartPregnancyEditor(
++                            AncEvent.StartDatingEditor(
+                                 patientId = patient.id,
+-                                pregnancyId = pregnancy.id,
+-                                newPregnancyId = pregnancy.id,
+                                 editorSessionId = UUID.randomUUID().toString(),
+                             ),
+                         )
+-                    },
+-                    onDelete = {
+-                        onEvent(
+-                            AncEvent.RequestDelete(
+-                                patientId = patient.id,
+-                                type = DeletableType.PREVIOUS_PREGNANCY,
+-                                recordId = pregnancy.id,
+-                            ),
+-                        )
+-                    },
+-                )
+-            }
++                    }
++                } else null,
++            )
++            ParityPregnanciesSection(
++                patient = patient,
++                canEdit = canEdit,
++                onAddPregnancy = if (canEdit) ({ startPregnancyEditor(null) }) else null,
++                onEditPregnancy = { startPregnancyEditor(it) },
++                onDeletePregnancy = {
++                    onEvent(
++                        AncEvent.RequestDelete(
++                            patientId = patient.id,
++                            type = DeletableType.PREVIOUS_PREGNANCY,
++                            recordId = it,
++                        ),
++                    )
++                },
++            )
++            MedicalHistoriesSection(
++                patient = patient,
++                onEdit = if (canEdit) ({ startPatientEditor() }) else null,
++            )
+         }
+ 
+-        // 5. Delivery Planning Card Snapshot
+         DeliveryPlanningCard(
+             patient = patient,
+             canEdit = canEdit,
+-            onEditPatient = {
+-                onEvent(
+-                    AncEvent.StartPatientEditor(
+-                        patientId = patient.id,
+-                        newPatientId = patient.id,
+-                        editorSessionId = UUID.randomUUID().toString(),
+-                    ),
+-                )
+-            },
++            onEditPatient = { startPatientEditor() },
+         )
+ 
+-        // 6. Clinical Documents & Attachments Snapshot
+         AttachmentsSectionCard(
+             patient = patient,
+             onAddAttachment = onAddAttachment,
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index 93da932..9429c26 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -139,6 +139,10 @@
+     <string name="surgical_history">Surgical history</string>
+     <string name="family_history">Family history</string>
+     <string name="allergy_history">Allergy history</string>
++    <string name="pregnancy_dating_title">Pregnancy dating &amp; due date</string>
++    <string name="medical_histories_title">Medical, surgical &amp; family history</string>
++    <string name="date_not_recorded">Date not recorded</string>
++    <string name="allergy_banner">Allergy: %1$s</string>
+     <string name="previous_pregnancies">Previous pregnancies</string>
+     <string name="add_previous_pregnancy">Add previous pregnancy</string>
+     <string name="correct_previous_pregnancy">Correct previous pregnancy</string>
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/ui/patienthub/model/PastDeliveryRowModelTest.kt b/app/src/test/java/com/sherifradwan/ancnative/ui/patienthub/model/PastDeliveryRowModelTest.kt
+new file mode 100644
+index 0000000..0549189
+--- /dev/null
++++ b/app/src/test/java/com/sherifradwan/ancnative/ui/patienthub/model/PastDeliveryRowModelTest.kt
+@@ -0,0 +1,203 @@
++package com.sherifradwan.ancnative.ui.patienthub.model
++
++import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
++import org.junit.Assert.assertEquals
++import org.junit.Assert.assertFalse
++import org.junit.Assert.assertNotNull
++import org.junit.Assert.assertNull
++import org.junit.Assert.assertTrue
++import org.junit.Test
++
++class PastDeliveryRowModelTest {
++
++    private fun pregnancy(
++        dateText: String? = null,
++        outcomeText: String? = null,
++        outcome: String? = null,
++        birthMethod: String? = null,
++        deliveryBy: String? = null,
++        pregnancyType: String? = null,
++        lossManagement: String? = null,
++        terminationMethod: String? = null,
++        placeAndDoctor: String? = null,
++        otherDetails: String? = null,
++    ) = DemoPreviousPregnancy(
++        id = "pp-1",
++        patientId = "p-1",
++        modelVersion = 3,
++        dateText = dateText,
++        outcomeText = outcomeText,
++        pregnancyType = pregnancyType,
++        otherDetails = otherDetails,
++        placeAndDoctor = placeAndDoctor,
++        deliveryBy = deliveryBy,
++        outcome = outcome,
++        birthMethod = birthMethod,
++        lossManagement = lossManagement,
++        terminationMethod = terminationMethod,
++        provenanceKind = "CLINICIAN_ENTRY",
++        clinicianId = "c-1",
++        recordedAt = "2026-01-01T00:00:00Z",
++        updatedAt = "2026-01-01T00:00:00Z",
++        revision = 1,
++    )
++
++    // ORACLE-B1: year extraction
++
++    @Test
++    fun year_plainYear() {
++        val r = pastDeliveryRow(pregnancy(dateText = "2023"))
++        assertEquals("2023", r.year)
++        assertNull(r.dateTextFallback)
++    }
++
++    @Test
++    fun year_isoDateTakesYear() {
++        assertEquals("2023", pastDeliveryRow(pregnancy(dateText = "2023-05-20")).year)
++    }
++
++    @Test
++    fun year_monthNameAndYear() {
++        val r = pastDeliveryRow(pregnancy(dateText = "Mar 2019"))
++        assertEquals("2019", r.year)
++        assertNull(r.dateTextFallback)
++    }
++
++    @Test
++    fun year_noYearUsesFallback() {
++        val r = pastDeliveryRow(pregnancy(dateText = "last year"))
++        assertNull(r.year)
++        assertEquals("last year", r.dateTextFallback)
++    }
++
++    @Test
++    fun year_nullAndBlankAndWhitespace() {
++        for (t in listOf(null, "", "   ", "\t\n")) {
++            val r = pastDeliveryRow(pregnancy(dateText = t))
++            assertNull("year for '$t'", r.year)
++            assertNull("fallback for '$t'", r.dateTextFallback)
++        }
++    }
++
++    @Test
++    fun year_twoYearsTakesFirst() {
++        assertEquals("2019", pastDeliveryRow(pregnancy(dateText = "2019 then 2021")).year)
++        assertEquals("1998", pastDeliveryRow(pregnancy(dateText = "from 1998 to 2003")).year)
++    }
++
++    @Test
++    fun year_boundaryRange() {
++        assertEquals("1900", pastDeliveryRow(pregnancy(dateText = "1900")).year)
++        assertEquals("2099", pastDeliveryRow(pregnancy(dateText = "2099")).year)
++        for (t in listOf("1899", "2100")) {
++            val r = pastDeliveryRow(pregnancy(dateText = t))
++            assertNull("year for $t", r.year)
++            assertEquals(t, r.dateTextFallback)
++        }
++    }
++
++    @Test
++    fun year_twoDigitOrShortNumberIsNotAYear() {
++        val r = pastDeliveryRow(pregnancy(dateText = "19"))
++        assertNull(r.year)
++        assertEquals("19", r.dateTextFallback)
++    }
++
++    // ORACLE-B2: tone and label
++
++    @Test
++    fun tone_stillbirthIsSevere() {
++        assertEquals(OutcomeTone.Severe, pastDeliveryRow(pregnancy(outcome = "Stillbirth")).outcomeTone)
++    }
++
++    @Test
++    fun tone_earlyLossIsCaution() {
++        assertEquals(OutcomeTone.Caution, pastDeliveryRow(pregnancy(outcome = "EarlyPregnancyLoss")).outcomeTone)
++    }
++
++    @Test
++    fun tone_otherOutcomesAreNeutral() {
++        for (o in listOf("LiveBirth", "TerminationOfPregnancy")) {
++            assertEquals(o, OutcomeTone.Neutral, pastDeliveryRow(pregnancy(outcome = o)).outcomeTone)
++        }
++    }
++
++    @Test
++    fun tone_freeTextAndMissingAreNeutral() {
++        assertEquals(OutcomeTone.Neutral, pastDeliveryRow(pregnancy(outcomeText = "stillbirth at 34 weeks")).outcomeTone)
++        assertEquals(OutcomeTone.Neutral, pastDeliveryRow(pregnancy()).outcomeTone)
++    }
++
++    @Test
++    fun label_neverNullWhenOutcomeOrTextExists() {
++        for (o in listOf("LiveBirth", "Stillbirth", "EarlyPregnancyLoss", "TerminationOfPregnancy")) {
++            assertNotNull(o, pastDeliveryRow(pregnancy(outcome = o)).outcomeLabel)
++        }
++        assertEquals("Live female infant", pastDeliveryRow(pregnancy(outcomeText = "Live female infant")).outcomeLabel)
++        assertNotNull(pastDeliveryRow(pregnancy(outcome = "Stillbirth", outcomeText = "IUFD at 34 weeks")).outcomeLabel)
++    }
++
++    @Test
++    fun label_nullWhenNothingRecordedOrBlank() {
++        assertNull(pastDeliveryRow(pregnancy()).outcomeLabel)
++        assertNull(pastDeliveryRow(pregnancy(outcome = "  ", outcomeText = " ")).outcomeLabel)
++    }
++
++    @Test
++    fun label_freeTextOutcomeKeptVerbatim() {
++        val text = "Intrauterine fetal demise at 34 weeks (IUFD Stillbirth)"
++        assertEquals(text, pastDeliveryRow(pregnancy(outcomeText = text)).outcomeLabel)
++    }
++
++    // ORACLE-B3: mode and extras
++
++    @Test
++    fun mode_birthMethodWinsOverDeliveryBy() {
++        assertEquals("Cesarean", pastDeliveryRow(pregnancy(birthMethod = "Cesarean", deliveryBy = "CS")).mode)
++    }
++
++    @Test
++    fun mode_fallsBackToDeliveryBy() {
++        assertEquals("CS", pastDeliveryRow(pregnancy(deliveryBy = "CS")).mode)
++        assertEquals("Vaginal", pastDeliveryRow(pregnancy(birthMethod = "  ", deliveryBy = "Vaginal")).mode)
++    }
++
++    @Test
++    fun mode_blankBecomesNull() {
++        assertNull(pastDeliveryRow(pregnancy()).mode)
++        assertNull(pastDeliveryRow(pregnancy(birthMethod = "", deliveryBy = "   ")).mode)
++    }
++
++    @Test
++    fun extras_orderIsTypeThenLossThenTermination() {
++        val r = pastDeliveryRow(
++            pregnancy(pregnancyType = "Twin", lossManagement = "Expectant", terminationMethod = "Medical"),
++        )
++        assertEquals(
++            listOf(
++                RowExtraKind.PregnancyType to "Twin",
++                RowExtraKind.LossManagement to "Expectant",
++                RowExtraKind.TerminationMethod to "Medical",
++            ),
++            r.extras,
++        )
++    }
++
++    @Test
++    fun extras_blanksNeverAppear() {
++        val r = pastDeliveryRow(pregnancy(pregnancyType = " ", lossManagement = "Surgical", terminationMethod = ""))
++        assertEquals(listOf(RowExtraKind.LossManagement to "Surgical"), r.extras)
++        assertTrue(pastDeliveryRow(pregnancy()).extras.isEmpty())
++        r.extras.forEach { assertFalse(it.second.isBlank()) }
++    }
++
++    @Test
++    fun placeAndNotes_blankBecomeNull() {
++        val r = pastDeliveryRow(pregnancy(placeAndDoctor = "  ", otherDetails = ""))
++        assertNull(r.placeAndDoctor)
++        assertNull(r.notes)
++        val s = pastDeliveryRow(pregnancy(placeAndDoctor = "Cairo Hospital", otherDetails = "Uncomplicated"))
++        assertEquals("Cairo Hospital", s.placeAndDoctor)
++        assertEquals("Uncomplicated", s.notes)
++    }
++}
