@@ -343,7 +343,8 @@ object EncryptedBackupManager {
                 put("ultrasoundGestationalDays", JSONObject.NULL)
                 putNullable("ivfTransferDate", dating.transferDate)
                 putNullable("ivfEmbryoAgeDays", dating.embryoAgeDays)
-                putNullable("edd", dating.agreedEdd ?: dating.ultrasoundEdd)
+                putNullable("ultrasoundEdd", dating.ultrasoundEdd)
+                putNullable("agreedEdd", dating.agreedEdd)
                 putNullable("datingMethod", dating.datingMethod)
                 putNullable("notes", dating.notes)
                 put("decisionConfirmedAt", JSONObject.NULL)
@@ -468,7 +469,8 @@ object EncryptedBackupManager {
         put("ultrasoundGestationalDays", JSONObject.NULL)
         putNullable("ivfTransferDate", transferDate)
         putNullable("ivfEmbryoAgeDays", embryoAgeDays)
-        putNullable("edd", agreedEdd ?: ultrasoundEdd)
+        putNullable("ultrasoundEdd", ultrasoundEdd)
+        putNullable("agreedEdd", agreedEdd)
         putNullable("datingMethod", datingMethod)
         putNullable("notes", notes)
         put("decisionConfirmedAt", JSONObject.NULL)
@@ -631,12 +633,14 @@ object EncryptedBackupManager {
         )
 
     private fun JSONObject.toPatientDatingEntity(parentPatientId: String): PatientDatingEntity {
-        val edd = optNullableString("edd")
+        // Old backups carried one merged "edd"; they restore it into both fields as before.
+        val hasSplitEdd = has("ultrasoundEdd") || has("agreedEdd")
+        val oldEdd = if (hasSplitEdd) null else optNullableString("edd")
         return PatientDatingEntity(
             patientId = optNullableString("patientId") ?: parentPatientId,
             lmpDate = optNullableString("lmpDate"),
-            ultrasoundEdd = edd,
-            agreedEdd = edd,
+            ultrasoundEdd = if (hasSplitEdd) optNullableString("ultrasoundEdd") else oldEdd,
+            agreedEdd = if (hasSplitEdd) optNullableString("agreedEdd") else oldEdd,
             datingMethod = optNullableString("datingMethod"),
             notes = optNullableString("notes"),
             transferDate = optNullableString("ivfTransferDate"),
