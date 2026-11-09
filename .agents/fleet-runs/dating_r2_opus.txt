@@ -1,0 +1,77 @@
+# Dating section review, round 2: FIX-NEEDED
+
+All six round-1 findings are fixed. I found one new reachable crash, one pre-existing storage defect that the new rule makes worse, and several smaller issues. I did not run any tests or builds; everything below comes from reading the code.
+
+## Round-1 findings: status
+- **Delivery Plan card:** fixed. `DeliveryPlanningCard.kt:54-57,116-132` now uses `datingSummaryOf` and `datingTextRows` for the EDD, and the current-GA tile shows the `??`. The `agreedEdd ?: ultrasoundEdd` fallback is gone.
+- **Print "Target Delivery Timing":** fixed. It uses `datingSummary.edd`, and `PatientPrintHtmlGeneratorTest.kt:711-750` covers an LMP-only patient, a malformed agreed EDD, a scan-only patient and no EDD at all.
+- **Dead `GestationalBanner` and `STICKY_COMPACT`:** both deleted, along with their strings. Nothing else uses those strings; `calculated_edd` is still used by `DatingEditor.kt:233`.
+- **Scan anchor (D2a):** fixed in `DatingText.kt:15-21`. Malformed, pre-LMP and future scans are ignored.
+  - I checked whether ignoring a scan dated before the LMP can hide a discordance. It cannot: such a scan means the gap is larger than the scan's GA (over 35 days for any real scan), which is above every tier limit.
+- **Extreme dates inside `datingSummary`:** wrapped by `derivedOrNull` and the 560-day span guard.
+- **Editor method check:** fixed. `DatingEditor.kt:176` uses `canonicalDatingMethod`.
+
+## Findings
+
+**Major | `model/DatingText.kt:58`** — `datingDiscordanceLine` calls `GestationalAgeEngine.dueDateForMethod(d, "LMP")` with no guard.
+- Failure: an LMP of `+999999999-12-31` passes `isValidIsoDate`, and leaving the agreed EDD blank (or different from the scan EDD) still gives a discordance, because the day difference silently wraps in `.toInt()` (Redating.kt). Adding 280 days to the LMP then throws `DateTimeException`, and print (`PatientPrintHtmlGenerator.kt:78`) and share (`ClinicalSummaryGenerator.kt:28`) crash. This breaks D6a.
+- Why the test misses it: `DatingSummaryTest.kt:366` sets the agreed EDD equal to the scan EDD, so D5 clears the alert and the crash path never runs.
+
+**Major (pre-existing, outside the diff, made worse by D5) | `storage/EncryptedBackupManager.kt:346,471,637-639`**
+- Backup export writes `edd = agreedEdd ?: ultrasoundEdd`, and restore writes that one value into both `ultrasoundEdd` and `agreedEdd`.
+- Failure: take an LMP-method patient with a discordant scan EDD and no agreed EDD. After a backup and restore, the agreed EDD equals the scan EDD, so D5 clears the alert and the `??`. The shown EDD also switches from the LMP date to the scan date.
+- A patient with an agreed EDD only gets a scan EDD that was never measured.
+
+**Major (spec gap, item 3) | `model/DatingText.kt:49-51`**
+- When `agreedEdd` differs from the method's due date, the section shows the agreed date labelled plain "EDD", next to "Method: LMP" (or "by ultrasound").
+- Failure: LMP 01/03 with agreed EDD 20/12 shows an EDD that is not LMP + 280. Nothing tells the clinician that the EDD on screen comes from neither the LMP nor the scan.
+- The old print and share showed agreed, LMP and scan EDD separately. Now the scan EDD appears only when a discordance exists, and never under the Ultrasound method. This is one of the open owner decisions.
+
+**Major (open owner decision, safety) | `model/DatingSummary.kt:32`**
+- When there is no usable scan, the check is measured at today, so the tier limit grows as the pregnancy advances.
+- Failure: an outside-clinic scan EDD 10 days off an 8-week LMP gets no alert once today's GA passes about 28 weeks (limit 21 days). Spec line 91 lists this as open; I'm noting the patient-safety cost.
+
+**Major (test gap) | `ui/patienthub/PatientHubHeader.kt:145,273,366`**
+- The real patient header (expanded and sticky) shows the `??`, but no test renders `PatientHubHeader`.
+- `DatingGaMarkerSurfacesTest` only covers `ClinicalPatientCard` variants and the list row. A regression in the header would go unnoticed.
+
+**Nit | `model/DatingSummary.kt:65,74`**
+- The 560-day span guard is not in the spec. A mistyped scan EDD (for example 2062) under a null, Clinical or unknown method becomes the shown EDD (the engine's `else` branch), with no alert.
+
+**Nit | `model/Redating.kt` (`.toInt()`)**
+- An extreme LMP makes the gap wrap silently. `abs(Int.MIN_VALUE)` in `DatingText.kt:60` and `OverviewSections.kt:94` could then print a negative gap.
+
+**Nit | `model/DatingText.kt:28-34,49`**
+- "by ultrasound", "clinical", "ET", "Confirmed EDD" and "Method" are hard-coded English used in the Compose UI.
+- They replace the deleted `datingMethodLabelRes` string resources, which is a localisation regression. RTL rendering of "dd/mm/yyyy · D5" is also unverified.
+
+**Nit | `model/DatingText.kt:43`**
+- With a null embryo age the ET row shows no "· D5", but the engine still computes the EDD assuming day 5 (`GestationalAgeEngine` uses `embryoAgeDays ?: 5`). The assumption is invisible.
+
+**Nit | `ui/Components.kt:219-220,326-329`**
+- `datingSummaryOf` is not wrapped in `remember`, so it is recomputed on every recomposition of every list card.
+- Also, `gaResult` is computed as of now while the summary uses `asOfDate` (the GA part is pre-existing).
+
+**Nit | `DeliveryPlanningCard.kt:54,57`, `OverviewSections.kt:67`, `PatientHubHeader.kt:145`**
+- `remember(patient) { …LocalDate.now() }` keeps the old date past midnight, so the GA, the marker and the anchor go stale until the patient object changes.
+
+**Nit | `state/IntakeDatingRule.kt:26,36,68,92`**
+- A second method parser remains, using raw `equals("IVF"/"US"/"LMP", ignoreCase)` with no trim. This is outside the diff and existed before.
+- The rest of the duplication grep (`agreedEdd`, `ultrasoundEdd`, `uppercase()`) only hits storage and draft plumbing, not display fallbacks.
+
+## Checked and passing
+- All oracles match `DatingSummary.kt` and `DatingText.kt` as written: O1-O4, E1-E2, M1 (trim and the "US" alias), D1-D7.
+- Discordance maths: the sign follows the Clarifications, and the limit check is strictly greater than, with the right tier boundaries.
+- Discordance alert: it is full width, wraps, has an icon and no button, uses the warning tokens, and the alert string uses `&#160;d`.
+- Non-breaking spaces: the ET row uses real U+00A0 bytes.
+- The `??` marker: it is text with a content description and the critical accent colour in light and dark. It is absent from the Visits and Scans GA badges, and in the patient list it shows only when a GA exists.
+- Print: values are escaped exactly once, and `PatientPrintHtmlGenerator.kt` is at 1,278 lines, under the 1,500-line ceiling.
+
+## Not checked
+- Whether the Lab GA display also stays free of the marker. I did not open LabsTab.
+- Actual contrast ratios of the `CriticalAccent` tokens.
+- 360dp at 1.3x font scale for the header and Delivery Plan card. I only read the existing tests; I rendered nothing.
+- Pixel-level match against the mock HTML, and RTL layout.
+- Whether `ClinicalDateField` or the editor would actually let someone enter an out-of-range year.
+
+**Verdict: FIX-NEEDED.** Guard `DatingText.kt:58` and fix the test that misses it. Then the owner needs to decide on the backup round-trip (EncryptedBackupManager), the hidden agreed-EDD source and today-anchor tier drift.

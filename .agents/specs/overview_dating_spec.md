@@ -89,3 +89,9 @@ Reviewers: Opus, DeepSeek (code), Sonnet (tests). Evidence in `.agents/fleet-run
 - U11. `DatingEditor` uses `canonicalDatingMethod` instead of its own raw string comparison for the IVF fields.
 - U12. The `??` is not clipped at 360dp and 1.3x font scale in the patient list row.
 - Open owner decisions (not built): scan EDD hidden below the limit or under the Ultrasound method; Method row when no method is recorded; transfer date recorded under a non-IVF method; tier drift when no scan exists.
+
+## Amendments after round 2 review (final round)
+
+- D6b. A scan EDD more than 560 days (2 x full term) from the anchor, or an LMP more than 560 days from the anchor in either direction, gives no discordance. Boundary: 560 days is accepted, 561 days gives none.
+- D6c. Every consumer of the summary (`datingDiscordanceLine`, the Overview alert, print, share) is safe for extreme dates: nothing throws and no negative or wrapped gap is ever printed.
+- Known and deferred: backup export/restore (`EncryptedBackupManager`) collapses `agreedEdd` and `ultrasoundEdd` into one value, which can clear the alert after a restore. Pre-existing, outside this change.

@@ -1,0 +1,69 @@
+**Verdict: FIX-NEEDED.** The unit and print layers now close the round-1 logic gaps well. The remaining holes are a few mutations nothing catches, and the real workspace header (`PatientHubHeader`) has no marker test. I did not run any tests, so every "caught" or "not caught" below comes from reading the assertions against the diff.
+
+## Findings
+
+### Blocker
+None.
+
+### Major
+- **`PatientHubHeader` has no marker test.** This is `ui/patienthub/PatientHubHeader.kt`, the real workspace header. It draws the marker at line ~270 (expanded) and ~366 (compact), and nothing under `androidTest` references it.
+  - `DatingGaMarkerSurfacesTest.headerCardShowsMarkerOnlyWhenDiscordant` only drives `ClinicalPatientCard` (`BEDSIDE_TOP_BAR` and `EDITOR_SUMMARY`).
+  - If `gaDiscordant` were dropped or hard-coded to false in `PatientHubHeader`, every test stays green.
+  - U4 names the header, so this is the largest uncovered surface.
+- **The `hasGa` guard in the patient list row has no test.**
+  - `PatientDirectoryMetricsRow` now shows the marker only when `hasGa && row.isDatingDiscordant`.
+  - Discordance does not depend on the current GA being inside the engine's 0 to 320 day window. A discordant patient with no printable GA ("-" shown as "Pending") would otherwise get a marker with no number.
+  - `listRowShowsMarkerOnlyWhenDiscordant` only uses a valid GA. Removing `hasGa` passes everything.
+- **The `gaText != null` guard in `DeliveryPlanningCard` has the same gap.** Every card test uses an in-window GA.
+- **The 560-day span guard has no boundary test, and the spec never defines it.**
+  - `MAX_SCAN_EDD_SPAN_DAYS = 2 * FULL_TERM_DAYS` silently suppresses the alert for a scan EDD more than 560 days from the anchor.
+  - Only ±999999999-year dates exercise it (`DatingSummaryTest.outOfRangeUltrasoundEddGivesNoDiscordance`).
+  - Any limit from about 220 up to millions of days passes every test.
+  - It suppresses a safety alert, so it needs a spec line (D6a is only about "extreme") and a boundary test at 560 and 561 days.
+
+### Nit
+- **`DatingSummaryTest.extremeLmpDateNeverThrows` and `extremeUltrasoundEddNeverThrows`** assert `s.edd == null || s.discordance == null`. That passes if `edd` is non-null and `discordance` is null for the wrong reason. It matches the D6a wording, but it is loose.
+- **`DatingScanAnchorTest.scanDatedTodayIsAccepted` is a tautology.** The scan sits on `gaAlertDay` and today is also `gaAlertDay`, so the "no scan, anchor = today" fallback gives the same answer. Changing `!it.isAfter(today)` to `it.isBefore(today)` passes.
+- **Tier coverage stops at the listed edges.** There is no GA below 62 (GA 0, or a negative GA from a pre-LMP anchor) and none above 196, such as GA 280. Behaviour past the last tier is unpinned.
+- **`PatientPrintHtmlGeneratorTest.q19d_agreedEddMissing_notRecorded`** is unchanged by the diff, but its fixture now has all dating fields null, so it passes under any EDD implementation. The new `targetDeliveryTiming_*` tests carry the real weight.
+- **`q93_datingSection_escapedOnce` is not weakened.** It is exact (2 escaped cells, EDD cell "Not recorded") rather than `>= 2`. The box delimiter moved from `section-title` to `ga-highlight`, which is fine. A malformed agreed EDD is no longer echoed raw anywhere in print; that is a behaviour change worth confirming with the owner.
+- **Time dependence.**
+  - `OverviewTabSectionsTest.withDating` and `ClinicalSummaryDatingTest` use a fixed scan date of 2026-08-27 against the real `LocalDate.now()`. They pass on any clock after that date and would silently change on an earlier one.
+  - The related print tests pin `asOfDate`, so they are stable.
+- **Header and list coverage.**
+  - The sticky bar and banner are deleted, so there is nothing to cover. The removed `stickyCompactBar_displaysFullNameAndActions` test is consistent with U10.
+  - No test asserts the banner is gone (there is no `GestationalBanner` caller to find).
+  - The list-row marker is covered, including U12 at 360dp and 1.3x font scale for a post-term patient.
+
+### Oracles with a test (round-1 gaps closed)
+- **D2a, scan anchor:** earliest scan wins whatever the order, malformed scans, a scan before the LMP, a future scan and a scan on the LMP date are handled, and an extreme-date scan does not throw. The fixtures pin the tier (limit 7 vs 10), so a wrong anchor flips the result. Tested through `datingSummaryOf`.
+- **D5, agreedEdd:** null, blank, malformed and unequal values do not clear the alert; equal values do, including with whitespace.
+- **D4, tier boundaries:** GA 62/63, 111/112, 153/154 and 195/196, each at gap == limit (no alert) and limit+1 (alert), with both signs, and `thresholdDays` checked.
+- **D6a, extremes:** no throw for extreme values in any date field.
+- **D7, IVF:** never alerts, in the summary, the share text and print, for both `IVF` and `IVF_TRANSFER`.
+- **Ultrasound clear:** covered in the summary (with the `us` alias), share and print.
+- **Negative gap:** a scan EDD earlier than the LMP EDD prints "gap 9 d" with no minus sign, in share and print.
+- **U9, print target delivery:** the shared EDD in dd/mm/yyyy, with agreed null, blank or malformed falling back to the method EDD, no raw ISO date, IVF giving the transfer EDD, and "Not recorded" only when no EDD exists.
+- **U8, Delivery Plan card:** shared label and EDD, no scan-EDD fallback, "Confirmed EDD" for a referred patient, marker only when discordant, and an unclipped marker at 360dp and 1.3x.
+- **U4, GA badge and visit/scan surfaces:** the marker has a content description, and it never appears on the visit or scan GA badges.
+- **`formatDmy`:** hostile default locales (Thai, Arabic, Hindi, Persian), plus a fresh class load that proves the top-level formatter does not capture the locale.
+
+## Three mutations
+
+| # | Mutation | Caught? |
+|---|---|---|
+| 1 | In `redatingAdvice`, change the strict `>` to `>=` (or add one day to the limit) | **Caught.** `gapAtTheLimitGivesNoAlertAndOneOverAlertsAtEveryTierBoundary` asserts no alert at the limit and an alert at limit+1, at every tier edge and both signs. |
+| 2 | Drop the `method == ULTRASOUND_CODE` clear in `discordanceOf` | **Caught.** `clearedWhenMethodIsUltrasound` (and the share and print Ultrasound tests) expect null at gap 30. The other two clears are also caught: removing the IVF check fails `neverFiresForTheIvfTransferMethod`, and removing `scanEdd == agreedEdd` fails `clearedWhenAgreedEddEqualsUltrasoundEdd`. |
+| 3 | In `earliestScanDate`, change `!it.isAfter(today)` to `it.isBefore(today)` (so a scan dated today is dropped) | **Not caught.** `scanDatedTodayIsAccepted` gives the same answer from the fallback. |
+
+Further mutations that also pass today: remove `hasGa &&` from the list row, change `MAX_SCAN_EDD_SPAN_DAYS` to 5000, or hard-code `gaDiscordant = false` in `PatientHubHeader`.
+
+Of those, the three-item cluster behind mutation 3 and the header, list and span items are the fix list. Mutations 1 and 2 show the core maths is well pinned.
+
+## Not checked
+- I ran no tests, on JVM or device.
+- I read `FormatDmyTest` only through the diff, not the first 40 lines of the original file.
+- I did not read `projectDashboardRow` or `PatientDirectoryCard`, only the diff and the call sites.
+- I could not judge things only a device shows: marker contrast in light and dark (U4 has no test at all, and nothing tests dark theme), real layout at 360dp and 1.3x beyond what the tests assert, and the `PatientHubHeader` collapse behaviour.
+- I did not check that `OverviewSections.kt` `DatingSection` is free of raw-field branching (U1); the tests only check the rendered rows.
+- I did not check other callers of the removed strings or enum value for compile safety.

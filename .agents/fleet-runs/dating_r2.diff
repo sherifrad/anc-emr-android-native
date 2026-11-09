@@ -1,0 +1,1612 @@
+diff --git a/app/src/androidTest/java/com/sherifradwan/ancnative/ClinicalPatientCardTest.kt b/app/src/androidTest/java/com/sherifradwan/ancnative/ClinicalPatientCardTest.kt
+index 7c5d20e..a7143a3 100644
+--- a/app/src/androidTest/java/com/sherifradwan/ancnative/ClinicalPatientCardTest.kt
++++ b/app/src/androidTest/java/com/sherifradwan/ancnative/ClinicalPatientCardTest.kt
+@@ -53,28 +53,6 @@ class ClinicalPatientCardTest {
+         compose.onNodeWithTag("workspaceTopBar").assertIsDisplayed()
+     }
+ 
+-    @Test
+-    fun stickyCompactBar_displaysFullNameAndActions() {
+-        compose.activityRule.scenario.onActivity { activity ->
+-            activity.setContent {
+-                AncTheme {
+-                    ClinicalPatientCard(
+-                        patient = patient,
+-                        variant = PatientCardVariant.STICKY_COMPACT,
+-                        asOfDate = LocalDate.parse("2026-11-08"),
+-                        onBack = { },
+-                        onOpenReport = { },
+-                    )
+-                }
+-            }
+-        }
+-        compose.waitForIdle()
+-
+-        compose.onNodeWithText(patient.displayName).assertIsDisplayed()
+-        compose.onNodeWithTag("workspaceStickyCompactBar").assertIsDisplayed()
+-        compose.onAllNodesWithText("DEMO-ANC-001").assertCountEquals(0)
+-    }
+-
+     @Test
+     fun editorSummary_displaysFullNameAndMetadata() {
+         compose.activityRule.scenario.onActivity { activity ->
+diff --git a/app/src/androidTest/java/com/sherifradwan/ancnative/ComposeTextAsserts.kt b/app/src/androidTest/java/com/sherifradwan/ancnative/ComposeTextAsserts.kt
+new file mode 100644
+index 0000000..c8d49e2
+--- /dev/null
++++ b/app/src/androidTest/java/com/sherifradwan/ancnative/ComposeTextAsserts.kt
+@@ -0,0 +1,35 @@
++package com.sherifradwan.ancnative
++
++import androidx.compose.ui.semantics.SemanticsActions
++import androidx.compose.ui.semantics.getOrNull
++import androidx.compose.ui.test.SemanticsMatcher
++import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
++import androidx.compose.ui.test.hasAnyAncestor
++import androidx.compose.ui.test.hasTestTag
++import androidx.compose.ui.test.hasText
++import androidx.compose.ui.text.TextLayoutResult
++import org.junit.Assert.assertFalse
++import org.junit.Assert.assertTrue
++
++/** Matches the node carrying [tag] and any of its descendants (hasAnyAncestor alone excludes the tagged node). */
++fun inTagged(tag: String): SemanticsMatcher = hasTestTag(tag) or hasAnyAncestor(hasTestTag(tag))
++
++/** Fails when the text node matched by [matcher] is clipped or ellipsized in its own layout. */
++fun SemanticsNodeInteractionsProvider.assertTextNotClipped(label: String, matcher: SemanticsMatcher) {
++    val node = onNode(matcher, useUnmergedTree = true)
++    val results = mutableListOf<TextLayoutResult>()
++    node.fetchSemanticsNode().config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.invoke(results)
++    assertTrue("'$label' has no text layout to check", results.isNotEmpty())
++    results.forEach { layout ->
++        // hasVisualOverflow is not used: text that shrinks to its content width reports
++        // size.width < laid-out paragraph width even when nothing is clipped. Check clipping directly.
++        assertTrue("'$label' clipped vertically", layout.size.height >= layout.multiParagraph.height.toInt())
++        for (line in 0 until layout.lineCount) {
++            assertTrue("'$label' line $line clipped horizontally", layout.getLineRight(line) <= layout.size.width + 1f)
++            assertFalse("'$label' ellipsized on line $line", layout.isLineEllipsized(line))
++        }
++    }
++}
++
++fun SemanticsNodeInteractionsProvider.assertNotEllipsized(text: String, ancestorTag: String) =
++    assertTextNotClipped(text, hasText(text, substring = true) and inTagged(ancestorTag))
+diff --git a/app/src/androidTest/java/com/sherifradwan/ancnative/DatingGaMarkerSurfacesTest.kt b/app/src/androidTest/java/com/sherifradwan/ancnative/DatingGaMarkerSurfacesTest.kt
+new file mode 100644
+index 0000000..5ce3230
+--- /dev/null
++++ b/app/src/androidTest/java/com/sherifradwan/ancnative/DatingGaMarkerSurfacesTest.kt
+@@ -0,0 +1,168 @@
++package com.sherifradwan.ancnative
++
++import androidx.activity.compose.setContent
++import androidx.compose.foundation.layout.Box
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.layout.width
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.CompositionLocalProvider
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.platform.LocalDensity
++import androidx.compose.ui.test.assertCountEquals
++import androidx.compose.ui.test.assertIsDisplayed
++import androidx.compose.ui.test.getUnclippedBoundsInRoot
++import androidx.compose.ui.test.hasTestTag
++import androidx.compose.ui.test.hasText
++import androidx.compose.ui.test.junit4.createAndroidComposeRule
++import androidx.compose.ui.unit.Density
++import androidx.compose.ui.unit.dp
++import androidx.test.ext.junit.runners.AndroidJUnit4
++import com.sherifradwan.ancnative.model.DemoFixtures
++import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.model.DemoPatientDating
++import com.sherifradwan.ancnative.model.DemoUltrasoundScan
++import com.sherifradwan.ancnative.model.DemoVisit
++import com.sherifradwan.ancnative.ui.AncTheme
++import com.sherifradwan.ancnative.ui.ClinicalPatientCard
++import com.sherifradwan.ancnative.ui.PatientCardVariant
++import com.sherifradwan.ancnative.ui.patientdirectory.PatientDirectoryCard
++import com.sherifradwan.ancnative.ui.projectDashboardRow
++import com.sherifradwan.ancnative.ui.patienthub.tabs.ScansTab
++import com.sherifradwan.ancnative.ui.patienthub.tabs.VisitsTab
++import java.time.LocalDate
++import org.junit.Assert.assertEquals
++import org.junit.Assert.assertTrue
++import org.junit.Rule
++import org.junit.Test
++import org.junit.runner.RunWith
++
++/**
++ * The red "??" after the current gestational age appears on the header card and the patient list row when the
++ * dating is discordant, and never on the historical GA badges of visits and scans (U4, U12).
++ * Dates are relative to now so the current GA is always inside the engine's 0 to 320 day window.
++ */
++@RunWith(AndroidJUnit4::class)
++class DatingGaMarkerSurfacesTest {
++    @get:Rule
++    val compose = createAndroidComposeRule<MainActivity>()
++
++    private val markerTag = "gaDiscordanceMarker"
++    private val today: LocalDate = LocalDate.now()
++
++    /** LMP 300 d ago: current GA 42w6d, post-term, so the list row also shows the "Post" chip beside the marker. */
++    private val postTermLmp: LocalDate = today.minusDays(300)
++
++    /** LMP 150 d ago, mid-pregnancy, for the surfaces that do not need post-term. */
++    private val midLmp: LocalDate = today.minusDays(150)
++
++    private val base: DemoPatient = DemoFixtures.patients.first()
++
++    private fun scanOn(date: LocalDate) = DemoUltrasoundScan(
++        id = "anchor-$date", patientId = base.id, date = date.toString(),
++        gestationalAgeWeeks = null, gestationalAgeDays = null, fetalNumber = null,
++        presentation = null, placentalSite = null, amnioticFluid = null,
++        fetalHeartRate = null, biometryBpd = null, biometryHc = null, biometryAc = null,
++        biometryFl = null, estimatedFetalWeight = null, impression = null,
++    )
++
++    /** The 25 d gap between the LMP and scan due dates exceeds every tier limit (5 to 21 d) at any anchor. */
++    private fun patient(lmp: LocalDate, discordant: Boolean): DemoPatient {
++        val lmpEdd = lmp.plusDays(280)
++        return base.copy(
++            dating = DemoPatientDating(
++                patientId = base.id, lmpDate = lmp.toString(),
++                ultrasoundEdd = if (discordant) lmpEdd.plusDays(25).toString() else null,
++                agreedEdd = null, datingMethod = "LMP", notes = null,
++            ),
++            ultrasoundScans = listOf(scanOn(lmp.plusDays(80))),
++            visits = listOf(
++                DemoVisit(
++                    id = "v-ga", date = lmp.plusDays(100).toString(),
++                    bloodPressure = "110/70", weight = "70", findings = null, notes = null,
++                ),
++            ),
++        )
++    }
++
++    private fun show(widthDp: Int? = null, fontScale: Float? = null, content: @Composable () -> Unit) {
++        compose.activity.runOnUiThread {
++            compose.activity.setContent {
++                AncTheme {
++                    val density = LocalDensity.current
++                    val scaled = if (fontScale != null) Density(density.density, fontScale) else density
++                    CompositionLocalProvider(LocalDensity provides scaled) {
++                        val sized = if (widthDp != null) Modifier.width(widthDp.dp) else Modifier
++                        Box(sized) { content() }
++                    }
++                }
++            }
++        }
++        compose.waitForIdle()
++    }
++
++    private fun markerCount() = compose.onAllNodes(hasTestTag(markerTag), useUnmergedTree = true).fetchSemanticsNodes().size
++
++    private fun badgeCount() =
++        compose.onAllNodes(hasTestTag("gestationalAgeBadge"), useUnmergedTree = true).fetchSemanticsNodes().size
++
++    @Test
++    fun headerCardShowsMarkerOnlyWhenDiscordant() {
++        for (variant in listOf(PatientCardVariant.BEDSIDE_TOP_BAR, PatientCardVariant.EDITOR_SUMMARY)) {
++            show { ClinicalPatientCard(patient(midLmp, discordant = true), variant, asOfDate = today) }
++            assertEquals("$variant discordant", 1, markerCount())
++            show { ClinicalPatientCard(patient(midLmp, discordant = false), variant, asOfDate = today) }
++            assertEquals("$variant concordant", 0, markerCount())
++            assertEquals("$variant keeps the GA badge", 1, badgeCount())
++        }
++    }
++
++    @Test
++    fun visitGaBadgesNeverShowTheMarkerEvenForADiscordantPatient() {
++        show { VisitsTab(patient(midLmp, discordant = true), canEdit = true, onStartVisit = { _, _ -> }, onEvent = {}) }
++        assertTrue("the visit must render a GA badge for this test to mean anything", badgeCount() >= 1)
++        assertEquals(0, markerCount())
++        compose.onAllNodes(hasText("??", substring = true), useUnmergedTree = true).assertCountEquals(0)
++    }
++
++    @Test
++    fun scanGaBadgesNeverShowTheMarkerEvenForADiscordantPatient() {
++        show { ScansTab(patient(midLmp, discordant = true), canEdit = true, onEvent = {}, onViewPhotos = { _, _ -> }) }
++        assertTrue("the scan must render a GA badge for this test to mean anything", badgeCount() >= 1)
++        assertEquals(0, markerCount())
++        compose.onAllNodes(hasText("??", substring = true), useUnmergedTree = true).assertCountEquals(0)
++    }
++
++    private fun showListCard(p: DemoPatient, widthDp: Int? = null, fontScale: Float? = null) =
++        show(widthDp, fontScale) {
++            Box(Modifier.padding(horizontal = 8.dp)) {
++                PatientDirectoryCard(patient = p, row = projectDashboardRow(p), onEvent = {}, onOpenMenu = {})
++            }
++        }
++
++    @Test
++    fun listRowShowsMarkerOnlyWhenDiscordant() {
++        showListCard(patient(midLmp, discordant = true))
++        assertEquals(1, markerCount())
++        showListCard(patient(midLmp, discordant = false))
++        assertEquals(0, markerCount())
++    }
++
++    // U12: post-term and discordant is the widest first column: number, "??" and the "Post" chip share one row.
++    @Test
++    fun listRowMarkerIsNotClippedForAPostTermPatientAt360dpFontScale13() {
++        showListCard(patient(postTermLmp, discordant = true), widthDp = 360, fontScale = 1.3f)
++        compose.onNode(hasTestTag(markerTag), useUnmergedTree = true).assertExists().assertIsDisplayed()
++        compose.assertNotEllipsized("??", markerTag)
++
++        val marker = compose.onNode(hasTestTag(markerTag), useUnmergedTree = true).getUnclippedBoundsInRoot()
++        val parityLabel = compose.onNode(hasText("Parity"), useUnmergedTree = true).getUnclippedBoundsInRoot()
++        val post = compose.onNode(hasText("Post"), useUnmergedTree = true).getUnclippedBoundsInRoot()
++        assertTrue(
++            "marker must stay inside the GA column (right=${marker.right}, parity column starts at ${parityLabel.left})",
++            marker.right <= parityLabel.left,
++        )
++        assertTrue("the Post chip must stay inside the GA column", post.right <= parityLabel.left)
++        assertTrue("marker and Post chip must not overlap", marker.right <= post.left || post.right <= marker.left)
++        assertTrue("marker must stay inside the 360dp viewport", marker.right <= 360.dp)
++    }
++}
+diff --git a/app/src/androidTest/java/com/sherifradwan/ancnative/OverviewTabSectionsTest.kt b/app/src/androidTest/java/com/sherifradwan/ancnative/OverviewTabSectionsTest.kt
+index 00509c6..0ba38f9 100644
+--- a/app/src/androidTest/java/com/sherifradwan/ancnative/OverviewTabSectionsTest.kt
++++ b/app/src/androidTest/java/com/sherifradwan/ancnative/OverviewTabSectionsTest.kt
+@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.width
+ import androidx.compose.runtime.CompositionLocalProvider
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.platform.LocalDensity
+-import androidx.compose.ui.semantics.SemanticsActions
+ import androidx.compose.ui.semantics.SemanticsProperties
+ import androidx.compose.ui.semantics.getOrNull
+ import androidx.compose.ui.test.SemanticsMatcher
+@@ -28,7 +27,8 @@ import com.sherifradwan.ancnative.model.DemoPatientDating
+ import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
+ import com.sherifradwan.ancnative.model.DemoUltrasoundScan
+ import com.sherifradwan.ancnative.ui.AncTheme
+-import com.sherifradwan.ancnative.ui.GestationalBanner
++import com.sherifradwan.ancnative.ui.GestationalAgeBadge
++import com.sherifradwan.ancnative.ui.patienthub.components.DeliveryPlanningCard
+ import com.sherifradwan.ancnative.ui.patienthub.tabs.OverviewTab
+ import java.time.LocalDate
+ import org.junit.Assert.assertEquals
+@@ -51,9 +51,6 @@ class OverviewTabSectionsTest {
+         it.config.getOrNull(SemanticsProperties.TestTag)?.startsWith(prefix) == true
+     }
+ 
+-    /** Matches the node carrying [tag] and any of its descendants (hasAnyAncestor alone excludes the tagged node). */
+-    private fun inTagged(tag: String) = hasTestTag(tag) or hasAnyAncestor(hasTestTag(tag))
+-
+     private fun show(
+         patient: DemoPatient,
+         canEdit: Boolean = true,
+@@ -170,27 +167,7 @@ class OverviewTabSectionsTest {
+                 "'$text' overlaps delete button (right=${bounds.right}, deleteLeft=${deleteBounds.left})",
+                 bounds.right <= deleteBounds.left,
+             )
+-            assertNotEllipsized(text, rowTag)
+-        }
+-    }
+-
+-    private fun assertNotEllipsized(text: String, ancestorTag: String) {
+-        val node = compose.onNode(
+-            hasText(text, substring = true) and inTagged(ancestorTag),
+-            useUnmergedTree = true,
+-        )
+-        val results = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+-        node.fetchSemanticsNode().config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.invoke(results)
+-        results.forEach { layout ->
+-            // hasVisualOverflow is not used: text that shrinks to its content width reports
+-            // size.width < laid-out paragraph width even when nothing is clipped. Check clipping directly.
+-            assertTrue("'$text' clipped vertically", layout.size.height >= layout.multiParagraph.height.toInt())
+-            for (line in 0 until layout.lineCount) {
+-                assertTrue("'$text' line $line clipped horizontally", layout.getLineRight(line) <= layout.size.width + 1f)
+-            }
+-            for (line in 0 until layout.lineCount) {
+-                assertFalse("'$text' ellipsized on line $line", layout.isLineEllipsized(line))
+-            }
++            compose.assertNotEllipsized(text, rowTag)
+         }
+     }
+ 
+@@ -214,7 +191,7 @@ class OverviewTabSectionsTest {
+                 hasText(t, substring = true) and inTagged(extrasTag),
+                 useUnmergedTree = true,
+             ).assertExists("extras text '$t' missing from $extrasTag")
+-            assertNotEllipsized(t, extrasTag)
++            compose.assertNotEllipsized(t, extrasTag)
+         }
+     }
+ 
+@@ -472,7 +449,7 @@ class OverviewTabSectionsTest {
+     fun datingVariantG_alertWrapsUnclippedAt360dpFontScale13() {
+         show(withDating(variantB), widthDp = 360, fontScale = 1.3f)
+         compose.onNodeWithTag(alertTag, useUnmergedTree = true).assertExists().assertIsDisplayed()
+-        assertNotEllipsized("EDD discordance", alertTag)
++        compose.assertNotEllipsized("EDD discordance", alertTag)
+         val screenWidth = 360.dp
+         val card = compose.onNodeWithTag("datingCard", useUnmergedTree = true).getUnclippedBoundsInRoot()
+         val alert = compose.onNodeWithTag(alertTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
+@@ -482,37 +459,143 @@ class OverviewTabSectionsTest {
+         compose.onAllNodes(hasClickAction() and inTagged(alertTag), useUnmergedTree = true).assertCountEquals(0)
+     }
+ 
+-    // GA marker: red "??" beside the current GA only when discordant (shared composable).
++    // GA marker: red "??" after the current GA only when discordant. One shared composable draws it.
+     private val markerTag = "gaDiscordanceMarker"
+ 
+-    private fun showBanner(d: DemoPatientDating) {
+-        compose.activity.runOnUiThread {
+-            compose.activity.setContent {
+-                AncTheme { GestationalBanner(dating = d, asOfDate = LocalDate.of(2026, 10, 1)) }
+-            }
+-        }
++    private fun showContent(content: @androidx.compose.runtime.Composable () -> Unit) {
++        compose.activity.runOnUiThread { compose.activity.setContent { AncTheme { content() } } }
+         compose.waitForIdle()
+     }
+ 
+-    // 25 d gap exceeds every tier limit (5 to 21 d), so the result does not depend on the anchor date.
+-    private val discordantLmpScan = dating(lmp = "2026-06-08", us = "2027-04-09", method = "LMP")
+-    private val concordantLmpScan = dating(lmp = "2026-06-08", method = "LMP")
++    private fun markerCount() = compose.onAllNodes(hasTestTag(markerTag), useUnmergedTree = true).fetchSemanticsNodes().size
+ 
+     @Test
+-    fun gaMarkerShownWhenDiscordant() {
+-        showBanner(discordantLmpScan)
+-        compose.onAllNodes(hasTestTag(markerTag), useUnmergedTree = true).assertCountEquals(1)
++    fun gaBadgeShowsMarkerWithContentDescriptionWhenDiscordant() {
++        showContent { GestationalAgeBadge(gaText = "GA 20w0d", discordant = true) }
++        assertEquals(1, markerCount())
+         compose.onNode(hasText("??") and inTagged(markerTag), useUnmergedTree = true).assertExists()
+         compose.onNode(
+             inTagged(markerTag) and SemanticsMatcher.keyIsDefined(SemanticsProperties.ContentDescription),
+             useUnmergedTree = true,
+         ).assertExists("marker needs a content description")
++        compose.onNode(hasText("GA 20w0d") and inTagged("gestationalAgeBadge"), useUnmergedTree = true).assertExists()
+     }
+ 
+     @Test
+-    fun gaMarkerAbsentWhenNotDiscordant() {
+-        showBanner(concordantLmpScan)
+-        compose.onAllNodes(hasTestTag(markerTag), useUnmergedTree = true).assertCountEquals(0)
++    fun gaBadgeKeepsTheNumberAndHasNoMarkerWhenNotDiscordant() {
++        showContent { GestationalAgeBadge(gaText = "GA 20w0d", discordant = false) }
++        assertEquals(0, markerCount())
+         compose.onAllNodes(hasText("??", substring = true), useUnmergedTree = true).assertCountEquals(0)
++        compose.onNode(hasText("GA 20w0d") and inTagged("gestationalAgeBadge"), useUnmergedTree = true).assertExists()
++    }
++
++    @Test
++    fun gaBadgeDefaultIsNotDiscordant() {
++        showContent { GestationalAgeBadge(gaText = "GA 20w0d") }
++        assertEquals(0, markerCount())
++    }
++
++    // Delivery Plan card (U8). Dates are relative to now so the current GA is always within 0 to 320 days.
++    private val today: LocalDate = LocalDate.now()
++    private val cardLmp: LocalDate = today.minusDays(150)
++    private val cardLmpEdd: LocalDate = cardLmp.plusDays(280)
++    private val dmy = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy", java.util.Locale.ROOT)
++
++    private fun cardPatient(d: DemoPatientDating): DemoPatient = withDating(d).copy(
++        ultrasoundScans = listOf(
++            DemoUltrasoundScan(
++                id = "card-anchor-scan", patientId = multiparous.id, date = cardLmp.plusDays(80).toString(),
++                gestationalAgeWeeks = null, gestationalAgeDays = null, fetalNumber = null,
++                presentation = null, placentalSite = null, amnioticFluid = null,
++                fetalHeartRate = null, biometryBpd = null, biometryHc = null, biometryAc = null,
++                biometryFl = null, estimatedFetalWeight = null, impression = null,
++            ),
++        ),
++    )
++
++    private fun showDeliveryCard(patient: DemoPatient) = showContent {
++        DeliveryPlanningCard(patient = patient, canEdit = true, onEditPatient = {})
++    }
++
++    private fun cardNode(label: String) = compose.onNode(
++        hasText(label, ignoreCase = true) and hasAnyAncestor(hasTestTag("deliveryPlanningCard")),
++        useUnmergedTree = true,
++    )
++
++    private fun cardValue(value: String) = compose.onNode(
++        hasText(value) and hasAnyAncestor(hasTestTag("deliveryPlanningCard")),
++        useUnmergedTree = true,
++    )
++
++    /** The value sits in the same tile as the label: same left edge, directly below it. */
++    private fun assertTile(label: String, value: String) {
++        val l = cardNode(label).assertExists("tile label '$label' missing").fetchSemanticsNode().boundsInRoot
++        val v = cardValue(value).assertExists("tile value '$value' missing").fetchSemanticsNode().boundsInRoot
++        assertTrue("'$value' must start at the left edge of the '$label' tile", kotlin.math.abs(v.left - l.left) < 2f)
++        assertTrue("'$value' must sit below '$label'", v.top >= l.bottom - 1f)
++        assertTrue("'$value' is too far below '$label'", v.top - l.bottom < 40f)
++    }
++
++    @Test
++    fun deliveryCardShowsTheSharedEddInDmyWithPlainLabel() {
++        showDeliveryCard(cardPatient(dating(lmp = cardLmp.toString(), method = "LMP")))
++        assertTile("EDD", cardLmpEdd.format(dmy))
++        compose.onAllNodes(hasText("Confirmed EDD", ignoreCase = true), useUnmergedTree = true).assertCountEquals(0)
++        compose.onAllNodes(hasText(cardLmpEdd.toString(), substring = true), useUnmergedTree = true).assertCountEquals(0)
++    }
++
++    @Test
++    fun deliveryCardUsesTheSharedEddNotTheScanEddWhenAgreedEddIsMissing() {
++        val scanEdd = cardLmpEdd.plusDays(3)
++        showDeliveryCard(cardPatient(dating(lmp = cardLmp.toString(), us = scanEdd.toString(), agreed = null, method = "LMP")))
++        assertTile("EDD", cardLmpEdd.format(dmy))
++        compose.onAllNodes(hasText(scanEdd.format(dmy), substring = true), useUnmergedTree = true).assertCountEquals(0)
++        compose.onAllNodes(hasText(scanEdd.toString(), substring = true), useUnmergedTree = true).assertCountEquals(0)
++    }
++
++    @Test
++    fun deliveryCardShowsConfirmedEddLabelForAReferredPatient() {
++        showDeliveryCard(cardPatient(dating(agreed = "2027-04-02", method = "Clinical")))
++        assertTile("Confirmed EDD", "02/04/2027")
++    }
++
++    @Test
++    fun deliveryCardGaTileCarriesTheMarkerOnlyWhenDiscordant() {
++        // 25 d gap exceeds every tier limit (5 to 21 d), so the result does not depend on the anchor date.
++        val discordant = dating(lmp = cardLmp.toString(), us = cardLmpEdd.plusDays(25).toString(), method = "LMP")
++        showDeliveryCard(cardPatient(discordant))
++        assertEquals(1, markerCount())
++        val label = cardNode(compose.activity.getString(R.string.current_gestational_age))
++            .fetchSemanticsNode().boundsInRoot
++        val eddLabel = cardNode("EDD").fetchSemanticsNode().boundsInRoot
++        val marker = compose.onNode(hasTestTag(markerTag), useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
++        assertTrue("marker must sit in the GA tile, below its label", marker.top >= label.bottom - 1f && marker.left >= label.left)
++        assertTrue("marker must not drift into the EDD tile", marker.bottom <= eddLabel.top + 1f)
++
++        showDeliveryCard(cardPatient(dating(lmp = cardLmp.toString(), method = "LMP")))
++        assertEquals(0, markerCount())
++    }
++
++    @Test
++    fun deliveryCardMarkerIsUnclippedAt360dpFontScale13() {
++        val discordant = dating(lmp = cardLmp.toString(), us = cardLmpEdd.plusDays(25).toString(), method = "LMP")
++        compose.activity.runOnUiThread {
++            compose.activity.setContent {
++                AncTheme {
++                    val base = LocalDensity.current
++                    CompositionLocalProvider(LocalDensity provides Density(base.density, 1.3f)) {
++                        Box(Modifier.width(360.dp)) {
++                            DeliveryPlanningCard(patient = cardPatient(discordant), canEdit = true, onEditPatient = {})
++                        }
++                    }
++                }
++            }
++        }
++        compose.waitForIdle()
++        compose.onNode(hasTestTag(markerTag), useUnmergedTree = true).assertExists().assertIsDisplayed()
++        compose.assertNotEllipsized("??", markerTag)
++        val card = compose.onNodeWithTag("deliveryPlanningCard", useUnmergedTree = true).getUnclippedBoundsInRoot()
++        val marker = compose.onNode(hasTestTag(markerTag), useUnmergedTree = true).getUnclippedBoundsInRoot()
++        assertTrue("marker overflows the card (right=${marker.right}, card=${card.right})", marker.right <= card.right)
+     }
+ }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/model/DatingSummary.kt b/app/src/main/java/com/sherifradwan/ancnative/model/DatingSummary.kt
+index 55a596b..96b00f5 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/model/DatingSummary.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/model/DatingSummary.kt
+@@ -1,7 +1,9 @@
+ package com.sherifradwan.ancnative.model
+ 
++import java.time.DateTimeException
+ import java.time.LocalDate
+ import java.time.temporal.ChronoUnit
++import kotlin.math.abs
+ 
+ enum class EddLabel { PLAIN, CONFIRMED }
+ 
+@@ -24,10 +26,10 @@ fun datingSummary(dating: DemoPatientDating?, earliestScanDate: LocalDate?, toda
+     val method = canonicalDatingMethod(dating.datingMethod)
+     return DatingSummary(
+         origin = originOf(dating, method),
+-        edd = GestationalAgeEngine.calculateEstimatedDueDate(dating),
++        edd = derivedOrNull { GestationalAgeEngine.calculateEstimatedDueDate(dating) },
+         eddLabel = eddLabelOf(dating),
+         methodCode = method,
+-        discordance = discordanceOf(dating, method, earliestScanDate ?: today),
++        discordance = derivedOrNull { discordanceOf(dating, method, earliestScanDate ?: today) },
+     )
+ }
+ 
+@@ -47,9 +49,20 @@ private fun eddLabelOf(dating: DemoPatientDating): EddLabel {
+     return if (onlyAgreed) EddLabel.CONFIRMED else EddLabel.PLAIN
+ }
+ 
++/** Date arithmetic on parseable but extreme dates overflows; such a derived value is treated as absent. */
++private inline fun <T> derivedOrNull(block: () -> T?): T? =
++    try {
++        block()
++    } catch (_: DateTimeException) {
++        null
++    } catch (_: ArithmeticException) {
++        null
++    }
++
+ private fun discordanceOf(dating: DemoPatientDating, method: String?, anchor: LocalDate): RedatingAdvice? {
+     if (method == IVF_TRANSFER_CODE || method == ULTRASOUND_CODE) return null
+     val scanEdd = parseIsoDateOrNull(dating.ultrasoundEdd) ?: return null
++    if (abs(ChronoUnit.DAYS.between(anchor, scanEdd)) > MAX_SCAN_EDD_SPAN_DAYS) return null
+     if (scanEdd == parseIsoDateOrNull(dating.agreedEdd)) return null
+     val lmp = parseIsoDateOrNull(dating.lmpDate) ?: return null
+     val datingGaDays = ChronoUnit.DAYS.between(lmp, anchor)
+@@ -57,5 +70,7 @@ private fun discordanceOf(dating: DemoPatientDating, method: String?, anchor: Lo
+     return redatingAdvice(datingGaDays, scanGaDays)
+ }
+ 
++/** A scan EDD further than this from the anchor is outside what the engine models and gives no discordance. */
++private const val MAX_SCAN_EDD_SPAN_DAYS = 2 * FULL_TERM_DAYS
+ private const val IVF_TRANSFER_CODE = "IVF_TRANSFER"
+ private const val ULTRASOUND_CODE = "Ultrasound"
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/model/DatingText.kt b/app/src/main/java/com/sherifradwan/ancnative/model/DatingText.kt
+index e655904..49f53d2 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/model/DatingText.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/model/DatingText.kt
+@@ -8,13 +8,21 @@ private const val NBSP = ' '
+ /** One labelled line of the dating block. A null [value] means "not recorded". */
+ data class DatingTextRow(val label: String, val value: String?, val isEdd: Boolean = false)
+ 
+-/** Earliest parseable scan date of the patient, the anchor for the dating discordance check. */
+-fun earliestScanDate(patient: DemoPatient): LocalDate? =
+-    patient.ultrasoundScans.mapNotNull { parseIsoDateOrNull(it.date) }.minOrNull()
++/**
++ * Anchor for the dating discordance check: the earliest scan on or after the LMP and not after [today].
++ * Malformed, pre-LMP and future scan dates are ignored; null when none is left (the check then uses today).
++ */
++private fun earliestScanDate(patient: DemoPatient, today: LocalDate): LocalDate? {
++    val lmp = parseIsoDateOrNull(patient.dating?.lmpDate)
++    return patient.ultrasoundScans
++        .mapNotNull { parseIsoDateOrNull(it.date) }
++        .filter { (lmp == null || !it.isBefore(lmp)) && !it.isAfter(today) }
++        .minOrNull()
++}
+ 
+ /** The dating summary of a patient as of [today]; every screen builds it through here. */
+ fun datingSummaryOf(patient: DemoPatient, today: LocalDate): DatingSummary =
+-    datingSummary(patient.dating, earliestScanDate(patient), today)
++    datingSummary(patient.dating, earliestScanDate(patient, today), today)
+ 
+ /** Short method label for a stored dating code; unknown codes are shown as typed. */
+ fun datingMethodLabel(code: String?): String? = when (val canonical = canonicalDatingMethod(code)) {
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt
+index 8ecda21..bd272fc 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt
+@@ -137,7 +137,13 @@ fun DeliverySectionBox(
+ 
+ /** Compact label-over-value tile used for key delivery facts (blood group, EDD, GA...). */
+ @Composable
+-fun KeyFactTile(label: String, value: String?, modifier: Modifier = Modifier, emphasize: Boolean = false) {
++fun KeyFactTile(
++    label: String,
++    value: String?,
++    modifier: Modifier = Modifier,
++    emphasize: Boolean = false,
++    trailing: (@Composable () -> Unit)? = null,
++) {
+     Surface(
+         shape = RoundedCornerShape(10.dp),
+         color = MaterialTheme.colorScheme.surface,
+@@ -151,12 +157,16 @@ fun KeyFactTile(label: String, value: String?, modifier: Modifier = Modifier, em
+                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                 maxLines = 2,
+             )
+-            Text(
+-                text = value?.takeIf { it.isNotBlank() } ?: "-",
+-                style = MaterialTheme.typography.titleSmall,
+-                fontWeight = FontWeight.Bold,
+-                color = if (emphasize) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+-            )
++            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
++                Text(
++                    text = value?.takeIf { it.isNotBlank() } ?: "-",
++                    style = MaterialTheme.typography.titleSmall,
++                    fontWeight = FontWeight.Bold,
++                    color = if (emphasize) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
++                    modifier = Modifier.weight(1f, fill = false),
++                )
++                trailing?.invoke()
++            }
+         }
+     }
+ }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt
+index 81a4b0d..61532be 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt
+@@ -73,12 +73,6 @@ enum class PatientCardVariant {
+      */
+     BEDSIDE_TOP_BAR,
+ 
+-    /**
+-     * Compact sticky bar elevated when scrolling down: Back button, patient name,
+-     * ClinicalRiskBadge, Gestational Age chip, and action buttons.
+-     */
+-    STICKY_COMPACT,
+-
+     /**
+      * Summary card for section/editor headers (e.g. Lab Batch, Lab Editor, Meds Editor).
+      */
+@@ -271,82 +265,6 @@ fun ClinicalPatientCard(
+             }
+         }
+ 
+-        PatientCardVariant.STICKY_COMPACT -> {
+-            Surface(
+-                modifier = modifier
+-                    .fillMaxWidth()
+-                    .height(48.dp)
+-                    .testTag("workspaceStickyCompactBar"),
+-                color = MaterialTheme.colorScheme.surface,
+-                tonalElevation = 2.dp,
+-                border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+-            ) {
+-                Row(
+-                    modifier = Modifier
+-                        .fillMaxSize()
+-                        .padding(horizontal = 8.dp),
+-                    verticalAlignment = Alignment.CenterVertically,
+-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+-                ) {
+-                    if (onBack != null) {
+-                        IconButton(
+-                            onClick = onBack,
+-                            modifier = Modifier.minimumTouchTarget(),
+-                        ) {
+-                            Icon(
+-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+-                                contentDescription = stringResource(R.string.back),
+-                                tint = MaterialTheme.colorScheme.primary,
+-                                modifier = Modifier.size(20.dp),
+-                            )
+-                        }
+-                    }
+-                    Text(
+-                        text = patient.displayName,
+-                        style = MaterialTheme.typography.titleMedium,
+-                        fontWeight = FontWeight.Bold,
+-                        color = MaterialTheme.colorScheme.primary,
+-                        maxLines = 1,
+-                        overflow = TextOverflow.Ellipsis,
+-                        modifier = Modifier.weight(1f),
+-                    )
+-                    if (isHighRisk(patient.riskLevel)) {
+-                        ClinicalRiskBadge(isHighRisk = true)
+-                    }
+-                    val gaResult = patient.dating?.calculateGestationalAgeResult()
+-                    val ga = patient.dating?.calculateGestationalAge(asOfDate)
+-                    val gaText = gaResult?.shortWeeksText ?: ga?.toString()
+-                    if (gaText != null) {
+-                        Surface(
+-                            shape = RoundedCornerShape(4.dp),
+-                            color = MaterialTheme.colorScheme.tertiaryContainer,
+-                        ) {
+-                            Text(
+-                                text = "GA $gaText",
+-                                style = MaterialTheme.typography.labelSmall,
+-                                fontWeight = FontWeight.Bold,
+-                                color = MaterialTheme.colorScheme.onTertiaryContainer,
+-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+-                            )
+-                        }
+-                    }
+-                    if (onOpenReport != null) {
+-                        IconButton(
+-                            onClick = onOpenReport,
+-                            modifier = Modifier.minimumTouchTarget().testTag("workspaceReportButton"),
+-                        ) {
+-                            Icon(
+-                                imageVector = Icons.Default.Print,
+-                                contentDescription = stringResource(R.string.print_patient_report),
+-                                tint = MaterialTheme.colorScheme.secondary,
+-                                modifier = Modifier.size(18.dp),
+-                            )
+-                        }
+-                    }
+-                }
+-            }
+-        }
+-
+         PatientCardVariant.EDITOR_SUMMARY -> {
+             Surface(
+                 modifier = modifier.fillMaxWidth(),
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt
+index 23bd63f..f67bf9f 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt
+@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.unit.dp
+ import com.sherifradwan.ancnative.R
+ import com.sherifradwan.ancnative.model.GestationalAgeEngine
++import com.sherifradwan.ancnative.model.canonicalDatingMethod
+ import com.sherifradwan.ancnative.state.AncEvent
+ import com.sherifradwan.ancnative.state.AncRoute
+ import com.sherifradwan.ancnative.state.AncState
+@@ -172,7 +173,7 @@ fun DatingEditor(
+                 }
+ 
+                 // IVF Specific inputs
+-                if (draft.values.datingMethod.equals("IVF_TRANSFER", ignoreCase = true) || draft.values.datingMethod.equals("IVF", ignoreCase = true)) {
++                if (canonicalDatingMethod(draft.values.datingMethod) == "IVF_TRANSFER") {
+                     ClinicalDateField(
+                         value = draft.values.transferDate,
+                         onValueChange = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.TRANSFER_DATE, it)) },
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt
+deleted file mode 100644
+index f2ba775..0000000
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/GestationalBanner.kt
++++ /dev/null
+@@ -1,226 +0,0 @@
+-package com.sherifradwan.ancnative.ui
+-
+-import androidx.compose.foundation.layout.Arrangement
+-import androidx.compose.foundation.layout.Column
+-import androidx.compose.foundation.layout.ExperimentalLayoutApi
+-import androidx.compose.foundation.layout.FlowRow
+-import androidx.compose.foundation.layout.Row
+-import androidx.compose.foundation.layout.fillMaxWidth
+-import androidx.compose.foundation.layout.height
+-import androidx.compose.foundation.layout.padding
+-import androidx.compose.foundation.shape.RoundedCornerShape
+-import androidx.compose.material3.Card
+-import androidx.compose.material3.CardDefaults
+-import androidx.compose.material3.LinearProgressIndicator
+-import androidx.compose.material3.MaterialTheme
+-import androidx.compose.material3.Surface
+-import androidx.compose.material3.Text
+-import androidx.compose.runtime.Composable
+-import androidx.compose.ui.Alignment
+-import androidx.compose.ui.Modifier
+-import androidx.compose.ui.draw.clip
+-import androidx.compose.ui.platform.testTag
+-import androidx.compose.ui.res.stringResource
+-import androidx.compose.ui.semantics.contentDescription
+-import androidx.compose.ui.semantics.heading
+-import androidx.compose.ui.semantics.semantics
+-import androidx.compose.ui.text.font.FontWeight
+-import androidx.compose.ui.unit.dp
+-import com.sherifradwan.ancnative.R
+-import com.sherifradwan.ancnative.model.DemoPatientDating
+-import com.sherifradwan.ancnative.model.datingSummary
+-import com.sherifradwan.ancnative.model.daysToEdd
+-import com.sherifradwan.ancnative.model.formatDmy
+-import java.time.LocalDate
+-
+-@OptIn(ExperimentalLayoutApi::class)
+-@Composable
+-fun GestationalBanner(
+-    dating: DemoPatientDating?,
+-    asOfDate: LocalDate = LocalDate.now(),
+-    modifier: Modifier = Modifier,
+-    earliestScanDate: LocalDate? = null,
+-) {
+-    val gaResult = dating?.calculateGestationalAgeResult(asOfDate)
+-    val summary = datingSummary(dating, earliestScanDate, asOfDate)
+-    val edd = summary.edd
+-
+-    Card(
+-        modifier = modifier
+-            .fillMaxWidth()
+-            .testTag("gestationalHeroBanner"),
+-        shape = RoundedCornerShape(16.dp),
+-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+-    ) {
+-        Column(
+-            modifier = Modifier
+-                .fillMaxWidth()
+-                .padding(16.dp),
+-            verticalArrangement = Arrangement.spacedBy(10.dp),
+-        ) {
+-            if (gaResult != null && edd != null) {
+-                // Active clinical gestational tracking state
+-                FlowRow(
+-                    modifier = Modifier.fillMaxWidth(),
+-                    horizontalArrangement = Arrangement.SpaceBetween,
+-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+-                ) {
+-                    Column(modifier = Modifier.weight(1f, fill = false)) {
+-                        Text(
+-                            text = stringResource(R.string.current_gestational_age),
+-                            style = MaterialTheme.typography.labelMedium,
+-                            fontWeight = FontWeight.SemiBold,
+-                            color = MaterialTheme.colorScheme.primary,
+-                        )
+-                        Row(
+-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+-                            verticalAlignment = Alignment.CenterVertically,
+-                        ) {
+-                            Text(
+-                                text = gaResult.formatted,
+-                                style = MaterialTheme.typography.headlineMedium,
+-                                fontWeight = FontWeight.Bold,
+-                                modifier = Modifier.semantics { heading() },
+-                            )
+-                            if (summary.discordance != null) {
+-                                GaDiscordanceMarker(style = MaterialTheme.typography.headlineMedium)
+-                            }
+-                        }
+-                    }
+-
+-                    Row(
+-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+-                        verticalAlignment = Alignment.CenterVertically,
+-                    ) {
+-                        Surface(
+-                            color = MaterialTheme.colorScheme.primaryContainer,
+-                            shape = RoundedCornerShape(8.dp),
+-                        ) {
+-                            Text(
+-                                text = stringResource(R.string.trimester_badge, gaResult.trimester),
+-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+-                                style = MaterialTheme.typography.labelMedium,
+-                                fontWeight = FontWeight.SemiBold,
+-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+-                            )
+-                        }
+-
+-                        if (gaResult.isPostTerm) {
+-                            Surface(
+-                                color = MaterialTheme.colorScheme.errorContainer,
+-                                shape = RoundedCornerShape(8.dp),
+-                            ) {
+-                                Text(
+-                                    text = stringResource(R.string.post_term_badge),
+-                                    color = MaterialTheme.colorScheme.onErrorContainer,
+-                                    style = MaterialTheme.typography.labelMedium,
+-                                    fontWeight = FontWeight.Bold,
+-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+-                                )
+-                            }
+-                        } else if (gaResult.isLateTerm) {
+-                            Surface(
+-                                color = MaterialTheme.colorScheme.tertiaryContainer,
+-                                shape = RoundedCornerShape(8.dp),
+-                            ) {
+-                                Text(
+-                                    text = stringResource(R.string.late_term_badge),
+-                                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+-                                    style = MaterialTheme.typography.labelMedium,
+-                                    fontWeight = FontWeight.Bold,
+-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+-                                )
+-                            }
+-                        }
+-                    }
+-                }
+-
+-                val progress = gaResult.progressFraction
+-                val progressPercent = (progress * 100).toInt()
+-                val cdMessage = stringResource(R.string.gestational_progress_cd, gaResult.formatted, progressPercent)
+-
+-                LinearProgressIndicator(
+-                    progress = { progress },
+-                    modifier = Modifier
+-                        .fillMaxWidth()
+-                        .height(8.dp)
+-                        .clip(RoundedCornerShape(4.dp))
+-                        .semantics {
+-                            contentDescription = cdMessage
+-                        },
+-                    color = MaterialTheme.colorScheme.primary,
+-                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+-                )
+-
+-                val daysDiff = daysToEdd(edd, asOfDate)
+-                val countdownText = when {
+-                    daysDiff > 0L -> stringResource(R.string.days_remaining, daysDiff)
+-                    daysDiff == 0L -> stringResource(R.string.due_today)
+-                    else -> stringResource(R.string.days_past_edd, -daysDiff)
+-                }
+-                val countdownContainer = if (daysDiff < 0L) {
+-                    MaterialTheme.colorScheme.errorContainer
+-                } else {
+-                    MaterialTheme.colorScheme.primaryContainer
+-                }
+-                val countdownContentColor = if (daysDiff < 0L) {
+-                    MaterialTheme.colorScheme.onErrorContainer
+-                } else {
+-                    MaterialTheme.colorScheme.onPrimaryContainer
+-                }
+-
+-                Row(
+-                    modifier = Modifier.fillMaxWidth(),
+-                    horizontalArrangement = Arrangement.SpaceBetween,
+-                    verticalAlignment = Alignment.CenterVertically,
+-                ) {
+-                    Column {
+-                        Text(
+-                            text = stringResource(R.string.calculated_edd),
+-                            style = MaterialTheme.typography.labelSmall,
+-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+-                        )
+-                        Text(
+-                            text = formatDmy(edd),
+-                            style = MaterialTheme.typography.titleMedium,
+-                            fontWeight = FontWeight.Bold,
+-                            color = MaterialTheme.colorScheme.onSurface,
+-                        )
+-                    }
+-
+-                    Surface(
+-                        shape = RoundedCornerShape(8.dp),
+-                        color = countdownContainer,
+-                    ) {
+-                        Text(
+-                            text = countdownText,
+-                            style = MaterialTheme.typography.labelMedium,
+-                            fontWeight = FontWeight.Bold,
+-                            color = countdownContentColor,
+-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+-                            maxLines = 1,
+-                            softWrap = false,
+-                        )
+-                    }
+-                }
+-            } else {
+-                // Neutral compact state when dating is not established or unavailable
+-                Column(
+-                    modifier = Modifier.fillMaxWidth(),
+-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+-                ) {
+-                    Text(
+-                        text = stringResource(R.string.gestational_age_not_established),
+-                        style = MaterialTheme.typography.titleMedium,
+-                        fontWeight = FontWeight.SemiBold,
+-                    )
+-                    Text(
+-                        text = stringResource(R.string.no_dating_subtitle),
+-                        style = MaterialTheme.typography.bodyMedium,
+-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+-                    )
+-                }
+-            }
+-        }
+-    }
+-}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt
+index 80f3415..f333eae 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt
+@@ -52,18 +52,20 @@ fun PatientDirectoryMetricsRow(
+                     fontWeight = FontWeight.Medium,
+                     fontSize = 10.sp,
+                 )
++                val hasGa = row.gestationalAgeText.isNotBlank() && row.gestationalAgeText != "-"
+                 Row(
+                     verticalAlignment = Alignment.CenterVertically,
+                     horizontalArrangement = Arrangement.spacedBy(4.dp),
+                 ) {
+                     Text(
+-                        text = if (row.gestationalAgeText.isNotBlank() && row.gestationalAgeText != "-") row.gestationalAgeText else stringResource(R.string.pending),
++                        text = if (hasGa) row.gestationalAgeText else stringResource(R.string.pending),
+                         style = MaterialTheme.typography.bodyMedium,
+                         fontWeight = FontWeight.Bold,
+                         color = MaterialTheme.colorScheme.onSurface,
+                         maxLines = 1,
++                        modifier = Modifier.weight(1f, fill = false),
+                     )
+-                    if (row.isDatingDiscordant) GaDiscordanceMarker(style = MaterialTheme.typography.bodyMedium)
++                    if (hasGa && row.isDatingDiscordant) GaDiscordanceMarker(style = MaterialTheme.typography.bodyMedium)
+                     if (row.isLateOrPostTerm) {
+                         Surface(
+                             shape = RoundedCornerShape(4.dp),
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt
+index 241ec71..12937e3 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt
+@@ -30,14 +30,18 @@ import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.unit.dp
+ import com.sherifradwan.ancnative.R
+ import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.model.datingSummaryOf
++import com.sherifradwan.ancnative.model.datingTextRows
+ import com.sherifradwan.ancnative.ui.DeliverySectionBox
+ import com.sherifradwan.ancnative.ui.DeliveryTone
++import com.sherifradwan.ancnative.ui.GaDiscordanceMarker
+ import com.sherifradwan.ancnative.ui.KeyFactTile
+ import com.sherifradwan.ancnative.ui.formatBloodGroup
+ import com.sherifradwan.ancnative.ui.isHighRisk
+ import com.sherifradwan.ancnative.ui.isRhNegative
+ import com.sherifradwan.ancnative.ui.minimumTouchTarget
+ import com.sherifradwan.ancnative.ui.parseDeliveryNotes
++import java.time.LocalDate
+ 
+ @Composable
+ fun DeliveryPlanningCard(
+@@ -47,7 +51,10 @@ fun DeliveryPlanningCard(
+     onEditPatient: () -> Unit,
+ ) {
+     val sections = remember(patient.obstetricNotes) { parseDeliveryNotes(patient.obstetricNotes) }
++    val summary = remember(patient) { datingSummaryOf(patient, LocalDate.now()) }
++    val eddRow = remember(summary) { datingTextRows(summary).first { it.isEdd } }
+     val latestScan = patient.ultrasoundScans.maxByOrNull { it.date }
++    val gaText = remember(patient) { patient.dating?.calculateGestationalAge() }
+     val rhNegative = isRhNegative(patient.bloodGroupText)
+ 
+     Card(
+@@ -109,14 +116,19 @@ fun DeliveryPlanningCard(
+                 )
+                 KeyFactTile(
+                     label = stringResource(R.string.current_gestational_age),
+-                    value = patient.dating?.calculateGestationalAge(),
++                    value = gaText,
+                     modifier = Modifier.weight(1f),
++                    trailing = if (gaText != null && summary.discordance != null) {
++                        { GaDiscordanceMarker(style = MaterialTheme.typography.titleSmall) }
++                    } else {
++                        null
++                    },
+                 )
+             }
+             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                 KeyFactTile(
+-                    label = stringResource(R.string.agreed_edd),
+-                    value = patient.dating?.agreedEdd ?: patient.dating?.ultrasoundEdd,
++                    label = eddRow.label,
++                    value = eddRow.value,
+                     modifier = Modifier.weight(1f),
+                 )
+                 KeyFactTile(
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+index bf39d2e..89610d7 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+@@ -1237,7 +1237,7 @@ object PatientPrintHtmlGenerator {
+                             </div>
+                             <div class="history-row">
+                                 <span class="k">Target Delivery Timing:</span>
+-                                <span class="v text-navy font-bold">${escapeHtml(formatDmy(patient.dating?.agreedEdd) ?: "Not recorded")}</span>
++                                <span class="v text-navy font-bold">${escapeHtml(datingSummary.edd?.let(::formatDmy) ?: "Not recorded")}</span>
+                             </div>
+                             <div class="history-row">
+                                 <span class="k">Hospital & Blood Bank Precautions:</span>
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index 7413f3f..445f1fb 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -172,7 +172,6 @@
+     <string name="lmp_date">Last menstrual period (LMP)</string>
+     <string name="ultrasound_edd">Ultrasound EDD</string>
+     <string name="agreed_edd">Agreed clinical EDD</string>
+-    <string name="dating_method">Dating method</string>
+     <string name="gestational_age">Gestational age</string>
+     <string name="current_gestational_age">Current gestational age</string>
+     <string name="dating_saved">Dating record saved.</string>
+@@ -305,15 +304,6 @@
+     <string name="save_and_add_another_med">Save &amp; add another</string>
+     <string name="advanced_med_options">Route &amp; End date (optional)</string>
+     <string name="patient_previous_meds">Patient\'s previous prescriptions</string>
+-    <string name="days_remaining">%1$d days remaining</string>
+-    <string name="due_today">Due today</string>
+-    <string name="days_past_edd">%1$d days past EDD</string>
+-    <string name="trimester_badge">Trimester %1$d</string>
+-    <string name="late_term_badge">Late term (41w+)</string>
+-    <string name="post_term_badge">Post-term (42w+)</string>
+-    <string name="gestational_age_not_established">Gestational age not established</string>
+-    <string name="no_dating_subtitle">Record LMP, Ultrasound EDD, or IVF to activate clinical tracking</string>
+-    <string name="gestational_progress_cd">Gestational progress %1$s, %2$d percent</string>
+     <string name="all_filter">All</string>
+     <string name="high_risk_filter">High Risk</string>
+     <string name="medium_risk_filter">Medium Risk</string>
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/model/ClinicalSummaryDatingTest.kt b/app/src/test/java/com/sherifradwan/ancnative/model/ClinicalSummaryDatingTest.kt
+index 166ea33..2646c95 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/model/ClinicalSummaryDatingTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/model/ClinicalSummaryDatingTest.kt
+@@ -92,4 +92,32 @@ class ClinicalSummaryDatingTest {
+         assertFalse(block, Regex("""\bLMP\b""").containsMatchIn(block))
+         assertFalse(block, Regex("""\bET\b""").containsMatchIn(block))
+     }
++
++    @Test
++    fun ivfPatientNeverSharesScanEddOrGap() {
++        val block = datingBlock(
++            patient(
++                lmp = "2026-06-08", us = "2027-04-09", agreed = "2027-03-08",
++                method = "IVF_TRANSFER", transfer = "2026-06-20", embryoAge = 5,
++            ),
++        )
++        assertFalse(block, block.contains("US EDD"))
++        assertFalse(block, block.contains("gap"))
++    }
++
++    @Test
++    fun ultrasoundMethodNeverSharesScanEddOrGap() {
++        val block = datingBlock(patient(lmp = "2026-06-08", us = "2027-04-09", agreed = null, method = "Ultrasound"))
++        assertFalse(block, block.contains("US EDD"))
++        assertFalse(block, block.contains("gap"))
++    }
++
++    @Test
++    fun scanEddEarlierThanLmpEddSharesPositiveGap() {
++        val block = datingBlock(patient(lmp = "2026-06-08", us = "2027-03-06", agreed = "2027-03-15", method = "LMP"))
++        assertTrue(block, block.contains("LMP EDD 15/03/2027"))
++        assertTrue(block, block.contains("US EDD 06/03/2027"))
++        assertTrue(block, block.contains("gap 9 d"))
++        assertFalse(block, block.contains("gap -"))
++    }
+ }
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/model/DatingScanAnchorTest.kt b/app/src/test/java/com/sherifradwan/ancnative/model/DatingScanAnchorTest.kt
+new file mode 100644
+index 0000000..64ca90f
+--- /dev/null
++++ b/app/src/test/java/com/sherifradwan/ancnative/model/DatingScanAnchorTest.kt
+@@ -0,0 +1,139 @@
++package com.sherifradwan.ancnative.model
++
++import java.time.LocalDate
++import org.junit.Assert.assertEquals
++import org.junit.Assert.assertNotNull
++import org.junit.Assert.assertNull
++import org.junit.Test
++
++/**
++ * D2a: the discordance anchor is the earliest scan dated on or after the LMP and not after today.
++ * Every case uses a 8 d gap between the LMP and scan due dates, which is an alert at dating GA
++ * 63 to 111 d (limit 7 d) and below, and no alert at GA 112 to 153 d (limit 10 d) and above.
++ * The anchor therefore decides the outcome.
++ */
++class DatingScanAnchorTest {
++    private val lmp = LocalDate.of(2026, 1, 1)
++    private val lmpEdd = lmp.plusDays(FULL_TERM_DAYS)
++    private val gapDays = 8L
++
++    private val gaAlertDay = lmp.plusDays(70)
++    private val gaNoAlertDay = lmp.plusDays(130)
++
++    private fun scan(date: String) = DemoUltrasoundScan(
++        id = "s-$date", patientId = "p1", date = date,
++        gestationalAgeWeeks = null, gestationalAgeDays = null, fetalNumber = null,
++        presentation = null, placentalSite = null, amnioticFluid = null,
++        fetalHeartRate = null, biometryBpd = null, biometryHc = null, biometryAc = null,
++        biometryFl = null, estimatedFetalWeight = null, impression = null,
++    )
++
++    private fun patient(scanDates: List<String>) = DemoPatient(
++        id = "p1", caseId = "C1", displayName = "Anchor", dateOfBirth = null, phone = null,
++        visits = emptyList(),
++        dating = DemoPatientDating(
++            patientId = "p1",
++            lmpDate = lmp.toString(),
++            ultrasoundEdd = lmpEdd.plusDays(gapDays).toString(),
++            agreedEdd = lmpEdd.toString(),
++            datingMethod = "LMP",
++            notes = null,
++        ),
++        ultrasoundScans = scanDates.map(::scan),
++    )
++
++    private fun alert(scanDates: List<String>, today: LocalDate): Boolean =
++        datingSummaryOf(patient(scanDates), today).discordance != null
++
++    @Test
++    fun earliestOfUnsortedScansIsTheAnchor() {
++        val scans = listOf(gaNoAlertDay, gaAlertDay.plusDays(30), gaAlertDay, gaAlertDay.plusDays(10))
++            .map(LocalDate::toString)
++        assertEquals(true, alert(scans, today = lmp.plusDays(200)))
++    }
++
++    @Test
++    fun earliestIsTheAnchorWhateverTheListOrder() {
++        val early = gaAlertDay.toString()
++        val late = gaNoAlertDay.toString()
++        assertEquals(true, alert(listOf(early, late), today = lmp.plusDays(200)))
++        assertEquals(true, alert(listOf(late, early), today = lmp.plusDays(200)))
++    }
++
++    @Test
++    fun laterScansDoNotMoveTheAnchorWhenTheEarliestIsPastTheLimit() {
++        val scans = listOf(gaNoAlertDay, gaNoAlertDay.plusDays(20)).map(LocalDate::toString)
++        assertEquals(false, alert(scans, today = gaAlertDay.plusDays(100)))
++    }
++
++    @Test
++    fun noScansMeasuresAtToday() {
++        assertEquals(true, alert(emptyList(), today = gaAlertDay))
++        assertEquals(false, alert(emptyList(), today = gaNoAlertDay))
++    }
++
++    @Test
++    fun malformedScanDatesAreIgnored() {
++        val scans = listOf("garbage", "", "  ", "2026-13-45", gaAlertDay.toString(), "31/03/2026")
++        assertEquals(true, alert(scans, today = gaNoAlertDay))
++    }
++
++    @Test
++    fun onlyInvalidScansFallBackToToday() {
++        val invalid = listOf("garbage", "", "2026-02-30")
++        assertEquals(true, alert(invalid, today = gaAlertDay))
++        assertEquals(false, alert(invalid, today = gaNoAlertDay))
++    }
++
++    @Test
++    fun scanDatedBeforeTheLmpIsIgnored() {
++        val before = lmp.minusDays(30).toString()
++        assertEquals(false, alert(listOf(before), today = gaNoAlertDay))
++        assertEquals(true, alert(listOf(before), today = gaAlertDay))
++    }
++
++    @Test
++    fun scanBeforeTheLmpDoesNotHideALaterValidScan() {
++        val scans = listOf(lmp.minusDays(30).toString(), gaAlertDay.toString())
++        assertEquals(true, alert(scans, today = gaNoAlertDay))
++    }
++
++    @Test
++    fun scanOnTheLmpDateIsAccepted() {
++        assertEquals(true, alert(listOf(lmp.toString()), today = gaNoAlertDay))
++    }
++
++    @Test
++    fun scanDatedAfterTodayIsIgnored() {
++        val future = gaNoAlertDay.toString()
++        assertEquals(true, alert(listOf(future), today = gaAlertDay))
++    }
++
++    @Test
++    fun futureScanDoesNotHideAnEarlierValidScan() {
++        val scans = listOf(gaNoAlertDay.plusDays(60).toString(), gaAlertDay.toString())
++        assertEquals(true, alert(scans, today = gaNoAlertDay))
++    }
++
++    @Test
++    fun scanDatedTodayIsAccepted() {
++        assertEquals(true, alert(listOf(gaAlertDay.toString()), today = gaAlertDay))
++    }
++
++    @Test
++    fun scanAnchorWithOnlyInvalidScansMatchesNoScans() {
++        val today = gaAlertDay
++        val withInvalid = datingSummaryOf(patient(listOf("junk", lmp.minusDays(5).toString(), today.plusDays(9).toString())), today)
++        val withNone = datingSummaryOf(patient(emptyList()), today)
++        assertNotNull(withNone.discordance)
++        assertEquals(withNone.discordance, withInvalid.discordance)
++    }
++
++    @Test
++    fun extremeScanDatesNeverThrowAndAreIgnored() {
++        val scans = listOf("+999999999-12-31", "-999999999-01-01", "9999-12-31", "0000-01-01")
++        val s = datingSummaryOf(patient(scans), today = gaAlertDay)
++        assertNotNull(s.discordance)
++        assertNull(datingSummaryOf(patient(scans), today = gaNoAlertDay).discordance)
++    }
++}
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/model/DatingSummaryTest.kt b/app/src/test/java/com/sherifradwan/ancnative/model/DatingSummaryTest.kt
+index 9bf67b4..a9831b1 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/model/DatingSummaryTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/model/DatingSummaryTest.kt
+@@ -4,6 +4,7 @@ import java.time.LocalDate
+ import org.junit.Assert.assertEquals
+ import org.junit.Assert.assertNotNull
+ import org.junit.Assert.assertNull
++import org.junit.Assert.assertTrue
+ import org.junit.Test
+ 
+ class DatingSummaryTest {
+@@ -328,4 +329,89 @@ class DatingSummaryTest {
+         val scanGa = FULL_TERM_DAYS - java.time.temporal.ChronoUnit.DAYS.between(anchor, lmpEdd.plusDays(12))
+         assertEquals(redatingAdvice(100, scanGa), summary(d, scan = anchor).discordance)
+     }
++
++    // D5: only an agreed EDD equal to the scan EDD clears the alert; a missing or unusable one never does.
++    @Test
++    fun discordanceRemainsWhenAgreedEddIsNullBlankWhitespaceOrMalformed() {
++        val anchor = lmp.plusDays(80)
++        for (agreed in listOf(null, "", "   ", "garbage", "2026-13-45", "2027-02-30")) {
++            val s = summary(gapPatient(gapDays = 9, agreedEdd = agreed), scan = anchor)
++            assertNotNull("agreedEdd '$agreed' must not clear the alert", s.discordance)
++        }
++    }
++
++    @Test
++    fun discordanceClearsOnlyWhenAgreedEddEqualsTheScanEdd() {
++        val anchor = lmp.plusDays(80)
++        val scanEdd = lmpEdd.plusDays(9)
++        assertNull(summary(gapPatient(gapDays = 9, agreedEdd = scanEdd.toString()), scan = anchor).discordance)
++        assertNull(summary(gapPatient(gapDays = 9, agreedEdd = " $scanEdd "), scan = anchor).discordance)
++        assertNotNull(summary(gapPatient(gapDays = 9, agreedEdd = scanEdd.plusDays(1).toString()), scan = anchor).discordance)
++        assertNotNull(summary(gapPatient(gapDays = 9, agreedEdd = lmpEdd.toString()), scan = anchor).discordance)
++    }
++
++    // D6a: parseable but extreme dates never throw, in any date field.
++    private val extremeDates = listOf("9999-12-31", "+999999999-12-31", "-999999999-01-01", "0000-01-01")
++
++    private fun assertNoThrow(label: String, block: () -> DatingSummary): DatingSummary =
++        try {
++            block()
++        } catch (e: Exception) {
++            throw AssertionError("$label threw $e", e)
++        }
++
++    @Test
++    fun extremeLmpDateNeverThrows() {
++        for (x in extremeDates) {
++            val d = dating(lmpDate = x, ultrasoundEdd = lmpEdd.toString(), agreedEdd = lmpEdd.toString(), method = "LMP")
++            val s = assertNoThrow("lmpDate $x") { summary(d, scan = lmp) }
++            assertTrue("lmpDate $x", s.edd == null || s.discordance == null)
++            assertNoThrow("lmpDate $x, no scan") { summary(d) }
++            assertNoThrow("lmpDate $x, other method") { summary(d.copy(datingMethod = null)) }
++        }
++    }
++
++    @Test
++    fun extremeUltrasoundEddNeverThrows() {
++        for (x in extremeDates) {
++            val d = dating(lmpDate = lmp.toString(), ultrasoundEdd = x, agreedEdd = lmpEdd.toString(), method = "LMP")
++            val s = assertNoThrow("ultrasoundEdd $x") { summary(d, scan = lmp.plusDays(80)) }
++            assertTrue("ultrasoundEdd $x", s.edd == null || s.discordance == null)
++            assertNoThrow("ultrasoundEdd $x, ultrasound method") { summary(d.copy(datingMethod = "Ultrasound")) }
++            assertNoThrow("ultrasoundEdd $x, no method") { summary(d.copy(datingMethod = null, agreedEdd = null)) }
++        }
++    }
++
++    @Test
++    fun outOfRangeUltrasoundEddGivesNoDiscordance() {
++        for (x in listOf("+999999999-12-31", "-999999999-01-01")) {
++            val d = dating(lmpDate = lmp.toString(), ultrasoundEdd = x, agreedEdd = lmpEdd.toString(), method = "LMP")
++            assertNull("ultrasoundEdd $x", summary(d, scan = lmp.plusDays(80)).discordance)
++        }
++    }
++
++    @Test
++    fun extremeAgreedEddNeverThrows() {
++        for (x in extremeDates) {
++            val d = dating(lmpDate = lmp.toString(), ultrasoundEdd = lmpEdd.plusDays(9).toString(), agreedEdd = x, method = "LMP")
++            assertNoThrow("agreedEdd $x") { summary(d, scan = lmp.plusDays(80)) }
++            val onlyAgreed = dating(agreedEdd = x, method = "Clinical")
++            val s = assertNoThrow("agreedEdd $x only") { summary(onlyAgreed) }
++            assertNull("agreedEdd $x only", s.discordance)
++        }
++    }
++
++    @Test
++    fun extremeTransferDateNeverThrows() {
++        for (x in extremeDates) {
++            for (m in listOf("IVF_TRANSFER", "IVF", "LMP", null)) {
++                val d = dating(
++                    lmpDate = lmp.toString(), ultrasoundEdd = lmpEdd.plusDays(9).toString(),
++                    method = m, transferDate = x, embryoAgeDays = 5,
++                )
++                val s = assertNoThrow("transferDate $x method $m") { summary(d, scan = lmp.plusDays(80)) }
++                if (m == "IVF_TRANSFER" || m == "IVF") assertNull("transferDate $x method $m", s.discordance)
++            }
++        }
++    }
+ }
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/model/FormatDmyTest.kt b/app/src/test/java/com/sherifradwan/ancnative/model/FormatDmyTest.kt
+index 85941ca..9576c27 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/model/FormatDmyTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/model/FormatDmyTest.kt
+@@ -1,7 +1,9 @@
+ package com.sherifradwan.ancnative.model
+ 
++import java.time.LocalDate
+ import java.util.Locale
+ import org.junit.Assert.assertEquals
++import org.junit.Assert.assertNotSame
+ import org.junit.Assert.assertNull
+ import org.junit.Test
+ 
+@@ -39,16 +41,62 @@ class FormatDmyTest {
+         assertEquals("2026-02-30", formatDmy(" 2026-02-30"))
+     }
+ 
+-    @Test
+-    fun defaultLocaleDoesNotChangeDigitsOrOrder() {
+-        val original = Locale.getDefault()
++    private val hostileLocales = listOf(
++        "th-TH-u-ca-buddhist-nu-thai",
++        "ar-SA-u-ca-islamic-umalqura-nu-arab",
++        "hi-IN-u-nu-deva",
++        "fa-IR-u-ca-persian-nu-arabext",
++    )
++
++    private inline fun withDefaultLocale(tag: String, block: () -> Unit) {
++        val default = Locale.getDefault()
++        val format = Locale.getDefault(Locale.Category.FORMAT)
+         try {
+-            Locale.setDefault(Locale.forLanguageTag("ar-EG-u-nu-arab"))
+-            assertEquals("07/03/2026", formatDmy("2026-03-07"))
+-            Locale.setDefault(Locale.forLanguageTag("hi-IN-u-nu-deva"))
+-            assertEquals("07/03/2026", formatDmy("2026-03-07"))
++            val locale = Locale.forLanguageTag(tag)
++            Locale.setDefault(locale)
++            Locale.setDefault(Locale.Category.FORMAT, locale)
++            block()
+         } finally {
+-            Locale.setDefault(original)
++            Locale.setDefault(default)
++            Locale.setDefault(Locale.Category.FORMAT, format)
++        }
++    }
++
++    @Test
++    fun formattingIgnoresTheDefaultLocale() {
++        for (tag in hostileLocales) {
++            withDefaultLocale(tag) {
++                assertEquals(tag, "07/03/2026", formatDmy("2026-03-07"))
++                assertEquals(tag, "07/03/2026", formatDmy(LocalDate.of(2026, 3, 7)))
++            }
+         }
+     }
++
++    // The formatter is a top-level val built when IsoDatesKt loads. A fresh copy of the class loaded under a
++    // hostile default locale fails if the formatter captures that locale (Thai digits and Buddhist year 2569
++    // with localizedBy or a default-locale String.format), which the in-process test above cannot see.
++    @Test
++    fun formatterBuiltUnderAHostileDefaultLocaleStillPrintsAsciiGregorian() {
++        for (tag in hostileLocales) {
++            withDefaultLocale(tag) {
++                val facade = FreshIsoDatesLoader().loadClass(ISO_DATES_FACADE)
++                assertNotSame("the facade must be a fresh copy so its formatter is rebuilt", ISO_DATES_CLASS, facade)
++                val format = facade.getMethod("formatDmy", String::class.java)
++                assertEquals(tag, "07/03/2026", format.invoke(null, "2026-03-07"))
++            }
++        }
++    }
++
++    private class FreshIsoDatesLoader : ClassLoader(FormatDmyTest::class.java.classLoader) {
++        override fun loadClass(name: String, resolve: Boolean): Class<*> {
++            if (name != ISO_DATES_FACADE) return super.loadClass(name, resolve)
++            val bytes = parent.getResourceAsStream(name.replace('.', '/') + ".class")!!.use { it.readBytes() }
++            return defineClass(name, bytes, 0, bytes.size)
++        }
++    }
++
++    private companion object {
++        const val ISO_DATES_FACADE = "com.sherifradwan.ancnative.model.IsoDatesKt"
++        val ISO_DATES_CLASS: Class<*> = Class.forName(ISO_DATES_FACADE)
++    }
+ }
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt b/app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt
+index f90d1b1..760b06e 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt
+@@ -208,14 +208,48 @@ class PatientPrintHtmlEscapeTest {
+         assertFalse(html.contains("<b>&"))
+     }
+ 
++    private fun datingBox(page: String): String {
++        val start = page.indexOf("<span>Pregnancy Dating</span>")
++        assertTrue(start >= 0)
++        val rest = page.substring(start)
++        val end = rest.indexOf("ga-highlight")
++        assertTrue("dating matrix must be followed by the GA highlight", end > 0)
++        return rest.substring(0, end)
++    }
++
++    // The EDD is a LocalDate, so a marker string can never reach the EDD cell. With nothing parseable the
++    // defined fallback is the rose EDD cell reading "Not recorded". The LMP and Method rows keep the raw text, escaped once.
+     @Test
+     fun q93_datingSection_escapedOnce() {
+-        val start = html.indexOf("<span>Pregnancy Dating</span>")
+-        assertTrue(start >= 0)
+-        val rest = html.substring(start + 1)
+-        val box = rest.substring(0, rest.indexOf("""class="section-title"""").let { if (it < 0) rest.length else it })
+-        assertTrue(Regex(Regex.escape(ESCAPED)).findAll(box).count() >= 2)
++        val box = datingBox(html)
++        assertFalse(box.contains(MARKER))
++        assertFalse(box.contains("&amp;lt;"))
++        assertTrue(box, box.contains("""<div class="label">LMP</div><div class="val">$ESCAPED</div>"""))
++        assertTrue(box, box.contains("""<div class="label">Method</div><div class="val">$ESCAPED</div>"""))
++        assertEquals(2, Regex("""<div class="val">$ESCAPED</div>""").findAll(box).count())
++        val eddCells = Regex("""<div class="label">EDD</div><div class="val text-rose">([^<]*)</div>""").findAll(box).toList()
++        assertEquals(box, 1, eddCells.size)
++        assertEquals("Not recorded", eddCells.single().groupValues[1])
++    }
++
++    // A malformed agreed EDD and scan EDD beside a valid LMP: the EDD cell is the LMP due date, no raw marker leaks.
++    @Test
++    fun q93_datingSection_malformedEddsFallBackToTheMethodEddInTheRoseCell() {
++        val dating = DemoPatientDating(
++            patientId = "q93", lmpDate = "2026-06-08", ultrasoundEdd = MARKER,
++            agreedEdd = MARKER, datingMethod = "LMP", notes = MARKER,
++        )
++        val page = PatientPrintHtmlGenerator.generateHtml(
++            context = null,
++            patient = markedPatient().copy(dating = dating),
++            settings = SecuritySettingsState(clinicName = MARKER),
++            asOfDate = AS_OF_DATE,
++        )
++        val box = datingBox(page)
++        assertTrue(box, box.contains("""<div class="label">EDD</div><div class="val text-rose">15/03/2027</div>"""))
+         assertFalse(box.contains(MARKER))
++        assertFalse(box.contains("&amp;lt;"))
++        assertFalse(page.contains("&amp;amp;"))
+     }
+ 
+     @Test
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt b/app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+index eb00dba..e4106f3 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+@@ -665,4 +665,87 @@ class PatientPrintHtmlGeneratorTest {
+         val html = printDating(printDatingFields(lmp = "2026-06-08", method = "LMP"), scanDate = null)
+         assertFalse(datingBoxText(html).contains("Confirmed EDD"))
+     }
++
++    // D5 and D7 in print: the scan due date and the gap only appear for a discordant non-IVF, non-Ultrasound patient.
++    @Test
++    fun dating_ivfPatientNeverPrintsScanEddOrGap() {
++        for (m in listOf("IVF_TRANSFER", "IVF")) {
++            val html = printDating(
++                printDatingFields(
++                    lmp = "2026-06-08", us = "2027-04-09", agreed = "2027-03-08",
++                    method = m, transfer = "2026-06-20", embryoAge = 5,
++                ),
++            )
++            val box = datingBoxText(html)
++            assertFalse("$m: $box", box.contains("US EDD"))
++            assertFalse("$m: $box", box.contains("gap"))
++        }
++    }
++
++    @Test
++    fun dating_ultrasoundMethodNeverPrintsScanEddOrGap() {
++        for (agreed in listOf(null, "2027-03-15")) {
++            val html = printDating(
++                printDatingFields(lmp = "2026-06-08", us = "2027-04-09", agreed = agreed, method = "Ultrasound"),
++            )
++            val box = datingBoxText(html)
++            assertFalse("agreed $agreed: $box", box.contains("US EDD"))
++            assertFalse("agreed $agreed: $box", box.contains("gap"))
++        }
++    }
++
++    @Test
++    fun dating_scanEddEarlierThanLmpEdd_printsPositiveGap() {
++        val html = printDating(
++            printDatingFields(lmp = "2026-06-08", us = "2027-03-06", agreed = "2027-03-15", method = "LMP"),
++        )
++        val box = datingBoxText(html)
++        assertTrue(box, box.contains("LMP EDD 15/03/2027"))
++        assertTrue(box, box.contains("US EDD 06/03/2027"))
++        assertTrue(box, box.contains("gap 9 d"))
++        assertFalse(box, box.contains("gap -"))
++    }
++
++    // U9: "Target Delivery Timing" is the shared EDD in dd/mm/yyyy.
++    @Test
++    fun targetDeliveryTiming_lmpOnlyPatientShowsTheLmpEddWhateverTheAgreedEddIsMissingAs() {
++        for (agreed in MISSING) {
++            val html = printDating(printDatingFields(lmp = "2026-06-08", agreed = agreed, method = "LMP"), scanDate = null)
++            assertEquals("agreed '$agreed'", "15/03/2027", rowValue(html, "Target Delivery Timing:"))
++        }
++    }
++
++    @Test
++    fun targetDeliveryTiming_malformedAgreedEddFallsBackToTheMethodEdd() {
++        val html = printDating(printDatingFields(lmp = "2026-06-08", agreed = "garbage", method = "LMP"), scanDate = null)
++        assertEquals("15/03/2027", rowValue(html, "Target Delivery Timing:"))
++    }
++
++    @Test
++    fun targetDeliveryTiming_agreedEddWinsAndIsNeverRawIso() {
++        val html = printDating(printDatingFields(lmp = "2026-06-08", agreed = "2027-03-20", method = "LMP"), scanDate = null)
++        assertEquals("20/03/2027", rowValue(html, "Target Delivery Timing:"))
++        assertFalse(html.contains("2027-03-20"))
++    }
++
++    @Test
++    fun targetDeliveryTiming_scanOnlyDatingShowsTheScanEdd() {
++        val html = printDating(printDatingFields(us = "2027-03-24"), scanDate = null)
++        assertEquals("24/03/2027", rowValue(html, "Target Delivery Timing:"))
++    }
++
++    @Test
++    fun targetDeliveryTiming_ivfPatientShowsTheTransferEdd() {
++        val html = printDating(
++            printDatingFields(method = "IVF_TRANSFER", transfer = "2026-06-20", embryoAge = 5),
++            scanDate = null,
++        )
++        assertEquals("08/03/2027", rowValue(html, "Target Delivery Timing:"))
++    }
++
++    @Test
++    fun targetDeliveryTiming_noEddAnywhereIsNotRecorded() {
++        val html = printDating(printDatingFields(agreed = "garbage", method = "LMP"), scanDate = null)
++        assertEquals(NOT_RECORDED, rowValue(html, "Target Delivery Timing:"))
++    }
+ }
