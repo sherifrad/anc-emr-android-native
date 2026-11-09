@@ -15,7 +15,6 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sherifradwan.ancnative.model.DemoFixtures
 import com.sherifradwan.ancnative.model.DemoAttachment
@@ -30,6 +29,7 @@ import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncReducer
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
+import com.sherifradwan.ancnative.state.SavedNotice
 import com.sherifradwan.ancnative.state.UndoCoordinator
 import com.sherifradwan.ancnative.state.WorkspaceSection
 import com.sherifradwan.ancnative.storage.ClinicalCommand
@@ -44,6 +44,7 @@ import com.sherifradwan.ancnative.storage.RestoreRecordCommand
 import com.sherifradwan.ancnative.storage.VaultState
 import com.sherifradwan.ancnative.ui.AncApp
 import com.sherifradwan.ancnative.ui.AncTheme
+import com.sherifradwan.ancnative.ui.patienthub.PatientHubTab
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -75,10 +76,19 @@ class DeleteUndoUiTest {
         scope.cancel()
     }
 
-    private class Kind(val type: DeletableType, val section: WorkspaceSection, val card: String, val id: String)
+    private class Kind(
+        val type: DeletableType,
+        val section: WorkspaceSection,
+        val card: String,
+        val id: String,
+        val deletePrefix: String = "delete-${type.name.lowercase()}-",
+    ) {
+        val deleteTag get() = deletePrefix + id
+    }
 
     private val med = Kind(DeletableType.MEDICATION, WorkspaceSection.MEDICATIONS, "medication-", "ui-med-1")
-    private val lab = Kind(DeletableType.LAB, WorkspaceSection.LABORATORY, "lab-", "ui-lab-1")
+    // The lab row has its own delete button (not the shared DeleteIconButton), so its tag differs.
+    private val lab = Kind(DeletableType.LAB, WorkspaceSection.LABORATORY, "lab-", "ui-lab-1", deletePrefix = "deleteLab-")
     private val us = Kind(DeletableType.ULTRASOUND, WorkspaceSection.ULTRASOUND, "ultrasound-", "ui-us-1")
     private val visitKind = Kind(DeletableType.VISIT, WorkspaceSection.VISITS, "visit-", "ui-visit-1")
     private val prevKind = Kind(DeletableType.PREVIOUS_PREGNANCY, WorkspaceSection.OBSTETRIC_HISTORY, "pregnancy-", "ui-prev-1")
@@ -237,9 +247,9 @@ class DeleteUndoUiTest {
 
     private fun workspace(kind: Kind) = host(AncRoute.Workspace(patientA.id, kind.section))
 
-    private fun scrollTo(tag: String) {
-        compose.onNodeWithTag("workspaceList", useUnmergedTree = true).performScrollToNode(hasTestTag(tag))
-    }
+    private fun openTab() = PatientHubTab.fromSection((state.route as AncRoute.Workspace).section)
+
+    private fun scrollTo(tag: String) = compose.scrollHubTabTo(openTab(), tag)
 
     private fun exists(tag: String) = compose.onNodeWithTag(tag, useUnmergedTree = true).assertExists()
     private fun missing(tag: String) = compose.onNodeWithTag(tag, useUnmergedTree = true).assertDoesNotExist()
@@ -248,11 +258,9 @@ class DeleteUndoUiTest {
         compose.waitForIdle()
     }
 
-    private fun deleteTag(kind: Kind) = "delete-${kind.type.name.lowercase()}-${kind.id}"
-
     private fun openDialog(kind: Kind) {
-        scrollTo(deleteTag(kind))
-        click(deleteTag(kind))
+        scrollTo(kind.deleteTag)
+        click(kind.deleteTag)
         exists("deleteConfirmDialog")
     }
 
@@ -372,9 +380,11 @@ class DeleteUndoUiTest {
         // The dialog must name the record the way a clinician reads it, never the internal file name.
         assertTrue(
             "the confirm dialog must show the attachment label",
-            compose.onAllNodes(hasText("Scan 1", substring = true), useUnmergedTree = true)
+            compose.onAllNodes(hasText("Scan 1", substring = true) and inTagged("deleteConfirmDialog"), useUnmergedTree = true)
                 .fetchSemanticsNodes().isNotEmpty(),
         )
+        compose.onAllNodes(hasText("att_ui_1", substring = true) and inTagged("deleteConfirmDialog"), useUnmergedTree = true)
+            .assertCountEquals(0)
         click("deleteConfirm")
         compose.waitUntil(5_000) {
             compose.onAllNodes(hasTestTag("undoBar"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
@@ -383,6 +393,14 @@ class DeleteUndoUiTest {
         missing("attachmentCard-ui-att-1")
         missing("deleteAttachmentBtn")
         exists("undoButton")
+    }
+
+    @Test
+    fun attachment_archivedPatientCannotDeleteFromTheViewer() {
+        val archived = patientA.copy(status = "archived")
+        host(AncRoute.Workspace(archived.id, WorkspaceSection.ATTACHMENTS), listOf(archived, patientB))
+        openAttachmentViewer("ui-att-1")
+        compose.onNodeWithTag("deleteAttachmentBtn", useUnmergedTree = true).assertIsNotEnabled()
     }
 
     @Test
@@ -452,9 +470,13 @@ class DeleteUndoUiTest {
         openDialog(med)
         click("deleteConfirm")
         compose.waitUntil(5_000) { state.savedNotice }
-        compose.onNodeWithTag("workspaceList", useUnmergedTree = true)
-            .performScrollToNode(hasText("Medication deleted."))
+        assertEquals(SavedNotice.MEDICATION_DELETED, state.notice)
+        compose.onNodeWithTag("undoBar", useUnmergedTree = true).assertIsDisplayed()
+        compose.onAllNodes(hasText("Deleted UiDrug 1", substring = true), useUnmergedTree = true)
+            .fetchSemanticsNodes().let { assertTrue("the Undo bar must say the record was deleted", it.isNotEmpty()) }
         compose.onAllNodes(hasText("Medication record saved."), useUnmergedTree = true).assertCountEquals(0)
+        compose.onAllNodes(hasText("saved", substring = true, ignoreCase = true) and inTagged("undoBar"), useUnmergedTree = true)
+            .assertCountEquals(0)
     }
 
     @Test
@@ -462,7 +484,7 @@ class DeleteUndoUiTest {
         val archived = patientA.copy(status = "archived")
         host(AncRoute.Workspace(archived.id, med.section), listOf(archived, patientB))
         scrollTo(med.card + med.id)
-        missing(deleteTag(med))
+        missing(med.deleteTag)
     }
 
     @Test
@@ -528,8 +550,8 @@ class DeleteUndoUiTest {
     @Test
     fun deleteIconDescriptionNamesTheRecord() {
         workspace(med)
-        scrollTo(deleteTag(med))
-        compose.onNodeWithTag(deleteTag(med), useUnmergedTree = true).assertExists()
+        scrollTo(med.deleteTag)
+        compose.onNodeWithTag(med.deleteTag, useUnmergedTree = true).assertExists()
         compose.onAllNodes(hasContentDescription("Delete medication: UiDrug 1", substring = true), useUnmergedTree = true)
             .assertCountEquals(1)
     }
@@ -538,7 +560,8 @@ class DeleteUndoUiTest {
     fun undoBarNamesThePatient() {
         deleteConfirmsRemovesCardAndShowsUndoBar(med)
         compose.onNodeWithTag("undoBar", useUnmergedTree = true).assertIsDisplayed()
-        compose.onAllNodes(hasText(patientA.displayName, substring = true), useUnmergedTree = true)
+        // Scoped to the bar: the hub header shows the same name, so an unscoped match would pass for any bar.
+        compose.onAllNodes(hasText(patientA.displayName, substring = true) and inTagged("undoBar"), useUnmergedTree = true)
             .fetchSemanticsNodes().let { assertTrue(it.isNotEmpty()) }
     }
 

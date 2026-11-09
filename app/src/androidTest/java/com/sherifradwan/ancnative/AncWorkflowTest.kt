@@ -33,15 +33,14 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
@@ -69,6 +68,7 @@ import com.sherifradwan.ancnative.storage.VaultBlockReason
 import com.sherifradwan.ancnative.storage.VaultState
 import com.sherifradwan.ancnative.ui.AncApp
 import com.sherifradwan.ancnative.ui.AncTheme
+import com.sherifradwan.ancnative.ui.patienthub.PatientHubTab
 import java.util.Locale
 import kotlin.math.abs
 import org.junit.Assert.assertEquals
@@ -385,7 +385,7 @@ class AncWorkflowTest {
         )
         mountFixture(LayoutFixture.narrowPhone(), parityState)
         compose.onAllNodesWithText("P3 Synthetic Person Corrected", substring = true)[0].assertIsDisplayed()
-        compose.onNodeWithTag("workspaceList").performScrollToNode(hasText("P3 parity detail"))
+        compose.scrollHubTabTo(PatientHubTab.OVERVIEW, hasText("P3 parity detail"))
         compose.onNodeWithText("P3 parity detail").assertIsDisplayed()
     }
 
@@ -510,7 +510,8 @@ class AncWorkflowTest {
 
         // 1. Mount Workspace in DATING section
         mountFixture(LayoutFixture.narrowPhone(), state)
-        compose.onNodeWithTag("workspaceList").performScrollToNode(hasTestTag("editDating"))
+        compose.onNodeWithTag(PatientHubTab.OVERVIEW.contentTag()).assertIsDisplayed()
+        compose.scrollHubTabTo(PatientHubTab.OVERVIEW, "editDating")
         compose.onNodeWithTag("editDating").assertIsDisplayed()
 
         // 2. Open Dating Editor
@@ -568,8 +569,8 @@ class AncWorkflowTest {
             ultrasoundDraft = null,
         )
         mountFixture(LayoutFixture.narrowPhone(), usWorkspaceState)
-        compose.onNodeWithTag("workspaceList").performScrollToNode(hasTestTag("addUltrasound"))
-        compose.onNodeWithTag("addUltrasound").assertIsDisplayed()
+        compose.onNodeWithTag(PatientHubTab.SCANS.contentTag()).assertIsDisplayed()
+        compose.onNodeWithTag("recordNewScanBtn").assertIsDisplayed()
     }
 
     @Test
@@ -583,8 +584,8 @@ class AncWorkflowTest {
 
         // 1. Mount Workspace in LABORATORY section
         mountFixture(LayoutFixture.narrowPhone(), state)
-        compose.onNodeWithTag("workspaceList").performScrollToNode(hasTestTag("addLab"))
-        compose.onNodeWithTag("addLab").assertIsDisplayed()
+        compose.onNodeWithTag(PatientHubTab.LABS.contentTag()).assertIsDisplayed()
+        compose.onNodeWithTag("addInvestigationBtn").assertIsDisplayed()
 
         // 2. Open Lab Editor
         state = AncReducer.reduce(
@@ -647,8 +648,9 @@ class AncWorkflowTest {
             medicationDraft = null,
         )
         mountFixture(LayoutFixture.narrowPhone(), medWorkspaceState)
-        compose.onNodeWithTag("workspaceList").performScrollToNode(hasTestTag("addMedication"))
-        compose.onNodeWithTag("addMedication").assertIsDisplayed()
+        compose.onNodeWithTag(PatientHubTab.MEDS.contentTag()).assertIsDisplayed()
+        compose.scrollHubTabTo(PatientHubTab.MEDS, "addCustomMedicationBtn")
+        compose.onNodeWithTag("addCustomMedicationBtn").assertIsDisplayed()
     }
 
     @Test
@@ -660,31 +662,38 @@ class AncWorkflowTest {
             route = AncRoute.Workspace(patient.id, WorkspaceSection.EPISODE_OVERVIEW),
         )
 
-        // 1. Mount Episode Overview
+        // 1. Mount Episode Overview. The report button sits in the expanded header, so open the report first.
         mountFixture(LayoutFixture.narrowPhone(), state)
-        compose.onNodeWithTag("workspaceList").performScrollToNode(hasTestTag("overviewMilestones"))
-        compose.onNodeWithTag("overviewMilestones").assertIsDisplayed()
-        compose.onNodeWithTag("workspaceList").performScrollToNode(hasTestTag("overviewQuickActions"))
-        compose.onNodeWithTag("overviewQuickActions").assertIsDisplayed()
-        compose.onNodeWithTag("workspaceList").performScrollToNode(hasTestTag("overviewClinicalSummary"))
-        compose.onNodeWithTag("overviewClinicalSummary").assertIsDisplayed()
-        compose.onNodeWithTag("workspaceList").performScrollToNode(hasTestTag("copyClinicalSummary"))
-        compose.onNodeWithTag("copyClinicalSummary").assertIsDisplayed()
+        compose.onNodeWithTag(PatientHubTab.OVERVIEW.contentTag()).assertIsDisplayed()
+        compose.onNodeWithTag("workspaceReportButton").performClick()
+        compose.onNodeWithTag("patientTwoPageReportDialog").assertIsDisplayed()
+        compose.onNodeWithTag("shareReportButton").assertIsDisplayed()
+        compose.onNodeWithTag("printReportButton").assertIsDisplayed()
+        compose.onNodeWithTag("closeReportDialog").performClick()
+        compose.onNodeWithTag("patientTwoPageReportDialog").assertDoesNotExist()
 
-        // 2. Mount Delivery Section
+        // 1b. The three clinical sections and both shared cards
+        listOf("datingCard", "obstetricParityCard", "medicalHistoriesCard", "deliveryPlanningCard", "attachmentsSectionCard")
+            .forEach { tag ->
+                compose.scrollHubTabTo(PatientHubTab.OVERVIEW, tag)
+                compose.onNodeWithTag(tag).assertIsDisplayed()
+            }
+
+        // 2. Mount Delivery Section: the Plan tab carries the delivery planning card
         val deliveryState = state.copy(
             route = AncRoute.Workspace(patient.id, WorkspaceSection.DELIVERY),
         )
         mountFixture(LayoutFixture.narrowPhone(), deliveryState)
-        compose.onNodeWithTag("workspaceList").performScrollToNode(hasTestTag("deliveryPlanningCard"))
+        compose.onNodeWithTag(PatientHubTab.PLAN.contentTag()).assertIsDisplayed()
+        compose.scrollHubTabTo(PatientHubTab.PLAN, "deliveryPlanningCard")
         compose.onNodeWithTag("deliveryPlanningCard").assertIsDisplayed()
 
         // 3. Mount Patient List and check patient list card
         val listState = state.copy(route = AncRoute.PatientList)
         mountFixture(LayoutFixture.narrowPhone(), listState)
         compose.onNodeWithTag("patient-${patient.caseId}").assertIsDisplayed()
+        compose.onNodeWithTag("patientMenu-${patient.caseId}").performClick()
         compose.onNodeWithTag("workspace-${patient.caseId}").assertIsDisplayed()
-        compose.onNodeWithTag("profile-${patient.caseId}").assertIsDisplayed()
     }
 
     private fun mountFixture(layout: LayoutFixture, state: AncState): Float {

@@ -1,0 +1,72 @@
+I found a real bug in the hub, and two delete/Undo assertions that pass whatever the screen shows. **Verdict: FIX-NEEDED.** The rewrite itself is mostly faithful. What needs fixing is one production bug (the red test) and some weak assertions, most of them older than this rewrite.
+
+I read the code only and ran nothing. The diff file is identical to the current working tree.
+
+## (3) The deliberate red test `attachment_deleteConfirmRemovesCardAndShowsUndoBar`
+
+**The assertion is right, and the bug is real.**
+- **Old screen:** it had `LaunchedEffect(patient.attachments)` at old `WorkspaceScreen.kt:353-355`, which set `viewingAttachment = null` once the open attachment was gone.
+- **New hub:** `PatientHubScreen.kt:147` and `:270-287` have no such effect. Nothing clears `viewingAttachment` after a delete.
+- **Result:** the viewer stays open on a record that no longer exists, with a working `deleteAttachmentBtn`. Tapping it again sends a second delete request for an id that isn't there.
+
+So `missing("deleteAttachmentBtn")` fails for the right reason. The fix belongs in `PatientHubScreen`, not in the test. `attachment_cancelKeepsTheViewerOpen` still holds once that effect is restored.
+
+## Findings
+
+**Major**
+1. **Production bug, `PatientHubScreen.kt`:** the attachment viewer stays open after its record is deleted, as described in (3).
+2. **`DeleteUndoUiTest.undoBarNamesThePatient` passes for any Undo bar (older than this rewrite).** It looks for `hasText(patientA.displayName)` anywhere on screen, and the hub header always shows that name (`PatientHubHeader.kt:260/358`). It should be scoped with `and inTagged("undoBar")`.
+3. **`DeleteUndoUiTest.attachment_deleteConfirmRemovesCardAndShowsUndoBar`, "Scan 1" check (also older):** it passes even if the confirm dialog shows the file name. "Scan 1" is also the title on the attachment card and in the viewer behind the dialog. It should be scoped with `inTagged("deleteConfirmDialog")`.
+4. **Production, `LabReportItem.kt:369-371`:** the lab row has its own delete `IconButton` tagged `deleteLab-` instead of the shared `DeleteIconButton`. This breaks the "one canonical component" rule in AGENTS.md. It also loses the shared spoken record name, and no test checks the lab's content description. The test's `deletePrefix` comment accepts this split rather than flagging it.
+5. **`PatientHubNavigation.kt`, `scrollHubTabTo` on the Overview and Plan tabs: not limited to the tab body.**
+   - For those two tabs it calls `onNode(target).performScrollTo()` across the whole screen. `performScrollTo` scrolls every scrollable parent, including the `HorizontalPager`.
+   - The pager keeps one neighbouring page composed (`beyondViewportPageCount = 1`). If a card moved to the next tab, the helper would swipe the pager there and `assertIsDisplayed` would still pass.
+   - No current target is affected: none of them exist on Visits or Meds.
+   - Fix: `target and hasAnyAncestor(hasTestTag(tab.contentTag()))`.
+   - The lazy-list branch (`performScrollToNode` on the tab's own list) is properly limited. The tab-bar scroll in `openHubTab` is correct.
+
+**Nit**
+6. **`*_barDisappearsAfterAboutEightSeconds` (older than this rewrite):** they check only an upper limit of 15 s. A 1 s timer would pass. The 8 s value (`UndoCoordinator.kt:95`) has no unit test under `*Undo*` that I could find.
+7. **`archivedPatientHasNoDeleteIcons` covers medication only.** Archived attachments (`canDelete` at `PatientHubScreen.kt:274`, a separate gate) and the custom lab button are not covered.
+8. **`AncWorkflowTest` "P3 parity detail":** the match was loosened from exact to `substring = true`. Worth confirming why the rendered text changed.
+9. **Production dead tags:** when one element carries several test tags, only the first one counts. That leaves `hubReportButton` (`PatientHubHeader.kt:230`) and the card's `workspace-`/`profile-` (`PatientDirectoryCard.kt:87-88`) unreachable. This is why the tests switched to `workspaceReportButton` and dropped `profile-`, which is correct. The dead tags should be deleted under the "no legacy baggage" rule.
+
+## (1) Did each test keep the oracle in its name?
+
+**DeleteUndoUiTest**
+- **Per-kind delete, cancel, Undo and 8 s bar:** the oracle is kept. Only the scrolling changed, and the per-kind card and delete tags exist in production.
+- **Failed delete, failed Undo, other patient opened:** kept; these tests were not touched.
+- **`deleteNoticeSaysDeletedNotSaved`:** the meaning changed, but it is not empty. The old test looked for the on-screen notice "Medication deleted.". The hub no longer shows saved notices at all; the only `savedNotice` display left is the patient list's archive notice. The new test checks:
+  - `state.notice == MEDICATION_DELETED`;
+  - the Undo bar says "Deleted UiDrug 1";
+  - there is no "saved" text inside the Undo bar.
+
+  It would catch a delete wrongly labelled as a save.
+
+**AncWorkflowTest**
+- **`clinicalSummaryAndDeliveryPlanningWorkflowRenderAccurately`:** `overviewMilestones`, `overviewQuickActions`, `overviewClinicalSummary` and `copyClinicalSummary` no longer exist anywhere in `main`. The test now opens the report dialog, checks Share and Print, and checks the Overview cards. The checks are real, but the name now claims a "clinical summary" that no longer exists.
+- **Patient-list check:** it now checks the card, then opens the menu and checks that the sheet offers "Open workspace". `profile-` is dropped because that tag was dead.
+
+**PatientHubDesignTest**
+- The tab test now scrolls the tab bar (`PrimaryScrollableTabRow`) before checking each tab. It no longer checks that all six tabs are visible at once.
+
+## (4) Three production mutations
+
+| Mutation | Caught? |
+|---|---|
+| Undo click does nothing, or the Undo button is removed | **Yes.** `*_undoRestoresTheCard` (no button means `exists("undoButton")` fails; a no-op button never restores the card). |
+| `canEdit` ignores archived status in `PatientHubScreen` | **Yes**, through `archivedPatientHasNoDeleteIcons` (medication only). The attachment viewer's separate `canDelete` gate: **No.** |
+| Undo bar shows the wrong patient (B instead of A) | **No.** `undoBarNamesThePatient` finds A's name in the header. |
+
+## (5) Decisions for the owner
+1. The copy-clinical-summary feature is gone. Accept that, and rename `clinicalSummary...` to match what it now checks?
+2. The hub shows no "Medication deleted." notice; only the Undo bar reports the delete. Is that intended?
+3. Six tabs no longer have to fit on screen at once; they only have to be reachable by scrolling. OK at 360dp?
+4. Patient list: is "Open workspace" in the menu sheet the intended way into a patient?
+5. Should labs move back to the shared `DeleteIconButton`? If so, drop the test's `deletePrefix` special case.
+
+## What I did not check
+- I did not run any test on an emulator, so I can't confirm which tests are green.
+- I did not compare `AncWorkflowTest` lines 497-577 beyond the diff hunks.
+- I did not check why the P3 text needed the substring match.
+- I did not look at the older `AncWorkflowTest` tests outside the diff, or check the `ScansTab`/`VisitsTab` archived gates one by one.
