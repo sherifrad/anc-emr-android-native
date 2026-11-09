@@ -1,5 +1,7 @@
 package com.sherifradwan.ancnative.model
 
+import java.time.LocalDate
+
 object ClinicalSummaryGenerator {
     fun generateTextSummary(patient: DemoPatient): String {
         val sb = StringBuilder()
@@ -21,10 +23,9 @@ object ClinicalSummaryGenerator {
         if (dating != null) {
             val ga = dating.calculateGestationalAge() ?: "Not calculated"
             sb.appendLine("Gestational Age: $ga")
-            if (!dating.agreedEdd.isNullOrBlank()) sb.appendLine("Agreed EDD: ${dating.agreedEdd}")
-            if (!dating.lmpDate.isNullOrBlank()) sb.appendLine("LMP: ${dating.lmpDate}")
-            if (!dating.ultrasoundEdd.isNullOrBlank()) sb.appendLine("Ultrasound EDD: ${dating.ultrasoundEdd}")
-            if (!dating.datingMethod.isNullOrBlank()) sb.appendLine("Method: ${dating.datingMethod}")
+            val summary = datingSummaryOf(patient, LocalDate.now())
+            datingTextRows(summary).forEach { sb.appendLine("${it.label}: ${it.value ?: "Not recorded"}") }
+            datingDiscordanceLine(dating, summary)?.let { sb.appendLine(it) }
         } else {
             sb.appendLine("Dating: Not recorded")
         }

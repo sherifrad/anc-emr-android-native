@@ -20,6 +20,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -28,14 +30,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
+import java.time.LocalDate
+import kotlin.math.abs
 import com.sherifradwan.ancnative.model.DemoPatient
-import com.sherifradwan.ancnative.model.DemoPatientDating
+import com.sherifradwan.ancnative.model.datingSummaryOf
+import com.sherifradwan.ancnative.model.datingTextRows
 import com.sherifradwan.ancnative.model.previousDeliverySummary
 import com.sherifradwan.ancnative.ui.AllergyState
 import com.sherifradwan.ancnative.ui.FactRow
 import com.sherifradwan.ancnative.ui.ObstetricParityBadge
 import com.sherifradwan.ancnative.ui.classifyAllergy
-import com.sherifradwan.ancnative.ui.datingMethodLabelRes
+import com.sherifradwan.ancnative.ui.ClinicalCardTokens
+import com.sherifradwan.ancnative.ui.isDarkTheme
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
 
 @Composable
@@ -52,11 +58,13 @@ private fun SectionIconAction(
 
 @Composable
 fun DatingSection(
-    dating: DemoPatientDating?,
+    patient: DemoPatient,
     onEdit: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val scheme = MaterialTheme.colorScheme
+    val dating = patient.dating
+    val summary = remember(patient) { datingSummaryOf(patient, LocalDate.now()) }
     ClinicalGroupSection(
         title = stringResource(R.string.pregnancy_dating_title),
         icon = Icons.Default.DateRange,
@@ -75,23 +83,54 @@ fun DatingSection(
             )
             return@ClinicalGroupSection
         }
-        val agreed = dating.agreedEdd?.trim().orEmpty()
-        val us = dating.ultrasoundEdd?.trim().orEmpty()
-        val eddSource: Pair<Int, String?> = when {
-            agreed.isNotEmpty() -> R.string.agreed_edd to agreed
-            us.isNotEmpty() -> R.string.ultrasound_edd to us
-            else -> R.string.calculated_edd to dating.calculateEstimatedDueDate()?.toString()
+        datingTextRows(summary).forEach { row ->
+            FactRow(row.label, row.value, isEmphasized = row.isEdd)
         }
-        FactRow(eddSource.first, eddSource.second ?: stringResource(R.string.not_recorded), isEmphasized = true)
-        if (agreed.isNotEmpty() && us.isNotEmpty() && !agreed.equals(us, ignoreCase = true)) FactRow(R.string.ultrasound_edd, us)
-        FactRow(
-            R.string.dating_method,
-            datingMethodLabelRes(dating.datingMethod)?.let { stringResource(it) } ?: dating.datingMethod,
-        )
-        FactRow(R.string.lmp_date, dating.lmpDate)
-        if (!dating.transferDate.isNullOrBlank()) FactRow(R.string.ivf_transfer_date, dating.transferDate)
-        dating.embryoAgeDays?.let { FactRow(R.string.embryo_age, stringResource(R.string.embryo_age_days, it)) }
+        summary.discordance?.let { advice ->
+            val dark = isDarkTheme()
+            SectionBanner(
+                text = stringResource(
+                    R.string.dating_discordance_alert,
+                    abs(advice.differenceDays),
+                    advice.thresholdDays,
+                ),
+                container = if (dark) ClinicalCardTokens.WarningDarkBg else ClinicalCardTokens.WarningBg,
+                accent = if (dark) ClinicalCardTokens.WarningDarkAccent else ClinicalCardTokens.WarningAccent,
+                content = if (dark) ClinicalCardTokens.WarningDarkText else ClinicalCardTokens.WarningText,
+                modifier = Modifier.padding(top = 4.dp).testTag("datingDiscordanceAlert"),
+            )
+        }
         if (!dating.notes.isNullOrBlank()) FactRow(R.string.notes, dating.notes)
+    }
+}
+
+/** Full-width wrapping banner: warning icon plus bold text on a tinted surface. No actions. */
+@Composable
+private fun SectionBanner(
+    text: String,
+    container: Color,
+    accent: Color,
+    content: Color,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = container,
+        modifier = modifier.fillMaxWidth().padding(bottom = 6.dp),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Icon(Icons.Default.Warning, contentDescription = null, tint = accent, modifier = Modifier.size(16.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = content,
+            )
+        }
     }
 }
 
@@ -153,25 +192,12 @@ fun MedicalHistoriesSection(
         modifier = modifier.testTag("medicalHistoriesCard"),
     ) {
         when (val allergy = classifyAllergy(patient.allergyHistory)) {
-            is AllergyState.Recorded -> Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = scheme.errorContainer,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Icon(Icons.Default.Warning, contentDescription = null, tint = scheme.error, modifier = Modifier.size(16.dp))
-                    Text(
-                        text = stringResource(R.string.allergy_banner, allergy.text),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = scheme.onErrorContainer,
-                    )
-                }
-            }
+            is AllergyState.Recorded -> SectionBanner(
+                text = stringResource(R.string.allergy_banner, allergy.text),
+                container = scheme.errorContainer,
+                accent = scheme.error,
+                content = scheme.onErrorContainer,
+            )
             AllergyState.ExplicitlyNone -> Text(
                 text = stringResource(R.string.no_allergy_history),
                 style = MaterialTheme.typography.bodyMedium,

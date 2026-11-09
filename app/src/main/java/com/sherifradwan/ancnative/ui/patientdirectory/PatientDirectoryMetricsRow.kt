@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.ui.GaDiscordanceMarker
 import com.sherifradwan.ancnative.model.previousDeliverySummary
 import com.sherifradwan.ancnative.ui.PatientDashboardRowProjection
 import com.sherifradwan.ancnative.ui.ActionRose
@@ -62,6 +63,7 @@ fun PatientDirectoryMetricsRow(
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                     )
+                    if (row.isDatingDiscordant) GaDiscordanceMarker(style = MaterialTheme.typography.bodyMedium)
                     if (row.isLateOrPostTerm) {
                         Surface(
                             shape = RoundedCornerShape(4.dp),

@@ -26,6 +26,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -338,7 +340,7 @@ fun BloodGroupBadge(bloodGroup: String?, modifier: Modifier = Modifier) {
  * Resolves dark mode automatically via isDarkTheme().
  */
 @Composable
-fun GestationalAgeBadge(gaText: String?, modifier: Modifier = Modifier) {
+fun GestationalAgeBadge(gaText: String?, modifier: Modifier = Modifier, discordant: Boolean = false) {
     if (gaText.isNullOrBlank()) return
     val dark = isDarkTheme()
     val bg = if (dark) TagGestationalAgeDarkBg else TagGestationalAgeBg
@@ -351,16 +353,42 @@ fun GestationalAgeBadge(gaText: String?, modifier: Modifier = Modifier) {
         border = BorderStroke(1.dp, border),
         modifier = modifier.testTag("gestationalAgeBadge"),
     ) {
-        Text(
-            text = gaText,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            color = text,
-            maxLines = 1,
-            softWrap = false,
+        Row(
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-        )
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = gaText,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = text,
+                maxLines = 1,
+                softWrap = false,
+            )
+            if (discordant) GaDiscordanceMarker()
+        }
     }
+}
+
+/** Red "??" shown after the current gestational age when the LMP and scan due dates disagree. */
+@Composable
+fun GaDiscordanceMarker(
+    modifier: Modifier = Modifier,
+    style: TextStyle = MaterialTheme.typography.labelSmall,
+) {
+    val description = stringResource(R.string.ga_discordance_marker_cd)
+    Text(
+        text = "??",
+        style = style,
+        fontWeight = FontWeight.Black,
+        color = if (isDarkTheme()) ClinicalCardTokens.CriticalDarkAccent else ClinicalCardTokens.CriticalAccent,
+        maxLines = 1,
+        softWrap = false,
+        modifier = modifier
+            .testTag("gaDiscordanceMarker")
+            .semantics { contentDescription = description },
+    )
 }
 
 /**

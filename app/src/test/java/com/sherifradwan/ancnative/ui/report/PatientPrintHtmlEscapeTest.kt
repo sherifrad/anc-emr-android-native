@@ -210,8 +210,12 @@ class PatientPrintHtmlEscapeTest {
 
     @Test
     fun q93_datingSection_escapedOnce() {
-        assertTrue(countOf("""<div class="val">$ESCAPED</div>""") >= 2)
-        assertTrue(countOf("""<div class="val text-rose">$ESCAPED</div>""") >= 1)
+        val start = html.indexOf("<span>Pregnancy Dating</span>")
+        assertTrue(start >= 0)
+        val rest = html.substring(start + 1)
+        val box = rest.substring(0, rest.indexOf("""class="section-title"""").let { if (it < 0) rest.length else it })
+        assertTrue(Regex(Regex.escape(ESCAPED)).findAll(box).count() >= 2)
+        assertFalse(box.contains(MARKER))
     }
 
     @Test

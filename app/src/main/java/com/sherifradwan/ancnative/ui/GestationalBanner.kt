@@ -28,7 +28,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatientDating
+import com.sherifradwan.ancnative.model.datingSummary
 import com.sherifradwan.ancnative.model.daysToEdd
+import com.sherifradwan.ancnative.model.formatDmy
 import java.time.LocalDate
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -37,9 +39,11 @@ fun GestationalBanner(
     dating: DemoPatientDating?,
     asOfDate: LocalDate = LocalDate.now(),
     modifier: Modifier = Modifier,
+    earliestScanDate: LocalDate? = null,
 ) {
     val gaResult = dating?.calculateGestationalAgeResult(asOfDate)
-    val edd = dating?.calculateEstimatedDueDate()
+    val summary = datingSummary(dating, earliestScanDate, asOfDate)
+    val edd = summary.edd
 
     Card(
         modifier = modifier
@@ -68,12 +72,20 @@ fun GestationalBanner(
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary,
                         )
-                        Text(
-                            text = gaResult.formatted,
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.semantics { heading() },
-                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = gaResult.formatted,
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.semantics { heading() },
+                            )
+                            if (summary.discordance != null) {
+                                GaDiscordanceMarker(style = MaterialTheme.typography.headlineMedium)
+                            }
+                        }
                     }
 
                     Row(
@@ -169,7 +181,7 @@ fun GestationalBanner(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Text(
-                            text = edd.toString(),
+                            text = formatDmy(edd),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface,

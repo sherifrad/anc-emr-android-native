@@ -3,7 +3,6 @@ package com.sherifradwan.ancnative.ui
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.BpLevel
 import com.sherifradwan.ancnative.model.bpLevel
-import com.sherifradwan.ancnative.model.canonicalDatingMethod
 
 /** True when a recorded blood group is Rh negative ("A-", "O neg", "B Rh -ve", "O minus", ...). */
 internal fun isRhNegative(bloodGroup: String?): Boolean {
@@ -12,18 +11,6 @@ internal fun isRhNegative(bloodGroup: String?): Boolean {
     if (raw.contains('+') || Regex("\\b(pos|positive)\\b").containsMatchIn(raw)) return false
     return raw.contains('-') ||
         Regex("\\b(neg|negative|minus)\\b").containsMatchIn(raw)
-}
-
-/**
- * String resource for a stored dating method code, (see [canonicalDatingMethod]). Null for blank or
- * unknown codes, so callers show the raw text.
- */
-internal fun datingMethodLabelRes(method: String?): Int? = when (canonicalDatingMethod(method)) {
-    "LMP" -> R.string.dating_method_lmp
-    "Ultrasound" -> R.string.dating_method_ultrasound
-    "IVF_TRANSFER" -> R.string.dating_method_ivf_transfer
-    "Clinical" -> R.string.dating_method_clinical
-    else -> null
 }
 
 /** What the allergy field says: nothing entered, an explicit "none", or a real recorded allergy. */

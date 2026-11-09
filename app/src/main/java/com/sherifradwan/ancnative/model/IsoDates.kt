@@ -40,7 +40,9 @@ fun parseCanonicalIsoDateOrNull(value: String?): LocalDate? {
 
 private val DmyFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.ROOT)
 
+fun formatDmy(date: LocalDate): String = date.format(DmyFormatter)
+
 fun formatDmy(iso: String?): String? {
     if (iso.isNullOrBlank()) return null
-    return parseIsoDateOrNull(iso)?.format(DmyFormatter) ?: iso.trim()
+    return parseIsoDateOrNull(iso)?.let(::formatDmy) ?: iso.trim()
 }

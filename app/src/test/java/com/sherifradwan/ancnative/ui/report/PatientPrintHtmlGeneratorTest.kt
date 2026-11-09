@@ -403,7 +403,7 @@ class PatientPrintHtmlGeneratorTest {
 
     @Test
     fun q19d_agreedEddPresent_printed() {
-        assertEquals("2026-11-08", rowValue(q19Html(dating = dating("2026-11-08")), "Target Delivery Timing:"))
+        assertEquals("08/11/2026", rowValue(q19Html(dating = dating("2026-11-08")), "Target Delivery Timing:"))
     }
 
     // (e) risk level missing
@@ -548,5 +548,121 @@ class PatientPrintHtmlGeneratorTest {
     fun q19k_imageLabelWithImpression_unchanged() {
         val html = htmlWith { it.copy(ultrasoundScans = listOf(scanWithImage("Normal growth"))) }
         assertTrue(html.contains("""<div class="photo-caption">Ultrasound Scan 1.1 - 2026-09-01 (Normal growth)</div>"""))
+    }
+
+    // =====================================================================
+    // Dating summary in the printed report (overview_dating_spec.md U6).
+    // Assertions read the text of the "Pregnancy Dating" box only, with tags
+    // stripped and non-breaking spaces folded, so markup stays the builder's choice.
+    // =====================================================================
+
+    private fun datingBoxText(html: String): String {
+        val start = html.indexOf("<span>Pregnancy Dating</span>")
+        assertTrue("Pregnancy Dating title must be printed", start >= 0)
+        val rest = html.substring(start + 1)
+        val end = rest.indexOf("""class="section-title"""").let { if (it < 0) rest.length else it }
+        return rest.substring(0, end)
+            .replace(Regex("<[^>]*>"), " ")
+            .replace("&nbsp;", " ")
+            .replace("\u00A0", " ")
+            .replace(Regex("\\s+"), " ")
+    }
+
+    private fun printDating(d: DemoPatientDating, scanDate: String? = "2026-08-27"): String =
+        PatientPrintHtmlGenerator.generateHtml(
+            context = null,
+            patient = patient("Low Risk", "O+").copy(
+                dating = d,
+                ultrasoundScans = listOfNotNull(scanDate?.let { scan(null, null, null).copy(date = it) }),
+            ),
+            asOfDate = AS_OF_DATE,
+        )
+
+    private fun printDatingFields(
+        lmp: String? = null,
+        us: String? = null,
+        agreed: String? = null,
+        method: String? = null,
+        transfer: String? = null,
+        embryoAge: Int? = null,
+    ) = DemoPatientDating(
+        patientId = "r2e-print-1", lmpDate = lmp, ultrasoundEdd = us, agreedEdd = agreed,
+        datingMethod = method, notes = null, transferDate = transfer, embryoAgeDays = embryoAge,
+    )
+
+    @Test
+    fun dating_lmpPatient_printsLmpRowDmyAndEdd() {
+        val html = printDating(printDatingFields(lmp = "2026-06-08", agreed = "2027-03-15", method = "LMP"))
+        val box = datingBoxText(html)
+        assertTrue(box, Regex("""LMP:? 08/06/2026""").containsMatchIn(box))
+        assertTrue(box, Regex("""EDD:? 15/03/2027""").containsMatchIn(box))
+        assertFalse(box, box.contains("2026-06-08"))
+        assertFalse(box, box.contains("Confirmed EDD"))
+        assertFalse(box, Regex("""\bET\b""").containsMatchIn(box))
+    }
+
+    @Test
+    fun dating_ivfTransferPatient_printsEtWithTransferDateAndNeverLmp() {
+        val html = printDating(
+            printDatingFields(lmp = "2026-06-01", agreed = "2027-03-08", method = "IVF_TRANSFER", transfer = "2026-06-20", embryoAge = 5),
+        )
+        val box = datingBoxText(html)
+        assertTrue(box, Regex("""ET:? 20/06/2026""").containsMatchIn(box))
+        assertFalse(box, Regex("""\bLMP\b""").containsMatchIn(box))
+        assertFalse(box, box.contains("01/06/2026"))
+        assertTrue(box, Regex("""EDD:? 08/03/2027""").containsMatchIn(box))
+    }
+
+    @Test
+    fun dating_methodPrintsAsLabelNeverTheRawCode() {
+        val ivf = printDating(
+            printDatingFields(agreed = "2027-03-08", method = "IVF_TRANSFER", transfer = "2026-06-20", embryoAge = 5),
+        )
+        assertTrue(Regex("""Method:? ET\b""").containsMatchIn(datingBoxText(ivf)))
+        assertFalse(ivf.contains("IVF_TRANSFER"))
+
+        val us = printDating(printDatingFields(lmp = "2026-06-08", us = "2027-03-24", agreed = "2027-03-24", method = "Ultrasound"))
+        assertTrue(Regex("""Method:? by ultrasound""").containsMatchIn(datingBoxText(us)))
+
+        val clinical = printDating(printDatingFields(agreed = "2027-04-02", method = "Clinical"))
+        assertTrue(Regex("""Method:? clinical""").containsMatchIn(datingBoxText(clinical)))
+    }
+
+    @Test
+    fun dating_discordance_printsBothDueDatesAndGap() {
+        val html = printDating(
+            printDatingFields(lmp = "2026-06-08", us = "2027-03-24", agreed = "2027-03-15", method = "LMP"),
+        )
+        val box = datingBoxText(html)
+        assertTrue(box, box.contains("LMP EDD 15/03/2027"))
+        assertTrue(box, box.contains("US EDD 24/03/2027"))
+        assertTrue(box, box.contains("gap 9 d"))
+        assertFalse(box, box.contains("2027-03-24"))
+    }
+
+    @Test
+    fun dating_noDiscordance_scanEddLineAbsent() {
+        val html = printDating(
+            printDatingFields(lmp = "2026-06-08", us = "2027-03-18", agreed = "2027-03-15", method = "LMP"),
+        )
+        val box = datingBoxText(html)
+        assertFalse(box, box.contains("US EDD"))
+        assertFalse(box, box.contains("gap"))
+        assertTrue(box, box.contains("15/03/2027"))
+    }
+
+    @Test
+    fun dating_referredPatient_printsConfirmedEddAndNoLmpOrEtRow() {
+        val html = printDating(printDatingFields(agreed = "2027-04-02", method = "Clinical"), scanDate = null)
+        val box = datingBoxText(html)
+        assertTrue(box, Regex("""Confirmed EDD:? 02/04/2027""").containsMatchIn(box))
+        assertFalse(box, Regex("""\bLMP\b""").containsMatchIn(box))
+        assertFalse(box, Regex("""\bET\b""").containsMatchIn(box))
+    }
+
+    @Test
+    fun dating_plainEdd_isNotLabelledConfirmed() {
+        val html = printDating(printDatingFields(lmp = "2026-06-08", method = "LMP"), scanDate = null)
+        assertFalse(datingBoxText(html).contains("Confirmed EDD"))
     }
 }

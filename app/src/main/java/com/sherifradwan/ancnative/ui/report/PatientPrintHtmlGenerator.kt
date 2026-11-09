@@ -12,6 +12,10 @@ import com.sherifradwan.ancnative.model.MEDICATION_LABEL_ACTIVE
 import com.sherifradwan.ancnative.model.medicationInstructions
 import com.sherifradwan.ancnative.model.medicationStatusLabel
 import com.sherifradwan.ancnative.model.bpLevel
+import com.sherifradwan.ancnative.model.datingDiscordanceLine
+import com.sherifradwan.ancnative.model.datingSummaryOf
+import com.sherifradwan.ancnative.model.datingTextRows
+import com.sherifradwan.ancnative.model.formatDmy
 import com.sherifradwan.ancnative.model.formatIsoDate
 import com.sherifradwan.ancnative.model.isEarlyLoss
 import com.sherifradwan.ancnative.model.isStillbirth
@@ -64,6 +68,17 @@ object PatientPrintHtmlGenerator {
         val printDateStr = formatIsoDate(asOfDate)
         val gaResult = patient.dating?.calculateGestationalAgeResult(asOfDate)
         val currentGaFormatted = gaResult?.formatted ?: "Unspecified"
+        val datingSummary = datingSummaryOf(patient, asOfDate)
+        val datingMatrixHtml = buildString {
+            datingTextRows(datingSummary).forEach { row ->
+                val valueClass = if (row.isEdd) "val text-rose" else "val"
+                append("""<div class="matrix-item"><div class="label">${escapeHtml(row.label)}</div>""")
+                append("""<div class="$valueClass">${escapeHtml(row.value ?: "Not recorded")}</div></div>""")
+            }
+            datingDiscordanceLine(patient.dating, datingSummary)?.let {
+                append("""<div class="matrix-item" style="grid-column: 1 / -1"><div class="val">${escapeHtml(it)}</div></div>""")
+            }
+        }
 
         // Format Obstetric summary
         val g = patient.gravida ?: "-"
@@ -1043,18 +1058,7 @@ object PatientPrintHtmlGenerator {
                         <span>Pregnancy Dating</span>
                     </div>
                     <div class="dating-matrix">
-                        <div class="matrix-item">
-                            <div class="label">LMP Date</div>
-                            <div class="val">${escapeHtml(patient.dating?.lmpDate ?: "-")}</div>
-                        </div>
-                        <div class="matrix-item">
-                            <div class="label">Ultrasound EDD</div>
-                            <div class="val">${escapeHtml(patient.dating?.ultrasoundEdd ?: "-")}</div>
-                        </div>
-                        <div class="matrix-item">
-                            <div class="label">Agreed EDD</div>
-                            <div class="val text-rose">${escapeHtml(patient.dating?.agreedEdd ?: "-")}</div>
-                        </div>
+                        $datingMatrixHtml
                     </div>
                     <div class="ga-highlight">
                         Current Gestational Age (GA): $currentGaFormatted
@@ -1233,7 +1237,7 @@ object PatientPrintHtmlGenerator {
                             </div>
                             <div class="history-row">
                                 <span class="k">Target Delivery Timing:</span>
-                                <span class="v text-navy font-bold">${escapeHtml(patient.dating?.agreedEdd?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
+                                <span class="v text-navy font-bold">${escapeHtml(formatDmy(patient.dating?.agreedEdd) ?: "Not recorded")}</span>
                             </div>
                             <div class="history-row">
                                 <span class="k">Hospital & Blood Bank Precautions:</span>

@@ -52,6 +52,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.model.datingSummaryOf
+import com.sherifradwan.ancnative.model.formatDmy
 import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.SavePhase
 import com.sherifradwan.ancnative.state.stringRes
@@ -220,15 +222,16 @@ fun ClinicalPatientCard(
                         BloodGroupBadge(patient.bloodGroupText)
 
                         // 5. Gestational Age
+                        val datingSummary = datingSummaryOf(patient, asOfDate)
                         val gaResult = patient.dating?.calculateGestationalAgeResult()
                         val ga = patient.dating?.calculateGestationalAge(asOfDate)
                         val gaText = gaResult?.shortWeeksText ?: ga?.toString()
                         if (gaText != null) {
-                            GestationalAgeBadge("GA $gaText")
+                            GestationalAgeBadge("GA $gaText", discordant = datingSummary.discordance != null)
                         }
 
                         // 6. EDD
-                        val edd = patient.dating?.agreedEdd ?: patient.dating?.calculateEstimatedDueDate()?.toString()
+                        val edd = datingSummary.edd?.let(::formatDmy)
                         if (!edd.isNullOrBlank()) {
                             Surface(shape = RoundedCornerShape(6.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
                                 Text(
@@ -405,7 +408,7 @@ fun ClinicalPatientCard(
                         val ga = patient.dating?.calculateGestationalAge(asOfDate)
                         val gaText = gaResult?.shortWeeksText ?: ga?.toString()
                         if (gaText != null) {
-                            GestationalAgeBadge("GA $gaText")
+                            GestationalAgeBadge("GA $gaText", discordant = datingSummaryOf(patient, asOfDate).discordance != null)
                         }
                     }
                 }

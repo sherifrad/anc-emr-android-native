@@ -148,7 +148,6 @@
     <string name="outcome_termination">Termination of pregnancy</string>
     <string name="labeled_value">%1$s: %2$s</string>
     <string name="detail_separator">" · "</string>
-    <string name="embryo_age_days">Day %1$d</string>
     <string name="allergy_banner">Allergy: %1$s</string>
     <string name="previous_pregnancies">Previous pregnancies</string>
     <string name="add_previous_pregnancy">Add previous pregnancy</string>
@@ -174,10 +173,6 @@
     <string name="ultrasound_edd">Ultrasound EDD</string>
     <string name="agreed_edd">Agreed clinical EDD</string>
     <string name="dating_method">Dating method</string>
-    <string name="dating_method_lmp">LMP</string>
-    <string name="dating_method_ultrasound">Ultrasound</string>
-    <string name="dating_method_ivf_transfer">IVF embryo transfer</string>
-    <string name="dating_method_clinical">Clinical estimate</string>
     <string name="gestational_age">Gestational age</string>
     <string name="current_gestational_age">Current gestational age</string>
     <string name="dating_saved">Dating record saved.</string>
@@ -382,6 +377,8 @@
     <string name="bp_alert_raised">▲ Raised BP (≥140/90) · Recheck</string>
     <string name="bp_alert_severe">▲ Severe BP (≥160/110) · Urgent</string>
     <string name="embryo_day_6">Day 6</string>
+    <string name="dating_discordance_alert">EDD discordance: LMP and scan differ by %1$d&#160;d (limit %2$d&#160;d)</string>
+    <string name="ga_discordance_marker_cd">Gestational age uncertain: LMP and scan due dates disagree</string>
     <string name="redating_hint">Dating delta: %1$d d (&gt;%2$d d threshold). Re-dating indicated.</string>
     <string name="bp_badge_severe">Severe BP</string>
     <string name="bp_attention_severe">Severe-range blood pressure at the last visit: %1$s (%2$s)</string>

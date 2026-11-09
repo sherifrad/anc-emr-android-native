@@ -73,6 +73,8 @@ import androidx.compose.ui.unit.sp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.SevereBpAttention
+import com.sherifradwan.ancnative.model.datingSummaryOf
+import java.time.LocalDate
 import com.sherifradwan.ancnative.model.isOngoingMedication
 import com.sherifradwan.ancnative.ui.ActionRose
 import com.sherifradwan.ancnative.ui.BpAlertLabel
@@ -140,6 +142,7 @@ fun PatientHubHeader(
     modifier: Modifier = Modifier,
 ) {
     val ga = patient.dating?.calculateGestationalAge()
+    val gaDiscordant = remember(patient) { datingSummaryOf(patient, LocalDate.now()).discordance != null }
     val isRhNeg = isRhNegative(patient.bloodGroupText)
     val hasAttention = !patient.clinicalAttention.isNullOrBlank() || severeBp != null
 
@@ -267,6 +270,7 @@ fun PatientHubHeader(
                             GestationalAgeBadge(
                                 gaText = stringResource(R.string.ga_prefix, ga),
                                 modifier = Modifier.padding(start = 8.dp),
+                                discordant = gaDiscordant,
                             )
                         }
                     }
@@ -359,7 +363,7 @@ fun PatientHubHeader(
                                 modifier = Modifier.weight(1f),
                             )
                             if (!gaCompact.isNullOrBlank()) {
-                                GestationalAgeBadge(gaCompact)
+                                GestationalAgeBadge(gaCompact, discordant = gaDiscordant)
                             }
                             if (hasAttention) {
                                 IconButton(

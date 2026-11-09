@@ -74,7 +74,7 @@ fun OverviewTab(
         ) {
             Column {
                 DatingSection(
-                    dating = patient.dating,
+                    patient = patient,
                     onEdit = if (canEdit) {
                         {
                             onEvent(

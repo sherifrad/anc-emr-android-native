@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import java.time.LocalDate
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -73,6 +74,8 @@ import androidx.compose.ui.unit.sp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.SevereBpAttention
+import com.sherifradwan.ancnative.model.datingSummaryOf
+import com.sherifradwan.ancnative.model.formatDmy
 import com.sherifradwan.ancnative.model.previousDeliverySummary
 import com.sherifradwan.ancnative.model.severeBpAttention
 import com.sherifradwan.ancnative.state.AncEvent
@@ -102,7 +105,7 @@ data class PatientDashboardRowProjection(
     val obstetricSummary: String,
     val gestationalAgeText: String,
     val eddText: String?,
-    val datingMethodText: String?,
+    val isDatingDiscordant: Boolean = false,
     val bloodGroup: String?,
     val isRhNegative: Boolean,
     val isRhPositive: Boolean,
@@ -124,16 +127,8 @@ fun projectDashboardRow(patient: DemoPatient): PatientDashboardRowProjection {
     val gaResult = patient.dating?.calculateGestationalAgeResult()
     val gaFormatted = gaResult?.shortWeeksText ?: "-"
 
-    val edd = patient.dating?.calculateEstimatedDueDate()?.toString()
-        ?: patient.dating?.ultrasoundEdd
-        ?: patient.dating?.agreedEdd
-
-    val datingMethod = when {
-        patient.dating?.agreedEdd != null -> "Agreed Clinical EDD"
-        patient.dating?.ultrasoundEdd != null -> "Ultrasound Dating"
-        patient.dating?.lmpDate != null -> "LMP Dating"
-        else -> null
-    }
+    val datingSummary = datingSummaryOf(patient, LocalDate.now())
+    val edd = datingSummary.edd?.let(::formatDmy)
 
     val bg = patient.bloodGroupText?.trim()
     val isRhNeg = isRhNegative(bg)
@@ -155,7 +150,7 @@ fun projectDashboardRow(patient: DemoPatient): PatientDashboardRowProjection {
         obstetricSummary = obstetricFormatted,
         gestationalAgeText = gaFormatted,
         eddText = edd,
-        datingMethodText = datingMethod,
+        isDatingDiscordant = datingSummary.discordance != null,
         bloodGroup = bg,
         isRhNegative = isRhNeg,
         isRhPositive = isRhPos,
