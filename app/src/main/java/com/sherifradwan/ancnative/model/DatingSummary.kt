@@ -50,7 +50,7 @@ private fun eddLabelOf(dating: DemoPatientDating): EddLabel {
 }
 
 /** Date arithmetic on parseable but extreme dates overflows; such a derived value is treated as absent. */
-private inline fun <T> derivedOrNull(block: () -> T?): T? =
+internal inline fun <T> derivedOrNull(block: () -> T?): T? =
     try {
         block()
     } catch (_: DateTimeException) {
@@ -62,15 +62,16 @@ private inline fun <T> derivedOrNull(block: () -> T?): T? =
 private fun discordanceOf(dating: DemoPatientDating, method: String?, anchor: LocalDate): RedatingAdvice? {
     if (method == IVF_TRANSFER_CODE || method == ULTRASOUND_CODE) return null
     val scanEdd = parseIsoDateOrNull(dating.ultrasoundEdd) ?: return null
-    if (abs(ChronoUnit.DAYS.between(anchor, scanEdd)) > MAX_SCAN_EDD_SPAN_DAYS) return null
+    if (abs(ChronoUnit.DAYS.between(anchor, scanEdd)) > MAX_DATING_SPAN_DAYS) return null
     if (scanEdd == parseIsoDateOrNull(dating.agreedEdd)) return null
     val lmp = parseIsoDateOrNull(dating.lmpDate) ?: return null
+    if (abs(ChronoUnit.DAYS.between(lmp, anchor)) > MAX_DATING_SPAN_DAYS) return null
     val datingGaDays = ChronoUnit.DAYS.between(lmp, anchor)
     val scanGaDays = FULL_TERM_DAYS - ChronoUnit.DAYS.between(anchor, scanEdd)
     return redatingAdvice(datingGaDays, scanGaDays)
 }
 
-/** A scan EDD further than this from the anchor is outside what the engine models and gives no discordance. */
-private const val MAX_SCAN_EDD_SPAN_DAYS = 2 * FULL_TERM_DAYS
+/** An LMP or scan EDD further than this from the anchor is outside what the engine models and gives no discordance. */
+private const val MAX_DATING_SPAN_DAYS = 2 * FULL_TERM_DAYS
 private const val IVF_TRANSFER_CODE = "IVF_TRANSFER"
 private const val ULTRASOUND_CODE = "Ultrasound"

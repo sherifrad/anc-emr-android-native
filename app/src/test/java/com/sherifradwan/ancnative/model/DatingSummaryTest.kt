@@ -365,7 +365,7 @@ class DatingSummaryTest {
         for (x in extremeDates) {
             val d = dating(lmpDate = x, ultrasoundEdd = lmpEdd.toString(), agreedEdd = lmpEdd.toString(), method = "LMP")
             val s = assertNoThrow("lmpDate $x") { summary(d, scan = lmp) }
-            assertTrue("lmpDate $x", s.edd == null || s.discordance == null)
+            assertNull("lmpDate $x", s.discordance)
             assertNoThrow("lmpDate $x, no scan") { summary(d) }
             assertNoThrow("lmpDate $x, other method") { summary(d.copy(datingMethod = null)) }
         }
@@ -376,7 +376,7 @@ class DatingSummaryTest {
         for (x in extremeDates) {
             val d = dating(lmpDate = lmp.toString(), ultrasoundEdd = x, agreedEdd = lmpEdd.toString(), method = "LMP")
             val s = assertNoThrow("ultrasoundEdd $x") { summary(d, scan = lmp.plusDays(80)) }
-            assertTrue("ultrasoundEdd $x", s.edd == null || s.discordance == null)
+            assertNull("ultrasoundEdd $x", s.discordance)
             assertNoThrow("ultrasoundEdd $x, ultrasound method") { summary(d.copy(datingMethod = "Ultrasound")) }
             assertNoThrow("ultrasoundEdd $x, no method") { summary(d.copy(datingMethod = null, agreedEdd = null)) }
         }

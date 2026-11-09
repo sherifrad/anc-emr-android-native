@@ -14,6 +14,7 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -27,6 +28,10 @@ import com.sherifradwan.ancnative.ui.ClinicalPatientCard
 import com.sherifradwan.ancnative.ui.PatientCardVariant
 import com.sherifradwan.ancnative.ui.patientdirectory.PatientDirectoryCard
 import com.sherifradwan.ancnative.ui.projectDashboardRow
+import com.sherifradwan.ancnative.ui.patienthub.PatientHubHeader
+import com.sherifradwan.ancnative.ui.patienthub.PatientHubHeaderState
+import com.sherifradwan.ancnative.ui.patienthub.PatientHubTab
+import com.sherifradwan.ancnative.ui.patienthub.components.DeliveryPlanningCard
 import com.sherifradwan.ancnative.ui.patienthub.tabs.ScansTab
 import com.sherifradwan.ancnative.ui.patienthub.tabs.VisitsTab
 import java.time.LocalDate
@@ -164,5 +169,51 @@ class DatingGaMarkerSurfacesTest {
         assertTrue("the Post chip must stay inside the GA column", post.right <= parityLabel.left)
         assertTrue("marker and Post chip must not overlap", marker.right <= post.left || post.right <= marker.left)
         assertTrue("marker must stay inside the 360dp viewport", marker.right <= 360.dp)
+    }
+
+    private fun showHeader(p: DemoPatient) = show {
+        PatientHubHeader(
+            patient = p, headerState = PatientHubHeaderState(), selectedTab = PatientHubTab.entries.first(),
+            onTabSelected = {}, severeBp = null, onBack = {}, onEditPatient = {}, onOpenReport = {},
+            onOpenAttentionDialog = {},
+        )
+    }
+
+    // The expanded header only. The sticky bar needs the measured expanded height, so it is not driven here.
+    @Test
+    fun expandedPatientHubHeaderShowsMarkerOnlyWhenDiscordant() {
+        showHeader(patient(midLmp, discordant = true))
+        assertEquals(1, badgeCount())
+        assertEquals(1, markerCount())
+        showHeader(patient(midLmp, discordant = false))
+        assertEquals(1, badgeCount())
+        assertEquals(0, markerCount())
+    }
+
+    /** LMP 400 d ago: the current GA is past the engine's 320 d window, so there is no GA to flag. */
+    private val outOfWindowLmp: LocalDate = today.minusDays(400)
+
+    @Test
+    fun discordantPatientWithGaOutsideTheWindowShowsNoMarkerInTheListRow() {
+        val p = patient(outOfWindowLmp, discordant = true)
+        assertEquals("-", projectDashboardRow(p).gestationalAgeText)
+        assertTrue(projectDashboardRow(p).isDatingDiscordant)
+        showListCard(p)
+        assertEquals(0, markerCount())
+        compose.onAllNodes(hasText("??", substring = true), useUnmergedTree = true).assertCountEquals(0)
+    }
+
+    @Test
+    fun discordantPatientWithGaOutsideTheWindowShowsNoMarkerOnTheDeliveryPlanCard() {
+        show { DeliveryPlanningCard(patient = patient(outOfWindowLmp, discordant = true), canEdit = true, onEditPatient = {}) }
+        compose.onNodeWithTag("deliveryPlanningCard", useUnmergedTree = true).assertExists()
+        assertEquals(0, markerCount())
+        compose.onAllNodes(hasText("??", substring = true), useUnmergedTree = true).assertCountEquals(0)
+    }
+
+    @Test
+    fun discordantPatientWithGaOutsideTheWindowShowsNoMarkerInTheHeader() {
+        showHeader(patient(outOfWindowLmp, discordant = true))
+        assertEquals(0, markerCount())
     }
 }

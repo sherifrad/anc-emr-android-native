@@ -117,6 +117,8 @@ class DatingScanAnchorTest {
 
     @Test
     fun scanDatedTodayIsAccepted() {
+        assertEquals(gaAlertDay, earliestScanDate(patient(listOf(gaAlertDay.toString())), today = gaAlertDay))
+        assertNull(earliestScanDate(patient(listOf(gaAlertDay.plusDays(1).toString())), today = gaAlertDay))
         assertEquals(true, alert(listOf(gaAlertDay.toString()), today = gaAlertDay))
     }
 

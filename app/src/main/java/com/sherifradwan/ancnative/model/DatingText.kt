@@ -12,7 +12,7 @@ data class DatingTextRow(val label: String, val value: String?, val isEdd: Boole
  * Anchor for the dating discordance check: the earliest scan on or after the LMP and not after [today].
  * Malformed, pre-LMP and future scan dates are ignored; null when none is left (the check then uses today).
  */
-private fun earliestScanDate(patient: DemoPatient, today: LocalDate): LocalDate? {
+internal fun earliestScanDate(patient: DemoPatient, today: LocalDate): LocalDate? {
     val lmp = parseIsoDateOrNull(patient.dating?.lmpDate)
     return patient.ultrasoundScans
         .mapNotNull { parseIsoDateOrNull(it.date) }

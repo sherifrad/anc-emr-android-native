@@ -44,7 +44,11 @@ fun canonicalDatingMethod(method: String?): String? {
 
 object GestationalAgeEngine {
 
-    fun dueDateForMethod(dating: DemoPatientDating, method: String?): LocalDate? {
+    /** Null when the method has no usable date, including a parseable date so extreme that adding a term overflows. */
+    fun dueDateForMethod(dating: DemoPatientDating, method: String?): LocalDate? =
+        derivedOrNull { dueDateForMethodUnsafe(dating, method) }
+
+    private fun dueDateForMethodUnsafe(dating: DemoPatientDating, method: String?): LocalDate? {
         return when (canonicalDatingMethod(method)) {
             "IVF_TRANSFER" -> {
                 if (!dating.transferDate.isNullOrBlank()) {
