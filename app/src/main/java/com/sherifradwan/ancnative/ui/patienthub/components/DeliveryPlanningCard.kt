@@ -96,12 +96,6 @@ fun DeliveryPlanningCard(
                 }
             }
 
-            Text(
-                text = stringResource(R.string.delivery_planning_notice),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
             // Key clinical facts: label above, bold value, each in its own tile
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 KeyFactTile(
@@ -148,28 +142,28 @@ fun DeliveryPlanningCard(
                 title = "Agreed Delivery Hospital",
                 value = sections.hospital,
                 tone = DeliveryTone.HOSPITAL,
-                placeholder = "Hospital not agreed yet",
+                placeholder = "No records",
                 modifier = Modifier.testTag("deliveryHospital"),
             )
             DeliverySectionBox(
                 title = "Agreed Delivery Fees",
                 value = sections.fees,
                 tone = DeliveryTone.FEE,
-                placeholder = "To be agreed based on hospital and delivery mode (NVD / CS)",
+                placeholder = "pending",
                 modifier = Modifier.testTag("deliveryFees"),
             )
             DeliverySectionBox(
                 title = "Delivery Plan",
                 value = sections.plan,
                 tone = DeliveryTone.PLAN,
-                placeholder = "No delivery plan recorded yet",
+                placeholder = "please specify",
                 modifier = Modifier.testTag("deliveryPlan"),
             )
             DeliverySectionBox(
                 title = "Postpartum Note",
                 value = sections.postpartum,
                 tone = DeliveryTone.POSTPARTUM,
-                placeholder = "No postpartum note yet",
+                placeholder = "No records",
                 modifier = Modifier.testTag("deliveryPostpartum"),
             )
         }

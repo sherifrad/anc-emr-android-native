@@ -1,6 +1,7 @@
 package com.sherifradwan.ancnative.ui.patienthub.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,14 +12,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.previousDeliverySummary
+import com.sherifradwan.ancnative.ui.ClinicalCardTokens
 import com.sherifradwan.ancnative.ui.FactRow
 
 @Composable
@@ -40,14 +43,18 @@ fun ObstetricParityCard(
     val p = patient.parity ?: 0L
     val a = patient.abortion ?: 0L
     val summary = previousDeliverySummary(patient)
+    val isDark = isSystemInDarkTheme()
+    val bg = if (isDark) ClinicalCardTokens.ParityDarkBg else ClinicalCardTokens.ParityBg
+    val border = if (isDark) ClinicalCardTokens.ParityDarkBorder else ClinicalCardTokens.ParityBorder
+    val accent = ClinicalCardTokens.ParityAccent
 
     Card(
         modifier = modifier
             .fillMaxWidth()
             .testTag("obstetricParityCard"),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        colors = CardDefaults.cardColors(containerColor = bg),
+        border = BorderStroke(1.5.dp, border),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(
@@ -62,45 +69,51 @@ fun ObstetricParityCard(
                     Icon(
                         Icons.Default.Person,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = accent,
                         modifier = Modifier.size(20.dp),
                     )
                     Text(
                         text = "Obstetric Parity",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer,
+                        color = accent.copy(alpha = 0.15f),
+                        border = BorderStroke(1.dp, accent.copy(alpha = 0.3f)),
                     ) {
                         Text(
                             text = "G$g P$p" + if (a > 0) " A$a" else "",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            color = accent,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                         )
                     }
                 }
                 if (onAddPregnancy != null) {
-                    Button(
+                    FilledTonalButton(
                         onClick = onAddPregnancy,
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = accent.copy(alpha = 0.15f),
+                            contentColor = accent,
+                        ),
                         shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                         modifier = Modifier.testTag("addPregnancyButton"),
                     ) {
                         Icon(
                             Icons.Default.Add,
                             contentDescription = null,
-                            modifier = Modifier.size(16.dp),
+                            modifier = Modifier.size(14.dp),
                         )
                         Text(
-                            text = "Add Prior Delivery",
+                            text = "Add Delivery",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(start = 4.dp),
+                            softWrap = false,
+                            modifier = Modifier.padding(start = 2.dp),
                         )
                     }
                 }
@@ -110,7 +123,8 @@ fun ObstetricParityCard(
             if (summary.isNotBlank()) {
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, border.copy(alpha = 0.6f)),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Column(Modifier.padding(12.dp)) {
@@ -131,9 +145,6 @@ fun ObstetricParityCard(
                 }
             }
 
-            FactRow(R.string.gravida, g.toString())
-            FactRow(R.string.parity, p.toString())
-            FactRow(R.string.abortion, a.toString())
             if (!patient.obstetricNotes.isNullOrBlank()) {
                 FactRow(R.string.obstetric_notes, patient.obstetricNotes)
             }

@@ -1,6 +1,7 @@
 package com.sherifradwan.ancnative.ui.patienthub.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatientDating
+import com.sherifradwan.ancnative.ui.ClinicalCardTokens
 import com.sherifradwan.ancnative.ui.ClinicalTeal
 import com.sherifradwan.ancnative.ui.FactRow
 
@@ -36,13 +38,18 @@ fun GestationalDatingCard(
     onEdit: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
+    val isDark = isSystemInDarkTheme()
+    val bg = if (isDark) ClinicalCardTokens.DatingDarkBg else ClinicalCardTokens.DatingBg
+    val border = if (isDark) ClinicalCardTokens.DatingDarkBorder else ClinicalCardTokens.DatingBorder
+    val accent = ClinicalCardTokens.DatingAccent
+
     Card(
         modifier = modifier
             .fillMaxWidth()
             .testTag("datingCard"),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        colors = CardDefaults.cardColors(containerColor = bg),
+        border = BorderStroke(1.5.dp, border),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             // Header Row: Title + Method badge + Edit affordance
@@ -58,25 +65,26 @@ fun GestationalDatingCard(
                     Icon(
                         Icons.Default.DateRange,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = accent,
                         modifier = Modifier.size(20.dp),
                     )
                     Text(
                         text = "Pregnancy Dating",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     if (!dating?.datingMethod.isNullOrBlank()) {
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            color = accent.copy(alpha = 0.15f),
+                            border = BorderStroke(1.dp, accent.copy(alpha = 0.3f)),
                         ) {
                             Text(
                                 text = dating?.datingMethod.orEmpty(),
                                 style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                fontWeight = FontWeight.Bold,
+                                color = accent,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             )
                         }
@@ -90,7 +98,7 @@ fun GestationalDatingCard(
                         Icon(
                             Icons.Default.Edit,
                             contentDescription = stringResource(R.string.edit_dating),
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = accent,
                             modifier = Modifier.size(20.dp),
                         )
                     }
@@ -112,7 +120,7 @@ fun GestationalDatingCard(
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                    border = BorderStroke(1.dp, border.copy(alpha = 0.6f)),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Row(
@@ -131,8 +139,10 @@ fun GestationalDatingCard(
                             )
                             Text(
                                 text = ga ?: "—",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontFeatureSettings = "tnum",
+                                ),
                                 color = ClinicalTeal,
                             )
                         }
@@ -145,26 +155,21 @@ fun GestationalDatingCard(
                             )
                             Text(
                                 text = edd ?: "—",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontFeatureSettings = "tnum",
+                                ),
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                         }
                     }
                 }
             }
 
-            if (!ga.isNullOrBlank()) {
-                FactRow(R.string.current_gestational_age, ga)
-            }
-
-            if (!dating.datingMethod.isNullOrBlank()) {
-                FactRow(R.string.dating_method, dating.datingMethod)
-            }
-
+            // Only underlying clinical parameters (LMP, IVF, or notes) - GA and Dating Method are already in hero & header
             when (dating.datingMethod?.uppercase()) {
                 "ULTRASOUND", "US" -> {
-                    if (!dating.ultrasoundEdd.isNullOrBlank()) {
+                    if (!dating.ultrasoundEdd.isNullOrBlank() && dating.ultrasoundEdd != edd) {
                         FactRow(R.string.ultrasound_edd, dating.ultrasoundEdd)
                     }
                 }
@@ -182,14 +187,11 @@ fun GestationalDatingCard(
                     }
                 }
                 "CLINICAL" -> {
-                    if (!dating.agreedEdd.isNullOrBlank()) {
+                    if (!dating.agreedEdd.isNullOrBlank() && dating.agreedEdd != edd) {
                         FactRow(R.string.agreed_edd, dating.agreedEdd)
                     }
                 }
                 else -> {
-                    if (!dating.ultrasoundEdd.isNullOrBlank()) {
-                        FactRow(R.string.ultrasound_edd, dating.ultrasoundEdd)
-                    }
                     if (!dating.lmpDate.isNullOrBlank()) {
                         FactRow(R.string.lmp_date, dating.lmpDate)
                     }
@@ -198,9 +200,6 @@ fun GestationalDatingCard(
                     }
                     dating.embryoAgeDays?.let { age ->
                         FactRow(R.string.embryo_age, "Day $age")
-                    }
-                    if (!dating.agreedEdd.isNullOrBlank()) {
-                        FactRow(R.string.agreed_edd, dating.agreedEdd)
                     }
                 }
             }

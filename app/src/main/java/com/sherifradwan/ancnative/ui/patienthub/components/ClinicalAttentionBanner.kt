@@ -44,6 +44,9 @@ import androidx.compose.ui.unit.sp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.SevereBpAttention
 import com.sherifradwan.ancnative.ui.ActionRose
+import com.sherifradwan.ancnative.ui.ClinicalCardTokens
+import com.sherifradwan.ancnative.ui.TagAttentionDarkText
+import com.sherifradwan.ancnative.ui.TagAttentionText
 import com.sherifradwan.ancnative.ui.TagBloodNegativeBg
 import com.sherifradwan.ancnative.ui.TagBloodNegativeDarkBg
 import com.sherifradwan.ancnative.ui.TagBloodNegativeDarkBorder
@@ -97,17 +100,33 @@ fun ClinicalAttentionBanner(
     val level = if (severeBp != null) ClinicalAttentionLevel.CRITICAL else parsedLevel
     val isDark = isSystemInDarkTheme()
 
-    val containerColor = if (isDark) TagBloodNegativeDarkBg else TagBloodNegativeBg
-    val borderColor = if (isDark) TagBloodNegativeDarkBorder else TagBloodNegativeBorder
-    val accentBarColor = ActionRose
-    val textColor = if (isDark) TagBloodNegativeDarkText else TagBloodNegativeText
+    val (containerColor, borderColor, accentBarColor, textColor) = when (level) {
+        ClinicalAttentionLevel.CRITICAL -> {
+            val bg = if (isDark) ClinicalCardTokens.CriticalDarkBg else ClinicalCardTokens.CriticalBg
+            val b = if (isDark) ClinicalCardTokens.CriticalDarkBorder else ClinicalCardTokens.CriticalBorder
+            val t = if (isDark) TagBloodNegativeDarkText else TagBloodNegativeText
+            listOf(bg, b, ActionRose, t)
+        }
+        ClinicalAttentionLevel.ALERT -> {
+            val bg = if (isDark) ClinicalCardTokens.WarningDarkBg else ClinicalCardTokens.WarningBg
+            val b = if (isDark) ClinicalCardTokens.WarningDarkBorder else ClinicalCardTokens.WarningBorder
+            val t = if (isDark) TagAttentionDarkText else TagAttentionText
+            listOf(bg, b, ClinicalCardTokens.WarningText, t)
+        }
+        ClinicalAttentionLevel.NOTE -> {
+            val bg = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainerLow
+            val b = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+            val t = MaterialTheme.colorScheme.onSurface
+            listOf(bg, b, MaterialTheme.colorScheme.primary, t)
+        }
+    }
 
     Card(
         modifier = modifier
             .fillMaxWidth()
             .testTag("clinicalAttentionBanner"),
         colors = CardDefaults.cardColors(containerColor = containerColor),
-        border = BorderStroke(1.dp, borderColor),
+        border = BorderStroke(if (level == ClinicalAttentionLevel.CRITICAL) 1.5.dp else 1.dp, borderColor),
         shape = RoundedCornerShape(12.dp),
     ) {
         Row(
@@ -119,8 +138,8 @@ fun ClinicalAttentionBanner(
         ) {
             Box(
                 modifier = Modifier
-                    .width(3.5.dp)
-                    .height(28.dp)
+                    .width(4.dp)
+                    .height(30.dp)
                     .background(accentBarColor, RoundedCornerShape(2.dp)),
             )
 

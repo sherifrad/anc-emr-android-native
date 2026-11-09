@@ -61,9 +61,11 @@ fun BedsideVitalsGrid(
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        text = vitals.bpText?.let { "$it mmHg" } ?: "Not recorded",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
+                        text = vitals.bpText?.let { "$it mmHg" } ?: "—",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontFeatureSettings = "tnum",
+                        ),
                         color = when (vitals.bpLevel) {
                             BpLevel.SEVERE -> MaterialTheme.colorScheme.error
                             BpLevel.RAISED -> MaterialTheme.colorScheme.tertiary
@@ -81,8 +83,8 @@ fun BedsideVitalsGrid(
                     ) {
                         Text(
                             text = when (vitals.bpLevel) {
-                                BpLevel.SEVERE -> "Severe (160/110+) ⚠️"
-                                BpLevel.RAISED -> "Raised (140/90+) ▲"
+                                BpLevel.SEVERE -> "▲ Severe (≥160/110) ⚠️"
+                                BpLevel.RAISED -> "▲ Raised (≥140/90) · Recheck"
                                 BpLevel.NORMAL -> "Normal ✓"
                             },
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
@@ -116,9 +118,11 @@ fun BedsideVitalsGrid(
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        text = formatWeightKg(vitals.weightText) ?: "Not recorded",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
+                        text = formatWeightKg(vitals.weightText) ?: "—",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontFeatureSettings = "tnum",
+                        ),
                         color = MaterialTheme.colorScheme.primary,
                     )
                     if (vitals.weightDeltaText != null) {
@@ -161,8 +165,10 @@ fun BedsideVitalsGrid(
                             Spacer(Modifier.height(2.dp))
                             Text(
                                 text = "${vitals.fhrText} bpm",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontFeatureSettings = "tnum",
+                                ),
                                 color = MaterialTheme.colorScheme.primary,
                             )
                             if (vitals.fhrLevel != null) {
@@ -209,8 +215,10 @@ fun BedsideVitalsGrid(
                             Spacer(Modifier.height(2.dp))
                             Text(
                                 text = "${vitals.sfhCm} cm",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontFeatureSettings = "tnum",
+                                ),
                                 color = MaterialTheme.colorScheme.primary,
                             )
                             if (vitals.sfhConcordance != null) {

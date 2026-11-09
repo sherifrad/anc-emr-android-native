@@ -80,12 +80,24 @@ fun PreviousPregnancyCard(
             FactRow(R.string.pregnancy_type, pregnancy.pregnancyType)
             FactRow(R.string.structured_outcome, pregnancy.outcome)
             FactRow(R.string.historical_delivery_mode, pregnancy.deliveryBy)
-            FactRow(R.string.other_details, pregnancy.otherDetails)
-            FactRow(R.string.place_and_doctor, pregnancy.placeAndDoctor)
-            FactRow(R.string.birth_method, pregnancy.birthMethod)
-            FactRow(R.string.loss_management, pregnancy.lossManagement)
-            FactRow(R.string.termination_method, pregnancy.terminationMethod)
-            FactRow(R.string.clinician_id, pregnancy.clinicianId)
+            if (!pregnancy.otherDetails.isNullOrBlank()) {
+                FactRow(R.string.other_details, pregnancy.otherDetails)
+            }
+            if (!pregnancy.placeAndDoctor.isNullOrBlank()) {
+                FactRow(R.string.place_and_doctor, pregnancy.placeAndDoctor)
+            }
+            if (!pregnancy.birthMethod.isNullOrBlank()) {
+                FactRow(R.string.birth_method, pregnancy.birthMethod)
+            }
+            if (!pregnancy.lossManagement.isNullOrBlank()) {
+                FactRow(R.string.loss_management, pregnancy.lossManagement)
+            }
+            if (!pregnancy.terminationMethod.isNullOrBlank()) {
+                FactRow(R.string.termination_method, pregnancy.terminationMethod)
+            }
+            if (!pregnancy.clinicianId.isNullOrBlank()) {
+                FactRow(R.string.clinician_id, pregnancy.clinicianId)
+            }
             if (canEdit) {
                 Row(
                     Modifier.fillMaxWidth(),

@@ -103,11 +103,12 @@ fun MedsTab(
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                         modifier = Modifier.testTag("addCustomMedicationBtn"),
                     ) {
                         Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("+ New Prescription", fontWeight = FontWeight.Bold)
+                        Text("Prescribe", fontWeight = FontWeight.Bold, softWrap = false)
                     }
                 }
             }
@@ -121,7 +122,7 @@ fun MedsTab(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
-                        text = "No active medications currently prescribed.",
+                        text = "No records",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(16.dp),

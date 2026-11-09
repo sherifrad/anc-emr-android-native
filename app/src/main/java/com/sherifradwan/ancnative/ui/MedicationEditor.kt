@@ -98,7 +98,7 @@ fun MedicationEditor(
 
     EditorPage(
         title = stringResource(R.string.medication_editor),
-        subtitle = "${patient.displayName} · Pregnancy Medication Management & Prescription",
+        subtitle = "${patient.displayName} · Medication",
         tag = "medicationEditor",
         bottomBar = {
             Row(

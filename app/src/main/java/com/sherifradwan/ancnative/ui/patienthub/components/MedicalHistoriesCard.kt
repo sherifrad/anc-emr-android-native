@@ -28,14 +28,19 @@ import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.ui.FactRow
 
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Surface
+
 @Composable
 fun MedicalHistoriesCard(
     patient: DemoPatient,
     modifier: Modifier = Modifier,
     onEdit: (() -> Unit)? = null,
 ) {
-    val notRecorded = stringResource(R.string.not_recorded)
-    fun String?.orNotRec(): String = if (this.isNullOrBlank()) notRecorded else this
+    val hasAny = !patient.medicalHistory.isNullOrBlank() ||
+        !patient.surgicalHistory.isNullOrBlank() ||
+        !patient.familyHistory.isNullOrBlank() ||
+        !patient.allergyHistory.isNullOrBlank()
 
     Card(
         modifier = modifier
@@ -83,10 +88,57 @@ fun MedicalHistoriesCard(
                 }
             }
 
-            FactRow(R.string.medical_history, patient.medicalHistory.orNotRec())
-            FactRow(R.string.surgical_history, patient.surgicalHistory.orNotRec())
-            FactRow(R.string.family_history, patient.familyHistory.orNotRec())
-            FactRow(R.string.allergy_history, patient.allergyHistory.orNotRec(), isEmphasized = !patient.allergyHistory.isNullOrBlank())
+            if (!hasAny) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = "No records",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    )
+                }
+            } else {
+                if (!patient.allergyHistory.isNullOrBlank()) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f)),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Text(
+                                text = "Allergy: ${patient.allergyHistory}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                            )
+                        }
+                    }
+                }
+                if (!patient.medicalHistory.isNullOrBlank()) {
+                    FactRow(R.string.medical_history, patient.medicalHistory)
+                }
+                if (!patient.surgicalHistory.isNullOrBlank()) {
+                    FactRow(R.string.surgical_history, patient.surgicalHistory)
+                }
+                if (!patient.familyHistory.isNullOrBlank()) {
+                    FactRow(R.string.family_history, patient.familyHistory)
+                }
+            }
         }
     }
 }

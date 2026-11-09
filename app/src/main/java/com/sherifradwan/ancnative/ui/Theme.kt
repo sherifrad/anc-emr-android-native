@@ -133,6 +133,54 @@ val DeliveryPostpartumDarkBg = Color(0xFF500724)
 val DeliveryPostpartumDarkBorder = Color(0xFF9D174D)
 val DeliveryPostpartumDarkText = Color(0xFFFBCFE8)
 
+/**
+ * Visual Distinction Design System (VDDS) Semantic Tokens
+ * Provides domain-scoped container, border, and accent colors for clinical cards and alert banners.
+ */
+object ClinicalCardTokens {
+    // Pregnancy Dating Card (Sky / Cyan)
+    val DatingBg = Color(0xFFF0F9FF)
+    val DatingBorder = Color(0xFFBAE6FD)
+    val DatingAccent = Color(0xFF0284C7)
+    val DatingDarkBg = Color(0xFF082F49)
+    val DatingDarkBorder = Color(0xFF075985)
+
+    // Obstetric Parity Card (Maternity Lavender / Purple)
+    val ParityBg = Color(0xFFFAF5FF)
+    val ParityBorder = Color(0xFFE9D5FF)
+    val ParityAccent = Color(0xFF7E22CE)
+    val ParityDarkBg = Color(0xFF2E1065)
+    val ParityDarkBorder = Color(0xFF581C87)
+
+    // Ultrasound Biometry Card (Teal)
+    val ScanBg = Color(0xFFF0FDFA)
+    val ScanBorder = Color(0xFF99F6E4)
+    val ScanAccent = Color(0xFF0D9488)
+    val ScanDarkBg = Color(0xFF042F2E)
+    val ScanDarkBorder = Color(0xFF115E59)
+
+    // Critical Vitals / Alerts (Crimson / Red)
+    val CriticalBg = Color(0xFFFEF2F2)
+    val CriticalBorder = Color(0xFFFCA5A5)
+    val CriticalText = Color(0xFFB91C1C)
+    val CriticalDarkBg = Color(0xFF450A0A)
+    val CriticalDarkBorder = Color(0xFF991B1B)
+
+    // Warning / Attention Alerts (Amber)
+    val WarningBg = Color(0xFFFFFBEB)
+    val WarningBorder = Color(0xFFFDE68A)
+    val WarningText = Color(0xFFB45309)
+    val WarningDarkBg = Color(0xFF451A03)
+    val WarningDarkBorder = Color(0xFF78350F)
+
+    // Allergy Warning Card (Orange)
+    val AllergyBg = Color(0xFFFFF7ED)
+    val AllergyBorder = Color(0xFFFDBA74)
+    val AllergyAccent = Color(0xFFC2410C)
+    val AllergyDarkBg = Color(0xFF431407)
+    val AllergyDarkBorder = Color(0xFF9A3412)
+}
+
 private val LightColors = lightColorScheme(
     primary = ClinicalNavy,
     onPrimary = Color.White,

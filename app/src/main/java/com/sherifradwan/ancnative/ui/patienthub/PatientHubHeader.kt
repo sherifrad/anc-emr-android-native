@@ -243,7 +243,7 @@ fun PatientHubHeader(
                             ) {
                                 Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(4.dp))
-                                Text("+ Visit", fontWeight = FontWeight.Bold)
+                                Text("Visit", fontWeight = FontWeight.Bold)
                             }
                         }
                     }

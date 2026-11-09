@@ -94,11 +94,12 @@ fun ScansTab(
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                         modifier = Modifier.testTag("recordNewScanBtn"),
                     ) {
                         Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("+ Record Scan", fontWeight = FontWeight.Bold)
+                        Text("Record Scan", fontWeight = FontWeight.Bold, softWrap = false)
                     }
                 }
             }
@@ -112,7 +113,7 @@ fun ScansTab(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
-                        text = "No ultrasound scans recorded yet. Tap '+ Record Scan' to log biometry and attach images.",
+                        text = "No records",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(16.dp),

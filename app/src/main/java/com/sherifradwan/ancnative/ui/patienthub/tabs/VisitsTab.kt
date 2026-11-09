@@ -88,11 +88,12 @@ fun VisitsTab(
                         onClick = { onStartVisit(patient.id, null) },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                         modifier = Modifier.testTag("recordNewVisitBtn"),
                     ) {
                         Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("+ Record Visit", fontWeight = FontWeight.Bold)
+                        Text("Record Visit", fontWeight = FontWeight.Bold, softWrap = false)
                     }
                 }
             }
@@ -106,7 +107,7 @@ fun VisitsTab(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
-                        text = "No antenatal visits recorded yet. Tap '+ Record Visit' to log bedside vitals.",
+                        text = "No records",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(16.dp),
