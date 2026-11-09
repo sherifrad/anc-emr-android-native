@@ -52,18 +52,20 @@ fun PatientDirectoryMetricsRow(
                     fontWeight = FontWeight.Medium,
                     fontSize = 10.sp,
                 )
+                val hasGa = row.gestationalAgeText.isNotBlank() && row.gestationalAgeText != "-"
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
-                        text = if (row.gestationalAgeText.isNotBlank() && row.gestationalAgeText != "-") row.gestationalAgeText else stringResource(R.string.pending),
+                        text = if (hasGa) row.gestationalAgeText else stringResource(R.string.pending),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
+                        modifier = Modifier.weight(1f, fill = false),
                     )
-                    if (row.isDatingDiscordant) GaDiscordanceMarker(style = MaterialTheme.typography.bodyMedium)
+                    if (hasGa && row.isDatingDiscordant) GaDiscordanceMarker(style = MaterialTheme.typography.bodyMedium)
                     if (row.isLateOrPostTerm) {
                         Surface(
                             shape = RoundedCornerShape(4.dp),

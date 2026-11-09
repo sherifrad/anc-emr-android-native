@@ -1,7 +1,9 @@
 package com.sherifradwan.ancnative.model
 
+import java.time.DateTimeException
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
+import kotlin.math.abs
 
 enum class EddLabel { PLAIN, CONFIRMED }
 
@@ -24,10 +26,10 @@ fun datingSummary(dating: DemoPatientDating?, earliestScanDate: LocalDate?, toda
     val method = canonicalDatingMethod(dating.datingMethod)
     return DatingSummary(
         origin = originOf(dating, method),
-        edd = GestationalAgeEngine.calculateEstimatedDueDate(dating),
+        edd = derivedOrNull { GestationalAgeEngine.calculateEstimatedDueDate(dating) },
         eddLabel = eddLabelOf(dating),
         methodCode = method,
-        discordance = discordanceOf(dating, method, earliestScanDate ?: today),
+        discordance = derivedOrNull { discordanceOf(dating, method, earliestScanDate ?: today) },
     )
 }
 
@@ -47,9 +49,20 @@ private fun eddLabelOf(dating: DemoPatientDating): EddLabel {
     return if (onlyAgreed) EddLabel.CONFIRMED else EddLabel.PLAIN
 }
 
+/** Date arithmetic on parseable but extreme dates overflows; such a derived value is treated as absent. */
+private inline fun <T> derivedOrNull(block: () -> T?): T? =
+    try {
+        block()
+    } catch (_: DateTimeException) {
+        null
+    } catch (_: ArithmeticException) {
+        null
+    }
+
 private fun discordanceOf(dating: DemoPatientDating, method: String?, anchor: LocalDate): RedatingAdvice? {
     if (method == IVF_TRANSFER_CODE || method == ULTRASOUND_CODE) return null
     val scanEdd = parseIsoDateOrNull(dating.ultrasoundEdd) ?: return null
+    if (abs(ChronoUnit.DAYS.between(anchor, scanEdd)) > MAX_SCAN_EDD_SPAN_DAYS) return null
     if (scanEdd == parseIsoDateOrNull(dating.agreedEdd)) return null
     val lmp = parseIsoDateOrNull(dating.lmpDate) ?: return null
     val datingGaDays = ChronoUnit.DAYS.between(lmp, anchor)
@@ -57,5 +70,7 @@ private fun discordanceOf(dating: DemoPatientDating, method: String?, anchor: Lo
     return redatingAdvice(datingGaDays, scanGaDays)
 }
 
+/** A scan EDD further than this from the anchor is outside what the engine models and gives no discordance. */
+private const val MAX_SCAN_EDD_SPAN_DAYS = 2 * FULL_TERM_DAYS
 private const val IVF_TRANSFER_CODE = "IVF_TRANSFER"
 private const val ULTRASOUND_CODE = "Ultrasound"

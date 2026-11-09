@@ -92,4 +92,32 @@ class ClinicalSummaryDatingTest {
         assertFalse(block, Regex("""\bLMP\b""").containsMatchIn(block))
         assertFalse(block, Regex("""\bET\b""").containsMatchIn(block))
     }
+
+    @Test
+    fun ivfPatientNeverSharesScanEddOrGap() {
+        val block = datingBlock(
+            patient(
+                lmp = "2026-06-08", us = "2027-04-09", agreed = "2027-03-08",
+                method = "IVF_TRANSFER", transfer = "2026-06-20", embryoAge = 5,
+            ),
+        )
+        assertFalse(block, block.contains("US EDD"))
+        assertFalse(block, block.contains("gap"))
+    }
+
+    @Test
+    fun ultrasoundMethodNeverSharesScanEddOrGap() {
+        val block = datingBlock(patient(lmp = "2026-06-08", us = "2027-04-09", agreed = null, method = "Ultrasound"))
+        assertFalse(block, block.contains("US EDD"))
+        assertFalse(block, block.contains("gap"))
+    }
+
+    @Test
+    fun scanEddEarlierThanLmpEddSharesPositiveGap() {
+        val block = datingBlock(patient(lmp = "2026-06-08", us = "2027-03-06", agreed = "2027-03-15", method = "LMP"))
+        assertTrue(block, block.contains("LMP EDD 15/03/2027"))
+        assertTrue(block, block.contains("US EDD 06/03/2027"))
+        assertTrue(block, block.contains("gap 9 d"))
+        assertFalse(block, block.contains("gap -"))
+    }
 }

@@ -4,6 +4,7 @@ import java.time.LocalDate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DatingSummaryTest {
@@ -327,5 +328,90 @@ class DatingSummaryTest {
         val d = gapPatient(gapDays = 12)
         val scanGa = FULL_TERM_DAYS - java.time.temporal.ChronoUnit.DAYS.between(anchor, lmpEdd.plusDays(12))
         assertEquals(redatingAdvice(100, scanGa), summary(d, scan = anchor).discordance)
+    }
+
+    // D5: only an agreed EDD equal to the scan EDD clears the alert; a missing or unusable one never does.
+    @Test
+    fun discordanceRemainsWhenAgreedEddIsNullBlankWhitespaceOrMalformed() {
+        val anchor = lmp.plusDays(80)
+        for (agreed in listOf(null, "", "   ", "garbage", "2026-13-45", "2027-02-30")) {
+            val s = summary(gapPatient(gapDays = 9, agreedEdd = agreed), scan = anchor)
+            assertNotNull("agreedEdd '$agreed' must not clear the alert", s.discordance)
+        }
+    }
+
+    @Test
+    fun discordanceClearsOnlyWhenAgreedEddEqualsTheScanEdd() {
+        val anchor = lmp.plusDays(80)
+        val scanEdd = lmpEdd.plusDays(9)
+        assertNull(summary(gapPatient(gapDays = 9, agreedEdd = scanEdd.toString()), scan = anchor).discordance)
+        assertNull(summary(gapPatient(gapDays = 9, agreedEdd = " $scanEdd "), scan = anchor).discordance)
+        assertNotNull(summary(gapPatient(gapDays = 9, agreedEdd = scanEdd.plusDays(1).toString()), scan = anchor).discordance)
+        assertNotNull(summary(gapPatient(gapDays = 9, agreedEdd = lmpEdd.toString()), scan = anchor).discordance)
+    }
+
+    // D6a: parseable but extreme dates never throw, in any date field.
+    private val extremeDates = listOf("9999-12-31", "+999999999-12-31", "-999999999-01-01", "0000-01-01")
+
+    private fun assertNoThrow(label: String, block: () -> DatingSummary): DatingSummary =
+        try {
+            block()
+        } catch (e: Exception) {
+            throw AssertionError("$label threw $e", e)
+        }
+
+    @Test
+    fun extremeLmpDateNeverThrows() {
+        for (x in extremeDates) {
+            val d = dating(lmpDate = x, ultrasoundEdd = lmpEdd.toString(), agreedEdd = lmpEdd.toString(), method = "LMP")
+            val s = assertNoThrow("lmpDate $x") { summary(d, scan = lmp) }
+            assertTrue("lmpDate $x", s.edd == null || s.discordance == null)
+            assertNoThrow("lmpDate $x, no scan") { summary(d) }
+            assertNoThrow("lmpDate $x, other method") { summary(d.copy(datingMethod = null)) }
+        }
+    }
+
+    @Test
+    fun extremeUltrasoundEddNeverThrows() {
+        for (x in extremeDates) {
+            val d = dating(lmpDate = lmp.toString(), ultrasoundEdd = x, agreedEdd = lmpEdd.toString(), method = "LMP")
+            val s = assertNoThrow("ultrasoundEdd $x") { summary(d, scan = lmp.plusDays(80)) }
+            assertTrue("ultrasoundEdd $x", s.edd == null || s.discordance == null)
+            assertNoThrow("ultrasoundEdd $x, ultrasound method") { summary(d.copy(datingMethod = "Ultrasound")) }
+            assertNoThrow("ultrasoundEdd $x, no method") { summary(d.copy(datingMethod = null, agreedEdd = null)) }
+        }
+    }
+
+    @Test
+    fun outOfRangeUltrasoundEddGivesNoDiscordance() {
+        for (x in listOf("+999999999-12-31", "-999999999-01-01")) {
+            val d = dating(lmpDate = lmp.toString(), ultrasoundEdd = x, agreedEdd = lmpEdd.toString(), method = "LMP")
+            assertNull("ultrasoundEdd $x", summary(d, scan = lmp.plusDays(80)).discordance)
+        }
+    }
+
+    @Test
+    fun extremeAgreedEddNeverThrows() {
+        for (x in extremeDates) {
+            val d = dating(lmpDate = lmp.toString(), ultrasoundEdd = lmpEdd.plusDays(9).toString(), agreedEdd = x, method = "LMP")
+            assertNoThrow("agreedEdd $x") { summary(d, scan = lmp.plusDays(80)) }
+            val onlyAgreed = dating(agreedEdd = x, method = "Clinical")
+            val s = assertNoThrow("agreedEdd $x only") { summary(onlyAgreed) }
+            assertNull("agreedEdd $x only", s.discordance)
+        }
+    }
+
+    @Test
+    fun extremeTransferDateNeverThrows() {
+        for (x in extremeDates) {
+            for (m in listOf("IVF_TRANSFER", "IVF", "LMP", null)) {
+                val d = dating(
+                    lmpDate = lmp.toString(), ultrasoundEdd = lmpEdd.plusDays(9).toString(),
+                    method = m, transferDate = x, embryoAgeDays = 5,
+                )
+                val s = assertNoThrow("transferDate $x method $m") { summary(d, scan = lmp.plusDays(80)) }
+                if (m == "IVF_TRANSFER" || m == "IVF") assertNull("transferDate $x method $m", s.discordance)
+            }
+        }
     }
 }

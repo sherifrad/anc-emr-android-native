@@ -74,12 +74,6 @@ enum class PatientCardVariant {
     BEDSIDE_TOP_BAR,
 
     /**
-     * Compact sticky bar elevated when scrolling down: Back button, patient name,
-     * ClinicalRiskBadge, Gestational Age chip, and action buttons.
-     */
-    STICKY_COMPACT,
-
-    /**
      * Summary card for section/editor headers (e.g. Lab Batch, Lab Editor, Meds Editor).
      */
     EDITOR_SUMMARY,
@@ -264,82 +258,6 @@ fun ClinicalPatientCard(
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        PatientCardVariant.STICKY_COMPACT -> {
-            Surface(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .testTag("workspaceStickyCompactBar"),
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 2.dp,
-                border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    if (onBack != null) {
-                        IconButton(
-                            onClick = onBack,
-                            modifier = Modifier.minimumTouchTarget(),
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.back),
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp),
-                            )
-                        }
-                    }
-                    Text(
-                        text = patient.displayName,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f),
-                    )
-                    if (isHighRisk(patient.riskLevel)) {
-                        ClinicalRiskBadge(isHighRisk = true)
-                    }
-                    val gaResult = patient.dating?.calculateGestationalAgeResult()
-                    val ga = patient.dating?.calculateGestationalAge(asOfDate)
-                    val gaText = gaResult?.shortWeeksText ?: ga?.toString()
-                    if (gaText != null) {
-                        Surface(
-                            shape = RoundedCornerShape(4.dp),
-                            color = MaterialTheme.colorScheme.tertiaryContainer,
-                        ) {
-                            Text(
-                                text = "GA $gaText",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            )
-                        }
-                    }
-                    if (onOpenReport != null) {
-                        IconButton(
-                            onClick = onOpenReport,
-                            modifier = Modifier.minimumTouchTarget().testTag("workspaceReportButton"),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Print,
-                                contentDescription = stringResource(R.string.print_patient_report),
-                                tint = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.size(18.dp),
                             )
                         }
                     }

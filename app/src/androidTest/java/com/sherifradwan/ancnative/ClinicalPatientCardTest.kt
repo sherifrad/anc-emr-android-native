@@ -54,28 +54,6 @@ class ClinicalPatientCardTest {
     }
 
     @Test
-    fun stickyCompactBar_displaysFullNameAndActions() {
-        compose.activityRule.scenario.onActivity { activity ->
-            activity.setContent {
-                AncTheme {
-                    ClinicalPatientCard(
-                        patient = patient,
-                        variant = PatientCardVariant.STICKY_COMPACT,
-                        asOfDate = LocalDate.parse("2026-11-08"),
-                        onBack = { },
-                        onOpenReport = { },
-                    )
-                }
-            }
-        }
-        compose.waitForIdle()
-
-        compose.onNodeWithText(patient.displayName).assertIsDisplayed()
-        compose.onNodeWithTag("workspaceStickyCompactBar").assertIsDisplayed()
-        compose.onAllNodesWithText("DEMO-ANC-001").assertCountEquals(0)
-    }
-
-    @Test
     fun editorSummary_displaysFullNameAndMetadata() {
         compose.activityRule.scenario.onActivity { activity ->
             activity.setContent {

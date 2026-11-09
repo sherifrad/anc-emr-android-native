@@ -137,7 +137,13 @@ fun DeliverySectionBox(
 
 /** Compact label-over-value tile used for key delivery facts (blood group, EDD, GA...). */
 @Composable
-fun KeyFactTile(label: String, value: String?, modifier: Modifier = Modifier, emphasize: Boolean = false) {
+fun KeyFactTile(
+    label: String,
+    value: String?,
+    modifier: Modifier = Modifier,
+    emphasize: Boolean = false,
+    trailing: (@Composable () -> Unit)? = null,
+) {
     Surface(
         shape = RoundedCornerShape(10.dp),
         color = MaterialTheme.colorScheme.surface,
@@ -151,12 +157,16 @@ fun KeyFactTile(label: String, value: String?, modifier: Modifier = Modifier, em
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2,
             )
-            Text(
-                text = value?.takeIf { it.isNotBlank() } ?: "-",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = if (emphasize) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = value?.takeIf { it.isNotBlank() } ?: "-",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (emphasize) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                trailing?.invoke()
+            }
         }
     }
 }

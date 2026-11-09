@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
+import com.sherifradwan.ancnative.model.canonicalDatingMethod
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
@@ -172,7 +173,7 @@ fun DatingEditor(
                 }
 
                 // IVF Specific inputs
-                if (draft.values.datingMethod.equals("IVF_TRANSFER", ignoreCase = true) || draft.values.datingMethod.equals("IVF", ignoreCase = true)) {
+                if (canonicalDatingMethod(draft.values.datingMethod) == "IVF_TRANSFER") {
                     ClinicalDateField(
                         value = draft.values.transferDate,
                         onValueChange = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.TRANSFER_DATE, it)) },

@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
@@ -28,7 +27,8 @@ import com.sherifradwan.ancnative.model.DemoPatientDating
 import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.ui.AncTheme
-import com.sherifradwan.ancnative.ui.GestationalBanner
+import com.sherifradwan.ancnative.ui.GestationalAgeBadge
+import com.sherifradwan.ancnative.ui.patienthub.components.DeliveryPlanningCard
 import com.sherifradwan.ancnative.ui.patienthub.tabs.OverviewTab
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
@@ -50,9 +50,6 @@ class OverviewTabSectionsTest {
     private fun hasTagPrefix(prefix: String) = SemanticsMatcher("testTag starts with $prefix") {
         it.config.getOrNull(SemanticsProperties.TestTag)?.startsWith(prefix) == true
     }
-
-    /** Matches the node carrying [tag] and any of its descendants (hasAnyAncestor alone excludes the tagged node). */
-    private fun inTagged(tag: String) = hasTestTag(tag) or hasAnyAncestor(hasTestTag(tag))
 
     private fun show(
         patient: DemoPatient,
@@ -170,27 +167,7 @@ class OverviewTabSectionsTest {
                 "'$text' overlaps delete button (right=${bounds.right}, deleteLeft=${deleteBounds.left})",
                 bounds.right <= deleteBounds.left,
             )
-            assertNotEllipsized(text, rowTag)
-        }
-    }
-
-    private fun assertNotEllipsized(text: String, ancestorTag: String) {
-        val node = compose.onNode(
-            hasText(text, substring = true) and inTagged(ancestorTag),
-            useUnmergedTree = true,
-        )
-        val results = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
-        node.fetchSemanticsNode().config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.invoke(results)
-        results.forEach { layout ->
-            // hasVisualOverflow is not used: text that shrinks to its content width reports
-            // size.width < laid-out paragraph width even when nothing is clipped. Check clipping directly.
-            assertTrue("'$text' clipped vertically", layout.size.height >= layout.multiParagraph.height.toInt())
-            for (line in 0 until layout.lineCount) {
-                assertTrue("'$text' line $line clipped horizontally", layout.getLineRight(line) <= layout.size.width + 1f)
-            }
-            for (line in 0 until layout.lineCount) {
-                assertFalse("'$text' ellipsized on line $line", layout.isLineEllipsized(line))
-            }
+            compose.assertNotEllipsized(text, rowTag)
         }
     }
 
@@ -214,7 +191,7 @@ class OverviewTabSectionsTest {
                 hasText(t, substring = true) and inTagged(extrasTag),
                 useUnmergedTree = true,
             ).assertExists("extras text '$t' missing from $extrasTag")
-            assertNotEllipsized(t, extrasTag)
+            compose.assertNotEllipsized(t, extrasTag)
         }
     }
 
@@ -472,7 +449,7 @@ class OverviewTabSectionsTest {
     fun datingVariantG_alertWrapsUnclippedAt360dpFontScale13() {
         show(withDating(variantB), widthDp = 360, fontScale = 1.3f)
         compose.onNodeWithTag(alertTag, useUnmergedTree = true).assertExists().assertIsDisplayed()
-        assertNotEllipsized("EDD discordance", alertTag)
+        compose.assertNotEllipsized("EDD discordance", alertTag)
         val screenWidth = 360.dp
         val card = compose.onNodeWithTag("datingCard", useUnmergedTree = true).getUnclippedBoundsInRoot()
         val alert = compose.onNodeWithTag(alertTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
@@ -482,37 +459,143 @@ class OverviewTabSectionsTest {
         compose.onAllNodes(hasClickAction() and inTagged(alertTag), useUnmergedTree = true).assertCountEquals(0)
     }
 
-    // GA marker: red "??" beside the current GA only when discordant (shared composable).
+    // GA marker: red "??" after the current GA only when discordant. One shared composable draws it.
     private val markerTag = "gaDiscordanceMarker"
 
-    private fun showBanner(d: DemoPatientDating) {
-        compose.activity.runOnUiThread {
-            compose.activity.setContent {
-                AncTheme { GestationalBanner(dating = d, asOfDate = LocalDate.of(2026, 10, 1)) }
-            }
-        }
+    private fun showContent(content: @androidx.compose.runtime.Composable () -> Unit) {
+        compose.activity.runOnUiThread { compose.activity.setContent { AncTheme { content() } } }
         compose.waitForIdle()
     }
 
-    // 25 d gap exceeds every tier limit (5 to 21 d), so the result does not depend on the anchor date.
-    private val discordantLmpScan = dating(lmp = "2026-06-08", us = "2027-04-09", method = "LMP")
-    private val concordantLmpScan = dating(lmp = "2026-06-08", method = "LMP")
+    private fun markerCount() = compose.onAllNodes(hasTestTag(markerTag), useUnmergedTree = true).fetchSemanticsNodes().size
 
     @Test
-    fun gaMarkerShownWhenDiscordant() {
-        showBanner(discordantLmpScan)
-        compose.onAllNodes(hasTestTag(markerTag), useUnmergedTree = true).assertCountEquals(1)
+    fun gaBadgeShowsMarkerWithContentDescriptionWhenDiscordant() {
+        showContent { GestationalAgeBadge(gaText = "GA 20w0d", discordant = true) }
+        assertEquals(1, markerCount())
         compose.onNode(hasText("??") and inTagged(markerTag), useUnmergedTree = true).assertExists()
         compose.onNode(
             inTagged(markerTag) and SemanticsMatcher.keyIsDefined(SemanticsProperties.ContentDescription),
             useUnmergedTree = true,
         ).assertExists("marker needs a content description")
+        compose.onNode(hasText("GA 20w0d") and inTagged("gestationalAgeBadge"), useUnmergedTree = true).assertExists()
     }
 
     @Test
-    fun gaMarkerAbsentWhenNotDiscordant() {
-        showBanner(concordantLmpScan)
-        compose.onAllNodes(hasTestTag(markerTag), useUnmergedTree = true).assertCountEquals(0)
+    fun gaBadgeKeepsTheNumberAndHasNoMarkerWhenNotDiscordant() {
+        showContent { GestationalAgeBadge(gaText = "GA 20w0d", discordant = false) }
+        assertEquals(0, markerCount())
         compose.onAllNodes(hasText("??", substring = true), useUnmergedTree = true).assertCountEquals(0)
+        compose.onNode(hasText("GA 20w0d") and inTagged("gestationalAgeBadge"), useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun gaBadgeDefaultIsNotDiscordant() {
+        showContent { GestationalAgeBadge(gaText = "GA 20w0d") }
+        assertEquals(0, markerCount())
+    }
+
+    // Delivery Plan card (U8). Dates are relative to now so the current GA is always within 0 to 320 days.
+    private val today: LocalDate = LocalDate.now()
+    private val cardLmp: LocalDate = today.minusDays(150)
+    private val cardLmpEdd: LocalDate = cardLmp.plusDays(280)
+    private val dmy = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy", java.util.Locale.ROOT)
+
+    private fun cardPatient(d: DemoPatientDating): DemoPatient = withDating(d).copy(
+        ultrasoundScans = listOf(
+            DemoUltrasoundScan(
+                id = "card-anchor-scan", patientId = multiparous.id, date = cardLmp.plusDays(80).toString(),
+                gestationalAgeWeeks = null, gestationalAgeDays = null, fetalNumber = null,
+                presentation = null, placentalSite = null, amnioticFluid = null,
+                fetalHeartRate = null, biometryBpd = null, biometryHc = null, biometryAc = null,
+                biometryFl = null, estimatedFetalWeight = null, impression = null,
+            ),
+        ),
+    )
+
+    private fun showDeliveryCard(patient: DemoPatient) = showContent {
+        DeliveryPlanningCard(patient = patient, canEdit = true, onEditPatient = {})
+    }
+
+    private fun cardNode(label: String) = compose.onNode(
+        hasText(label, ignoreCase = true) and hasAnyAncestor(hasTestTag("deliveryPlanningCard")),
+        useUnmergedTree = true,
+    )
+
+    private fun cardValue(value: String) = compose.onNode(
+        hasText(value) and hasAnyAncestor(hasTestTag("deliveryPlanningCard")),
+        useUnmergedTree = true,
+    )
+
+    /** The value sits in the same tile as the label: same left edge, directly below it. */
+    private fun assertTile(label: String, value: String) {
+        val l = cardNode(label).assertExists("tile label '$label' missing").fetchSemanticsNode().boundsInRoot
+        val v = cardValue(value).assertExists("tile value '$value' missing").fetchSemanticsNode().boundsInRoot
+        assertTrue("'$value' must start at the left edge of the '$label' tile", kotlin.math.abs(v.left - l.left) < 2f)
+        assertTrue("'$value' must sit below '$label'", v.top >= l.bottom - 1f)
+        assertTrue("'$value' is too far below '$label'", v.top - l.bottom < 40f)
+    }
+
+    @Test
+    fun deliveryCardShowsTheSharedEddInDmyWithPlainLabel() {
+        showDeliveryCard(cardPatient(dating(lmp = cardLmp.toString(), method = "LMP")))
+        assertTile("EDD", cardLmpEdd.format(dmy))
+        compose.onAllNodes(hasText("Confirmed EDD", ignoreCase = true), useUnmergedTree = true).assertCountEquals(0)
+        compose.onAllNodes(hasText(cardLmpEdd.toString(), substring = true), useUnmergedTree = true).assertCountEquals(0)
+    }
+
+    @Test
+    fun deliveryCardUsesTheSharedEddNotTheScanEddWhenAgreedEddIsMissing() {
+        val scanEdd = cardLmpEdd.plusDays(3)
+        showDeliveryCard(cardPatient(dating(lmp = cardLmp.toString(), us = scanEdd.toString(), agreed = null, method = "LMP")))
+        assertTile("EDD", cardLmpEdd.format(dmy))
+        compose.onAllNodes(hasText(scanEdd.format(dmy), substring = true), useUnmergedTree = true).assertCountEquals(0)
+        compose.onAllNodes(hasText(scanEdd.toString(), substring = true), useUnmergedTree = true).assertCountEquals(0)
+    }
+
+    @Test
+    fun deliveryCardShowsConfirmedEddLabelForAReferredPatient() {
+        showDeliveryCard(cardPatient(dating(agreed = "2027-04-02", method = "Clinical")))
+        assertTile("Confirmed EDD", "02/04/2027")
+    }
+
+    @Test
+    fun deliveryCardGaTileCarriesTheMarkerOnlyWhenDiscordant() {
+        // 25 d gap exceeds every tier limit (5 to 21 d), so the result does not depend on the anchor date.
+        val discordant = dating(lmp = cardLmp.toString(), us = cardLmpEdd.plusDays(25).toString(), method = "LMP")
+        showDeliveryCard(cardPatient(discordant))
+        assertEquals(1, markerCount())
+        val label = cardNode(compose.activity.getString(R.string.current_gestational_age))
+            .fetchSemanticsNode().boundsInRoot
+        val eddLabel = cardNode("EDD").fetchSemanticsNode().boundsInRoot
+        val marker = compose.onNode(hasTestTag(markerTag), useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        assertTrue("marker must sit in the GA tile, below its label", marker.top >= label.bottom - 1f && marker.left >= label.left)
+        assertTrue("marker must not drift into the EDD tile", marker.bottom <= eddLabel.top + 1f)
+
+        showDeliveryCard(cardPatient(dating(lmp = cardLmp.toString(), method = "LMP")))
+        assertEquals(0, markerCount())
+    }
+
+    @Test
+    fun deliveryCardMarkerIsUnclippedAt360dpFontScale13() {
+        val discordant = dating(lmp = cardLmp.toString(), us = cardLmpEdd.plusDays(25).toString(), method = "LMP")
+        compose.activity.runOnUiThread {
+            compose.activity.setContent {
+                AncTheme {
+                    val base = LocalDensity.current
+                    CompositionLocalProvider(LocalDensity provides Density(base.density, 1.3f)) {
+                        Box(Modifier.width(360.dp)) {
+                            DeliveryPlanningCard(patient = cardPatient(discordant), canEdit = true, onEditPatient = {})
+                        }
+                    }
+                }
+            }
+        }
+        compose.waitForIdle()
+        compose.onNode(hasTestTag(markerTag), useUnmergedTree = true).assertExists().assertIsDisplayed()
+        compose.assertNotEllipsized("??", markerTag)
+        val card = compose.onNodeWithTag("deliveryPlanningCard", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val marker = compose.onNode(hasTestTag(markerTag), useUnmergedTree = true).getUnclippedBoundsInRoot()
+        assertTrue("marker overflows the card (right=${marker.right}, card=${card.right})", marker.right <= card.right)
     }
 }

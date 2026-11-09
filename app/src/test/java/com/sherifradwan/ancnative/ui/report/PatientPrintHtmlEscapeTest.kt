@@ -208,14 +208,48 @@ class PatientPrintHtmlEscapeTest {
         assertFalse(html.contains("<b>&"))
     }
 
+    private fun datingBox(page: String): String {
+        val start = page.indexOf("<span>Pregnancy Dating</span>")
+        assertTrue(start >= 0)
+        val rest = page.substring(start)
+        val end = rest.indexOf("ga-highlight")
+        assertTrue("dating matrix must be followed by the GA highlight", end > 0)
+        return rest.substring(0, end)
+    }
+
+    // The EDD is a LocalDate, so a marker string can never reach the EDD cell. With nothing parseable the
+    // defined fallback is the rose EDD cell reading "Not recorded". The LMP and Method rows keep the raw text, escaped once.
     @Test
     fun q93_datingSection_escapedOnce() {
-        val start = html.indexOf("<span>Pregnancy Dating</span>")
-        assertTrue(start >= 0)
-        val rest = html.substring(start + 1)
-        val box = rest.substring(0, rest.indexOf("""class="section-title"""").let { if (it < 0) rest.length else it })
-        assertTrue(Regex(Regex.escape(ESCAPED)).findAll(box).count() >= 2)
+        val box = datingBox(html)
         assertFalse(box.contains(MARKER))
+        assertFalse(box.contains("&amp;lt;"))
+        assertTrue(box, box.contains("""<div class="label">LMP</div><div class="val">$ESCAPED</div>"""))
+        assertTrue(box, box.contains("""<div class="label">Method</div><div class="val">$ESCAPED</div>"""))
+        assertEquals(2, Regex("""<div class="val">$ESCAPED</div>""").findAll(box).count())
+        val eddCells = Regex("""<div class="label">EDD</div><div class="val text-rose">([^<]*)</div>""").findAll(box).toList()
+        assertEquals(box, 1, eddCells.size)
+        assertEquals("Not recorded", eddCells.single().groupValues[1])
+    }
+
+    // A malformed agreed EDD and scan EDD beside a valid LMP: the EDD cell is the LMP due date, no raw marker leaks.
+    @Test
+    fun q93_datingSection_malformedEddsFallBackToTheMethodEddInTheRoseCell() {
+        val dating = DemoPatientDating(
+            patientId = "q93", lmpDate = "2026-06-08", ultrasoundEdd = MARKER,
+            agreedEdd = MARKER, datingMethod = "LMP", notes = MARKER,
+        )
+        val page = PatientPrintHtmlGenerator.generateHtml(
+            context = null,
+            patient = markedPatient().copy(dating = dating),
+            settings = SecuritySettingsState(clinicName = MARKER),
+            asOfDate = AS_OF_DATE,
+        )
+        val box = datingBox(page)
+        assertTrue(box, box.contains("""<div class="label">EDD</div><div class="val text-rose">15/03/2027</div>"""))
+        assertFalse(box.contains(MARKER))
+        assertFalse(box.contains("&amp;lt;"))
+        assertFalse(page.contains("&amp;amp;"))
     }
 
     @Test

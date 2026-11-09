@@ -665,4 +665,87 @@ class PatientPrintHtmlGeneratorTest {
         val html = printDating(printDatingFields(lmp = "2026-06-08", method = "LMP"), scanDate = null)
         assertFalse(datingBoxText(html).contains("Confirmed EDD"))
     }
+
+    // D5 and D7 in print: the scan due date and the gap only appear for a discordant non-IVF, non-Ultrasound patient.
+    @Test
+    fun dating_ivfPatientNeverPrintsScanEddOrGap() {
+        for (m in listOf("IVF_TRANSFER", "IVF")) {
+            val html = printDating(
+                printDatingFields(
+                    lmp = "2026-06-08", us = "2027-04-09", agreed = "2027-03-08",
+                    method = m, transfer = "2026-06-20", embryoAge = 5,
+                ),
+            )
+            val box = datingBoxText(html)
+            assertFalse("$m: $box", box.contains("US EDD"))
+            assertFalse("$m: $box", box.contains("gap"))
+        }
+    }
+
+    @Test
+    fun dating_ultrasoundMethodNeverPrintsScanEddOrGap() {
+        for (agreed in listOf(null, "2027-03-15")) {
+            val html = printDating(
+                printDatingFields(lmp = "2026-06-08", us = "2027-04-09", agreed = agreed, method = "Ultrasound"),
+            )
+            val box = datingBoxText(html)
+            assertFalse("agreed $agreed: $box", box.contains("US EDD"))
+            assertFalse("agreed $agreed: $box", box.contains("gap"))
+        }
+    }
+
+    @Test
+    fun dating_scanEddEarlierThanLmpEdd_printsPositiveGap() {
+        val html = printDating(
+            printDatingFields(lmp = "2026-06-08", us = "2027-03-06", agreed = "2027-03-15", method = "LMP"),
+        )
+        val box = datingBoxText(html)
+        assertTrue(box, box.contains("LMP EDD 15/03/2027"))
+        assertTrue(box, box.contains("US EDD 06/03/2027"))
+        assertTrue(box, box.contains("gap 9 d"))
+        assertFalse(box, box.contains("gap -"))
+    }
+
+    // U9: "Target Delivery Timing" is the shared EDD in dd/mm/yyyy.
+    @Test
+    fun targetDeliveryTiming_lmpOnlyPatientShowsTheLmpEddWhateverTheAgreedEddIsMissingAs() {
+        for (agreed in MISSING) {
+            val html = printDating(printDatingFields(lmp = "2026-06-08", agreed = agreed, method = "LMP"), scanDate = null)
+            assertEquals("agreed '$agreed'", "15/03/2027", rowValue(html, "Target Delivery Timing:"))
+        }
+    }
+
+    @Test
+    fun targetDeliveryTiming_malformedAgreedEddFallsBackToTheMethodEdd() {
+        val html = printDating(printDatingFields(lmp = "2026-06-08", agreed = "garbage", method = "LMP"), scanDate = null)
+        assertEquals("15/03/2027", rowValue(html, "Target Delivery Timing:"))
+    }
+
+    @Test
+    fun targetDeliveryTiming_agreedEddWinsAndIsNeverRawIso() {
+        val html = printDating(printDatingFields(lmp = "2026-06-08", agreed = "2027-03-20", method = "LMP"), scanDate = null)
+        assertEquals("20/03/2027", rowValue(html, "Target Delivery Timing:"))
+        assertFalse(html.contains("2027-03-20"))
+    }
+
+    @Test
+    fun targetDeliveryTiming_scanOnlyDatingShowsTheScanEdd() {
+        val html = printDating(printDatingFields(us = "2027-03-24"), scanDate = null)
+        assertEquals("24/03/2027", rowValue(html, "Target Delivery Timing:"))
+    }
+
+    @Test
+    fun targetDeliveryTiming_ivfPatientShowsTheTransferEdd() {
+        val html = printDating(
+            printDatingFields(method = "IVF_TRANSFER", transfer = "2026-06-20", embryoAge = 5),
+            scanDate = null,
+        )
+        assertEquals("08/03/2027", rowValue(html, "Target Delivery Timing:"))
+    }
+
+    @Test
+    fun targetDeliveryTiming_noEddAnywhereIsNotRecorded() {
+        val html = printDating(printDatingFields(agreed = "garbage", method = "LMP"), scanDate = null)
+        assertEquals(NOT_RECORDED, rowValue(html, "Target Delivery Timing:"))
+    }
 }

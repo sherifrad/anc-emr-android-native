@@ -172,7 +172,6 @@
     <string name="lmp_date">Last menstrual period (LMP)</string>
     <string name="ultrasound_edd">Ultrasound EDD</string>
     <string name="agreed_edd">Agreed clinical EDD</string>
-    <string name="dating_method">Dating method</string>
     <string name="gestational_age">Gestational age</string>
     <string name="current_gestational_age">Current gestational age</string>
     <string name="dating_saved">Dating record saved.</string>
@@ -305,15 +304,6 @@
     <string name="save_and_add_another_med">Save &amp; add another</string>
     <string name="advanced_med_options">Route &amp; End date (optional)</string>
     <string name="patient_previous_meds">Patient\'s previous prescriptions</string>
-    <string name="days_remaining">%1$d days remaining</string>
-    <string name="due_today">Due today</string>
-    <string name="days_past_edd">%1$d days past EDD</string>
-    <string name="trimester_badge">Trimester %1$d</string>
-    <string name="late_term_badge">Late term (41w+)</string>
-    <string name="post_term_badge">Post-term (42w+)</string>
-    <string name="gestational_age_not_established">Gestational age not established</string>
-    <string name="no_dating_subtitle">Record LMP, Ultrasound EDD, or IVF to activate clinical tracking</string>
-    <string name="gestational_progress_cd">Gestational progress %1$s, %2$d percent</string>
     <string name="all_filter">All</string>
     <string name="high_risk_filter">High Risk</string>
     <string name="medium_risk_filter">Medium Risk</string>

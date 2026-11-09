@@ -30,14 +30,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.model.datingSummaryOf
+import com.sherifradwan.ancnative.model.datingTextRows
 import com.sherifradwan.ancnative.ui.DeliverySectionBox
 import com.sherifradwan.ancnative.ui.DeliveryTone
+import com.sherifradwan.ancnative.ui.GaDiscordanceMarker
 import com.sherifradwan.ancnative.ui.KeyFactTile
 import com.sherifradwan.ancnative.ui.formatBloodGroup
 import com.sherifradwan.ancnative.ui.isHighRisk
 import com.sherifradwan.ancnative.ui.isRhNegative
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
 import com.sherifradwan.ancnative.ui.parseDeliveryNotes
+import java.time.LocalDate
 
 @Composable
 fun DeliveryPlanningCard(
@@ -47,7 +51,10 @@ fun DeliveryPlanningCard(
     onEditPatient: () -> Unit,
 ) {
     val sections = remember(patient.obstetricNotes) { parseDeliveryNotes(patient.obstetricNotes) }
+    val summary = remember(patient) { datingSummaryOf(patient, LocalDate.now()) }
+    val eddRow = remember(summary) { datingTextRows(summary).first { it.isEdd } }
     val latestScan = patient.ultrasoundScans.maxByOrNull { it.date }
+    val gaText = remember(patient) { patient.dating?.calculateGestationalAge() }
     val rhNegative = isRhNegative(patient.bloodGroupText)
 
     Card(
@@ -109,14 +116,19 @@ fun DeliveryPlanningCard(
                 )
                 KeyFactTile(
                     label = stringResource(R.string.current_gestational_age),
-                    value = patient.dating?.calculateGestationalAge(),
+                    value = gaText,
                     modifier = Modifier.weight(1f),
+                    trailing = if (gaText != null && summary.discordance != null) {
+                        { GaDiscordanceMarker(style = MaterialTheme.typography.titleSmall) }
+                    } else {
+                        null
+                    },
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 KeyFactTile(
-                    label = stringResource(R.string.agreed_edd),
-                    value = patient.dating?.agreedEdd ?: patient.dating?.ultrasoundEdd,
+                    label = eddRow.label,
+                    value = eddRow.value,
                     modifier = Modifier.weight(1f),
                 )
                 KeyFactTile(

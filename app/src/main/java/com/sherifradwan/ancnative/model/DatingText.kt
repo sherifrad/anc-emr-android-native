@@ -8,13 +8,21 @@ private const val NBSP = ' '
 /** One labelled line of the dating block. A null [value] means "not recorded". */
 data class DatingTextRow(val label: String, val value: String?, val isEdd: Boolean = false)
 
-/** Earliest parseable scan date of the patient, the anchor for the dating discordance check. */
-fun earliestScanDate(patient: DemoPatient): LocalDate? =
-    patient.ultrasoundScans.mapNotNull { parseIsoDateOrNull(it.date) }.minOrNull()
+/**
+ * Anchor for the dating discordance check: the earliest scan on or after the LMP and not after [today].
+ * Malformed, pre-LMP and future scan dates are ignored; null when none is left (the check then uses today).
+ */
+private fun earliestScanDate(patient: DemoPatient, today: LocalDate): LocalDate? {
+    val lmp = parseIsoDateOrNull(patient.dating?.lmpDate)
+    return patient.ultrasoundScans
+        .mapNotNull { parseIsoDateOrNull(it.date) }
+        .filter { (lmp == null || !it.isBefore(lmp)) && !it.isAfter(today) }
+        .minOrNull()
+}
 
 /** The dating summary of a patient as of [today]; every screen builds it through here. */
 fun datingSummaryOf(patient: DemoPatient, today: LocalDate): DatingSummary =
-    datingSummary(patient.dating, earliestScanDate(patient), today)
+    datingSummary(patient.dating, earliestScanDate(patient, today), today)
 
 /** Short method label for a stored dating code; unknown codes are shown as typed. */
 fun datingMethodLabel(code: String?): String? = when (val canonical = canonicalDatingMethod(code)) {

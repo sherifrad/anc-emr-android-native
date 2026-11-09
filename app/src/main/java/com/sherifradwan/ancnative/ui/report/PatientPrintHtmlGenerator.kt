@@ -1237,7 +1237,7 @@ object PatientPrintHtmlGenerator {
                             </div>
                             <div class="history-row">
                                 <span class="k">Target Delivery Timing:</span>
-                                <span class="v text-navy font-bold">${escapeHtml(formatDmy(patient.dating?.agreedEdd) ?: "Not recorded")}</span>
+                                <span class="v text-navy font-bold">${escapeHtml(datingSummary.edd?.let(::formatDmy) ?: "Not recorded")}</span>
                             </div>
                             <div class="history-row">
                                 <span class="k">Hospital & Blood Bank Precautions:</span>
