@@ -1,6 +1,8 @@
 package com.sherifradwan.ancnative.model
 
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 const val FULL_TERM_DAYS = 280L
 
@@ -34,4 +36,11 @@ fun parseCanonicalIsoDateOrNull(value: String?): LocalDate? {
     } catch (_: Exception) {
         null
     }
+}
+
+private val DmyFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.ROOT)
+
+fun formatDmy(iso: String?): String? {
+    if (iso.isNullOrBlank()) return null
+    return parseIsoDateOrNull(iso)?.format(DmyFormatter) ?: iso.trim()
 }

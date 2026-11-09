@@ -2,6 +2,7 @@ package com.sherifradwan.ancnative.model
 
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 
 fun daysToEdd(edd: LocalDate, asOf: LocalDate): Long = ChronoUnit.DAYS.between(asOf, edd)
 
@@ -26,11 +27,26 @@ data class DueDatesByMethod(
     val scan: LocalDate?,
 )
 
+/**
+ * Canonical dating method code for a stored value, matched ignoring case and surrounding spaces.
+ * "IVF" and "US" are aliases. Unknown values come back trimmed, blank or null gives null.
+ */
+fun canonicalDatingMethod(method: String?): String? {
+    val trimmed = method?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+    return when (trimmed.uppercase(Locale.ROOT)) {
+        "LMP" -> "LMP"
+        "ULTRASOUND", "US" -> "Ultrasound"
+        "IVF_TRANSFER", "IVF" -> "IVF_TRANSFER"
+        "CLINICAL" -> "Clinical"
+        else -> trimmed
+    }
+}
+
 object GestationalAgeEngine {
 
     fun dueDateForMethod(dating: DemoPatientDating, method: String?): LocalDate? {
-        return when (method?.uppercase()) {
-            "IVF_TRANSFER", "IVF" -> {
+        return when (canonicalDatingMethod(method)) {
+            "IVF_TRANSFER" -> {
                 if (!dating.transferDate.isNullOrBlank()) {
                     val transfer = parseIsoDateOrNull(dating.transferDate) ?: return null
                     val embryoAge = dating.embryoAgeDays ?: 5
@@ -38,7 +54,7 @@ object GestationalAgeEngine {
                     ivfEddFromTransfer(transfer, embryoAge)
                 } else null
             }
-            "ULTRASOUND", "US" -> {
+            "Ultrasound" -> {
                 if (!dating.ultrasoundEdd.isNullOrBlank()) {
                     parseIsoDateOrNull(dating.ultrasoundEdd)
                 } else null

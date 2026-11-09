@@ -3,6 +3,7 @@ package com.sherifradwan.ancnative.ui
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.BpLevel
 import com.sherifradwan.ancnative.model.bpLevel
+import com.sherifradwan.ancnative.model.canonicalDatingMethod
 
 /** True when a recorded blood group is Rh negative ("A-", "O neg", "B Rh -ve", "O minus", ...). */
 internal fun isRhNegative(bloodGroup: String?): Boolean {
@@ -14,15 +15,14 @@ internal fun isRhNegative(bloodGroup: String?): Boolean {
 }
 
 /**
- * String resource for a stored dating method code, matched ignoring case and surrounding spaces;
- * "IVF" is accepted as an alias of "IVF_TRANSFER". Null for blank or unknown codes, so callers
- * show the raw text.
+ * String resource for a stored dating method code, (see [canonicalDatingMethod]). Null for blank or
+ * unknown codes, so callers show the raw text.
  */
-internal fun datingMethodLabelRes(method: String?): Int? = when (method?.trim()?.uppercase(java.util.Locale.ROOT)) {
+internal fun datingMethodLabelRes(method: String?): Int? = when (canonicalDatingMethod(method)) {
     "LMP" -> R.string.dating_method_lmp
-    "ULTRASOUND" -> R.string.dating_method_ultrasound
-    "IVF_TRANSFER", "IVF" -> R.string.dating_method_ivf_transfer
-    "CLINICAL" -> R.string.dating_method_clinical
+    "Ultrasound" -> R.string.dating_method_ultrasound
+    "IVF_TRANSFER" -> R.string.dating_method_ivf_transfer
+    "Clinical" -> R.string.dating_method_clinical
     else -> null
 }
 
