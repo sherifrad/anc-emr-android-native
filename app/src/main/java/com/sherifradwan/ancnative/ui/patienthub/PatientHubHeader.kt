@@ -132,7 +132,6 @@ fun PatientHubHeader(
     onTabSelected: (PatientHubTab) -> Unit,
     severeBp: SevereBpAttention?,
     onBack: () -> Unit,
-    onStartVisit: () -> Unit,
     onEditPatient: () -> Unit,
     onOpenReport: () -> Unit,
     onOpenAttentionDialog: () -> Unit,
@@ -243,17 +242,6 @@ fun PatientHubHeader(
                                     modifier = Modifier.size(20.dp),
                                 )
                             }
-                            Button(
-                                onClick = onStartVisit,
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                                shape = RoundedCornerShape(10.dp),
-                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
-                                modifier = Modifier.minimumTouchTarget().testTag("headerStartVisit"),
-                            ) {
-                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Visit", fontWeight = FontWeight.Bold)
-                            }
                         }
                     }
 
@@ -330,6 +318,7 @@ fun PatientHubHeader(
                 // Layer B: Collapsed Sticky Top Bar (Composed only when active to eliminate ghost touch conflicts)
                 val isStickyActive = headerState.stickyAlpha > 0.05f
                 if (isStickyActive) {
+                    val gaCompact = patient.dating?.calculateGestationalAgeResult()?.shortWeeksText ?: ga
                     Surface(
                         color = MaterialTheme.colorScheme.surface,
                         modifier = Modifier
@@ -345,51 +334,36 @@ fun PatientHubHeader(
                                 .fillMaxSize()
                                 .padding(horizontal = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.weight(1f),
+                            IconButton(
+                                onClick = onBack,
+                                modifier = Modifier.minimumTouchTarget().testTag("stickyBackButton"),
                             ) {
-                                IconButton(onClick = onBack, modifier = Modifier.minimumTouchTarget()) {
-                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                                }
-                                Text(
-                                    text = patient.displayName,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f, fill = false),
-                                )
-                                if (!ga.isNullOrBlank()) {
-                                    GestationalAgeBadge(ga)
-                                }
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                             }
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            ) {
-                                if (hasAttention) {
-                                    IconButton(
-                                        onClick = onOpenAttentionDialog,
-                                        modifier = Modifier.minimumTouchTarget().testTag("stickyAttentionButton"),
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Warning,
-                                            contentDescription = "Attention Alert",
-                                            tint = ActionRose,
-                                            modifier = Modifier.size(20.dp),
-                                        )
-                                    }
-                                }
-                                FilledTonalIconButton(
-                                    onClick = onStartVisit,
-                                    modifier = Modifier.minimumTouchTarget().testTag("stickyStartVisit"),
+                            Text(
+                                text = patient.displayName,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f),
+                            )
+                            if (!gaCompact.isNullOrBlank()) {
+                                GestationalAgeBadge(gaCompact)
+                            }
+                            if (hasAttention) {
+                                IconButton(
+                                    onClick = onOpenAttentionDialog,
+                                    modifier = Modifier.minimumTouchTarget().testTag("stickyAttentionButton"),
                                 ) {
-                                    Icon(Icons.Default.Add, contentDescription = "Start Visit", modifier = Modifier.size(20.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.Warning,
+                                        contentDescription = "Attention Alert",
+                                        tint = ActionRose,
+                                        modifier = Modifier.size(20.dp),
+                                    )
                                 }
                             }
                         }

@@ -179,7 +179,6 @@ fun PatientHubScreen(
                 },
                 severeBp = severeBp,
                 onBack = { onEvent(AncEvent.Back) },
-                onStartVisit = { onStartVisit(patient.id, null) },
                 onEditPatient = {
                     onEvent(
                         AncEvent.StartPatientEditor(
