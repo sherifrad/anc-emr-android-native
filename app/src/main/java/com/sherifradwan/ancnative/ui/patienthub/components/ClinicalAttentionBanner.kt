@@ -136,13 +136,6 @@ fun ClinicalAttentionBanner(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.Top,
         ) {
-            Box(
-                modifier = Modifier
-                    .width(4.dp)
-                    .height(30.dp)
-                    .background(accentBarColor, RoundedCornerShape(2.dp)),
-            )
-
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp),

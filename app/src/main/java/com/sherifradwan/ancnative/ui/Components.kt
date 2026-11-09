@@ -220,46 +220,14 @@ fun ClinicalPatientCard(
                         }
 
                         // 4. Blood Group
-                        if (!patient.bloodGroupText.isNullOrBlank()) {
-                            val isRhNeg = isRhNegative(patient.bloodGroupText)
-                            val isRhPos = isRhPositive(patient.bloodGroupText)
-                            val bgSurface = when {
-                                isRhNeg -> if (isDark) TagBloodNegativeDarkBg else TagBloodNegativeBg
-                                isRhPos -> if (isDark) TagBloodPositiveDarkBg else TagBloodPositiveBg
-                                else -> if (isDark) TagBloodNeutralDarkBg else TagBloodNeutralBg
-                            }
-                            val bgText = when {
-                                isRhNeg -> if (isDark) TagBloodNegativeDarkText else TagBloodNegativeText
-                                isRhPos -> if (isDark) TagBloodPositiveDarkText else TagBloodPositiveText
-                                else -> if (isDark) TagBloodNeutralDarkText else TagBloodNeutralText
-                            }
-                            Surface(shape = RoundedCornerShape(6.dp), color = bgSurface) {
-                                Text(
-                                    text = formatBloodGroup(patient.bloodGroupText).orEmpty(),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = bgText,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                )
-                            }
-                        }
+                        BloodGroupBadge(patient.bloodGroupText)
 
                         // 5. Gestational Age
                         val gaResult = patient.dating?.calculateGestationalAgeResult()
                         val ga = patient.dating?.calculateGestationalAge(asOfDate)
                         val gaText = gaResult?.shortWeeksText ?: ga?.toString()
                         if (gaText != null) {
-                            Surface(shape = RoundedCornerShape(6.dp), color = MaterialTheme.colorScheme.tertiaryContainer) {
-                                Text(
-                                    text = "GA $gaText",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                    maxLines = 1,
-                                    softWrap = false,
-                                )
-                            }
+                            GestationalAgeBadge("GA $gaText")
                         }
 
                         // 6. EDD
@@ -437,50 +405,15 @@ fun ClinicalPatientCard(
 
                         val g = patient.gravida ?: 1L
                         val p = patient.parity ?: 0L
-                        Surface(
-                            shape = RoundedCornerShape(4.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                        ) {
-                            Text(
-                                text = "G$g P$p",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            )
-                        }
+                        ObstetricParityBadge(g, p, 0L)
 
-                        if (!patient.bloodGroupText.isNullOrBlank()) {
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            ) {
-                                Text(
-                                    text = formatBloodGroup(patient.bloodGroupText).orEmpty(),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                )
-                            }
-                        }
+                        BloodGroupBadge(patient.bloodGroupText)
 
                         val gaResult = patient.dating?.calculateGestationalAgeResult()
                         val ga = patient.dating?.calculateGestationalAge(asOfDate)
                         val gaText = gaResult?.shortWeeksText ?: ga?.toString()
                         if (gaText != null) {
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = MaterialTheme.colorScheme.tertiaryContainer,
-                            ) {
-                                Text(
-                                    text = "GA $gaText",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                )
-                            }
+                            GestationalAgeBadge("GA $gaText")
                         }
                     }
                 }

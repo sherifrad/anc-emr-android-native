@@ -43,6 +43,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
+import com.sherifradwan.ancnative.ui.BloodGroupBadge
+import com.sherifradwan.ancnative.ui.GestationalAgeBadge
+import com.sherifradwan.ancnative.ui.ObstetricParityBadge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
@@ -265,22 +268,10 @@ fun PatientHubHeader(
                         )
 
                         if (!ga.isNullOrBlank()) {
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = TagGestationalAgeBg,
-                                border = BorderStroke(1.dp, TagGestationalAgeBorder),
+                            GestationalAgeBadge(
+                                gaText = stringResource(R.string.ga_prefix, ga),
                                 modifier = Modifier.padding(start = 8.dp),
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.ga_prefix, ga),
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TagGestationalAgeText,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                )
-                            }
+                            )
                         }
                     }
 
@@ -297,38 +288,9 @@ fun PatientHubHeader(
                         if (!patient.ageText.isNullOrBlank()) {
                             PatientAgeBadge(ageText = patient.ageText)
                         }
-                        val g = patient.gravida ?: 1L
-                        val p = patient.parity ?: 0L
-                        val a = patient.abortion ?: 0L
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
-                            modifier = Modifier.height(24.dp),
-                        ) {
-                            Text(
-                                text = "G$g P$p" + if (a > 0) " A$a" else "",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
-                            )
-                        }
+                        ObstetricParityBadge(patient.gravida, patient.parity, patient.abortion)
                         if (!patient.bloodGroupText.isNullOrBlank()) {
-                            val bg = formatBloodGroup(patient.bloodGroupText).orEmpty()
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = if (isRhNeg) TagBloodNegativeBg else TagBloodPositiveBg,
-                                border = BorderStroke(1.dp, if (isRhNeg) TagBloodNegativeBorder else TagBloodPositiveBorder),
-                                modifier = Modifier.height(24.dp),
-                            ) {
-                                Text(
-                                    text = bg,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isRhNeg) TagBloodNegativeText else TagBloodPositiveText,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
-                                )
-                            }
+                            BloodGroupBadge(patient.bloodGroupText)
                         }
                         if (!patient.allergyHistory.isNullOrBlank()) {
                             Surface(
@@ -389,21 +351,7 @@ fun PatientHubHeader(
                             modifier = Modifier.weight(1f, fill = false),
                         )
                         if (!ga.isNullOrBlank()) {
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = TagGestationalAgeBg,
-                                border = BorderStroke(1.dp, TagGestationalAgeBorder),
-                            ) {
-                                Text(
-                                    text = ga,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TagGestationalAgeText,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                )
-                            }
+                            GestationalAgeBadge(ga)
                         }
                     }
 
@@ -555,13 +503,13 @@ fun CompactClinicalAttentionStrip(
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = contentColor,
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = "Edit clinical alerts",
+                contentDescription = "View clinical alert details",
                 tint = contentColor.copy(alpha = 0.7f),
                 modifier = Modifier.size(18.dp),
             )

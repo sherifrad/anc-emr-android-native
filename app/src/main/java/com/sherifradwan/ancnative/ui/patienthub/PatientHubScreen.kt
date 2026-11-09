@@ -29,6 +29,7 @@ import com.sherifradwan.ancnative.model.DemoAttachment
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.model.severeBpAttention
 import com.sherifradwan.ancnative.security.SecuritySettingsRepository
+import com.sherifradwan.ancnative.security.SecuritySettingsState
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
@@ -57,6 +58,7 @@ fun PatientHubScreen(
     onEvent: (AncEvent) -> Unit,
     onStartVisit: (String, String?) -> Unit,
     asOfDate: LocalDate = LocalDate.now(),
+    securitySettings: SecuritySettingsState? = null,
     modifier: Modifier = Modifier,
 ) {
     val patient = state.patient(route.patientId) ?: run {
@@ -148,7 +150,7 @@ fun PatientHubScreen(
     var showAttentionDialog by remember(patient.id) { mutableStateOf(false) }
 
     val context = LocalContext.current
-    val securitySettings = remember(patient.id) {
+    val effectiveSecuritySettings = securitySettings ?: remember(patient.id) {
         SecuritySettingsRepository.getInstance(context).settings.value
     }
 
@@ -307,7 +309,7 @@ fun PatientHubScreen(
         if (showReportDialog) {
             PatientTwoPageReportDialog(
                 patient = patient,
-                securitySettings = securitySettings,
+                securitySettings = effectiveSecuritySettings,
                 onDismiss = { showReportDialog = false },
             )
         }

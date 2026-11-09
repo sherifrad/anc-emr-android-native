@@ -460,17 +460,17 @@ class AncStateTest {
 
     @Test
     fun clinicalAttentionLevelPrefixParsing() {
-        val critical = com.sherifradwan.ancnative.ui.ClinicalAttentionLevel.parse("[CRITICAL] Severe pre-eclampsia")
-        assertEquals(com.sherifradwan.ancnative.ui.ClinicalAttentionLevel.CRITICAL, critical.first)
+        val critical = com.sherifradwan.ancnative.ui.patienthub.components.ClinicalAttentionLevel.parse("[CRITICAL] Severe pre-eclampsia")
+        assertEquals(com.sherifradwan.ancnative.ui.patienthub.components.ClinicalAttentionLevel.CRITICAL, critical.first)
         assertEquals("Severe pre-eclampsia", critical.second)
 
-        val alert = com.sherifradwan.ancnative.ui.ClinicalAttentionLevel.parse("ALERT: Low PAPP-A on first trimester screen")
-        assertEquals(com.sherifradwan.ancnative.ui.ClinicalAttentionLevel.ALERT, alert.first)
+        val alert = com.sherifradwan.ancnative.ui.patienthub.components.ClinicalAttentionLevel.parse("ALERT: Low PAPP-A on first trimester screen")
+        assertEquals(com.sherifradwan.ancnative.ui.patienthub.components.ClinicalAttentionLevel.ALERT, alert.first)
         assertEquals("Low PAPP-A on first trimester screen", alert.second)
 
         // Substring guard: narrative containing "critical" without prefix MUST NOT be promoted to CRITICAL
-        val negativeNarrative = com.sherifradwan.ancnative.ui.ClinicalAttentionLevel.parse("No critical alerts or allergies noted")
-        assertEquals(com.sherifradwan.ancnative.ui.ClinicalAttentionLevel.NOTE, negativeNarrative.first)
+        val negativeNarrative = com.sherifradwan.ancnative.ui.patienthub.components.ClinicalAttentionLevel.parse("No critical alerts or allergies noted")
+        assertEquals(com.sherifradwan.ancnative.ui.patienthub.components.ClinicalAttentionLevel.NOTE, negativeNarrative.first)
         assertEquals("No critical alerts or allergies noted", negativeNarrative.second)
     }
 

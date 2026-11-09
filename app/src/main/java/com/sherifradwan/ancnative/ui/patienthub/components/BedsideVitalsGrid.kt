@@ -54,8 +54,8 @@ fun BedsideVitalsGrid(
                 // Blood Pressure Column
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "BLOOD PRESSURE",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                        text = "Blood Pressure",
+                        style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -83,11 +83,11 @@ fun BedsideVitalsGrid(
                     ) {
                         Text(
                             text = when (vitals.bpLevel) {
-                                BpLevel.SEVERE -> "▲ Severe (≥160/110) ⚠️"
-                                BpLevel.RAISED -> "▲ Raised (≥140/90) · Recheck"
+                                BpLevel.SEVERE -> "▲ Severe · Urgent ⚠️"
+                                BpLevel.RAISED -> "▲ Raised · Recheck"
                                 BpLevel.NORMAL -> "Normal ✓"
                             },
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                            style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = when (vitals.bpLevel) {
                                 BpLevel.SEVERE -> MaterialTheme.colorScheme.onErrorContainer
@@ -111,8 +111,8 @@ fun BedsideVitalsGrid(
                 // Maternal Weight Column
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "MATERNAL WEIGHT",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                        text = "Maternal Weight",
+                        style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -133,7 +133,7 @@ fun BedsideVitalsGrid(
                         ) {
                             Text(
                                 text = vitals.weightDeltaText,
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
@@ -157,8 +157,8 @@ fun BedsideVitalsGrid(
                     if (hasFhr) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "FETAL HEART RATE",
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                text = "Fetal Heart Rate",
+                                style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -184,7 +184,7 @@ fun BedsideVitalsGrid(
                                 ) {
                                     Text(
                                         text = fhrText,
-                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                        style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = fhrColor,
                                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
@@ -207,8 +207,8 @@ fun BedsideVitalsGrid(
                     if (hasLegacySfh) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "FUNDAL HEIGHT",
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                text = "Fundal Height",
+                                style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -234,7 +234,7 @@ fun BedsideVitalsGrid(
                                 ) {
                                     Text(
                                         text = sfhText,
-                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                        style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = sfhColor,
                                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),

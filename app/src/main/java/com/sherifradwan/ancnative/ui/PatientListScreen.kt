@@ -671,19 +671,7 @@ private fun PatientDirectoryCard(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 // Obstetric GPA & Previous Deliveries
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = if (isDark) TagObstetricDarkBg else TagObstetricBg,
-                    border = BorderStroke(1.dp, if (isDark) TagObstetricDarkBorder else TagObstetricBorder),
-                ) {
-                    Text(
-                        text = row.obstetricSummary,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (isDark) TagObstetricDarkText else TagObstetricText,
-                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
-                    )
-                }
+                ObstetricParityBadge(summaryText = row.obstetricSummary)
 
                 // Maternal Age with standard validated PatientAgeBadge
                 if (row.ageText != null) {
@@ -691,39 +679,7 @@ private fun PatientDirectoryCard(
                 }
 
                 // Blood Group
-                val bloodGroupFormatted = formatBloodGroup(row.bloodGroup)
-                if (bloodGroupFormatted != null) {
-                    val isRhNeg = isRhNegative(row.bloodGroup)
-                    val bgSurfaceColor = if (isRhNeg) {
-                        if (isDark) TagBloodNegativeDarkBg else TagBloodNegativeBg
-                    } else {
-                        if (isDark) TagBloodPositiveDarkBg else TagBloodPositiveBg
-                    }
-                    val bgBorderColor = if (isRhNeg) {
-                        if (isDark) TagBloodNegativeDarkBorder else TagBloodNegativeBorder
-                    } else {
-                        if (isDark) TagBloodPositiveDarkBorder else TagBloodPositiveBorder
-                    }
-                    val bgTextColor = if (isRhNeg) {
-                        if (isDark) TagBloodNegativeDarkText else TagBloodNegativeText
-                    } else {
-                        if (isDark) TagBloodPositiveDarkText else TagBloodPositiveText
-                    }
-
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = bgSurfaceColor,
-                        border = BorderStroke(1.dp, bgBorderColor),
-                    ) {
-                        Text(
-                            text = bloodGroupFormatted,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = if (isRhNeg) FontWeight.Bold else FontWeight.Medium,
-                            color = bgTextColor,
-                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
-                        )
-                    }
-                }
+                BloodGroupBadge(bloodGroup = row.bloodGroup)
 
                 if (row.isArchived) {
                     Surface(

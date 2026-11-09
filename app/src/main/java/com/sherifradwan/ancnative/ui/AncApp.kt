@@ -220,6 +220,7 @@ fun AncApp(
                             route = route,
                             onEvent = onEvent,
                             onStartVisit = onStartVisit,
+                            securitySettings = securitySettings,
                         )
                         is AncRoute.VisitEditor -> VisitEditor(
                             state = state,

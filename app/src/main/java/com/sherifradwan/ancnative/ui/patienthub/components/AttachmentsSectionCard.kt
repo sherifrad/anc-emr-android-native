@@ -32,13 +32,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -190,18 +194,20 @@ fun AttachmentsSectionCard(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                                 ) {
-                                    // Thumbnail preview
-                                    val thumbBitmap = remember(attachment.id) {
-                                        runCatching {
-                                            val file = PatientAttachmentVault.resolveAttachmentFile(
-                                                context = context,
-                                                patientId = patient.id,
-                                                fileName = attachment.fileName,
-                                            )
-                                            if (file != null && file.exists()) {
-                                                BoundedBitmap.decodeFile(file.absolutePath, 2048)?.asImageBitmap()
-                                            } else null
-                                        }.getOrNull()
+                                    // Thumbnail preview loaded off the main UI thread
+                                    val thumbBitmap by produceState<ImageBitmap?>(initialValue = null, key1 = attachment.id) {
+                                        value = withContext(Dispatchers.IO) {
+                                            runCatching {
+                                                val file = PatientAttachmentVault.resolveAttachmentFile(
+                                                    context = context,
+                                                    patientId = patient.id,
+                                                    fileName = attachment.fileName,
+                                                )
+                                                if (file != null && file.exists()) {
+                                                    BoundedBitmap.decodeFile(file.absolutePath, 2048)?.asImageBitmap()
+                                                } else null
+                                            }.getOrNull()
+                                        }
                                     }
 
                                     Box(
@@ -211,9 +217,10 @@ fun AttachmentsSectionCard(
                                             .background(Color.DarkGray),
                                         contentAlignment = Alignment.Center,
                                     ) {
-                                        if (thumbBitmap != null) {
+                                        val bitmap = thumbBitmap
+                                        if (bitmap != null) {
                                             androidx.compose.foundation.Image(
-                                                bitmap = thumbBitmap,
+                                                bitmap = bitmap,
                                                 contentDescription = null,
                                                 modifier = Modifier.fillMaxSize(),
                                                 contentScale = ContentScale.Crop,

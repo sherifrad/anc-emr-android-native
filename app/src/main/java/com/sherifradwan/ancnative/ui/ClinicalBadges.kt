@@ -292,3 +292,122 @@ fun MedicationStatusBadge(status: String, modifier: Modifier = Modifier) {
         )
     }
 }
+
+/**
+ * Canonical Blood Group Badge.
+ * Highlights Rh-negative status prominently with TagBloodNegative tokens as a critical clinical flag.
+ * Supports dark mode automatically via isDarkSurface().
+ */
+@Composable
+fun BloodGroupBadge(bloodGroup: String?, modifier: Modifier = Modifier) {
+    val formatted = formatBloodGroup(bloodGroup) ?: return
+    val dark = isDarkSurface()
+    val isRhNeg = isRhNegative(bloodGroup)
+    val bg = if (isRhNeg) {
+        if (dark) TagBloodNegativeDarkBg else TagBloodNegativeBg
+    } else {
+        if (dark) TagBloodPositiveDarkBg else TagBloodPositiveBg
+    }
+    val border = if (isRhNeg) {
+        if (dark) TagBloodNegativeDarkBorder else TagBloodNegativeBorder
+    } else {
+        if (dark) TagBloodPositiveDarkBorder else TagBloodPositiveBorder
+    }
+    val text = if (isRhNeg) {
+        if (dark) TagBloodNegativeDarkText else TagBloodNegativeText
+    } else {
+        if (dark) TagBloodPositiveDarkText else TagBloodPositiveText
+    }
+
+    Surface(
+        shape = RoundedCornerShape(6.dp),
+        color = bg,
+        border = BorderStroke(1.dp, border),
+        modifier = modifier.testTag("bloodGroupBadge"),
+    ) {
+        Text(
+            text = formatted,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = if (isRhNeg) FontWeight.Bold else FontWeight.SemiBold,
+            color = text,
+            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+        )
+    }
+}
+
+/**
+ * Canonical Gestational Age Badge.
+ * Renders gestational age (e.g., "28w 4d") with softWrap = false to prevent 360dp text wrapping.
+ * Resolves dark mode automatically via isDarkSurface().
+ */
+@Composable
+fun GestationalAgeBadge(gaText: String?, modifier: Modifier = Modifier) {
+    if (gaText.isNullOrBlank()) return
+    val dark = isDarkSurface()
+    val bg = if (dark) TagGestationalAgeDarkBg else TagGestationalAgeBg
+    val border = if (dark) TagGestationalAgeDarkBorder else TagGestationalAgeBorder
+    val text = if (dark) TagGestationalAgeDarkText else TagGestationalAgeText
+
+    Surface(
+        shape = RoundedCornerShape(6.dp),
+        color = bg,
+        border = BorderStroke(1.dp, border),
+        modifier = modifier.testTag("gestationalAgeBadge"),
+    ) {
+        Text(
+            text = gaText,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = text,
+            maxLines = 1,
+            softWrap = false,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+        )
+    }
+}
+
+/**
+ * Canonical Obstetric Parity (GPA) Badge.
+ * Formats Gravida, Parity, Abortion (e.g. "G2 P1 A0" or "G1 P0").
+ * Automatically resolves dark mode via isDarkSurface().
+ */
+@Composable
+fun ObstetricParityBadge(
+    gravida: Long?,
+    parity: Long?,
+    abortion: Long?,
+    modifier: Modifier = Modifier,
+) {
+    val g = gravida ?: 1L
+    val p = parity ?: 0L
+    val a = abortion ?: 0L
+    val text = "G$g P$p" + if (a > 0) " A$a" else ""
+    ObstetricParityBadge(summaryText = text, modifier = modifier)
+}
+
+@Composable
+fun ObstetricParityBadge(
+    summaryText: String,
+    modifier: Modifier = Modifier,
+) {
+    if (summaryText.isBlank()) return
+    val dark = isDarkSurface()
+    val bg = if (dark) TagObstetricDarkBg else TagObstetricBg
+    val border = if (dark) TagObstetricDarkBorder else TagObstetricBorder
+    val text = if (dark) TagObstetricDarkText else TagObstetricText
+
+    Surface(
+        shape = RoundedCornerShape(6.dp),
+        color = bg,
+        border = BorderStroke(1.dp, border),
+        modifier = modifier.testTag("obstetricParityBadge"),
+    ) {
+        Text(
+            text = summaryText,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = text,
+            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+        )
+    }
+}

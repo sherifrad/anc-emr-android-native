@@ -2,7 +2,6 @@ package com.sherifradwan.ancnative.ui
 
 import android.app.Activity
 import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
@@ -138,24 +137,24 @@ val DeliveryPostpartumDarkText = Color(0xFFFBCFE8)
  * Provides domain-scoped container, border, and accent colors for clinical cards and alert banners.
  */
 object ClinicalCardTokens {
-    // Pregnancy Dating Card (Sky / Cyan)
+    // Pregnancy Dating Card (Sky / Cyan - WCAG AA 5.57:1)
     val DatingBg = Color(0xFFF0F9FF)
     val DatingBorder = Color(0xFFBAE6FD)
-    val DatingAccent = Color(0xFF0284C7)
+    val DatingAccent = Color(0xFF0369A1)
     val DatingDarkBg = Color(0xFF082F49)
     val DatingDarkBorder = Color(0xFF075985)
 
-    // Obstetric Parity Card (Maternity Lavender / Purple)
+    // Obstetric Parity Card (Maternity Lavender / Purple - WCAG AA 6.51:1)
     val ParityBg = Color(0xFFFAF5FF)
     val ParityBorder = Color(0xFFE9D5FF)
     val ParityAccent = Color(0xFF7E22CE)
     val ParityDarkBg = Color(0xFF2E1065)
     val ParityDarkBorder = Color(0xFF581C87)
 
-    // Ultrasound Biometry Card (Teal)
+    // Ultrasound Biometry Card (Teal - WCAG AA 5.25:1)
     val ScanBg = Color(0xFFF0FDFA)
     val ScanBorder = Color(0xFF99F6E4)
-    val ScanAccent = Color(0xFF0D9488)
+    val ScanAccent = Color(0xFF0F766E)
     val ScanDarkBg = Color(0xFF042F2E)
     val ScanDarkBorder = Color(0xFF115E59)
 

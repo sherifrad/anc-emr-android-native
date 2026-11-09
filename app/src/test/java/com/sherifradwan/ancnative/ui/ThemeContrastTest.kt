@@ -18,7 +18,7 @@ import java.io.File
 class ThemeContrastTest {
 
     private fun locateUiDir(): File {
-        var dir: File? = File(System.getProperty("user.dir")).absoluteFile
+        var dir: File? = File(System.getProperty("user.dir") ?: ".").absoluteFile
         repeat(8) {
             val current = dir ?: return@repeat
             for (candidate in listOf(
@@ -158,5 +158,26 @@ class ThemeContrastTest {
             "P9: placeholder text must use a full-opacity token, not copy(alpha = 0.65); found: $faded",
             faded.isEmpty(),
         )
+    }
+
+    @Test
+    fun clinicalCardTokens_everyTextContainerPair_meetsWcagAa_4_5() {
+        val tokens = parseColorTokens()
+        val pairs = listOf(
+            "DatingAccent" to "DatingBg",
+            "ParityAccent" to "ParityBg",
+            "ScanAccent" to "ScanBg",
+            "CriticalText" to "CriticalBg",
+            "WarningText" to "WarningBg",
+            "AllergyAccent" to "AllergyBg",
+        )
+        val failures = mutableListOf<String>()
+        for ((textToken, bgToken) in pairs) {
+            val t = tokens[textToken] ?: throw AssertionError("missing Theme.kt token $textToken")
+            val bg = tokens[bgToken] ?: throw AssertionError("missing Theme.kt token $bgToken")
+            val ratio = contrastRatio(t, bg)
+            if (ratio < 4.5) failures += "$textToken on $bgToken = %.2f:1 (needs >= 4.5:1)".format(ratio)
+        }
+        assertTrue("ClinicalCardTokens pairs below WCAG AA 4.5:1: $failures", failures.isEmpty())
     }
 }

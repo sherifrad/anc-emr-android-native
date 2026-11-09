@@ -29,6 +29,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -43,6 +44,7 @@ import com.sherifradwan.ancnative.model.GestationalAgeEngine
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.storage.DeletableType
 import com.sherifradwan.ancnative.ui.ClinicalTeal
+import com.sherifradwan.ancnative.ui.GestationalAgeBadge
 import com.sherifradwan.ancnative.ui.DeleteIconButton
 import com.sherifradwan.ancnative.ui.FactRow
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
@@ -125,9 +127,11 @@ fun ScansTab(
                 items = patient.ultrasoundScans,
                 key = { it.id },
             ) { scan ->
-                val gaAtScan = GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, scan.date)
+                val gaAtScan = remember(patient.dating, scan.date) {
+                    GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, scan.date)
+                }
                 val gaDisplayText = gaAtScan?.displayText
-                val biometry = extractBiometry(scan)
+                val biometry = remember(scan) { extractBiometry(scan) }
 
                 Card(
                     modifier = Modifier.fillMaxWidth().testTag("ultrasound-${scan.id}"),
@@ -152,19 +156,7 @@ fun ScansTab(
                                 color = MaterialTheme.colorScheme.primary,
                             )
                             if (!gaDisplayText.isNullOrBlank()) {
-                                Surface(
-                                    shape = RoundedCornerShape(6.dp),
-                                    color = ClinicalTeal.copy(alpha = 0.12f),
-                                    border = BorderStroke(1.dp, ClinicalTeal.copy(alpha = 0.3f)),
-                                ) {
-                                    Text(
-                                        text = gaDisplayText,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = ClinicalTeal,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                    )
-                                }
+                                GestationalAgeBadge(gaDisplayText)
                             }
                         }
 

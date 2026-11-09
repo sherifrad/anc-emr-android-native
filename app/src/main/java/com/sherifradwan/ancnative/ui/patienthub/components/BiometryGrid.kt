@@ -40,8 +40,8 @@ fun BiometryGrid(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                text = "ULTRASOUND BIOMETRY",
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                text = "Ultrasound Biometry",
+                style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

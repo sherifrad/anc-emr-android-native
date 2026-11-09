@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
+import com.sherifradwan.ancnative.ui.ObstetricParityBadge
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.previousDeliverySummary
 import com.sherifradwan.ancnative.ui.ClinicalCardTokens
@@ -63,8 +64,9 @@ fun ObstetricParityCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Row(
+                    modifier = Modifier.weight(1f, fill = false),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     Icon(
                         Icons.Default.Person,
@@ -73,24 +75,13 @@ fun ObstetricParityCard(
                         modifier = Modifier.size(20.dp),
                     )
                     Text(
-                        text = "Obstetric Parity",
+                        text = "Parity",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
                     )
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = accent.copy(alpha = 0.15f),
-                        border = BorderStroke(1.dp, accent.copy(alpha = 0.3f)),
-                    ) {
-                        Text(
-                            text = "G$g P$p" + if (a > 0) " A$a" else "",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = accent,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        )
-                    }
+                    ObstetricParityBadge(g, p, a)
                 }
                 if (onAddPregnancy != null) {
                     FilledTonalButton(

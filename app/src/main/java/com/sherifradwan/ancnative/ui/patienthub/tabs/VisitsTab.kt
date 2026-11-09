@@ -119,18 +119,22 @@ fun VisitsTab(
                 items = patient.visits,
                 key = { it.id },
             ) { visit ->
-                val gaAtVisit = GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, visit.date)
+                val gaAtVisit = remember(patient.dating, visit.date) {
+                    GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, visit.date)
+                }
                 val gaDisplayText = gaAtVisit?.displayText
                 val gaWeeks = gaAtVisit?.weeks
-                val parsedFindings = parseVisitFindings(visit.findings)
+                val parsedFindings = remember(visit.findings) { parseVisitFindings(visit.findings) }
 
-                val vitals = deriveVitalsSnapshot(
-                    bloodPressure = visit.bloodPressure,
-                    weight = visit.weight,
-                    findings = visit.findings,
-                    gaWeeks = gaWeeks,
-                    bookingWeightKg = bookingWeightKg,
-                )
+                val vitals = remember(visit.bloodPressure, visit.weight, visit.findings, gaWeeks, bookingWeightKg) {
+                    deriveVitalsSnapshot(
+                        bloodPressure = visit.bloodPressure,
+                        weight = visit.weight,
+                        findings = visit.findings,
+                        gaWeeks = gaWeeks,
+                        bookingWeightKg = bookingWeightKg,
+                    )
+                }
 
                 Card(
                     modifier = Modifier.fillMaxWidth().testTag("visit-${visit.id}"),
