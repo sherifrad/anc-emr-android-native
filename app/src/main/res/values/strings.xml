@@ -321,6 +321,10 @@
     <string name="print_pdf">Print PDF</string>
     <string name="print_patient_report">Print Patient Report</string>
     <string name="active_patients_count">%1$d Patients</string>
+    <string name="record_visit">Record Visit</string>
+    <string name="ga_label">GA</string>
+    <string name="pending">Pending</string>
+    <string name="edd_pending">EDD Pending</string>
     <string name="expand_details">Expand</string>
     <string name="collapse_details">Collapse</string>
     <string name="recent_visits">Recent Visits</string>

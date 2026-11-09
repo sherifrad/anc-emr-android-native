@@ -78,6 +78,8 @@ import com.sherifradwan.ancnative.model.severeBpAttention
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.SavedNotice
+import com.sherifradwan.ancnative.ui.patientdirectory.PatientActionsModalSheet
+import com.sherifradwan.ancnative.ui.patientdirectory.PatientDirectoryCard
 import java.util.UUID
 
 enum class PatientRiskTier { HIGH, MEDIUM, LOW, UNRECORDED }
@@ -107,6 +109,9 @@ data class PatientDashboardRowProjection(
     val isHighRisk: Boolean,
     val riskTier: PatientRiskTier,
     val clinicalAttention: String?,
+    val latestVitalsBp: String? = null,
+    val isSevereBp: Boolean = false,
+    val isLateOrPostTerm: Boolean = false,
 )
 
 fun projectDashboardRow(patient: DemoPatient): PatientDashboardRowProjection {
@@ -136,6 +141,11 @@ fun projectDashboardRow(patient: DemoPatient): PatientDashboardRowProjection {
     val isHigh = isHighRisk(patient.riskLevel)
     val tier = parseRiskTier(patient.riskLevel)
 
+    val latestVisit = patient.visits.maxByOrNull { it.date }
+    val latestBp = latestVisit?.bloodPressure?.trim()?.takeIf { it.isNotBlank() }
+    val isSevere = severeBpAttention(patient.visits) != null
+    val isLateOrPost = gaResult != null && gaResult.weeks >= 41
+
     return PatientDashboardRowProjection(
         id = patient.id,
         caseId = patient.caseId,
@@ -152,6 +162,9 @@ fun projectDashboardRow(patient: DemoPatient): PatientDashboardRowProjection {
         isHighRisk = isHigh,
         riskTier = tier,
         clinicalAttention = patient.clinicalAttention?.takeIf { it.isNotBlank() },
+        latestVitalsBp = latestBp,
+        isSevereBp = isSevere,
+        isLateOrPostTerm = isLateOrPost,
     )
 }
 
@@ -371,488 +384,12 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
     // Modal Bottom Sheet for Patient Card "⋯" Actions
     sheetPatient?.let { p ->
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        ModalBottomSheet(
-            onDismissRequest = { sheetPatient = null },
+        PatientActionsModalSheet(
+            patient = p,
             sheetState = sheetState,
-            containerColor = MaterialTheme.colorScheme.surface,
-        ) {
-            val isDark = isDarkTheme()
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Text(
-                    text = p.displayName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Text(
-                    text = "${p.ageText ?: "-"} · G${p.gravida ?: 1} P${p.parity ?: 0}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-                // Action 1: Edit Patient Record
-                if (p.status != "archived") {
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable {
-                                sheetPatient = null
-                                onEvent(
-                                    AncEvent.StartPatientEditor(
-                                        patientId = p.id,
-                                        newPatientId = p.id,
-                                        editorSessionId = UUID.randomUUID().toString(),
-                                    ),
-                                )
-                            }
-                            .testTag("editPatient-${p.caseId}"),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                        shape = RoundedCornerShape(12.dp),
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                                Text(stringResource(R.string.edit_patient), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                            }
-                            Text("›", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.outline)
-                        }
-                    }
-                }
-
-                // Action 2: Archive / Restore Patient
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .clickable {
-                            sheetPatient = null
-                            onEvent(
-                                AncEvent.StartStatusEditor(
-                                    patientId = p.id,
-                                    targetStatus = if (p.status == "archived") "active" else "archived",
-                                    editorSessionId = UUID.randomUUID().toString(),
-                                ),
-                            )
-                        }
-                        .testTag("statusPatient-${p.caseId}"),
-                    color = if (p.status == "archived") MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else if (isDark) TagHighRiskDarkBg else TagHighRiskBg,
-                    border = BorderStroke(1.dp, if (p.status == "archived") MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.error.copy(alpha = 0.3f)),
-                    shape = RoundedCornerShape(12.dp),
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Icon(
-                                if (p.status == "archived") Icons.Default.Unarchive else Icons.Default.Archive,
-                                contentDescription = null,
-                                tint = if (p.status == "archived") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(20.dp),
-                            )
-                            Column {
-                                Text(
-                                    text = stringResource(if (p.status == "archived") R.string.unarchive_patient else R.string.archive_patient),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = if (p.status == "archived") MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
-                                )
-                                Text(
-                                    text = stringResource(if (p.status == "archived") R.string.unarchive_patient_subtitle else R.string.archive_patient_subtitle),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
-                        Text("›", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.outline)
-                    }
-                }
-
-                // Action 3: Open Workspace
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .clickable {
-                            sheetPatient = null
-                            onEvent(AncEvent.OpenWorkspace(p.id))
-                        }
-                        .testTag("workspace-${p.caseId}"),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                    shape = RoundedCornerShape(12.dp),
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Icon(Icons.Default.EditNote, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                            Text(stringResource(R.string.open_workspace), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                        }
-                        Text("›", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.outline)
-                    }
-                }
-
-                // Action 4: Open Profile / Chart
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .clickable {
-                            sheetPatient = null
-                            onEvent(AncEvent.OpenWorkspace(p.id))
-                        }
-                        .testTag("profile-${p.caseId}"),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                    shape = RoundedCornerShape(12.dp),
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Icon(Icons.Default.AccountCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                            Text(stringResource(R.string.profile), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                        }
-                        Text("›", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.outline)
-                    }
-                }
-
-                Spacer(Modifier.height(4.dp))
-
-                TextButton(
-                    onClick = { sheetPatient = null },
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                ) {
-                    Text(stringResource(R.string.cancel), fontWeight = FontWeight.Bold)
-                }
-
-                Spacer(Modifier.height(8.dp))
-            }
-        }
-    }
-}
-
-@Composable
-private fun PatientDirectoryCard(
-    patient: DemoPatient,
-    row: PatientDashboardRowProjection,
-    onEvent: (AncEvent) -> Unit,
-    onOpenMenu: () -> Unit,
-) {
-    val severeBp = remember(patient.visits) { severeBpAttention(patient.visits) }
-    val isArabic = row.displayName.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.ARABIC }
-    val isDark = isDarkTheme()
-
-    val rowBgColor = if (row.isHighRisk) {
-        lerp(
-            MaterialTheme.colorScheme.surface,
-            MaterialTheme.colorScheme.errorContainer,
-            0.04f,
+            onDismissRequest = { sheetPatient = null },
+            onEvent = onEvent,
         )
-    } else {
-        MaterialTheme.colorScheme.surface
-    }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .testTag("patient-${patient.caseId}")
-            .clickable { onEvent(AncEvent.OpenWorkspace(patient.id)) },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = rowBgColor),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            // Line 1: Patient Name (Bold, up to 2 lines without crowding) + 48dp "⋯" menu button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    text = row.displayName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = if (isArabic) TextAlign.End else TextAlign.Start,
-                    modifier = Modifier.weight(1f),
-                )
-
-                Spacer(Modifier.width(8.dp))
-
-                IconButton(
-                    onClick = onOpenMenu,
-                    modifier = Modifier
-                        .minimumTouchTarget()
-                        .testTag("patientMenu-${patient.caseId}"),
-                ) {
-                    Icon(
-                        Icons.Default.MoreVert,
-                        contentDescription = stringResource(R.string.more_actions),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-            }
-
-            // Line 2: Clinical tags (Risk Badge, Severe BP Alert, Obstetric GPA, Age, Blood Group) wrapped in FlowRow
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = if (isArabic) Arrangement.spacedBy(8.dp, Alignment.End) else Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                // Canonical Risk Badge (Rule of Reusability)
-                if (row.isHighRisk) {
-                    ClinicalRiskBadge(isHighRisk = true)
-                }
-
-                // Severe Blood Pressure Warning Badge
-                if (severeBp != null) {
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = if (isDark) TagHighRiskDarkBg else TagHighRiskBg,
-                        border = BorderStroke(1.dp, if (isDark) TagHighRiskDarkBorder else TagHighRiskBorder),
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(3.dp),
-                        ) {
-                            Icon(
-                                Icons.Default.Warning,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(11.dp),
-                            )
-                            Text(
-                                text = stringResource(R.string.bp_badge_severe),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.error,
-                            )
-                        }
-                    }
-                }
-
-                // Obstetric GPA & Previous Deliveries
-                ObstetricParityBadge(summaryText = row.obstetricSummary)
-
-                // Maternal Age with standard validated PatientAgeBadge
-                if (row.ageText != null) {
-                    PatientAgeBadge(ageText = row.ageText)
-                }
-
-                // Blood Group
-                BloodGroupBadge(bloodGroup = row.bloodGroup)
-
-                if (row.isArchived) {
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = if (isDark) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surfaceContainerHighest,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.archived),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
-                        )
-                    }
-                }
-            }
-
-            // Line 3: Gestational Age & EDD (FlowRow so EDD never truncates)
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.ga_prefix, row.gestationalAgeText),
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = " · " + stringResource(R.string.edd_prefix, row.eddText ?: stringResource(R.string.not_recorded)),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            // Line 4: Prominent Clinical Attention Callout Box (up to 140 chars / 2 visible lines)
-            DirectoryClinicalAttentionBox(
-                clinicalAttention = row.clinicalAttention,
-                severeBp = severeBp,
-            )
-
-            // Line 5: Quick Card Actions (Workspace and Profile)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 2.dp),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(
-                    onClick = { onEvent(AncEvent.OpenWorkspace(patient.id)) },
-                    modifier = Modifier
-                        .minimumTouchTarget()
-                        .testTag("workspace-${patient.caseId}"),
-                ) {
-                    Icon(
-                        Icons.Default.EditNote,
-                        contentDescription = stringResource(R.string.open_workspace),
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-
-                IconButton(
-                    onClick = { onEvent(AncEvent.OpenWorkspace(patient.id)) },
-                    modifier = Modifier
-                        .minimumTouchTarget()
-                        .testTag("profile-${patient.caseId}"),
-                ) {
-                    Icon(
-                        Icons.Default.AccountCircle,
-                        contentDescription = stringResource(R.string.profile),
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-            }
-        }
     }
 }
 
-
-@Composable
-private fun DirectoryClinicalAttentionBox(
-    clinicalAttention: String?,
-    severeBp: SevereBpAttention?,
-) {
-    val isDark = isDarkTheme()
-    val hasContent = !clinicalAttention.isNullOrBlank() || severeBp != null
-
-    if (hasContent) {
-        val containerColor = if (isDark) TagBloodNegativeDarkBg else TagBloodNegativeBg
-        val borderColor = if (isDark) TagBloodNegativeDarkBorder else TagBloodNegativeBorder
-        val accentBarColor = ActionRose
-        val textColor = if (isDark) TagBloodNegativeDarkText else TagBloodNegativeText
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 3.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(containerColor)
-                .border(1.dp, borderColor, RoundedCornerShape(6.dp))
-                .padding(horizontal = 8.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .width(3.5.dp)
-                    .height(28.dp)
-                    .background(accentBarColor, RoundedCornerShape(2.dp)),
-            )
-
-            Icon(
-                Icons.Default.Warning,
-                contentDescription = null,
-                tint = accentBarColor,
-                modifier = Modifier.size(15.dp),
-            )
-
-            Column(modifier = Modifier.weight(1f)) {
-                if (severeBp != null) {
-                    Text(
-                        text = stringResource(R.string.bp_attention_severe, severeBp.bloodPressure, severeBp.date),
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold,
-                        color = textColor,
-                    )
-                }
-                if (!clinicalAttention.isNullOrBlank()) {
-                    Text(
-                        text = clinicalAttention,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Medium,
-                        color = textColor,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-        }
-    } else {
-        // Calm muted placeholder
-        val containerColor = if (isDark) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surfaceContainerHighest
-        val borderColor = MaterialTheme.colorScheme.outlineVariant
-        val accentBarColor = MaterialTheme.colorScheme.outline
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 2.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(containerColor)
-                .border(1.dp, borderColor, RoundedCornerShape(6.dp))
-                .padding(horizontal = 8.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .width(3.dp)
-                    .height(18.dp)
-                    .background(accentBarColor, RoundedCornerShape(2.dp)),
-            )
-            Text(
-                text = stringResource(R.string.no_clinical_attention_recorded),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-    }
-}
