@@ -20,3 +20,7 @@ Tests that need updating: PatientCommandsTest:25-52 (blank phone), AncWorkflowTe
 Owner answers 2026-11-10: risk level, blood group and clinical attention go to step 3, titled "Obstetric history and risk"; "incomplete" rule accepted (steps 4 and 5 excluded); phone required on create and in step 1, on edit only if the stored phone is non-blank; Next on an untouched step is done if data exists, else skipped; date of birth leaves the editable screen, stored values stay.
 
 Review fixes 2026-11-10: DATING done only when calculateEstimatedDueDate(dating) != null (a dating row with every field blank is not done). Next takes hasData: done if data exists, else skipped. PREGNANCIES done iff G known and stored pregnancies >= suggested count.
+
+## Owner changes 2026-11-10 (mock approved with these)
+1. Telephone is NOT required. Age IS required (on create and in step 1; on edit only when the stored age is non-blank, so old records without an age stay editable). Required fields in step 1 are name and age. This replaces every "phone required" rule above: PHONE_REQUIRED becomes AGE_REQUIRED; "Incomplete" means age blank, no usable dating, or G/P/A not recorded (phone no longer counts); IDENTITY is DONE iff name and age are non-blank.
+2. Dating step: a "Dating method" dropdown replaces the default LMP field. Ultrasound dating is one option of the dropdown (with LMP and the other existing methods). Only the fields belonging to the chosen method are shown. The dating rules and EDD calculation are not changed.

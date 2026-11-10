@@ -64,7 +64,7 @@ import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.PatientDraftField
 import com.sherifradwan.ancnative.state.SavePhase
-import com.sherifradwan.ancnative.state.intakeDatingPreview
+import com.sherifradwan.ancnative.state.PatientDraft
 
 @Composable
 fun PatientEditor(
@@ -77,315 +77,13 @@ fun PatientEditor(
 
     EditorPage(
         title = if (route.isNew) stringResource(R.string.register_patient) else stringResource(R.string.edit_patient),
-        subtitle = "Demographic & Clinical Profile",
+        subtitle = stringResource(R.string.patient_editor_subtitle),
         tag = "patientEditor",
     ) {
         GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
+        IdentityFields(draft, enabled, onEvent)
+        ObstetricFields(draft, enabled, onEvent)
 
-        // CARD 1: PATIENT DEMOGRAPHICS & IDENTITY
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(
-                    text = "1. Demographics & Intake Details",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-
-                // Full Name
-                EditorField(
-                    value = draft.values.displayName,
-                    onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.DISPLAY_NAME, it)) },
-                    label = stringResource(R.string.full_name_required),
-                    tag = "patientName",
-                    enabled = enabled,
-                    singleLine = true,
-                    imeAction = ImeAction.Next,
-                    error = PatientValidationError.FULL_NAME_REQUIRED in draft.errors,
-                )
-
-                // Compact Demographics Row: Age + Phone
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    EditorField(
-                        value = draft.values.ageText,
-                        onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.AGE_TEXT, it)) },
-                        label = stringResource(R.string.age_text),
-                        tag = "patientAgeText",
-                        enabled = enabled,
-                        singleLine = true,
-                        keyboardType = KeyboardType.Number,
-                        modifier = Modifier.weight(1f),
-                    )
-                    EditorField(
-                        value = draft.values.phone,
-                        onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.PHONE, it)) },
-                        label = stringResource(R.string.phone),
-                        tag = "patientPhone",
-                        enabled = enabled,
-                        singleLine = true,
-                        keyboardType = KeyboardType.Phone,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-
-                // Compact Demographics Row: Date of Birth + Address
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    ClinicalDateField(
-                        value = draft.values.dateOfBirth,
-                        onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.DATE_OF_BIRTH, it)) },
-                        label = stringResource(R.string.date_of_birth),
-                        tag = "patientDateOfBirth",
-                        enabled = enabled,
-                        showTodayButton = false,
-                        modifier = Modifier.weight(1f),
-                    )
-                    EditorField(
-                        value = draft.values.addressText,
-                        onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.ADDRESS_TEXT, it)) },
-                        label = stringResource(R.string.address),
-                        tag = "patientAddress",
-                        enabled = enabled,
-                        singleLine = true,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-
-                // Last Menstrual Period (LMP) with live EDD & GA preview
-                ClinicalDateField(
-                    value = draft.values.lmpDate,
-                    onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.LMP_DATE, it)) },
-                    label = "Last Menstrual Period (LMP)",
-                    tag = "patientLmpDate",
-                    enabled = enabled,
-                    showTodayButton = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                val preview = intakeDatingPreview(draft.values)
-                if (preview != null) {
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = "Estimated Due Date: ${preview.dueDate}",
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            )
-                            if (preview.gestationalAge != null) {
-                                Text(
-                                    text = "Current GA: ${preview.gestationalAge}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // CARD 2: OBSTETRIC HISTORY (GPA)
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(
-                    text = "2. Obstetric History (Gravida, Parity, Abortion)",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    EditorField(
-                        value = draft.values.gravida,
-                        onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.GRAVIDA, it)) },
-                        label = "Gravida (G)",
-                        tag = "patientGravida",
-                        enabled = enabled,
-                        singleLine = true,
-                        keyboardType = KeyboardType.Number,
-                        modifier = Modifier.weight(1f),
-                        error = draft.errors.any { it == PatientValidationError.GPA_ALL_OR_NONE || it == PatientValidationError.INVALID_GPA },
-                    )
-                    EditorField(
-                        value = draft.values.parity,
-                        onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.PARITY, it)) },
-                        label = "Parity (P)",
-                        tag = "patientParity",
-                        enabled = enabled,
-                        singleLine = true,
-                        keyboardType = KeyboardType.Number,
-                        modifier = Modifier.weight(1f),
-                        error = draft.errors.any { it == PatientValidationError.GPA_ALL_OR_NONE || it == PatientValidationError.INVALID_GPA },
-                    )
-                    EditorField(
-                        value = draft.values.abortion,
-                        onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.ABORTION, it)) },
-                        label = "Abortion (A)",
-                        tag = "patientAbortion",
-                        enabled = enabled,
-                        singleLine = true,
-                        keyboardType = KeyboardType.Number,
-                        modifier = Modifier.weight(1f),
-                        error = draft.errors.any { it == PatientValidationError.GPA_ALL_OR_NONE || it == PatientValidationError.INVALID_GPA },
-                    )
-                }
-
-                val existingPatient = state.patient(route.patientId)
-                if (existingPatient != null) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-                        shape = RoundedCornerShape(12.dp),
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    text = "Previous Pregnancies & Deliveries (${existingPatient.previousPregnancies.size})",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
-                                OutlinedButton(
-                                    onClick = {
-                                        onEvent(
-                                            AncEvent.StartPregnancyEditor(
-                                                patientId = existingPatient.id,
-                                                pregnancyId = null,
-                                                newPregnancyId = java.util.UUID.randomUUID().toString(),
-                                                editorSessionId = java.util.UUID.randomUUID().toString(),
-                                            ),
-                                        )
-                                    },
-                                    modifier = Modifier.minimumTouchTarget(),
-                                ) {
-                                    Text("+ Add Delivery")
-                                }
-                            }
-                            if (existingPatient.previousPregnancies.isEmpty()) {
-                                Text(
-                                    text = "No prior pregnancies recorded (Primigravida)",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            } else {
-                                existingPatient.previousPregnancies.forEach { pp ->
-                                    Text(
-                                        text = "• ${pp.dateText ?: "Past"} : ${pp.birthMethod ?: pp.outcomeText ?: "Delivery"} (${pp.outcome ?: "Live birth"})",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        fontWeight = FontWeight.SemiBold,
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                EditorField(
-                    value = draft.values.obstetricNotes,
-                    onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.OBSTETRIC_NOTES, it)) },
-                    label = stringResource(R.string.obstetric_notes),
-                    tag = "patientObstetricNotes",
-                    enabled = enabled,
-                )
-            }
-        }
-
-        // CARD 3: CLINICAL RISK & BLOOD GROUP
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(
-                    text = "3. Clinical Risk & Blood Group",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    ClinicalDropdownField(
-                        label = stringResource(R.string.blood_group),
-                        selectedValue = draft.values.bloodGroupText,
-                        options = PatientVocabulary.bloodGroups.toList(),
-                        onSelect = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.BLOOD_GROUP, it)) },
-                        enabled = enabled,
-                        tag = "bloodGroupDropdown",
-                        modifier = Modifier.weight(1f),
-                    )
-                    ClinicalDropdownField(
-                        label = stringResource(R.string.manual_risk),
-                        selectedValue = draft.values.riskLevel,
-                        options = PatientVocabulary.riskLevels.toList(),
-                        onSelect = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.RISK_LEVEL, it)) },
-                        enabled = enabled,
-                        tag = "riskDropdown",
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-
-                EditorField(
-                    value = draft.values.clinicalAttention,
-                    onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.CLINICAL_ATTENTION, it)) },
-                    label = "Clinical Attention & High-Risk Alerts (One alert per line)",
-                    tag = "patientClinicalAttention",
-                    enabled = enabled,
-                )
-            }
-        }
-
-        // Security Vault Indicator
         Row(
             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
             horizontalArrangement = Arrangement.Center,
@@ -399,7 +97,7 @@ fun PatientEditor(
             )
             Spacer(Modifier.width(6.dp))
             Text(
-                text = "Photos are stored on this phone (not encrypted separately)",
+                text = stringResource(R.string.photos_stored_on_phone_notice),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -410,6 +108,159 @@ fun PatientEditor(
             saveTag = "savePatient",
             onCancel = { onEvent(AncEvent.CancelEditor) },
             onSave = { onEvent(AncEvent.SubmitPatientProfile) },
+        )
+    }
+}
+
+@Composable
+private fun EditorSectionCard(title: String, content: @Composable () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            content()
+        }
+    }
+}
+
+/** Name, phone (optional), age (required) and address. Date of birth stays in the draft untouched. */
+@Composable
+fun IdentityFields(
+    draft: PatientDraft,
+    enabled: Boolean,
+    onEvent: (AncEvent) -> Unit,
+) {
+    EditorSectionCard(stringResource(R.string.identity_section_title)) {
+        EditorField(
+            value = draft.values.displayName,
+            onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.DISPLAY_NAME, it)) },
+            label = stringResource(R.string.full_name_required),
+            tag = "patientName",
+            enabled = enabled,
+            singleLine = true,
+            imeAction = ImeAction.Next,
+            error = PatientValidationError.FULL_NAME_REQUIRED in draft.errors,
+        )
+        EditorField(
+            value = draft.values.phone,
+            onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.PHONE, it)) },
+            label = stringResource(R.string.phone_optional),
+            tag = "patientPhone",
+            enabled = enabled,
+            singleLine = true,
+            keyboardType = KeyboardType.Phone,
+        )
+        EditorField(
+            value = draft.values.ageText,
+            onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.AGE_TEXT, it)) },
+            label = stringResource(R.string.age_required),
+            tag = "patientAgeText",
+            enabled = enabled,
+            singleLine = true,
+            keyboardType = KeyboardType.Number,
+        )
+        EditorField(
+            value = draft.values.addressText,
+            onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.ADDRESS_TEXT, it)) },
+            label = stringResource(R.string.address),
+            tag = "patientAddress",
+            enabled = enabled,
+            singleLine = true,
+        )
+    }
+}
+
+/** Gravida, parity, abortion, obstetric notes, risk level, blood group and clinical attention. */
+@Composable
+fun ObstetricFields(
+    draft: PatientDraft,
+    enabled: Boolean,
+    onEvent: (AncEvent) -> Unit,
+) {
+    EditorSectionCard(stringResource(R.string.obstetric_risk_section_title)) {
+        val gpaError = draft.errors.any {
+            it == PatientValidationError.GPA_ALL_OR_NONE || it == PatientValidationError.INVALID_GPA
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            EditorField(
+                value = draft.values.gravida,
+                onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.GRAVIDA, it)) },
+                label = stringResource(R.string.gravida_short),
+                tag = "patientGravida",
+                enabled = enabled,
+                singleLine = true,
+                keyboardType = KeyboardType.Number,
+                modifier = Modifier.weight(1f),
+                error = gpaError,
+            )
+            EditorField(
+                value = draft.values.parity,
+                onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.PARITY, it)) },
+                label = stringResource(R.string.parity_short),
+                tag = "patientParity",
+                enabled = enabled,
+                singleLine = true,
+                keyboardType = KeyboardType.Number,
+                modifier = Modifier.weight(1f),
+                error = gpaError,
+            )
+            EditorField(
+                value = draft.values.abortion,
+                onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.ABORTION, it)) },
+                label = stringResource(R.string.abortion_short),
+                tag = "patientAbortion",
+                enabled = enabled,
+                singleLine = true,
+                keyboardType = KeyboardType.Number,
+                modifier = Modifier.weight(1f),
+                error = gpaError,
+            )
+        }
+        EditorField(
+            value = draft.values.obstetricNotes,
+            onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.OBSTETRIC_NOTES, it)) },
+            label = stringResource(R.string.obstetric_notes),
+            tag = "patientObstetricNotes",
+            enabled = enabled,
+        )
+        ClinicalDropdownField(
+            label = stringResource(R.string.manual_risk),
+            selectedValue = draft.values.riskLevel,
+            options = PatientVocabulary.riskLevels.toList(),
+            onSelect = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.RISK_LEVEL, it)) },
+            enabled = enabled,
+            tag = "riskDropdown",
+        )
+        ClinicalDropdownField(
+            label = stringResource(R.string.blood_group),
+            selectedValue = draft.values.bloodGroupText,
+            options = PatientVocabulary.bloodGroups.toList(),
+            onSelect = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.BLOOD_GROUP, it)) },
+            enabled = enabled,
+            tag = "bloodGroupDropdown",
+        )
+        EditorField(
+            value = draft.values.clinicalAttention,
+            onValueChange = { onEvent(AncEvent.PatientDraftChanged(PatientDraftField.CLINICAL_ATTENTION, it)) },
+            label = stringResource(R.string.clinical_attention_label),
+            tag = "patientClinicalAttention",
+            enabled = enabled,
         )
     }
 }
@@ -574,7 +425,7 @@ internal fun ClinicalDropdownField(
 
     Box(modifier = modifier) {
         OutlinedTextField(
-            value = if (selectedValue.isBlank()) "Not specified" else selectedValue,
+            value = if (selectedValue.isBlank()) stringResource(R.string.not_specified) else selectedValue,
             onValueChange = {},
             readOnly = true,
             label = { Text(label) },
@@ -597,7 +448,7 @@ internal fun ClinicalDropdownField(
             onDismissRequest = { expanded = false },
         ) {
             DropdownMenuItem(
-                text = { Text("Not specified (Empty)") },
+                text = { Text(stringResource(R.string.not_specified_empty)) },
                 onClick = {
                     onSelect("")
                     expanded = false

@@ -518,9 +518,18 @@ class AncWorkflowTest {
         )
         mountFixture(LayoutFixture.narrowPhone(), state)
         compose.onNodeWithTag("datingEditor").assertIsDisplayed()
-        compose.onNodeWithTag("lmpDate").assertIsDisplayed()
+        compose.onNodeWithTag("datingMethodDropdown").assertIsDisplayed()
         compose.onNodeWithTag("ultrasoundEdd").assertIsDisplayed()
         compose.onNodeWithTag("agreedEdd").assertIsDisplayed()
+        // LMP is hidden for an Ultrasound-dated patient; picking LMP in the dropdown shows it.
+        compose.onNodeWithTag("lmpDate").assertDoesNotExist()
+        state = AncReducer.reduce(
+            state,
+            AncEvent.DatingDraftChanged(com.sherifradwan.ancnative.state.DatingDraftField.DATING_METHOD, "LMP"),
+        )
+        mountFixture(LayoutFixture.narrowPhone(), state)
+        compose.onNodeWithTag("lmpDate").assertIsDisplayed()
+        compose.onNodeWithTag("ultrasoundEdd").assertDoesNotExist()
         compose.onNodeWithTag("datingNotes").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("saveDating").performScrollTo().assertIsDisplayed()
 

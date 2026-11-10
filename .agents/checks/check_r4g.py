@@ -8,7 +8,7 @@ Textual source contract only; verifies nothing at runtime. Comments are stripped
   S172 the intake dating rule goes through the engine's per-method rule.
   S173 the post-save dating write uses the rule's result, not a hard-coded LMP.
   S174 the new fields are saved and restored with the patient draft.
-  S175 the new-patient form calls the preview; the old LMP-only engine function is gone.
+  S175 the patient editor does not call the old LMP-only functions and calculateForLmp is gone from main sources.
 """
 import re
 import sys
@@ -116,14 +116,12 @@ def check_s174():
 def check_s175():
     problems = []
     ed = code(EDITOR)
-    if "intakeDatingPreview(" not in ed:
-        problems.append("PatientEditor.kt does not call intakeDatingPreview")
     for banned in ("eddFromLmp(", "calculateForLmp("):
         if banned in ed:
             problems.append("PatientEditor.kt still calls " + banned)
     if defined_in(r"\bcalculateForLmp\b"):
         problems.append("calculateForLmp still exists in main sources")
-    record("S175 form calls the preview; LMP-only engine function gone", not problems, "; ".join(problems))
+    record("S175 editor free of LMP-only calls; calculateForLmp gone", not problems, "; ".join(problems))
 
 
 check_s170()

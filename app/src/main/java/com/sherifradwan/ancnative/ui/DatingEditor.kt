@@ -30,7 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
-import com.sherifradwan.ancnative.model.canonicalDatingMethod
+import com.sherifradwan.ancnative.model.formatDmy
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
@@ -87,93 +87,54 @@ fun DatingEditor(
                     color = MaterialTheme.colorScheme.primary,
                 )
 
-                ClinicalDateField(
-                    value = draft.values.lmpDate,
-                    onValueChange = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.LMP_DATE, it)) },
-                    label = stringResource(R.string.lmp_date),
-                    tag = "lmpDate",
-                    enabled = enabled,
-                    error = draft.errors.contains(ClinicalValidationError.INVALID_DATE),
-                    showTodayButton = true,
+                val methodOptions = listOf(
+                    "LMP" to stringResource(R.string.lmp_date),
+                    "Ultrasound" to stringResource(R.string.ultrasound),
+                    "IVF_TRANSFER" to stringResource(R.string.ivf_transfer_date),
+                    "Clinical" to stringResource(R.string.dating_method_clinical),
                 )
-
-                ClinicalDateField(
-                    value = draft.values.ultrasoundEdd,
-                    onValueChange = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.ULTRASOUND_EDD, it)) },
-                    label = stringResource(R.string.ultrasound_edd),
-                    tag = "ultrasoundEdd",
-                    enabled = enabled,
-                    error = draft.errors.contains(ClinicalValidationError.INVALID_DATE),
-                    showTodayButton = false,
-                )
-
-                // Agreed / Adjudicated EDD (Allows overriding if clinician agrees on a different date)
-                ClinicalDateField(
-                    value = draft.values.agreedEdd,
-                    onValueChange = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.AGREED_EDD, it)) },
-                    label = stringResource(R.string.agreed_edd),
-                    tag = "agreedEdd",
-                    enabled = enabled,
-                    error = draft.errors.contains(ClinicalValidationError.INVALID_DATE),
-                    showTodayButton = false,
-                )
-            }
-        }
-
-        // CARD 2: DATING METHOD & ESTIMATED DUE DATE PREVIEW
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(
-                    text = "2. Dating Method & GA Calculation",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-
-                // Dating Method Selector (Progressive Disclosure)
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        text = stringResource(R.string.dating_method_select_hint),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        listOf(
-                            "LMP" to stringResource(R.string.lmp_date),
-                            "Ultrasound" to stringResource(R.string.ultrasound),
-                            "IVF_TRANSFER" to stringResource(R.string.ivf_transfer_date),
-                            "Clinical" to stringResource(R.string.agreed_edd),
-                        ).forEach { (methodKey, methodLabel) ->
-                            val isSelected = draft.values.datingMethod.equals(methodKey, ignoreCase = true)
-                            FilterChip(
-                                selected = isSelected,
-                                onClick = {
-                                    onEvent(AncEvent.DatingDraftChanged(DatingDraftField.DATING_METHOD, methodKey))
-                                },
-                                label = { Text(methodLabel) },
-                                enabled = enabled,
-                                modifier = Modifier.testTag("datingMethod_$methodKey"),
-                            )
+                val visibility = datingFieldVisibility(draft.values.datingMethod)
+                val selectedMethod = visibility.selectedMethod
+                ClinicalDropdownField(
+                    label = stringResource(R.string.dating_method),
+                    selectedValue = methodOptions.firstOrNull { it.first == selectedMethod }?.second ?: "",
+                    options = methodOptions.map { it.second },
+                    onSelect = { picked ->
+                        methodOptions.firstOrNull { it.second == picked }?.let { (key, _) ->
+                            onEvent(AncEvent.DatingDraftChanged(DatingDraftField.DATING_METHOD, key))
                         }
-                    }
+                    },
+                    enabled = enabled,
+                    tag = "datingMethodDropdown",
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                if (visibility.showLmp) {
+                    ClinicalDateField(
+                        value = draft.values.lmpDate,
+                        onValueChange = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.LMP_DATE, it)) },
+                        label = stringResource(R.string.lmp_date),
+                        tag = "lmpDate",
+                        enabled = enabled,
+                        error = draft.errors.contains(ClinicalValidationError.INVALID_DATE),
+                        showTodayButton = true,
+                    )
+                }
+
+                if (visibility.showUltrasoundEdd) {
+                    ClinicalDateField(
+                        value = draft.values.ultrasoundEdd,
+                        onValueChange = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.ULTRASOUND_EDD, it)) },
+                        label = stringResource(R.string.ultrasound_edd),
+                        tag = "ultrasoundEdd",
+                        enabled = enabled,
+                        error = draft.errors.contains(ClinicalValidationError.INVALID_DATE),
+                        showTodayButton = false,
+                    )
                 }
 
                 // IVF Specific inputs
-                if (canonicalDatingMethod(draft.values.datingMethod) == "IVF_TRANSFER") {
+                if (visibility.showIvf) {
                     ClinicalDateField(
                         value = draft.values.transferDate,
                         onValueChange = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.TRANSFER_DATE, it)) },
@@ -218,6 +179,43 @@ fun DatingEditor(
                         }
                     }
                 }
+
+
+                if (!visibility.showLmp) RecordedDateNote(R.string.lmp_on_record, draft.values.lmpDate)
+                if (!visibility.showUltrasoundEdd) RecordedDateNote(R.string.ultrasound_edd_on_record, draft.values.ultrasoundEdd)
+                if (!visibility.showIvf) RecordedDateNote(R.string.transfer_date_on_record, draft.values.transferDate)
+
+                // Agreed / Adjudicated EDD (Allows overriding if clinician agrees on a different date)
+                ClinicalDateField(
+                    value = draft.values.agreedEdd,
+                    onValueChange = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.AGREED_EDD, it)) },
+                    label = stringResource(R.string.agreed_edd),
+                    tag = "agreedEdd",
+                    enabled = enabled,
+                    error = draft.errors.contains(ClinicalValidationError.INVALID_DATE),
+                    showTodayButton = false,
+                )
+            }
+        }
+
+        // CARD 2: DATING METHOD & ESTIMATED DUE DATE PREVIEW
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    text = "2. Dating Method & GA Calculation",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
 
                 // Live calculation card if EDD or GA is available
                 AnimatedVisibility(visible = calculatedEdd != null || calculatedGa != null) {
@@ -322,4 +320,14 @@ fun DatingEditor(
             onSave = { onEvent(AncEvent.SubmitDating) },
         )
     }
+}
+
+@Composable
+private fun RecordedDateNote(labelRes: Int, isoValue: String) {
+    val shown = formatDmy(isoValue) ?: return
+    Text(
+        text = stringResource(labelRes, shown),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }

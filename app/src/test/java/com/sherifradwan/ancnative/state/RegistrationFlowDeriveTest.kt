@@ -34,22 +34,25 @@ class RegistrationFlowDeriveTest {
     private fun patient(
         name: String = "Mona",
         phone: String? = "0100",
+        age: String? = "30",
         g: Long? = 1, p: Long? = 0, a: Long? = 0,
         dating: DemoPatientDating? = dating(),
         status: String? = "active",
         history: String? = null,
         pregnancies: Int = 0,
     ) = DemoPatient(
-        id = "p1", caseId = "c", displayName = name, dateOfBirth = null, phone = phone, visits = emptyList(),
+        id = "p1", caseId = "c", displayName = name, dateOfBirth = null, phone = phone, ageText = age, visits = emptyList(),
         status = status, gravida = g, parity = p, abortion = a, dating = dating, medicalHistory = history,
         previousPregnancies = (1..pregnancies).map { pregnancy(it) },
     )
 
     @Test
-    fun rf6_identity_done_and_blank_phone_negative() {
+    fun rf6_identity_done_needs_name_and_age_not_phone() {
         assertEquals(StepStatus.DONE, deriveStepStatuses(patient())[IDENTITY])
-        assertEquals(StepStatus.PENDING, deriveStepStatuses(patient(phone = "   "))[IDENTITY])
-        assertEquals(StepStatus.PENDING, deriveStepStatuses(patient(phone = null))[IDENTITY])
+        assertEquals(StepStatus.DONE, deriveStepStatuses(patient(phone = null))[IDENTITY])
+        assertEquals(StepStatus.DONE, deriveStepStatuses(patient(phone = "   "))[IDENTITY])
+        assertEquals(StepStatus.PENDING, deriveStepStatuses(patient(age = "   "))[IDENTITY])
+        assertEquals(StepStatus.PENDING, deriveStepStatuses(patient(age = null))[IDENTITY])
         assertEquals(StepStatus.PENDING, deriveStepStatuses(patient(name = " "))[IDENTITY])
     }
 
@@ -124,8 +127,11 @@ class RegistrationFlowDeriveTest {
 
     @Test
     fun rf7_incomplete_cases() {
-        assertTrue(isRegistrationIncomplete(patient(phone = null)))
-        assertTrue(isRegistrationIncomplete(patient(phone = "   ")))
+        assertFalse(isRegistrationIncomplete(patient(phone = null)))
+        assertFalse(isRegistrationIncomplete(patient(phone = "   ")))
+        assertTrue(isRegistrationIncomplete(patient(age = null)))
+        assertTrue(isRegistrationIncomplete(patient(age = "   ")))
+        assertTrue(isRegistrationIncomplete(patient(name = "  ")))
         assertTrue(isRegistrationIncomplete(patient(dating = null)))
         assertTrue(isRegistrationIncomplete(patient(g = 1, p = null, a = null)))
         assertTrue(isRegistrationIncomplete(patient(g = null, p = 1, a = 0)))
@@ -142,7 +148,7 @@ class RegistrationFlowDeriveTest {
 
     @Test
     fun rf7_archived_is_never_incomplete() {
-        assertFalse(isRegistrationIncomplete(patient(status = "archived", phone = null, dating = null, g = null, p = null, a = null)))
+        assertFalse(isRegistrationIncomplete(patient(status = "archived", age = null, dating = null, g = null, p = null, a = null)))
     }
 
     @Test
@@ -166,11 +172,14 @@ class RegistrationFlowDeriveTest {
     fun s2_row_flag_complete_patient_false() = assertRowFlag(patient(), false)
 
     @Test
-    fun s2_row_flag_blank_phone_true() = assertRowFlag(patient(phone = "  "), true)
+    fun s2_row_flag_blank_age_true() = assertRowFlag(patient(age = "  "), true)
+
+    @Test
+    fun s2_row_flag_blank_phone_false() = assertRowFlag(patient(phone = "  "), false)
 
     @Test
     fun s2_row_flag_no_dating_true() = assertRowFlag(patient(dating = null), true)
 
     @Test
-    fun s2_row_flag_archived_false() = assertRowFlag(patient(phone = null, dating = null, status = "archived"), false)
+    fun s2_row_flag_archived_false() = assertRowFlag(patient(age = null, dating = null, status = "archived"), false)
 }

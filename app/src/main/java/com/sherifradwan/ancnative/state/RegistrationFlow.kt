@@ -97,7 +97,7 @@ fun deriveStepStatuses(patient: DemoPatient): Map<RegistrationStep, StepStatus> 
     val expectedPregnancies = suggestedPregnancyCount(patient.gravida, patient.parity, patient.abortion)
     val done = mapOf(
         RegistrationStep.IDENTITY to
-            (!patient.displayName.isBlank() && !patient.phone.isNullOrBlank()),
+            (patient.displayName.isNotBlank() && !patient.ageText.isNullOrBlank()),
         RegistrationStep.DATING to (GestationalAgeEngine.calculateEstimatedDueDate(patient.dating) != null),
         RegistrationStep.OBSTETRIC to
             (patient.gravida != null && patient.parity != null && patient.abortion != null),
