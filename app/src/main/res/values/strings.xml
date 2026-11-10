@@ -307,6 +307,7 @@
     <string name="all_filter">All</string>
     <string name="high_risk_filter">High Risk</string>
     <string name="medium_risk_filter">Medium Risk</string>
+    <string name="moderate_risk">Moderate</string>
     <string name="low_risk_filter">Low Risk</string>
     <string name="normal_risk_filter">Normal Risk</string>
     <string name="no_clinical_attention_recorded">No clinical attention recorded</string>

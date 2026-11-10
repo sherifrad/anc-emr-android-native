@@ -111,12 +111,19 @@ fun PatientDirectoryCard(
                     .padding(start = 12.dp, top = 10.dp, end = 8.dp, bottom = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                // Header: Patient Name + Risk / BP Alert Badge + MoreVert Menu
+                // Header: leading Risk badge (High / Moderate) + Patient Name + Severe BP chip + MoreVert Menu
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
+                    if (row.isHighRisk) {
+                        ClinicalRiskBadge(isHighRisk = true)
+                        Spacer(Modifier.width(6.dp))
+                    } else if (row.riskTier == PatientRiskTier.MEDIUM) {
+                        ClinicalRiskBadge(isHighRisk = false, isModerate = true)
+                        Spacer(Modifier.width(6.dp))
+                    }
+
                     Text(
                         text = row.displayName,
                         style = MaterialTheme.typography.titleMedium,
@@ -136,10 +143,6 @@ fun PatientDirectoryCard(
                     ) {
                         if (row.isSevereBp) {
                             BpAlertChip(R.string.bp_badge_severe, isSevere = true)
-                        } else if (row.isHighRisk) {
-                            ClinicalRiskBadge(isHighRisk = true)
-                        } else if (row.riskTier == PatientRiskTier.MEDIUM) {
-                            ClinicalRiskBadge(isHighRisk = false)
                         }
 
                         IconButton(

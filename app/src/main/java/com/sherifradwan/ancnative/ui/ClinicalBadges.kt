@@ -262,8 +262,15 @@ internal fun ClinicalTagBadge(
 }
 
 @Composable
-fun ClinicalRiskBadge(isHighRisk: Boolean, modifier: Modifier = Modifier) {
-    if (isHighRisk) {
+fun ClinicalRiskBadge(isHighRisk: Boolean, modifier: Modifier = Modifier, isModerate: Boolean = false) {
+    if (isModerate && !isHighRisk) {
+        ClinicalTagBadge(
+            text = stringResource(R.string.moderate_risk),
+            showWarningIcon = false,
+            isError = false,
+            modifier = modifier,
+        )
+    } else if (isHighRisk) {
         ClinicalTagBadge(
             text = stringResource(R.string.high_risk),
             showWarningIcon = true,
