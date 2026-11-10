@@ -12,7 +12,6 @@ class SavedNoticeTextTest {
     private val expected = mapOf(
         SavedNotice.VISIT to R.string.visit_saved,
         SavedNotice.PATIENT to R.string.patient_saved,
-        SavedNotice.PATIENT_DATING_NOT_UPDATED to R.string.patient_saved_dating_not_updated,
         SavedNotice.HISTORIES to R.string.histories_saved,
         SavedNotice.PREGNANCY to R.string.pregnancy_saved,
         SavedNotice.ARCHIVED to R.string.patient_archived_notice,

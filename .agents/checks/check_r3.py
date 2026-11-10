@@ -3,7 +3,8 @@
 
 Stdlib only. Prints PASS/FAIL per sub-check, exits 1 if any FAIL.
 Textual source contract only; verifies nothing at runtime.
-  S1 AncViewModel.kt calls intakeDatingUpdate and has no "plusDays(280)".
+  S1 AncViewModel.kt has no intakeDatingUpdate or profileSavedNotice, state/IntakeDatingRule.kt
+     is gone, and the view model has no "plusDays(280)".
   S2 RecordsRepository.kt seed function has an includeDemoPatients parameter and
      every patient-owned insert sits behind it (inserts after the metadata insert
      appear only inside an `if (includeDemoPatients)` block).
@@ -43,7 +44,12 @@ if vm is None:
     record("S1 AncViewModel.kt readable", False, "missing file")
 else:
     code = strip_comments(vm)
-    record("S1a AncViewModel.kt calls intakeDatingUpdate(", "intakeDatingUpdate(" in code, "no call")
+    dead = [n for n in ("intakeDatingUpdate", "profileSavedNotice") if n in code]
+    if re.search(r"\bSaveDatingCommand\s*\(", code):
+        dead.append("SaveDatingCommand(")
+    if (MAIN / "state/IntakeDatingRule.kt").exists():
+        dead.append("state/IntakeDatingRule.kt exists")
+    record("S1a AncViewModel.kt has no intakeDatingUpdate/profileSavedNotice and IntakeDatingRule.kt is gone", not dead, "still present: " + ", ".join(dead))
     record("S1b AncViewModel.kt has no plusDays(280)", "plusDays(280" not in code, "plusDays(280) still present")
 
 # S2

@@ -498,34 +498,8 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
             when (result) {
                 is PatientCommandOutcome.Committed -> {
                     frozenPatientCommand = null
-                    var patients = result.snapshot.patients
-                    var notice = command.savedNotice()
-                    if (command is SavePatientProfileCommand) {
-                        val currentDraft = _state.value.patientDraft
-                        val committedPatient = result.snapshot.patients.firstOrNull { it.id == command.patientId }
-                        val datingUpdate = currentDraft?.let { intakeDatingUpdate(committedPatient?.dating, it.values) }
-                        if (datingUpdate != null) {
-                            val datingCmd = SaveDatingCommand(
-                                operationUuid = UUID.randomUUID().toString(),
-                                editorSessionId = UUID.randomUUID().toString(),
-                                patientId = command.patientId,
-                                expectedPatientRevision = committedPatient?.revision ?: 1L,
-                                lmpDate = datingUpdate.lmpDate,
-                                ultrasoundEdd = datingUpdate.ultrasoundEdd,
-                                agreedEdd = datingUpdate.agreedEdd,
-                                datingMethod = datingUpdate.datingMethod,
-                                notes = committedPatient?.dating?.notes ?: datingUpdate.note,
-                                transferDate = datingUpdate.transferDate,
-                                embryoAgeDays = datingUpdate.embryoAgeDays,
-                            )
-                            val datingResult = controller.execute(datingCmd, sessionEpoch, onReconciliation = {})
-                            val datingSaved = datingResult is ClinicalCommandOutcome.Committed
-                            if (datingResult is ClinicalCommandOutcome.Committed) {
-                                patients = datingResult.snapshot.patients
-                            }
-                            notice = profileSavedNotice(datingAttempted = true, datingSaved = datingSaved)
-                        }
-                    }
+                    val patients = result.snapshot.patients
+                    val notice = command.savedNotice()
                     updateState {
                         AncReducer.reduce(
                             it,

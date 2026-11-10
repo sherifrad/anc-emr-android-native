@@ -14,12 +14,12 @@ Textual source contract only; verifies nothing at runtime.
   S65 storage/SaveVisitCommand.kt and storage/RecordsRepository.kt contain no
       "isSyntheticEdit = true" wording (Q82: both write false); strings.xml has
       no "Synthetic patient record saved".
-  S66 state/AncViewModel.kt calls profileSavedNotice( and no longer contains the
-      bare statement controller.execute(datingCmd, sessionEpoch) {}; the list of
-      patients handed to RecordCommitted comes from the dating snapshot when it
-      is saved (see the spec; textual check covers the notice side);
-      state/AncState.kt maps SavedNotice.PATIENT_DATING_NOT_UPDATED;
-      strings.xml defines patient_saved_dating_not_updated.
+  S66 (also: savedNotice() maps SavePatientProfileCommand to SavedNotice.PATIENT, and the
+      view model never constructs SaveDatingCommand) the removed intake-dating notice stays removed: no profileSavedNotice or
+      PATIENT_DATING_NOT_UPDATED anywhere in main, no
+      patient_saved_dating_not_updated in strings.xml, and the fire-and-forget
+      statement controller.execute(datingCmd, sessionEpoch) {} stays absent
+      from state/AncViewModel.kt.
 """
 import re
 import sys
@@ -168,36 +168,32 @@ def check_s66():
     vm = read(MAIN / "state/AncViewModel.kt")
     if vm is None:
         problems.append("state/AncViewModel.kt missing")
-    else:
-        vm = strip_comments(vm)
-        if "profileSavedNotice(" not in vm:
-            problems.append("AncViewModel.kt does not call profileSavedNotice(")
-        if re.search(
-            r"controller\s*\.\s*execute\s*\(\s*datingCmd\s*,\s*sessionEpoch\s*\)\s*\{\s*\}",
-            vm,
-            flags=re.S,
-        ):
-            problems.append("AncViewModel.kt still contains the fire-and-forget statement controller.execute(datingCmd, sessionEpoch) {}")
-
-    # The notice -> string mapping lives in SavedNotice?.stringRes() in state/AncState.kt (JVM-testable);
-    # WorkspaceScreen.kt is gone and the patient hub just renders that string.
-    st = read(MAIN / "state/AncState.kt")
-    if st is None:
-        problems.append("state/AncState.kt missing")
-    elif not re.search(
-        r"SavedNotice\.PATIENT_DATING_NOT_UPDATED\s*->\s*R\.string\.patient_saved_dating_not_updated\b",
-        strip_comments(st),
+    elif re.search(
+        r"controller\s*\.\s*execute\s*\(\s*datingCmd\s*,\s*sessionEpoch\s*\)\s*\{\s*\}",
+        strip_comments(vm),
+        flags=re.S,
     ):
-        problems.append("AncState.kt does not map SavedNotice.PATIENT_DATING_NOT_UPDATED to R.string.patient_saved_dating_not_updated")
+        problems.append("AncViewModel.kt still contains the fire-and-forget statement controller.execute(datingCmd, sessionEpoch) {}")
+    if vm is not None:
+        vmcode = strip_comments(vm)
+        if re.search(r"\bSaveDatingCommand\s*\(", vmcode):
+            problems.append("AncViewModel.kt constructs SaveDatingCommand(")
+        if not re.search(r"is\s+SavePatientProfileCommand\s*->\s*SavedNotice\.PATIENT\b(?!_)", vmcode):
+            problems.append("savedNotice() no longer maps SavePatientProfileCommand to SavedNotice.PATIENT")
+
+    for path in sorted(MAIN.rglob("*.kt")):
+        code = strip_comments(path.read_text(encoding="utf-8"))
+        for name in ("profileSavedNotice", "PATIENT_DATING_NOT_UPDATED"):
+            if name in code:
+                problems.append(f"{path.name} mentions {name}")
 
     strings = read(RES / "strings.xml")
     if strings is None:
         problems.append("res/values/strings.xml missing")
-    else:
-        if not re.search(r'<string\s+name="patient_saved_dating_not_updated"\s*>', strip_xml_comments(strings)):
-            problems.append('strings.xml lacks <string name="patient_saved_dating_not_updated">')
+    elif "patient_saved_dating_not_updated" in strip_xml_comments(strings):
+        problems.append("strings.xml still defines patient_saved_dating_not_updated")
     record(
-        "S66 the profile save reports the dating outcome via profileSavedNotice and the UI maps it to patient_saved_dating_not_updated",
+        "S66 the removed intake-dating save notice (profileSavedNotice, PATIENT_DATING_NOT_UPDATED, its string) stays removed",
         not problems,
         "; ".join(problems),
     )

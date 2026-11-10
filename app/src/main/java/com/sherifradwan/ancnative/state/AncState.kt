@@ -220,7 +220,6 @@ fun SaveUiError?.stringRes(): Int = when (this) {
 enum class SavedNotice {
     VISIT,
     PATIENT,
-    PATIENT_DATING_NOT_UPDATED,
     HISTORIES,
     PREGNANCY,
     ARCHIVED,
@@ -249,7 +248,6 @@ enum class SavedNotice {
 }
 fun SavedNotice?.stringRes(): Int = when (this) {
     SavedNotice.PATIENT -> R.string.patient_saved
-    SavedNotice.PATIENT_DATING_NOT_UPDATED -> R.string.patient_saved_dating_not_updated
     SavedNotice.HISTORIES -> R.string.histories_saved
     SavedNotice.PREGNANCY -> R.string.pregnancy_saved
     SavedNotice.ARCHIVED -> R.string.patient_archived_notice

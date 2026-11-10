@@ -1,0 +1,601 @@
+
+[read] .agents/DESIGN_S6_REGISTRATION_UI.md
+
+[read] .agents/SPEC_REGISTRATION_FLOW.md
+
+[read] .agents/DESIGN_S5_REGISTRATION_DRIVER.md
+
+[read] .agents/mocks/registration_flow.html
+
+[Tokens] upload: 14758 download: 162 cache_read: 0 cache_write: 0
+
+  → 
+  → 
+  → 
+  →     1	# Design: S5b (remove the dead intake-dating path) and S6 (registration UI)
+    2	
+    3	* **Author:** planner, 2026-11-10. Read-only pass; nothing here is built.
+    4	* **Inputs:** `.agents/SPEC_REGISTRATION_FLOW.md` (owner changes at the bottom win), `.agents/DESIGN_S5_REGISTRATION_DRIVER.md` (committed, 7f16290), approved mock `.agents/mocks/registration_flow.html` (read; the .png was not opened).
+    5	* **Convention for claims:** `file:line` means I read that line. Paths are under `app/src/main/java/com/sherifradwan/ancnative/` unless they start with `.agents`, `app/src/test` or `app/src/androidTest`. UNVERIFIED means I did not check it.
+    6	* **Risk level:** S5b edits level-3 paths (AncViewModel, AncState, draft mapping). S6 edits `ui/` only, plus a few pure functions in `state/RegistrationFlow.kt`. Per AGENTS.md, S5b needs a frontier-tier review and an independent test review. S6 pure-logic part is level 2.
+    7	
+    8	## Part 1. S5b: remove the dead intake-dating path
+… truncated: 161 more lines, 29006 more chars
+    1	# Spec: registration step flow (new and existing patients). Owner decisions 2026-11-10. No schema change.
+    2	
+    3	Flow: five steps, existing editors stay separate screens: 1 Identity (name and phone required, address, age; no date of birth), 2 Dating (DatingEditor), 3 Obstetric history (G/P/A, obstetric notes), 4 Histories (OtherHistoriesEditor, never reachable from UI today), 5 Previous pregnancies (ask "how many?" first, then existing PreviousPregnancyEditor). Segmented progress header with text "Step 2 of 5: Dating"; skipped step differs from done by text/glyph, not colour. Back / Skip (steps 2-5) / Next ("Finish" on last) at the bottom. Nothing automatic. Each step saves on its own. Incomplete patients are marked in the directory and can resume from the hub.
+    4	
+    5	Design (from the read-only plan):
+    6	- New pure file state/RegistrationFlow.kt: RegistrationStep, StepStatus, RegistrationFlow, FlowEvent, reduce, deriveStepStatuses(patient), isRegistrationIncomplete(patient), suggestedPregnancyCount(g,p,a) = if g known max(g-1,0) else p+a (G counts the current pregnancy, so G = P + A + 1; ObstetricHistory.kt previousDeliverySummary only defaults G to 1 and has no count rule), clamped 0..20.
+    7	- AncState gets ONE field `registrationFlow` and ONE `AncEvent.Flow` line (AncState.kt is over 1500 lines, keep edits to a few lines). clearDrafts must not clear the flow. Flow ends on Finish, Back from step 1, Lock.
+    8	- Driver in new state/RegistrationFlowDriver.kt (chain-after-commit pattern of pendingChainedLab). Flow moves always go through Start*Editor with a fresh editorSessionId, never PendingAction.Navigate (it creates no draft). Dirty draft: existing discard dialog first.
+… truncated: 18 more lines, 4546 more chars
+    1	# Design: registration flow state and driver (slice S5), revision 3
+    2	
+    3	* **Author:** sherifrad
+    4	* **Date:** 2026-11-10
+    5	* **Status:** revision 3 adds four findings from agy Argon (age on a legacy patient in step 1, exit on the last step, no-op events, flow editors started outside the flow). Revised after independent review of revision 1 (`.agents/fleet-runs/s5_design_v1.md`; reports: EGM implementation readiness, agy Argon, Alphacode in `.agents/fleet-runs/s5_design_*`). Parent spec: `.agents/SPEC_REGISTRATION_FLOW.md`. Pure logic committed: `state/RegistrationFlow.kt`.
+    6	
+    7	## Overview
+    8	
+… truncated: 85 more lines, 17421 more chars
+    1	<!doctype html>
+    2	<html lang="en" dir="ltr">
+    3	<head>
+    4	<meta charset="utf-8">
+    5	<meta name="viewport" content="width=360,initial-scale=1">
+    6	<title>Registration flow mock</title>
+    7	<!--
+    8	Contrast (python3 contrast-check.py, normal text needs 4.5:1):
+… truncated: 220 more lines, 16751 more chars
+
+
+[read] app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt
+
+[read] app/src/main/java/com/sherifradwan/ancnative/state/IntakeDatingRule.kt
+
+[read] app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+
+[read] app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
+
+[Tokens] upload: 37260 download: 437 cache_read: 0 cache_write: 0
+
+  → 
+  → 
+  → 
+  →     1	package com.sherifradwan.ancnative.ui
+    2	
+    3	import androidx.compose.foundation.BorderStroke
+    4	import androidx.compose.foundation.clickable
+    5	import androidx.compose.foundation.layout.Arrangement
+    6	import androidx.compose.foundation.layout.Box
+    7	import androidx.compose.foundation.layout.BoxWithConstraints
+    8	import androidx.compose.foundation.layout.Column
+… truncated: 486 more lines, 21692 more chars
+    1	package com.sherifradwan.ancnative.state
+    2	
+    3	import com.sherifradwan.ancnative.model.ClinicalVocabulary
+    4	import com.sherifradwan.ancnative.model.DemoPatientDating
+    5	import com.sherifradwan.ancnative.model.GestationalAgeEngine
+    6	import com.sherifradwan.ancnative.model.eddFromScan
+    7	import com.sherifradwan.ancnative.model.parseCanonicalIsoDateOrNull
+    8	import com.sherifradwan.ancnative.model.parseIsoDateOrNull
+… truncated: 138 more lines, 6871 more chars
+ 1800	            fetalHeartRate = parsedFindings.fetalHeartRate.orEmpty(),
+ 1801	            oedema = parsedFindings.oedema.orEmpty(),
+ 1802	            fetalMovements = parsedFindings.fetalMovements.orEmpty(),
+ 1803	            urineProtein = parsedFindings.urineProtein.orEmpty(),
+ 1804	        )
+ 1805	    }
+ 1806	
+ 1807	    private fun DemoPatient.toPatientDraftValues() = PatientDraftValues(
+… truncated: 91 more lines, 4232 more chars
+  500	                    frozenPatientCommand = null
+  501	                    var patients = result.snapshot.patients
+  502	                    var notice = command.savedNotice()
+  503	                    if (command is SavePatientProfileCommand) {
+  504	                        val currentDraft = _state.value.patientDraft
+  505	                        val committedPatient = result.snapshot.patients.firstOrNull { it.id == command.patientId }
+  506	                        val datingUpdate = currentDraft?.let { intakeDatingUpdate(committedPatient?.dating, it.values) }
+  507	                        if (datingUpdate != null) {
+… truncated: 94 more lines, 5255 more chars
+
+
+[read] app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+
+[read] app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+
+[read] app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+
+[Tokens] upload: 49337 download: 217 cache_read: 35072 cache_write: 0
+
+  → 
+  → 
+  →   460	    val addressText: String = "",
+  461	    val bloodGroupText: String = "",
+  462	    val riskLevel: String = "",
+  463	    val gravida: String = "",
+  464	    val parity: String = "",
+  465	    val abortion: String = "",
+  466	    val obstetricNotes: String = "",
+  467	    val clinicalAttention: String = "",
+… truncated: 194 more lines, 6776 more chars
+  200	    CONFIRMED_NOT_SAVED,
+  201	    STALE_OR_CONFLICT,
+  202	    CROSS_PATIENT_REJECTED,
+  203	    DUPLICATE_OPERATION_MISMATCH,
+  204	    PATIENT_ARCHIVED,
+  205	    CASE_ID_CONFLICT,
+  206	    STORAGE_ERROR,
+  207	    OUTCOME_UNRESOLVED,
+… truncated: 94 more lines, 4023 more chars
+  375	fun AncState.canRunUndo(token: String): Boolean =
+  376	    undoOffer?.let { it.token == token && it.phase == UndoPhase.RUNNING } == true
+  377	
+  378	/** True while an Undo that would remove or restore this record is in flight: the record must not be opened for edit. */
+  379	fun AncState.undoRunningFor(recordId: String): Boolean =
+  380	    undoOffer?.let { it.phase == UndoPhase.RUNNING && it.recordId == recordId } == true
+  381	
+  382	/** Medication saves are blocked while an Undo is in flight. */
+… truncated: 94 more lines, 3770 more chars
+
+
+[read] app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+
+[read] app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+
+[Tokens] upload: 55406 download: 158 cache_read: 48224 cache_write: 0
+
+  → 
+  →    70	}
+   71	
+   72	enum class DraftField {
+   73	    DATE,
+   74	    BLOOD_PRESSURE,
+   75	    WEIGHT,
+   76	    FINDINGS,
+   77	    NOTES,
+… truncated: 144 more lines, 4023 more chars
+  650	}
+  651	
+  652	data class AncState(
+  653	    val patients: List<DemoPatient>,
+  654	    val vaultState: VaultState = VaultState.Locked,
+  655	    val route: AncRoute = AncRoute.PatientList,
+  656	    val searchQuery: String = "",
+  657	    val draft: VisitDraft? = null,
+… truncated: 94 more lines, 5039 more chars
+
+
+[read] app/src/main/java/com/sherifradwan/ancnative/state/RegistrationFlow.kt
+
+[Tokens] upload: 59161 download: 67 cache_read: 52608 cache_write: 0
+
+  →     1	package com.sherifradwan.ancnative.state
+    2	
+    3	import com.sherifradwan.ancnative.model.DemoPatient
+    4	import com.sherifradwan.ancnative.model.GestationalAgeEngine
+    5	
+    6	enum class RegistrationStep(val title: String) {
+    7	    IDENTITY("Identity"),
+    8	    DATING("Dating"),
+… truncated: 150 more lines, 7571 more chars
+
+
+[read] app/src/main/java/com/sherifradwan/ancnative/state/AncRoute.kt
+
+[read] app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+
+[Tokens] upload: 61765 download: 159 cache_read: 56992 cache_write: 0
+
+  → 
+  → Error: File not found: app/src/main/java/com/sherifradwan/ancnative/state/AncRoute.kt
+Did you mean: /Users/sherifgamalradwan/anc-emr-android-native/.claude/worktrees/clever-goldwasser-e086ce/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+    1	package com.sherifradwan.ancnative.ui.patienthub.tabs
+    2	
+    3	import androidx.compose.foundation.layout.Arrangement
+    4	import androidx.compose.foundation.layout.Column
+    5	import androidx.compose.foundation.layout.fillMaxSize
+    6	import androidx.compose.foundation.layout.padding
+    7	import androidx.compose.foundation.rememberScrollState
+    8	import androidx.compose.foundation.verticalScroll
+… truncated: 118 more lines, 5069 more chars
+
+
+[alphagrep] 
+[Tokens] upload: 63635 download: 68 cache_read: 61376 cache_write: 0
+
+  → 5 file(s) ranked for "AncRoute"
+1. com/sherifradwan/ancnative/security/BiometricAuthManager.kt
+2. com/sherifradwan/ancnative/storage/AndroidVaultKeys.kt
+3. com/sherifradwan/ancnative/storage/PreviousPregnancyDeleteAdapter.kt
+4. com/sherifradwan/ancnative/storage/UltrasoundDeleteAdapter.kt
+5. com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt
+… truncated: 0 more lines, 5 more chars
+
+
+[alphagrep] 
+[Tokens] upload: 63873 download: 62 cache_read: 61376 cache_write: 0
+
+  → 1 match(es) in 1 file(s) for literal "sealed interface AncRoute"
+
+com/sherifradwan/ancnative/state/AncState.kt
+  39: sealed interface AncRoute {
+… truncated: 0 more lines, 3 more chars
+
+
+[read] app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+
+[Tokens] upload: 64049 download: 87 cache_read: 61376 cache_write: 0
+
+  →    39	sealed interface AncRoute {
+   40	    data object PatientList : AncRoute
+   41	    data class Workspace(
+   42	        val patientId: String,
+   43	        val section: WorkspaceSection = WorkspaceSection.VISITS,
+   44	    ) : AncRoute
+   45	    data class VisitEditor(val patientId: String) : AncRoute
+   46	    data class PatientEditor(val patientId: String, val isNew: Boolean) : AncRoute
+… truncated: 194 more lines, 5944 more chars
+
+
+[read] app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt
+
+[Tokens] upload: 66751 download: 85 cache_read: 61376 cache_write: 0
+
+  →    80	    val isAppLocked = securitySettings?.isAppLocked ?: false
+   81	    var showSettingsDialog by remember { mutableStateOf(false) }
+   82	
+   83	    LaunchedEffect(isAppLocked, securitySettings?.needsPinSetup) {
+   84	        if (isAppLocked || securitySettings?.needsPinSetup == true) {
+   85	            showSettingsDialog = false
+   86	        }
+   87	    }
+… truncated: 282 more lines, 15957 more chars
+
+
+[read] app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt
+
+[Tokens] upload: 71005 download: 92 cache_read: 65760 cache_write: 0
+
+  →   300	            verticalAlignment = Alignment.CenterVertically,
+  301	        ) {
+  302	            Icon(
+  303	                Icons.Default.Lock,
+  304	                contentDescription = null,
+  305	                tint = MaterialTheme.colorScheme.tertiary,
+  306	                modifier = Modifier.size(16.dp),
+  307	            )
+… truncated: 26 more lines, 1017 more chars
+
+
+[read] app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt
+
+[Tokens] upload: 71571 download: 82 cache_read: 70144 cache_write: 0
+
+  →     1	package com.sherifradwan.ancnative.ui
+    2	
+    3	import androidx.compose.animation.AnimatedVisibility
+    4	import androidx.compose.foundation.BorderStroke
+    5	import androidx.compose.foundation.layout.Arrangement
+    6	import androidx.compose.foundation.layout.Column
+    7	import androidx.compose.foundation.layout.FlowRow
+    8	import androidx.compose.foundation.layout.Row
+… truncated: 94 more lines, 4857 more chars
+
+
+[read] app/src/main/java/com/sherifradwan/ancnative/ui/OtherHistoriesEditor.kt
+
+[read] app/src/main/java/com/sherifradwan/ancnative/ui/PreviousPregnancyEditor.kt
+
+[Tokens] upload: 73153 download: 176 cache_read: 70144 cache_write: 0
+
+  → 
+  →   230	                contentDescription = null,
+  231	                tint = MaterialTheme.colorScheme.tertiary,
+  232	                modifier = Modifier.size(16.dp),
+  233	            )
+  234	            Spacer(Modifier.width(6.dp))
+  235	            Text(
+  236	                text = "Medical and surgical histories encrypted locally (AES-256 GCM) · Local Vault Security",
+  237	                style = MaterialTheme.typography.labelSmall,
+… truncated: 12 more lines, 407 more chars
+  220	            )
+  221	            Spacer(Modifier.width(6.dp))
+  222	            Text(
+  223	                text = "Previous pregnancy records encrypted and digitally signed · Tamper-Evident Local Storage",
+  224	                style = MaterialTheme.typography.labelSmall,
+  225	                color = MaterialTheme.colorScheme.onSurfaceVariant,
+  226	            )
+  227	        }
+… truncated: 9 more lines, 300 more chars
+
+
+[read] .agents/scripts/check_r3.py
+
+[read] .agents/scripts/check_r3i.py
+
+[Tokens] upload: 73893 download: 76 cache_read: 70144 cache_write: 0
+
+  → 
+  → Error: File not found: .agents/scripts/check_r3.py
+Error: File not found: .agents/scripts/check_r3i.py
+
+
+[alphagrep] 
+[Tokens] upload: 74131 download: 55 cache_read: 70144 cache_write: 0
+
+  → note: 53 files matched; showing the top 10 (raise max_files for more)
+10 file(s) ranked for "check_"
+1. checks/check_r3.py
+2. checks/check_r3b.py
+3. checks/check_r3c.py
+4. checks/check_r3d.py
+5. checks/check_r3e.py
+6. checks/check_r3f1.py
+… truncated: 4 more lines, 102 more chars
+
+
+[read] .agents/checks/check_r3.py
+
+[read] .agents/checks/check_r3i.py
+
+[read] .agents/checks/check_r4g.py
+
+[Tokens] upload: 74382 download: 103 cache_read: 70144 cache_write: 0
+
+  → 
+  → 
+  →     1	#!/usr/bin/env python3
+    2	"""S1-S4 static source check for round 3a (SPEC_FIX_R3.md).
+    3	
+    4	Stdlib only. Prints PASS/FAIL per sub-check, exits 1 if any FAIL.
+    5	Textual source contract only; verifies nothing at runtime.
+    6	  S1 AncViewModel.kt calls intakeDatingUpdate and has no "plusDays(280)".
+    7	  S2 RecordsRepository.kt seed function has an includeDemoPatients parameter and
+    8	     every patient-owned insert sits behind it (inserts after the metadata insert
+… truncated: 95 more lines, 4190 more chars
+    1	#!/usr/bin/env python3
+    2	"""S51-S54 static source check for round 3i (SPEC_FIX_R3.md).
+    3	
+    4	Stdlib only. Prints PASS/FAIL per check, exits 1 if any FAIL.
+    5	Textual source contract only; verifies nothing at runtime.
+    6	  S51 LocalDate.parse( appears in app/src/main only in model/IsoDates.kt and model/DemoFixtures.kt.
+    7	  S52 plusDays(280, "/ 280f" and "280 -" do not appear in app/src/main outside IsoDates.kt.
+    8	  S53 model/IsoDates.kt defines parseIsoDateOrNull, parseCanonicalIsoDateOrNull, FULL_TERM_DAYS, eddFromLmp.
+… truncated: 86 more lines, 3676 more chars
+    1	#!/usr/bin/env python3
+    2	"""S170-S175 static source check for round 4g (SPEC_FIX_R4.md, section "Round 4g").
+    3	
+    4	Stdlib only. Prints PASS/FAIL per check, exits 1 if any FAIL.
+    5	Textual source contract only; verifies nothing at runtime. Comments are stripped before matching.
+    6	  S170 one scan due-date function.
+    7	  S171 new-patient draft carries the dating choice fields.
+    8	  S172 the intake dating rule goes through the engine's per-method rule.
+… truncated: 125 more lines, 5272 more chars
+
+
+[alphagrep] 
+[Tokens] upload: 79883 download: 139 cache_read: 70144 cache_write: 0
+
+  → 1 file(s) ranked for "IntakeDatingRuleTest"
+1. java/com/sherifradwan/ancnative/state/IntakeDatingRuleTest.kt
+… truncated: 0 more lines, 1 more char
+
+
+[read] app/src/test/java/com/sherifradwan/ancnative/state/IntakeDatingRuleTest.kt
+
+[alphagrep] 
+[Tokens] upload: 80051 download: 113 cache_read: 78912 cache_write: 0
+
+  → 
+  →     1	package com.sherifradwan.ancnative.state
+    2	
+    3	import com.sherifradwan.ancnative.model.DemoPatientDating
+    4	import java.time.LocalDate
+    5	import org.junit.Assert.assertEquals
+    6	import org.junit.Assert.assertNull
+    7	import org.junit.Test
+    8	
+… truncated: 174 more lines, 8884 more chars
+1 file(s) ranked for "ProfileSavedNoticeTest"
+1. java/com/sherifradwan/ancnative/state/ProfileSavedNoticeTest.kt
+… truncated: 0 more lines, 1 more char
+
+
+[read] app/src/test/java/com/sherifradwan/ancnative/state/ProfileSavedNoticeTest.kt
+
+[Tokens] upload: 83795 download: 70 cache_read: 78912 cache_write: 0
+
+  →     1	package com.sherifradwan.ancnative.state
+    2	
+    3	import org.junit.Assert.assertEquals
+    4	import org.junit.Test
+    5	
+    6	class ProfileSavedNoticeTest {
+    7	    @Test
+    8	    fun noDatingAttemptReportsPatientSaved() {
+… truncated: 30 more lines, 1021 more chars
+
+
+[read] .agents/TEST_MANIFEST.json
+
+[Tokens] upload: 84304 download: 76 cache_read: 83296 cache_write: 0
+
+  →   120	        "U1",
+  121	        "U2",
+  122	        "U3",
+  123	        "U4",
+  124	        "U5",
+  125	        "U6",
+  126	        "Q7"
+  127	      ]
+… truncated: 94 more lines, 2939 more chars
+
+
+[alphagrep] 
+[Tokens] upload: 85730 download: 70 cache_read: 83296 cache_write: 0
+
+  → 2 match(es) in 1 file(s) for literal "ProfileSavedNoticeTest"
+
+TEST_MANIFEST.json
+  863:       "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*ProfileSavedNoticeTest'",
+  867:         "app/src/test/**/state/ProfileSavedNoticeTest.kt"
+… truncated: 0 more lines, 4 more chars
+
+
+[read] app/src/main/java/com/sherifradwan/ancnative/model/PatientProfileRules.kt
+
+[Tokens] upload: 85945 download: 69 cache_read: 83296 cache_write: 0
+
+  →     1	package com.sherifradwan.ancnative.model
+    2	
+    3	/**
+    4	 * Rules of the patient profile form. The command builder (`SavePatientProfileCommand.prepare`) enforces the full
+    5	 * rule, using the age stored when the editor opened. `isStructurallyValid` only enforces the create case, because
+    6	 * a stored command does not carry the age the row had before it.
+    7	 */
+    8	object PatientProfileRules {
+… truncated: 7 more lines, 412 more chars
+
+
+[alphagrep] 
+[Tokens] upload: 86295 download: 81 cache_read: 83296 cache_write: 0
+
+  → 1 file(s) ranked for "RegistrationFlowDriver"
+1. com/sherifradwan/ancnative/state/RegistrationFlowDriver.kt
+… truncated: 0 more lines, 1 more char
+
+
+[read] app/src/main/java/com/sherifradwan/ancnative/state/RegistrationFlowDriver.kt
+
+[Tokens] upload: 86454 download: 59 cache_read: 83296 cache_write: 0
+
+  →     1	package com.sherifradwan.ancnative.state
+    2	
+    3	import com.sherifradwan.ancnative.model.DemoPatient
+    4	import com.sherifradwan.ancnative.state.RegistrationStep.DATING
+    5	import com.sherifradwan.ancnative.state.RegistrationStep.HISTORIES
+    6	import com.sherifradwan.ancnative.state.RegistrationStep.IDENTITY
+    7	import com.sherifradwan.ancnative.state.RegistrationStep.OBSTETRIC
+    8	import com.sherifradwan.ancnative.state.RegistrationStep.PREGNANCIES
+… truncated: 194 more lines, 11540 more chars
+
+
+[read] app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt
+
+[Tokens] upload: 90271 download: 99 cache_read: 83296 cache_write: 0
+
+  →     1	package com.sherifradwan.ancnative.state
+    2	
+    3	import com.sherifradwan.ancnative.model.parseBloodPressure
+    4	import com.sherifradwan.ancnative.model.parseVisitFindings
+    5	import com.sherifradwan.ancnative.storage.DraftEditorKind
+    6	import com.sherifradwan.ancnative.storage.DraftRecord
+    7	import com.sherifradwan.ancnative.storage.DraftScreenKind
+    8	import com.sherifradwan.ancnative.storage.NEW_PATIENT_DRAFT_KEY
+… truncated: 144 more lines, 6630 more chars
+
+
+[read] app/src/main/res/values/strings.xml
+
+[Tokens] upload: 92591 download: 98 cache_read: 87680 cache_write: 0
+
+  →   130	    <string name="not_specified_empty">Not specified (empty)</string>
+  131	    <string name="unknown">Unknown</string>
+  132	    <string name="correct_highlighted_field">Correct this field before saving.</string>
+  133	    <string name="correct_highlighted_fields">Review the highlighted fields. No record was changed.</string>
+  134	    <string name="archive_patient">Archive patient</string>
+  135	    <string name="unarchive_patient">Unarchive patient</string>
+  136	    <string name="archived">Archived</string>
+  137	    <string name="status_reason_notice">Enter the owner-supplied reason for this explicit status change.</string>
+… truncated: 144 more lines, 10438 more chars
+
+
+[read] app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt
+
+[Tokens] upload: 96117 download: 91 cache_read: 92064 cache_write: 0
+
+  →   380	        Spacer(Modifier.width(10.dp))
+  381	        Text(
+  382	            text = value?.takeIf(String::isNotBlank) ?: stringResource(R.string.not_recorded),
+  383	            style = if (isEmphasized) MaterialTheme.typography.titleSmall else MaterialTheme.typography.bodyMedium,
+  384	            fontWeight = if (isEmphasized) FontWeight.Bold else FontWeight.SemiBold,
+  385	            color = valueColor ?: if (value.isNullOrBlank()) {
+  386	                MaterialTheme.colorScheme.outline
+  387	            } else {
+… truncated: 62 more lines, 2789 more chars
+
+
+[read] .agents/checks/check_r3l.py
+
+[Tokens] upload: 97280 download: 56 cache_read: 92064 cache_write: 0
+
+  →     1	#!/usr/bin/env python3
+    2	"""S64-S66 static source check for round 3l (SPEC_FIX_R3.md, section "Round 3l").
+    3	
+    4	Stdlib only. Prints PASS/FAIL per check, exits 1 if any FAIL.
+    5	Textual source contract only; verifies nothing at runtime.
+    6	  S64 storage/RecordsRepository.kt: inside ONLY the four clinical save functions
+    7	      (saveDating, saveUltrasoundScan, saveLabInvestigation, saveMedication) no
+    8	      "if (patientUpdated != 1) return" remains, the guard is still evaluated
+… truncated: 206 more lines, 8666 more chars
+
+
+[read] .agents/checks/check_r3d.py
+
+[Tokens] upload: 100398 download: 119 cache_read: 96448 cache_write: 0
+
+  →     1	#!/usr/bin/env python3
+    2	"""S17-S22 static source check for round 3d (SPEC_FIX_R3.md).
+    3	
+    4	Stdlib only. Prints PASS/FAIL per sub-check, exits 1 if any FAIL.
+    5	Textual source contract only; verifies nothing at runtime.
+    6	  S17 file_paths.xml: cache-path with path backups/ (or backups), still camera/ and files-path.
+    7	  S18 MainActivity.kt: no FLAG_SECURE (owner decision D15 replaced the release-only block); no VAULT_DEBUG.
+    8	  S19 SecuritySettingsRepository.kt: loadSettings needsPinSetup ignores key_pin_change_required; lockApp assigns needsPinSetup.
+… truncated: 169 more lines, 7104 more chars
+
+Now I have enough context. Let me compile the comprehensive review table.
+
+---
+
+## Review Table: DESIGN_S6_REGISTRATION_UI.md
+
+| # | Severity | Plan section or file:line | Problem | Smallest fix |
+|---|----------|---------------------------|---------|--------------|
+| 1 | BLOCKER | S5b §14 / `AncViewModel.kt:506` | Plan says "The only caller of `intakeDatingUpdate` is `AncViewModel.kt:506`" — but the code at line 506 is `val datingUpdate = currentDraft?.let { intakeDatingUpdate(committedPatient?.dating, it.values) }`. The `intakeDatingUpdate` call is inside the `SavePatientProfileCommand` branch (lines 503–528), not at line 506. The line numbers are stale. | Update the line references in the plan to match the current source (the `if (command is SavePatientProfileCommand)` block starts at line 503, `intakeDatingUpdate` called at line 506). |
+| 2 | BLOCKER | S5b §15 / `AncViewModel.kt:503-528` | Plan says "What remains at `:501-502` is `val patients = result.snapshot.patients` and `val notice = command.savedNotice()`". Actually line 501 is `frozenPatientCommand = null` and line 502 is `var patients = result.snapshot.patients`; line 503 starts the `if (command is SavePatientProfileCommand)` block. After deleting lines 503–528, the `var patients` becomes unused (it's only used inside the deleted block), and `var notice` is only used in the `RecordCommitted` at line 532. The plan must also delete `var patients` and change `var notice` to `val notice = SavedNotice.PATIENT` (or use `command.savedNotice()` for non-patient commands). | Delete `var patients = result.snapshot.patients` line; change `var notice = command.savedNotice()` to `val notice = command.savedNotice()`. The `command.savedNotice()` method exists on `PatientCommand` and returns `SavedNotice.PATIENT` by default. |
+| 3 | BLOCKER | S5b §16 / `strings.xml:143` | Plan says "delete `<string name=\"patient_saved_dating_not_updated\">` at `res/values/strings.xml:143`". The string is at line 143 in the current file. But `check_r3l.py:S66` (line 187–191) asserts `AncState.kt` maps `SavedNotice.PATIENT_DATING_NOT_UPDATED` to `R.string.patient_saved_dating_not_updated`, and `strings.xml` defines it. Deleting the enum value without updating `check_r3l.py` will make the static check fail. The plan mentions updating `check_r3l.py` at §27 but not `check_r3l.py`'s string existence check. | In the `check_r3l.py` update (§27), also remove the string-existence check (line 193–198) since the string and enum are both being deleted. |
+| 4 | BLOCKER | S5b §26 / `check_r4g.py` S171/S174 | Plan says S171 and S174 stay in S5b-1 because the dating fields stay in the draft. But `check_r4g.py` S171 checks `PatientDraftValues` has the seven dating fields (line 78–80), and S174 checks they are saved/restored in `DraftMapping.kt` (line 112). If S5b-1 keeps the fields, these checks must remain unchanged. However, the plan says "in S5b-2 they are replaced by 'PatientDraftValues has none of the seven dating fields'" — but S5b-2 is optional and needs owner approval. The static check gate will run after S5b-1; if the fields are still there, the checks pass. No problem, but the plan should clarify that S5b-1 must NOT change these checks. | Explicitly note in §26: "S171 and S174 remain unchanged in S5b-1; they are only replaced in S5b-2 after owner approval." |
+| 5 | BLOCKER | S6 §38 / `AncViewModel.kt:352-357` | Plan says "The ViewModel has two public helpers, `registrationNext()` and `flowMove(move)` ... Nothing calls them (grep over `app/src` found no caller). With the UI building events from `onEvent`, they would be a second id generator. Decision (reuse rule): delete those three lines in 6a and keep one id helper in the UI." But `AncViewModel.kt` lines 352–357 don't exist in the current file — the file is only ~560 lines and the `savePatientProfile` method ends around line 540. The helpers were likely added in S5 but are not in the current codebase. The plan cites a future state, not the current state. | Verify whether `registrationNext()` and `flowMove()` exist in the committed S5 code (7f16290). If they don't exist yet, remove the claim from the plan; if they do, update the line numbers. |
+| 6 | BLOCKER | S6 §66 / `RegistrationFlow.kt` | Plan says `forwardIsFinish(flow)` rule: "the forward label is Finish only when `forwardIsFinish(flow)`: `current == PREGNANCIES && pregnancyTarget != null && pregnancyIndex + 1 >= pregnancyTarget`. On the count prompt and on earlier pregnancy editors it reads Next. (The mock D shows Finish on 'pregnancy 2 of 3'; that contradicts `PregnancyCommitted` at `RegistrationFlow.kt:104-113`, which only exits at the last one. The rule above follows the code.)" — But the mock D (lines 185–200) shows "Finish" on the pregnancy editor for "Pregnancy 2 of 3", meaning `pregnancyTarget = 3`, `pregnancyIndex = 1` (second pregnancy). The code at `RegistrationFlow.kt:108` says `if (flow.pregnancyIndex + 1 >= target) FlowResult.Exit` — so `1 + 1 >= 3` is false, it should show "Next", not "Finish". The mock contradicts the driver. The plan's "rule above follows the code" is correct for the code, but the approved mock shows "Finish" earlier. The owner approved the mock. | Align the driver with the mock: `forwardIsFinish` should return true when `pregnancyIndex + 1 == pregnancyTarget` (i.e., on the LAST pregnancy editor). The current code `>=` is wrong; it should be `==`. Fix `RegistrationFlow.kt:108` to `==` (or change the mock). Since the mock is approved, the code must change. |
+| 7 | BLOCKER | S6 §97 / `AncApp.kt:89-91` | Plan recommends: "when `state.registrationFlow != null`, send `flowMoveEvent(FlowEvent.Back)` instead, so the gesture means 'previous step', same as the footer. On step 1 the driver sends it to `requestBack` anyway (`RegistrationFlowDriver.kt:133`), so behaviour there is unchanged." — But `RegistrationFlowDriver.kt:133` handles `Back` on step 1 by returning `AncReducer.requestBack(state)`, which goes to patient list (new unsaved) or hub (saved). The system Back gesture currently sends `AncEvent.Back` (line 90). Changing it to send `Flow(Back)` would make system Back on step 1 behave like the footer Back (disabled on step 1 per mock A). But the mock A shows Back disabled on step 1 with no on-screen exit. The system Back would then also do nothing on step 1 (since `reduceFlowEvent` treats Back on step 1 as Exit, but `requestBack` is only called when `reduce(flow, Back) == FlowResult.Exit` at line 133). Actually `reduce` returns `FlowResult.Exit` on step 1 (line 90), and `applyFlowMove` calls `exitFlow` which clears drafts and goes to hub. But `reduceFlowEvent` at line 133 intercepts `Back` on step 1 and calls `AncReducer.requestBack` instead. So the system Back gesture would trigger `requestBack` (discard dialog) on step 1 — different from the footer Back (which is disabled). This is a UX inconsistency. | Either: (a) keep system Back as `AncEvent.Back` (current behaviour: discard dialog on step 1), or (b) make footer Back on step 1 also show discard dialog (enable it). The mock shows footer Back disabled on step 1. The plan's open question 1 addresses this. Default should be: keep system Back as `AncEvent.Back` (discard dialog), footer Back disabled on step 1 (per mock). |
+| 8 | MAJOR | S5b §20–21 / `AncState.kt:466-475, 87-108` | Plan says dead draft fields stay in S5b-1 and are removed in S5b-2 (optional). But the `PatientDraftField` enum (lines 87–108) includes `LMP_DATE`, `DATING_METHOD`, `TRANSFER_DATE`, `EMBRYO_AGE_DAYS`, `AGREED_EDD`, `SCAN_DATE`, `SCAN_GA_WEEKS`, `SCAN_GA_DAYS` (8 fields, not 7). The `PatientDraftValues` (lines 466–475) has corresponding fields. The `DraftMapping.kt` save/restore (lines 107–118) only saves the 7 dating fields for NEW patients (`isNew` branch). For existing patients, they are NOT saved (line 119–120). This is a data-loss risk: if a user edits an existing patient in the flow, changes to dating fields in the patient draft are never persisted to the draft record. The plan says "Old stored drafts with extra keys are ignored on restore because restore reads known keys only (`DraftMapping.kt:360-385` reads by name; strict-schema rejection is UNVERIFIED)." But the restore path for patient drafts is not shown. | Verify `DraftMapping.kt` restore logic for patient drafts. If it only restores known keys, extra keys are silently dropped (OK). But the save path for existing patients drops dating fields — this is a bug in the current code that S5b-1 doesn't fix. The plan should either fix the save path in S5b-1 or note it as a known limitation. |
+| 9 | MAJOR | S6 §85–95 / `AncApp.kt:215-248` | Plan says: "AncApp maps PregnancyCountPrompt to a hub placeholder (`:225-232`). Change to: [new mapping] ... The placeholder branch is deleted (no legacy shim)." But the current `AncApp.kt` (lines 226–232) has: `is AncRoute.PregnancyCountPrompt -> PatientHubScreen(...)`. The plan's new mapping adds `RegistrationFlowScaffold` wrapping for 4 routes. However, `RegistrationFlowScaffold` is a new component that doesn't exist yet. The plan says "AncApp.kt grows by about 10 lines (369 now)." The current file is ~370 lines. The edit is straightforward but the plan doesn't show the exact `when` branch replacement — it shows a pseudo-code snippet. The real edit must preserve the exhaustive `when` on `AncRoute`. | Provide the exact `when` branch replacement in the plan, not pseudo-code. Ensure all routes are covered. |
+| 10 | MAJOR | S6 §99–104 / `PatientEditor.kt:70-113` | Plan says: "`PatientEditor.kt:70-113`: `val flow = state.inRegistrationFlow(route.patientId)`; render `IdentityFields` only when `flow == null || flow.current == IDENTITY`, `ObstetricFields` only when `flow == null || flow.current == OBSTETRIC`; skip the `EditorActions` at `:106-111` when `flow != null`." But `PatientEditor.kt` lines 70–113 show the entire `PatientEditor` composable (lines 70–113). The `IdentityFields` and `ObstetricFields` are called unconditionally at lines 84–85. The `EditorActions` is at lines 106–111. The plan's line numbers are correct for the current file. However, the `inRegistrationFlow` helper doesn't exist yet — it's planned as "Common helper (one rule, in the scaffold file)". The plan must ensure this helper is added before the editor changes. | Add the `inRegistrationFlow` extension function to `RegistrationFlowScaffold.kt` (or a shared util) before editing editors. |
+| 11 | MAJOR | S6 §109 / `RegistrationFlow.kt:154` | Plan says: `firstNotDoneStep(patient)` returns the first step whose `deriveStepStatuses` value is not DONE. "Because the button only shows when IDENTITY, DATING or OBSTETRIC is not DONE, the result is never null there; use `?: return` rather than `!!`." But `deriveStepStatuses` (line 132–149) returns statuses for ALL 5 steps, including HISTORIES and PREGNANCIES. The `isRegistrationIncomplete` (line 154–157) only checks `REQUIRED_STEPS` (IDENTITY, DATING, OBSTETRIC). If a patient has IDENTITY, DATING, OBSTETRIC all DONE but HISTORIES is PENDING, `isRegistrationIncomplete` returns false (hub button not shown), but `firstNotDoneStep` would return HISTORIES. The plan says "the button only shows when IDENTITY, DATING or OBSTETRIC is not DONE" — this matches `isRegistrationIncomplete`, but `firstNotDoneStep` considers all steps. If the button shows, at least one required step is not DONE, so `firstNotDoneStep` will return a required step (since they come first in enum order). This is correct but the reasoning is slightly off. | Clarify: `firstNotDoneStep` iterates `RegistrationStep.entries` in order; since required steps are first, it will always return a required step when the button is shown. No code change needed, just fix the comment. |
+| 12 | MAJOR | S6 §116–118 / `RegistrationFlow.kt` | Plan says: "Parse rule is one pure function `parsePregnancyCount(text): Int?` in `RegistrationFlow.kt`: trim, `toIntOrNull`, null outside 0..`MAX_SUGGESTED_PREGNANCIES` (20). Next is enabled only when it returns non-null; otherwise the field shows 'Enter a number from 0 to 20.'" But `RegistrationFlow.kt` currently has no such function. It must be added. Also, the plan says "Next dispatches `flowMoveEvent(FlowEvent.PregnancyCountChosen(n))` ... It passes `onNext` into the scaffold, so RegistrationNext is NOT used here: `reduceRegistrationNext` ignores it on the prompt because there is no draft session (`:152`)." The `reduceRegistrationNext` at line 149–159 checks `state.route.matchesStep(flow.current, flow.patientId)` — `PregnancyCountPrompt` matches PREGNANCIES step (line 36–38). But there's no draft session for the prompt, so `activeEditorSessionId(state)` returns null (line 152), and the function returns early. This is correct. | Add `parsePregnancyCount` to `RegistrationFlow.kt` and ensure it's tested. |
+| 13 | MAJOR | S6 §129 / `RegistrationStepText.kt` | Plan says: "Moving the hard-coded titles and labels out of `RegistrationFlow.kt` (`:6-18`, `:56-59`) without Android in the pure logic: least invasive is to delete the `title` and `label` constructor properties and `registrationHeaderText`/`stepStatusText`, keep the enums, and map in the UI layer." But `RegistrationFlow.kt` lines 6–12 define `RegistrationStep` enum with `title` property, and lines 14–18 define `StepStatus` with `label`. Lines 56–59 define `registrationHeaderText` and `stepStatusText`. The plan proposes removing these from the pure logic file. However, `RegistrationFlow.kt` is used by the driver (pure JVM) and the UI. Removing `title` and `label` from the enums breaks `deriveStepStatuses` (which doesn't use them) but may break tests that rely on `step.title`. The plan says "update `RegistrationFlowTest`" — this must be done. | Ensure `RegistrationFlowTest` is updated to not depend on `step.title` or `status.label`. The pure logic should only use enum ordinal/name; UI maps to strings. |
+| 14 | MAJOR | S6 §179–185 / Open issues | Plan lists 8 "known gaps". Item 1: "Back on step 1: the mock disables it and shows no Cancel; `reduceFlowEvent` treats Back on step 1 as exit through `requestBack` (`RegistrationFlowDriver.kt:133`); S5 design line 47 says the same. With EditorActions hidden in flow, the only on-screen exit from step 1 is then none; the system Back gesture still works (`AncApp.kt:89-91`). Smallest fix: follow the mock (disabled), keep exit via system Back." — But the system Back currently sends `AncEvent.Back` (not `Flow(Back)`). If the plan changes system Back to send `Flow(Back)` (question 2), then on step 1 it would trigger `requestBack` (discard dialog) via line 133. That's an on-screen exit (the dialog). If system Back stays as `AncEvent.Back`, it also triggers `requestBack` (same). So either way, system Back shows discard dialog on step 1. The mock shows no Cancel button and Back disabled. The discard dialog IS the exit path. This is consistent. | No fix needed; clarify in the plan that system Back on step 1 shows the discard dialog (which is the intended exit). |
+| 15 | MAJOR | S6 §185 / Level-3 touch | Plan says: "Level-3 touch in S6 is limited to the three pure functions in `state/RegistrationFlow.kt` (a level-2 pure file in this repo's map: UNVERIFIED against `PROJECT_MAP.json`, which I did not load as instructed). If the map marks it level 3, 6a needs the frontier review too." The `PROJECT_MAP.json` is generated from the risk map. The plan should verify whether `RegistrationFlow.kt` is level 3. The risk map at the top of AGENTS.md says: "Highest-risk areas: `app/src` (auth_security, clinical_safety, core_logic, data_schema, 51 files)". `state/RegistrationFlow.kt` is in `app/src/state`, likely level 3 (core_logic/data_schema). If so, S6a needs frontier review. | Run `scripts/project_map.py` to check `RegistrationFlow.kt` risk level. If level 3, add frontier review to S6a gate. |
+| 16 | MAJOR | S6 §36–37 / `RegistrationStepFooter.kt` | Plan says: "Buttons, all `Modifier.minimumTouchTarget()` (`Components.kt:395`, 48x48dp): Back (`OutlinedButton`, tag `flowBack`), Skip (`OutlinedButton`, tag `flowSkip`), forward (`Button`, tag `flowNext`)." But `Components.kt:395` shows `fun Modifier.minimumTouchTarget(): Modifier = sizeIn(minWidth = 48.dp, minHeight = 48.dp)`. This only sets minimum size, not touch target expansion. Material3 buttons already have 48dp touch target by default. The `minimumTouchTarget()` modifier is redundant but harmless. However, the plan says "all `Modifier.minimumTouchTarget()`" — this should be applied to the buttons, not the container. The mock shows buttons with 48dp height. | Verify the footer composable applies `minimumTouchTarget()` to each button, or rely on Material3 defaults. |
+| 17 | MAJOR | S6 §62 / `RegistrationStepHeader.kt` | Plan says: "Semantics: container `liveRegion = Polite` and heading, so TalkBack announces a step change. Each segment `semantics(mergeDescendants = true) { contentDescription = \"<Title>, <status>\" }`; the glyph `Text` is cleared from semantics (`clearAndSetSemantics {}`) so it is not read as 'check mark'." This is good accessibility practice. But the plan doesn't mention `stateDescription` for the progress indicator (step N of 5). The header should also convey progress programmatically. | Add `progressBarRangeInfo` or `stateDescription` to the header container for accessibility. |
+| 18 | MAJOR | S6 §81 / `RegistrationFlowScaffold.kt` | Plan says: "The `key(...)` matters: Identity and Obstetric are the same composable call (`PatientEditor`), so without it the `rememberScrollState()` inside `EditorPage` (`PatientEditor.kt:331,355`) would carry the scroll position from step 1 into step 3, and pregnancy 1 into pregnancy 2." The `key` is on the `Box` at line 74: `key(flow.current, flow.pregnancyIndex, flow.pregnancyTarget == null) { content() }`. But `EditorPage` has TWO `rememberScrollState()` calls (lines 330 and 345 — one for content, one for bottomBar). The `key` on the `Box` will recompose `content()` (the editor), which creates a new `EditorPage`, which creates new scroll states. This works. However, `PatientEditor` is called for both Identity and Obstetric steps — but it renders BOTH `IdentityFields` and `ObstetricFields` (lines 84–85). The plan says "render `IdentityFields` only when `flow == null || flow.current == IDENTITY`, `ObstetricFields` only when `flow == null || flow.current == OBSTETRIC`" (§101). So the same `PatientEditor` composable will conditionally render different sections. The `key` change will reset scroll when switching between Identity and Obstetric, which is correct. | Ensure the `key` includes `flow.current` (it does). |
+| 19 | NIT | S6 §125 / `strings.xml` | Plan lists new string keys: `registration_step_identity`, `registration_step_dating`, `registration_step_histories`, `registration_header`, `registration_status_done`, `registration_status_skipped`, `registration_status_pending`, `registration_current`, `registration_segment_cd`, `registration_pregnancy_progress`, `flow_back` (reuse), `flow_skip`, `flow_next`, `flow_finish`, `registration_count_title`, `registration_count_label`, `registration_count_hint`, `registration_count_existing` (plural), `registration_count_error`, `registration_resume_body`, `registration_resume_button`. That's 19 new keys. The plan says "Reuse, no new key: step 3 title is the existing `obstetric_risk_section_title` ... step 5 title the existing `previous_pregnancies` ... Incomplete chip stays `registration_incomplete_chip`." This is correct. But the plan doesn't mention `registration_step_obstetric` (step 3) — it reuses `obstetric_risk_section_title`. The step titles in the header should match the mock: "Identity", "Dating", "Obstetric history and risk", "Histories", "Previous pregnancies". The enum `RegistrationStep` has titles: "Identity", "Dating", "Obstetric history and risk", "Histories", "Previous pregnancies". The plan proposes deleting `title` from the enum and mapping in `RegistrationStepText.kt`. The string keys for steps 1, 2, 4 are new; steps 3 and 5 reuse existing. This is fine. | Ensure `RegistrationStepText.kt` maps `RegistrationStep.OBSTETRIC` to `R.string.obstetric_risk_section_title` and `RegistrationStep.PREGNANCIES` to `R.string.previous_pregnancies`. |
+| 20 | NIT | S5b §32 / Tests | Plan says: "No new feature, so one regression oracle: a profile save for a new patient and for an edit issues exactly one command (the profile command) and the committed `RecordCommitted.notice` is `SavedNotice.PATIENT`. If the ViewModel has no JVM harness (UNVERIFIED), cover with the existing `PatientCommands` tests plus the static check S1a above." The `PatientCommands` tests exist (`PatientCommandsTest.kt`). But the plan doesn't specify which test file to add the oracle to. The static check S1a (in `check_r3.py`) will assert `AncViewModel.kt` does NOT contain `intakeDatingUpdate` or `profileSavedNotice`, and `IntakeDatingRule.kt` does not exist. This is a textual check, not a behavioral test. A JVM test would be better. | Add a test case to `PatientCommandsTest.kt` (or a new test) verifying that saving a patient profile issues only one command and the notice is `PATIENT`. |
+| 21 | NIT | S6 §197–207 / Build order | Plan splits S6 into S6a (pure logic, scaffold, header, footer, editors hide actions) and S6b (hub button, count prompt, remaining strings). S6a gate includes "Walk new-patient flow steps 1 to 4 on the emulator at 360dp." S6b gate includes "emulator walk of the full flow including a resume from the hub, and the 360dp, 1.4 font, dark and RTL passes." The split is reasonable. But S6a deletes `AncViewModel.kt:351-357` helpers (which may not exist yet — see #5). The plan should verify those helpers exist before planning their deletion. | Check if `registrationNext()` and `flowMove()` exist in the committed S5 code (7f16290). If not, remove the deletion step from S6a. |
+| 22 | NIT | Open question 4 / Large fonts | Plan: "At large font sizes (above 1.3) the five segments cannot fit their status words in 360dp. Default: hide the words and rely on glyph plus screen-reader text there. Alternative: stack the segments in a vertical list at large fonts." The mock uses a horizontal row of 5 segments with glyph + status word + "Current" label. At 360dp with 1.4 font scale, the text will truncate. The plan's default (hide words, keep glyph + screen-reader text) is correct for accessibility — the `contentDescription` on each segment already provides the status. The visual glyph (check/dash/circle) is decorative. | Implement font-scale responsive hiding: use `LocalDensity.current.fontScale` or `Text` `maxLines`/`overflow` to hide status words at large scales, but keep `contentDescription`. |
+| 23 | NIT | S5b §18 / `IntakeDatingRuleTest` branches | Plan says: "Before deleting `IntakeDatingRuleTest`, check that the engine rules it exercises indirectly (`dueDateForMethod` for LMP, IVF, Ultrasound, Clinical; scan EDD) have their own tests. `DatingDraftRuleTest`, `EddFromScanTest` and `DatingSummaryTest` exist; whether they cover the IVF and Clinical branches of `GestationalAgeEngine.dueDateForMethod` is UNVERIFIED. If a branch has no other test, move that one test case to a new `GestationalAgeEngineTest` rather than lose it." This is a critical test-preservation task. The plan correctly identifies the risk. | Verify coverage of `GestationalAgeEngine.dueDateForMethod` for IVF and Clinical methods in existing tests. If missing, extract those cases to `GestationalAgeEngineTest` before deleting `IntakeDatingRuleTest`. |
+
+---
+
+## Three things I could not verify
+
+1. **Whether `AncViewModel.kt` currently has `registrationNext()` and `flowMove()` helpers** (plan §38, line 352–357). The current file ends around line 560 and these methods are not present. They may have been added in the committed S5 revision (7f16290) but are not in the working tree. The plan's deletion step in S6a may be a no-op or may reference stale line numbers.
+
+2. **Whether `RegistrationFlow.kt` is marked level-3 in `PROJECT_MAP.json`** (plan §185). The risk map generation script was not run; if `RegistrationFlow.kt` is level 3 (core_logic/data_schema), S6a requires a frontier-tier review per AGENTS.md, which the plan only mentions for S5b and S6b.
+
+3. **Whether `DraftMapping.kt` restore logic for patient drafts silently ignores unknown keys** (plan §21, "strict-schema rejection is UNVERIFIED"). The restore code (lines 360–385 per plan) was not inspected; if it validates schema strictly, old drafts with the 7 dating fields could fail to restore after S5b-2 deletes the fields. This affects data migration safety.
+[Tokens] upload: 103193 download: 7037 cache_read: 96448 cache_write: 0
+

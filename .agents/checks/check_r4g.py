@@ -5,8 +5,8 @@ Stdlib only. Prints PASS/FAIL per check, exits 1 if any FAIL.
 Textual source contract only; verifies nothing at runtime. Comments are stripped before matching.
   S170 one scan due-date function.
   S171 new-patient draft carries the dating choice fields.
-  S172 the intake dating rule goes through the engine's per-method rule.
-  S173 the post-save dating write uses the rule's result, not a hard-coded LMP.
+  S172 intakeDatingUpdate and intakeDatingPreview are defined nowhere in main.
+  S173 the view model builds no post-save dating command (no datingCmd).
   S174 the new fields are saved and restored with the patient draft.
   S175 the patient editor does not call the old LMP-only functions and calculateForLmp is gone from main sources.
 """
@@ -18,7 +18,6 @@ ROOT = Path(__file__).resolve().parents[2]
 MAIN = ROOT / "app/src/main/java/com/sherifradwan/ancnative"
 ISO = MAIN / "model/IsoDates.kt"
 STATE = MAIN / "state/AncState.kt"
-RULE = MAIN / "state/IntakeDatingRule.kt"
 VM = MAIN / "state/AncViewModel.kt"
 MAPPING = MAIN / "state/DraftMapping.kt"
 EDITOR = MAIN / "ui/PatientEditor.kt"
@@ -83,28 +82,25 @@ def check_s171():
 
 def check_s172():
     problems = []
-    rule = code(RULE)
-    if not re.search(r"fun\s+intakeDatingUpdate\s*\([^)]*PatientDraftValues", rule):
-        problems.append("intakeDatingUpdate does not take PatientDraftValues")
-    for needed in ("dueDateForMethod", "eddFromScan"):
-        if needed not in rule:
-            problems.append("does not use " + needed)
-    for banned in ("eddFromLmp(", "ivfEddFromTransfer("):
-        if banned in rule:
-            problems.append("still calls " + banned)
-    if defined_in(r"\bfun\s+intakeDatingPreview\s*\(") != [RULE.name]:
-        problems.append("intakeDatingPreview not defined once in IntakeDatingRule.kt")
-    record("S172 intake dating goes through the engine rule", not problems, "; ".join(problems))
+    for name in ("intakeDatingUpdate", "intakeDatingPreview"):
+        found = defined_in(r"\bfun\s+" + name + r"\s*\(")
+        if found:
+            problems.append(name + " defined in " + ", ".join(found))
+    if (MAIN / "state/IntakeDatingRule.kt").exists():
+        problems.append("state/IntakeDatingRule.kt exists")
+    record("S172 the intake dating rule stays removed", not problems, "; ".join(problems))
 
 
 def check_s173():
-    vm = code(VM)
     problems = []
-    if re.search(r'datingMethod\s*=\s*"LMP"', vm):
-        problems.append("hard-coded LMP method")
-    if re.search(r"values\?\.lmpDate", vm):
-        problems.append("passes only the LMP to the rule")
-    record("S173 post-save dating write uses the rule result", not problems, "; ".join(problems))
+    if not VM.exists():
+        problems.append("AncViewModel.kt missing")
+    vm = code(VM)
+    if "datingCmd" in vm:
+        problems.append("AncViewModel.kt contains datingCmd")
+    if re.search(r"\bSaveDatingCommand\s*\(", vm):
+        problems.append("AncViewModel.kt constructs SaveDatingCommand(")
+    record("S173 the view model builds no post-save dating command", not problems, "; ".join(problems))
 
 
 def check_s174():
