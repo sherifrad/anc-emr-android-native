@@ -1,0 +1,33 @@
+I've finished reading the code and found no blockers. The condition at `RegistrationFlowDriver.kt:156` is correct, and the fix works end to end through the ViewModel, not only in the reducer.
+
+**How the fixed path runs:**
+1. Next on a clean Identity step for a patient who isn't done (or a new patient) sets `awaitingAdvance` (`AncViewModel.kt:363-369`).
+2. Because `patientDraft != null`, the ViewModel calls `savePatientProfile()`. Nothing in that function skips a clean draft.
+3. `prepare` gets `forceAgeRequired = forcesAgeRequired()`, which is true at Identity. It rejects: a new patient has no stored age, and a legacy patient's age is forced to be required.
+4. `PatientValidationFailed` puts the errors on the draft. The post-pass in `withFlowConsistent` clears `awaitingAdvance`, so the user can press Next again.
+
+**Your four checks:**
+- **(1) Wrong firing or advancing without a save:** neither can happen.
+  - "Not done" on Identity means the stored name is blank or the stored age is blank. `prepare` always rejects both: FULL_NAME_REQUIRED (`DemoModels.kt:155`) and AGE_REQUIRED under the forced flag (`:157`). So this branch can never produce a Ready save or an empty update.
+  - A new patient with only a name typed has a dirty draft, so it takes the old dirty path. `isNew` then makes age required.
+  - The only move forward is through `advanceFlowAfterCommit` after a real `RecordCommitted`.
+- **(2) End to end:** yes, as above.
+- **(3) Tests:** they catch the obvious wrong versions.
+  - Dropping the `IDENTITY` guard fails the existing Histories-skipped test.
+  - Waiting on every Identity Next fails S6-2.
+  - Leaving the old condition fails S5-4 and S6-1.
+  - S6-1 only catches a broken `forcesAgeRequired` in its legacy case.
+- **(4) Other steps:** the new branch only fires on Identity. Clean Next on Dating, Obstetric and Histories still moves without a save (tests at `:310` and `:324`).
+
+| # | Severity | file:line | Problem | Smallest fix |
+|---|---|---|---|---|
+| 1 | MAJOR | `storage/PatientCommands.kt:62-63` (with `RegistrationFlowDriver.kt:156`) | `prepare` checks G/P/A first and returns early. A stored legacy patient with only some of G/P/A filled, and no age, gets only `GPA_ALL_OR_NONE` on Identity Next. Today the Identity step shows those fields, so the error is visible, but no age error appears until a second Next. Once S6a-1 hides the Obstetric fields on Identity, the plan only brings them back for `INVALID_GPA` (`DESIGN_S6:147`). With `GPA_ALL_OR_NONE`, no error would show and the user would be stuck again. | Make the S6a-1 groups rule show Obstetric for both GPA errors, matching `PatientEditor.kt:200`. Or merge GPA errors with `validationErrors()` instead of returning early. Add an S6-1 case with a partial G/P/A fixture. |
+| 2 | NIT | `RegistrationFlowStateTest.kt:352-379` | S6-1 calls `prepare` and `PatientValidationFailed` by hand. Nothing tests the ViewModel step from `awaitingAdvance` to `savePatientProfile()` (`AncViewModel.kt:366-369`). If that step broke, the original bug would come back and every JVM test would still pass. | Cover it in the S6a-1 emulator walk: press Next on an empty Identity step and check that the name and age errors show. Or add a ViewModel test if a fake controller exists. |
+| 3 | NIT | `RegistrationFlowStateTest.kt:384-389` | S6-2 only checks that the step is "not IDENTITY". A move to the wrong step, or a move with no editor opened, would still pass. | Assert `current == DATING`, `route == DatingEditor("p1")`, `pendingSave == null` and `patientDraft == null`. |
+| 4 | NIT | `AncViewModel.kt:351-357` | The plan puts deleting the unused `registrationNext()`, `flowMove()` and `flowIds()` in S6a-0. This diff only carries the Identity fix, and `activeFlowForRoute`, `systemBackKind` and the `RegistrationFlow.kt` changes are also missing. | Either land them in the same commit or rename this commit so the S6a-0 gate isn't marked done too early. |
+| 5 | NIT | `RegistrationFlowDriver.kt:156,159` | `hasStepData` is worked out twice on the clean path. | Compute it once into a `val`, which also makes the condition easier to read. |
+
+**What I could not verify:**
+- I ran no gradle, so I haven't seen the new tests compile or pass.
+- I don't know whether any stored or imported patients really have partial G/P/A. The model allows it, but I didn't check the database. That decides whether #1 can happen in real use.
+- The Identity, Obstetric and error-display parts of S6a-1 aren't written yet, so I couldn't confirm that the errors will show on the narrowed Identity step at 360dp.

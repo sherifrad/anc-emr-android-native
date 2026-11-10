@@ -142,9 +142,10 @@ internal fun reduceFlowEvent(state: AncState, event: AncEvent.Flow): AncState {
 }
 
 /**
- * Next. With nothing to save the flow moves at once; with edits (or on a pregnancy editor, which always has to be
- * saved) the reducer only records [AwaitingAdvance] and the ViewModel runs the editor's own save. The move happens
- * inside the [AncEvent.RecordCommitted] transition of that save.
+ * Next. With nothing to save the flow moves at once. With edits, on a pregnancy editor (always saved) or on an Identity
+ * step without stored data (the save is what reports the missing name and age), the reducer only records
+ * [AwaitingAdvance] and the ViewModel runs the editor's own save. The move happens inside the
+ * [AncEvent.RecordCommitted] transition of that save.
  */
 internal fun reduceRegistrationNext(state: AncState, event: AncEvent.RegistrationNext): AncState {
     val flow = state.registrationFlow ?: return state
@@ -152,10 +153,11 @@ internal fun reduceRegistrationNext(state: AncState, event: AncEvent.Registratio
     val session = activeEditorSessionId(state) ?: return state
     if (session != flow.activeEditorSessionId || !state.route.matchesStep(flow.current, flow.patientId)) return state
     val ids = FlowIds(event.editorSessionId, event.newPregnancyId)
-    if (state.hasDirtyDraft || flow.current == PREGNANCIES) {
+    val hasData = hasStepData(state, flow)
+    if (state.hasDirtyDraft || flow.current == PREGNANCIES || (flow.current == IDENTITY && !hasData)) {
         return state.copy(awaitingAdvance = AwaitingAdvance(session, ids))
     }
-    return applyFlowMove(state, FlowEvent.Next(hasData = hasStepData(state, flow)), ids)
+    return applyFlowMove(state, FlowEvent.Next(hasData = hasData), ids)
 }
 
 private fun hasStepData(state: AncState, flow: RegistrationFlow): Boolean =

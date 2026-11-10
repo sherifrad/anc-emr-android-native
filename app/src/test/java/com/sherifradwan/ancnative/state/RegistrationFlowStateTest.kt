@@ -334,13 +334,74 @@ class RegistrationFlowStateTest {
     }
 
     @Test
-    fun s5_4_a_clean_next_on_identity_without_data_stays() {
+    fun s5_4_a_clean_next_on_identity_without_data_waits_for_the_save_and_stays() {
         val newPatient = reduce(AncState(patients = emptyList()), AncEvent.StartPatientEditor(null, "new-1", "s1"))
-        assertEquals(newPatient, next(newPatient, ids2))
+        val waiting = next(newPatient, ids2)
+        assertEquals(AwaitingAdvance("s1", ids2), waiting.awaitingAdvance)
+        assertEquals(newPatient.copy(awaitingAdvance = waiting.awaitingAdvance), waiting)
 
         val noAge = atStep(IDENTITY, patient(age = null))
-        assertEquals(noAge, next(noAge, ids2))
-        assertEquals(IDENTITY, noAge.registrationFlow?.current)
+        val noAgeWaiting = next(noAge, ids2)
+        assertEquals(AwaitingAdvance("s1", ids2), noAgeWaiting.awaitingAdvance)
+        assertEquals(noAge.copy(awaitingAdvance = noAgeWaiting.awaitingAdvance), noAgeWaiting)
+        assertEquals(IDENTITY, noAgeWaiting.registrationFlow?.current)
+    }
+
+    // S6-1
+
+    private fun rejectedErrors(state: AncState): Set<PatientValidationError> {
+        val prepared = SavePatientProfileCommand.prepare(
+            state, "op", "2026-11-10T10:00:00Z", forceAgeRequired = state.forcesAgeRequired(),
+        )
+        return (prepared as PatientCommandPreparation.Rejected).errors
+    }
+
+    @Test
+    fun s6_1_next_on_untouched_identity_shows_the_name_and_age_errors_and_clears_the_wait() {
+        val newPatient = reduce(AncState(patients = emptyList()), AncEvent.StartPatientEditor(null, "new-1", "s1"))
+        val waiting = next(newPatient, ids2)
+        assertNotNull(waiting.awaitingAdvance)
+        val newErrors = rejectedErrors(waiting)
+        assertTrue(PatientValidationError.FULL_NAME_REQUIRED in newErrors)
+        assertTrue(PatientValidationError.AGE_REQUIRED in newErrors)
+        val shown = reduce(waiting, AncEvent.PatientValidationFailed(PatientEditorKind.PROFILE, newErrors))
+        assertTrue(shown.patientDraft!!.errors.containsAll(newErrors))
+        assertNull(shown.awaitingAdvance)
+
+        val legacyWaiting = next(atStep(IDENTITY, patient(age = null)), ids2)
+        assertNotNull(legacyWaiting.awaitingAdvance)
+        val legacyErrors = rejectedErrors(legacyWaiting)
+        assertTrue(PatientValidationError.AGE_REQUIRED in legacyErrors)
+        val legacyShown = reduce(legacyWaiting, AncEvent.PatientValidationFailed(PatientEditorKind.PROFILE, legacyErrors))
+        assertTrue(PatientValidationError.AGE_REQUIRED in legacyShown.patientDraft!!.errors)
+        assertNull(legacyShown.awaitingAdvance)
+        assertEquals(IDENTITY, legacyShown.registrationFlow?.current)
+    }
+
+    // S6-2
+
+    @Test
+    fun s6_2_next_on_untouched_identity_with_name_and_age_advances_without_a_save() {
+        val moved = next(atStep(IDENTITY), ids2)
+        assertNull(moved.awaitingAdvance)
+        assertEquals(StepStatus.DONE, moved.registrationFlow?.statuses?.get(IDENTITY))
+        assertEquals(DATING, moved.registrationFlow?.current)
+        assertEquals(AncRoute.DatingEditor("p1"), moved.route)
+        assertNull(moved.pendingSave)
+        assertNull(moved.patientDraft)
+    }
+
+    @Test
+    fun s6_1_next_on_untouched_identity_with_a_partial_gpa_and_no_age_reports_the_gpa_error_too() {
+        val partial = patient(age = null).copy(gravida = 2, parity = null, abortion = null)
+        val waiting = next(atStep(IDENTITY, partial), ids2)
+        assertNotNull(waiting.awaitingAdvance)
+        val errors = rejectedErrors(waiting)
+        assertTrue(PatientValidationError.GPA_ALL_OR_NONE in errors)
+        val shown = reduce(waiting, AncEvent.PatientValidationFailed(PatientEditorKind.PROFILE, errors))
+        assertTrue(shown.patientDraft!!.errors.containsAll(errors))
+        assertNull(shown.awaitingAdvance)
+        assertEquals(IDENTITY, shown.registrationFlow?.current)
     }
 
     // S5-5
