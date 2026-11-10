@@ -188,7 +188,10 @@ fun ClinicalPatientCard(
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         // 1. Risk Level Badge
-                        ClinicalRiskBadge(isHighRisk = isHighRisk(patient.riskLevel))
+                        ClinicalRiskBadge(
+                            isHighRisk = isHighRisk(patient.riskLevel),
+                            isModerate = parseRiskTier(patient.riskLevel) == PatientRiskTier.MEDIUM,
+                        )
 
                         // 2. Maternal Age Badge (in metadata row so it never squishes patient name)
                         if (formatAgeYears(patient.ageText) != null) {
@@ -304,7 +307,10 @@ fun ClinicalPatientCard(
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f),
                         )
-                        ClinicalRiskBadge(isHighRisk = isHighRisk(patient.riskLevel))
+                        ClinicalRiskBadge(
+                            isHighRisk = isHighRisk(patient.riskLevel),
+                            isModerate = parseRiskTier(patient.riskLevel) == PatientRiskTier.MEDIUM,
+                        )
                     }
 
                     FlowRow(

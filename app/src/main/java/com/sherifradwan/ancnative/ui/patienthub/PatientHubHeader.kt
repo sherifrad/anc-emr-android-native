@@ -79,6 +79,8 @@ import com.sherifradwan.ancnative.model.isOngoingMedication
 import com.sherifradwan.ancnative.ui.ActionRose
 import com.sherifradwan.ancnative.ui.BpAlertLabel
 import com.sherifradwan.ancnative.ui.ClinicalRiskBadge
+import com.sherifradwan.ancnative.ui.PatientRiskTier
+import com.sherifradwan.ancnative.ui.parseRiskTier
 import com.sherifradwan.ancnative.ui.ClinicalTeal
 import com.sherifradwan.ancnative.ui.PatientAgeBadge
 import com.sherifradwan.ancnative.ui.TagBloodNegativeBg
@@ -281,7 +283,10 @@ fun PatientHubHeader(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        ClinicalRiskBadge(isHighRisk = isHighRisk(patient.riskLevel))
+                        ClinicalRiskBadge(
+                            isHighRisk = isHighRisk(patient.riskLevel),
+                            isModerate = parseRiskTier(patient.riskLevel) == PatientRiskTier.MEDIUM,
+                        )
                         patient.visits.firstOrNull()?.bloodPressure?.let { bp ->
                             BpAlertLabel(bp)
                         }

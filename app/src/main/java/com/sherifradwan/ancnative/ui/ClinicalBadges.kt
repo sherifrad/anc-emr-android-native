@@ -216,10 +216,24 @@ internal fun ClinicalTagBadge(
     text: String,
     showWarningIcon: Boolean = false,
     isError: Boolean = true,
+    isWarning: Boolean = false,
+    isModerate: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val isDark = isDarkTheme()
-    val (bgColor, borderColor, textColor) = if (isError) {
+    val (bgColor, borderColor, textColor) = if (isModerate) {
+        if (isDark) {
+            Triple(TagModerateRiskDarkBg, TagModerateRiskDarkBorder, TagModerateRiskDarkText)
+        } else {
+            Triple(TagModerateRiskBg, TagModerateRiskBorder, TagModerateRiskText)
+        }
+    } else if (isWarning) {
+        if (isDark) {
+            Triple(ClinicalCardTokens.WarningDarkBg, ClinicalCardTokens.WarningDarkBorder, ClinicalCardTokens.WarningDarkText)
+        } else {
+            Triple(ClinicalCardTokens.WarningBg, ClinicalCardTokens.WarningBorder, ClinicalCardTokens.WarningText)
+        }
+    } else if (isError) {
         if (isDark) {
             Triple(TagHighRiskDarkBg, TagHighRiskDarkBorder, TagHighRiskDarkText)
         } else {
@@ -268,6 +282,7 @@ fun ClinicalRiskBadge(isHighRisk: Boolean, modifier: Modifier = Modifier, isMode
             text = stringResource(R.string.moderate_risk),
             showWarningIcon = false,
             isError = false,
+            isModerate = true,
             modifier = modifier,
         )
     } else if (isHighRisk) {

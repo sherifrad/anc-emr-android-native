@@ -1008,7 +1008,7 @@ class EncryptedRecordsTest {
         dateOfBirth = null,
         phone = null,
         riskLevel = null,
-        ageText = null,
+        ageText = "28",
         addressText = null,
         bloodGroupText = null,
         gravida = null,

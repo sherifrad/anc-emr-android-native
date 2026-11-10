@@ -27,6 +27,7 @@ class PatientCommandsTest {
             displayName = "  Synthetic Person  ",
             dateOfBirth = "   ",
             phone = "",
+            ageText = " 28 ",
             gravida = "",
             parity = "  ",
             abortion = "",
@@ -58,7 +59,7 @@ class PatientCommandsTest {
 
     @Test
     fun profilePreparationRejectsPartialOrOutOfRangeGpa() {
-        val partial = profileState(PatientDraftValues(caseId = "CASE-1", displayName = "Patient", gravida = "1"))
+        val partial = profileState(PatientDraftValues(caseId = "CASE-1", displayName = "Patient", ageText = "30", gravida = "1"))
         assertTrue(
             SavePatientProfileCommand.prepare(partial, OPERATION_ID, SUBMITTED_AT) is
                 PatientCommandPreparation.Rejected,
@@ -68,6 +69,7 @@ class PatientCommandsTest {
             PatientDraftValues(
                 caseId = "CASE-1",
                 displayName = "Patient",
+                ageText = "30",
                 gravida = "9007199254740992",
                 parity = "0",
                 abortion = "0",
@@ -385,7 +387,7 @@ class PatientCommandsTest {
             dateOfBirth = null,
             phone = null,
             riskLevel = null,
-            ageText = null,
+            ageText = "28",
             addressText = null,
             bloodGroupText = null,
             gravida = null,
@@ -399,6 +401,70 @@ class PatientCommandsTest {
         assertFalse(command.copy(displayName = "Different").isStructurallyValid())
         assertFalse(command.copy(operationUuid = "not-a-uuid").withCanonicalFingerprint().isStructurallyValid())
     }
+
+    @Test
+    fun newProfileWithNameAndAgeOnlyIsReadyAndPhoneStaysOptional() {
+        val state = profileState(PatientDraftValues(caseId = "CASE-1", displayName = "Patient", ageText = "31"))
+        val prepared = SavePatientProfileCommand.prepare(state, OPERATION_ID, SUBMITTED_AT)
+        assertTrue(prepared is PatientCommandPreparation.Ready)
+        assertNull(((prepared as PatientCommandPreparation.Ready).command as SavePatientProfileCommand).phone)
+    }
+
+    @Test
+    fun newProfileRejectsBlankAndWhitespaceAge() {
+        for (age in listOf("", "   ")) {
+            val state = profileState(PatientDraftValues(caseId = "CASE-1", displayName = "Patient", ageText = age))
+            val prepared = SavePatientProfileCommand.prepare(state, OPERATION_ID, SUBMITTED_AT)
+            assertEquals(
+                setOf(PatientValidationError.AGE_REQUIRED),
+                (prepared as PatientCommandPreparation.Rejected).errors,
+            )
+        }
+    }
+
+    @Test
+    fun editOfLegacyRowWithoutStoredAgeSavesWithoutAge() {
+        val state = editState(original = "", values = "")
+        assertTrue(SavePatientProfileCommand.prepare(state, OPERATION_ID, SUBMITTED_AT) is PatientCommandPreparation.Ready)
+    }
+
+    @Test
+    fun editOfRowWithStoredAgeCannotBlankIt() {
+        for (age in listOf("", "  ")) {
+            val prepared = SavePatientProfileCommand.prepare(editState(original = "29", values = age), OPERATION_ID, SUBMITTED_AT)
+            assertEquals(
+                setOf(PatientValidationError.AGE_REQUIRED),
+                (prepared as PatientCommandPreparation.Rejected).errors,
+            )
+        }
+        assertTrue(
+            SavePatientProfileCommand.prepare(editState(original = "29", values = "30"), OPERATION_ID, SUBMITTED_AT) is
+                PatientCommandPreparation.Ready,
+        )
+    }
+
+    @Test
+    fun storedCommandReplayRequiresAgeOnlyForCreate() {
+        val create = SavePatientProfileCommand(
+            OPERATION_ID, "editor-1", PATIENT_ID, null, SUBMITTED_AT, "CASE-1", "Patient", null, null, null,
+            null, null, null, null, null, null, null, fingerprint = "",
+        )
+        assertFalse(create.withCanonicalFingerprint().isStructurallyValid())
+        val update = create.copy(expectedPatientRevision = 2)
+        assertTrue(update.withCanonicalFingerprint().isStructurallyValid())
+    }
+
+    private fun editState(original: String, values: String) = AncState(
+        patients = emptyList(),
+        patientDraft = PatientDraft(
+            editorSessionId = "editor-1",
+            patientId = PATIENT_ID,
+            baseRevision = 2,
+            createdAt = SUBMITTED_AT,
+            original = PatientDraftValues(caseId = "CASE-1", displayName = "Patient", ageText = original),
+            values = PatientDraftValues(caseId = "CASE-1", displayName = "Patient", ageText = values),
+        ),
+    )
 
     private fun profileState(values: PatientDraftValues) = AncState(
         patients = emptyList(),

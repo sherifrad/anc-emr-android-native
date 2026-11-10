@@ -1,6 +1,7 @@
 package com.sherifradwan.ancnative.storage
 
 import com.sherifradwan.ancnative.model.PatientClinicalInput
+import com.sherifradwan.ancnative.model.PatientProfileRules
 import com.sherifradwan.ancnative.model.PatientValidationError
 import com.sherifradwan.ancnative.model.PatientVocabulary
 import com.sherifradwan.ancnative.model.PreviousPregnancyClinicalInput
@@ -68,6 +69,7 @@ data class SavePatientProfileCommand(
                 parity = gpa.parity,
                 abortion = gpa.abortion,
                 obstetricNotes = draft.values.obstetricNotes.normalized(),
+                ageRequired = PatientProfileRules.ageRequired(draft.baseRevision == null, draft.original.ageText),
             )
             val errors = input.validationErrors()
             if (errors.isNotEmpty()) return PatientCommandPreparation.Rejected(errors)
@@ -333,6 +335,7 @@ internal fun PatientCommand.isStructurallyValid(): Boolean {
                 parity,
                 abortion,
                 obstetricNotes,
+                ageRequired = PatientProfileRules.ageRequired(expectedPatientRevision == null, null),
             )
             input.validationErrors().isEmpty() &&
                 listOf(dateOfBirth, phone, ageText, addressText, obstetricNotes).all { it == it.normalized() } &&

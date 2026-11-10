@@ -171,6 +171,11 @@ fun IdentityFields(
             enabled = enabled,
             singleLine = true,
             keyboardType = KeyboardType.Number,
+            errorMessage = if (PatientValidationError.AGE_REQUIRED in draft.errors) {
+                stringResource(R.string.age_required_error)
+            } else {
+                null
+            },
         )
         EditorField(
             value = draft.values.addressText,

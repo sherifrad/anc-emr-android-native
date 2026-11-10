@@ -166,6 +166,7 @@ fun PatientDirectoryCard(
                     ClinicalTagBadge(
                         text = stringResource(R.string.registration_incomplete_chip),
                         isError = false,
+                        isWarning = true,
                         modifier = Modifier.testTag("incompleteChip"),
                     )
                 }

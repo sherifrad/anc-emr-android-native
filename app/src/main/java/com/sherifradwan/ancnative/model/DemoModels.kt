@@ -114,6 +114,7 @@ object PatientVocabulary {
 enum class PatientValidationError {
     FULL_NAME_REQUIRED,
     CASE_ID_REQUIRED,
+    AGE_REQUIRED,
     CASE_ID_CONFLICT,
     INVALID_BLOOD_GROUP,
     INVALID_RISK_LEVEL,
@@ -147,11 +148,13 @@ data class PatientClinicalInput(
     val parity: Long?,
     val abortion: Long?,
     val obstetricNotes: String?,
+    val ageRequired: Boolean = false,
 )
 
 fun PatientClinicalInput.validationErrors(): Set<PatientValidationError> = buildSet {
     if (displayName.isBlank() || displayName != displayName.trim()) add(PatientValidationError.FULL_NAME_REQUIRED)
     if (caseId.isBlank() || caseId != caseId.trim()) add(PatientValidationError.CASE_ID_REQUIRED)
+    if (ageRequired && ageText.isNullOrBlank()) add(PatientValidationError.AGE_REQUIRED)
     if (bloodGroupText != null && bloodGroupText !in PatientVocabulary.bloodGroups) {
         add(PatientValidationError.INVALID_BLOOD_GROUP)
     }

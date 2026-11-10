@@ -1,0 +1,35 @@
+**PASS.** I found no blockers. Nothing was edited and I did not run any tests; everything below comes from reading the code.
+
+**1. Age rule (S4) and data safety, verified:**
+- **Hub clinical-attention dialog** (`PatientHubScreen.kt:325-334`): it goes through `StartPatientEditor`. That sets `baseRevision = patient.revision` and `original` from the stored patient (`AncState.kt:1324-1330`). A patient with no stored age therefore gets `ageRequired=false`, and the dialog is not blocked.
+- **Archive/status:** `ChangePatientStatusCommand` never builds a `PatientClinicalInput`, so it is not affected.
+- **Backup restore** (`RecordsRepository.kt:128-166`) inserts entities directly and runs no validation.
+- **Draft restore** (`DraftMapping.kt:350-375`) only overwrites `values`. `baseRevision` and `original` stay from the live editor, so `baseRevision==null` still means create.
+- **Whitespace:** `normalized()` (`SaveVisitCommand.kt:153`) trims and turns blank into null before `isNullOrBlank`, which is the same trim used elsewhere.
+- **Replay:** patient commands live only in memory and are retried for an `Ambiguous` result (`VaultController.kt:440`). Receipts are matched by fingerprint, so no create command saved before this change can be re-validated.
+- **Registration flow:** `RegistrationFlow.kt:100` already checks name and age.
+
+**2. Tests.** These tests would fail on the old code, so they do catch the change: `newProfileRejectsBlankAndWhitespaceAge`, `editOfRowWithStoredAgeCannotBlankIt`, the create half of `storedCommandReplayRequiresAgeOnlyForCreate`, and the `AGE_REQUIRED` asserts in `ageRuleRequiresAgeForNewAndForStoredAgeOnly`. The legacy-edit test and the phone-optional test pass on old and new code alike; they only guard against regressions. The three most important missing tests:
+1. A reducer-level test of the hub dialog path on a patient with no stored age: `StartPatientEditor`, then the attention change, then `SubmitPatientProfile`, ending in Ready.
+2. A restored create draft with blank age being rejected, and a restored edit draft keeping the stored `original`.
+3. A Compose test that the age error shows in `IdentityFields`, and that the directory card shows the Moderate badge and the Incomplete chip with the right style, plus nothing for normal/low risk.
+
+The boundary case age "0" is also untested. It is accepted as non-blank.
+
+**3. Badges.** The High risk badge is unchanged. Moderate differs from High by its text ("Moderate" vs "HIGH RISK"), no icon, and SemiBold vs Bold, not only by colour. All three callers of the medium-risk path work out the tier with `parseRiskTier`. The amber Incomplete chip uses the existing warning tokens. Light and dark tokens are both defined. Only one badge component exists. No hard-coded English or emoji.
+
+The contrast numbers look plausible. These are my own estimates, not tool output: `B91C1C` on `FEF2F2` is about 6:1, the `EF4444` border against a white card is about 3.7:1, and `FECACA` on `2A1620` is about 13:1.
+
+**4. Out of scope:** only the untracked run logs under `.agents/fleet-runs/`.
+
+**Findings:**
+```
+storage/PatientCommands.kt:338 | SHOULD | isStructurallyValid passes storedAgeText=null, so on edit the repository accepts a command that blanks a stored age. Only prepare() enforces the edit rule, and savePatientProfile (RecordsRepository.kt ~389-414) does not check it. This contradicts the PatientProfileRules.kt:3 KDoc claim that stored-command validation shares the rule. Either check the stored row in savePatientProfile or correct the KDoc.
+app/src/test/.../storage/PatientCommandsTest.kt:425 | SHOULD | The legacy-edit and phone-optional tests pass on old code too, so they don't catch the change. No test goes through the hub clinical-attention reducer path or draft restore (missing tests 1-2 above).
+app/src/test/.../model/PatientValidationTest.kt:49 | NIT | No boundary test for age "0". It is accepted, and the spec only asks for non-blank, but the intent should be pinned down.
+ui/Theme.kt:59-62 | NIT | Moderate text B91C1C is the same as High, and the backgrounds (FEF2F2 vs FEE2E2) are almost identical. They are told apart by text, icon, weight and border only. That is acceptable, but "tint" adds little.
+ui/Theme.kt:119 | NIT | Dark Moderate background 2A1620 is a mauve tint, outside the red family of TagHighRiskDarkBg 450A0A.
+res/values/strings.xml:326 | NIT | Badge text "Moderate" has no "risk" word, while High says "HIGH RISK". On the directory card it sits next to the amber "Incomplete" chip. The colours keep them apart, but "Moderate" alone is easy to misread.
+ui/Components.kt:191,310; ui/patienthub/PatientHubHeader.kt:286 | NIT | These callers still show the green "Normal" badge for low/unrecorded risk, while the directory card shows nothing. That is a pre-existing inconsistency, not new here.
+ui/ClinicalBadges.kt:224 | NIT | If both isModerate and isWarning are set, isModerate silently wins. No caller does this today, so it is fine for now.
+```
