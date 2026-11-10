@@ -51,7 +51,12 @@ data class SavePatientProfileCommand(
     override val recordId: String = patientId
 
     companion object {
-        fun prepare(state: AncState, operationUuid: String, submittedAt: String): PatientCommandPreparation {
+        fun prepare(
+            state: AncState,
+            operationUuid: String,
+            submittedAt: String,
+            forceAgeRequired: Boolean = false,
+        ): PatientCommandPreparation {
             val draft = state.patientDraft
                 ?: return PatientCommandPreparation.Rejected(setOf(PatientValidationError.SAVE_FAILED))
             val gpa = parseGpa(draft.values.gravida, draft.values.parity, draft.values.abortion)
@@ -69,7 +74,11 @@ data class SavePatientProfileCommand(
                 parity = gpa.parity,
                 abortion = gpa.abortion,
                 obstetricNotes = draft.values.obstetricNotes.normalized(),
-                ageRequired = PatientProfileRules.ageRequired(draft.baseRevision == null, draft.original.ageText),
+                ageRequired = PatientProfileRules.ageRequired(
+                    draft.baseRevision == null,
+                    draft.original.ageText,
+                    forceAgeRequired,
+                ),
             )
             val errors = input.validationErrors()
             if (errors.isNotEmpty()) return PatientCommandPreparation.Rejected(errors)

@@ -222,6 +222,14 @@ fun AncApp(
                             onStartVisit = onStartVisit,
                             securitySettings = securitySettings,
                         )
+                        // The count prompt screen arrives with the registration UI; until then the hub stands in.
+                        is AncRoute.PregnancyCountPrompt -> PatientHubScreen(
+                            state = state,
+                            route = AncRoute.Workspace(route.patientId),
+                            onEvent = onEvent,
+                            onStartVisit = onStartVisit,
+                            securitySettings = securitySettings,
+                        )
                         is AncRoute.VisitEditor -> VisitEditor(
                             state = state,
                             route = route,

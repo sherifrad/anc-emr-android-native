@@ -21,6 +21,32 @@ import org.junit.Test
 
 class PatientCommandsTest {
     @Test
+    fun forcedAgeRejectsABlankAgeOnAStoredPatientWithoutOne() {
+        val original = PatientDraftValues(caseId = "CASE-9", displayName = "Synthetic Person")
+        val state = AncState(
+            patients = emptyList(),
+            patientDraft = PatientDraft(
+                editorSessionId = "editor-1",
+                patientId = PATIENT_ID,
+                baseRevision = 2L,
+                createdAt = "2026-10-11T09:00:00Z",
+                original = original,
+                values = original.copy(clinicalAttention = "Review"),
+            ),
+        )
+
+        assertTrue(SavePatientProfileCommand.prepare(state, OPERATION_ID, SUBMITTED_AT) is PatientCommandPreparation.Ready)
+        val forced = SavePatientProfileCommand.prepare(state, OPERATION_ID, SUBMITTED_AT, forceAgeRequired = true)
+        assertEquals(setOf(PatientValidationError.AGE_REQUIRED), (forced as PatientCommandPreparation.Rejected).errors)
+
+        val aged = state.copy(patientDraft = state.patientDraft!!.copy(values = original.copy(ageText = "0")))
+        assertTrue(
+            SavePatientProfileCommand.prepare(aged, OPERATION_ID, SUBMITTED_AT, forceAgeRequired = true)
+                is PatientCommandPreparation.Ready,
+        )
+    }
+
+    @Test
     fun profilePreparationTrimsRequiredIdentityAndPreservesUnknownFields() {
         val values = PatientDraftValues(
             caseId = "  CASE-9  ",

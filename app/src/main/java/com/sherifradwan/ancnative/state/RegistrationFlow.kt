@@ -25,15 +25,23 @@ data class RegistrationFlow(
     val statuses: Map<RegistrationStep, StepStatus>,
     val pregnancyTarget: Int? = null,
     val pregnancyIndex: Int = 0,
+    /** Session of the editor the flow opened last; null while the pregnancy count prompt is showing. */
+    val activeEditorSessionId: String? = null,
 )
 
 sealed interface FlowEvent {
-    data class Begin(val patientId: String, val startStep: RegistrationStep = RegistrationStep.IDENTITY) : FlowEvent
+    /** [patient] is the stored patient (statuses are derived from it); null for a patient not saved yet. */
+    data class Begin(
+        val patientId: String,
+        val startStep: RegistrationStep = RegistrationStep.IDENTITY,
+        val patient: DemoPatient? = null,
+    ) : FlowEvent
     data class Next(val hasData: Boolean) : FlowEvent
     data object Back : FlowEvent
     data object Skip : FlowEvent
     data object Finish : FlowEvent
-    data class PregnancyCountChosen(val n: Int) : FlowEvent
+    data class PregnancyCountChosen(val n: Int, val existingCount: Int = 0) : FlowEvent
+    data object PregnancyCommitted : FlowEvent
 }
 
 sealed interface FlowResult {
@@ -50,13 +58,19 @@ fun registrationHeaderText(flow: RegistrationFlow): String =
 
 fun stepStatusText(status: StepStatus): String = status.label
 
+/** The one rule for how many pregnancy editors still have to open: the chosen total minus those already stored. */
+fun remainingPregnancies(chosen: Int, existing: Int): Int =
+    (chosen.coerceIn(0, MAX_SUGGESTED_PREGNANCIES) - existing).coerceAtLeast(0)
+
 fun reduce(flow: RegistrationFlow?, event: FlowEvent): FlowResult {
     if (event is FlowEvent.Begin) {
+        val patient = event.patient
+        if (patient?.status == "archived") return FlowResult.Exit
         return FlowResult.Continue(
             RegistrationFlow(
                 patientId = event.patientId,
                 current = event.startStep,
-                statuses = STEPS.associateWith { StepStatus.PENDING },
+                statuses = patient?.let(::deriveStepStatuses) ?: STEPS.associateWith { StepStatus.PENDING },
             ),
         )
     }
@@ -72,21 +86,43 @@ fun reduce(flow: RegistrationFlow?, event: FlowEvent): FlowResult {
         FlowEvent.Finish -> if (isLast) FlowResult.Exit else FlowResult.Continue(flow)
         FlowEvent.Skip ->
             if (index == 0) FlowResult.Continue(flow) else advance(flow, index, StepStatus.SKIPPED)
-        FlowEvent.Back ->
-            if (index == 0) FlowResult.Exit else FlowResult.Continue(flow.copy(current = STEPS[index - 1]))
+        FlowEvent.Back -> when {
+            index == 0 -> FlowResult.Exit
+            // Inside the pregnancy walk Back returns to the count prompt; the index is left as it is.
+            flow.current == RegistrationStep.PREGNANCIES && flow.pregnancyTarget != null ->
+                FlowResult.Continue(flow.copy(pregnancyTarget = null))
+            else -> FlowResult.Continue(enter(flow, STEPS[index - 1]))
+        }
         is FlowEvent.PregnancyCountChosen ->
-            if (flow.current != RegistrationStep.PREGNANCIES) FlowResult.Continue(flow)
-            else FlowResult.Continue(
-                flow.copy(pregnancyTarget = event.n.coerceIn(0, MAX_SUGGESTED_PREGNANCIES), pregnancyIndex = 0),
-            )
+            if (flow.current != RegistrationStep.PREGNANCIES || flow.pregnancyTarget != null) {
+                FlowResult.Continue(flow)
+            } else {
+                val remaining = remainingPregnancies(event.n, event.existingCount)
+                if (remaining == 0) FlowResult.Exit
+                else FlowResult.Continue(flow.copy(pregnancyTarget = remaining, pregnancyIndex = 0))
+            }
+        FlowEvent.PregnancyCommitted -> {
+            val target = flow.pregnancyTarget
+            if (flow.current != RegistrationStep.PREGNANCIES || target == null) {
+                FlowResult.Continue(flow)
+            } else if (flow.pregnancyIndex + 1 >= target) {
+                FlowResult.Exit
+            } else {
+                FlowResult.Continue(flow.copy(pregnancyIndex = flow.pregnancyIndex + 1))
+            }
+        }
     }
 }
 
 private fun advance(flow: RegistrationFlow, index: Int, status: StepStatus): FlowResult {
     val marked = flow.statuses + (flow.current to status)
     if (index == STEPS.lastIndex) return FlowResult.Exit
-    return FlowResult.Continue(flow.copy(current = STEPS[index + 1], statuses = marked))
+    return FlowResult.Continue(enter(flow.copy(statuses = marked), STEPS[index + 1]))
 }
+
+/** Moving onto a step always resets the pregnancy walk, so the count prompt reappears on entering the last step. */
+private fun enter(flow: RegistrationFlow, step: RegistrationStep): RegistrationFlow =
+    flow.copy(current = step, pregnancyTarget = null, pregnancyIndex = 0)
 
 fun suggestedPregnancyCount(gravida: Long?, parity: Long?, abortion: Long?): Int {
     val raw = if (gravida != null) maxOf(gravida - 1, 0L) else (parity ?: 0L) + (abortion ?: 0L)

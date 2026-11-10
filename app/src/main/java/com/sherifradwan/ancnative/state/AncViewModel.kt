@@ -146,7 +146,9 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
                 val stateAfterLoad = _state.value
                 val currentSessionId = activeEditorSessionId(stateAfterLoad)
                 val currentSlot = activeDraftSlot(stateAfterLoad)
-                if (record != null && currentSessionId == afterSession && currentSlot == slot) {
+                if (record != null && currentSessionId == afterSession && currentSlot == slot &&
+                    draftRecordBelongsToOpenEditor(stateAfterLoad, record)
+                ) {
                     val isStale = isDraftStale(record, activeEditorBaseRevision(stateAfterLoad))
                     val prompt = DraftRecoveryPrompt(
                         slot = slot,
@@ -187,6 +189,7 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
         if (_state.value.vaultState !is VaultState.Unlocked) return
         when (event) {
             AncEvent.SubmitPatientProfile -> savePatientProfile()
+            is AncEvent.RegistrationNext -> registrationNext(event)
             AncEvent.SubmitOtherHistories -> saveOtherHistories()
             AncEvent.SubmitPreviousPregnancy -> savePreviousPregnancy()
             AncEvent.SubmitPatientStatus -> savePatientStatus()
@@ -345,6 +348,31 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /** Next in the registration flow: ids are made here so the reducer stays pure. */
+    fun registrationNext() = dispatch(flowIds().let { AncEvent.RegistrationNext(it.editorSessionId, it.newPregnancyId) })
+
+    /** Back, Skip, Finish, Begin or the pregnancy count of the registration flow. */
+    fun flowMove(move: FlowEvent) = dispatch(flowIds().let { AncEvent.Flow(move, it.editorSessionId, it.newPregnancyId) })
+
+    private fun flowIds() = FlowIds(UUID.randomUUID().toString(), UUID.randomUUID().toString())
+
+    /**
+     * Runs the current editor's own save, but only when the reducer accepted Next (it recorded the advance for this
+     * editor session). A Next that was ignored, or that already moved the flow, saves nothing.
+     */
+    private fun registrationNext(event: AncEvent.RegistrationNext) {
+        updateState { AncReducer.reduce(it, event) }
+        val after = _state.value
+        val waiting = after.awaitingAdvance ?: return
+        if (waiting != AwaitingAdvance(activeEditorSessionId(after) ?: return, FlowIds(event.editorSessionId, event.newPregnancyId))) return
+        when {
+            after.patientDraft != null -> savePatientProfile()
+            after.datingDraft != null -> saveDating()
+            after.historiesDraft != null -> saveOtherHistories()
+            after.pregnancyDraft != null -> savePreviousPregnancy()
+        }
+    }
+
     fun startVisit(patientId: String, visitId: String? = null) {
         frozenVisitCommand = null
         dispatch(AncEvent.StartVisit(patientId, visitId, UUID.randomUUID().toString()))
@@ -376,6 +404,7 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
             current,
             same?.operationUuid ?: UUID.randomUUID().toString(),
             timestamp,
+            forceAgeRequired = current.forcesAgeRequired(),
         )) {
             is PatientCommandPreparation.Rejected -> dispatch(
                 AncEvent.PatientValidationFailed(PatientEditorKind.PROFILE, prepared.errors),

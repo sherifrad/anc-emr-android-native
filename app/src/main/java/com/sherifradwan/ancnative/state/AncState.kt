@@ -48,6 +48,7 @@ sealed interface AncRoute {
     data class PreviousPregnancyEditor(val patientId: String, val pregnancyId: String) : AncRoute
     data class StatusEditor(val patientId: String, val targetStatus: String) : AncRoute
     data class DatingEditor(val patientId: String) : AncRoute
+    data class PregnancyCountPrompt(val patientId: String) : AncRoute
     data class UltrasoundEditor(val patientId: String, val scanId: String, val isNew: Boolean) : AncRoute
     data class LabEditor(val patientId: String, val labId: String, val isNew: Boolean) : AncRoute
     data class LabBatchEditor(val patientId: String) : AncRoute
@@ -60,6 +61,11 @@ sealed interface PendingAction {
         val patientId: String,
         val visitId: String?,
         val editorSessionId: String,
+    ) : PendingAction
+    data class FlowMove(
+        val event: FlowEvent,
+        val editorSessionId: String,
+        val newPregnancyId: String,
     ) : PendingAction
 }
 
@@ -349,6 +355,7 @@ fun AncRoute.patientIdOrNull(): String? = when (this) {
     is AncRoute.PreviousPregnancyEditor -> patientId
     is AncRoute.StatusEditor -> patientId
     is AncRoute.DatingEditor -> patientId
+    is AncRoute.PregnancyCountPrompt -> patientId
     is AncRoute.UltrasoundEditor -> patientId
     is AncRoute.LabEditor -> patientId
     is AncRoute.LabBatchEditor -> patientId
@@ -377,7 +384,15 @@ val AncState.undoRunning: Boolean get() = undoOffer?.phase == UndoPhase.RUNNING
 
 /** What a vault lock does to the delete/undo UI state. */
 fun AncState.clearedForLock(): AncState =
-    copy(deleteConfirmation = null, undoOffer = null, deleteRunning = false, deleteMessage = null, noticePatientId = null)
+    copy(
+        deleteConfirmation = null,
+        undoOffer = null,
+        deleteRunning = false,
+        deleteMessage = null,
+        noticePatientId = null,
+        registrationFlow = null,
+        awaitingAdvance = null,
+    )
 
 /**
  * Keeps the delete/Undo UI state tied to what is on screen: a dialog for a record that is gone closes, and the
@@ -664,6 +679,8 @@ data class AncState(
     val deleteRunning: Boolean = false,
     val deleteMessage: DeleteMessage? = null,
     val noticePatientId: String? = null,
+    val registrationFlow: RegistrationFlow? = null,
+    val awaitingAdvance: AwaitingAdvance? = null,
 ) {
     fun patient(patientId: String): DemoPatient? = patients.firstOrNull { it.id == patientId }
 
@@ -706,6 +723,8 @@ sealed interface AncEvent {
         val editorSessionId: String,
     ) : AncEvent
     data class StartHistoriesEditor(val patientId: String, val editorSessionId: String) : AncEvent
+    data class Flow(val event: FlowEvent, val editorSessionId: String, val newPregnancyId: String) : AncEvent
+    data class RegistrationNext(val editorSessionId: String, val newPregnancyId: String) : AncEvent
     data class StartPregnancyEditor(
         val patientId: String,
         val pregnancyId: String?,
@@ -888,7 +907,7 @@ sealed interface AncEvent {
 
 object AncReducer {
     fun reduce(state: AncState, event: AncEvent): AncState {
-        val next = reduceInternal(state, event).withDeleteUiConsistent()
+        val next = reduceInternal(state, event).withDeleteUiConsistent().withFlowConsistent(event)
         val prompt = next.draftRecoveryPrompt
         return if (prompt != null && activeEditorSessionId(next) != prompt.editorSessionId) {
             next.copy(draftRecoveryPrompt = null)
@@ -928,6 +947,8 @@ object AncReducer {
             }
             is AncEvent.StartVisit -> startVisit(state, event)
             is AncEvent.StartPatientEditor -> startPatientEditor(state, event)
+            is AncEvent.Flow -> reduceFlowEvent(state, event)
+            is AncEvent.RegistrationNext -> reduceRegistrationNext(state, event)
             is AncEvent.StartHistoriesEditor -> startHistoriesEditor(state, event)
             is AncEvent.StartPregnancyEditor -> startPregnancyEditor(state, event)
             is AncEvent.StartStatusEditor -> startStatusEditor(state, event)
@@ -1026,7 +1047,7 @@ object AncReducer {
                     savePhase = SavePhase.IDLE,
                     saveError = null,
                     pendingSave = null,
-                )
+                ).advanceFlowAfterCommit(event.token)
             } else state
             AncEvent.CancelEditor, AncEvent.Back -> requestBack(state)
             AncEvent.ConfirmDiscard -> confirmDiscard(state)
@@ -1054,6 +1075,7 @@ object AncReducer {
             AncEvent.AcceptDraftRecovery -> {
                 val prompt = state.draftRecoveryPrompt ?: return state
                 applyDraftRecord(state, prompt.record).copy(draftRecoveryPrompt = null)
+                    .withFlowSessionFollowing(prompt.editorSessionId)
             }
             AncEvent.DiscardDraftRecovery -> state.copy(draftRecoveryPrompt = null)
             is AncEvent.RequestDelete -> {
@@ -1309,7 +1331,7 @@ object AncReducer {
         )
     }
 
-    private fun startPatientEditor(state: AncState, event: AncEvent.StartPatientEditor): AncState {
+    internal fun startPatientEditor(state: AncState, event: AncEvent.StartPatientEditor): AncState {
         if (state.savePhase.blocksEditing() || state.hasDirtyDraft) return state
         val patient = event.patientId?.let(state::patient)
         if (event.patientId != null && (patient == null || patient.status == "archived")) return state
@@ -1319,7 +1341,7 @@ object AncReducer {
             PatientDraftValues(caseId = "ANC-$year-$nextSeq")
         }
         val patientId = patient?.id ?: event.newPatientId
-        return state.clearDrafts().copy(
+        val started = state.clearDrafts().copy(
             route = AncRoute.PatientEditor(patientId, patient == null),
             patientDraft = PatientDraft(
                 editorSessionId = event.editorSessionId,
@@ -1332,9 +1354,10 @@ object AncReducer {
             savedNotice = false,
             notice = null,
         )
+        return if (patient == null) started.withNewPatientFlow(patientId, event.editorSessionId) else started
     }
 
-    private fun startHistoriesEditor(state: AncState, event: AncEvent.StartHistoriesEditor): AncState {
+    internal fun startHistoriesEditor(state: AncState, event: AncEvent.StartHistoriesEditor): AncState {
         if (state.savePhase.blocksEditing() || state.hasDirtyDraft) return state
         val patient = state.patient(event.patientId)?.takeIf { it.status != "archived" } ?: return state
         val values = HistoriesDraftValues(
@@ -1351,7 +1374,7 @@ object AncReducer {
         )
     }
 
-    private fun startPregnancyEditor(state: AncState, event: AncEvent.StartPregnancyEditor): AncState {
+    internal fun startPregnancyEditor(state: AncState, event: AncEvent.StartPregnancyEditor): AncState {
         if (state.savePhase.blocksEditing() || state.hasDirtyDraft) return state
         val patient = state.patient(event.patientId)?.takeIf { it.status != "archived" } ?: return state
         if (event.pregnancyId != null && state.undoRunningFor(event.pregnancyId)) return state
@@ -1396,7 +1419,7 @@ object AncReducer {
         )
     }
 
-    private fun startDatingEditor(state: AncState, event: AncEvent.StartDatingEditor): AncState {
+    internal fun startDatingEditor(state: AncState, event: AncEvent.StartDatingEditor): AncState {
         if (state.savePhase.blocksEditing() || state.hasDirtyDraft) return state
         val patient = state.patient(event.patientId)?.takeIf { it.status != "archived" } ?: return state
         val values = patient.dating?.toDraftValues() ?: DatingDraftValues()
@@ -1699,7 +1722,7 @@ object AncReducer {
         PatientEditorKind.STATUS -> state.copy(statusDraft = state.statusDraft?.copy(errors = event.errors))
     }.copy(savePhase = SavePhase.IDLE, saveError = null)
 
-    private fun requestBack(state: AncState): AncState {
+    internal fun requestBack(state: AncState): AncState {
         if (state.savePhase.blocksEditing()) return state
         val destination = when (val route = state.route) {
             AncRoute.PatientList -> return state
@@ -1710,13 +1733,14 @@ object AncReducer {
             is AncRoute.PreviousPregnancyEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.OBSTETRIC_HISTORY)
             is AncRoute.StatusEditor -> AncRoute.PatientList
             is AncRoute.DatingEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.DATING)
+            is AncRoute.PregnancyCountPrompt -> AncRoute.Workspace(route.patientId)
             is AncRoute.UltrasoundEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.ULTRASOUND)
             is AncRoute.LabEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.LABORATORY)
             is AncRoute.LabBatchEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.LABORATORY)
             is AncRoute.MedicationEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.MEDICATIONS)
         }
         return if (state.hasDirtyDraft) {
-            state.copy(showDiscardDialog = true, pendingAction = PendingAction.Navigate(destination))
+            state.copy(showDiscardDialog = true, pendingAction = PendingAction.Navigate(destination), awaitingAdvance = null)
         } else {
             state.clearDrafts().copy(route = destination, savedNotice = false, notice = null)
         }
@@ -1725,18 +1749,23 @@ object AncReducer {
     private fun confirmDiscard(state: AncState): AncState {
         if (state.savePhase.blocksEditing()) return state
         val action = state.pendingAction
-        val discarded = state.clearDrafts().copy(savedNotice = false, notice = null)
+        val discarded = state.clearDrafts().copy(savedNotice = false, notice = null, awaitingAdvance = null)
         return when (action) {
             is PendingAction.Navigate -> discarded.copy(route = action.destination)
             is PendingAction.StartVisit -> startVisit(
                 discarded,
                 AncEvent.StartVisit(action.patientId, action.visitId, action.editorSessionId),
             )
+            is PendingAction.FlowMove -> applyFlowMove(
+                discarded,
+                action.event,
+                FlowIds(action.editorSessionId, action.newPregnancyId),
+            )
             null -> discarded
         }
     }
 
-    private fun AncState.clearDrafts(): AncState = copy(
+    internal fun AncState.clearDrafts(): AncState = copy(
         draft = null,
         patientDraft = null,
         historiesDraft = null,

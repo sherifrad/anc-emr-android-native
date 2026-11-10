@@ -1,0 +1,59 @@
+**PASS.** There are no blockers. One MAJOR, about pregnancy draft recovery, is worth fixing before the registration screens start sending these events. In this diff, nothing in the UI dispatches `RegistrationNext` or `Flow` yet; the only callers are the unused `AncViewModel.kt:350,353`. So the only new behaviour users can reach now is a flow starting at Identity for a new patient, plus the post-pass. That changes nothing about what gets saved, because a new patient already needs an age.
+
+Checked against the code, with no build or test run, as asked:
+
+1. **Atomicity.**
+   - Every move is one transition through `applyFlowMove` (`RegistrationFlowDriver.kt:92-99`).
+   - Next-after-commit runs inside the commit transition (`AncState.kt:1050`).
+   - When the start logic refuses, `startFlowEditor` returns null (`started === state`, `:55`). Every refusal in the `start*Editor` functions returns `state` itself (`AncState.kt:1335-1424`).
+   - When it returns null, the caller uses `exitFlow`, which goes to the hub (`:97`). `beginFlow` returns `state` (`:114`).
+   - The hub never renders between two editors.
+2. **Advance safety.**
+   - The flow moves only when the commit token's session equals both `awaitingAdvance.fromSessionId` and `flow.activeEditorSessionId` (`:166`).
+   - It does not move when the save failed, was rejected by validation, is still in progress, or has an unresolved outcome (`:149`, `:178-185`).
+   - A double tap cannot advance twice: the save starts synchronously and `pendingSave` blocks the second Next.
+   - `awaitingAdvance` is cleared in every place the design lists. Row 9 is one narrow gap.
+3. **No-ops and Exit.**
+   - No-op events are checked before the dirty-draft check (`:129`).
+   - Every Exit goes through `exitFlow`.
+   - Skip on the last step clears drafts. Tests `s5_11_*` cover this.
+4. **Lifetime.**
+   - The post-pass checks both the route and the draft's session id (`:195-197`).
+   - The `AcceptDraftRecovery` change only follows the session when the old session was the flow's own, and it never changes the patient or the route. It is correct.
+   - Lock resets the whole state (`AncViewModel.kt:179`), and `clearedForLock` also clears the flow.
+5. **Data safety.**
+   - The only save-side change is `forceAgeRequired`. It is true only when `flow.current == IDENTITY`, and the post-pass guarantees that the flow belongs to the open draft.
+   - No flow path drops edits without the discard dialog.
+   - Identity → Obstetric → Back → Identity keeps every profile field (test S5-9 checks this against the stored values).
+6. **Pregnancy walk.**
+   - There is a single remaining-count rule (`RegistrationFlow.kt:62`).
+   - An empty pregnancy cannot be saved: a new pregnancy requires place and doctor (`PreviousPregnancyFormRules.kt:57`, `DemoModels.kt:207`).
+   - So the builder's deviation (4), saving even a clean draft, is safe.
+   - Deviation (3), Back keeping the index, is consistent: choosing the count again recomputes from the stored count. The kept index is never read again (row 7).
+   - Deviation (2) is row 1.
+
+| # | Sev | path:line | Problem | Smallest fix |
+|---|---|---|---|---|
+| 1 | MAJOR (runtime UNVERIFIED) | `state/DraftMapping.kt:316-318,399` | Recovery slots for previous pregnancies are keyed by (patientId, PREVIOUS_PREGNANCY), and `applyDraftRecord` never compares `record.recordId` or `editorKind` with the open draft. If pregnancy 1's leftover record survives (a failed `store.delete`, which is silently ignored at `DraftAutosaver.kt:76-78`, or a crash), pregnancy 2 gets the prompt. Accepting it copies pregnancy 1's fields into the new id and can create a duplicate clinical record. Within one run, delete and load are ordered on the same lock, so the normal path is safe. The S5-8 "does not inherit" test only checks the reducer's values, not this recovery path. | In `DraftRecoveryFound`/`applyDraftRecord`, ignore a pregnancy record whose `recordId` differs from `pregnancyDraft.pregnancyId`. Add a test for it. |
+| 2 | NIT | `RegistrationFlowDriver.kt:74-75,84-85`; start*Editor `savedNotice=false` | When the flow moves on after a commit, the commit's notice is wiped. That includes `PATIENT_DATING_NOT_UPDATED` (`IntakeDatingRule.kt:146`). Practical reach is low: the patient editor UI no longer has an LMP field; only `DatingEditor.kt` does. | If the commit notice is `PATIENT_DATING_NOT_UPDATED`, keep it on the next editor, or exit to the hub. |
+| 3 | NIT | `AncViewModel.kt:997-1009,1021-1034`; design edge case 4 | The design says frozen commands are cleared because flow starts use the `Start*` logic. But clearing is keyed on the *event type* in the ViewModel, and `Flow`/`RegistrationNext` never match it. Frozen commands stay; they are never reused only because `same` requires a matching session (`:399,422,442,560`). That is safe, but the stated invariant is wrong and the test for it (`s5_5_…fresh_sessions`) only compares session ids. | Fix the design text, or add `is AncEvent.Flow, is AncEvent.RegistrationNext` to both `clearsFrozen*` functions. |
+| 4 | NIT | `RegistrationFlowDriver.kt:102-104` | A second new-patient editor opened while a flow is active keeps the old flow. The post-pass then kills it, so the second new patient ends up with *no* flow. Test `s5_1_a_second_new_patient…` locks this in. Currently unreachable from the flow screens. | Begin the flow when `registrationFlow == null` or when it belongs to another patient. |
+| 5 | NIT | `RegistrationFlow.kt:96-103` | `PregnancyCountChosen` in the middle of the walk (`pregnancyTarget != null`, editor open) is not a no-op. It restarts the walk with index 0. The design allows the count only on the prompt. | Return `Continue(flow)` when `pregnancyTarget != null`. |
+| 6 | NIT | `RegistrationFlowDriver.kt:196` | The post-pass accepts any flow screen of the patient (`isFlowScreenOf`), not the screen of `flow.current`. It is safe only because the session must also match. | Use `route.matchesStep(flow.current, flow.patientId)`. |
+| 7 | NIT | `RegistrationFlow.kt:92-93` | The index kept by Back inside the walk is never read afterwards; choosing the count again resets it to 0. It is dead state. | Document it as display-only, or reset it. |
+| 8 | NIT (UNVERIFIED UI) | `AncState.kt:1023-1028` + start*Editor | After a failed save (phase ERROR), Skip or Back opens the next editor with `savePhase=ERROR` and the old `saveError` still set. Editors started from the hub already behave this way. | Set `savePhase=IDLE, saveError=null` in `startFlowEditor`. |
+| 9 | NIT | `RegistrationFlowDriver.kt:131` | Back on step 1 with a dirty draft goes through `requestBack` and the discard dialog without clearing `awaitingAdvance`. After Keep editing, a stale wait can survive. Only reachable if `SaveStarted` was refused. | Add `.copy(awaitingAdvance = null)` there. |
+| 10 | NIT | `RegistrationFlowDriver.kt:44` | The KDoc of `forcesAgeRequired` describes the wrong thing ("The editor draft opened by the flow"). | Reword: "True in the flow's Identity step, where age is required for every patient." |
+| 11 | NIT | `state/AncState.kt` (1898 lines) | The file grew by about 45 lines and is already over 1500. The ceiling applies to UI files, so this is advisory. | None needed now. |
+| 12 | NIT (test) | `RegistrationFlowDriverTest.kt:120-123` | `assertNotNull(AncRoute.PregnancyCountPrompt("p1"))` cannot fail. | Delete that line. |
+| 13 | NIT (test) | `RegistrationFlowStateTest.kt:89-93` | `s5_1_a_fresh_state…` only checks constructor defaults. | Keep it, but it proves almost nothing. |
+| 14 | NIT (test) | `PatientProfileAgeStateTest.kt:50-65` | S5-10 passes `force = true` by hand and calls `prepare` directly. It never checks that `savePatientProfile` passes `forcesAgeRequired()` (`AncViewModel.kt:405`), or the "on Next" path in the design. | See missing test 1. |
+
+**Test review.** S5-1 to S5-9, S5-11 and S5-12 mostly compare the whole resulting state or exact routes, flows and session ids, so a wrong implementation would fail them. The S5-2, S5-5, S5-8 and S5-9 tests are strong. Weak or tautological: rows 12 to 14, and the pregnancy-2 assertion in S5-8 (row 1).
+
+The three most important missing tests:
+1. **ViewModel wiring:** an accepted `RegistrationNext` runs exactly one save of the right kind with `forceAgeRequired` set for Identity, and an ignored or clean Next runs none. No ViewModel test covers this now.
+2. **Pregnancy recovery:** a pregnancy-1 `DraftRecord` (recordId n2) is not offered or applied to the pregnancy-2 draft (n3).
+3. **The commit notice across a flow move:** what happens to `PATIENT_DATING_NOT_UPDATED` when the flow moves on, and that a stale ERROR phase does not carry onto the next editor after Skip.
+
+**Scope.** The diff stays within the design's file list. It adds no new hard-coded user-facing strings; the step titles and status labels are older code. `registrationNext()` and `flowMove()` in the ViewModel are unused until the UI slice, which is expected.

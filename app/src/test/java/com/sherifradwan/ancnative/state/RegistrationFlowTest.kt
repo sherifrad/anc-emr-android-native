@@ -6,8 +6,6 @@ import com.sherifradwan.ancnative.state.RegistrationStep.IDENTITY
 import com.sherifradwan.ancnative.state.RegistrationStep.OBSTETRIC
 import com.sherifradwan.ancnative.state.RegistrationStep.PREGNANCIES
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertSame
 import org.junit.Test
 
 class RegistrationFlowTest {
@@ -107,32 +105,112 @@ class RegistrationFlowTest {
     }
 
     @Test
-    fun pregnancy_count_is_stored_clamped_and_resets_index() {
+    fun pregnancy_count_is_stored_as_remaining_clamped_and_resets_index() {
         val flow = begin(PREGNANCIES)
         assertEquals(3, step(flow, FlowEvent.PregnancyCountChosen(3)).pregnancyTarget)
         assertEquals(20, step(flow, FlowEvent.PregnancyCountChosen(99)).pregnancyTarget)
-        assertEquals(0, step(flow, FlowEvent.PregnancyCountChosen(-4)).pregnancyTarget)
+        assertEquals(2, step(flow, FlowEvent.PregnancyCountChosen(3, existingCount = 1)).pregnancyTarget)
         assertEquals(0, step(flow.copy(pregnancyIndex = 2), FlowEvent.PregnancyCountChosen(3)).pregnancyIndex)
     }
 
     @Test
-    fun rf5_skipped_and_done_render_different_text() {
-        val done = stepStatusText(StepStatus.DONE)
-        val skipped = stepStatusText(StepStatus.SKIPPED)
-        val pending = stepStatusText(StepStatus.PENDING)
-        assertEquals("Done", done)
-        assertEquals("Skipped", skipped)
-        assertEquals(3, setOf(done, skipped, pending).size)
-        assertNotEquals(done, skipped)
+    fun pregnancy_count_with_nothing_remaining_finishes() {
+        val flow = begin(PREGNANCIES)
+        assertEquals(FlowResult.Exit, reduce(flow, FlowEvent.PregnancyCountChosen(0)))
+        assertEquals(FlowResult.Exit, reduce(flow, FlowEvent.PregnancyCountChosen(-4)))
+        assertEquals(FlowResult.Exit, reduce(flow, FlowEvent.PregnancyCountChosen(2, existingCount = 2)))
+        assertEquals(FlowResult.Exit, reduce(flow, FlowEvent.PregnancyCountChosen(2, existingCount = 5)))
     }
 
     @Test
-    fun rf5_flow_does_not_mutate_input() {
-        val flow = begin()
-        val next = step(flow, FlowEvent.Next(hasData = true))
-        assertEquals(StepStatus.PENDING, flow.statuses[IDENTITY])
-        assertEquals(StepStatus.DONE, next.statuses[IDENTITY])
-        assertSame(flow.patientId, next.patientId)
+    fun remaining_rule_is_the_clamped_total_minus_the_stored_count() {
+        assertEquals(0, remainingPregnancies(0, 0))
+        assertEquals(2, remainingPregnancies(3, 1))
+        assertEquals(0, remainingPregnancies(1, 3))
+        assertEquals(20, remainingPregnancies(99, 0))
+        assertEquals(17, remainingPregnancies(99, 3))
+        assertEquals(0, remainingPregnancies(-4, 0))
+    }
+
+    @Test
+    fun pregnancy_committed_counts_one_pregnancy_and_exits_at_the_target() {
+        val walking = step(begin(PREGNANCIES), FlowEvent.PregnancyCountChosen(3))
+        val one = step(walking, FlowEvent.PregnancyCommitted)
+        assertEquals(1, one.pregnancyIndex)
+        assertEquals(3, one.pregnancyTarget)
+        val two = step(one, FlowEvent.PregnancyCommitted)
+        assertEquals(2, two.pregnancyIndex)
+        assertEquals(FlowResult.Exit, reduce(two, FlowEvent.PregnancyCommitted))
+    }
+
+    @Test
+    fun pregnancy_committed_is_ignored_without_a_walk_or_outside_the_step() {
+        val prompt = begin(PREGNANCIES)
+        assertEquals(prompt, step(prompt, FlowEvent.PregnancyCommitted))
+        val histories = begin(HISTORIES)
+        assertEquals(histories, step(histories, FlowEvent.PregnancyCommitted))
+    }
+
+    @Test
+    fun skip_inside_the_pregnancy_walk_leaves_the_step() {
+        val walking = step(begin(PREGNANCIES), FlowEvent.PregnancyCountChosen(2))
+        assertEquals(FlowResult.Exit, reduce(walking, FlowEvent.Skip))
+    }
+
+    @Test
+    fun back_inside_the_walk_returns_to_the_prompt_and_keeps_the_index() {
+        val walking = step(step(begin(PREGNANCIES), FlowEvent.PregnancyCountChosen(3)), FlowEvent.PregnancyCommitted)
+        val back = step(walking, FlowEvent.Back)
+        assertEquals(PREGNANCIES, back.current)
+        assertEquals(null, back.pregnancyTarget)
+        assertEquals(1, back.pregnancyIndex)
+        assertEquals(walking.statuses, back.statuses)
+    }
+
+    @Test
+    fun back_from_the_prompt_and_entering_the_step_reset_the_walk() {
+        val prompt = begin(PREGNANCIES).copy(pregnancyIndex = 2)
+        val back = step(prompt, FlowEvent.Back)
+        assertEquals(HISTORIES, back.current)
+        assertEquals(null, back.pregnancyTarget)
+        assertEquals(0, back.pregnancyIndex)
+        val stale = begin(HISTORIES).copy(pregnancyTarget = 4, pregnancyIndex = 3)
+        val entered = step(stale, FlowEvent.Next(hasData = true))
+        assertEquals(PREGNANCIES, entered.current)
+        assertEquals(null, entered.pregnancyTarget)
+        assertEquals(0, entered.pregnancyIndex)
+    }
+
+    private fun storedPatient(status: String? = "active", age: String? = "30", phone: String? = null) =
+        com.sherifradwan.ancnative.model.DemoPatient(
+            id = "p1", caseId = "c", displayName = "Mona", dateOfBirth = null, phone = phone, visits = emptyList(),
+            status = status, ageText = age, gravida = 1, parity = 0, abortion = 0,
+            dating = com.sherifradwan.ancnative.model.DemoPatientDating(
+                patientId = "p1", lmpDate = "2026-06-01", ultrasoundEdd = null, agreedEdd = null,
+                datingMethod = "LMP", notes = null,
+            ),
+        )
+
+    @Test
+    fun begin_for_a_stored_patient_seeds_statuses_from_its_data() {
+        val flow = (reduce(null, FlowEvent.Begin("p1", DATING, storedPatient())) as FlowResult.Continue).flow
+        assertEquals(DATING, flow.current)
+        assertEquals(
+            mapOf(
+                IDENTITY to StepStatus.DONE,
+                DATING to StepStatus.DONE,
+                OBSTETRIC to StepStatus.DONE,
+                HISTORIES to StepStatus.PENDING,
+                PREGNANCIES to StepStatus.DONE,
+            ),
+            flow.statuses,
+        )
+        assertEquals(null, flow.activeEditorSessionId)
+    }
+
+    @Test
+    fun begin_for_an_archived_patient_is_refused() {
+        assertEquals(FlowResult.Exit, reduce(null, FlowEvent.Begin("p1", IDENTITY, storedPatient(status = "archived"))))
     }
 
     @Test

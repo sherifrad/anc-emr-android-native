@@ -6,7 +6,10 @@ package com.sherifradwan.ancnative.model
  * a stored command does not carry the age the row had before it.
  */
 object PatientProfileRules {
-    /** Required for a new patient; for an existing one only if it already has a stored age. */
-    fun ageRequired(isNew: Boolean, storedAgeText: String?): Boolean =
-        isNew || !storedAgeText.isNullOrBlank()
+    /**
+     * Required for a new patient; for an existing one only if it already has a stored age. The Identity step of the
+     * registration flow forces it for every patient.
+     */
+    fun ageRequired(isNew: Boolean, storedAgeText: String?, forceAgeRequired: Boolean = false): Boolean =
+        isNew || forceAgeRequired || !storedAgeText.isNullOrBlank()
 }

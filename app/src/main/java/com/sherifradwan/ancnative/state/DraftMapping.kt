@@ -313,9 +313,17 @@ fun draftRecordFor(state: AncState, nowMillis: Long): DraftRecord? {
     return null
 }
 
+/**
+ * The pregnancy slot is shared by every pregnancy of a patient, so a stored pregnancy record belongs to the open
+ * editor only when it names the same pregnancy. Every other kind is identified by its slot alone.
+ */
+fun draftRecordBelongsToOpenEditor(state: AncState, record: DraftRecord): Boolean =
+    record.screenKind != DraftScreenKind.PREVIOUS_PREGNANCY || record.recordId == state.pregnancyDraft?.pregnancyId
+
 fun applyDraftRecord(state: AncState, record: DraftRecord): AncState {
     val slot = activeDraftSlot(state) ?: return state
     if (slot != DraftSlot(record.patientId, record.screenKind)) return state
+    if (!draftRecordBelongsToOpenEditor(state, record)) return state
     val newSessionId = UUID.randomUUID().toString()
 
     return when (record.screenKind) {
