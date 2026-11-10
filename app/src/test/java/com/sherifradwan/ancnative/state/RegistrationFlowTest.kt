@@ -6,6 +6,9 @@ import com.sherifradwan.ancnative.state.RegistrationStep.IDENTITY
 import com.sherifradwan.ancnative.state.RegistrationStep.OBSTETRIC
 import com.sherifradwan.ancnative.state.RegistrationStep.PREGNANCIES
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class RegistrationFlowTest {
@@ -22,14 +25,15 @@ class RegistrationFlowTest {
         assertEquals(IDENTITY, flow.current)
         assertEquals(5, flow.statuses.size)
         assertEquals(RegistrationStep.entries.associateWith { StepStatus.PENDING }, flow.statuses)
-        assertEquals("Step 1 of 5: Identity", registrationHeaderText(flow))
+        assertEquals(1, registrationStepNumber(flow.current))
+        assertEquals(5, registrationStepCount)
     }
 
     @Test
     fun rf1_begin_at_a_later_step_keeps_all_pending() {
         val flow = begin(OBSTETRIC)
         assertEquals(OBSTETRIC, flow.current)
-        assertEquals("Step 3 of 5: Obstetric history and risk", registrationHeaderText(flow))
+        assertEquals(3, registrationStepNumber(flow.current))
         assertEquals(setOf(StepStatus.PENDING), flow.statuses.values.toSet())
     }
 
@@ -250,5 +254,56 @@ class RegistrationFlowTest {
         val result = reduce(flow, FlowEvent.PregnancyCountChosen(3)) as FlowResult.Continue
         assertEquals(flow, result.flow)
         assertEquals(null, result.flow.pregnancyTarget)
+    }
+
+    private fun walk(target: Int?, index: Int = 0) = begin(PREGNANCIES).copy(pregnancyTarget = target, pregnancyIndex = index)
+
+    @Test
+    fun forward_is_finish_is_false_on_steps_one_to_four() {
+        for (step in listOf(IDENTITY, DATING, OBSTETRIC, HISTORIES)) {
+            assertFalse(step.name, forwardIsFinish(begin(step)))
+            assertFalse(step.name, forwardIsFinish(begin(step), remainingOnPrompt = 0))
+        }
+    }
+
+    @Test
+    fun forward_is_finish_on_the_count_prompt_only_when_nothing_remains() {
+        assertFalse(forwardIsFinish(walk(null)))
+        assertFalse(forwardIsFinish(walk(null), remainingOnPrompt = 2))
+        assertTrue(forwardIsFinish(walk(null), remainingOnPrompt = 0))
+    }
+
+    @Test
+    fun forward_is_finish_only_on_the_last_pregnancy_of_the_walk() {
+        assertFalse(forwardIsFinish(walk(target = 3, index = 0)))
+        assertFalse(forwardIsFinish(walk(target = 3, index = 1)))
+        assertTrue(forwardIsFinish(walk(target = 3, index = 2)))
+        assertTrue(forwardIsFinish(walk(target = 1, index = 0)))
+        assertFalse(forwardIsFinish(walk(target = 1, index = 0).copy(current = HISTORIES)))
+    }
+
+    @Test
+    fun skip_is_shown_on_every_step_but_identity() {
+        assertFalse(showsSkip(begin(IDENTITY)))
+        for (step in listOf(DATING, OBSTETRIC, HISTORIES, PREGNANCIES)) assertTrue(step.name, showsSkip(begin(step)))
+    }
+
+    @Test
+    fun parse_pregnancy_count_accepts_whole_numbers_from_zero_to_twenty() {
+        assertEquals(2, parsePregnancyCount("2"))
+        assertEquals(7, parsePregnancyCount(" 7 "))
+        assertEquals(0, parsePregnancyCount("0"))
+        assertEquals(20, parsePregnancyCount("20"))
+    }
+
+    @Test
+    fun parse_pregnancy_count_rejects_everything_else() {
+        for (bad in listOf("21", "25", "-1", "", "   ", "x", "2.5", "1 2")) assertNull(bad, parsePregnancyCount(bad))
+    }
+
+    @Test
+    fun step_count_is_five() {
+        assertEquals(5, registrationStepCount)
+        assertEquals(5, registrationStepNumber(PREGNANCIES))
     }
 }

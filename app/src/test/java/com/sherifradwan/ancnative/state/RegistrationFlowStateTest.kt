@@ -1135,4 +1135,73 @@ class RegistrationFlowStateTest {
         val wrongStep = atDating.copy(registrationFlow = atDating.registrationFlow!!.copy(current = HISTORIES))
         assertNull(reduce(wrongStep, AncEvent.SearchChanged("x")).registrationFlow)
     }
+
+    // activeFlowForRoute and systemBackKind
+
+    @Test
+    fun active_flow_for_route_returns_the_flow_on_its_own_editor_screen() {
+        val state = atStep(DATING)
+        assertEquals(state.registrationFlow, state.activeFlowForRoute())
+        assertEquals(AncRoute.DatingEditor("p1"), state.route)
+    }
+
+    @Test
+    fun active_flow_for_route_is_null_when_the_route_is_not_the_flows_screen() {
+        val state = atStep(DATING)
+        assertNull(state.copy(route = AncRoute.Workspace("p1")).activeFlowForRoute())
+        assertNull(state.copy(route = AncRoute.OtherHistoriesEditor("p1")).activeFlowForRoute())
+        assertNull(state.copy(route = AncRoute.DatingEditor("other")).activeFlowForRoute())
+        assertNull(state.copy(registrationFlow = null).activeFlowForRoute())
+    }
+
+    @Test
+    fun system_back_in_a_flow_editor_without_a_dialog_is_flow_back() {
+        assertEquals(SystemBack.FLOW_BACK, systemBackKind(atStep(DATING)))
+    }
+
+    @Test
+    fun system_back_with_the_discard_dialog_open_keeps_editing_even_in_a_flow() {
+        assertEquals(SystemBack.KEEP_EDITING, systemBackKind(atStep(DATING).copy(showDiscardDialog = true)))
+    }
+
+    @Test
+    fun system_back_on_the_hub_with_a_stale_flow_is_plain_back() {
+        val stale = atStep(DATING).copy(route = AncRoute.Workspace("p1"))
+        assertNotNull(stale.registrationFlow)
+        assertEquals(SystemBack.BACK, systemBackKind(stale))
+    }
+
+    @Test
+    fun system_back_with_the_dialog_open_and_no_flow_keeps_editing() {
+        assertEquals(
+            SystemBack.KEEP_EDITING,
+            systemBackKind(AncState(patients = listOf(patient())).copy(showDiscardDialog = true)),
+        )
+    }
+
+    @Test
+    fun system_back_in_the_identity_step_is_flow_back() {
+        assertEquals(SystemBack.FLOW_BACK, systemBackKind(atStep(IDENTITY)))
+    }
+
+    @Test
+    fun system_back_on_the_count_prompt_is_flow_back() {
+        val prompt = atStep(PREGNANCIES, patient(g = 3))
+        assertEquals(AncRoute.PregnancyCountPrompt("p1"), prompt.route)
+        assertEquals(SystemBack.FLOW_BACK, systemBackKind(prompt))
+    }
+
+    @Test
+    fun active_flow_for_route_is_null_when_the_open_draft_is_not_the_flows_session() {
+        val state = atStep(DATING)
+        val other = state.copy(datingDraft = state.datingDraft!!.copy(editorSessionId = "other"))
+        assertNull(other.activeFlowForRoute())
+        assertEquals(SystemBack.BACK, systemBackKind(other))
+    }
+
+    @Test
+    fun system_back_without_a_flow_is_plain_back() {
+        assertEquals(SystemBack.BACK, systemBackKind(AncState(patients = listOf(patient()))))
+        assertEquals(SystemBack.BACK, systemBackKind(atStep(DATING).copy(registrationFlow = null)))
+    }
 }

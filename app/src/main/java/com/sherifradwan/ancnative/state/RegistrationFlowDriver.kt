@@ -41,6 +41,21 @@ internal fun AncRoute.matchesStep(step: RegistrationStep, patientId: String): Bo
 /** True in the flow's Identity step, where age is required for every patient. */
 fun AncState.forcesAgeRequired(): Boolean = registrationFlow?.current == IDENTITY
 
+/** The flow when the open screen is the one it shows, else null. Every flow-aware screen asks this one function. */
+fun AncState.activeFlowForRoute(): RegistrationFlow? =
+    registrationFlow?.takeIf {
+        route.matchesStep(it.current, it.patientId) && activeEditorSessionId(this) == it.activeEditorSessionId
+    }
+
+enum class SystemBack { KEEP_EDITING, FLOW_BACK, BACK }
+
+/** What the system Back gesture does. The discard dialog wins, then the flow's own Back, then the plain back. */
+fun systemBackKind(state: AncState): SystemBack = when {
+    state.showDiscardDialog -> SystemBack.KEEP_EDITING
+    state.activeFlowForRoute() != null -> SystemBack.FLOW_BACK
+    else -> SystemBack.BACK
+}
+
 /**
  * Opens the editor (or the pregnancy count prompt) of [flow]'s current step and commits [flow] with it. Returns null
  * when the existing start logic refuses (saving, dirty draft, patient missing or archived): the state is then unchanged.

@@ -10,6 +10,7 @@ import com.sherifradwan.ancnative.state.RegistrationStep.OBSTETRIC
 import com.sherifradwan.ancnative.state.RegistrationStep.PREGNANCIES
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -182,4 +183,41 @@ class RegistrationFlowDeriveTest {
 
     @Test
     fun s2_row_flag_archived_false() = assertRowFlag(patient(age = null, dating = null, status = "archived"), false)
+
+    @Test
+    fun first_not_done_step_is_dating_with_name_and_age_but_no_dating() {
+        assertEquals(DATING, firstNotDoneStep(patient(dating = null)))
+    }
+
+    @Test
+    fun first_not_done_step_is_dating_when_dating_and_obstetric_are_both_not_done() {
+        assertEquals(DATING, firstNotDoneStep(patient(dating = null, g = null, p = null, a = null)))
+    }
+
+    @Test
+    fun first_not_done_step_is_identity_without_an_age() {
+        assertEquals(IDENTITY, firstNotDoneStep(patient(age = null)))
+        assertEquals(IDENTITY, firstNotDoneStep(patient(age = null, dating = null)))
+    }
+
+    @Test
+    fun first_not_done_step_is_obstetric_without_gpa() {
+        assertEquals(OBSTETRIC, firstNotDoneStep(patient(g = null, p = null, a = null)))
+    }
+
+    @Test
+    fun first_not_done_step_is_histories_when_complete_without_histories() {
+        assertEquals(HISTORIES, firstNotDoneStep(patient()))
+    }
+
+    @Test
+    fun first_not_done_step_is_pregnancies_when_the_expected_ones_are_missing() {
+        assertEquals(PREGNANCIES, firstNotDoneStep(patient(history = "h", g = 3)))
+    }
+
+    @Test
+    fun first_not_done_step_is_null_when_every_step_is_done() {
+        assertNull(firstNotDoneStep(patient(history = "h")))
+        assertNull(firstNotDoneStep(patient(history = "h", g = 2, pregnancies = 1)))
+    }
 }

@@ -348,14 +348,6 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /** Next in the registration flow: ids are made here so the reducer stays pure. */
-    fun registrationNext() = dispatch(flowIds().let { AncEvent.RegistrationNext(it.editorSessionId, it.newPregnancyId) })
-
-    /** Back, Skip, Finish, Begin or the pregnancy count of the registration flow. */
-    fun flowMove(move: FlowEvent) = dispatch(flowIds().let { AncEvent.Flow(move, it.editorSessionId, it.newPregnancyId) })
-
-    private fun flowIds() = FlowIds(UUID.randomUUID().toString(), UUID.randomUUID().toString())
-
     /**
      * Runs the current editor's own save, but only when the reducer accepted Next (it recorded the advance for this
      * editor session). A Next that was ignored, or that already moved the flow, saves nothing.

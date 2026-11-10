@@ -1850,6 +1850,44 @@
         "W4",
         "W5"
       ]
+    },
+    {
+      "id": "UNIT-registration-flow",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*RegistrationFlowTest' --tests '*RegistrationFlowDeriveTest' --tests '*RegistrationFlowDriverTest' --tests '*RegistrationFlowStateTest' --tests 'com.sherifradwan.ancnative.ui.components.RegistrationStepTextTest'",
+      "deps": [
+        "app/src/main/**/state/RegistrationFlow.kt",
+        "app/src/main/**/state/RegistrationFlowDriver.kt",
+        "app/src/main/**/state/AncViewModel.kt",
+        "app/src/main/**/ui/components/RegistrationStepText.kt",
+        "app/src/main/res/values/strings.xml",
+        "app/src/test/**/RegistrationFlowTest.kt",
+        "app/src/test/**/RegistrationFlowDeriveTest.kt",
+        "app/src/test/**/RegistrationFlowDriverTest.kt",
+        "app/src/test/**/RegistrationFlowStateTest.kt",
+        "app/src/test/**/RegistrationStepTextTest.kt"
+      ],
+      "covers": [
+        "RF1",
+        "RF2",
+        "RF3",
+        "RF6",
+        "S5-1",
+        "S5-2",
+        "S5-3",
+        "S5-4",
+        "S5-5",
+        "S5-6",
+        "S5-7",
+        "S5-8",
+        "S5-9",
+        "S5-10",
+        "S5-11",
+        "S5-12",
+        "S6-1",
+        "S6-2",
+        "S6a-0"
+      ]
     }
   ]
 }

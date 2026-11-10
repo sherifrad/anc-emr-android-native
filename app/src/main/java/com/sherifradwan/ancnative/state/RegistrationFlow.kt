@@ -3,18 +3,18 @@ package com.sherifradwan.ancnative.state
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
 
-enum class RegistrationStep(val title: String) {
-    IDENTITY("Identity"),
-    DATING("Dating"),
-    OBSTETRIC("Obstetric history and risk"),
-    HISTORIES("Histories"),
-    PREGNANCIES("Previous pregnancies"),
+enum class RegistrationStep {
+    IDENTITY,
+    DATING,
+    OBSTETRIC,
+    HISTORIES,
+    PREGNANCIES,
 }
 
-enum class StepStatus(val label: String) {
-    PENDING("Pending"),
-    DONE("Done"),
-    SKIPPED("Skipped"),
+enum class StepStatus {
+    PENDING,
+    DONE,
+    SKIPPED,
 }
 
 const val MAX_SUGGESTED_PREGNANCIES = 20
@@ -53,10 +53,24 @@ private val STEPS = RegistrationStep.entries
 
 fun registrationStepNumber(step: RegistrationStep): Int = STEPS.indexOf(step) + 1
 
-fun registrationHeaderText(flow: RegistrationFlow): String =
-    "Step ${registrationStepNumber(flow.current)} of ${STEPS.size}: ${flow.current.title}"
+val registrationStepCount: Int = STEPS.size
 
-fun stepStatusText(status: StepStatus): String = status.label
+/** Skip is offered on every step except Identity, which cannot be skipped. */
+fun showsSkip(flow: RegistrationFlow): Boolean = flow.current != RegistrationStep.IDENTITY
+
+/**
+ * True when the forward button reads Finish. In the pregnancy walk that is the last pregnancy; on the count prompt
+ * ([RegistrationFlow.pregnancyTarget] null) it is when the typed count leaves [remainingOnPrompt] pregnancies at 0.
+ */
+fun forwardIsFinish(flow: RegistrationFlow, remainingOnPrompt: Int? = null): Boolean {
+    if (flow.current != RegistrationStep.PREGNANCIES) return false
+    val target = flow.pregnancyTarget ?: return remainingOnPrompt == 0
+    return flow.pregnancyIndex + 1 >= target
+}
+
+/** The count typed on the prompt: trimmed whole number from 0 to [MAX_SUGGESTED_PREGNANCIES], else null. */
+fun parsePregnancyCount(text: String): Int? =
+    text.trim().toIntOrNull()?.takeIf { it in 0..MAX_SUGGESTED_PREGNANCIES }
 
 /** The one rule for how many pregnancy editors still have to open: the chosen total minus those already stored. */
 fun remainingPregnancies(chosen: Int, existing: Int): Int =
@@ -147,6 +161,12 @@ fun deriveStepStatuses(patient: DemoPatient): Map<RegistrationStep, StepStatus> 
             (patient.gravida != null && patient.previousPregnancies.size >= expectedPregnancies),
     )
     return done.mapValues { (_, isDone) -> if (isDone) StepStatus.DONE else StepStatus.PENDING }
+}
+
+/** The first step, in flow order, that is not done for [patient]; null when every step is done. */
+fun firstNotDoneStep(patient: DemoPatient): RegistrationStep? {
+    val statuses = deriveStepStatuses(patient)
+    return STEPS.firstOrNull { statuses[it] != StepStatus.DONE }
 }
 
 private val REQUIRED_STEPS = listOf(RegistrationStep.IDENTITY, RegistrationStep.DATING, RegistrationStep.OBSTETRIC)

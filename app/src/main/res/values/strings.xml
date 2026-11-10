@@ -578,4 +578,25 @@
     <string name="lab_batch_add">Add</string>
     <string name="lab_batch_edit">Edit</string>
     <string name="lab_batch_abnormal">Abnormal</string>
+    <string name="registration_step_identity">Identity</string>
+    <string name="registration_step_histories">Histories</string>
+    <string name="registration_header">%1$s: %2$s</string>
+    <string name="registration_status_skipped">Skipped</string>
+    <string name="registration_status_pending">To do</string>
+    <string name="registration_current">Current</string>
+    <string name="registration_segment_cd">%1$s, %2$s</string>
+    <string name="registration_segment_current_cd">%1$s, %2$s, current</string>
+    <string name="registration_pregnancy_progress">Pregnancy %1$d of %2$d to add</string>
+    <string name="flow_skip">Skip</string>
+    <string name="flow_finish">Finish</string>
+    <string name="registration_count_title">How many previous pregnancies?</string>
+    <string name="registration_count_label">Number of previous pregnancies</string>
+    <string name="registration_count_hint">Suggested from the gravida count. Change it if the record differs. 0 to %1$d.</string>
+    <plurals name="registration_count_existing">
+        <item quantity="one">%d previous pregnancy is already recorded.</item>
+        <item quantity="other">%d previous pregnancies are already recorded.</item>
+    </plurals>
+    <string name="registration_count_error">Enter a number from 0 to %1$d.</string>
+    <string name="registration_resume_body">Registration is not finished. Resume at: %1$s.</string>
+    <string name="registration_resume_button">Continue registration</string>
 </resources>
