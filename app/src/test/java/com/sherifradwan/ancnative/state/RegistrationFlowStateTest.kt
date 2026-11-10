@@ -757,10 +757,7 @@ class RegistrationFlowStateTest {
         assertEquals("s7", draft.editorSessionId)
         assertEquals(draft.original, draft.values)
         assertEquals(2L, draft.baseRevision)
-        assertEquals(
-            obstetricValues.copy(lmpDate = ""),
-            draft.values.copy(lmpDate = ""),
-        )
+        assertEquals(obstetricValues, draft.values)
         assertEquals("Mona Said", draft.values.displayName)
         assertEquals("31", draft.values.ageText)
         assertEquals("0100", draft.values.phone)

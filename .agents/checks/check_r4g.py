@@ -3,11 +3,11 @@
 
 Stdlib only. Prints PASS/FAIL per check, exits 1 if any FAIL.
 Textual source contract only; verifies nothing at runtime. Comments are stripped before matching.
-  S170 one scan due-date function.
-  S171 new-patient draft carries the dating choice fields.
+  S170 eddFromScan is defined nowhere in main.
+  S171 the patient draft carries none of the eight removed dating fields.
   S172 intakeDatingUpdate and intakeDatingPreview are defined nowhere in main.
   S173 the view model builds no post-save dating command (no datingCmd).
-  S174 the new fields are saved and restored with the patient draft.
+  S174 DraftMapping.kt does not mention the eight removed dating names in the patient branch.
   S175 the patient editor does not call the old LMP-only functions and calculateForLmp is gone from main sources.
 """
 import re
@@ -21,8 +21,8 @@ STATE = MAIN / "state/AncState.kt"
 VM = MAIN / "state/AncViewModel.kt"
 MAPPING = MAIN / "state/DraftMapping.kt"
 EDITOR = MAIN / "ui/PatientEditor.kt"
-FIELDS = ("datingMethod", "transferDate", "embryoAgeDays", "agreedEdd", "scanDate", "scanGaWeeks", "scanGaDays")
-ENUMS = ("DATING_METHOD", "TRANSFER_DATE", "EMBRYO_AGE_DAYS", "AGREED_EDD", "SCAN_DATE", "SCAN_GA_WEEKS", "SCAN_GA_DAYS")
+FIELDS = ("lmpDate", "datingMethod", "transferDate", "embryoAgeDays", "agreedEdd", "scanDate", "scanGaWeeks", "scanGaDays")
+ENUMS = ("LMP_DATE", "DATING_METHOD", "TRANSFER_DATE", "EMBRYO_AGE_DAYS", "AGREED_EDD", "SCAN_DATE", "SCAN_GA_WEEKS", "SCAN_GA_DAYS")
 
 results = []
 
@@ -66,18 +66,23 @@ def block(src, header):
 
 
 def check_s170():
-    record("S170 one scan due-date function", defined_in(r"\bfun\s+eddFromScan\s*\(") == [ISO.name],
-           "eddFromScan not defined exactly once in IsoDates.kt")
+    found = defined_in(r"\b(?:fun\s+(?:[\w.<>?]+\.)?|va[lr]\s+(?:[\w.<>?]+\.)?)eddFromScan\b")
+    record("S170 eddFromScan is gone from main", not found, "eddFromScan defined in " + ", ".join(found))
 
 
 def check_s171():
     st = code(STATE)
     values = block(st, r"data\s+class\s+PatientDraftValues\s*\(")
     enum = block(st, r"enum\s+class\s+PatientDraftField\s*\{")
-    problems = ["PatientDraftValues lacks " + f for f in FIELDS if not re.search(r"\bval\s+" + f + r"\b", values)]
-    problems += ["PatientDraftField lacks " + e for e in ENUMS if not re.search(r"\b" + e + r"\b", enum)]
-    problems += ["reducer does not handle " + e for e in ENUMS if not re.search(r"PatientDraftField\." + e + r"\s*->", st)]
-    record("S171 new-patient draft carries the dating choice fields", not problems, "; ".join(problems[:6]))
+    problems = []
+    if not values:
+        problems.append("PatientDraftValues not found")
+    if not enum:
+        problems.append("PatientDraftField not found")
+    problems += ["PatientDraftValues has " + f for f in FIELDS if re.search(r"\bval\s+" + f + r"\b", values)]
+    problems += ["PatientDraftField has " + e for e in ENUMS if re.search(r"\b" + e + r"\b", enum)]
+    problems += ["reducer handles PatientDraftField." + e for e in ENUMS if re.search(r"PatientDraftField\." + e + r"\b", st)]
+    record("S171 the patient draft carries none of the eight removed dating fields", not problems, "; ".join(problems[:6]))
 
 
 def check_s172():
@@ -105,8 +110,17 @@ def check_s173():
 
 def check_s174():
     src = code(MAPPING)
-    bad = [f for f in FIELDS if len(re.findall(r'"' + f + r'"', src)) < 2]
-    record("S174 new fields saved and restored with the patient draft", not bad, "not saved and restored: " + ", ".join(bad))
+    patient = block(src, r"state\.patientDraft\?\.let\s*")
+    restore = block(src, r"DraftScreenKind\.PATIENT_PROFILE\s*->\s*")
+    problems = []
+    if not patient:
+        problems.append("patient save block not found")
+    if not restore:
+        problems.append("patient restore block not found")
+    for f in FIELDS:
+        if '"' + f + '"' in patient or '"' + f + '"' in restore:
+            problems.append("patient save or restore still uses " + f)
+    record("S174 the patient draft is not saved or restored with the removed dating keys", not problems, "; ".join(problems))
 
 
 def check_s175():

@@ -1629,17 +1629,12 @@
     {
       "id": "UNIT-r4g",
       "tier": 1,
-      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.model.EddFromScanTest' --tests 'com.sherifradwan.ancnative.state.PatientDatingDraftTest' --tests 'com.sherifradwan.ancnative.state.DraftMappingTest'",
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.state.DraftMappingTest'",
       "deps": [
-        "app/src/main/**/model/IsoDates.kt",
         "app/src/main/**/state/*.kt",
-        "app/src/test/**/EddFromScanTest.kt",
-        "app/src/test/**/PatientDatingDraftTest.kt"
+        "app/src/test/**/state/DraftMappingTest.kt"
       ],
       "covers": [
-        "Q270",
-        "Q271",
-        "Q272",
         "Q274",
         "Q275"
       ]
