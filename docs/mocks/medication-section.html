@@ -1,0 +1,925 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Medication section mock (Stage 1)</title>
+<!--
+  Clickable mock for the Meds tab, Stage 1. Fictional data only. No network, no libraries, no images.
+  Layout: left = review controls (outside the phone), centre = 360px phone, right = live checks.
+  Every colour is a CSS variable (see the two theme blocks).
+-->
+<style>
+/* ---------- Colour tokens (hex only so the live contrast table can read them) ---------- */
+[data-theme="light"]{
+  color-scheme:light;
+  --color-bg:#F4F6F8; --color-surface:#FFFFFF; --color-surface-raised:#FFFFFF; --color-surface-2:#EEF2F6;
+  --color-text:#1A2330; --color-text-muted:#4A5568;
+  --color-primary:#0B5CAD; --color-on-primary:#FFFFFF;
+  --color-alert:#B3261E; --color-alert-bg:#FDECEA; --color-success:#1B6E3C;
+  --color-border:#6B7787; --color-divider:#D5DBE3;
+  --color-scrim:rgba(10,16,24,.55); --color-frame:#2B3340;
+  --color-disabled-bg:#E6EAEF; --color-disabled-text:#566170; --color-hatch:#C3CBD6;
+  --color-kb:#D3D8E0; --color-kb-key:#FFFFFF; --color-shadow:rgba(10,16,24,.25);
+}
+[data-theme="dark"]{
+  color-scheme:dark;
+  --color-bg:#0E1217; --color-surface:#181E26; --color-surface-raised:#212833; --color-surface-2:#2A3340;
+  --color-text:#E8EDF3; --color-text-muted:#A9B4C2;
+  --color-primary:#7DB7F5; --color-on-primary:#0B1A2B;
+  --color-alert:#FF8A80; --color-alert-bg:#3A1B1A; --color-success:#6FD39A;
+  --color-border:#8693A5; --color-divider:#2F3947;
+  --color-scrim:rgba(0,0,0,.62); --color-frame:#05070A;
+  --color-disabled-bg:#222A34; --color-disabled-text:#8A96A6; --color-hatch:#3A4553;
+  --color-kb:#10151B; --color-kb-key:#2A3340; --color-shadow:rgba(0,0,0,.6);
+}
+
+/* ---------- Base ---------- */
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--color-bg);color:var(--color-text);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Arabic",Tahoma,sans-serif}
+button,input,textarea{font:inherit;color:inherit}
+[hidden]{display:none!important}
+h1,h2,h3,p{margin:0}
+:focus-visible{outline:3px solid var(--color-primary);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.ic{width:24px;height:24px;fill:currentColor;flex:none}
+.ic-s{width:20px;height:20px}
+.phone[dir="rtl"] .dir{transform:scaleX(-1)}
+
+/* ---------- Page chrome (outside the phone) ---------- */
+.top{padding:16px 16px 0;max-width:1180px;margin:0 auto}
+.top h1{font-size:22px}
+.top p{color:var(--color-text-muted);margin-top:4px;max-width:70ch}
+.layout{display:flex;flex-wrap:wrap;gap:24px;justify-content:center;align-items:flex-start;padding:16px}
+.panel{width:340px;max-width:100%;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.panel h2{font-size:16px}
+.panel h3{font-size:14px;color:var(--color-text-muted);font-weight:600}
+fieldset{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+legend{font-weight:700;font-size:14px;padding:0;margin-bottom:6px}
+.opt{display:flex;align-items:center;gap:10px;min-height:48px;padding:0 12px;border:1px solid var(--color-border);border-radius:10px;cursor:pointer;background:var(--color-surface)}
+.opt input{width:22px;height:22px;accent-color:var(--color-primary);margin:0}
+.opt:has(input:checked){border:2px solid var(--color-primary);font-weight:700}
+.segrow{display:flex;gap:6px}
+.seg{flex:1;min-height:48px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface);cursor:pointer;font-weight:600}
+.seg[aria-pressed="true"]{border:2px solid var(--color-primary);background:var(--color-surface-2);font-weight:800}
+.seg[aria-pressed="true"]::before{content:"\2713\00a0"}
+.cbtn{min-height:48px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface);padding:0 14px;cursor:pointer;font-weight:600}
+.readout{font-size:14px;background:var(--color-surface-2);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.readout b{font-weight:700}
+.note{border:2px solid var(--color-border);border-radius:12px;padding:12px 14px;font-size:14px}
+.note h2{font-size:15px;margin-bottom:6px}
+.note ul{margin:0;padding-inline-start:20px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:start;padding:4px 6px;border-bottom:1px solid var(--color-divider);vertical-align:top}
+.pass::before{content:"PASS ";font-weight:800;color:var(--color-success)}
+.fail::before{content:"FAIL ";font-weight:800;color:var(--color-alert)}
+
+/* ---------- Phone frame: 360px wide screen ---------- */
+.phone{width:360px;height:780px;border:8px solid var(--color-frame);border-radius:34px;overflow:hidden;box-sizing:content-box;background:var(--color-bg);position:relative;display:flex;flex-direction:column;box-shadow:0 10px 30px var(--color-shadow);flex:none}
+.phone .screen{display:flex;flex-direction:column;flex:1;min-height:0;font-size:var(--fs,16px);line-height:1.35}
+.phone[data-scale="2"]{--fs:32px}
+.app{flex:1;min-height:0;position:relative;display:flex;flex-direction:column;overflow:hidden}
+.appbar{flex:none;display:flex;align-items:center;gap:4px;min-height:56px;padding-inline:4px 12px;background:var(--color-surface);border-bottom:1px solid var(--color-divider)}
+.appbar-title{font-weight:700;font-size:1.0625em}
+.icon-btn{width:48px;height:48px;border:0;background:none;border-radius:24px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:none}
+.scroller{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;background:var(--color-bg)}
+
+/* Patient header strip */
+.hdr{background:var(--color-surface);padding:12px 16px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--color-divider)}
+.pname{font-size:1.125em;font-weight:800;overflow-wrap:anywhere}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:2px 10px;border-radius:16px;background:var(--color-surface-2);font-weight:600;font-size:.875em;border:1px solid var(--color-divider)}
+.pill.alert{background:var(--color-alert-bg);color:var(--color-alert);border-color:var(--color-alert);font-weight:800}
+.banner{display:flex;gap:10px;align-items:flex-start;border:2px solid var(--color-alert);background:var(--color-alert-bg);color:var(--color-alert);border-radius:12px;padding:10px 12px;font-size:.9375em}
+.banner strong{display:block}
+.banner span.txt{color:var(--color-text)}
+
+.tabs{position:sticky;top:0;z-index:5;display:flex;overflow-x:auto;background:var(--color-surface);border-bottom:1px solid var(--color-divider);scrollbar-width:none}
+.tab{flex:none;min-height:48px;min-width:72px;padding:0 14px;border:0;border-bottom:4px solid transparent;background:none;cursor:pointer;color:var(--color-text-muted);font-weight:600}
+.tab[aria-selected="true"]{color:var(--color-text);font-weight:800;border-bottom-color:var(--color-primary)}
+
+/* Meds tab */
+.titlerow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 16px 6px;flex-wrap:wrap}
+.titlerow h2{font-size:1.0625em;font-weight:800;flex:1 1 140px}
+.lockmsg{position:absolute;top:64px;inset-inline:12px;z-index:10;background:var(--color-surface-raised);padding:8px 12px;border:2px dashed var(--color-border);border-radius:10px;display:flex;gap:8px;align-items:center;font-size:.875em;font-weight:600}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;min-width:48px;padding:0 16px;border-radius:24px;border:2px solid var(--color-border);background:var(--color-surface);color:var(--color-text);font-weight:700;cursor:pointer;text-align:center}
+.btn-primary{background:var(--color-primary);color:var(--color-on-primary);border-color:var(--color-primary)}
+.btn-secondary{background:transparent;color:var(--color-primary);border-color:var(--color-primary)}
+.btn-danger{background:var(--color-alert-bg);color:var(--color-alert);border-color:var(--color-alert)}
+.btn.wide{flex:1 1 100%}
+.btn:disabled,[data-entry]:disabled{background-color:var(--color-disabled-bg);color:var(--color-disabled-text);border-color:var(--color-disabled-text);border-style:dashed;cursor:not-allowed;background-image:repeating-linear-gradient(135deg,transparent 0 7px,var(--color-hatch) 7px 8px)}
+.list{background:var(--color-surface);border-block:1px solid var(--color-divider)}
+.row{display:flex;align-items:stretch;border-bottom:1px solid var(--color-divider)}
+.row:last-child{border-bottom:0}
+.row-main{flex:1;min-width:0;min-height:60px;padding:8px 8px 8px 16px;padding-inline:16px 8px;border:0;background:none;display:flex;align-items:center;gap:8px;text-align:start;cursor:pointer;border-radius:0}
+.row-main .txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.r-name{font-weight:700;overflow-wrap:anywhere}
+.r-meta{color:var(--color-text-muted);font-size:.875em;overflow-wrap:anywhere}
+.row-main:disabled .r-meta,.tile:disabled .r-meta{color:inherit}
+.row-stop{flex:none;width:60px;min-height:60px;border:0;border-inline-start:1px solid var(--color-divider);background:none;color:var(--color-alert);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;font-size:.8125em;font-weight:700;cursor:pointer;border-radius:0}
+.row.past .r-name{font-weight:600}
+.tagstop{display:inline-flex;align-items:center;gap:4px;font-weight:700;color:var(--color-text-muted);font-size:.875em}
+.picker{margin:12px 0}
+.picker-head{display:flex;align-items:center;gap:10px;width:100%;min-height:56px;padding:0 16px;background:var(--color-surface);border:0;border-block:1px solid var(--color-divider);cursor:pointer;font-weight:700;text-align:start}
+.picker-head .grow{flex:1}
+.picker-head[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.picker-panel{background:var(--color-surface);border-bottom:1px solid var(--color-divider);padding:8px 16px 12px;display:flex;flex-direction:column;gap:8px}
+.searchrow{display:flex;align-items:center;border:2px solid var(--color-border);border-radius:12px;background:var(--color-surface);min-height:48px}
+.searchrow:focus-within{border-color:var(--color-primary)}
+.searchrow input{flex:1;min-width:0;min-height:48px;border:0;background:none;padding:0 12px;outline:none}
+.searchrow input::placeholder{color:var(--color-text-muted);opacity:1}
+.searchrow input:disabled{color:var(--color-disabled-text)}
+.chiprow,.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:48px;min-width:48px;padding:0 14px;border-radius:24px;border:2px solid var(--color-border);background:var(--color-surface-2);color:var(--color-text);cursor:pointer;font-weight:600;justify-content:center}
+.chip.on{background:var(--color-primary);color:var(--color-on-primary);border-color:var(--color-primary);font-weight:800}
+.plist{max-height:280px;overflow-y:auto;border:1px solid var(--color-divider);border-radius:10px}
+.phone[data-scale="2"] .plist{max-height:340px}
+.tile{display:flex;align-items:center;gap:8px;width:100%;min-height:56px;padding:6px 12px;border:0;border-bottom:1px solid var(--color-divider);background:var(--color-surface);text-align:start;cursor:pointer;border-radius:0}
+.tile:last-child{border-bottom:0}
+.tile .txt{flex:1;min-width:0;display:flex;flex-direction:column}
+.tile.have{cursor:default;color:var(--color-text-muted)}
+.tile-state{display:inline-flex;align-items:center;gap:4px;color:var(--color-success);font-weight:800;font-size:.875em}
+.tile.have .r-name{font-weight:600}
+.count{font-size:.8125em;color:var(--color-text-muted)}
+.empty{padding:32px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;background:var(--color-surface);border-block:1px solid var(--color-divider)}
+.empty h3{font-size:1.0625em}
+.empty p{color:var(--color-text-muted)}
+.skel{height:60px;border-bottom:1px solid var(--color-divider);padding:12px 16px;display:flex;flex-direction:column;gap:8px}
+.skel i{display:block;height:12px;border-radius:6px;background:var(--color-surface-2);animation:pulse 1.2s ease-in-out infinite}
+.skel i:first-child{width:55%}.skel i:last-child{width:80%;height:10px}
+@keyframes pulse{50%{opacity:.45}}
+.past-toggle{display:flex;align-items:center;gap:8px;width:100%;min-height:48px;padding:0 16px;border:0;background:none;color:var(--color-primary);font-weight:700;cursor:pointer;text-align:start}
+.past-toggle[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.toast{position:absolute;inset-inline:12px;bottom:12px;z-index:40;flex-wrap:wrap;background:var(--color-text);color:var(--color-bg);border-radius:12px;padding:6px 6px 6px 16px;padding-inline:16px 6px;display:flex;align-items:center;gap:8px;min-height:48px;font-weight:600;box-shadow:0 4px 14px var(--color-shadow)}
+.toast .btn{min-height:48px;border-radius:12px;background:transparent;color:var(--color-bg);border-color:var(--color-bg)}
+.toast span{flex:1}
+
+/* Bottom sheet */
+.overlay{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;justify-content:flex-end}
+.overlay:empty{display:none}
+.scrim{position:absolute;inset:0;border:0;padding:0;background:var(--color-scrim);cursor:default}
+.sheet{position:relative;background:var(--color-surface-raised);border-radius:22px 22px 0 0;max-height:calc(100% - 12px);display:flex;flex-direction:column;box-shadow:0 -6px 24px var(--color-shadow);color:var(--color-text)}
+.phone.peek .sheet{visibility:hidden}.phone.peek .scrim{pointer-events:none}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--color-border);margin:8px auto 0;flex:none}
+.sheet-head{flex:none;padding:6px 16px 8px}
+.sheet-head h2{font-size:1.1875em;font-weight:800;outline:none}
+.sheet-head p{color:var(--color-text-muted);font-size:.875em;overflow-wrap:anywhere}
+.progress{height:4px;background:var(--color-surface-2);overflow:hidden;flex:none}
+.progress::after{content:"";display:block;height:100%;width:40%;background:var(--color-primary);animation:slide 1s linear infinite}
+@keyframes slide{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
+@keyframes slide-rtl{from{transform:translateX(100%)}to{transform:translateX(-250%)}}
+.phone[dir="rtl"] .progress::after{animation-name:slide-rtl}
+.sheet-body{flex:1;min-height:0;overflow-y:auto;padding:4px 16px 16px;display:flex;flex-direction:column;gap:14px}
+.sheet-foot{flex:none;border-top:1px solid var(--color-divider);padding:10px 16px 12px;display:flex;flex-wrap:wrap;gap:8px;background:var(--color-surface-raised)}
+.sheet-foot .btn{flex:1 1 120px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field>label,.field>.lbl{font-weight:700;font-size:.9375em}
+.inp{min-height:48px;width:100%;border:2px solid var(--color-border);border-radius:12px;background:var(--color-surface);padding:8px 12px;color:var(--color-text)}
+.inp:focus{outline:none;border-color:var(--color-primary);box-shadow:0 0 0 2px var(--color-primary)}
+.inp[aria-invalid="true"]{border-color:var(--color-alert)}
+.inp:disabled{color:var(--color-disabled-text);background:var(--color-disabled-bg)}
+textarea.inp{min-height:72px;resize:none}
+.err{display:flex;gap:6px;align-items:flex-start;color:var(--color-alert);font-weight:700;font-size:.875em}
+.hint{color:var(--color-text-muted);font-size:.875em}
+.ro{min-height:48px;display:flex;align-items:center;gap:8px;padding:0 12px;border:2px dashed var(--color-border);border-radius:12px;background:var(--color-surface-2);font-weight:600}
+.segs{display:flex;gap:8px}
+.segs .chip{flex:1}
+.daterow{display:flex;gap:8px;align-items:stretch}
+.daterow .inp{flex:1;min-width:0}
+.daterow .btn{border-radius:12px}
+.failbox{display:flex;gap:10px;border:2px solid var(--color-alert);background:var(--color-alert-bg);border-radius:12px;padding:10px 12px;color:var(--color-alert);outline:none}
+.failbox strong{display:block}
+.failbox .txt{color:var(--color-text);font-size:.9375em}
+.dialog-wrap{position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;padding:16px;background:var(--color-scrim)}
+.dialog{background:var(--color-surface-raised);border:2px solid var(--color-border);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;width:100%;max-height:100%;overflow:auto}
+.dialog h3{font-size:1.0625em}
+.dialog .acts{display:flex;flex-wrap:wrap;gap:8px}
+.dialog .acts .btn{flex:1 1 120px}
+.spin{width:18px;height:18px;border-radius:50%;border:3px solid currentColor;border-inline-end-color:transparent;animation:rot .8s linear infinite;flex:none}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* Simulated keyboard */
+.kb{display:none;flex:none;height:280px;background:var(--color-kb);padding:8px 6px;color:var(--color-text)}
+.phone.kb-on .kb{display:flex;flex-direction:column;gap:8px}
+.kb-bar{height:36px;display:flex;gap:6px;align-items:center;font-size:.8125em;color:var(--color-text-muted);justify-content:space-around}
+.kb-row{display:flex;gap:5px;justify-content:center}
+.kb-row{margin-bottom:4px}.kb-row div{flex:1;max-width:32px;height:48px;border-radius:6px;background:var(--color-kb-key);display:flex;align-items:center;justify-content:center;font:600 15px system-ui,sans-serif;direction:ltr;color:var(--color-text)}
+.kb-last{display:flex;gap:8px;margin-top:auto}
+.kb-last div{flex:1;height:48px;border-radius:8px;background:var(--color-kb-key);display:flex;align-items:center;justify-content:center;color:var(--color-text-muted);font-size:14px}
+.kb-action{flex:0 0 108px;min-height:48px;border:0;border-radius:8px;background:var(--color-primary);color:var(--color-on-primary);font-weight:800;cursor:pointer}
+
+@media (prefers-reduced-motion:reduce){.skel i,.progress::after,.spin{animation:none}.progress::after{width:100%;opacity:.6}}
+@media (max-width:420px){
+  .layout{padding:16px 0}.panel{border-radius:0;border-inline:0;width:100%}
+  .phone{border-width:0;border-radius:0;width:100%;max-width:360px}
+}
+</style>
+</head>
+<body>
+
+<!-- Icon sprite: inline SVG symbols, no image files -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4 14H8V8h8v8z"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><path d="M18 8h-1V6A5 5 0 0 0 7 6v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zM9 6a3 3 0 0 1 6 0v2H9V6z"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V9h14v11z"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></symbol>
+</svg>
+
+<header class="top">
+  <h1>Meds tab, Stage 1: clickable mock</h1>
+  <p>Fictional data. The phone is 360px wide. Controls on the left and checks on the right are review aids and are not part of the app.</p>
+</header>
+
+<main class="layout">
+
+  <!-- ===== Review controls (outside the phone) ===== -->
+  <section class="panel" aria-label="Review controls">
+    <fieldset>
+      <legend>State</legend>
+      <label class="opt"><input type="radio" name="state" value="populated" checked> Populated (default)</label>
+      <label class="opt"><input type="radio" name="state" value="empty"> Empty list</label>
+      <label class="opt"><input type="radio" name="state" value="loading"> Loading (skeleton)</label>
+      <label class="opt"><input type="radio" name="state" value="saving"> Saving (all entry points disabled)</label>
+      <label class="opt"><input type="radio" name="state" value="savefail"> Save failed</label>
+      <label class="opt"><input type="radio" name="state" value="warning"> Warning (high-risk alert)</label>
+      <label class="opt"><input type="radio" name="state" value="extreme"> Extreme text (200%, long names)</label>
+    </fieldset>
+    <fieldset>
+      <legend>Direction and theme</legend>
+      <div class="segrow" role="group" aria-label="Direction">
+        <button class="seg" id="dirLtr" aria-pressed="true">LTR (English)</button>
+        <button class="seg" id="dirRtl" aria-pressed="false">RTL (Arabic)</button>
+      </div>
+      <div class="segrow" role="group" aria-label="Theme">
+        <button class="seg" id="thLight" aria-pressed="true">Light</button>
+        <button class="seg" id="thDark" aria-pressed="false">Dark</button>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Device</legend>
+      <label class="opt"><input type="checkbox" id="kbToggle"> Show keyboard (simulated)</label>
+      <label class="opt"><input type="checkbox" id="peekToggle"> Peek behind sheet (hide sheet, keep state)</label>
+      <button class="cbtn" id="sysBack">System back (Esc closes an open sheet)</button>
+      <p class="hint" style="font-size:13px;color:var(--color-text-muted)">Real code treats an add or stop draft as changed on open (for crash recovery) but shows the discard prompt only after the doctor edits something.</p>
+    </fieldset>
+    <fieldset>
+      <legend>Helpers</legend>
+      <button class="cbtn" id="prep">Prepare ORACLE-1 test (open picker, type "a", Show past, scroll)</button>
+      <button class="cbtn" id="reset">Reset this state</button>
+    </fieldset>
+  </section>
+
+  <!-- ===== Phone ===== -->
+  <section aria-label="Phone, 360px wide">
+    <div class="phone" id="phone" dir="ltr" lang="en" data-scale="1">
+      <div class="screen">
+        <div class="app" id="app"></div>
+        <div class="kb" id="kb" role="group" aria-label="Simulated keyboard">
+          <div class="kb-bar" aria-hidden="true"><span>suggestion</span><span>|</span><span>suggestion</span></div>
+          <div id="kbKeys"></div>
+          <div class="kb-last"><div aria-hidden="true">123</div><div aria-hidden="true">space</div><button class="kb-action" id="kbAction" type="button" tabindex="-1">Next</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Live checks (outside the phone) ===== -->
+  <section class="panel" aria-label="Live checks">
+    <h2>Tap counter (ORACLE-2)</h2>
+    <div class="readout" aria-live="polite">
+      <div>Taps since reset: <b id="tapTotal">0</b></div>
+      <div>First add with the picker closed: <b>3 taps</b> (open picker, tile, Save)</div>
+      <div>Next adds while the picker stays open: <b>2 taps</b></div>
+      <div>Stop: <b>1 tap</b> (stop symbol; Undo for 10 s; other date: edit the row)</div>
+      <div>A drug with no saved frequency (Anti-D): <b>+1 tap</b> to choose a frequency</div>
+      <div>Last measured: <b id="tapLast">none yet</b></div>
+    </div>
+    <button class="cbtn" id="tapReset">Reset tap counter</button>
+
+    <h2>Tab stays put (ORACLE-1)</h2>
+    <div class="readout" id="o1" aria-live="polite">Run an add, stop or edit. This panel compares the tab before and after.</div>
+
+    <h2>Keyboard layout (ORACLE-6)</h2>
+    <div class="readout" id="o6" aria-live="polite">Open the sheet, show the keyboard and focus a field.</div>
+
+    <h2>Audits</h2>
+    <button class="cbtn" id="auditBtn">Run 48px hit-area audit</button>
+    <div class="readout" id="auditOut">Not run yet.</div>
+    <h3>Contrast, computed from the CSS variables</h3>
+    <div id="contrast"></div>
+
+    <aside class="note" id="scopeNote" aria-label="Not in Stage 1">
+      <h2>Stage 1 does NOT include</h2>
+      <ul>
+        <li>Course length and automatic end of a short course</li>
+        <li>Change history and the "Changed" mark</li>
+        <li>Undo for a dose change (Undo after one-tap stop and after "Save and add another" is in the mock)</li>
+        <li>Favourites and dose or frequency variants (and the settings screen)</li>
+      </ul>
+    </aside>
+  </section>
+</main>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const icon = (n, c = '') => `<svg class="ic ${c}" aria-hidden="true" focusable="false"><use href="#i-${n}"/></svg>`;
+
+/* ---------- Strings (English and Arabic) ---------- */
+const I18N = {
+en:{appTitle:'Patient workspace',back:'Back',tabs:['Overview','Visits','Scans','Labs','Meds','Plan'],
+ pname:'Fatima Abdelrahman Mohammed El-Sayed Al-Husseini',ga:'GA 28w 3d',bp:'BP',elev:'Elevated',highRisk:'High risk',
+ alertTitle:'High-risk alert',alertText:'Pre-eclampsia risk: blood pressure above 140/90 at the last two visits.',
+ active:'Active Prescriptions ({n})',activeLoading:'Active Prescriptions',prescribe:'Prescribe',stop:'Stop',stopAria:'Stop {name}',editAria:'Edit {name}',
+ addMed:'Add medication',search:'Search medications',clear:'Clear search',common:'Common',recent:'Recent',src:'Drug list',
+ count:'{n} drugs, scroll this list',noMatch:'No match. Use Prescribe for a custom drug.',haveAria:'{name} is already active',
+ activeTag:'Active',stopped:'Stopped',stoppedOn:'Stopped {d}',showPast:'Show past ({n})',hidePast:'Hide past ({n})',chooseFreq:'Choose frequency',
+ sheetAdd:'Add medication',sheetCustom:'Prescribe a medication',sheetStop:'Stop medication',sheetEdit:'Edit medication',
+ name:'Medication name',dose:'Dose',route:'Route',routeRO:'Route (read-only)',routeNote:'A different route is a new drug.',freq:'Frequency',other:'Other',otherText:'Frequency in words',
+ status:'Status',startDate:'Start date',stopDate:'Stop date',today:'Today',notes:'Notes',
+ cancel:'Cancel',save:'Save',saveAnother:'Save and add another',saving:'Saving…',savingAria:'Saving',
+ errName:'Enter the drug name.',errDose:'Enter the dose.',errFreq:'Choose a frequency.',errOther:'Describe the frequency.',errDate:'Pick a date.',errDateOrder:'Stop date is before the start date.',
+ failTitle:'Not saved',failCause:"This patient's record changed since you opened it. Close and reopen the patient.",failHint:'Your entries are kept. Press Save to try again.',
+ discardTitle:'Discard changes?',discardText:'Your edits to this medication will be lost.',keep:'Keep editing',discard:'Discard',
+ empty:'No medications yet',emptyHint:'Add the first medication for this patient.',emptyAction:'Prescribe the first medication',
+ loading:'Loading medications…',lockSaving:'Saving. Medication entry is paused until the save finishes.',lockOpen:'A medication form is open. Finish or cancel it first.',
+ saved:'Saved: {name}',stoppedMsg:'Stopped: {name}',added:'Added: {name}',undo:'Undo',undone:'Undone',notMock:'Not part of this mock.',
+ ph:{name:'e.g. Paracetamol',dose:'e.g. 500 mg',other:'e.g. Every 12 hours for 5 days',notes:'Optional'},
+ r:{oral:'Oral',im:'IM',iv:'IV',topical:'Topical',sc:'Subcutaneous'},
+ f:{once:'Once daily',twice:'Twice daily',thrice:'Three times daily',q8:'Every 8 hours',weekly:'Weekly',other:'Other'},
+ sa:{active:'Active',stopped:'Stopped'},next:'Next',enter:'Enter',dismiss:'Dismiss'},
+ar:{appTitle:'ملف المريضة',back:'رجوع',tabs:['نظرة عامة','الزيارات','الفحوص','التحاليل','الأدوية','الخطة'],
+ pname:'فاطمة عبد الرحمن محمد السيد الحسيني',ga:'عمر الحمل 28 أسبوعًا و3 أيام',bp:'الضغط',elev:'مرتفع',highRisk:'حمل عالي الخطورة',
+ alertTitle:'تنبيه خطورة عالية',alertText:'خطر تسمم الحمل: الضغط أعلى من 140/90 في آخر زيارتين.',
+ active:'الوصفات الحالية ({n})',activeLoading:'الوصفات الحالية',prescribe:'وصف دواء',stop:'إيقاف',stopAria:'إيقاف {name}',editAria:'تعديل {name}',
+ addMed:'إضافة دواء',search:'ابحث عن دواء',clear:'مسح البحث',common:'شائع',recent:'الأخيرة',src:'قائمة الأدوية',
+ count:'{n} دواءً، مرّر القائمة',noMatch:'لا نتائج. استخدم «وصف دواء» لدواء مخصص.',haveAria:'{name} نشط بالفعل',
+ activeTag:'نشط',stopped:'متوقف',stoppedOn:'أُوقف {d}',showPast:'عرض السابقة ({n})',hidePast:'إخفاء السابقة ({n})',chooseFreq:'اختر التكرار',
+ sheetAdd:'إضافة دواء',sheetCustom:'وصف دواء',sheetStop:'إيقاف دواء',sheetEdit:'تعديل دواء',
+ name:'اسم الدواء',dose:'الجرعة',route:'طريق الإعطاء',routeRO:'طريق الإعطاء (للقراءة فقط)',routeNote:'طريق إعطاء مختلف يعني دواءً جديدًا.',freq:'التكرار',other:'أخرى',otherText:'التكرار بالكلمات',
+ status:'الحالة',startDate:'تاريخ البدء',stopDate:'تاريخ الإيقاف',today:'اليوم',notes:'ملاحظات',
+ cancel:'إلغاء',save:'حفظ',saveAnother:'حفظ وإضافة آخر',saving:'جارٍ الحفظ…',savingAria:'جارٍ الحفظ',
+ errName:'أدخل اسم الدواء.',errDose:'أدخل الجرعة.',errFreq:'اختر التكرار.',errOther:'صف التكرار.',errDate:'اختر تاريخًا.',errDateOrder:'تاريخ الإيقاف قبل تاريخ البدء.',
+ failTitle:'لم يتم الحفظ',failCause:'تغيّر سجل هذه المريضة منذ فتحته. أغلق الملف وأعد فتحه.',failHint:'بياناتك محفوظة في النموذج. اضغط حفظ للمحاولة مرة أخرى.',
+ discardTitle:'تجاهل التغييرات؟',discardText:'ستفقد تعديلاتك على هذا الدواء.',keep:'متابعة التعديل',discard:'تجاهل',
+ empty:'لا توجد أدوية بعد',emptyHint:'أضف أول دواء لهذه المريضة.',emptyAction:'وصف أول دواء',
+ loading:'جارٍ تحميل الأدوية…',lockSaving:'جارٍ الحفظ. إدخال الأدوية متوقف حتى ينتهي الحفظ.',lockOpen:'نموذج دواء مفتوح. أنهِه أو ألغِه أولًا.',
+ saved:'تم الحفظ: {name}',stoppedMsg:'أُوقف: {name}',added:'تمت الإضافة: {name}',undo:'تراجع',undone:'تم التراجع',notMock:'ليس جزءًا من هذا النموذج.',
+ ph:{name:'مثال: باراسيتامول',dose:'مثال: 500 ملغ',other:'مثال: كل 12 ساعة لمدة 5 أيام',notes:'اختياري'},
+ r:{oral:'فموي',im:'عضلي',iv:'وريدي',topical:'موضعي',sc:'تحت الجلد'},
+ f:{once:'مرة يوميًا',twice:'مرتين يوميًا',thrice:'ثلاث مرات يوميًا',q8:'كل 8 ساعات',weekly:'أسبوعيًا',other:'أخرى'},
+ sa:{active:'نشط',stopped:'متوقف'},next:'التالي',enter:'إدخال',dismiss:'إغلاق'}
+};
+let LANG = 'en';
+const T = k => I18N[LANG][k] ?? I18N.en[k] ?? k;
+const fmt = (k, o) => T(k).replace(/\{(\w+)\}/g, (_, x) => o[x]);
+
+/* ---------- Data ---------- */
+const iso = dt => dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+const dayOff = n => { const d = new Date(); d.setDate(d.getDate() + n); return iso(d); };
+const TODAY = iso(new Date());
+const ROUTES = ['oral', 'im', 'iv', 'topical', 'sc'];
+const FREQS = ['once', 'twice', 'thrice', 'q8', 'weekly', 'other'];
+const CAT = [
+ {id:'folic', name:'Folic acid', dose:'5 mg', route:'oral', freq:'once'},
+ {id:'iron', name:'Ferrous sulfate', dose:'200 mg', route:'oral', freq:'once'},
+ {id:'asa', name:'Aspirin', dose:'75 mg', route:'oral', freq:'once'},
+ {id:'lab', name:'Labetalol', dose:'100 mg', route:'oral', freq:'twice'},
+ {id:'ca', name:'Calcium carbonate', dose:'500 mg', route:'oral', freq:'twice'},
+ {id:'methyl', name:'Methyldopa', dose:'250 mg', route:'oral', freq:'thrice'},
+ {id:'para', name:'Paracetamol', dose:'500 mg', route:'oral', freq:'q8'},
+ {id:'ondan', name:'Ondansetron', dose:'4 mg', route:'oral', freq:'q8'},
+ {id:'enox', name:'Enoxaparin', dose:'40 mg', route:'sc', freq:'once'},
+ {id:'vitd', name:'Vitamin D3', dose:'50000 IU', route:'oral', freq:'weekly'},
+ {id:'antid', name:'Anti-D immunoglobulin', dose:'1500 IU', route:'im', freq:''},
+ {id:'nife', name:'Nifedipine', dose:'20 mg', route:'oral', freq:'twice'}
+];
+const RECENT = ['lab', 'iron', 'para', 'ca', 'methyl'];
+const seed = () => [
+ {id:'m1', name:'Folic acid', dose:'5 mg', route:'oral', freq:'once', freqText:'', status:'active', start:dayOff(-70), stop:null, notes:''},
+ {id:'m2', name:'Ferrous sulfate', dose:'200 mg', route:'oral', freq:'once', freqText:'', status:'active', start:dayOff(-42), stop:null, notes:'After food'},
+ {id:'m3', name:'Aspirin', dose:'75 mg', route:'oral', freq:'once', freqText:'', status:'active', start:dayOff(-35), stop:null, notes:''},
+ {id:'m4', name:'Labetalol', dose:'100 mg', route:'oral', freq:'twice', freqText:'', status:'active', start:dayOff(-14), stop:null, notes:''},
+ {id:'m5', name:'Metoclopramide', dose:'10 mg', route:'oral', freq:'thrice', freqText:'', status:'stopped', start:dayOff(-60), stop:dayOff(-45), notes:''},
+ {id:'m6', name:'Amoxicillin', dose:'500 mg', route:'oral', freq:'thrice', freqText:'', status:'stopped', start:dayOff(-30), stop:dayOff(-23), notes:''}
+];
+const BLANK = () => ({name:'', dose:'', route:'oral', freq:'', freqText:'', status:'active', start:TODAY, stop:TODAY, notes:''});
+
+/* ---------- State ---------- */
+const S = {view:'populated', meds:[], pickerOpen:false, query:'', src:'common', showPast:false,
+  draft:null, phase:'idle', failMode:false, freeze:false, dialog:false, kb:false, peek:false,
+  taps:0, task:null, instance:0, snap:null, returnFid:null, uid:100, toastTimer:null};
+const phone = $('#phone');
+const medById = id => S.meds.find(m => m.id === id);
+const isActive = m => m.status === 'active';
+const haveName = n => S.meds.some(m => isActive(m) && m.name.toLowerCase() === n.toLowerCase());
+const locked = () => S.phase === 'saving' || !!S.draft || S.view === 'loading';
+const rLabel = r => T('r')[r] || r;
+const fLabel = m => m.freq === 'other' ? (m.freqText || T('f').other) : (m.freq ? T('f')[m.freq] : '');
+const dFmt = s => s ? new Date(s + 'T00:00:00').toLocaleDateString(LANG === 'ar' ? 'ar-EG-u-nu-latn' : 'en-GB', {day:'numeric', month:'short'}) : '';
+const longName = n => S.view === 'extreme' ? n + ' extended-release film-coated' : n;
+
+/* ---------- Build the screen (static regions; lists update in place) ---------- */
+function buildApp() {
+  const keepScroll = $('#scroller') ? $('#scroller').scrollTop : 0;
+  S.instance++;
+  phone.dataset.scale = S.view === 'extreme' ? '2' : '1';
+  $('#app').innerHTML = `
+  <div class="appbar"><button class="icon-btn" data-act="app-back" aria-label="${esc(T('back'))}">${icon('back', 'dir')}</button><span class="appbar-title">${esc(T('appTitle'))}</span></div>
+  <div id="lockMsg" class="lockmsg" role="status" hidden></div>
+  <div class="scroller" id="scroller" tabindex="-1">
+    <header class="hdr" id="hdr"></header>
+    <nav class="tabs" role="tablist" aria-label="${esc(T('appTitle'))}">${T('tabs').map((n, i) => `<button class="tab" role="tab" aria-selected="${i === 4}" data-act="${i === 4 ? 'noop' : 'tab'}">${esc(n)}</button>`).join('')}</nav>
+    <section id="medsBody" aria-labelledby="activeTitle">
+      <div class="titlerow"><h2 id="activeTitle" tabindex="-1"></h2>
+        <button class="btn btn-primary" id="prescribe" data-act="prescribe" data-entry data-fid="prescribe">${icon('plus')}<span>${esc(T('prescribe'))}</span></button></div>
+      <div id="activeList"></div>
+      <section class="picker">
+        <button class="picker-head" id="pickerToggle" data-act="picker-toggle" data-entry data-fid="pickerToggle" aria-expanded="false" aria-controls="pickerPanel">${icon('plus')}<span class="grow">${esc(T('addMed'))}</span>${icon('down', 'chev')}</button>
+        <div class="picker-panel" id="pickerPanel" hidden>
+          <div class="searchrow"><input id="q" type="text" inputmode="search" enterkeyhint="search" autocomplete="off" data-entry placeholder="${esc(T('search'))}" aria-label="${esc(T('search'))}" value="${esc(S.query)}">
+            <button class="icon-btn" id="qClear" data-act="clear-q" data-entry aria-label="${esc(T('clear'))}" hidden>${icon('close')}</button></div>
+          <div class="chiprow" role="group" aria-label="${esc(T('src'))}">
+            <button class="chip" data-act="src" data-v="common" data-entry aria-pressed="false">${esc(T('common'))}</button>
+            <button class="chip" data-act="src" data-v="recent" data-entry aria-pressed="false">${esc(T('recent'))}</button></div>
+          <div class="plist" id="pickerList" tabindex="0" role="region" aria-label="${esc(T('addMed'))}"></div>
+          <p class="count" id="pickerCount"></p>
+        </div>
+      </section>
+      <button class="past-toggle" id="pastToggle" data-act="past-toggle" data-entry aria-expanded="false" hidden><span id="pastLabel"></span>${icon('down', 'chev')}</button>
+      <div id="pastList" hidden></div>
+    </section>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <div class="toast" id="toast" role="status" hidden></div>`;
+  renderHeader(); refreshLists(); applyPicker(); applyPast(); renderSheet();
+  $('#scroller').scrollTop = keepScroll;
+  setInert();
+}
+
+function renderHeader() {
+  const warn = S.view === 'warning';
+  $('#hdr').innerHTML = `
+    <h1 class="pname" dir="auto">${esc(T('pname'))}</h1>
+    <div class="pills">
+      <span class="pill">${icon('cal', 'ic-s')}<span>${esc(T('ga'))}</span></span>
+      <span class="pill${warn ? ' alert' : ''}">${icon(warn ? 'up' : 'heart', 'ic-s')}<span>${esc(T('bp'))} <bdi dir="ltr">${warn ? '152/98' : '118/76'}</bdi>${warn ? ' · ' + esc(T('elev')) : ''}</span></span>
+      <span class="pill alert">${icon('warn', 'ic-s')}<span>${esc(T('highRisk'))}</span></span>
+    </div>
+    ${warn ? `<div class="banner" role="alert">${icon('warn')}<div><strong>${esc(T('alertTitle'))}</strong><span class="txt">${esc(T('alertText'))}</span></div></div>` : ''}`;
+}
+
+/* ---------- Lists ---------- */
+function rowHTML(m, past) {
+  const meta = [m.dose, rLabel(m.route), fLabel(m)].filter(Boolean).join(' · ');
+  const nm = longName(m.name);
+  const stopLine = past ? `<span class="tagstop">${icon('stop', 'ic-s')}${esc(fmt('stoppedOn', {d: dFmt(m.stop)}))}</span>` : '';
+  return `<div class="row${past ? ' past' : ''}">
+    <button class="row-main" data-act="edit" data-id="${m.id}" data-entry data-fid="row-${m.id}" aria-label="${esc(fmt('editAria', {name: nm}))}, ${esc(meta)}"${locked() ? ' disabled' : ''}>
+      <span class="txt"><span class="r-name" dir="auto">${esc(nm)}</span><span class="r-meta" dir="auto">${esc(meta)}</span>${stopLine}</span>${icon('right', 'ic-s dir')}</button>
+    ${past ? '' : `<button class="row-stop" data-act="stop" data-id="${m.id}" data-entry data-fid="stop-${m.id}" aria-label="${esc(fmt('stopAria', {name: nm}))}"${locked() ? ' disabled' : ''}>${icon('stop')}<span>${esc(T('stop'))}</span></button>`}
+  </div>`;
+}
+function renderActive() {
+  const list = S.meds.filter(isActive), el = $('#activeList');
+  if (S.view === 'loading') {
+    $('#activeTitle').textContent = T('activeLoading');
+    el.innerHTML = `<div class="list" role="status" aria-label="${esc(T('loading'))}">${'<div class="skel"><i></i><i></i></div>'.repeat(4)}<span class="sr">${esc(T('loading'))}</span></div>`;
+    return;
+  }
+  $('#activeTitle').textContent = fmt('active', {n: list.length});
+  if (!S.meds.length) {
+    el.innerHTML = `<div class="empty">${icon('plus')}<h3>${esc(T('empty'))}</h3><p>${esc(T('emptyHint'))}</p>
+      <button class="btn btn-primary" data-act="prescribe" data-entry data-fid="empty"${locked() ? ' disabled' : ''}>${icon('plus')}<span>${esc(T('emptyAction'))}</span></button></div>`;
+    return;
+  }
+  el.innerHTML = list.length ? `<div class="list">${list.map(m => rowHTML(m, false)).join('')}</div>` : '';
+}
+function renderPast() {
+  const past = S.meds.filter(m => !isActive(m)).sort((a, b) => (b.stop || '').localeCompare(a.stop || ''));
+  const tg = $('#pastToggle'), pl = $('#pastList');
+  tg.hidden = !past.length || S.view === 'loading';
+  $('#pastLabel').textContent = fmt(S.showPast ? 'hidePast' : 'showPast', {n: past.length});
+  pl.innerHTML = past.length ? `<div class="list">${past.map(m => rowHTML(m, true)).join('')}</div>` : '';
+  pl.hidden = !S.showPast || !past.length;
+}
+function renderPickerList() {
+  const base = S.src === 'recent' ? RECENT.map(id => CAT.find(c => c.id === id)) : [...CAT].sort((a, b) => a.name.localeCompare(b.name));
+  const q = S.query.trim().toLowerCase();
+  const items = base.filter(c => !q || c.name.toLowerCase().includes(q));
+  const lk = locked();
+  $('#pickerList').innerHTML = items.length ? items.map(c => {
+    const meta = [c.dose, rLabel(c.route), c.freq ? T('f')[c.freq] : T('chooseFreq')].join(' · ');
+    if (haveName(c.name)) return `<div class="tile have" aria-label="${esc(fmt('haveAria', {name: c.name}))}"><span class="txt"><span class="r-name" dir="auto">${esc(c.name)}</span><span class="r-meta" dir="auto">${esc(meta)}</span></span><span class="tile-state">${icon('check', 'ic-s')}${esc(T('activeTag'))}</span></div>`;
+    return `<button class="tile" data-act="tile" data-id="${c.id}" data-entry data-fid="tile-${c.id}"${lk ? ' disabled' : ''}><span class="txt"><span class="r-name" dir="auto">${esc(c.name)}</span><span class="r-meta" dir="auto">${esc(meta)}</span></span>${icon('plus', 'ic-s')}</button>`;
+  }).join('') : `<p class="hint" style="padding:12px">${esc(T('noMatch'))}</p>`;
+  $('#pickerCount').textContent = fmt('count', {n: items.length});
+  $('#qClear').hidden = !S.query;
+}
+function applyEntryState() {
+  const lk = locked();
+  $$('[data-entry]', $('#app')).forEach(b => { b.disabled = lk; });
+  const m = $('#lockMsg');
+  m.hidden = !(S.phase === 'saving' || S.draft);
+  m.innerHTML = S.phase === 'saving' ? `<span class="spin"></span><span>${esc(T('lockSaving'))}</span>` : `${icon('lock', 'ic-s')}<span>${esc(T('lockOpen'))}</span>`;
+}
+function refreshLists() { renderActive(); renderPast(); renderPickerList(); applyEntryState(); }
+function applyPicker() {
+  $('#pickerToggle').setAttribute('aria-expanded', S.pickerOpen);
+  $('#pickerPanel').hidden = !S.pickerOpen;
+  $$('[data-act="src"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === S.src));
+  $('#q').value = S.query;
+}
+function applyPast() { $('#pastToggle').setAttribute('aria-expanded', S.showPast); renderPast(); }
+function setInert() { const v = !!S.draft; $('#scroller').inert = v; $('.appbar').inert = v; }
+
+/* ---------- Sheet ---------- */
+function openSheet(mode, src, fid) {
+  if (S.draft || S.phase === 'saving') return;           // entry points are disabled; this is only a safety net
+  let original, values;
+  if (mode === 'add') { original = BLANK(); values = {...BLANK(), name: src.name, dose: src.dose, route: src.route, freq: src.freq}; }
+  else if (mode === 'stop') { original = medValues(src); values = {...original, status: 'stopped', stop: TODAY}; }
+  else if (mode === 'edit') { original = medValues(src); values = {...original}; }
+  else { original = BLANK(); values = BLANK(); }
+  S.draft = {mode, medId: src && src.id, original, values, errors: {}, saveError: null, atOpen: JSON.stringify(values)};
+  S.returnFid = fid; S.dialog = false;
+  S.snap = {scroll: $('#scroller').scrollTop, q: S.query, past: S.showPast, inst: S.instance};
+  S.task = (mode === 'add' || mode === 'stop') ? {kind: mode, taps: 1} : null;
+  renderSheet(); setInert(); refreshLists();
+  const first = mode === 'custom' ? $('[data-f="name"]') : $('.sheet-head h2');
+  if (first) first.focus({preventScroll: true});
+}
+const medValues = m => ({name: m.name, dose: m.dose, route: m.route, freq: m.freq, freqText: m.freqText || '', status: m.status, start: m.start, stop: m.stop || TODAY, notes: m.notes || ''});
+const dirty = D => D.atOpen !== JSON.stringify(D.values);   // changed by the doctor since the sheet opened
+
+function sheetHTML(D) {
+  const V = D.values, E = D.errors, saving = S.phase === 'saving', dis = saving ? ' disabled' : '';
+  const adding = D.mode === 'add' || D.mode === 'custom';
+  const title = {add: T('sheetAdd'), custom: T('sheetCustom'), stop: T('sheetStop'), edit: T('sheetEdit')}[D.mode];
+  const err = f => E[f] ? `<p class="err" id="e-${f}" role="alert">${icon('warn', 'ic-s')}<span>${esc(E[f])}</span></p>` : '';
+  const inv = f => E[f] ? ` aria-invalid="true" aria-describedby="e-${f}"` : '';
+  const chipset = (name, opts, sel, labelOf, act) => {
+    const has = opts.includes(sel);
+    return `<div class="chips" role="radiogroup" aria-labelledby="l-${name}">${opts.map((o, i) => {
+      const on = o === sel;
+      return `<button type="button" class="chip${on ? ' on' : ''}" role="radio" aria-checked="${on}" data-act="${act}" data-v="${o}"${on || (!has && i === 0) ? ` data-f="${name}"` : ''}${dis}>${on ? icon('check', 'ic-s') : ''}<span>${esc(labelOf(o))}</span></button>`;
+    }).join('')}</div>`;
+  };
+  const dateLabel = V.status === 'stopped' ? T('stopDate') : T('startDate');
+  const dateVal = V.status === 'stopped' ? V.stop : V.start;
+  return `<button class="scrim" data-act="scrim" tabindex="-1" aria-label="${esc(T('cancel'))}"></button>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"${saving ? ' aria-busy="true"' : ''}>
+    <div class="grab" aria-hidden="true"></div>
+    <div class="sheet-head"><h2 id="sheetTitle" tabindex="-1">${esc(title)}</h2>${D.mode === 'stop' ? `<p dir="auto">${esc(V.name)}</p>` : ''}</div>
+    ${saving ? `<div class="progress" role="progressbar" aria-label="${esc(T('savingAria'))}"></div>` : ''}
+    <div class="sheet-body" id="sheetBody">
+      ${D.saveError ? `<div class="failbox" role="alert" tabindex="-1" id="failbox">${icon('warn')}<div><strong>${esc(T('failTitle'))}</strong><span class="txt">${esc(T(D.saveError))}<br>${esc(T('failHint'))}</span></div></div>` : ''}
+      <div class="field"><label for="f-name">${esc(T('name'))}</label>
+        <input class="inp" id="f-name" data-f="name" enterkeyhint="next" autocomplete="off" dir="auto" placeholder="${esc(T('ph').name)}" value="${esc(V.name)}"${inv('name')}${dis}>${err('name')}</div>
+      <div class="field"><label for="f-dose">${esc(T('dose'))}</label>
+        <input class="inp" id="f-dose" data-f="dose" enterkeyhint="next" autocomplete="off" dir="auto" placeholder="${esc(T('ph').dose)}" value="${esc(V.dose)}"${inv('dose')}${dis}>${err('dose')}</div>
+      <div class="field"><span class="lbl" id="l-route">${esc(adding ? T('route') : T('routeRO'))}</span>
+        ${adding ? chipset('route', ROUTES, V.route, rLabel, 'route')
+          : `<div class="ro" aria-labelledby="l-route">${icon('lock', 'ic-s')}<span>${esc(rLabel(V.route))}</span></div><p class="hint">${esc(T('routeNote'))}</p>`}</div>
+      <div class="field"><span class="lbl" id="l-freq">${esc(T('freq'))}</span>
+        ${chipset('freq', FREQS, V.freq, o => T('f')[o], 'freq')}${err('freq')}
+        ${V.freq === 'other' ? `<input class="inp" id="f-other" data-f="freqOther" enterkeyhint="next" autocomplete="off" dir="auto" aria-label="${esc(T('otherText'))}" placeholder="${esc(T('ph').other)}" value="${esc(V.freqText)}"${inv('freqOther')}${dis}>${err('freqOther')}` : ''}</div>
+      <div class="field"><span class="lbl" id="l-status">${esc(T('status'))}</span>
+        <div class="segs" role="radiogroup" aria-labelledby="l-status">${['active', 'stopped'].map(s => `<button type="button" class="chip${V.status === s ? ' on' : ''}" role="radio" aria-checked="${V.status === s}" data-act="status" data-v="${s}"${V.status === s ? ' data-f="status"' : ''}${dis}>${V.status === s ? icon('check', 'ic-s') : (s === 'stopped' ? icon('stop', 'ic-s') : '')}<span>${esc(T('sa')[s])}</span></button>`).join('')}</div></div>
+      <div class="field"><label for="f-date" id="l-date">${esc(dateLabel)}</label>
+        <div class="daterow"><input class="inp" type="date" id="f-date" data-f="date" enterkeyhint="next" value="${esc(dateVal)}"${inv('date')}${dis}>
+          <button type="button" class="btn" data-act="today"${dis}>${esc(T('today'))}</button></div>${err('date')}</div>
+      <div class="field"><label for="f-notes">${esc(T('notes'))}</label>
+        <textarea class="inp" id="f-notes" data-f="notes" rows="2" enterkeyhint="enter" dir="auto" placeholder="${esc(T('ph').notes)}"${dis}>${esc(V.notes)}</textarea></div>
+    </div>
+    <div class="sheet-foot">
+      <button class="btn" data-act="cancel"${dis}>${esc(T('cancel'))}</button>
+      <button class="btn btn-primary" data-act="save"${dis}>${saving ? '<span class="spin"></span>' : ''}<span>${esc(saving ? T('saving') : T('save'))}</span></button>
+      ${adding ? `<button class="btn btn-secondary wide" data-act="another"${dis}>${esc(T('saveAnother'))}</button>` : ''}
+    </div>
+    ${S.dialog ? `<div class="dialog-wrap"><div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="dlgT" aria-describedby="dlgD">
+      <h3 id="dlgT">${icon('warn', 'ic-s')} ${esc(T('discardTitle'))}</h3><p id="dlgD">${esc(T('discardText'))}</p>
+      <div class="acts"><button class="btn btn-primary" data-act="keep" id="dlgKeep">${esc(T('keep'))}</button><button class="btn btn-danger" data-act="discard">${icon('close', 'ic-s')}<span>${esc(T('discard'))}</span></button></div></div></div>` : ''}
+  </div>`;
+}
+
+function renderSheet(focusF) {
+  const ov = $('#overlay'), D = S.draft;
+  if (!D) { ov.innerHTML = ''; return; }
+  const old = $('#sheetBody', ov), top = old ? old.scrollTop : 0;
+  const af = document.activeElement, inOv = af && ov.contains(af);
+  const f = focusF || (inOv && af.dataset ? af.dataset.f : null);
+  const sel = inOv && /INPUT|TEXTAREA/.test(af.tagName) && af.type !== 'date' ? [af.selectionStart, af.selectionEnd] : null;
+  ov.innerHTML = sheetHTML(D);
+  const body = $('#sheetBody', ov); body.scrollTop = top;
+  if (S.dialog) { $('#dlgKeep').focus(); return; }
+  if (f) {
+    const el = $(`[data-f="${f}"]`, ov);
+    if (el && !el.disabled) { el.focus({preventScroll: true}); if (sel) try { el.setSelectionRange(sel[0], sel[1]); } catch (e) {} }
+  }
+  updateKb();
+}
+
+/* Enter-to-next: ordered list of focus stops */
+function stops() {
+  const V = S.draft.values, adding = S.draft.mode === 'add' || S.draft.mode === 'custom';
+  return ['name', 'dose', adding ? 'route' : null, 'freq', V.freq === 'other' ? 'freqOther' : null, 'status', 'date', 'notes'].filter(Boolean);
+}
+function focusStop(f) {
+  const el = $(`#overlay [data-f="${f}"]`); if (!el) return;
+  el.focus({preventScroll: true}); reveal(el);
+}
+function enterFrom(f) {
+  const s = stops(), i = s.indexOf(f);
+  if (i >= 0 && i < s.length - 1) focusStop(s[i + 1]); else attemptSave('save');   // last field is Done
+}
+function reveal(el) {
+  const b = $('#sheetBody'); if (!b || !b.contains(el)) return;
+  const box = el.closest('.field') || el, r = box.getBoundingClientRect(), br = b.getBoundingClientRect();
+  if (r.top < br.top + 6 || r.bottom > br.bottom - 6) b.scrollTop += (r.top + r.height / 2) - (br.top + br.height / 2);
+}
+function setField(kind, v) {
+  const V = S.draft.values; delete S.draft.errors[kind === 'status' ? 'date' : kind];
+  if (kind === 'route') V.route = v;
+  if (kind === 'freq') { V.freq = v; if (v !== 'other') V.freqText = ''; }
+  if (kind === 'status') V.status = v;
+  renderSheet(kind);
+}
+function validate(D) {
+  const V = D.values, e = {};
+  if (!V.name.trim()) e.name = T('errName');
+  if (!V.dose.trim()) e.dose = T('errDose');
+  if (!V.freq) e.freq = T('errFreq'); else if (V.freq === 'other' && !V.freqText.trim()) e.freqOther = T('errOther');
+  const dv = V.status === 'stopped' ? V.stop : V.start;
+  if (!dv) e.date = T('errDate'); else if (V.status === 'stopped' && V.start && V.stop < V.start) e.date = T('errDateOrder');
+  return e;
+}
+
+/* Saving, failing, closing */
+function attemptSave(kind) {
+  const D = S.draft; if (!D || S.phase === 'saving') return;
+  D.errors = validate(D);
+  const bad = ['name', 'dose', 'freq', 'freqOther', 'date'].find(k => D.errors[k]);
+  if (bad) { D.saveError = null; renderSheet(bad); focusStop(bad); return; }
+  D.saveError = null; S.phase = 'saving';
+  renderSheet(); refreshLists();
+  if (S.freeze) return;                                   // "Saving" review state stays in progress
+  setTimeout(() => {
+    if (!S.draft || S.phase !== 'saving') return;
+    if (S.failMode) {                                      // rejected save: stay open, keep values, no automatic retry
+      S.phase = 'idle'; D.saveError = 'failCause'; renderSheet(); refreshLists();
+      const fb = $('#failbox'); if (fb) { fb.focus({preventScroll: true}); $('#sheetBody').scrollTop = 0; }
+      return;
+    }
+    commit(D, kind);
+  }, 300);
+}
+function commit(D, kind) {
+  const V = D.values; let m, name = V.name.trim();
+  if (D.mode === 'add' || D.mode === 'custom') {
+    m = {id: 'm' + (++S.uid)}; S.meds.unshift(m);
+  } else m = medById(D.medId);
+  Object.assign(m, {name, dose: V.dose.trim(), route: V.route, freq: V.freq, freqText: V.freqText.trim(), status: V.status,
+    start: V.start, stop: V.status === 'stopped' ? V.stop : null, notes: V.notes.trim()});
+  const rec = S.task ? {kind: S.task.kind, taps: S.task.taps, fresh: S.task.fresh || 0} : null;
+  report(rec);
+  S.draft = null; S.phase = 'idle'; S.dialog = false; S.task = null;
+  renderSheet(); setInert(); refreshLists();
+  if (kind === 'another') {
+    toast(fmt('added', {name}), () => { S.meds = S.meds.filter(x => x.id !== m.id); refreshLists(); toast(T('undone')); });
+    openSheet('custom', null, 'prescribe');
+    return;
+  }
+  toast(fmt('saved', {name}));
+  restoreFocus();
+}
+function quickStop(m) {                                  // one tap: stop today, row moves to Show past, Undo for 10 s; no sheet, no lock
+  if (!m || locked()) return;
+  S.snap = {scroll: $('#scroller').scrollTop, q: S.query, past: S.showPast, inst: S.instance};
+  const prev = {status: m.status, stop: m.stop};
+  m.status = 'stopped'; m.stop = TODAY;
+  report({kind: 'stop', taps: 1, fresh: 0});
+  refreshLists();
+  toast(fmt('stoppedMsg', {name: m.name}), () => { m.status = prev.status; m.stop = prev.stop; refreshLists(); toast(T('undone')); });
+  restoreFocus();
+}
+function restoreFocus() {
+  const el = S.returnFid && $(`[data-fid="${S.returnFid}"]`);
+  (el && !el.disabled ? el : $('#activeTitle')).focus({preventScroll: true});
+}
+function requestClose() {
+  if (!S.draft || S.phase === 'saving') return;           // Cancel, scrim and Back are inert while a save runs
+  if (S.dialog) { S.dialog = false; renderSheet(); return; }
+  if (dirty(S.draft)) { S.dialog = true; renderSheet(); return; }
+  closeSheet();
+}
+function closeSheet() {
+  S.draft = null; S.dialog = false; S.task = null; S.phase = 'idle';
+  renderSheet(); setInert(); refreshLists(); restoreFocus();
+}
+
+/* ---------- Toast ---------- */
+function toast(msg, undoFn) {
+  const el = $('#toast'); clearTimeout(S.toastTimer);
+  el.innerHTML = `<span>${esc(msg)}</span>${undoFn ? `<button class="btn" data-act="undo">${esc(T('undo'))}</button><button class="btn" data-act="dismiss">${esc(T('dismiss'))}</button>` : ''}`;
+  el.hidden = false; S.undoFn = undoFn;
+  S.toastTimer = setTimeout(() => { el.hidden = true; }, undoFn ? 10000 : 3500);
+}
+
+/* ---------- Events inside the phone ---------- */
+phone.addEventListener('click', e => {                     // capture-free: handlers run after the tap counter (see below)
+  const b = e.target.closest('[data-act]');
+  if (!b || b.disabled || b.getAttribute('aria-disabled') === 'true') return;
+  const a = b.dataset.act, D = S.draft;
+  switch (a) {
+    case 'app-back': case 'tab': toast(T('notMock')); break;
+    case 'prescribe': openSheet('custom', null, b.dataset.fid); break;
+    case 'picker-toggle': S.pickerOpen = !S.pickerOpen; S.fresh = S.pickerOpen; applyPicker(); break;
+    case 'src': S.src = b.dataset.v; applyPicker(); renderPickerList(); break;
+    case 'clear-q': S.query = ''; applyPicker(); renderPickerList(); $('#q').focus(); break;
+    case 'tile': { const extra = S.fresh ? 1 : 0; S.fresh = false; openSheet('add', CAT.find(c => c.id === b.dataset.id), b.dataset.fid); if (S.task) { S.task.taps += extra; S.task.fresh = extra; } break; }
+    case 'stop': quickStop(medById(b.dataset.id)); break;
+    case 'edit': openSheet('edit', medById(b.dataset.id), b.dataset.fid); break;
+    case 'past-toggle': S.showPast = !S.showPast; applyPast(); break;
+    case 'scrim': case 'cancel': requestClose(); break;
+    case 'route': case 'freq': case 'status': setField(a, b.dataset.v); break;
+    case 'today': { const k = D.values.status === 'stopped' ? 'stop' : 'start'; D.values[k] = TODAY; delete D.errors.date; renderSheet('date'); break; }
+    case 'save': attemptSave('save'); break;
+    case 'another': attemptSave('another'); break;
+    case 'keep': S.dialog = false; renderSheet(); break;
+    case 'discard': closeSheet(); break;
+    case 'dismiss': $('#toast').hidden = true; break;
+    case 'undo': { const f = S.undoFn; $('#toast').hidden = true; f && f(); break; }
+  }
+});
+phone.addEventListener('click', e => {                     // tap counter, runs for every click inside the phone on an enabled control
+  const c = e.target.closest('button,input,textarea,[role="radio"]');
+  if (!c || c.disabled) return;
+  S.taps++; $('#tapTotal').textContent = S.taps;
+}, true);
+phone.addEventListener('click', e => {                     // task taps (capture, so the opening tap is counted by openSheet's initial 1)
+  if (S.task && S.draft && e.target.closest('#overlay') && e.target.closest('button,input,textarea')) S.task.taps++;
+}, true);
+
+phone.addEventListener('input', e => {
+  const t = e.target;
+  if (t.id === 'q') { S.query = t.value; renderPickerList(); return; }
+  const f = t.dataset && t.dataset.f; if (!f || !S.draft) return;
+  const V = S.draft.values;
+  if (f === 'name') V.name = t.value; else if (f === 'dose') V.dose = t.value; else if (f === 'freqOther') V.freqText = t.value;
+  else if (f === 'notes') V.notes = t.value;
+  else if (f === 'date') V[V.status === 'stopped' ? 'stop' : 'start'] = t.value;
+  const p = $(`#e-${f}`); if (p) { p.remove(); t.removeAttribute('aria-invalid'); delete S.draft.errors[f]; }
+});
+phone.addEventListener('keydown', e => {
+  const t = e.target;
+  if (t.id === 'q' && e.key === 'Enter') { e.preventDefault(); t.blur(); return; }
+  if (!S.draft) return;
+  if (e.key === 'Tab') {                                   // keep Tab inside the sheet
+    const f = $$('#overlay button:not([disabled]):not([tabindex="-1"]), #overlay input:not([disabled]), #overlay textarea:not([disabled])').filter(x => x.getClientRects().length);
+    if (f.length && S.dialog) { const d = f.filter(x => x.closest('.dialog')); if (e.shiftKey && t === d[0]) { e.preventDefault(); d[d.length - 1].focus(); } else if (!e.shiftKey && t === d[d.length - 1]) { e.preventDefault(); d[0].focus(); } }
+    else if (f.length) { if (e.shiftKey && t === f[0]) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && t === f[f.length - 1]) { e.preventDefault(); f[0].focus(); } }
+    return;
+  }
+  if (e.key !== 'Enter' || !t.dataset || !t.dataset.f) return;
+  if (t.tagName === 'TEXTAREA') return;                   // Notes is multi-line: Enter inserts a new line; Save is the Save button
+  e.preventDefault();
+  if (['route', 'freq', 'status'].includes(t.dataset.act)) setField(t.dataset.act, t.dataset.v);
+  enterFrom(t.dataset.f);
+});
+phone.addEventListener('focusin', e => {
+  const t = e.target;
+  if (S.draft && t.closest && t.closest('#sheetBody')) setTimeout(() => { reveal(t); updateKb(); checkKb(); }, 0);
+});
+
+/* Simulated keyboard */
+$('#kbKeys').innerHTML = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'].map(r => `<div class="kb-row" aria-hidden="true">${[...r].map(c => `<div>${c}</div>`).join('')}</div>`).join('');
+$('#kbAction').addEventListener('mousedown', e => e.preventDefault());
+$('#kbAction').addEventListener('click', () => {
+  const a = document.activeElement;
+  if (S.draft && a && a.tagName === 'TEXTAREA') {
+    const i = a.selectionStart, j = a.selectionEnd; a.setRangeText('\n', i, j, 'end'); a.dispatchEvent(new Event('input', {bubbles: true})); }
+  else if (S.draft && a && a.dataset && a.dataset.f) { if (['route', 'freq', 'status'].includes(a.dataset.act)) setField(a.dataset.act, a.dataset.v); enterFrom(a.dataset.f); }
+  else if (a && a.id === 'q') a.blur();
+});
+function updateKb() {
+  const a = document.activeElement, s = S.draft ? stops() : [];
+  const last = a && a.dataset && a.dataset.f === s[s.length - 1];
+  $('#kbAction').textContent = last ? T('enter') : T('next');
+}
+function checkKb() {
+  const o = $('#o6'); if (!S.kb) { o.textContent = 'Keyboard hidden. Turn on "Show keyboard (simulated)" and focus a field.'; return; }
+  const body = $('#sheetBody'), save = $('[data-act="save"]'), kb = $('#kb').getBoundingClientRect(), a = document.activeElement;
+  if (!body || !save) { o.textContent = 'Keyboard shown. Open the sheet to check the form.'; return; }
+  const br = body.getBoundingClientRect(), sr = save.getBoundingClientRect();
+  const saveOk = sr.bottom <= kb.top + 0.5 && sr.top >= 0;
+  const inp = a && body.contains(a) ? a.getBoundingClientRect() : null;
+  const fOk = inp ? inp.top >= br.top - 0.5 && inp.bottom <= br.bottom + 0.5 && inp.bottom <= kb.top : null;
+  o.innerHTML = `Keyboard top edge: ${Math.round(kb.top)}px<br>Save button bottom: ${Math.round(sr.bottom)}px: <b class="${saveOk ? 'pass' : 'fail'}">${saveOk ? 'visible above keyboard' : 'hidden'}</b><br>` +
+    (inp ? `Focused field "${esc(a.dataset.f || a.id)}": <b class="${fOk ? 'pass' : 'fail'}">${fOk ? 'fully visible' : 'not fully visible'}</b>` : 'Focus a field in the sheet to check it.');
+}
+
+/* ---------- Outside-the-phone controls ---------- */
+function report(rec) {
+  const sc = $('#scroller'), s = S.snap; if (!s) return;
+  const row = (k, a, b) => `<div>${k}: <b>${esc(a)}</b> to <b>${esc(b)}</b> <b class="${a == b ? 'pass' : 'fail'}">${a == b ? 'unchanged' : 'CHANGED'}</b></div>`;
+  $('#o1').innerHTML = `<div>Route: Patient workspace, Meds tab <b class="pass">did not change</b></div>` +
+    row('Meds tab instance', '#' + s.inst, '#' + S.instance) + row('Scroll position', Math.round(s.scroll), Math.round(sc.scrollTop)) +
+    row('Picker search text', '"' + s.q + '"', '"' + S.query + '"') + row('Show past', s.past ? 'on' : 'off', S.showPast ? 'on' : 'off');
+  if (rec) $('#tapLast').textContent = `${rec.kind === 'add' ? 'Add' : 'Stop'} took ${rec.taps} tap${rec.taps === 1 ? '' : 's'} (${rec.kind === 'stop' ? 'stop symbol only' : rec.fresh ? 'open picker, tile, Save' : 'tile, Save'}${rec.kind === 'stop' || rec.taps <= 2 + rec.fresh ? '' : ', plus extra taps you made'})`;
+}
+function setView(v) {
+  S.view = v; S.meds = v === 'empty' ? [] : seed(); S.draft = null; S.phase = 'idle'; S.dialog = false; S.task = null; S.snap = null;
+  S.failMode = v === 'savefail'; S.freeze = v === 'saving'; S.showPast = false; S.pickerOpen = false; S.fresh = false; S.query = ''; S.src = 'common';
+  buildApp();
+  if (v === 'saving') {                                    // frozen in the saving phase so the disabled list can be inspected
+    openSheet('add', CAT.find(c => c.id === 'ca'), 'tile-ca'); S.phase = 'saving'; renderSheet(); refreshLists();
+  }
+  if (v === 'savefail') {                                  // an edit whose save was just rejected
+    openSheet('edit', medById('m2'), 'row-m2'); S.draft.values.freq = 'twice'; S.draft.saveError = 'failCause'; renderSheet();
+  }
+  checkKb();
+}
+function setLang(l) {
+  LANG = l; phone.dir = l === 'ar' ? 'rtl' : 'ltr'; phone.lang = l;
+  $('#dirLtr').setAttribute('aria-pressed', l === 'en'); $('#dirRtl').setAttribute('aria-pressed', l === 'ar');
+  buildApp(); checkKb();
+}
+function setTheme(t) {
+  document.documentElement.dataset.theme = t;
+  $('#thLight').setAttribute('aria-pressed', t === 'light'); $('#thDark').setAttribute('aria-pressed', t === 'dark');
+}
+$$('input[name="state"]').forEach(r => r.addEventListener('change', () => setView(r.value)));
+$('#dirLtr').onclick = () => setLang('en'); $('#dirRtl').onclick = () => setLang('ar');
+$('#thLight').onclick = () => setTheme('light'); $('#thDark').onclick = () => setTheme('dark');
+$('#kbToggle').addEventListener('change', e => { S.kb = e.target.checked; phone.classList.toggle('kb-on', S.kb); setTimeout(() => { const a = document.activeElement; if (a && $('#sheetBody') && $('#sheetBody').contains(a)) reveal(a); checkKb(); }, 0); });
+$('#peekToggle').addEventListener('change', e => { S.peek = e.target.checked; phone.classList.toggle('peek', S.peek); });
+$('#sysBack').onclick = backAction;
+function backAction() {
+  if (S.draft) requestClose(); else toast(T('notMock'));
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && S.draft) requestClose(); });
+$('#reset').onclick = () => setView(S.view);
+$('#tapReset').onclick = () => { S.taps = 0; $('#tapTotal').textContent = '0'; $('#tapLast').textContent = 'none yet'; };
+$('#prep').onclick = () => {
+  if (S.draft || S.view === 'loading') return;
+  S.pickerOpen = true; S.fresh = false; S.query = 'a'; S.src = 'common'; S.showPast = true; applyPicker(); renderPickerList(); applyPast();
+  const sc = $('#scroller'); sc.scrollTop = Math.min(180, sc.scrollHeight - sc.clientHeight);
+  $('#o1').textContent = 'Test prepared: picker open, search "a", Show past on, scrolled. Now add a drug, stop one or edit one.';
+};
+
+/* ---------- Audits ---------- */
+$('#auditBtn').onclick = () => {
+  const els = $$('button,input,select,textarea,a[href],[role="tab"],[role="radio"],[role="switch"]').filter(e => e.getClientRects().length && !e.classList.contains('sr'));
+  const bad = [];
+  els.forEach(e => {
+    const box = (e.matches('input[type="radio"],input[type="checkbox"]') && e.closest('label')) || e;
+    const r = box.getBoundingClientRect();
+    if (r.width < 47.5 || r.height < 47.5) bad.push(`${e.tagName.toLowerCase()}${e.dataset && e.dataset.act ? '[' + e.dataset.act + ']' : ''} ${Math.round(r.width)}x${Math.round(r.height)}`);
+  });
+  const inPhone = els.filter(e => phone.contains(e)).length;
+  $('#auditOut').innerHTML = `<div>Checked ${els.length} visible controls (${inPhone} inside the phone) in the current state.</div><div><b class="${bad.length ? 'fail' : 'pass'}">${bad.length ? bad.length + ' below 48x48' : 'all at least 48x48'}</b></div>` + bad.slice(0, 12).map(b => `<div>${esc(b)}</div>`).join('') + '<div>Open the sheet (and the picker) and run again to cover them.</div>';
+};
+const lum = h => { const c = h.replace('#', '').match(/../g).map(x => parseInt(x, 16) / 255).map(v => v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4)); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; };
+const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + .05) / (y + .05); };
+function contrastTable() {
+  const pairs = [['text', 'surface', 4.5, 'Body text on rows'], ['text', 'surface-raised', 4.5, 'Text in sheet'], ['text', 'bg', 4.5, 'Text on page'],
+    ['text-muted', 'surface', 4.5, 'Secondary text on rows'], ['text-muted', 'surface-raised', 4.5, 'Secondary text in sheet'], ['text-muted', 'bg', 4.5, 'Secondary text on page'], ['text-muted', 'surface-2', 4.5, 'Muted on chip fill'],
+    ['text', 'surface-2', 4.5, 'Text on chip fill'], ['on-primary', 'primary', 4.5, 'Primary button, selected chip'], ['primary', 'surface', 4.5, 'Link and outline button text'], ['primary', 'surface-raised', 4.5, 'Outline button in sheet'],
+    ['alert', 'surface', 4.5, 'Stop symbol, errors'], ['alert', 'surface-raised', 4.5, 'Errors in sheet'], ['alert', 'alert-bg', 4.5, 'High-risk pill and banner'], ['success', 'surface', 4.5, 'Active check'],
+    ['border', 'surface', 3, 'Control border (non-text)'], ['border', 'surface-raised', 3, 'Sheet control border'], ['border', 'surface-2', 3, 'Border on chip fill']];
+  let html = '';
+  ['light', 'dark'].forEach(th => {
+    const d = document.createElement('div'); d.dataset.theme = th; document.body.appendChild(d);
+    const cs = getComputedStyle(d), v = n => cs.getPropertyValue('--color-' + n).trim();
+    html += `<h3>${th}</h3><table><tr><th>Pair</th><th>Ratio</th><th>Need</th></tr>` + pairs.map(([a, b, need, why]) => {
+      const r = ratio(v(a), v(b));
+      return `<tr><td>${esc(why)}<br>${a} on ${b}</td><td class="${r >= need ? 'pass' : 'fail'}">${r.toFixed(2)}:1</td><td>${need}:1</td></tr>`;
+    }).join('') + '</table>';
+    d.remove();
+  });
+  $('#contrast').innerHTML = html;
+}
+
+/* ---------- Start ---------- */
+setTheme(matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+S.meds = seed();
+buildApp();
+contrastTable();
+window.MOCK = {S, setView, setLang, setTheme};
+})();
+</script>
+</body>
+</html>

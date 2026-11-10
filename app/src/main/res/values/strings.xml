@@ -561,4 +561,12 @@
     <string name="lab_batch_add">Add</string>
     <string name="lab_batch_edit">Edit</string>
     <string name="lab_batch_abnormal">Abnormal</string>
+    <string name="medication_route_locked_note">A different route is a new drug.</string>
+    <string name="medication_route_locked_label">Route (read-only)</string>
+    <string name="medication_stop_date">Stop date</string>
+    <string name="medication_frequency_other">Other</string>
+    <string name="medication_frequency_other_label">Frequency in words</string>
+    <string name="medication_frequency_required">Choose a frequency.</string>
+    <string name="medication_saving">Saving…</string>
+    <string name="medication_save_failed_title">The medication was not saved.</string>
 </resources>

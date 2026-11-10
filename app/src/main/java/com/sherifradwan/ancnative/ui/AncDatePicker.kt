@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.DatePicker
@@ -22,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,13 +67,13 @@ fun AncDatePickerDialog(
                     }
                     onDismiss()
                 },
-                modifier = Modifier.testTag("datePickerConfirm"),
+                modifier = Modifier.minimumTouchTarget().testTag("datePickerConfirm"),
             ) {
                 Text(stringResource(R.string.save))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, modifier = Modifier.testTag("datePickerDismiss")) {
+            TextButton(onClick = onDismiss, modifier = Modifier.minimumTouchTarget().testTag("datePickerDismiss")) {
                 Text(stringResource(R.string.cancel))
             }
         },
@@ -90,8 +93,11 @@ fun ClinicalDateField(
     errorMessage: String? = null,
     showTodayButton: Boolean = true,
     modifier: Modifier = Modifier,
+    fieldModifier: Modifier = Modifier,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
 ) {
-    var showDatePicker by remember { mutableStateOf(false) }
+    var showDatePicker by rememberSaveable { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = modifier.fillMaxWidth()) {
         OutlinedTextField(
@@ -119,7 +125,9 @@ fun ClinicalDateField(
                     )
                 }
             },
-            modifier = Modifier.fillMaxWidth().testTag(tag),
+            keyboardOptions = keyboardOptions,
+            keyboardActions = keyboardActions,
+            modifier = fieldModifier.fillMaxWidth().testTag(tag),
         )
 
         if (showTodayButton && enabled) {
@@ -132,7 +140,7 @@ fun ClinicalDateField(
                     selected = false,
                     onClick = { onValueChange(LocalDate.now().toString()) },
                     label = { Text("⚡ " + stringResource(R.string.today) + " (" + LocalDate.now().toString() + ")") },
-                    modifier = Modifier.testTag("${tag}TodayButton"),
+                    modifier = Modifier.minimumTouchTarget().testTag("${tag}TodayButton"),
                 )
             }
         }
