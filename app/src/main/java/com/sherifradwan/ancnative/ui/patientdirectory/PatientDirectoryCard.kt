@@ -41,6 +41,7 @@ import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.ui.BpAlertChip
 import com.sherifradwan.ancnative.ui.ClinicalRiskBadge
+import com.sherifradwan.ancnative.ui.ClinicalTagBadge
 import com.sherifradwan.ancnative.ui.PatientDashboardRowProjection
 import com.sherifradwan.ancnative.ui.PatientRiskTier
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
@@ -159,6 +160,14 @@ fun PatientDirectoryCard(
                             )
                         }
                     }
+                }
+
+                if (row.isIncomplete) {
+                    ClinicalTagBadge(
+                        text = stringResource(R.string.registration_incomplete_chip),
+                        isError = false,
+                        modifier = Modifier.testTag("incompleteChip"),
+                    )
                 }
 
                 // Body: Structured 3-Column Clinical Micro-Grid (GA & EDD, Parity, Vitals)

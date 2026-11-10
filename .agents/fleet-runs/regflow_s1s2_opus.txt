@@ -1,0 +1,31 @@
+**FAIL.** One blocker: the "dating present" test lets a patient with no usable dating slip past the Incomplete chip.
+
+- `state/RegistrationFlow.kt:96` | BLOCKER | `DATING` counts as done whenever `patient.dating != null`. That check reads no field at all. `storage/ClinicalCommands.kt:129-163` accepts a save where every dating field is blank, and `storage/RecordsRepository.kt:1051-1063` then inserts a row with every date null. Such a patient has no LMP, no scan EDD, no agreed EDD and no transfer date, yet loses the Incomplete chip. The reverse never happens: a patient with real dating always has a row, so is never wrongly flagged. Fix: call the existing rule, `GestationalAgeEngine.calculateEstimatedDueDate(dating) != null` (already used in `model/DatingSummary.kt:29`), rather than writing a new one. That covers agreed EDD, LMP, scan EDD and IVF transfer. The spec's "an empty lmpDate saves no dating" item is in a later slice and only covers saves made inside the flow.
+- `test/.../RegistrationFlowDeriveTest.kt:52-55` | SHOULD | The dating tests use only "has an LMP" and "no dating object". Nothing tests a dating object with every field null, the case that would have caught the blocker. Also missing: agreed EDD only, and scan EDD only.
+- `state/RegistrationFlow.kt:66` | SHOULD | `Next` always marks the step `DONE`. The owner's answer says Next on an untouched step is done if data exists, otherwise skipped. `reduce` has no input to tell these apart, so the later driver slice must send `Skip` itself, or `reduce` needs a has-data flag. This is not written down anywhere yet.
+- `test/.../RegistrationFlowDeriveTest.kt:57-62` | SHOULD | Missing: P set with G null (`g=null,p=1,a=0`), G=0 for the obstetric step, and the pregnancies step for a first pregnancy. With G=1 the expected count is 0, but `:101` needs `isNotEmpty()`, so that step stays Pending forever (only blocked by a test at `:89`).
+- `test/.../RegistrationFlowTest.kt` | SHOULD | Not tested: `Finish` on a step before the last (it acts like Next, `:67`), and `Skip`, `Finish` and `PregnancyCountChosen` with no flow. `pregnancyIndex` is only tested for its reset. No event ever increases it, so in this slice it is state nothing uses.
+- `state/RegistrationFlow.kt:73-76` | NIT | `PregnancyCountChosen` is accepted on any step, not just the previous-pregnancies step.
+- `state/RegistrationFlow.kt:65` | NIT | The `is FlowEvent.Begin -> Exit` branch can never run, because Begin returns earlier at `:53`.
+- `state/RegistrationFlow.kt:86-89` | NIT | The spec says the count "matches previousDeliverySummary convention". It cannot: `model/ObstetricHistory.kt:73-97` never works out a previous-pregnancy count, it only defaults G to 1. `g-1`, or else `p+a`, is clinically sound (G = P + A + current pregnancy). The spec line is wrong, not the code.
+- `ui/patientdirectory/PatientDirectoryCard.kt:165-171` | NIT | The chip uses `isError=false`, which gives it the normal-risk colours. That reassuring palette is a questionable choice for a data-gap marker. Neutral or amber would fit better.
+- `test/.../RegistrationFlowDeriveTest.kt:115-119` | NIT | The row-flag helper compares the flag with `isRegistrationIncomplete(patient)`, which is the code's own output. That half proves nothing, though the hard-coded expected value next to it does.
+- Spec RF14 | NIT | The 360dp directory-card test is not in this slice. It is due in the later androidTest slice, so it is still owed.
+
+Verified as fine:
+- **Rule implemented once:** `ui/PatientListScreen.kt:165` is the only caller and nothing else re-implements the rule.
+- **Phone:** `isNullOrBlank` catches whitespace-only phones (`:94`).
+- **Archived patients:** never flagged (`:114`, same string as `AncState.kt:1286`).
+- **Required steps:** only identity, dating and obstetric history count (`:110`).
+- **Transitions:**
+  - Skip on step 1 returns the flow unchanged.
+  - Back keeps all statuses.
+  - The step index can never go out of range.
+- **The chip:**
+  - It sits on its own line below the name row, so it never truncates the name.
+  - Its label is text, not colour alone, and has no line limit, so it wraps.
+  - Existing test tags are kept.
+  - The string is in `values/strings.xml:376`, with no em dash or emoji.
+- **File sizes:** 393 and 181 lines.
+
+Beyond the slice: the handoff ledger gets one approval line, which is fine. No schema change.

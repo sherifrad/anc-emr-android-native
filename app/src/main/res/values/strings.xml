@@ -373,6 +373,7 @@
     <string name="dating_discordance_alert">EDD discordance: LMP and scan differ by %1$d&#160;d (limit %2$d&#160;d)</string>
     <string name="ga_discordance_marker_cd">Gestational age uncertain: LMP and scan due dates disagree</string>
     <string name="redating_hint">Dating delta: %1$d d (&gt;%2$d d threshold). Re-dating indicated.</string>
+    <string name="registration_incomplete_chip">Incomplete</string>
     <string name="bp_badge_severe">Severe BP</string>
     <string name="bp_attention_severe">Severe-range blood pressure at the last visit: %1$s (%2$s)</string>
     <string name="draft_recovery_title">Unsaved draft found</string>

@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=360,initial-scale=1">
+<title>Registration flow mock</title>
+<!--
+Contrast (python3 contrast-check.py, normal text needs 4.5:1):
+ #1b1b1f on #fdfbff (body text on surface)      16.69:1 PASS
+ #5a5a63 on #fdfbff (muted text on surface)      6.64:1 PASS
+ #5a5a63 on #f3f1f6 (muted text on card)         6.08:1 PASS
+ #1b1b1f on #f3f1f6 (text on card)              15.31:1 PASS
+ #3b5ba9 on #fdfbff (accent text on surface)     6.27:1 PASS
+ #3b5ba9 on #f3f1f6 (accent text on card)        5.75:1 PASS
+ #ffffff on #3b5ba9 (Next / Finish button label) 6.45:1 PASS
+ #2b1700 on #ffddb8 (Incomplete chip)           13.29:1 PASS
+ #5a5a63 on #e8e6ec (muted text on field fill)   5.51:1 PASS
+Accent uses (two): primary #3b5ba9 for done segments and the Next/Finish button; tertiary #ffddb8 for the Incomplete chip only.
+-->
+<style>
+:root{--surface:#fdfbff;--card:#f3f1f6;--hi:#e8e6ec;--text:#1b1b1f;--muted:#5a5a63;--line:#c9c6d0;--primary:#3b5ba9;--ter:#ffddb8;--onter:#2b1700}
+*{box-sizing:border-box}
+body{margin:0;width:360px;background:var(--surface);font:14px/1.4 system-ui,sans-serif;color:var(--text)}
+.state{border-bottom:1px solid var(--line);padding:0 0 12px}
+.lab{margin:0;padding:10px 16px 6px;font-size:12px;font-weight:700;color:var(--muted)}
+.phone{width:360px;padding:0 16px}
+.cap{margin:8px 16px 0;font-size:12px;color:var(--muted)}
+.cap code{font-family:ui-monospace,monospace;color:var(--text)}
+/* header */
+.hdr{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 12px 10px;margin-bottom:12px}
+.hdr .t{font-weight:700;min-height:24px;display:flex;align-items:center}
+.segs{display:flex;gap:4px;margin-top:6px}
+.seg{flex:1;min-width:0;text-align:center;font-size:11px;color:var(--muted)}
+.bar{height:6px;border-radius:3px;border:1px solid var(--primary);background:transparent}
+.seg.done .bar{background:var(--primary)}
+.seg.skip .bar{border:1px dashed var(--muted)}
+.seg.cur .bar{height:8px}
+.g{display:block;font-size:13px;font-weight:700;line-height:18px;color:var(--text)}
+.seg.pend .g{font-weight:400;color:var(--muted)}
+.seg.cur .w{font-weight:700;color:var(--text)}
+/* fields */
+.fld{margin:0 0 10px}
+.fld label{display:block;font-size:12px;color:var(--muted);margin-bottom:2px}
+.fld .in{min-height:48px;border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--surface)}
+.fld .in.ph{color:var(--muted)}
+.req{color:var(--text);font-weight:700}
+.row2{display:flex;gap:8px}.row2 .fld{flex:1}
+.note{background:var(--hi);color:var(--muted);border-radius:8px;padding:8px 10px;font-size:12px;margin:0 0 10px}
+.seglist{display:flex;gap:6px;flex-wrap:wrap}
+.opt{min-height:48px;min-width:48px;padding:0 14px;border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.opt.on{border:2px solid var(--primary);font-weight:700}
+.h3{margin:4px 0 8px;font-size:15px;font-weight:700}
+.sub{font-size:12px;font-weight:700;color:var(--muted);margin:0 0 6px}
+/* footer */
+.foot{display:flex;gap:8px;align-items:center;border-top:1px solid var(--line);padding-top:8px;margin-top:12px}
+.btn{min-height:48px;min-width:48px;padding:0 16px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--primary);font:600 14px system-ui,sans-serif;display:flex;align-items:center;justify-content:center}
+.btn.dis{color:var(--muted);border-style:dashed}
+.btn.next{background:var(--primary);color:#fff;border-color:var(--primary)}
+.sp{flex:1}
+/* directory card + hub */
+.dcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin:12px 0}
+.dcard .nm{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-weight:700;overflow-wrap:anywhere}
+.chip{display:inline-block;border-radius:6px;padding:2px 6px;font-size:11px;font-weight:600;background:var(--ter);color:var(--onter)}
+.dcard .meta{color:var(--muted);font-size:13px;margin-top:2px}
+.hub{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.hub p{margin:0 0 8px;color:var(--muted);font-size:13px}
+.hub .btn{width:100%}
+</style>
+</head>
+<body>
+
+<!-- A -->
+<div class="state">
+<p class="lab">A. Step 1: Identity</p>
+<div class="phone">
+ <div class="hdr" data-tag="registrationStepHeader"><div class="t">Step 1 of 5: Identity</div>
+  <div class="segs">
+   <div class="seg cur pend"><div class="bar"></div><span class="g">&#9675;</span><span class="w">To do</span></div>
+   <div class="seg pend"><div class="bar"></div><span class="g">&#9675;</span><span class="w">To do</span></div>
+   <div class="seg pend"><div class="bar"></div><span class="g">&#9675;</span><span class="w">To do</span></div>
+   <div class="seg pend"><div class="bar"></div><span class="g">&#9675;</span><span class="w">To do</span></div>
+   <div class="seg pend"><div class="bar"></div><span class="g">&#9675;</span><span class="w">To do</span></div>
+  </div></div>
+ <div class="fld"><label>Full name <span class="req">(required)</span></label><div class="in">Amira Hassan Mahmoud</div></div>
+ <div class="fld"><label>Phone <span class="req">(required)</span></label><div class="in ph">Enter phone number</div></div>
+ <div class="fld"><label>Address</label><div class="in ph">Street, area, city</div></div>
+ <div class="fld"><label>Age (years)</label><div class="in">29</div></div>
+ <div class="foot">
+  <button class="btn dis" disabled data-tag="flowBack">Back</button><span class="sp"></span>
+  <button class="btn next" data-tag="flowNext">Next</button></div>
+</div>
+<p class="cap">Back is disabled on step 1 and no Skip is shown. Tags: <code>registrationStepHeader</code>, <code>flowBack</code>, <code>flowNext</code>. No date of birth field.</p>
+</div>
+
+<!-- B -->
+<div class="state">
+<p class="lab">B. Step 2: Dating</p>
+<div class="phone">
+ <div class="hdr" data-tag="registrationStepHeader"><div class="t">Step 2 of 5: Dating</div>
+  <div class="segs">
+   <div class="seg done"><div class="bar"></div><span class="g">&#10003;</span><span class="w">Done</span></div>
+   <div class="seg cur pend"><div class="bar"></div><span class="g">&#9675;</span><span class="w">To do</span></div>
+   <div class="seg pend"><div class="bar"></div><span class="g">&#9675;</span><span class="w">To do</span></div>
+   <div class="seg pend"><div class="bar"></div><span class="g">&#9675;</span><span class="w">To do</span></div>
+   <div class="seg pend"><div class="bar"></div><span class="g">&#9675;</span><span class="w">To do</span></div>
+  </div></div>
+ <div class="fld"><label>Last menstrual period</label><div class="in ph">dd/mm/yyyy</div></div>
+ <div class="fld"><label>Ultrasound date</label><div class="in ph">dd/mm/yyyy</div></div>
+ <div class="fld"><label>Gestational age at ultrasound</label><div class="row2"><div class="in" style="flex:1">12 w</div><div class="in" style="flex:1">3 d</div></div></div>
+ <div class="foot">
+  <button class="btn" data-tag="flowBack">Back</button><span class="sp"></span>
+  <button class="btn" data-tag="flowSkip">Skip</button>
+  <button class="btn next" data-tag="flowNext">Next</button></div>
+</div>
+<p class="cap">Back, Skip and Next all shown from step 2. Tags: <code>registrationStepHeader</code>, <code>flowBack</code>, <code>flowSkip</code>, <code>flowNext</code>.</p>
+</div>
+
+<!-- C -->
+<div class="state">
+<p class="lab">C. Step 3: Obstetric history and risk</p>
+<div class="phone">
+ <div class="hdr" data-tag="registrationStepHeader"><div class="t">Step 3 of 5: Obstetric history and risk</div>
+  <div class="segs">
+   <div class="seg done"><div class="bar"></div><span class="g">&#10003;</span><span class="w">Done</span></div>
+   <div class="seg done"><div class="bar"></div><span class="g">&#10003;</span><span class="w">Done</span></div>
+   <div class="seg cur pend"><div class="bar"></div><span class="g">&#9675;</span><span class="w">To do</span></div>
+   <div class="seg pend"><div class="bar"></div><span class="g">&#9675;</span><span class="w">To do</span></div>
+   <div class="seg pend"><div class="bar"></div><span class="g">&#9675;</span><span class="w">To do</span></div>
+  </div></div>
+ <div class="row2">
+  <div class="fld"><label>Gravida (G)</label><div class="in">3</div></div>
+  <div class="fld"><label>Para (P)</label><div class="in">1</div></div>
+  <div class="fld"><label>Abortions (A)</label><div class="in">1</div></div></div>
+ <div class="fld"><label>Obstetric notes</label><div class="in" style="min-height:72px">Previous cesarean in 2022.</div></div>
+ <div class="fld"><label>Risk level</label><div class="seglist"><div class="opt">Normal</div><div class="opt on">Moderate</div><div class="opt">High</div></div></div>
+ <div class="fld"><label>Blood group</label><div class="seglist"><div class="opt on">O+</div><div class="opt">A+</div><div class="opt">B+</div><div class="opt">AB+</div><div class="opt">O-</div></div></div>
+ <div class="foot">
+  <button class="btn" data-tag="flowBack">Back</button><span class="sp"></span>
+  <button class="btn" data-tag="flowSkip">Skip</button>
+  <button class="btn next" data-tag="flowNext">Next</button></div>
+</div>
+<p class="cap">G, P, A are all-or-none. Risk level and blood group moved here from step 1. Tags: <code>registrationStepHeader</code>, <code>flowBack</code>, <code>flowSkip</code>, <code>flowNext</code>.</p>
+</div>
+
+<!-- D -->
+<div class="state">
+<p class="lab">D. Step 5: Previous pregnancies (two screens)</p>
+<div class="phone">
+ <div class="hdr" data-tag="registrationStepHeader"><div class="t">Step 5 of 5: Previous pregnancies</div>
+  <div class="segs">
+   <div class="seg done"><div class="bar"></div><span class="g">&#10003;</span><span class="w">Done</span></div>
+   <div class="seg done"><div class="bar"></div><span class="g">&#10003;</span><span class="w">Done</span></div>
+   <div class="seg done"><div class="bar"></div><span class="g">&#10003;</span><span class="w">Done</span></div>
+   <div class="seg skip"><div class="bar"></div><span class="g">&#8722;</span><span class="w">Skipped</span></div>
+   <div class="seg cur pend"><div class="bar"></div><span class="g">&#9675;</span><span class="w">To do</span></div>
+  </div></div>
+ <p class="h3">How many previous pregnancies?</p>
+ <div class="fld"><label>Number of previous pregnancies</label><div class="in">2</div></div>
+ <p class="note">Default is suggested from G3: gravida minus the current pregnancy. Change it if the record differs. 0 to 20.</p>
+ <div class="foot">
+  <button class="btn" data-tag="flowBack">Back</button><span class="sp"></span>
+  <button class="btn" data-tag="flowSkip">Skip</button>
+  <button class="btn next" data-tag="flowNext">Next</button></div>
+</div>
+<div class="phone" style="margin-top:20px">
+ <div class="hdr" data-tag="registrationStepHeader"><div class="t">Step 5 of 5: Previous pregnancies</div>
+  <div class="segs">
+   <div class="seg done"><div class="bar"></div><span class="g">&#10003;</span><span class="w">Done</span></div>
+   <div class="seg done"><div class="bar"></div><span class="g">&#10003;</span><span class="w">Done</span></div>
+   <div class="seg done"><div class="bar"></div><span class="g">&#10003;</span><span class="w">Done</span></div>
+   <div class="seg skip"><div class="bar"></div><span class="g">&#8722;</span><span class="w">Skipped</span></div>
+   <div class="seg cur pend"><div class="bar"></div><span class="g">&#9675;</span><span class="w">To do</span></div>
+  </div></div>
+ <p class="sub">Pregnancy 2 of 3</p>
+ <div class="fld"><label>Year</label><div class="in">2022</div></div>
+ <div class="fld"><label>Outcome</label><div class="seglist"><div class="opt on">Live birth</div><div class="opt">Stillbirth</div><div class="opt">Early loss</div></div></div>
+ <div class="fld"><label>Delivery mode</label><div class="seglist"><div class="opt">Vaginal</div><div class="opt on">Cesarean</div></div></div>
+ <div class="foot">
+  <button class="btn" data-tag="flowBack">Back</button><span class="sp"></span>
+  <button class="btn" data-tag="flowSkip">Skip</button>
+  <button class="btn next" data-tag="flowNext">Finish</button></div>
+</div>
+<p class="cap">Count prompt first, then one editor per pregnancy. The last step names its forward button Finish. Tags: <code>registrationStepHeader</code>, <code>flowBack</code>, <code>flowSkip</code>, <code>flowNext</code>.</p>
+</div>
+
+<!-- E -->
+<div class="state" style="border-bottom:0">
+<p class="lab">E. Done, skipped and pending; directory card; hub</p>
+<div class="phone">
+ <div class="hdr" data-tag="registrationStepHeader"><div class="t">Step 4 of 5: Histories</div>
+  <div class="segs">
+   <div class="seg done"><div class="bar"></div><span class="g">&#10003;</span><span class="w">Done</span></div>
+   <div class="seg skip"><div class="bar"></div><span class="g">&#8722;</span><span class="w">Skipped</span></div>
+   <div class="seg done"><div class="bar"></div><span class="g">&#10003;</span><span class="w">Done</span></div>
+   <div class="seg cur pend"><div class="bar"></div><span class="g">&#9675;</span><span class="w">To do</span></div>
+   <div class="seg pend"><div class="bar"></div><span class="g">&#9675;</span><span class="w">To do</span></div>
+  </div></div>
+ <div class="dcard">
+  <div class="nm"><span>Fatima Abdelrahman Mohamed El-Sayed Ibrahim</span><span class="chip">Incomplete</span></div>
+  <div class="meta">32w 2d &middot; BP 118/76</div>
+ </div>
+ <div class="hub"><p>Dating not recorded. Resume at the first step that is not done.</p>
+  <button class="btn next">Continue registration</button></div>
+</div>
+<p class="cap">Done = check mark and Done. Skipped = dash, dashed bar and Skipped. Pending = hollow circle and To do. The name wraps in full; the Incomplete chip is text. Tags: <code>registrationStepHeader</code>.</p>
+</div>
+
+</body>
+</html>
