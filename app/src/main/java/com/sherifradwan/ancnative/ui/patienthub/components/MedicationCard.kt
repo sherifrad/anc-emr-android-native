@@ -21,6 +21,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,12 +50,17 @@ fun MedicationCard(
     canEdit: Boolean,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
+    /** False while a save runs or a medication draft is open: stop, edit and delete show disabled. */
+    actionsEnabled: Boolean = true,
     onStop: (() -> Unit)? = null,
     onEdit: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
 ) {
     val status = medicationStatusLabel(med.status, med.isNonCompliant)
-    val instructions = medicationInstructions(med.dosage, med.route, med.notes)
+    // Dose and route through the shared helper (notes left out), then frequency, each on its own untruncated line;
+    // notes follow, cut to two lines while the card is closed. The helper itself stays as the summary and print use it.
+    val doseAndRoute = medicationInstructions(med.dosage, med.route, null)
+    val notes = med.notes?.trim().orEmpty()
 
     Card(
         modifier = modifier
@@ -85,15 +91,30 @@ fun MedicationCard(
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(med.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         MedicationStatusBadge(status)
-                        if (instructions.isNotBlank()) {
+                        if (doseAndRoute.isNotBlank()) {
                             Text(
-                                text = instructions,
+                                text = doseAndRoute,
                                 style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Normal,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.testTag("medicationInstructions-${med.id}"),
+                            )
+                        }
+                        if (med.frequency.isNotBlank()) {
+                            Text(
+                                text = med.frequency,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.testTag("medicationFrequency-${med.id}"),
+                            )
+                        }
+                        if (notes.isNotEmpty()) {
+                            Text(
+                                text = notes,
+                                style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = if (isExpanded) Int.MAX_VALUE else 2,
                                 overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.testTag("medicationInstructions-${med.id}"),
+                                modifier = Modifier.testTag("medicationNotes-${med.id}"),
                             )
                         }
                     }
@@ -103,28 +124,30 @@ fun MedicationCard(
                     if (isOngoingMedication(med.status, med.isNonCompliant) && onStop != null) {
                         IconButton(
                             onClick = onStop,
+                            enabled = actionsEnabled,
                             modifier = Modifier.minimumTouchTarget().testTag("stopMedication-${med.id}"),
                         ) {
                             Icon(
                                 Icons.Default.Stop,
-                                contentDescription = stringResource(R.string.stop_medication),
-                                tint = MaterialTheme.colorScheme.secondary,
+                                contentDescription = stringResource(R.string.stop_medication_description, med.name),
+                                tint = if (actionsEnabled) MaterialTheme.colorScheme.secondary else LocalContentColor.current,
                                 modifier = Modifier.size(20.dp),
                             )
                         }
                     }
                     if (onDelete != null) {
-                        DeleteIconButton(DeletableType.MEDICATION, med, onDelete)
+                        DeleteIconButton(DeletableType.MEDICATION, med, onDelete, enabled = actionsEnabled)
                     }
                     if (onEdit != null) {
                         IconButton(
                             onClick = onEdit,
+                            enabled = actionsEnabled,
                             modifier = Modifier.minimumTouchTarget().testTag("editMedication-${med.id}"),
                         ) {
                             Icon(
                                 Icons.Default.Edit,
-                                contentDescription = stringResource(R.string.edit_medication),
-                                tint = MaterialTheme.colorScheme.primary,
+                                contentDescription = stringResource(R.string.edit_medication_description, med.name),
+                                tint = if (actionsEnabled) MaterialTheme.colorScheme.primary else LocalContentColor.current,
                                 modifier = Modifier.size(20.dp),
                             )
                         }
@@ -139,6 +162,7 @@ fun MedicationCard(
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     FactRow(R.string.dosage, med.dosage)
                     FactRow(R.string.route, med.route)
+                    FactRow(R.string.frequency, med.frequency)
                     FactRow(R.string.start_date, med.startDate)
                     if (!med.adverseNotes.isNullOrBlank()) {
                         FactRow(R.string.adverse_effects, med.adverseNotes)

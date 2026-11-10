@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,21 +33,65 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.model.DemoPatient
-import com.sherifradwan.ancnative.model.MEDICATION_STATUS_DISCONTINUED
 import com.sherifradwan.ancnative.model.isOngoingMedication
 import com.sherifradwan.ancnative.state.AncEvent
+import com.sherifradwan.ancnative.state.MedicationDraft
+import com.sherifradwan.ancnative.state.MedicationQuickSave
+import com.sherifradwan.ancnative.state.MedicationStopUndo
+import com.sherifradwan.ancnative.state.SavePhase
+import com.sherifradwan.ancnative.state.SaveUiError
+import com.sherifradwan.ancnative.state.blocksEditing
 import com.sherifradwan.ancnative.storage.DeletableType
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
 import com.sherifradwan.ancnative.ui.patienthub.components.MedicationCard
 import com.sherifradwan.ancnative.ui.patienthub.components.MedicationTapToAddSection
-import com.sherifradwan.ancnative.ui.patienthub.components.dispatchMedicationDraft
-import java.time.LocalDate
+import com.sherifradwan.ancnative.ui.patienthub.components.MedicationStopBar
 import java.util.UUID
 
+/**
+ * The Meds tab. Adding, editing and stopping never leave it: tiles, edit and "Prescribe" open the medication sheet
+ * (hosted by the hub) through one [AncEvent.StartMedicationEditor], and the stop symbol saves at once through
+ * [AncEvent.StopMedication]. [canEdit] shows the controls (patient not archived); they are visibly disabled while
+ * [actionsAllowed] is false, a save runs or [medicationDraft] is open.
+ */
 @Composable
 fun MedsTab(
     patient: DemoPatient,
     canEdit: Boolean,
+    actionsAllowed: Boolean,
+    medicationDraft: MedicationDraft?,
+    savePhase: SavePhase,
+    saveError: SaveUiError?,
+    quickSave: MedicationQuickSave?,
+    stopUndo: MedicationStopUndo?,
+    onEvent: (AncEvent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val entryEnabled = canEdit && actionsAllowed && medicationDraft == null && !savePhase.blocksEditing()
+    Column(modifier = modifier.fillMaxSize()) {
+        MedsList(
+            patient = patient,
+            canEdit = canEdit,
+            entryEnabled = entryEnabled,
+            onEvent = onEvent,
+            modifier = Modifier.weight(1f),
+        )
+        MedicationStopBar(
+            quickSave = quickSave?.takeIf { it.draft.patientId == patient.id },
+            stopUndo = stopUndo?.takeIf { it.patientId == patient.id },
+            savePhase = savePhase,
+            saveError = saveError,
+            undoEnabled = entryEnabled,
+            onEvent = onEvent,
+        )
+    }
+}
+
+@Composable
+private fun MedsList(
+    patient: DemoPatient,
+    canEdit: Boolean,
+    entryEnabled: Boolean,
     onEvent: (AncEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -57,21 +102,21 @@ fun MedsTab(
         patient.medications.filter { !isOngoingMedication(it.status, it.isNonCompliant) }
     }
 
-    var expandedMedId by remember { mutableStateOf<String?>(null) }
+    var expandedMedId by rememberSaveable { mutableStateOf<String?>(null) }
 
     LazyColumn(
         modifier = modifier
-            .fillMaxSize()
+            .fillMaxWidth()
             .testTag("medsTabContent"),
         contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 48.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         // Fast Formulary Tap-to-Add Section
-        if (canEdit && patient.status != "archived") {
+        if (canEdit) {
             item {
                 MedicationTapToAddSection(
                     patient = patient,
-                    canStartEditor = canEdit,
+                    enabled = entryEnabled,
                     onEvent = onEvent,
                 )
             }
@@ -90,8 +135,9 @@ fun MedsTab(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                 )
-                if (canEdit && patient.status != "archived") {
+                if (canEdit) {
                     Button(
+                        enabled = entryEnabled,
                         onClick = {
                             onEvent(
                                 AncEvent.StartMedicationEditor(
@@ -139,18 +185,12 @@ fun MedsTab(
                     med = med,
                     isExpanded = expandedMedId == med.id,
                     canEdit = canEdit,
+                    actionsEnabled = entryEnabled,
                     onToggle = {
                         expandedMedId = if (expandedMedId == med.id) null else med.id
                     },
                     onStop = {
-                        dispatchMedicationDraft(
-                            onEvent = onEvent,
-                            patientId = patient.id,
-                            medicationId = med.id,
-                            status = MEDICATION_STATUS_DISCONTINUED,
-                            endDate = LocalDate.now().toString(),
-                            submit = true,
-                        )
+                        onEvent(AncEvent.StopMedication(patient.id, med.id, UUID.randomUUID().toString()))
                     },
                     onEdit = {
                         onEvent(
@@ -188,6 +228,7 @@ fun MedsTab(
                     med = med,
                     isExpanded = expandedMedId == med.id,
                     canEdit = canEdit,
+                    actionsEnabled = entryEnabled,
                     onToggle = {
                         expandedMedId = if (expandedMedId == med.id) null else med.id
                     },

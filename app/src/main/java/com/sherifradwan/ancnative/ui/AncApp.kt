@@ -58,6 +58,7 @@ import com.sherifradwan.ancnative.security.SecuritySettingsRepository
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
+import com.sherifradwan.ancnative.state.medicationSheetDraft
 import com.sherifradwan.ancnative.storage.VaultState
 import com.sherifradwan.ancnative.ui.patienthub.PatientHubScreen
 
@@ -235,11 +236,11 @@ fun AncApp(
                         is AncRoute.DatingEditor -> DatingEditor(state, route, onEvent)
                         is AncRoute.UltrasoundEditor -> UltrasoundEditor(state, route, onEvent)
                         is AncRoute.LabEditor -> LabEditor(state, route, onEvent)
-                        is AncRoute.MedicationEditor -> MedicationEditor(state, route, onEvent)
                         is AncRoute.LabBatchEditor -> LabBatchScreen(state, route, onEvent)
                     }
                 }
-                UndoBarHost(state, onEvent)
+                // While the medication sheet is open it shows the Undo bar itself, under its buttons.
+                if (state.medicationSheetDraft() == null) UndoBarHost(state, onEvent)
             }
         }
     }

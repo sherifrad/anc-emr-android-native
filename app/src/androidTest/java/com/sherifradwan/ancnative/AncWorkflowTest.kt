@@ -619,7 +619,8 @@ class AncWorkflowTest {
         assertFalse(state.showDiscardDialog)
         assertFalse(state.hasDirtyDraft)
 
-        // 4. Open Medication Editor
+        // 4. Open the medication sheet from the Meds tab: the route stays on the workspace
+        state = AncReducer.reduce(state, AncEvent.SelectSection(WorkspaceSection.MEDICATIONS))
         state = AncReducer.reduce(
             state,
             AncEvent.StartMedicationEditor(
@@ -629,8 +630,9 @@ class AncWorkflowTest {
                 editorSessionId = "med-session-1",
             ),
         )
+        assertEquals(AncRoute.Workspace(patient.id, WorkspaceSection.MEDICATIONS), state.route)
         mountFixture(LayoutFixture.narrowPhone(), state)
-        compose.onNodeWithTag("medicationEditor").assertIsDisplayed()
+        compose.onNodeWithTag("medicationSheet").assertIsDisplayed()
         compose.onNodeWithTag("medName").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("medDosage").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("saveMedication").assertIsDisplayed()
@@ -638,9 +640,9 @@ class AncWorkflowTest {
         compose.onAllNodesWithTag("medFrequency").assertCountEquals(0)
         compose.onAllNodesWithTag("medMoreToggle").assertCountEquals(0)
 
-        // 5. Test Arabic RTL mounting for Medication Editor
+        // 5. Test Arabic RTL mounting for the medication sheet
         mountFixture(LayoutFixture.arabicRtl(), state)
-        compose.onNodeWithTag("medicationEditor").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("medicationSheet").assertIsDisplayed()
 
         // 6. Mount Workspace in MEDICATIONS section
         val medWorkspaceState = state.copy(

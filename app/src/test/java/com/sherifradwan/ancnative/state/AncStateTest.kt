@@ -285,6 +285,7 @@ class AncStateTest {
         assertNull(state.labDraft)
         assertEquals(AncRoute.Workspace(patient.id, WorkspaceSection.LABORATORY), state.route)
 
+        state = state.reduce(AncEvent.SelectSection(WorkspaceSection.MEDICATIONS))
         state = state.reduce(
             AncEvent.StartMedicationEditor(
                 patientId = patient.id,
@@ -293,7 +294,8 @@ class AncStateTest {
                 editorSessionId = "med-session-1",
             ),
         )
-        assertEquals(AncRoute.MedicationEditor(patient.id, "med-test-1", isNew = true), state.route)
+        // The medication sheet opens over the Meds tab: the route does not change.
+        assertEquals(AncRoute.Workspace(patient.id, WorkspaceSection.MEDICATIONS), state.route)
         assertNotNull(state.medicationDraft)
         assertFalse(state.hasDirtyDraft)
 
@@ -479,6 +481,7 @@ class AncStateTest {
         val patient = firstPatient
         val state = initialState()
             .reduce(AncEvent.OpenWorkspace(patient.id))
+            .reduce(AncEvent.SelectSection(WorkspaceSection.MEDICATIONS))
             .reduce(
                 AncEvent.StartMedicationEditor(
                     patientId = patient.id,
@@ -492,9 +495,10 @@ class AncStateTest {
         assertNotNull(state.medicationDraft)
         assertFalse(state.hasDirtyDraft)
 
-        // Canceling clean draft returns to workspace without discard dialog
+        // Canceling a clean draft closes the sheet without a discard dialog and stays on the Meds tab
         val canceled = state.reduce(AncEvent.CancelEditor)
         assertNull(canceled.medicationDraft)
+        assertFalse(canceled.showDiscardDialog)
         assertEquals(AncRoute.Workspace(patient.id, WorkspaceSection.MEDICATIONS), canceled.route)
     }
 

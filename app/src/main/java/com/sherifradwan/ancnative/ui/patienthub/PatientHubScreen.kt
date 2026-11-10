@@ -35,11 +35,14 @@ import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.PatientDraftField
 import com.sherifradwan.ancnative.state.SavePhase
+import com.sherifradwan.ancnative.state.medicationSheetDraft
 import com.sherifradwan.ancnative.storage.DeletableType
 import com.sherifradwan.ancnative.ui.AddAttachmentDialog
 import com.sherifradwan.ancnative.ui.ClinicalAttachmentViewerDialog
 import com.sherifradwan.ancnative.ui.UltrasoundPhotoViewerDialog
+import com.sherifradwan.ancnative.ui.UndoBarHost
 import com.sherifradwan.ancnative.ui.patienthub.components.ClinicalAttentionDialog
+import com.sherifradwan.ancnative.ui.patienthub.components.MedicationSheet
 import com.sherifradwan.ancnative.ui.patienthub.tabs.LabsTab
 import com.sherifradwan.ancnative.ui.patienthub.tabs.MedsTab
 import com.sherifradwan.ancnative.ui.patienthub.tabs.OverviewTab
@@ -140,6 +143,7 @@ fun PatientHubScreen(
         state.savePhase == SavePhase.RECONCILING ||
         state.savePhase == SavePhase.UNRESOLVED
     val canModifyData = canEdit && !state.hasDirtyDraft && !isSaveBlocked && !state.deleteRunning
+    val medicationDraft = state.medicationSheetDraft()
 
     // Dialog state holders
     var viewingPhotoScan by remember(patient.id) { mutableStateOf<DemoUltrasoundScan?>(null) }
@@ -240,7 +244,13 @@ fun PatientHubScreen(
                     PatientHubTab.MEDS -> {
                         MedsTab(
                             patient = patient,
-                            canEdit = canModifyData,
+                            canEdit = canEdit,
+                            actionsAllowed = canModifyData,
+                            medicationDraft = medicationDraft,
+                            savePhase = state.savePhase,
+                            saveError = state.saveError,
+                            quickSave = state.medicationQuickSave,
+                            stopUndo = state.medicationStopUndo,
                             onEvent = onEvent,
                         )
                     }
@@ -255,6 +265,18 @@ fun PatientHubScreen(
                     }
                 }
             }
+        }
+
+        // The medication sheet sits above the pager: its scrim blocks tab swipes, and the route never changes.
+        if (medicationDraft != null) {
+            MedicationSheet(
+                draft = medicationDraft,
+                savePhase = state.savePhase,
+                saveError = state.saveError,
+                touched = medicationDraft.touched,
+                onEvent = onEvent,
+                footer = { UndoBarHost(state, onEvent) },
+            )
         }
 
         // Modal Dialog Hosts

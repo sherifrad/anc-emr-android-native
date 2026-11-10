@@ -13,15 +13,9 @@ object MedicationEditorHook : EditorHook {
     override fun isOpenFor(state: AncState, recordId: String): Boolean =
         state.medicationDraft?.medicationId == recordId
 
+    /** The medication sheet sits over the workspace, so closing it only drops the draft; the route stays. */
     override fun closeEditor(state: AncState, patientId: String): AncState =
-        state.copy(
-            medicationDraft = null,
-            route = if (state.route is AncRoute.MedicationEditor) {
-                AncRoute.Workspace(patientId, WorkspaceSection.MEDICATIONS)
-            } else {
-                state.route
-            },
-        )
+        state.copy(medicationDraft = null)
 
     override fun rebaseCreateDraft(state: AncState, patients: List<DemoPatient>): AncState {
         var nextDraft = state.medicationDraft

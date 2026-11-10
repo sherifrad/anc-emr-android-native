@@ -37,7 +37,8 @@ class AncDeleteUndoStateTest {
             startEditor = { s, id, newId, session -> reduce(s, AncEvent.StartMedicationEditor("p1", id, newId, session)) },
             makeDirty = { reduce(it, AncEvent.MedicationDraftChanged(MedicationDraftField.NAME, "Changed")) },
             openRecordId = { it.medicationDraft?.medicationId },
-            isEditorRoute = { it.route is AncRoute.MedicationEditor },
+            // The medication sheet shows while its draft exists; it has no route of its own.
+            isEditorRoute = { it.medicationDraft != null },
             draftBasePatientRevision = { it.medicationDraft?.basePatientRevision },
             draftValues = { it.medicationDraft?.values },
             submit = AncEvent.SubmitMedication,
@@ -289,7 +290,7 @@ class AncDeleteUndoStateTest {
         var s = base().copy(savedNotice = true, notice = SavedNotice.VISIT)
         s = reduce(s, AncEvent.UndoOffered(offer))
         s = reduce(s, AncEvent.StartMedicationEditor("p1", null, "new-id", "session-2", keepSavedNotice = true))
-        assertTrue(s.route is AncRoute.MedicationEditor)
+        assertEquals(base().route, s.route)
         assertEquals("new-id", s.medicationDraft?.medicationId)
         assertTrue(s.savedNotice)
         assertEquals(SavedNotice.VISIT, s.notice)

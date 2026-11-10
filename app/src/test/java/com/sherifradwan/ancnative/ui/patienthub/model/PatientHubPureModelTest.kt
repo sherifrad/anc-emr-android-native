@@ -156,9 +156,9 @@ class PatientHubPureModelTest {
     @Test
     fun testFilterMedicationTiles_searchAndTabs() {
         val tiles = listOf(
-            MedicationTile("1", "Paracetamol", "500 mg", "Oral"),
-            MedicationTile("2", "Ferrous Sulfate", "200 mg", "Oral"),
-            MedicationTile("3", "Calcium Carbonate", "500 mg", "Oral"),
+            MedicationTile("1", "Paracetamol", "500 mg", "Oral", "Once daily"),
+            MedicationTile("2", "Ferrous Sulfate", "200 mg", "Oral", "Once daily"),
+            MedicationTile("3", "Calcium Carbonate", "500 mg", "Oral", "Twice daily"),
         )
         val pastMeds = setOf("paracetamol")
 

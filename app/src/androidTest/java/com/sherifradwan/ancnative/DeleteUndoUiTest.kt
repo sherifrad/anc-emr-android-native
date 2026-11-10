@@ -1,5 +1,7 @@
 package com.sherifradwan.ancnative
 
+import android.os.SystemClock
+
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -8,13 +10,13 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sherifradwan.ancnative.model.DemoFixtures
 import com.sherifradwan.ancnative.model.DemoAttachment
@@ -24,7 +26,6 @@ import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.model.DemoVisit
 import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
-import com.sherifradwan.ancnative.model.catalog.ClinicalCatalogRepository
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncReducer
 import com.sherifradwan.ancnative.state.AncRoute
@@ -521,7 +522,7 @@ class DeleteUndoUiTest {
     }
 
     @Test
-    fun undoBarShowsOverBlankMedicationEditorWithoutCoveringTheFormButtons() {
+    fun undoBarShowsInsideTheBlankMedicationSheetUnderItsButtons() {
         host(AncRoute.Workspace(patientA.id, med.section))
         compose.runOnIdle {
             state = AncReducer.reduce(
@@ -545,39 +546,15 @@ class DeleteUndoUiTest {
         }
         compose.waitForIdle()
         exists("medName")
-        compose.onNodeWithTag("undoBar", useUnmergedTree = true).assertIsDisplayed()
+        // The modal sheet would hide the app's bar, so the sheet shows it, once, under its own buttons.
+        compose.onAllNodes(hasTestTag("undoBar"), useUnmergedTree = true).assertCountEquals(1)
+        compose.onNode(hasTestTag("undoBar") and hasAnyAncestor(hasTestTag("medicationSheet")), useUnmergedTree = true).assertIsDisplayed()
         compose.onNodeWithTag("undoButton", useUnmergedTree = true).assertIsDisplayed()
-        compose.onNodeWithTag("addAnotherMedication", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag("saveMedication", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("addAnotherMedication", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithTag("saveMedication", useUnmergedTree = true).assertIsDisplayed()
         val barTop = compose.onNodeWithTag("undoBar", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot.top
-        val buttonBottom = compose.onNodeWithTag("saveMedication", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot.bottom
-        assertTrue("bar ($barTop) must not cover the Save button (bottom $buttonBottom)", buttonBottom <= barTop + 1f)
-    }
-
-    @Test
-    fun longPresavedMedicationListCollapsesToFiveWithAShowAllToggle() {
-        host(AncRoute.Workspace(patientA.id, med.section))
-        compose.runOnIdle {
-            state = AncReducer.reduce(
-                state,
-                AncEvent.StartMedicationEditor(patientA.id, null, "ui-med-new", "ui-session"),
-            )
-        }
-        compose.waitForIdle()
-        val total = ClinicalCatalogRepository.getInstance(compose.activity).medicationCatalogItems.value.size
-        if (total > 5) {
-            compose.onNodeWithTag("presavedToggle", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
-            exists("medPreset-4")
-            missing("medPreset-5")
-            click("presavedToggle")
-            exists("medPreset-${total - 1}")
-            // The editor has a pinned action bar, so the shorter form area needs a scroll before the click.
-            compose.onNodeWithTag("presavedToggle", useUnmergedTree = true).performScrollTo()
-            click("presavedToggle")
-            missing("medPreset-5")
-        } else {
-            missing("presavedToggle")
-        }
+        val buttonBottom = compose.onNodeWithTag("addAnotherMedication", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot.bottom
+        assertTrue("bar ($barTop) must not cover the sheet buttons (bottom $buttonBottom)", buttonBottom <= barTop + 1f)
     }
 
     @Test
@@ -677,5 +654,40 @@ class DeleteUndoUiTest {
         held.complete(Unit)
         compose.waitUntil(5_000) { compose.onAllNodes(hasTestTag("undoBar"), useUnmergedTree = true).fetchSemanticsNodes().isEmpty() }
         assertTrue(state.route is AncRoute.Workspace)
+    }
+
+    private fun undoBars() = compose.onAllNodes(hasTestTag("undoBar"), useUnmergedTree = true).fetchSemanticsNodes().size
+    private fun undoBarsInSheet() =
+        compose.onAllNodes(hasTestTag("undoBar") and hasAnyAncestor(hasTestTag("medicationSheet")), useUnmergedTree = true)
+            .fetchSemanticsNodes().size
+
+    @Test
+    fun deleteUndoBarFollowsTheSheetOnceAndKeepsItsOwnWindow() {
+        deleteConfirmsRemovesCardAndShowsUndoBar(med)
+        val shownAt = SystemClock.elapsedRealtime()
+        scrollTo("editMedication-ui-med-2")
+        click("editMedication-ui-med-2")
+        exists("medicationSheet")
+        assertEquals("one bar, inside the sheet", 1, undoBars())
+        assertEquals(1, undoBarsInSheet())
+        click("cancelMedication")
+        missing("medicationSheet")
+        assertEquals("one bar, back under the screen", 1, undoBars())
+        assertEquals(0, undoBarsInSheet())
+        // The 8 s window is the coordinator's, not the host's: opening and closing the sheet does not restart it.
+        compose.waitUntil(12_000) { undoBars() == 0 }
+        assertTrue("expired on its first window", SystemClock.elapsedRealtime() - shownAt < 9_500)
+    }
+
+    @Test
+    fun deleteUndoExpiresOnTimeWhileTheSheetIsOpen() {
+        deleteConfirmsRemovesCardAndShowsUndoBar(med)
+        val shownAt = SystemClock.elapsedRealtime()
+        scrollTo("editMedication-ui-med-2")
+        click("editMedication-ui-med-2")
+        assertEquals(1, undoBarsInSheet())
+        compose.waitUntil(12_000) { undoBars() == 0 }
+        assertTrue(SystemClock.elapsedRealtime() - shownAt < 9_500)
+        exists("medicationSheet")
     }
 }

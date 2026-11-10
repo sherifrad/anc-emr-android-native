@@ -233,7 +233,6 @@
     <string name="normal_badge">NORMAL</string>
     <string name="add_medication">Add Medication</string>
     <string name="edit_medication">Edit Medication</string>
-    <string name="medication_editor">Medication Record</string>
     <string name="medication_editor_notice">Medication details and status are tracked explicitly.</string>
     <string name="medication_name">Medication name</string>
     <string name="dosage">Dosage</string>
@@ -257,7 +256,6 @@
     <string name="pick_date">Select date</string>
     <string name="common_presets">Quick shortcuts</string>
     <string name="common_tests">Common investigations</string>
-    <string name="common_medications">Common ANC medications</string>
     <string name="ivf_transfer_date">Embryo transfer date (IVF)</string>
     <string name="embryo_age">Embryo age</string>
     <string name="embryo_day_3">Day 3 (Cleavage)</string>
@@ -303,7 +301,6 @@
     <string name="fill_all_negative">Confirm all histories negative</string>
     <string name="save_and_add_another_med">Save &amp; add another</string>
     <string name="advanced_med_options">Route &amp; End date (optional)</string>
-    <string name="patient_previous_meds">Patient\'s previous prescriptions</string>
     <string name="all_filter">All</string>
     <string name="high_risk_filter">High Risk</string>
     <string name="medium_risk_filter">Medium Risk</string>
@@ -417,8 +414,6 @@
     <string name="lab_preset_non_reactive">Non-reactive</string>
     <string name="lab_preset_normal">Normal</string>
     <string name="lab_preset_positive">Positive</string>
-    <string name="medication">Medication</string>
-    <string name="medication_dose_and_schedule">Dose and route</string>
     <string name="medication_status_active">Active</string>
     <string name="medication_status_stopped">Stopped</string>
     <string name="medication_note">Note / instructions</string>
@@ -482,7 +477,8 @@
     <string name="tab_common">Common</string>
     <string name="tab_recent">Recent</string>
     <string name="stopped_in_this_session">Stopped in this session</string>
-    <string name="stop_medication">Stop</string>
+    <string name="stop_medication_description">Stop %1$s</string>
+    <string name="edit_medication_description">Edit %1$s</string>
     <string name="restart_medication">Restart</string>
     <string name="already_on_todays_list">%1$s is already on today\'s list</string>
     <string name="add_other_choice">+ Add other</string>
@@ -569,4 +565,5 @@
     <string name="medication_frequency_required">Choose a frequency.</string>
     <string name="medication_saving">Saving…</string>
     <string name="medication_save_failed_title">The medication was not saved.</string>
+    <string name="medication_stopped_undo_message">Stopped: %1$s</string>
 </resources>

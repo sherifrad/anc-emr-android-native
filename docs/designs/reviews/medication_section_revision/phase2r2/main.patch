@@ -1,0 +1,1829 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt b/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+index 25c8faf..47e9b1a 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+@@ -8,16 +8,22 @@ import com.sherifradwan.ancnative.model.DemoPatientDating
+ import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
+ import com.sherifradwan.ancnative.model.DemoUltrasoundScan
+ import com.sherifradwan.ancnative.model.DemoVisit
++import com.sherifradwan.ancnative.model.ClinicalVocabulary
+ import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
++import com.sherifradwan.ancnative.model.MEDICATION_STATUS_DISCONTINUED
+ import com.sherifradwan.ancnative.model.MEDICATION_STATUS_NON_COMPLIANT
++import com.sherifradwan.ancnative.model.MedicationOnOff
+ import com.sherifradwan.ancnative.model.PatientValidationError
+ import com.sherifradwan.ancnative.model.effectiveMedicationStatus
++import com.sherifradwan.ancnative.model.isOngoingMedication
++import com.sherifradwan.ancnative.model.medicationEditorChoice
+ import com.sherifradwan.ancnative.model.parseBloodPressure
+ import com.sherifradwan.ancnative.model.parseVisitFindings
+ import com.sherifradwan.ancnative.storage.ClinicalRecordKind
+ import com.sherifradwan.ancnative.storage.DeletableRecord
+ import com.sherifradwan.ancnative.storage.DeletableRegistry
+ import com.sherifradwan.ancnative.storage.DeletableType
++import com.sherifradwan.ancnative.storage.DraftScreenKind
+ import com.sherifradwan.ancnative.storage.VaultState
+ 
+ enum class AttachmentError { SAVE_FAILED }
+@@ -50,7 +56,6 @@ sealed interface AncRoute {
+     data class UltrasoundEditor(val patientId: String, val scanId: String, val isNew: Boolean) : AncRoute
+     data class LabEditor(val patientId: String, val labId: String, val isNew: Boolean) : AncRoute
+     data class LabBatchEditor(val patientId: String) : AncRoute
+-    data class MedicationEditor(val patientId: String, val medicationId: String, val isNew: Boolean) : AncRoute
+ }
+ 
+ sealed interface PendingAction {
+@@ -341,6 +346,13 @@ val DeleteMessageKind.survivesPatientSwitch: Boolean get() = this != DeleteMessa
+ internal fun AncState.deleteMessageAfterSuccessFor(patientId: String): DeleteMessage? =
+     deleteMessage?.takeIf { it.patientId != patientId && it.kind.survivesPatientSwitch }
+ 
++/**
++ * The medication draft the open workspace shows in its sheet, or null. While it is shown the sheet also hosts the
++ * app's Undo bar, so the bar is never hidden under the modal sheet.
++ */
++fun AncState.medicationSheetDraft(): MedicationDraft? =
++    medicationDraft?.takeIf { it.patientId == (route as? AncRoute.Workspace)?.patientId }
++
+ /** The patient a route belongs to, or null for the patient list. */
+ fun AncRoute.patientIdOrNull(): String? = when (this) {
+     AncRoute.PatientList -> null
+@@ -354,7 +366,6 @@ fun AncRoute.patientIdOrNull(): String? = when (this) {
+     is AncRoute.UltrasoundEditor -> patientId
+     is AncRoute.LabEditor -> patientId
+     is AncRoute.LabBatchEditor -> patientId
+-    is AncRoute.MedicationEditor -> patientId
+ }
+ 
+ /** A failed Undo may restart its 8 s window at most this many times. */
+@@ -379,7 +390,15 @@ val AncState.undoRunning: Boolean get() = undoOffer?.phase == UndoPhase.RUNNING
+ 
+ /** What a vault lock does to the delete/undo UI state. */
+ fun AncState.clearedForLock(): AncState =
+-    copy(deleteConfirmation = null, undoOffer = null, deleteRunning = false, deleteMessage = null, noticePatientId = null)
++    copy(
++        deleteConfirmation = null,
++        undoOffer = null,
++        deleteRunning = false,
++        deleteMessage = null,
++        noticePatientId = null,
++        medicationStopUndo = null,
++        medicationQuickSave = null,
++    )
+ 
+ /**
+  * Keeps the delete/Undo UI state tied to what is on screen: a dialog for a record that is gone closes, and the
+@@ -632,10 +651,59 @@ data class MedicationDraft(
+     val original: MedicationDraftValues,
+     val values: MedicationDraftValues,
+     val errors: Set<ClinicalValidationError> = emptySet(),
++    /**
++     * Set by the first field change. Only the sheet's discard prompt reads it: it is not part of [isDirty] and is
++     * not saved with the draft, so crash recovery still goes by [isDirty].
++     */
++    val touched: Boolean = false,
+ ) {
+     val isDirty: Boolean get() = values != original
+ }
+ 
++/** The route a new medication draft starts with, and the one shown when a row has none. */
++val DEFAULT_MEDICATION_ROUTE: String = ClinicalVocabulary.medicationRoutes.first()
++
++/** What a catalog tile puts into a new medication draft, on top of the blank new-drug defaults. */
++data class MedicationPrefill(
++    val name: String,
++    val dosage: String,
++    val route: String,
++    val frequency: String,
++)
++
++/** How long the Meds tab offers Undo after a one-tap stop. */
++const val MEDICATION_STOP_UNDO_MILLIS = 10_000L
++
++/**
++ * The Meds-tab Undo bar after a one-tap stop. Undo saves the same row again with these earlier values and the row's
++ * revision at that moment. [token] is the stop save's editor session id. [committedAtMillis] is when the stop
++ * committed, so the bar counts its 10 s from then however often it is recomposed, rotated or re-shown.
++ */
++data class MedicationStopUndo(
++    val token: String,
++    val patientId: String,
++    val medicationId: String,
++    val medicationName: String,
++    val previousStatus: String,
++    val previousEndDate: String,
++    val previousNonCompliant: Boolean,
++    val committedAtMillis: Long = 0L,
++)
++
++/** How much of the Undo window is left at [nowMillis] (same clock as [MedicationStopUndo.committedAtMillis]); 0 when it is over. */
++fun MedicationStopUndo.remainingMillis(nowMillis: Long, windowMillis: Long = MEDICATION_STOP_UNDO_MILLIS): Long =
++    (windowMillis - (nowMillis - committedAtMillis)).coerceIn(0L, windowMillis)
++
++/**
++ * A one-tap stop, or its Undo, while it is being saved. [draft] is the stored row with the new values; it is never
++ * shown, autosaved or recovered, and it goes through the normal medication save command. [undoOnSuccess] is the bar
++ * to show when a stop commits; it is null for the save that is itself the Undo.
++ */
++data class MedicationQuickSave(
++    val draft: MedicationDraft,
++    val undoOnSuccess: MedicationStopUndo?,
++)
++
+ data class AncState(
+     val patients: List<DemoPatient>,
+     val vaultState: VaultState = VaultState.Locked,
+@@ -666,6 +734,9 @@ data class AncState(
+     val deleteRunning: Boolean = false,
+     val deleteMessage: DeleteMessage? = null,
+     val noticePatientId: String? = null,
++    /** A one-tap stop or its Undo in flight; it stays after a failed save so the Meds tab can show the cause. */
++    val medicationQuickSave: MedicationQuickSave? = null,
++    val medicationStopUndo: MedicationStopUndo? = null,
+ ) {
+     fun patient(patientId: String): DemoPatient? = patients.firstOrNull { it.id == patientId }
+ 
+@@ -751,7 +822,20 @@ sealed interface AncEvent {
+         val defaultStartDate: String = "",
+         /** "Save and add another": open the blank editor but keep the just-shown saved notice. */
+         val keepSavedNotice: Boolean = false,
++        /** Catalog tile values for a new draft; ignored when [medicationId] names a stored row. */
++        val prefill: MedicationPrefill? = null,
++    ) : AncEvent
++    /** One-tap stop: saves the stored row as Discontinued with today's end date, without a draft or sheet. */
++    data class StopMedication(
++        val patientId: String,
++        val medicationId: String,
++        val editorSessionId: String,
+     ) : AncEvent
++    /** Undo of a one-tap stop: saves the row again with its earlier status and end date. */
++    data class UndoMedicationStop(val token: String, val editorSessionId: String) : AncEvent
++    data class MedicationStopUndoExpired(val token: String) : AncEvent
++    /** Closes the cause shown after a failed one-tap stop or Undo. */
++    data object DismissMedicationStopFailure : AncEvent
+     data class DatingDraftChanged(val field: DatingDraftField, val value: String) : AncEvent
+     data class UltrasoundDraftChanged(val field: UltrasoundDraftField, val value: String) : AncEvent
+     data class LabDraftChanged(val field: LabDraftField, val value: String) : AncEvent
+@@ -807,6 +891,11 @@ sealed interface AncEvent {
+         val patients: List<DemoPatient>,
+         val destination: AncRoute,
+         val notice: SavedNotice,
++        /**
++         * When the store committed, on the monotonic clock the Meds tab's Undo bar counts from
++         * (`SystemClock.elapsedRealtime()` in the app). Only a one-tap stop reads it.
++         */
++        val committedAtMillis: Long = 0L,
+     ) : AncEvent
+     data object CancelEditor : AncEvent
+     data object Back : AncEvent
+@@ -890,7 +979,7 @@ sealed interface AncEvent {
+ 
+ object AncReducer {
+     fun reduce(state: AncState, event: AncEvent): AncState {
+-        val next = reduceInternal(state, event).withDeleteUiConsistent()
++        val next = reduceInternal(state, event).withDeleteUiConsistent().withMedicationStopUiKept(event)
+         val prompt = next.draftRecoveryPrompt
+         return if (prompt != null && activeEditorSessionId(next) != prompt.editorSessionId) {
+             next.copy(draftRecoveryPrompt = null)
+@@ -937,6 +1026,11 @@ object AncReducer {
+             is AncEvent.StartUltrasoundEditor -> startUltrasoundEditor(state, event)
+             is AncEvent.StartLabEditor -> startLabEditor(state, event)
+             is AncEvent.StartMedicationEditor -> startMedicationEditor(state, event)
++            is AncEvent.StopMedication -> stopMedication(state, event)
++            is AncEvent.UndoMedicationStop -> undoMedicationStop(state, event)
++            is AncEvent.MedicationStopUndoExpired ->
++                if (state.medicationStopUndo?.token == event.token) state.copy(medicationStopUndo = null) else state
++            AncEvent.DismissMedicationStopFailure -> state.withoutFailedMedicationQuickSave()
+             is AncEvent.DraftChanged -> updateDraft(state, event)
+             is AncEvent.PatientDraftChanged -> updatePatientDraft(state, event)
+             is AncEvent.HistoriesDraftChanged -> updateHistoriesDraft(state, event)
+@@ -976,7 +1070,13 @@ object AncReducer {
+                 ClinicalRecordKind.DATING -> state.copy(datingDraft = state.datingDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
+                 ClinicalRecordKind.ULTRASOUND_CREATE, ClinicalRecordKind.ULTRASOUND_UPDATE -> state.copy(ultrasoundDraft = state.ultrasoundDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
+                 ClinicalRecordKind.LAB_CREATE, ClinicalRecordKind.LAB_UPDATE -> state.copy(labDraft = state.labDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
+-                ClinicalRecordKind.MEDICATION_CREATE, ClinicalRecordKind.MEDICATION_UPDATE -> state.copy(medicationDraft = state.medicationDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
++                ClinicalRecordKind.MEDICATION_CREATE, ClinicalRecordKind.MEDICATION_UPDATE ->
++                    if (state.medicationDraft == null && state.medicationQuickSave != null) {
++                        // A stored row that no longer passes the save rules cannot be stopped in one tap: nothing was written.
++                        state.copy(savePhase = SavePhase.ERROR, saveError = SaveUiError.CONFIRMED_NOT_SAVED)
++                    } else {
++                        state.copy(medicationDraft = state.medicationDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
++                    }
+                 // A validation failure is not a storage error: it belongs on the draft, like every other editor.
+                 ClinicalRecordKind.LAB_BATCH_SAVE -> state.copy(
+                     labBatchDraft = state.labBatchDraft?.copy(errors = event.errors),
+@@ -1020,17 +1120,21 @@ object AncReducer {
+                 )
+             } else state
+             is AncEvent.RecordCommitted -> if (state.pendingSave == event.token) {
++                val quick = state.medicationQuickSave?.takeIf { it.draft.editorSessionId == event.token.editorSessionId }
+                 state.clearDrafts().copy(
+                     patients = event.patients,
+-                    route = event.destination,
++                    // A one-tap stop or its Undo never moves the screen: the clinician may have changed tab meanwhile.
++                    route = if (quick != null) state.route else event.destination,
+                     savedNotice = true,
+                     notice = event.notice,
+                     savePhase = SavePhase.IDLE,
+                     saveError = null,
+                     pendingSave = null,
++                    medicationStopUndo = quick?.undoOnSuccess?.copy(committedAtMillis = event.committedAtMillis)
++                        ?: state.medicationStopUndo,
+                 )
+             } else state
+-            AncEvent.CancelEditor, AncEvent.Back -> requestBack(state)
++            AncEvent.CancelEditor, AncEvent.Back -> requestBack(state, event)
+             AncEvent.ConfirmDiscard -> confirmDiscard(state)
+             AncEvent.KeepEditing -> state.copy(showDiscardDialog = false, pendingAction = null)
+             AncEvent.DismissNotice -> state.copy(savedNotice = false, notice = null)
+@@ -1055,7 +1159,13 @@ object AncReducer {
+             }
+             AncEvent.AcceptDraftRecovery -> {
+                 val prompt = state.draftRecoveryPrompt ?: return state
+-                applyDraftRecord(state, prompt.record).copy(draftRecoveryPrompt = null)
++                val recovered = applyDraftRecord(state, prompt.record).copy(draftRecoveryPrompt = null)
++                // Recovered work counts as the clinician's own edits: the medication sheet asks before discarding it.
++                if (prompt.record.screenKind == DraftScreenKind.MEDICATION) {
++                    recovered.copy(medicationDraft = recovered.medicationDraft?.copy(touched = true))
++                } else {
++                    recovered
++                }
+             }
+             AncEvent.DiscardDraftRecovery -> state.copy(draftRecoveryPrompt = null)
+             is AncEvent.RequestDelete -> {
+@@ -1467,27 +1577,45 @@ object AncReducer {
+         )
+     }
+ 
++    /**
++     * Opens the medication sheet in one step; the navigation route does not change. A start is ignored while a save
++     * runs, while any medication draft is open, or while another draft has unsaved changes.
++     *
++     * - Edit (a stored [AncEvent.StartMedicationEditor.medicationId]): `original` and `values` are both the stored row.
++     * - Add from a catalog tile ([AncEvent.StartMedicationEditor.prefill]): `original` is the blank new-drug defaults
++     *   and `values` is the tile on top of them, so the draft is dirty (and recoverable) from the start.
++     * - Blank custom drug: both are the blank defaults.
++     */
+     private fun startMedicationEditor(state: AncState, event: AncEvent.StartMedicationEditor): AncState {
+-        if (state.savePhase.blocksEditing() || state.hasDirtyDraft) return state
++        if (state.savePhase.blocksEditing() || state.hasDirtyDraft || state.medicationDraft != null) return state
+         if (event.medicationId != null && state.undoRunningFor(event.medicationId)) return state
+         val patient = state.patient(event.patientId)?.takeIf { it.status != "archived" } ?: return state
+         val med = event.medicationId?.let { id -> patient.medications.firstOrNull { it.id == id } }
+-        val defaultStart = event.defaultStartDate.ifEmpty { java.time.LocalDate.now().toString() }
+-        val values = med?.toDraftValues() ?: MedicationDraftValues(
+-            route = "Oral",
++        if (event.medicationId != null && med == null) return state
++        val blank = MedicationDraftValues(
++            route = DEFAULT_MEDICATION_ROUTE,
+             status = MEDICATION_STATUS_ACTIVE,
+-            startDate = defaultStart,
++            startDate = event.defaultStartDate.ifEmpty { today() },
+         )
+-        val medicationId = med?.id ?: event.newMedicationId
++        val original = med?.toDraftValues() ?: blank
++        val values = when {
++            med != null -> original
++            event.prefill != null -> blank.copy(
++                name = event.prefill.name,
++                dosage = event.prefill.dosage,
++                route = event.prefill.route.ifBlank { blank.route },
++                frequency = event.prefill.frequency,
++            )
++            else -> blank
++        }
+         return state.clearDrafts().copy(
+-            route = AncRoute.MedicationEditor(patient.id, medicationId, isNew = med == null),
+             medicationDraft = MedicationDraft(
+                 editorSessionId = event.editorSessionId,
+                 patientId = patient.id,
+-                medicationId = medicationId,
++                medicationId = med?.id ?: event.newMedicationId,
+                 basePatientRevision = patient.revision,
+                 baseMedicationRevision = med?.revision,
+-                original = values,
++                original = original,
+                 values = values,
+             ),
+             savedNotice = if (event.keepSavedNotice) state.savedNotice else false,
+@@ -1495,6 +1623,133 @@ object AncReducer {
+         )
+     }
+ 
++    /** True when a one-tap stop or its Undo may start a save now: nothing else is open, saving or being undone. */
++    private fun AncState.canQuickSaveMedication(): Boolean =
++        !savePhase.blocksEditing() && !hasDirtyDraft && medicationDraft == null && !undoRunning && !deleteRunning
++
++    /** One-tap stop: no draft and no sheet. The stored row is saved as Discontinued, ending today, at its current revision. */
++    private fun stopMedication(state: AncState, event: AncEvent.StopMedication): AncState {
++        if (!state.canQuickSaveMedication()) return state
++        val patient = state.patient(event.patientId)?.takeIf { it.status != "archived" } ?: return state
++        val med = patient.medications.firstOrNull { it.id == event.medicationId } ?: return state
++        if (!isOngoingMedication(med.status, med.isNonCompliant)) return state
++        val stored = med.toDraftValues()
++        val stopped = stored.copy(status = MEDICATION_STATUS_DISCONTINUED, isNonCompliant = false, endDate = today())
++        return state.copy(
++            medicationQuickSave = MedicationQuickSave(
++                draft = quickSaveDraft(event.editorSessionId, patient, med, stored, stopped),
++                undoOnSuccess = MedicationStopUndo(
++                    token = event.editorSessionId,
++                    patientId = patient.id,
++                    medicationId = med.id,
++                    medicationName = med.name,
++                    previousStatus = stored.status,
++                    previousEndDate = stored.endDate,
++                    previousNonCompliant = stored.isNonCompliant,
++                ),
++            ),
++            medicationStopUndo = null,
++            savePhase = SavePhase.IDLE,
++            saveError = null,
++            savedNotice = false,
++            notice = null,
++        )
++    }
++
++    /** Undo of a one-tap stop: a second normal save of the same row, at the revision the stop produced. */
++    private fun undoMedicationStop(state: AncState, event: AncEvent.UndoMedicationStop): AncState {
++        val undo = state.medicationStopUndo?.takeIf { it.token == event.token } ?: return state
++        if (!state.canQuickSaveMedication()) return state
++        val patient = state.patient(undo.patientId)?.takeIf { it.status != "archived" }
++        val med = patient?.medications?.firstOrNull { it.id == undo.medicationId }
++        if (patient == null || med == null) return state.copy(medicationStopUndo = null)
++        val stored = med.toDraftValues()
++        val restored = stored.copy(
++            status = undo.previousStatus,
++            endDate = undo.previousEndDate,
++            isNonCompliant = undo.previousNonCompliant,
++        )
++        return state.copy(
++            medicationQuickSave = MedicationQuickSave(
++                draft = quickSaveDraft(event.editorSessionId, patient, med, stored, restored),
++                undoOnSuccess = null,
++            ),
++            medicationStopUndo = null,
++            savePhase = SavePhase.IDLE,
++            saveError = null,
++            savedNotice = false,
++            notice = null,
++        )
++    }
++
++    private fun quickSaveDraft(
++        editorSessionId: String,
++        patient: DemoPatient,
++        med: DemoMedicationRecord,
++        original: MedicationDraftValues,
++        values: MedicationDraftValues,
++    ) = MedicationDraft(
++        editorSessionId = editorSessionId,
++        patientId = patient.id,
++        medicationId = med.id,
++        basePatientRevision = patient.revision,
++        baseMedicationRevision = med.revision,
++        original = original,
++        values = values,
++    )
++
++    /**
++     * The one-tap stop's Undo bar and its failure message belong to the Meds tab of one patient: both go when another
++     * action starts or the open patient changes.
++     */
++    private fun AncState.withMedicationStopUiKept(event: AncEvent): AncState {
++        var next = this
++        val undo = next.medicationStopUndo
++        if (undo != null && (event.startsAnotherAction() || route.patientIdOrNull() != undo.patientId)) {
++            next = next.copy(medicationStopUndo = null)
++        }
++        val failed = next.medicationQuickSave
++        if (failed != null && (event.startsAnotherAction() || route.patientIdOrNull() != failed.draft.patientId)) {
++            next = next.withoutFailedMedicationQuickSave()
++        }
++        return next
++    }
++
++    /** Drops a one-tap stop (or Undo) whose save failed, with its message. One that is still saving, or unresolved, stays. */
++    private fun AncState.withoutFailedMedicationQuickSave(): AncState =
++        if (medicationQuickSave != null && medicationDraft == null && savePhase == SavePhase.ERROR) {
++            copy(medicationQuickSave = null, savePhase = SavePhase.IDLE, saveError = null)
++        } else {
++            this
++        }
++
++    private fun AncEvent.startsAnotherAction(): Boolean = when (this) {
++        is AncEvent.OpenWorkspace,
++        is AncEvent.SelectSection,
++        is AncEvent.StartVisit,
++        is AncEvent.StartPatientEditor,
++        is AncEvent.StartHistoriesEditor,
++        is AncEvent.StartPregnancyEditor,
++        is AncEvent.StartStatusEditor,
++        is AncEvent.StartDatingEditor,
++        is AncEvent.StartUltrasoundEditor,
++        is AncEvent.StartLabEditor,
++        is AncEvent.StartMedicationEditor,
++        is AncEvent.StopMedication,
++        is AncEvent.StartLabBatch,
++        is AncEvent.StartLabBatchRequest,
++        is AncEvent.RequestDelete,
++        is AncEvent.UndoRequested,
++        is AncEvent.AddAttachment,
++        is AncEvent.ImportScanPhoto,
++        AncEvent.Back,
++        AncEvent.CancelEditor,
++        -> true
++        else -> false
++    }
++
++    private fun today(): String = java.time.LocalDate.now().toString()
++
+     private fun updateDraft(state: AncState, event: AncEvent.DraftChanged): AncState {
+         if (state.savePhase.blocksEditing()) return state
+         val draft = state.draft ?: return state
+@@ -1682,14 +1937,29 @@ object AncReducer {
+             MedicationDraftField.FREQUENCY -> draft.values.copy(frequency = event.value)
+             MedicationDraftField.START_DATE -> draft.values.copy(startDate = event.value)
+             MedicationDraftField.END_DATE -> draft.values.copy(endDate = event.value)
+-            MedicationDraftField.STATUS -> draft.values.copy(
+-                status = event.value.ifBlank { MEDICATION_STATUS_ACTIVE },
+-                isNonCompliant = (event.value == MEDICATION_STATUS_NON_COMPLIANT),
+-            )
++            MedicationDraftField.STATUS -> withMedicationStatus(draft.values, event.value.ifBlank { MEDICATION_STATUS_ACTIVE })
+             MedicationDraftField.NOTES -> draft.values.copy(notes = event.value)
+             MedicationDraftField.ADVERSE_NOTES -> draft.values.copy(adverseNotes = event.value)
+         }
+-        return state.copy(medicationDraft = draft.copy(values = values, errors = emptySet()), savePhase = SavePhase.IDLE, saveError = null)
++        return state.copy(
++            medicationDraft = draft.copy(values = values, errors = emptySet(), touched = true),
++            savePhase = SavePhase.IDLE,
++            saveError = null,
++        )
++    }
++
++    /**
++     * A change to Stopped fills a blank end date with today, so the one date field is never empty. A change from
++     * Stopped back to Active keeps the start date and clears the end date, as an active drug has none.
++     */
++    private fun withMedicationStatus(values: MedicationDraftValues, status: String): MedicationDraftValues {
++        val next = values.copy(status = status, isNonCompliant = status == MEDICATION_STATUS_NON_COMPLIANT)
++        val wasStopped = medicationEditorChoice(values.status) == MedicationOnOff.STOPPED
++        return when (medicationEditorChoice(status)) {
++            MedicationOnOff.STOPPED -> if (next.endDate.isBlank()) next.copy(endDate = today()) else next
++            MedicationOnOff.ON -> if (wasStopped) next.copy(endDate = "") else next
++            null -> next
++        }
+     }
+ 
+     private fun validationFailed(state: AncState, event: AncEvent.PatientValidationFailed): AncState = when (event.editor) {
+@@ -1699,8 +1969,18 @@ object AncReducer {
+         PatientEditorKind.STATUS -> state.copy(statusDraft = state.statusDraft?.copy(errors = event.errors))
+     }.copy(savePhase = SavePhase.IDLE, saveError = null)
+ 
+-    private fun requestBack(state: AncState): AncState {
++    private fun requestBack(state: AncState, event: AncEvent): AncState {
+         if (state.savePhase.blocksEditing()) return state
++        val medicationDraft = state.medicationDraft
++        if (medicationDraft != null) {
++            // The sheet sits over the workspace, so closing it never leaves the screen. The sheet has already asked
++            // before it sends Cancel, and an untouched form closes at once; only a Back that bypassed the sheet asks here.
++            return if (event == AncEvent.CancelEditor || !medicationDraft.touched) {
++                state.clearDrafts().copy(savedNotice = false, notice = null)
++            } else {
++                state.copy(showDiscardDialog = true, pendingAction = PendingAction.Navigate(state.route))
++            }
++        }
+         val destination = when (val route = state.route) {
+             AncRoute.PatientList -> return state
+             is AncRoute.Workspace -> AncRoute.PatientList
+@@ -1713,7 +1993,6 @@ object AncReducer {
+             is AncRoute.UltrasoundEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.ULTRASOUND)
+             is AncRoute.LabEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.LABORATORY)
+             is AncRoute.LabBatchEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.LABORATORY)
+-            is AncRoute.MedicationEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.MEDICATIONS)
+         }
+         return if (state.hasDirtyDraft) {
+             state.copy(showDiscardDialog = true, pendingAction = PendingAction.Navigate(destination))
+@@ -1747,6 +2026,7 @@ object AncReducer {
+         labDraft = null,
+         medicationDraft = null,
+         labBatchDraft = null,
++        medicationQuickSave = null,
+         showDiscardDialog = false,
+         pendingAction = null,
+         savePhase = SavePhase.IDLE,
+@@ -1865,5 +2145,6 @@ object AncReducer {
+     }
+ 
+     private fun AncState.canAccept(token: PendingSaveToken): Boolean =
+-        (savePhase == SavePhase.IDLE || savePhase == SavePhase.ERROR) && activeEditorSessionId(this) == token.editorSessionId
++        (savePhase == SavePhase.IDLE || savePhase == SavePhase.ERROR) &&
++            (activeEditorSessionId(this) == token.editorSessionId || medicationQuickSave?.draft?.editorSessionId == token.editorSessionId)
+ }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt b/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
+index d748ece..07e2d09 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
+@@ -47,8 +47,13 @@ import kotlinx.coroutines.sync.Mutex
+ import kotlinx.coroutines.sync.withLock
+ import kotlinx.coroutines.withTimeoutOrNull
+ 
+-class AncViewModel(application: Application) : AndroidViewModel(application) {
+-    private val controller = VaultController.get(application)
++class AncViewModel internal constructor(
++    application: Application,
++    /** The app's vault; instrumented tests pass an isolated test vault instead. */
++    private val controller: VaultController,
++) : AndroidViewModel(application) {
++    constructor(application: Application) : this(application, VaultController.get(application))
++
+     private val _state = MutableStateFlow(
+         AncState(patients = emptyList(), vaultState = VaultState.Inspecting),
+     )
+@@ -210,6 +215,14 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
+                     saveMedication(isChained = true)
+                 }
+             }
++            is AncEvent.StopMedication -> {
++                updateState { AncReducer.reduce(it, event) }
++                saveMedicationQuick(event.editorSessionId)
++            }
++            is AncEvent.UndoMedicationStop -> {
++                updateState { AncReducer.reduce(it, event) }
++                saveMedicationQuick(event.editorSessionId)
++            }
+             AncEvent.ConfirmDelete -> confirmDelete()
+             is AncEvent.UndoRequested -> requestUndo(event.token)
+             is AncEvent.AddAttachment -> addAttachment(event)
+@@ -704,6 +717,30 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
+         }
+     }
+ 
++    /**
++     * Saves a one-tap stop (or its Undo) that the reducer accepted under [editorSessionId]. It uses the normal
++     * medication command, built by its own prepare step from the row the reducer set up; nothing else differs.
++     */
++    private fun saveMedicationQuick(editorSessionId: String) {
++        val current = _state.value
++        val unlocked = current.vaultState as? VaultState.Unlocked ?: return
++        val quick = current.medicationQuickSave?.takeIf { it.draft.editorSessionId == editorSessionId } ?: return
++        when (val prepared = SaveMedicationCommand.prepare(
++            current.copy(medicationDraft = quick.draft),
++            UUID.randomUUID().toString(),
++            quick.draft.medicationId,
++        )) {
++            is ClinicalCommandPreparation.Rejected -> dispatch(
++                AncEvent.ClinicalValidationFailed(ClinicalRecordKind.MEDICATION_UPDATE, prepared.errors),
++            )
++            is ClinicalCommandPreparation.Ready -> submitPreparedClinicalCommand(
++                existing = null,
++                prepared = prepared.command,
++                sessionEpoch = unlocked.sessionEpoch,
++            )
++        }
++    }
++
+     private fun submitPreparedClinicalCommand(
+         existing: ClinicalCommand?,
+         prepared: ClinicalCommand,
+@@ -734,6 +771,7 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
+                                 patients = result.snapshot.patients,
+                                 destination = command.destination(),
+                                 notice = command.savedNotice(),
++                                committedAtMillis = android.os.SystemClock.elapsedRealtime(),
+                             ),
+                         )
+                     }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/EditorHooks.kt b/app/src/main/java/com/sherifradwan/ancnative/state/EditorHooks.kt
+index 0661f06..1540eaa 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/state/EditorHooks.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/EditorHooks.kt
+@@ -13,15 +13,9 @@ object MedicationEditorHook : EditorHook {
+     override fun isOpenFor(state: AncState, recordId: String): Boolean =
+         state.medicationDraft?.medicationId == recordId
+ 
++    /** The medication sheet sits over the workspace, so closing it only drops the draft; the route stays. */
+     override fun closeEditor(state: AncState, patientId: String): AncState =
+-        state.copy(
+-            medicationDraft = null,
+-            route = if (state.route is AncRoute.MedicationEditor) {
+-                AncRoute.Workspace(patientId, WorkspaceSection.MEDICATIONS)
+-            } else {
+-                state.route
+-            },
+-        )
++        state.copy(medicationDraft = null)
+ 
+     override fun rebaseCreateDraft(state: AncState, patients: List<DemoPatient>): AncState {
+         var nextDraft = state.medicationDraft
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt
+index 225ee6f..c626a5c 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt
+@@ -58,6 +58,7 @@ import com.sherifradwan.ancnative.security.SecuritySettingsRepository
+ import com.sherifradwan.ancnative.state.AncEvent
+ import com.sherifradwan.ancnative.state.AncRoute
+ import com.sherifradwan.ancnative.state.AncState
++import com.sherifradwan.ancnative.state.medicationSheetDraft
+ import com.sherifradwan.ancnative.storage.VaultState
+ import com.sherifradwan.ancnative.ui.patienthub.PatientHubScreen
+ 
+@@ -235,11 +236,11 @@ fun AncApp(
+                         is AncRoute.DatingEditor -> DatingEditor(state, route, onEvent)
+                         is AncRoute.UltrasoundEditor -> UltrasoundEditor(state, route, onEvent)
+                         is AncRoute.LabEditor -> LabEditor(state, route, onEvent)
+-                        is AncRoute.MedicationEditor -> MedicationEditor(state, route, onEvent)
+                         is AncRoute.LabBatchEditor -> LabBatchScreen(state, route, onEvent)
+                     }
+                 }
+-                UndoBarHost(state, onEvent)
++                // While the medication sheet is open it shows the Undo bar itself, under its buttons.
++                if (state.medicationSheetDraft() == null) UndoBarHost(state, onEvent)
+             }
+         }
+     }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt
+index 5aedb39..502ff40 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt
+@@ -17,6 +17,7 @@ import androidx.compose.material3.Button
+ import androidx.compose.material3.CircularProgressIndicator
+ import androidx.compose.material3.Icon
+ import androidx.compose.material3.IconButton
++import androidx.compose.material3.LocalContentColor
+ import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.Surface
+ import androidx.compose.material3.Text
+@@ -73,12 +74,14 @@ internal fun DeleteIconButton(
+     onClick: () -> Unit,
+     modifier: Modifier = Modifier,
+     tag: String? = null,
++    enabled: Boolean = true,
+ ) {
+     val recordId = record.id
+     // A type/record mismatch draws nothing instead of throwing while the screen is composed.
+     val label = DeletableRegistry.labelOrNull(type, record) ?: return
+     IconButton(
+         onClick = onClick,
++        enabled = enabled,
+         modifier = modifier
+             .minimumTouchTarget()
+             .testTag(tag ?: "delete-${type.name.lowercase()}-$recordId"),
+@@ -86,7 +89,7 @@ internal fun DeleteIconButton(
+         Icon(
+             Icons.Default.Delete,
+             contentDescription = stringResource(R.string.delete_record_description, stringResource(type.labelResource()), label),
+-            tint = MaterialTheme.colorScheme.error,
++            tint = if (enabled) MaterialTheme.colorScheme.error else LocalContentColor.current,
+             modifier = Modifier.size(20.dp),
+         )
+     }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/MedicationEditor.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/MedicationEditor.kt
+deleted file mode 100644
+index f1ce6fa..0000000
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/MedicationEditor.kt
++++ /dev/null
+@@ -1,396 +0,0 @@
+-package com.sherifradwan.ancnative.ui
+-
+-import androidx.compose.foundation.layout.Arrangement
+-import androidx.compose.foundation.layout.Column
+-import androidx.compose.foundation.layout.PaddingValues
+-import androidx.compose.foundation.layout.Row
+-import androidx.compose.foundation.layout.Spacer
+-import androidx.compose.foundation.layout.fillMaxWidth
+-import androidx.compose.foundation.layout.heightIn
+-import androidx.compose.foundation.layout.padding
+-import androidx.compose.foundation.layout.size
+-import androidx.compose.foundation.layout.width
+-import androidx.compose.foundation.shape.RoundedCornerShape
+-import androidx.compose.foundation.text.KeyboardActions
+-import androidx.compose.material.icons.Icons
+-import androidx.compose.material.icons.filled.Add
+-import androidx.compose.material.icons.filled.Lock
+-import androidx.compose.material3.Button
+-import androidx.compose.material3.Icon
+-import androidx.compose.material3.MaterialTheme
+-import androidx.compose.material3.OutlinedButton
+-import androidx.compose.material3.Surface
+-import androidx.compose.material3.Text
+-import androidx.compose.material3.TextButton
+-import androidx.compose.runtime.Composable
+-import androidx.compose.runtime.LaunchedEffect
+-import androidx.compose.runtime.collectAsState
+-import androidx.compose.runtime.getValue
+-import androidx.compose.runtime.mutableStateOf
+-import androidx.compose.runtime.remember
+-import androidx.compose.runtime.saveable.rememberSaveable
+-import androidx.compose.runtime.setValue
+-import androidx.compose.ui.Alignment
+-import androidx.compose.ui.Modifier
+-import androidx.compose.ui.focus.FocusRequester
+-import androidx.compose.ui.focus.focusRequester
+-import androidx.compose.ui.platform.LocalContext
+-import androidx.compose.ui.platform.testTag
+-import androidx.compose.ui.res.stringResource
+-import androidx.compose.ui.text.input.ImeAction
+-import androidx.compose.ui.text.style.TextAlign
+-import androidx.compose.ui.text.input.KeyboardType
+-import androidx.compose.ui.unit.dp
+-import com.sherifradwan.ancnative.R
+-import com.sherifradwan.ancnative.model.ClinicalVocabulary
+-import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
+-import com.sherifradwan.ancnative.model.MedicationOnOff
+-import com.sherifradwan.ancnative.model.medicationEditorChoice
+-import com.sherifradwan.ancnative.model.medicationStatusAfterChoice
+-import com.sherifradwan.ancnative.model.catalog.ClinicalCatalogRepository
+-import com.sherifradwan.ancnative.model.catalog.MedicationCatalogItem
+-import com.sherifradwan.ancnative.model.effectiveMedicationStatus
+-import com.sherifradwan.ancnative.state.AncEvent
+-import com.sherifradwan.ancnative.state.AncRoute
+-import com.sherifradwan.ancnative.state.AncState
+-import com.sherifradwan.ancnative.state.ClinicalValidationError
+-import com.sherifradwan.ancnative.state.MedicationDraftField
+-import com.sherifradwan.ancnative.state.SavePhase
+-import java.time.LocalDate
+-
+-private fun firstBlankRow(dosage: String, route: String): String? {
+-    if (dosage.isBlank()) return "dose"
+-    if (route.isBlank()) return "route"
+-    return null
+-}
+-
+-@Composable
+-fun MedicationEditor(
+-    state: AncState,
+-    route: AncRoute.MedicationEditor,
+-    onEvent: (AncEvent) -> Unit,
+-) {
+-    val patient = state.patient(route.patientId) ?: return
+-    val draft = state.medicationDraft?.takeIf { it.patientId == route.patientId && it.medicationId == route.medicationId } ?: return
+-    val enabled = state.savePhase == SavePhase.IDLE || state.savePhase == SavePhase.ERROR
+-
+-    val dosageFocusRequester = remember { FocusRequester() }
+-    // Row key whose field should take focus once that row has been composed (IME Next only).
+-    var pendingFocusKey by remember(draft.medicationId) { mutableStateOf<String?>(null) }
+-
+-    var openRowKey by rememberSaveable(draft.medicationId) {
+-        mutableStateOf(
+-            firstBlankRow(draft.values.dosage, draft.values.route),
+-        )
+-    }
+-
+-    LaunchedEffect(openRowKey, pendingFocusKey) {
+-        val target = pendingFocusKey
+-        if (target == "dose" && target == openRowKey) {
+-            try {
+-                dosageFocusRequester.requestFocus()
+-            } catch (_: IllegalStateException) {
+-                // Field not attached (row closed or not composed yet): skip programmatic focus.
+-            }
+-        }
+-        pendingFocusKey = null
+-    }
+-
+-    EditorPage(
+-        title = stringResource(R.string.medication_editor),
+-        subtitle = "${patient.displayName} · Medication",
+-        tag = "medicationEditor",
+-        bottomBar = {
+-            Row(
+-                modifier = Modifier.fillMaxWidth(),
+-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+-                verticalAlignment = Alignment.CenterVertically,
+-            ) {
+-                OutlinedButton(
+-                    onClick = { onEvent(AncEvent.CancelEditor) },
+-                    enabled = enabled,
+-                    contentPadding = PaddingValues(horizontal = 8.dp),
+-                    modifier = Modifier.weight(1f).minimumTouchTarget().testTag("cancelMedication"),
+-                ) {
+-                    Text(stringResource(R.string.cancel), maxLines = 1, softWrap = false)
+-                }
+-                Button(
+-                    onClick = { onEvent(AncEvent.SubmitMedication) },
+-                    enabled = enabled,
+-                    contentPadding = PaddingValues(horizontal = 8.dp),
+-                    modifier = Modifier.weight(1f).minimumTouchTarget().testTag("saveMedication"),
+-                ) {
+-                    Text(stringResource(R.string.save), maxLines = 1, softWrap = false)
+-                }
+-                OutlinedButton(
+-                    onClick = { onEvent(AncEvent.SubmitMedicationAndAddAnother) },
+-                    enabled = enabled,
+-                    contentPadding = PaddingValues(horizontal = 4.dp),
+-                    modifier = Modifier.weight(1.8f).minimumTouchTarget().testTag("addAnotherMedication"),
+-                ) {
+-                    Text(
+-                        stringResource(R.string.save_and_add_another_med),
+-                        maxLines = 1,
+-                        softWrap = false,
+-                        textAlign = TextAlign.Center,
+-                        style = MaterialTheme.typography.labelMedium,
+-                    )
+-                }
+-            }
+-        },
+-    ) {
+-        GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
+-
+-        // 1-Tap Presets from Medication Catalog Delegate
+-        val context = LocalContext.current
+-        val catalogRepo = remember { ClinicalCatalogRepository.getInstance(context) }
+-        val catalogMedItems by catalogRepo.medicationCatalogItems.collectAsState()
+-
+-        // CARD 1: MEDICATION (M401, tag medPickCard)
+-        SectionCard(
+-            title = stringResource(R.string.medication),
+-            tag = "medPickCard",
+-        ) {
+-            EditorField(
+-                value = draft.values.name,
+-                onValueChange = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.NAME, it)) },
+-                label = stringResource(R.string.medication_name),
+-                tag = "medName",
+-                enabled = enabled,
+-                error = draft.errors.contains(ClinicalValidationError.REQUIRED_NAME),
+-                singleLine = true,
+-                keyboardType = KeyboardType.Text,
+-                imeAction = ImeAction.Next,
+-                keyboardActions = KeyboardActions(onNext = {
+-                    openRowKey = firstBlankRow(draft.values.dosage, draft.values.route)
+-                    pendingFocusKey = openRowKey
+-                }),
+-            )
+-
+-            QuickPresetChips(
+-                title = stringResource(R.string.common_medications),
+-                items = catalogMedItems.map { it.displayLabel },
+-                enabled = enabled,
+-                onSelect = { selectedLabel ->
+-                    val preset = catalogMedItems.firstOrNull { it.displayLabel == selectedLabel }
+-                    if (preset != null) {
+-                        onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.NAME, preset.name))
+-                        onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.DOSAGE, preset.dosage))
+-                        onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ROUTE, preset.route))
+-                        onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.FREQUENCY, ""))
+-                        onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.END_DATE, ""))
+-                        onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ADVERSE_NOTES, ""))
+-                        // The start date is not asked for; a new entry starts today.
+-                        if (draft.values.startDate.isEmpty()) {
+-                            onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.START_DATE, LocalDate.now().toString()))
+-                        }
+-                        openRowKey = firstBlankRow(preset.dosage, preset.route)
+-                    }
+-                },
+-                tagPrefix = "medPreset",
+-                collapseAfter = PRESAVED_COLLAPSE_AFTER,
+-                toggleTag = "presavedToggle",
+-            )
+-
+-            // Save current medication to my list if it's new
+-            val trimmedMedName = draft.values.name.trim()
+-            val isAlreadyInMedCatalog = catalogMedItems.any { it.name.equals(trimmedMedName, ignoreCase = true) }
+-            if (trimmedMedName.isNotBlank() && !isAlreadyInMedCatalog) {
+-                Surface(
+-                    modifier = Modifier.fillMaxWidth().testTag("saveToMedCodexBanner"),
+-                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+-                    shape = RoundedCornerShape(8.dp),
+-                ) {
+-                    Row(
+-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp).fillMaxWidth(),
+-                        horizontalArrangement = Arrangement.SpaceBetween,
+-                        verticalAlignment = Alignment.CenterVertically,
+-                    ) {
+-                        Text(
+-                            text = "New medication: add to my medication list?",
+-                            style = MaterialTheme.typography.bodySmall,
+-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+-                            modifier = Modifier.weight(1f),
+-                        )
+-                        TextButton(
+-                            onClick = {
+-                                catalogRepo.addMedicationCatalogItem(
+-                                    MedicationCatalogItem(
+-                                        name = trimmedMedName,
+-                                        dosage = draft.values.dosage.trim(),
+-                                        route = draft.values.route.ifBlank { "Oral" },
+-                                        frequency = draft.values.frequency.trim(),
+-                                        isProphylaxis = false,
+-                                        isCustom = true,
+-                                    ),
+-                                )
+-                            },
+-                            modifier = Modifier.minimumTouchTarget().testTag("saveToMedCodexButton"),
+-                        ) {
+-                            Icon(
+-                                Icons.Default.Add,
+-                                contentDescription = null,
+-                                modifier = Modifier.size(16.dp),
+-                            )
+-                            Spacer(Modifier.width(4.dp))
+-                            Text("Add to my list", maxLines = 1, softWrap = false)
+-                        }
+-                    }
+-                }
+-            }
+-
+-            // Patient's previous medications suggestion
+-            val previousMedNames = patient.medications.map { it.name }.distinct().filter { it.isNotBlank() }
+-            if (previousMedNames.isNotEmpty()) {
+-                QuickPresetChips(
+-                    title = stringResource(R.string.patient_previous_meds),
+-                    items = previousMedNames,
+-                    enabled = enabled,
+-                    onSelect = { medName ->
+-                        val prior = patient.medications.firstOrNull { it.name == medName }
+-                        if (prior != null) {
+-                            onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.NAME, prior.name))
+-                            onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.DOSAGE, prior.dosage))
+-                            onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ROUTE, prior.route))
+-                            // Safety Reset Rule: sets status "Active", wipes adverse notes, end date, frequency, and notes
+-                            onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, MEDICATION_STATUS_ACTIVE))
+-                            onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.FREQUENCY, ""))
+-                            onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ADVERSE_NOTES, ""))
+-                            onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.END_DATE, ""))
+-                            onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.NOTES, ""))
+-                            openRowKey = firstBlankRow(prior.dosage, prior.route)
+-                        }
+-                    },
+-                    tagPrefix = "patientPrevMed",
+-                    collapseAfter = PRESAVED_COLLAPSE_AFTER,
+-                )
+-            }
+-        }
+-
+-        // CARD 2: DOSE AND ROUTE (M402, tag medDetailsCard)
+-        SectionCard(
+-            title = stringResource(R.string.medication_dose_and_schedule),
+-            tag = "medDetailsCard",
+-        ) {
+-            // Row 1: dose
+-            if (openRowKey == "dose") {
+-                Column(
+-                    modifier = Modifier.fillMaxWidth().testTag("medOpen-dose"),
+-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+-                ) {
+-                    EditorField(
+-                        value = draft.values.dosage,
+-                        onValueChange = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.DOSAGE, it)) },
+-                        label = stringResource(R.string.dosage),
+-                        tag = "medDosage",
+-                        enabled = enabled,
+-                        modifier = Modifier.focusRequester(dosageFocusRequester),
+-                        error = draft.errors.contains(ClinicalValidationError.REQUIRED_DOSAGE),
+-                        singleLine = true,
+-                        keyboardType = KeyboardType.Text,
+-                        imeAction = ImeAction.Next,
+-                        keyboardActions = KeyboardActions(onNext = {
+-                            openRowKey = firstBlankRow(draft.values.dosage, draft.values.route)
+-                            pendingFocusKey = openRowKey
+-                        }),
+-                    )
+-                }
+-            } else {
+-                SummaryRow(
+-                    label = stringResource(R.string.dosage),
+-                    value = draft.values.dosage,
+-                    tag = "medRow-dose",
+-                    onClick = { openRowKey = "dose" },
+-                )
+-            }
+-
+-            // Row 2: route
+-            if (openRowKey == "route") {
+-                Column(
+-                    modifier = Modifier.fillMaxWidth().testTag("medOpen-route"),
+-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+-                ) {
+-                    ChoiceGroup(
+-                        label = stringResource(R.string.route),
+-                        selected = draft.values.route.ifEmpty { "Oral" },
+-                        choices = ClinicalVocabulary.medicationRoutes.toList(),
+-                        enabled = enabled,
+-                        tagPrefix = "medRouteChoice",
+-                        rowGap = 0.dp,
+-                        onSelected = { selectedRoute ->
+-                            onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ROUTE, selectedRoute))
+-                            openRowKey = firstBlankRow(draft.values.dosage, selectedRoute)
+-                        },
+-                    )
+-                }
+-            } else {
+-                SummaryRow(
+-                    label = stringResource(R.string.route),
+-                    value = draft.values.route.ifBlank { "Oral" },
+-                    tag = "medRow-route",
+-                    onClick = { openRowKey = "route" },
+-                )
+-            }
+-        }
+-
+-        // CARD 3: STATUS AND NOTE (M403, tag medStatusCard). The editor offers On (stored Active) and Stopped (stored Discontinued).
+-        SectionCard(
+-            title = stringResource(R.string.status),
+-            tag = "medStatusCard",
+-        ) {
+-            val currentStatus = effectiveMedicationStatus(
+-                draft.values.status.ifEmpty { MEDICATION_STATUS_ACTIVE },
+-                draft.values.isNonCompliant,
+-            )
+-            val currentChoice = medicationEditorChoice(currentStatus)
+-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+-                listOf(
+-                    MedicationOnOff.ON to stringResource(R.string.medication_status_active),
+-                    MedicationOnOff.STOPPED to stringResource(R.string.medication_status_stopped),
+-                ).forEachIndexed { index, (choice, label) ->
+-                    BigChoiceButton(
+-                        label = label,
+-                        selected = currentChoice == choice,
+-                        tag = "medStatusChoice-$index",
+-                        onClick = {
+-                            val next = medicationStatusAfterChoice(currentStatus, choice)
+-                            if (next != currentStatus) {
+-                                onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, next))
+-                            }
+-                        },
+-                        enabled = enabled,
+-                        modifier = Modifier.weight(1f),
+-                    )
+-                }
+-            }
+-            EditorField(
+-                value = draft.values.notes,
+-                onValueChange = { onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.NOTES, it)) },
+-                label = stringResource(R.string.medication_note),
+-                tag = "medNotes",
+-                enabled = enabled,
+-                singleLine = false,
+-            )
+-        }
+-
+-        // Security Vault Indicator
+-        Row(
+-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+-            horizontalArrangement = Arrangement.Center,
+-            verticalAlignment = Alignment.CenterVertically,
+-        ) {
+-            Icon(
+-                Icons.Default.Lock,
+-                contentDescription = null,
+-                tint = MaterialTheme.colorScheme.tertiary,
+-                modifier = Modifier.size(16.dp),
+-            )
+-            Spacer(Modifier.width(6.dp))
+-            Text(
+-                text = "Medication and prescription records encrypted locally (AES-256 GCM) · Local Vault Security",
+-                style = MaterialTheme.typography.labelSmall,
+-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+-            )
+-        }
+-    }
+-}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
+index 7b49c33..756fee0 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
+@@ -35,11 +35,14 @@ import com.sherifradwan.ancnative.state.AncRoute
+ import com.sherifradwan.ancnative.state.AncState
+ import com.sherifradwan.ancnative.state.PatientDraftField
+ import com.sherifradwan.ancnative.state.SavePhase
++import com.sherifradwan.ancnative.state.medicationSheetDraft
+ import com.sherifradwan.ancnative.storage.DeletableType
+ import com.sherifradwan.ancnative.ui.AddAttachmentDialog
+ import com.sherifradwan.ancnative.ui.ClinicalAttachmentViewerDialog
+ import com.sherifradwan.ancnative.ui.UltrasoundPhotoViewerDialog
++import com.sherifradwan.ancnative.ui.UndoBarHost
+ import com.sherifradwan.ancnative.ui.patienthub.components.ClinicalAttentionDialog
++import com.sherifradwan.ancnative.ui.patienthub.components.MedicationSheet
+ import com.sherifradwan.ancnative.ui.patienthub.tabs.LabsTab
+ import com.sherifradwan.ancnative.ui.patienthub.tabs.MedsTab
+ import com.sherifradwan.ancnative.ui.patienthub.tabs.OverviewTab
+@@ -140,6 +143,7 @@ fun PatientHubScreen(
+         state.savePhase == SavePhase.RECONCILING ||
+         state.savePhase == SavePhase.UNRESOLVED
+     val canModifyData = canEdit && !state.hasDirtyDraft && !isSaveBlocked && !state.deleteRunning
++    val medicationDraft = state.medicationSheetDraft()
+ 
+     // Dialog state holders
+     var viewingPhotoScan by remember(patient.id) { mutableStateOf<DemoUltrasoundScan?>(null) }
+@@ -240,7 +244,13 @@ fun PatientHubScreen(
+                     PatientHubTab.MEDS -> {
+                         MedsTab(
+                             patient = patient,
+-                            canEdit = canModifyData,
++                            canEdit = canEdit,
++                            actionsAllowed = canModifyData,
++                            medicationDraft = medicationDraft,
++                            savePhase = state.savePhase,
++                            saveError = state.saveError,
++                            quickSave = state.medicationQuickSave,
++                            stopUndo = state.medicationStopUndo,
+                             onEvent = onEvent,
+                         )
+                     }
+@@ -257,6 +267,18 @@ fun PatientHubScreen(
+             }
+         }
+ 
++        // The medication sheet sits above the pager: its scrim blocks tab swipes, and the route never changes.
++        if (medicationDraft != null) {
++            MedicationSheet(
++                draft = medicationDraft,
++                savePhase = state.savePhase,
++                saveError = state.saveError,
++                touched = medicationDraft.touched,
++                onEvent = onEvent,
++                footer = { UndoBarHost(state, onEvent) },
++            )
++        }
++
+         // Modal Dialog Hosts
+         if (viewingPhotoScan != null) {
+             UltrasoundPhotoViewerDialog(
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationCard.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationCard.kt
+index ec0b232..e7bdc41 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationCard.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationCard.kt
+@@ -21,6 +21,7 @@ import androidx.compose.material3.CardDefaults
+ import androidx.compose.material3.HorizontalDivider
+ import androidx.compose.material3.Icon
+ import androidx.compose.material3.IconButton
++import androidx.compose.material3.LocalContentColor
+ import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
+@@ -49,12 +50,17 @@ fun MedicationCard(
+     canEdit: Boolean,
+     onToggle: () -> Unit,
+     modifier: Modifier = Modifier,
++    /** False while a save runs or a medication draft is open: stop, edit and delete show disabled. */
++    actionsEnabled: Boolean = true,
+     onStop: (() -> Unit)? = null,
+     onEdit: (() -> Unit)? = null,
+     onDelete: (() -> Unit)? = null,
+ ) {
+     val status = medicationStatusLabel(med.status, med.isNonCompliant)
+-    val instructions = medicationInstructions(med.dosage, med.route, med.notes)
++    // Dose and route through the shared helper (notes left out), then frequency, each on its own untruncated line;
++    // notes follow, cut to two lines while the card is closed. The helper itself stays as the summary and print use it.
++    val doseAndRoute = medicationInstructions(med.dosage, med.route, null)
++    val notes = med.notes?.trim().orEmpty()
+ 
+     Card(
+         modifier = modifier
+@@ -85,15 +91,30 @@ fun MedicationCard(
+                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                         Text(med.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                         MedicationStatusBadge(status)
+-                        if (instructions.isNotBlank()) {
++                        if (doseAndRoute.isNotBlank()) {
+                             Text(
+-                                text = instructions,
++                                text = doseAndRoute,
+                                 style = MaterialTheme.typography.bodyMedium,
+-                                fontWeight = FontWeight.Normal,
++                                color = MaterialTheme.colorScheme.onSurfaceVariant,
++                                modifier = Modifier.testTag("medicationInstructions-${med.id}"),
++                            )
++                        }
++                        if (med.frequency.isNotBlank()) {
++                            Text(
++                                text = med.frequency,
++                                style = MaterialTheme.typography.bodyMedium,
++                                color = MaterialTheme.colorScheme.onSurfaceVariant,
++                                modifier = Modifier.testTag("medicationFrequency-${med.id}"),
++                            )
++                        }
++                        if (notes.isNotEmpty()) {
++                            Text(
++                                text = notes,
++                                style = MaterialTheme.typography.bodySmall,
+                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                 maxLines = if (isExpanded) Int.MAX_VALUE else 2,
+                                 overflow = TextOverflow.Ellipsis,
+-                                modifier = Modifier.testTag("medicationInstructions-${med.id}"),
++                                modifier = Modifier.testTag("medicationNotes-${med.id}"),
+                             )
+                         }
+                     }
+@@ -103,28 +124,30 @@ fun MedicationCard(
+                     if (isOngoingMedication(med.status, med.isNonCompliant) && onStop != null) {
+                         IconButton(
+                             onClick = onStop,
++                            enabled = actionsEnabled,
+                             modifier = Modifier.minimumTouchTarget().testTag("stopMedication-${med.id}"),
+                         ) {
+                             Icon(
+                                 Icons.Default.Stop,
+                                 contentDescription = stringResource(R.string.stop_medication),
+-                                tint = MaterialTheme.colorScheme.secondary,
++                                tint = if (actionsEnabled) MaterialTheme.colorScheme.secondary else LocalContentColor.current,
+                                 modifier = Modifier.size(20.dp),
+                             )
+                         }
+                     }
+                     if (onDelete != null) {
+-                        DeleteIconButton(DeletableType.MEDICATION, med, onDelete)
++                        DeleteIconButton(DeletableType.MEDICATION, med, onDelete, enabled = actionsEnabled)
+                     }
+                     if (onEdit != null) {
+                         IconButton(
+                             onClick = onEdit,
++                            enabled = actionsEnabled,
+                             modifier = Modifier.minimumTouchTarget().testTag("editMedication-${med.id}"),
+                         ) {
+                             Icon(
+                                 Icons.Default.Edit,
+                                 contentDescription = stringResource(R.string.edit_medication),
+-                                tint = MaterialTheme.colorScheme.primary,
++                                tint = if (actionsEnabled) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                                 modifier = Modifier.size(20.dp),
+                             )
+                         }
+@@ -139,6 +162,7 @@ fun MedicationCard(
+                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                     FactRow(R.string.dosage, med.dosage)
+                     FactRow(R.string.route, med.route)
++                    FactRow(R.string.frequency, med.frequency)
+                     FactRow(R.string.start_date, med.startDate)
+                     if (!med.adverseNotes.isNullOrBlank()) {
+                         FactRow(R.string.adverse_effects, med.adverseNotes)
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt
+index 37ca8b1..f8b7f0e 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt
+@@ -48,6 +48,7 @@ import com.sherifradwan.ancnative.model.medicationEditorChoice
+ import com.sherifradwan.ancnative.model.medicationStatusAfterChoice
+ import com.sherifradwan.ancnative.state.AncEvent
+ import com.sherifradwan.ancnative.state.ClinicalValidationError
++import com.sherifradwan.ancnative.state.DEFAULT_MEDICATION_ROUTE
+ import com.sherifradwan.ancnative.state.MedicationDraftField
+ import com.sherifradwan.ancnative.state.MedicationDraftValues
+ import com.sherifradwan.ancnative.ui.BigChoiceButton
+@@ -58,8 +59,6 @@ import com.sherifradwan.ancnative.ui.EditorField
+ import com.sherifradwan.ancnative.ui.minimumTouchTarget
+ import kotlinx.coroutines.launch
+ 
+-private val DEFAULT_ROUTE = ClinicalVocabulary.medicationRoutes.first()
+-
+ /**
+  * The one medication form. It renders immutable draft values and errors and emits only
+  * [AncEvent.MedicationDraftChanged]; it holds no business rules.
+@@ -144,11 +143,11 @@ fun MedicationForm(
+         )
+ 
+         if (isExistingRow) {
+-            RouteReadOnly(route = values.route.ifBlank { DEFAULT_ROUTE })
++            RouteReadOnly(route = values.route.ifBlank { DEFAULT_MEDICATION_ROUTE })
+         } else {
+             ChoiceGroup(
+                 label = stringResource(R.string.route),
+-                selected = values.route.ifEmpty { DEFAULT_ROUTE },
++                selected = values.route.ifEmpty { DEFAULT_MEDICATION_ROUTE },
+                 choices = ClinicalVocabulary.medicationRoutes.toList(),
+                 enabled = enabled,
+                 tagPrefix = "medRouteChoice",
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationSheet.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationSheet.kt
+index 18a4b85..669c79f 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationSheet.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationSheet.kt
+@@ -64,6 +64,8 @@ fun MedicationSheet(
+     saveError: SaveUiError?,
+     touched: Boolean,
+     onEvent: (AncEvent) -> Unit,
++    /** Shown under the buttons, inside the sheet: the host puts the app's Undo bar here so the sheet never hides it. */
++    footer: @Composable () -> Unit = {},
+ ) {
+     val isExistingRow = draft.baseMedicationRevision != null
+     val enabled = savePhase == SavePhase.IDLE || savePhase == SavePhase.ERROR
+@@ -131,6 +133,7 @@ fun MedicationSheet(
+                 onSave = { onEvent(AncEvent.SubmitMedication) },
+                 onSaveAndAddAnother = { onEvent(AncEvent.SubmitMedicationAndAddAnother) },
+             )
++            footer()
+         }
+     }
+ 
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationTapToAddSection.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationTapToAddSection.kt
+index 17f8175..11b9f1f 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationTapToAddSection.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationTapToAddSection.kt
+@@ -1,6 +1,5 @@
+ package com.sherifradwan.ancnative.ui.patienthub.components
+ 
+-import android.widget.Toast
+ import androidx.compose.foundation.BorderStroke
+ import androidx.compose.foundation.clickable
+ import androidx.compose.foundation.layout.Arrangement
+@@ -26,61 +25,41 @@ import androidx.compose.runtime.saveable.rememberSaveable
+ import androidx.compose.runtime.setValue
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
++import androidx.compose.ui.draw.alpha
+ import androidx.compose.ui.platform.LocalContext
+ import androidx.compose.ui.platform.testTag
+ import androidx.compose.ui.res.stringResource
+ import androidx.compose.ui.semantics.Role
++import androidx.compose.ui.semantics.semantics
++import androidx.compose.ui.semantics.stateDescription
+ import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.unit.dp
+ import com.sherifradwan.ancnative.R
+ import com.sherifradwan.ancnative.model.DemoPatient
+-import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
+ import com.sherifradwan.ancnative.model.catalog.ClinicalCatalogRepository
+ import com.sherifradwan.ancnative.model.catalog.CustomChoiceList
+ import com.sherifradwan.ancnative.model.isOngoingMedication
+ import com.sherifradwan.ancnative.state.AncEvent
+-import com.sherifradwan.ancnative.state.MedicationDraftField
++import com.sherifradwan.ancnative.state.DEFAULT_MEDICATION_ROUTE
++import com.sherifradwan.ancnative.state.MedicationPrefill
+ import com.sherifradwan.ancnative.ui.EditorField
+ import com.sherifradwan.ancnative.ui.SectionCard
+ import com.sherifradwan.ancnative.ui.minimumTouchTarget
+ import com.sherifradwan.ancnative.ui.patienthub.model.MedicationTile
+ import com.sherifradwan.ancnative.ui.patienthub.model.filterMedicationTiles
+-import java.time.LocalDate
+ import java.util.UUID
+ 
+-fun dispatchMedicationDraft(
+-    onEvent: (AncEvent) -> Unit,
+-    patientId: String,
+-    medicationId: String? = null,
+-    name: String? = null,
+-    dosage: String? = null,
+-    route: String? = null,
+-    status: String? = null,
+-    startDate: String? = null,
+-    endDate: String? = null,
+-    submit: Boolean = false,
+-) {
+-    onEvent(
+-        AncEvent.StartMedicationEditor(
+-            patientId = patientId,
+-            medicationId = medicationId,
+-            newMedicationId = medicationId ?: UUID.randomUUID().toString(),
+-            editorSessionId = UUID.randomUUID().toString(),
+-        ),
+-    )
+-    if (name != null) onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.NAME, name))
+-    if (dosage != null) onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.DOSAGE, dosage))
+-    if (route != null) onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ROUTE, route))
+-    if (status != null) onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, status))
+-    if (startDate != null) onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.START_DATE, startDate))
+-    if (endDate != null) onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.END_DATE, endDate))
+-    if (submit) onEvent(AncEvent.SubmitMedication)
+-}
++private const val DISABLED_TILE_ALPHA = 0.38f
+ 
++/**
++ * The add picker. A tile opens the medication sheet filled with its dose, route and frequency through one
++ * [AncEvent.StartMedicationEditor]. A tile for a drug that is already active shows its check and does nothing.
++ * While [enabled] is false (a save runs or a draft is open) every tile is visibly disabled.
++ */
+ @Composable
+ fun MedicationTapToAddSection(
+     patient: DemoPatient,
+-    canStartEditor: Boolean,
++    enabled: Boolean,
+     onEvent: (AncEvent) -> Unit,
+     modifier: Modifier = Modifier,
+ ) {
+@@ -138,6 +117,7 @@ fun MedicationTapToAddSection(
+                     name = it.name,
+                     dosage = it.dosage,
+                     route = it.route,
++                    frequency = it.frequency,
+                     isCustom = it.isCustom,
+                 )
+             }
+@@ -146,7 +126,8 @@ fun MedicationTapToAddSection(
+                     id = "custom_${it.id}",
+                     name = it.label,
+                     dosage = "",
+-                    route = "Oral",
++                    route = DEFAULT_MEDICATION_ROUTE,
++                    frequency = "",
+                     isCustom = true,
+                 )
+             }
+@@ -187,41 +168,30 @@ fun MedicationTapToAddSection(
+                     } else {
+                         stringResource(R.string.set_dose_in_editor)
+                     }
++                    val alreadyOnList = String.format(alreadyOnListFormat, tile.name)
++                    val tileEnabled = enabled && !isActive
+                     Surface(
+                         modifier = Modifier
+                             .fillMaxWidth()
+                             .minimumTouchTarget()
+                             .testTag("medTile-${tile.id}")
+-                            .clickable(role = Role.Button) {
+-                                if (!canStartEditor) return@clickable
+-                                if (isActive) {
+-                                    Toast.makeText(
+-                                        context,
+-                                        String.format(alreadyOnListFormat, tile.name),
+-                                        Toast.LENGTH_SHORT,
+-                                    ).show()
+-                                } else if (tile.isCustom || tile.dosage.isBlank()) {
+-                                    dispatchMedicationDraft(
+-                                        onEvent = onEvent,
++                            .semantics { if (isActive) stateDescription = alreadyOnList }
++                            .alpha(if (enabled || isActive) 1f else DISABLED_TILE_ALPHA)
++                            .clickable(enabled = tileEnabled, role = Role.Button) {
++                                onEvent(
++                                    AncEvent.StartMedicationEditor(
+                                         patientId = patient.id,
+-                                        name = tile.name,
+-                                        route = tile.route.ifBlank { "Oral" },
+-                                        status = MEDICATION_STATUS_ACTIVE,
+-                                        startDate = LocalDate.now().toString(),
+-                                        submit = false,
+-                                    )
+-                                } else {
+-                                    dispatchMedicationDraft(
+-                                        onEvent = onEvent,
+-                                        patientId = patient.id,
+-                                        name = tile.name,
+-                                        dosage = tile.dosage,
+-                                        route = tile.route,
+-                                        status = MEDICATION_STATUS_ACTIVE,
+-                                        startDate = LocalDate.now().toString(),
+-                                        submit = true,
+-                                    )
+-                                }
++                                        medicationId = null,
++                                        newMedicationId = UUID.randomUUID().toString(),
++                                        editorSessionId = UUID.randomUUID().toString(),
++                                        prefill = MedicationPrefill(
++                                            name = tile.name,
++                                            dosage = tile.dosage,
++                                            route = tile.route,
++                                            frequency = tile.frequency,
++                                        ),
++                                    ),
++                                )
+                             },
+                         shape = RoundedCornerShape(14.dp),
+                         color = if (isActive) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface,
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/MedicationTiles.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/MedicationTiles.kt
+index 6babd47..7083153 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/MedicationTiles.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/MedicationTiles.kt
+@@ -1,10 +1,12 @@
+ package com.sherifradwan.ancnative.ui.patienthub.model
+ 
++/** One picker tile. Its dose, route and frequency fill a new draft; a custom-choice tile has a blank dose and frequency. */
+ data class MedicationTile(
+     val id: String,
+     val name: String,
+     val dosage: String,
+     val route: String,
++    val frequency: String,
+     val isCustom: Boolean = false,
+ )
+ 
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt
+index 7dcf3d0..9285e49 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt
+@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
+ import androidx.compose.runtime.getValue
+ import androidx.compose.runtime.mutableStateOf
+ import androidx.compose.runtime.remember
++import androidx.compose.runtime.saveable.rememberSaveable
+ import androidx.compose.runtime.setValue
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+@@ -32,21 +33,65 @@ import androidx.compose.ui.platform.testTag
+ import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.unit.dp
+ import com.sherifradwan.ancnative.model.DemoPatient
+-import com.sherifradwan.ancnative.model.MEDICATION_STATUS_DISCONTINUED
+ import com.sherifradwan.ancnative.model.isOngoingMedication
+ import com.sherifradwan.ancnative.state.AncEvent
++import com.sherifradwan.ancnative.state.MedicationDraft
++import com.sherifradwan.ancnative.state.MedicationQuickSave
++import com.sherifradwan.ancnative.state.MedicationStopUndo
++import com.sherifradwan.ancnative.state.SavePhase
++import com.sherifradwan.ancnative.state.SaveUiError
++import com.sherifradwan.ancnative.state.blocksEditing
+ import com.sherifradwan.ancnative.storage.DeletableType
+ import com.sherifradwan.ancnative.ui.minimumTouchTarget
+ import com.sherifradwan.ancnative.ui.patienthub.components.MedicationCard
+ import com.sherifradwan.ancnative.ui.patienthub.components.MedicationTapToAddSection
+-import com.sherifradwan.ancnative.ui.patienthub.components.dispatchMedicationDraft
+-import java.time.LocalDate
++import com.sherifradwan.ancnative.ui.patienthub.components.MedicationStopBar
+ import java.util.UUID
+ 
++/**
++ * The Meds tab. Adding, editing and stopping never leave it: tiles, edit and "Prescribe" open the medication sheet
++ * (hosted by the hub) through one [AncEvent.StartMedicationEditor], and the stop symbol saves at once through
++ * [AncEvent.StopMedication]. [canEdit] shows the controls (patient not archived); they are visibly disabled while
++ * [actionsAllowed] is false, a save runs or [medicationDraft] is open.
++ */
+ @Composable
+ fun MedsTab(
+     patient: DemoPatient,
+     canEdit: Boolean,
++    actionsAllowed: Boolean,
++    medicationDraft: MedicationDraft?,
++    savePhase: SavePhase,
++    saveError: SaveUiError?,
++    quickSave: MedicationQuickSave?,
++    stopUndo: MedicationStopUndo?,
++    onEvent: (AncEvent) -> Unit,
++    modifier: Modifier = Modifier,
++) {
++    val entryEnabled = canEdit && actionsAllowed && medicationDraft == null && !savePhase.blocksEditing()
++    Column(modifier = modifier.fillMaxSize()) {
++        MedsList(
++            patient = patient,
++            canEdit = canEdit,
++            entryEnabled = entryEnabled,
++            onEvent = onEvent,
++            modifier = Modifier.weight(1f),
++        )
++        MedicationStopBar(
++            quickSave = quickSave?.takeIf { it.draft.patientId == patient.id },
++            stopUndo = stopUndo?.takeIf { it.patientId == patient.id },
++            savePhase = savePhase,
++            saveError = saveError,
++            undoEnabled = entryEnabled,
++            onEvent = onEvent,
++        )
++    }
++}
++
++@Composable
++private fun MedsList(
++    patient: DemoPatient,
++    canEdit: Boolean,
++    entryEnabled: Boolean,
+     onEvent: (AncEvent) -> Unit,
+     modifier: Modifier = Modifier,
+ ) {
+@@ -57,21 +102,21 @@ fun MedsTab(
+         patient.medications.filter { !isOngoingMedication(it.status, it.isNonCompliant) }
+     }
+ 
+-    var expandedMedId by remember { mutableStateOf<String?>(null) }
++    var expandedMedId by rememberSaveable { mutableStateOf<String?>(null) }
+ 
+     LazyColumn(
+         modifier = modifier
+-            .fillMaxSize()
++            .fillMaxWidth()
+             .testTag("medsTabContent"),
+         contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 48.dp),
+         verticalArrangement = Arrangement.spacedBy(14.dp),
+     ) {
+         // Fast Formulary Tap-to-Add Section
+-        if (canEdit && patient.status != "archived") {
++        if (canEdit) {
+             item {
+                 MedicationTapToAddSection(
+                     patient = patient,
+-                    canStartEditor = canEdit,
++                    enabled = entryEnabled,
+                     onEvent = onEvent,
+                 )
+             }
+@@ -90,8 +135,9 @@ fun MedsTab(
+                     fontWeight = FontWeight.Bold,
+                     color = MaterialTheme.colorScheme.primary,
+                 )
+-                if (canEdit && patient.status != "archived") {
++                if (canEdit) {
+                     Button(
++                        enabled = entryEnabled,
+                         onClick = {
+                             onEvent(
+                                 AncEvent.StartMedicationEditor(
+@@ -139,18 +185,12 @@ fun MedsTab(
+                     med = med,
+                     isExpanded = expandedMedId == med.id,
+                     canEdit = canEdit,
++                    actionsEnabled = entryEnabled,
+                     onToggle = {
+                         expandedMedId = if (expandedMedId == med.id) null else med.id
+                     },
+                     onStop = {
+-                        dispatchMedicationDraft(
+-                            onEvent = onEvent,
+-                            patientId = patient.id,
+-                            medicationId = med.id,
+-                            status = MEDICATION_STATUS_DISCONTINUED,
+-                            endDate = LocalDate.now().toString(),
+-                            submit = true,
+-                        )
++                        onEvent(AncEvent.StopMedication(patient.id, med.id, UUID.randomUUID().toString()))
+                     },
+                     onEdit = {
+                         onEvent(
+@@ -188,6 +228,7 @@ fun MedsTab(
+                     med = med,
+                     isExpanded = expandedMedId == med.id,
+                     canEdit = canEdit,
++                    actionsEnabled = entryEnabled,
+                     onToggle = {
+                         expandedMedId = if (expandedMedId == med.id) null else med.id
+                     },
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index 47c637a..442a749 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -233,7 +233,6 @@
+     <string name="normal_badge">NORMAL</string>
+     <string name="add_medication">Add Medication</string>
+     <string name="edit_medication">Edit Medication</string>
+-    <string name="medication_editor">Medication Record</string>
+     <string name="medication_editor_notice">Medication details and status are tracked explicitly.</string>
+     <string name="medication_name">Medication name</string>
+     <string name="dosage">Dosage</string>
+@@ -257,7 +256,6 @@
+     <string name="pick_date">Select date</string>
+     <string name="common_presets">Quick shortcuts</string>
+     <string name="common_tests">Common investigations</string>
+-    <string name="common_medications">Common ANC medications</string>
+     <string name="ivf_transfer_date">Embryo transfer date (IVF)</string>
+     <string name="embryo_age">Embryo age</string>
+     <string name="embryo_day_3">Day 3 (Cleavage)</string>
+@@ -303,7 +301,6 @@
+     <string name="fill_all_negative">Confirm all histories negative</string>
+     <string name="save_and_add_another_med">Save &amp; add another</string>
+     <string name="advanced_med_options">Route &amp; End date (optional)</string>
+-    <string name="patient_previous_meds">Patient\'s previous prescriptions</string>
+     <string name="all_filter">All</string>
+     <string name="high_risk_filter">High Risk</string>
+     <string name="medium_risk_filter">Medium Risk</string>
+@@ -417,8 +414,6 @@
+     <string name="lab_preset_non_reactive">Non-reactive</string>
+     <string name="lab_preset_normal">Normal</string>
+     <string name="lab_preset_positive">Positive</string>
+-    <string name="medication">Medication</string>
+-    <string name="medication_dose_and_schedule">Dose and route</string>
+     <string name="medication_status_active">Active</string>
+     <string name="medication_status_stopped">Stopped</string>
+     <string name="medication_note">Note / instructions</string>
+@@ -569,4 +564,5 @@
+     <string name="medication_frequency_required">Choose a frequency.</string>
+     <string name="medication_saving">Saving…</string>
+     <string name="medication_save_failed_title">The medication was not saved.</string>
++    <string name="medication_stopped_undo_message">Stopped: %1$s</string>
+ </resources>
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationStopBar.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationStopBar.kt
+new file mode 100644
+index 0000000..b25901b
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationStopBar.kt
+@@ -0,0 +1,148 @@
++package com.sherifradwan.ancnative.ui.patienthub.components
++
++import android.os.SystemClock
++import androidx.compose.foundation.BorderStroke
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.material3.LinearProgressIndicator
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Surface
++import androidx.compose.material3.Text
++import androidx.compose.material3.TextButton
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.LaunchedEffect
++import androidx.compose.runtime.getValue
++import androidx.compose.runtime.rememberUpdatedState
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.semantics.LiveRegionMode
++import androidx.compose.ui.semantics.liveRegion
++import androidx.compose.ui.semantics.semantics
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.state.AncEvent
++import com.sherifradwan.ancnative.state.MEDICATION_STOP_UNDO_MILLIS
++import com.sherifradwan.ancnative.state.MedicationQuickSave
++import com.sherifradwan.ancnative.state.MedicationStopUndo
++import com.sherifradwan.ancnative.state.SavePhase
++import com.sherifradwan.ancnative.state.SaveUiError
++import com.sherifradwan.ancnative.state.remainingMillis
++import com.sherifradwan.ancnative.state.stringRes
++import com.sherifradwan.ancnative.ui.minimumTouchTarget
++import kotlinx.coroutines.delay
++import java.util.UUID
++
++/**
++ * Bottom of the Meds tab for a one-tap stop and its Undo: a progress line while the save runs, the existing save-error
++ * message when it fails, and after a stop commits the Undo bar until [undoWindowMillis] after the commit.
++ *
++ * The bar counts from [MedicationStopUndo.committedAtMillis] on [clock] (the same monotonic clock the view model
++ * stamps the commit with), so recomposition, rotation or leaving the tab never gives it a fresh window.
++ */
++@Composable
++fun MedicationStopBar(
++    quickSave: MedicationQuickSave?,
++    stopUndo: MedicationStopUndo?,
++    savePhase: SavePhase,
++    saveError: SaveUiError?,
++    undoEnabled: Boolean,
++    onEvent: (AncEvent) -> Unit,
++    undoWindowMillis: Long = MEDICATION_STOP_UNDO_MILLIS,
++    clock: () -> Long = SystemClock::elapsedRealtime,
++) {
++    when {
++        quickSave != null && (savePhase == SavePhase.PENDING || savePhase == SavePhase.RECONCILING) ->
++            LinearProgressIndicator(modifier = Modifier.fillMaxWidth().testTag("medStopProgress"))
++        quickSave != null && savePhase == SavePhase.UNRESOLVED -> StopFailure(SaveUiError.OUTCOME_UNRESOLVED, onDismiss = null)
++        quickSave != null && savePhase == SavePhase.ERROR ->
++            StopFailure(saveError, onDismiss = { onEvent(AncEvent.DismissMedicationStopFailure) })
++        stopUndo != null -> StopUndo(stopUndo, undoEnabled, onEvent, undoWindowMillis, clock)
++    }
++}
++
++/** [onDismiss] is null for an unresolved outcome: like every other editor, nothing may move on until it is resolved. */
++@Composable
++private fun StopFailure(error: SaveUiError?, onDismiss: (() -> Unit)?) {
++    Surface(
++        color = MaterialTheme.colorScheme.errorContainer,
++        contentColor = MaterialTheme.colorScheme.onErrorContainer,
++        shape = RoundedCornerShape(12.dp),
++        modifier = Modifier
++            .fillMaxWidth()
++            .padding(horizontal = 12.dp, vertical = 6.dp)
++            .testTag("medStopError")
++            .semantics { liveRegion = LiveRegionMode.Assertive },
++    ) {
++        Row(
++            modifier = Modifier.padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
++            verticalAlignment = Alignment.CenterVertically,
++            horizontalArrangement = Arrangement.spacedBy(8.dp),
++        ) {
++            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
++                Text(stringResource(R.string.medication_save_failed_title), style = MaterialTheme.typography.titleSmall)
++                Text(stringResource(error.stringRes()), style = MaterialTheme.typography.bodyMedium)
++            }
++            if (onDismiss != null) {
++                TextButton(
++                    onClick = onDismiss,
++                    modifier = Modifier.minimumTouchTarget().testTag("medStopErrorDismiss"),
++                ) {
++                    Text(stringResource(R.string.close))
++                }
++            }
++        }
++    }
++}
++
++@Composable
++private fun StopUndo(
++    undo: MedicationStopUndo,
++    enabled: Boolean,
++    onEvent: (AncEvent) -> Unit,
++    windowMillis: Long,
++    clock: () -> Long,
++) {
++    val send by rememberUpdatedState(onEvent)
++    LaunchedEffect(undo.token, undo.committedAtMillis, windowMillis) {
++        // Only what is left of the window; a bar shown again after its window ended goes at once.
++        delay(undo.remainingMillis(clock(), windowMillis))
++        send(AncEvent.MedicationStopUndoExpired(undo.token))
++    }
++    Surface(
++        color = MaterialTheme.colorScheme.surfaceContainerHighest,
++        contentColor = MaterialTheme.colorScheme.onSurface,
++        shape = RoundedCornerShape(12.dp),
++        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
++        shadowElevation = 2.dp,
++        modifier = Modifier
++            .fillMaxWidth()
++            .padding(horizontal = 12.dp, vertical = 6.dp)
++            .testTag("medStopUndoBar")
++            .semantics { liveRegion = LiveRegionMode.Polite },
++    ) {
++        Row(
++            modifier = Modifier.padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
++            verticalAlignment = Alignment.CenterVertically,
++            horizontalArrangement = Arrangement.spacedBy(8.dp),
++        ) {
++            Text(
++                text = stringResource(R.string.medication_stopped_undo_message, undo.medicationName),
++                style = MaterialTheme.typography.bodyMedium,
++                modifier = Modifier.weight(1f),
++            )
++            TextButton(
++                onClick = { onEvent(AncEvent.UndoMedicationStop(undo.token, UUID.randomUUID().toString())) },
++                enabled = enabled,
++                modifier = Modifier.minimumTouchTarget().testTag("medStopUndo"),
++            ) {
++                Text(stringResource(R.string.undo))
++            }
++        }
++    }
++}

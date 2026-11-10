@@ -57,7 +57,8 @@ class DraftRecoveryTest {
         base().copy(route = AncRoute.LabEditor("p1", "l1", isNew = false), labDraft = LabDraft(session, "p1", "l1", 9L, 3L, LabDraftValues(), values))
 
     private fun medication(session: String = "s1", values: MedicationDraftValues = MedicationDraftValues()) = base().copy(
-        route = AncRoute.MedicationEditor("p1", "m1", isNew = false),
+        // The medication sheet opens over the Meds tab, so its draft has no route of its own.
+        route = AncRoute.Workspace("p1", WorkspaceSection.MEDICATIONS),
         medicationDraft = MedicationDraft(session, "p1", "m1", 9L, 4L, MedicationDraftValues(), values),
     )
 

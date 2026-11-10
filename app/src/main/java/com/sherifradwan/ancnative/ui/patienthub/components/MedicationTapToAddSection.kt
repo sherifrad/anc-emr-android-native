@@ -1,6 +1,5 @@
 package com.sherifradwan.ancnative.ui.patienthub.components
 
-import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -26,61 +25,41 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
-import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
 import com.sherifradwan.ancnative.model.catalog.ClinicalCatalogRepository
 import com.sherifradwan.ancnative.model.catalog.CustomChoiceList
 import com.sherifradwan.ancnative.model.isOngoingMedication
 import com.sherifradwan.ancnative.state.AncEvent
-import com.sherifradwan.ancnative.state.MedicationDraftField
+import com.sherifradwan.ancnative.state.DEFAULT_MEDICATION_ROUTE
+import com.sherifradwan.ancnative.state.MedicationPrefill
 import com.sherifradwan.ancnative.ui.EditorField
 import com.sherifradwan.ancnative.ui.SectionCard
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
 import com.sherifradwan.ancnative.ui.patienthub.model.MedicationTile
 import com.sherifradwan.ancnative.ui.patienthub.model.filterMedicationTiles
-import java.time.LocalDate
 import java.util.UUID
 
-fun dispatchMedicationDraft(
-    onEvent: (AncEvent) -> Unit,
-    patientId: String,
-    medicationId: String? = null,
-    name: String? = null,
-    dosage: String? = null,
-    route: String? = null,
-    status: String? = null,
-    startDate: String? = null,
-    endDate: String? = null,
-    submit: Boolean = false,
-) {
-    onEvent(
-        AncEvent.StartMedicationEditor(
-            patientId = patientId,
-            medicationId = medicationId,
-            newMedicationId = medicationId ?: UUID.randomUUID().toString(),
-            editorSessionId = UUID.randomUUID().toString(),
-        ),
-    )
-    if (name != null) onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.NAME, name))
-    if (dosage != null) onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.DOSAGE, dosage))
-    if (route != null) onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.ROUTE, route))
-    if (status != null) onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, status))
-    if (startDate != null) onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.START_DATE, startDate))
-    if (endDate != null) onEvent(AncEvent.MedicationDraftChanged(MedicationDraftField.END_DATE, endDate))
-    if (submit) onEvent(AncEvent.SubmitMedication)
-}
+private const val DISABLED_TILE_ALPHA = 0.38f
 
+/**
+ * The add picker. A tile opens the medication sheet filled with its dose, route and frequency through one
+ * [AncEvent.StartMedicationEditor]. A tile for a drug that is already active shows its check and does nothing.
+ * While [enabled] is false (a save runs or a draft is open) every tile is visibly disabled.
+ */
 @Composable
 fun MedicationTapToAddSection(
     patient: DemoPatient,
-    canStartEditor: Boolean,
+    enabled: Boolean,
     onEvent: (AncEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -88,8 +67,6 @@ fun MedicationTapToAddSection(
     val catalogRepo = remember { ClinicalCatalogRepository.getInstance(context) }
     val catalogMedItems by catalogRepo.medicationCatalogItems.collectAsState()
     val customChoices by catalogRepo.customChoices(CustomChoiceList.MEDICATION_NAME).collectAsState(initial = emptyList())
-
-    val alreadyOnListFormat = stringResource(R.string.already_on_todays_list)
 
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var selectedTab by rememberSaveable { mutableStateOf("common") }
@@ -138,6 +115,7 @@ fun MedicationTapToAddSection(
                     name = it.name,
                     dosage = it.dosage,
                     route = it.route,
+                    frequency = it.frequency,
                     isCustom = it.isCustom,
                 )
             }
@@ -146,7 +124,8 @@ fun MedicationTapToAddSection(
                     id = "custom_${it.id}",
                     name = it.label,
                     dosage = "",
-                    route = "Oral",
+                    route = DEFAULT_MEDICATION_ROUTE,
+                    frequency = "",
                     isCustom = true,
                 )
             }
@@ -187,41 +166,30 @@ fun MedicationTapToAddSection(
                     } else {
                         stringResource(R.string.set_dose_in_editor)
                     }
+                    val alreadyOnList = stringResource(R.string.already_on_todays_list, tile.name)
+                    val tileEnabled = enabled && !isActive
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
                             .minimumTouchTarget()
                             .testTag("medTile-${tile.id}")
-                            .clickable(role = Role.Button) {
-                                if (!canStartEditor) return@clickable
-                                if (isActive) {
-                                    Toast.makeText(
-                                        context,
-                                        String.format(alreadyOnListFormat, tile.name),
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
-                                } else if (tile.isCustom || tile.dosage.isBlank()) {
-                                    dispatchMedicationDraft(
-                                        onEvent = onEvent,
+                            .semantics { if (isActive) stateDescription = alreadyOnList }
+                            .alpha(if (enabled || isActive) 1f else DISABLED_TILE_ALPHA)
+                            .clickable(enabled = tileEnabled, role = Role.Button) {
+                                onEvent(
+                                    AncEvent.StartMedicationEditor(
                                         patientId = patient.id,
-                                        name = tile.name,
-                                        route = tile.route.ifBlank { "Oral" },
-                                        status = MEDICATION_STATUS_ACTIVE,
-                                        startDate = LocalDate.now().toString(),
-                                        submit = false,
-                                    )
-                                } else {
-                                    dispatchMedicationDraft(
-                                        onEvent = onEvent,
-                                        patientId = patient.id,
-                                        name = tile.name,
-                                        dosage = tile.dosage,
-                                        route = tile.route,
-                                        status = MEDICATION_STATUS_ACTIVE,
-                                        startDate = LocalDate.now().toString(),
-                                        submit = true,
-                                    )
-                                }
+                                        medicationId = null,
+                                        newMedicationId = UUID.randomUUID().toString(),
+                                        editorSessionId = UUID.randomUUID().toString(),
+                                        prefill = MedicationPrefill(
+                                            name = tile.name,
+                                            dosage = tile.dosage,
+                                            route = tile.route,
+                                            frequency = tile.frequency,
+                                        ),
+                                    ),
+                                )
                             },
                         shape = RoundedCornerShape(14.dp),
                         color = if (isActive) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface,

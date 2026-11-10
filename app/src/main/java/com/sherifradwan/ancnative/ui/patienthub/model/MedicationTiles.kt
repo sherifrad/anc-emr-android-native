@@ -1,10 +1,12 @@
 package com.sherifradwan.ancnative.ui.patienthub.model
 
+/** One picker tile. Its dose, route and frequency fill a new draft; a custom-choice tile has a blank dose and frequency. */
 data class MedicationTile(
     val id: String,
     val name: String,
     val dosage: String,
     val route: String,
+    val frequency: String,
     val isCustom: Boolean = false,
 )
 

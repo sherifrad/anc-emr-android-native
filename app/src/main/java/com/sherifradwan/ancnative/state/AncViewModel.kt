@@ -47,8 +47,13 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 
-class AncViewModel(application: Application) : AndroidViewModel(application) {
-    private val controller = VaultController.get(application)
+class AncViewModel internal constructor(
+    application: Application,
+    /** The app's vault; instrumented tests pass an isolated test vault instead. */
+    private val controller: VaultController,
+) : AndroidViewModel(application) {
+    constructor(application: Application) : this(application, VaultController.get(application))
+
     private val _state = MutableStateFlow(
         AncState(patients = emptyList(), vaultState = VaultState.Inspecting),
     )
@@ -209,6 +214,14 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
                 if (!_state.value.undoRunning) {
                     saveMedication(isChained = true)
                 }
+            }
+            is AncEvent.StopMedication -> {
+                updateState { AncReducer.reduce(it, event) }
+                saveMedicationQuick(event.editorSessionId)
+            }
+            is AncEvent.UndoMedicationStop -> {
+                updateState { AncReducer.reduce(it, event) }
+                saveMedicationQuick(event.editorSessionId)
             }
             AncEvent.ConfirmDelete -> confirmDelete()
             is AncEvent.UndoRequested -> requestUndo(event.token)
@@ -704,6 +717,30 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /**
+     * Saves a one-tap stop (or its Undo) that the reducer accepted under [editorSessionId]. It uses the normal
+     * medication command, built by its own prepare step from the row the reducer set up; nothing else differs.
+     */
+    private fun saveMedicationQuick(editorSessionId: String) {
+        val current = _state.value
+        val unlocked = current.vaultState as? VaultState.Unlocked ?: return
+        val quick = current.medicationQuickSave?.takeIf { it.draft.editorSessionId == editorSessionId } ?: return
+        when (val prepared = SaveMedicationCommand.prepare(
+            current.copy(medicationDraft = quick.draft),
+            UUID.randomUUID().toString(),
+            quick.draft.medicationId,
+        )) {
+            is ClinicalCommandPreparation.Rejected -> dispatch(
+                AncEvent.ClinicalValidationFailed(ClinicalRecordKind.MEDICATION_UPDATE, prepared.errors),
+            )
+            is ClinicalCommandPreparation.Ready -> submitPreparedClinicalCommand(
+                existing = null,
+                prepared = prepared.command,
+                sessionEpoch = unlocked.sessionEpoch,
+            )
+        }
+    }
+
     private fun submitPreparedClinicalCommand(
         existing: ClinicalCommand?,
         prepared: ClinicalCommand,
@@ -734,6 +771,7 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
                                 patients = result.snapshot.patients,
                                 destination = command.destination(),
                                 notice = command.savedNotice(),
+                                committedAtMillis = android.os.SystemClock.elapsedRealtime(),
                             ),
                         )
                     }

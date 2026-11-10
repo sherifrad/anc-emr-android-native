@@ -48,6 +48,7 @@ import com.sherifradwan.ancnative.model.medicationEditorChoice
 import com.sherifradwan.ancnative.model.medicationStatusAfterChoice
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.ClinicalValidationError
+import com.sherifradwan.ancnative.state.DEFAULT_MEDICATION_ROUTE
 import com.sherifradwan.ancnative.state.MedicationDraftField
 import com.sherifradwan.ancnative.state.MedicationDraftValues
 import com.sherifradwan.ancnative.ui.BigChoiceButton
@@ -57,8 +58,6 @@ import com.sherifradwan.ancnative.ui.ClinicalDateField
 import com.sherifradwan.ancnative.ui.EditorField
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
 import kotlinx.coroutines.launch
-
-private val DEFAULT_ROUTE = ClinicalVocabulary.medicationRoutes.first()
 
 /**
  * The one medication form. It renders immutable draft values and errors and emits only
@@ -144,11 +143,11 @@ fun MedicationForm(
         )
 
         if (isExistingRow) {
-            RouteReadOnly(route = values.route.ifBlank { DEFAULT_ROUTE })
+            RouteReadOnly(route = values.route.ifBlank { DEFAULT_MEDICATION_ROUTE })
         } else {
             ChoiceGroup(
                 label = stringResource(R.string.route),
-                selected = values.route.ifEmpty { DEFAULT_ROUTE },
+                selected = values.route.ifEmpty { DEFAULT_MEDICATION_ROUTE },
                 choices = ClinicalVocabulary.medicationRoutes.toList(),
                 enabled = enabled,
                 tagPrefix = "medRouteChoice",

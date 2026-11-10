@@ -64,6 +64,8 @@ fun MedicationSheet(
     saveError: SaveUiError?,
     touched: Boolean,
     onEvent: (AncEvent) -> Unit,
+    /** Shown under the buttons, inside the sheet: the host puts the app's Undo bar here so the sheet never hides it. */
+    footer: @Composable () -> Unit = {},
 ) {
     val isExistingRow = draft.baseMedicationRevision != null
     val enabled = savePhase == SavePhase.IDLE || savePhase == SavePhase.ERROR
@@ -131,6 +133,7 @@ fun MedicationSheet(
                 onSave = { onEvent(AncEvent.SubmitMedication) },
                 onSaveAndAddAnother = { onEvent(AncEvent.SubmitMedicationAndAddAnother) },
             )
+            footer()
         }
     }
 

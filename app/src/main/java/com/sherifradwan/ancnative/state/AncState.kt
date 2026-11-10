@@ -8,16 +8,22 @@ import com.sherifradwan.ancnative.model.DemoPatientDating
 import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.model.DemoVisit
+import com.sherifradwan.ancnative.model.ClinicalVocabulary
 import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
+import com.sherifradwan.ancnative.model.MEDICATION_STATUS_DISCONTINUED
 import com.sherifradwan.ancnative.model.MEDICATION_STATUS_NON_COMPLIANT
+import com.sherifradwan.ancnative.model.MedicationOnOff
 import com.sherifradwan.ancnative.model.PatientValidationError
 import com.sherifradwan.ancnative.model.effectiveMedicationStatus
+import com.sherifradwan.ancnative.model.isOngoingMedication
+import com.sherifradwan.ancnative.model.medicationEditorChoice
 import com.sherifradwan.ancnative.model.parseBloodPressure
 import com.sherifradwan.ancnative.model.parseVisitFindings
 import com.sherifradwan.ancnative.storage.ClinicalRecordKind
 import com.sherifradwan.ancnative.storage.DeletableRecord
 import com.sherifradwan.ancnative.storage.DeletableRegistry
 import com.sherifradwan.ancnative.storage.DeletableType
+import com.sherifradwan.ancnative.storage.DraftScreenKind
 import com.sherifradwan.ancnative.storage.VaultState
 
 enum class AttachmentError { SAVE_FAILED }
@@ -50,7 +56,6 @@ sealed interface AncRoute {
     data class UltrasoundEditor(val patientId: String, val scanId: String, val isNew: Boolean) : AncRoute
     data class LabEditor(val patientId: String, val labId: String, val isNew: Boolean) : AncRoute
     data class LabBatchEditor(val patientId: String) : AncRoute
-    data class MedicationEditor(val patientId: String, val medicationId: String, val isNew: Boolean) : AncRoute
 }
 
 sealed interface PendingAction {
@@ -341,6 +346,13 @@ val DeleteMessageKind.survivesPatientSwitch: Boolean get() = this != DeleteMessa
 internal fun AncState.deleteMessageAfterSuccessFor(patientId: String): DeleteMessage? =
     deleteMessage?.takeIf { it.patientId != patientId && it.kind.survivesPatientSwitch }
 
+/**
+ * The medication draft the open workspace shows in its sheet, or null. While it is shown the sheet also hosts the
+ * app's Undo bar, so the bar is never hidden under the modal sheet.
+ */
+fun AncState.medicationSheetDraft(): MedicationDraft? =
+    medicationDraft?.takeIf { it.patientId == (route as? AncRoute.Workspace)?.patientId }
+
 /** The patient a route belongs to, or null for the patient list. */
 fun AncRoute.patientIdOrNull(): String? = when (this) {
     AncRoute.PatientList -> null
@@ -354,7 +366,6 @@ fun AncRoute.patientIdOrNull(): String? = when (this) {
     is AncRoute.UltrasoundEditor -> patientId
     is AncRoute.LabEditor -> patientId
     is AncRoute.LabBatchEditor -> patientId
-    is AncRoute.MedicationEditor -> patientId
 }
 
 /** A failed Undo may restart its 8 s window at most this many times. */
@@ -379,7 +390,15 @@ val AncState.undoRunning: Boolean get() = undoOffer?.phase == UndoPhase.RUNNING
 
 /** What a vault lock does to the delete/undo UI state. */
 fun AncState.clearedForLock(): AncState =
-    copy(deleteConfirmation = null, undoOffer = null, deleteRunning = false, deleteMessage = null, noticePatientId = null)
+    copy(
+        deleteConfirmation = null,
+        undoOffer = null,
+        deleteRunning = false,
+        deleteMessage = null,
+        noticePatientId = null,
+        medicationStopUndo = null,
+        medicationQuickSave = null,
+    )
 
 /**
  * Keeps the delete/Undo UI state tied to what is on screen: a dialog for a record that is gone closes, and the
@@ -632,9 +651,58 @@ data class MedicationDraft(
     val original: MedicationDraftValues,
     val values: MedicationDraftValues,
     val errors: Set<ClinicalValidationError> = emptySet(),
+    /**
+     * Set by the first field change. Only the sheet's discard prompt reads it: it is not part of [isDirty] and is
+     * not saved with the draft, so crash recovery still goes by [isDirty].
+     */
+    val touched: Boolean = false,
 ) {
     val isDirty: Boolean get() = values != original
 }
+
+/** The route a new medication draft starts with, and the one shown when a row has none. */
+val DEFAULT_MEDICATION_ROUTE: String = ClinicalVocabulary.medicationRoutes.first()
+
+/** What a catalog tile puts into a new medication draft, on top of the blank new-drug defaults. */
+data class MedicationPrefill(
+    val name: String,
+    val dosage: String,
+    val route: String,
+    val frequency: String,
+)
+
+/** How long the Meds tab offers Undo after a one-tap stop. */
+const val MEDICATION_STOP_UNDO_MILLIS = 10_000L
+
+/**
+ * The Meds-tab Undo bar after a one-tap stop. Undo saves the same row again with these earlier values and the row's
+ * revision at that moment. [token] is the stop save's editor session id. [committedAtMillis] is when the stop
+ * committed, so the bar counts its 10 s from then however often it is recomposed, rotated or re-shown.
+ */
+data class MedicationStopUndo(
+    val token: String,
+    val patientId: String,
+    val medicationId: String,
+    val medicationName: String,
+    val previousStatus: String,
+    val previousEndDate: String,
+    val previousNonCompliant: Boolean,
+    val committedAtMillis: Long = 0L,
+)
+
+/** How much of the Undo window is left at [nowMillis] (same clock as [MedicationStopUndo.committedAtMillis]); 0 when it is over. */
+fun MedicationStopUndo.remainingMillis(nowMillis: Long, windowMillis: Long = MEDICATION_STOP_UNDO_MILLIS): Long =
+    (windowMillis - (nowMillis - committedAtMillis)).coerceIn(0L, windowMillis)
+
+/**
+ * A one-tap stop, or its Undo, while it is being saved. [draft] is the stored row with the new values; it is never
+ * shown, autosaved or recovered, and it goes through the normal medication save command. [undoOnSuccess] is the bar
+ * to show when a stop commits; it is null for the save that is itself the Undo.
+ */
+data class MedicationQuickSave(
+    val draft: MedicationDraft,
+    val undoOnSuccess: MedicationStopUndo?,
+)
 
 data class AncState(
     val patients: List<DemoPatient>,
@@ -666,6 +734,9 @@ data class AncState(
     val deleteRunning: Boolean = false,
     val deleteMessage: DeleteMessage? = null,
     val noticePatientId: String? = null,
+    /** A one-tap stop or its Undo in flight; it stays after a failed save so the Meds tab can show the cause. */
+    val medicationQuickSave: MedicationQuickSave? = null,
+    val medicationStopUndo: MedicationStopUndo? = null,
 ) {
     fun patient(patientId: String): DemoPatient? = patients.firstOrNull { it.id == patientId }
 
@@ -751,7 +822,20 @@ sealed interface AncEvent {
         val defaultStartDate: String = "",
         /** "Save and add another": open the blank editor but keep the just-shown saved notice. */
         val keepSavedNotice: Boolean = false,
+        /** Catalog tile values for a new draft; ignored when [medicationId] names a stored row. */
+        val prefill: MedicationPrefill? = null,
     ) : AncEvent
+    /** One-tap stop: saves the stored row as Discontinued with today's end date, without a draft or sheet. */
+    data class StopMedication(
+        val patientId: String,
+        val medicationId: String,
+        val editorSessionId: String,
+    ) : AncEvent
+    /** Undo of a one-tap stop: saves the row again with its earlier status and end date. */
+    data class UndoMedicationStop(val token: String, val editorSessionId: String) : AncEvent
+    data class MedicationStopUndoExpired(val token: String) : AncEvent
+    /** Closes the cause shown after a failed one-tap stop or Undo. */
+    data object DismissMedicationStopFailure : AncEvent
     data class DatingDraftChanged(val field: DatingDraftField, val value: String) : AncEvent
     data class UltrasoundDraftChanged(val field: UltrasoundDraftField, val value: String) : AncEvent
     data class LabDraftChanged(val field: LabDraftField, val value: String) : AncEvent
@@ -807,6 +891,11 @@ sealed interface AncEvent {
         val patients: List<DemoPatient>,
         val destination: AncRoute,
         val notice: SavedNotice,
+        /**
+         * When the store committed, on the monotonic clock the Meds tab's Undo bar counts from
+         * (`SystemClock.elapsedRealtime()` in the app). Only a one-tap stop reads it.
+         */
+        val committedAtMillis: Long = 0L,
     ) : AncEvent
     data object CancelEditor : AncEvent
     data object Back : AncEvent
@@ -890,7 +979,7 @@ sealed interface AncEvent {
 
 object AncReducer {
     fun reduce(state: AncState, event: AncEvent): AncState {
-        val next = reduceInternal(state, event).withDeleteUiConsistent()
+        val next = reduceInternal(state, event).withDeleteUiConsistent().withMedicationStopUiKept(event)
         val prompt = next.draftRecoveryPrompt
         return if (prompt != null && activeEditorSessionId(next) != prompt.editorSessionId) {
             next.copy(draftRecoveryPrompt = null)
@@ -937,6 +1026,11 @@ object AncReducer {
             is AncEvent.StartUltrasoundEditor -> startUltrasoundEditor(state, event)
             is AncEvent.StartLabEditor -> startLabEditor(state, event)
             is AncEvent.StartMedicationEditor -> startMedicationEditor(state, event)
+            is AncEvent.StopMedication -> stopMedication(state, event)
+            is AncEvent.UndoMedicationStop -> undoMedicationStop(state, event)
+            is AncEvent.MedicationStopUndoExpired ->
+                if (state.medicationStopUndo?.token == event.token) state.copy(medicationStopUndo = null) else state
+            AncEvent.DismissMedicationStopFailure -> state.withoutFailedMedicationQuickSave()
             is AncEvent.DraftChanged -> updateDraft(state, event)
             is AncEvent.PatientDraftChanged -> updatePatientDraft(state, event)
             is AncEvent.HistoriesDraftChanged -> updateHistoriesDraft(state, event)
@@ -976,7 +1070,13 @@ object AncReducer {
                 ClinicalRecordKind.DATING -> state.copy(datingDraft = state.datingDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
                 ClinicalRecordKind.ULTRASOUND_CREATE, ClinicalRecordKind.ULTRASOUND_UPDATE -> state.copy(ultrasoundDraft = state.ultrasoundDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
                 ClinicalRecordKind.LAB_CREATE, ClinicalRecordKind.LAB_UPDATE -> state.copy(labDraft = state.labDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
-                ClinicalRecordKind.MEDICATION_CREATE, ClinicalRecordKind.MEDICATION_UPDATE -> state.copy(medicationDraft = state.medicationDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
+                ClinicalRecordKind.MEDICATION_CREATE, ClinicalRecordKind.MEDICATION_UPDATE ->
+                    if (state.medicationDraft == null && state.medicationQuickSave != null) {
+                        // A stored row that no longer passes the save rules cannot be stopped in one tap: nothing was written.
+                        state.copy(savePhase = SavePhase.ERROR, saveError = SaveUiError.CONFIRMED_NOT_SAVED)
+                    } else {
+                        state.copy(medicationDraft = state.medicationDraft?.copy(errors = event.errors), savePhase = SavePhase.IDLE, saveError = null)
+                    }
                 // A validation failure is not a storage error: it belongs on the draft, like every other editor.
                 ClinicalRecordKind.LAB_BATCH_SAVE -> state.copy(
                     labBatchDraft = state.labBatchDraft?.copy(errors = event.errors),
@@ -1020,17 +1120,21 @@ object AncReducer {
                 )
             } else state
             is AncEvent.RecordCommitted -> if (state.pendingSave == event.token) {
+                val quick = state.medicationQuickSave?.takeIf { it.draft.editorSessionId == event.token.editorSessionId }
                 state.clearDrafts().copy(
                     patients = event.patients,
-                    route = event.destination,
+                    // A one-tap stop or its Undo never moves the screen: the clinician may have changed tab meanwhile.
+                    route = if (quick != null) state.route else event.destination,
                     savedNotice = true,
                     notice = event.notice,
                     savePhase = SavePhase.IDLE,
                     saveError = null,
                     pendingSave = null,
+                    medicationStopUndo = quick?.undoOnSuccess?.copy(committedAtMillis = event.committedAtMillis)
+                        ?: state.medicationStopUndo,
                 )
             } else state
-            AncEvent.CancelEditor, AncEvent.Back -> requestBack(state)
+            AncEvent.CancelEditor, AncEvent.Back -> requestBack(state, event)
             AncEvent.ConfirmDiscard -> confirmDiscard(state)
             AncEvent.KeepEditing -> state.copy(showDiscardDialog = false, pendingAction = null)
             AncEvent.DismissNotice -> state.copy(savedNotice = false, notice = null)
@@ -1055,7 +1159,13 @@ object AncReducer {
             }
             AncEvent.AcceptDraftRecovery -> {
                 val prompt = state.draftRecoveryPrompt ?: return state
-                applyDraftRecord(state, prompt.record).copy(draftRecoveryPrompt = null)
+                val recovered = applyDraftRecord(state, prompt.record).copy(draftRecoveryPrompt = null)
+                // Recovered work counts as the clinician's own edits: the medication sheet asks before discarding it.
+                if (prompt.record.screenKind == DraftScreenKind.MEDICATION) {
+                    recovered.copy(medicationDraft = recovered.medicationDraft?.copy(touched = true))
+                } else {
+                    recovered
+                }
             }
             AncEvent.DiscardDraftRecovery -> state.copy(draftRecoveryPrompt = null)
             is AncEvent.RequestDelete -> {
@@ -1467,33 +1577,180 @@ object AncReducer {
         )
     }
 
+    /**
+     * Opens the medication sheet in one step; the navigation route does not change. A start is ignored while a save
+     * runs, while any medication draft is open, or while another draft has unsaved changes.
+     *
+     * - Edit (a stored [AncEvent.StartMedicationEditor.medicationId]): `original` and `values` are both the stored row.
+     * - Add from a catalog tile ([AncEvent.StartMedicationEditor.prefill]): `original` is the blank new-drug defaults
+     *   and `values` is the tile on top of them, so the draft is dirty (and recoverable) from the start.
+     * - Blank custom drug: both are the blank defaults.
+     */
     private fun startMedicationEditor(state: AncState, event: AncEvent.StartMedicationEditor): AncState {
-        if (state.savePhase.blocksEditing() || state.hasDirtyDraft) return state
+        if (state.savePhase.blocksEditing() || state.hasDirtyDraft || state.medicationDraft != null) return state
         if (event.medicationId != null && state.undoRunningFor(event.medicationId)) return state
         val patient = state.patient(event.patientId)?.takeIf { it.status != "archived" } ?: return state
         val med = event.medicationId?.let { id -> patient.medications.firstOrNull { it.id == id } }
-        val defaultStart = event.defaultStartDate.ifEmpty { java.time.LocalDate.now().toString() }
-        val values = med?.toDraftValues() ?: MedicationDraftValues(
-            route = "Oral",
+        if (event.medicationId != null && med == null) return state
+        val blank = MedicationDraftValues(
+            route = DEFAULT_MEDICATION_ROUTE,
             status = MEDICATION_STATUS_ACTIVE,
-            startDate = defaultStart,
+            startDate = event.defaultStartDate.ifEmpty { today() },
         )
-        val medicationId = med?.id ?: event.newMedicationId
+        val original = med?.toDraftValues() ?: blank
+        val values = when {
+            med != null -> original
+            event.prefill != null -> blank.copy(
+                name = event.prefill.name,
+                dosage = event.prefill.dosage,
+                route = event.prefill.route.ifBlank { blank.route },
+                frequency = event.prefill.frequency,
+            )
+            else -> blank
+        }
         return state.clearDrafts().copy(
-            route = AncRoute.MedicationEditor(patient.id, medicationId, isNew = med == null),
             medicationDraft = MedicationDraft(
                 editorSessionId = event.editorSessionId,
                 patientId = patient.id,
-                medicationId = medicationId,
+                medicationId = med?.id ?: event.newMedicationId,
                 basePatientRevision = patient.revision,
                 baseMedicationRevision = med?.revision,
-                original = values,
+                original = original,
                 values = values,
             ),
             savedNotice = if (event.keepSavedNotice) state.savedNotice else false,
             notice = if (event.keepSavedNotice) state.notice else null,
         )
     }
+
+    /** True when a one-tap stop or its Undo may start a save now: nothing else is open, saving or being undone. */
+    private fun AncState.canQuickSaveMedication(): Boolean =
+        !savePhase.blocksEditing() && !hasDirtyDraft && medicationDraft == null && !undoRunning && !deleteRunning
+
+    /** One-tap stop: no draft and no sheet. The stored row is saved as Discontinued, ending today, at its current revision. */
+    private fun stopMedication(state: AncState, event: AncEvent.StopMedication): AncState {
+        if (!state.canQuickSaveMedication()) return state
+        val patient = state.patient(event.patientId)?.takeIf { it.status != "archived" } ?: return state
+        val med = patient.medications.firstOrNull { it.id == event.medicationId } ?: return state
+        if (!isOngoingMedication(med.status, med.isNonCompliant)) return state
+        val stored = med.toDraftValues()
+        val stopped = stored.copy(status = MEDICATION_STATUS_DISCONTINUED, isNonCompliant = false, endDate = today())
+        return state.copy(
+            medicationQuickSave = MedicationQuickSave(
+                draft = quickSaveDraft(event.editorSessionId, patient, med, stored, stopped),
+                undoOnSuccess = MedicationStopUndo(
+                    token = event.editorSessionId,
+                    patientId = patient.id,
+                    medicationId = med.id,
+                    medicationName = med.name,
+                    previousStatus = stored.status,
+                    previousEndDate = stored.endDate,
+                    previousNonCompliant = stored.isNonCompliant,
+                ),
+            ),
+            medicationStopUndo = null,
+            savePhase = SavePhase.IDLE,
+            saveError = null,
+            savedNotice = false,
+            notice = null,
+        )
+    }
+
+    /** Undo of a one-tap stop: a second normal save of the same row, at the revision the stop produced. */
+    private fun undoMedicationStop(state: AncState, event: AncEvent.UndoMedicationStop): AncState {
+        val undo = state.medicationStopUndo?.takeIf { it.token == event.token } ?: return state
+        if (!state.canQuickSaveMedication()) return state
+        val patient = state.patient(undo.patientId)?.takeIf { it.status != "archived" }
+        val med = patient?.medications?.firstOrNull { it.id == undo.medicationId }
+        if (patient == null || med == null) return state.copy(medicationStopUndo = null)
+        val stored = med.toDraftValues()
+        val restored = stored.copy(
+            status = undo.previousStatus,
+            endDate = undo.previousEndDate,
+            isNonCompliant = undo.previousNonCompliant,
+        )
+        return state.copy(
+            medicationQuickSave = MedicationQuickSave(
+                draft = quickSaveDraft(event.editorSessionId, patient, med, stored, restored),
+                undoOnSuccess = null,
+            ),
+            medicationStopUndo = null,
+            savePhase = SavePhase.IDLE,
+            saveError = null,
+            savedNotice = false,
+            notice = null,
+        )
+    }
+
+    private fun quickSaveDraft(
+        editorSessionId: String,
+        patient: DemoPatient,
+        med: DemoMedicationRecord,
+        original: MedicationDraftValues,
+        values: MedicationDraftValues,
+    ) = MedicationDraft(
+        editorSessionId = editorSessionId,
+        patientId = patient.id,
+        medicationId = med.id,
+        basePatientRevision = patient.revision,
+        baseMedicationRevision = med.revision,
+        original = original,
+        values = values,
+    )
+
+    /**
+     * The one-tap stop's Undo bar and its failure message belong to the Meds tab of one patient: both go when another
+     * action starts or the open patient changes.
+     */
+    private fun AncState.withMedicationStopUiKept(event: AncEvent): AncState {
+        var next = this
+        val undo = next.medicationStopUndo
+        if (undo != null && (event.startsAnotherAction() || route.patientIdOrNull() != undo.patientId)) {
+            next = next.copy(medicationStopUndo = null)
+        }
+        val failed = next.medicationQuickSave
+        // A tab change alone keeps the cause: the doctor has not acted on it yet and finds it again on the Meds tab.
+        val actedElsewhere = event.startsAnotherAction() && event !is AncEvent.SelectSection
+        if (failed != null && (actedElsewhere || route.patientIdOrNull() != failed.draft.patientId)) {
+            next = next.withoutFailedMedicationQuickSave()
+        }
+        return next
+    }
+
+    /** Drops a one-tap stop (or Undo) whose save failed, with its message. One that is still saving, or unresolved, stays. */
+    private fun AncState.withoutFailedMedicationQuickSave(): AncState =
+        if (medicationQuickSave != null && medicationDraft == null && savePhase == SavePhase.ERROR) {
+            copy(medicationQuickSave = null, savePhase = SavePhase.IDLE, saveError = null)
+        } else {
+            this
+        }
+
+    private fun AncEvent.startsAnotherAction(): Boolean = when (this) {
+        is AncEvent.OpenWorkspace,
+        is AncEvent.SelectSection,
+        is AncEvent.StartVisit,
+        is AncEvent.StartPatientEditor,
+        is AncEvent.StartHistoriesEditor,
+        is AncEvent.StartPregnancyEditor,
+        is AncEvent.StartStatusEditor,
+        is AncEvent.StartDatingEditor,
+        is AncEvent.StartUltrasoundEditor,
+        is AncEvent.StartLabEditor,
+        is AncEvent.StartMedicationEditor,
+        is AncEvent.StopMedication,
+        is AncEvent.StartLabBatch,
+        is AncEvent.StartLabBatchRequest,
+        is AncEvent.RequestDelete,
+        is AncEvent.UndoRequested,
+        is AncEvent.AddAttachment,
+        is AncEvent.ImportScanPhoto,
+        AncEvent.Back,
+        AncEvent.CancelEditor,
+        -> true
+        else -> false
+    }
+
+    private fun today(): String = java.time.LocalDate.now().toString()
 
     private fun updateDraft(state: AncState, event: AncEvent.DraftChanged): AncState {
         if (state.savePhase.blocksEditing()) return state
@@ -1682,14 +1939,36 @@ object AncReducer {
             MedicationDraftField.FREQUENCY -> draft.values.copy(frequency = event.value)
             MedicationDraftField.START_DATE -> draft.values.copy(startDate = event.value)
             MedicationDraftField.END_DATE -> draft.values.copy(endDate = event.value)
-            MedicationDraftField.STATUS -> draft.values.copy(
-                status = event.value.ifBlank { MEDICATION_STATUS_ACTIVE },
-                isNonCompliant = (event.value == MEDICATION_STATUS_NON_COMPLIANT),
-            )
+            MedicationDraftField.STATUS -> withMedicationStatus(draft.original, draft.values, event.value.ifBlank { MEDICATION_STATUS_ACTIVE })
             MedicationDraftField.NOTES -> draft.values.copy(notes = event.value)
             MedicationDraftField.ADVERSE_NOTES -> draft.values.copy(adverseNotes = event.value)
         }
-        return state.copy(medicationDraft = draft.copy(values = values, errors = emptySet()), savePhase = SavePhase.IDLE, saveError = null)
+        return state.copy(
+            medicationDraft = draft.copy(values = values, errors = emptySet(), touched = true),
+            savePhase = SavePhase.IDLE,
+            saveError = null,
+        )
+    }
+
+    /**
+     * A change to Stopped fills a blank end date, so the one date field is never empty: with the stored stop date when
+     * the row was stored as stopped (so Active and back to Stopped loses nothing), otherwise with today. A change from
+     * Stopped back to Active keeps the start date and clears the end date, as an active drug has none.
+     */
+    private fun withMedicationStatus(
+        original: MedicationDraftValues,
+        values: MedicationDraftValues,
+        status: String,
+    ): MedicationDraftValues {
+        val next = values.copy(status = status, isNonCompliant = status == MEDICATION_STATUS_NON_COMPLIANT)
+        val wasStopped = medicationEditorChoice(values.status) == MedicationOnOff.STOPPED
+        val storedStopDate = original.endDate.takeIf { medicationEditorChoice(original.status) == MedicationOnOff.STOPPED }
+        return when (medicationEditorChoice(status)) {
+            MedicationOnOff.STOPPED ->
+                if (next.endDate.isBlank()) next.copy(endDate = storedStopDate?.ifBlank { null } ?: today()) else next
+            MedicationOnOff.ON -> if (wasStopped) next.copy(endDate = "") else next
+            null -> next
+        }
     }
 
     private fun validationFailed(state: AncState, event: AncEvent.PatientValidationFailed): AncState = when (event.editor) {
@@ -1699,8 +1978,18 @@ object AncReducer {
         PatientEditorKind.STATUS -> state.copy(statusDraft = state.statusDraft?.copy(errors = event.errors))
     }.copy(savePhase = SavePhase.IDLE, saveError = null)
 
-    private fun requestBack(state: AncState): AncState {
+    private fun requestBack(state: AncState, event: AncEvent): AncState {
         if (state.savePhase.blocksEditing()) return state
+        val medicationDraft = state.medicationDraft
+        if (medicationDraft != null) {
+            // The sheet sits over the workspace, so closing it never leaves the screen. The sheet has already asked
+            // before it sends Cancel, and an untouched form closes at once; only a Back that bypassed the sheet asks here.
+            return if (event == AncEvent.CancelEditor || !medicationDraft.touched) {
+                state.clearDrafts().copy(savedNotice = false, notice = null)
+            } else {
+                state.copy(showDiscardDialog = true, pendingAction = PendingAction.Navigate(state.route))
+            }
+        }
         val destination = when (val route = state.route) {
             AncRoute.PatientList -> return state
             is AncRoute.Workspace -> AncRoute.PatientList
@@ -1713,7 +2002,6 @@ object AncReducer {
             is AncRoute.UltrasoundEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.ULTRASOUND)
             is AncRoute.LabEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.LABORATORY)
             is AncRoute.LabBatchEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.LABORATORY)
-            is AncRoute.MedicationEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.MEDICATIONS)
         }
         return if (state.hasDirtyDraft) {
             state.copy(showDiscardDialog = true, pendingAction = PendingAction.Navigate(destination))
@@ -1747,6 +2035,7 @@ object AncReducer {
         labDraft = null,
         medicationDraft = null,
         labBatchDraft = null,
+        medicationQuickSave = null,
         showDiscardDialog = false,
         pendingAction = null,
         savePhase = SavePhase.IDLE,
@@ -1865,5 +2154,6 @@ object AncReducer {
     }
 
     private fun AncState.canAccept(token: PendingSaveToken): Boolean =
-        (savePhase == SavePhase.IDLE || savePhase == SavePhase.ERROR) && activeEditorSessionId(this) == token.editorSessionId
+        (savePhase == SavePhase.IDLE || savePhase == SavePhase.ERROR) &&
+            (activeEditorSessionId(this) == token.editorSessionId || medicationQuickSave?.draft?.editorSessionId == token.editorSessionId)
 }

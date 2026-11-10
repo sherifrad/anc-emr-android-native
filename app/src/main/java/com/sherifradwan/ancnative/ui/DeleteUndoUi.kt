@@ -17,6 +17,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -73,12 +74,14 @@ internal fun DeleteIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     tag: String? = null,
+    enabled: Boolean = true,
 ) {
     val recordId = record.id
     // A type/record mismatch draws nothing instead of throwing while the screen is composed.
     val label = DeletableRegistry.labelOrNull(type, record) ?: return
     IconButton(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier
             .minimumTouchTarget()
             .testTag(tag ?: "delete-${type.name.lowercase()}-$recordId"),
@@ -86,7 +89,7 @@ internal fun DeleteIconButton(
         Icon(
             Icons.Default.Delete,
             contentDescription = stringResource(R.string.delete_record_description, stringResource(type.labelResource()), label),
-            tint = MaterialTheme.colorScheme.error,
+            tint = if (enabled) MaterialTheme.colorScheme.error else LocalContentColor.current,
             modifier = Modifier.size(20.dp),
         )
     }
