@@ -1,0 +1,931 @@
+diff --git a/app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt b/app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt
+index 2e57fb6..bd59005 100644
+--- a/app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt
++++ b/app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt
+@@ -412,11 +412,7 @@ class AncWorkflowTest {
+         )
+         state = AncReducer.reduce(
+             state,
+-            AncEvent.PregnancyDraftChanged(PregnancyDraftField.BIRTH_METHOD, "Vaginal"),
+-        )
+-        state = AncReducer.reduce(
+-            state,
+-            AncEvent.PregnancyDraftChanged(PregnancyDraftField.CLINICIAN_ID, "synthetic-clinician"),
++            AncEvent.PregnancyDraftChanged(PregnancyDraftField.DELIVERY_BY, "Vaginal"),
+         )
+         val editorRoute = state.route
+         val dirtyBack = AncReducer.reduce(state, AncEvent.Back)
+@@ -454,6 +450,7 @@ class AncWorkflowTest {
+             AncEvent.PregnancyDraftChanged(PregnancyDraftField.OUTCOME, "EarlyPregnancyLoss"),
+         )
+         val correctedDraft = state.pregnancyDraft!!.values
++        assertEquals("", correctedDraft.deliveryBy)
+         assertEquals("", correctedDraft.birthMethod)
+         assertEquals("", correctedDraft.terminationMethod)
+         state = AncReducer.reduce(
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt b/app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt
+index b4c5f71..38ff45e 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt
+@@ -122,6 +122,7 @@ enum class PatientValidationError {
+     INVALID_GPA,
+     ARCHIVE_REASON_REQUIRED,
+     CLINICIAN_ID_REQUIRED,
++    PLACE_AND_DOCTOR_REQUIRED,
+     INVALID_PREGNANCY_TYPE,
+     INVALID_DELIVERY_MODE,
+     INVALID_PREGNANCY_OUTCOME,
+@@ -173,6 +174,9 @@ data class PreviousPregnancyClinicalInput(
+     val terminationMethod: String?,
+     val provenanceKind: String,
+     val clinicianId: String,
++    val placeAndDoctor: String? = null,
++    val placeAndDoctorRequired: Boolean = false,
++    val storedRow: Boolean = false,
+ )
+ 
+ fun PreviousPregnancyClinicalInput.validationErrors(): Set<PatientValidationError> = buildSet {
+@@ -197,12 +201,15 @@ fun PreviousPregnancyClinicalInput.validationErrors(): Set<PatientValidationErro
+     if (provenanceKind != PatientVocabulary.CLINICIAN_ENTRY || clinicianId.isBlank()) {
+         add(PatientValidationError.CLINICIAN_ID_REQUIRED)
+     }
++    if (placeAndDoctorRequired && placeAndDoctor.isNullOrBlank()) {
++        add(PatientValidationError.PLACE_AND_DOCTOR_REQUIRED)
++    }
+ 
+     val birthOutcome = outcome == "LiveBirth" || outcome == "Stillbirth"
+     val lossOutcome = outcome == "EarlyPregnancyLoss"
+     val terminationOutcome = outcome == "TerminationOfPregnancy"
+     if (
+-        (!birthOutcome && birthMethod != null) ||
++        ((outcome != null || !storedRow) && !birthOutcome && birthMethod != null) ||
+         (!lossOutcome && lossManagement != null) ||
+         (!terminationOutcome && terminationMethod != null) ||
+         (birthOutcome && (lossManagement != null || terminationMethod != null)) ||
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/model/PreviousPregnancyFormRules.kt b/app/src/main/java/com/sherifradwan/ancnative/model/PreviousPregnancyFormRules.kt
+new file mode 100644
+index 0000000..206a432
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/model/PreviousPregnancyFormRules.kt
+@@ -0,0 +1,55 @@
++package com.sherifradwan.ancnative.model
++
++/** Rules of the previous-pregnancy form, shared by the draft reducer, the command builder and validation. */
++object PreviousPregnancyFormRules {
++    const val DEFAULT_CLINICIAN_ID = "Dr. Sherif Radwan"
++
++    const val MODE_VAGINAL = "Vaginal"
++    const val MODE_CS = "CS"
++    val deliveryModeChoices = listOf(MODE_VAGINAL, MODE_CS)
++
++    data class DeliveryColumns(val deliveryBy: String?, val birthMethod: String?)
++
++    fun hasDeliveryMode(outcome: String?): Boolean = outcome == "LiveBirth" || outcome == "Stillbirth"
++
++    /**
++     * The one rule for the stored delivery columns. They are never cleared on their own: a picked mode (even an
++     * empty one) overwrites both through the Vaginal/CS mapping, a change of outcome to loss or termination
++     * (compared with the outcome the row was opened with) clears them, and otherwise they are kept as stored.
++     */
++    fun deliveryColumns(
++        outcome: String?,
++        originalOutcome: String?,
++        deliveryBy: String?,
++        birthMethod: String?,
++        pickedMode: String? = null,
++    ): DeliveryColumns = when {
++        pickedMode != null -> when (pickedMode) {
++            MODE_VAGINAL -> DeliveryColumns(MODE_VAGINAL, "Vaginal")
++            MODE_CS -> DeliveryColumns(MODE_CS, "Cesarean")
++            else -> DeliveryColumns(null, null)
++        }
++        (outcome == "EarlyPregnancyLoss" || outcome == "TerminationOfPregnancy") && outcome != originalOutcome ->
++            DeliveryColumns(null, null)
++        else -> DeliveryColumns(deliveryBy?.ifBlank { null }, birthMethod?.ifBlank { null })
++    }
++
++    /** The form choice an existing row shows, with the reader priority of ObstetricHistory: Cesarean wins. */
++    fun modeOf(deliveryBy: String?, birthMethod: String?): String {
++        val bm = birthMethod?.trim()
++        val db = deliveryBy?.trim()
++        return when {
++            bm.equals("Cesarean", ignoreCase = true) || db.equals(MODE_CS, ignoreCase = true) -> MODE_CS
++            bm.equals("Vaginal", ignoreCase = true) || db.equals(MODE_VAGINAL, ignoreCase = true) -> MODE_VAGINAL
++            else -> ""
++        }
++    }
++
++    /** New pregnancies get the default clinician; an existing row keeps its stored id. Never blank. */
++    fun clinicianIdFor(isNew: Boolean, storedClinicianId: String): String =
++        if (isNew) DEFAULT_CLINICIAN_ID else storedClinicianId.trim().ifEmpty { DEFAULT_CLINICIAN_ID }
++
++    /** Required for a new pregnancy; for an existing row only if it already had a value. */
++    fun placeAndDoctorRequired(isNew: Boolean, originalPlaceAndDoctor: String?): Boolean =
++        isNew || !originalPlaceAndDoctor.isNullOrBlank()
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt b/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+index 25c8faf..804d1d1 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+@@ -11,6 +11,7 @@ import com.sherifradwan.ancnative.model.DemoVisit
+ import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
+ import com.sherifradwan.ancnative.model.MEDICATION_STATUS_NON_COMPLIANT
+ import com.sherifradwan.ancnative.model.PatientValidationError
++import com.sherifradwan.ancnative.model.PreviousPregnancyFormRules
+ import com.sherifradwan.ancnative.model.effectiveMedicationStatus
+ import com.sherifradwan.ancnative.model.parseBloodPressure
+ import com.sherifradwan.ancnative.model.parseVisitFindings
+@@ -103,16 +104,13 @@ enum class PatientDraftField {
+ enum class HistoriesDraftField { MEDICAL, SURGICAL, FAMILY, ALLERGY }
+ enum class PregnancyDraftField {
+     DATE_TEXT,
+-    OUTCOME_TEXT,
+     PREGNANCY_TYPE,
+     OTHER_DETAILS,
+     PLACE_AND_DOCTOR,
+     DELIVERY_BY,
+     OUTCOME,
+-    BIRTH_METHOD,
+     LOSS_MANAGEMENT,
+     TERMINATION_METHOD,
+-    CLINICIAN_ID,
+ }
+ enum class DatingDraftField {
+     LMP_DATE,
+@@ -1588,27 +1586,28 @@ object AncReducer {
+         val draft = state.pregnancyDraft ?: return state
+         val values = when (event.field) {
+             PregnancyDraftField.DATE_TEXT -> draft.values.copy(dateText = event.value)
+-            PregnancyDraftField.OUTCOME_TEXT -> draft.values.copy(outcomeText = event.value)
+             PregnancyDraftField.PREGNANCY_TYPE -> draft.values.copy(pregnancyType = event.value)
+             PregnancyDraftField.OTHER_DETAILS -> draft.values.copy(otherDetails = event.value)
+             PregnancyDraftField.PLACE_AND_DOCTOR -> draft.values.copy(placeAndDoctor = event.value)
+-            PregnancyDraftField.DELIVERY_BY -> draft.values.copy(deliveryBy = event.value)
+-            PregnancyDraftField.OUTCOME -> draft.values.copy(
++            PregnancyDraftField.DELIVERY_BY -> PreviousPregnancyFormRules.deliveryColumns(
++                draft.values.outcome, draft.original.outcome, draft.values.deliveryBy, draft.values.birthMethod, event.value,
++            ).let { draft.values.copy(deliveryBy = it.deliveryBy.orEmpty(), birthMethod = it.birthMethod.orEmpty()) }
++            PregnancyDraftField.OUTCOME -> PreviousPregnancyFormRules.deliveryColumns(
++                event.value, draft.original.outcome, draft.values.deliveryBy, draft.values.birthMethod,
++            ).let { columns -> draft.values.copy(
+                 outcome = event.value,
+-                birthMethod = draft.values.birthMethod.takeIf {
+-                    event.value == "LiveBirth" || event.value == "Stillbirth"
+-                }.orEmpty(),
++                outcomeText = if (event.value.isNotBlank()) "" else draft.values.outcomeText,
++                deliveryBy = columns.deliveryBy.orEmpty(),
++                birthMethod = columns.birthMethod.orEmpty(),
+                 lossManagement = draft.values.lossManagement.takeIf {
+                     event.value == "EarlyPregnancyLoss"
+                 }.orEmpty(),
+                 terminationMethod = draft.values.terminationMethod.takeIf {
+                     event.value == "TerminationOfPregnancy"
+                 }.orEmpty(),
+-            )
+-            PregnancyDraftField.BIRTH_METHOD -> draft.values.copy(birthMethod = event.value)
++            ) }
+             PregnancyDraftField.LOSS_MANAGEMENT -> draft.values.copy(lossManagement = event.value)
+             PregnancyDraftField.TERMINATION_METHOD -> draft.values.copy(terminationMethod = event.value)
+-            PregnancyDraftField.CLINICIAN_ID -> draft.values.copy(clinicianId = event.value)
+         }
+         return state.copy(pregnancyDraft = draft.copy(values = values, errors = emptySet()), savePhase = SavePhase.IDLE, saveError = null)
+     }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt b/app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt
+index c8b7197..7adc05f 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt
+@@ -4,6 +4,7 @@ import com.sherifradwan.ancnative.model.PatientClinicalInput
+ import com.sherifradwan.ancnative.model.PatientValidationError
+ import com.sherifradwan.ancnative.model.PatientVocabulary
+ import com.sherifradwan.ancnative.model.PreviousPregnancyClinicalInput
++import com.sherifradwan.ancnative.model.PreviousPregnancyFormRules
+ import com.sherifradwan.ancnative.model.validationErrors
+ import com.sherifradwan.ancnative.state.AncState
+ import java.time.Instant
+@@ -207,15 +208,29 @@ data class SavePreviousPregnancyCommand(
+         fun prepare(state: AncState, operationUuid: String, submittedAt: String): PatientCommandPreparation {
+             val draft = state.pregnancyDraft
+                 ?: return PatientCommandPreparation.Rejected(setOf(PatientValidationError.SAVE_FAILED))
++            val isNew = draft.basePregnancyRevision == null
++            val outcome = draft.values.outcome.normalized()
++            val delivery = PreviousPregnancyFormRules.deliveryColumns(
++                outcome,
++                draft.original.outcome.normalized(),
++                draft.values.deliveryBy.normalized(),
++                draft.values.birthMethod.normalized(),
++            )
+             val input = PreviousPregnancyClinicalInput(
+                 pregnancyType = draft.values.pregnancyType.normalized(),
+-                deliveryBy = draft.values.deliveryBy.normalized(),
+-                outcome = draft.values.outcome.normalized(),
+-                birthMethod = draft.values.birthMethod.normalized(),
++                deliveryBy = delivery.deliveryBy,
++                outcome = outcome,
++                birthMethod = delivery.birthMethod,
+                 lossManagement = draft.values.lossManagement.normalized(),
+                 terminationMethod = draft.values.terminationMethod.normalized(),
+                 provenanceKind = PatientVocabulary.CLINICIAN_ENTRY,
+-                clinicianId = draft.values.clinicianId.trim(),
++                clinicianId = PreviousPregnancyFormRules.clinicianIdFor(isNew, draft.original.clinicianId),
++                placeAndDoctor = draft.values.placeAndDoctor.normalized(),
++                storedRow = !isNew,
++                placeAndDoctorRequired = PreviousPregnancyFormRules.placeAndDoctorRequired(
++                    isNew,
++                    draft.original.placeAndDoctor,
++                ),
+             )
+             val errors = input.validationErrors()
+             if (errors.isNotEmpty()) return PatientCommandPreparation.Rejected(errors)
+@@ -336,6 +351,7 @@ internal fun PatientCommand.isStructurallyValid(): Boolean {
+                 terminationMethod,
+                 provenanceKind,
+                 clinicianId,
++                storedRow = expectedPregnancyRevision != null,
+             )
+             modelVersion == 3 &&
+                 expectedPregnancyRevision?.let { it >= 1 } != false &&
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/PreviousPregnancyEditor.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/PreviousPregnancyEditor.kt
+index 125b9a8..24f44de 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/PreviousPregnancyEditor.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/PreviousPregnancyEditor.kt
+@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
+ import com.sherifradwan.ancnative.R
+ import com.sherifradwan.ancnative.model.PatientValidationError
+ import com.sherifradwan.ancnative.model.PatientVocabulary
++import com.sherifradwan.ancnative.model.PreviousPregnancyFormRules
+ import com.sherifradwan.ancnative.state.AncEvent
+ import com.sherifradwan.ancnative.state.AncRoute
+ import com.sherifradwan.ancnative.state.AncState
+@@ -55,7 +56,6 @@ fun PreviousPregnancyEditor(
+     ) {
+         GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
+ 
+-        // CARD 1: TIMING & PREGNANCY BASICS
+         Card(
+             modifier = Modifier.fillMaxWidth(),
+             shape = RoundedCornerShape(16.dp),
+@@ -68,7 +68,7 @@ fun PreviousPregnancyEditor(
+                 verticalArrangement = Arrangement.spacedBy(12.dp),
+             ) {
+                 Text(
+-                    text = "1. Pregnancy Timing, Type & Location",
++                    text = stringResource(R.string.pregnancy_core_facts_title),
+                     style = MaterialTheme.typography.titleMedium,
+                     fontWeight = FontWeight.Bold,
+                     color = MaterialTheme.colorScheme.primary,
+@@ -83,69 +83,6 @@ fun PreviousPregnancyEditor(
+                     showTodayButton = false,
+                 )
+ 
+-                EditorField(
+-                    value = draft.values.outcomeText,
+-                    onValueChange = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.OUTCOME_TEXT, it)) },
+-                    label = stringResource(R.string.entered_outcome_text),
+-                    tag = "pregnancyOutcomeText",
+-                    enabled = enabled,
+-                )
+-
+-                ChoiceGroup(
+-                    label = stringResource(R.string.pregnancy_type),
+-                    selected = draft.values.pregnancyType,
+-                    choices = PatientVocabulary.pregnancyTypes.toList(),
+-                    enabled = enabled,
+-                    tagPrefix = "pregnancyType",
+-                    onSelected = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.PREGNANCY_TYPE, it)) },
+-                )
+-
+-                EditorField(
+-                    value = draft.values.otherDetails,
+-                    onValueChange = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.OTHER_DETAILS, it)) },
+-                    label = stringResource(R.string.other_details),
+-                    tag = "pregnancyOtherDetails",
+-                    enabled = enabled,
+-                )
+-
+-                EditorField(
+-                    value = draft.values.placeAndDoctor,
+-                    onValueChange = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.PLACE_AND_DOCTOR, it)) },
+-                    label = stringResource(R.string.place_and_doctor),
+-                    tag = "pregnancyPlaceDoctor",
+-                    enabled = enabled,
+-                )
+-            }
+-        }
+-
+-        // CARD 2: DELIVERY MODE & CLINICAL OUTCOME
+-        Card(
+-            modifier = Modifier.fillMaxWidth(),
+-            shape = RoundedCornerShape(16.dp),
+-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+-        ) {
+-            Column(
+-                modifier = Modifier.padding(16.dp),
+-                verticalArrangement = Arrangement.spacedBy(12.dp),
+-            ) {
+-                Text(
+-                    text = "2. Delivery Mode & Clinical Outcome",
+-                    style = MaterialTheme.typography.titleMedium,
+-                    fontWeight = FontWeight.Bold,
+-                    color = MaterialTheme.colorScheme.primary,
+-                )
+-
+-                ChoiceGroup(
+-                    label = stringResource(R.string.historical_delivery_mode),
+-                    selected = draft.values.deliveryBy,
+-                    choices = PatientVocabulary.deliveryModes.toList(),
+-                    enabled = enabled,
+-                    tagPrefix = "deliveryBy",
+-                    onSelected = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.DELIVERY_BY, it)) },
+-                )
+-
+                 ChoiceGroup(
+                     label = stringResource(R.string.structured_outcome),
+                     selected = draft.values.outcome,
+@@ -155,14 +92,34 @@ fun PreviousPregnancyEditor(
+                     onSelected = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.OUTCOME, it)) },
+                 )
+ 
+-                if (draft.values.outcome == "LiveBirth" || draft.values.outcome == "Stillbirth") {
++                if (draft.values.outcomeText.isNotBlank() && draft.values.outcome.isBlank()) {
++                    Text(
++                        text = stringResource(R.string.earlier_outcome_note, draft.values.outcomeText),
++                        style = MaterialTheme.typography.bodySmall,
++                        color = MaterialTheme.colorScheme.onSurfaceVariant,
++                    )
++                }
++
++                if (PreviousPregnancyFormRules.hasDeliveryMode(draft.values.outcome)) {
+                     ChoiceGroup(
+-                        label = stringResource(R.string.birth_method),
+-                        selected = draft.values.birthMethod,
+-                        choices = PatientVocabulary.birthMethods.toList(),
++                        label = stringResource(R.string.delivery_mode),
++                        selected = PreviousPregnancyFormRules.modeOf(draft.values.deliveryBy, draft.values.birthMethod),
++                        choices = PreviousPregnancyFormRules.deliveryModeChoices,
+                         enabled = enabled,
+-                        tagPrefix = "birthMethod",
+-                        onSelected = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.BIRTH_METHOD, it)) },
++                        tagPrefix = "deliveryBy",
++                        onSelected = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.DELIVERY_BY, it)) },
++                    )
++                }
++
++                if (
++                    PreviousPregnancyFormRules.hasDeliveryMode(draft.values.outcome) &&
++                    draft.values.deliveryBy.isNotBlank() &&
++                    draft.values.deliveryBy !in PreviousPregnancyFormRules.deliveryModeChoices
++                ) {
++                    Text(
++                        text = stringResource(R.string.stored_delivery_mode, draft.values.deliveryBy),
++                        style = MaterialTheme.typography.bodySmall,
++                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                     )
+                 }
+ 
+@@ -187,10 +144,18 @@ fun PreviousPregnancyEditor(
+                         onSelected = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.TERMINATION_METHOD, it)) },
+                     )
+                 }
++
++                if (PatientValidationError.OUTCOME_METHOD_MISMATCH in draft.errors) {
++                    Text(
++                        stringResource(R.string.outcome_method_mismatch),
++                        color = MaterialTheme.colorScheme.error,
++                        style = MaterialTheme.typography.bodySmall,
++                        fontWeight = FontWeight.Bold,
++                    )
++                }
+             }
+         }
+ 
+-        // CARD 3: CLINICIAN AUDIT & VERIFICATION
+         Card(
+             modifier = Modifier.fillMaxWidth(),
+             shape = RoundedCornerShape(16.dp),
+@@ -203,30 +168,41 @@ fun PreviousPregnancyEditor(
+                 verticalArrangement = Arrangement.spacedBy(12.dp),
+             ) {
+                 Text(
+-                    text = "3. Clinician Documentation & Audit",
++                    text = stringResource(R.string.pregnancy_details_title),
+                     style = MaterialTheme.typography.titleMedium,
+                     fontWeight = FontWeight.Bold,
+                     color = MaterialTheme.colorScheme.primary,
+                 )
+ 
+                 EditorField(
+-                    value = draft.values.clinicianId,
+-                    onValueChange = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.CLINICIAN_ID, it)) },
+-                    label = stringResource(R.string.clinician_id_required),
+-                    tag = "pregnancyClinicianId",
++                    value = draft.values.placeAndDoctor,
++                    onValueChange = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.PLACE_AND_DOCTOR, it)) },
++                    label = stringResource(R.string.place_and_doctor),
++                    tag = "pregnancyPlaceDoctor",
+                     enabled = enabled,
+-                    singleLine = true,
+-                    error = PatientValidationError.CLINICIAN_ID_REQUIRED in draft.errors,
++                    errorMessage = if (PatientValidationError.PLACE_AND_DOCTOR_REQUIRED in draft.errors) {
++                        stringResource(R.string.place_and_doctor_required)
++                    } else {
++                        null
++                    },
+                 )
+ 
+-                if (PatientValidationError.OUTCOME_METHOD_MISMATCH in draft.errors) {
+-                    Text(
+-                        stringResource(R.string.outcome_method_mismatch),
+-                        color = MaterialTheme.colorScheme.error,
+-                        style = MaterialTheme.typography.bodySmall,
+-                        fontWeight = FontWeight.Bold,
+-                    )
+-                }
++                ChoiceGroup(
++                    label = stringResource(R.string.pregnancy_type),
++                    selected = draft.values.pregnancyType,
++                    choices = PatientVocabulary.pregnancyTypes.toList(),
++                    enabled = enabled,
++                    tagPrefix = "pregnancyType",
++                    onSelected = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.PREGNANCY_TYPE, it)) },
++                )
++
++                EditorField(
++                    value = draft.values.otherDetails,
++                    onValueChange = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.OTHER_DETAILS, it)) },
++                    label = stringResource(R.string.other_details),
++                    tag = "pregnancyOtherDetails",
++                    enabled = enabled,
++                )
+             }
+         }
+ 
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+index 89610d7..5189090 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+@@ -8,6 +8,7 @@ import com.sherifradwan.ancnative.R
+ import com.sherifradwan.ancnative.model.BpLevel
+ import com.sherifradwan.ancnative.model.DemoPatient
+ import com.sherifradwan.ancnative.model.GestationalAgeEngine
++import com.sherifradwan.ancnative.model.PreviousPregnancyFormRules
+ import com.sherifradwan.ancnative.model.MEDICATION_LABEL_ACTIVE
+ import com.sherifradwan.ancnative.model.medicationInstructions
+ import com.sherifradwan.ancnative.model.medicationStatusLabel
+@@ -1252,7 +1253,7 @@ object PatientPrintHtmlGenerator {
+ 
+                     <div class="signature-box">
+                         <div>
+-                            <div class="doc-name">Dr. Sherif Radwan</div>
++                            <div class="doc-name">${escapeHtml(PreviousPregnancyFormRules.DEFAULT_CLINICIAN_ID)}</div>
+                             <div class="doc-title">$doctorOfficialTitle</div>
+                             <div class="stamp-placeholder">Official Stamp & Signature</div>
+                         </div>
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index c49756d..4aa97e0 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -155,16 +155,18 @@
+     <string name="no_previous_pregnancies">No previous pregnancies recorded.</string>
+     <string name="no_date_inference_notice">Entered dates and free text are preserved as supplied. No chronology or visit linkage is inferred.</string>
+     <string name="entered_date_text">Entered date text</string>
+-    <string name="entered_outcome_text">Entered outcome text</string>
+     <string name="pregnancy_type">Pregnancy type</string>
+     <string name="other_details">Other details</string>
+     <string name="place_and_doctor">Place and doctor</string>
+-    <string name="historical_delivery_mode">Historical delivery mode</string>
+-    <string name="structured_outcome">Structured outcome</string>
+-    <string name="birth_method">Birth method</string>
++    <string name="structured_outcome">Outcome</string>
++    <string name="stored_delivery_mode">Stored mode: %1$s</string>
++    <string name="delivery_mode">Delivery mode</string>
++    <string name="pregnancy_core_facts_title">Date, outcome and delivery</string>
++    <string name="pregnancy_details_title">Place, type and other details</string>
++    <string name="earlier_outcome_note">Earlier entry: %1$s. Choose an outcome to replace it.</string>
++    <string name="place_and_doctor_required">Enter the place and doctor.</string>
+     <string name="loss_management">Loss management</string>
+     <string name="termination_method">Termination method</string>
+-    <string name="clinician_id_required">Clinician ID (required for clinician entry)</string>
+     <string name="outcome_method_mismatch">The selected method does not apply to the selected outcome. Clear or correct it.</string>
+     <string name="save_patient_archived">This patient is archived. Only explicit unarchive is allowed.</string>
+     <string name="save_case_id_conflict">That case ID is already used. Case IDs are compared case-sensitively.</string>
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/model/ObstetricHistoryTest.kt b/app/src/test/java/com/sherifradwan/ancnative/model/ObstetricHistoryTest.kt
+index 339c266..d237a58 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/model/ObstetricHistoryTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/model/ObstetricHistoryTest.kt
+@@ -49,6 +49,15 @@ class ObstetricHistoryTest {
+         revision = 1,
+     )
+ 
++    @Test
++    fun pf5_oldRowWithOutcomeTextOnlyStillCountsFromFreeText() {
++        val counts = previousDeliveryCounts(listOf(preg(outcome = null, outcomeText = "CS")))
++        assertEquals(1, counts.cesarean)
++        assertEquals(0, counts.vaginal)
++        val vaginal = previousDeliveryCounts(listOf(preg(outcome = null, outcomeText = "SVD")))
++        assertEquals(1, vaginal.vaginal)
++    }
++
+     private fun patient(
+         gravida: Long? = 1L,
+         parity: Long? = 0L,
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/model/PreviousPregnancyValidationTest.kt b/app/src/test/java/com/sherifradwan/ancnative/model/PreviousPregnancyValidationTest.kt
+index c57f51e..fb2023b 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/model/PreviousPregnancyValidationTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/model/PreviousPregnancyValidationTest.kt
+@@ -1,5 +1,6 @@
+ package com.sherifradwan.ancnative.model
+ 
++import org.junit.Assert.assertEquals
+ import org.junit.Assert.assertFalse
+ import org.junit.Assert.assertTrue
+ import org.junit.Test
+@@ -55,6 +56,33 @@ class PreviousPregnancyValidationTest {
+         assertFalse(validInput(outcome = "livebirth").validationErrors().isEmpty())
+     }
+ 
++    @Test
++    fun pf4_errorsAreSpecific() {
++        assertEquals(
++            setOf(PatientValidationError.OUTCOME_METHOD_MISMATCH),
++            validInput(outcome = "EarlyPregnancyLoss", birthMethod = "Vaginal").validationErrors(),
++        )
++        assertEquals(setOf(PatientValidationError.INVALID_PREGNANCY_TYPE), validInput(pregnancyType = "Twins").validationErrors())
++        assertEquals(setOf(PatientValidationError.INVALID_DELIVERY_MODE), validInput(deliveryBy = "Cesarean").validationErrors())
++        assertEquals(setOf(PatientValidationError.INVALID_PREGNANCY_OUTCOME), validInput(outcome = "livebirth").validationErrors())
++        assertEquals(setOf(PatientValidationError.INVALID_BIRTH_METHOD), validInput(outcome = "LiveBirth", birthMethod = "CS").validationErrors())
++        assertEquals(setOf(PatientValidationError.INVALID_LOSS_MANAGEMENT), validInput(outcome = "EarlyPregnancyLoss", lossManagement = "x").validationErrors())
++        assertEquals(setOf(PatientValidationError.INVALID_TERMINATION_METHOD), validInput(outcome = "TerminationOfPregnancy", terminationMethod = "x").validationErrors())
++    }
++
++    @Test
++    fun pf2_placeAndDoctorRuleIsOneFunctionUsedByValidation() {
++        assertTrue(PreviousPregnancyFormRules.placeAndDoctorRequired(isNew = true, originalPlaceAndDoctor = null))
++        assertFalse(PreviousPregnancyFormRules.placeAndDoctorRequired(isNew = false, originalPlaceAndDoctor = null))
++        assertFalse(PreviousPregnancyFormRules.placeAndDoctorRequired(isNew = false, originalPlaceAndDoctor = "  "))
++        assertTrue(PreviousPregnancyFormRules.placeAndDoctorRequired(isNew = false, originalPlaceAndDoctor = "Clinic"))
++        val required = validInput().copy(placeAndDoctorRequired = true)
++        assertEquals(setOf(PatientValidationError.PLACE_AND_DOCTOR_REQUIRED), required.validationErrors())
++        assertEquals(setOf(PatientValidationError.PLACE_AND_DOCTOR_REQUIRED), required.copy(placeAndDoctor = "   ").validationErrors())
++        assertTrue(required.copy(placeAndDoctor = "Clinic A").validationErrors().isEmpty())
++        assertTrue(validInput().validationErrors().isEmpty())
++    }
++
+     private fun validInput(
+         pregnancyType: String? = null,
+         deliveryBy: String? = null,
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/storage/PatientCommandsTest.kt b/app/src/test/java/com/sherifradwan/ancnative/storage/PatientCommandsTest.kt
+index ddcafb9..c4708a3 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/storage/PatientCommandsTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/storage/PatientCommandsTest.kt
+@@ -1,5 +1,10 @@
+ package com.sherifradwan.ancnative.storage
+ 
++import com.sherifradwan.ancnative.model.DemoFixtures
++import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
++import com.sherifradwan.ancnative.model.PatientValidationError
++import com.sherifradwan.ancnative.model.PatientVocabulary
++import com.sherifradwan.ancnative.model.PreviousPregnancyFormRules
+ import com.sherifradwan.ancnative.state.AncEvent
+ import com.sherifradwan.ancnative.state.AncReducer
+ import com.sherifradwan.ancnative.state.AncState
+@@ -79,7 +84,7 @@ class PatientCommandsTest {
+         val starting = pregnancyState(
+             PreviousPregnancyDraftValues(
+                 outcome = "LiveBirth",
+-                birthMethod = "Cesarean",
++                deliveryBy = "CS",
+                 lossManagement = "Surgical",
+                 terminationMethod = "Medical",
+                 clinicianId = "clinician-1",
+@@ -90,7 +95,7 @@ class PatientCommandsTest {
+             starting,
+             AncEvent.PregnancyDraftChanged(PregnancyDraftField.OUTCOME, "EarlyPregnancyLoss"),
+         ).pregnancyDraft!!.values
+-        assertEquals("", loss.birthMethod)
++        assertEquals("", loss.deliveryBy)
+         assertEquals("Surgical", loss.lossManagement)
+         assertEquals("", loss.terminationMethod)
+ 
+@@ -98,7 +103,7 @@ class PatientCommandsTest {
+             starting,
+             AncEvent.PregnancyDraftChanged(PregnancyDraftField.OUTCOME, "TerminationOfPregnancy"),
+         ).pregnancyDraft!!.values
+-        assertEquals("", termination.birthMethod)
++        assertEquals("", termination.deliveryBy)
+         assertEquals("", termination.lossManagement)
+         assertEquals("Medical", termination.terminationMethod)
+ 
+@@ -106,11 +111,251 @@ class PatientCommandsTest {
+             starting,
+             AncEvent.PregnancyDraftChanged(PregnancyDraftField.OUTCOME, "Stillbirth"),
+         ).pregnancyDraft!!.values
+-        assertEquals("Cesarean", stillbirth.birthMethod)
++        assertEquals("CS", stillbirth.deliveryBy)
+         assertEquals("", stillbirth.lossManagement)
+         assertEquals("", stillbirth.terminationMethod)
+     }
+ 
++    @Test
++    fun pf1_oneDeliveryModeIsWrittenToBothColumns() {
++        val cs = ready(picked(draftValues(outcome = "LiveBirth"), "CS"))
++        assertEquals("CS", cs.deliveryBy)
++        assertEquals("Cesarean", cs.birthMethod)
++        val vaginal = ready(picked(draftValues(outcome = "Stillbirth"), "Vaginal"))
++        assertEquals("Vaginal", vaginal.deliveryBy)
++        assertEquals("Vaginal", vaginal.birthMethod)
++        val loss = ready(draftValues(outcome = "EarlyPregnancyLoss", deliveryBy = "CS", birthMethod = "Cesarean", lossManagement = "Medical"))
++        assertNull(loss.deliveryBy)
++        assertNull(loss.birthMethod)
++        assertTrue(loss.isStructurallyValid())
++    }
++
++    @Test
++    fun explicitPickOverwritesBothStoredColumns() {
++        val old = draftValues(outcome = "LiveBirth", deliveryBy = "Hysterotomy", birthMethod = "Vaginal")
++        val repicked = ready(picked(old, "CS"))
++        assertEquals("CS", repicked.deliveryBy)
++        assertEquals("Cesarean", repicked.birthMethod)
++    }
++
++    @Test
++    fun oldRowWithBlankOutcomeKeepsItsDeliveryColumnsWhenSavedUntouched() {
++        val saved = ready(
++            pregnancyState(
++                draftValues(deliveryBy = "CS", birthMethod = "Cesarean"),
++                original = draftValues(deliveryBy = "CS", birthMethod = "Cesarean", placeAndDoctor = ""),
++                baseRevision = 2L,
++            ),
++        )
++        assertNull(saved.outcome)
++        assertEquals("CS", saved.deliveryBy)
++        assertEquals("Cesarean", saved.birthMethod)
++    }
++
++    @Test
++    fun hysterotomyUnderLiveBirthSurvivesAnUnrelatedEdit() {
++        val values = draftValues(outcome = "LiveBirth", deliveryBy = "Hysterotomy", otherDetails = "edited note")
++        val saved = ready(pregnancyState(values, original = values.copy(otherDetails = ""), baseRevision = 2L))
++        assertEquals("Hysterotomy", saved.deliveryBy)
++        assertNull(saved.birthMethod)
++        assertEquals("", PreviousPregnancyFormRules.modeOf("Hysterotomy", null))
++    }
++
++    @Test
++    fun changingOutcomeToLossOrTerminationClearsTheStoredColumns() {
++        val stored = draftValues(outcome = "LiveBirth", deliveryBy = "CS", birthMethod = "Cesarean")
++        val old = pregnancyState(stored, original = stored, baseRevision = 2L)
++        for (outcome in listOf("EarlyPregnancyLoss", "TerminationOfPregnancy")) {
++            val values = AncReducer.reduce(old, AncEvent.PregnancyDraftChanged(PregnancyDraftField.OUTCOME, outcome))
++                .pregnancyDraft!!.values
++            assertEquals("", values.deliveryBy)
++            assertEquals("", values.birthMethod)
++        }
++    }
++
++    @Test
++    fun storedLossAndTerminationRowsKeepDeliveryColumnsOnUnrelatedEdit() {
++        val loss = draftValues(outcome = "EarlyPregnancyLoss", deliveryBy = "CS", lossManagement = "Medical")
++        val lossSaved = ready(pregnancyState(loss.copy(otherDetails = "note"), original = loss, baseRevision = 2L))
++        assertEquals("CS", lossSaved.deliveryBy)
++        assertNull(lossSaved.birthMethod)
++        val termination = draftValues(outcome = "TerminationOfPregnancy", deliveryBy = "Hysterotomy", terminationMethod = "Hysterotomy")
++        val terminationSaved = ready(pregnancyState(termination.copy(otherDetails = "note"), original = termination, baseRevision = 2L))
++        assertEquals("Hysterotomy", terminationSaved.deliveryBy)
++        assertNull(terminationSaved.birthMethod)
++        assertEquals("Hysterotomy", terminationSaved.terminationMethod)
++    }
++
++    @Test
++    fun rePickingBirthOutcomeKeepsStoredHysterotomy() {
++        val stored = draftValues(outcome = "LiveBirth", deliveryBy = "Hysterotomy")
++        val values = AncReducer.reduce(
++            pregnancyState(stored, original = stored, baseRevision = 2L),
++            AncEvent.PregnancyDraftChanged(PregnancyDraftField.OUTCOME, "Stillbirth"),
++        ).pregnancyDraft!!.values
++        assertEquals("Hysterotomy", values.deliveryBy)
++    }
++
++    @Test
++    fun hysterotomyIsValidAsTerminationMethodOnlyNotAsBirthMethod() {
++        assertEquals("Hysterotomy", ready(draftValues(outcome = "TerminationOfPregnancy", terminationMethod = "Hysterotomy")).terminationMethod)
++        val rejected = SavePreviousPregnancyCommand.prepare(
++            pregnancyState(draftValues(outcome = "LiveBirth", birthMethod = "Hysterotomy")), OPERATION_ID, SUBMITTED_AT,
++        ) as PatientCommandPreparation.Rejected
++        assertEquals(setOf(PatientValidationError.INVALID_BIRTH_METHOD), rejected.errors)
++    }
++
++    @Test
++    fun birthMethodWithoutOutcomeIsAllowedOnlyWhenEditingAStoredRow() {
++        val values = draftValues(birthMethod = "Cesarean")
++        val rejected = SavePreviousPregnancyCommand.prepare(pregnancyState(values), OPERATION_ID, SUBMITTED_AT)
++        assertEquals(
++            setOf(PatientValidationError.OUTCOME_METHOD_MISMATCH),
++            (rejected as PatientCommandPreparation.Rejected).errors,
++        )
++        val saved = ready(pregnancyState(values, original = values, baseRevision = 2L))
++        assertEquals("Cesarean", saved.birthMethod)
++        assertTrue(saved.isStructurallyValid())
++    }
++
++    @Test
++    fun combinedOldRowEditKeepsEverythingStored() {
++        val stored = draftValues(
++            outcome = "LiveBirth", deliveryBy = "Hysterotomy", placeAndDoctor = "", clinicianId = " ",
++        )
++        val saved = ready(pregnancyState(stored.copy(otherDetails = "note"), original = stored, baseRevision = 2L))
++        assertEquals("Hysterotomy", saved.deliveryBy)
++        assertNull(saved.placeAndDoctor)
++        assertEquals(PreviousPregnancyFormRules.DEFAULT_CLINICIAN_ID, saved.clinicianId)
++    }
++
++    @Test
++    fun clinicianIdOnEditComesFromTheOriginalRowNotTheRestoredDraft() {
++        val original = draftValues(clinicianId = "old-doctor")
++        val saved = ready(pregnancyState(original.copy(clinicianId = "tampered"), original = original, baseRevision = 2L))
++        assertEquals("old-doctor", saved.clinicianId)
++    }
++
++    @Test
++    fun modeOfFollowsReaderPriorityCesareanWins() {
++        assertEquals("CS", PreviousPregnancyFormRules.modeOf("Vaginal", "Cesarean"))
++        assertEquals("CS", PreviousPregnancyFormRules.modeOf("CS", "Vaginal"))
++        assertEquals("Vaginal", PreviousPregnancyFormRules.modeOf(null, "Vaginal"))
++        assertEquals("", PreviousPregnancyFormRules.modeOf("Hysterotomy", null))
++    }
++
++    @Test
++    fun pf1_changingOutcomeAwayFromBirthClearsTheModeAndPickingOutcomeClearsOldFreeText() {
++        val starting = pregnancyState(draftValues(outcome = "LiveBirth", deliveryBy = "CS", birthMethod = "Cesarean", outcomeText = "Live birth by CS"))
++        val picked = AncReducer.reduce(starting, AncEvent.PregnancyDraftChanged(PregnancyDraftField.OUTCOME, "EarlyPregnancyLoss"))
++            .pregnancyDraft!!.values
++        assertEquals("", picked.deliveryBy)
++        assertEquals("", picked.outcomeText)
++        val unpicked = AncReducer.reduce(
++            pregnancyState(draftValues(outcomeText = "Live birth by CS")),
++            AncEvent.PregnancyDraftChanged(PregnancyDraftField.OUTCOME, ""),
++        ).pregnancyDraft!!.values
++        assertEquals("Live birth by CS", unpicked.outcomeText)
++    }
++
++    @Test
++    fun pf2_newPregnancyRequiresPlaceAndDoctor() {
++        for (blank in listOf("", "   ")) {
++            val rejected = SavePreviousPregnancyCommand.prepare(
++                pregnancyState(draftValues(placeAndDoctor = blank)), OPERATION_ID, SUBMITTED_AT,
++            ) as PatientCommandPreparation.Rejected
++            assertEquals(setOf(PatientValidationError.PLACE_AND_DOCTOR_REQUIRED), rejected.errors)
++        }
++        assertEquals("Clinic A, Dr. B", ready(draftValues(placeAndDoctor = "  Clinic A, Dr. B ")).placeAndDoctor)
++    }
++
++    @Test
++    fun pf2_existingRowWithoutPlaceStaysEditableButAFilledOneCannotBeBlanked() {
++        val oldRow = pregnancyState(
++            draftValues(placeAndDoctor = ""),
++            original = draftValues(placeAndDoctor = ""),
++            baseRevision = 2L,
++        )
++        val saved = SavePreviousPregnancyCommand.prepare(oldRow, OPERATION_ID, SUBMITTED_AT)
++        assertTrue(saved is PatientCommandPreparation.Ready)
++        assertNull((saved as PatientCommandPreparation.Ready).command.let { it as SavePreviousPregnancyCommand }.placeAndDoctor)
++
++        val cleared = pregnancyState(
++            draftValues(placeAndDoctor = "  "),
++            original = draftValues(placeAndDoctor = "Clinic A"),
++            baseRevision = 2L,
++        )
++        val rejected = SavePreviousPregnancyCommand.prepare(cleared, OPERATION_ID, SUBMITTED_AT) as PatientCommandPreparation.Rejected
++        assertEquals(setOf(PatientValidationError.PLACE_AND_DOCTOR_REQUIRED), rejected.errors)
++    }
++
++    @Test
++    fun pf3_clinicianIdIsDefaultForNewAndKeptOnEditAndNeverBlocksSave() {
++        assertEquals(PreviousPregnancyFormRules.DEFAULT_CLINICIAN_ID, ready(draftValues(clinicianId = "")).clinicianId)
++        assertEquals(PreviousPregnancyFormRules.DEFAULT_CLINICIAN_ID, ready(draftValues(clinicianId = "someone")).clinicianId)
++
++        val edit = pregnancyState(draftValues(clinicianId = "old-doctor"), original = draftValues(clinicianId = "old-doctor"), baseRevision = 3L)
++        assertEquals("old-doctor", (ready(edit)).clinicianId)
++        val blankStored = pregnancyState(draftValues(clinicianId = " "), original = draftValues(clinicianId = " "), baseRevision = 3L)
++        val result = SavePreviousPregnancyCommand.prepare(blankStored, OPERATION_ID, SUBMITTED_AT)
++        assertTrue(result is PatientCommandPreparation.Ready)
++        assertEquals(PatientVocabulary.CLINICIAN_ENTRY, ready(draftValues()).provenanceKind)
++    }
++
++    @Test
++    fun pf4_preparationStillRejectsMismatchedMethods() {
++        val rejected = SavePreviousPregnancyCommand.prepare(
++            pregnancyState(draftValues(outcome = "EarlyPregnancyLoss", lossManagement = "Medical", terminationMethod = "Surgical")),
++            OPERATION_ID,
++            SUBMITTED_AT,
++        ) as PatientCommandPreparation.Rejected
++        assertEquals(setOf(PatientValidationError.OUTCOME_METHOD_MISMATCH), rejected.errors)
++        val unknown = SavePreviousPregnancyCommand.prepare(
++            pregnancyState(draftValues(outcome = "Unknown")), OPERATION_ID, SUBMITTED_AT,
++        ) as PatientCommandPreparation.Rejected
++        assertEquals(setOf(PatientValidationError.INVALID_PREGNANCY_OUTCOME), unknown.errors)
++    }
++
++    @Test
++    fun pf5_editorKeepsAnOldFreeTextOutcomeAndShowsModeFromBirthMethod() {
++        val row = DemoPreviousPregnancy(
++            id = PREGNANCY_ID,
++            patientId = DemoFixtures.patients.first().id,
++            modelVersion = 3,
++            dateText = null,
++            outcomeText = "Live birth by CS",
++            pregnancyType = null,
++            otherDetails = null,
++            placeAndDoctor = null,
++            deliveryBy = null,
++            outcome = null,
++            birthMethod = "Cesarean",
++            lossManagement = null,
++            terminationMethod = null,
++            provenanceKind = PatientVocabulary.CLINICIAN_ENTRY,
++            clinicianId = "old-doctor",
++            recordedAt = SUBMITTED_AT,
++            updatedAt = SUBMITTED_AT,
++            revision = 2,
++        )
++        val old = DemoFixtures.patients.first().copy(previousPregnancies = listOf(row))
++        val state = AncReducer.reduce(
++            AncState(patients = listOf(old)),
++            AncEvent.StartPregnancyEditor(
++                patientId = old.id,
++                pregnancyId = old.previousPregnancies.first().id,
++                newPregnancyId = "unused",
++                editorSessionId = "editor-old",
++            ),
++        )
++        val values = state.pregnancyDraft!!.values
++        assertEquals("Live birth by CS", values.outcomeText)
++        assertEquals("Cesarean", values.birthMethod)
++        assertEquals("CS", PreviousPregnancyFormRules.modeOf(values.deliveryBy, values.birthMethod))
++        assertEquals("Live birth by CS", ready(state).outcomeText)
++        assertEquals("Cesarean", ready(state).birthMethod)
++    }
++
+     @Test
+     fun canonicalFingerprintMakesUuidAndPayloadReplayImmutable() {
+         val command = SavePatientProfileCommand(
+@@ -151,16 +396,55 @@ class PatientCommandsTest {
+         ),
+     )
+ 
+-    private fun pregnancyState(values: PreviousPregnancyDraftValues) = AncState(
++    private fun draftValues(
++        outcome: String = "",
++        deliveryBy: String = "",
++        birthMethod: String = "",
++        otherDetails: String = "",
++        lossManagement: String = "",
++        terminationMethod: String = "",
++        placeAndDoctor: String = "Clinic A, Dr. B",
++        clinicianId: String = "",
++        outcomeText: String = "",
++    ) = PreviousPregnancyDraftValues(
++        outcome = outcome,
++        deliveryBy = deliveryBy,
++        birthMethod = birthMethod,
++        otherDetails = otherDetails,
++        lossManagement = lossManagement,
++        terminationMethod = terminationMethod,
++        placeAndDoctor = placeAndDoctor,
++        clinicianId = clinicianId,
++        outcomeText = outcomeText,
++    )
++
++    private fun picked(values: PreviousPregnancyDraftValues, mode: String): AncState = AncReducer.reduce(
++        pregnancyState(values),
++        AncEvent.PregnancyDraftChanged(PregnancyDraftField.DELIVERY_BY, mode),
++    )
++
++    private fun ready(values: PreviousPregnancyDraftValues): SavePreviousPregnancyCommand = ready(pregnancyState(values))
++
++    private fun ready(state: AncState): SavePreviousPregnancyCommand {
++        val prepared = SavePreviousPregnancyCommand.prepare(state, OPERATION_ID, SUBMITTED_AT)
++        assertTrue("expected Ready but was $prepared", prepared is PatientCommandPreparation.Ready)
++        return (prepared as PatientCommandPreparation.Ready).command as SavePreviousPregnancyCommand
++    }
++
++    private fun pregnancyState(
++        values: PreviousPregnancyDraftValues,
++        original: PreviousPregnancyDraftValues = PreviousPregnancyDraftValues(),
++        baseRevision: Long? = null,
++    ) = AncState(
+         patients = emptyList(),
+         pregnancyDraft = PreviousPregnancyDraft(
+             editorSessionId = "editor-1",
+             patientId = PATIENT_ID,
+             pregnancyId = PREGNANCY_ID,
+             basePatientRevision = 1,
+-            basePregnancyRevision = null,
++            basePregnancyRevision = baseRevision,
+             recordedAt = null,
+-            original = PreviousPregnancyDraftValues(),
++            original = original,
+             values = values,
+         ),
+     )

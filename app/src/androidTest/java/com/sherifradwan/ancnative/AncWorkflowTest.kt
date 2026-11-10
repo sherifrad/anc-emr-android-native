@@ -412,11 +412,7 @@ class AncWorkflowTest {
         )
         state = AncReducer.reduce(
             state,
-            AncEvent.PregnancyDraftChanged(PregnancyDraftField.BIRTH_METHOD, "Vaginal"),
-        )
-        state = AncReducer.reduce(
-            state,
-            AncEvent.PregnancyDraftChanged(PregnancyDraftField.CLINICIAN_ID, "synthetic-clinician"),
+            AncEvent.PregnancyDraftChanged(PregnancyDraftField.DELIVERY_BY, "Vaginal"),
         )
         val editorRoute = state.route
         val dirtyBack = AncReducer.reduce(state, AncEvent.Back)
@@ -454,6 +450,7 @@ class AncWorkflowTest {
             AncEvent.PregnancyDraftChanged(PregnancyDraftField.OUTCOME, "EarlyPregnancyLoss"),
         )
         val correctedDraft = state.pregnancyDraft!!.values
+        assertEquals("", correctedDraft.deliveryBy)
         assertEquals("", correctedDraft.birthMethod)
         assertEquals("", correctedDraft.terminationMethod)
         state = AncReducer.reduce(

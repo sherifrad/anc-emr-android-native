@@ -8,6 +8,7 @@ import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.BpLevel
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
+import com.sherifradwan.ancnative.model.PreviousPregnancyFormRules
 import com.sherifradwan.ancnative.model.MEDICATION_LABEL_ACTIVE
 import com.sherifradwan.ancnative.model.medicationInstructions
 import com.sherifradwan.ancnative.model.medicationStatusLabel
@@ -1252,7 +1253,7 @@ object PatientPrintHtmlGenerator {
 
                     <div class="signature-box">
                         <div>
-                            <div class="doc-name">Dr. Sherif Radwan</div>
+                            <div class="doc-name">${escapeHtml(PreviousPregnancyFormRules.DEFAULT_CLINICIAN_ID)}</div>
                             <div class="doc-title">$doctorOfficialTitle</div>
                             <div class="stamp-placeholder">Official Stamp & Signature</div>
                         </div>

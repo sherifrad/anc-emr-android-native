@@ -4,6 +4,7 @@ import com.sherifradwan.ancnative.model.PatientClinicalInput
 import com.sherifradwan.ancnative.model.PatientValidationError
 import com.sherifradwan.ancnative.model.PatientVocabulary
 import com.sherifradwan.ancnative.model.PreviousPregnancyClinicalInput
+import com.sherifradwan.ancnative.model.PreviousPregnancyFormRules
 import com.sherifradwan.ancnative.model.validationErrors
 import com.sherifradwan.ancnative.state.AncState
 import java.time.Instant
@@ -207,15 +208,31 @@ data class SavePreviousPregnancyCommand(
         fun prepare(state: AncState, operationUuid: String, submittedAt: String): PatientCommandPreparation {
             val draft = state.pregnancyDraft
                 ?: return PatientCommandPreparation.Rejected(setOf(PatientValidationError.SAVE_FAILED))
+            val isNew = draft.basePregnancyRevision == null
+            val outcome = draft.values.outcome.normalized()
+            val delivery = PreviousPregnancyFormRules.deliveryColumns(
+                outcome,
+                draft.original.outcome.normalized(),
+                draft.values.deliveryBy.normalized(),
+                draft.values.birthMethod.normalized(),
+                originalDeliveryBy = draft.original.deliveryBy.normalized(),
+                originalBirthMethod = draft.original.birthMethod.normalized(),
+            )
             val input = PreviousPregnancyClinicalInput(
                 pregnancyType = draft.values.pregnancyType.normalized(),
-                deliveryBy = draft.values.deliveryBy.normalized(),
-                outcome = draft.values.outcome.normalized(),
-                birthMethod = draft.values.birthMethod.normalized(),
+                deliveryBy = delivery.deliveryBy,
+                outcome = outcome,
+                birthMethod = delivery.birthMethod,
                 lossManagement = draft.values.lossManagement.normalized(),
                 terminationMethod = draft.values.terminationMethod.normalized(),
                 provenanceKind = PatientVocabulary.CLINICIAN_ENTRY,
-                clinicianId = draft.values.clinicianId.trim(),
+                clinicianId = PreviousPregnancyFormRules.clinicianIdFor(isNew, draft.original.clinicianId),
+                placeAndDoctor = draft.values.placeAndDoctor.normalized(),
+                storedRow = !isNew,
+                placeAndDoctorRequired = PreviousPregnancyFormRules.placeAndDoctorRequired(
+                    isNew,
+                    draft.original.placeAndDoctor,
+                ),
             )
             val errors = input.validationErrors()
             if (errors.isNotEmpty()) return PatientCommandPreparation.Rejected(errors)
@@ -336,6 +353,7 @@ internal fun PatientCommand.isStructurallyValid(): Boolean {
                 terminationMethod,
                 provenanceKind,
                 clinicianId,
+                storedRow = expectedPregnancyRevision != null,
             )
             modelVersion == 3 &&
                 expectedPregnancyRevision?.let { it >= 1 } != false &&

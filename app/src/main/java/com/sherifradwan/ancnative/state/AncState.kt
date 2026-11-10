@@ -11,6 +11,7 @@ import com.sherifradwan.ancnative.model.DemoVisit
 import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
 import com.sherifradwan.ancnative.model.MEDICATION_STATUS_NON_COMPLIANT
 import com.sherifradwan.ancnative.model.PatientValidationError
+import com.sherifradwan.ancnative.model.PreviousPregnancyFormRules
 import com.sherifradwan.ancnative.model.effectiveMedicationStatus
 import com.sherifradwan.ancnative.model.parseBloodPressure
 import com.sherifradwan.ancnative.model.parseVisitFindings
@@ -103,16 +104,13 @@ enum class PatientDraftField {
 enum class HistoriesDraftField { MEDICAL, SURGICAL, FAMILY, ALLERGY }
 enum class PregnancyDraftField {
     DATE_TEXT,
-    OUTCOME_TEXT,
     PREGNANCY_TYPE,
     OTHER_DETAILS,
     PLACE_AND_DOCTOR,
     DELIVERY_BY,
     OUTCOME,
-    BIRTH_METHOD,
     LOSS_MANAGEMENT,
     TERMINATION_METHOD,
-    CLINICIAN_ID,
 }
 enum class DatingDraftField {
     LMP_DATE,
@@ -1588,27 +1586,29 @@ object AncReducer {
         val draft = state.pregnancyDraft ?: return state
         val values = when (event.field) {
             PregnancyDraftField.DATE_TEXT -> draft.values.copy(dateText = event.value)
-            PregnancyDraftField.OUTCOME_TEXT -> draft.values.copy(outcomeText = event.value)
             PregnancyDraftField.PREGNANCY_TYPE -> draft.values.copy(pregnancyType = event.value)
             PregnancyDraftField.OTHER_DETAILS -> draft.values.copy(otherDetails = event.value)
             PregnancyDraftField.PLACE_AND_DOCTOR -> draft.values.copy(placeAndDoctor = event.value)
-            PregnancyDraftField.DELIVERY_BY -> draft.values.copy(deliveryBy = event.value)
-            PregnancyDraftField.OUTCOME -> draft.values.copy(
+            PregnancyDraftField.DELIVERY_BY -> PreviousPregnancyFormRules.deliveryColumns(
+                draft.values.outcome, draft.original.outcome, draft.values.deliveryBy, draft.values.birthMethod, event.value,
+            ).let { draft.values.copy(deliveryBy = it.deliveryBy.orEmpty(), birthMethod = it.birthMethod.orEmpty()) }
+            PregnancyDraftField.OUTCOME -> PreviousPregnancyFormRules.deliveryColumns(
+                event.value, draft.original.outcome, draft.values.deliveryBy, draft.values.birthMethod,
+                originalDeliveryBy = draft.original.deliveryBy, originalBirthMethod = draft.original.birthMethod,
+            ).let { columns -> draft.values.copy(
                 outcome = event.value,
-                birthMethod = draft.values.birthMethod.takeIf {
-                    event.value == "LiveBirth" || event.value == "Stillbirth"
-                }.orEmpty(),
+                outcomeText = if (event.value.isNotBlank()) "" else draft.values.outcomeText,
+                deliveryBy = columns.deliveryBy.orEmpty(),
+                birthMethod = columns.birthMethod.orEmpty(),
                 lossManagement = draft.values.lossManagement.takeIf {
                     event.value == "EarlyPregnancyLoss"
                 }.orEmpty(),
                 terminationMethod = draft.values.terminationMethod.takeIf {
                     event.value == "TerminationOfPregnancy"
                 }.orEmpty(),
-            )
-            PregnancyDraftField.BIRTH_METHOD -> draft.values.copy(birthMethod = event.value)
+            ) }
             PregnancyDraftField.LOSS_MANAGEMENT -> draft.values.copy(lossManagement = event.value)
             PregnancyDraftField.TERMINATION_METHOD -> draft.values.copy(terminationMethod = event.value)
-            PregnancyDraftField.CLINICIAN_ID -> draft.values.copy(clinicianId = event.value)
         }
         return state.copy(pregnancyDraft = draft.copy(values = values, errors = emptySet()), savePhase = SavePhase.IDLE, saveError = null)
     }

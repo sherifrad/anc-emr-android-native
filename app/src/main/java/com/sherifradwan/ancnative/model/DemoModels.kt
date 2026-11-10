@@ -122,6 +122,7 @@ enum class PatientValidationError {
     INVALID_GPA,
     ARCHIVE_REASON_REQUIRED,
     CLINICIAN_ID_REQUIRED,
+    PLACE_AND_DOCTOR_REQUIRED,
     INVALID_PREGNANCY_TYPE,
     INVALID_DELIVERY_MODE,
     INVALID_PREGNANCY_OUTCOME,
@@ -173,6 +174,9 @@ data class PreviousPregnancyClinicalInput(
     val terminationMethod: String?,
     val provenanceKind: String,
     val clinicianId: String,
+    val placeAndDoctor: String? = null,
+    val placeAndDoctorRequired: Boolean = false,
+    val storedRow: Boolean = false,
 )
 
 fun PreviousPregnancyClinicalInput.validationErrors(): Set<PatientValidationError> = buildSet {
@@ -197,12 +201,15 @@ fun PreviousPregnancyClinicalInput.validationErrors(): Set<PatientValidationErro
     if (provenanceKind != PatientVocabulary.CLINICIAN_ENTRY || clinicianId.isBlank()) {
         add(PatientValidationError.CLINICIAN_ID_REQUIRED)
     }
+    if (placeAndDoctorRequired && placeAndDoctor.isNullOrBlank()) {
+        add(PatientValidationError.PLACE_AND_DOCTOR_REQUIRED)
+    }
 
     val birthOutcome = outcome == "LiveBirth" || outcome == "Stillbirth"
     val lossOutcome = outcome == "EarlyPregnancyLoss"
     val terminationOutcome = outcome == "TerminationOfPregnancy"
     if (
-        (!birthOutcome && birthMethod != null) ||
+        ((outcome != null || !storedRow) && !birthOutcome && birthMethod != null) ||
         (!lossOutcome && lossManagement != null) ||
         (!terminationOutcome && terminationMethod != null) ||
         (birthOutcome && (lossManagement != null || terminationMethod != null)) ||

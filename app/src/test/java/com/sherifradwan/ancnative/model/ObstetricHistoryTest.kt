@@ -49,6 +49,15 @@ class ObstetricHistoryTest {
         revision = 1,
     )
 
+    @Test
+    fun pf5_oldRowWithOutcomeTextOnlyStillCountsFromFreeText() {
+        val counts = previousDeliveryCounts(listOf(preg(outcome = null, outcomeText = "CS")))
+        assertEquals(1, counts.cesarean)
+        assertEquals(0, counts.vaginal)
+        val vaginal = previousDeliveryCounts(listOf(preg(outcome = null, outcomeText = "SVD")))
+        assertEquals(1, vaginal.vaginal)
+    }
+
     private fun patient(
         gravida: Long? = 1L,
         parity: Long? = 0L,

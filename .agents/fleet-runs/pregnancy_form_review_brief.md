@@ -1,0 +1,9 @@
+READ-ONLY REVIEW. Do not edit files. Repo is the cwd (Android EMR, Kotlin/Compose, safety-critical, level-3 clinical data validation). Review `git diff` against .agents/SPEC_PREGNANCY_FORM.md plus these owner follow-ups: stored deliveryBy/birthMethod must be PRESERVED unless the user explicitly picks a mode or changes the outcome to a loss/termination outcome; old rows with Hysterotomy under LiveBirth must survive an unrelated edit.
+Judge, citing path:line you verified:
+1. Data loss: can ANY edit path (form save, draft restore via DraftMapping, backup/restore, delete/undo adapter PreviousPregnancyDeleteAdapter) lose or silently change a stored outcome, outcomeText, deliveryBy, birthMethod, clinicianId or placeAndDoctor? The builder changed OUTCOME_METHOD_MISMATCH so that "birth method without a birth outcome" is only an error when an outcome is set: is that safe, or does it let invalid combinations into new rows?
+2. Is the mode/clinician/place rule in exactly ONE function and called (not copied) by builder, reducer, form, and draft loader? Any second copy of "Dr. Sherif Radwan" or the mode mapping?
+3. History readers (model/ObstetricHistory.kt, ui/patienthub/model/PastDeliveryRowModel.kt, print report) still count parity/caesareans correctly for new rows (CS -> Cesarean) and old rows?
+4. Tests (independent test review): does each oracle PF1..PF5 and the follow-up tests really fail against the old behaviour (not vacuous, not asserting the implementation's own output)? Any missing boundary: whitespace-only place, outcome blank, Hysterotomy as termination method, edit of old row with null place?
+5. UI at 360dp: no fixed widths, labels not truncated, testTags kept for remaining fields, androidTest AncWorkflowTest edits consistent (it was compiled but not run).
+6. Anything beyond the spec in the diff.
+Output: PASS or FAIL, then findings `path:line | BLOCKER/SHOULD/NIT | problem`, max 25 lines. Only claim what you verified.
