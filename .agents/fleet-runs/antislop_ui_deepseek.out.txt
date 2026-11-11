@@ -1,0 +1,758 @@
+[0m
+> build · deepseek-v4.1-flash-free
+I'll start by exploring the UI directory structure to understand the codebase.
+[0m$ [0mfind app/src/main/java/com/sherifradwan/ancnative/ui -name "*.kt" | wc -l; echo "---dirs---"; find app/src/main/java/com/sherifradwan/ancnative/ui -type d | sort
+62
+---dirs---
+app/src/main/java/com/sherifradwan/ancnative/ui
+app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs
+app/src/main/java/com/sherifradwan/ancnative/ui/report
+[0m$ [0mfind app/src/main/java/com/sherifradwan/ancnative/ui -name "*.kt" | sort | xargs wc -l | sort -rn | head -60
+20184 total
+    1302 app/src/main/java/com/sherifradwan/ancnative/ui/VisitEditor.kt
+    1278 app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+    1128 app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt
+     986 app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt
+     979 app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt
+     777 app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt
+     745 app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt
+     638 app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt
+     529 app/src/main/java/com/sherifradwan/ancnative/ui/DesignSystem.kt
+     523 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
+     486 app/src/main/java/com/sherifradwan/ancnative/ui/AppLockScreen.kt
+     448 app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt
+     443 app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt
+     396 app/src/main/java/com/sherifradwan/ancnative/ui/MedicationEditor.kt
+     396 app/src/main/java/com/sherifradwan/ancnative/ui/AddAttachmentDialog.kt
+     390 app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt
+     383 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/LabReportItem.kt
+     366 app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt
+     361 app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt
+     340 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
+     333 app/src/main/java/com/sherifradwan/ancnative/ui/DeliveryNotesParser.kt
+     325 app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt
+     314 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt
+     307 app/src/main/java/com/sherifradwan/ancnative/ui/InAppCameraDialog.kt
+     296 app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt
+     294 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/AttachmentsSectionCard.kt
+     291 app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt
+     268 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/VisitsTab.kt
+     266 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/BedsideVitalsGrid.kt
+     264 app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientActionsModalSheet.kt
+     260 app/src/main/java/com/sherifradwan/ancnative/ui/PreviousPregnancyEditor.kt
+     257 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationTapToAddSection.kt
+     253 app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt
+     249 app/src/main/java/com/sherifradwan/ancnative/ui/OtherHistoriesEditor.kt
+     234 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/ScansTab.kt
+     222 app/src/main/java/com/sherifradwan/ancnative/ui/VaultGateScreen.kt
+     220 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt
+     214 app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt
+     211 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt
+     188 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt
+     169 app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt
+     154 app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt
+     151 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationCard.kt
+     151 app/src/main/java/com/sherifradwan/ancnative/ui/AncDatePicker.kt
+     135 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/BiometryGrid.kt
+     130 app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt
+     129 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PastDeliveryMicroRow.kt
+     128 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/LabsTab.kt
+     126 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+     113 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/LabReportGrouping.kt
+      88 app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalPresets.kt
+      82 app/src/main/java/com/sherifradwan/ancnative/ui/TimelineSpine.kt
+      70 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalGroupSection.kt
+      66 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/PastDeliveryRowModel.kt
+      64 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/BedsideVitalsUi.kt
+      59 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt
+      47 app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintManager.kt
+      43 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PencilEditButton.kt
+      40 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/BiometryUi.kt
+> build · deepseek-v4.1-flash-free
+Let me read the design system and theme first to establish the token baseline.
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/DesignSystem.kt 
+> build · deepseek-v4.1-flash-free
+Now let me read the patienthub components and tabs.
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/BiometryGrid.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/BedsideVitalsGrid.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/ScansTab.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/LabsTab.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/VisitsTab.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationCard.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/LabReportItem.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationTapToAddSection.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/AttachmentsSectionCard.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalGroupSection.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PencilEditButton.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PastDeliveryMicroRow.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/BedsideVitalsUi.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientActionsModalSheet.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/VisitEditor.kt [90m[limit=700][0m
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/VisitEditor.kt [90m[offset=701][0m
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/AncDatePicker.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/AppLockScreen.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/VaultGateScreen.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/TimelineSpine.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/MedicationEditor.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt [90m[limit=400][0m
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt [90m[offset=401][0m
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt [90m[limit=500][0m
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt 
+> build · deepseek-v4.1-flash-free
+I'll continue by reading the remaining UI files, then verify findings with exact line numbers.
+[0m⚙ [0mexecute {"code":"const r = await tools.shell({command: \"find app/src/main/java/com/sherifradwan/ancnative/ui -name '*.kt' ! -path '*/report/*' | xargs wc -l | sort -rn | head -70\"});\nreturn r.output ?? r;"} 
+> build · deepseek-v4.1-flash-free
+[0m⚙ [0mexecute {"code":"const r = search({query: \"shell\", limit: 10});\nreturn r;"} 
+> build · deepseek-v4.1-flash-free
+[0m$ [0mfind app/src/main/java/com/sherifradwan/ancnative/ui -name '*.kt' ! -path '*/report/*' | xargs wc -l | sort -rn
+18634 total
+    1302 app/src/main/java/com/sherifradwan/ancnative/ui/VisitEditor.kt
+    1128 app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt
+     986 app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt
+     979 app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt
+     777 app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt
+     745 app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt
+     638 app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt
+     529 app/src/main/java/com/sherifradwan/ancnative/ui/DesignSystem.kt
+     523 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
+     486 app/src/main/java/com/sherifradwan/ancnative/ui/AppLockScreen.kt
+     448 app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt
+     443 app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt
+     396 app/src/main/java/com/sherifradwan/ancnative/ui/MedicationEditor.kt
+     396 app/src/main/java/com/sherifradwan/ancnative/ui/AddAttachmentDialog.kt
+     390 app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt
+     383 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/LabReportItem.kt
+     366 app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt
+     361 app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt
+     340 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
+     333 app/src/main/java/com/sherifradwan/ancnative/ui/DeliveryNotesParser.kt
+     325 app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt
+     314 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt
+     307 app/src/main/java/com/sherifradwan/ancnative/ui/InAppCameraDialog.kt
+     296 app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt
+     294 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/AttachmentsSectionCard.kt
+     291 app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt
+     268 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/VisitsTab.kt
+     266 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/BedsideVitalsGrid.kt
+     264 app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientActionsModalSheet.kt
+     260 app/src/main/java/com/sherifradwan/ancnative/ui/PreviousPregnancyEditor.kt
+     257 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationTapToAddSection.kt
+     253 app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt
+     249 app/src/main/java/com/sherifradwan/ancnative/ui/OtherHistoriesEditor.kt
+     234 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/ScansTab.kt
+     222 app/src/main/java/com/sherifradwan/ancnative/ui/VaultGateScreen.kt
+     220 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt
+     211 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt
+     188 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt
+     169 app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt
+     154 app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt
+     151 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationCard.kt
+     151 app/src/main/java/com/sherifradwan/ancnative/ui/AncDatePicker.kt
+     135 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/BiometryGrid.kt
+     130 app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt
+     129 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PastDeliveryMicroRow.kt
+     128 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/LabsTab.kt
+     126 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+     113 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/LabReportGrouping.kt
+      88 app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalPresets.kt
+      82 app/src/main/java/com/sherifradwan/ancnative/ui/TimelineSpine.kt
+      70 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalGroupSection.kt
+      66 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/PastDeliveryRowModel.kt
+      64 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/BedsideVitalsUi.kt
+      59 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt
+      43 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PencilEditButton.kt
+      40 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/BiometryUi.kt
+      40 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubTab.kt
+      28 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/MedicationTiles.kt
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/AddAttachmentDialog.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/InAppCameraDialog.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/PreviousPregnancyEditor.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt [90m[offset=440, limit=550][0m
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd app/src/main/java/com/sherifradwan/ancnative/ui && grep -rn "Color(0x" --include=*.kt . | grep -v '/report/'
+zsh:1: no matches found: --include=*.kt
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd app/src/main/java/com/sherifradwan/ancnative/ui && grep -rn "Color(0x" --include='*.kt' . | grep -v '/report/'
+./Theme.kt:23:val ClinicalNavy = Color(0xFF0D1B3D)
+./Theme.kt:24:val ClinicalIvory = Color(0xFFFBF8F5)
+./Theme.kt:25:val ClinicalRose = Color(0xFFD49AA0)
+./Theme.kt:26:val ActionRose = Color(0xFF934F5B)
+./Theme.kt:27:val ClinicalTeal = Color(0xFF176B70)
+./Theme.kt:30:val TagObstetricBg = Color(0xFFF3E8FF)
+./Theme.kt:31:val TagObstetricBorder = Color(0xFFDDD6FE)
+./Theme.kt:32:val TagObstetricText = Color(0xFF6B21A8)
+./Theme.kt:34:val TagGestationalAgeBg = Color(0xFFE0F2FE)
+./Theme.kt:35:val TagGestationalAgeBorder = Color(0xFFBAE6FD)
+./Theme.kt:36:val TagGestationalAgeText = Color(0xFF0369A1)
+./Theme.kt:38:val TagBloodPositiveBg = Color(0xFFEFF6FF)
+./Theme.kt:39:val TagBloodPositiveBorder = Color(0xFFBFDBFE)
+./Theme.kt:40:val TagBloodPositiveText = Color(0xFF1D4ED8)
+./Theme.kt:42:val TagBloodNegativeBg = Color(0xFFFFE4E6)
+./Theme.kt:43:val TagBloodNegativeBorder = Color(0xFFFECDD3)
+./Theme.kt:44:val TagBloodNegativeText = Color(0xFFBE123C)
+./Theme.kt:46:val TagBloodNeutralBg = Color(0xFFF1F5F9)
+./Theme.kt:47:val TagBloodNeutralBorder = Color(0xFFCBD5E1)
+./Theme.kt:48:val TagBloodNeutralText = Color(0xFF334155)
+./Theme.kt:50:val TagAttentionBg = Color(0xFFFEF3C7)
+./Theme.kt:51:val TagAttentionBorder = Color(0xFFFDE68A)
+./Theme.kt:52:val TagAttentionIcon = Color(0xFFB45309)
+./Theme.kt:53:val TagAttentionText = Color(0xFF92400E)
+./Theme.kt:55:val TagHighRiskBg = Color(0xFFFEE2E2)
+./Theme.kt:56:val TagHighRiskBorder = Color(0xFFFCA5A5)
+./Theme.kt:57:val TagHighRiskText = Color(0xFFB91C1C)
+./Theme.kt:59:val TagNormalRiskBg = Color(0xFFDCFCE7)
+./Theme.kt:60:val TagNormalRiskBorder = Color(0xFF86EFAC)
+./Theme.kt:61:val TagNormalRiskText = Color(0xFF166534)
+./Theme.kt:64:val TagAgeBg = Color(0xFFE0E7FF)
+./Theme.kt:65:val TagAgeBorder = Color(0xFFA5B4FC)
+./Theme.kt:66:val TagAgeText = Color(0xFF3730A3)
+./Theme.kt:67:val TagAgeLabelBg = Color(0xFF4F46E5)
+./Theme.kt:68:val TagAgeLabelText = Color(0xFFFFFFFF)
+./Theme.kt:71:val DeliveryHospitalBg = Color(0xFFF3E8FF)
+./Theme.kt:72:val DeliveryHospitalBorder = Color(0xFFD8B4FE)
+./Theme.kt:73:val DeliveryHospitalText = Color(0xFF6B21A8)
+./Theme.kt:74:val DeliveryFeeBg = Color(0xFFDCFCE7)
+./Theme.kt:75:val DeliveryFeeBorder = Color(0xFF86EFAC)
+./Theme.kt:76:val DeliveryFeeText = Color(0xFF166534)
+./Theme.kt:77:val DeliveryPlanBg = Color(0xFFE0F2FE)
+./Theme.kt:78:val DeliveryPlanBorder = Color(0xFF7DD3FC)
+./Theme.kt:79:val DeliveryPlanText = Color(0xFF075985)
+./Theme.kt:80:val DeliveryPostpartumBg = Color(0xFFFCE7F3)
+./Theme.kt:81:val DeliveryPostpartumBorder = Color(0xFFF9A8D4)
+./Theme.kt:82:val DeliveryPostpartumText = Color(0xFF9D174D)
+./Theme.kt:85:val TagObstetricDarkBg = Color(0xFF2E1065)
+./Theme.kt:86:val TagObstetricDarkBorder = Color(0xFF581C87)
+./Theme.kt:87:val TagObstetricDarkText = Color(0xFFE9D5FF)
+./Theme.kt:89:val TagGestationalAgeDarkBg = Color(0xFF082F49)
+./Theme.kt:90:val TagGestationalAgeDarkBorder = Color(0xFF075985)
+./Theme.kt:91:val TagGestationalAgeDarkText = Color(0xFFBAE6FD)
+./Theme.kt:93:val TagBloodPositiveDarkBg = Color(0xFF172554)
+./Theme.kt:94:val TagBloodPositiveDarkBorder = Color(0xFF1E40AF)
+./Theme.kt:95:val TagBloodPositiveDarkText = Color(0xFFBFDBFE)
+./Theme.kt:97:val TagBloodNegativeDarkBg = Color(0xFF4C0519)
+./Theme.kt:98:val TagBloodNegativeDarkBorder = Color(0xFF9F1239)
+./Theme.kt:99:val TagBloodNegativeDarkText = Color(0xFFFECDD3)
+./Theme.kt:101:val TagBloodNeutralDarkBg = Color(0xFF1E293B)
+./Theme.kt:102:val TagBloodNeutralDarkBorder = Color(0xFF334155)
+./Theme.kt:103:val TagBloodNeutralDarkText = Color(0xFFCBD5E1)
+./Theme.kt:105:val TagAttentionDarkBg = Color(0xFF451A03)
+./Theme.kt:106:val TagAttentionDarkBorder = Color(0xFF78350F)
+./Theme.kt:107:val TagAttentionDarkIcon = Color(0xFFF59E0B)
+./Theme.kt:108:val TagAttentionDarkText = Color(0xFFFDE68A)
+./Theme.kt:110:val TagHighRiskDarkBg = Color(0xFF450A0A)
+./Theme.kt:111:val TagHighRiskDarkBorder = Color(0xFF991B1B)
+./Theme.kt:112:val TagHighRiskDarkText = Color(0xFFFCA5A5)
+./Theme.kt:114:val TagNormalRiskDarkBg = Color(0xFF052E16)
+./Theme.kt:115:val TagNormalRiskDarkBorder = Color(0xFF166534)
+./Theme.kt:116:val TagNormalRiskDarkText = Color(0xFF86EFAC)
+./Theme.kt:118:val TagAgeDarkBg = Color(0xFF1E1B4B)
+./Theme.kt:119:val TagAgeDarkBorder = Color(0xFF3730A3)
+./Theme.kt:120:val TagAgeDarkText = Color(0xFFC7D2FE)
+./Theme.kt:121:val TagAgeLabelDarkBg = Color(0xFF4F46E5)
+./Theme.kt:123:val DeliveryHospitalDarkBg = Color(0xFF2E1065)
+./Theme.kt:124:val DeliveryHospitalDarkBorder = Color(0xFF6B21A8)
+./Theme.kt:125:val DeliveryHospitalDarkText = Color(0xFFE9D5FF)
+./Theme.kt:126:val DeliveryFeeDarkBg = Color(0xFF052E16)
+./Theme.kt:127:val DeliveryFeeDarkBorder = Color(0xFF166534)
+./Theme.kt:128:val DeliveryFeeDarkText = Color(0xFF86EFAC)
+./Theme.kt:129:val DeliveryPlanDarkBg = Color(0xFF082F49)
+./Theme.kt:130:val DeliveryPlanDarkBorder = Color(0xFF075985)
+./Theme.kt:131:val DeliveryPlanDarkText = Color(0xFFBAE6FD)
+./Theme.kt:132:val DeliveryPostpartumDarkBg = Color(0xFF500724)
+./Theme.kt:133:val DeliveryPostpartumDarkBorder = Color(0xFF9D174D)
+./Theme.kt:134:val DeliveryPostpartumDarkText = Color(0xFFFBCFE8)
+./Theme.kt:142:    val DatingBg = Color(0xFFF0F9FF)
+./Theme.kt:143:    val DatingBorder = Color(0xFFBAE6FD)
+./Theme.kt:144:    val DatingAccent = Color(0xFF0369A1)
+./Theme.kt:145:    val DatingText = Color(0xFF0369A1)
+./Theme.kt:146:    val DatingDarkBg = Color(0xFF082F49)
+./Theme.kt:147:    val DatingDarkBorder = Color(0xFF075985)
+./Theme.kt:148:    val DatingDarkAccent = Color(0xFF7DD3FC)
+./Theme.kt:149:    val DatingDarkText = Color(0xFFBAE6FD)
+./Theme.kt:152:    val ParityBg = Color(0xFFFAF5FF)
+./Theme.kt:153:    val ParityBorder = Color(0xFFE9D5FF)
+./Theme.kt:154:    val ParityAccent = Color(0xFF7E22CE)
+./Theme.kt:155:    val ParityText = Color(0xFF7E22CE)
+./Theme.kt:156:    val ParityDarkBg = Color(0xFF2E1065)
+./Theme.kt:157:    val ParityDarkBorder = Color(0xFF581C87)
+./Theme.kt:158:    val ParityDarkAccent = Color(0xFFD8B4FE)
+./Theme.kt:159:    val ParityDarkText = Color(0xFFE9D5FF)
+./Theme.kt:162:    val ScanBg = Color(0xFFF0FDFA)
+./Theme.kt:163:    val ScanBorder = Color(0xFF99F6E4)
+./Theme.kt:164:    val ScanAccent = Color(0xFF0F766E)
+./Theme.kt:165:    val ScanText = Color(0xFF0F766E)
+./Theme.kt:166:    val ScanDarkBg = Color(0xFF042F2E)
+./Theme.kt:167:    val ScanDarkBorder = Color(0xFF115E59)
+./Theme.kt:168:    val ScanDarkAccent = Color(0xFF5EEAD4)
+./Theme.kt:169:    val ScanDarkText = Color(0xFF99F6E4)
+./Theme.kt:172:    val CriticalBg = Color(0xFFFEF2F2)
+./Theme.kt:173:    val CriticalBorder = Color(0xFFFCA5A5)
+./Theme.kt:174:    val CriticalAccent = Color(0xFFB91C1C)
+./Theme.kt:175:    val CriticalText = Color(0xFFB91C1C)
+./Theme.kt:176:    val CriticalDarkBg = Color(0xFF450A0A)
+./Theme.kt:177:    val CriticalDarkBorder = Color(0xFF991B1B)
+./Theme.kt:178:    val CriticalDarkAccent = Color(0xFFFCA5A5)
+./Theme.kt:179:    val CriticalDarkText = Color(0xFFFECDD3)
+./Theme.kt:182:    val WarningBg = Color(0xFFFFFBEB)
+./Theme.kt:183:    val WarningBorder = Color(0xFFFDE68A)
+./Theme.kt:184:    val WarningAccent = Color(0xFFB45309)
+./Theme.kt:185:    val WarningText = Color(0xFFB45309)
+./Theme.kt:186:    val WarningDarkBg = Color(0xFF451A03)
+./Theme.kt:187:    val WarningDarkBorder = Color(0xFF78350F)
+./Theme.kt:188:    val WarningDarkAccent = Color(0xFFF59E0B)
+./Theme.kt:189:    val WarningDarkText = Color(0xFFFDE68A)
+./Theme.kt:192:    val AllergyBg = Color(0xFFFFF7ED)
+./Theme.kt:193:    val AllergyBorder = Color(0xFFFDBA74)
+./Theme.kt:194:    val AllergyAccent = Color(0xFFC2410C)
+./Theme.kt:195:    val AllergyText = Color(0xFFC2410C)
+./Theme.kt:196:    val AllergyDarkBg = Color(0xFF431407)
+./Theme.kt:197:    val AllergyDarkBorder = Color(0xFF9A3412)
+./Theme.kt:198:    val AllergyDarkAccent = Color(0xFFFB923C)
+./Theme.kt:199:    val AllergyDarkText = Color(0xFFFDBA74)
+./Theme.kt:212:    primaryContainer = Color(0xFFD6DFFF),
+./Theme.kt:213:    onPrimaryContainer = Color(0xFF041334),
+./Theme.kt:216:    secondaryContainer = Color(0xFFFFD9DE),
+./Theme.kt:217:    onSecondaryContainer = Color(0xFF3B0815),
+./Theme.kt:220:    tertiaryContainer = Color(0xFFAFECEE),
+./Theme.kt:221:    onTertiaryContainer = Color(0xFF002021),
+./Theme.kt:226:    surfaceVariant = Color(0xFFF3E9E7),
+./Theme.kt:227:    onSurfaceVariant = Color(0xFF4C3F43),
+./Theme.kt:229:    surfaceContainerLow = Color(0xFFF9F5F3),
+./Theme.kt:230:    surfaceContainer = Color(0xFFF4EFEA),
+./Theme.kt:231:    surfaceContainerHigh = Color(0xFFEFE9E4),
+./Theme.kt:232:    surfaceContainerHighest = Color(0xFFE9E2DD),
+./Theme.kt:233:    error = Color(0xFFBA1A1A),
+./Theme.kt:235:    errorContainer = Color(0xFFFFDAD6),
+./Theme.kt:236:    onErrorContainer = Color(0xFF410002),
+./Theme.kt:237:    outline = Color(0xFF79747E),
+./Theme.kt:238:    outlineVariant = Color(0xFFCAC4D0),
+./Theme.kt:242:    primary = Color(0xFFB4C5FF),
+./Theme.kt:243:    onPrimary = Color(0xFF002A78),
+./Theme.kt:244:    primaryContainer = Color(0xFF183F91),
+./Theme.kt:245:    onPrimaryContainer = Color(0xFFDCE1FF),
+./Theme.kt:246:    secondary = Color(0xFFFFB2BC),
+./Theme.kt:247:    onSecondary = Color(0xFF5A1826),
+./Theme.kt:248:    secondaryContainer = Color(0xFF762E3B),
+./Theme.kt:249:    onSecondaryContainer = Color(0xFFFFD9DE),
+./Theme.kt:250:    tertiary = Color(0xFF70D7D9),
+./Theme.kt:251:    onTertiary = Color(0xFF003738),
+./Theme.kt:252:    tertiaryContainer = Color(0xFF004F50),
+./Theme.kt:253:    onTertiaryContainer = Color(0xFF8CF3F5),
+./Theme.kt:254:    background = Color(0xFF0E121B),
+./Theme.kt:255:    onBackground = Color(0xFFE2E2EA),
+./Theme.kt:256:    surface = Color(0xFF1A202E),
+./Theme.kt:257:    onSurface = Color(0xFFE2E2EA),
+./Theme.kt:258:    surfaceVariant = Color(0xFF262E40),
+./Theme.kt:259:    onSurfaceVariant = Color(0xFFCDC3C6),
+./Theme.kt:260:    surfaceContainerLowest = Color(0xFF090C13),
+./Theme.kt:261:    surfaceContainerLow = Color(0xFF141924),
+./Theme.kt:262:    surfaceContainer = Color(0xFF1E2638),
+./Theme.kt:263:    surfaceContainerHigh = Color(0xFF283248),
+./Theme.kt:264:    surfaceContainerHighest = Color(0xFF323D56),
+./Theme.kt:265:    error = Color(0xFFFFB4AB),
+./Theme.kt:266:    onError = Color(0xFF690005),
+./Theme.kt:267:    errorContainer = Color(0xFF5C141D),
+./Theme.kt:268:    onErrorContainer = Color(0xFFFFDAD6),
+./Theme.kt:269:    outline = Color(0xFF8E95A5),
+./Theme.kt:270:    outlineVariant = Color(0xFF3A4459),
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd app/src/main/java/com/sherifradwan/ancnative/ui && grep -rn "Color\.\(Black\|White\|Gray\|LightGray\|Red\|Green\|Yellow\)" --include='*.kt' . | grep -v '/report/'
+./AddAttachmentDialog.kt:340:                                color = Color.Black.copy(alpha = 0.75f),
+./AddAttachmentDialog.kt:345:                                    color = Color.White,
+./AddAttachmentDialog.kt:352:                                color = Color.Black.copy(alpha = 0.75f),
+./AddAttachmentDialog.kt:361:                                    color = Color.White,
+./Theme.kt:211:    onPrimary = Color.White,
+./Theme.kt:215:    onSecondary = Color.White,
+./Theme.kt:219:    onTertiary = Color.White,
+./Theme.kt:224:    surface = Color.White,
+./Theme.kt:228:    surfaceContainerLowest = Color.White,
+./Theme.kt:234:    onError = Color.White,
+./InAppCameraDialog.kt:193:        Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+./InAppCameraDialog.kt:204:                            color = Color.White,
+./InAppCameraDialog.kt:232:                                CircularProgressIndicator(color = Color.White)
+./InAppCameraDialog.kt:242:                            ) { Text(stringResource(R.string.camera_retake), color = Color.White) }
+./InAppCameraDialog.kt:271:                            color = Color.White,
+./InAppCameraDialog.kt:278:                            color = Color.White,
+./InAppCameraDialog.kt:287:                                .background(if (capturing) Color.Gray else Color.White)
+./InAppCameraDialog.kt:304:        border = BorderStroke(1.dp, Color.White),
+./InAppCameraDialog.kt:306:    ) { Text(stringResource(R.string.camera_close), color = Color.White) }
+./ClinicalAttachmentViewerDialog.kt:191:                        .background(Color.Black)
+./ClinicalAttachmentViewerDialog.kt:214:                                tint = Color.Gray,
+./ClinicalAttachmentViewerDialog.kt:220:                                color = Color.LightGray,
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd app/src/main/java/com/sherifradwan/ancnative/ui && grep -rn "size(\([1-3][0-9]\|4[0-7]\)\.dp)" --include='*.kt' . | grep -v '/report/'
+./CatalogSettingsSections.kt:125:                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+./CatalogSettingsSections.kt:134:                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+./CatalogSettingsSections.kt:262:                                            modifier = Modifier.size(20.dp),
+./CatalogSettingsSections.kt:276:                                            modifier = Modifier.size(20.dp),
+./CatalogSettingsSections.kt:343:                                            modifier = Modifier.size(20.dp),
+./CatalogSettingsSections.kt:385:            Icon(Icons.Default.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
+./CatalogSettingsSections.kt:701:                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(16.dp)) },
+./CatalogSettingsSections.kt:821:                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+./CatalogSettingsSections.kt:924:                                    modifier = Modifier.size(20.dp),
+./CatalogSettingsSections.kt:938:            Icon(Icons.Default.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
+./DesignSystem.kt:130:                modifier = Modifier.size(20.dp),
+./DesignSystem.kt:181:                    modifier = Modifier.size(20.dp),
+./DesignSystem.kt:445:                    modifier = Modifier.size(16.dp),
+./DesignSystem.kt:522:                    modifier = Modifier.size(20.dp),
+./UltrasoundPhotoViewerDialog.kt:125:                            modifier = Modifier.size(38.dp),
+./UltrasoundPhotoViewerDialog.kt:132:                                    modifier = Modifier.size(20.dp),
+./MedicationEditor.kt:233:                                modifier = Modifier.size(16.dp),
+./MedicationEditor.kt:386:                modifier = Modifier.size(16.dp),
+./VaultGateScreen.kt:109:                        modifier = Modifier.size(36.dp),
+./VaultGateScreen.kt:138:                    Icon(Icons.Default.Security, contentDescription = null, modifier = Modifier.size(20.dp))
+./VaultGateScreen.kt:150:                    Icon(Icons.Default.Fingerprint, contentDescription = null, modifier = Modifier.size(22.dp))
+./VaultGateScreen.kt:162:                    Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(20.dp))
+./AncApp.kt:156:                                modifier = Modifier.size(34.dp),
+./AppLockScreen.kt:299:                            .size(16.dp)
+./AppLockScreen.kt:404:                                modifier = Modifier.size(28.dp),
+./AppLockScreen.kt:428:                                modifier = Modifier.size(22.dp),
+./AppLockScreen.kt:446:                        modifier = Modifier.size(18.dp),
+./SecuritySettingsDialog.kt:166:                            modifier = Modifier.size(46.dp),
+./SecuritySettingsDialog.kt:172:                                    modifier = Modifier.size(42.dp),
+./SecuritySettingsDialog.kt:614:                                    Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(16.dp))
+./SecuritySettingsDialog.kt:625:                                    Icon(Icons.Default.Security, contentDescription = null, modifier = Modifier.size(16.dp))
+./SecuritySettingsDialog.kt:643:                        Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
+./Components.kt:127:                                    modifier = Modifier.size(20.dp),
+./Components.kt:161:                                        modifier = Modifier.size(20.dp),
+./Components.kt:175:                                        modifier = Modifier.size(20.dp),
+./Components.kt:293:                                    modifier = Modifier.size(18.dp),
+./PatientListScreen.kt:248:                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+./PreviousPregnancyEditor.kt:243:                modifier = Modifier.size(16.dp),
+./VisitEditor.kt:1202:                modifier = Modifier.size(16.dp),
+./DeleteUndoUi.kt:90:            modifier = Modifier.size(20.dp),
+./DeleteUndoUi.kt:240:                    modifier = Modifier.size(20.dp).semantics { contentDescription = progressDescription },
+./AddAttachmentDialog.kt:249:                                    modifier = Modifier.size(36.dp),
+./AddAttachmentDialog.kt:291:                                    modifier = Modifier.size(36.dp),
+./ClinicalAttachmentViewerDialog.kt:125:                            modifier = Modifier.size(40.dp),
+./ClinicalAttachmentViewerDialog.kt:132:                                    modifier = Modifier.size(20.dp),
+./ClinicalAttachmentViewerDialog.kt:250:                                    modifier = Modifier.size(16.dp),
+./patientdirectory/PatientActionsModalSheet.kt:126:                            Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+./patientdirectory/PatientActionsModalSheet.kt:156:                        Icon(Icons.Default.FolderOpen, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+./patientdirectory/PatientActionsModalSheet.kt:192:                            Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+./patientdirectory/PatientActionsModalSheet.kt:232:                            modifier = Modifier.size(20.dp),
+./patientdirectory/PatientDirectoryCard.kt:155:                                modifier = Modifier.size(20.dp),
+./PatientEditor.kt:398:                modifier = Modifier.size(16.dp),
+./ClinicalBadges.kt:244:                    modifier = Modifier.size(14.dp),
+./LabBatchScreen.kt:372:                                            modifier = Modifier.size(16.dp),
+./LabBatchScreen.kt:396:                                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
+./LabBatchScreen.kt:431:                                                modifier = Modifier.size(24.dp),
+./LabBatchScreen.kt:733:                            .size(32.dp)
+./LabBatchScreen.kt:739:                            modifier = Modifier.size(26.dp),
+./LabBatchScreen.kt:879:                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+./patienthub/tabs/LabsTab.kt:78:                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+./patienthub/tabs/ScansTab.kt:103:                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+./patienthub/tabs/MedsTab.kt:110:                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+./patienthub/tabs/VisitsTab.kt:95:                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+./patienthub/tabs/VisitsTab.kt:212:                                        modifier = Modifier.size(18.dp),
+./patienthub/PatientHubHeader.kt:223:                                        modifier = Modifier.size(20.dp),
+./patienthub/PatientHubHeader.kt:236:                                    modifier = Modifier.size(20.dp),
+./patienthub/PatientHubHeader.kt:247:                                    modifier = Modifier.size(20.dp),
+./patienthub/PatientHubHeader.kt:377:                                        modifier = Modifier.size(20.dp),
+./patienthub/PatientHubHeader.kt:423:                                    modifier = Modifier.size(16.dp),
+./patienthub/PatientHubHeader.kt:504:                modifier = Modifier.size(16.dp),
+./patienthub/PatientHubHeader.kt:519:                modifier = Modifier.size(18.dp),
+./patienthub/components/ClinicalAttentionBanner.kt:160:                            modifier = Modifier.size(16.dp),
+./patienthub/components/ClinicalAttentionBanner.kt:178:                            modifier = Modifier.size(16.dp),
+./patienthub/components/AttachmentsSectionCard.kt:99:                        modifier = Modifier.size(20.dp),
+./patienthub/components/AttachmentsSectionCard.kt:114:                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+./patienthub/components/AttachmentsSectionCard.kt:277:                                                modifier = Modifier.size(12.dp),
+./patienthub/components/ClinicalGroupSection.kt:48:                    .size(24.dp)
+./patienthub/components/ClinicalGroupSection.kt:52:                Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(16.dp))
+./patienthub/components/MedicationCard.kt:83:                        modifier = Modifier.size(20.dp),
+./patienthub/components/MedicationCard.kt:112:                                modifier = Modifier.size(20.dp),
+./patienthub/components/MedicationCard.kt:128:                                modifier = Modifier.size(20.dp),
+./patienthub/components/LabReportItem.kt:147:                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+./patienthub/components/LabReportItem.kt:192:                                            modifier = Modifier.size(18.dp),
+./patienthub/components/LabReportItem.kt:377:                        modifier = Modifier.size(18.dp),
+./patienthub/components/MedicationTapToAddSection.kt:248:                                    modifier = Modifier.size(20.dp),
+./patienthub/components/PencilEditButton.kt:39:                modifier = Modifier.size(20.dp),
+./patienthub/components/OverviewSections.kt:55:        Icon(icon, contentDescription = description, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+./patienthub/components/OverviewSections.kt:126:            Icon(Icons.Default.Warning, contentDescription = null, tint = accent, modifier = Modifier.size(16.dp))
+./patienthub/components/DeliveryPlanningCard.kt:82:                        modifier = Modifier.size(20.dp),
+./patienthub/components/DeliveryPlanningCard.kt:103:                            modifier = Modifier.size(20.dp),
+./LabEditor.kt:738:                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+./LabEditor.kt:767:                modifier = Modifier.size(16.dp),
+./UltrasoundEditor.kt:567:                    modifier = Modifier.size(16.dp),
+./UltrasoundEditor.kt:656:                            Icon(Icons.Default.PhotoCamera, contentDescription = null, modifier = Modifier.size(16.dp))
+./UltrasoundEditor.kt:670:                            Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, modifier = Modifier.size(16.dp))
+./OtherHistoriesEditor.kt:232:                modifier = Modifier.size(16.dp),
+./DatingEditor.kt:308:                modifier = Modifier.size(16.dp),
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalGroupSection.kt 
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd app/src/main/java/com/sherifradwan/ancnative/ui && grep -rn "clickable" --include='*.kt' . | grep -v '/report/'
+./CatalogSettingsSections.kt:4:import androidx.compose.foundation.clickable
+./DesignSystem.kt:5:import androidx.compose.foundation.clickable
+./DesignSystem.kt:99:            .clickable(onClick = onClick)
+./DesignSystem.kt:253:                    .clickable(
+./DesignSystem.kt:396:            .clickable(onClick = onChangeClick)
+./UltrasoundPhotoViewerDialog.kt:12:import androidx.compose.foundation.clickable
+./UltrasoundPhotoViewerDialog.kt:224:                                        .clickable { currentIndex = idx },
+./AppLockScreen.kt:11:import androidx.compose.foundation.clickable
+./AppLockScreen.kt:390:                            .clickable(
+./AppLockScreen.kt:421:                            .clickable(role = Role.Button) { handleBackspace() },
+./AppLockScreen.kt:474:            .clickable(role = Role.Button) { onClick() },
+./SecuritySettingsDialog.kt:10:import androidx.compose.foundation.clickable
+./SecuritySettingsDialog.kt:284:                                        .clickable {
+./Components.kt:7:import androidx.compose.foundation.clickable
+./PatientListScreen.kt:6:import androidx.compose.foundation.clickable
+./AddAttachmentDialog.kt:10:import androidx.compose.foundation.clickable
+./AddAttachmentDialog.kt:235:                                .clickable { showCamera = true }
+./AddAttachmentDialog.kt:273:                                .clickable {
+./AddAttachmentDialog.kt:341:                                modifier = Modifier.clickable { showCamera = true },
+./AddAttachmentDialog.kt:353:                                modifier = Modifier.clickable {
+./InAppCameraDialog.kt:19:import androidx.compose.foundation.clickable
+./InAppCameraDialog.kt:288:                                .clickable(enabled = !capturing, onClickLabel = captureLabel) { takePhoto() }
+./ClinicalAttachmentViewerDialog.kt:6:import androidx.compose.foundation.clickable
+./patientdirectory/PatientActionsModalSheet.kt:4:import androidx.compose.foundation.clickable
+./patientdirectory/PatientActionsModalSheet.kt:103:                        .clickable {
+./patientdirectory/PatientActionsModalSheet.kt:139:                    .clickable {
+./patientdirectory/PatientActionsModalSheet.kt:169:                        .clickable {
+./patientdirectory/PatientActionsModalSheet.kt:205:                    .clickable {
+./patientdirectory/PatientDirectoryCard.kt:5:import androidx.compose.foundation.clickable
+./patientdirectory/PatientDirectoryCard.kt:89:            .clickable { onEvent(AncEvent.OpenWorkspace(patient.id)) },
+./PatientEditor.kt:4:import androidx.compose.foundation.clickable
+./PatientEditor.kt:593:                .clickable(enabled = enabled) { expanded = !expanded },
+./LabBatchScreen.kt:5:import androidx.compose.foundation.clickable
+./LabBatchScreen.kt:362:                                        .clickable {
+./LabBatchScreen.kt:418:                                                .clickable {
+./LabBatchScreen.kt:618:                            .clickable {
+./LabBatchScreen.kt:920:                                .clickable {
+./patienthub/tabs/ScansTab.kt:4:import androidx.compose.foundation.clickable
+./patienthub/tabs/ScansTab.kt:186:                                            .clickable { onViewPhotos(scan, idx) },
+./patienthub/PatientHubHeader.kt:8:import androidx.compose.foundation.clickable
+./patienthub/components/PastDeliveryMicroRow.kt:3:import androidx.compose.foundation.clickable
+./patienthub/components/PastDeliveryMicroRow.kt:73:            Modifier.clickable(onClickLabel = editLabel, onClick = onEdit).minimumTouchTarget().testTag("editPregnancy-${pregnancy.id}")
+./patienthub/components/ClinicalAttentionBanner.kt:5:import androidx.compose.foundation.clickable
+./patienthub/components/ClinicalAttentionBanner.kt:257:                                .clickable(
+./patienthub/components/AttachmentsSectionCard.kt:5:import androidx.compose.foundation.clickable
+./patienthub/components/AttachmentsSectionCard.kt:187:                                    .clickable { onViewAttachment(attachment) }
+./patienthub/components/MedicationCard.kt:4:import androidx.compose.foundation.clickable
+./patienthub/components/MedicationCard.kt:74:                        .clickable(onClick = onToggle)
+./patienthub/components/LabReportItem.kt:5:import androidx.compose.foundation.clickable
+./patienthub/components/LabReportItem.kt:176:                                        .clickable(
+./patienthub/components/LabReportItem.kt:321:            .clickable(enabled = canEdit, onClick = onEdit)
+./patienthub/components/MedicationTapToAddSection.kt:5:import androidx.compose.foundation.clickable
+./patienthub/components/MedicationTapToAddSection.kt:195:                            .clickable(role = Role.Button) {
+./patienthub/components/MedicationTapToAddSection.kt:196:                                if (!canStartEditor) return@clickable
+./LabEditor.kt:5:import androidx.compose.foundation.clickable
+./LabEditor.kt:134:            .clickable(enabled = enabled, onClick = onChange)
+./LabEditor.kt:607:                    .clickable(enabled = enabled) { onEvent(AncEvent.LabAbnormalChanged(!draft.values.isAbnormal)) }
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt 
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd app/src/main/java/com/sherifradwan/ancnative/ui && grep -rn "CircularProgressIndicator\|LinearProgressIndicator" --include='*.kt' . | grep -v '/report/'; echo "---EMPTY---"; grep -rn "\"No \|No .*yet\|is currently empty\|nothing" --include='*.kt' . | grep -v '/report/' | head -40
+./AncApp.kt:25:import androidx.compose.material3.CircularProgressIndicator
+./AncApp.kt:126:                            CircularProgressIndicator(
+./DeleteUndoUi.kt:17:import androidx.compose.material3.CircularProgressIndicator
+./DeleteUndoUi.kt:239:                CircularProgressIndicator(
+./InAppCameraDialog.kt:31:import androidx.compose.material3.CircularProgressIndicator
+./InAppCameraDialog.kt:232:                                CircularProgressIndicator(color = Color.White)
+---EMPTY---
+./CatalogSettingsSections.kt:189:                            text = if (searchQuery.isNotBlank()) "No matching results for: $searchQuery"
+./CatalogSettingsSections.kt:190:                            else "Lab test directory is currently empty.",
+./CatalogSettingsSections.kt:298:                            text = if (searchQuery.isNotBlank()) "No groups matching: $searchQuery"
+./CatalogSettingsSections.kt:299:                            else "No registered panels or profiles.",
+./CatalogSettingsSections.kt:850:                        text = if (searchQuery.isNotBlank()) "No matching results for: $searchQuery"
+./CatalogSettingsSections.kt:851:                        else "Medication list is currently empty.",
+./ClinicalFormat.kt:16:/** What the allergy field says: nothing entered, an explicit "none", or a real recorded allergy. */
+./PatientListScreen.kt:358:                                text = if (state.searchQuery.isNotBlank()) "No matching patients found" else "No patients in this category",
+./VisitEditor.kt:133:    val nothingLeftToFill = stringResource(R.string.nothing_left_to_fill)
+./VisitEditor.kt:757:                                nothingLeftToFill
+./VisitEditor.kt:1027:                                        text = stringResource(R.string.nothing_flagged),
+./DeleteUndoUi.kt:60:/** " (patient Name)", or nothing when the name is blank: the UI never shows "(patient )". */
+./DeleteUndoUi.kt:78:    // A type/record mismatch draws nothing instead of throwing while the screen is composed.
+./PatientEditor.kt:308:                                    text = "No prior pregnancies recorded (Primigravida)",
+./ClinicalBadges.kt:175: * Alert badge for abnormal blood pressure (Q87). Renders nothing when bpAlertResource is null.
+./patienthub/tabs/LabsTab.kt:94:                        text = "No records",
+./patienthub/tabs/ScansTab.kt:119:                        text = "No records",
+./patienthub/tabs/MedsTab.kt:126:                        text = "No records",
+./patienthub/tabs/VisitsTab.kt:111:                        text = "No records",
+./patienthub/components/AttachmentsSectionCard.kt:123:                    text = "No saved attachments or clinical images",
+./patienthub/components/AttachmentsSectionCard.kt:175:                        text = "No attachments in this selected category",
+./UltrasoundEditor.kt:161:        val reportDisplayText = liveReport.ifBlank { stringResource(R.string.ultrasound_nothing_chosen_yet) }
+./ClinicalPresets.kt:34:        "No pedal edema",
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/VisitsTab.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/LabsTab.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/ScansTab.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/DesignSystem.kt [90m[offset=60, limit=220][0m
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/DesignSystem.kt [90m[limit=250, offset=280][0m
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd app/src/main/java/com/sherifradwan/ancnative/ui && grep -rn "fun Modifier.minimumTouchTarget\|minimumTouchTarget" DesignSystem.kt; echo ---; grep -rn "minimumTouchTarget" --include='*.kt' . | grep -c .
+---
+98
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd app/src/main/java/com/sherifradwan/ancnative/ui && grep -rn "minimumTouchTarget" --include='*.kt' . | grep "fun " 
+./Components.kt:389:fun Modifier.minimumTouchTarget(): Modifier = sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd app/src/main/java/com/sherifradwan/ancnative/ui && grep -rn "infiniteRepeatable\|infiniteTransition\|animateFloat\|rememberInfiniteTransition" --include='*.kt' . | grep -v '/report/'; echo "---EMOJI---"; grep -rn "✓\|✔\|✕\|✖\|⚠\|▲\|◀\|▶\|🔥\|✅\|❌\|🩺\|👶\|💊\|📋\|📅\|⏰\|🔒\|➜\|→" --include='*.kt' . | grep -v '/report/'
+./AppLockScreen.kt:5:import androidx.compose.animation.core.animateFloatAsState
+./AppLockScreen.kt:296:                    val scale by animateFloatAsState(if (isFilled) 1.15f else 1.0f, label = "dotScale")
+---EMOJI---
+./VisitEditor.kt:707:                                    FhrLevel.NORMAL -> Triple("Normal baseline (110–160 bpm) ✓", ClinicalTeal, ClinicalTeal.copy(alpha = 0.12f))
+./VisitEditor.kt:708:                                    FhrLevel.BRADYCARDIA -> Triple("Bradycardia (<110 bpm) ⚠️", MaterialTheme.colorScheme.onErrorContainer, MaterialTheme.colorScheme.errorContainer)
+./VisitEditor.kt:709:                                    FhrLevel.TACHYCARDIA -> Triple("Tachycardia (>160 bpm) ⚠️", MaterialTheme.colorScheme.onErrorContainer, MaterialTheme.colorScheme.errorContainer)
+./LabBatchScreen.kt:444:                                        Text("Add Selected (${selectedTestNames.size} tests) ▶")
+./LabBatchScreen.kt:743:                                    text = "✕",
+./LabBatchScreen.kt:792:                                text = if (item.isAbnormal) "Abnormal ▲" else "Normal ✓",
+./LabBatchScreen.kt:846:                        Text("◀ " + stringResource(R.string.back_step))
+./LabBatchScreen.kt:861:                                stringResource(R.string.next_step) + " ▶"
+./LabBatchScreen.kt:945:                                        text = if (item.isAbnormal) "Abnormal ▲" else "Normal ✓",
+./patienthub/PatientHubHeader.kt:438:                                            text = if (hasTabAlert && tab == PatientHubTab.LABS) "$badgeCount▲" else "$badgeCount",
+./patienthub/components/BedsideVitalsGrid.kt:98:                                BpLevel.SEVERE -> "▲ Severe · Urgent ⚠️"
+./patienthub/components/BedsideVitalsGrid.kt:99:                                BpLevel.RAISED -> "▲ Raised · Recheck"
+./patienthub/components/BedsideVitalsGrid.kt:100:                                BpLevel.NORMAL -> "Normal ✓"
+./patienthub/components/BedsideVitalsGrid.kt:192:                                    FhrLevel.NORMAL -> Triple("110-160 normal ✓", normalText, normalBg)
+./patienthub/components/BedsideVitalsGrid.kt:193:                                    FhrLevel.BRADYCARDIA -> Triple("Bradycardia (<110) ⚠️", MaterialTheme.colorScheme.onErrorContainer, MaterialTheme.colorScheme.errorContainer)
+./patienthub/components/BedsideVitalsGrid.kt:194:                                    FhrLevel.TACHYCARDIA -> Triple("Tachycardia (>160) ⚠️", MaterialTheme.colorScheme.onErrorContainer, MaterialTheme.colorScheme.errorContainer)
+./patienthub/components/BedsideVitalsGrid.kt:243:                                    SfhConcordance.CONCORDANT -> Triple("Concordant ✓", normalText, normalBg)
+./patienthub/components/BedsideVitalsGrid.kt:244:                                    SfhConcordance.DISCREPANT_LARGE -> Triple("Large for dates ▲", MaterialTheme.colorScheme.onTertiaryContainer, MaterialTheme.colorScheme.tertiaryContainer)
+./patienthub/components/LabReportItem.kt:120:                                text = "${report.abnormalCount} ABNORMAL ▲",
+./patienthub/components/LabReportItem.kt:133:                                text = "ALL NORMAL ✓",
+./patienthub/components/LabReportItem.kt:359:                        text = "ABNORMAL ▲",
+./patienthub/model/LabReportGrouping.kt:28:                "ALL NORMAL ✓"
+./LabEditor.kt:110:                LabResultFlag.NORMAL -> "Normal ✓"
+./LabEditor.kt:111:                LabResultFlag.HIGH -> "High ▲"
+./UltrasoundEditor.kt:436:                    Text(if (biometryExpanded) "▲ Collapse" else "▼ Expand Biometry")
+./UltrasoundEditor.kt:640:                                            Text("✕", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+./OtherHistoriesEditor.kt:89:                    Text("✓ " + stringResource(R.string.fill_all_negative))
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt 
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd app/src/main/java/com/sherifradwan/ancnative && grep -rn "fun bpAlertResource\|fun bpLevel" --include='*.kt' . | head
+./ui/ClinicalFormat.kt:126:internal fun bpAlertResource(raw: String?): Int? = when (bpLevel(raw)) {
+./model/VisitVitals.kt:27:fun bpLevel(systolic: Int?, diastolic: Int?): BpLevel {
+./model/VisitVitals.kt:37:fun bpLevel(raw: String?): BpLevel {
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/model/VisitVitals.kt [90m[limit=70][0m
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/BedsideVitalsGrid.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/BiometryGrid.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/LabReportItem.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationCard.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/AttachmentsSectionCard.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationTapToAddSection.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PastDeliveryMicroRow.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PencilEditButton.kt 
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd app/src/main/java/com/sherifradwan/ancnative/ui && grep -rn "Icons.Default.Edit" --include='*.kt' . | grep -v '/report/'
+./CatalogSettingsSections.kt:259:                                            imageVector = Icons.Default.Edit,
+./patientdirectory/PatientActionsModalSheet.kt:192:                            Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+./patienthub/PatientHubHeader.kt:244:                                    Icons.Default.Edit,
+./patienthub/components/ClinicalAttentionBanner.kt:175:                            imageVector = Icons.Default.Edit,
+./patienthub/components/MedicationCard.kt:125:                                Icons.Default.Edit,
+./patienthub/components/PencilEditButton.kt:36:                Icons.Default.Edit,
+./patienthub/components/OverviewSections.kt:74:            { SectionIconAction(it, Icons.Default.Edit, stringResource(R.string.edit_dating), "editDating") }
+./patienthub/components/OverviewSections.kt:190:            { SectionIconAction(it, Icons.Default.Edit, stringResource(R.string.edit_patient), "editMedicalHistoryButton") }
+./patienthub/components/DeliveryPlanningCard.kt:100:                            Icons.Default.Edit,
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt [90m[offset=200, limit=45][0m
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd app/src/main/java/com/sherifradwan/ancnative/ui && grep -rn "ClinicalRose\|ClinicalTeal" --include='*.kt' . | grep -v '/report/' | grep -v Theme.kt
+./VisitEditor.kt:416:                                    color = ClinicalTeal.copy(alpha = 0.12f),
+./VisitEditor.kt:417:                                    border = BorderStroke(1.dp, ClinicalTeal.copy(alpha = 0.3f)),
+./VisitEditor.kt:429:                                            color = ClinicalTeal,
+./VisitEditor.kt:707:                                    FhrLevel.NORMAL -> Triple("Normal baseline (110–160 bpm) ✓", ClinicalTeal, ClinicalTeal.copy(alpha = 0.12f))
+./patienthub/tabs/ScansTab.kt:47:import com.sherifradwan.ancnative.ui.ClinicalTeal
+./patienthub/PatientHubHeader.kt:82:import com.sherifradwan.ancnative.ui.ClinicalTeal
+./patienthub/components/BiometryGrid.kt:21:import com.sherifradwan.ancnative.ui.ClinicalTeal
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd app/src/main/java/com/sherifradwan/ancnative/ui && grep -rn "\.width([0-9]\{3,\}" --include='*.kt' . | grep -v '/report/'; echo ---HEIGHT---; grep -rn "\.height([0-9]\{3,\}" --include='*.kt' . | grep -v '/report/'
+./DesignSystem.kt:320:                .width(140.dp)
+---HEIGHT---
+./UltrasoundPhotoViewerDialog.kt:170:                        .height(280.dp)
+./AddAttachmentDialog.kt:234:                                .height(120.dp)
+./AddAttachmentDialog.kt:272:                                .height(120.dp)
+./ClinicalAttachmentViewerDialog.kt:189:                        .height(380.dp)
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/OtherHistoriesEditor.kt 
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt 
+> build · deepseek-v4.1-flash-free
+[0m$ [0mcd app/src/main/java/com/sherifradwan/ancnative/ui && grep -rn "fun QuickPresetChips\|fun ChoiceGroup\|fun EditorPage\|fun EditorActions\|fun ClinicalDateField" --include='*.kt' . | grep -v '/report/'
+./AncDatePicker.kt:83:fun ClinicalDateField(
+./PatientEditor.kt:455:internal fun EditorPage(
+./PatientEditor.kt:513:private fun EditorPageHeader(title: String, subtitle: String, tag: String) {
+./PatientEditor.kt:533:internal fun ChoiceGroup(
+./PatientEditor.kt:620:internal fun EditorActions(
+./ClinicalPresets.kt:41:fun QuickPresetChips(
+> build · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalPresets.kt 
+> build · deepseek-v4.1-flash-free
+[91m[1mError: [0mFree usage limit reached. Free models work in OpenCode (https://opencode.ai); subscribe to OpenCode Go to keep going: https://opencode.ai/go

@@ -39,8 +39,9 @@ import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.state.AncEvent
-import com.sherifradwan.ancnative.ui.BpAlertLabel
+import com.sherifradwan.ancnative.ui.BpAlertChip
 import com.sherifradwan.ancnative.ui.ClinicalRiskBadge
+import com.sherifradwan.ancnative.ui.ClinicalTagBadge
 import com.sherifradwan.ancnative.ui.PatientDashboardRowProjection
 import com.sherifradwan.ancnative.ui.PatientRiskTier
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
@@ -111,12 +112,19 @@ fun PatientDirectoryCard(
                     .padding(start = 12.dp, top = 10.dp, end = 8.dp, bottom = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                // Header: Patient Name + Risk / BP Alert Badge + MoreVert Menu
+                // Header: leading Risk badge (High / Moderate) + Patient Name + Severe BP chip + MoreVert Menu
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
+                    if (row.isHighRisk) {
+                        ClinicalRiskBadge(isHighRisk = true)
+                        Spacer(Modifier.width(6.dp))
+                    } else if (row.riskTier == PatientRiskTier.MEDIUM) {
+                        ClinicalRiskBadge(isHighRisk = false, isModerate = true)
+                        Spacer(Modifier.width(6.dp))
+                    }
+
                     Text(
                         text = row.displayName,
                         style = MaterialTheme.typography.titleMedium,
@@ -135,11 +143,7 @@ fun PatientDirectoryCard(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         if (row.isSevereBp) {
-                            BpAlertLabel("≥160/110")
-                        } else if (row.isHighRisk) {
-                            ClinicalRiskBadge(isHighRisk = true)
-                        } else if (row.riskTier == PatientRiskTier.MEDIUM) {
-                            ClinicalRiskBadge(isHighRisk = false)
+                            BpAlertChip(R.string.bp_badge_severe, isSevere = true)
                         }
 
                         IconButton(
@@ -156,6 +160,15 @@ fun PatientDirectoryCard(
                             )
                         }
                     }
+                }
+
+                if (row.isIncomplete) {
+                    ClinicalTagBadge(
+                        text = stringResource(R.string.registration_incomplete_chip),
+                        isError = false,
+                        isWarning = true,
+                        modifier = Modifier.testTag("incompleteChip"),
+                    )
                 }
 
                 // Body: Structured 3-Column Clinical Micro-Grid (GA & EDD, Parity, Vitals)

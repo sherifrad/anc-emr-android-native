@@ -1,0 +1,3 @@
+# Read-only audit brief (do NOT edit any file)
+Project: Android EMR for antenatal care (Kotlin, Jetpack Compose). Safety-critical clinical UI, must work on a 360dp wide phone. Repo root is the current directory.
+Report format: a markdown list. Each finding = `path:line | severity (BLOCKER/SHOULD/NIT) | what is wrong | suggested fix in one line`. Only report things you verified by reading the file at that line. No praise, no summary of what is fine, max 40 findings, most severe first. Do not invent files or line numbers. Never write patient data. If you find nothing in a category, say "none found".

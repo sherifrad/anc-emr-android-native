@@ -151,7 +151,9 @@ class AncViewModel internal constructor(
                 val stateAfterLoad = _state.value
                 val currentSessionId = activeEditorSessionId(stateAfterLoad)
                 val currentSlot = activeDraftSlot(stateAfterLoad)
-                if (record != null && currentSessionId == afterSession && currentSlot == slot) {
+                if (record != null && currentSessionId == afterSession && currentSlot == slot &&
+                    draftRecordBelongsToOpenEditor(stateAfterLoad, record)
+                ) {
                     val isStale = isDraftStale(record, activeEditorBaseRevision(stateAfterLoad))
                     val prompt = DraftRecoveryPrompt(
                         slot = slot,
@@ -192,6 +194,7 @@ class AncViewModel internal constructor(
         if (_state.value.vaultState !is VaultState.Unlocked) return
         when (event) {
             AncEvent.SubmitPatientProfile -> savePatientProfile()
+            is AncEvent.RegistrationNext -> registrationNext(event)
             AncEvent.SubmitOtherHistories -> saveOtherHistories()
             AncEvent.SubmitPreviousPregnancy -> savePreviousPregnancy()
             AncEvent.SubmitPatientStatus -> savePatientStatus()
@@ -358,6 +361,23 @@ class AncViewModel internal constructor(
         }
     }
 
+    /**
+     * Runs the current editor's own save, but only when the reducer accepted Next (it recorded the advance for this
+     * editor session). A Next that was ignored, or that already moved the flow, saves nothing.
+     */
+    private fun registrationNext(event: AncEvent.RegistrationNext) {
+        updateState { AncReducer.reduce(it, event) }
+        val after = _state.value
+        val waiting = after.awaitingAdvance ?: return
+        if (waiting != AwaitingAdvance(activeEditorSessionId(after) ?: return, FlowIds(event.editorSessionId, event.newPregnancyId))) return
+        when {
+            after.patientDraft != null -> savePatientProfile()
+            after.datingDraft != null -> saveDating()
+            after.historiesDraft != null -> saveOtherHistories()
+            after.pregnancyDraft != null -> savePreviousPregnancy()
+        }
+    }
+
     fun startVisit(patientId: String, visitId: String? = null) {
         frozenVisitCommand = null
         dispatch(AncEvent.StartVisit(patientId, visitId, UUID.randomUUID().toString()))
@@ -389,6 +409,7 @@ class AncViewModel internal constructor(
             current,
             same?.operationUuid ?: UUID.randomUUID().toString(),
             timestamp,
+            forceAgeRequired = current.forcesAgeRequired(),
         )) {
             is PatientCommandPreparation.Rejected -> dispatch(
                 AncEvent.PatientValidationFailed(PatientEditorKind.PROFILE, prepared.errors),
@@ -482,34 +503,8 @@ class AncViewModel internal constructor(
             when (result) {
                 is PatientCommandOutcome.Committed -> {
                     frozenPatientCommand = null
-                    var patients = result.snapshot.patients
-                    var notice = command.savedNotice()
-                    if (command is SavePatientProfileCommand) {
-                        val currentDraft = _state.value.patientDraft
-                        val committedPatient = result.snapshot.patients.firstOrNull { it.id == command.patientId }
-                        val datingUpdate = currentDraft?.let { intakeDatingUpdate(committedPatient?.dating, it.values) }
-                        if (datingUpdate != null) {
-                            val datingCmd = SaveDatingCommand(
-                                operationUuid = UUID.randomUUID().toString(),
-                                editorSessionId = UUID.randomUUID().toString(),
-                                patientId = command.patientId,
-                                expectedPatientRevision = committedPatient?.revision ?: 1L,
-                                lmpDate = datingUpdate.lmpDate,
-                                ultrasoundEdd = datingUpdate.ultrasoundEdd,
-                                agreedEdd = datingUpdate.agreedEdd,
-                                datingMethod = datingUpdate.datingMethod,
-                                notes = committedPatient?.dating?.notes ?: datingUpdate.note,
-                                transferDate = datingUpdate.transferDate,
-                                embryoAgeDays = datingUpdate.embryoAgeDays,
-                            )
-                            val datingResult = controller.execute(datingCmd, sessionEpoch, onReconciliation = {})
-                            val datingSaved = datingResult is ClinicalCommandOutcome.Committed
-                            if (datingResult is ClinicalCommandOutcome.Committed) {
-                                patients = datingResult.snapshot.patients
-                            }
-                            notice = profileSavedNotice(datingAttempted = true, datingSaved = datingSaved)
-                        }
-                    }
+                    val patients = result.snapshot.patients
+                    val notice = command.savedNotice()
                     updateState {
                         AncReducer.reduce(
                             it,

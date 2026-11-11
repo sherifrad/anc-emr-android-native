@@ -626,7 +626,7 @@ fun UltrasoundEditor(
                                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                                     ) {
                                         Text(
-                                            text = "📷 Photo ${index + 1}",
+                                            text = "Photo ${index + 1}",
                                             style = MaterialTheme.typography.labelMedium,
                                         )
                                         IconButton(

@@ -6,7 +6,8 @@ Textual source contract only; verifies nothing at runtime.
   S51 LocalDate.parse( appears in app/src/main only in model/IsoDates.kt and model/DemoFixtures.kt.
   S52 plusDays(280, "/ 280f" and "280 -" do not appear in app/src/main outside IsoDates.kt.
   S53 model/IsoDates.kt defines parseIsoDateOrNull, parseCanonicalIsoDateOrNull, FULL_TERM_DAYS, eddFromLmp.
-  S54 ui/PatientEditor.kt and state/IntakeDatingRule.kt reference eddFromLmp( or FULL_TERM_DAYS.
+  S54 state/DatingDraftRule.kt references eddFromLmp(, FULL_TERM_DAYS or dueDateForMethod(, and
+      state/IntakeDatingRule.kt does not exist.
 """
 import re
 import sys
@@ -77,15 +78,17 @@ def main():
     problems = []
     # The banner no longer names the rule: since the gestational-age display round it reads progress, term stage and days
     # to EDD from the engine (model/GestationalAgeEngine.kt), so it is checked for NOT owning any term constant (S52 covers it).
-    for rel in ("ui/PatientEditor.kt", "state/IntakeDatingRule.kt"):
+    if (MAIN / "state/IntakeDatingRule.kt").exists():
+        problems.append("state/IntakeDatingRule.kt exists again")
+    for rel in ("state/DatingDraftRule.kt",):
         src = read(MAIN / rel)
         if src is None:
             problems.append(rel + " missing")
             continue
         code = strip_comments(src)
-        if not any(n in code for n in ("eddFromLmp(", "FULL_TERM_DAYS", "dueDateForMethod(", "intakeDatingPreview(")):
-            problems.append(rel + " does not use the shared due-date rule (eddFromLmp, FULL_TERM_DAYS, dueDateForMethod or intakeDatingPreview)")
-    record("S54 editor and dating rule use the shared due-date rule", not problems, "; ".join(problems))
+        if not any(n in code for n in ("eddFromLmp(", "FULL_TERM_DAYS", "dueDateForMethod(")):
+            problems.append(rel + " does not use the shared due-date rule (eddFromLmp, FULL_TERM_DAYS or dueDateForMethod)")
+    record("S54 dating rule uses the shared due-date rule", not problems, "; ".join(problems))
 
     sys.exit(0 if all(results) else 1)
 

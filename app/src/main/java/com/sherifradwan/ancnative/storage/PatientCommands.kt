@@ -2,12 +2,14 @@ package com.sherifradwan.ancnative.storage
 
 import com.sherifradwan.ancnative.model.DeliveryOutcomeError
 import com.sherifradwan.ancnative.model.PatientClinicalInput
+import com.sherifradwan.ancnative.model.PatientProfileRules
 import com.sherifradwan.ancnative.model.PatientValidationError
 import com.sherifradwan.ancnative.model.PatientVocabulary
 import com.sherifradwan.ancnative.model.PreviousPregnancyClinicalInput
 import com.sherifradwan.ancnative.model.DeliveryOutcomeFields
 import com.sherifradwan.ancnative.model.normalized
 import com.sherifradwan.ancnative.model.validateDeliveryOutcome
+import com.sherifradwan.ancnative.model.PreviousPregnancyFormRules
 import com.sherifradwan.ancnative.model.validationErrors
 import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.toDeliveryOutcomeFields
@@ -60,7 +62,12 @@ data class SavePatientProfileCommand(
     override val recordId: String = patientId
 
     companion object {
-        fun prepare(state: AncState, operationUuid: String, submittedAt: String): PatientCommandPreparation {
+        fun prepare(
+            state: AncState,
+            operationUuid: String,
+            submittedAt: String,
+            forceAgeRequired: Boolean = false,
+        ): PatientCommandPreparation {
             val draft = state.patientDraft
                 ?: return PatientCommandPreparation.Rejected(setOf(PatientValidationError.SAVE_FAILED))
             val gpa = parseGpa(draft.values.gravida, draft.values.parity, draft.values.abortion)
@@ -78,6 +85,11 @@ data class SavePatientProfileCommand(
                 parity = gpa.parity,
                 abortion = gpa.abortion,
                 obstetricNotes = draft.values.obstetricNotes.normalized(),
+                ageRequired = PatientProfileRules.ageRequired(
+                    draft.baseRevision == null,
+                    draft.original.ageText,
+                    forceAgeRequired,
+                ),
             )
             val errors = input.validationErrors()
             if (errors.isNotEmpty()) return PatientCommandPreparation.Rejected(errors)
@@ -253,15 +265,31 @@ data class SavePreviousPregnancyCommand(
         fun prepare(state: AncState, operationUuid: String, submittedAt: String): PatientCommandPreparation {
             val draft = state.pregnancyDraft
                 ?: return PatientCommandPreparation.Rejected(setOf(PatientValidationError.SAVE_FAILED))
+            val isNew = draft.basePregnancyRevision == null
+            val outcome = draft.values.outcome.normalized()
+            val delivery = PreviousPregnancyFormRules.deliveryColumns(
+                outcome,
+                draft.original.outcome.normalized(),
+                draft.values.deliveryBy.normalized(),
+                draft.values.birthMethod.normalized(),
+                originalDeliveryBy = draft.original.deliveryBy.normalized(),
+                originalBirthMethod = draft.original.birthMethod.normalized(),
+            )
             val input = PreviousPregnancyClinicalInput(
                 pregnancyType = draft.values.pregnancyType.normalized(),
-                deliveryBy = draft.values.deliveryBy.normalized(),
-                outcome = draft.values.outcome.normalized(),
-                birthMethod = draft.values.birthMethod.normalized(),
+                deliveryBy = delivery.deliveryBy,
+                outcome = outcome,
+                birthMethod = delivery.birthMethod,
                 lossManagement = draft.values.lossManagement.normalized(),
                 terminationMethod = draft.values.terminationMethod.normalized(),
                 provenanceKind = PatientVocabulary.CLINICIAN_ENTRY,
-                clinicianId = draft.values.clinicianId.trim(),
+                clinicianId = PreviousPregnancyFormRules.clinicianIdFor(isNew, draft.original.clinicianId),
+                placeAndDoctor = draft.values.placeAndDoctor.normalized(),
+                storedRow = !isNew,
+                placeAndDoctorRequired = PreviousPregnancyFormRules.placeAndDoctorRequired(
+                    isNew,
+                    draft.original.placeAndDoctor,
+                ),
             )
             val errors = input.validationErrors()
             if (errors.isNotEmpty()) return PatientCommandPreparation.Rejected(errors)
@@ -362,6 +390,7 @@ internal fun PatientCommand.isStructurallyValid(): Boolean {
                 parity,
                 abortion,
                 obstetricNotes,
+                ageRequired = PatientProfileRules.ageRequired(expectedPatientRevision == null, null),
             )
             input.validationErrors().isEmpty() &&
                 listOf(dateOfBirth, phone, ageText, addressText, obstetricNotes).all { it == it.normalized() } &&
@@ -382,6 +411,7 @@ internal fun PatientCommand.isStructurallyValid(): Boolean {
                 terminationMethod,
                 provenanceKind,
                 clinicianId,
+                storedRow = expectedPregnancyRevision != null,
             )
             modelVersion == 3 &&
                 expectedPregnancyRevision?.let { it >= 1 } != false &&

@@ -152,17 +152,13 @@ def check_s56():
         problems.append("R.string.photos_count still referenced in " + ", ".join(keepers))
 
     if not problems:
-        counts = {}
-        for rel in ("ui/WorkspaceScreen.kt", "ui/ProfileScreen.kt"):
-            src = read(MAIN / rel)
-            n = len(re.findall(r"pluralStringResource\s*\(\s*R\.plurals\.photos_count\b", strip_comments(src or "")))
-            counts[rel] = n
-            if n < 2:
-                problems.append(rel + " uses pluralStringResource(R.plurals.photos_count only " + str(n) + " time(s)")
-        total = sum(counts.values())
-        if total < 4:
-            problems.append("pluralStringResource(R.plurals.photos_count used only " + str(total) + " time(s)")
-    record("S56 photos_count is a plural, no string variant, four pluralStringResource call sites", not problems, "; ".join(problems))
+        # WorkspaceScreen/ProfileScreen are gone; the photo count is shown by the scan card in the patient hub.
+        hub = sorted((MAIN / "ui/patienthub").rglob("*.kt"))
+        total = sum(len(re.findall(r"pluralStringResource\s*\(\s*R\.plurals\.photos_count\b",
+                                   strip_comments(read(f) or ""))) for f in hub)
+        if total < 1:
+            problems.append("pluralStringResource(R.plurals.photos_count used " + str(total) + " time(s) in ui/patienthub")
+    record("S56 photos_count is a plural, no string variant, pluralStringResource call site in the patient hub", not problems, "; ".join(problems))
 
 
 def check_s57():
@@ -174,16 +170,17 @@ def check_s57():
         if not re.search(r"\binternal\s+fun\s+attachmentDisplayTitle\s*\(", strip_comments(cf)):
             problems.append("ClinicalFormat.kt lacks internal fun attachmentDisplayTitle(")
 
-    ws = read(MAIN / "ui/WorkspaceScreen.kt")
+    # WorkspaceScreen.kt is gone; the attachments card in the patient hub is its replacement.
+    hub = sorted((MAIN / "ui/patienthub").rglob("*.kt"))
+    ws = "\n".join(strip_comments(read(f) or "") for f in hub) if hub else None
     if ws is None:
-        problems.append("ui/WorkspaceScreen.kt missing")
+        problems.append("ui/patienthub missing")
     else:
-        ws = strip_comments(ws)
         if "attachmentDisplayTitle(" not in ws:
-            problems.append("WorkspaceScreen.kt does not call attachmentDisplayTitle(")
+            problems.append("patient hub does not call attachmentDisplayTitle(")
         if re.search(r"attachment\.title\s*\?:\s*attachment\.fileName", ws):
-            problems.append('WorkspaceScreen.kt still contains "attachment.title ?: attachment.fileName"')
-    record("S57 attachment display title is the one helper, WorkspaceScreen calls it", not problems, "; ".join(problems))
+            problems.append('patient hub still contains "attachment.title ?: attachment.fileName"')
+    record("S57 attachment display title is the one helper, the patient hub calls it", not problems, "; ".join(problems))
 
 
 def check_s58():

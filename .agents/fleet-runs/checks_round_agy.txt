@@ -1,0 +1,12 @@
+FAIL
+
+.agents/checks/check_r3f1.py:223 | BLOCKER | S34 fails: UI lacks attachment_error_banner, DismissAttachmentError, and R.string.attachment_save_failed
+.agents/checks/check_r5d.py:28 | BLOCKER | S230 fails: ui/patienthub lacks testTag "medicationsToggleAll"
+.agents/checks/check_r6b3.py:77 | BLOCKER | S424 fails: DeleteIconButton count is 1; ui/patienthub/components/LabReportItem.kt:370 uses custom IconButton instead of DeleteIconButton(DeletableType.LAB)
+.agents/checks/check_r3k.py:111 | SHOULD | S60 chip FlowRow spacedBy(8.dp, Alignment.End) check removed without replacement
+.agents/checks/check_r3t.py:72 | SHOULD | S87 GestationalBanner progressFraction and daysToEdd UI checks removed without replacement
+.agents/checks/check_r6a.py:47 | NIT | S303 historical round UI file-change guard removed
+.agents/checks/check_r6b2.py:87 | NIT | S416 historical round ALLOWED_UI check removed
+app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt:381 | NIT | parseIsoDateOrNull trims padded dates (e.g. " 2026-11-09 "), evaluating GA as-of that date instead of defaulting to LocalDate.now()
+app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt:229 | NIT | parseIsoDateOrNull trims padded dates, evaluating GA as-of that date instead of defaulting to LocalDate.now()
+.agents/pipeline/ADDING_A_DELETABLE_KIND.md:15 | NIT | Deletable guide call-site docs updated to ui/patienthub beyond stated intent (a)/(b)/(c)

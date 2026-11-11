@@ -1,0 +1,579 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt b/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
+index a6c7f11..4a23088 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
+@@ -498,34 +498,8 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
+             when (result) {
+                 is PatientCommandOutcome.Committed -> {
+                     frozenPatientCommand = null
+-                    var patients = result.snapshot.patients
+-                    var notice = command.savedNotice()
+-                    if (command is SavePatientProfileCommand) {
+-                        val currentDraft = _state.value.patientDraft
+-                        val committedPatient = result.snapshot.patients.firstOrNull { it.id == command.patientId }
+-                        val datingUpdate = currentDraft?.let { intakeDatingUpdate(committedPatient?.dating, it.values) }
+-                        if (datingUpdate != null) {
+-                            val datingCmd = SaveDatingCommand(
+-                                operationUuid = UUID.randomUUID().toString(),
+-                                editorSessionId = UUID.randomUUID().toString(),
+-                                patientId = command.patientId,
+-                                expectedPatientRevision = committedPatient?.revision ?: 1L,
+-                                lmpDate = datingUpdate.lmpDate,
+-                                ultrasoundEdd = datingUpdate.ultrasoundEdd,
+-                                agreedEdd = datingUpdate.agreedEdd,
+-                                datingMethod = datingUpdate.datingMethod,
+-                                notes = committedPatient?.dating?.notes ?: datingUpdate.note,
+-                                transferDate = datingUpdate.transferDate,
+-                                embryoAgeDays = datingUpdate.embryoAgeDays,
+-                            )
+-                            val datingResult = controller.execute(datingCmd, sessionEpoch, onReconciliation = {})
+-                            val datingSaved = datingResult is ClinicalCommandOutcome.Committed
+-                            if (datingResult is ClinicalCommandOutcome.Committed) {
+-                                patients = datingResult.snapshot.patients
+-                            }
+-                            notice = profileSavedNotice(datingAttempted = true, datingSaved = datingSaved)
+-                        }
+-                    }
++                    val patients = result.snapshot.patients
++                    val notice = command.savedNotice()
+                     updateState {
+                         AncReducer.reduce(
+                             it,
+diff --git a/.agents/TEST_MANIFEST.json b/.agents/TEST_MANIFEST.json
+index e3c9261..b988e3d 100644
+--- a/.agents/TEST_MANIFEST.json
++++ b/.agents/TEST_MANIFEST.json
+@@ -126,18 +126,6 @@
+         "Q7"
+       ]
+     },
+-    {
+-      "id": "UNIT-intake-dating",
+-      "tier": 1,
+-      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*IntakeDatingRuleTest'",
+-      "deps": [
+-        "app/src/main/**/state/IntakeDatingRule.kt",
+-        "app/src/test/**/IntakeDatingRuleTest.kt"
+-      ],
+-      "covers": [
+-        "Q20"
+-      ]
+-    },
+     {
+       "id": "STATIC-r3",
+       "tier": 1,
+@@ -766,7 +754,6 @@
+         "app/src/main/**/model/IsoDates.kt",
+         "app/src/main/**/model/DemoFixtures.kt",
+         "app/src/main/**/ui/PatientEditor.kt",
+-        "app/src/main/**/state/IntakeDatingRule.kt",
+         "app/src/main/**/ui/GestationalBanner.kt",
+         "app/src/main/**/*.kt",
+         ".agents/checks/check_r3i.py"
+@@ -857,19 +844,6 @@
+         "Q70"
+       ]
+     },
+-    {
+-      "id": "UNIT-profile-saved-notice",
+-      "tier": 1,
+-      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*ProfileSavedNoticeTest'",
+-      "deps": [
+-        "app/src/main/**/state/IntakeDatingRule.kt",
+-        "app/src/main/**/state/AncState.kt",
+-        "app/src/test/**/state/ProfileSavedNoticeTest.kt"
+-      ],
+-      "covers": [
+-        "Q83"
+-      ]
+-    },
+     {
+       "id": "UNIT-visit-synthetic-flag",
+       "tier": 1,
+@@ -1654,13 +1628,12 @@
+     {
+       "id": "UNIT-r4g",
+       "tier": 1,
+-      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.model.EddFromScanTest' --tests 'com.sherifradwan.ancnative.state.PatientDatingDraftTest' --tests 'com.sherifradwan.ancnative.state.IntakeDatingRuleTest' --tests 'com.sherifradwan.ancnative.state.DraftMappingTest'",
++      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.model.EddFromScanTest' --tests 'com.sherifradwan.ancnative.state.PatientDatingDraftTest' --tests 'com.sherifradwan.ancnative.state.DraftMappingTest'",
+       "deps": [
+         "app/src/main/**/model/IsoDates.kt",
+         "app/src/main/**/state/*.kt",
+         "app/src/test/**/EddFromScanTest.kt",
+-        "app/src/test/**/PatientDatingDraftTest.kt",
+-        "app/src/test/**/IntakeDatingRuleTest.kt"
++        "app/src/test/**/PatientDatingDraftTest.kt"
+       ],
+       "covers": [
+         "Q270",
+diff --git a/.agents/checks/check_r3.py b/.agents/checks/check_r3.py
+index 93c0ae7..9c07453 100644
+--- a/.agents/checks/check_r3.py
++++ b/.agents/checks/check_r3.py
+@@ -3,7 +3,8 @@
+ 
+ Stdlib only. Prints PASS/FAIL per sub-check, exits 1 if any FAIL.
+ Textual source contract only; verifies nothing at runtime.
+-  S1 AncViewModel.kt calls intakeDatingUpdate and has no "plusDays(280)".
++  S1 AncViewModel.kt has no intakeDatingUpdate or profileSavedNotice, state/IntakeDatingRule.kt
++     is gone, and the view model has no "plusDays(280)".
+   S2 RecordsRepository.kt seed function has an includeDemoPatients parameter and
+      every patient-owned insert sits behind it (inserts after the metadata insert
+      appear only inside an `if (includeDemoPatients)` block).
+@@ -43,7 +44,10 @@ if vm is None:
+     record("S1 AncViewModel.kt readable", False, "missing file")
+ else:
+     code = strip_comments(vm)
+-    record("S1a AncViewModel.kt calls intakeDatingUpdate(", "intakeDatingUpdate(" in code, "no call")
++    dead = [n for n in ("intakeDatingUpdate", "profileSavedNotice") if n in code]
++    if (MAIN / "state/IntakeDatingRule.kt").exists():
++        dead.append("state/IntakeDatingRule.kt exists")
++    record("S1a AncViewModel.kt has no intakeDatingUpdate/profileSavedNotice and IntakeDatingRule.kt is gone", not dead, "still present: " + ", ".join(dead))
+     record("S1b AncViewModel.kt has no plusDays(280)", "plusDays(280" not in code, "plusDays(280) still present")
+ 
+ # S2
+diff --git a/.agents/checks/check_r3i.py b/.agents/checks/check_r3i.py
+index bb84058..d3584bd 100644
+--- a/.agents/checks/check_r3i.py
++++ b/.agents/checks/check_r3i.py
+@@ -6,7 +6,8 @@ Textual source contract only; verifies nothing at runtime.
+   S51 LocalDate.parse( appears in app/src/main only in model/IsoDates.kt and model/DemoFixtures.kt.
+   S52 plusDays(280, "/ 280f" and "280 -" do not appear in app/src/main outside IsoDates.kt.
+   S53 model/IsoDates.kt defines parseIsoDateOrNull, parseCanonicalIsoDateOrNull, FULL_TERM_DAYS, eddFromLmp.
+-  S54 state/IntakeDatingRule.kt references eddFromLmp( or FULL_TERM_DAYS.
++  S54 state/DatingDraftRule.kt references eddFromLmp(, FULL_TERM_DAYS or dueDateForMethod(, and
++      state/IntakeDatingRule.kt does not exist.
+ """
+ import re
+ import sys
+@@ -77,14 +78,16 @@ def main():
+     problems = []
+     # The banner no longer names the rule: since the gestational-age display round it reads progress, term stage and days
+     # to EDD from the engine (model/GestationalAgeEngine.kt), so it is checked for NOT owning any term constant (S52 covers it).
+-    for rel in ("state/IntakeDatingRule.kt",):
++    if (MAIN / "state/IntakeDatingRule.kt").exists():
++        problems.append("state/IntakeDatingRule.kt exists again")
++    for rel in ("state/DatingDraftRule.kt",):
+         src = read(MAIN / rel)
+         if src is None:
+             problems.append(rel + " missing")
+             continue
+         code = strip_comments(src)
+-        if not any(n in code for n in ("eddFromLmp(", "FULL_TERM_DAYS", "dueDateForMethod(", "intakeDatingPreview(")):
+-            problems.append(rel + " does not use the shared due-date rule (eddFromLmp, FULL_TERM_DAYS, dueDateForMethod or intakeDatingPreview)")
++        if not any(n in code for n in ("eddFromLmp(", "FULL_TERM_DAYS", "dueDateForMethod(")):
++            problems.append(rel + " does not use the shared due-date rule (eddFromLmp, FULL_TERM_DAYS or dueDateForMethod)")
+     record("S54 dating rule uses the shared due-date rule", not problems, "; ".join(problems))
+ 
+     sys.exit(0 if all(results) else 1)
+diff --git a/.agents/checks/check_r3l.py b/.agents/checks/check_r3l.py
+index 8511979..6fa053b 100644
+--- a/.agents/checks/check_r3l.py
++++ b/.agents/checks/check_r3l.py
+@@ -14,12 +14,11 @@ Textual source contract only; verifies nothing at runtime.
+   S65 storage/SaveVisitCommand.kt and storage/RecordsRepository.kt contain no
+       "isSyntheticEdit = true" wording (Q82: both write false); strings.xml has
+       no "Synthetic patient record saved".
+-  S66 state/AncViewModel.kt calls profileSavedNotice( and no longer contains the
+-      bare statement controller.execute(datingCmd, sessionEpoch) {}; the list of
+-      patients handed to RecordCommitted comes from the dating snapshot when it
+-      is saved (see the spec; textual check covers the notice side);
+-      state/AncState.kt maps SavedNotice.PATIENT_DATING_NOT_UPDATED;
+-      strings.xml defines patient_saved_dating_not_updated.
++  S66 the removed intake-dating notice stays removed: no profileSavedNotice or
++      PATIENT_DATING_NOT_UPDATED anywhere in main, no
++      patient_saved_dating_not_updated in strings.xml, and the fire-and-forget
++      statement controller.execute(datingCmd, sessionEpoch) {} stays absent
++      from state/AncViewModel.kt.
+ """
+ import re
+ import sys
+@@ -168,36 +167,26 @@ def check_s66():
+     vm = read(MAIN / "state/AncViewModel.kt")
+     if vm is None:
+         problems.append("state/AncViewModel.kt missing")
+-    else:
+-        vm = strip_comments(vm)
+-        if "profileSavedNotice(" not in vm:
+-            problems.append("AncViewModel.kt does not call profileSavedNotice(")
+-        if re.search(
+-            r"controller\s*\.\s*execute\s*\(\s*datingCmd\s*,\s*sessionEpoch\s*\)\s*\{\s*\}",
+-            vm,
+-            flags=re.S,
+-        ):
+-            problems.append("AncViewModel.kt still contains the fire-and-forget statement controller.execute(datingCmd, sessionEpoch) {}")
+-
+-    # The notice -> string mapping lives in SavedNotice?.stringRes() in state/AncState.kt (JVM-testable);
+-    # WorkspaceScreen.kt is gone and the patient hub just renders that string.
+-    st = read(MAIN / "state/AncState.kt")
+-    if st is None:
+-        problems.append("state/AncState.kt missing")
+-    elif not re.search(
+-        r"SavedNotice\.PATIENT_DATING_NOT_UPDATED\s*->\s*R\.string\.patient_saved_dating_not_updated\b",
+-        strip_comments(st),
++    elif re.search(
++        r"controller\s*\.\s*execute\s*\(\s*datingCmd\s*,\s*sessionEpoch\s*\)\s*\{\s*\}",
++        strip_comments(vm),
++        flags=re.S,
+     ):
+-        problems.append("AncState.kt does not map SavedNotice.PATIENT_DATING_NOT_UPDATED to R.string.patient_saved_dating_not_updated")
++        problems.append("AncViewModel.kt still contains the fire-and-forget statement controller.execute(datingCmd, sessionEpoch) {}")
++
++    for path in sorted(MAIN.rglob("*.kt")):
++        code = strip_comments(path.read_text(encoding="utf-8"))
++        for name in ("profileSavedNotice", "PATIENT_DATING_NOT_UPDATED"):
++            if name in code:
++                problems.append(f"{path.name} mentions {name}")
+ 
+     strings = read(RES / "strings.xml")
+     if strings is None:
+         problems.append("res/values/strings.xml missing")
+-    else:
+-        if not re.search(r'<string\s+name="patient_saved_dating_not_updated"\s*>', strip_xml_comments(strings)):
+-            problems.append('strings.xml lacks <string name="patient_saved_dating_not_updated">')
++    elif "patient_saved_dating_not_updated" in strip_xml_comments(strings):
++        problems.append("strings.xml still defines patient_saved_dating_not_updated")
+     record(
+-        "S66 the profile save reports the dating outcome via profileSavedNotice and the UI maps it to patient_saved_dating_not_updated",
++        "S66 the removed intake-dating save notice (profileSavedNotice, PATIENT_DATING_NOT_UPDATED, its string) stays removed",
+         not problems,
+         "; ".join(problems),
+     )
+diff --git a/.agents/checks/check_r4g.py b/.agents/checks/check_r4g.py
+index 6d9e305..fe5f162 100644
+--- a/.agents/checks/check_r4g.py
++++ b/.agents/checks/check_r4g.py
+@@ -5,8 +5,8 @@ Stdlib only. Prints PASS/FAIL per check, exits 1 if any FAIL.
+ Textual source contract only; verifies nothing at runtime. Comments are stripped before matching.
+   S170 one scan due-date function.
+   S171 new-patient draft carries the dating choice fields.
+-  S172 the intake dating rule goes through the engine's per-method rule.
+-  S173 the post-save dating write uses the rule's result, not a hard-coded LMP.
++  S172 intakeDatingUpdate and intakeDatingPreview are defined nowhere in main.
++  S173 the view model builds no post-save dating command (no datingCmd).
+   S174 the new fields are saved and restored with the patient draft.
+   S175 the patient editor does not call the old LMP-only functions and calculateForLmp is gone from main sources.
+ """
+@@ -18,7 +18,6 @@ ROOT = Path(__file__).resolve().parents[2]
+ MAIN = ROOT / "app/src/main/java/com/sherifradwan/ancnative"
+ ISO = MAIN / "model/IsoDates.kt"
+ STATE = MAIN / "state/AncState.kt"
+-RULE = MAIN / "state/IntakeDatingRule.kt"
+ VM = MAIN / "state/AncViewModel.kt"
+ MAPPING = MAIN / "state/DraftMapping.kt"
+ EDITOR = MAIN / "ui/PatientEditor.kt"
+@@ -83,28 +82,20 @@ def check_s171():
+ 
+ def check_s172():
+     problems = []
+-    rule = code(RULE)
+-    if not re.search(r"fun\s+intakeDatingUpdate\s*\([^)]*PatientDraftValues", rule):
+-        problems.append("intakeDatingUpdate does not take PatientDraftValues")
+-    for needed in ("dueDateForMethod", "eddFromScan"):
+-        if needed not in rule:
+-            problems.append("does not use " + needed)
+-    for banned in ("eddFromLmp(", "ivfEddFromTransfer("):
+-        if banned in rule:
+-            problems.append("still calls " + banned)
+-    if defined_in(r"\bfun\s+intakeDatingPreview\s*\(") != [RULE.name]:
+-        problems.append("intakeDatingPreview not defined once in IntakeDatingRule.kt")
+-    record("S172 intake dating goes through the engine rule", not problems, "; ".join(problems))
++    for name in ("intakeDatingUpdate", "intakeDatingPreview"):
++        found = defined_in(r"\bfun\s+" + name + r"\s*\(")
++        if found:
++            problems.append(name + " defined in " + ", ".join(found))
++    if (MAIN / "state/IntakeDatingRule.kt").exists():
++        problems.append("state/IntakeDatingRule.kt exists")
++    record("S172 the intake dating rule stays removed", not problems, "; ".join(problems))
+ 
+ 
+ def check_s173():
+-    vm = code(VM)
+     problems = []
+-    if re.search(r'datingMethod\s*=\s*"LMP"', vm):
+-        problems.append("hard-coded LMP method")
+-    if re.search(r"values\?\.lmpDate", vm):
+-        problems.append("passes only the LMP to the rule")
+-    record("S173 post-save dating write uses the rule result", not problems, "; ".join(problems))
++    if "datingCmd" in code(VM):
++        problems.append("AncViewModel.kt contains datingCmd")
++    record("S173 the view model builds no post-save dating command", not problems, "; ".join(problems))
+ 
+ 
+ def check_s174():
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt b/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+index 706589e..fed6ffa 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+@@ -220,7 +220,6 @@ fun SaveUiError?.stringRes(): Int = when (this) {
+ enum class SavedNotice {
+     VISIT,
+     PATIENT,
+-    PATIENT_DATING_NOT_UPDATED,
+     HISTORIES,
+     PREGNANCY,
+     ARCHIVED,
+@@ -249,7 +248,6 @@ enum class SavedNotice {
+ }
+ fun SavedNotice?.stringRes(): Int = when (this) {
+     SavedNotice.PATIENT -> R.string.patient_saved
+-    SavedNotice.PATIENT_DATING_NOT_UPDATED -> R.string.patient_saved_dating_not_updated
+     SavedNotice.HISTORIES -> R.string.histories_saved
+     SavedNotice.PREGNANCY -> R.string.pregnancy_saved
+     SavedNotice.ARCHIVED -> R.string.patient_archived_notice
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index d0a48cd..25933cb 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -140,7 +140,6 @@
+     <string name="patient_unarchived_notice">Patient unarchived.</string>
+     <string name="archived_read_only_notice">This patient is archived. Profile and committed records remain readable; writes are blocked.</string>
+     <string name="patient_saved">Patient record saved.</string>
+-    <string name="patient_saved_dating_not_updated">Patient saved, but the due date was not updated. Open Dating to set it.</string>
+     <string name="histories_saved">Medical histories record saved.</string>
+     <string name="pregnancy_saved">Previous pregnancy record saved.</string>
+     <string name="patient_status">Patient status</string>
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/state/IntakeDatingRuleTest.kt b/app/src/test/java/com/sherifradwan/ancnative/state/IntakeDatingRuleTest.kt
+deleted file mode 100644
+index 0a603dc..0000000
+--- a/app/src/test/java/com/sherifradwan/ancnative/state/IntakeDatingRuleTest.kt
++++ /dev/null
+@@ -1,182 +0,0 @@
+-package com.sherifradwan.ancnative.state
+-
+-import com.sherifradwan.ancnative.model.DemoPatientDating
+-import java.time.LocalDate
+-import org.junit.Assert.assertEquals
+-import org.junit.Assert.assertNull
+-import org.junit.Test
+-
+-/** Round 3a / Q20 and Round 4g / Q273: the intake dating rule (SPEC_FIX_R3.md, SPEC_FIX_R4.md). */
+-class IntakeDatingRuleTest {
+-
+-    private fun dating(
+-        lmp: String? = "2026-02-01",
+-        uss: String? = null,
+-        method: String? = "LMP",
+-        transfer: String? = null,
+-        embryo: Int? = null,
+-    ) = DemoPatientDating(
+-        patientId = "p1", lmpDate = lmp, ultrasoundEdd = uss, agreedEdd = null,
+-        datingMethod = method, notes = null, transferDate = transfer, embryoAgeDays = embryo,
+-    )
+-
+-    private fun lmpValues(lmp: String?) = PatientDraftValues(lmpDate = lmp.orEmpty())
+-
+-    private fun lmpDating(lmp: String, edd: String) =
+-        IntakeDating(lmp, edd, note = "Baseline from intake LMP ($lmp)")
+-
+-    private fun ivfValues(transfer: String = "2026-03-01", embryo: String = "5") =
+-        PatientDraftValues(datingMethod = "IVF_TRANSFER", transferDate = transfer, embryoAgeDays = embryo)
+-
+-    private fun scanValues(date: String = "2026-03-01", weeks: String = "8", days: String = "3") =
+-        PatientDraftValues(datingMethod = "Ultrasound", scanDate = date, scanGaWeeks = weeks, scanGaDays = days)
+-
+-    private fun clinicalValues(edd: String = "2026-11-20") =
+-        PatientDraftValues(datingMethod = "Clinical", agreedEdd = edd)
+-
+-    // ---- spec examples ----
+-    @Test fun noExisting_validDraft() =
+-        assertEquals(lmpDating("2026-02-01", "2026-11-08"), intakeDatingUpdate(null, lmpValues("2026-02-01")))
+-
+-    @Test fun noExisting_paddedDraft() =
+-        assertEquals(lmpDating("2026-02-01", "2026-11-08"), intakeDatingUpdate(null, lmpValues("  2026-02-01 ")))
+-
+-    @Test fun noExisting_invalidFormat() = assertNull(intakeDatingUpdate(null, lmpValues("01/02/2026")))
+-    @Test fun noExisting_emptyDraft() = assertNull(intakeDatingUpdate(null, lmpValues("")))
+-    @Test fun noExisting_nullDraft() = assertNull(intakeDatingUpdate(null, lmpValues(null)))
+-
+-    @Test fun sameLmp_null() = assertNull(intakeDatingUpdate(dating(), lmpValues("2026-02-01")))
+-
+-    @Test fun lmpOnlyChanged_updates() =
+-        assertEquals(lmpDating("2026-02-08", "2026-11-15"), intakeDatingUpdate(dating(), lmpValues("2026-02-08")))
+-
+-    @Test fun existingUltrasoundEdd_null() =
+-        assertNull(intakeDatingUpdate(dating(uss = "2026-11-12"), lmpValues("2026-02-08")))
+-
+-    @Test fun ivfDating_null() =
+-        assertNull(
+-            intakeDatingUpdate(
+-                dating(lmp = null, method = "IVF", transfer = "2026-02-15", embryo = 5),
+-                lmpValues("2026-02-01"),
+-            ),
+-        )
+-
+-    @Test fun ultrasoundMethodWithoutEdd_null() =
+-        assertNull(intakeDatingUpdate(dating(method = "Ultrasound", uss = null), lmpValues("2026-02-08")))
+-
+-    @Test fun nullMethodCountsAsLmp() =
+-        assertEquals(
+-            lmpDating("2026-02-08", "2026-11-15"),
+-            intakeDatingUpdate(dating(method = null), lmpValues("2026-02-08")),
+-        )
+-
+-    // ---- own boundaries ----
+-    @Test fun leapYear_plus280() =
+-        assertEquals(lmpDating("2028-02-29", "2028-12-05"), intakeDatingUpdate(null, lmpValues("2028-02-29")))
+-
+-    @Test fun whitespaceUltrasoundEdd_treatedAsMissing() =
+-        assertEquals(
+-            lmpDating("2026-02-08", "2026-11-15"),
+-            intakeDatingUpdate(dating(uss = "   "), lmpValues("2026-02-08")),
+-        )
+-
+-    @Test fun lowercaseLmpMethod_isLmp() =
+-        assertEquals(
+-            lmpDating("2026-02-08", "2026-11-15"),
+-            intakeDatingUpdate(dating(method = "lmp"), lmpValues("2026-02-08")),
+-        )
+-
+-    @Test fun impossibleDate_null() = assertNull(intakeDatingUpdate(null, lmpValues("2026-02-30")))
+-
+-    @Test fun existingLmpPaddedEqualsDraft_null() =
+-        assertNull(intakeDatingUpdate(dating(lmp = " 2026-02-01 "), lmpValues("2026-02-01")))
+-
+-    // ---- round 4g: dating choice ----
+-    @Test fun lmpResultCarriesMethodAndNote() {
+-        val r = intakeDatingUpdate(null, lmpValues("2026-02-01"))!!
+-        assertEquals("LMP", r.datingMethod)
+-        assertEquals("Baseline from intake LMP (2026-02-01)", r.note)
+-        assertNull(r.ultrasoundEdd)
+-        assertNull(r.transferDate)
+-        assertNull(r.embryoAgeDays)
+-    }
+-
+-    @Test fun blankMethodBehavesAsLmp() =
+-        assertEquals(
+-            intakeDatingUpdate(null, lmpValues("2026-02-01")),
+-            intakeDatingUpdate(null, PatientDraftValues(datingMethod = "", lmpDate = "2026-02-01")),
+-        )
+-
+-    @Test fun explicitLmpMethodSameAsBlank() =
+-        assertEquals(
+-            intakeDatingUpdate(null, lmpValues("2026-02-01")),
+-            intakeDatingUpdate(null, PatientDraftValues(datingMethod = "LMP", lmpDate = "2026-02-01")),
+-        )
+-
+-    @Test fun ivf_day5() =
+-        assertEquals(
+-            IntakeDating(
+-                lmpDate = null, agreedEdd = "2026-11-17", datingMethod = "IVF_TRANSFER",
+-                transferDate = "2026-03-01", embryoAgeDays = 5,
+-                note = "Baseline from intake IVF transfer (2026-03-01, day 5)",
+-            ),
+-            intakeDatingUpdate(null, ivfValues()),
+-        )
+-
+-    @Test fun ivf_day4_null() = assertNull(intakeDatingUpdate(null, ivfValues(embryo = "4")))
+-    @Test fun ivf_blankEmbryoDay_null() = assertNull(intakeDatingUpdate(null, ivfValues(embryo = "")))
+-    @Test fun ivf_missingTransfer_null() = assertNull(intakeDatingUpdate(null, ivfValues(transfer = "")))
+-    @Test fun ivf_badTransferDate_null() = assertNull(intakeDatingUpdate(null, ivfValues(transfer = "2026-02-30")))
+-
+-    @Test fun scan_8w3d() =
+-        assertEquals(
+-            IntakeDating(
+-                lmpDate = null, agreedEdd = "2026-10-08", datingMethod = "Ultrasound", ultrasoundEdd = "2026-10-08",
+-                note = "Baseline from intake scan (2026-03-01, 8w3d)",
+-            ),
+-            intakeDatingUpdate(null, scanValues()),
+-        )
+-
+-    @Test fun scan_badGaDays_null() = assertNull(intakeDatingUpdate(null, scanValues(days = "7")))
+-    @Test fun scan_badGaWeeks_null() = assertNull(intakeDatingUpdate(null, scanValues(weeks = "43")))
+-    @Test fun scan_nonNumericGa_null() = assertNull(intakeDatingUpdate(null, scanValues(weeks = "x")))
+-    @Test fun scan_blankGa_null() = assertNull(intakeDatingUpdate(null, scanValues(weeks = "", days = "")))
+-    @Test fun scan_badDate_null() = assertNull(intakeDatingUpdate(null, scanValues(date = "01/03/2026")))
+-
+-    @Test fun clinical_dueDateOnly() =
+-        assertEquals(
+-            IntakeDating(
+-                lmpDate = null, agreedEdd = "2026-11-20", datingMethod = "Clinical",
+-                note = "Baseline from intake due date (2026-11-20)",
+-            ),
+-            intakeDatingUpdate(null, clinicalValues()),
+-        )
+-
+-    @Test fun clinical_badDate_null() = assertNull(intakeDatingUpdate(null, clinicalValues("20/11/2026")))
+-    @Test fun clinical_blankDate_null() = assertNull(intakeDatingUpdate(null, clinicalValues("")))
+-
+-    @Test fun existingPatient_nonLmpMethods_null() {
+-        val existing = dating()
+-        assertNull(intakeDatingUpdate(existing, ivfValues()))
+-        assertNull(intakeDatingUpdate(existing, scanValues()))
+-        assertNull(intakeDatingUpdate(existing, clinicalValues()))
+-    }
+-
+-    // ---- preview ----
+-    private val asOf = LocalDate.of(2026, 8, 1)
+-
+-    @Test fun preview_lmp() {
+-        val p = intakeDatingPreview(lmpValues("2026-02-01"), asOf)!!
+-        assertEquals("2026-11-08", p.dueDate)
+-        // 2026-02-01 to 2026-08-01 is 181 days = 25 weeks 6 days (the spec text said 26w2d; the engine's own format has a space)
+-        assertEquals("25w 6d", p.gestationalAge)
+-    }
+-
+-    @Test fun preview_invalid_null() {
+-        assertNull(intakeDatingPreview(lmpValues("2026-02-30"), asOf))
+-        assertNull(intakeDatingPreview(PatientDraftValues(), asOf))
+-    }
+-
+-    @Test fun preview_scanUsesScanDueDate() =
+-        assertEquals("2026-10-08", intakeDatingPreview(scanValues(), asOf)!!.dueDate)
+-}
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/state/ProfileSavedNoticeTest.kt b/app/src/test/java/com/sherifradwan/ancnative/state/ProfileSavedNoticeTest.kt
+deleted file mode 100644
+index 2484fb3..0000000
+--- a/app/src/test/java/com/sherifradwan/ancnative/state/ProfileSavedNoticeTest.kt
++++ /dev/null
+@@ -1,38 +0,0 @@
+-package com.sherifradwan.ancnative.state
+-
+-import org.junit.Assert.assertEquals
+-import org.junit.Test
+-
+-class ProfileSavedNoticeTest {
+-    @Test
+-    fun noDatingAttemptReportsPatientSaved() {
+-        assertEquals(
+-            SavedNotice.PATIENT,
+-            profileSavedNotice(datingAttempted = false, datingSaved = false),
+-        )
+-    }
+-
+-    @Test
+-    fun datingAttemptedAndSavedReportsPatientSaved() {
+-        assertEquals(
+-            SavedNotice.PATIENT,
+-            profileSavedNotice(datingAttempted = true, datingSaved = true),
+-        )
+-    }
+-
+-    @Test
+-    fun datingSavedWithoutAnAttemptStillReportsPatientSaved() {
+-        assertEquals(
+-            SavedNotice.PATIENT,
+-            profileSavedNotice(datingAttempted = false, datingSaved = true),
+-        )
+-    }
+-
+-    @Test
+-    fun datingAttemptedButNotSavedReportsPatientDatingNotUpdated() {
+-        assertEquals(
+-            SavedNotice.PATIENT_DATING_NOT_UPDATED,
+-            profileSavedNotice(datingAttempted = true, datingSaved = false),
+-        )
+-    }
+-}
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/state/SavedNoticeTextTest.kt b/app/src/test/java/com/sherifradwan/ancnative/state/SavedNoticeTextTest.kt
+index 341b436..8d3ca72 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/state/SavedNoticeTextTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/state/SavedNoticeTextTest.kt
+@@ -12,7 +12,6 @@ class SavedNoticeTextTest {
+     private val expected = mapOf(
+         SavedNotice.VISIT to R.string.visit_saved,
+         SavedNotice.PATIENT to R.string.patient_saved,
+-        SavedNotice.PATIENT_DATING_NOT_UPDATED to R.string.patient_saved_dating_not_updated,
+         SavedNotice.HISTORIES to R.string.histories_saved,
+         SavedNotice.PREGNANCY to R.string.pregnancy_saved,
+         SavedNotice.ARCHIVED to R.string.patient_archived_notice,

@@ -59,6 +59,7 @@ import com.sherifradwan.ancnative.model.catalog.LabCatalogItem
 import com.sherifradwan.ancnative.model.catalog.nextLabPanelTest
 import com.sherifradwan.ancnative.model.catalog.resolveLabPanel
 import com.sherifradwan.ancnative.model.labResultFlag
+import com.sherifradwan.ancnative.model.parseIsoDateOrNull
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
@@ -377,7 +378,7 @@ fun LabEditor(
         ClinicalPatientCard(
             patient = patient,
             variant = PatientCardVariant.EDITOR_SUMMARY,
-            asOfDate = runCatching { LocalDate.parse(draft.values.date) }.getOrNull() ?: LocalDate.now(),
+            asOfDate = parseIsoDateOrNull(draft.values.date) ?: LocalDate.now(),
         )
 
         // Batch info bar replaces the old numbered details card
@@ -400,7 +401,7 @@ fun LabEditor(
                     modifier = Modifier.testTag("pinnedLabHeaderTag"),
                 ) {
                     Text(
-                        text = "📌 Chained Batch",
+                        text = "Chained batch",
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,

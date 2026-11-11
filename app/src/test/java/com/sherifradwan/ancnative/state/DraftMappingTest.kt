@@ -59,7 +59,7 @@ class DraftMappingTest {
     )
 
     private val visitValues = DraftValues("2026-10-01", "120/80", "70", "findings", "notes", "u9")
-    private val patientValues = PatientDraftValues(displayName = "Mona", phone = "0100", gravida = "2", lmpDate = "2026-01-01")
+    private val patientValues = PatientDraftValues(displayName = "Mona", phone = "0100", gravida = "2")
     private val historiesValues = HistoriesDraftValues("m", "s", "f", "a")
     private val pregnancyValues = PreviousPregnancyDraftValues(dateText = "2020", outcome = "live", clinicianId = "c1")
     private val datingValues = DatingDraftValues(lmpDate = "2026-01-01", agreedEdd = "2026-10-08", notes = "n")
@@ -134,9 +134,9 @@ class DraftMappingTest {
         assertNull(edit.recordId)
         assertEquals(4L, edit.baseRevision)
         assertEquals("Mona", edit.fields["displayName"])
-        assertEquals("2026-01-01", edit.fields["lmpDate"])
         assertEquals("", edit.fields["caseId"])
-        assertEquals(14, edit.fields.size)
+        assertEquals(13, edit.fields.size)
+        assertEquals(13, record(patient(patientValues, revision = null, id = "generated-id"))!!.fields.size)
 
         val fresh = patient(patientValues, revision = null, id = "generated-id")
         assertEquals(DraftSlot(NEW_PATIENT_DRAFT_KEY, DraftScreenKind.PATIENT_PROFILE), activeDraftSlot(fresh))
@@ -144,6 +144,35 @@ class DraftMappingTest {
         assertEquals(NEW_PATIENT_DRAFT_KEY, created.patientId)
         assertEquals(DraftEditorKind.CREATE, created.editorKind)
         assertNull(created.baseRevision)
+    }
+
+    @Test
+    fun oldPatientDraftWithRemovedDatingKeysStillLoads() {
+        val removedKeys = mapOf(
+            "lmpDate" to "2026-01-01",
+            "datingMethod" to "Ultrasound",
+            "transferDate" to "2026-03-01",
+            "embryoAgeDays" to "5",
+            "agreedEdd" to "2026-11-20",
+            "scanDate" to "2026-03-01",
+            "scanGaWeeks" to "8",
+            "scanGaDays" to "3",
+        )
+        val full = PatientDraftValues(
+            caseId = "c1", displayName = "Mona", dateOfBirth = "1990-01-01", phone = "0100", ageText = "31",
+            addressText = "Cairo", bloodGroupText = "A+", riskLevel = "Moderate Risk", gravida = "2", parity = "1",
+            abortion = "0", obstetricNotes = "n", clinicalAttention = "Watch BP",
+        )
+        for ((revision, id) in listOf<Pair<Long?, String>>(4L to "p1", null to "generated-id")) {
+            val typed = patient(full, revision = revision, id = id)
+            val current = record(typed)!!
+            assertEquals(13, current.fields.size)
+            val decoded = decodeDraftFields(encodeDraftFields(current.fields + removedKeys)!!)!!
+            assertTrue(decoded.keys.containsAll(removedKeys.keys))
+            val restored = applyDraftRecord(freshOf(typed), current.copy(fields = decoded)).patientDraft!!.values
+            assertEquals(full, restored)
+            removedKeys.keys.forEach { assertFalse("$it must not be saved again", it in record(patient(restored, revision, id))!!.fields) }
+        }
     }
 
     @Test

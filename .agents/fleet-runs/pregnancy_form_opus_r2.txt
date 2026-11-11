@@ -1,0 +1,25 @@
+**PASS.** All round-1 findings are fixed, and I found no new blockers. I only read code and did not run any tests.
+
+```
+model/PreviousPregnancyFormRules.kt:44 + storage/PatientCommands.kt:211-216 | B1 fixed | The builder clears only when the outcome is loss or termination AND differs from draft.original.outcome; otherwise it keeps the stored columns (:46).
+PatientCommandsTest.kt:177 | B2 fixed | storedLossAndTerminationRowsKeepDeliveryColumnsOnUnrelatedEdit asserts deliveryBy CS/Hysterotomy is kept. The round-1 builder would null these, so the test would FAIL on it.
+androidTest/AncWorkflowTest.kt:446 vs :808-810 | B3 fixed | The assert is now on birthMethod "Vaginal", which matches the fixture. :453-454 match the reducer clearing on LiveBirth→EPL.
+PreviousPregnancyFormRules.kt:50-58 | S4 fixed | Cesarean/CS wins, as in the readers. Test :240.
+DemoModels.kt:61 + PatientCommands.kt:231,353 | S5 fixed | The check is relaxed only when storedRow is true (builder: !isNew; structural check: expectedPregnancyRevision != null). Test :209 covers both sides.
+PatientCommands.kt:227 | S6 fixed | Reads draft.original.clinicianId. Test :233 ("tampered" restored value is ignored).
+PatientPrintHtmlGenerator.kt:1256 | S7 fixed | Uses escapeHtml(DEFAULT_CLINICIAN_ID). escapeHtml is at ui/report/HtmlEscape.kt:3.
+PatientCommandsTest.kt:190,200,222 | S8 fixed | Covers Hysterotomy: termination Ready / birthMethod INVALID; Stillbirth re-pick keeps it; combined old-row edit. Nits fixed: columns computed per branch only (AncState.kt:1593-1598), note hidden when outcome is set (Editor:351), mismatch message moved to card 1 (Editor:392).
+state/AncState.kt:1596 + FormRules:44-46 | SHOULD | Stored LiveBirth CS row, user picks EPL then LiveBirth again: the columns are cleared and not restored (outcome == original keeps the now-empty draft values). If the empty chooser goes unnoticed, the save drops the CS and lowers the uterine-scar count. When returning to a birth outcome, restore the columns from draft.original.
+DemoModels.kt:61 + FormRules:44 | NIT | A stored non-birth row with a birthMethod (old/imported data) always fails with OUTCOME_METHOD_MISMATCH, and re-picking the same outcome no longer clears it (outcome == original). The field is hidden. The only way out is picking another outcome and then switching back.
+ui/PreviousPregnancyEditor.kt:375-379 | NIT | A deliveryBy CS/Hysterotomy kept on a loss or termination row is now preserved but never shown (the "Stored mode" note is shown only for birth outcomes).
+state/DraftMapping.kt:172,418 | NIT | The draft still saves and restores clinicianId. It is harmless now that the builder ignores it, but it is dead data.
+androidTest/AncWorkflowTest.kt:424,807-808 | NIT | The commit fixture is not what the form now writes (deliveryBy null; placeAndDoctor null on a new row, which prepare() would reject). The test skips prepare(), so it passes but does not check the new rules.
+```
+
+On the `originalOutcome` question:
+- **Brand-new row:** the original values are empty, so the original outcome is null and any loss or termination pick clears the columns, which is correct.
+- **After draft restore:** `original` comes from the stored row when the editor opens, and only the values are restored from the draft (DraftMapping.kt:403-419). The comparison is therefore always against the stored row.
+
+On the other paths you asked about:
+- **Unchanged by the diff:** the backup code (EncryptedBackupManager.kt:326/453/625) and the undo/delete adapter.
+- **Pass-through on save:** outcomeText and placeAndDoctor are written unchanged unless the user picks an outcome (which clears outcomeText) or edits the place and doctor field.

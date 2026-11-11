@@ -1,0 +1,215 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/AncDatePicker.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/AncDatePicker.kt
+index 2e02ded..27fc6b0 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/AncDatePicker.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/AncDatePicker.kt
+@@ -131,7 +131,7 @@ fun ClinicalDateField(
+                 FilterChip(
+                     selected = false,
+                     onClick = { onValueChange(LocalDate.now().toString()) },
+-                    label = { Text("⚡ " + stringResource(R.string.today) + " (" + LocalDate.now().toString() + ")") },
++                    label = { Text(stringResource(R.string.today) + " (" + LocalDate.now().toString() + ")") },
+                     modifier = Modifier.testTag("${tag}TodayButton"),
+                 )
+             }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt
+index bdad5ce..d6320d6 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt
+@@ -601,7 +601,7 @@ private fun AddLabTestDialog(
+                 onClick = {
+                     val trimmed = testName.trim()
+                     if (trimmed.isBlank()) {
+-                        errorMessage = "Please enter test name!"
++                        errorMessage = "Please enter test name."
+                     } else {
+                         val itemToSave = if (initial != null) {
+                             initial.copy(
+@@ -742,9 +742,9 @@ private fun AddLabCategoryGroupDialog(
+             Button(
+                 onClick = {
+                     if (groupName.trim().isBlank()) {
+-                        errorMessage = "Please enter panel name!"
++                        errorMessage = "Please enter panel name."
+                     } else if (selectedTests.value.isEmpty()) {
+-                        errorMessage = "Please select at least one test!"
++                        errorMessage = "Please select at least one test."
+                     } else {
+                         onSave(
+                             LabCategoryGroup(
+@@ -1099,7 +1099,7 @@ private fun AddMedicationDialog(
+             Button(
+                 onClick = {
+                     if (name.trim().isBlank()) {
+-                        errorMessage = "Please enter medication name!"
++                        errorMessage = "Please enter medication name."
+                     } else {
+                         onSave(
+                             MedicationCatalogItem(
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalPresets.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalPresets.kt
+index 70982cf..4aeae8c 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalPresets.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalPresets.kt
+@@ -53,7 +53,7 @@ fun QuickPresetChips(
+     val visibleCount = if (collapsible && !expanded) collapseAfter!! else items.size
+     Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+         Text(
+-            text = "⚡ $title",
++            text = title,
+             style = MaterialTheme.typography.labelMedium,
+             color = MaterialTheme.colorScheme.primary,
+         )
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt
+index 97e1d6b..c6c34f6 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt
+@@ -400,7 +400,7 @@ fun LabEditor(
+                     modifier = Modifier.testTag("pinnedLabHeaderTag"),
+                 ) {
+                     Text(
+-                        text = "📌 Chained Batch",
++                        text = "Chained batch",
+                         color = MaterialTheme.colorScheme.onSecondaryContainer,
+                         style = MaterialTheme.typography.labelSmall,
+                         fontWeight = FontWeight.Bold,
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt
+index 11b4d29..0dbdaa7 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt
+@@ -120,7 +120,7 @@ fun SecuritySettingsDialog(
+                 pendingRestoreBytes = bytes
+                 showRestoreConfirmDialog = true
+             } else {
+-                backupStatusMessage = "Unable to read selected backup file!"
++                backupStatusMessage = "Unable to read selected backup file."
+                 isBackupError = true
+             }
+         }
+@@ -402,7 +402,7 @@ fun SecuritySettingsDialog(
+                                 onClick = {
+                                     securityRepo.updateClinicBranding(editedClinicName, editedClinicSubtitle)
+                                     settingsState = securityRepo.settings.value
+-                                    brandingSavedMessage = "Clinic branding saved and applied successfully!"
++                                    brandingSavedMessage = "Clinic branding saved and applied."
+                                 },
+                                 modifier = Modifier.testTag("saveBrandingButton"),
+                             ) {
+@@ -511,7 +511,7 @@ fun SecuritySettingsDialog(
+                                     BiometricAuthManager.promptBiometric(
+                                         activity = activity,
+                                         onResult = { ok ->
+-                                            biometricFeedbackMessage = if (ok) "Fingerprint verified successfully! Ready for use." else "Fingerprint verification failed."
++                                            biometricFeedbackMessage = if (ok) "Fingerprint verified. Ready for use." else "Fingerprint verification failed."
+                                         },
+                                     )
+                                 },
+@@ -684,14 +684,14 @@ fun SecuritySettingsDialog(
+                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                             }
+                             context.startActivity(Intent.createChooser(shareIntent, "Save or Share Encrypted Backup"))
+-                            backupStatusMessage = "Encrypted backup created and exported successfully (${backupBytes.size} bytes)!"
++                            backupStatusMessage = "Encrypted backup created and exported (${backupBytes.size} bytes)."
+                             isBackupError = false
+                         } catch (e: Exception) {
+                             backupStatusMessage = "Backup created but unable to open share sheet: ${e.message}"
+                             isBackupError = true
+                         }
+                     } else {
+-                        backupStatusMessage = "Failed to generate backup!"
++                        backupStatusMessage = "Failed to generate backup."
+                         isBackupError = true
+                     }
+                 }
+@@ -746,11 +746,11 @@ fun SecuritySettingsDialog(
+                 onRestoreBackup(bytes, passphrase) { result ->
+                     when (result) {
+                         is BackupInspectionResult.Valid -> {
+-                            backupStatusMessage = "Vault restored successfully (${result.patientCount} patients)!"
++                            backupStatusMessage = "Vault restored (${result.patientCount} patients)."
+                             isBackupError = false
+                         }
+                         is BackupInspectionResult.InvalidPassphraseOrCorrupted -> {
+-                            backupStatusMessage = "Decryption failed: Incorrect passphrase or corrupted backup file!"
++                            backupStatusMessage = "Decryption failed: incorrect passphrase or corrupted backup file."
+                             isBackupError = true
+                         }
+                         is BackupInspectionResult.Error -> {
+@@ -824,7 +824,7 @@ private fun ChangePinDialog(
+                     if (!isValidNewPin(newPin)) {
+                         errorMessage = invalidPinMessage
+                     } else if (newPin != confirmPin) {
+-                        errorMessage = "New PIN and confirmation do not match!"
++                        errorMessage = "New PIN and confirmation do not match."
+                     } else {
+                         if (securityRepo.updatePin(newPin)) onSuccess()
+                     }
+@@ -896,9 +896,9 @@ private fun ExportBackupDialog(
+             Button(
+                 onClick = {
+                     if (passphrase.length < 6) {
+-                        errorMessage = "Passphrase must be at least 6 characters!"
++                        errorMessage = "Passphrase must be at least 6 characters."
+                     } else if (passphrase != confirmPassphrase) {
+-                        errorMessage = "Passphrase and confirmation do not match!"
++                        errorMessage = "Passphrase and confirmation do not match."
+                     } else {
+                         onConfirm(passphrase.toCharArray())
+                     }
+@@ -960,7 +960,7 @@ private fun RestorePassphraseDialog(
+             Button(
+                 onClick = {
+                     if (passphrase.isEmpty()) {
+-                        errorMessage = "Please enter the passphrase!"
++                        errorMessage = "Please enter the passphrase."
+                     } else {
+                         onConfirm(passphrase.toCharArray())
+                     }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt
+index 902d033..995b226 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt
+@@ -626,7 +626,7 @@ fun UltrasoundEditor(
+                                         horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                     ) {
+                                         Text(
+-                                            text = "📷 Photo ${index + 1}",
++                                            text = "Photo ${index + 1}",
+                                             style = MaterialTheme.typography.labelMedium,
+                                         )
+                                         IconButton(
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt
+index da2922b..ded0a1a 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt
+@@ -135,7 +135,7 @@ fun UltrasoundPhotoViewerDialog(
+                         }
+                         Column {
+                             Text(
+-                                text = "Ultrasound Scan — ${scan.date}",
++                                text = "Ultrasound Scan: ${scan.date}",
+                                 style = MaterialTheme.typography.titleMedium,
+                                 fontWeight = FontWeight.Bold,
+                                 color = MaterialTheme.colorScheme.onSurface,
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index 445f1fb..54422f6 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -113,7 +113,7 @@
+     <string name="address">Address</string>
+     <string name="blood_group">Blood group</string>
+     <string name="manual_risk">Manual risk level</string>
+-    <string name="gpa_all_or_none">G / P / A — enter all three or leave all blank</string>
++    <string name="gpa_all_or_none">G / P / A: enter all three or leave all blank</string>
+     <string name="gravida">Gravida</string>
+     <string name="parity">Parity</string>
+     <string name="abortion">Abortion</string>
+@@ -362,8 +362,8 @@
+     <string name="attachment_retake">Retake</string>
+     <string name="attachment_gallery">Gallery</string>
+     <string name="visit_date_in_future">Visit date cannot be in the future.</string>
+-    <string name="blood_pressure_invalid">✖ Invalid (e.g. 120/80)</string>
+-    <string name="weight_invalid">✖ Invalid (30 – 250)</string>
++    <string name="blood_pressure_invalid">Invalid (e.g. 120/80)</string>
++    <string name="weight_invalid">Invalid (30 – 250)</string>
+     <string name="bp_alert_raised">▲ Raised BP (≥140/90) · Recheck</string>
+     <string name="bp_alert_severe">▲ Severe BP (≥160/110) · Urgent</string>
+     <string name="embryo_day_6">Day 6</string>

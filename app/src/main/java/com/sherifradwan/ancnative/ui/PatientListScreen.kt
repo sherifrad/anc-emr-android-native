@@ -79,6 +79,7 @@ import com.sherifradwan.ancnative.model.formatDmy
 import com.sherifradwan.ancnative.model.previousDeliverySummary
 import com.sherifradwan.ancnative.model.severeBpAttention
 import com.sherifradwan.ancnative.state.AncEvent
+import com.sherifradwan.ancnative.state.isRegistrationIncomplete
 import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.SavedNotice
 import com.sherifradwan.ancnative.ui.patientdirectory.PatientActionsModalSheet
@@ -117,6 +118,7 @@ data class PatientDashboardRowProjection(
     val isLateOrPostTerm: Boolean = false,
     val isDelivered: Boolean = false,
     val deliveryDate: String? = null,
+    val isIncomplete: Boolean = false,
 )
 
 fun projectDashboardRow(patient: DemoPatient): PatientDashboardRowProjection {
@@ -164,6 +166,7 @@ fun projectDashboardRow(patient: DemoPatient): PatientDashboardRowProjection {
         isLateOrPostTerm = isLateOrPost,
         isDelivered = patient.delivered,
         deliveryDate = patient.deliveryDate,
+        isIncomplete = isRegistrationIncomplete(patient),
     )
 }
 

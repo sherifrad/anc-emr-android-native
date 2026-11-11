@@ -1,0 +1,8 @@
+Waiting for unit tests to complete...
+PASS
+app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt:403 | NIT | "Batch" lowercased to "batch" beyond emoji prefix removal
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:405 | NIT | word "successfully" removed beyond trailing "!" removal
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:514 | NIT | mid-sentence "successfully!" removed beyond trailing "!" removal
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:687 | NIT | word "successfully" removed beyond trailing "!" removal
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:749 | NIT | word "successfully" removed beyond trailing "!" removal
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:753 | NIT | "Incorrect" lowercased to "incorrect" beyond trailing "!" removal

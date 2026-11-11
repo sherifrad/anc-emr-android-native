@@ -147,6 +147,7 @@ class DraftPersistenceIntegrationTest {
                 displayName = "Zahra New Patient",
                 caseId = "NEW-ANC-999",
                 phone = "+201011112222",
+                ageText = "27",
             )
             val cleanDraft = PatientDraft(
                 editorSessionId = "new-patient-session",

@@ -45,6 +45,21 @@ class PatientValidationTest {
         assertFalse(validInput(bloodGroupText = "AB-", riskLevel = "high risk").validationErrors().isEmpty())
     }
 
+    @Test
+    fun ageRuleRequiresAgeForNewAndForStoredAgeOnly() {
+        assertTrue(PatientProfileRules.ageRequired(isNew = true, storedAgeText = null))
+        assertTrue(PatientProfileRules.ageRequired(isNew = false, storedAgeText = "30"))
+        assertFalse(PatientProfileRules.ageRequired(isNew = false, storedAgeText = null))
+        assertFalse(PatientProfileRules.ageRequired(isNew = false, storedAgeText = "  "))
+        assertTrue(PatientProfileRules.ageRequired(isNew = false, storedAgeText = null, forceAgeRequired = true))
+        assertTrue(PatientProfileRules.ageRequired(isNew = false, storedAgeText = "  ", forceAgeRequired = true))
+        assertFalse(PatientProfileRules.ageRequired(isNew = false, storedAgeText = null, forceAgeRequired = false))
+        val blank = validInput().copy(ageRequired = true)
+        assertTrue(PatientValidationError.AGE_REQUIRED in blank.validationErrors())
+        assertTrue(PatientValidationError.AGE_REQUIRED in blank.copy(ageText = "   ").validationErrors())
+        assertTrue(blank.copy(ageText = "30").validationErrors().isEmpty())
+    }
+
     private fun validInput(
         caseId: String = "CASE-1",
         displayName: String = "Synthetic Patient",

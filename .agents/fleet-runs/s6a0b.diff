@@ -1,0 +1,466 @@
+diff --git a/.agents/TEST_MANIFEST.json b/.agents/TEST_MANIFEST.json
+index 3975d61..bd97278 100644
+--- a/.agents/TEST_MANIFEST.json
++++ b/.agents/TEST_MANIFEST.json
+@@ -1850,6 +1850,33 @@
+         "W4",
+         "W5"
+       ]
++    },
++    {
++      "id": "UNIT-registration-flow",
++      "tier": 1,
++      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*RegistrationFlowTest' --tests '*RegistrationFlowDeriveTest' --tests '*RegistrationFlowDriverTest' --tests '*RegistrationFlowStateTest' --tests 'com.sherifradwan.ancnative.ui.components.RegistrationStepTextTest'",
++      "deps": [
++        "app/src/main/**/state/RegistrationFlow.kt",
++        "app/src/main/**/state/RegistrationFlowDriver.kt",
++        "app/src/main/**/state/AncViewModel.kt",
++        "app/src/main/**/ui/components/RegistrationStepText.kt",
++        "app/src/main/res/values/strings.xml",
++        "app/src/test/**/RegistrationFlowTest.kt",
++        "app/src/test/**/RegistrationFlowDeriveTest.kt",
++        "app/src/test/**/RegistrationFlowDriverTest.kt",
++        "app/src/test/**/RegistrationFlowStateTest.kt",
++        "app/src/test/**/RegistrationStepTextTest.kt"
++      ],
++      "covers": [
++        "RF1",
++        "RF2",
++        "RF3",
++        "RF6",
++        "S5-4",
++        "S6-1",
++        "S6-2",
++        "S6a-0"
++      ]
+     }
+   ]
+ }
+\ No newline at end of file
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt b/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
+index 4a23088..3f6a51a 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
+@@ -348,14 +348,6 @@ class AncViewModel(application: Application) : AndroidViewModel(application) {
+         }
+     }
+ 
+-    /** Next in the registration flow: ids are made here so the reducer stays pure. */
+-    fun registrationNext() = dispatch(flowIds().let { AncEvent.RegistrationNext(it.editorSessionId, it.newPregnancyId) })
+-
+-    /** Back, Skip, Finish, Begin or the pregnancy count of the registration flow. */
+-    fun flowMove(move: FlowEvent) = dispatch(flowIds().let { AncEvent.Flow(move, it.editorSessionId, it.newPregnancyId) })
+-
+-    private fun flowIds() = FlowIds(UUID.randomUUID().toString(), UUID.randomUUID().toString())
+-
+     /**
+      * Runs the current editor's own save, but only when the reducer accepted Next (it recorded the advance for this
+      * editor session). A Next that was ignored, or that already moved the flow, saves nothing.
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/RegistrationFlow.kt b/app/src/main/java/com/sherifradwan/ancnative/state/RegistrationFlow.kt
+index c2250e3..dd3aad4 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/state/RegistrationFlow.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/RegistrationFlow.kt
+@@ -3,18 +3,18 @@ package com.sherifradwan.ancnative.state
+ import com.sherifradwan.ancnative.model.DemoPatient
+ import com.sherifradwan.ancnative.model.GestationalAgeEngine
+ 
+-enum class RegistrationStep(val title: String) {
+-    IDENTITY("Identity"),
+-    DATING("Dating"),
+-    OBSTETRIC("Obstetric history and risk"),
+-    HISTORIES("Histories"),
+-    PREGNANCIES("Previous pregnancies"),
++enum class RegistrationStep {
++    IDENTITY,
++    DATING,
++    OBSTETRIC,
++    HISTORIES,
++    PREGNANCIES,
+ }
+ 
+-enum class StepStatus(val label: String) {
+-    PENDING("Pending"),
+-    DONE("Done"),
+-    SKIPPED("Skipped"),
++enum class StepStatus {
++    PENDING,
++    DONE,
++    SKIPPED,
+ }
+ 
+ const val MAX_SUGGESTED_PREGNANCIES = 20
+@@ -53,10 +53,24 @@ private val STEPS = RegistrationStep.entries
+ 
+ fun registrationStepNumber(step: RegistrationStep): Int = STEPS.indexOf(step) + 1
+ 
+-fun registrationHeaderText(flow: RegistrationFlow): String =
+-    "Step ${registrationStepNumber(flow.current)} of ${STEPS.size}: ${flow.current.title}"
++val registrationStepCount: Int = STEPS.size
+ 
+-fun stepStatusText(status: StepStatus): String = status.label
++/** Skip is offered on every step except Identity, which cannot be skipped. */
++fun showsSkip(flow: RegistrationFlow): Boolean = flow.current != RegistrationStep.IDENTITY
++
++/**
++ * True when the forward button reads Finish. In the pregnancy walk that is the last pregnancy; on the count prompt
++ * ([RegistrationFlow.pregnancyTarget] null) it is when the typed count leaves [remainingOnPrompt] pregnancies at 0.
++ */
++fun forwardIsFinish(flow: RegistrationFlow, remainingOnPrompt: Int? = null): Boolean {
++    if (flow.current != RegistrationStep.PREGNANCIES) return false
++    val target = flow.pregnancyTarget ?: return remainingOnPrompt == 0
++    return flow.pregnancyIndex + 1 >= target
++}
++
++/** The count typed on the prompt: trimmed whole number from 0 to [MAX_SUGGESTED_PREGNANCIES], else null. */
++fun parsePregnancyCount(text: String): Int? =
++    text.trim().toIntOrNull()?.takeIf { it in 0..MAX_SUGGESTED_PREGNANCIES }
+ 
+ /** The one rule for how many pregnancy editors still have to open: the chosen total minus those already stored. */
+ fun remainingPregnancies(chosen: Int, existing: Int): Int =
+@@ -149,6 +163,12 @@ fun deriveStepStatuses(patient: DemoPatient): Map<RegistrationStep, StepStatus>
+     return done.mapValues { (_, isDone) -> if (isDone) StepStatus.DONE else StepStatus.PENDING }
+ }
+ 
++/** The first step, in flow order, that is not done for [patient]; null when every step is done. */
++fun firstNotDoneStep(patient: DemoPatient): RegistrationStep? {
++    val statuses = deriveStepStatuses(patient)
++    return STEPS.firstOrNull { statuses[it] != StepStatus.DONE }
++}
++
+ private val REQUIRED_STEPS = listOf(RegistrationStep.IDENTITY, RegistrationStep.DATING, RegistrationStep.OBSTETRIC)
+ 
+ fun isRegistrationIncomplete(patient: DemoPatient): Boolean {
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/RegistrationFlowDriver.kt b/app/src/main/java/com/sherifradwan/ancnative/state/RegistrationFlowDriver.kt
+index 995ae01..bfe80a3 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/state/RegistrationFlowDriver.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/RegistrationFlowDriver.kt
+@@ -41,6 +41,19 @@ internal fun AncRoute.matchesStep(step: RegistrationStep, patientId: String): Bo
+ /** True in the flow's Identity step, where age is required for every patient. */
+ fun AncState.forcesAgeRequired(): Boolean = registrationFlow?.current == IDENTITY
+ 
++/** The flow when the open screen is the one it shows, else null. Every flow-aware screen asks this one function. */
++fun AncState.activeFlowForRoute(): RegistrationFlow? =
++    registrationFlow?.takeIf { route.matchesStep(it.current, it.patientId) }
++
++enum class SystemBack { KEEP_EDITING, FLOW_BACK, BACK }
++
++/** What the system Back gesture does. The discard dialog wins, then the flow's own Back, then the plain back. */
++fun systemBackKind(state: AncState): SystemBack = when {
++    state.showDiscardDialog -> SystemBack.KEEP_EDITING
++    state.activeFlowForRoute() != null -> SystemBack.FLOW_BACK
++    else -> SystemBack.BACK
++}
++
+ /**
+  * Opens the editor (or the pregnancy count prompt) of [flow]'s current step and commits [flow] with it. Returns null
+  * when the existing start logic refuses (saving, dirty draft, patient missing or archived): the state is then unchanged.
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationStepText.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationStepText.kt
+new file mode 100644
+index 0000000..bdef27f
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationStepText.kt
+@@ -0,0 +1,42 @@
++package com.sherifradwan.ancnative.ui.components
++
++import androidx.annotation.StringRes
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.res.stringResource
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.state.RegistrationFlow
++import com.sherifradwan.ancnative.state.RegistrationStep
++import com.sherifradwan.ancnative.state.StepStatus
++import com.sherifradwan.ancnative.state.registrationStepCount
++import com.sherifradwan.ancnative.state.registrationStepNumber
++
++@StringRes
++fun RegistrationStep.titleRes(): Int = when (this) {
++    RegistrationStep.IDENTITY -> R.string.registration_step_identity
++    RegistrationStep.DATING -> R.string.registration_step_dating
++    RegistrationStep.OBSTETRIC -> R.string.obstetric_risk_section_title
++    RegistrationStep.HISTORIES -> R.string.registration_step_histories
++    RegistrationStep.PREGNANCIES -> R.string.previous_pregnancies
++}
++
++@StringRes
++fun StepStatus.labelRes(): Int = when (this) {
++    StepStatus.DONE -> R.string.done
++    StepStatus.SKIPPED -> R.string.registration_status_skipped
++    StepStatus.PENDING -> R.string.registration_status_pending
++}
++
++/** Shape that tells the three statuses apart without colour or words. */
++fun StepStatus.glyph(): String = when (this) {
++    StepStatus.DONE -> "✓"
++    StepStatus.SKIPPED -> "−"
++    StepStatus.PENDING -> "○"
++}
++
++/** "Step 3 of 5: Obstetric history and risk". */
++@Composable
++fun registrationHeaderText(flow: RegistrationFlow): String = stringResource(
++    R.string.registration_header,
++    stringResource(R.string.step_n_of_m, registrationStepNumber(flow.current), registrationStepCount),
++    stringResource(flow.current.titleRes()),
++)
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index 25933cb..10baab8 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -578,4 +578,26 @@
+     <string name="lab_batch_add">Add</string>
+     <string name="lab_batch_edit">Edit</string>
+     <string name="lab_batch_abnormal">Abnormal</string>
++    <string name="registration_step_identity">Identity</string>
++    <string name="registration_step_dating">Dating</string>
++    <string name="registration_step_histories">Histories</string>
++    <string name="registration_header">%1$s: %2$s</string>
++    <string name="registration_status_skipped">Skipped</string>
++    <string name="registration_status_pending">To do</string>
++    <string name="registration_current">Current</string>
++    <string name="registration_segment_cd">%1$s, %2$s</string>
++    <string name="registration_segment_current_cd">%1$s, %2$s, current</string>
++    <string name="registration_pregnancy_progress">Pregnancy %1$d of %2$d to add</string>
++    <string name="flow_skip">Skip</string>
++    <string name="flow_finish">Finish</string>
++    <string name="registration_count_title">How many previous pregnancies?</string>
++    <string name="registration_count_label">Number of previous pregnancies</string>
++    <string name="registration_count_hint">Suggested from the gravida count. Change it if the record differs. 0 to 20.</string>
++    <plurals name="registration_count_existing">
++        <item quantity="one">%d previous pregnancy is already recorded.</item>
++        <item quantity="other">%d previous pregnancies are already recorded.</item>
++    </plurals>
++    <string name="registration_count_error">Enter a number from 0 to 20.</string>
++    <string name="registration_resume_body">Registration is not finished. Resume at: %1$s.</string>
++    <string name="registration_resume_button">Continue registration</string>
+ </resources>
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowDeriveTest.kt b/app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowDeriveTest.kt
+index ec6d783..e881238 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowDeriveTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowDeriveTest.kt
+@@ -10,6 +10,7 @@ import com.sherifradwan.ancnative.state.RegistrationStep.OBSTETRIC
+ import com.sherifradwan.ancnative.state.RegistrationStep.PREGNANCIES
+ import org.junit.Assert.assertEquals
+ import org.junit.Assert.assertFalse
++import org.junit.Assert.assertNull
+ import org.junit.Assert.assertTrue
+ import org.junit.Test
+ 
+@@ -182,4 +183,36 @@ class RegistrationFlowDeriveTest {
+ 
+     @Test
+     fun s2_row_flag_archived_false() = assertRowFlag(patient(age = null, dating = null, status = "archived"), false)
++
++    @Test
++    fun first_not_done_step_is_dating_with_name_and_age_but_no_dating() {
++        assertEquals(DATING, firstNotDoneStep(patient(dating = null)))
++    }
++
++    @Test
++    fun first_not_done_step_is_identity_without_an_age() {
++        assertEquals(IDENTITY, firstNotDoneStep(patient(age = null)))
++        assertEquals(IDENTITY, firstNotDoneStep(patient(age = null, dating = null)))
++    }
++
++    @Test
++    fun first_not_done_step_is_obstetric_without_gpa() {
++        assertEquals(OBSTETRIC, firstNotDoneStep(patient(g = null, p = null, a = null)))
++    }
++
++    @Test
++    fun first_not_done_step_is_histories_when_complete_without_histories() {
++        assertEquals(HISTORIES, firstNotDoneStep(patient()))
++    }
++
++    @Test
++    fun first_not_done_step_is_pregnancies_when_the_expected_ones_are_missing() {
++        assertEquals(PREGNANCIES, firstNotDoneStep(patient(history = "h", g = 3)))
++    }
++
++    @Test
++    fun first_not_done_step_is_null_when_every_step_is_done() {
++        assertNull(firstNotDoneStep(patient(history = "h")))
++        assertNull(firstNotDoneStep(patient(history = "h", g = 2, pregnancies = 1)))
++    }
+ }
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt b/app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt
+index ca9e981..052b5b1 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt
+@@ -1135,4 +1135,45 @@ class RegistrationFlowStateTest {
+         val wrongStep = atDating.copy(registrationFlow = atDating.registrationFlow!!.copy(current = HISTORIES))
+         assertNull(reduce(wrongStep, AncEvent.SearchChanged("x")).registrationFlow)
+     }
++
++    // activeFlowForRoute and systemBackKind
++
++    @Test
++    fun active_flow_for_route_returns_the_flow_on_its_own_editor_screen() {
++        val state = atStep(DATING)
++        assertEquals(state.registrationFlow, state.activeFlowForRoute())
++        assertEquals(AncRoute.DatingEditor("p1"), state.route)
++    }
++
++    @Test
++    fun active_flow_for_route_is_null_when_the_route_is_not_the_flows_screen() {
++        val state = atStep(DATING)
++        assertNull(state.copy(route = AncRoute.Workspace("p1")).activeFlowForRoute())
++        assertNull(state.copy(route = AncRoute.OtherHistoriesEditor("p1")).activeFlowForRoute())
++        assertNull(state.copy(route = AncRoute.DatingEditor("other")).activeFlowForRoute())
++        assertNull(state.copy(registrationFlow = null).activeFlowForRoute())
++    }
++
++    @Test
++    fun system_back_in_a_flow_editor_without_a_dialog_is_flow_back() {
++        assertEquals(SystemBack.FLOW_BACK, systemBackKind(atStep(DATING)))
++    }
++
++    @Test
++    fun system_back_with_the_discard_dialog_open_keeps_editing_even_in_a_flow() {
++        assertEquals(SystemBack.KEEP_EDITING, systemBackKind(atStep(DATING).copy(showDiscardDialog = true)))
++    }
++
++    @Test
++    fun system_back_on_the_hub_with_a_stale_flow_is_plain_back() {
++        val stale = atStep(DATING).copy(route = AncRoute.Workspace("p1"))
++        assertNotNull(stale.registrationFlow)
++        assertEquals(SystemBack.BACK, systemBackKind(stale))
++    }
++
++    @Test
++    fun system_back_without_a_flow_is_plain_back() {
++        assertEquals(SystemBack.BACK, systemBackKind(AncState(patients = listOf(patient()))))
++        assertEquals(SystemBack.BACK, systemBackKind(atStep(DATING).copy(registrationFlow = null)))
++    }
+ }
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowTest.kt b/app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowTest.kt
+index 6fb2371..8aca3d5 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowTest.kt
+@@ -6,6 +6,9 @@ import com.sherifradwan.ancnative.state.RegistrationStep.IDENTITY
+ import com.sherifradwan.ancnative.state.RegistrationStep.OBSTETRIC
+ import com.sherifradwan.ancnative.state.RegistrationStep.PREGNANCIES
+ import org.junit.Assert.assertEquals
++import org.junit.Assert.assertFalse
++import org.junit.Assert.assertNull
++import org.junit.Assert.assertTrue
+ import org.junit.Test
+ 
+ class RegistrationFlowTest {
+@@ -22,14 +25,15 @@ class RegistrationFlowTest {
+         assertEquals(IDENTITY, flow.current)
+         assertEquals(5, flow.statuses.size)
+         assertEquals(RegistrationStep.entries.associateWith { StepStatus.PENDING }, flow.statuses)
+-        assertEquals("Step 1 of 5: Identity", registrationHeaderText(flow))
++        assertEquals(1, registrationStepNumber(flow.current))
++        assertEquals(5, registrationStepCount)
+     }
+ 
+     @Test
+     fun rf1_begin_at_a_later_step_keeps_all_pending() {
+         val flow = begin(OBSTETRIC)
+         assertEquals(OBSTETRIC, flow.current)
+-        assertEquals("Step 3 of 5: Obstetric history and risk", registrationHeaderText(flow))
++        assertEquals(3, registrationStepNumber(flow.current))
+         assertEquals(setOf(StepStatus.PENDING), flow.statuses.values.toSet())
+     }
+ 
+@@ -251,4 +255,55 @@ class RegistrationFlowTest {
+         assertEquals(flow, result.flow)
+         assertEquals(null, result.flow.pregnancyTarget)
+     }
++
++    private fun walk(target: Int?, index: Int = 0) = begin(PREGNANCIES).copy(pregnancyTarget = target, pregnancyIndex = index)
++
++    @Test
++    fun forward_is_finish_is_false_on_steps_one_to_four() {
++        for (step in listOf(IDENTITY, DATING, OBSTETRIC, HISTORIES)) {
++            assertFalse(step.name, forwardIsFinish(begin(step)))
++            assertFalse(step.name, forwardIsFinish(begin(step), remainingOnPrompt = 0))
++        }
++    }
++
++    @Test
++    fun forward_is_finish_on_the_count_prompt_only_when_nothing_remains() {
++        assertFalse(forwardIsFinish(walk(null)))
++        assertFalse(forwardIsFinish(walk(null), remainingOnPrompt = 2))
++        assertTrue(forwardIsFinish(walk(null), remainingOnPrompt = 0))
++    }
++
++    @Test
++    fun forward_is_finish_only_on_the_last_pregnancy_of_the_walk() {
++        assertFalse(forwardIsFinish(walk(target = 3, index = 0)))
++        assertFalse(forwardIsFinish(walk(target = 3, index = 1)))
++        assertTrue(forwardIsFinish(walk(target = 3, index = 2)))
++        assertTrue(forwardIsFinish(walk(target = 1, index = 0)))
++        assertFalse(forwardIsFinish(walk(target = 1, index = 0).copy(current = HISTORIES)))
++    }
++
++    @Test
++    fun skip_is_shown_on_every_step_but_identity() {
++        assertFalse(showsSkip(begin(IDENTITY)))
++        for (step in listOf(DATING, OBSTETRIC, HISTORIES, PREGNANCIES)) assertTrue(step.name, showsSkip(begin(step)))
++    }
++
++    @Test
++    fun parse_pregnancy_count_accepts_whole_numbers_from_zero_to_twenty() {
++        assertEquals(2, parsePregnancyCount("2"))
++        assertEquals(7, parsePregnancyCount(" 7 "))
++        assertEquals(0, parsePregnancyCount("0"))
++        assertEquals(20, parsePregnancyCount("20"))
++    }
++
++    @Test
++    fun parse_pregnancy_count_rejects_everything_else() {
++        for (bad in listOf("21", "25", "-1", "", "   ", "x", "2.5", "1 2")) assertNull(bad, parsePregnancyCount(bad))
++    }
++
++    @Test
++    fun step_count_matches_the_enum() {
++        assertEquals(RegistrationStep.entries.size, registrationStepCount)
++        assertEquals(registrationStepCount, registrationStepNumber(PREGNANCIES))
++    }
+ }
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/ui/components/RegistrationStepTextTest.kt b/app/src/test/java/com/sherifradwan/ancnative/ui/components/RegistrationStepTextTest.kt
+new file mode 100644
+index 0000000..9d39460
+--- /dev/null
++++ b/app/src/test/java/com/sherifradwan/ancnative/ui/components/RegistrationStepTextTest.kt
+@@ -0,0 +1,38 @@
++package com.sherifradwan.ancnative.ui.components
++
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.state.RegistrationStep
++import com.sherifradwan.ancnative.state.StepStatus
++import org.junit.Assert.assertEquals
++import org.junit.Assert.assertNotEquals
++import org.junit.Test
++
++class RegistrationStepTextTest {
++    @Test
++    fun five_steps_have_five_distinct_title_resources() {
++        val titles = RegistrationStep.entries.map { it.titleRes() }
++        assertEquals(RegistrationStep.entries.size, titles.toSet().size)
++    }
++
++    @Test
++    fun obstetric_and_pregnancy_titles_reuse_the_existing_strings() {
++        assertEquals(R.string.obstetric_risk_section_title, RegistrationStep.OBSTETRIC.titleRes())
++        assertEquals(R.string.previous_pregnancies, RegistrationStep.PREGNANCIES.titleRes())
++        assertNotEquals(R.string.previous_pregnancies, RegistrationStep.HISTORIES.titleRes())
++    }
++
++    @Test
++    fun three_statuses_have_distinct_words_and_the_done_word_is_reused() {
++        val words = StepStatus.entries.map { it.labelRes() }
++        assertEquals(StepStatus.entries.size, words.toSet().size)
++        assertEquals(R.string.done, StepStatus.DONE.labelRes())
++    }
++
++    @Test
++    fun three_statuses_have_distinct_nonblank_glyphs() {
++        val glyphs = StepStatus.entries.map { it.glyph() }
++        assertEquals(StepStatus.entries.size, glyphs.toSet().size)
++        glyphs.forEach { assertNotEquals("", it.trim()) }
++        assertEquals("✓", StepStatus.DONE.glyph())
++    }
++}

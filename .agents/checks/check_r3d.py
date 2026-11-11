@@ -152,13 +152,17 @@ else:
     record("S21 settings dialog: no timeout picker, restore confirm", not problems, "; ".join(problems))
 
 # S22
-claims = [
-    ("ui/WorkspaceScreen.kt", ["Encrypted & Verified"]),
+claims = [  # WorkspaceScreen.kt is gone; the patient hub files replace it
+
+    *[(rel, ["Encrypted & Verified"]) for rel in sorted(
+        str(f.relative_to(MAIN)) for f in (MAIN / "ui/patienthub").rglob("*.kt"))],
     ("ui/PatientEditor.kt", ["Hardware Vault Security"]),
     ("storage/AttachmentSyncManager.kt", ["Locally Encrypted & Secured"]),
     ("ui/SecuritySettingsDialog.kt", ["Zero Data Loss", "100% verif"]),
 ]
 problems = []
+if not any(r.startswith("ui/patienthub/") for r, _ in claims):
+    problems.append("no ui/patienthub files found")
 for rel, bad in claims:
     src = read(MAIN / rel)
     if src is None:

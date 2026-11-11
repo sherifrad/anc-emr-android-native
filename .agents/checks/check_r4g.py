@@ -3,12 +3,12 @@
 
 Stdlib only. Prints PASS/FAIL per check, exits 1 if any FAIL.
 Textual source contract only; verifies nothing at runtime. Comments are stripped before matching.
-  S170 one scan due-date function.
-  S171 new-patient draft carries the dating choice fields.
-  S172 the intake dating rule goes through the engine's per-method rule.
-  S173 the post-save dating write uses the rule's result, not a hard-coded LMP.
-  S174 the new fields are saved and restored with the patient draft.
-  S175 the new-patient form calls the preview; the old LMP-only engine function is gone.
+  S170 eddFromScan is defined nowhere in main.
+  S171 the patient draft carries none of the eight removed dating fields.
+  S172 intakeDatingUpdate and intakeDatingPreview are defined nowhere in main.
+  S173 the view model builds no post-save dating command (no datingCmd).
+  S174 DraftMapping.kt does not mention the eight removed dating names in the patient branch.
+  S175 the patient editor does not call the old LMP-only functions and calculateForLmp is gone from main sources.
 """
 import re
 import sys
@@ -18,12 +18,11 @@ ROOT = Path(__file__).resolve().parents[2]
 MAIN = ROOT / "app/src/main/java/com/sherifradwan/ancnative"
 ISO = MAIN / "model/IsoDates.kt"
 STATE = MAIN / "state/AncState.kt"
-RULE = MAIN / "state/IntakeDatingRule.kt"
 VM = MAIN / "state/AncViewModel.kt"
 MAPPING = MAIN / "state/DraftMapping.kt"
 EDITOR = MAIN / "ui/PatientEditor.kt"
-FIELDS = ("datingMethod", "transferDate", "embryoAgeDays", "agreedEdd", "scanDate", "scanGaWeeks", "scanGaDays")
-ENUMS = ("DATING_METHOD", "TRANSFER_DATE", "EMBRYO_AGE_DAYS", "AGREED_EDD", "SCAN_DATE", "SCAN_GA_WEEKS", "SCAN_GA_DAYS")
+FIELDS = ("lmpDate", "datingMethod", "transferDate", "embryoAgeDays", "agreedEdd", "scanDate", "scanGaWeeks", "scanGaDays")
+ENUMS = ("LMP_DATE", "DATING_METHOD", "TRANSFER_DATE", "EMBRYO_AGE_DAYS", "AGREED_EDD", "SCAN_DATE", "SCAN_GA_WEEKS", "SCAN_GA_DAYS")
 
 results = []
 
@@ -67,63 +66,72 @@ def block(src, header):
 
 
 def check_s170():
-    record("S170 one scan due-date function", defined_in(r"\bfun\s+eddFromScan\s*\(") == [ISO.name],
-           "eddFromScan not defined exactly once in IsoDates.kt")
+    found = defined_in(r"\b(?:fun\s+(?:[\w.<>?]+\.)?|va[lr]\s+(?:[\w.<>?]+\.)?)eddFromScan\b")
+    record("S170 eddFromScan is gone from main", not found, "eddFromScan defined in " + ", ".join(found))
 
 
 def check_s171():
     st = code(STATE)
     values = block(st, r"data\s+class\s+PatientDraftValues\s*\(")
     enum = block(st, r"enum\s+class\s+PatientDraftField\s*\{")
-    problems = ["PatientDraftValues lacks " + f for f in FIELDS if not re.search(r"\bval\s+" + f + r"\b", values)]
-    problems += ["PatientDraftField lacks " + e for e in ENUMS if not re.search(r"\b" + e + r"\b", enum)]
-    problems += ["reducer does not handle " + e for e in ENUMS if not re.search(r"PatientDraftField\." + e + r"\s*->", st)]
-    record("S171 new-patient draft carries the dating choice fields", not problems, "; ".join(problems[:6]))
+    problems = []
+    if not values:
+        problems.append("PatientDraftValues not found")
+    if not enum:
+        problems.append("PatientDraftField not found")
+    problems += ["PatientDraftValues has " + f for f in FIELDS if re.search(r"\bval\s+" + f + r"\b", values)]
+    problems += ["PatientDraftField has " + e for e in ENUMS if re.search(r"\b" + e + r"\b", enum)]
+    problems += ["reducer handles PatientDraftField." + e for e in ENUMS if re.search(r"PatientDraftField\." + e + r"\b", st)]
+    record("S171 the patient draft carries none of the eight removed dating fields", not problems, "; ".join(problems[:6]))
 
 
 def check_s172():
     problems = []
-    rule = code(RULE)
-    if not re.search(r"fun\s+intakeDatingUpdate\s*\([^)]*PatientDraftValues", rule):
-        problems.append("intakeDatingUpdate does not take PatientDraftValues")
-    for needed in ("dueDateForMethod", "eddFromScan"):
-        if needed not in rule:
-            problems.append("does not use " + needed)
-    for banned in ("eddFromLmp(", "ivfEddFromTransfer("):
-        if banned in rule:
-            problems.append("still calls " + banned)
-    if defined_in(r"\bfun\s+intakeDatingPreview\s*\(") != [RULE.name]:
-        problems.append("intakeDatingPreview not defined once in IntakeDatingRule.kt")
-    record("S172 intake dating goes through the engine rule", not problems, "; ".join(problems))
+    for name in ("intakeDatingUpdate", "intakeDatingPreview"):
+        found = defined_in(r"\bfun\s+" + name + r"\s*\(")
+        if found:
+            problems.append(name + " defined in " + ", ".join(found))
+    if (MAIN / "state/IntakeDatingRule.kt").exists():
+        problems.append("state/IntakeDatingRule.kt exists")
+    record("S172 the intake dating rule stays removed", not problems, "; ".join(problems))
 
 
 def check_s173():
-    vm = code(VM)
     problems = []
-    if re.search(r'datingMethod\s*=\s*"LMP"', vm):
-        problems.append("hard-coded LMP method")
-    if re.search(r"values\?\.lmpDate", vm):
-        problems.append("passes only the LMP to the rule")
-    record("S173 post-save dating write uses the rule result", not problems, "; ".join(problems))
+    if not VM.exists():
+        problems.append("AncViewModel.kt missing")
+    vm = code(VM)
+    if "datingCmd" in vm:
+        problems.append("AncViewModel.kt contains datingCmd")
+    if re.search(r"\bSaveDatingCommand\s*\(", vm):
+        problems.append("AncViewModel.kt constructs SaveDatingCommand(")
+    record("S173 the view model builds no post-save dating command", not problems, "; ".join(problems))
 
 
 def check_s174():
     src = code(MAPPING)
-    bad = [f for f in FIELDS if len(re.findall(r'"' + f + r'"', src)) < 2]
-    record("S174 new fields saved and restored with the patient draft", not bad, "not saved and restored: " + ", ".join(bad))
+    patient = block(src, r"state\.patientDraft\?\.let\s*")
+    restore = block(src, r"DraftScreenKind\.PATIENT_PROFILE\s*->\s*")
+    problems = []
+    if not patient:
+        problems.append("patient save block not found")
+    if not restore:
+        problems.append("patient restore block not found")
+    for f in FIELDS:
+        if '"' + f + '"' in patient or '"' + f + '"' in restore:
+            problems.append("patient save or restore still uses " + f)
+    record("S174 the patient draft is not saved or restored with the removed dating keys", not problems, "; ".join(problems))
 
 
 def check_s175():
     problems = []
     ed = code(EDITOR)
-    if "intakeDatingPreview(" not in ed:
-        problems.append("PatientEditor.kt does not call intakeDatingPreview")
     for banned in ("eddFromLmp(", "calculateForLmp("):
         if banned in ed:
             problems.append("PatientEditor.kt still calls " + banned)
     if defined_in(r"\bcalculateForLmp\b"):
         problems.append("calculateForLmp still exists in main sources")
-    record("S175 form calls the preview; LMP-only engine function gone", not problems, "; ".join(problems))
+    record("S175 editor free of LMP-only calls; calculateForLmp gone", not problems, "; ".join(problems))
 
 
 check_s170()

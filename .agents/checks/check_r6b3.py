@@ -69,11 +69,12 @@ def main():
             bad.append(f.name + " hard-codes a per-kind delete tag")
     record("S423 no per-kind delete dialog, Undo bar or delete icon anywhere (one mechanism keyed by DeletableType)", not bad, ", ".join(bad))
 
-    ws = read(MAIN / "ui/WorkspaceScreen.kt")
+    # WorkspaceScreen.kt is gone: the patient hub (tabs and components) wires the delete mechanism now.
+    ws = "\n".join(read(f) for f in sorted((MAIN / "ui/patienthub").rglob("*.kt")))
     wired = len(re.findall(r"RequestDelete\s*\(\s*patient\.id\s*,\s*DeletableType\.(MEDICATION|LAB)", ws))
     icons = len(re.findall(r"DeleteIconButton\s*\(\s*DeletableType\.(MEDICATION|LAB)", ws))
     # medication card now has ONE header row (collapsed and expanded share it): medication 1 + lab 1 = 2 icons
-    record("S424 WorkspaceScreen wires RequestDelete and DeleteIconButton for medications (cards) and labs", wired >= 2 and icons >= 2 and
+    record("S424 patient hub wires RequestDelete and DeleteIconButton for medications (cards) and labs", wired >= 2 and icons >= 2 and
            "DeletableType.MEDICATION" in ws and "DeletableType.LAB" in ws, "RequestDelete=%d DeleteIconButton=%d" % (wired, icons))
 
     strings = read(RES / "values/strings.xml")

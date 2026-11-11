@@ -29,6 +29,7 @@ import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
+import com.sherifradwan.ancnative.state.activeFlowForRoute
 import com.sherifradwan.ancnative.state.HistoriesDraftField
 import com.sherifradwan.ancnative.state.SavePhase
 
@@ -41,6 +42,7 @@ fun OtherHistoriesEditor(
     val patient = state.patient(route.patientId) ?: return
     val draft = state.historiesDraft?.takeIf { it.patientId == route.patientId } ?: return
     val enabled = state.savePhase == SavePhase.IDLE || state.savePhase == SavePhase.ERROR
+    val inFlow = state.activeFlowForRoute() != null
 
     val noMedical = stringResource(R.string.no_medical_history)
     val noSurgical = stringResource(R.string.no_surgical_history)
@@ -51,6 +53,7 @@ fun OtherHistoriesEditor(
         title = stringResource(R.string.edit_other_histories),
         subtitle = "${patient.displayName} · Medical, Surgical, Family & Allergy Histories",
         tag = "otherHistoriesEditor",
+        showHeader = !inFlow,
     ) {
         GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
 
@@ -239,11 +242,13 @@ fun OtherHistoriesEditor(
             )
         }
 
-        EditorActions(
-            enabled = enabled,
-            saveTag = "saveHistories",
-            onCancel = { onEvent(AncEvent.CancelEditor) },
-            onSave = { onEvent(AncEvent.SubmitOtherHistories) },
-        )
+        if (!inFlow) {
+            EditorActions(
+                enabled = enabled,
+                saveTag = "saveHistories",
+                onCancel = { onEvent(AncEvent.CancelEditor) },
+                onSave = { onEvent(AncEvent.SubmitOtherHistories) },
+            )
+        }
     }
 }

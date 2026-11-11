@@ -139,7 +139,7 @@ fun ClinicalDateField(
                 FilterChip(
                     selected = false,
                     onClick = { onValueChange(LocalDate.now().toString()) },
-                    label = { Text("⚡ " + stringResource(R.string.today) + " (" + LocalDate.now().toString() + ")") },
+                    label = { Text(stringResource(R.string.today) + " (" + LocalDate.now().toString() + ")") },
                     modifier = Modifier.minimumTouchTarget().testTag("${tag}TodayButton"),
                 )
             }

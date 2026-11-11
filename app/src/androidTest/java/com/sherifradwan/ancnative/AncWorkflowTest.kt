@@ -412,11 +412,7 @@ class AncWorkflowTest {
         )
         state = AncReducer.reduce(
             state,
-            AncEvent.PregnancyDraftChanged(PregnancyDraftField.BIRTH_METHOD, "Vaginal"),
-        )
-        state = AncReducer.reduce(
-            state,
-            AncEvent.PregnancyDraftChanged(PregnancyDraftField.CLINICIAN_ID, "synthetic-clinician"),
+            AncEvent.PregnancyDraftChanged(PregnancyDraftField.DELIVERY_BY, "Vaginal"),
         )
         val editorRoute = state.route
         val dirtyBack = AncReducer.reduce(state, AncEvent.Back)
@@ -454,6 +450,7 @@ class AncWorkflowTest {
             AncEvent.PregnancyDraftChanged(PregnancyDraftField.OUTCOME, "EarlyPregnancyLoss"),
         )
         val correctedDraft = state.pregnancyDraft!!.values
+        assertEquals("", correctedDraft.deliveryBy)
         assertEquals("", correctedDraft.birthMethod)
         assertEquals("", correctedDraft.terminationMethod)
         state = AncReducer.reduce(
@@ -521,9 +518,18 @@ class AncWorkflowTest {
         )
         mountFixture(LayoutFixture.narrowPhone(), state)
         compose.onNodeWithTag("datingEditor").assertIsDisplayed()
-        compose.onNodeWithTag("lmpDate").assertIsDisplayed()
+        compose.onNodeWithTag("datingMethodDropdown").assertIsDisplayed()
         compose.onNodeWithTag("ultrasoundEdd").assertIsDisplayed()
         compose.onNodeWithTag("agreedEdd").assertIsDisplayed()
+        // LMP is hidden for an Ultrasound-dated patient; picking LMP in the dropdown shows it.
+        compose.onNodeWithTag("lmpDate").assertDoesNotExist()
+        state = AncReducer.reduce(
+            state,
+            AncEvent.DatingDraftChanged(com.sherifradwan.ancnative.state.DatingDraftField.DATING_METHOD, "LMP"),
+        )
+        mountFixture(LayoutFixture.narrowPhone(), state)
+        compose.onNodeWithTag("lmpDate").assertIsDisplayed()
+        compose.onNodeWithTag("ultrasoundEdd").assertDoesNotExist()
         compose.onNodeWithTag("datingNotes").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("saveDating").performScrollTo().assertIsDisplayed()
 
@@ -912,28 +918,7 @@ class AncWorkflowTest {
         )
 
         if (minHeightDp >= 48f) {
-            val touchBounds = semanticsNode.touchBoundsInRoot
-            assertTrue(
-                "$label touch target is too short: height=${touchBounds.height}px, " +
-                    "expected>=${minHeightDp * fixtureDensity}px",
-                touchBounds.height + tolerancePx >= minHeightDp * fixtureDensity,
-            )
-            assertTrue(
-                "$label touch target is outside host left: touch=$touchBounds host=$host",
-                touchBounds.left + tolerancePx >= host.left,
-            )
-            assertTrue(
-                "$label touch target is outside host top: touch=$touchBounds host=$host",
-                touchBounds.top + tolerancePx >= host.top,
-            )
-            assertTrue(
-                "$label touch target is outside host right: touch=$touchBounds host=$host",
-                touchBounds.right <= host.right + tolerancePx,
-            )
-            assertTrue(
-                "$label touch target is outside host bottom: touch=$touchBounds host=$host",
-                touchBounds.bottom <= host.bottom + tolerancePx,
-            )
+            assertTouchTargetInsideHost(label, semanticsNode, host, fixtureDensity, minHeightDp, tolerancePx = tolerancePx)
         } else {
             assertTrue(
                 "$label is too short: height=${bounds.height}px, expected>=${minHeightDp * fixtureDensity}px",

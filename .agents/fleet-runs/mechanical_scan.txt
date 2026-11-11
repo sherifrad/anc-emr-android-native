@@ -1,0 +1,305 @@
+
+== em dash in resource strings
+116:    <string name="gpa_all_or_none">G / P / A — enter all three or leave all blank</string>
+
+== em dash in UI string literals
+app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt:138:                                text = "Ultrasound Scan — ${scan.date}",
+
+== emoji, check and warning signs in UI code and strings
+app/src/main/res/values/strings.xml:413:    <string name="note_filled">Note ✓</string>
+app/src/main/res/values/strings.xml:514:    <string name="filled_normal_toast">✔ Populated %1$d standard findings</string>
+app/src/main/java/com/sherifradwan/ancnative/ui/OtherHistoriesEditor.kt:89:                    Text("✓ " + stringResource(R.string.fill_all_negative))
+app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt:629:                                            text = "📷 Photo ${index + 1}",
+app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt:110:                LabResultFlag.NORMAL -> "Normal ✓"
+app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt:403:                        text = "📌 Chained Batch",
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/LabReportGrouping.kt:28:                "ALL NORMAL ✓"
+app/src/main/java/com/sherifradwan/ancnative/ui/VisitEditor.kt:707:                                    FhrLevel.NORMAL -> Triple("Normal baseline (110–160 bpm) ✓", ClinicalTeal, Clinical
+app/src/main/java/com/sherifradwan/ancnative/ui/VisitEditor.kt:708:                                    FhrLevel.BRADYCARDIA -> Triple("Bradycardia (<110 bpm) ⚠️", MaterialTheme.colorSche
+app/src/main/java/com/sherifradwan/ancnative/ui/VisitEditor.kt:709:                                    FhrLevel.TACHYCARDIA -> Triple("Tachycardia (>160 bpm) ⚠️", MaterialTheme.colorSche
+app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt:164:                    """<div class="photo-badge">📷 ${s.imageUris.size} scan photos attached</div>"""
+app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt:341:                                    <div class="photo-preview-placeholder">📷 [Original Ultrasound S
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/LabReportItem.kt:133:                                text = "ALL NORMAL ✓",
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/BedsideVitalsGrid.kt:98:                                BpLevel.SEVERE -> "▲ Severe · Urgent ⚠️"
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/BedsideVitalsGrid.kt:100:                                BpLevel.NORMAL -> "Normal ✓"
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/BedsideVitalsGrid.kt:192:                                    FhrLevel.NORMAL -> Triple("110-160 normal ✓", normalText,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/BedsideVitalsGrid.kt:193:                                    FhrLevel.BRADYCARDIA -> Triple("Bradycardia (<110) ⚠️",
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/BedsideVitalsGrid.kt:194:                                    FhrLevel.TACHYCARDIA -> Triple("Tachycardia (>160) ⚠️",
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/BedsideVitalsGrid.kt:243:                                    SfhConcordance.CONCORDANT -> Triple("Concordant ✓", norma
+app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt:792:                                text = if (item.isAbnormal) "Abnormal ▲" else "Normal ✓",
+app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt:945:                                        text = if (item.isAbnormal) "Abnormal ▲" else "Normal ✓",
+
+== contentDescription = null (lines)
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:306:                contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/OtherHistoriesEditor.kt:230:                contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt:565:                    contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt:656:                            Icon(Icons.Default.PhotoCamera, contentDescription = null, modifier = 
+app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt:670:                            Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, modif
+app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt:738:                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.si
+app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt:765:                contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt:80:                        contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt:126:            Icon(Icons.Default.Warning, contentDescription = null, tint = ac
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationTapToAddSection.kt:246:                                    contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/LabReportItem.kt:147:                            Icon(Icons.Default.Add, contentDescription = null, 
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/LabReportItem.kt:190:                                            contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalGroupSection.kt:52:                Icon(icon, contentDescription = null, tint = iconTint, mo
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/AttachmentsSectionCard.kt:97:                        contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/AttachmentsSectionCard.kt:114:                        Icon(Icons.Default.Add, contentDescription = n
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/AttachmentsSectionCard.kt:223:                                                contentDescription = n
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/AttachmentsSectionCard.kt:275:                                                contentDescription = n
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt:158:                            contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt:422:                                    contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/VisitsTab.kt:95:                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modi
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/VisitsTab.kt:210:                                        contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt:110:                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modif
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/ScansTab.kt:103:                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modi
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/LabsTab.kt:78:                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifi
+app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt:370:                                            contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt:396:                                        Icon(Icons.Default.Add, contentDescription = null, modifier 
+app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt:879:                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:248:                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.si
+app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:282:                        Icon(Icons.Default.Search, contentDescription = null, tint = MaterialThem
+app/src/main/java/com/sherifradwan/ancnative/ui/AddAttachmentDialog.kt:247:                                    contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/AddAttachmentDialog.kt:289:                                    contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/MedicationEditor.kt:232:                                contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/MedicationEditor.kt:384:                contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:263:                                Icon(Icons.Default.BrightnessAuto, contentDescription = null
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:327:                            Icon(Icons.Default.Security, contentDescription = null, tint = M
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:429:                            Icon(Icons.Default.Password, contentDescription = null, tint = M
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:475:                                Icon(Icons.Default.Fingerprint, contentDescription = null, t
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:551:                            Icon(Icons.Default.LockClock, contentDescription = null, tint = 
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:582:                                Icon(Icons.Default.Security, contentDescription = null, tint
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:614:                                    Icon(Icons.Default.Lock, contentDescription = null, modi
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:625:                                    Icon(Icons.Default.Security, contentDescription = null, 
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:643:                        Icon(Icons.Default.Lock, contentDescription = null, modifier = Modif
+app/src/main/java/com/sherifradwan/ancnative/ui/AppLockScreen.kt:445:                        contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/VaultGateScreen.kt:108:                        contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/VaultGateScreen.kt:138:                    Icon(Icons.Default.Security, contentDescription = null, modifier = Modifier.siz
+app/src/main/java/com/sherifradwan/ancnative/ui/VaultGateScreen.kt:150:                    Icon(Icons.Default.Fingerprint, contentDescription = null, modifier = Modifier.
+app/src/main/java/com/sherifradwan/ancnative/ui/VaultGateScreen.kt:162:                    Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt:242:                    contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt:130:                                    contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt:213:                                contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt:248:                                    contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/PreviousPregnancyEditor.kt:241:                contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt:130:                                    contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/VisitEditor.kt:1200:                contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/DesignSystem.kt:128:                contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/DesignSystem.kt:179:                    contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/DesignSystem.kt:443:                    contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/DesignSystem.kt:520:                    contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt:396:                contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:125:                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modif
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:134:                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modif
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:171:            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:385:            Icon(Icons.Default.RestartAlt, contentDescription = null, modifier = Modifier.s
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:701:                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, m
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:821:                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:833:            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:938:            Icon(Icons.Default.RestartAlt, contentDescription = null, modifier = Modifier.s
+app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientActionsModalSheet.kt:126:                            Icon(Icons.Default.Add, contentDescription = 
+app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientActionsModalSheet.kt:156:                        Icon(Icons.Default.FolderOpen, contentDescription
+app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientActionsModalSheet.kt:192:                            Icon(Icons.Default.Edit, contentDescription =
+app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientActionsModalSheet.kt:230:                            contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/InAppCameraDialog.kt:227:                                    contentDescription = null,
+
+== infinite animations
+
+== hardcoded Text literals
+app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt:658:                            Text("Take Photo", maxLines = 1, softWrap = false)
+app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt:672:                            Text("Choose Image", maxLines = 1, softWrap = false)
+app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt:328:                    Text("Done")
+app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt:740:                                Text("Add template")
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/LabReportItem.kt:149:                            Text("Add Test", style = MaterialTheme.typography.labelMedium, fontWeig
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt:285:                    label = { Text("Alerts narrative (one item per line)") },
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt:286:                    placeholder = { Text("Example:\n• Mild anemia at 34w (Hb 10.6 g/dL)
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/VisitsTab.kt:97:                        Text("Record Visit", fontWeight = FontWeight.Bold, softWrap = false)
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt:112:                        Text("Prescribe", fontWeight = FontWeight.Bold, softWrap = false)
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/ScansTab.kt:105:                        Text("Record Scan", fontWeight = FontWeight.Bold, softWrap = false)
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/LabsTab.kt:80:                        Text("Add Test", fontWeight = FontWeight.Bold, softWrap = false)
+app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt:144:                        label = { Text("Date") },
+app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt:154:                        label = { Text("Laboratory") },
+app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt:563:                    label = { Text("Panel name") },
+app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt:600:                text = { Text("Not specified (Empty)") },
+app/src/main/java/com/sherifradwan/ancnative/ui/AddAttachmentDialog.kt:216:                    label = { Text("Title or Notes (Optional)") },
+app/src/main/java/com/sherifradwan/ancnative/ui/AddAttachmentDialog.kt:217:                    placeholder = { Text("Example: 32w Scan or CBC Blood Report") },
+app/src/main/java/com/sherifradwan/ancnative/ui/AddAttachmentDialog.kt:377:                        Text("Cancel")
+app/src/main/java/com/sherifradwan/ancnative/ui/AddAttachmentDialog.kt:390:                        Text("Save to Patient Record")
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:374:                            label = { Text("Clinic Name (Header & Top Bar)") },
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:382:                            label = { Text("Specialty or Description (Subtitle)") },
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:409:                                Text("Save Clinic Branding")
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:450:                            Text("Change 6-Digit PIN", fontWeight = FontWeight.SemiBold)
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:522:                                Text("Test Fingerprint Now")
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:616:                                    Text("Export Backup", maxLines = 1)
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:627:                                    Text("Restore Backup", maxLines = 1)
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:645:                        Text("Lock App Now", fontWeight = FontWeight.Bold)
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:709:                Text("Restoring replaces every patient on this phone with the backup. This cannot be undone.")
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:718:                    Text("Replace all")
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:728:                    Text("Cancel")
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:781:            Text("Set New 6-Digit PIN", fontWeight = FontWeight.Bold)
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:794:                    label = { Text("New 6-Digit PIN") },
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:804:                    label = { Text("Confirm New PIN") },
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:834:                Text("Save New PIN")
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:839:                Text("Cancel")
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:857:            Text("Export Encrypted Backup", fontWeight = FontWeight.Bold)
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:870:                    label = { Text("Backup Passphrase") },
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:879:                    label = { Text("Confirm Passphrase") },
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:908:                Text("Export & Encrypt")
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:913:                Text("Cancel")
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:930:            Text("Restore Encrypted Vault", fontWeight = FontWeight.Bold)
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:943:                    label = { Text("Passphrase for Decryption") },
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:970:                Text("Decrypt & Restore")
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:975:                Text("Cancel")
+app/src/main/java/com/sherifradwan/ancnative/ui/MedicationEditor.kt:236:                            Text("Add to my list", maxLines = 1, softWrap = false)
+app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt:275:                    Text("Close Viewer", fontWeight = FontWeight.SemiBold)
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:127:                        Text("Add Test", maxLines = 1, softWrap = false)
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:136:                        Text("Create Panel", maxLines = 1, softWrap = false)
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:387:            Text("Reset lab tests to defaults")
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:436:            title = { Text("Confirm Delete Test") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:445:                    Text("Delete")
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:450:                    Text("Cancel")
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:460:            title = { Text("Confirm Delete Diagnostic Panel") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:469:                    Text("Delete")
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:474:                    Text("Cancel")
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:484:            title = { Text("Reset lab tests to defaults") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:485:            text = { Text("This will restore the clinic lab catalog and panels back to standard antenatal clini
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:494:                    Text("Reset")
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:499:                    Text("Cancel")
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:534:                    label = { Text("Test Name (Required)") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:535:                    placeholder = { Text("e.g. Complete Blood Count or TSH") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:565:                        label = { Text("Unit") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:566:                        placeholder = { Text("g/dL") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:573:                        label = { Text("Reference Range") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:583:                    label = { Text("Default Result / Value (Optional)") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:584:                    placeholder = { Text("e.g. Negative or Nil") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:636:                Text("Save")
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:641:                Text("Cancel")
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:666:        title = { Text("Create New Diagnostic Panel") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:675:                    label = { Text("Panel Name (Required)") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:676:                    placeholder = { Text("e.g. Hypertension Follow-up or Diabetes Screening") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:684:                    label = { Text("Description / Indication (Optional)") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:685:                    placeholder = { Text("e.g. Panel requested at 28 weeks gestation") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:700:                    placeholder = { Text("Search available tests...") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:761:                Text("Save Panel")
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:766:                Text("Cancel")
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:823:                    Text("Add Medication", maxLines = 1, softWrap = false)
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:832:            placeholder = { Text("Search medications or dosages...") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:940:            Text("Reset medication list to defaults")
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:959:            title = { Text("Confirm Delete Medication") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:968:                    Text("Delete")
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:973:                    Text("Cancel")
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:983:            title = { Text("Reset to default medications") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:984:            text = { Text("This will restore the medication catalog to standard clinical maternal care guidelin
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:992:                    Text("Reset")
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:997:                    Text("Cancel")
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:1018:        title = { Text("Add new medication") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:1028:                        label = { Text("Medication Name (Required)") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:1029:                        placeholder = { Text("e.g. Folic Acid") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:1036:                        label = { Text("Dosage") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:1082:                    label = { Text("Instructions / Clinical Indication") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:1083:                    placeholder = { Text("e.g. For neural tube defect prevention") },
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:1119:                Text("Add to my list")
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:1124:                Text("Cancel")
+
+== Color(0x...) in UI outside Theme and DesignSystem
+
+== explicit sizes 16 to 44dp (check each is a visual, not a tap target)
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:308:                modifier = Modifier.size(16.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/OtherHistoriesEditor.kt:232:                modifier = Modifier.size(16.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt:567:                    modifier = Modifier.size(16.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt:656:                            Icon(Icons.Default.PhotoCamera, contentDescription
+app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundEditor.kt:670:                            Icon(Icons.Default.AddPhotoAlternate, contentDescr
+app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt:738:                                Icon(Icons.Default.Add, contentDescription = null, mo
+app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt:767:                modifier = Modifier.size(16.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt:82:                        modifier = Modifier.size(20.d
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt:103:                            modifier = Modifier.size
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt:55:        Icon(icon, contentDescription = description, tint
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt:126:            Icon(Icons.Default.Warning, contentDescripti
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PencilEditButton.kt:39:                modifier = Modifier.size(20.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationTapToAddSection.kt:248:                                    modifier = 
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/LabReportItem.kt:147:                            Icon(Icons.Default.Add, content
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/LabReportItem.kt:192:                                            modifier = Modi
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/LabReportItem.kt:377:                        modifier = Modifier.size(18.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationCard.kt:83:                        modifier = Modifier.size(20.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationCard.kt:112:                                modifier = Modifier.size(2
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationCard.kt:128:                                modifier = Modifier.size(2
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalGroupSection.kt:48:                    .size(24.dp)
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalGroupSection.kt:52:                Icon(icon, contentDescription = null,
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/AttachmentsSectionCard.kt:99:                        modifier = Modifier.size(20
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/AttachmentsSectionCard.kt:114:                        Icon(Icons.Default.Add, co
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/AttachmentsSectionCard.kt:277:                                                mo
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt:160:                            modifier = Modifier.s
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt:178:                            modifier = Modifier.s
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt:223:                                        modifier = Modifier.size(20
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt:236:                                    modifier = Modifier.size(20.dp)
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt:247:                                    modifier = Modifier.size(20.dp)
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt:377:                                        modifier = Modifier.size(20
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt:423:                                    modifier = Modifier.size(16.dp)
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt:504:                modifier = Modifier.size(16.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt:519:                modifier = Modifier.size(18.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/VisitsTab.kt:95:                        Icon(Icons.Default.Add, contentDescription = n
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/VisitsTab.kt:212:                                        modifier = Modifier.size(18.d
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt:110:                        Icon(Icons.Default.Add, contentDescription = nu
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/ScansTab.kt:103:                        Icon(Icons.Default.Add, contentDescription = n
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/LabsTab.kt:78:                        Icon(Icons.Default.Add, contentDescription = nul
+app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt:372:                                            modifier = Modifier.size(16.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt:396:                                        Icon(Icons.Default.Add, contentDescripti
+app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt:431:                                                modifier = Modifier.size(24.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt:733:                            .size(32.dp)
+app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt:739:                            modifier = Modifier.size(26.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt:879:                Icon(Icons.Default.Add, contentDescription = null, modifier = Mo
+app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt:166:                                    modifier = Modifier.size(
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt:244:                    modifier = Modifier.size(14.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt:398:                modifier = Modifier.size(16.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt:90:            modifier = Modifier.size(20.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/DeleteUndoUi.kt:240:                    modifier = Modifier.size(20.dp).semantics { contentDescription
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:127:                                    modifier = Modifier.size(20.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:161:                                        modifier = Modifier.size(20.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:175:                                        modifier = Modifier.size(20.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:293:                                    modifier = Modifier.size(18.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientActionsModalSheet.kt:126:                            Icon(Icons.Default.Add, c
+app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientActionsModalSheet.kt:156:                        Icon(Icons.Default.FolderOpen
+app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientActionsModalSheet.kt:192:                            Icon(Icons.Default.Edit, 
+app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientActionsModalSheet.kt:232:                            modifier = Modifier.size(
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt:125:                            modifier = Modifier.size(40.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt:132:                                    modifier = Modifier.size(20.
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt:250:                                    modifier = Modifier.size(16.
+app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt:156:                                modifier = Modifier.size(34.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/MedicationEditor.kt:233:                                modifier = Modifier.size(16.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/MedicationEditor.kt:386:                modifier = Modifier.size(16.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/AddAttachmentDialog.kt:249:                                    modifier = Modifier.size(36.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/AddAttachmentDialog.kt:291:                                    modifier = Modifier.size(36.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt:155:                                modifier = Modifier.size(
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:614:                                    Icon(Icons.Default.Lock, contentDesc
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:625:                                    Icon(Icons.Default.Security, content
+app/src/main/java/com/sherifradwan/ancnative/ui/SecuritySettingsDialog.kt:643:                        Icon(Icons.Default.Lock, contentDescription = nu
+app/src/main/java/com/sherifradwan/ancnative/ui/VaultGateScreen.kt:109:                        modifier = Modifier.size(36.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/VaultGateScreen.kt:138:                    Icon(Icons.Default.Security, contentDescription = null, mod
+app/src/main/java/com/sherifradwan/ancnative/ui/VaultGateScreen.kt:150:                    Icon(Icons.Default.Fingerprint, contentDescription = null, 
+app/src/main/java/com/sherifradwan/ancnative/ui/VaultGateScreen.kt:162:                    Icon(Icons.Default.Refresh, contentDescription = null, modi
+app/src/main/java/com/sherifradwan/ancnative/ui/DesignSystem.kt:130:                modifier = Modifier.size(20.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/DesignSystem.kt:181:                    modifier = Modifier.size(20.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/DesignSystem.kt:445:                    modifier = Modifier.size(16.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/DesignSystem.kt:522:                    modifier = Modifier.size(20.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/AppLockScreen.kt:299:                            .size(16.dp)
+app/src/main/java/com/sherifradwan/ancnative/ui/AppLockScreen.kt:404:                                modifier = Modifier.size(28.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/AppLockScreen.kt:428:                                modifier = Modifier.size(22.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/AppLockScreen.kt:446:                        modifier = Modifier.size(18.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/PreviousPregnancyEditor.kt:243:                modifier = Modifier.size(16.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt:125:                            modifier = Modifier.size(38.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt:132:                                    modifier = Modifier.size(20.dp)
+app/src/main/java/com/sherifradwan/ancnative/ui/VisitEditor.kt:1202:                modifier = Modifier.size(16.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:125:                        Icon(Icons.Default.Add, contentDescription = nu
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:134:                        Icon(Icons.Default.Add, contentDescription = nu
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:262:                                            modifier = Modifier.size(20
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:276:                                            modifier = Modifier.size(20
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:343:                                            modifier = Modifier.size(20
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:385:            Icon(Icons.Default.RestartAlt, contentDescription = null, m
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:701:                    leadingIcon = { Icon(Icons.Default.Search, contentD
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:821:                    Icon(Icons.Default.Add, contentDescription = null, 
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:924:                                    modifier = Modifier.size(20.dp),
+app/src/main/java/com/sherifradwan/ancnative/ui/CatalogSettingsSections.kt:938:            Icon(Icons.Default.RestartAlt, contentDescription = null, m
+app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt:248:                        Icon(Icons.Default.Add, contentDescription = null, mo
+
+== files over 1500 lines
+    1869 app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+    1695 app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt

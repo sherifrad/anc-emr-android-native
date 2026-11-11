@@ -1,0 +1,101 @@
+[0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead .agents/fleet-runs/s6a0b.diff 
+[0m$ [0mwc -l .agents/fleet-runs/s6a0b.diff .agents/DESIGN_S6_REGISTRATION_UI.md .agents/DESIGN_S5_REGISTRATION_DRIVER.md
+466 .agents/fleet-runs/s6a0b.diff
+     192 .agents/DESIGN_S6_REGISTRATION_UI.md
+      93 .agents/DESIGN_S5_REGISTRATION_DRIVER.md
+     751 total
+> build · glm-5.3-flash-free
+[0m→ [0mRead .agents/DESIGN_S6_REGISTRATION_UI.md 
+[0m→ [0mRead .agents/DESIGN_S5_REGISTRATION_DRIVER.md 
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/RegistrationFlowDriver.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/RegistrationFlow.kt 
+> build · glm-5.3-flash-free
+The design and current state code look consistent so far. Now let me verify no remaining callers of deleted helpers and removed text properties, and check all test files, strings, and AncApp wiring.
+[0m✱ [0mGrep "registrationHeaderText|stepStatusText|\.title\b|status\.label|StepStatus\.DONE\.label" [90min app/src · 22 matches[0m
+[0m✱ [0mGrep "registrationNext\(\)|flowMove\(|flowIds\(" [90m14 matches[0m
+> build · glm-5.3-flash-free
+[0m✱ [0mGrep "step_n_of_m|obstetric_risk_section_title|previous_pregnancies|\"done\"|next_step|back_step" [90min app/src/main/res/values/strings.xml · 7 matches[0m
+[0m✱ [0mGlob "app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlow*" [90m4 matches[0m
+[0m✱ [0mGrep "registrationHeaderText|stepStatusText|RegistrationStep|StepStatus|registrationNext|flowMove|titleRes|labelRes" [90min app/src/androidTest · 2 matches[0m
+[0m✱ [0mGrep "S6-1|S6_1|GPA_ALL_OR_NONE.*awaitingAdvance|awaitingAdvance.*IDENTITY|forcesAgeRequired|_age_required_on_next|untouched" [90min app/src/test · 18 matches[0m
+> build · glm-5.3-flash-free
+The removed helpers have no remaining callers, and the reused string keys all exist. Now let me check the S6-1/S6-2 oracle tests that should pre-commit this slice, and inspect the state test file around the new tests plus the manifest unchanged-entry impact.
+[0m✱ [0mGrep "import|fun atStep|private fun patient|assertNotNull|notNullWithout" [90min app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt · 30 matches[0m
+[0m→ [0mRead app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt [90m[offset=1130, limit=60][0m
+[0m→ [0mRead app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt [90m[offset=330, limit=75][0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt [90m[limit=70, offset=27][0m
+[0m✱ [0mGrep "private fun patient|fun patient\(|= DemoPatient\(" [90min app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowDeriveTest.kt · 2 matches[0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowDeriveTest.kt [90m[limit=60, offset=20][0m
+> build · glm-5.3-flash-free
+The FIXTURE and oracle tests check out. Now verify the remaining details: AncViewModel leftover imports/usages, the `Flow(Next)`/`PregnancyCommitted` guard, the driver-side Begin tests for the hub, and the manifest consistency with other entries.
+[0m✱ [0mGrep "FlowIds|UUID|dispatch\(" [90min app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt · 43 matches[0m
+[0m✱ [0mGrep "registration_incomplete_chip|—|–" [90min app/src/main/res/values/strings.xml · 5 matches[0m
+[0m✱ [0mGrep "fun .*begin.*first_not_done|firstNotDoneStep|count_prompt|PregnancyCountPrompt" [90min app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt · 6 matches[0m
+> build · glm-5.3-flash-free
+[0m✱ [0mGrep "[bp]egin" [90min app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt · 12 matches[0m
+[0m✱ [0mGrep "@Test\n    fun .*[Bb]egin|fun .*[Bb]egin" [90min app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt · 0 matches[0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead .agents/TEST_MANIFEST.json [90m[offset=1835, limit=50][0m
+[0m→ [0mRead app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowTest.kt [90m[limit=60][0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt [90m[limit=55, offset=330][0m
+> build · glm-5.3-flash-free
+[0m✱ [0mGrep "RegistrationStep|RegistrationFlow|showDiscardDialog|BackHandler|PregnancyCountPrompt|registrationFlow" [90min app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt · 5 matches[0m
+[0m✱ [0mGrep "RegistrationFlow|UNIT-registration-flow" [90min .agents/TEST_MANIFEST.json · 8 matches[0m
+> build · glm-5.3-flash-free
+One important question remains: does any test positively cover Begin at the hub for the earlier steps (IDENTITY/DATING/OBSTETRIC) and Begin at PREGNANCIES opening the count prompt, as the design section 9 requires? Let me check those two spots in the state test.
+[0m→ [0mRead app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt [90m[limit=30, offset=555][0m
+[0m→ [0mRead app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt [90m[limit=30, offset=305][0m
+> build · glm-5.3-flash-free
+One last check — the `values-v31` qualifier file (design §5) to make sure the new strings don't need an entry there, and a quick scan of the driver test file for compile health.
+[0m✱ [0mGrep "registrationHeaderText|stepStatusText|\.title|\.label\b" [90min app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowDriverTest.kt · 0 matches[0m
+[0m✱ [0mGlob "app/src/main/res/values-v31/*" [90m1 match[0m
+> build · glm-5.3-flash-free
+All streams are verified. One final sanity check — the static-check scripts mentioned in the design (they pin names and could break on the removed functions):
+[0m✱ [0mGrep "registrationHeaderText|stepStatusText|Step 1 of 5|registrationFlow\.kt" [90min .agents · 0 matches[0m
+> build · glm-5.3-flash-free
+Review complete. I opened every real file behind the diff and traced each requirement against DESIGN_S6 §1/§5/§6/§9/§11 and DESIGN_S5. Headline results:
+
+**(1) Pure functions** — all correct vs design and the driver's real finish behaviour: `forwardIsFinish` matches `PregnancyCommitted`'s exit rule exactly (`RegistrationFlow.kt:122` vs `:68`) and the prompt rule matches `PregnancyCountChosen`'s `remaining == 0` exit (`:114-115`); `flow on a non-pregnancy step` → false, tested; `walk(null, remainingOnPrompt = null)` → false (invalid count ⇒ Next label); 0-remaining → Finish and real exit. `firstNotDoneStep` is exactly the design contract, all six edge assertions are meaningful given the fixture (`derive` fixture: name/age/dating/GPA set). `parsePregnancyCount` matches the design's `trim() → toIntOrNull → 0..20` exactly. `registrationStepCount` correct.
+
+**(2) Routing/gesture** — `systemBackKind` order is exactly dialog > flow Back > plain back; `activeFlowForRoute` one source of truth; stale flow on hub returns BACK (tested, and the test pre-asserts `registrationFlow != null`, not tautological). No way to lose edits: `reduceFlowEvent:147-153` always arms the dialog with `PendingAction.FlowMove` before any move; step-1 gesture routes to `requestBack` (dialog when dirty, leave when clean) as the owner decided. Only silent no-op: gesture while a save is running — transient, not stuck.
+
+**(3) Deletion** — no caller of `registrationNext()`/`flowMove()`/`flowIds()` anywhere (grep incl. androidTest); `FlowIds`/`UUID` imports still used in the VM so no dangling imports; the private `registrationNext(event)` handler and its acceptance check (`AncViewModel.kt:355-366`) are intact.
+
+**(4) Text removal** — no remaining reader of `RegistrationStep.title`/`StepStatus.label`/`registrationHeaderText`/`stepStatusText` in main, test or androidTest. All 19 new strings present and match the design list; `step_n_of_m`, `obstetric_risk_section_title`, `previous_pregnancies`, `done` reused (verified in strings.xml); "To do" wording; no em dashes; plurals well-formed; `values-v31` is themes-only so no qualifier file needs the keys; no static check pins the removed names.
+
+**(5) Tests** — the oracle tests can fail on wrong implementations (I traced each against the fixtures); the manifest entry is structurally valid and matches existing files. Test gaps only, below.
+
+| # | BLOCKER/MAJOR/NIT | file:line | problem | smallest fix |
+|---|---|---|---|---|
+| 1 | MAJOR | app/src/test/java/com/sherifradwan/ancnative/ui/components/RegistrationStepTextTest.kt:14 | The exact resource mapping for the three new step titles (`IDENTITY/DATING/HISTORIES`) and for `SKIPPED`/`PENDING` is never asserted — only distinctness plus the two reused strings and `DONE`. A wrong-but-distinct mapping (e.g. `DATING → histories`, `HISTORIES → dating`, or `PENDING → ` registration_current`) passes all three tests. | Add five `assertEquals(R.string.…, X.titleRes())` and three `labelRes()` assertions, one line each, in the existing two tests. |
+| 2 | MAJOR | app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt:994 | Design §9 (S6a-0 scope) requires the oracle "hub patient whose first not-done step is IDENTITY, DATING or OBSTETRIC opens that editor"; it is missing — hub `Begin` is only positively tested at HISTORIES, and IDENTITY appears only as negative fixtures (`:1015-1021`). The `firstNotDoneStep` → `Begin` contract for the three steps that matter in practice is unguarded. | Add one test: `begin(AncState(patients = listOf(patient(age = null))), IDENTITY)` asserts route `PatientEditor("p1", false)` and derived statuses (clone per DATING if cheap). |
+| 3 | NIT | app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt:1174-1178 | `system_back_without_a_flow_is_plain_back` only covers no-dialog states; no test pins `showDiscardDialog && registrationFlow == null → KEEP_EDITING`, the behaviour S6a-1's AncApp swap relies on for non-flow editors (a wrong impl reordering to check the flow first with a null-dialog-only dialog check could pass the dialog+flow case but break the hub case). | Append `systemBackKind(AncState(patients = emptyList()).copy(showDiscardDialog = true)) == KEEP_EDITING` to that test. |
+| 4 | NIT | app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt:1148-1155 | `activeFlowForRoute` is never directly asserted for the `PregnancyCountPrompt` route or an OBSTETRIC/IDENTITY step — matchesStep's two-branch PREGNANCIES arm and the PatientEditor arm are only covered de facto through reducer lifetime tests. | Add one positive line: `assertEquals(state.registrationFlow, state.copy(route = AncRoute.PregnancyCountPrompt("p1")).activeFlowForRoute())`. |
+| 5 | NIT | app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowTest.kt:418-421 | `step_count_matches_the_enum` restates the definition (`STEPS = entries`), so it only fails against a different constant, not a derivation bug; the real pin is the literal `assertEquals(5, …)` at rf1 (`:29`). | Drop the redundant test, or keep only the `registrationStepNumber(PREGNANCIES)` line — the rf1 literal already guards the regression. |
+| 6 | NIT | app/src/main/java/com/sherifradwan/ancnative/state/RegistrationFlow.kt:72-73 | `parsePregnancyCount` accepts Kotlin `toIntOrNull` quirks untouched by the design: `"+2"` and `"007"` parse (test rejects `"2.5"` etc. but never pins these). Compliant with the design's spec ("trim, toIntOrNull, null outside 0..20"), so behaviour, not code, is in question. | If the product wants strict digits: add `takeIf { it.isEmpty() || it[0].isDigit() }`-style sign/zero check plus a `"007"`/`"+2"` rejection test; otherwise document acceptance in the KDoc. |
+| 7 | NIT | .agents/TEST_MANIFEST.json:1855-1879 | Valid entry (paths all exist, classes exist, no duplicate id, no em dashes), but it merges the design's planned ids into one `UNIT-registration-flow` (`UNIT-registration-step-text`, `UNIT-registration-flow-ui-logic` are still owed later, per design §1 Part-1 list); also the diff keeps the file's pre-existing missing trailing newline. | When S6a-1 lands, split or note ${missing} planned ids in the manifest; add a trailing newline. |
+
+No BLOCKERs found. Nothing in check (2) produces a stuck or lost-edits path in the current code.
+
+**What I could not verify (3 lines):**
+1. I did not execute anything (read-only): the five test classes, the Gradle `--tests` wildcard resolution, and `run_build_gate.sh`/static checks were not run; compile-consistency of the edited test files is established by reading, not by compilation.
+2. The `reduceRegistrationNext` Identity fix (`RegistrationFlowDriver.kt:170`) and the S5-4-edited/S6-1/S6-2 oracles are present in the worktree but are **not part of this diff** — presumably a preceding slice; I could not confirm which commit carries them or that gate double-coverage isn't claimed twice.
+3. JVM access to `R.string.*` without Robolectric was verified only against the design's reference to `SavedNoticeTextTest` (I did not open its runner config), and tool-mandated internal review/metrics scripts under `.agents/` reporting were not inspected beyond the grep above.
+
+**Full table (final message):**
+
+| # | BLOCKER/MAJOR/NIT | file:line | problem | smallest fix |
+|---|---|---|---|---|
+| 1 | MAJOR | app/src/test/java/com/sherifradwan/ancnative/ui/components/RegistrationStepTextTest.kt:14 | Exact resource mapping unasserted for `IDENTITY/DATING/HISTORIES` titles and `SKIPPED`/`PENDING` statuses; wrong-but-distinct mapping passes. | Add five `titleRes()` and three `labelRes()` `assertEquals` lines. |
+| 2 | MAJOR | app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt:994 | Design §9 hub-Begin trio oracle (IDENTITY/DATING/OBSTETRIC) missing; only HISTORIES positive. | One test: legacy patient `Begin` at IDENTITY opens `PatientEditor("p1", false)` with derived statuses. |
+| 3 | NIT | app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt:1174-1178 | Missing `KEEP_EDITING` case with dialog open and no flow (S6a-1 AncApp swap relies on it). | Add one `assertEquals(KEEP_EDITING, systemBackKind(dialog-state))` line. |
+| 4 | NIT | app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt:1148-1155 | Direct positive `activeFlowForRoute` coverage missing for `PregnancyCountPrompt`/OBSTETRIC branches of `matchesStep`. | Add one positive assertion for the count-prompt route. |
+| 5 | NIT | app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowTest.kt:418-421 | Semi-tautological `step_count_matches_the_enum`; rf1 literal `:29` is the real pin. | Drop the derived-vs-derived assertions or keep only the `registrationStepNumber(PREGNANCIES)` line. |
+| 6 | NIT | app/src/main/java/com/sherifradwan/ancnative/state/RegistrationFlow.kt:72-73 | `"+2"` and `"007"` accepted by `toIntOrNull`; design-spec-compliant but unpinned by tests. | Either reject sign/leading zeros with a test, or document acceptance in the KDoc. |
+| 7 | NIT | .agents/TEST_MANIFEST.json:1855-1879 | Entry valid but merges the design's three planned ids into one; pre-existing missing trailing newline carried. | Add missing ids in S6a-1's manifest edit; add trailing newline. |

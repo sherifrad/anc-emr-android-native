@@ -127,23 +127,12 @@
       ]
     },
     {
-      "id": "UNIT-intake-dating",
-      "tier": 1,
-      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*IntakeDatingRuleTest'",
-      "deps": [
-        "app/src/main/**/state/IntakeDatingRule.kt",
-        "app/src/test/**/IntakeDatingRuleTest.kt"
-      ],
-      "covers": [
-        "Q20"
-      ]
-    },
-    {
       "id": "STATIC-r3",
       "tier": 1,
       "cmd": "python3 .agents/checks/check_r3.py",
       "deps": [
         "app/src/main/**/state/AncViewModel.kt",
+        "app/src/main/**/state/IntakeDatingRule.kt",
         "app/src/main/**/storage/RecordsRepository.kt",
         "app/src/main/**/storage/VaultController.kt",
         "app/build.gradle.kts",
@@ -766,7 +755,6 @@
         "app/src/main/**/model/IsoDates.kt",
         "app/src/main/**/model/DemoFixtures.kt",
         "app/src/main/**/ui/PatientEditor.kt",
-        "app/src/main/**/state/IntakeDatingRule.kt",
         "app/src/main/**/ui/GestationalBanner.kt",
         "app/src/main/**/*.kt",
         ".agents/checks/check_r3i.py"
@@ -858,19 +846,6 @@
       ]
     },
     {
-      "id": "UNIT-profile-saved-notice",
-      "tier": 1,
-      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*ProfileSavedNoticeTest'",
-      "deps": [
-        "app/src/main/**/state/IntakeDatingRule.kt",
-        "app/src/main/**/state/AncState.kt",
-        "app/src/test/**/state/ProfileSavedNoticeTest.kt"
-      ],
-      "covers": [
-        "Q83"
-      ]
-    },
-    {
       "id": "UNIT-visit-synthetic-flag",
       "tier": 1,
       "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*VisitSyntheticFlagTest'",
@@ -910,7 +885,7 @@
         "app/src/main/**/state/AncState.kt",
         "app/src/main/**/ui/VisitEditor.kt",
         "app/src/main/**/ui/ClinicalBadges.kt",
-        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/main/**/*.kt",
         "app/src/main/**/ui/ProfileScreen.kt",
         "app/src/main/res/values/strings.xml",
         ".agents/checks/check_r3m.py"
@@ -1654,19 +1629,12 @@
     {
       "id": "UNIT-r4g",
       "tier": 1,
-      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.model.EddFromScanTest' --tests 'com.sherifradwan.ancnative.state.PatientDatingDraftTest' --tests 'com.sherifradwan.ancnative.state.IntakeDatingRuleTest' --tests 'com.sherifradwan.ancnative.state.DraftMappingTest'",
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.state.DraftMappingTest'",
       "deps": [
-        "app/src/main/**/model/IsoDates.kt",
         "app/src/main/**/state/*.kt",
-        "app/src/test/**/EddFromScanTest.kt",
-        "app/src/test/**/PatientDatingDraftTest.kt",
-        "app/src/test/**/IntakeDatingRuleTest.kt"
+        "app/src/test/**/state/DraftMappingTest.kt"
       ],
       "covers": [
-        "Q270",
-        "Q271",
-        "Q272",
-        "Q273",
         "Q274",
         "Q275"
       ]
@@ -1881,6 +1849,44 @@
         "W3",
         "W4",
         "W5"
+      ]
+    },
+    {
+      "id": "UNIT-registration-flow",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*RegistrationFlowTest' --tests '*RegistrationFlowDeriveTest' --tests '*RegistrationFlowDriverTest' --tests '*RegistrationFlowStateTest' --tests 'com.sherifradwan.ancnative.ui.components.RegistrationStepTextTest'",
+      "deps": [
+        "app/src/main/**/state/RegistrationFlow.kt",
+        "app/src/main/**/state/RegistrationFlowDriver.kt",
+        "app/src/main/**/state/AncViewModel.kt",
+        "app/src/main/**/ui/components/RegistrationStepText.kt",
+        "app/src/main/res/values/strings.xml",
+        "app/src/test/**/RegistrationFlowTest.kt",
+        "app/src/test/**/RegistrationFlowDeriveTest.kt",
+        "app/src/test/**/RegistrationFlowDriverTest.kt",
+        "app/src/test/**/RegistrationFlowStateTest.kt",
+        "app/src/test/**/RegistrationStepTextTest.kt"
+      ],
+      "covers": [
+        "RF1",
+        "RF2",
+        "RF3",
+        "RF6",
+        "S5-1",
+        "S5-2",
+        "S5-3",
+        "S5-4",
+        "S5-5",
+        "S5-6",
+        "S5-7",
+        "S5-8",
+        "S5-9",
+        "S5-10",
+        "S5-11",
+        "S5-12",
+        "S6-1",
+        "S6-2",
+        "S6a-0"
       ]
     }
   ]

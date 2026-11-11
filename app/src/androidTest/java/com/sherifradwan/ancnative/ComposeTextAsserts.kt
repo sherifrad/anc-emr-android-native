@@ -1,6 +1,8 @@
 package com.sherifradwan.ancnative
 
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
@@ -33,3 +35,31 @@ fun SemanticsNodeInteractionsProvider.assertTextNotClipped(label: String, matche
 
 fun SemanticsNodeInteractionsProvider.assertNotEllipsized(text: String, ancestorTag: String) =
     assertTextNotClipped(text, hasText(text, substring = true) and inTagged(ancestorTag))
+
+/**
+ * Fails when the touch area of [node] is shorter than [minHeightDp] (or narrower than [minWidthDp]) or sticks out of
+ * [host]. [density] is pixels per dp of the fixture.
+ */
+fun assertTouchTargetInsideHost(
+    label: String,
+    node: SemanticsNode,
+    host: Rect,
+    density: Float,
+    minHeightDp: Float,
+    minWidthDp: Float = 0f,
+    tolerancePx: Float = 1f,
+) {
+    val touch = node.touchBoundsInRoot
+    assertTrue(
+        "$label touch target is too short: height=${touch.height}px, expected>=${minHeightDp * density}px",
+        touch.height + tolerancePx >= minHeightDp * density,
+    )
+    assertTrue(
+        "$label touch target is too narrow: width=${touch.width}px, expected>=${minWidthDp * density}px",
+        touch.width + tolerancePx >= minWidthDp * density,
+    )
+    assertTrue("$label touch target is outside host left: touch=$touch host=$host", touch.left + tolerancePx >= host.left)
+    assertTrue("$label touch target is outside host top: touch=$touch host=$host", touch.top + tolerancePx >= host.top)
+    assertTrue("$label touch target is outside host right: touch=$touch host=$host", touch.right <= host.right + tolerancePx)
+    assertTrue("$label touch target is outside host bottom: touch=$touch host=$host", touch.bottom <= host.bottom + tolerancePx)
+}

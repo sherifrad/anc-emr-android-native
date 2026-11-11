@@ -1,0 +1,900 @@
+diff --git a/.agents/checks/check_r3d.py b/.agents/checks/check_r3d.py
+index 0041577..8130ae4 100644
+--- a/.agents/checks/check_r3d.py
++++ b/.agents/checks/check_r3d.py
+@@ -152,13 +152,17 @@ else:
+     record("S21 settings dialog: no timeout picker, restore confirm", not problems, "; ".join(problems))
+ 
+ # S22
+-claims = [
+-    ("ui/WorkspaceScreen.kt", ["Encrypted & Verified"]),
++claims = [  # WorkspaceScreen.kt is gone; the patient hub files replace it
++
++    *[(rel, ["Encrypted & Verified"]) for rel in sorted(
++        str(f.relative_to(MAIN)) for f in (MAIN / "ui/patienthub").rglob("*.kt"))],
+     ("ui/PatientEditor.kt", ["Hardware Vault Security"]),
+     ("storage/AttachmentSyncManager.kt", ["Locally Encrypted & Secured"]),
+     ("ui/SecuritySettingsDialog.kt", ["Zero Data Loss", "100% verif"]),
+ ]
+ problems = []
++if not any(r.startswith("ui/patienthub/") for r, _ in claims):
++    problems.append("no ui/patienthub files found")
+ for rel, bad in claims:
+     src = read(MAIN / rel)
+     if src is None:
+diff --git a/.agents/checks/check_r3e.py b/.agents/checks/check_r3e.py
+index 342eaca..16ba8f8 100644
+--- a/.agents/checks/check_r3e.py
++++ b/.agents/checks/check_r3e.py
+@@ -161,7 +161,11 @@ else:
+ 
+ # S28
+ problems = []
+-for rel in ["ui/PatientListScreen.kt", "ui/ProfileScreen.kt", "ui/AddAttachmentDialog.kt"]:
++hub_files = sorted(str(f.relative_to(MAIN)) for f in (MAIN / "ui/patienthub").rglob("*.kt"))
++if not hub_files:
++    problems.append("no ui/patienthub files found")
++# ProfileScreen.kt is gone; the patient hub files replace it
++for rel in ["ui/PatientListScreen.kt", "ui/AddAttachmentDialog.kt"] + hub_files:
+     c = code_of(rel)
+     if c is None:
+         problems.append(rel + " missing")
+diff --git a/.agents/checks/check_r3f1.py b/.agents/checks/check_r3f1.py
+index e317919..22fb3be 100644
+--- a/.agents/checks/check_r3f1.py
++++ b/.agents/checks/check_r3f1.py
+@@ -186,7 +186,14 @@ def main():
+         record("S32 repository seam", not problems, "; ".join(problems))
+ 
+     vm = code_of("state/AncViewModel.kt")
+-    ws = code_of("ui/WorkspaceScreen.kt")
++    # WorkspaceScreen.kt is gone: the patient hub files are its replacement, and the
++    # attachment error banner may live anywhere in the ui tree.
++    def _ui_code(sub):
++        files = sorted((MAIN / sub).rglob("*.kt"))
++        return "\n".join(strip_comments(f.read_text(encoding="utf-8")) for f in files) if files else None
++
++    ws = _ui_code("ui/patienthub")
++    ui_all = _ui_code("ui")
+     if vm is None or ws is None:
+         record("S33 attachments use the shared add and delete paths", False, "file missing")
+     else:
+@@ -205,19 +212,19 @@ def main():
+         if re.search(r"AncEvent\.DeleteAttachment\b", vm + ws):
+             problems.append("legacy AncEvent.DeleteAttachment still referenced")
+         if not re.search(r"RequestDelete\([^)]*DeletableType\.ATTACHMENT", ws, re.S):
+-            problems.append("WorkspaceScreen does not dispatch RequestDelete(DeletableType.ATTACHMENT")
++            problems.append("patient hub does not dispatch RequestDelete(DeletableType.ATTACHMENT")
+         record("S33 attachments use the shared add and delete paths", not problems, "; ".join(problems))
+ 
+     strings = read(ROOT / "app/src/main/res/values/strings.xml")
+     problems = []
+-    if ws is None:
+-        problems.append("WorkspaceScreen.kt missing")
++    if ui_all is None:
++        problems.append("ui tree missing")
+     else:
+         for needle in ["attachment_error_banner", "DismissAttachmentError", "R.string.attachment_save_failed"]:
+-            if needle not in ws:
+-                problems.append("WorkspaceScreen lacks " + needle)
+-        if "R.string.attachment_delete_failed" in ws:
+-            problems.append("WorkspaceScreen still uses the removed attachment_delete_failed")
++            if needle not in ui_all:
++                problems.append("ui lacks " + needle)
++        if "R.string.attachment_delete_failed" in ui_all:
++            problems.append("ui still uses the removed attachment_delete_failed")
+     for name in ["attachment_save_failed", "attachment_deleted", "attachment_restored"]:
+         if strings is None or not re.search(r'<string\s+name="%s"' % name, strings):
+             problems.append("strings.xml lacks " + name)
+diff --git a/.agents/checks/check_r3g.py b/.agents/checks/check_r3g.py
+index b705ec3..4737394 100644
+--- a/.agents/checks/check_r3g.py
++++ b/.agents/checks/check_r3g.py
+@@ -134,7 +134,7 @@ def main():
+     problems = []
+     dlg = code_of("ui/UltrasoundPhotoViewerDialog.kt")
+     problems += lacks(dlg, "UltrasoundPhotoViewerDialog.kt", ["scanPhotoFileName", "resolveAttachmentFile"])
+-    for rel in ("ui/WorkspaceScreen.kt", "ui/ProfileScreen.kt"):
++    for rel in ("ui/patienthub/PatientHubScreen.kt",):  # replaces WorkspaceScreen/ProfileScreen
+         src = code_of(rel)
+         if src is None:
+             problems.append(rel + " missing")
+diff --git a/.agents/checks/check_r3j.py b/.agents/checks/check_r3j.py
+index df77c13..81888ea 100644
+--- a/.agents/checks/check_r3j.py
++++ b/.agents/checks/check_r3j.py
+@@ -152,17 +152,13 @@ def check_s56():
+         problems.append("R.string.photos_count still referenced in " + ", ".join(keepers))
+ 
+     if not problems:
+-        counts = {}
+-        for rel in ("ui/WorkspaceScreen.kt", "ui/ProfileScreen.kt"):
+-            src = read(MAIN / rel)
+-            n = len(re.findall(r"pluralStringResource\s*\(\s*R\.plurals\.photos_count\b", strip_comments(src or "")))
+-            counts[rel] = n
+-            if n < 2:
+-                problems.append(rel + " uses pluralStringResource(R.plurals.photos_count only " + str(n) + " time(s)")
+-        total = sum(counts.values())
+-        if total < 4:
+-            problems.append("pluralStringResource(R.plurals.photos_count used only " + str(total) + " time(s)")
+-    record("S56 photos_count is a plural, no string variant, four pluralStringResource call sites", not problems, "; ".join(problems))
++        # WorkspaceScreen/ProfileScreen are gone; the photo count is shown by the scan card in the patient hub.
++        hub = sorted((MAIN / "ui/patienthub").rglob("*.kt"))
++        total = sum(len(re.findall(r"pluralStringResource\s*\(\s*R\.plurals\.photos_count\b",
++                                   strip_comments(read(f) or ""))) for f in hub)
++        if total < 1:
++            problems.append("pluralStringResource(R.plurals.photos_count used " + str(total) + " time(s) in ui/patienthub")
++    record("S56 photos_count is a plural, no string variant, pluralStringResource call site in the patient hub", not problems, "; ".join(problems))
+ 
+ 
+ def check_s57():
+@@ -174,16 +170,17 @@ def check_s57():
+         if not re.search(r"\binternal\s+fun\s+attachmentDisplayTitle\s*\(", strip_comments(cf)):
+             problems.append("ClinicalFormat.kt lacks internal fun attachmentDisplayTitle(")
+ 
+-    ws = read(MAIN / "ui/WorkspaceScreen.kt")
++    # WorkspaceScreen.kt is gone; the attachments card in the patient hub is its replacement.
++    hub = sorted((MAIN / "ui/patienthub").rglob("*.kt"))
++    ws = "\n".join(strip_comments(read(f) or "") for f in hub) if hub else None
+     if ws is None:
+-        problems.append("ui/WorkspaceScreen.kt missing")
++        problems.append("ui/patienthub missing")
+     else:
+-        ws = strip_comments(ws)
+         if "attachmentDisplayTitle(" not in ws:
+-            problems.append("WorkspaceScreen.kt does not call attachmentDisplayTitle(")
++            problems.append("patient hub does not call attachmentDisplayTitle(")
+         if re.search(r"attachment\.title\s*\?:\s*attachment\.fileName", ws):
+-            problems.append('WorkspaceScreen.kt still contains "attachment.title ?: attachment.fileName"')
+-    record("S57 attachment display title is the one helper, WorkspaceScreen calls it", not problems, "; ".join(problems))
++            problems.append('patient hub still contains "attachment.title ?: attachment.fileName"')
++    record("S57 attachment display title is the one helper, the patient hub calls it", not problems, "; ".join(problems))
+ 
+ 
+ def check_s58():
+diff --git a/.agents/checks/check_r3k.py b/.agents/checks/check_r3k.py
+index 1e4e6d4..9b74a72 100644
+--- a/.agents/checks/check_r3k.py
++++ b/.agents/checks/check_r3k.py
+@@ -109,76 +109,54 @@ def check_s59():
+ 
+ 
+ def check_s60():
++    # The clinical-tag chip FlowRow of the old patient list card no longer exists (the directory card was
++    # redesigned into a header plus a three-column metrics row), so only the card background rule is kept.
+     problems = []
+-    src = read(MAIN / "ui/PatientListScreen.kt")
++    src = read(MAIN / "ui/patientdirectory/PatientDirectoryCard.kt")
+     if src is None:
+-        problems.append("ui/PatientListScreen.kt missing")
++        problems.append("ui/patientdirectory/PatientDirectoryCard.kt missing")
+     else:
+         src = strip_comments(src)
+-        # The chip FlowRow: every FlowRow whose content lays out the clinical tags.
+-        chip_rows = []
+-        for m in re.finditer(r"(?<![A-Za-z])FlowRow\(", src):
+-            args, args_end = call_args(src, m.start())
+-            if args is None:
+-                continue
+-            inner_open = src.find("{", args_end + 1)
+-            body = brace_body(src, inner_open) if inner_open != -1 else None
+-            if body is not None and "TagObstetricBg" in body:
+-                chip_rows.append(args)
+-        if not chip_rows:
+-            problems.append("the chip FlowRow (clinical tags, TagObstetricBg) was not found")
+-        for args in chip_rows:
+-            if re.search(r"\bArrangement\.End\b", args):
+-                problems.append("the chip FlowRow still uses bare Arrangement.End (no 8dp gap between chips)")
+-            if not re.search(r"Arrangement\.spacedBy\s*\(\s*8\.dp,\s*Alignment\.End\s*\)", args):
+-                problems.append(
+-                    "the chip FlowRow does not use Arrangement.spacedBy(8.dp, Alignment.End) "
+-                    "(spacedBy(Dp, Alignment) is the real overload; Alignment.End, not Arrangement.End)"
+-                )
+         if not re.search(r"\blerp\s*\(", src):
+             problems.append(
+-                "the PatientCard high-risk background does not use lerp( "
++                "the PatientDirectoryCard high-risk background does not use lerp( "
+                 "(androidx.compose.ui.graphics.lerp(surface, errorContainer, fraction))"
+             )
+         if re.search(r"errorContainer\.copy\s*\(\s*alpha", src):
+             problems.append("the card background is still a translucent errorContainer.copy(alpha = ...)")
+-    record("S60 chip FlowRow ends with spacedBy(8.dp, Alignment.End); card background uses lerp(", not problems, "; ".join(problems))
++    record("S60 directory card high-risk background uses lerp( (opaque blend, not a translucent errorContainer)", not problems, "; ".join(problems))
+ 
+ 
+ def check_s61():
++    # The Prior Pregnancies card now renders each pregnancy with PastDeliveryMicroRow.kt.
+     problems = []
+-    src = read(MAIN / "ui/ProfileScreen.kt")
++    src = read(MAIN / "ui/patienthub/components/PastDeliveryMicroRow.kt")
+     if src is None:
+-        problems.append("ui/ProfileScreen.kt missing")
++        problems.append("ui/patienthub/components/PastDeliveryMicroRow.kt missing")
+     else:
+         src = strip_comments(src)
+-        feed_at = src.find("prevPregnancies.forEach")
+-        card_open = src.find("{", feed_at) if feed_at != -1 else -1
+-        if feed_at == -1 or card_open == -1:
+-            problems.append('the Prior Pregnancies card block (prevPregnancies.forEach { p ->) was not found')
+-        else:
+-            block = brace_body(src, card_open)
+-            if block is None:
+-                problems.append("the Prior Pregnancies card block is not closed")
+-            else:
+-                summary_at = block.find('p.dateText ?: "Prior"')
+-                outcome_at = block.find("p.outcomeText")
+-                if summary_at == -1 or outcome_at == -1:
+-                    problems.append("the Prior Pregnancies summary/outcome Texts were not found")
+-                if "Arrangement.SpaceBetween" in block:
+-                    problems.append("the Prior Pregnancies block still uses Arrangement.SpaceBetween")
+-                if "Column(" not in block:
+-                    problems.append("the Prior Pregnancies block does not contain a Column")
+-                for m in re.finditer(r"(?<![A-Za-z])Row\(", block):
+-                    body = brace_body(block, m.start() + len("Row"))
+-                    if body is None:
+-                        continue
+-                    if re.search(
+-                        r'p\.dateText\s*\?:\s*"Prior"', body
+-                    ) and "p.outcomeText" in body:
+-                        problems.append("the summary Text and the outcome Text are still siblings of a Row")
+-                        break
+-    record("S61 Prior Pregnancies summary and outcome Texts are not siblings of a Row with SpaceBetween", not problems, "; ".join(problems))
++        if "Arrangement.SpaceBetween" in src:
++            problems.append("PastDeliveryMicroRow still uses Arrangement.SpaceBetween")
++        if "Column(" not in src:
++            problems.append("PastDeliveryMicroRow does not contain a Column")
++        # The year (summary) Text and the outcome Text must wrap together in a FlowRow, not sit in a plain Row.
++        flows = []
++        for m in re.finditer(r"(?<![A-Za-z])FlowRow\(", src):
++            _, args_end = call_args(src, m.start())
++            inner_open = src.find("{", args_end + 1) if args_end != -1 else -1
++            body = brace_body(src, inner_open) if inner_open != -1 else None
++            if body is not None:
++                flows.append(body)
++        if not any("yearText" in f and "outcomeText" in f for f in flows):
++            problems.append("the year Text and the outcome Text are not both inside a FlowRow")
++        for m in re.finditer(r"(?<![A-Za-z])Row\(", src):
++            _, args_end = call_args(src, m.start())
++            inner_open = src.find("{", args_end + 1) if args_end != -1 else -1
++            body = brace_body(src, inner_open) if inner_open != -1 else None
++            if body is not None and "text = yearText" in body and "text = it" in body and "FlowRow(" not in body:
++                problems.append("the year Text and the outcome Text are siblings of a plain Row")
++                break
++    record("S61 Prior Pregnancies year and outcome Texts wrap in a FlowRow, not a SpaceBetween Row", not problems, "; ".join(problems))
+ 
+ 
+ def check_s62():
+@@ -190,16 +168,17 @@ def check_s62():
+         if not re.search(r"\binternal\s+fun\s+formatWeightKg\s*\(", strip_comments(cf)):
+             problems.append("ClinicalFormat.kt lacks internal fun formatWeightKg(")
+ 
+-    ps = read(MAIN / "ui/ProfileScreen.kt")
++    # ProfileScreen.kt is gone; the weight is shown by the bedside vitals grid in the patient hub.
++    hub = sorted((MAIN / "ui/patienthub").rglob("*.kt"))
++    ps = "\n".join(strip_comments(read(f) or "") for f in hub) if hub else None
+     if ps is None:
+-        problems.append("ui/ProfileScreen.kt missing")
++        problems.append("ui/patienthub missing")
+     else:
+-        ps = strip_comments(ps)
+         if "formatWeightKg(" not in ps:
+-            problems.append("ProfileScreen.kt does not call formatWeightKg(")
++            problems.append("patient hub does not call formatWeightKg(")
+         if re.search(r"\$\{\s*visit\.weight\s*\}\s*kg", ps):
+-            problems.append('ProfileScreen.kt still contains the "${visit.weight} kg" literal ("kg kg" bug)')
+-    record("S62 formatWeightKg is the one weight rule; ProfileScreen uses it and no raw visit.weight kg literal", not problems, "; ".join(problems))
++            problems.append('patient hub still contains the "${visit.weight} kg" literal ("kg kg" bug)')
++    record("S62 formatWeightKg is the one weight rule; the patient hub uses it and no raw visit.weight kg literal", not problems, "; ".join(problems))
+ 
+ 
+ def check_s63():
+diff --git a/.agents/checks/check_r3l.py b/.agents/checks/check_r3l.py
+index 9981087..8511979 100644
+--- a/.agents/checks/check_r3l.py
++++ b/.agents/checks/check_r3l.py
+@@ -18,7 +18,7 @@ Textual source contract only; verifies nothing at runtime.
+       bare statement controller.execute(datingCmd, sessionEpoch) {}; the list of
+       patients handed to RecordCommitted comes from the dating snapshot when it
+       is saved (see the spec; textual check covers the notice side);
+-      ui/WorkspaceScreen.kt handles SavedNotice.PATIENT_DATING_NOT_UPDATED;
++      state/AncState.kt maps SavedNotice.PATIENT_DATING_NOT_UPDATED;
+       strings.xml defines patient_saved_dating_not_updated.
+ """
+ import re
+@@ -179,14 +179,16 @@ def check_s66():
+         ):
+             problems.append("AncViewModel.kt still contains the fire-and-forget statement controller.execute(datingCmd, sessionEpoch) {}")
+ 
+-    ws = read(MAIN / "ui/WorkspaceScreen.kt")
+-    if ws is None:
+-        problems.append("ui/WorkspaceScreen.kt missing")
+-    else:
+-        # r6b3 moved the notice -> string mapping to SavedNotice?.stringRes() in state/AncState.kt (JVM-testable).
+-        mapping = strip_comments(ws) + strip_comments(read(MAIN / "state/AncState.kt") or "")
+-        if "SavedNotice.PATIENT_DATING_NOT_UPDATED" not in mapping:
+-            problems.append("neither WorkspaceScreen.kt nor AncState.kt handles SavedNotice.PATIENT_DATING_NOT_UPDATED")
++    # The notice -> string mapping lives in SavedNotice?.stringRes() in state/AncState.kt (JVM-testable);
++    # WorkspaceScreen.kt is gone and the patient hub just renders that string.
++    st = read(MAIN / "state/AncState.kt")
++    if st is None:
++        problems.append("state/AncState.kt missing")
++    elif not re.search(
++        r"SavedNotice\.PATIENT_DATING_NOT_UPDATED\s*->\s*R\.string\.patient_saved_dating_not_updated\b",
++        strip_comments(st),
++    ):
++        problems.append("AncState.kt does not map SavedNotice.PATIENT_DATING_NOT_UPDATED to R.string.patient_saved_dating_not_updated")
+ 
+     strings = read(RES / "strings.xml")
+     if strings is None:
+diff --git a/.agents/checks/check_r3m.py b/.agents/checks/check_r3m.py
+index 64983cd..11decc1 100644
+--- a/.agents/checks/check_r3m.py
++++ b/.agents/checks/check_r3m.py
+@@ -14,8 +14,8 @@ Textual source contract only; verifies nothing at runtime.
+   S70 ui/VisitEditor.kt uses the three new strings and calls bpLevel( or
+       bpAlertResource(; strings.xml defines visit_date_in_future,
+       blood_pressure_invalid, weight_invalid, bp_alert_raised, bp_alert_severe.
+-  S71 ui/ClinicalBadges.kt defines fun BpAlertLabel, and WorkspaceScreen.kt and
+-      ProfileScreen.kt call it via BpAlertLabel(.
++  S71 ui/ClinicalBadges.kt defines fun BpAlertLabel, and VisitsTab.kt and
++      PatientHubHeader.kt call it via BpAlertLabel(.
+ """
+ import re
+ import sys
+@@ -193,7 +193,8 @@ def check_s71():
+         if not re.search(r"\bfun\s+BpAlertLabel\s*\(", strip_comments(badges)):
+             problems.append("ClinicalBadges.kt lacks fun BpAlertLabel(")
+ 
+-    for rel in ("ui/WorkspaceScreen.kt", "ui/ProfileScreen.kt"):
++    # WorkspaceScreen/ProfileScreen are gone: the visits tab and the hub header show the alert now.
++    for rel in ("ui/patienthub/tabs/VisitsTab.kt", "ui/patienthub/PatientHubHeader.kt"):
+         src = read(MAIN / rel)
+         if src is None:
+             problems.append(rel + " missing")
+diff --git a/.agents/checks/check_r3o.py b/.agents/checks/check_r3o.py
+index e194f19..9596470 100644
+--- a/.agents/checks/check_r3o.py
++++ b/.agents/checks/check_r3o.py
+@@ -123,6 +123,7 @@ ALLOW_PREFIXES = [
+     # generator-owned markup branches (constants, never patient text)
+     ('if (isRhNegative) "text-rose" else "text-navy"', "CSS class branch"),
+     ('if (!patient.allergyHistory.isNullOrBlank()) "text-rose font-bold" else ""', "CSS class branch"),
++    ('if (classifyAllergy(patient.allergyHistory) is AllergyState.Recorded) "text-rose font-bold" else ""', "CSS class branch (selects between two constant class names)"),
+     ('if (isRhNegative) """<span class="badge badge-danger">Rh- Negative</span>""" else ""', "generated Rh badge branch"),
+     ('if (isRhNegative) "Anti-D Prophylaxis + Matched Packed RBCs Cross-match" else "Routine Obstetric Hospital Protocol"', "generator-owned precaution wording branch (both constants)"),
+     ("when {", "risk-badge selector block (generator markup only)"),
+diff --git a/.agents/checks/check_r3q.py b/.agents/checks/check_r3q.py
+index 41845a3..497a5fe 100755
+--- a/.agents/checks/check_r3q.py
++++ b/.agents/checks/check_r3q.py
+@@ -83,31 +83,41 @@ def check_s80():
+            not problems, "; ".join(problems))
+ 
+ 
++def _code(rel):
++    src = read(MAIN / rel)
++    return None if src is None else strip_comments(src)
++
++
+ def check_s81():
++    # PatientListScreen.kt now only builds the row projection; the card is ui/patientdirectory/PatientDirectoryCard.kt,
++    # and WorkspaceScreen.kt is replaced by PatientHubScreen.kt plus components/ClinicalAttentionBanner.kt.
+     problems = []
+-    pls = read(MAIN / "ui/PatientListScreen.kt")
+-    if pls is None:
++    code = _code("ui/PatientListScreen.kt")
++    if code is None:
+         problems.append("ui/PatientListScreen.kt missing")
++    elif "severeBpAttention(" not in code:
++        problems.append("PatientListScreen.kt does not call severeBpAttention(")
++
++    code = _code("ui/patientdirectory/PatientDirectoryCard.kt")
++    if code is None:
++        problems.append("ui/patientdirectory/PatientDirectoryCard.kt missing")
++    elif "R.string.bp_badge_severe" not in code:
++        problems.append("PatientDirectoryCard.kt does not use R.string.bp_badge_severe")
++
++    code = _code("ui/patienthub/PatientHubScreen.kt")
++    if code is None:
++        problems.append("ui/patienthub/PatientHubScreen.kt missing")
++    elif "severeBpAttention(" not in code:
++        problems.append("PatientHubScreen.kt does not call severeBpAttention(")
++
++    code = _code("ui/patienthub/components/ClinicalAttentionBanner.kt")
++    if code is None:
++        problems.append("ui/patienthub/components/ClinicalAttentionBanner.kt missing")
+     else:
+-        code = strip_comments(pls)
+-        if "severeBpAttention(" not in code:
+-            problems.append("PatientListScreen.kt does not call severeBpAttention(")
+-        if "R.string.bp_badge_severe" not in code:
+-            problems.append("PatientListScreen.kt does not use R.string.bp_badge_severe")
+-        if "R.string.bp_attention_severe" not in code:
+-            problems.append("PatientListScreen.kt does not use R.string.bp_attention_severe")
+-
+-    ws = read(MAIN / "ui/WorkspaceScreen.kt")
+-    if ws is None:
+-        problems.append("ui/WorkspaceScreen.kt missing")
+-    else:
+-        code = strip_comments(ws)
+-        if "severeBpAttention(" not in code:
+-            problems.append("WorkspaceScreen.kt does not call severeBpAttention(")
+         if "R.string.bp_attention_severe" not in code:
+-            problems.append("WorkspaceScreen.kt does not use R.string.bp_attention_severe")
++            problems.append("ClinicalAttentionBanner.kt does not use R.string.bp_attention_severe")
+         if 'testTag("severeBpAttention")' not in code:
+-            problems.append('WorkspaceScreen.kt lacks testTag("severeBpAttention")')
++            problems.append('ClinicalAttentionBanner.kt lacks testTag("severeBpAttention")')
+ 
+     strings = read(RES / "strings.xml")
+     if strings is None:
+@@ -119,7 +129,7 @@ def check_s81():
+         if not re.search(r'name="bp_attention_severe"', s_code):
+             problems.append('strings.xml lacks name="bp_attention_severe"')
+ 
+-    record("S81 PatientListScreen and WorkspaceScreen show severe BP badge/attention line, strings defined",
++    record("S81 directory card and patient hub banner show severe BP badge/attention line, strings defined",
+            not problems, "; ".join(problems))
+ 
+ 
+diff --git a/.agents/checks/check_r3s.py b/.agents/checks/check_r3s.py
+index 9d3adab..17439cb 100755
+--- a/.agents/checks/check_r3s.py
++++ b/.agents/checks/check_r3s.py
+@@ -5,7 +5,7 @@ Stdlib only. Prints PASS/FAIL per check, exits 1 if any FAIL.
+ Textual source contract only; verifies nothing at runtime.
+   S84 model/ObstetricHistory.kt defines PreviousDeliveryCounts, previousDeliveryCounts,
+       previousDeliverySummary and has no android. import.
+-  S85 PatientListScreen.kt, ProfileScreen.kt and PatientPrintHtmlGenerator.kt each call
++  S85 PatientListScreen.kt, PatientDirectoryMetricsRow.kt, OverviewSections.kt and PatientPrintHtmlGenerator.kt each call
+       previousDeliverySummary( and none of the three (nor any other main file besides
+       ObstetricHistory.kt) contains "Cesarean" compared to birthMethod, "CS" compared to
+       deliveryBy, contains("Cesarean", contains("CS", contains("SVD" or contains("Stillbirth".
+@@ -60,7 +60,7 @@ def check_s84():
+ 
+ def check_s85():
+     problems = []
+-    for filename in ("ui/PatientListScreen.kt", "ui/ProfileScreen.kt", "ui/report/PatientPrintHtmlGenerator.kt"):
++    for filename in ("ui/PatientListScreen.kt", "ui/patientdirectory/PatientDirectoryMetricsRow.kt", "ui/patienthub/components/OverviewSections.kt", "ui/report/PatientPrintHtmlGenerator.kt"):
+         fpath = MAIN / filename
+         src = read(fpath)
+         if src is None:
+@@ -90,7 +90,7 @@ def check_s85():
+             if contains_match:
+                 problems.append(f'{path.name}:{i} contains {contains_match.group(0)}')
+ 
+-    record("S85 PatientListScreen, ProfileScreen, PatientPrintHtmlGenerator call previousDeliverySummary and no file has inline delivery counting comparisons",
++    record("S85 PatientListScreen, directory metrics row, hub overview section, PatientPrintHtmlGenerator call previousDeliverySummary and no file has inline delivery counting comparisons",
+            not problems, "; ".join(problems))
+ 
+ 
+diff --git a/.agents/checks/check_r3t.py b/.agents/checks/check_r3t.py
+index 4d95275..177ab8f 100755
+--- a/.agents/checks/check_r3t.py
++++ b/.agents/checks/check_r3t.py
+@@ -19,9 +19,8 @@ ROOT = Path(__file__).resolve().parents[2]
+ MAIN = ROOT / "app/src/main/java/com/sherifradwan/ancnative"
+ TEST = ROOT / "app/src/test/java/com/sherifradwan/ancnative"
+ ENGINE = MAIN / "model/GestationalAgeEngine.kt"
+-BANNER = MAIN / "ui/GestationalBanner.kt"
+ PATIENT_LIST = MAIN / "ui/PatientListScreen.kt"
+-PROFILE = MAIN / "ui/ProfileScreen.kt"
++PROFILE = MAIN / "ui/patienthub/PatientHubHeader.kt"  # replaces ProfileScreen.kt
+ BANNER_TEST = TEST / "ui/GestationalBannerLogicTest.kt"
+ 
+ results = []
+@@ -72,21 +71,18 @@ def check_s86():
+ 
+ def check_s87():
+     problems = []
+-    banner_src = read(BANNER)
+-    if banner_src is None:
+-        problems.append("ui/GestationalBanner.kt missing")
+-    else:
+-        b_code = strip_comments(banner_src)
+-        if "ChronoUnit" in b_code:
+-            problems.append("GestationalBanner.kt contains ChronoUnit")
+-        if re.search(r"weeks\s*>=\s*42", b_code):
+-            problems.append("GestationalBanner.kt contains weeks >= 42")
+-        if "FULL_TERM_DAYS" in b_code:
+-            problems.append("GestationalBanner.kt contains FULL_TERM_DAYS")
+-        if not re.search(r"\bprogressFraction\b", b_code):
+-            problems.append("GestationalBanner.kt does not reference progressFraction")
+-        if not re.search(r"\bdaysToEdd\s*\(", b_code):
+-            problems.append("GestationalBanner.kt does not call daysToEdd")
++    # GestationalBanner.kt was deleted in the redesign and nothing in ui/ shows a progress bar any more,
++    # so the banner-only requirements (progressFraction/daysToEdd references) are retired. The rule
++    # "no screen computes term/progress by hand" is kept for every ui file.
++    for path in sorted((MAIN / "ui").rglob("*.kt")):
++        u_code = strip_comments(read(path) or "")
++        rel = path.relative_to(MAIN).as_posix()
++        if "ChronoUnit" in u_code:
++            problems.append(rel + " contains ChronoUnit")
++        if re.search(r"weeks\s*>=\s*42", u_code):
++            problems.append(rel + " contains weeks >= 42")
++        if "FULL_TERM_DAYS" in u_code:
++            problems.append(rel + " contains FULL_TERM_DAYS")
+ 
+     pls_src = read(PATIENT_LIST)
+     if pls_src is None:
+@@ -100,15 +96,15 @@ def check_s87():
+ 
+     prof_src = read(PROFILE)
+     if prof_src is None:
+-        problems.append("ui/ProfileScreen.kt missing")
++        problems.append("ui/patienthub/PatientHubHeader.kt missing")
+     else:
+         prof_code = strip_comments(prof_src)
+         if re.search(r'\+\s*\$\{[^}]*\}\s*wks', prof_code):
+-            problems.append("ProfileScreen.kt contains +${...} wks hand formatting")
++            problems.append("PatientHubHeader.kt contains +${...} wks hand formatting")
+         if not re.search(r"\bshortWeeksText\b", prof_code):
+-            problems.append("ProfileScreen.kt does not reference shortWeeksText")
++            problems.append("PatientHubHeader.kt does not reference shortWeeksText")
+ 
+-    record("S87 GestationalBanner has no ChronoUnit/weeks>=42/FULL_TERM_DAYS, screens have no hand-formatted wks and reference shortWeeksText/progressFraction/daysToEdd",
++    record("S87 no ui file has ChronoUnit/weeks>=42/FULL_TERM_DAYS, list and hub header have no hand-formatted wks and reference shortWeeksText",
+            not problems, "; ".join(problems))
+ 
+ 
+diff --git a/.agents/checks/check_r4a.py b/.agents/checks/check_r4a.py
+index 5301743..08f5a93 100644
+--- a/.agents/checks/check_r4a.py
++++ b/.agents/checks/check_r4a.py
+@@ -9,9 +9,9 @@ Textual source contract only; verifies nothing at runtime. Comments are stripped
+        strings.xml (the is_prophylaxis DB column is data and stays; only the string key is checked).
+   S112 "[Prophylaxis]" and "Active Medications & Prophylaxis" are gone from main; isProphylaxis is still
+        stored (RecordEntities, RecordsDao, ClinicalCommands, EncryptedBackupManager).
+-  S113 MedicationStatusBadge is defined once in ClinicalBadges.kt and used in WorkspaceScreen.kt.
++  S113 MedicationStatusBadge is defined once in ClinicalBadges.kt and used in MedicationCard.kt.
+   S114 "Save to Codex" and "Save to Clinic Medication Codex" are gone from MedicationEditor.kt and from
+-       the medication part of CodexSettingsSections.kt.
++       the medication part of CatalogSettingsSections.kt.
+ """
+ import re
+ import sys
+@@ -139,24 +139,24 @@ def check_s113():
+         problems.append("MedicationStatusBadge defined in " + str(definitions) + ", expected only ClinicalBadges.kt")
+     if len(re.findall(r"\bfun\s+MedicationStatusBadge\s*\(", joined)) > 1:
+         problems.append("MedicationStatusBadge defined more than once")
+-    workspace = find(sources, "WorkspaceScreen.kt") or ""
+-    if not re.search(r"\bMedicationStatusBadge\s*\(", workspace):
+-        problems.append("MedicationStatusBadge not used in WorkspaceScreen.kt")
+-    record("S113 MedicationStatusBadge defined once and used by the profile card", not problems, "; ".join(problems))
++    card = find(sources, "MedicationCard.kt") or ""
++    if not re.search(r"\bMedicationStatusBadge\s*\(", card):
++        problems.append("MedicationStatusBadge not used in MedicationCard.kt")
++    record("S113 MedicationStatusBadge defined once and used by the patient hub medication card", not problems, "; ".join(problems))
+ 
+ 
+ def check_s114():
+     problems = []
+     sources = main_sources()
+     editor = find(sources, "MedicationEditor.kt")
+-    settings = find(sources, "CodexSettingsSections.kt")
++    settings = find(sources, "CatalogSettingsSections.kt")  # renamed from CodexSettingsSections.kt
+     if editor is None:
+         problems.append("MedicationEditor.kt missing")
+     if settings is None:
+-        problems.append("CodexSettingsSections.kt missing")
++        problems.append("CatalogSettingsSections.kt missing")
+     scopes = {
+         "MedicationEditor.kt": editor or "",
+-        "CodexSettingsSections.kt (medication part)": medication_part(settings or ""),
++        "CatalogSettingsSections.kt (medication part)": medication_part(settings or ""),
+     }
+     for scope, code in scopes.items():
+         for text in ("Save to Codex", "Save to Clinic Medication Codex"):
+diff --git a/.agents/checks/check_r4c.py b/.agents/checks/check_r4c.py
+index 7931efc..d39e597 100644
+--- a/.agents/checks/check_r4c.py
++++ b/.agents/checks/check_r4c.py
+@@ -3,9 +3,9 @@
+ 
+ Stdlib only. Prints PASS/FAIL per check, exits 1 if any FAIL.
+ Textual source contract only; verifies nothing at runtime. Comments are stripped before matching.
+-  S130 applyLabItemEdit is defined once (ClinicalCodexModels.kt); updateLabCodexItem is in the interface and the
++  S130 applyLabItemEdit is defined once (ClinicalCatalogModels.kt); updateLabCatalogItem is in the interface and the
+        repository, and the repository calls applyLabItemEdit.
+-  S131 lab settings has the editLabCodexBtn- tag, calls updateLabCodexItem and keeps one AddLabTestDialog.
++  S131 lab settings has the editLabCodexBtn- tag, calls updateLabCatalogItem and keeps one AddLabTestDialog.
+   S132 no visible "Codex" string in the five UI files; the old testTags are all still present.
+ """
+ import re
+@@ -14,11 +14,11 @@ from pathlib import Path
+ 
+ ROOT = Path(__file__).resolve().parents[2]
+ MAIN = ROOT / "app/src/main"
+-CODEX = MAIN / "java/com/sherifradwan/ancnative/model/codex"
++CODEX = MAIN / "java/com/sherifradwan/ancnative/model/catalog"
+ UI = MAIN / "java/com/sherifradwan/ancnative/ui"
+-MODELS = CODEX / "ClinicalCodexModels.kt"
+-REPO = CODEX / "ClinicalCodexRepository.kt"
+-SETTINGS = UI / "CodexSettingsSections.kt"
++MODELS = CODEX / "ClinicalCatalogModels.kt"
++REPO = CODEX / "ClinicalCatalogRepository.kt"
++SETTINGS = UI / "CatalogSettingsSections.kt"
+ VISIBLE = [SETTINGS, UI / "SecuritySettingsDialog.kt", UI / "LabEditor.kt", UI / "MedicationEditor.kt", MAIN / "res/values/strings.xml"]
+ OLD_TAGS = ["saveToLabCodexBanner", "saveToLabCodexButton", "saveToMedCodexBanner", "saveToMedCodexButton", "searchLabCodexField",
+             "searchMedCodexField", "saveLabCodexConfirmBtn", "saveMedCodexConfirmBtn", "labCodexItem-", "medCodexItem-",
+@@ -53,12 +53,12 @@ def check_s130():
+     homes = [p.name for p in MAIN.rglob("*.kt") for _ in re.findall(r"\bfun\s+applyLabItemEdit\s*\(", code(p))]
+     if homes != [MODELS.name]:
+         problems.append("applyLabItemEdit defined in " + str(homes))
+-    if not re.search(r"\bfun\s+updateLabCodexItem\s*\(", code(MODELS)):
+-        problems.append("interface lacks updateLabCodexItem")
++    if not re.search(r"\bfun\s+updateLabCatalogItem\s*\(", code(MODELS)):
++        problems.append("interface lacks updateLabCatalogItem")
+     repo = code(REPO)
+-    m = re.search(r"override\s+fun\s+updateLabCodexItem\s*\(", repo)
++    m = re.search(r"override\s+fun\s+updateLabCatalogItem\s*\(", repo)
+     if not m:
+-        problems.append("repository lacks updateLabCodexItem")
++        problems.append("repository lacks updateLabCatalogItem")
+     elif "applyLabItemEdit(" not in repo[m.end():]:
+         problems.append("repository update does not call applyLabItemEdit")
+     record("S130 one edit rule, wired through the repository", not problems, "; ".join(problems))
+@@ -69,8 +69,8 @@ def check_s131():
+     problems = []
+     if "editLabCodexBtn-" not in src:
+         problems.append("no editLabCodexBtn- tag")
+-    if "updateLabCodexItem(" not in src:
+-        problems.append("settings never calls updateLabCodexItem")
++    if "updateLabCatalogItem(" not in src:
++        problems.append("settings never calls updateLabCatalogItem")
+     n = len(re.findall(r"\bfun\s+AddLabTestDialog\s*\(", src))
+     if n != 1:
+         problems.append("AddLabTestDialog defined %d times" % n)
+diff --git a/.agents/checks/check_r4d.py b/.agents/checks/check_r4d.py
+index a59a671..1b70d94 100644
+--- a/.agents/checks/check_r4d.py
++++ b/.agents/checks/check_r4d.py
+@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
+ MAIN = ROOT / "app/src/main"
+ UI = MAIN / "java/com/sherifradwan/ancnative/ui"
+ FLAG = MAIN / "java/com/sherifradwan/ancnative/model/LabResultFlag.kt"
+-MODELS = MAIN / "java/com/sherifradwan/ancnative/model/codex/ClinicalCodexModels.kt"
++MODELS = MAIN / "java/com/sherifradwan/ancnative/model/catalog/ClinicalCatalogModels.kt"
+ LAB = UI / "LabEditor.kt"
+ PATIENT = UI / "PatientEditor.kt"
+ TAGS = ["labNameField", "labDate", "labName", "labResult", "labUnit", "labRefRange", "labAbnormal", "labNotes",
+diff --git a/.agents/checks/check_r4e.py b/.agents/checks/check_r4e.py
+index b8cd433..ddacaf8 100644
+--- a/.agents/checks/check_r4e.py
++++ b/.agents/checks/check_r4e.py
+@@ -15,7 +15,7 @@ from pathlib import Path
+ ROOT = Path(__file__).resolve().parents[2]
+ MAIN = ROOT / "app/src/main"
+ UI = MAIN / "java/com/sherifradwan/ancnative/ui"
+-CODEX = MAIN / "java/com/sherifradwan/ancnative/model/codex/ClinicalCodexModels.kt"
++CODEX = MAIN / "java/com/sherifradwan/ancnative/model/catalog/ClinicalCatalogModels.kt"
+ CLINICAL = MAIN / "java/com/sherifradwan/ancnative/model/ClinicalModels.kt"
+ DEMO = "DemoFixtures.kt"
+ LAB = UI / "LabEditor.kt"
+@@ -96,7 +96,7 @@ def check_s153():
+         problems.append("LabEditor.kt never calls nextLabPanelTest")
+     if "rememberSaveable" not in lab:
+         problems.append("LabEditor.kt does not use rememberSaveable")
+-    if re.search(r"mutableStateOf<List<LabCodexItem>>", lab):
++    if re.search(r"mutableStateOf<List<LabCatalogItem>>", lab):
+         problems.append("queue still holds items in plain remember state")
+     record("S153 panel queue saved across rotation, one advance rule", not problems, "; ".join(problems))
+ 
+diff --git a/.agents/checks/check_r5d.py b/.agents/checks/check_r5d.py
+index 0e50c17..d43a132 100644
+--- a/.agents/checks/check_r5d.py
++++ b/.agents/checks/check_r5d.py
+@@ -22,9 +22,11 @@ def read(path):
+ 
+ 
+ def main():
+-    ws = read(ROOT / "app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt")
++    # WorkspaceScreen.kt is gone: the patient hub (tabs and components) renders the medication list now.
++    hub = sorted((ROOT / "app/src/main/java/com/sherifradwan/ancnative/ui/patienthub").rglob("*.kt"))
++    ws = "\n".join(read(f) for f in hub)
+     missing = [t for t in ("medicationToggle-", "medicationsToggleAll", "medication-", "editMedication-") if '"' + t not in ws]
+-    record("S230 workspace medication tags present", not missing, "missing " + ", ".join(missing))
++    record("S230 patient hub medication tags present", not missing, "missing " + ", ".join(missing))
+     strings = read(ROOT / "app/src/main/res/values/strings.xml")
+     new = [m for m in re.findall(r'<string name="([a-z_]*(?:expand|collapse|show_details|hide_details)[a-z_]*)"', strings)]
+     record("S231 new labels defined once", len(new) == len(set(new)) and len(new) >= 4, "found " + str(new))
+diff --git a/.agents/checks/check_r6a.py b/.agents/checks/check_r6a.py
+index 6c5e9e2..73cdb71 100644
+--- a/.agents/checks/check_r6a.py
++++ b/.agents/checks/check_r6a.py
+@@ -44,12 +44,13 @@ def main():
+     try:
+         out = subprocess.run(["git", "diff", "--name-only", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=True).stdout
+         for line in out.splitlines():
+-            if "/ancnative/ui/" in line or re.search(r"RecordsMigration|schemas/", line):
++            # The "no ui file changed in this round" half is retired (one-round condition); schema and migrations stay frozen.
++            if re.search(r"RecordsMigration|schemas/", line):
+                 problems.append("forbidden file changed: " + line)
+     except (OSError, subprocess.CalledProcessError) as exc:
+         problems.append("git diff failed: " + str(exc))
+     db = read(MAIN / "storage/RecordsDatabase.kt")
+-    record("S303 no ui, schema or migration file changed", not problems and "version" in db, "; ".join(problems))
++    record("S303 no schema or migration file changed", not problems and "version" in db, "; ".join(problems))
+     sys.exit(0 if all(results) else 1)
+ 
+ 
+diff --git a/.agents/checks/check_r6b2.py b/.agents/checks/check_r6b2.py
+index 3d04b0a..cd246dc 100755
+--- a/.agents/checks/check_r6b2.py
++++ b/.agents/checks/check_r6b2.py
+@@ -12,7 +12,6 @@ results = []
+ BANNED = ["DeleteMedicationCommand", "DeleteLabInvestigationCommand", "RestoreMedicationCommand", "RestoreLabInvestigationCommand",
+           "DeletionKind", "RequestDeleteMedication", "RequestDeleteLab"]
+ OLD_UNDO = ["UndoKind", "DELETE_MED", "DELETE_LAB", "SAVE_MED"]
+-ALLOWED_UI = {"MedicationEditor.kt", "LabEditor.kt", "WorkspaceScreen.kt"}
+ 
+ 
+ def record(name, ok, detail=""):
+@@ -85,13 +84,11 @@ def main():
+         for line in subprocess.run(["git", "diff", "--name-only", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.splitlines():
+             if re.search(r"app/schemas/|RecordsMigration|RecordsDatabase\.kt|RecordsDao\.kt", line):
+                 problems.append("forbidden file changed: " + line)
+-            m = re.search(r"/ancnative/ui/([^/]+)$", line)
+-            if m and m.group(1) not in ALLOWED_UI:
+-                problems.append("ui file outside allow list: " + line)
++            # The ui allow-list (one-round condition: which ui files round 6b2 may touch) is retired.
+     except (OSError, subprocess.CalledProcessError) as exc:
+         problems.append("git diff failed: " + str(exc))
+     db = read(MAIN / "storage/RecordsDatabase.kt")
+-    record("S416 repository keeps one deleteRecord/restoreRecord; no schema, version, DAO or stray ui change",
++    record("S416 repository keeps one deleteRecord/restoreRecord; no schema, version or DAO change",
+            not problems and bool(re.search(r"version\s*=\s*6\b", db)), "; ".join(problems) or "version != 6")
+     sys.exit(0 if all(results) else 1)
+ 
+diff --git a/.agents/checks/check_r6b3.py b/.agents/checks/check_r6b3.py
+index 9d67b7a..909b526 100644
+--- a/.agents/checks/check_r6b3.py
++++ b/.agents/checks/check_r6b3.py
+@@ -69,11 +69,12 @@ def main():
+             bad.append(f.name + " hard-codes a per-kind delete tag")
+     record("S423 no per-kind delete dialog, Undo bar or delete icon anywhere (one mechanism keyed by DeletableType)", not bad, ", ".join(bad))
+ 
+-    ws = read(MAIN / "ui/WorkspaceScreen.kt")
++    # WorkspaceScreen.kt is gone: the patient hub (tabs and components) wires the delete mechanism now.
++    ws = "\n".join(read(f) for f in sorted((MAIN / "ui/patienthub").rglob("*.kt")))
+     wired = len(re.findall(r"RequestDelete\s*\(\s*patient\.id\s*,\s*DeletableType\.(MEDICATION|LAB)", ws))
+     icons = len(re.findall(r"DeleteIconButton\s*\(\s*DeletableType\.(MEDICATION|LAB)", ws))
+     # medication card now has ONE header row (collapsed and expanded share it): medication 1 + lab 1 = 2 icons
+-    record("S424 WorkspaceScreen wires RequestDelete and DeleteIconButton for medications (cards) and labs", wired >= 2 and icons >= 2 and
++    record("S424 patient hub wires RequestDelete and DeleteIconButton for medications (cards) and labs", wired >= 2 and icons >= 2 and
+            "DeletableType.MEDICATION" in ws and "DeletableType.LAB" in ws, "RequestDelete=%d DeleteIconButton=%d" % (wired, icons))
+ 
+     strings = read(RES / "values/strings.xml")
+diff --git a/.agents/checks/check_r6c.py b/.agents/checks/check_r6c.py
+index d721dd3..068db2c 100644
+--- a/.agents/checks/check_r6c.py
++++ b/.agents/checks/check_r6c.py
+@@ -37,7 +37,8 @@ NO_EDITOR_HOOK = {"ATTACHMENT"}
+ LINE_OK = {
+     "state/AncState.kt": re.compile(r"^\s*(?:%s_(?:DELETED|RESTORED|SAVE_UNDONE),|SavedNotice\.%s_(?:DELETED|RESTORED|SAVE_UNDONE) -> R\.string\.\w+)\s*$" % (KIND, KIND)),
+     "ui/DeleteUndoUi.kt": re.compile(r"^\s*DeletableType\.%s -> R\.string\.deletable_type_\w+\s*$" % KIND),
+-    "ui/WorkspaceScreen.kt": re.compile(r"(?:RequestDelete\(.*DeletableType\.%s|DeleteIconButton\(DeletableType\.%s|^\s*type = DeletableType\.%s,\s*$)" % (KIND, KIND, KIND)),
++    # Call sites (ADDING_A_DELETABLE_KIND.md step 8): the patient hub tabs and components, which replaced WorkspaceScreen.kt.
++    "ui/patienthub/": re.compile(r"(?:RequestDelete\(.*DeletableType\.%s|DeleteIconButton\(DeletableType\.%s|^\s*type = DeletableType\.%s,\s*$)" % (KIND, KIND, KIND)),
+     "state/AncViewModel.kt": re.compile(r"^\s*type = DeletableType\.%s,\s*$" % KIND),
+ }
+ 
+@@ -48,7 +49,7 @@ def shared_layers_name_no_kind():
+         rel = f.relative_to(MAIN).as_posix()
+         if rel in FREE:
+             continue
+-        ok_line = LINE_OK.get(rel)
++        ok_line = LINE_OK.get(rel) or next((p for k, p in LINE_OK.items() if k.endswith("/") and rel.startswith(k)), None)
+         for n, line in enumerate(read(f).splitlines(), 1):
+             if NAMED.search(line) and not (ok_line and ok_line.search(line)):
+                 bad.append("%s:%d" % (rel, n))
+diff --git a/.agents/pipeline/ADDING_A_DELETABLE_KIND.md b/.agents/pipeline/ADDING_A_DELETABLE_KIND.md
+index 016c246..095a08b 100644
+--- a/.agents/pipeline/ADDING_A_DELETABLE_KIND.md
++++ b/.agents/pipeline/ADDING_A_DELETABLE_KIND.md
+@@ -12,7 +12,7 @@ Stored data is frozen: do not change `canonical()` of an existing kind, content
+ 5. `state/EditorHooks.kt`: add an `EditorHook` object and its `DeletableType.XXX to ...` map entry (tells the shared layer how to close or rebase that kind's open editor).
+ 6. Strings in `values/strings.xml` (and `values-ar` if present): `deletable_type_xxx` (the kind's name), `xxx_deleted`, `xxx_restored`, `xxx_save_undone`. Generic delete/Undo strings already exist and take the kind name as argument.
+ 7. `ui/DeleteUndoUi.kt`: add the `DeletableType.XXX -> R.string.deletable_type_xxx` branch in `labelResource()`.
+-8. Call sites: on the card or row put `trailing = { DeleteIconButton(DeletableType.XXX, id, label, onDelete) }` with `onDelete = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.XXX, id)) }` (see `WorkspaceScreen.kt`). To offer Undo after a save, call `undoCoordinator.offerSaveUndo(type = DeletableType.XXX, ...)` from the save success path in `AncViewModel`.
++8. Call sites: on the card or row put `trailing = { DeleteIconButton(DeletableType.XXX, id, label, onDelete) }` with `onDelete = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.XXX, id)) }` (see `ui/patienthub/tabs/VisitsTab.kt` and `ui/patienthub/components/MedicationCard.kt`; `check_r6c.py` allows kind names on call-site lines under `ui/patienthub/`). To offer Undo after a save, call `undoCoordinator.offerSaveUndo(type = DeletableType.XXX, ...)` from the save success path in `AncViewModel`.
+ 9. Tests: JVM `DeletableRegistryTest`: add a `DeleteFixture` to `DeleteFixtures.all` with a hard-coded golden canonical, hash and fingerprints computed outside the code; `everyDeletableTypeValueHasAFullyDescribedAdapter` then covers tag, kinds, notices. Device: add `"xxx"` to `kinds()` in `ClinicalDeleteRestoreDbTest` (with its `Kind` implementation) and a UI case in `DeleteUndoUiTest`.
+ 10. Run `python3 .agents/checks/check_r6c.py` (wiring and no-kind-names check) plus the Gradle gate. This is a level-3 area: needs a frontier review and an independent test review.
+ 
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt
+index bd272fc..83cda2c 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalBadges.kt
+@@ -1,5 +1,6 @@
+ package com.sherifradwan.ancnative.ui
+ 
++import androidx.annotation.StringRes
+ import androidx.compose.foundation.BorderStroke
+ import androidx.compose.foundation.background
+ import androidx.compose.foundation.layout.Arrangement
+@@ -179,6 +180,12 @@ fun KeyFactTile(
+ fun BpAlertLabel(raw: String?, modifier: Modifier = Modifier) {
+     val res = bpAlertResource(raw) ?: return
+     val isSevere = bpLevel(raw) == BpLevel.SEVERE
++    BpAlertChip(textRes = res, isSevere = isSevere, modifier = modifier)
++}
++
++/** Single BP badge look, shared by BpAlertLabel and callers that already know the severity. */
++@Composable
++internal fun BpAlertChip(@StringRes textRes: Int, isSevere: Boolean, modifier: Modifier = Modifier) {
+     val containerColor = if (isSevere) {
+         MaterialTheme.colorScheme.errorContainer
+     } else {
+@@ -195,7 +202,7 @@ fun BpAlertLabel(raw: String?, modifier: Modifier = Modifier) {
+         modifier = modifier.testTag("bpAlertLabel"),
+     ) {
+         Text(
+-            text = stringResource(res),
++            text = stringResource(textRes),
+             style = MaterialTheme.typography.labelSmall,
+             fontWeight = FontWeight.SemiBold,
+             color = contentColor,
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt
+index d5280cd..d059645 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/LabBatchScreen.kt
+@@ -63,6 +63,7 @@ import androidx.compose.ui.text.style.TextAlign
+ import androidx.compose.ui.unit.dp
+ import com.sherifradwan.ancnative.R
+ import com.sherifradwan.ancnative.model.GestationalAgeEngine
++import com.sherifradwan.ancnative.model.parseIsoDateOrNull
+ import com.sherifradwan.ancnative.model.catalog.ClinicalCatalogRepository
+ import com.sherifradwan.ancnative.model.catalog.LabCategoryGroup
+ import com.sherifradwan.ancnative.model.catalog.LabCatalogItem
+@@ -225,7 +226,7 @@ fun LabBatchScreen(state: AncState, route: AncRoute.LabBatchEditor, onEvent: (An
+         ClinicalPatientCard(
+             patient = patient,
+             variant = PatientCardVariant.EDITOR_SUMMARY,
+-            asOfDate = runCatching { LocalDate.parse(draft.date) }.getOrNull() ?: LocalDate.now(),
++            asOfDate = parseIsoDateOrNull(draft.date) ?: LocalDate.now(),
+         )
+ 
+         Row(
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt
+index c6c34f6..5ef1fee 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/LabEditor.kt
+@@ -59,6 +59,7 @@ import com.sherifradwan.ancnative.model.catalog.LabCatalogItem
+ import com.sherifradwan.ancnative.model.catalog.nextLabPanelTest
+ import com.sherifradwan.ancnative.model.catalog.resolveLabPanel
+ import com.sherifradwan.ancnative.model.labResultFlag
++import com.sherifradwan.ancnative.model.parseIsoDateOrNull
+ import com.sherifradwan.ancnative.state.AncEvent
+ import com.sherifradwan.ancnative.state.AncRoute
+ import com.sherifradwan.ancnative.state.AncState
+@@ -377,7 +378,7 @@ fun LabEditor(
+         ClinicalPatientCard(
+             patient = patient,
+             variant = PatientCardVariant.EDITOR_SUMMARY,
+-            asOfDate = runCatching { LocalDate.parse(draft.values.date) }.getOrNull() ?: LocalDate.now(),
++            asOfDate = parseIsoDateOrNull(draft.values.date) ?: LocalDate.now(),
+         )
+ 
+         // Batch info bar replaces the old numbered details card
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt
+index afc6462..236b44d 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt
+@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.dp
+ import com.sherifradwan.ancnative.R
+ import com.sherifradwan.ancnative.model.DemoPatient
+ import com.sherifradwan.ancnative.state.AncEvent
+-import com.sherifradwan.ancnative.ui.BpAlertLabel
++import com.sherifradwan.ancnative.ui.BpAlertChip
+ import com.sherifradwan.ancnative.ui.ClinicalRiskBadge
+ import com.sherifradwan.ancnative.ui.PatientDashboardRowProjection
+ import com.sherifradwan.ancnative.ui.PatientRiskTier
+@@ -135,7 +135,7 @@ fun PatientDirectoryCard(
+                         horizontalArrangement = Arrangement.spacedBy(4.dp),
+                     ) {
+                         if (row.isSevereBp) {
+-                            BpAlertLabel("≥160/110")
++                            BpAlertChip(R.string.bp_badge_severe, isSevere = true)
+                         } else if (row.isHighRisk) {
+                             ClinicalRiskBadge(isHighRisk = true)
+                         } else if (row.riskTier == PatientRiskTier.MEDIUM) {

@@ -56,6 +56,11 @@ val TagHighRiskBg = Color(0xFFFEE2E2)
 val TagHighRiskBorder = Color(0xFFFCA5A5)
 val TagHighRiskText = Color(0xFFB91C1C)
 
+// Moderate risk: lighter red tonal variant (outline carries the shape, 3:1 vs card)
+val TagModerateRiskBg = Color(0xFFFEF2F2)
+val TagModerateRiskBorder = Color(0xFFEF4444)
+val TagModerateRiskText = Color(0xFFB91C1C)
+
 val TagNormalRiskBg = Color(0xFFDCFCE7)
 val TagNormalRiskBorder = Color(0xFF86EFAC)
 val TagNormalRiskText = Color(0xFF166534)
@@ -110,6 +115,10 @@ val TagAttentionDarkText = Color(0xFFFDE68A)
 val TagHighRiskDarkBg = Color(0xFF450A0A)
 val TagHighRiskDarkBorder = Color(0xFF991B1B)
 val TagHighRiskDarkText = Color(0xFFFCA5A5)
+
+val TagModerateRiskDarkBg = Color(0xFF2A1620)
+val TagModerateRiskDarkBorder = Color(0xFFF87171)
+val TagModerateRiskDarkText = Color(0xFFFECACA)
 
 val TagNormalRiskDarkBg = Color(0xFF052E16)
 val TagNormalRiskDarkBorder = Color(0xFF166534)

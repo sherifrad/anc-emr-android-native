@@ -161,7 +161,11 @@ else:
 
 # S28
 problems = []
-for rel in ["ui/PatientListScreen.kt", "ui/ProfileScreen.kt", "ui/AddAttachmentDialog.kt"]:
+hub_files = sorted(str(f.relative_to(MAIN)) for d in ("ui/patienthub", "ui/patientdirectory") for f in (MAIN / d).rglob("*.kt"))
+if not hub_files:
+    problems.append("no ui/patienthub or ui/patientdirectory files found")
+# ProfileScreen.kt is gone; the patient hub files replace it
+for rel in ["ui/PatientListScreen.kt", "ui/AddAttachmentDialog.kt"] + hub_files:
     c = code_of(rel)
     if c is None:
         problems.append(rel + " missing")

@@ -134,7 +134,7 @@ def main():
     problems = []
     dlg = code_of("ui/UltrasoundPhotoViewerDialog.kt")
     problems += lacks(dlg, "UltrasoundPhotoViewerDialog.kt", ["scanPhotoFileName", "resolveAttachmentFile"])
-    for rel in ("ui/WorkspaceScreen.kt", "ui/ProfileScreen.kt"):
+    for rel in ("ui/patienthub/PatientHubScreen.kt",):  # replaces WorkspaceScreen/ProfileScreen
         src = code_of(rel)
         if src is None:
             problems.append(rel + " missing")

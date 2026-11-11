@@ -15,7 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 MAIN = ROOT / "app/src/main"
 UI = MAIN / "java/com/sherifradwan/ancnative/ui"
-CODEX = MAIN / "java/com/sherifradwan/ancnative/model/codex/ClinicalCodexModels.kt"
+CODEX = MAIN / "java/com/sherifradwan/ancnative/model/catalog/ClinicalCatalogModels.kt"
 CLINICAL = MAIN / "java/com/sherifradwan/ancnative/model/ClinicalModels.kt"
 DEMO = "DemoFixtures.kt"
 LAB = UI / "LabEditor.kt"
@@ -96,7 +96,7 @@ def check_s153():
         problems.append("LabEditor.kt never calls nextLabPanelTest")
     if "rememberSaveable" not in lab:
         problems.append("LabEditor.kt does not use rememberSaveable")
-    if re.search(r"mutableStateOf<List<LabCodexItem>>", lab):
+    if re.search(r"mutableStateOf<List<LabCatalogItem>>", lab):
         problems.append("queue still holds items in plain remember state")
     record("S153 panel queue saved across rotation, one advance rule", not problems, "; ".join(problems))
 

@@ -1,0 +1,437 @@
+[0m
+> build · glm-5.3-flash-free
+I'll read the brief and key files first, then explore the code.
+[0m→ [0mRead AGENTS.md 
+[0m✱ [0mGlob "concepts_brief.md" [90m1 match[0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead concepts_brief.md 
+> build · glm-5.3-flash-free
+Now let me explore the codebase structure.
+[0m✱ [0mGlob "app/src/main/java/**/*.kt" [90m100 matches[0m
+[0m✱ [0mGlob "app/schemas/**" [90m6 matches[0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDatabase.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/storage/RecordsMigration.kt 
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/storage/EncryptedBackupManager.kt 
+[0m✱ [0mGrep "schemaVersion|SCHEMA_VERSION|version ==|version !=|VAULT_BLOCK|VaultBlockReason" [90min app/src/main/java/com/sherifradwan/ancnative/storage/VaultController.kt · 44 matches[0m
+> build · glm-5.3-flash-free
+[0m✱ [0mGrep ""archived"" [90min app/src/main · 45 matches[0m
+[0m✱ [0mGrep "schemaVersion|SCHEMA_VERSION|EXPECTED_SCHEMA|version = 6|DATABASE_VERSION" [90min app/src · 35 matches[0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt [90m[limit=230][0m
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt 
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt 
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt [90m[limit=220][0m
+[0m✱ [0mGrep "fun parseDeliveryNotes|class DeliveryNotesSections|data class DeliverySections" [90min app/src/main/java/com/sherifradwan/ancnative/model · 0 matches[0m
+> build · glm-5.3-flash-free
+[0m✱ [0mGrep "parseDeliveryNotes" [90min app/src/main/java/com/sherifradwan/ancnative · 4 matches[0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/DeliveryNotesParser.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientActionsModalSheet.kt [90m[limit=120][0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt [90m[limit=260][0m
+[0m✱ [0mGrep "class ChangePatientStatus|ChangePatientStatusCommand|ReminderE|nextVisit|reminder" [90min app/src/main/java/com/sherifradwan/ancnative · 12 matches[0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt 
+[0m✱ [0mGrep "visiblePatients|fun AncState\.|fun patient\(" [90min app/src/main/java/com/sherifradwan/ancnative/state · 16 matches[0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt [90m[limit=80, offset=640][0m
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/UndoCoordinator.kt 
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt [90m[limit=130, offset=440][0m
+[0m✱ [0mGrep "object PatientVocabulary|val statuses|const val STATUS|calculateGestationalAge|fun datingSummaryOf" [90min app/src/main/java/com/sherifradwan/ancnative/model · 7 matches[0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt [90m[limit=140, offset=60][0m
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt [90m[limit=120, offset=60][0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt [90m[limit=80, offset=890][0m
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt [90m[limit=130, offset=400][0m
+> build · glm-5.3-flash-free
+[0m✱ [0mGrep "archivePatient|unarchivePatient|fun .*Patient|fun .*Draft" [90min app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt · 24 matches[0m
+[0m✱ [0mGlob "scripts/*" [90m0 matches[0m
+[0m✱ [0mGlob "app/src/test/java/**/storage/*.kt" [90m26 matches[0m
+> build · glm-5.3-flash-free
+[0m✱ [0mGlob "app/src/androidTest/java/**/*.kt" [90m24 matches[0m
+[0m✱ [0mGlob "scripts/**" [90m0 matches[0m
+> build · glm-5.3-flash-free
+[0m$ [0mls /Users/sherifgamalradwan/anc-emr-android-native/.claude/worktrees/clever-goldwasser-e086ce
+AGENTS.md
+FIX_PIPELINE.command
+LICENSE
+README.md
+app
+build.gradle.kts
+concepts_brief.md
+consolidated_review_report.md
+design_draft.md
+docs
+gradle
+gradle.properties
+gradlew
+gradlew.bat
+local.properties
+settings.gradle.kts
+tasks
+tests
+tools
+[0m✱ [0mGrep "gate|Gate" [90m30 matches[0m
+> build · glm-5.3-flash-free
+[0m$ [0mls /Users/sherifgamalradwan/anc-emr-android-native/.claude/worktrees/clever-goldwasser-e086ce/tools /Users/sherifgamalradwan/anc-emr-android-native/.claude/worktrees/clever-goldwasser-e086ce/tasks /Users/sherifgamalradwan/anc-emr-android-native/.claude/worktrees/clever-goldwasser-e086ce/tests 2>/dev/null
+/Users/sherifgamalradwan/anc-emr-android-native/.claude/worktrees/clever-goldwasser-e086ce/tasks:
+current_task.md
+
+/Users/sherifgamalradwan/anc-emr-android-native/.claude/worktrees/clever-goldwasser-e086ce/tests:
+maestro
+
+/Users/sherifgamalradwan/anc-emr-android-native/.claude/worktrees/clever-goldwasser-e086ce/tools:
+verify_p2.py
+> build · glm-5.3-flash-free
+[0m$ [0mls /Users/sherifgamalradwan/anc-emr-android-native/.claude/worktrees/clever-goldwasser-e086ce/.agents 2>/dev/null; find /Users/sherifgamalradwan/anc-emr-android-native/.claude/worktrees/clever-goldwasser-e086ce -maxdepth 3 -name "run_build_gate.sh" -o -maxdepth 3 -name "run_static_checks.sh" 2>/dev/null
+AI_HANDOFF_LEDGER.md
+CONSTITUTION.md
+DESIGN_S5_REGISTRATION_DRIVER.md
+DESIGN_S6_REGISTRATION_UI.md
+EVIDENCE.json
+PROJECT_MAP.json
+PROJECT_PROFILE.md
+SKILL_COMPLIANCE_LOG.md
+SPEC_AND_AUDIT.md
+SPEC_PREGNANCY_FORM.md
+SPEC_REGISTRATION_FLOW.md
+TEST_MANIFEST.json
+UNIFIED_BEDSIDE_AND_LAB_PLAN.md
+backup-20261029-025233
+backup-20261029-031001
+backup-20261029-031629
+backup-20261029-230415
+backup-20261029-232729
+backup-20261029-233138
+backup-20261029-233755
+backup-20261029-234257
+backup-20261029-234348
+backup-20261030-110956
+backup-20261030-114106
+backup-20261030-123728
+backup-20261030-124029
+backup-20261030-124141
+backup-20261030-145357
+backup-20261030-150323
+backup-20261030-152104
+backup-20261030-160322
+backup-20261030-160522
+backup-20261030-160822
+backup-20261030-161610
+backup-20261030-162108
+backup-20261030-164151
+backup-20261030-175143
+backup-20261030-175644
+backup-20261030-182233
+backup-20261030-210523
+backup-20261030-220718
+backup-20261030-224329
+backup-20261030-233105
+backup-20261031-003322
+backup-20261031-003640
+backup-20261031-010955
+backup-20261031-014856
+backup-20261031-015328
+backup-20261031-022337
+backup-20261031-024837
+backup-20261031-104624
+backup-20261031-113341
+backup-20261031-120803
+backup-20261031-134721
+backup-20261031-143752
+backup-20261031-150045
+backup-20261031-152448
+backup-20261031-152526
+backup-20261031-153956
+backup-20261031-165916
+backup-20261031-173757
+backup-20261031-182425
+backup-20261031-191652
+backup-20261031-205447
+backup-20261031-205500
+backup-20261031-210326
+backup-20261031-214850
+backup-20261101-020429
+backup-20261101-023101
+backup-20261101-023135
+backup-20261101-080417
+backup-20261101-090915
+backup-20261101-095708
+backup-20261101-135028
+backup-20261101-151959
+backup-20261101-162119
+backup-20261101-162505
+backup-20261101-183717
+backup-20261101-222506
+backup-20261101-235150
+backup-20261102-002529
+backup-20261102-010537
+backup-20261102-022358
+backup-20261102-073139
+backup-20261102-091859
+backup-20261102-104737
+briefs
+checks
+fleet-runs
+maca-run-2026-10-29
+mocks
+pipeline
+review-r1.md
+review-workspace-step5.md
+scripts
+specs
+work
+/Users/sherifgamalradwan/anc-emr-android-native/.claude/worktrees/clever-goldwasser-e086ce/.agents/scripts/run_build_gate.sh
+/Users/sherifgamalradwan/anc-emr-android-native/.claude/worktrees/clever-goldwasser-e086ce/.agents/scripts/run_static_checks.sh
+> build · glm-5.3-flash-free
+[0m→ [0mRead .agents/scripts/run_build_gate.sh 
+[0m→ [0mRead .agents/scripts/run_static_checks.sh 
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt [90m[limit=60, offset=180][0m
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt [90m[limit=120, offset=220][0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt [90m[limit=58][0m
+[0m✱ [0mGrep "isLateOrPostTerm|lateOrPost|eddText|Post-term|isPostTerm" [90min app/src/main/java/com/sherifradwan/ancnative/ui · 7 matches[0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/storage/DraftRecord.kt 
+[0m✱ [0mGrep "calculateGestationalAge\(\)|datingSummaryOf\(" [90min app/src/main/java/com/sherifradwan/ancnative · 12 matches[0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt [90m[limit=110, offset=40][0m
+[0m✱ [0mGrep "Reminder|reminder|nextVisit|NextVisit|followUp|FollowUp" [90min app/src/main/java/com/sherifradwan/ancnative · 0 matches[0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt [90m[limit=100, offset=120][0m
+[0m→ [0mRead app/build.gradle.kts 
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/test/java/com/sherifradwan/ancnative/storage/RecordsMappingRoundTripTest.kt [90m[limit=60][0m
+[0m→ [0mRead app/src/androidTest/java/com/sherifradwan/ancnative/storage/EncryptedRecordsTest.kt [90m[limit=120, offset=140][0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt [90m[limit=120, offset=1280][0m
+[0m✱ [0mGrep "fun PatientEntity.toDomain|fun DemoPatient.toEntity" [90min app/src/main/java/com/sherifradwan/ancnative/storage · 2 matches[0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt [90m[limit=130, offset=800][0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt [90m[limit=120, offset=1030][0m
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt [90m[limit=90, offset=100][0m
+> build · glm-5.3-flash-free
+[0m✱ [0mGrep "DraftScreenKind\.|fun mapToDraft|fun upsert|editorKind" [90min app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt · 51 matches[0m
+[0m✱ [0mGrep "DraftScreenKind\.|fun encode|fun decode" [90min app/src/main/java/com/sherifradwan/ancnative/storage/DraftCodec.kt · 2 matches[0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt [90m[limit=60, offset=255][0m
+[0m$ [0mgrep -rn '"archived"' app/src/main/java --include='*.kt' | wc -l; grep -rn "'archived'" app/src/main/java --include='*.kt' | wc -l; grep -rn 'PatientVocabulary.statuses' app/src/main --include='*.kt' -r
+45
+       6
+app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt:168:                if (draft.targetStatus !in PatientVocabulary.statuses) add(PatientValidationError.INVALID_STATUS)
+app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt:357:            targetStatus in PatientVocabulary.statuses && reason.isNotBlank() && reason == reason.trim() && changedAt.isInstant()
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordAnomalies.kt:23:        patient.status?.let { if (it !in PatientVocabulary.statuses) add(RecordAnomaly(patient.id, "status", it)) }
+> build · glm-5.3-flash-free
+[0m✱ [0mGrep "object AncReducer|fun reduce\(" [90min app/src/main/java/com/sherifradwan/ancnative/state · 3 matches[0m
+[0m✱ [0mGrep "decryptAndParseBackup|restoreCanonicalBackup|BackupInspectionResult\.Valid" [90min app/src/main/java/com/sherifradwan/ancnative · 7 matches[0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt [90m[limit=60, offset=890][0m
+[0m$ [0mwc -l app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt app/src/main/java/com/sherifradwan/ancnative/storage/EncryptedBackupManager.kt app/src/main/java/com/sherifradwan/ancnative/storage/RecordsMigration.kt app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientActionsModalSheet.kt app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt
+1871 app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+    1045 app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
+    1695 app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt
+     752 app/src/main/java/com/sherifradwan/ancnative/storage/EncryptedBackupManager.kt
+     646 app/src/main/java/com/sherifradwan/ancnative/storage/RecordsMigration.kt
+     494 app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt
+     393 app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt
+     340 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
+     188 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt
+      59 app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt
+     264 app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientActionsModalSheet.kt
+     596 app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt
+    8343 total
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/storage/RecordAnomalies.kt 
+[0m$ [0mgrep -rn "'archived'" app/src/main/java --include='*.kt'
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt:139:          AND (patient_status IS NULL OR patient_status != 'archived')
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt:170:          AND (patient_status IS NULL OR patient_status != 'archived')
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt:185:        SET patient_status = 'archived',
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt:191:          AND (patient_status IS NULL OR patient_status != 'archived')
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt:210:          AND patient_status = 'archived'
+app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt:221:          AND (patient_status IS NULL OR patient_status != 'archived')
+> build · glm-5.3-flash-free
+# Build plan: Delivery plan editor, Mark delivered, schema v7
+
+## 0. Verified ground truth (files I opened)
+
+- Statuses are a closed set: `PatientVocabulary.statuses = setOf("active", "archived")` at `app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt:97`. Unknown statuses are rejected at `storage/PatientCommands.kt:168` and `PatientCommands.kt:357`, and flagged as anomalies at `storage/RecordAnomalies.kt:23`.
+- The literal string "archived" appears 51 times in `app/src/main` (45 Kotlin sites in 18 files, 6 in SQL in `RecordsDao.kt`). The brief said "about 20"; the real count is 51. Full list with dispositions in section 3.
+- The Plan tab pencil opens the whole patient form: `ui/patienthub/tabs/PlanTab.kt:41-49` emits `AncEvent.StartPatientEditor`; the card's pencil is `ui/patienthub/components/DeliveryPlanningCard.kt:92-106`.
+- Plan content today is parsed from free text: `DeliveryPlanningCard.kt:53` calls `ui/DeliveryNotesParser.kt:26 parseDeliveryNotes`; print also uses it at `ui/report/PatientPrintHtmlGenerator.kt:1237`.
+- Fail-closed version gates: `storage/RecordsDatabase.kt:26 (version = 6)`, migrations wired at `RecordsDatabase.kt:50-56`; `storage/RecordsRepository.kt:1681 (SCHEMA_VERSION = 6)` enforced at `RecordsRepository.kt:83` (PRAGMA user_version) and `RecordsRepository.kt:100` (vault_metadata row). Migration pattern: `storage/RecordsMigration.kt:345-383 (from5To6)` with table-set validation at `RecordsMigration.kt:385-397,616-645`.
+- Backup has its own exact-match version: `storage/EncryptedBackupManager.kt:39 (SCHEMA_VERSION = 3)`, rejected at `EncryptedBackupManager.kt:87` (silent null from `decryptAndParseBackup`), restore flow at `storage/VaultController.kt:526-533`. What the UI shows when that null returns I did not fully read: UNVERIFIED.
+- Undo is one pending, 8 seconds, per record: `state/UndoCoordinator.kt:92-112`. Not suitable for delivered; owner decision 2 says persistent revert (concepts_brief.md:60).
+- Filters in the directory are local UI state, risk-level only: `ui/PatientListScreen.kt:173-188`; active count at `PatientListScreen.kt:190`.
+- GA/EDD surfaces (all call sites verified): `ui/patienthub/PatientHubHeader.kt:146-147`, `DeliveryPlanningCard.kt:54-57`, `ui/patienthub/components/OverviewSections.kt:67,86-102`, `PatientListScreen.kt:129-133,144`, `ui/Components.kt:222,335`, `model/ClinicalSummaryGenerator.kt:24-26`, `ui/report/PatientPrintHtmlGenerator.kt:72`, `ui/patientdirectory/PatientDirectoryMetricsRow.kt:69,86`. Engine: `model/GestationalAgeEngine.kt:95-113`, `model/DatingText.kt:24`.
+- There is no reminder/notification feature in main source (grep for Reminder/nextVisit/followUp returned nothing). "Reminders" in the brief maps to the EDD "Due <date>" chip and the late/post-term chip. Interpretation, not a verbatim feature: UNVERIFIED mapping.
+- Draft machinery for a new editor: `storage/DraftRecord.kt:5-21`, `state/DraftMapping.kt:20-55,316-502,532-544`, codec `storage/DraftCodec.kt:8,27`.
+- One-row-per-patient table precedent: `patient_dating` at `storage/RecordEntities.kt:182-193`, created in `RecordsMigration.kt:115-132` with a unique index.
+- Gate: `.agents/scripts/run_build_gate.sh:1-6` (unit tests, lint, release compile, androidTest compile, offline) and `.agents/scripts/run_static_checks.sh:1-9`.
+- No `androidx.room:room-testing` dependency exists (`app/build.gradle.kts:94-99`), so there is no `MigrationTestHelper`; migration tests hand-build vaults, see the v1 fixture pattern at `androidTest/.../storage/EncryptedRecordsTest.kt:179-259` including the negative unknown-table case at `EncryptedRecordsTest.kt:237-259`.
+- Schema exports exist for 1..6 under `app/schemas/com.sherifradwan.ancnative.storage.RecordsDatabase/`; KSP export location at `app/build.gradle.kts:68-70`.
+- `AncState.kt` is 1871 lines (over the 1500 UI ceiling, AGENTS.md:22). `AncReducer.reduceInternal` is a private exhaustive `when` at `state/AncState.kt:890-920`, so new events need dispatch arms there, but all new reducer bodies go in new files (same package, sealed interface subclasses may live in any file of the package).
+
+---
+
+## 1. Data model (schema v7)
+
+Status value: `"delivered"` added to `PatientVocabulary.statuses` (DemoModels.kt:97). Delivered never reuses `archived_at`/`archived_reason`.
+
+New columns on `patients` (nullable, all additive):
+- `delivery_date TEXT` (ISO yyyy-MM-dd)
+- `delivery_place TEXT`
+- `delivery_mode TEXT` (value from `PatientVocabulary.deliveryModes`, DemoModels.kt:99: CS, Vaginal, Hysterotomy)
+- `delivery_outcome TEXT` (from `pregnancyOutcomes`, DemoModels.kt:100-105: LiveBirth, Stillbirth, EarlyPregnancyLoss, TerminationOfPregnancy)
+- `delivered_at TEXT` (Instant, audit timestamp)
+
+New table `delivery_plan`, one row per patient (mirrors `patient_dating`):
+```
+patient_id TEXT NOT NULL PRIMARY KEY
+agreed_hospital TEXT
+agreed_fees_minor INTEGER        -- integer minor units (piasters); never a float
+agreed_fees_currency TEXT        -- ISO 4217 code, e.g. "EGP"; required when fees set
+delivery_plan_text TEXT
+postpartum_note TEXT
+revision INTEGER NOT NULL
+FOREIGN KEY(patient_id) REFERENCES patients(id) ON UPDATE RESTRICT ON DELETE RESTRICT
+```
+plus `CREATE UNIQUE INDEX index_delivery_plan_patient_id ON delivery_plan (patient_id)` (pattern: RecordsMigration.kt:130-132).
+
+Entity additions: `DeliveryPlanEntity` (~25 lines) and 5 nullable columns on `PatientEntity` (RecordEntities.kt:15-39); `PatientWithVisits` gains `@Relation deliveryPlan` (RecordEntities.kt:374-390). Domain: 5 fields on `DemoPatient` (DemoModels.kt:3-34) plus `DemoDeliveryPlan`; mapping extensions in `RecordsRepository.kt` next to the existing `toDomain`/`toEntity` (RecordsRepository.kt:682,804).
+
+Precedence rule for display (from brief line 19): read `delivery_plan` fields first; if the row is absent or a field is null, fall back to `parseDeliveryNotes(patient.obstetricNotes)` for that field only. No backfill in the migration.
+
+## 2. Migration steps and backup policy
+
+`RecordsMigration.from6To7(expectedVaultUuid)` (new, ~45 lines, exact shape of from5To6 at RecordsMigration.kt:345-383):
+1. `validateSchemaSixTables(db)`: table set must equal `SCHEMA_FIVE_TABLES + "drafts"` (new constant `SCHEMA_SIX_TABLES`, RecordsMigration.kt:616-645 pattern); else `UNKNOWN_SCHEMA`.
+2. `validateSchemaSixMetadata(db, uuid)`: single row, uuid match, `schemaVersion == 6`, initialized; else `VAULT_METADATA_MISMATCH`.
+3. `CREATE TABLE delivery_plan ...` and unique index (DDL in section 1).
+4. Five `ALTER TABLE patients ADD COLUMN ...` statements.
+5. `UPDATE vault_metadata SET schema_version = 7 WHERE vault_uuid = ? AND schema_version = 6 AND is_synthetic = 1 AND initialized = 1`; `changed != 1` throws `RecordsMigrationFailure(VAULT_METADATA_MISMATCH)`.
+6. No data transformation, no parser backfill.
+
+Wiring changes: `RecordsDatabase.kt:26` version 6 to 7, add `DeliveryPlanEntity` to the entities array (lines 11-25), register `from6To7` at lines 50-56; `RecordsRepository.kt:1681` `SCHEMA_VERSION = 7`; commit exported `app/schemas/.../7.json`. AGENTS.md:30 gains the recorded v7 sign-off in the same change (owner decision, concepts_brief.md:10,69).
+
+Backup (owner decision 3, concepts_brief.md:61, old backups dropped):
+- `EncryptedBackupManager.kt:39` `SCHEMA_VERSION = 3` to `4`. Old backups then fail the exact check at line 87 and `decryptAndParseBackup` returns null; restore is refused. The restore error surfaced to the UI at `VaultController.kt:526-533` must be verified and, if it is silent, mapped to an explicit "backup version not supported" message.
+- Patient JSON gains 5 nullable delivery fields plus a nullable `deliveryPlan` object (5 keys). Export at EncryptedBackupManager.kt:241-275, parse at lines 550-598, using the existing `putNullable`/`optNullableString` helpers (lines 723-734).
+- `restoreCanonicalBackup` (RecordsRepository.kt:128-169) adds `DELETE FROM delivery_plan` before `DELETE FROM patients` (FK is RESTRICT) and inserts plans and delivered fields.
+
+Update hardcoded expectations in tests: `androidTest/.../EncryptedRecordsTest.kt:219` (6 to 7) and `:223-229` (PRAGMA user_version), `test/.../EncryptedBackupTest.kt:31,222,263`, `test/.../BackupVaultIntegrationAndZeroDataLossTest.kt:40,51`, `test/.../CustomChoicesLogicTest.kt:278-301` (3 to 4).
+
+## 3. Every "archived" site and its disposition (51 total)
+
+Rule: Delivered adds sibling checks where behavior must differ; it never rewrites an archived check to mean delivered. Of 51 sites, 3 change, 48 stay archive-specific.
+
+Changed sites:
+- `DemoModels.kt:97`: vocabulary gains `"delivered"`.
+- `PatientListScreen.kt:190`: `activeCount` becomes `count { it.status == null || it.status == "active" }` (legacy null rows are treated as active everywhere, see the SQL guards below).
+- `AncState.kt:1388-1389` (`startStatusEditor`): gains explicit delivered handling; archive/unarchive actions are disabled for delivered patients pending owner Q1 (today the two-literal gate would let a delivered patient into the archive editor).
+
+Stays archive-specific (delivered patients are deliberately not blocked by these, because they still need postpartum visits, labs, meds, attachments):
+- SQL guards `RecordsDao.kt:139,170,191,221` (edit guards), `185` (archive), `210` (unarchive; a delivered patient cannot be unarchived by this query, so revert needs its own SQL).
+- Repository guards `RecordsRepository.kt:183` (visit save), `461,467` (status change), `561` (writeGuard), `884` (attachment save), `1040` (dating), `1102` (ultrasound), `1210,1292,1350,1396,1456` (lab/medication/clinical saves), `1544` (clinical delete).
+- ViewModel `AncViewModel.kt:581,936` (plus a new notice branch for delivered, parallel to line 936).
+- Reducers `AncState.kt:1065,1290,1319,1344,1361,1406,1425,1449,1476` (visit/editor starts; the dating start among lines 1449-1476 gains a new sibling delivered guard, see freeze rules).
+- Flow `RegistrationFlow.kt:68,155`, `RegistrationFlowDriver.kt:73,112`.
+- UI `PatientEditor.kt:283`, `PatientActionsModalSheet.kt:57,210`, `PatientHubScreen.kt:138,279`, `PatientListScreen.kt:151`, `ScansTab.kt:86`, `MedsTab.kt:70,93`, `LabsTab.kt:70`, `VisitsTab.kt:87`, `AttachmentsSectionCard.kt:108`.
+- `PatientCommands.kt:155` (recordKind stays ARCHIVE/UNARCHIVE).
+
+## 4. Freeze rules after delivery (owner decision 1, concepts_brief.md:59)
+
+One helper in `model/DatingText.kt`: `fun DemoPatient.pregnancyAsOf(): LocalDate?` = parsed `delivery_date` or null. Call sites pass it as the as-of date:
+- GA: every `calculateGestationalAge()` / `calculateGestationalAgeResult()` call (the 9 surfaces in section 0) passes `pregnancyAsOf() ?: LocalDate.now()`. A delivered mother's GA text is then constant; engine default is `LocalDate.now()` at `model/ClinicalModels.kt:125-129`.
+- EDD display: `datingSummaryOf(patient, pregnancyAsOf() ?: today)`; the "Due <date>" chip (`PatientDirectoryMetricsRow.kt:86`) becomes "Delivered <date> (<outcome>)" for delivered patients. The EDD date itself stays visible in the dating section as history.
+- Late/post-term chip: hidden for delivered (`PatientListScreen.kt:144`, `PatientDirectoryMetricsRow.kt:69`).
+- Discordance banner: hidden for delivered (`OverviewSections.kt:89-102`).
+- High-risk alerts: `riskLevel` badge and `clinicalAttention` and severe-BP surfacing stay visible (postpartum pre-eclampsia safety); only pregnancy-progress alerts (discordance, post-term) freeze. This is my proposed implementation of "alerts frozen"; flag for clinical review in slice 4.
+- Write freeze: `SaveDatingCommand` gains a repository guard `patient.status == "delivered"` returning a new `ClinicalCommandFailure.PATIENT_DELIVERED` (new enum entry at `PatientCommands.kt:304-316` analog and `ClinicalCommands.kt` failure enum), plus a reducer guard on the dating editor start. Labs, meds, visits, ultrasound scans, attachments, profile stay editable (SQL guards in section 3 already allow this). Reverting delivery unfreezes everything because the as-of date derives from `delivery_date`.
+
+## 5. Feature A: Plan-tab delivery plan editor
+
+Pencil rewiring: `PlanTab.kt:41-49` emits new `AncEvent.StartPlanEditor(patientId, editorSessionId)` instead of `StartPatientEditor`. The attachments card is untouched (brief line 32).
+
+New files:
+- `storage/DeliveryPlanCommands.kt` (~230 lines): `SaveDeliveryPlanCommand(operationUuid, editorSessionId, patientId, expectedPatientRevision, agreedHospital: String?, agreedFeesMinor: Long?, agreedFeesCurrency: String?, deliveryPlanText: String?, postpartumNote: String?, fingerprint)` with `prepare(state, operationUuid)` following `ChangePatientStatusCommand.prepare` (PatientCommands.kt:162-184); validation: fees negative rejected, currency required when fees set and must be a known code, text fields normalized (trimmed, blank to null). `recordKind = PatientRecordKind.DELIVERY_PLAN_SAVE` (PatientCommands.kt:279-287).
+- `state/PlanEditorState.kt` (~260 lines): `PlanDraftField` enum (HOSPITAL, FEES_AMOUNT, FEES_CURRENCY, PLAN_TEXT, POSTPARTUM_NOTE), `PlanDraft` data class (editorSessionId, patientId, baseRevision, original, values), events `StartPlanEditor`, `PlanDraftChanged`, `SubmitPlanDraft`, and reducer functions `internal fun startPlanEditor(...)`, `updatePlanDraft(...)`. Events are declared in this file (same package as the sealed interface, legal in Kotlin); `AncState.kt` changes only by ~4 dispatch lines at `reduceInternal` (AncState.kt:920) and one `planDraft` field on `AncState` (~2 lines, line 640-665 block).
+- `ui/PlanEditor.kt` (~330 lines): `PlanEditorScreen` using the `EditorPage` pattern (`PatientEditor.kt:273-308`); hospital text, fees numeric field with currency dropdown (default EGP), plan text, postpartum text. Test tags `planHospitalField`, `planFeesField`, `planCurrencyDropdown`, `planEditorSave`.
+- `state/PlanEditorDriver.kt` if the submit plumbing (frozen command slot, `submitPreparedPatientCommand` shape at AncViewModel.kt:484-529) needs a home outside `AncViewModel.kt` (1045 lines, still under budget; keep it there if it fits).
+
+Modified: `DeliveryPlanningCard.kt` (+~20 lines: render table-first with parser fallback, keep the four `DeliverySectionBox`es at lines 158-185); `DraftRecord.kt` (+1 enum entry `DELIVERY_PLAN`), `DraftMapping.kt` (+~45: slot at lines 20-55 pattern, codec arm in 316-502 pattern, dirty check at 532-544 pattern); `RecordsRepository.kt` (+~50: execute branch upserting `delivery_plan`, patient revision bump like `savePreviousPregnancy` at 478-540, receipt via `commitReceipt` at 542-558); `AncViewModel.kt` (+~40); `AncState.kt` (+~10 dispatch and field); `SavedNotice.DELIVERY_PLAN` (+2 lines, strings at AncState.kt:241-269); ~8 new strings. Destination after save: `AncRoute.Workspace(patientId, WorkspaceSection.DELIVERY)`.
+
+## 6. Feature B: Mark delivered, revert, Delivered filter
+
+New command in `storage/DeliveryPlanCommands.kt` (or a sibling `DeliveryCommands.kt`, ~180 lines):
+- `MarkDeliveredCommand(operationUuid, editorSessionId, patientId, expectedPatientRevision, deliveryDate: String, deliveryPlace: String?, deliveryMode: String, deliveryOutcome: String, deliveredAt: String, fingerprint)`, `recordKind = DELIVER`.
+- `RevertDeliveryCommand(operationUuid, editorSessionId, patientId, expectedPatientRevision, revertedAt, fingerprint)`, `recordKind = REVERT_DELIVER`.
+- Both validated with `PatientVocabulary` sets; no 8-second undo (UndoCoordinator.kt:92-112 is untouched); persistent revert is a real action.
+
+Repository (new, ~70 lines): `markDelivered` runs one transaction: the DAO update
+```
+UPDATE patients SET patient_status='delivered', delivery_date=:d, delivery_place=:p,
+ delivery_mode=:m, delivery_outcome=:o, delivered_at=:t, revision=revision+1
+WHERE id=:id AND revision=:rev AND (patient_status IS NULL OR patient_status='active')
+```
+then `commitReceipt` (RecordsRepository.kt:542-558 pattern). `revertDelivery` sets status back to `'active'` and nulls the 5 columns in one transaction with its own receipt. Rejected when: patient missing, stale revision, status archived (unless owner Q1 says otherwise), status already delivered. G/P/A columns and previous-pregnancy records are untouched (brief line 26; the one-tap "add to history" is deferred).
+
+UI:
+- `ui/DeliveredEditor.kt` (~260 lines): date, place, mode dropdown, outcome dropdown, confirm; pattern of `PatientStatusEditor` (PatientEditor.kt:273-308). Tags `deliveredDateField`, `deliveryPlaceField`, `deliveryModeDropdown`, `deliveryOutcomeDropdown`, `markDeliveredSave`.
+- New route `AncRoute.DeliveredEditor(patientId)` and events `StartDeliveredEditor`, `DeliveryDraftChanged`, `SubmitDelivery`, `RevertDelivery` in new `state/DeliveryState.kt` (~300 lines); `AncState.kt` again only gains dispatch arms and one `deliveryDraft` field.
+- Entry point: `PatientActionsModalSheet.kt` (+~45 lines): "Mark delivered" action for active patients, "Revert delivery" for delivered ones.
+- Directory: `PatientListScreen.kt` (+~55): a status chip row [Active, Delivered, Archived] alongside the risk chips (lines 173-188); activeCount change in section 3; delivered cards show an outcome badge instead of GA.
+- Notice `SavedNotice.DELIVERED` / `DELIVERY_REVERTED` with the new `recordKind` branches at `AncViewModel.kt:925-941`.
+
+## 7. Oracles (each with one negative case)
+
+JVM (src/test, gate-runnable offline):
+1. `DeliveryPlanCommandsTest.kt` (new, ~150): prepare/validate/fingerprint round trip. Negative: a negative `agreedFeesMinor` is rejected and nothing commits.
+2. `MarkDeliveredRulesTest.kt` (new, ~140): vocabulary validation, freeze math. Negative: GA text for a delivered patient computed at two different current dates is identical (proves the freeze); and for a reverted patient it moves again.
+3. `EncryptedBackupTest.kt` (+~50): v4 payload with deliveryPlan round trips field for field. Negative: a v3 backup fails `decryptAndParseBackup` (returns null), and `inspectBackup` reports the version so the UI can say why.
+4. `RecordsMappingRoundTripTest.kt` (+~35): `DeliveryPlanEntity` and delivered patient fields entity-to-domain-to-entity. Negative: all-null plan fields survive a round trip without becoming empty strings.
+5. Schema export check (in test 3's file or its own, ~40): parse committed `app/schemas/.../7.json`, assert version 7, `delivery_plan` present with the exact column set of section 1, and the 5 new patient columns. Negative: flipping the assertion, 6.json does not contain delivery_plan (guards against committing the wrong file).
+
+androidTest (needs an emulator run, not covered by the offline gate):
+6. `DeliveryMigrationTest.kt` (new, ~220, pattern of EncryptedRecordsTest.kt:179-259): build an encrypted v6 vault with patient, dating, visit, draft rows; open through `RecordsDatabase.open` (RecordsDatabase.kt:36-72); assert kept rows, empty `delivery_plan`, `metadata.schemaVersion == 7`, `PRAGMA user_version == 7`, and column sets of the new columns. Negative: a v6 vault with one extra unknown table is rejected `UNKNOWN_SCHEMA` before any DDL runs (assert user_version still 6, pattern at EncryptedRecordsTest.kt:237-259).
+7. `DeliveredWorkflowDbTest.kt` (new, ~200): mark delivered then revert then deliver again, receipts written each time, snapshot correct. Negative: marking delivered on an already-delivered patient with the same expected revision is rejected (stale/conflict), no second row change.
+8. `DeliveredFilterUiTest.kt` (new, ~150): chips filter the directory. Negative: a delivered patient is absent from the Active chip view and the active count drops.
+9. Restore test in `BackupVaultIntegrationAndZeroDataLossTest.kt` (+~40): a v4 backup containing a delivery plan restores it. Negative: a v3 backup restore is refused with a visible error, not a silent no-op (the VaultController.kt:526-533 path, UNVERIFIED detail until read).
+
+## 8. Build slices (each compiles and passes `.agents/scripts/run_build_gate.sh` and `run_static_checks.sh` alone, in this order)
+
+- Slice 0, governance (docs only): record the 2026-11-10 v7 sign-off in AGENTS.md:30. No review point beyond owner confirmation.
+- Slice 1, schema and backup (level-3 review point 1: data schema + backup policy): everything in section 2 plus oracles 3,4,5,6,9. Largest single slice; lands before any UI so later slices sit on frozen storage. Frontier review plus independent test review required (AGENTS.md:11).
+- Slice 2, Plan editor (level-3 review point 2: money/billing for fees number+currency): section 5 plus oracles 1, and a UI edit-gate test addition next to `androidTest/DeliveryPlanningCardEditGateTest.kt`.
+- Slice 3, Mark delivered core (level-3 review point 3: status state machine): vocabulary, commands, transactions, editor UI, revert, sheet entry, oracle 7.
+- Slice 4, Delivered filter and freeze (clinical-safety review of the freeze rules in section 4): section 6 UI additions and section 4 call-site changes, oracles 2, 8.
+- Slice 5, print and PDF (brief build order step 8): `PatientPrintHtmlGenerator.kt:1237` and `:72` read the table first with parser fallback; delivered section in print. Level-2.
+
+## 9. Risks
+
+- 51 literal "archived" sites: a missed site would either treat delivered as archived (patient loses postpartum visit entry) or as active (a "41w" card, the safety defect the brief names). Mitigation: the section 3 checklist plus a static check script under `.agents/checks/` that greps for new `"archived"` comparisons next to `"delivered"` handling.
+- Two sources of truth (notes parser vs table): display precedence and no backfill; print switched in slice 5 only, so until then print can disagree with the Plan tab. Acceptable, flagged.
+- No `MigrationTestHelper`: the v6 test fixture is hand-written DDL and can drift from 6.json. Mitigation: oracle 5 parses 6.json for the fixture assertions.
+- Backup version bump orphans old backups by design (owner decision 3); the restore failure must be explicit, not a silent null (currently UNVERIFIED at VaultController.kt:526-533).
+- Fees as float would be a money defect; minor-units integer is specified in section 1.
+- `AncState.kt` is already over the ceiling; this plan adds only dispatch arms to it and puts bodies in new files. `RecordsRepository.kt` (1695 lines) grows ~180; the AGENTS.md ceiling is UI-only, but a follow-up split is worth scheduling.
+- Revert clears the delivery columns; audit survives only as receipt fingerprints. If the owner wants revert to preserve visible history, that changes the command.
+
+## 10. Owner questions (max 6, with recommended defaults)
+
+1. Can an archived patient be marked delivered? Default: no; revert to active first. (Keeps one transition source: active/null only.)
+2. Delivery date validation? Default: reject future dates, allow any past date including before the LMP dating (LMP uncertainty); no upper-bound check.
+3. Hospital field: free text or closed list? Default: free text, matching the parser fallback and the brief's open question.
+4. Does v7 also relax `previous_pregnancies.clinician_id` NOT NULL (RecordEntities.kt:136) for the pregnancy-form slice? Default: yes, relax it in the same v7 (one bump; avoids sentinel values tripping the anomaly check at RecordAnomalies.kt:36); costs a table rebuild in the migration, covered by oracle 6's kept-rows assertion.
+5. Is the plan editor still editable after delivery? Default: yes, including the postpartum note; the delivery facts (date, place, mode, outcome) are locked except through revert.
+6. Do delivered patients appear in the default directory view? Default: yes, with an outcome badge and their own chip; hiding them recreates the "patient disappeared" hazard the brief warns about.
+
+UNVERIFIED items are marked inline: the restore-failure UI branch at VaultController.kt:526-533, and the mapping of the word "reminders" to the EDD and post-term chips.

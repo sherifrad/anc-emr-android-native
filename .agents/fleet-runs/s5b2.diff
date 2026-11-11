@@ -1,0 +1,405 @@
+diff --git a/.agents/TEST_MANIFEST.json b/.agents/TEST_MANIFEST.json
+index 3b60f07..7e0331c 100644
+--- a/.agents/TEST_MANIFEST.json
++++ b/.agents/TEST_MANIFEST.json
+@@ -1629,12 +1629,11 @@
+     {
+       "id": "UNIT-r4g",
+       "tier": 1,
+-      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.model.EddFromScanTest' --tests 'com.sherifradwan.ancnative.state.PatientDatingDraftTest' --tests 'com.sherifradwan.ancnative.state.DraftMappingTest'",
++      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.state.DraftMappingTest'",
+       "deps": [
+         "app/src/main/**/model/IsoDates.kt",
+         "app/src/main/**/state/*.kt",
+-        "app/src/test/**/EddFromScanTest.kt",
+-        "app/src/test/**/PatientDatingDraftTest.kt"
++        "app/src/test/**/state/DraftMappingTest.kt"
+       ],
+       "covers": [
+         "Q270",
+diff --git a/.agents/checks/check_r4g.py b/.agents/checks/check_r4g.py
+index e7b153d..4efbb90 100644
+--- a/.agents/checks/check_r4g.py
++++ b/.agents/checks/check_r4g.py
+@@ -3,11 +3,11 @@
+ 
+ Stdlib only. Prints PASS/FAIL per check, exits 1 if any FAIL.
+ Textual source contract only; verifies nothing at runtime. Comments are stripped before matching.
+-  S170 one scan due-date function.
+-  S171 new-patient draft carries the dating choice fields.
++  S170 eddFromScan is defined nowhere in main.
++  S171 the patient draft carries none of the eight removed dating fields.
+   S172 intakeDatingUpdate and intakeDatingPreview are defined nowhere in main.
+   S173 the view model builds no post-save dating command (no datingCmd).
+-  S174 the new fields are saved and restored with the patient draft.
++  S174 DraftMapping.kt does not mention the eight removed dating names in the patient branch.
+   S175 the patient editor does not call the old LMP-only functions and calculateForLmp is gone from main sources.
+ """
+ import re
+@@ -21,8 +21,8 @@ STATE = MAIN / "state/AncState.kt"
+ VM = MAIN / "state/AncViewModel.kt"
+ MAPPING = MAIN / "state/DraftMapping.kt"
+ EDITOR = MAIN / "ui/PatientEditor.kt"
+-FIELDS = ("datingMethod", "transferDate", "embryoAgeDays", "agreedEdd", "scanDate", "scanGaWeeks", "scanGaDays")
+-ENUMS = ("DATING_METHOD", "TRANSFER_DATE", "EMBRYO_AGE_DAYS", "AGREED_EDD", "SCAN_DATE", "SCAN_GA_WEEKS", "SCAN_GA_DAYS")
++FIELDS = ("lmpDate", "datingMethod", "transferDate", "embryoAgeDays", "agreedEdd", "scanDate", "scanGaWeeks", "scanGaDays")
++ENUMS = ("LMP_DATE", "DATING_METHOD", "TRANSFER_DATE", "EMBRYO_AGE_DAYS", "AGREED_EDD", "SCAN_DATE", "SCAN_GA_WEEKS", "SCAN_GA_DAYS")
+ 
+ results = []
+ 
+@@ -66,18 +66,23 @@ def block(src, header):
+ 
+ 
+ def check_s170():
+-    record("S170 one scan due-date function", defined_in(r"\bfun\s+eddFromScan\s*\(") == [ISO.name],
+-           "eddFromScan not defined exactly once in IsoDates.kt")
++    found = defined_in(r"\bfun\s+eddFromScan\s*\(")
++    record("S170 eddFromScan is gone from main", not found, "eddFromScan defined in " + ", ".join(found))
+ 
+ 
+ def check_s171():
+     st = code(STATE)
+     values = block(st, r"data\s+class\s+PatientDraftValues\s*\(")
+     enum = block(st, r"enum\s+class\s+PatientDraftField\s*\{")
+-    problems = ["PatientDraftValues lacks " + f for f in FIELDS if not re.search(r"\bval\s+" + f + r"\b", values)]
+-    problems += ["PatientDraftField lacks " + e for e in ENUMS if not re.search(r"\b" + e + r"\b", enum)]
+-    problems += ["reducer does not handle " + e for e in ENUMS if not re.search(r"PatientDraftField\." + e + r"\s*->", st)]
+-    record("S171 new-patient draft carries the dating choice fields", not problems, "; ".join(problems[:6]))
++    problems = []
++    if not values:
++        problems.append("PatientDraftValues not found")
++    if not enum:
++        problems.append("PatientDraftField not found")
++    problems += ["PatientDraftValues has " + f for f in FIELDS if re.search(r"\bval\s+" + f + r"\b", values)]
++    problems += ["PatientDraftField has " + e for e in ENUMS if re.search(r"\b" + e + r"\b", enum)]
++    problems += ["reducer handles PatientDraftField." + e for e in ENUMS if re.search(r"PatientDraftField\." + e + r"\b", st)]
++    record("S171 the patient draft carries none of the eight removed dating fields", not problems, "; ".join(problems[:6]))
+ 
+ 
+ def check_s172():
+@@ -105,8 +110,17 @@ def check_s173():
+ 
+ def check_s174():
+     src = code(MAPPING)
+-    bad = [f for f in FIELDS if len(re.findall(r'"' + f + r'"', src)) < 2]
+-    record("S174 new fields saved and restored with the patient draft", not bad, "not saved and restored: " + ", ".join(bad))
++    patient = block(src, r"state\.patientDraft\?\.let\s*")
++    restore = block(src, r"DraftScreenKind\.PATIENT_PROFILE\s*->\s*")
++    problems = []
++    if not patient:
++        problems.append("patient save block not found")
++    if not restore:
++        problems.append("patient restore block not found")
++    for f in FIELDS:
++        if '"' + f + '"' in patient or '"' + f + '"' in restore:
++            problems.append("patient save or restore still uses " + f)
++    record("S174 the patient draft is not saved or restored with the removed dating keys", not problems, "; ".join(problems))
+ 
+ 
+ def check_s175():
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt b/app/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt
+index 61ae3b6..714b97f 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt
+@@ -8,11 +8,6 @@ const val FULL_TERM_DAYS = 280L
+ 
+ fun eddFromLmp(lmp: LocalDate): LocalDate = lmp.plusDays(FULL_TERM_DAYS)
+ 
+-fun eddFromScan(scanDate: LocalDate, gaWeeks: Int, gaDays: Int): LocalDate? {
+-    if (gaWeeks !in 0..42 || gaDays !in 0..6) return null
+-    return scanDate.plusDays(FULL_TERM_DAYS - (gaWeeks * 7L + gaDays))
+-}
+-
+ fun ivfGaDaysAtTransfer(embryoAgeDays: Int): Long = 14L + embryoAgeDays
+ 
+ fun ivfEddFromTransfer(transfer: LocalDate, embryoAgeDays: Int): LocalDate =
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt b/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+index fed6ffa..bf516bf 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+@@ -98,14 +98,6 @@ enum class PatientDraftField {
+     ABORTION,
+     OBSTETRIC_NOTES,
+     CLINICAL_ATTENTION,
+-    LMP_DATE,
+-    DATING_METHOD,
+-    TRANSFER_DATE,
+-    EMBRYO_AGE_DAYS,
+-    AGREED_EDD,
+-    SCAN_DATE,
+-    SCAN_GA_WEEKS,
+-    SCAN_GA_DAYS,
+ }
+ enum class HistoriesDraftField { MEDICAL, SURGICAL, FAMILY, ALLERGY }
+ enum class PregnancyDraftField {
+@@ -463,14 +455,6 @@ data class PatientDraftValues(
+     val abortion: String = "",
+     val obstetricNotes: String = "",
+     val clinicalAttention: String = "",
+-    val lmpDate: String = "",
+-    val datingMethod: String = "",
+-    val transferDate: String = "",
+-    val embryoAgeDays: String = "",
+-    val agreedEdd: String = "",
+-    val scanDate: String = "",
+-    val scanGaWeeks: String = "",
+-    val scanGaDays: String = "",
+ )
+ 
+ data class PatientDraft(
+@@ -1578,14 +1562,6 @@ object AncReducer {
+             PatientDraftField.ABORTION -> draft.values.copy(abortion = event.value)
+             PatientDraftField.OBSTETRIC_NOTES -> draft.values.copy(obstetricNotes = event.value)
+             PatientDraftField.CLINICAL_ATTENTION -> draft.values.copy(clinicalAttention = event.value)
+-            PatientDraftField.LMP_DATE -> draft.values.copy(lmpDate = event.value)
+-            PatientDraftField.DATING_METHOD -> draft.values.copy(datingMethod = event.value)
+-            PatientDraftField.TRANSFER_DATE -> draft.values.copy(transferDate = event.value)
+-            PatientDraftField.EMBRYO_AGE_DAYS -> draft.values.copy(embryoAgeDays = event.value)
+-            PatientDraftField.AGREED_EDD -> draft.values.copy(agreedEdd = event.value)
+-            PatientDraftField.SCAN_DATE -> draft.values.copy(scanDate = event.value)
+-            PatientDraftField.SCAN_GA_WEEKS -> draft.values.copy(scanGaWeeks = event.value)
+-            PatientDraftField.SCAN_GA_DAYS -> draft.values.copy(scanGaDays = event.value)
+         }
+         return state.copy(patientDraft = draft.copy(values = values, errors = emptySet()), savePhase = SavePhase.IDLE, saveError = null)
+     }
+@@ -1816,7 +1792,6 @@ object AncReducer {
+         abortion = abortion?.toString().orEmpty(),
+         obstetricNotes = obstetricNotes.orEmpty(),
+         clinicalAttention = clinicalAttention.orEmpty(),
+-        lmpDate = dating?.lmpDate.orEmpty(),
+     )
+ 
+     private fun DemoPreviousPregnancy.toDraftValues() = PreviousPregnancyDraftValues(
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt b/app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt
+index 1a25e46..e55b9b3 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt
+@@ -90,7 +90,7 @@ fun draftRecordFor(state: AncState, nowMillis: Long): DraftRecord? {
+         if (!draft.isDirty) return null
+         val isNew = draft.baseRevision == null
+         val patientId = if (isNew) NEW_PATIENT_DRAFT_KEY else draft.patientId
+-        val baseFields = mapOf(
++        val fields = mapOf(
+             "caseId" to draft.values.caseId,
+             "displayName" to draft.values.displayName,
+             "dateOfBirth" to draft.values.dateOfBirth,
+@@ -104,21 +104,7 @@ fun draftRecordFor(state: AncState, nowMillis: Long): DraftRecord? {
+             "abortion" to draft.values.abortion,
+             "obstetricNotes" to draft.values.obstetricNotes,
+             "clinicalAttention" to draft.values.clinicalAttention,
+-            "lmpDate" to draft.values.lmpDate,
+         )
+-        val fields = if (isNew) {
+-            baseFields + mapOf(
+-                "datingMethod" to draft.values.datingMethod,
+-                "transferDate" to draft.values.transferDate,
+-                "embryoAgeDays" to draft.values.embryoAgeDays,
+-                "agreedEdd" to draft.values.agreedEdd,
+-                "scanDate" to draft.values.scanDate,
+-                "scanGaWeeks" to draft.values.scanGaWeeks,
+-                "scanGaDays" to draft.values.scanGaDays,
+-            )
+-        } else {
+-            baseFields
+-        }
+         return DraftRecord(
+             patientId = patientId,
+             screenKind = DraftScreenKind.PATIENT_PROFILE,
+@@ -375,14 +361,6 @@ fun applyDraftRecord(state: AncState, record: DraftRecord): AncState {
+                         abortion = record.fields["abortion"] ?: v.abortion,
+                         obstetricNotes = record.fields["obstetricNotes"] ?: v.obstetricNotes,
+                         clinicalAttention = record.fields["clinicalAttention"] ?: v.clinicalAttention,
+-                        lmpDate = record.fields["lmpDate"] ?: v.lmpDate,
+-                        datingMethod = record.fields["datingMethod"] ?: v.datingMethod,
+-                        transferDate = record.fields["transferDate"] ?: v.transferDate,
+-                        embryoAgeDays = record.fields["embryoAgeDays"] ?: v.embryoAgeDays,
+-                        agreedEdd = record.fields["agreedEdd"] ?: v.agreedEdd,
+-                        scanDate = record.fields["scanDate"] ?: v.scanDate,
+-                        scanGaWeeks = record.fields["scanGaWeeks"] ?: v.scanGaWeeks,
+-                        scanGaDays = record.fields["scanGaDays"] ?: v.scanGaDays,
+                     ),
+                     errors = emptySet(),
+                 ),
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/model/EddFromScanTest.kt b/app/src/test/java/com/sherifradwan/ancnative/model/EddFromScanTest.kt
+deleted file mode 100644
+index 2ed5eaf..0000000
+--- a/app/src/test/java/com/sherifradwan/ancnative/model/EddFromScanTest.kt
++++ /dev/null
+@@ -1,27 +0,0 @@
+-package com.sherifradwan.ancnative.model
+-
+-import java.time.LocalDate
+-import org.junit.Assert.assertEquals
+-import org.junit.Assert.assertNull
+-import org.junit.Test
+-
+-/** Round 4g / Q270: one due-date rule for a first-trimester scan (SPEC_FIX_R4.md). */
+-class EddFromScanTest {
+-    private val scan = LocalDate.of(2026, 3, 1)
+-
+-    @Test fun eightWeeksThreeDays() = assertEquals(LocalDate.of(2026, 10, 8), eddFromScan(scan, 8, 3))
+-
+-    @Test fun twelveWeeksZeroDays() = assertEquals(LocalDate.of(2026, 9, 13), eddFromScan(scan, 12, 0))
+-
+-    @Test fun sevenDaysIsInvalid() = assertNull(eddFromScan(scan, 8, 7))
+-
+-    @Test fun negativeDaysIsInvalid() = assertNull(eddFromScan(scan, 8, -1))
+-
+-    @Test fun negativeWeeksIsInvalid() = assertNull(eddFromScan(scan, -1, 0))
+-
+-    @Test fun weeks43IsInvalid() = assertNull(eddFromScan(scan, 43, 0))
+-
+-    @Test fun weeks42IsAccepted() = assertEquals(LocalDate.of(2026, 3, 1).minusDays(14), eddFromScan(scan, 42, 0))
+-
+-    @Test fun zeroWeeksIsAccepted() = assertEquals(LocalDate.of(2026, 12, 6), eddFromScan(scan, 0, 0))
+-}
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/state/DraftMappingTest.kt b/app/src/test/java/com/sherifradwan/ancnative/state/DraftMappingTest.kt
+index 7297dfe..ac514ea 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/state/DraftMappingTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/state/DraftMappingTest.kt
+@@ -59,7 +59,7 @@ class DraftMappingTest {
+     )
+ 
+     private val visitValues = DraftValues("2026-10-01", "120/80", "70", "findings", "notes", "u9")
+-    private val patientValues = PatientDraftValues(displayName = "Mona", phone = "0100", gravida = "2", lmpDate = "2026-01-01")
++    private val patientValues = PatientDraftValues(displayName = "Mona", phone = "0100", gravida = "2")
+     private val historiesValues = HistoriesDraftValues("m", "s", "f", "a")
+     private val pregnancyValues = PreviousPregnancyDraftValues(dateText = "2020", outcome = "live", clinicianId = "c1")
+     private val datingValues = DatingDraftValues(lmpDate = "2026-01-01", agreedEdd = "2026-10-08", notes = "n")
+@@ -134,9 +134,9 @@ class DraftMappingTest {
+         assertNull(edit.recordId)
+         assertEquals(4L, edit.baseRevision)
+         assertEquals("Mona", edit.fields["displayName"])
+-        assertEquals("2026-01-01", edit.fields["lmpDate"])
+         assertEquals("", edit.fields["caseId"])
+-        assertEquals(14, edit.fields.size)
++        assertEquals(13, edit.fields.size)
++        assertEquals(13, record(patient(patientValues, revision = null, id = "generated-id"))!!.fields.size)
+ 
+         val fresh = patient(patientValues, revision = null, id = "generated-id")
+         assertEquals(DraftSlot(NEW_PATIENT_DRAFT_KEY, DraftScreenKind.PATIENT_PROFILE), activeDraftSlot(fresh))
+@@ -146,6 +146,27 @@ class DraftMappingTest {
+         assertNull(created.baseRevision)
+     }
+ 
++    @Test
++    fun oldPatientDraftWithRemovedDatingKeysStillLoads() {
++        val removedKeys = mapOf(
++            "lmpDate" to "2026-01-01",
++            "datingMethod" to "Ultrasound",
++            "transferDate" to "2026-03-01",
++            "embryoAgeDays" to "5",
++            "agreedEdd" to "2026-11-20",
++            "scanDate" to "2026-03-01",
++            "scanGaWeeks" to "8",
++            "scanGaDays" to "3",
++        )
++        val current = record(patient(patientValues))!!
++        val oldJson = encodeDraftFields(current.fields + removedKeys)!!
++        val decoded = decodeDraftFields(oldJson)!!
++        assertEquals(removedKeys.keys, removedKeys.keys.intersect(decoded.keys))
++        val restored = applyDraftRecord(freshOf(patient(patientValues)), current.copy(fields = decoded)).patientDraft!!.values
++        assertEquals(patientValues, restored)
++        removedKeys.keys.forEach { assertFalse("$it must not be saved again", it in record(patient(restored))!!.fields) }
++    }
++
+     @Test
+     fun historiesRecord() {
+         val r = record(histories(historiesValues))!!
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/state/PatientDatingDraftTest.kt b/app/src/test/java/com/sherifradwan/ancnative/state/PatientDatingDraftTest.kt
+deleted file mode 100644
+index 181bc51..0000000
+--- a/app/src/test/java/com/sherifradwan/ancnative/state/PatientDatingDraftTest.kt
++++ /dev/null
+@@ -1,75 +0,0 @@
+-package com.sherifradwan.ancnative.state
+-
+-import com.sherifradwan.ancnative.storage.DraftRecord
+-import com.sherifradwan.ancnative.storage.VaultState
+-import org.junit.Assert.assertEquals
+-import org.junit.Test
+-
+-/** Round 4g / Q271-Q272: the new-patient draft carries the dating choice and keeps it across save and restore. */
+-class PatientDatingDraftTest {
+-    private fun base() = AncState(patients = emptyList(), vaultState = VaultState.Unlocked(1L))
+-
+-    private fun stateWith(values: PatientDraftValues, original: PatientDraftValues = PatientDraftValues(), session: String = "s1") =
+-        base().copy(patientDraft = PatientDraft(session, "new", null, null, original, values))
+-
+-    private val allSeven = PatientDraftValues(
+-        displayName = "Mona",
+-        datingMethod = "Ultrasound",
+-        transferDate = "2026-03-01",
+-        embryoAgeDays = "5",
+-        agreedEdd = "2026-11-20",
+-        scanDate = "2026-03-01",
+-        scanGaWeeks = "8",
+-        scanGaDays = "3",
+-    )
+-
+-    private fun reduced(field: PatientDraftField, value: String): PatientDraftValues =
+-        AncReducer.reduce(stateWith(PatientDraftValues()), AncEvent.PatientDraftChanged(field, value)).patientDraft!!.values
+-
+-    @Test fun reducerSetsEachNewField() {
+-        assertEquals("IVF_TRANSFER", reduced(PatientDraftField.DATING_METHOD, "IVF_TRANSFER").datingMethod)
+-        assertEquals("2026-03-01", reduced(PatientDraftField.TRANSFER_DATE, "2026-03-01").transferDate)
+-        assertEquals("5", reduced(PatientDraftField.EMBRYO_AGE_DAYS, "5").embryoAgeDays)
+-        assertEquals("2026-11-20", reduced(PatientDraftField.AGREED_EDD, "2026-11-20").agreedEdd)
+-        assertEquals("2026-03-01", reduced(PatientDraftField.SCAN_DATE, "2026-03-01").scanDate)
+-        assertEquals("8", reduced(PatientDraftField.SCAN_GA_WEEKS, "8").scanGaWeeks)
+-        assertEquals("3", reduced(PatientDraftField.SCAN_GA_DAYS, "3").scanGaDays)
+-    }
+-
+-    @Test fun reducerChangesOnlyTheNamedField() {
+-        val v = reduced(PatientDraftField.SCAN_GA_WEEKS, "8")
+-        assertEquals(PatientDraftValues(scanGaWeeks = "8"), v)
+-    }
+-
+-    @Test fun newFieldsDefaultToBlank() {
+-        val v = PatientDraftValues()
+-        assertEquals(listOf("", "", "", "", "", "", ""), listOf(v.datingMethod, v.transferDate, v.embryoAgeDays, v.agreedEdd, v.scanDate, v.scanGaWeeks, v.scanGaDays))
+-    }
+-
+-    @Test fun saveThenRestoreKeepsAllSevenValues() {
+-        val typed = stateWith(allSeven)
+-        val record = draftRecordFor(typed, 1234L)!!
+-        val fresh = stateWith(PatientDraftValues(), session = "fresh")
+-        val restored = applyDraftRecord(fresh, record).patientDraft!!.values
+-        assertEquals(allSeven.datingMethod, restored.datingMethod)
+-        assertEquals(allSeven.transferDate, restored.transferDate)
+-        assertEquals(allSeven.embryoAgeDays, restored.embryoAgeDays)
+-        assertEquals(allSeven.agreedEdd, restored.agreedEdd)
+-        assertEquals(allSeven.scanDate, restored.scanDate)
+-        assertEquals(allSeven.scanGaWeeks, restored.scanGaWeeks)
+-        assertEquals(allSeven.scanGaDays, restored.scanGaDays)
+-        assertEquals("Mona", restored.displayName)
+-    }
+-
+-    @Test fun oldRecordWithoutTheKeysRestoresUnchanged() {
+-        val typed = stateWith(allSeven)
+-        val full = draftRecordFor(typed, 1234L)!!
+-        val sevenKeys = setOf("datingMethod", "transferDate", "embryoAgeDays", "agreedEdd", "scanDate", "scanGaWeeks", "scanGaDays")
+-        val old: DraftRecord = full.copy(fields = full.fields - sevenKeys)
+-        val current = PatientDraftValues(datingMethod = "Clinical", agreedEdd = "2026-11-20")
+-        val fresh = stateWith(current, session = "fresh")
+-        val restored = applyDraftRecord(fresh, old).patientDraft!!.values
+-        assertEquals("Mona", restored.displayName)
+-        assertEquals(current.copy(displayName = "Mona"), restored)
+-    }
+-}
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt b/app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt
+index adc5235..d848692 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt
+@@ -757,10 +757,7 @@ class RegistrationFlowStateTest {
+         assertEquals("s7", draft.editorSessionId)
+         assertEquals(draft.original, draft.values)
+         assertEquals(2L, draft.baseRevision)
+-        assertEquals(
+-            obstetricValues.copy(lmpDate = ""),
+-            draft.values.copy(lmpDate = ""),
+-        )
++        assertEquals(obstetricValues, draft.values)
+         assertEquals("Mona Said", draft.values.displayName)
+         assertEquals("31", draft.values.ageText)
+         assertEquals("0100", draft.values.phone)

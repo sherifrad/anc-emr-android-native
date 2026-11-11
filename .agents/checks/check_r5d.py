@@ -22,9 +22,11 @@ def read(path):
 
 
 def main():
-    ws = read(ROOT / "app/src/main/java/com/sherifradwan/ancnative/ui/WorkspaceScreen.kt")
+    # WorkspaceScreen.kt is gone: the patient hub (tabs and components) renders the medication list now.
+    hub = sorted((ROOT / "app/src/main/java/com/sherifradwan/ancnative/ui/patienthub").rglob("*.kt"))
+    ws = "\n".join(read(f) for f in hub)
     missing = [t for t in ("medicationToggle-", "medicationsToggleAll", "medication-", "editMedication-") if '"' + t not in ws]
-    record("S230 workspace medication tags present", not missing, "missing " + ", ".join(missing))
+    record("S230 patient hub medication tags present", not missing, "missing " + ", ".join(missing))
     strings = read(ROOT / "app/src/main/res/values/strings.xml")
     new = [m for m in re.findall(r'<string name="([a-z_]*(?:expand|collapse|show_details|hide_details)[a-z_]*)"', strings)]
     record("S231 new labels defined once", len(new) == len(set(new)) and len(new) >= 4, "found " + str(new))

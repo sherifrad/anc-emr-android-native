@@ -7,6 +7,11 @@ import com.sherifradwan.ancnative.model.DeliveryOutcomeFields
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.PatientValidationError
 import com.sherifradwan.ancnative.model.composeDeliveryNotes
+import com.sherifradwan.ancnative.model.PreviousPregnancyFormRules
+import com.sherifradwan.ancnative.model.effectiveMedicationStatus
+import com.sherifradwan.ancnative.model.parseBloodPressure
+import com.sherifradwan.ancnative.model.parseVisitFindings
+import com.sherifradwan.ancnative.storage.ClinicalRecordKind
 import com.sherifradwan.ancnative.storage.DeletableRecord
 import com.sherifradwan.ancnative.storage.DeletableRegistry
 import com.sherifradwan.ancnative.storage.DeletableType
@@ -39,6 +44,7 @@ sealed interface AncRoute {
     data class PreviousPregnancyEditor(val patientId: String, val pregnancyId: String) : AncRoute
     data class StatusEditor(val patientId: String, val targetStatus: String) : AncRoute
     data class DatingEditor(val patientId: String) : AncRoute
+    data class PregnancyCountPrompt(val patientId: String) : AncRoute
     data class UltrasoundEditor(val patientId: String, val scanId: String, val isNew: Boolean) : AncRoute
     data class LabEditor(val patientId: String, val labId: String, val isNew: Boolean) : AncRoute
     data class LabBatchEditor(val patientId: String) : AncRoute
@@ -50,6 +56,11 @@ sealed interface PendingAction {
         val patientId: String,
         val visitId: String?,
         val editorSessionId: String,
+    ) : PendingAction
+    data class FlowMove(
+        val event: FlowEvent,
+        val editorSessionId: String,
+        val newPregnancyId: String,
     ) : PendingAction
 }
 
@@ -82,28 +93,17 @@ enum class PatientDraftField {
     ABORTION,
     OBSTETRIC_NOTES,
     CLINICAL_ATTENTION,
-    LMP_DATE,
-    DATING_METHOD,
-    TRANSFER_DATE,
-    EMBRYO_AGE_DAYS,
-    AGREED_EDD,
-    SCAN_DATE,
-    SCAN_GA_WEEKS,
-    SCAN_GA_DAYS,
 }
 enum class HistoriesDraftField { MEDICAL, SURGICAL, FAMILY, ALLERGY }
 enum class PregnancyDraftField {
     DATE_TEXT,
-    OUTCOME_TEXT,
     PREGNANCY_TYPE,
     OTHER_DETAILS,
     PLACE_AND_DOCTOR,
     DELIVERY_BY,
     OUTCOME,
-    BIRTH_METHOD,
     LOSS_MANAGEMENT,
     TERMINATION_METHOD,
-    CLINICIAN_ID,
 }
 enum class DatingDraftField {
     LMP_DATE,
@@ -207,7 +207,6 @@ fun SaveUiError?.stringRes(): Int = when (this) {
 enum class SavedNotice {
     VISIT,
     PATIENT,
-    PATIENT_DATING_NOT_UPDATED,
     HISTORIES,
     PREGNANCY,
     ARCHIVED,
@@ -236,7 +235,6 @@ enum class SavedNotice {
 }
 fun SavedNotice?.stringRes(): Int = when (this) {
     SavedNotice.PATIENT -> R.string.patient_saved
-    SavedNotice.PATIENT_DATING_NOT_UPDATED -> R.string.patient_saved_dating_not_updated
     SavedNotice.HISTORIES -> R.string.histories_saved
     SavedNotice.PREGNANCY -> R.string.pregnancy_saved
     SavedNotice.ARCHIVED -> R.string.patient_archived_notice
@@ -353,6 +351,7 @@ fun AncRoute.patientIdOrNull(): String? = when (this) {
     is AncRoute.PreviousPregnancyEditor -> patientId
     is AncRoute.StatusEditor -> patientId
     is AncRoute.DatingEditor -> patientId
+    is AncRoute.PregnancyCountPrompt -> patientId
     is AncRoute.UltrasoundEditor -> patientId
     is AncRoute.LabEditor -> patientId
     is AncRoute.LabBatchEditor -> patientId
@@ -388,6 +387,8 @@ fun AncState.clearedForLock(): AncState =
         noticePatientId = null,
         medicationStopUndo = null,
         medicationQuickSave = null,
+        registrationFlow = null,
+        awaitingAdvance = null,
     )
 
 /**
@@ -465,14 +466,6 @@ data class PatientDraftValues(
     val deliveryDate: String = "",
     val deliveryMode: String = "",
     val deliveryOutcome: String = "",
-    val lmpDate: String = "",
-    val datingMethod: String = "",
-    val transferDate: String = "",
-    val embryoAgeDays: String = "",
-    val agreedEdd: String = "",
-    val scanDate: String = "",
-    val scanGaWeeks: String = "",
-    val scanGaDays: String = "",
 )
 
 data class PatientDraft(
@@ -774,6 +767,8 @@ data class AncState(
     /** A one-tap stop or its Undo in flight; it stays after a failed save so the Meds tab can show the cause. */
     val medicationQuickSave: MedicationQuickSave? = null,
     val medicationStopUndo: MedicationStopUndo? = null,
+    val registrationFlow: RegistrationFlow? = null,
+    val awaitingAdvance: AwaitingAdvance? = null,
 ) {
     fun patient(patientId: String): DemoPatient? = patients.firstOrNull { it.id == patientId }
 

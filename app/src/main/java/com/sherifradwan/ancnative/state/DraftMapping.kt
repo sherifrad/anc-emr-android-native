@@ -90,7 +90,7 @@ fun draftRecordFor(state: AncState, nowMillis: Long): DraftRecord? {
         if (!draft.isDirty) return null
         val isNew = draft.baseRevision == null
         val patientId = if (isNew) NEW_PATIENT_DRAFT_KEY else draft.patientId
-        val baseFields = mapOf(
+        val fields = mapOf(
             "caseId" to draft.values.caseId,
             "displayName" to draft.values.displayName,
             "dateOfBirth" to draft.values.dateOfBirth,
@@ -104,21 +104,7 @@ fun draftRecordFor(state: AncState, nowMillis: Long): DraftRecord? {
             "abortion" to draft.values.abortion,
             "obstetricNotes" to draft.values.obstetricNotes,
             "clinicalAttention" to draft.values.clinicalAttention,
-            "lmpDate" to draft.values.lmpDate,
         )
-        val fields = if (isNew) {
-            baseFields + mapOf(
-                "datingMethod" to draft.values.datingMethod,
-                "transferDate" to draft.values.transferDate,
-                "embryoAgeDays" to draft.values.embryoAgeDays,
-                "agreedEdd" to draft.values.agreedEdd,
-                "scanDate" to draft.values.scanDate,
-                "scanGaWeeks" to draft.values.scanGaWeeks,
-                "scanGaDays" to draft.values.scanGaDays,
-            )
-        } else {
-            baseFields
-        }
         return DraftRecord(
             patientId = patientId,
             screenKind = DraftScreenKind.PATIENT_PROFILE,
@@ -313,9 +299,17 @@ fun draftRecordFor(state: AncState, nowMillis: Long): DraftRecord? {
     return null
 }
 
+/**
+ * The pregnancy slot is shared by every pregnancy of a patient, so a stored pregnancy record belongs to the open
+ * editor only when it names the same pregnancy. Every other kind is identified by its slot alone.
+ */
+fun draftRecordBelongsToOpenEditor(state: AncState, record: DraftRecord): Boolean =
+    record.screenKind != DraftScreenKind.PREVIOUS_PREGNANCY || record.recordId == state.pregnancyDraft?.pregnancyId
+
 fun applyDraftRecord(state: AncState, record: DraftRecord): AncState {
     val slot = activeDraftSlot(state) ?: return state
     if (slot != DraftSlot(record.patientId, record.screenKind)) return state
+    if (!draftRecordBelongsToOpenEditor(state, record)) return state
     val newSessionId = UUID.randomUUID().toString()
 
     return when (record.screenKind) {
@@ -367,14 +361,6 @@ fun applyDraftRecord(state: AncState, record: DraftRecord): AncState {
                         abortion = record.fields["abortion"] ?: v.abortion,
                         obstetricNotes = record.fields["obstetricNotes"] ?: v.obstetricNotes,
                         clinicalAttention = record.fields["clinicalAttention"] ?: v.clinicalAttention,
-                        lmpDate = record.fields["lmpDate"] ?: v.lmpDate,
-                        datingMethod = record.fields["datingMethod"] ?: v.datingMethod,
-                        transferDate = record.fields["transferDate"] ?: v.transferDate,
-                        embryoAgeDays = record.fields["embryoAgeDays"] ?: v.embryoAgeDays,
-                        agreedEdd = record.fields["agreedEdd"] ?: v.agreedEdd,
-                        scanDate = record.fields["scanDate"] ?: v.scanDate,
-                        scanGaWeeks = record.fields["scanGaWeeks"] ?: v.scanGaWeeks,
-                        scanGaDays = record.fields["scanGaDays"] ?: v.scanGaDays,
                     ),
                     errors = emptySet(),
                 ),

@@ -1,0 +1,30 @@
+**PASS.** The diff does what it says, and none of the changed checks pass vacuously. I could not run the checks because the run needed approval, so everything below comes from reading the source.
+
+**1. Checks**
+- Every check that walks the `ui/patienthub` folder fails if that folder is empty. r3d and r3e have an explicit guard. r5d, r6b3, r3j, r3k S62 and r3f1 fail because the symbol they look for would be missing.
+- The new positive checks match real code:
+  - `BpAlertLabel(` in `VisitsTab.kt` and `PatientHubHeader.kt`
+  - `severeBpAttention(` in `PatientHubScreen.kt:137`
+  - `bp_attention_severe` and `testTag("severeBpAttention")` in `ClinicalAttentionBanner.kt:185,189`
+  - `MedicationStatusBadge(` in `MedicationCard.kt:87`
+  - `shortWeeksText` in `PatientHubHeader.kt:333`
+  - the year and outcome texts inside a `FlowRow` in `PastDeliveryMicroRow.kt:81-102`
+  - the `SavedNotice.PATIENT_DATING_NOT_UPDATED -> R.string...` mapping in `AncState.kt:248`
+  - the `UltrasoundPhotoViewerDialog(patientId = patient.id` call in `PatientHubScreen.kt:262`
+- Two requirements were removed with no replacement: S60's chip `FlowRow` spacing and S87's `progressFraction`/`daysToEdd`. I found no `progressFraction` or progress bar anywhere under `ui/`, so dropping them is justified.
+
+**2. Lab date:** behaviour is the same for valid, invalid and blank dates. The one change is a date with spaces around it: before, it fell back to today's date; now it parses. That is a fix. The gestational age shown above the card, `calculateGestationalAgeAt` (`GestationalAgeEngine.kt:89-93`), already went through `parseIsoDateOrNull`. So before this change, a date with spaces made the card's as-of date (today) disagree with that gestational age. Now they match. The EDD is not affected.
+
+**3. Severe-BP badge:** the old code passed `"≥160/110"` to `BpAlertLabel`. That string almost certainly fails `parseBloodPressure`, so `bpLevel` returned NORMAL and no badge was drawn (I did not read `parseBloodPressure` itself). The badge now shows exactly when `row.isSevereBp` is true. The `BpAlertLabel` path is unchanged for its three callers (`VisitEditor.kt:307`, `VisitsTab.kt:175`, `PatientHubHeader.kt:286`), and the `testTag("bpAlertLabel")` is kept in the shared chip. "Severe BP" is short and sits next to a name with `weight(1f)` and `maxLines=2`, so it should fit at 360dp. That is not checked on a device.
+
+**4. Outside the stated intent:** the r3o allowlist entry (it matches `PatientPrintHtmlGenerator.kt:1080` exactly), the r4a/r4c/r4d/r4e codex-to-catalog renames, the r6a/r6b2 rule removals and the doc edit.
+
+**Findings**
+- `state/AncState.kt:1047` | BLOCKER (already there before this diff) | `attachmentError` is set when an attachment fails, but nothing in `ui/` reads it. `attachment_error_banner`, `DismissAttachmentError` and `R.string.attachment_save_failed` appear in no UI file. A failed attachment save is never shown to the user. r3f1's S33 strings check will correctly still FAIL, so that part of the repair is not finished.
+- `.agents/checks/check_r3e.py:168` | SHOULD | The no-36dp-`IconButton` check (S28) no longer covers the patient list card. The card's `IconButton` moved to `ui/patientdirectory/PatientDirectoryCard.kt`, which the check does not scan. Add `ui/patientdirectory` to the scanned files.
+- `.agents/checks/check_r3j.py:125` | NIT | S56 went from at least 4 `photos_count` call sites to at least 1. Only one call site exists (`ScansTab.kt:173`), so the lower number is accurate. It is still a real loosening.
+- `.agents/checks/check_r3f1.py:58` | NIT | The banner check now accepts the strings anywhere under `ui/`, so a stray reference elsewhere would satisfy it.
+- `.agents/checks/check_r6a.py:711`, `.agents/checks/check_r6b2.py:87` | NIT | The "no UI file changed" guards were removed with no replacement. They only applied to one past round and would fail on any UI edit now, so removing them is reasonable, but note it in the commit message.
+- `ui/patientdirectory/PatientDirectoryCard.kt:138` | NIT | I did not confirm on a device that "Severe BP" fits at 360dp, or that `bp_badge_severe` has an Arabic version (there is only one `values` folder).
+
+To confirm the results, run `python3` on each changed `.agents/checks/check_*.py`. I expect r3f1 to fail on S33 and the rest to pass.

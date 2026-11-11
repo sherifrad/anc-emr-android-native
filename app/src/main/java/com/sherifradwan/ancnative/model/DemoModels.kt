@@ -118,6 +118,7 @@ object PatientVocabulary {
 enum class PatientValidationError {
     FULL_NAME_REQUIRED,
     CASE_ID_REQUIRED,
+    AGE_REQUIRED,
     CASE_ID_CONFLICT,
     INVALID_BLOOD_GROUP,
     INVALID_RISK_LEVEL,
@@ -126,6 +127,7 @@ enum class PatientValidationError {
     INVALID_GPA,
     ARCHIVE_REASON_REQUIRED,
     CLINICIAN_ID_REQUIRED,
+    PLACE_AND_DOCTOR_REQUIRED,
     INVALID_PREGNANCY_TYPE,
     INVALID_DELIVERY_MODE,
     DELIVERY_DATE_INVALID,
@@ -155,11 +157,13 @@ data class PatientClinicalInput(
     val parity: Long?,
     val abortion: Long?,
     val obstetricNotes: String?,
+    val ageRequired: Boolean = false,
 )
 
 fun PatientClinicalInput.validationErrors(): Set<PatientValidationError> = buildSet {
     if (displayName.isBlank() || displayName != displayName.trim()) add(PatientValidationError.FULL_NAME_REQUIRED)
     if (caseId.isBlank() || caseId != caseId.trim()) add(PatientValidationError.CASE_ID_REQUIRED)
+    if (ageRequired && ageText.isNullOrBlank()) add(PatientValidationError.AGE_REQUIRED)
     if (bloodGroupText != null && bloodGroupText !in PatientVocabulary.bloodGroups) {
         add(PatientValidationError.INVALID_BLOOD_GROUP)
     }
@@ -182,6 +186,9 @@ data class PreviousPregnancyClinicalInput(
     val terminationMethod: String?,
     val provenanceKind: String,
     val clinicianId: String,
+    val placeAndDoctor: String? = null,
+    val placeAndDoctorRequired: Boolean = false,
+    val storedRow: Boolean = false,
 )
 
 fun PreviousPregnancyClinicalInput.validationErrors(): Set<PatientValidationError> = buildSet {
@@ -206,12 +213,15 @@ fun PreviousPregnancyClinicalInput.validationErrors(): Set<PatientValidationErro
     if (provenanceKind != PatientVocabulary.CLINICIAN_ENTRY || clinicianId.isBlank()) {
         add(PatientValidationError.CLINICIAN_ID_REQUIRED)
     }
+    if (placeAndDoctorRequired && placeAndDoctor.isNullOrBlank()) {
+        add(PatientValidationError.PLACE_AND_DOCTOR_REQUIRED)
+    }
 
     val birthOutcome = outcome == "LiveBirth" || outcome == "Stillbirth"
     val lossOutcome = outcome == "EarlyPregnancyLoss"
     val terminationOutcome = outcome == "TerminationOfPregnancy"
     if (
-        (!birthOutcome && birthMethod != null) ||
+        ((outcome != null || !storedRow) && !birthOutcome && birthMethod != null) ||
         (!lossOutcome && lossManagement != null) ||
         (!terminationOutcome && terminationMethod != null) ||
         (birthOutcome && (lossManagement != null || terminationMethod != null)) ||

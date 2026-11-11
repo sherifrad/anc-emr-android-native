@@ -123,6 +123,7 @@ ALLOW_PREFIXES = [
     # generator-owned markup branches (constants, never patient text)
     ('if (isRhNegative) "text-rose" else "text-navy"', "CSS class branch"),
     ('if (!patient.allergyHistory.isNullOrBlank()) "text-rose font-bold" else ""', "CSS class branch"),
+    ('if (classifyAllergy(patient.allergyHistory) is AllergyState.Recorded) "text-rose font-bold" else ""', "CSS class branch (selects between two constant class names)"),
     ('if (isRhNegative) """<span class="badge badge-danger">Rh- Negative</span>""" else ""', "generated Rh badge branch"),
     ('if (isRhNegative) "Anti-D Prophylaxis + Matched Packed RBCs Cross-match" else "Routine Obstetric Hospital Protocol"', "generator-owned precaution wording branch (both constants)"),
     ("when {", "risk-badge selector block (generator markup only)"),

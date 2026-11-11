@@ -601,7 +601,7 @@ private fun AddLabTestDialog(
                 onClick = {
                     val trimmed = testName.trim()
                     if (trimmed.isBlank()) {
-                        errorMessage = "Please enter test name!"
+                        errorMessage = "Please enter test name."
                     } else {
                         val itemToSave = if (initial != null) {
                             initial.copy(
@@ -742,9 +742,9 @@ private fun AddLabCategoryGroupDialog(
             Button(
                 onClick = {
                     if (groupName.trim().isBlank()) {
-                        errorMessage = "Please enter panel name!"
+                        errorMessage = "Please enter panel name."
                     } else if (selectedTests.value.isEmpty()) {
-                        errorMessage = "Please select at least one test!"
+                        errorMessage = "Please select at least one test."
                     } else {
                         onSave(
                             LabCategoryGroup(
@@ -1099,7 +1099,7 @@ private fun AddMedicationDialog(
             Button(
                 onClick = {
                     if (name.trim().isBlank()) {
-                        errorMessage = "Please enter medication name!"
+                        errorMessage = "Please enter medication name."
                     } else {
                         onSave(
                             MedicationCatalogItem(

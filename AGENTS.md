@@ -33,6 +33,6 @@
 - **No Old Users = Zero Migration Overhead**: Do not maintain backward-compatibility shims, legacy route aliases, or deprecated adapters for old users when no production users exist. Deprecated code paths, duplicate screens, and dead routes must be deleted cleanly.
 
 ### 4. SAMD Safety & Viewport Ergonomics
-- **Schema v6 Frozen**: Room database schema v6 is 100% frozen; zero SQLite migrations are permitted without clinical sign-off.
+- **Schema changes need sign-off**: Room schema v6 is frozen except for the v7 migration the owner approved on 2026-11-10 (delivery plan, delivered state). It needs a tested migration, a committed schema export, and backup coverage. Any other migration still needs clinical sign-off.
 - **360dp Narrow Viewport First**: All clinical UI must render without critical text truncation (Patient Name, Gestational Age, Blood Pressure, High Risk Alert) on 360dp narrow mobile viewports.
 

@@ -1,5 +1,6 @@
 package com.sherifradwan.ancnative.ui
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -143,6 +144,12 @@ fun DeliverySectionBox(
 fun BpAlertLabel(raw: String?, modifier: Modifier = Modifier) {
     val res = bpAlertResource(raw) ?: return
     val isSevere = bpLevel(raw) == BpLevel.SEVERE
+    BpAlertChip(textRes = res, isSevere = isSevere, modifier = modifier)
+}
+
+/** Single BP badge look, shared by BpAlertLabel and callers that already know the severity. */
+@Composable
+internal fun BpAlertChip(@StringRes textRes: Int, isSevere: Boolean, modifier: Modifier = Modifier) {
     val containerColor = if (isSevere) {
         MaterialTheme.colorScheme.errorContainer
     } else {
@@ -159,7 +166,7 @@ fun BpAlertLabel(raw: String?, modifier: Modifier = Modifier) {
         modifier = modifier.testTag("bpAlertLabel"),
     ) {
         Text(
-            text = stringResource(res),
+            text = stringResource(textRes),
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.SemiBold,
             color = contentColor,
@@ -173,10 +180,24 @@ internal fun ClinicalTagBadge(
     text: String,
     showWarningIcon: Boolean = false,
     isError: Boolean = true,
+    isWarning: Boolean = false,
+    isModerate: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val isDark = isDarkTheme()
-    val (bgColor, borderColor, textColor) = if (isError) {
+    val (bgColor, borderColor, textColor) = if (isModerate) {
+        if (isDark) {
+            Triple(TagModerateRiskDarkBg, TagModerateRiskDarkBorder, TagModerateRiskDarkText)
+        } else {
+            Triple(TagModerateRiskBg, TagModerateRiskBorder, TagModerateRiskText)
+        }
+    } else if (isWarning) {
+        if (isDark) {
+            Triple(ClinicalCardTokens.WarningDarkBg, ClinicalCardTokens.WarningDarkBorder, ClinicalCardTokens.WarningDarkText)
+        } else {
+            Triple(ClinicalCardTokens.WarningBg, ClinicalCardTokens.WarningBorder, ClinicalCardTokens.WarningText)
+        }
+    } else if (isError) {
         if (isDark) {
             Triple(TagHighRiskDarkBg, TagHighRiskDarkBorder, TagHighRiskDarkText)
         } else {
@@ -219,8 +240,16 @@ internal fun ClinicalTagBadge(
 }
 
 @Composable
-fun ClinicalRiskBadge(isHighRisk: Boolean, modifier: Modifier = Modifier) {
-    if (isHighRisk) {
+fun ClinicalRiskBadge(isHighRisk: Boolean, modifier: Modifier = Modifier, isModerate: Boolean = false) {
+    if (isModerate && !isHighRisk) {
+        ClinicalTagBadge(
+            text = stringResource(R.string.moderate_risk),
+            showWarningIcon = false,
+            isError = false,
+            isModerate = true,
+            modifier = modifier,
+        )
+    } else if (isHighRisk) {
         ClinicalTagBadge(
             text = stringResource(R.string.high_risk),
             showWarningIcon = true,
