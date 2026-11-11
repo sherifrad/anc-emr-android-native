@@ -251,10 +251,10 @@ fun PatientHubHeader(
                     }
 
                     // Patient Identity & Primary Metrics Lockup
-                    Row(
+                    // Name owns the full row width so the GA badge stacks below instead of squeezing it
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         Text(
                             text = patient.displayName,
@@ -263,25 +263,36 @@ fun PatientHubHeader(
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("hubPatientName"),
                         )
 
                         if (!ga.isNullOrBlank()) {
-                            GestationalAgeBadge(
-                                gaText = stringResource(R.string.ga_prefix, ga),
-                                modifier = Modifier.padding(start = 8.dp),
-                                discordant = gaDiscordant,
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .testTag("hubGaBadge"),
+                            ) {
+                                GestationalAgeBadge(
+                                    gaText = stringResource(R.string.ga_prefix, ga),
+                                    discordant = gaDiscordant,
+                                )
+                            }
                         }
                     }
 
-                    // Standardized Clinical Badges FlowRow (24dp height, zero truncation on 360dp)
+                    // Clinical badges flow row: pills wrap and grow with their text
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        ClinicalRiskBadge(isHighRisk = isHighRisk(patient.riskLevel))
+                        Box(
+                            modifier = Modifier
+                                .testTag("hubRiskBadge")
+                        ) {
+                            ClinicalRiskBadge(isHighRisk = isHighRisk(patient.riskLevel))
+                        }
                         patient.visits.firstOrNull()?.bloodPressure?.let { bp ->
                             BpAlertLabel(bp)
                         }
@@ -298,7 +309,7 @@ fun PatientHubHeader(
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
                                 color = if (isAlert) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
-                                modifier = Modifier.height(24.dp),
+                                modifier = Modifier.testTag("hubAllergyPill"),
                             ) {
                                 Text(
                                     text = if (allergy is AllergyState.Recorded) {
@@ -309,9 +320,9 @@ fun PatientHubHeader(
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = if (isAlert) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                                    modifier = Modifier
+                                        .padding(horizontal = 6.dp, vertical = 3.dp)
+                                        .testTag("hubAllergyText"),
                                 )
                             }
                         }
