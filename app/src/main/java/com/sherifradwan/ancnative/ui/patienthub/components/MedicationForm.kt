@@ -71,7 +71,8 @@ import kotlinx.coroutines.launch
  * Fields in order: name, dose, route (read-only on an existing row), frequency, status, one date
  * (Start date while active, Stop date while stopped) and notes. Enter (IME Next) moves focus to the
  * next text field; notes keeps Enter for a new line. Every field asks to be scrolled into view when
- * it takes focus, so the keyboard never hides it.
+ * it takes focus, so the keyboard never hides it. After a rejected save the first field in error
+ * (name, dose, frequency, then date) is scrolled into view, so the doctor sees why the save stopped.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -121,6 +122,13 @@ fun MedicationForm(
     val dateValue = if (stopped) values.endDate else values.startDate
     val dateError = errors.contains(ClinicalValidationError.REQUIRED_DATE) ||
         errors.contains(ClinicalValidationError.INVALID_DATE)
+    val nameError = errors.contains(ClinicalValidationError.REQUIRED_NAME)
+    val doseError = errors.contains(ClinicalValidationError.REQUIRED_DOSAGE)
+    val frequencyMissing = errors.contains(ClinicalValidationError.REQUIRED_FREQUENCY)
+    // Only one field is revealed: the first one in error, in form order.
+    val revealDose = doseError && !nameError
+    val revealFrequency = frequencyMissing && !nameError && !doseError
+    val revealDate = dateError && !nameError && !doseError && !frequencyMissing
 
     Column(
         modifier = modifier.fillMaxWidth().testTag("medicationForm"),
@@ -131,9 +139,9 @@ fun MedicationForm(
             onValueChange = { change(MedicationDraftField.NAME, it) },
             label = stringResource(R.string.medication_name),
             tag = "medName",
-            modifier = Modifier.focusRequester(nameFocus).revealOnFocus(),
+            modifier = Modifier.focusRequester(nameFocus).revealOnFocus().revealWhen(nameError),
             enabled = enabled,
-            error = errors.contains(ClinicalValidationError.REQUIRED_NAME),
+            error = nameError,
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
             keyboardActions = KeyboardActions(onNext = { doseFocus.requestFocus() }),
@@ -144,9 +152,9 @@ fun MedicationForm(
             onValueChange = { change(MedicationDraftField.DOSAGE, it) },
             label = stringResource(R.string.dosage),
             tag = "medDosage",
-            modifier = Modifier.focusRequester(doseFocus).revealOnFocus(),
+            modifier = Modifier.focusRequester(doseFocus).revealOnFocus().revealWhen(revealDose),
             enabled = enabled,
-            error = errors.contains(ClinicalValidationError.REQUIRED_DOSAGE),
+            error = doseError,
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
             keyboardActions = KeyboardActions(
@@ -203,16 +211,16 @@ fun MedicationForm(
                     modifier = Modifier.minimumTouchTarget().testTag("medFreqChoice-other"),
                 )
             }
-            val frequencyMissing = errors.contains(ClinicalValidationError.REQUIRED_FREQUENCY)
             if (otherMode) {
                 EditorField(
                     value = values.frequency,
                     onValueChange = { change(MedicationDraftField.FREQUENCY, it) },
                     label = stringResource(R.string.medication_frequency_other_label),
                     tag = "medFreqOther",
-                    modifier = Modifier.focusRequester(otherFocus).revealOnFocus(),
+                    modifier = Modifier.focusRequester(otherFocus).revealOnFocus().revealWhen(revealFrequency),
                     enabled = enabled,
                     error = frequencyMissing,
+                    errorMessage = if (frequencyMissing) stringResource(R.string.medication_frequency_required) else null,
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
                     keyboardActions = KeyboardActions(onNext = { dateFocus.requestFocus() }),
@@ -222,7 +230,7 @@ fun MedicationForm(
                     text = stringResource(R.string.medication_frequency_required),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.testTag("medFreqError"),
+                    modifier = Modifier.revealWhen(revealFrequency).testTag("medFreqError"),
                 )
             }
         }
@@ -256,6 +264,7 @@ fun MedicationForm(
             tag = "medDate",
             enabled = enabled,
             error = dateError,
+            modifier = Modifier.revealWhen(revealDate),
             fieldModifier = Modifier.focusRequester(dateFocus).revealOnFocus(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
             keyboardActions = KeyboardActions(onNext = { notesFocus.requestFocus() }),
@@ -313,4 +322,21 @@ private fun Modifier.revealOnFocus(): Modifier {
     return this
         .bringIntoViewRequester(requester)
         .onFocusChanged { if (it.isFocused) scope.launch { requester.bringIntoView() } }
+}
+
+/**
+ * Asks the enclosing scroll container to bring this element into view when [reveal] turns true, one frame later so
+ * the error text it just gained is laid out. Used after a rejected save for the first field in error and the message.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+internal fun Modifier.revealWhen(reveal: Boolean): Modifier {
+    val requester = remember { BringIntoViewRequester() }
+    LaunchedEffect(reveal) {
+        if (reveal) {
+            withFrameNanos { }
+            requester.bringIntoView()
+        }
+    }
+    return this.bringIntoViewRequester(requester)
 }

@@ -1,0 +1,68 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt b/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt
+index f8f1f00..a2281df 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt
+@@ -442,8 +442,12 @@ data class SaveMedicationCommand(
+                 errors.add(ClinicalValidationError.INVALID_ROUTE)
+             }
+ 
+-            // Frequency is optional: the editor no longer asks for it. A stored value is kept; a blank one stays blank.
++            // A new medication needs a frequency. An update keeps a stored blank one, so the one-tap stop and its
++            // Undo still save a stored row that has none.
+             val frequency = draft.values.frequency.trim()
++            if (frequency.isEmpty() && draft.baseMedicationRevision == null) {
++                errors.add(ClinicalValidationError.REQUIRED_FREQUENCY)
++            }
+ 
+             val startDate = draft.values.startDate.trim()
+             if (startDate.isEmpty()) {
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt
+index 3da336f..d8083d3 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt
+@@ -213,6 +213,7 @@ fun MedicationForm(
+                     modifier = Modifier.focusRequester(otherFocus).revealOnFocus(),
+                     enabled = enabled,
+                     error = frequencyMissing,
++                    errorMessage = if (frequencyMissing) stringResource(R.string.medication_frequency_required) else null,
+                     singleLine = true,
+                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+                     keyboardActions = KeyboardActions(onNext = { dateFocus.requestFocus() }),
+diff --git a/docs/designs/medication_section_revision.md b/docs/designs/medication_section_revision.md
+index 9a29ecc..f0c127b 100644
+--- a/docs/designs/medication_section_revision.md
++++ b/docs/designs/medication_section_revision.md
+@@ -39,7 +39,7 @@ A clickable 360dp HTML mock is a deliverable and is approved before any code is
+ ## Non-Goals
+ 
+ *   No Room schema change. Schema v6 stays frozen.
+-*   No change to the save command, the repository, the DAO or the undo code. Stage 1 does not touch `ClinicalCommands.kt`, `RecordsRepository.kt`, `RecordsDao.kt` or `UndoCoordinator.kt`.
++*   No change to the repository, the DAO or the undo code. Stage 1 does not touch `RecordsRepository.kt`, `RecordsDao.kt` or `UndoCoordinator.kt`. `ClinicalCommands.kt` changes only for the frequency rule (see Decisions): a new medication needs a frequency.
+ *   Deferred to Stage 2 (decided after the review):
+     *   Course length and automatic end of a short course.
+     *   Change history. Editing a dose updates the row in place, so the earlier dose is not kept as a separate record. A proper history needs a schema change and clinical sign-off.
+@@ -64,6 +64,7 @@ A clickable 360dp HTML mock is a deliverable and is approved before any code is
+ *   **Mock approved** (author, 2026-11-10): layout of `docs/mocks/medication-section.html` approved with three changes: one-tap stop with a 10-second Undo (no stop sheet), first add with a collapsed picker takes three taps, Cancel prompts only after the doctor edits.
+ *   **Scope reduced after the Goldfish review** (author, 2026-11-10): the author accepted the reviewers' advice to remove course length, the change record, the two-row replace command, undo for stop and change, the "3 days ago" shortcut and the shared Enter helper from Stage 1.
+ *   **Failed save:** show the cause using the existing messages; no automatic retry.
++*   **Frequency required for a new medication** (owner approved 2026-11-11): saving a new medication with a blank frequency, or with Other chosen and no text, is rejected with the frequency error. An update of a stored row does not require it, so a stored row without a frequency can still be edited, stopped in one tap and restored by Undo. This is the only change to `ClinicalCommands.kt`.
+ 
+ ## Terms Used in This Document
+ 
+@@ -156,6 +157,7 @@ After:   Workspace(MEDICATIONS)      the navigation route never changes
+ ### 7. Failed saves
+ 
+ *   A rejected save keeps the sheet open with the doctor's values. The sheet shows the same save-error message the other editors show, taken from the existing `SaveUiError` messages (changed since opened, archived patient, cross-patient, storage error, result unknown, and so on). Validation errors still show next to their fields.
++*   A new medication with no frequency is rejected by `SaveMedicationCommand.prepare` with the frequency error, shown next to the frequency field; the sheet stays open. This rule is the only change to `ClinicalCommands.kt`. Updates of stored rows, including the one-tap stop and its Undo, do not require a frequency.
+ *   The doctor can press Save again. There is no automatic retry. Finer messages (for example "medication was removed") are a Stage 2 item because they need changes to the error mapping.
+ 
+ ### 8. What is deleted
+@@ -326,7 +328,7 @@ After:   Workspace(MEDICATIONS)      the navigation route never changes
+ 
+ ### Files that Stage 1 must not change
+ 
+-`app/schemas/*`, `RecordsDatabase.kt`, `RecordEntities.kt`, `RecordsDao.kt`, `RecordsRepository.kt`, `ClinicalCommands.kt`, `UndoCoordinator.kt`, `ClinicalModels.kt`, the clinical summary and print generators. The Verification Plan checks this with a diff.
++`app/schemas/*`, `RecordsDatabase.kt`, `RecordEntities.kt`, `RecordsDao.kt`, `RecordsRepository.kt`, `UndoCoordinator.kt`, `ClinicalModels.kt`, the clinical summary and print generators. `ClinicalCommands.kt` may change only for the frequency rule in Decisions (a new medication needs a frequency). The Verification Plan checks this with a diff.
+ 
+ ### Tests (Create/Modify)
+ 

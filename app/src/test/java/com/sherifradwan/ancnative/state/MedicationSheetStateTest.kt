@@ -34,8 +34,9 @@ class MedicationSheetStateTest {
         endDate: String? = null,
         revision: Long = 3L,
         nonCompliant: Boolean = false,
+        frequency: String = "Once daily",
     ) = DemoMedicationRecord(
-        id = id, patientId = "p1", name = "Iron $id", dosage = "100 mg", route = "Oral", frequency = "Once daily",
+        id = id, patientId = "p1", name = "Iron $id", dosage = "100 mg", route = "Oral", frequency = frequency,
         startDate = "2026-01-01", endDate = endDate, status = status, notes = "After food", isProphylaxis = true,
         isNonCompliant = nonCompliant, revision = revision,
     )
@@ -381,6 +382,32 @@ class MedicationSheetStateTest {
     }
 
     @Test
+    fun aStoredRowWithoutFrequencyCanBeStoppedUndoneAndEditedThroughTheReducer() {
+        val legacy = base(med(frequency = ""))
+        // The one-tap stop, built by the reducer and checked by the real prepare step.
+        val stopping = stop(legacy)
+        val stopPrepared = SaveMedicationCommand.prepare(
+            stopping.copy(medicationDraft = stopping.medicationQuickSave!!.draft), "op-stop", "m1",
+        )
+        assertTrue("the stop of a row with no frequency is accepted", stopPrepared is ClinicalCommandPreparation.Ready)
+        assertEquals("", commandOf(stopping).frequency)
+        val stopped = commit(stopping, revision = 4L)
+
+        // Its Undo, the second save at the revision the stop produced.
+        val undoing = stopped.reduce(AncEvent.UndoMedicationStop(stopped.medicationStopUndo!!.token, "undo-1"))
+        val undoPrepared = SaveMedicationCommand.prepare(
+            undoing.copy(medicationDraft = undoing.medicationQuickSave!!.draft), "op-undo", "m1",
+        )
+        assertTrue("the Undo of that stop is accepted", undoPrepared is ClinicalCommandPreparation.Ready)
+        assertEquals(4L, commandOf(undoing).expectedMedicationRevision)
+        assertEquals(MEDICATION_STATUS_ACTIVE, commit(undoing, revision = 5L).patient("p1")!!.medications.first { it.id == "m1" }.status)
+
+        // Editing the same stored row in the sheet does not ask for a frequency either.
+        val editing = edit(legacy)
+        assertTrue(SaveMedicationCommand.prepare(editing, "op-edit", "m1") is ClinicalCommandPreparation.Ready)
+    }
+
+    @Test
     fun undoWithAStaleTokenIsIgnored() {
         val stopped = commit(stop(), revision = 4L)
         assertSame(stopped, stopped.reduce(AncEvent.UndoMedicationStop("other", "undo-1")))
@@ -413,6 +440,29 @@ class MedicationSheetStateTest {
         val failed = stop().reduce(AncEvent.ClinicalValidationFailed(ClinicalRecordKind.MEDICATION_UPDATE, setOf(ClinicalValidationError.REQUIRED_DOSAGE)))
         assertEquals(SavePhase.ERROR, failed.savePhase)
         assertEquals(SaveUiError.CONFIRMED_NOT_SAVED, failed.saveError)
+    }
+
+    @Test
+    fun aNewMedicationWithoutFrequencyIsRejectedAndTheErrorReachesTheDraft() {
+        val blankFrequency = MedicationPrefill("Folic acid", "5 mg", "Oral", "")
+        val open = base().reduce(
+            AncEvent.StartMedicationEditor("p1", null, "new-f", "s-freq", prefill = blankFrequency),
+        )
+        val prepared = SaveMedicationCommand.prepare(open, "op-freq", "new-f")
+        assertTrue("a new drug with no frequency is rejected", prepared is ClinicalCommandPreparation.Rejected)
+        val rejected = open.reduce(
+            AncEvent.ClinicalValidationFailed(ClinicalRecordKind.MEDICATION_CREATE, (prepared as ClinicalCommandPreparation.Rejected).errors),
+        )
+        assertTrue(
+            "the frequency error shows next to its field",
+            rejected.medicationDraft!!.errors.contains(ClinicalValidationError.REQUIRED_FREQUENCY),
+        )
+        assertEquals(SavePhase.IDLE, rejected.savePhase)
+        assertEquals("the doctor's values stay", "Folic acid", rejected.medicationDraft!!.values.name)
+        // The same draft with a frequency chosen saves.
+        val fixed = rejected.reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.FREQUENCY, "Once daily"))
+        assertTrue(SaveMedicationCommand.prepare(fixed, "op-freq-2", "new-f") is ClinicalCommandPreparation.Ready)
+        assertTrue(fixed.medicationDraft!!.errors.isEmpty())
     }
 
     @Test

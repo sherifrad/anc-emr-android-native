@@ -67,6 +67,7 @@ import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncReducer
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
+import com.sherifradwan.ancnative.state.ClinicalValidationError
 import com.sherifradwan.ancnative.state.PendingSaveToken
 import com.sherifradwan.ancnative.state.SavedNotice
 import com.sherifradwan.ancnative.state.SaveUiError
@@ -477,6 +478,50 @@ class MedsTabSheetTest {
     }
 
     @Test
+    fun aNewMedicationWithoutFrequencyShowsTheErrorAndKeepsTheSheetOpen() {
+        host()
+        scrollTo("addCustomMedicationBtn")
+        click("addCustomMedicationBtn")
+        node("medName").performTextInput("UiNoFreq")
+        node("medDosage").performTextInput("1 mg")
+        click("saveMedication")
+        node("medicationSheet").assertIsDisplayed()
+        compose.onNodeWithText(str(R.string.medication_frequency_required), useUnmergedTree = true).assertIsDisplayed()
+        assertTrue(commands.isEmpty())
+        assertNull(state.patient(patient.id)!!.medications.firstOrNull { it.name == "UiNoFreq" })
+        // Choosing a frequency clears the error; the same sheet then saves.
+        node("medFreqChoice-0").performScrollTo().performClick()
+        click("saveMedication")
+        node("medicationSheet").assertDoesNotExist()
+        assertNotNull(state.patient(patient.id)!!.medications.firstOrNull { it.name == "UiNoFreq" })
+    }
+
+    @Test
+    fun otherChosenWithNoTextIsRejectedWithTheErrorOnTheOtherBox() {
+        host()
+        scrollTo("addCustomMedicationBtn")
+        click("addCustomMedicationBtn")
+        node("medName").performTextInput("UiOtherBlank")
+        node("medDosage").performTextInput("1 mg")
+        node("medFreqChoice-0").performScrollTo().performClick()
+        // Other clears the chip's value, so the box starts empty.
+        node("medFreqChoice-other").performScrollTo().performClick()
+        compose.waitForIdle()
+        assertEquals("", state.medicationDraft!!.values.frequency)
+        click("saveMedication")
+        node("medicationSheet").assertIsDisplayed()
+        assertTrue(state.medicationDraft!!.errors.contains(ClinicalValidationError.REQUIRED_FREQUENCY))
+        compose.onNodeWithText(str(R.string.medication_frequency_required), useUnmergedTree = true).assertIsDisplayed()
+        node("medFreqError").assertDoesNotExist()
+        assertTrue(commands.isEmpty())
+        // The typed text is the frequency that is saved.
+        node("medFreqOther").performTextInput("Every other day")
+        click("saveMedication")
+        node("medicationSheet").assertDoesNotExist()
+        assertEquals("Every other day", state.patient(patient.id)!!.medications.first { it.name == "UiOtherBlank" }.frequency)
+    }
+
+    @Test
     fun theSheetButtonsAreDisabledWithProgressWhileADraftSaves() {
         host()
         holdSaves = true
@@ -543,6 +588,7 @@ class MedsTabSheetTest {
         click("addCustomMedicationBtn")
         node("medName").performTextInput("UiNew")
         node("medDosage").performTextInput("1 mg")
+        node("medFreqChoice-0").performScrollTo().performClick()
         click("saveMedication")
         node("medicationSheet").assertDoesNotExist()
         assertNotNull(state.patient(patient.id)!!.medications.firstOrNull { it.name == "UiNew" })
@@ -578,6 +624,7 @@ class MedsTabSheetTest {
         click("addCustomMedicationBtn")
         node("medName").performTextInput("UiCustom")
         node("medDosage").performTextInput("2 mg")
+        node("medFreqChoice-0").performScrollTo().performClick()
         click("saveMedication")
         node("medicationSheet").assertIsDisplayed()
         node("medName").assertTextContains("UiCustom")
@@ -599,6 +646,7 @@ class MedsTabSheetTest {
         click("addCustomMedicationBtn")
         node("medName").performTextInput("UiFirst")
         node("medDosage").performTextInput("1 mg")
+        node("medFreqChoice-0").performScrollTo().performClick()
         click("addAnotherMedication")
         node("medicationSheet").assertIsDisplayed()
         val next = state.medicationDraft!!
@@ -901,6 +949,7 @@ class MedsTabSheetTest {
         click("addCustomMedicationBtn")
         node("medName").performTextInput("UiNewPast")
         node("medDosage").performTextInput("1 mg")
+        node("medFreqChoice-0").performScrollTo().performClick()
         click("saveMedication")
         scrollTo("medication-ui-m3")
         node("medication-ui-m3").assertExists()
@@ -1138,6 +1187,7 @@ class MedsTabSheetTest {
         host()
         scrollTo("addCustomMedicationBtn")
         click("addCustomMedicationBtn")
+        node("medFreqChoice-0").performScrollTo().performClick()
         node("medName").performClick()
         node("medName").performTextInput("UiKeyboard")
         node("medName").performImeAction()
@@ -1283,6 +1333,7 @@ class MedsTabSheetTest {
         chainAfterAFrame = true
         scrollTo("addCustomMedicationBtn")
         click("addCustomMedicationBtn")
+        node("medFreqChoice-0").performScrollTo().performClick()
         node("medName").performClick()
         node("medName").performTextInput("UiGap")
         node("medDosage").performClick()

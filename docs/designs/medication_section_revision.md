@@ -39,7 +39,7 @@ A clickable 360dp HTML mock is a deliverable and is approved before any code is 
 ## Non-Goals
 
 *   No Room schema change. Schema v6 stays frozen.
-*   No change to the save command, the repository, the DAO or the undo code. Stage 1 does not touch `ClinicalCommands.kt`, `RecordsRepository.kt`, `RecordsDao.kt` or `UndoCoordinator.kt`.
+*   No change to the repository, the DAO or the undo code. Stage 1 does not touch `RecordsRepository.kt`, `RecordsDao.kt` or `UndoCoordinator.kt`. `ClinicalCommands.kt` changes only for the frequency rule (see Decisions): a new medication needs a frequency.
 *   Deferred to Stage 2 (decided after the review):
     *   Course length and automatic end of a short course.
     *   Change history. Editing a dose updates the row in place, so the earlier dose is not kept as a separate record. A proper history needs a schema change and clinical sign-off.
@@ -64,6 +64,7 @@ A clickable 360dp HTML mock is a deliverable and is approved before any code is 
 *   **Mock approved** (author, 2026-11-10): layout of `docs/mocks/medication-section.html` approved with three changes: one-tap stop with a 10-second Undo (no stop sheet), first add with a collapsed picker takes three taps, Cancel prompts only after the doctor edits.
 *   **Scope reduced after the Goldfish review** (author, 2026-11-10): the author accepted the reviewers' advice to remove course length, the change record, the two-row replace command, undo for stop and change, the "3 days ago" shortcut and the shared Enter helper from Stage 1.
 *   **Failed save:** show the cause using the existing messages; no automatic retry.
+*   **Frequency required for a new medication** (owner approved 2026-11-11): saving a new medication with a blank frequency, or with Other chosen and no text, is rejected with the frequency error. An update of a stored row does not require it, so a stored row without a frequency can still be edited, stopped in one tap and restored by Undo. This is the only change to `ClinicalCommands.kt`.
 
 ## Terms Used in This Document
 
@@ -156,6 +157,8 @@ After:   Workspace(MEDICATIONS)      the navigation route never changes
 ### 7. Failed saves
 
 *   A rejected save keeps the sheet open with the doctor's values. The sheet shows the same save-error message the other editors show, taken from the existing `SaveUiError` messages (changed since opened, archived patient, cross-patient, storage error, result unknown, and so on). Validation errors still show next to their fields.
+*   A new medication with no frequency is rejected by `SaveMedicationCommand.prepare` with the frequency error, shown next to the frequency field; the sheet stays open. This rule is the only change to `ClinicalCommands.kt`. Updates of stored rows, including the one-tap stop and its Undo, do not require a frequency.
+*   After a rejected save the sheet scrolls so the doctor sees why: the first field in error (name, dose, frequency, then date) for a validation error, or the save-error message at the top of the body for a failed save. A doctor who had scrolled past the frequency block, or who tapped a chip lower down, still sees the cause without scrolling back.
 *   The doctor can press Save again. There is no automatic retry. Finer messages (for example "medication was removed") are a Stage 2 item because they need changes to the error mapping.
 
 ### 8. What is deleted
@@ -326,7 +329,7 @@ After:   Workspace(MEDICATIONS)      the navigation route never changes
 
 ### Files that Stage 1 must not change
 
-`app/schemas/*`, `RecordsDatabase.kt`, `RecordEntities.kt`, `RecordsDao.kt`, `RecordsRepository.kt`, `ClinicalCommands.kt`, `UndoCoordinator.kt`, `ClinicalModels.kt`, the clinical summary and print generators. The Verification Plan checks this with a diff.
+`app/schemas/*`, `RecordsDatabase.kt`, `RecordEntities.kt`, `RecordsDao.kt`, `RecordsRepository.kt`, `UndoCoordinator.kt`, `ClinicalModels.kt`, the clinical summary and print generators. `ClinicalCommands.kt` may change only for the frequency rule in Decisions (a new medication needs a frequency). The Verification Plan checks this with a diff.
 
 ### Tests (Create/Modify)
 

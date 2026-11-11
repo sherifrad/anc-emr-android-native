@@ -1,0 +1,248 @@
+diff --git a/app/src/androidTest/java/com/sherifradwan/ancnative/MedicationFormTest.kt b/app/src/androidTest/java/com/sherifradwan/ancnative/MedicationFormTest.kt
+index ef56c0f..aa9333f 100644
+--- a/app/src/androidTest/java/com/sherifradwan/ancnative/MedicationFormTest.kt
++++ b/app/src/androidTest/java/com/sherifradwan/ancnative/MedicationFormTest.kt
+@@ -273,8 +273,9 @@ class MedicationFormTest {
+             ),
+         )
+         compose.onNodeWithText(str(R.string.correct_highlighted_fields)).assertIsDisplayed()
+-        // name, dose, the Other box and the date field each carry the per-field message.
+-        compose.onAllNodesWithText(str(R.string.correct_highlighted_field)).assertCountEquals(4)
++        // Name, dose and the date field carry the per-field message; the Other box says what is missing.
++        compose.onAllNodesWithText(str(R.string.correct_highlighted_field)).assertCountEquals(3)
++        compose.onNodeWithText(str(R.string.medication_frequency_required), useUnmergedTree = true).assertIsDisplayed()
+         shown("medFreqOther")
+     }
+ 
+@@ -429,7 +430,8 @@ class MedicationFormTest {
+         compose.onNodeWithTag("medFreqChoice-other").performScrollTo().performClick()
+         compose.waitForIdle()
+         shown("medFreqOther")
+-        compose.onAllNodesWithText(str(R.string.correct_highlighted_field)).assertCountEquals(1)
++        // The message sits in the Other box, so no separate text under the chips.
++        compose.onNodeWithText(str(R.string.medication_frequency_required), useUnmergedTree = true).assertIsDisplayed()
+         compose.onNodeWithTag("medFreqError").assertDoesNotExist()
+     }
+ 
+diff --git a/app/src/androidTest/java/com/sherifradwan/ancnative/MedsTabSheetTest.kt b/app/src/androidTest/java/com/sherifradwan/ancnative/MedsTabSheetTest.kt
+index c2aea7d..ed9d0eb 100644
+--- a/app/src/androidTest/java/com/sherifradwan/ancnative/MedsTabSheetTest.kt
++++ b/app/src/androidTest/java/com/sherifradwan/ancnative/MedsTabSheetTest.kt
+@@ -476,6 +476,25 @@ class MedsTabSheetTest {
+         assertTrue(commands.isEmpty())
+     }
+ 
++    @Test
++    fun aNewMedicationWithoutFrequencyShowsTheErrorAndKeepsTheSheetOpen() {
++        host()
++        scrollTo("addCustomMedicationBtn")
++        click("addCustomMedicationBtn")
++        node("medName").performTextInput("UiNoFreq")
++        node("medDosage").performTextInput("1 mg")
++        click("saveMedication")
++        node("medicationSheet").assertIsDisplayed()
++        compose.onNodeWithText(str(R.string.medication_frequency_required), useUnmergedTree = true).assertIsDisplayed()
++        assertTrue(commands.isEmpty())
++        assertNull(state.patient(patient.id)!!.medications.firstOrNull { it.name == "UiNoFreq" })
++        // Choosing a frequency clears the error; the same sheet then saves.
++        node("medFreqChoice-0").performScrollTo().performClick()
++        click("saveMedication")
++        node("medicationSheet").assertDoesNotExist()
++        assertNotNull(state.patient(patient.id)!!.medications.firstOrNull { it.name == "UiNoFreq" })
++    }
++
+     @Test
+     fun theSheetButtonsAreDisabledWithProgressWhileADraftSaves() {
+         host()
+@@ -543,6 +562,7 @@ class MedsTabSheetTest {
+         click("addCustomMedicationBtn")
+         node("medName").performTextInput("UiNew")
+         node("medDosage").performTextInput("1 mg")
++        node("medFreqChoice-0").performScrollTo().performClick()
+         click("saveMedication")
+         node("medicationSheet").assertDoesNotExist()
+         assertNotNull(state.patient(patient.id)!!.medications.firstOrNull { it.name == "UiNew" })
+@@ -578,6 +598,7 @@ class MedsTabSheetTest {
+         click("addCustomMedicationBtn")
+         node("medName").performTextInput("UiCustom")
+         node("medDosage").performTextInput("2 mg")
++        node("medFreqChoice-0").performScrollTo().performClick()
+         click("saveMedication")
+         node("medicationSheet").assertIsDisplayed()
+         node("medName").assertTextContains("UiCustom")
+@@ -599,6 +620,7 @@ class MedsTabSheetTest {
+         click("addCustomMedicationBtn")
+         node("medName").performTextInput("UiFirst")
+         node("medDosage").performTextInput("1 mg")
++        node("medFreqChoice-0").performScrollTo().performClick()
+         click("addAnotherMedication")
+         node("medicationSheet").assertIsDisplayed()
+         val next = state.medicationDraft!!
+@@ -901,6 +923,7 @@ class MedsTabSheetTest {
+         click("addCustomMedicationBtn")
+         node("medName").performTextInput("UiNewPast")
+         node("medDosage").performTextInput("1 mg")
++        node("medFreqChoice-0").performScrollTo().performClick()
+         click("saveMedication")
+         scrollTo("medication-ui-m3")
+         node("medication-ui-m3").assertExists()
+@@ -1138,6 +1161,7 @@ class MedsTabSheetTest {
+         host()
+         scrollTo("addCustomMedicationBtn")
+         click("addCustomMedicationBtn")
++        node("medFreqChoice-0").performScrollTo().performClick()
+         node("medName").performClick()
+         node("medName").performTextInput("UiKeyboard")
+         node("medName").performImeAction()
+@@ -1283,6 +1307,7 @@ class MedsTabSheetTest {
+         chainAfterAFrame = true
+         scrollTo("addCustomMedicationBtn")
+         click("addCustomMedicationBtn")
++        node("medFreqChoice-0").performScrollTo().performClick()
+         node("medName").performClick()
+         node("medName").performTextInput("UiGap")
+         node("medDosage").performClick()
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/state/MedicationSheetStateTest.kt b/app/src/test/java/com/sherifradwan/ancnative/state/MedicationSheetStateTest.kt
+index a555af9..f14f7a0 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/state/MedicationSheetStateTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/state/MedicationSheetStateTest.kt
+@@ -415,6 +415,29 @@ class MedicationSheetStateTest {
+         assertEquals(SaveUiError.CONFIRMED_NOT_SAVED, failed.saveError)
+     }
+ 
++    @Test
++    fun aNewMedicationWithoutFrequencyIsRejectedAndTheErrorReachesTheDraft() {
++        val blankFrequency = MedicationPrefill("Folic acid", "5 mg", "Oral", "")
++        val open = base().reduce(
++            AncEvent.StartMedicationEditor("p1", null, "new-f", "s-freq", prefill = blankFrequency),
++        )
++        val prepared = SaveMedicationCommand.prepare(open, "op-freq", "new-f")
++        assertTrue("a new drug with no frequency is rejected", prepared is ClinicalCommandPreparation.Rejected)
++        val rejected = open.reduce(
++            AncEvent.ClinicalValidationFailed(ClinicalRecordKind.MEDICATION_CREATE, (prepared as ClinicalCommandPreparation.Rejected).errors),
++        )
++        assertTrue(
++            "the frequency error shows next to its field",
++            rejected.medicationDraft!!.errors.contains(ClinicalValidationError.REQUIRED_FREQUENCY),
++        )
++        assertEquals(SavePhase.IDLE, rejected.savePhase)
++        assertEquals("the doctor's values stay", "Folic acid", rejected.medicationDraft!!.values.name)
++        // The same draft with a frequency chosen saves.
++        val fixed = rejected.reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.FREQUENCY, "Once daily"))
++        assertTrue(SaveMedicationCommand.prepare(fixed, "op-freq-2", "new-f") is ClinicalCommandPreparation.Ready)
++        assertTrue(fixed.medicationDraft!!.errors.isEmpty())
++    }
++
+     @Test
+     fun stopIsIgnoredWhenItCannotRun() {
+         val stoppedRow = base(med(status = MEDICATION_STATUS_DISCONTINUED))
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt b/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt
+index e664d97..276b8e5 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt
+@@ -320,7 +320,7 @@ class ClinicalCommandsTest {
+         assertTrue(errors.contains(com.sherifradwan.ancnative.state.ClinicalValidationError.REQUIRED_NAME))
+         assertTrue(errors.contains(com.sherifradwan.ancnative.state.ClinicalValidationError.REQUIRED_DOSAGE))
+         assertTrue(errors.contains(com.sherifradwan.ancnative.state.ClinicalValidationError.INVALID_ROUTE))
+-        assertFalse("frequency is optional", errors.contains(com.sherifradwan.ancnative.state.ClinicalValidationError.REQUIRED_FREQUENCY))
++        assertTrue("a new medication needs a frequency", errors.contains(com.sherifradwan.ancnative.state.ClinicalValidationError.REQUIRED_FREQUENCY))
+         assertTrue(errors.contains(com.sherifradwan.ancnative.state.ClinicalValidationError.INVALID_DATE))
+         assertTrue(errors.contains(com.sherifradwan.ancnative.state.ClinicalValidationError.INVALID_STATUS))
+ 
+@@ -440,6 +440,96 @@ class ClinicalCommandsTest {
+         org.junit.Assert.assertEquals("Mild nausea and constipation reported", cmd.adverseNotes)
+     }
+ 
++    /** A draft for one [frequency] and an optional stored revision (null = a new medication). */
++    private fun medicationState(
++        frequency: String,
++        baseMedicationRevision: Long?,
++        status: String = "Active",
++        endDate: String = "",
++    ) = com.sherifradwan.ancnative.state.AncState(
++        patients = emptyList(),
++        medicationDraft = com.sherifradwan.ancnative.state.MedicationDraft(
++            editorSessionId = "session-freq",
++            patientId = "p1",
++            medicationId = "med-freq",
++            basePatientRevision = 1,
++            baseMedicationRevision = baseMedicationRevision,
++            original = com.sherifradwan.ancnative.state.MedicationDraftValues(),
++            values = com.sherifradwan.ancnative.state.MedicationDraftValues(
++                name = "Folic Acid",
++                dosage = "5 mg",
++                route = "Oral",
++                frequency = frequency,
++                startDate = "2026-01-01",
++                endDate = endDate,
++                status = status,
++            ),
++        ),
++    )
++
++    @Test
++    fun saveMedicationPrepareRejectsNewMedicationWithoutFrequency() {
++        listOf("", "   ").forEach { blank ->
++            val prep = SaveMedicationCommand.prepare(medicationState(blank, baseMedicationRevision = null), "op-f", "med-freq")
++            assertTrue("blank '$blank' is rejected", prep is ClinicalCommandPreparation.Rejected)
++            assertEquals(
++                "only the frequency error",
++                setOf(com.sherifradwan.ancnative.state.ClinicalValidationError.REQUIRED_FREQUENCY),
++                (prep as ClinicalCommandPreparation.Rejected).errors,
++            )
++        }
++    }
++
++    @Test
++    fun saveMedicationPrepareAcceptsNewMedicationWithEachFixedFrequencyAndOtherText() {
++        val accepted = com.sherifradwan.ancnative.ui.COMMON_MEDICATION_FREQUENCIES + "Every other day after food"
++        assertTrue(com.sherifradwan.ancnative.ui.COMMON_MEDICATION_FREQUENCIES.isNotEmpty())
++        accepted.forEach { frequency ->
++            val prep = SaveMedicationCommand.prepare(medicationState(" $frequency ", baseMedicationRevision = null), "op-f", "med-freq")
++            assertTrue("'$frequency' is accepted", prep is ClinicalCommandPreparation.Ready)
++            val cmd = (prep as ClinicalCommandPreparation.Ready).command as SaveMedicationCommand
++            org.junit.Assert.assertEquals(frequency, cmd.frequency)
++            org.junit.Assert.assertEquals(null, cmd.expectedMedicationRevision)
++        }
++    }
++
++    @Test
++    fun saveMedicationPrepareAcceptsUpdateOfStoredRowWithoutFrequency() {
++        val prep = SaveMedicationCommand.prepare(
++            medicationState("", baseMedicationRevision = 3),
++            "00000000-0000-4000-8000-0000000000f3",
++            "med-freq",
++        )
++        assertTrue("an update keeps a stored blank frequency", prep is ClinicalCommandPreparation.Ready)
++        val cmd = (prep as ClinicalCommandPreparation.Ready).command as SaveMedicationCommand
++        org.junit.Assert.assertEquals("", cmd.frequency)
++        org.junit.Assert.assertEquals(3L, cmd.expectedMedicationRevision)
++        assertTrue(cmd.isStructurallyValid())
++    }
++
++    @Test
++    fun saveMedicationPrepareAcceptsStopAndUndoOfStoredRowWithoutFrequency() {
++        // What the one-tap stop builds for a legacy row with no frequency.
++        val stop = SaveMedicationCommand.prepare(
++            medicationState("", baseMedicationRevision = 2, status = "Discontinued", endDate = "2026-02-01"),
++            "op-stop",
++            "med-freq",
++        )
++        assertTrue("a legacy row can be stopped", stop is ClinicalCommandPreparation.Ready)
++        val stopCmd = (stop as ClinicalCommandPreparation.Ready).command as SaveMedicationCommand
++        org.junit.Assert.assertEquals("Discontinued", stopCmd.status)
++        org.junit.Assert.assertEquals("2026-02-01", stopCmd.endDate)
++        org.junit.Assert.assertEquals("", stopCmd.frequency)
++
++        // What its Undo builds: the second save that restores the earlier status.
++        val undo = SaveMedicationCommand.prepare(medicationState("", baseMedicationRevision = 3), "op-undo", "med-freq")
++        assertTrue("a legacy row can be restored", undo is ClinicalCommandPreparation.Ready)
++        val undoCmd = (undo as ClinicalCommandPreparation.Ready).command as SaveMedicationCommand
++        org.junit.Assert.assertEquals("Active", undoCmd.status)
++        org.junit.Assert.assertEquals(null, undoCmd.endDate)
++        org.junit.Assert.assertEquals(3L, undoCmd.expectedMedicationRevision)
++    }
++
+     @Test
+     fun imageUriCodecRoundTripsLosslesslyWithCommasAndSpecialChars() {
+         val sampleUris = listOf(

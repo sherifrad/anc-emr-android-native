@@ -442,8 +442,12 @@ data class SaveMedicationCommand(
                 errors.add(ClinicalValidationError.INVALID_ROUTE)
             }
 
-            // Frequency is optional: the editor no longer asks for it. A stored value is kept; a blank one stays blank.
+            // A new medication needs a frequency. An update keeps a stored blank one, so the one-tap stop and its
+            // Undo still save a stored row that has none.
             val frequency = draft.values.frequency.trim()
+            if (frequency.isEmpty() && draft.baseMedicationRevision == null) {
+                errors.add(ClinicalValidationError.REQUIRED_FREQUENCY)
+            }
 
             val startDate = draft.values.startDate.trim()
             if (startDate.isEmpty()) {

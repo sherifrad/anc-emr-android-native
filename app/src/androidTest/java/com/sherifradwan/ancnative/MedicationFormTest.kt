@@ -273,8 +273,13 @@ class MedicationFormTest {
             ),
         )
         compose.onNodeWithText(str(R.string.correct_highlighted_fields)).assertIsDisplayed()
-        // name, dose, the Other box and the date field each carry the per-field message.
-        compose.onAllNodesWithText(str(R.string.correct_highlighted_field)).assertCountEquals(4)
+        // Name, dose and the date field carry the per-field message; the Other box says what is missing.
+        compose.onAllNodesWithText(str(R.string.correct_highlighted_field)).assertCountEquals(3)
+        // The name is the first field in error, so it is the one revealed; the frequency sits below it.
+        shown("medName")
+        compose.onNodeWithText(str(R.string.medication_frequency_required), useUnmergedTree = true)
+            .performScrollTo()
+            .assertIsDisplayed()
         shown("medFreqOther")
     }
 
@@ -429,7 +434,8 @@ class MedicationFormTest {
         compose.onNodeWithTag("medFreqChoice-other").performScrollTo().performClick()
         compose.waitForIdle()
         shown("medFreqOther")
-        compose.onAllNodesWithText(str(R.string.correct_highlighted_field)).assertCountEquals(1)
+        // The message sits in the Other box, so no separate text under the chips.
+        compose.onNodeWithText(str(R.string.medication_frequency_required), useUnmergedTree = true).assertIsDisplayed()
         compose.onNodeWithTag("medFreqError").assertDoesNotExist()
     }
 

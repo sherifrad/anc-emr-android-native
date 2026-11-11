@@ -54,7 +54,7 @@ import com.sherifradwan.ancnative.ui.minimumTouchTarget
  * Add (and custom) mode is a draft with no stored revision; it also offers "Save and add another".
  * Cancel and dismiss send [AncEvent.CancelEditor] at once when the form is untouched, and ask first
  * when [touched] is true. While a save runs the form and every button are disabled; a rejected save
- * leaves the sheet open with the doctor's values and shows the [saveError] message.
+ * leaves the sheet open with the doctor's values and shows the [saveError] message, scrolled into view.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -186,6 +186,8 @@ private fun SaveMessage(savePhase: SavePhase, saveError: SaveUiError?, hasFieldE
         modifier = Modifier
             .fillMaxWidth()
             .semantics { liveRegion = LiveRegionMode.Polite }
+            // A failed save is shown at the top of the body; bring it back if the doctor had scrolled down.
+            .revealWhen(isFailure)
             .testTag("medSaveMessage"),
     ) {
         if (isFailure) {

@@ -320,7 +320,7 @@ class ClinicalCommandsTest {
         assertTrue(errors.contains(com.sherifradwan.ancnative.state.ClinicalValidationError.REQUIRED_NAME))
         assertTrue(errors.contains(com.sherifradwan.ancnative.state.ClinicalValidationError.REQUIRED_DOSAGE))
         assertTrue(errors.contains(com.sherifradwan.ancnative.state.ClinicalValidationError.INVALID_ROUTE))
-        assertFalse("frequency is optional", errors.contains(com.sherifradwan.ancnative.state.ClinicalValidationError.REQUIRED_FREQUENCY))
+        assertTrue("a new medication needs a frequency", errors.contains(com.sherifradwan.ancnative.state.ClinicalValidationError.REQUIRED_FREQUENCY))
         assertTrue(errors.contains(com.sherifradwan.ancnative.state.ClinicalValidationError.INVALID_DATE))
         assertTrue(errors.contains(com.sherifradwan.ancnative.state.ClinicalValidationError.INVALID_STATUS))
 
@@ -438,6 +438,96 @@ class ClinicalCommandsTest {
         val cmd = (prep as ClinicalCommandPreparation.Ready).command as SaveMedicationCommand
         assertTrue(cmd.isNonCompliant)
         org.junit.Assert.assertEquals("Mild nausea and constipation reported", cmd.adverseNotes)
+    }
+
+    /** A draft for one [frequency] and an optional stored revision (null = a new medication). */
+    private fun medicationState(
+        frequency: String,
+        baseMedicationRevision: Long?,
+        status: String = "Active",
+        endDate: String = "",
+    ) = com.sherifradwan.ancnative.state.AncState(
+        patients = emptyList(),
+        medicationDraft = com.sherifradwan.ancnative.state.MedicationDraft(
+            editorSessionId = "session-freq",
+            patientId = "p1",
+            medicationId = "med-freq",
+            basePatientRevision = 1,
+            baseMedicationRevision = baseMedicationRevision,
+            original = com.sherifradwan.ancnative.state.MedicationDraftValues(),
+            values = com.sherifradwan.ancnative.state.MedicationDraftValues(
+                name = "Folic Acid",
+                dosage = "5 mg",
+                route = "Oral",
+                frequency = frequency,
+                startDate = "2026-01-01",
+                endDate = endDate,
+                status = status,
+            ),
+        ),
+    )
+
+    @Test
+    fun saveMedicationPrepareRejectsNewMedicationWithoutFrequency() {
+        listOf("", "   ").forEach { blank ->
+            val prep = SaveMedicationCommand.prepare(medicationState(blank, baseMedicationRevision = null), "op-f", "med-freq")
+            assertTrue("blank '$blank' is rejected", prep is ClinicalCommandPreparation.Rejected)
+            assertEquals(
+                "only the frequency error",
+                setOf(com.sherifradwan.ancnative.state.ClinicalValidationError.REQUIRED_FREQUENCY),
+                (prep as ClinicalCommandPreparation.Rejected).errors,
+            )
+        }
+    }
+
+    @Test
+    fun saveMedicationPrepareAcceptsNewMedicationWithEachFixedFrequencyAndOtherText() {
+        val accepted = com.sherifradwan.ancnative.ui.COMMON_MEDICATION_FREQUENCIES + "Every other day after food"
+        assertTrue(com.sherifradwan.ancnative.ui.COMMON_MEDICATION_FREQUENCIES.isNotEmpty())
+        accepted.forEach { frequency ->
+            val prep = SaveMedicationCommand.prepare(medicationState(" $frequency ", baseMedicationRevision = null), "op-f", "med-freq")
+            assertTrue("'$frequency' is accepted", prep is ClinicalCommandPreparation.Ready)
+            val cmd = (prep as ClinicalCommandPreparation.Ready).command as SaveMedicationCommand
+            org.junit.Assert.assertEquals(frequency, cmd.frequency)
+            org.junit.Assert.assertEquals(null, cmd.expectedMedicationRevision)
+        }
+    }
+
+    @Test
+    fun saveMedicationPrepareAcceptsUpdateOfStoredRowWithoutFrequency() {
+        val prep = SaveMedicationCommand.prepare(
+            medicationState("", baseMedicationRevision = 3),
+            "00000000-0000-4000-8000-0000000000f3",
+            "med-freq",
+        )
+        assertTrue("an update keeps a stored blank frequency", prep is ClinicalCommandPreparation.Ready)
+        val cmd = (prep as ClinicalCommandPreparation.Ready).command as SaveMedicationCommand
+        org.junit.Assert.assertEquals("", cmd.frequency)
+        org.junit.Assert.assertEquals(3L, cmd.expectedMedicationRevision)
+        assertTrue(cmd.isStructurallyValid())
+    }
+
+    @Test
+    fun saveMedicationPrepareAcceptsStopAndUndoOfStoredRowWithoutFrequency() {
+        // What the one-tap stop builds for a legacy row with no frequency.
+        val stop = SaveMedicationCommand.prepare(
+            medicationState("", baseMedicationRevision = 2, status = "Discontinued", endDate = "2026-02-01"),
+            "op-stop",
+            "med-freq",
+        )
+        assertTrue("a legacy row can be stopped", stop is ClinicalCommandPreparation.Ready)
+        val stopCmd = (stop as ClinicalCommandPreparation.Ready).command as SaveMedicationCommand
+        org.junit.Assert.assertEquals("Discontinued", stopCmd.status)
+        org.junit.Assert.assertEquals("2026-02-01", stopCmd.endDate)
+        org.junit.Assert.assertEquals("", stopCmd.frequency)
+
+        // What its Undo builds: the second save that restores the earlier status.
+        val undo = SaveMedicationCommand.prepare(medicationState("", baseMedicationRevision = 3), "op-undo", "med-freq")
+        assertTrue("a legacy row can be restored", undo is ClinicalCommandPreparation.Ready)
+        val undoCmd = (undo as ClinicalCommandPreparation.Ready).command as SaveMedicationCommand
+        org.junit.Assert.assertEquals("Active", undoCmd.status)
+        org.junit.Assert.assertEquals(null, undoCmd.endDate)
+        org.junit.Assert.assertEquals(3L, undoCmd.expectedMedicationRevision)
     }
 
     @Test
