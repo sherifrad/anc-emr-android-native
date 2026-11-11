@@ -14,6 +14,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
@@ -84,14 +85,17 @@ fun PatientHubScreen(
         }
     }
 
-    // Pager swipe -> State synchronization (loop-free via settledPage)
+    // Pager swipe -> State synchronization (loop-free via settledPage). The effect outlives route changes, so it
+    // reads the latest route and callback: with the first route, a return to the opening tab was never reported.
+    val currentRoute by rememberUpdatedState(route)
+    val currentOnEvent by rememberUpdatedState(onEvent)
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.settledPage }
             .collect { page ->
                 val settledTab = PatientHubTab.entries[page]
-                val currentTabNow = PatientHubTab.fromSection(route.section)
+                val currentTabNow = PatientHubTab.fromSection(currentRoute.section)
                 if (settledTab != currentTabNow) {
-                    onEvent(AncEvent.SelectSection(settledTab.defaultSection))
+                    currentOnEvent(AncEvent.SelectSection(settledTab.defaultSection))
                 }
             }
     }

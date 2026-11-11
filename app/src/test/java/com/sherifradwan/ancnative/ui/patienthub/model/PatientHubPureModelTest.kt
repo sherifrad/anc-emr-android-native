@@ -173,4 +173,57 @@ class PatientHubPureModelTest {
         assertEquals(1, recentResult.size)
         assertEquals("Paracetamol", recentResult[0].name)
     }
+
+    @Test
+    fun recentMatchesStoredNamesWhateverTheirCaseOrSpaces() {
+        val tiles = listOf(
+            MedicationTile("1", "Paracetamol", "500 mg", "Oral", "Once daily"),
+            MedicationTile("2", "Ferrous Sulfate", "200 mg", "Oral", "Once daily"),
+        )
+        // As the picker passes them: the patient's stored names, untouched.
+        val stored = setOf("Ferrous Sulfate ", "PARACETAMOL")
+        val recent = filterMedicationTiles(tiles, selectedTab = "recent", searchQuery = "", pastMedicationNames = stored)
+        assertEquals(listOf("1", "2"), recent.map { it.id })
+        val recentSearch = filterMedicationTiles(tiles, selectedTab = "recent", searchQuery = " FERR ", pastMedicationNames = stored)
+        assertEquals(listOf("2"), recentSearch.map { it.id })
+    }
+
+    @Test
+    fun searchWithNoMatchIsEmptyInBothSources() {
+        val tiles = listOf(MedicationTile("1", "Paracetamol", "500 mg", "Oral", "Once daily"))
+        assertTrue(filterMedicationTiles(tiles, "common", "zzz", emptySet()).isEmpty())
+        assertTrue(filterMedicationTiles(tiles, "recent", "", emptySet()).isEmpty())
+    }
+
+    private fun medRecord(name: String, status: String, nonCompliant: Boolean = false) = com.sherifradwan.ancnative.model.DemoMedicationRecord(
+        id = name, patientId = "p", name = name, dosage = "1", route = "Oral", frequency = "Once daily",
+        startDate = "2026-01-01", endDate = null, status = status, notes = null, isProphylaxis = false,
+        isNonCompliant = nonCompliant, revision = 1,
+    )
+
+    @Test
+    fun aTileCountsAsActiveWhateverItsSpacesOrCase() {
+        val meds = listOf(
+            medRecord("Folic Acid", "Active"),
+            medRecord("Labetalol", "Active", nonCompliant = true),
+            medRecord("Aspirin", "Discontinued"),
+        )
+        val active = activeMedicationNameKeys(meds)
+        assertEquals(setOf("folic acid", "labetalol"), active)
+        assertTrue(MedicationTile("1", "  folic ACID ", "5 mg", "Oral", "Once daily").isAlreadyActive(active))
+        assertTrue("non-compliant is still active", MedicationTile("2", "LABETALOL", "", "Oral", "").isAlreadyActive(active))
+        assertFalse("stopped is not active", MedicationTile("3", "Aspirin", "75 mg", "Oral", "Once daily").isAlreadyActive(active))
+        assertFalse(MedicationTile("4", "Folic", "5 mg", "Oral", "Once daily").isAlreadyActive(active))
+        assertEquals("folic acid", medicationNameKey("\tFolic ACID \n"))
+    }
+
+    @Test
+    fun tilesAreTheListThenTheDoctorsOwnNamesWithBlankDoseAndFrequency() {
+        val tiles = medicationTiles(
+            listOf(com.sherifradwan.ancnative.model.catalog.MedicationCatalogItem("c1", "Folic Acid", "5 mg", "Oral", "Once daily")),
+            listOf(com.sherifradwan.ancnative.model.catalog.CustomChoiceItem(id = "x", list = com.sherifradwan.ancnative.model.catalog.CustomChoiceList.MEDICATION_NAME, label = "My drug")),
+        )
+        assertEquals(listOf("c1", "custom_x"), tiles.map { it.id })
+        assertEquals(MedicationTile("custom_x", "My drug", "", "Oral", "", isCustom = true), tiles[1])
+    }
 }

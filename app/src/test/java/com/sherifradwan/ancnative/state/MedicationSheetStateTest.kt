@@ -638,4 +638,21 @@ class MedicationSheetStateTest {
             assertNull(recovered.draftRecoveryPrompt)
         }
     }
+
+    // ---- "Save and add another" marks its next draft ----
+
+    @Test
+    fun onlyTheChainedBlankStartIsMarkedSoTheSheetFocusesTheName() {
+        val chained = base().reduce(AncEvent.StartMedicationEditor("p1", null, "new-3", "s-chain", keepSavedNotice = true))
+        assertTrue(chained.medicationDraft!!.chainedAdd)
+        assertEquals(blank, chained.medicationDraft!!.values)
+        assertFalse(custom().medicationDraft!!.chainedAdd)
+        assertFalse(addFromTile().medicationDraft!!.chainedAdd)
+        assertFalse(edit().medicationDraft!!.chainedAdd)
+        val editWithFlag = base().reduce(AncEvent.StartMedicationEditor("p1", "m1", "m1", "s-e", keepSavedNotice = true))
+        assertFalse("only a new drug is chained", editWithFlag.medicationDraft!!.chainedAdd)
+        // A field change keeps the mark; it is not part of the saved draft values.
+        val typed = chained.reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.NAME, "X"))
+        assertTrue(typed.medicationDraft!!.chainedAdd)
+    }
 }

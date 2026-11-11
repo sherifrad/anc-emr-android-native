@@ -470,9 +470,32 @@
     <string name="attachment_size_format">%1$s · WebP</string>
     <string name="show_all_count">Show all %1$d</string>
     <string name="show_fewer">Show fewer</string>
-    <string name="tap_to_add">Tap to add</string>
-    <string name="tap_to_add_sub">usual dose, today</string>
-    <string name="todays_list">Today\'s list</string>
+    <string name="state_expanded">Expanded</string>
+    <string name="state_collapsed">Collapsed</string>
+    <string name="action_expand">Expand</string>
+    <string name="action_collapse">Collapse</string>
+    <string name="medication_picker_no_match">No match. Use %1$s for a custom drug.</string>
+    <string name="medication_dose_route_frequency">%1$s · %2$s · %3$s</string>
+    <string name="medication_detail_separator">" · "</string>
+    <string name="stop_medication_short">Stop</string>
+    <string name="medication_choose_frequency">Choose frequency</string>
+    <plurals name="active_prescriptions_title">
+        <item quantity="one">Active Prescription (%1$d)</item>
+        <item quantity="other">Active Prescriptions (%1$d)</item>
+    </plurals>
+    <string name="prescribe_medication">Prescribe</string>
+    <string name="no_active_medications">No active medications</string>
+    <string name="medications_empty_title">No medications yet</string>
+    <string name="medications_empty_hint">Add the first medication for this patient.</string>
+    <string name="medications_empty_action">Prescribe the first medication</string>
+    <plurals name="medication_show_past">
+        <item quantity="one">Show past (%1$d)</item>
+        <item quantity="other">Show past (%1$d)</item>
+    </plurals>
+    <plurals name="medication_hide_past">
+        <item quantity="one">Hide past (%1$d)</item>
+        <item quantity="other">Hide past (%1$d)</item>
+    </plurals>
     <string name="search_drugs_placeholder">Search or type a drug name</string>
     <string name="tab_common">Common</string>
     <string name="tab_recent">Recent</string>
@@ -490,7 +513,7 @@
     <string name="custom_drug_too_long_error">Name is too long</string>
     <string name="custom_drug_invalid_chars_error">Name contains invalid characters</string>
     <string name="custom_drug_not_found_error">Item not found</string>
-    <string name="no_recent_medications">No past medications recorded for this patient</string>
+    <string name="no_recent_medications">No past medications recorded for this patient. Use %1$s for a new drug.</string>
     <string name="set_dose_in_editor">Set dose in editor</string>
     <string name="step_n_of_m">Step %1$d of %2$d</string>
     <string name="step_date_bp">Date and blood pressure</string>
@@ -563,6 +586,11 @@
     <string name="medication_frequency_other">Other</string>
     <string name="medication_frequency_other_label">Frequency in words</string>
     <string name="medication_frequency_required">Choose a frequency.</string>
+    <string name="medication_frequency_once_daily">Once daily</string>
+    <string name="medication_frequency_twice_daily">Twice daily</string>
+    <string name="medication_frequency_three_times_daily">Three times daily</string>
+    <string name="medication_frequency_at_bedtime">At bedtime</string>
+    <string name="medication_frequency_as_needed">As needed (PRN)</string>
     <string name="medication_saving">Saving…</string>
     <string name="medication_save_failed_title">The medication was not saved.</string>
     <string name="medication_stopped_undo_message">Stopped: %1$s</string>

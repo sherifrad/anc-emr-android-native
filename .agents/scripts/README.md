@@ -6,6 +6,7 @@ Rule (owner, 2026-11-02): any command sequence run twice becomes a script here, 
 |---|---|
 | run_build_gate.sh | unit tests, lint, release compile, androidTest compile |
 | run_static_checks.sh | all .agents/checks/check_r*.py, FAIL lines only |
+| run_emulator_all_tests.sh `[serial]` | whole instrumented suite on the .qa package at 360 dp (size and density restored on exit), per-class counts and failing names |
 | run_emulator_test_class.sh `<class>` `[serial]` | one instrumented class on the .qa package, prints counts |
 | install_qa_build_on_device.sh `<serial>` | installs com.sherifradwan.anc.qa only |
 | take_device_screenshot.sh `<serial>` `<png>` | adb screenshot |

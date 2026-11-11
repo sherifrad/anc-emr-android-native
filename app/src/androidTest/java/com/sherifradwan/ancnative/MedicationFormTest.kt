@@ -27,6 +27,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -450,6 +451,27 @@ class MedicationFormTest {
         compose.onNodeWithTag("medDosage").performScrollTo().performClick()
         compose.onNodeWithTag("medDosage").performImeAction()
         assertFocused("medDate")
+    }
+
+    @Test
+    fun theChainedNameFocusHappensOnceAndNotAgainAfterRecreation() {
+        val tester = StateRestorationTester(compose)
+        val chained = draft(false, activeValues, emptySet()).copy(chainedAdd = true)
+        tester.setContent {
+            AncTheme {
+                MedicationSheet(draft = chained, savePhase = SavePhase.IDLE, saveError = null, touched = false, onEvent = { events += it })
+            }
+        }
+        assertFocused("medName")
+        compose.onNodeWithTag("medNotes").performScrollTo().performClick()
+        assertFocused("medNotes")
+
+        // A rotation or theme change rebuilds the sheet: the same draft must not pull focus back to the name.
+        tester.emulateSavedInstanceStateRestore()
+        compose.waitForIdle()
+        repeat(5) { compose.mainClock.advanceTimeByFrame() }
+        compose.waitForIdle()
+        compose.onNodeWithTag("medName").assertIsNotFocused()
     }
 
     @Test

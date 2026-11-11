@@ -71,6 +71,10 @@ fun MedicationSheet(
     val enabled = savePhase == SavePhase.IDLE || savePhase == SavePhase.ERROR
     val saving = savePhase == SavePhase.PENDING || savePhase == SavePhase.RECONCILING
     var confirmDiscard by rememberSaveable { mutableStateOf(false) }
+    val draftKey = "${draft.editorSessionId}:${draft.medicationId}"
+    // The draft whose name already took focus. Saved here, outside the sheet's own window, so a rotation or theme
+    // change later in the same draft does not pull focus back to the name.
+    var nameFocusedFor by rememberSaveable { mutableStateOf<String?>(null) }
 
     val requestCancel = {
         if (touched) confirmDiscard = true else onEvent(AncEvent.CancelEditor)
@@ -112,7 +116,8 @@ fun MedicationSheet(
                 modifier = Modifier
                     .weight(1f, fill = false)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp),
+                    // Bottom room so the last row (route or notes) is fully visible when scrolled to the end.
+                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 SaveMessage(savePhase = savePhase, saveError = saveError, hasFieldErrors = draft.errors.isNotEmpty())
@@ -121,7 +126,11 @@ fun MedicationSheet(
                     errors = draft.errors,
                     isExistingRow = isExistingRow,
                     enabled = enabled,
-                    draftKey = "${draft.editorSessionId}:${draft.medicationId}",
+                    draftKey = draftKey,
+                    // The next drug of "Save and add another": its name takes focus, so the keyboard stays up,
+                    // whether this sheet stayed on screen between the two drafts or was shown again.
+                    focusNameOnStart = draft.chainedAdd && nameFocusedFor != draftKey,
+                    onNameFocused = { nameFocusedFor = draftKey },
                     onEvent = onEvent,
                 )
             }

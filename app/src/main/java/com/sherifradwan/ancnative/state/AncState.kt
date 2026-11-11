@@ -639,6 +639,11 @@ data class MedicationDraft(
      * not saved with the draft, so crash recovery still goes by [isDirty].
      */
     val touched: Boolean = false,
+    /**
+     * The next blank drug of "Save and add another" (started with [AncEvent.StartMedicationEditor.keepSavedNotice]).
+     * The sheet puts focus on its name field, so the keyboard stays up for it. UI only: not saved with the draft.
+     */
+    val chainedAdd: Boolean = false,
 ) {
     val isDirty: Boolean get() = values != original
 }

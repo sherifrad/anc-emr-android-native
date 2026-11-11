@@ -1,5 +1,6 @@
 package com.sherifradwan.ancnative.ui
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -20,7 +21,39 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 
-val COMMON_MEDICATION_FREQUENCIES = listOf("Once daily", "Twice daily", "Three times daily", "At bedtime", "As needed (PRN)")
+/** The fixed medication frequencies, in order: the stored value (English, saved as is) and the label the screen shows. */
+private val MEDICATION_FREQUENCY_LABELS: Map<String, Int> = linkedMapOf(
+    "Once daily" to R.string.medication_frequency_once_daily,
+    "Twice daily" to R.string.medication_frequency_twice_daily,
+    "Three times daily" to R.string.medication_frequency_three_times_daily,
+    "At bedtime" to R.string.medication_frequency_at_bedtime,
+    "As needed (PRN)" to R.string.medication_frequency_as_needed,
+)
+
+val COMMON_MEDICATION_FREQUENCIES: List<String> = MEDICATION_FREQUENCY_LABELS.keys.toList()
+
+/** The label resource for a stored value of [COMMON_MEDICATION_FREQUENCIES], or null for the doctor's own words. */
+@StringRes
+fun medicationFrequencyLabelRes(value: String): Int? = MEDICATION_FREQUENCY_LABELS[value]
+
+/** A stored frequency as the screen shows it: the label of a fixed value, otherwise the stored words unchanged. */
+@Composable
+fun medicationFrequencyLabel(value: String): String =
+    medicationFrequencyLabelRes(value)?.let { stringResource(it) } ?: value
+
+/**
+ * "dose · route · frequency" for a row or a picker tile, from one formatted string so a translation can reorder it.
+ * [frequency] is already a label. A part that is blank is left out, joined by the translatable separator.
+ */
+@Composable
+fun medicationDoseRouteFrequency(dosage: String, route: String, frequency: String): String {
+    val parts = listOf(dosage.trim(), route.trim(), frequency.trim())
+    return if (parts.all { it.isNotEmpty() }) {
+        stringResource(R.string.medication_dose_route_frequency, parts[0], parts[1], parts[2])
+    } else {
+        parts.filter { it.isNotEmpty() }.joinToString(stringResource(R.string.medication_detail_separator))
+    }
+}
 
 /** Long suggestion lists (my medication list, previous prescriptions) show this many chips until expanded. */
 const val PRESAVED_COLLAPSE_AFTER = 5

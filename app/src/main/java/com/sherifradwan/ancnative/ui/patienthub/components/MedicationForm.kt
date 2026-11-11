@@ -56,6 +56,7 @@ import com.sherifradwan.ancnative.ui.COMMON_MEDICATION_FREQUENCIES
 import com.sherifradwan.ancnative.ui.ChoiceGroup
 import com.sherifradwan.ancnative.ui.ClinicalDateField
 import com.sherifradwan.ancnative.ui.EditorField
+import com.sherifradwan.ancnative.ui.medicationFrequencyLabel
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
 import kotlinx.coroutines.launch
 
@@ -64,6 +65,8 @@ import kotlinx.coroutines.launch
  * [AncEvent.MedicationDraftChanged]; it holds no business rules.
  *
  * [draftKey] identifies the draft being edited; per-draft UI state (the Other-frequency mode) resets when it changes.
+ * With [focusNameOnStart] the name field takes focus for [draftKey], then [onNameFocused] tells the host so it can
+ * turn the request off (the host keeps that in saved state, so a rotation does not focus the name again).
  *
  * Fields in order: name, dose, route (read-only on an existing row), frequency, status, one date
  * (Start date while active, Stop date while stopped) and notes. Enter (IME Next) moves focus to the
@@ -80,6 +83,8 @@ fun MedicationForm(
     draftKey: String,
     onEvent: (AncEvent) -> Unit,
     modifier: Modifier = Modifier,
+    focusNameOnStart: Boolean = false,
+    onNameFocused: () -> Unit = {},
 ) {
     fun change(field: MedicationDraftField, value: String) =
         onEvent(AncEvent.MedicationDraftChanged(field, value))
@@ -92,6 +97,13 @@ fun MedicationForm(
 
     var otherMode by rememberSaveable(draftKey) {
         mutableStateOf(values.frequency.isNotBlank() && values.frequency !in COMMON_MEDICATION_FREQUENCIES)
+    }
+    LaunchedEffect(draftKey, focusNameOnStart) {
+        if (focusNameOnStart) {
+            withFrameNanos { }
+            nameFocus.requestFocus()
+            onNameFocused()
+        }
     }
     var focusOtherBox by remember { mutableStateOf(false) }
     LaunchedEffect(focusOtherBox, otherMode) {
@@ -171,7 +183,7 @@ fun MedicationForm(
                             change(MedicationDraftField.FREQUENCY, frequency)
                         },
                         enabled = enabled,
-                        label = { Text(frequency) },
+                        label = { Text(medicationFrequencyLabel(frequency)) },
                         modifier = Modifier.minimumTouchTarget().testTag("medFreqChoice-$index"),
                     )
                 }

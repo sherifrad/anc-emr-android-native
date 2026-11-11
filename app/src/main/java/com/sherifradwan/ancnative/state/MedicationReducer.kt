@@ -18,6 +18,9 @@ import com.sherifradwan.ancnative.model.medicationEditorChoice
  * - Add from a catalog tile ([AncEvent.StartMedicationEditor.prefill]): `original` is the blank new-drug defaults
  *   and `values` is the tile on top of them, so the draft is dirty (and recoverable) from the start.
  * - Blank custom drug: both are the blank defaults.
+ *
+ * A new draft started by "Save and add another" ([AncEvent.StartMedicationEditor.keepSavedNotice]) is marked
+ * [MedicationDraft.chainedAdd].
  */
 internal fun startMedicationEditor(state: AncState, event: AncEvent.StartMedicationEditor): AncState {
     if (state.savePhase.blocksEditing() || state.hasDirtyDraft || state.medicationDraft != null) return state
@@ -50,6 +53,7 @@ internal fun startMedicationEditor(state: AncState, event: AncEvent.StartMedicat
             baseMedicationRevision = med?.revision,
             original = original,
             values = values,
+            chainedAdd = event.keepSavedNotice && med == null,
         ),
         savedNotice = if (event.keepSavedNotice) state.savedNotice else false,
         notice = if (event.keepSavedNotice) state.notice else null,

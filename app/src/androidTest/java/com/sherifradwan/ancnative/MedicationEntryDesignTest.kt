@@ -128,7 +128,11 @@ class MedicationEntryDesignTest {
         host()
         node("medStatusChoice-0").performScrollTo().assertIsDisplayed()
         missing("medStatusChoice-2")
-        compose.onNode(hasText("Prophylaxis", substring = true, ignoreCase = true), useUnmergedTree = true).assertDoesNotExist()
+        // The form has no prophylaxis control. Scoped to the sheet: the active rows under it may carry the word in their notes.
+        compose.onNode(
+            hasText("Prophylaxis", substring = true, ignoreCase = true) and hasAnyAncestor(hasTestTag("medicationSheet")),
+            useUnmergedTree = true,
+        ).assertDoesNotExist()
         node("medStatusChoice-1").performScrollTo().performClick()
         compose.waitForIdle()
         assertEquals("Discontinued", state.medicationDraft!!.values.status)
