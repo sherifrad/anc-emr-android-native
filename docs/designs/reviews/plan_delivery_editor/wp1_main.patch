@@ -1,0 +1,80 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/model/DeliveryNotes.kt b/app/src/main/java/com/sherifradwan/ancnative/model/DeliveryNotes.kt
+index f11d79c..08fd731 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/model/DeliveryNotes.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/model/DeliveryNotes.kt
+@@ -22,6 +22,11 @@ internal data class DeliveryNoteSections(
+  * value is additionally listed in [DeliveryNoteSections.hospital] while its source line stays in
+  * its home section. A "<Name> Hospital" phrase after a previous-delivery marker never contributes a
+  * hospital, but a labelled "Hospital:" value always does (Q13).
++ *
++ * Strict rule (D4): a line that starts with one of the four exact labels [LABEL_HOSPITAL],
++ * [LABEL_FEES], [LABEL_PLAN] or [LABEL_POSTPARTUM], case-sensitive, then ':' and a non-blank value,
++ * goes wholly into that box. Such a line is not split at ';' or at a sentence end, is not classified
++ * by the heuristic, and adds no derived hospital name. Every other line is parsed as before.
+  */
+ internal fun parseDeliveryNotes(notes: String?): DeliveryNoteSections {
+     val lines = notes?.lines()?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty()
+@@ -33,6 +38,17 @@ internal fun parseDeliveryNotes(notes: String?): DeliveryNoteSections {
+     val postpartum = ArrayList<String>()
+ 
+     for (line in lines) {
++        val composed = COMPOSED_LINE.matchEntire(line)
++        if (composed != null) {
++            val value = composed.groupValues[2].trim()
++            when (composed.groupValues[1]) {
++                LABEL_HOSPITAL -> hospitals += value
++                LABEL_FEES -> fees += value
++                LABEL_PLAN -> plan += value
++                else -> postpartum += value
++            }
++            continue
++        }
+         val segments = splitSegments(line)
+         val placements = segments.map { place(it.text) }
+         segments.forEach { segment -> hospitals += hospitalNames(segment.text) }
+@@ -61,6 +77,45 @@ internal fun parseDeliveryNotes(notes: String?): DeliveryNoteSections {
+     )
+ }
+ 
++// ---------------------------------------------------------------- compose rule (section 5.3)
++
++internal const val LABEL_HOSPITAL = "Agreed Delivery Hospital"
++internal const val LABEL_FEES = "Agreed Delivery Fees"
++internal const val LABEL_PLAN = "Delivery Plan"
++internal const val LABEL_POSTPARTUM = "Postpartum Note"
++
++/**
++ * A line that opens with one of the four exact labels, then ':' and a non-blank value. DOT_MATCHES_ALL
++ * lets '.' match U+2028 and U+0085, which [lines] does not split on.
++ */
++private val COMPOSED_LINE = Regex(
++    "^(Agreed Delivery Hospital|Agreed Delivery Fees|Delivery Plan|Postpartum Note):\\s*(\\S.*)$",
++    RegexOption.DOT_MATCHES_ALL,
++)
++
++/**
++ * Builds the stored notes from the four boxes: one "<label>: <value>" line per non-blank line of each
++ * box, in the order hospital, fees, plan, postpartum, joined with a newline. Leading and trailing
++ * whitespace is trimmed, empty lines are dropped, and duplicate hospital lines are collapsed.
++ */
++internal fun composeDeliveryNotes(s: DeliveryNoteSections): String =
++    listOf(
++        LABEL_HOSPITAL to s.hospital,
++        LABEL_FEES to s.fees,
++        LABEL_PLAN to s.plan,
++        LABEL_POSTPARTUM to s.postpartum,
++    )
++        .flatMap { (label, value) ->
++            value.orEmpty().lines().map { it.trim() }.filter { it.isNotEmpty() }
++                .let { if (label == LABEL_HOSPITAL) it.distinct() else it }
++                .map { "$label: $it" }
++        }
++        .joinToString("\n")
++
++/** True when [notes] is null, blank, or exactly the text [composeDeliveryNotes] writes back for its parse. */
++internal fun isComposedDeliveryNotes(notes: String?): Boolean =
++    notes.isNullOrBlank() || composeDeliveryNotes(parseDeliveryNotes(notes)) == notes
++
+ // ---------------------------------------------------------------- segmentation (Q1)
+ 
+ /** Coding unit after a source line has been split; [separatorBefore] is the raw text that preceded it. */

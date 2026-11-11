@@ -1,0 +1,481 @@
+```kt
+FILE: app/src/main/java/com/sherifradwan/ancnative/model/DeliveryNotes.kt
+<<<<<<< SEARCH
+internal data class DeliveryNoteSections(
+    val hospital: String?,
+    val fees: String?,
+    val plan: String?,
+    val postpartum: String?,
+)
+=======
+internal data class DeliveryNoteSections(
+    val hospital: String?,
+    val fees: String?,
+    val plan: String?,
+    val postpartum: String?,
+)
+
+internal const val LABEL_HOSPITAL = "Agreed Delivery Hospital"
+internal const val LABEL_FEES = "Agreed Delivery Fees"
+internal const val LABEL_PLAN = "Delivery Plan"
+internal const val LABEL_POSTPARTUM = "Postpartum Note"
+
+// Strict composed line: exact label, case-sensitive, colon, non-blank value. DOT_MATCHES_ALL lets
+// '.' also match U+2028/U+0085, which lines() does not split on.
+private val COMPOSED_LINE = Regex(
+    "^(Agreed Delivery Hospital|Agreed Delivery Fees|Delivery Plan|Postpartum Note):\\s*(\\S.*)$",
+    RegexOption.DOT_MATCHES_ALL,
+)
+
+internal fun composeDeliveryNotes(s: DeliveryNoteSections): String =
+    listOf(
+        LABEL_HOSPITAL to s.hospital,
+        LABEL_FEES to s.fees,
+        LABEL_PLAN to s.plan,
+        LABEL_POSTPARTUM to s.postpartum,
+    )
+        .flatMap { (label, value) ->
+            value.orEmpty().lines().map { it.trim() }.filter { it.isNotEmpty() }
+                .let { if (label == LABEL_HOSPITAL) it.distinct() else it }
+                .map { "$label: $it" }
+        }
+        .joinToString("\n")
+
+internal fun isComposedDeliveryNotes(notes: String?): Boolean =
+    notes.isNullOrBlank() || composeDeliveryNotes(parseDeliveryNotes(notes)) == notes
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/model/DeliveryNotes.kt
+<<<<<<< SEARCH
+ * value is additionally listed in [DeliveryNoteSections.hospital] while its source line stays in
+ * its home section. A "<Name> Hospital" phrase after a previous-delivery marker never contributes a
+ * hospital, but a labelled "Hospital:" value always does (Q13).
+ */
+=======
+ * value is additionally listed in [DeliveryNoteSections.hospital] while its source line stays in
+ * its home section. A "<Name> Hospital" phrase after a previous-delivery marker never contributes a
+ * hospital, but a labelled "Hospital:" value always does (Q13).
+ *
+ * Strict rule (D4): a line that starts with one of the four exact labels ("Agreed Delivery
+ * Hospital", "Agreed Delivery Fees", "Delivery Plan", "Postpartum Note"), case-sensitive, followed
+ * by ':' and a non-blank value goes wholly into that box. Such a line is not split, not classified
+ * by heuristic, and adds no derived hospital name. Every other line is parsed as today, so a
+ * lowercase variant such as "postpartum note:" keeps the heuristic behaviour.
+ */
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/model/DeliveryNotes.kt
+<<<<<<< SEARCH
+    for (line in lines) {
+        val segments = splitSegments(line)
+=======
+    for (line in lines) {
+        COMPOSED_LINE.matchEntire(line)?.let { m ->
+            val value = m.groupValues[2].trim()
+            when (m.groupValues[1]) {
+                LABEL_HOSPITAL -> hospitals += value
+                LABEL_FEES -> fees += value
+                LABEL_PLAN -> plan += value
+                else -> postpartum += value
+            }
+            continue
+        }
+        val segments = splitSegments(line)
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/model/DeliveryNotesComposeTest.kt
+<<<<<<< SEARCH
+=======
+package com.sherifradwan.ancnative.model
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import kotlin.random.Random
+
+/**
+ * Round-trip proofs for the labelled compose format and the strict parser rule (design 5.3, 5.4,
+ * section 9, amendments A3 and A8).
+ */
+class DeliveryNotesComposeTest {
+
+    @Test
+    fun composeOfAllNullSectionsIsEmptyString() {
+        assertEquals("", composeDeliveryNotes(DeliveryNoteSections(null, null, null, null)))
+    }
+
+    @Test
+    fun composeOfOneFieldValueEmitsExactlyOneLabelledLine() {
+        assertEquals(
+            "Postpartum Note: IUD at 6 weeks",
+            composeDeliveryNotes(DeliveryNoteSections(null, null, null, "IUD at 6 weeks")),
+        )
+    }
+
+    @Test
+    fun composeEmitsOneLabelledLinePerLineOfAFieldInSourceOrder() {
+        assertEquals(
+            "Delivery Plan: SVD\nDelivery Plan: no tearing\nDelivery Plan: feels well",
+            composeDeliveryNotes(DeliveryNoteSections(null, null, "SVD\nno tearing\nfeels well", null)),
+        )
+    }
+
+    @Test
+    fun composeAlwaysEmitsFieldsInHospitalFeesPlanPostpartumOrder() {
+        assertEquals(
+            "Agreed Delivery Hospital: X Hospital\n" +
+                "Agreed Delivery Fees: 2000 EGP\n" +
+                "Delivery Plan: SVD\n" +
+                "Postpartum Note: IUD at 6 weeks",
+            composeDeliveryNotes(
+                DeliveryNoteSections("X Hospital", "2000 EGP", "SVD", "IUD at 6 weeks"),
+            ),
+        )
+    }
+
+    @Test
+    fun composeNormalisesSpacesTabsNbspCrLfAndBlankLinesBeforeLabelling() {
+        assertEquals(
+            "Agreed Delivery Hospital: Cleopatra Hospital\n" +
+                "Agreed Delivery Hospital: X Hospital\n" +
+                "Agreed Delivery Fees: 2000 EGP\n" +
+                "Delivery Plan: first line\nDelivery Plan: second line\n" +
+                "Postpartum Note: IUD at 6 weeks",
+            composeDeliveryNotes(
+                DeliveryNoteSections(
+                    "  Cleopatra Hospital  \n\n\tCleopatra Hospital\n\r\nX Hospital",
+                    "\u00A0 2000 EGP \u00A0",
+                    "\r\n first line \r\n second line \r\n",
+                    "  IUD at 6 weeks\t",
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun composeCollapsesDuplicateHospitalLinesToOneLine() {
+        val notes = composeDeliveryNotes(
+            DeliveryNoteSections("Cleopatra Hospital\nCleopatra Hospital", null, null, null),
+        )
+        assertEquals("Agreed Delivery Hospital: Cleopatra Hospital", notes)
+        assertEquals(
+            DeliveryNoteSections("Cleopatra Hospital", null, null, null),
+            parseDeliveryNotes(notes),
+        )
+    }
+
+    @Test
+    fun theoremAParseOfComposeEqualsNormalisedFieldsOnTwoThousandRandomFieldSets() {
+        val random = Random(20261111)
+        repeat(2_000) {
+            val hospital = randomField(random)
+            val fees = randomField(random)
+            val plan = randomField(random)
+            val postpartum = randomField(random)
+            val composed = composeDeliveryNotes(
+                DeliveryNoteSections(hospital, fees, plan, postpartum),
+            )
+            assertEquals(
+                "hospital=[$hospital] fees=[$fees] plan=[$plan] postpartum=[$postpartum] composed=[$composed]",
+                normalised(hospital, fees, plan, postpartum),
+                parseDeliveryNotes(composed),
+            )
+        }
+    }
+
+    @Test
+    fun corollaryCComposeOfParseOfComposeEqualsComposeOnTwoThousandRandomFieldSets() {
+        val random = Random(20261111)
+        repeat(2_000) {
+            val composed = composeDeliveryNotes(
+                DeliveryNoteSections(
+                    randomField(random),
+                    randomField(random),
+                    randomField(random),
+                    randomField(random),
+                ),
+            )
+            assertEquals(composed, composeDeliveryNotes(parseDeliveryNotes(composed)))
+        }
+    }
+
+    @Test
+    fun theoremBParseOfComposeOfParseEqualsParseOnTwoThousandRandomNotes() {
+        val random = Random(20261111)
+        repeat(2_000) {
+            val note = randomNote(random)
+            val parsed = parseDeliveryNotes(note)
+            assertEquals(
+                "note=[$note]",
+                parsed,
+                parseDeliveryNotes(composeDeliveryNotes(parsed)),
+            )
+        }
+    }
+
+    @Test
+    fun theoremBParseOfComposeOfParseEqualsParseOnEveryExistingParserFixture() {
+        for (note in PARSER_FIXTURES) {
+            val parsed = parseDeliveryNotes(note)
+            assertEquals(
+                "note=[$note]",
+                parsed,
+                parseDeliveryNotes(composeDeliveryNotes(parsed)),
+            )
+        }
+    }
+
+    @Test
+    fun isComposedDeliveryNotesIsTrueForNullBlankAndComposeOutput() {
+        assertTrue(isComposedDeliveryNotes(null))
+        assertTrue(isComposedDeliveryNotes(""))
+        assertTrue(isComposedDeliveryNotes("   \n\t "))
+        assertTrue(
+            isComposedDeliveryNotes(
+                composeDeliveryNotes(
+                    DeliveryNoteSections("X Hospital", "2000 EGP", "SVD", "IUD at 6 weeks"),
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun isComposedDeliveryNotesIsFalseForTheWorkedExampleNotes() {
+        assertFalse(
+            isComposedDeliveryNotes(
+                "Delivery at Cleopatra Hospital\n" +
+                    "Fees: 20000 EGP\n" +
+                    "Postpartum: IUD at 6 weeks",
+            ),
+        )
+    }
+
+    @Test
+    fun isComposedDeliveryNotesIsFalseForComposeOutputWithAddedTrailingNewline() {
+        val composed = composeDeliveryNotes(
+            DeliveryNoteSections("X Hospital", "2000 EGP", "SVD", "IUD at 6 weeks"),
+        )
+        assertFalse(isComposedDeliveryNotes(composed + "\n"))
+    }
+
+    @Test
+    fun strictPostpartumNoteLineGoesWholeIntoPostpartumWithoutSemicolonSplit() {
+        val s = parseDeliveryNotes("Postpartum Note: a; b")
+        assertEquals("a; b", s.postpartum)
+        assertNull(s.hospital); assertNull(s.fees); assertNull(s.plan)
+    }
+
+    @Test
+    fun lowercasePostpartumNoteLineKeepsTodayHeuristicSplit() {
+        val s = parseDeliveryNotes("postpartum note: a; b")
+        assertEquals("a", s.postpartum)
+        assertEquals("b", s.plan)
+    }
+
+    @Test
+    fun deliveryPlanLabelWithNoValueFallsBackToHeuristicAndKeepsItsText() {
+        val s = parseDeliveryNotes("Delivery Plan:")
+        assertEquals("Delivery Plan:", s.plan)
+        assertNull(s.hospital); assertNull(s.fees); assertNull(s.postpartum)
+    }
+
+    @Test
+    fun mixedDocumentParsesStrictLinesPlusHeuristicLinesWithHospitalSetInLineOrder() {
+        val s = parseDeliveryNotes(
+            "Agreed Delivery Hospital: Dar Al Fouad Hospital\n" +
+                "Dr. suggested Cleopatra Hospital\n" +
+                "Agreed Delivery Fees: 5000 EGP\n" +
+                "Plan: SVD next week\n" +
+                "Postpartum Note: IUD at 6 weeks",
+        )
+        assertEquals("Dar Al Fouad Hospital\nCleopatra Hospital", s.hospital)
+        assertEquals("5000 EGP", s.fees)
+        assertEquals("Dr. suggested Cleopatra Hospital\nPlan: SVD next week", s.plan)
+        assertEquals("IUD at 6 weeks", s.postpartum)
+    }
+
+    @Test
+    fun handTypedExactLabelLineReadsOnTheCardWithItsLabelStripped() {
+        // A3: before the strict rule the card kept the typed label words, "Delivery Plan: SVD" showed
+        // as "Delivery Plan: SVD" in the plan box and "Agreed Delivery Hospital: X Hospital" went to
+        // the plan box verbatim and derived no hospital name. After it, each exact-label line goes
+        // wholly into its own box on the card, before any save.
+        val s = parseDeliveryNotes(
+            "Agreed Delivery Hospital: X Hospital\n" +
+                "Agreed Delivery Fees: 2000 EGP\n" +
+                "Delivery Plan: SVD\n" +
+                "Postpartum Note: IUD at 6 weeks",
+        )
+        assertEquals("X Hospital", s.hospital)
+        assertEquals("2000 EGP", s.fees)
+        assertEquals("SVD", s.plan)
+        assertEquals("IUD at 6 weeks", s.postpartum)
+    }
+
+    @Test
+    fun feesValueWithSemicolonStaysWholeInFeesAcrossTheRoundTrip() {
+        // Old-parser counterexample (b)/(A4): the piece after ';' has no fee word and lands in plan.
+        val sections = DeliveryNoteSections(null, "5000 EGP; includes 2 nights", null, null)
+        assertEquals(sections, parseDeliveryNotes(composeDeliveryNotes(sections)))
+    }
+
+    @Test
+    fun planValueWithFeePackageStaysInPlanAcrossTheRoundTrip() {
+        // Old-parser counterexample (c): "Package 20000 EGP" without a label landed in fees.
+        val sections = DeliveryNoteSections(null, null, "Package 20000 EGP", null)
+        assertEquals(sections, parseDeliveryNotes(composeDeliveryNotes(sections)))
+    }
+
+    @Test
+    fun quotedFeeValueStaysInFeesAcrossTheRoundTrip() {
+        // Old-parser counterexample (d): UNCONFIRMED_FEE moved "quoted 30000" to the plan box.
+        val sections = DeliveryNoteSections(null, "quoted 30000", null, null)
+        assertEquals(sections, parseDeliveryNotes(composeDeliveryNotes(sections)))
+    }
+
+    @Test
+    fun clearedHospitalStaysNullWhenPlanMentionsCleopatraHospital() {
+        // Old-parser counterexample (e): the plan text re-derived "Cleopatra Hospital" into the
+        // hospital box on the next parse.
+        val sections = DeliveryNoteSections(null, null, "at Cleopatra Hospital", null)
+        val parsed = parseDeliveryNotes(composeDeliveryNotes(sections))
+        assertNull(parsed.hospital)
+        assertEquals(sections, parsed)
+    }
+
+    @Test
+    fun planValueStartingWithTheFeesLabelStaysInPlan() {
+        val sections = DeliveryNoteSections(null, null, "Agreed Delivery Fees: 5000", null)
+        assertEquals(sections, parseDeliveryNotes(composeDeliveryNotes(sections)))
+    }
+
+    @Test
+    fun nbspAtValueEdgesIsTrimmedOnComposeAndParse() {
+        val sections = DeliveryNoteSections(null, "\u00A02000 EGP\u00A0", null, null)
+        assertEquals("Agreed Delivery Fees: 2000 EGP", composeDeliveryNotes(sections))
+        assertEquals(sections, parseDeliveryNotes(composeDeliveryNotes(sections)))
+    }
+
+    @Test
+    fun u2028InsideAValueSurvivesTheRoundTrip() {
+        // lines() does not split on U+2028 and DOT_MATCHES_ALL lets '.' match it, so the value
+        // comes back whole.
+        val sections = DeliveryNoteSections(null, null, "SVD\u2028doing well", null)
+        assertEquals(sections, parseDeliveryNotes(composeDeliveryNotes(sections)))
+    }
+
+    @Test
+    fun u0085InsideAValueSurvivesTheRoundTrip() {
+        val sections = DeliveryNoteSections(null, null, "SVD\u0085doing well", null)
+        assertEquals(sections, parseDeliveryNotes(composeDeliveryNotes(sections)))
+    }
+
+    @Test
+    fun loneCarriageReturnAtValueEdgesBehavesLikeALineSeparator() {
+        // lines() splits on a lone \r and trim() removes one that lines() keeps at an edge, so
+        // "\r\r" normalises to nothing and "a\rb" normalises to two lines.
+        val parsed = parseDeliveryNotes(
+            composeDeliveryNotes(DeliveryNoteSections("\r\r", "2000 EGP\r", "a\rb", null)),
+        )
+        assertNull(parsed.hospital)
+        assertEquals("2000 EGP", parsed.fees)
+        assertEquals("a\nb", parsed.plan)
+    }
+
+    @Test
+    fun aLabelInsideEveryFieldValueStaysInItsOwnBox() {
+        val sections = DeliveryNoteSections(
+            "Agreed Delivery Hospital: X Hospital",
+            "Agreed Delivery Fees: not agreed 100 EGP",
+            "Agreed Delivery Fees: 5000\nDelivery Plan: SVD\nPostpartum Note: IUD",
+            "Postpartum Note: Postpartum Note: IUD at 6 weeks",
+        )
+        assertEquals(sections, parseDeliveryNotes(composeDeliveryNotes(sections)))
+    }
+
+    @Test
+    fun aValueOf5000CharactersSurvivesTheRoundTrip() {
+        val value = "x".repeat(2500) + " " + "y".repeat(2499)
+        assertEquals(5000, value.length)
+        val sections = DeliveryNoteSections(null, null, value, null)
+        assertEquals(sections, parseDeliveryNotes(composeDeliveryNotes(sections)))
+    }
+
+    @Test
+    fun strictLineWithSemicolonsAndSentenceEndsIsNotSplit() {
+        // Under the heuristic this line would split at ';' and at ". ", and the "X Hospital" piece
+        // would derive a hospital name. The strict branch keeps it whole in the plan box.
+        val sections = DeliveryNoteSections(
+            null,
+            null,
+            "SVD; no tearing. Dr. saw her at X Hospital; baby well",
+            null,
+        )
+        val parsed = parseDeliveryNotes(composeDeliveryNotes(sections))
+        assertNull(parsed.hospital)
+        assertEquals(sections, parsed)
+    }
+
+    private val SEPARATORS = listOf("", " ", "\n")
+
+    private val ALPHABET = listOf(
+        ";", ". ", ":", "Dr.", "Hospital", "X Hospital",
+        LABEL_HOSPITAL, LABEL_FEES, LABEL_PLAN, LABEL_POSTPARTUM,
+        "agreed delivery hospital", "agreed delivery fees", "delivery plan", "postpartum note",
+        "quoted", "not agreed", "EGP", "delivered", "7", "2026",
+        "\u00A0", "\u2028", "\u0085", "\r\n", "",
+    )
+
+    private val PARSER_FIXTURES: List<String?> = listOf(
+        null,
+        "Agreed delivery mode: Spontaneous Vaginal Delivery (SVD) at Cleopatra Maternity Hospital.\n" +
+            "Delivery fee package agreed: 15,000 EGP (Full hospital stay + pediatrician attendance).\n" +
+            "Postpartum note: Successfully delivered healthy female infant on 2026-10-12.",
+        "Previous uncomplicated full-term vaginal delivery in 2022.",
+    )
+
+    /** N(U): per field lines(), trim, drop empty, hospital distinct, join with "\n", null when empty. */
+    private fun normalised(hospital: String?, fees: String?, plan: String?, postpartum: String?): DeliveryNoteSections =
+        DeliveryNoteSections(
+            hospital = normalisedField(hospital, distinct = true),
+            fees = normalisedField(fees, distinct = false),
+            plan = normalisedField(plan, distinct = false),
+            postpartum = normalisedField(postpartum, distinct = false),
+        )
+
+    private fun normalisedField(value: String?, distinct: Boolean): String? {
+        if (value == null) return null
+        var lines = value.lines().map { it.trim() }.filter { it.isNotEmpty() }
+        if (distinct) lines = lines.distinct()
+        return lines.joinToString("\n").ifBlank { null }
+    }
+
+    private fun randomField(random: Random): String {
+        val count = random.nextInt(7)
+        if (count == 0) return ""
+        var value = ALPHABET[random.nextInt(ALPHABET.size)]
+        for (i in 1 until count) {
+            value += SEPARATORS[random.nextInt(SEPARATORS.size)] + ALPHABET[random.nextInt(ALPHABET.size)]
+        }
+        return value
+    }
+
+    private fun randomNote(random: Random): String {
+        val count = random.nextInt(9)
+        if (count == 0) return ""
+        var note = ALPHABET[random.nextInt(ALPHABET.size)]
+        for (i in 1 until count) {
+            note += SEPARATORS[random.nextInt(SEPARATORS.size)] + ALPHABET[random.nextInt(ALPHABET.size)]
+        }
+        return note
+    }
+}
+>>>>>>> REPLACE
+```
+
+Two notes on choices I made while writing the plan:
+
+- The three `DeliveryNotes.kt` blocks are one logical change split into three anchors so each SEARCH stays short and unique: the constants/regex/compose block after the data class, the added KDoc paragraph at the end of the existing KDoc, and the strict branch at the top of the `for (line in lines)` loop, using the design's `?.let { ... continue }` shape.
+- In the tests, `normalisedField` implements N(U) exactly as the design defines it, and the fixtures list includes `null` plus the three note strings from `DeliveryNotesParserTest.kt`, so the Theorem B fixture test covers the empty case too (`compose(parse(null))` is `""` and `parse("")` equals the all-null sections).
