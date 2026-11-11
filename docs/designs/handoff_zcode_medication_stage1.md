@@ -47,7 +47,7 @@ Phase 3 files (all under `app/src/`, now in `ab74d27`):
 
 Last verified result (run by me, 2026-11-11): `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug --rerun-tasks` BUILD SUCCESSFUL, 1194 unit tests, 0 failures. `.agents/scripts/run_emulator_all_tests.sh`: `TOTAL tests=435 failures=0`. No file from the protected list changed (see below).
 
-Review status of Phase 3: Opus (frontier) reviewed round 1 and round 1 fixes, no blockers. The last small round (focus flag, one-line notes preview, picker keyboard fix, tab-sync callback) was NOT reviewed by a frontier model, because the Opus lane hit its quota. The GLM review of it is in `docs/designs/reviews/medication_section_revision/phase3r3/code_glm.md`. I checked its findings: the claim that opening a card hides the notes is wrong (`MedicationCard.kt` line 181 shows them in the expanded rows); the double-tap on Stop concern is already covered by the reducer, which ignores a second stop while one saves (test `aSecondStopTapOnTheSameRowWhileItSavesIsIgnored`); its route finding became task C2 and its focus finding became task C3. The Gemini review of this round returned nothing. Get a frontier-tier review of that last round. The files to review are the ones listed above, mainly `MedicationForm.kt`, `MedicationSheet.kt`, `MedicationCard.kt`, `MedsTab.kt`, `MedicationTapToAddSection.kt`, `PatientHubScreen.kt`.
+Review status of Phase 3: Opus (frontier) reviewed round 1 and round 1 fixes, no blockers. The last small round (focus flag, one-line notes preview, picker keyboard fix, tab-sync callback) was NOT reviewed by a frontier model, because the Opus lane hit its quota. The GLM review of it is in `docs/designs/reviews/medication_section_revision/phase3r3/code_glm.md`. I checked its findings: the claim that opening a card hides the notes is wrong (`MedicationCard.kt` line 181 shows them in the expanded rows); the double-tap on Stop concern is already covered by the reducer, which ignores a second stop while one saves (test `aSecondStopTapOnTheSameRowWhileItSavesIsIgnored`); its route finding became task C2 and its focus finding became task C3. The Gemini review of this round arrived after the commit (`phase3r3/code_gemini.md`): no blockers. Its two majors repeat points already handled (sheet flicker is covered by the `chainedAdd` flag and a test that closes the sheet between the two drafts; Enter on Notes inserting a newline was approved in the mock). Its real minor findings became task C4. Get a frontier-tier review of that last round. The files to review are the ones listed above, mainly `MedicationForm.kt`, `MedicationSheet.kt`, `MedicationCard.kt`, `MedsTab.kt`, `MedicationTapToAddSection.kt`, `PatientHubScreen.kt`.
 
 ## Work for you
 
@@ -77,7 +77,7 @@ At 200% font scale at 360dp the patient header cuts the name to "Ma ya…" and c
 
 File: `app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt` (level 3 path). Let the name wrap to two lines or allow the header to grow; keep gestational age, risk badge and allergy line fully visible; keep it one canonical component. Test: add to `app/src/androidTest/java/com/sherifradwan/ancnative/PatientHubDesignTest.kt` a 360dp, fontScale 2.0 case with a long name asserting the name is not ellipsized (check text layout, not only existence) and the other fields are displayed. Capture a new screenshot.
 
-Commit B, C, C2 and C3 separately, each after review.
+Commit B, C, C2, C3 and C4 separately, each after review.
 
 ### C2. Already-active check should include the route
 
@@ -86,6 +86,14 @@ The picker marks a tile as "already on today's list" by drug name only (`activeM
 ### C3. Possible silent failure of name focus after "Save and add another"
 
 `MedicationForm.kt` waits one frame and then calls `requestFocus()` on the name field, while the sheet may still be animating in. If the field is not attached yet, the request fails and is not retried. The emulator tests pass, so this may only show on a slower phone. Check the result of the focus request and retry once after layout, and keep the existing chained-add tests green.
+
+### C4. Small layout fixes from the Gemini review
+
+- Tap ripples on `PickerToggle` and `MedicationPickerTile` in `MedicationTapToAddSection.kt` are drawn as rectangles outside the rounded corners: clip to the shape before `clickable`, or use `Surface(onClick = ...)`.
+- `FlowRow` with `Arrangement.SpaceBetween` in `MedicationCard.kt` (actions row) and `MedsTab.kt` (active header) puts a wrapped single item on the start edge; the actions and the Prescribe button should stay on the end side when they wrap.
+- `resultsRequester.bringIntoView(Rect(0f, 0f, 1f, firstRowPx))` uses a physical left coordinate: check it in a right-to-left layout.
+- `MedicationSheet.kt` applies `imePadding()` inside a `ModalBottomSheet`: confirm on the emulator that the keyboard does not leave extra empty space below Save (the 360dp keyboard test passes, so this may be fine).
+- One shared constant for the disabled opacity 0.38 (`DISABLED_CONTENT_ALPHA` in `MedicationCard.kt` and `DISABLED_TILE_ALPHA` in `MedicationTapToAddSection.kt`).
 
 ### D. Final pass
 
