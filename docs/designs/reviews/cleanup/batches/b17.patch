@@ -1,0 +1,382 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/storage/SaveVisitCommand.kt b/app/src/main/java/com/sherifradwan/ancnative/storage/SaveVisitCommand.kt
+new file mode 100644
+index 0000000..ca5cb9e
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/storage/SaveVisitCommand.kt
+@@ -0,0 +1,230 @@
++package com.sherifradwan.ancnative.storage
++
++import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.model.DemoVisit
++import com.sherifradwan.ancnative.model.buildVisitFindings
++import com.sherifradwan.ancnative.model.isPlausibleBloodPressure
++import com.sherifradwan.ancnative.model.isPlausibleWeightKg
++import com.sherifradwan.ancnative.model.parseBloodPressure
++import com.sherifradwan.ancnative.model.parseCanonicalIsoDateOrNull
++import com.sherifradwan.ancnative.model.parseVisitFindings
++import com.sherifradwan.ancnative.model.parseWeightKg
++import com.sherifradwan.ancnative.state.AncState
++import com.sherifradwan.ancnative.state.DraftError
++import java.nio.ByteBuffer
++import java.nio.charset.StandardCharsets
++import java.security.MessageDigest
++import java.time.LocalDate
++
++data class SaveVisitCommand(
++    val operationUuid: String,
++    val editorSessionId: String,
++    val patientId: String,
++    val visitId: String,
++    val expectedRevision: Int?,
++    val date: String,
++    val bloodPressure: String?,
++    val weight: String?,
++    val findings: String?,
++    val notes: String?,
++    val linkedUltrasoundId: String? = null,
++    val fingerprint: String,
++) {
++    companion object {
++        fun prepare(
++            state: AncState,
++            operationUuid: String,
++            newVisitId: String,
++            today: LocalDate = LocalDate.now(),
++        ): SavePreparation {
++            val draft = state.draft ?: return SavePreparation.Rejected(setOf(DraftError.SAVE_FAILED))
++            val date = draft.values.date.trim()
++            val parsedDate = parseCanonicalIsoDateOrNull(date)
++
++            val sysTrimmed = draft.values.systolic.trim()
++            val diaTrimmed = draft.values.diastolic.trim()
++            val isPartialBp = (sysTrimmed.isNotEmpty() && diaTrimmed.isEmpty()) ||
++                (sysTrimmed.isEmpty() && diaTrimmed.isNotEmpty())
++
++            val bloodPressureRaw = when {
++                isPartialBp -> "INVALID_PARTIAL_BP"
++                sysTrimmed.isNotEmpty() && diaTrimmed.isNotEmpty() -> "$sysTrimmed/$diaTrimmed"
++                else -> draft.values.bloodPressure.trim()
++            }
++
++            val hasStructuredFindings = draft.values.fundalHeight.isNotBlank() ||
++                draft.values.fetalHeartRate.isNotBlank() ||
++                draft.values.oedema.isNotBlank() ||
++                draft.values.fetalMovements.isNotBlank() ||
++                draft.values.urineProtein.isNotBlank()
++
++            val findingsRaw = if (hasStructuredFindings) {
++                val parsed = parseVisitFindings(draft.values.findings)
++                buildVisitFindings(
++                    fundalHeight = draft.values.fundalHeight,
++                    fetalHeartRate = draft.values.fetalHeartRate,
++                    oedema = draft.values.oedema,
++                    fetalMovements = draft.values.fetalMovements,
++                    urineProtein = draft.values.urineProtein,
++                    additionalFindings = parsed.additionalFindings,
++                )
++            } else {
++                draft.values.findings
++            }
++
++            val errors = buildSet {
++                when {
++                    date.isEmpty() -> add(DraftError.DATE_REQUIRED)
++                    parsedDate == null -> add(DraftError.INVALID_DATE)
++                    parsedDate.isAfter(today) -> add(DraftError.DATE_IN_FUTURE)
++                }
++                val bloodPressure = bloodPressureRaw.normalized()
++                if (bloodPressure == "INVALID_PARTIAL_BP" ||
++                    (bloodPressure != null && parseBloodPressure(bloodPressure)?.let(::isPlausibleBloodPressure) != true)
++                ) {
++                    add(DraftError.BLOOD_PRESSURE_INVALID)
++                }
++                val weight = draft.values.weight.normalized()
++                if (weight != null && parseWeightKg(weight)?.let(::isPlausibleWeightKg) != true) {
++                    add(DraftError.WEIGHT_INVALID)
++                }
++            }
++            if (errors.isNotEmpty()) return SavePreparation.Rejected(errors)
++
++            val patient = state.patient(draft.patientId)
++                ?: return SavePreparation.Rejected(setOf(DraftError.SAVE_FAILED))
++            val existing = draft.visitId?.let { id -> patient.visits.firstOrNull { it.id == id } }
++            if (draft.visitId != null && (existing == null || existing.revision != draft.baseRevision?.toLong())) {
++                return SavePreparation.Rejected(setOf(DraftError.STALE_REVISION))
++            }
++
++            val visitId = existing?.id ?: newVisitId
++            val command = SaveVisitCommand(
++                operationUuid = operationUuid,
++                editorSessionId = draft.editorSessionId,
++                patientId = draft.patientId,
++                visitId = visitId,
++                expectedRevision = draft.baseRevision,
++                date = date,
++                bloodPressure = bloodPressureRaw.normalized(),
++                weight = draft.values.weight.normalized(),
++                findings = findingsRaw.normalized(),
++                notes = draft.values.notes.normalized(),
++                linkedUltrasoundId = draft.values.linkedUltrasoundId.normalized(),
++                fingerprint = "",
++            )
++            return SavePreparation.Ready(
++                command.copy(fingerprint = command.canonicalFingerprint()),
++            )
++        }
++    }
++}
++
++internal fun SaveVisitCommand.canonicalFingerprint(): String = canonicalFingerprint(
++    listOf(
++        operationUuid,
++        patientId,
++        visitId,
++        expectedRevision?.toString(),
++        date.trim(),
++        bloodPressure.normalized(),
++        weight.normalized(),
++        findings.normalized(),
++        notes.normalized(),
++        linkedUltrasoundId.normalized(),
++    ),
++)
++
++internal fun canonicalFingerprint(fields: List<String?>): String {
++    val digest = MessageDigest.getInstance("SHA-256")
++    fields.forEach { field ->
++        if (field == null) {
++            digest.update(ByteBuffer.allocate(4).putInt(-1).array())
++        } else {
++            val bytes = field.toByteArray(StandardCharsets.UTF_8)
++            digest.update(ByteBuffer.allocate(4).putInt(bytes.size).array())
++            digest.update(bytes)
++        }
++    }
++    return digest.digest().toHexLower()
++}
++
++internal fun String?.normalized(): String? = this?.trim()?.takeIf(String::isNotEmpty)
++
++sealed interface SavePreparation {
++    data class Ready(val command: SaveVisitCommand) : SavePreparation
++    data class Rejected(val errors: Set<DraftError>) : SavePreparation
++}
++
++data class RecordSnapshot(val patients: List<DemoPatient>)
++
++data class SaveReceipt(
++    val operationUuid: String,
++    val patientId: String,
++    val visitId: String,
++    val committedRevision: Int,
++    val fingerprint: String,
++)
++
++enum class SaveFailure {
++    INVALID_COMMAND,
++    PATIENT_NOT_FOUND,
++    VISIT_CONFLICT,
++    STALE_REVISION,
++    CROSS_PATIENT_WRITE,
++    DUPLICATE_OPERATION_MISMATCH,
++    REVISION_EXHAUSTED,
++    CONFIRMED_NOT_SAVED,
++    STORAGE_LOCKED,
++    PATIENT_ARCHIVED,
++}
++
++sealed interface SaveOutcome {
++    data class Committed(val snapshot: RecordSnapshot, val receipt: SaveReceipt) : SaveOutcome
++    data class Rejected(val failure: SaveFailure) : SaveOutcome
++    data object Ambiguous : SaveOutcome
++    data object Obsolete : SaveOutcome
++}
++
++internal interface SaveGateway {
++    suspend fun save(command: SaveVisitCommand): SaveOutcome
++    suspend fun reconcile(command: SaveVisitCommand): SaveOutcome
++}
++
++internal class SaveCoordinator(
++    private val gateway: SaveGateway,
++    private val epochIsCurrent: (Long) -> Boolean,
++) {
++    suspend fun execute(
++        command: SaveVisitCommand,
++        sessionEpoch: Long,
++        onReconciliation: suspend () -> Unit = {},
++    ): SaveOutcome {
++        if (!epochIsCurrent(sessionEpoch)) return SaveOutcome.Obsolete
++        val first = gateway.save(command)
++        if (!epochIsCurrent(sessionEpoch)) return SaveOutcome.Obsolete
++        if (first !is SaveOutcome.Ambiguous) return first
++        onReconciliation()
++        if (!epochIsCurrent(sessionEpoch)) return SaveOutcome.Obsolete
++        val reconciled = gateway.reconcile(command)
++        return if (epochIsCurrent(sessionEpoch)) reconciled else SaveOutcome.Obsolete
++    }
++}
++
++internal fun DemoPatient.withCommittedVisit(command: SaveVisitCommand, revision: Int): DemoPatient {
++    val visit = DemoVisit(
++        id = command.visitId,
++        patientId = command.patientId,
++        date = command.date,
++        bloodPressure = command.bloodPressure,
++        weight = command.weight,
++        findings = command.findings,
++        notes = command.notes,
++        linkedUltrasoundId = command.linkedUltrasoundId,
++        revision = revision,
++        isSyntheticEdit = false,
++    )
++    return copy(
++        visits = visits.filterNot { it.id == visit.id }.plus(visit).sortedByDescending { it.date },
++    )
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/storage/ScanPhotoRef.kt b/app/src/main/java/com/sherifradwan/ancnative/storage/ScanPhotoRef.kt
+new file mode 100644
+index 0000000..195b553
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/storage/ScanPhotoRef.kt
+@@ -0,0 +1,13 @@
++package com.sherifradwan.ancnative.storage
++
++const val SCAN_PHOTO_REF_PREFIX = "vault:"
++
++private val SCAN_PHOTO_FILE_NAME = Regex("[A-Za-z0-9_-]+\\.webp")
++
++fun scanPhotoRef(fileName: String): String = SCAN_PHOTO_REF_PREFIX + fileName
++
++fun isScanPhotoRef(value: String): Boolean = value.startsWith(SCAN_PHOTO_REF_PREFIX)
++
++/** The vault file name of a scan photo ref, or null for anything that is not a well-formed ref. */
++fun scanPhotoFileName(value: String): String? =
++    if (isScanPhotoRef(value)) value.removePrefix(SCAN_PHOTO_REF_PREFIX).takeIf { SCAN_PHOTO_FILE_NAME.matches(it) } else null
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/storage/UltrasoundDeleteAdapter.kt b/app/src/main/java/com/sherifradwan/ancnative/storage/UltrasoundDeleteAdapter.kt
+new file mode 100644
+index 0000000..56908ef
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/storage/UltrasoundDeleteAdapter.kt
+@@ -0,0 +1,79 @@
++package com.sherifradwan.ancnative.storage
++
++import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.model.DemoUltrasoundScan
++import com.sherifradwan.ancnative.state.SavedNotice
++import com.sherifradwan.ancnative.state.WorkspaceSection
++
++object UltrasoundDeleteAdapter : DeletableRecordAdapter<DemoUltrasoundScan> {
++    override val type: DeletableType = DeletableType.ULTRASOUND
++    override val fingerprintTag: String = "US"
++    override val deleteReceiptKind: String = "ULTRASOUND_DELETE"
++    override val restoreReceiptKind: String = "ULTRASOUND_RESTORE"
++    override val section: WorkspaceSection = WorkspaceSection.ULTRASOUND
++    override val deletedNotice: SavedNotice = SavedNotice.ULTRASOUND_DELETED
++    override val restoredNotice: SavedNotice = SavedNotice.ULTRASOUND_RESTORED
++    override val saveUndoneNotice: SavedNotice = SavedNotice.ULTRASOUND_SAVE_UNDONE
++
++    override fun label(record: DemoUltrasoundScan): String = record.date
++
++    override fun canonical(record: DemoUltrasoundScan): String =
++        "${record.patientId}|${record.id}|${record.date}|${record.gestationalAgeWeeks}|${record.gestationalAgeDays}|${record.fetalNumber}|${record.presentation}|${record.placentalSite}|${record.amnioticFluid}|${record.fetalHeartRate}|${record.biometryBpd}|${record.biometryHc}|${record.biometryAc}|${record.biometryFl}|${record.estimatedFetalWeight}|${record.impression}|${record.linkedVisitId}|${ImageUriCodec.serialize(record.imageUris)}"
++
++    override suspend fun load(dao: RecordsDao, id: String): DemoUltrasoundScan? =
++        dao.ultrasoundScan(id)?.let {
++            DemoUltrasoundScan(
++                id = it.id,
++                patientId = it.patientId,
++                date = it.date,
++                gestationalAgeWeeks = it.gaWeeks,
++                gestationalAgeDays = it.gaDays,
++                fetalNumber = it.fetalNumber,
++                presentation = it.presentation,
++                placentalSite = it.placentalSite,
++                amnioticFluid = it.amnioticFluid,
++                fetalHeartRate = it.fetalHeartRate,
++                biometryBpd = it.biometryBpd,
++                biometryHc = it.biometryHc,
++                biometryAc = it.biometryAc,
++                biometryFl = it.biometryFl,
++                estimatedFetalWeight = it.estimatedFetalWeight,
++                impression = it.impression,
++                linkedVisitId = it.linkedVisitId,
++                imageUris = ImageUriCodec.deserialize(it.imageUris),
++                revision = it.revision,
++            )
++        }
++
++    override suspend fun deleteRow(dao: RecordsDao, id: String, patientId: String, expectedRevision: Long): Int =
++        dao.deleteUltrasoundScan(id, patientId, expectedRevision)
++
++    override suspend fun insertRow(dao: RecordsDao, record: DemoUltrasoundScan, revision: Long) {
++        dao.insertUltrasoundScan(
++            UltrasoundScanEntity(
++                id = record.id,
++                patientId = record.patientId,
++                date = record.date,
++                gaWeeks = record.gestationalAgeWeeks,
++                gaDays = record.gestationalAgeDays,
++                fetalNumber = record.fetalNumber,
++                presentation = record.presentation,
++                placentalSite = record.placentalSite,
++                amnioticFluid = record.amnioticFluid,
++                fetalHeartRate = record.fetalHeartRate,
++                biometryBpd = record.biometryBpd,
++                biometryHc = record.biometryHc,
++                biometryAc = record.biometryAc,
++                biometryFl = record.biometryFl,
++                estimatedFetalWeight = record.estimatedFetalWeight,
++                impression = record.impression,
++                linkedVisitId = record.linkedVisitId,
++                imageUris = ImageUriCodec.serialize(record.imageUris),
++                revision = revision,
++            ),
++        )
++    }
++
++    override fun record(patient: DemoPatient, id: String): DemoUltrasoundScan? =
++        patient.ultrasoundScans.firstOrNull { it.id == id }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/storage/VaultAutoAction.kt b/app/src/main/java/com/sherifradwan/ancnative/storage/VaultAutoAction.kt
+new file mode 100644
+index 0000000..276403c
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/storage/VaultAutoAction.kt
+@@ -0,0 +1,9 @@
++package com.sherifradwan.ancnative.storage
++
++internal enum class VaultAutoAction { BEGIN_UNLOCK, BEGIN_INITIALIZATION, NONE }
++
++internal fun vaultAutoAction(state: VaultState, appUnlocked: Boolean): VaultAutoAction = when (state) {
++    VaultState.Locked -> if (appUnlocked) VaultAutoAction.BEGIN_UNLOCK else VaultAutoAction.NONE
++    VaultState.Uninitialized -> VaultAutoAction.BEGIN_INITIALIZATION
++    else -> VaultAutoAction.NONE
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/storage/VaultCleanupRule.kt b/app/src/main/java/com/sherifradwan/ancnative/storage/VaultCleanupRule.kt
+new file mode 100644
+index 0000000..10daf07
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/storage/VaultCleanupRule.kt
+@@ -0,0 +1,21 @@
++package com.sherifradwan.ancnative.storage
++
++import java.io.File
++
++internal fun hasVaultDatabase(namespaceRoot: File): Boolean =
++    namespaceRoot.listFiles().orEmpty().any { child ->
++        child.isDirectory && child.name.startsWith("vault-") && File(child, "records.db").isFile
++    }
++
++internal fun cleanUpAbandonedInitialization(
++    namespaceRoot: File,
++    activePointerFile: File,
++    cleanupUnpublished: () -> Unit,
++    deleteOrphanAliases: () -> Unit,
++) {
++    if (activePointerFile.exists()) return
++    cleanupUnpublished()
++    if (!hasVaultDatabase(namespaceRoot)) {
++        deleteOrphanAliases()
++    }
++}

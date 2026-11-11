@@ -1,0 +1,666 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/MainActivity.kt b/app/src/main/java/com/sherifradwan/ancnative/MainActivity.kt
+new file mode 100644
+index 0000000..83e34db
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/MainActivity.kt
+@@ -0,0 +1,115 @@
++package com.sherifradwan.ancnative
++
++import android.os.Bundle
++import androidx.activity.ComponentActivity
++import androidx.activity.SystemBarStyle
++import androidx.activity.compose.setContent
++import androidx.activity.enableEdgeToEdge
++import androidx.compose.foundation.isSystemInDarkTheme
++import androidx.compose.runtime.DisposableEffect
++import androidx.compose.runtime.LaunchedEffect
++import androidx.lifecycle.ViewModelProvider
++import androidx.lifecycle.compose.collectAsStateWithLifecycle
++import com.sherifradwan.ancnative.security.AppThemeMode
++import com.sherifradwan.ancnative.security.SecuritySettingsRepository
++import com.sherifradwan.ancnative.state.AncViewModel
++import com.sherifradwan.ancnative.storage.VaultState
++import com.sherifradwan.ancnative.storage.VaultAutoAction
++import com.sherifradwan.ancnative.storage.vaultAutoAction
++import com.sherifradwan.ancnative.ui.AncApp
++import com.sherifradwan.ancnative.ui.AncTheme
++import java.util.Locale
++
++class MainActivity : ComponentActivity() {
++    private lateinit var viewModel: AncViewModel
++    private val securityRepo by lazy { SecuritySettingsRepository.getInstance(this) }
++
++    override fun attachBaseContext(newBase: android.content.Context) {
++        val locale = Locale.ENGLISH
++        Locale.setDefault(locale)
++        val config = android.content.res.Configuration(newBase.resources.configuration)
++        config.setLocale(locale)
++        config.setLayoutDirection(locale)
++        val context = newBase.createConfigurationContext(config)
++        super.attachBaseContext(context)
++    }
++
++    override fun onCreate(savedInstanceState: Bundle?) {
++        super.onCreate(savedInstanceState)
++        viewModel = ViewModelProvider(this)[AncViewModel::class.java]
++        viewModel.onForegrounded()
++        enableEdgeToEdge()
++        setContent {
++            val securitySettings = securityRepo.settings.collectAsStateWithLifecycle().value
++            val isDarkTheme = when (securitySettings.themeMode) {
++                AppThemeMode.SYSTEM -> isSystemInDarkTheme()
++                AppThemeMode.LIGHT -> false
++                AppThemeMode.DARK -> true
++            }
++            DisposableEffect(isDarkTheme) {
++                enableEdgeToEdge(
++                    statusBarStyle = if (isDarkTheme) {
++                        SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
++                    } else {
++                        SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
++                    },
++                    navigationBarStyle = if (isDarkTheme) {
++                        SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
++                    } else {
++                        SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
++                    },
++                )
++                onDispose {}
++            }
++            AncTheme(darkTheme = isDarkTheme, dynamicColor = false) {
++                val state = viewModel.state.collectAsStateWithLifecycle().value
++                val appUnlocked = !securitySettings.isAppLocked && !securitySettings.needsPinSetup
++                val authenticating = state.vaultState as? VaultState.Authenticating
++                LaunchedEffect(authenticating?.request?.id) {
++                    authenticating?.request?.let { request ->
++                        viewModel.completeAuthentication(request)
++                    }
++                }
++                LaunchedEffect(securitySettings.isAppLocked) {
++                    if (securitySettings.isAppLocked) viewModel.lockVault()
++                }
++                LaunchedEffect(state.vaultState, appUnlocked) {
++                    when (vaultAutoAction(state.vaultState, appUnlocked)) {
++                        VaultAutoAction.BEGIN_UNLOCK -> viewModel.beginUnlock()
++                        VaultAutoAction.BEGIN_INITIALIZATION -> viewModel.beginInitialization()
++                        VaultAutoAction.NONE -> Unit
++                    }
++                }
++                AncApp(
++                    state = state,
++                    onEvent = viewModel::dispatch,
++                    onStartVisit = viewModel::startVisit,
++                    onSaveVisit = viewModel::saveVisit,
++                    onInitialize = viewModel::beginInitialization,
++                    onUnlock = viewModel::beginUnlock,
++                    onLock = {
++                        securityRepo.lockApp()
++                    },
++                    onRetryStorage = viewModel::retryStorageInspection,
++                    securityRepo = securityRepo,
++                    onExportBackup = viewModel::exportBackup,
++                    onRestoreBackup = viewModel::restoreBackup,
++                )
++            }
++        }
++    }
++
++    override fun onStart() {
++        super.onStart()
++        if (com.sherifradwan.ancnative.security.shouldLockOnReturn(securityRepo.backgroundTimeMs(), System.currentTimeMillis())) {
++            securityRepo.lockApp()
++        }
++        viewModel.onForegrounded()
++    }
++
++    override fun onStop() {
++        super.onStop()
++        securityRepo.recordBackgroundTime(System.currentTimeMillis())
++        viewModel.onBackgrounded(authenticationOverlayActive = true)
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/model/DatingSummary.kt b/app/src/main/java/com/sherifradwan/ancnative/model/DatingSummary.kt
+new file mode 100644
+index 0000000..798b68e
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/model/DatingSummary.kt
+@@ -0,0 +1,77 @@
++package com.sherifradwan.ancnative.model
++
++import java.time.DateTimeException
++import java.time.LocalDate
++import java.time.temporal.ChronoUnit
++import kotlin.math.abs
++
++enum class EddLabel { PLAIN, CONFIRMED }
++
++sealed interface DatingOrigin {
++    data class Lmp(val date: String) : DatingOrigin
++    data class Transfer(val date: String, val embryoAgeDays: Int?) : DatingOrigin
++    data object None : DatingOrigin
++}
++
++data class DatingSummary(
++    val origin: DatingOrigin,
++    val edd: LocalDate?,
++    val eddLabel: EddLabel,
++    val methodCode: String?,
++    val discordance: RedatingAdvice?,
++)
++
++fun datingSummary(dating: DemoPatientDating?, earliestScanDate: LocalDate?, today: LocalDate): DatingSummary {
++    if (dating == null) return DatingSummary(DatingOrigin.None, null, EddLabel.PLAIN, null, null)
++    val method = canonicalDatingMethod(dating.datingMethod)
++    return DatingSummary(
++        origin = originOf(dating, method),
++        edd = derivedOrNull { GestationalAgeEngine.calculateEstimatedDueDate(dating) },
++        eddLabel = eddLabelOf(dating),
++        methodCode = method,
++        discordance = derivedOrNull { discordanceOf(dating, method, earliestScanDate ?: today) },
++    )
++}
++
++private fun originOf(dating: DemoPatientDating, method: String?): DatingOrigin = when {
++    method == IVF_TRANSFER_CODE ->
++        dating.transferDate?.takeIf { it.isNotBlank() }
++            ?.let { DatingOrigin.Transfer(it, dating.embryoAgeDays) }
++            ?: DatingOrigin.None
++    else -> dating.lmpDate?.takeIf { it.isNotBlank() }?.let { DatingOrigin.Lmp(it) } ?: DatingOrigin.None
++}
++
++private fun eddLabelOf(dating: DemoPatientDating): EddLabel {
++    val onlyAgreed = dating.lmpDate.isNullOrBlank() &&
++        dating.transferDate.isNullOrBlank() &&
++        dating.ultrasoundEdd.isNullOrBlank() &&
++        !dating.agreedEdd.isNullOrBlank()
++    return if (onlyAgreed) EddLabel.CONFIRMED else EddLabel.PLAIN
++}
++
++/** Date arithmetic on parseable but extreme dates overflows; such a derived value is treated as absent. */
++internal inline fun <T> derivedOrNull(block: () -> T?): T? =
++    try {
++        block()
++    } catch (_: DateTimeException) {
++        null
++    } catch (_: ArithmeticException) {
++        null
++    }
++
++private fun discordanceOf(dating: DemoPatientDating, method: String?, anchor: LocalDate): RedatingAdvice? {
++    if (method == IVF_TRANSFER_CODE || method == ULTRASOUND_CODE) return null
++    val scanEdd = parseIsoDateOrNull(dating.ultrasoundEdd) ?: return null
++    if (abs(ChronoUnit.DAYS.between(anchor, scanEdd)) > MAX_DATING_SPAN_DAYS) return null
++    if (scanEdd == parseIsoDateOrNull(dating.agreedEdd)) return null
++    val lmp = parseIsoDateOrNull(dating.lmpDate) ?: return null
++    if (abs(ChronoUnit.DAYS.between(lmp, anchor)) > MAX_DATING_SPAN_DAYS) return null
++    val datingGaDays = ChronoUnit.DAYS.between(lmp, anchor)
++    val scanGaDays = FULL_TERM_DAYS - ChronoUnit.DAYS.between(anchor, scanEdd)
++    return redatingAdvice(datingGaDays, scanGaDays)
++}
++
++/** An LMP or scan EDD further than this from the anchor is outside what the engine models and gives no discordance. */
++private const val MAX_DATING_SPAN_DAYS = 2 * FULL_TERM_DAYS
++private const val IVF_TRANSFER_CODE = "IVF_TRANSFER"
++private const val ULTRASOUND_CODE = "Ultrasound"
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/model/DatingText.kt b/app/src/main/java/com/sherifradwan/ancnative/model/DatingText.kt
+new file mode 100644
+index 0000000..fb80e00
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/model/DatingText.kt
+@@ -0,0 +1,61 @@
++package com.sherifradwan.ancnative.model
++
++import java.time.LocalDate
++import kotlin.math.abs
++
++private const val NBSP = ' '
++
++/** One labelled line of the dating block. A null [value] means "not recorded". */
++data class DatingTextRow(val label: String, val value: String?, val isEdd: Boolean = false)
++
++/**
++ * Anchor for the dating discordance check: the earliest scan on or after the LMP and not after [today].
++ * Malformed, pre-LMP and future scan dates are ignored; null when none is left (the check then uses today).
++ */
++internal fun earliestScanDate(patient: DemoPatient, today: LocalDate): LocalDate? {
++    val lmp = parseIsoDateOrNull(patient.dating?.lmpDate)
++    return patient.ultrasoundScans
++        .mapNotNull { parseIsoDateOrNull(it.date) }
++        .filter { (lmp == null || !it.isBefore(lmp)) && !it.isAfter(today) }
++        .minOrNull()
++}
++
++/** The dating summary of a patient as of [today]; every screen builds it through here. */
++fun datingSummaryOf(patient: DemoPatient, today: LocalDate): DatingSummary =
++    datingSummary(patient.dating, earliestScanDate(patient, today), today)
++
++/** Short method label for a stored dating code; unknown codes are shown as typed. */
++fun datingMethodLabel(code: String?): String? = when (val canonical = canonicalDatingMethod(code)) {
++    "LMP" -> "LMP"
++    "Ultrasound" -> "by ultrasound"
++    "IVF_TRANSFER" -> "ET"
++    "Clinical" -> "clinical"
++    else -> canonical
++}
++
++/** Rows in display order: LMP or ET, EDD, Method. Dates are dd/mm/yyyy. */
++fun datingTextRows(summary: DatingSummary): List<DatingTextRow> = buildList {
++    when (val origin = summary.origin) {
++        is DatingOrigin.Lmp -> add(DatingTextRow("LMP", formatDmy(origin.date)))
++        is DatingOrigin.Transfer -> add(
++            DatingTextRow(
++                "ET",
++                listOfNotNull(formatDmy(origin.date), origin.embryoAgeDays?.let { "D$it" })
++                    .joinToString("$NBSP·$NBSP"),
++            ),
++        )
++        DatingOrigin.None -> Unit
++    }
++    val eddLabel = if (summary.eddLabel == EddLabel.CONFIRMED) "Confirmed EDD" else "EDD"
++    add(DatingTextRow(eddLabel, summary.edd?.let(::formatDmy), isEdd = true))
++    datingMethodLabel(summary.methodCode)?.let { add(DatingTextRow("Method", it)) }
++}
++
++/** "LMP EDD dd/mm/yyyy · US EDD dd/mm/yyyy · gap 9 d" when the dating is discordant, else null. */
++fun datingDiscordanceLine(dating: DemoPatientDating?, summary: DatingSummary): String? {
++    val advice = summary.discordance ?: return null
++    val d = dating ?: return null
++    val lmpEdd = GestationalAgeEngine.dueDateForMethod(d, "LMP") ?: return null
++    val scanEdd = parseIsoDateOrNull(d.ultrasoundEdd) ?: return null
++    return "LMP EDD ${formatDmy(lmpEdd)} · US EDD ${formatDmy(scanEdd)} · gap ${abs(advice.differenceDays)} d"
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/model/DeliveryNotes.kt b/app/src/main/java/com/sherifradwan/ancnative/model/DeliveryNotes.kt
+new file mode 100644
+index 0000000..03ab344
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/model/DeliveryNotes.kt
+@@ -0,0 +1,389 @@
++package com.sherifradwan.ancnative.model
++
++internal data class DeliveryNoteSections(
++    val hospital: String?,
++    val fees: String?,
++    val plan: String?,
++    val postpartum: String?,
++)
++
++/**
++ * Splits free-text obstetric notes into the four delivery subsections.
++ *
++ * Pure function: no I/O, no state. Each line is split into segments at ';' and at a sentence end
++ * (". " before any letter, never after the abbreviations Dr/Mr/Mrs/Ms/St/No/approx/vs/e.g/i.e),
++ * and every segment is classified on its own. Consecutive segments of the same line that land in
++ * the same section are rejoined with their original separator, so an unsplit line reads as typed,
++ * and different source lines are joined with a newline.
++ *
++ * A non-empty segment is never dropped: it always lands in exactly one home section (plan is the
++ * fallback), and only a known label prefix is stripped before ':' and only for the fees / postpartum
++ * boxes; every other segment is kept verbatim. A "<Name> Hospital" phrase or a "Hospital: <name>"
++ * value is additionally listed in [DeliveryNoteSections.hospital] while its source line stays in
++ * its home section. A "<Name> Hospital" phrase after a previous-delivery marker never contributes a
++ * hospital, but a labelled "Hospital:" value always does (Q13).
++ *
++ * Strict rule (D4): a line that starts with one of the four exact labels [LABEL_HOSPITAL],
++ * [LABEL_FEES], [LABEL_PLAN] or [LABEL_POSTPARTUM], case-sensitive, then ':' and a non-blank value,
++ * goes wholly into that box. Such a line is not split at ';' or at a sentence end, is not classified
++ * by the heuristic, and adds no derived hospital name. Every other line is parsed as before.
++ */
++internal fun parseDeliveryNotes(notes: String?): DeliveryNoteSections {
++    val lines = notes?.lines()?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty()
++    if (lines.isEmpty()) return DeliveryNoteSections(null, null, null, null)
++
++    val hospitals = LinkedHashSet<String>()
++    val fees = ArrayList<String>()
++    val plan = ArrayList<String>()
++    val postpartum = ArrayList<String>()
++
++    for (line in lines) {
++        val composed = COMPOSED_LINE.matchEntire(line)
++        if (composed != null) {
++            val value = composed.groupValues[2].trim()
++            when (composed.groupValues[1]) {
++                LABEL_HOSPITAL -> hospitals += value
++                LABEL_FEES -> fees += value
++                LABEL_PLAN -> plan += value
++                LABEL_POSTPARTUM -> postpartum += value
++                else -> error("unreachable: COMPOSED_LINE has four labels")
++            }
++            continue
++        }
++        val segments = splitSegments(line)
++        val placements = segments.map { place(it.text) }
++        segments.forEach { segment -> hospitals += hospitalNames(segment.text) }
++
++        var start = 0
++        while (start < segments.size) {
++            var end = start
++            while (end + 1 < segments.size && placements[end + 1].home == placements[start].home) end++
++            val text = buildString {
++                append(placements[start].text)
++                for (k in start + 1..end) {
++                    append(segments[k].separatorBefore)
++                    append(placements[k].text)
++                }
++            }
++            listFor(placements[start].home, fees, plan, postpartum) += text
++            start = end + 1
++        }
++    }
++
++    return DeliveryNoteSections(
++        hospital = hospitals.joinToString("\n").ifBlank { null },
++        fees = fees.joinToString("\n").ifBlank { null },
++        plan = plan.joinToString("\n").ifBlank { null },
++        postpartum = postpartum.joinToString("\n").ifBlank { null },
++    )
++}
++
++// ---------------------------------------------------------------- compose rule (section 5.3)
++
++internal const val LABEL_HOSPITAL = "Agreed Delivery Hospital"
++internal const val LABEL_FEES = "Agreed Delivery Fees"
++internal const val LABEL_PLAN = "Delivery Plan"
++internal const val LABEL_POSTPARTUM = "Postpartum Note"
++
++/**
++ * A line that opens with one of the four exact labels, then ':' and a non-blank value. DOT_MATCHES_ALL
++ * lets '.' match U+2028 and U+0085, which [lines] does not split on.
++ */
++private val COMPOSED_LINE = Regex(
++    "^(Agreed Delivery Hospital|Agreed Delivery Fees|Delivery Plan|Postpartum Note):\\s*(\\S.*)$",
++    RegexOption.DOT_MATCHES_ALL,
++)
++
++/**
++ * Builds the stored notes from the four boxes: one "<label>: <value>" line per non-blank line of each
++ * box, in the order hospital, fees, plan, postpartum, joined with a newline. Leading and trailing
++ * whitespace is trimmed, empty lines are dropped, and duplicate hospital lines are collapsed.
++ */
++internal fun composeDeliveryNotes(s: DeliveryNoteSections): String =
++    listOf(
++        LABEL_HOSPITAL to s.hospital,
++        LABEL_FEES to s.fees,
++        LABEL_PLAN to s.plan,
++        LABEL_POSTPARTUM to s.postpartum,
++    )
++        .flatMap { (label, value) ->
++            value.orEmpty().lines().map { it.trim() }.filter { it.isNotEmpty() }
++                .let { if (label == LABEL_HOSPITAL) it.distinct() else it }
++                .map { "$label: $it" }
++        }
++        .joinToString("\n")
++
++/** True when [notes] is null, blank, or exactly the text [composeDeliveryNotes] writes back for its parse. */
++internal fun isComposedDeliveryNotes(notes: String?): Boolean =
++    notes.isNullOrBlank() || composeDeliveryNotes(parseDeliveryNotes(notes)) == notes
++
++// ---------------------------------------------------------------- segmentation (Q1)
++
++/** Coding unit after a source line has been split; [separatorBefore] is the raw text that preceded it. */
++private data class Segment(val text: String, val separatorBefore: String)
++
++/** A trimmed slice of the source line, kept with its bounds so separators survive verbatim. */
++private data class Piece(val text: String, val start: Int, val end: Int)
++
++private fun splitSegments(line: String): List<Segment> {
++    val pieces = ArrayList<Piece>()
++    var start = 0
++    var i = 0
++    while (i < line.length) {
++        val c = line[i]
++        when {
++            c == ';' -> {
++                pieceOf(line, start, i)?.let { pieces += it }
++                start = i + 1
++            }
++            c == '.' && isSentenceEnd(line, i) -> {
++                // the '.' belongs to the preceding segment, so a rejoin reproduces the text exactly
++                pieceOf(line, start, i + 1)?.let { pieces += it }
++                start = i + 1
++            }
++        }
++        i++
++    }
++    pieceOf(line, start, line.length)?.let { pieces += it }
++
++    return pieces.mapIndexed { index, piece ->
++        val separator = if (index == 0) "" else line.substring(pieces[index - 1].end, piece.start)
++        Segment(piece.text, separator)
++    }
++}
++
++private fun pieceOf(line: String, from: Int, to: Int): Piece? {
++    var start = from
++    var end = to
++    while (start < end && line[start].isWhitespace()) start++
++    while (end > start && line[end - 1].isWhitespace()) end--
++    return if (start < end) Piece(line.substring(start, end), start, end) else null
++}
++
++/** True at a '.' that closes a sentence: it is followed by a space, a letter, and no abbreviation. */
++private fun isSentenceEnd(line: String, dot: Int): Boolean {
++    var next = dot + 1
++    if (next >= line.length || line[next] != ' ') return false
++    while (next < line.length && line[next] == ' ') next++
++    if (next >= line.length || !line[next].isLetter()) return false
++    return !isAbbreviation(line, dot)
++}
++
++/** "Dr." / "e.g." style abbreviations never end a sentence, so they never split a line. */
++private fun isAbbreviation(line: String, dot: Int): Boolean {
++    val token = Regex("[\\p{L}.]+$").find(line.substring(0, dot))?.value?.lowercase() ?: return false
++    return token in ABBREVIATIONS
++}
++
++private val ABBREVIATIONS =
++    setOf("dr", "mr", "mrs", "ms", "st", "no", "approx", "vs", "e.g", "i.e")
++
++// ---------------------------------------------------------------- classification (round 1 + Q3)
++
++private enum class Label { HOSPITAL, PLAN, POSTPARTUM, FEE }
++
++private enum class Home { FEES, PLAN, POSTPARTUM }
++
++private data class Placement(val home: Home, val text: String)
++
++private fun place(text: String): Placement {
++    val label = knownLabel(text)
++    val unconfirmedFee = UNCONFIRMED_FEE.containsMatchIn(text)
++    return when {
++        label == Label.POSTPARTUM -> Placement(Home.POSTPARTUM, stripLabel(text))
++        label == Label.FEE -> if (unconfirmedFee) Placement(Home.PLAN, text) else Placement(Home.FEES, stripLabel(text))
++        label != null -> Placement(Home.PLAN, text)
++        HISTORY_MARKER.containsMatchIn(text) -> Placement(Home.PLAN, text)
++        // Q3: "delivered"/"discharged" describe this pregnancy only without a history or a plan marker
++        CURRENT_DELIVERY.containsMatchIn(text) && !PLAN_MARKER.containsMatchIn(text) ->
++            Placement(Home.POSTPARTUM, text)
++        FEE_KEYWORD.containsMatchIn(text) && !unconfirmedFee -> Placement(Home.FEES, text)
++        else -> Placement(Home.PLAN, text)
++    }
++}
++
++private fun listFor(home: Home, fees: MutableList<String>, plan: MutableList<String>, postpartum: MutableList<String>) =
++    when (home) {
++        Home.FEES -> fees
++        Home.PLAN -> plan
++        Home.POSTPARTUM -> postpartum
++    }
++
++/** Only these label shapes may be stripped before ':'. Anything else (e.g. "10:30") is data. */
++private val LABEL_PATTERNS: List<Pair<Label, Regex>> = listOf(
++    Label.HOSPITAL to Regex("^hospital$", RegexOption.IGNORE_CASE),
++    Label.PLAN to Regex("^plan$", RegexOption.IGNORE_CASE),
++    Label.POSTPARTUM to Regex("^postpartum(?:\\s+note)?$", RegexOption.IGNORE_CASE),
++    Label.FEE to Regex(
++        "^(?:delivery\\s+)?fees?(?:\\s+(?:package|agreed|quoted|discussed|proposed|estimate))*$",
++        RegexOption.IGNORE_CASE,
++    ),
++)
++
++private fun knownLabel(line: String): Label? {
++    val colon = line.indexOf(':')
++    if (colon <= 0) return null
++    val prefix = line.substring(0, colon).trim()
++    return LABEL_PATTERNS.firstOrNull { it.second.matches(prefix) }?.first
++}
++
++private fun stripLabel(line: String): String {
++    val colon = line.indexOf(':')
++    if (colon < 0) return line
++    return line.substring(colon + 1).trim().ifBlank { line }
++}
++
++/** Whole-word fee vocabulary only, so "feels"/"breastfeed" are never treated as fees. */
++private val FEE_KEYWORD = Regex("\\b(fees?|egp|cost|costs|package|packages)\\b", RegexOption.IGNORE_CASE)
++
++private val UNCONFIRMED_FEE =
++    Regex("\\b(quoted|quote|estimate|estimated|proposed|proposal|discussed|undecided)\\b|\\bnot\\s+agreed\\b", RegexOption.IGNORE_CASE)
++
++/** Markers that make "delivered"/"discharged" describe an earlier pregnancy, not this one. */
++private val HISTORY_MARKER =
++    Regex("\\b(previous|prior|history|earlier|pregnancy|G\\d+P\\d+)\\b", RegexOption.IGNORE_CASE)
++
++private val CURRENT_DELIVERY = Regex("\\b(delivered|discharged)\\b", RegexOption.IGNORE_CASE)
++
++/** Q3: a planned/future note is never a current postpartum record, even when it says "delivered". */
++private val PLAN_MARKER = Regex(
++    "\\b(will|shall|plan|planned|planning|expected|expect|booked|scheduled|if|should|would|may|aim|intend|intended)\\b" +
++        "|\\bto\\s+be\\b",
++    RegexOption.IGNORE_CASE,
++)
++
++// ---------------------------------------------------------------- hospital box (Q4)
++
++private fun hospitalNames(text: String): List<String> {
++    val phrases = ArrayList<String>()
++    for (match in HOSPITAL_PHRASE.findAll(text)) {
++        val phrase = trimLeadingWords(match.groupValues[1].trim())
++        if (isPreviousDeliveryPhrase(text, match.range.first, phrase.dropped)) continue
++        if (isNamePhrase(phrase.name)) phrases += phrase.name
++    }
++    return collapseWithLabelled(labelledHospital(text), phrases).distinct()
++}
++
++/**
++ * Q13: a "previous|prior|earlier|last ... delivery word" marker, within 3 words, before the phrase.
++ * Q15(b): the delivery words LSCS/SVD/NVD are markers too ("Previous LSCS Al Salam Hospital").
++ */
++private val PAST_DELIVERY_MARKER = Regex(
++    "\\b(?:previous|prior|earlier|last)\\s+(?:\\S+\\s+){0,2}?" +
++        "(?:baby|delivery|birth|CS|LSCS|SVD|NVD|caesarean|cesarean|section|pregnancy|child)\\b",
++    RegexOption.IGNORE_CASE,
++)
++
++/** Q13: words that say the hospital belongs to this pregnancy, not to an earlier one. */
++private val CURRENT_PREGNANCY_MARKER = Regex(
++    "\\b(?:now|this\\s+pregnancy|current|currently|booked|planned|plan|will|elective|scheduled)\\b",
++    RegexOption.IGNORE_CASE,
++)
++
++/**
++ * Q13/Q15(b): an unlabelled phrase starting at [phraseStart] belongs to a previous delivery when the
++ * nearest past-delivery marker before it has no current-pregnancy marker between the two. The leading
++ * words dropped from the phrase still count as text before it, so a dropped "Last CS" is a past marker
++ * and a dropped "Elective" is a current marker.
++ */
++private fun isPreviousDeliveryPhrase(text: String, phraseStart: Int, dropped: String): Boolean {
++    val before = text.substring(0, phraseStart) + " " + dropped
++    val past = PAST_DELIVERY_MARKER.findAll(before).lastOrNull() ?: return false
++    return !CURRENT_PREGNANCY_MARKER.containsMatchIn(before.substring(past.range.last + 1))
++}
++
++/**
++ * Q11: a labelled name and a phrase from the same segment that are equal or nested keep only the
++ * longer, once. The labelled value opens its segment, so it stays first in source order.
++ */
++private fun collapseWithLabelled(labelled: String?, phrases: List<String>): List<String> {
++    if (labelled == null) return phrases
++    val nested = phrases.filter { it.contains(labelled) || labelled.contains(it) }
++    if (nested.isEmpty()) return listOf(labelled) + phrases
++    val longer = (nested + labelled).maxBy { it.length }
++    return listOf(longer) + phrases.filter { it !in nested }
++}
++
++private val HOSPITAL_LABEL = Regex("^hospital$", RegexOption.IGNORE_CASE)
++
++/** Q4(a): "Hospital: <name>", the name cut where [isValueEnd] says so; undecided values give null. */
++private fun labelledHospital(text: String): String? {
++    val colon = text.indexOf(':')
++    if (colon <= 0) return null
++    if (!HOSPITAL_LABEL.matches(text.substring(0, colon).trim())) return null
++    val end = (colon + 1 until text.length).firstOrNull { isValueEnd(text, it) } ?: text.length
++    return acceptedName(text.substring(colon + 1, end))
++}
++
++/**
++ * Q11/Q14: a value ends at ';', ',', '(' or " - ", and at a '.' that does not close a Q1 abbreviation
++ * ("St.").
++ */
++private fun isValueEnd(text: String, i: Int): Boolean = when (text[i]) {
++    ';', ',', '(' -> true
++    '.' -> !isAbbreviation(text, i)
++    else -> text.startsWith(" - ", i)
++}
++
++private fun acceptedName(raw: String): String? {
++    val name = raw.trim()
++    if (name.isEmpty() || name.startsWith("?")) return null
++    return if (UNDECIDED_HOSPITAL.containsMatchIn(name)) null else name
++}
++
++/** A value that merely restates "not decided" must never become a hospital name. */
++private val UNDECIDED_HOSPITAL = Regex(
++    "^(?:tbd|to\\s+be\\s+decided|not\\s+decided|undecided|not\\s+agreed|none|pending)\\b",
++    RegexOption.IGNORE_CASE,
++)
++
++/** A capitalised, whitespace-separated word (optionally carrying an apostrophe, ampersand or dot). */
++private const val CAPITALISED_WORD = "[A-Z][\\p{L}'&.\\-]*"
++
++/**
++ * Q4(b): a capitalised "<Name> [Maternity|Medical] Hospital" phrase (capital H only). Lowercase
++ * connector particles may sit between the capitalised words, and lowercase words end the phrase,
++ * so "Full hospital stay" / "delivery at Cleopatra hospital" never become names.
++ */
++private val HOSPITAL_PHRASE = Regex(
++    "(?<![\\p{L}])($CAPITALISED_WORD(?:\\s+(?:$CAPITALISED_WORD|al|el|de|of|and))*\\s+Hospital)(?![\\p{L}])",
++)
++
++/**
++ * Leading verbs/prepositions that are dropped from a detected phrase ("Delivery At X Hospital"), plus
++ * the Q15(a) clinical words ("Last CS Dar Al Fouad Hospital", "Emergency CS X Hospital") and the
++ * Q16 time words ("Now Cleopatra Hospital", "Currently Booked Dar Al Fouad Hospital").
++ */
++private val HOSPITAL_LEADING_WORDS = setOf(
++    "at", "in", "to", "for", "from", "via", "booked", "book", "booking", "planned", "plan",
++    "delivery", "deliver", "admit", "admitted", "admission", "refer", "referred", "transfer",
++    "transferred", "prefers", "preferred", "patient", "agreed",
++    "last", "previous", "prior", "earlier", "repeat", "elective", "emergency",
++    "cs", "lscs", "svd", "nvd",
++    "now", "current", "currently",
++)
++
++/** A detected phrase after leading words are dropped; [dropped] keeps them for Q15(b). */
++private data class TrimmedPhrase(val name: String, val dropped: String)
++
++/**
++ * Q9: a phrase needs a word beyond Maternity/Medical/Hospital, and must not contain the whole word
++ * To, Go or If (any case): "Transfer To Hospital" is a transport phrase, not a destination name.
++ */
++private fun isNamePhrase(phrase: String): Boolean {
++    val words = phrase.split(Regex("\\s+")).map { it.lowercase() }
++    if (words.all { it in GENERIC_HOSPITAL_WORDS }) return false
++    return words.none { it in NON_NAME_WORDS }
++}
++
++private val GENERIC_HOSPITAL_WORDS = setOf("maternity", "medical", "hospital")
++
++private val NON_NAME_WORDS = setOf("to", "go", "if")
++
++/** Q15(a): drops leading words case-insensitively, always keeping at least one word. */
++private fun trimLeadingWords(phrase: String): TrimmedPhrase {
++    val words = phrase.split(Regex("\\s+")).toMutableList()
++    val dropped = ArrayList<String>()
++    while (words.size > 1 && words.first().lowercase() in HOSPITAL_LEADING_WORDS) dropped += words.removeAt(0)
++    return TrimmedPhrase(words.joinToString(" "), dropped.joinToString(" "))
++}

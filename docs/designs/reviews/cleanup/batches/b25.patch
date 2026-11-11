@@ -1,0 +1,629 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/InAppCameraDialog.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/InAppCameraDialog.kt
+new file mode 100644
+index 0000000..ed9c5f7
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/InAppCameraDialog.kt
+@@ -0,0 +1,307 @@
++package com.sherifradwan.ancnative.ui
++
++import android.Manifest
++import android.content.pm.PackageManager
++import android.graphics.Bitmap
++import android.net.Uri
++import android.view.Surface
++import androidx.activity.compose.rememberLauncherForActivityResult
++import androidx.activity.result.contract.ActivityResultContracts
++import androidx.camera.core.CameraSelector
++import androidx.camera.core.ImageCapture
++import androidx.camera.core.ImageCaptureException
++import androidx.camera.core.Preview
++import androidx.camera.lifecycle.ProcessCameraProvider
++import androidx.camera.view.PreviewView
++import androidx.compose.foundation.BorderStroke
++import androidx.compose.foundation.Image
++import androidx.compose.foundation.background
++import androidx.compose.foundation.clickable
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Box
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.layout.size
++import androidx.compose.foundation.shape.CircleShape
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.material3.Button
++import androidx.compose.material3.CircularProgressIndicator
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.OutlinedButton
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.DisposableEffect
++import androidx.compose.runtime.LaunchedEffect
++import androidx.compose.runtime.getValue
++import androidx.compose.runtime.mutableStateOf
++import androidx.compose.runtime.produceState
++import androidx.compose.runtime.remember
++import androidx.compose.runtime.setValue
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.draw.clip
++import androidx.compose.ui.graphics.Color
++import androidx.compose.ui.graphics.asImageBitmap
++import androidx.compose.ui.layout.ContentScale
++import androidx.compose.ui.platform.LocalContext
++import androidx.compose.ui.platform.LocalLifecycleOwner
++import androidx.compose.ui.platform.LocalView
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.semantics.contentDescription
++import androidx.compose.ui.semantics.semantics
++import androidx.compose.ui.unit.dp
++import androidx.compose.ui.viewinterop.AndroidView
++import androidx.compose.ui.window.Dialog
++import androidx.compose.ui.window.DialogProperties
++import androidx.core.content.ContextCompat
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.storage.BoundedBitmap
++import com.sherifradwan.ancnative.storage.CameraCaptureHelper
++import java.io.File
++import kotlinx.coroutines.Dispatchers
++import kotlinx.coroutines.withContext
++
++private const val STILL_MAX_SIDE = 1600
++
++/** Mutable state shared with camera callbacks that may fire after the dialog has left composition. */
++private class CameraSession {
++    var inFlight: File? = null
++    var gone = false
++    var previewView: PreviewView? = null
++}
++
++/** Full-screen in-app camera: live preview, capture, then Retake / Use photo. The app is never left. */
++@Composable
++fun InAppCameraDialog(
++    onCaptured: (Uri) -> Unit,
++    onDismiss: () -> Unit,
++) {
++    val context = LocalContext.current
++    val lifecycleOwner = LocalLifecycleOwner.current
++    val view = LocalView.current
++
++    var granted by remember {
++        mutableStateOf(
++            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED,
++        )
++    }
++    var permissionAsked by remember { mutableStateOf(granted) }
++    var captureFile by remember { mutableStateOf<File?>(null) }
++    var committed by remember { mutableStateOf(false) }
++    var failed by remember { mutableStateOf(false) }
++    var bindFailed by remember { mutableStateOf(false) }
++    var capturing by remember { mutableStateOf(false) }
++    val session = remember { CameraSession() }
++
++    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
++        granted = it
++        permissionAsked = true
++    }
++    val imageCapture = remember {
++        ImageCapture.Builder().setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY).build()
++    }
++
++    // Drop any uncommitted temp photo when the dialog leaves composition (close, back, app lock).
++    // The delegated state is read directly in onDispose so it sees the value at disposal time.
++    DisposableEffect(Unit) {
++        onDispose {
++            session.gone = true
++            // A capture still being written is deleted here; its callback deletes it too if it lands later.
++            session.inFlight?.let { it.delete() }
++            session.inFlight = null
++            if (!committed) {
++                captureFile?.let { f -> CameraCaptureHelper.deleteIfCaptureTemp(context, CameraCaptureHelper.uriFor(context, f)) }
++            }
++        }
++    }
++
++    LaunchedEffect(Unit) {
++        if (!granted) permissionLauncher.launch(Manifest.permission.CAMERA)
++    }
++
++    val live = granted && captureFile == null
++    DisposableEffect(lifecycleOwner, live) {
++        var provider: ProcessCameraProvider? = null
++        var disposed = false
++        if (live) {
++            bindFailed = false
++            val future = ProcessCameraProvider.getInstance(context)
++            future.addListener({
++                if (disposed) return@addListener
++                runCatching {
++                    val p = future.get()
++                    provider = p
++                    val pv = checkNotNull(session.previewView)
++                    val preview = Preview.Builder().build().also { it.surfaceProvider = pv.surfaceProvider }
++                    p.unbindAll()
++                    p.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageCapture)
++                }.onFailure { bindFailed = true }
++            }, ContextCompat.getMainExecutor(context))
++        }
++        onDispose {
++            disposed = true
++            provider?.unbindAll()
++        }
++    }
++
++    fun discardCapture() {
++        captureFile?.let { CameraCaptureHelper.deleteIfCaptureTemp(context, CameraCaptureHelper.uriFor(context, it)) }
++        captureFile = null
++    }
++
++    fun takePhoto() {
++        if (capturing) return
++        capturing = true
++        failed = false
++        val file = CameraCaptureHelper.createCameraTempFile(context)
++        session.inFlight = file
++        imageCapture.targetRotation = view.display?.rotation ?: Surface.ROTATION_0
++        imageCapture.takePicture(
++            ImageCapture.OutputFileOptions.Builder(file).build(),
++            ContextCompat.getMainExecutor(context),
++            object : ImageCapture.OnImageSavedCallback {
++                override fun onImageSaved(output: ImageCapture.OutputFileResults) {
++                    session.inFlight = null
++                    if (session.gone) {
++                        file.delete()
++                        return
++                    }
++                    capturing = false
++                    captureFile = file
++                    failed = false
++                }
++
++                override fun onError(exception: ImageCaptureException) {
++                    file.delete()
++                    session.inFlight = null
++                    if (session.gone) return
++                    capturing = false
++                    failed = true
++                }
++            },
++        )
++    }
++
++    Dialog(
++        onDismissRequest = onDismiss,
++        properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false),
++    ) {
++        Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
++            val shot = captureFile
++            when {
++                !granted -> Column(
++                    modifier = Modifier.fillMaxSize().padding(24.dp),
++                    horizontalAlignment = Alignment.CenterHorizontally,
++                    verticalArrangement = Arrangement.Center,
++                ) {
++                    if (permissionAsked) {
++                        Text(
++                            text = stringResource(R.string.camera_permission_needed),
++                            color = Color.White,
++                            style = MaterialTheme.typography.bodyLarge,
++                        )
++                    }
++                    CloseButton(onDismiss)
++                }
++
++                shot != null -> {
++                    val still by produceState<Bitmap?>(null, shot) {
++                        value = withContext(Dispatchers.Default) { BoundedBitmap.decodeFile(shot.absolutePath, STILL_MAX_SIDE) }
++                    }
++                    Column(
++                        modifier = Modifier.fillMaxSize().padding(16.dp),
++                        verticalArrangement = Arrangement.spacedBy(16.dp),
++                    ) {
++                        Box(
++                            modifier = Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(20.dp)),
++                            contentAlignment = Alignment.Center,
++                        ) {
++                            val ready = still
++                            if (ready != null) {
++                                Image(
++                                    bitmap = ready.asImageBitmap(),
++                                    contentDescription = null,
++                                    modifier = Modifier.fillMaxSize(),
++                                    contentScale = ContentScale.Fit,
++                                )
++                            } else {
++                                CircularProgressIndicator(color = Color.White)
++                            }
++                        }
++                        Row(
++                            modifier = Modifier.fillMaxWidth(),
++                            horizontalArrangement = Arrangement.spacedBy(12.dp),
++                        ) {
++                            OutlinedButton(
++                                onClick = { discardCapture() },
++                                modifier = Modifier.weight(1f).minimumTouchTarget().testTag("camera_retake"),
++                            ) { Text(stringResource(R.string.camera_retake), color = Color.White) }
++                            Button(
++                                onClick = {
++                                    committed = true
++                                    onCaptured(CameraCaptureHelper.uriFor(context, shot))
++                                },
++                                modifier = Modifier.weight(1f).minimumTouchTarget().testTag("camera_use"),
++                            ) { Text(stringResource(R.string.camera_use)) }
++                        }
++                        CloseButton(onDismiss)
++                    }
++                }
++
++                else -> Column(
++                    modifier = Modifier.fillMaxSize().padding(16.dp),
++                    horizontalAlignment = Alignment.CenterHorizontally,
++                    verticalArrangement = Arrangement.spacedBy(16.dp),
++                ) {
++                    AndroidView(
++                        factory = { ctx -> PreviewView(ctx).also { session.previewView = it } },
++                        modifier = Modifier
++                            .weight(1f)
++                            .fillMaxWidth()
++                            .clip(RoundedCornerShape(20.dp))
++                            .testTag("camera_preview"),
++                    )
++                    if (failed) {
++                        Text(
++                            text = stringResource(R.string.camera_capture_failed),
++                            color = Color.White,
++                            style = MaterialTheme.typography.bodyMedium,
++                        )
++                    }
++                    if (bindFailed) {
++                        Text(
++                            text = stringResource(R.string.camera_bind_failed),
++                            color = Color.White,
++                            style = MaterialTheme.typography.bodyMedium,
++                        )
++                    } else {
++                        val captureLabel = stringResource(R.string.camera_capture)
++                        Box(
++                            modifier = Modifier
++                                .size(72.dp)
++                                .clip(CircleShape)
++                                .background(if (capturing) Color.Gray else Color.White)
++                                .clickable(enabled = !capturing, onClickLabel = captureLabel) { takePhoto() }
++                                .semantics { contentDescription = captureLabel }
++                                .testTag("camera_capture"),
++                        )
++                    }
++                    CloseButton(onDismiss)
++                }
++            }
++        }
++    }
++}
++
++@Composable
++private fun CloseButton(onDismiss: () -> Unit) {
++    OutlinedButton(
++        onClick = onDismiss,
++        border = BorderStroke(1.dp, Color.White),
++        modifier = Modifier.minimumTouchTarget().testTag("camera_close"),
++    ) { Text(stringResource(R.string.camera_close), color = Color.White) }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/TimelineSpine.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/TimelineSpine.kt
+new file mode 100644
+index 0000000..cf7d0f7
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/TimelineSpine.kt
+@@ -0,0 +1,82 @@
++package com.sherifradwan.ancnative.ui
++
++import androidx.compose.foundation.layout.Box
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.Spacer
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.width
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.draw.drawBehind
++import androidx.compose.ui.geometry.Offset
++import androidx.compose.ui.unit.LayoutDirection
++import androidx.compose.ui.unit.dp
++
++@Composable
++fun TimelineSpineItem(
++    isFirst: Boolean,
++    isLast: Boolean,
++    modifier: Modifier = Modifier,
++    content: @Composable () -> Unit,
++) {
++    val spineLineColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
++    val nodePrimaryColor = MaterialTheme.colorScheme.primary
++    val nodeCenterColor = MaterialTheme.colorScheme.surface
++
++    Row(
++        modifier = modifier
++            .fillMaxWidth()
++            .drawBehind {
++                val isRtl = layoutDirection == LayoutDirection.Rtl
++                val railWidth = 24.dp.toPx()
++                val centerX = if (isRtl) size.width - (railWidth / 2f) else railWidth / 2f
++                val nodeCenterY = 24.dp.toPx()
++                val lineWidth = 2.dp.toPx()
++                val outerRadius = 6.dp.toPx() // 12dp diameter
++                val innerRadius = 3.dp.toPx()
++
++                // Top segment line (connects from top of card down to node)
++                if (!isFirst) {
++                    drawLine(
++                        color = spineLineColor,
++                        start = Offset(centerX, 0f),
++                        end = Offset(centerX, nodeCenterY - outerRadius),
++                        strokeWidth = lineWidth,
++                    )
++                }
++
++                // Bottom segment line (connects from node down to bottom of card)
++                if (!isLast) {
++                    drawLine(
++                        color = spineLineColor,
++                        start = Offset(centerX, nodeCenterY + outerRadius),
++                        end = Offset(centerX, size.height),
++                        strokeWidth = lineWidth,
++                    )
++                }
++
++                // Outer Node Circle (Primary solid circle)
++                drawCircle(
++                    color = nodePrimaryColor,
++                    radius = outerRadius,
++                    center = Offset(centerX, nodeCenterY),
++                )
++
++                // Inner Hollow Donut Center (Surface background color)
++                drawCircle(
++                    color = nodeCenterColor,
++                    radius = innerRadius,
++                    center = Offset(centerX, nodeCenterY),
++                )
++            },
++    ) {
++        // Spine Rail spacer (24dp rail + 8dp gap)
++        Spacer(modifier = Modifier.width(32.dp))
++
++        // Content Card (takes remaining horizontal space)
++        Box(modifier = Modifier.weight(1f)) {
++            content()
++        }
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/VaultGateScreen.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/VaultGateScreen.kt
+new file mode 100644
+index 0000000..d9288bc
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/VaultGateScreen.kt
+@@ -0,0 +1,222 @@
++package com.sherifradwan.ancnative.ui
++
++import androidx.annotation.StringRes
++import androidx.compose.foundation.Image
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.BoxWithConstraints
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.Spacer
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.height
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.layout.size
++import androidx.compose.foundation.rememberScrollState
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.foundation.verticalScroll
++import androidx.compose.material.icons.Icons
++import androidx.compose.material.icons.filled.Fingerprint
++import androidx.compose.material.icons.filled.Lock
++import androidx.compose.material.icons.filled.Refresh
++import androidx.compose.material.icons.filled.Security
++import androidx.compose.material3.Button
++import androidx.compose.material3.Card
++import androidx.compose.material3.CardDefaults
++import androidx.compose.material3.Icon
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.draw.clip
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.res.painterResource
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.semantics.heading
++import androidx.compose.ui.semantics.semantics
++import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.text.style.TextAlign
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.storage.AuthenticationPurpose
++import com.sherifradwan.ancnative.storage.VaultBlockReason
++import com.sherifradwan.ancnative.storage.VaultState
++
++@Composable
++fun VaultGateScreen(
++    state: VaultState,
++    onInitialize: () -> Unit,
++    onUnlock: () -> Unit,
++    onRetry: () -> Unit,
++) {
++    BoxWithConstraints(modifier = Modifier.fillMaxSize().testTag("vaultGate")) {
++        val horizontalPadding = maxOf(24.dp, (maxWidth - 520.dp) / 2)
++        Column(
++            modifier = Modifier
++                .fillMaxSize()
++                .verticalScroll(rememberScrollState())
++                .padding(horizontal = horizontalPadding, vertical = 40.dp),
++            verticalArrangement = Arrangement.Center,
++            horizontalAlignment = Alignment.CenterHorizontally,
++        ) {
++            Image(
++                painter = painterResource(R.drawable.clinic_logo_foreground),
++                contentDescription = "Clinic Logo",
++                modifier = Modifier
++                    .size(96.dp)
++                    .clip(RoundedCornerShape(20.dp)),
++            )
++
++            Spacer(modifier = Modifier.height(16.dp))
++
++            Text(
++                text = "Dr. Sherif Radwan Clinic",
++                style = MaterialTheme.typography.headlineMedium,
++                fontWeight = FontWeight.Bold,
++                color = MaterialTheme.colorScheme.primary,
++                textAlign = TextAlign.Center,
++                modifier = Modifier.semantics { heading() },
++            )
++
++            Text(
++                text = "Maternal-Fetal Medicine & Obstetrics",
++                style = MaterialTheme.typography.bodyMedium,
++                color = MaterialTheme.colorScheme.onSurfaceVariant,
++                textAlign = TextAlign.Center,
++            )
++
++            Spacer(modifier = Modifier.height(28.dp))
++
++            Card(
++                modifier = Modifier.fillMaxWidth(),
++                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
++                shape = RoundedCornerShape(16.dp),
++            ) {
++                Column(
++                    modifier = Modifier.padding(20.dp),
++                    verticalArrangement = Arrangement.spacedBy(10.dp),
++                    horizontalAlignment = Alignment.CenterHorizontally,
++                ) {
++                    Icon(
++                        imageVector = when (state) {
++                            VaultState.Locked -> Icons.Default.Lock
++                            is VaultState.Authenticating -> Icons.Default.Fingerprint
++                            VaultState.Uninitialized -> Icons.Default.Security
++                            is VaultState.Blocked -> Icons.Default.Refresh
++                            else -> Icons.Default.Lock
++                        },
++                        contentDescription = null,
++                        modifier = Modifier.size(36.dp),
++                        tint = MaterialTheme.colorScheme.primary,
++                    )
++                    Text(
++                        text = stringResource(state.titleResource()),
++                        fontWeight = FontWeight.Bold,
++                        style = MaterialTheme.typography.titleMedium,
++                        textAlign = TextAlign.Center,
++                    )
++                    Text(
++                        text = stringResource(state.bodyResource()),
++                        style = MaterialTheme.typography.bodyMedium,
++                        color = MaterialTheme.colorScheme.onSurfaceVariant,
++                        textAlign = TextAlign.Center,
++                    )
++                }
++            }
++
++            Spacer(modifier = Modifier.height(24.dp))
++
++            when (state) {
++                VaultState.Uninitialized -> Button(
++                    onClick = onInitialize,
++                    modifier = Modifier
++                        .fillMaxWidth()
++                        .height(52.dp)
++                        .testTag("initializeStorage"),
++                    shape = RoundedCornerShape(12.dp),
++                ) {
++                    Icon(Icons.Default.Security, contentDescription = null, modifier = Modifier.size(20.dp))
++                    Spacer(modifier = Modifier.size(8.dp))
++                    Text(stringResource(R.string.initialize_demo_storage), fontWeight = FontWeight.SemiBold)
++                }
++                VaultState.Locked -> Button(
++                    onClick = onUnlock,
++                    modifier = Modifier
++                        .fillMaxWidth()
++                        .height(52.dp)
++                        .testTag("unlockStorage"),
++                    shape = RoundedCornerShape(12.dp),
++                ) {
++                    Icon(Icons.Default.Fingerprint, contentDescription = null, modifier = Modifier.size(22.dp))
++                    Spacer(modifier = Modifier.size(8.dp))
++                    Text(stringResource(R.string.unlock_demo_storage), fontWeight = FontWeight.SemiBold)
++                }
++                is VaultState.Blocked -> Button(
++                    onClick = onRetry,
++                    modifier = Modifier
++                        .fillMaxWidth()
++                        .height(52.dp)
++                        .testTag("retryStorage"),
++                    shape = RoundedCornerShape(12.dp),
++                ) {
++                    Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(20.dp))
++                    Spacer(modifier = Modifier.size(8.dp))
++                    Text(stringResource(R.string.retry_storage_check), fontWeight = FontWeight.SemiBold)
++                }
++                else -> Unit
++            }
++        }
++    }
++}
++
++@StringRes
++private fun VaultState.titleResource(): Int = when (this) {
++    VaultState.Inspecting -> R.string.storage_checking_title
++    VaultState.Uninitialized -> R.string.storage_uninitialized_title
++    is VaultState.Authenticating -> R.string.storage_authenticating_title
++    VaultState.Locked -> R.string.storage_locked_title
++    is VaultState.Opening -> if (purpose == AuthenticationPurpose.INITIALIZE) {
++        R.string.storage_initializing_title
++    } else {
++        R.string.storage_opening_title
++    }
++    is VaultState.Unlocked -> R.string.storage_unlocked_title
++    is VaultState.Closing -> R.string.storage_closing_title
++    is VaultState.Blocked -> R.string.storage_blocked_title
++}
++
++@StringRes
++private fun VaultState.bodyResource(): Int = when (this) {
++    VaultState.Inspecting -> R.string.storage_checking_body
++    VaultState.Uninitialized -> R.string.storage_uninitialized_body
++    is VaultState.Authenticating -> R.string.storage_authenticating_body
++    VaultState.Locked -> R.string.storage_locked_body
++    is VaultState.Opening -> if (purpose == AuthenticationPurpose.INITIALIZE) {
++        R.string.storage_initializing_body
++    } else {
++        R.string.storage_opening_body
++    }
++    is VaultState.Unlocked -> R.string.storage_unlocked_body
++    is VaultState.Closing -> if (busy) R.string.storage_closing_busy_body else R.string.storage_closing_body
++    is VaultState.Blocked -> reason.bodyResource()
++}
++
++@StringRes
++private fun VaultBlockReason.bodyResource(): Int = when (this) {
++    VaultBlockReason.DEVICE_CREDENTIAL_UNAVAILABLE -> R.string.blocked_device_credential
++    VaultBlockReason.INCOMPLETE_SETUP -> R.string.blocked_incomplete_setup
++    VaultBlockReason.POINTER_MISSING -> R.string.blocked_pointer_missing
++    VaultBlockReason.DESCRIPTOR_INVALID -> R.string.blocked_descriptor_invalid
++    VaultBlockReason.ENVELOPE_MISSING -> R.string.blocked_envelope_missing
++    VaultBlockReason.ENVELOPE_INVALID -> R.string.blocked_envelope_invalid
++    VaultBlockReason.DATABASE_MISSING -> R.string.blocked_database_missing
++    VaultBlockReason.KEY_MISSING -> R.string.blocked_key_missing
++    VaultBlockReason.KEY_PERMANENTLY_INVALIDATED -> R.string.blocked_key_invalidated
++    VaultBlockReason.GCM_AUTHENTICATION_FAILED -> R.string.blocked_gcm_failure
++    VaultBlockReason.VAULT_METADATA_MISSING -> R.string.blocked_metadata_missing
++    VaultBlockReason.VAULT_METADATA_MISMATCH -> R.string.blocked_metadata_mismatch
++    VaultBlockReason.UNKNOWN_SCHEMA -> R.string.blocked_unknown_schema
++    VaultBlockReason.DATABASE_INTEGRITY_FAILED -> R.string.blocked_integrity
++    VaultBlockReason.DATABASE_OPEN_FAILED -> R.string.blocked_database_open
++    VaultBlockReason.STORAGE_BUSY -> R.string.blocked_storage_busy
++}

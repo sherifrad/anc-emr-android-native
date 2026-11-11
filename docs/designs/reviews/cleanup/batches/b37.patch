@@ -1,0 +1,432 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+new file mode 100644
+index 0000000..db1fd81
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+@@ -0,0 +1,128 @@
++package com.sherifradwan.ancnative.ui.patienthub.tabs
++
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.rememberScrollState
++import androidx.compose.foundation.verticalScroll
++import androidx.compose.material3.HorizontalDivider
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Surface
++import androidx.compose.runtime.Composable
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.model.DemoAttachment
++import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.state.AncEvent
++import com.sherifradwan.ancnative.storage.DeletableType
++import com.sherifradwan.ancnative.ui.patienthub.components.AttachmentsSectionCard
++import com.sherifradwan.ancnative.ui.patienthub.components.DatingSection
++import com.sherifradwan.ancnative.ui.patienthub.components.DeliveryPlanningCard
++import com.sherifradwan.ancnative.ui.patienthub.components.MedicalHistoriesSection
++import com.sherifradwan.ancnative.ui.patienthub.components.ParityPregnanciesSection
++import java.util.UUID
++
++@Composable
++private fun SectionDivider() {
++    HorizontalDivider(
++        modifier = Modifier.padding(vertical = 8.dp),
++        thickness = 0.75.dp,
++        color = MaterialTheme.colorScheme.outlineVariant,
++    )
++}
++
++@Composable
++fun OverviewTab(
++    patient: DemoPatient,
++    canEdit: Boolean,
++    onEvent: (AncEvent) -> Unit,
++    onAddAttachment: () -> Unit,
++    onViewAttachment: (DemoAttachment) -> Unit,
++    modifier: Modifier = Modifier,
++) {
++    fun startPatientEditor() = onEvent(
++        AncEvent.StartPatientEditor(
++            patientId = patient.id,
++            newPatientId = patient.id,
++            editorSessionId = UUID.randomUUID().toString(),
++        ),
++    )
++
++    fun startPregnancyEditor(pregnancyId: String?) = onEvent(
++        AncEvent.StartPregnancyEditor(
++            patientId = patient.id,
++            pregnancyId = pregnancyId,
++            newPregnancyId = pregnancyId ?: UUID.randomUUID().toString(),
++            editorSessionId = UUID.randomUUID().toString(),
++        ),
++    )
++
++    Column(
++        modifier = modifier
++            .fillMaxSize()
++            .verticalScroll(rememberScrollState())
++            .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 48.dp)
++            .testTag("overviewTabContent"),
++        verticalArrangement = Arrangement.spacedBy(14.dp),
++    ) {
++        Surface(
++            color = MaterialTheme.colorScheme.surface,
++            modifier = Modifier.fillMaxWidth(),
++        ) {
++            Column {
++                DatingSection(
++                    patient = patient,
++                    onEdit = if (canEdit) {
++                        {
++                            onEvent(
++                                AncEvent.StartDatingEditor(
++                                    patientId = patient.id,
++                                    editorSessionId = UUID.randomUUID().toString(),
++                                ),
++                            )
++                        }
++                    } else null,
++                )
++                SectionDivider()
++                ParityPregnanciesSection(
++                    patient = patient,
++                    onAddPregnancy = if (canEdit) ({ startPregnancyEditor(null) }) else null,
++                    onEditPregnancy = if (canEdit) ({ startPregnancyEditor(it) }) else null,
++                    onDeletePregnancy = if (canEdit) {
++                        {
++                            onEvent(
++                                AncEvent.RequestDelete(
++                                    patientId = patient.id,
++                                    type = DeletableType.PREVIOUS_PREGNANCY,
++                                    recordId = it,
++                                ),
++                            )
++                        }
++                    } else null,
++                )
++                SectionDivider()
++                MedicalHistoriesSection(
++                    patient = patient,
++                    onEdit = if (canEdit) ({ startPatientEditor() }) else null,
++                )
++            }
++        }
++
++        DeliveryPlanningCard(
++            patient = patient,
++            canEdit = canEdit,
++            onEditDeliveryPlan = {
++                onEvent(AncEvent.StartDeliveryPlanEditor(patient.id, UUID.randomUUID().toString()))
++            },
++        )
++
++        AttachmentsSectionCard(
++            patient = patient,
++            onAddAttachment = onAddAttachment,
++            onViewAttachment = onViewAttachment,
++        )
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt
+new file mode 100644
+index 0000000..ba4c741
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt
+@@ -0,0 +1,53 @@
++package com.sherifradwan.ancnative.ui.patienthub.tabs
++
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.rememberScrollState
++import androidx.compose.foundation.verticalScroll
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.model.DemoAttachment
++import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.state.AncEvent
++import com.sherifradwan.ancnative.ui.patienthub.components.AttachmentsSectionCard
++import com.sherifradwan.ancnative.ui.patienthub.components.DeliveryPlanningCard
++import java.util.UUID
++
++@Composable
++fun PlanTab(
++    patient: DemoPatient,
++    canEdit: Boolean,
++    onEvent: (AncEvent) -> Unit,
++    onAddAttachment: () -> Unit,
++    onViewAttachment: (DemoAttachment) -> Unit,
++    modifier: Modifier = Modifier,
++) {
++    Column(
++        modifier = modifier
++            .fillMaxSize()
++            .verticalScroll(rememberScrollState())
++            .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 48.dp)
++            .testTag("planTabContent"),
++        verticalArrangement = Arrangement.spacedBy(14.dp),
++    ) {
++        // Full Delivery Planning Card
++        DeliveryPlanningCard(
++            patient = patient,
++            canEdit = canEdit,
++            onEditDeliveryPlan = {
++                onEvent(AncEvent.StartDeliveryPlanEditor(patient.id, UUID.randomUUID().toString()))
++            },
++        )
++
++        // Full Documents & Attachments Section
++        AttachmentsSectionCard(
++            patient = patient,
++            onAddAttachment = onAddAttachment,
++            onViewAttachment = onViewAttachment,
++        )
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/ScansTab.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/ScansTab.kt
+new file mode 100644
+index 0000000..87b33b7
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/ScansTab.kt
+@@ -0,0 +1,233 @@
++package com.sherifradwan.ancnative.ui.patienthub.tabs
++
++import androidx.compose.foundation.BorderStroke
++import androidx.compose.foundation.clickable
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.ExperimentalLayoutApi
++import androidx.compose.foundation.layout.FlowRow
++import androidx.compose.foundation.layout.PaddingValues
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.Spacer
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.layout.size
++import androidx.compose.foundation.layout.width
++import androidx.compose.foundation.lazy.LazyColumn
++import androidx.compose.foundation.lazy.items
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.material.icons.Icons
++import androidx.compose.material.icons.filled.Add
++import androidx.compose.material3.Button
++import androidx.compose.material3.ButtonDefaults
++import androidx.compose.material3.Card
++import androidx.compose.material3.CardDefaults
++import androidx.compose.material3.Icon
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Surface
++import androidx.compose.material3.Text
++import androidx.compose.material3.TextButton
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.remember
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.res.pluralStringResource
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.ui.minimumTouchTarget
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.model.DemoUltrasoundScan
++import com.sherifradwan.ancnative.model.GestationalAgeEngine
++import com.sherifradwan.ancnative.state.AncEvent
++import com.sherifradwan.ancnative.storage.DeletableType
++import com.sherifradwan.ancnative.ui.GestationalAgeBadge
++import com.sherifradwan.ancnative.ui.DeleteIconButton
++import com.sherifradwan.ancnative.ui.FactRow
++import com.sherifradwan.ancnative.ui.minimumTouchTarget
++import com.sherifradwan.ancnative.ui.patienthub.components.BiometryGrid
++import com.sherifradwan.ancnative.ui.patienthub.model.extractBiometry
++
++import java.util.UUID
++
++@OptIn(ExperimentalLayoutApi::class)
++@Composable
++fun ScansTab(
++    patient: DemoPatient,
++    canEdit: Boolean,
++    onEvent: (AncEvent) -> Unit,
++    onViewPhotos: (DemoUltrasoundScan, Int) -> Unit,
++    modifier: Modifier = Modifier,
++) {
++    LazyColumn(
++        modifier = modifier
++            .fillMaxSize()
++            .testTag("scansTabContent"),
++        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 48.dp),
++        verticalArrangement = Arrangement.spacedBy(14.dp),
++    ) {
++        // Top Action: + Record Ultrasound Scan
++        item {
++            Row(
++                modifier = Modifier.fillMaxWidth(),
++                horizontalArrangement = Arrangement.SpaceBetween,
++                verticalAlignment = Alignment.CenterVertically,
++            ) {
++                Text(
++                    text = "Ultrasound Scans (${patient.ultrasoundScans.size})",
++                    style = MaterialTheme.typography.titleMedium,
++                    fontWeight = FontWeight.Bold,
++                    color = MaterialTheme.colorScheme.primary,
++                )
++                if (canEdit && patient.status != "archived") {
++                    Button(
++                        onClick = {
++                            onEvent(
++                                AncEvent.StartUltrasoundEditor(
++                                    patientId = patient.id,
++                                    scanId = null,
++                                    newScanId = UUID.randomUUID().toString(),
++                                    editorSessionId = UUID.randomUUID().toString(),
++                                ),
++                            )
++                        },
++                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
++                        shape = RoundedCornerShape(10.dp),
++                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
++                        modifier = Modifier.minimumTouchTarget().testTag("recordNewScanBtn"),
++                    ) {
++                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
++                        Spacer(Modifier.width(4.dp))
++                        Text("Record Scan", fontWeight = FontWeight.Bold, softWrap = false)
++                    }
++                }
++            }
++        }
++
++        if (patient.ultrasoundScans.isEmpty()) {
++            item {
++                Surface(
++                    shape = RoundedCornerShape(12.dp),
++                    color = MaterialTheme.colorScheme.surfaceContainerLow,
++                    modifier = Modifier.fillMaxWidth(),
++                ) {
++                    Text(
++                        text = "No records",
++                        style = MaterialTheme.typography.bodyMedium,
++                        color = MaterialTheme.colorScheme.onSurfaceVariant,
++                        modifier = Modifier.padding(16.dp),
++                    )
++                }
++            }
++        } else {
++            items(
++                items = patient.ultrasoundScans,
++                key = { it.id },
++            ) { scan ->
++                val gaAtScan = remember(patient.dating, scan.date) {
++                    GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, scan.date)
++                }
++                val gaDisplayText = gaAtScan?.displayText
++                val biometry = remember(scan) { extractBiometry(scan) }
++
++                Card(
++                    modifier = Modifier.fillMaxWidth().testTag("ultrasound-${scan.id}"),
++                    shape = RoundedCornerShape(16.dp),
++                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
++                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
++                ) {
++                    Column(
++                        modifier = Modifier.padding(16.dp),
++                        verticalArrangement = Arrangement.spacedBy(8.dp),
++                    ) {
++                        // Header Row: Date + GA
++                        Row(
++                            modifier = Modifier.fillMaxWidth(),
++                            horizontalArrangement = Arrangement.SpaceBetween,
++                            verticalAlignment = Alignment.CenterVertically,
++                        ) {
++                            Text(
++                                text = scan.date,
++                                style = MaterialTheme.typography.titleMedium,
++                                fontWeight = FontWeight.Bold,
++                                color = MaterialTheme.colorScheme.primary,
++                            )
++                            if (!gaDisplayText.isNullOrBlank()) {
++                                GestationalAgeBadge(gaDisplayText)
++                            }
++                        }
++
++                        // Canonical Quantitative Biometry Grid
++                        BiometryGrid(values = biometry)
++
++                        if (!scan.impression.isNullOrBlank()) {
++                            FactRow(R.string.scan_impression, scan.impression)
++                        }
++
++                        // Attachments Preview
++                        if (scan.imageUris.isNotEmpty()) {
++                            FactRow(R.string.scan_attachments, pluralStringResource(R.plurals.photos_count, scan.imageUris.size, scan.imageUris.size))
++                            FlowRow(
++                                horizontalArrangement = Arrangement.spacedBy(8.dp),
++                                verticalArrangement = Arrangement.spacedBy(4.dp),
++                                modifier = Modifier.padding(top = 2.dp),
++                            ) {
++                                scan.imageUris.forEachIndexed { idx, _ ->
++                                    Surface(
++                                        shape = RoundedCornerShape(8.dp),
++                                        color = MaterialTheme.colorScheme.secondaryContainer,
++                                        modifier = Modifier
++                                            .testTag("wsScanPhotoChip-${scan.id}-$idx")
++                                            .minimumTouchTarget()
++                                            .clickable { onViewPhotos(scan, idx) },
++                                    ) {
++                                        Text(
++                                            text = "Photo ${idx + 1}",
++                                            style = MaterialTheme.typography.labelMedium,
++                                            fontWeight = FontWeight.SemiBold,
++                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
++                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
++                                        )
++                                    }
++                                }
++                            }
++                        }
++
++                        // Actions
++                        if (canEdit) {
++                            Row(
++                                modifier = Modifier.fillMaxWidth(),
++                                horizontalArrangement = Arrangement.End,
++                                verticalAlignment = Alignment.CenterVertically,
++                            ) {
++                                DeleteIconButton(
++                                    type = DeletableType.ULTRASOUND,
++                                    record = scan,
++                                    onClick = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.ULTRASOUND, scan.id)) },
++                                )
++                                TextButton(
++                                    onClick = {
++                                        onEvent(
++                                            AncEvent.StartUltrasoundEditor(
++                                                patientId = patient.id,
++                                                scanId = scan.id,
++                                                newScanId = scan.id,
++                                                editorSessionId = UUID.randomUUID().toString(),
++                                            ),
++                                        )
++                                    },
++                                    modifier = Modifier.minimumTouchTarget().testTag("editUltrasound-${scan.id}"),
++                                ) {
++                                    Text(stringResource(R.string.edit_ultrasound))
++                                }
++                            }
++                        }
++                    }
++                }
++            }
++        }
++    }
++}

@@ -1,3 +1,59 @@
+# ROADMAP AND HANDOFF (living file)
+Last updated: 2026-11-11 (main at `37ff23d` plus local edits). Owner: Dr. Sherif Radwan. Repo: `/Users/sherifgamalradwan/anc-emr-android-native`, branch `main`.
+
+**How to keep this file true.** Every feature, fix or decision updates this file IN THE SAME COMMIT: move the mission row, add the artifact, add the dated line to the log. `.agents/scripts/git_audit.sh` warns when this file is older than the newest app commit. If this file and the code disagree, fix this file first.
+
+## A. Rules that apply now (they replace the matching lines of section 0 below)
+1. **Push only when the owner says so, each time.** The 2026-11-11 pushes (`04338a6`, `fa01e98`) were approved in chat. Never force-push.
+2. **Before any work and before any push run `.agents/scripts/git_audit.sh`.** It lists unmerged branches, dirty worktrees, stashes, stray files and unreachable commits. Deliberate branches are listed in `docs/BRANCHES.md`.
+3. **Phone safety.** The phone is the owner's daily device (`AX3C025527011668`). Never touch the clinic app `com.sherifradwan.anc`, never change phone settings, never uninstall. Only the QA copy `com.sherifradwan.anc.qa` may be installed. `docs/AI_HANDOFF.md` says the phone gets same-signer installs and read-only observation only; on 2026-11-11 the owner asked for app-level QA taps on the QA copy and `.agents/scripts/device_qa_meds.sh` ran them. Default from now on: observe (UI dumps) and ask before tapping. The script never enters a PIN or touches a fingerprint prompt.
+4. **Team roles (owner decision 2026-11-11).** Other models do the work, Claude orchestrates and verifies: lanes are opencode GLM, opencode DeepSeek, alphacode and agy models (when they have quota). They are read-only: they return text; edits are applied by `.agents/scripts/apply_blocks.py` from SEARCH/REPLACE blocks (`propose_patch.sh`), checked and revised by the orchestrator. Builder and reviewer are different model families. Level-3 paths (`state/`, `storage/`, `calculation/`, `PatientHubScreen.kt`, `PatientHubHeader.kt`) need a frontier-tier review plus an independent test review; say when none ran. Every change ends with the full gate (`.agents/scripts/push_gate.sh pre`).
+5. **Antislop skills (all variants) are run by other models**, never as a reason to edit files near an open feature.
+6. **Cleanup is postponed to the end of the main missions** (owner decision 2026-11-11), because it conflicts with files the registration flow changes. See mission M6.
+7. Commit locally after every verified round; one change per commit; do not leave work only in a working tree.
+
+## B. Missions (status as of 2026-11-11)
+| ID | Mission | Status | Next step |
+| --- | --- | --- | --- |
+| M1 | Meds tab revision, Stage 1: bottom sheet instead of the editor route, one-tap stop with 10 s Undo, collapsed picker, Show past, frequency required for new drugs, route-aware active check, header name at 200 percent text | DONE and pushed (`c9c1a82` to `fa01e98`). Design: `docs/designs/medication_section_revision.md` | Stage 2 list below (M1b) |
+| M2 | Plan tab and delivery plan sheet: the Delivery Planning card shows only the four boxes (hospital, fees, plan, postpartum) and the attachments; the pencil opens a sheet that writes labelled lines into the obstetric notes; fetal presentation moved to the Scans tab | CODE DONE and pushed (`7923f8f` to `fa01e98`), **BUT FAILED ON THE PHONE 2026-11-11: the owner could not find the pencil or it did nothing on the Plan and Overview tabs.** Passes on the emulator: `DeliveryPlanSheetTest` 11, `DeliveryPlanViewModelTest` 2 (real view model). Design: `docs/designs/plan_delivery_editor.md` | **NOW: reproduce on the phone (owner opens the QA app on the Plan tab; read-only dump first), find why, fix, add a regression test.** Known suspects: the pencil is hidden while `canModifyData` is false (a dirty draft, a running save, a running delete); the QA app held old in-memory state; the QA build on the phone. Also fix `AncViewModel.clearsFrozenPatient()`, which lacks `StartDeliveryPlanEditor` and `DeliveryPlanFieldChanged`. Owner still to confirm: the first Plan edit rewrites existing notes into labelled lines (label words such as "agreed" and "package" are dropped) |
+| M3 | Registration flow: the new patient entry form. The header pencil on the patient screen still opens the OLD form (`ui/PatientEditor.kt`) because the new flow is not merged | NOT STARTED on main. Work exists on branch `claude/clever-goldwasser-e086ce` (15 commits, last one a WIP commit of previously uncommitted files), worktree `.claude/worktrees/clever-goldwasser-e086ce`. It changes 173 files (27 main Kotlin files, `strings.xml`, tests) and conflicts with the `AncState` split, the medication sheet and the delivery plan sheet | After M2: write a merge plan (design note), rebase or merge the branch onto main, resolve conflicts by lane proposals, review, full gate, device check. Replace the header pencil target |
+| M4 | Device QA on the phone | Plan `docs/designs/device_qa_plan.md`; driver `.agents/scripts/device_qa_meds.sh` passed 15 of 15 on 2026-11-11 for the Meds tab (phone QA copy) | Add the Plan sheet checks; keep to the phone safety rule in A3 |
+| M5 | Git hygiene | DONE: `git_audit.sh`, `docs/BRANCHES.md`, rule in `AGENTS.md`, 11 old unreachable commits kept under `refs/archive/`, main worktree clean | Run the audit at the start of every session |
+| M6 | Deep clean of code, directory and app (antislop skills by other models, duplicates, unused code and resources) | **POSTPONED to the end of M2 and M3.** Evidence gathered and committed under `docs/designs/reviews/cleanup/`: 10 compiler warnings, 126 unused resources (lint), 37 duplicate clusters, 172 unused imports (31 removed in `37ff23d`; 107 sit in files the registration branch changes; 6 in protected storage files), 38 review batches (`batches/`) and a few `antislop-code` reports (`reports_code/`, run stopped on purpose) | After M3 is merged: re-run `find_unused.py` and `find_duplicates.py`, finish the antislop reviews (all six skills, other models), apply only compile-proven or test-covered cleanups in small commits, never touch the protected storage files without sign-off |
+| M7 | Older roadmap (section 2 and 3 below: design rounds, logic rounds L-1 to L-7, text-size control, custom choices) | UNKNOWN: much of it was overtaken by the patient hub work. Not re-triaged | After M3: go through sections 2 and 3, mark each item done, obsolete or open |
+
+### M1b. Meds Stage 2 (not started)
+Medication settings screen (favourites, variants, the saved list); course length; change history (needs a schema change and clinical sign-off); the "add to my medication list" banner and the preset chips removed with the old editor; frequency in the clinical summary and print output (protected helper `medicationInstructions`); a guard against a second active row through the blank Prescribe form; one shared expand/collapse row component; the picker tile "Active" badge reusing `MedicationStatusBadge`; translated route names; a lazy list for picker tiles; `otherMode` in `MedicationForm` possibly not surviving recreation; rotation and 360 dp behaviour on a real phone.
+
+## C. Open decisions for the owner
+1. Notes rewrite: is it acceptable that the first Plan edit rewrites a patient's obstetric notes into labelled lines (nothing dropped, label words such as "agreed" and "package" lost)?
+2. Push the local commits that are ahead of `origin/main` (list them with `git log origin/main..main`).
+3. Registration flow: order and the exact scope of the merge (M3).
+
+## D. Artifact index (what was created and where)
+| Area | Path |
+| --- | --- |
+| Meds design, review reports, decisions | `docs/designs/medication_section_revision.md`, `docs/designs/reviews/medication_section_revision/` (stage reports, mock reviews, phase 1 to 3 reviews, device QA runs excluded from git), working drafts in `docs/designs/archive/` |
+| Clickable Meds mock and device screenshots | `docs/mocks/medication-section.html`, `docs/mocks/screens/` |
+| Plan and delivery design, brief, reviews | `docs/designs/plan_delivery_editor.md` (amendments A1 to A19 in section 11), `docs/designs/briefs/plan_delivery_editor_brief.md`, `docs/designs/reviews/plan_delivery_editor/` |
+| Device QA | `docs/designs/device_qa_plan.md`, `.agents/scripts/device_qa_meds.sh` |
+| Hand-off for the zcode lane (Meds Stage 1) | `docs/designs/handoff_zcode_medication_stage1.md`, `docs/designs/zcode_start_prompt.md` |
+| Git hygiene | `.agents/scripts/git_audit.sh`, `docs/BRANCHES.md`, `refs/archive/` |
+| Lane tooling | `lane_ask.sh`, `propose_patch.sh`, `apply_blocks.py`, `review_code.sh`, `review_artifact.sh`, `antislop_review.sh`, `run_cleanup_reviews.sh`, `egm_goldfish.sh`, `egm_review_agy.sh` (all under `.agents/scripts/`) |
+| Gates | `push_gate.sh` (pre and post push), `run_emulator_all_tests.sh`, `run_emulator_test_class.sh`, `set_emulator_360dp.sh`, `install_qa_build_on_device.sh`, `verify_pure_move.py` |
+| Cleanup evidence | `docs/designs/reviews/cleanup/`, `.agents/scripts/find_duplicates.py`, `.agents/scripts/find_unused.py` |
+| Earlier ledger | `.agents/AI_HANDOFF_LEDGER.md` (provenance, approvals, reviews) |
+
+## E. Log
+- 2026-11-11: M1 and M2 code pushed. Owner tested the QA build on the phone and found no way to open the delivery sheet (M2 reopened). Owner approved: drop the six repeated tiles from the delivery card and show fetal presentation on the Scans tab (done); stop the cleanup and postpone it to the end (done); this file becomes the living roadmap.
+- 2026-11-11: git audit found yesterday's registration flow work as 3,684 uncommitted lines in a side worktree; committed there as WIP, recorded in `docs/BRANCHES.md`.
+
+---
+
+# Older roadmap and handoff for Antigravity (written 2026-11-01, kept as history)
+Sections 0 to 8 below were written for branch `maca-round2` and are partly out of date. Section A above wins where they differ.
+
 # HANDOFF FOR ANTIGRAVITY (agy): graphic and logic roadmap
 Written 2026-11-01 by the Claude orchestrator. Read this whole file, then `PROGRESS_LOG.md`, then work. Owner: Dr. Sherif Radwan (consultant obstetrician). Repo: `/Users/sherifgamalradwan/anc-emr-android-native`, branch `maca-round2`. Pronouns for people: they/them unless stated. English-only UI.
 

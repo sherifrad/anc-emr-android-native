@@ -1,0 +1,648 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt
+new file mode 100644
+index 0000000..c31f3ff
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt
+@@ -0,0 +1,220 @@
++package com.sherifradwan.ancnative.ui.patienthub.components
++
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.layout.size
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.material.icons.Icons
++import androidx.compose.material.icons.filled.Add
++import androidx.compose.material.icons.filled.DateRange
++import androidx.compose.material.icons.filled.Edit
++import androidx.compose.material.icons.filled.Healing
++import androidx.compose.material.icons.filled.Person
++import androidx.compose.material.icons.filled.Warning
++import androidx.compose.material3.Icon
++import androidx.compose.material3.IconButton
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Surface
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.remember
++import androidx.compose.ui.graphics.Color
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.graphics.vector.ImageVector
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.R
++import java.time.LocalDate
++import kotlin.math.abs
++import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.model.datingSummaryOf
++import com.sherifradwan.ancnative.model.datingTextRows
++import com.sherifradwan.ancnative.model.previousDeliverySummary
++import com.sherifradwan.ancnative.ui.AllergyState
++import com.sherifradwan.ancnative.ui.FactRow
++import com.sherifradwan.ancnative.ui.ObstetricParityBadge
++import com.sherifradwan.ancnative.ui.classifyAllergy
++import com.sherifradwan.ancnative.ui.ClinicalCardTokens
++import com.sherifradwan.ancnative.ui.isDarkTheme
++import com.sherifradwan.ancnative.ui.minimumTouchTarget
++
++@Composable
++private fun SectionIconAction(
++    onClick: () -> Unit,
++    icon: ImageVector,
++    description: String,
++    tag: String,
++) {
++    IconButton(onClick = onClick, modifier = Modifier.minimumTouchTarget().testTag(tag)) {
++        Icon(icon, contentDescription = description, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
++    }
++}
++
++@Composable
++fun DatingSection(
++    patient: DemoPatient,
++    onEdit: (() -> Unit)?,
++    modifier: Modifier = Modifier,
++) {
++    val scheme = MaterialTheme.colorScheme
++    val dating = patient.dating
++    val summary = remember(patient) { datingSummaryOf(patient, LocalDate.now()) }
++    ClinicalGroupSection(
++        title = stringResource(R.string.pregnancy_dating_title),
++        icon = Icons.Default.DateRange,
++        iconTint = scheme.onPrimaryContainer,
++        iconBgColor = scheme.primaryContainer,
++        actionButton = onEdit?.let {
++            { SectionIconAction(it, Icons.Default.Edit, stringResource(R.string.edit_dating), "editDating") }
++        },
++        modifier = modifier.testTag("datingCard"),
++    ) {
++        if (dating == null) {
++            Text(
++                text = stringResource(R.string.no_dating_recorded),
++                style = MaterialTheme.typography.bodyMedium,
++                color = scheme.onSurfaceVariant,
++            )
++            return@ClinicalGroupSection
++        }
++        datingTextRows(summary).forEach { row ->
++            FactRow(row.label, row.value, isEmphasized = row.isEdd)
++        }
++        summary.discordance?.let { advice ->
++            val dark = isDarkTheme()
++            SectionBanner(
++                text = stringResource(
++                    R.string.dating_discordance_alert,
++                    abs(advice.differenceDays),
++                    advice.thresholdDays,
++                ),
++                container = if (dark) ClinicalCardTokens.WarningDarkBg else ClinicalCardTokens.WarningBg,
++                accent = if (dark) ClinicalCardTokens.WarningDarkAccent else ClinicalCardTokens.WarningAccent,
++                content = if (dark) ClinicalCardTokens.WarningDarkText else ClinicalCardTokens.WarningText,
++                modifier = Modifier.padding(top = 4.dp).testTag("datingDiscordanceAlert"),
++            )
++        }
++        if (!dating.notes.isNullOrBlank()) FactRow(R.string.notes, dating.notes)
++    }
++}
++
++/** Full-width wrapping banner: warning icon plus bold text on a tinted surface. No actions. */
++@Composable
++private fun SectionBanner(
++    text: String,
++    container: Color,
++    accent: Color,
++    content: Color,
++    modifier: Modifier = Modifier,
++) {
++    Surface(
++        shape = RoundedCornerShape(8.dp),
++        color = container,
++        modifier = modifier.fillMaxWidth().padding(bottom = 6.dp),
++    ) {
++        Row(
++            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
++            verticalAlignment = Alignment.CenterVertically,
++            horizontalArrangement = Arrangement.spacedBy(6.dp),
++        ) {
++            Icon(Icons.Default.Warning, contentDescription = null, tint = accent, modifier = Modifier.size(16.dp))
++            Text(
++                text = text,
++                style = MaterialTheme.typography.bodyMedium,
++                fontWeight = FontWeight.Bold,
++                color = content,
++            )
++        }
++    }
++}
++
++@Composable
++fun ParityPregnanciesSection(
++    patient: DemoPatient,
++    onAddPregnancy: (() -> Unit)?,
++    onEditPregnancy: ((String) -> Unit)?,
++    onDeletePregnancy: ((String) -> Unit)?,
++    modifier: Modifier = Modifier,
++) {
++    val scheme = MaterialTheme.colorScheme
++    ClinicalGroupSection(
++        title = stringResource(R.string.previous_pregnancies),
++        icon = Icons.Default.Person,
++        iconTint = scheme.onPrimaryContainer,
++        iconBgColor = scheme.primaryContainer,
++        actionButton = onAddPregnancy?.let {
++            { SectionIconAction(it, Icons.Default.Add, stringResource(R.string.add_previous_pregnancy), "addPregnancyButton") }
++        },
++        modifier = modifier.testTag("obstetricParityCard"),
++    ) {
++        ObstetricParityBadge(patient.gravida, patient.parity, patient.abortion)
++        if (patient.previousPregnancies.isEmpty()) {
++            Text(
++                text = previousDeliverySummary(patient),
++                style = MaterialTheme.typography.bodyMedium,
++                color = scheme.onSurfaceVariant,
++                modifier = Modifier.padding(vertical = 6.dp),
++            )
++        } else {
++            patient.previousPregnancies.forEach { pregnancy ->
++                PastDeliveryMicroRow(
++                    pregnancy = pregnancy,
++                    onEdit = onEditPregnancy?.let { edit -> { edit(pregnancy.id) } },
++                    onDelete = onDeletePregnancy?.let { del -> { del(pregnancy.id) } },
++                )
++            }
++        }
++        if (!patient.obstetricNotes.isNullOrBlank()) FactRow(R.string.obstetric_notes, patient.obstetricNotes)
++    }
++}
++
++@Composable
++fun MedicalHistoriesSection(
++    patient: DemoPatient,
++    onEdit: (() -> Unit)?,
++    modifier: Modifier = Modifier,
++) {
++    val scheme = MaterialTheme.colorScheme
++    ClinicalGroupSection(
++        title = stringResource(R.string.medical_histories_title),
++        icon = Icons.Default.Healing,
++        iconTint = scheme.onPrimaryContainer,
++        iconBgColor = scheme.primaryContainer,
++        actionButton = onEdit?.let {
++            { SectionIconAction(it, Icons.Default.Edit, stringResource(R.string.edit_patient), "editMedicalHistoryButton") }
++        },
++        modifier = modifier.testTag("medicalHistoriesCard"),
++    ) {
++        when (val allergy = classifyAllergy(patient.allergyHistory)) {
++            is AllergyState.Recorded -> SectionBanner(
++                text = stringResource(R.string.allergy_banner, allergy.text),
++                container = scheme.errorContainer,
++                accent = scheme.error,
++                content = scheme.onErrorContainer,
++            )
++            AllergyState.ExplicitlyNone -> Text(
++                text = stringResource(R.string.no_allergy_history),
++                style = MaterialTheme.typography.bodyMedium,
++                color = scheme.onSurfaceVariant,
++                modifier = Modifier.padding(bottom = 6.dp),
++            )
++            AllergyState.NotRecorded -> Text(
++                text = stringResource(R.string.not_recorded),
++                style = MaterialTheme.typography.bodyMedium,
++                color = scheme.onSurfaceVariant,
++                modifier = Modifier.padding(bottom = 6.dp),
++            )
++        }
++        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
++            if (!patient.medicalHistory.isNullOrBlank()) FactRow(R.string.medical_history, patient.medicalHistory)
++            if (!patient.surgicalHistory.isNullOrBlank()) FactRow(R.string.surgical_history, patient.surgicalHistory)
++            if (!patient.familyHistory.isNullOrBlank()) FactRow(R.string.family_history, patient.familyHistory)
++        }
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PastDeliveryMicroRow.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PastDeliveryMicroRow.kt
+new file mode 100644
+index 0000000..f8456cd
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PastDeliveryMicroRow.kt
+@@ -0,0 +1,129 @@
++package com.sherifradwan.ancnative.ui.patienthub.components
++
++import androidx.compose.foundation.clickable
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.ExperimentalLayoutApi
++import androidx.compose.foundation.layout.FlowRow
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.heightIn
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Surface
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.text.style.TextOverflow
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
++import com.sherifradwan.ancnative.storage.DeletableType
++import com.sherifradwan.ancnative.ui.DeleteIconButton
++import com.sherifradwan.ancnative.ui.minimumTouchTarget
++import com.sherifradwan.ancnative.ui.patienthub.model.OutcomeTone
++import com.sherifradwan.ancnative.ui.patienthub.model.RowExtraKind
++import com.sherifradwan.ancnative.ui.patienthub.model.pastDeliveryRow
++
++@OptIn(ExperimentalLayoutApi::class)
++@Composable
++fun PastDeliveryMicroRow(
++    pregnancy: DemoPreviousPregnancy,
++    onEdit: (() -> Unit)?,
++    onDelete: (() -> Unit)?,
++    modifier: Modifier = Modifier,
++) {
++    val row = pastDeliveryRow(pregnancy)
++    val scheme = MaterialTheme.colorScheme
++    val (chipBg, chipFg) = when (row.outcomeTone) {
++        OutcomeTone.Severe -> scheme.errorContainer to scheme.onErrorContainer
++        OutcomeTone.Caution -> scheme.tertiaryContainer to scheme.onTertiaryContainer
++        OutcomeTone.Neutral -> scheme.surfaceContainerHigh to scheme.onSurfaceVariant
++    }
++    val yearText = row.year ?: row.dateTextFallback ?: stringResource(R.string.date_not_recorded)
++    val extras = row.extras.map { (kind, value) ->
++        val label = stringResource(
++            when (kind) {
++                RowExtraKind.PregnancyType -> R.string.pregnancy_type
++                RowExtraKind.LossManagement -> R.string.loss_management
++                RowExtraKind.TerminationMethod -> R.string.termination_method
++            },
++        )
++        stringResource(R.string.labeled_value, label, value)
++    }
++    val separator = stringResource(R.string.detail_separator)
++    val line2 = listOfNotNull(row.placeAndDoctor, row.notes).joinToString(separator)
++    val line3 = (extras + listOfNotNull(row.outcomeNote)).joinToString(separator)
++    val editLabel = stringResource(R.string.correct_previous_pregnancy)
++    val outcomeText = row.outcomeLabelRes?.let { stringResource(it) } ?: row.outcomeLabel
++
++    Row(
++        modifier = modifier
++            .fillMaxWidth()
++            .heightIn(min = 48.dp)
++            .testTag("pregnancy-${pregnancy.id}"),
++        verticalAlignment = Alignment.Top,
++    ) {
++        val editClick = if (onEdit != null) {
++            Modifier.clickable(onClickLabel = editLabel, onClick = onEdit).minimumTouchTarget().testTag("editPregnancy-${pregnancy.id}")
++        } else {
++            Modifier
++        }
++        Column(
++            modifier = Modifier.weight(1f).then(editClick).padding(vertical = 6.dp),
++            verticalArrangement = Arrangement.spacedBy(2.dp),
++        ) {
++            FlowRow(
++                horizontalArrangement = Arrangement.spacedBy(6.dp),
++                verticalArrangement = Arrangement.spacedBy(2.dp),
++                itemVerticalAlignment = Alignment.CenterVertically,
++            ) {
++                Text(
++                    text = yearText,
++                    style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
++                    fontWeight = FontWeight.Bold,
++                    color = scheme.onSurface,
++                )
++                outcomeText?.let {
++                    Surface(shape = RoundedCornerShape(6.dp), color = chipBg) {
++                        Text(
++                            text = it,
++                            style = MaterialTheme.typography.labelMedium,
++                            fontWeight = FontWeight.SemiBold,
++                            color = chipFg,
++                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
++                        )
++                    }
++                }
++                row.mode?.let {
++                    Text(text = it, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurface)
++                }
++            }
++            if (line2.isNotEmpty()) {
++                Text(
++                    text = line2,
++                    style = MaterialTheme.typography.bodySmall,
++                    color = scheme.onSurfaceVariant,
++                    maxLines = 2,
++                    overflow = TextOverflow.Ellipsis,
++                )
++            }
++            if (line3.isNotEmpty()) {
++                Text(
++                    text = line3,
++                    style = MaterialTheme.typography.bodySmall,
++                    color = scheme.onSurfaceVariant,
++                    modifier = Modifier.testTag("pregnancyExtras-${pregnancy.id}"),
++                )
++            }
++        }
++        if (onDelete != null) {
++            DeleteIconButton(DeletableType.PREVIOUS_PREGNANCY, pregnancy, onDelete)
++        }
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PencilEditButton.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PencilEditButton.kt
+new file mode 100644
+index 0000000..5f2c238
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PencilEditButton.kt
+@@ -0,0 +1,43 @@
++package com.sherifradwan.ancnative.ui.patienthub.components
++
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.size
++import androidx.compose.material.icons.Icons
++import androidx.compose.material.icons.filled.Edit
++import androidx.compose.material3.Icon
++import androidx.compose.material3.IconButton
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.ui.minimumTouchTarget
++
++/** Canonical compact edit affordance: a right-aligned pencil icon button. */
++@Composable
++fun CanonicalPencilEditButton(
++    contentDescription: String,
++    tag: String,
++    onClick: () -> Unit,
++    modifier: Modifier = Modifier,
++    trailing: (@Composable () -> Unit)? = null,
++) {
++    Row(
++        modifier = modifier.fillMaxWidth(),
++        horizontalArrangement = Arrangement.End,
++        verticalAlignment = Alignment.CenterVertically,
++    ) {
++        trailing?.invoke()
++        IconButton(onClick = onClick, modifier = Modifier.minimumTouchTarget().testTag(tag)) {
++            Icon(
++                Icons.Default.Edit,
++                contentDescription = contentDescription,
++                tint = MaterialTheme.colorScheme.primary,
++                modifier = Modifier.size(20.dp),
++            )
++        }
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/BedsideVitalsUi.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/BedsideVitalsUi.kt
+new file mode 100644
+index 0000000..f1a646c
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/BedsideVitalsUi.kt
+@@ -0,0 +1,64 @@
++package com.sherifradwan.ancnative.ui.patienthub.model
++
++import com.sherifradwan.ancnative.model.BpLevel
++import com.sherifradwan.ancnative.model.FhrLevel
++import com.sherifradwan.ancnative.model.SfhConcordance
++import com.sherifradwan.ancnative.model.bpLevel
++import com.sherifradwan.ancnative.model.checkSfhConcordance
++import com.sherifradwan.ancnative.model.fhrLevel
++import com.sherifradwan.ancnative.model.isPreEclampsiaWarning
++import com.sherifradwan.ancnative.model.parseBloodPressure
++import com.sherifradwan.ancnative.model.parseVisitFindings
++import com.sherifradwan.ancnative.model.parseWeightKg
++import java.util.Locale
++
++data class VitalsSnapshot(
++    val bpText: String?,
++    val bpLevel: BpLevel,
++    val weightText: String?,
++    val weightDeltaText: String?,
++    val fhrText: String?,
++    val fhrLevel: FhrLevel?,
++    val urineProtein: String?,
++    val sfhCm: String?,
++    val sfhConcordance: SfhConcordance?,
++    val isPreEclampsiaWarning: Boolean,
++)
++
++fun deriveVitalsSnapshot(
++    bloodPressure: String?,
++    weight: String?,
++    findings: String?,
++    gaWeeks: Int?,
++    bookingWeightKg: Double?,
++): VitalsSnapshot {
++    val parsedFindings = parseVisitFindings(findings)
++    val parsedBp = parseBloodPressure(bloodPressure)
++    val bpLev = bpLevel(parsedBp?.systolic, parsedBp?.diastolic)
++    val preEclampsia = isPreEclampsiaWarning(parsedBp?.systolic, parsedBp?.diastolic, parsedFindings.urineProtein)
++    val sfh = parsedFindings.fundalHeight?.toIntOrNull()
++    val sfhConc = checkSfhConcordance(sfh, gaWeeks)
++    val fhrLev = fhrLevel(parsedFindings.fetalHeartRate)
++
++    val currentWeightKg = parseWeightKg(weight)
++    val weightDeltaText = if (bookingWeightKg != null && currentWeightKg != null && bookingWeightKg > 0.0 && bookingWeightKg != currentWeightKg) {
++        val diff = currentWeightKg - bookingWeightKg
++        val sign = if (diff >= 0) "+" else ""
++        String.format(Locale.US, "Δ %s%.1f kg", sign, diff)
++    } else {
++        null
++    }
++
++    return VitalsSnapshot(
++        bpText = bloodPressure?.trim(),
++        bpLevel = bpLev,
++        weightText = weight?.trim(),
++        weightDeltaText = weightDeltaText,
++        fhrText = parsedFindings.fetalHeartRate,
++        fhrLevel = fhrLev,
++        urineProtein = parsedFindings.urineProtein,
++        sfhCm = parsedFindings.fundalHeight,
++        sfhConcordance = sfhConc,
++        isPreEclampsiaWarning = preEclampsia,
++    )
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/BiometryUi.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/BiometryUi.kt
+new file mode 100644
+index 0000000..eef66f6
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/BiometryUi.kt
+@@ -0,0 +1,43 @@
++package com.sherifradwan.ancnative.ui.patienthub.model
++
++import com.sherifradwan.ancnative.model.DemoUltrasoundScan
++
++data class BiometryValues(
++    val bpd: String?,
++    val hc: String?,
++    val ac: String?,
++    val fl: String?,
++    val efw: String?,
++    val fhr: String?,
++    val amnioticFluid: String?,
++    val placenta: String?,
++    val presentation: String? = null,
++) {
++    val isEmpty: Boolean
++        get() = bpd.isNullOrBlank() &&
++            hc.isNullOrBlank() &&
++            ac.isNullOrBlank() &&
++            fl.isNullOrBlank() &&
++            efw.isNullOrBlank()
++
++    val hasAnyData: Boolean
++        get() = !isEmpty ||
++            !fhr.isNullOrBlank() ||
++            !amnioticFluid.isNullOrBlank() ||
++            !placenta.isNullOrBlank() ||
++            !presentation.isNullOrBlank()
++}
++
++fun extractBiometry(scan: DemoUltrasoundScan): BiometryValues {
++    return BiometryValues(
++        bpd = scan.biometryBpd?.trim()?.takeIf { it.isNotEmpty() },
++        hc = scan.biometryHc?.trim()?.takeIf { it.isNotEmpty() },
++        ac = scan.biometryAc?.trim()?.takeIf { it.isNotEmpty() },
++        fl = scan.biometryFl?.trim()?.takeIf { it.isNotEmpty() },
++        efw = scan.estimatedFetalWeight?.trim()?.takeIf { it.isNotEmpty() },
++        fhr = scan.fetalHeartRate?.trim()?.takeIf { it.isNotEmpty() },
++        amnioticFluid = scan.amnioticFluid?.trim()?.takeIf { it.isNotEmpty() },
++        placenta = scan.placentalSite?.trim()?.takeIf { it.isNotEmpty() },
++        presentation = scan.presentation?.trim()?.takeIf { it.isNotEmpty() },
++    )
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/LabReportGrouping.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/LabReportGrouping.kt
+new file mode 100644
+index 0000000..0e00a08
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/LabReportGrouping.kt
+@@ -0,0 +1,113 @@
++package com.sherifradwan.ancnative.ui.patienthub.model
++
++import com.sherifradwan.ancnative.model.DemoLabInvestigation
++
++data class ClinicalLabReport(
++    val date: String,
++    val labName: String?,
++    val items: List<DemoLabInvestigation>,
++) {
++    val totalCount: Int get() = items.size
++    val abnormalCount: Int get() = items.count { it.isAbnormal }
++    val isAnyAbnormal: Boolean get() = abnormalCount > 0
++}
++
++data class CompositeTestGroup(
++    val title: String,
++    val isComposite: Boolean,
++    val items: List<DemoLabInvestigation>,
++) {
++    val abnormalCount: Int get() = items.count { it.isAbnormal }
++    val isAnyAbnormal: Boolean get() = abnormalCount > 0
++    val summaryPillText: String
++        get() {
++            val abnormalItem = items.firstOrNull { it.isAbnormal }
++            return if (abnormalItem != null) {
++                "${abnormalItem.testName} ${abnormalItem.result} [ABNORMAL]"
++            } else {
++                "ALL NORMAL ✓"
++            }
++        }
++}
++
++private val CBC_KEYWORDS = listOf("hemoglobin", "platelet", "wbc", "white blood", "rbc", "red blood", "hematocrit", "hct", "mcv", "mch", "mchc")
++private val URINE_KEYWORDS = listOf("urine", "pus cells", "nitrite", "leukocyte", "protein")
++private val STOOL_KEYWORDS = listOf("stool", "occult blood", "ova", "parasite")
++private val LFT_KEYWORDS = listOf("alt", "ast", "sgpt", "sgot", "bilirubin", "alkaline phosphatase")
++private val KFT_KEYWORDS = listOf("creatinine", "urea", "uric acid", "bun")
++
++fun partitionReportIntoCompositeGroups(
++    items: List<DemoLabInvestigation>,
++): List<CompositeTestGroup> {
++    val cbcItems = mutableListOf<DemoLabInvestigation>()
++    val urineItems = mutableListOf<DemoLabInvestigation>()
++    val stoolItems = mutableListOf<DemoLabInvestigation>()
++    val lftItems = mutableListOf<DemoLabInvestigation>()
++    val kftItems = mutableListOf<DemoLabInvestigation>()
++    val standaloneItems = mutableListOf<DemoLabInvestigation>()
++
++    items.forEach { lab ->
++        val nameLower = lab.testName.lowercase()
++        val catLower = lab.testCategory.lowercase()
++        when {
++            CBC_KEYWORDS.any { nameLower.contains(it) } -> cbcItems.add(lab)
++            catLower.contains("urine") || URINE_KEYWORDS.any { nameLower.contains(it) } -> urineItems.add(lab)
++            catLower.contains("stool") || STOOL_KEYWORDS.any { nameLower.contains(it) } -> stoolItems.add(lab)
++            LFT_KEYWORDS.any { nameLower.contains(it) } -> lftItems.add(lab)
++            KFT_KEYWORDS.any { nameLower.contains(it) } -> kftItems.add(lab)
++            else -> standaloneItems.add(lab)
++        }
++    }
++
++    val groups = mutableListOf<CompositeTestGroup>()
++    if (cbcItems.size >= 2) {
++        groups.add(CompositeTestGroup("Complete Blood Count (CBC)", isComposite = true, cbcItems))
++    } else {
++        standaloneItems.addAll(cbcItems)
++    }
++
++    if (urineItems.size >= 2) {
++        groups.add(CompositeTestGroup("Complete Urine Analysis", isComposite = true, urineItems))
++    } else {
++        standaloneItems.addAll(urineItems)
++    }
++
++    if (stoolItems.size >= 2) {
++        groups.add(CompositeTestGroup("Stool Analysis", isComposite = true, stoolItems))
++    } else {
++        standaloneItems.addAll(stoolItems)
++    }
++
++    if (lftItems.size >= 2) {
++        groups.add(CompositeTestGroup("Liver Function Panel (LFT)", isComposite = true, lftItems))
++    } else {
++        standaloneItems.addAll(lftItems)
++    }
++
++    if (kftItems.size >= 2) {
++        groups.add(CompositeTestGroup("Renal Function Panel (KFT)", isComposite = true, kftItems))
++    } else {
++        standaloneItems.addAll(kftItems)
++    }
++
++    if (standaloneItems.isNotEmpty()) {
++        groups.add(CompositeTestGroup("Individual Investigations", isComposite = false, standaloneItems))
++    }
++
++    return groups
++}
++
++fun groupLabsIntoReports(
++    labs: List<DemoLabInvestigation>,
++): List<ClinicalLabReport> {
++    return labs
++        .groupBy { it.date to it.labName }
++        .map { (key, groupLabs) ->
++            ClinicalLabReport(
++                date = key.first,
++                labName = key.second,
++                items = groupLabs,
++            )
++        }
++        .sortedByDescending { it.date }
++}

@@ -1,0 +1,4 @@
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/VisitsTab.kt
+app/src/main/java/com/sherifradwan/ancnative/ui/report/HtmlEscape.kt
+app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintManager.kt
+app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt

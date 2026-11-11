@@ -1,0 +1,10 @@
+w: app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:1005:9 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+w: app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:1006:9 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+w: app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:1007:9 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+w: app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:1014:9 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+w: app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:995:26 'constructor(p0: String!): Locale' is deprecated. Deprecated in Java.
+w: app/src/main/java/com/sherifradwan/ancnative/state/AncReducer.kt:278:56 Condition is always 'true'.
+w: app/src/main/java/com/sherifradwan/ancnative/ui/InAppCameraDialog.kt:84:26 'val LocalLifecycleOwner: ProvidableCompositionLocal<LifecycleOwner>' is deprecated. Moved to lifecycle-runtime-compose library in androidx.lifecycle.compose package.
+w: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/PastDeliveryRowModel.kt:17:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+w: app/src/test/java/com/sherifradwan/ancnative/storage/BackupVaultIntegrationAndZeroDataLossTest.kt:202:26 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: app/src/test/java/com/sherifradwan/ancnative/storage/RecordsMappingRoundTripTest.kt:108:26 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.

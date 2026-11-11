@@ -1,0 +1,480 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt b/app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt
+new file mode 100644
+index 0000000..9c6ab1b
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/model/GestationalAgeEngine.kt
+@@ -0,0 +1,138 @@
++package com.sherifradwan.ancnative.model
++
++import java.time.LocalDate
++import java.time.temporal.ChronoUnit
++import java.util.Locale
++
++fun daysToEdd(edd: LocalDate, asOf: LocalDate): Long = ChronoUnit.DAYS.between(asOf, edd)
++
++data class GestationalAgeResult(
++    val weeks: Int,
++    val days: Int,
++    val totalDays: Long,
++    val formatted: String,
++    val trimester: Int,
++    val isPostTerm: Boolean = false,
++) {
++    val displayText: String get() = formatted
++    val isPostConception: Boolean get() = totalDays >= 0
++    val isLateTerm: Boolean get() = weeks == 41
++    val progressFraction: Float get() = (totalDays / FULL_TERM_DAYS.toFloat()).coerceIn(0f, 1f)
++    val shortWeeksText: String get() = "${weeks}+${days} wks"
++}
++
++data class DueDatesByMethod(
++    val lmp: LocalDate?,
++    val ivf: LocalDate?,
++    val scan: LocalDate?,
++)
++
++/**
++ * Canonical dating method code for a stored value, matched ignoring case and surrounding spaces.
++ * "IVF" and "US" are aliases. Unknown values come back trimmed, blank or null gives null.
++ */
++fun canonicalDatingMethod(method: String?): String? {
++    val trimmed = method?.trim()?.takeIf { it.isNotEmpty() } ?: return null
++    return when (trimmed.uppercase(Locale.ROOT)) {
++        "LMP" -> "LMP"
++        "ULTRASOUND", "US" -> "Ultrasound"
++        "IVF_TRANSFER", "IVF" -> "IVF_TRANSFER"
++        "CLINICAL" -> "Clinical"
++        else -> trimmed
++    }
++}
++
++object GestationalAgeEngine {
++
++    /** Null when the method has no usable date, including a parseable date so extreme that adding a term overflows. */
++    fun dueDateForMethod(dating: DemoPatientDating, method: String?): LocalDate? =
++        derivedOrNull { dueDateForMethodUnsafe(dating, method) }
++
++    private fun dueDateForMethodUnsafe(dating: DemoPatientDating, method: String?): LocalDate? {
++        return when (canonicalDatingMethod(method)) {
++            "IVF_TRANSFER" -> {
++                if (!dating.transferDate.isNullOrBlank()) {
++                    val transfer = parseIsoDateOrNull(dating.transferDate) ?: return null
++                    val embryoAge = dating.embryoAgeDays ?: 5
++                    if (embryoAge !in ClinicalVocabulary.embryoAges) return null
++                    ivfEddFromTransfer(transfer, embryoAge)
++                } else null
++            }
++            "Ultrasound" -> {
++                if (!dating.ultrasoundEdd.isNullOrBlank()) {
++                    parseIsoDateOrNull(dating.ultrasoundEdd)
++                } else null
++            }
++            "LMP" -> {
++                if (!dating.lmpDate.isNullOrBlank()) {
++                    val lmp = parseIsoDateOrNull(dating.lmpDate) ?: return null
++                    eddFromLmp(lmp)
++                } else null
++            }
++            else -> {
++                val scan = if (!dating.ultrasoundEdd.isNullOrBlank()) {
++                    parseIsoDateOrNull(dating.ultrasoundEdd)
++                } else null
++                scan ?: dueDateForMethod(dating, "LMP")
++            }
++        }
++    }
++
++    fun dueDatesByMethod(dating: DemoPatientDating): DueDatesByMethod {
++        return DueDatesByMethod(
++            lmp = dueDateForMethod(dating, "LMP"),
++            ivf = dueDateForMethod(dating, "IVF_TRANSFER"),
++            scan = dueDateForMethod(dating, "Ultrasound"),
++        )
++    }
++
++    fun calculateGestationalAgeAt(dating: DemoPatientDating?, dateString: String?): GestationalAgeResult? {
++        if (dateString.isNullOrBlank()) return null
++        val date = parseIsoDateOrNull(dateString) ?: return null
++        return calculate(dating, date)
++    }
++
++    fun calculate(dating: DemoPatientDating?, asOfDate: LocalDate = LocalDate.now()): GestationalAgeResult? {
++        val edd = calculateEstimatedDueDate(dating) ?: return null
++        return calculateForEdd(edd, asOfDate)
++    }
++
++    fun calculateForEdd(edd: LocalDate, asOfDate: LocalDate = LocalDate.now()): GestationalAgeResult? {
++        val daysToEdd = daysToEdd(edd, asOfDate)
++        val totalDays = FULL_TERM_DAYS - daysToEdd
++        if (totalDays < 0 || totalDays > 320) return null
++        return formatGestationalDays(totalDays)
++    }
++
++    fun calculateEstimatedDueDate(dating: DemoPatientDating?): LocalDate? {
++        if (dating == null) return null
++        if (!dating.agreedEdd.isNullOrBlank()) {
++            parseIsoDateOrNull(dating.agreedEdd)?.let { return it }
++        }
++        return dueDateForMethod(dating, dating.datingMethod)
++    }
++
++    private fun formatGestationalDays(totalDays: Long): GestationalAgeResult {
++        val weeks = (totalDays / 7).toInt()
++        val days = (totalDays % 7).toInt()
++        val isPostTerm = weeks >= 42
++        val formatted = if (isPostTerm) {
++            "${weeks}w ${days}d (Post-term)"
++        } else {
++            "${weeks}w ${days}d"
++        }
++        val trimester = when {
++            weeks < 14 -> 1
++            weeks < 28 -> 2
++            else -> 3
++        }
++        return GestationalAgeResult(
++            weeks = weeks,
++            days = days,
++            totalDays = totalDays,
++            formatted = formatted,
++            trimester = trimester,
++            isPostTerm = isPostTerm,
++        )
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/model/LabResultFlag.kt b/app/src/main/java/com/sherifradwan/ancnative/model/LabResultFlag.kt
+new file mode 100644
+index 0000000..da74890
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/model/LabResultFlag.kt
+@@ -0,0 +1,68 @@
++package com.sherifradwan.ancnative.model
++
++enum class LabResultFlag {
++    NORMAL,
++    HIGH,
++    LOW,
++    UNKNOWN,
++}
++
++private val NUMBER_REGEX = Regex("""^\d+(?:\.\d+)?$""")
++private val RANGE_BETWEEN_REGEX = Regex("""^(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)$""")
++private val RANGE_LTE_REGEX = Regex("""^<=\s*(\d+(?:\.\d+)?)$""")
++private val RANGE_LT_REGEX = Regex("""^<\s*(\d+(?:\.\d+)?)$""")
++private val RANGE_GTE_REGEX = Regex("""^>=\s*(\d+(?:\.\d+)?)$""")
++private val RANGE_GT_REGEX = Regex("""^>\s*(\d+(?:\.\d+)?)$""")
++
++fun labResultFlag(result: String, referenceRange: String): LabResultFlag {
++    val cleanResult = result.trim()
++    val cleanRange = referenceRange.trim()
++
++    if (cleanResult.isEmpty() || cleanRange.isEmpty()) {
++        return LabResultFlag.UNKNOWN
++    }
++
++    if (!NUMBER_REGEX.matches(cleanResult)) {
++        return LabResultFlag.UNKNOWN
++    }
++
++    val resultNum = cleanResult.toDoubleOrNull() ?: return LabResultFlag.UNKNOWN
++
++    val betweenMatch = RANGE_BETWEEN_REGEX.matchEntire(cleanRange)
++    if (betweenMatch != null) {
++        val a = betweenMatch.groupValues[1].toDoubleOrNull() ?: return LabResultFlag.UNKNOWN
++        val b = betweenMatch.groupValues[2].toDoubleOrNull() ?: return LabResultFlag.UNKNOWN
++        if (a > b) return LabResultFlag.UNKNOWN
++        return when {
++            resultNum < a -> LabResultFlag.LOW
++            resultNum > b -> LabResultFlag.HIGH
++            else -> LabResultFlag.NORMAL
++        }
++    }
++
++    val lteMatch = RANGE_LTE_REGEX.matchEntire(cleanRange)
++    if (lteMatch != null) {
++        val x = lteMatch.groupValues[1].toDoubleOrNull() ?: return LabResultFlag.UNKNOWN
++        return if (resultNum <= x) LabResultFlag.NORMAL else LabResultFlag.HIGH
++    }
++
++    val ltMatch = RANGE_LT_REGEX.matchEntire(cleanRange)
++    if (ltMatch != null) {
++        val x = ltMatch.groupValues[1].toDoubleOrNull() ?: return LabResultFlag.UNKNOWN
++        return if (resultNum < x) LabResultFlag.NORMAL else LabResultFlag.HIGH
++    }
++
++    val gteMatch = RANGE_GTE_REGEX.matchEntire(cleanRange)
++    if (gteMatch != null) {
++        val x = gteMatch.groupValues[1].toDoubleOrNull() ?: return LabResultFlag.UNKNOWN
++        return if (resultNum >= x) LabResultFlag.NORMAL else LabResultFlag.LOW
++    }
++
++    val gtMatch = RANGE_GT_REGEX.matchEntire(cleanRange)
++    if (gtMatch != null) {
++        val x = gtMatch.groupValues[1].toDoubleOrNull() ?: return LabResultFlag.UNKNOWN
++        return if (resultNum > x) LabResultFlag.NORMAL else LabResultFlag.LOW
++    }
++
++    return LabResultFlag.UNKNOWN
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/model/LongitudinalTimelineProjection.kt b/app/src/main/java/com/sherifradwan/ancnative/model/LongitudinalTimelineProjection.kt
+new file mode 100644
+index 0000000..35afbda
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/model/LongitudinalTimelineProjection.kt
+@@ -0,0 +1,116 @@
++package com.sherifradwan.ancnative.model
++
++import java.time.LocalDate
++
++enum class TimelineEventKind {
++    VISIT,
++    STANDALONE_ULTRASOUND,
++}
++
++data class LongitudinalTimelineEvent(
++    val eventKey: String,
++    val id: String,
++    val dateString: String,
++    val parsedDate: LocalDate?,
++    val kind: TimelineEventKind,
++    val visit: DemoVisit? = null,
++    val standaloneScan: DemoUltrasoundScan? = null,
++    val linkedScan: DemoUltrasoundScan? = null,
++    val linkIntegrityWarning: String? = null,
++)
++
++object LongitudinalTimelineProjection {
++
++    fun build(patient: DemoPatient): List<LongitudinalTimelineEvent> {
++        val events = mutableListOf<LongitudinalTimelineEvent>()
++
++        // Filter ultrasound scans strictly owned by this patient
++        val patientScans = patient.ultrasoundScans.filter { it.patientId == patient.id }
++        val scanById = patientScans.associateBy { it.id }
++
++        // Reference counts to detect conflicts (e.g. multiple visits referencing one scan)
++        val scanReferenceCounts = mutableMapOf<String, Int>()
++        patient.visits.forEach { visit ->
++            visit.linkedUltrasoundId?.let { scanId ->
++                scanReferenceCounts[scanId] = (scanReferenceCounts[scanId] ?: 0) + 1
++            }
++        }
++
++        // 1. Process Visits
++        for (visit in patient.visits) {
++            val parsedDate = parseIsoDateOrNull(visit.date)
++            var linkedScan: DemoUltrasoundScan? = null
++            var warning: String? = null
++
++            val targetScanId = visit.linkedUltrasoundId
++            if (targetScanId != null) {
++                val candidateScan = scanById[targetScanId]
++                if (candidateScan == null) {
++                    warning = "Linked ultrasound ($targetScanId) not found in patient records"
++                } else {
++                    linkedScan = candidateScan
++                    val conflictCount = scanReferenceCounts[targetScanId] ?: 1
++                    if (conflictCount > 1) {
++                        warning = "Conflict: Multiple visits reference this ultrasound scan"
++                    } else if (candidateScan.linkedVisitId != null && candidateScan.linkedVisitId != visit.id) {
++                        warning = "Conflict: Ultrasound references a different visit (${candidateScan.linkedVisitId})"
++                    }
++                }
++            }
++
++            events.add(
++                LongitudinalTimelineEvent(
++                    eventKey = "visit:${visit.id}",
++                    id = visit.id,
++                    dateString = visit.date,
++                    parsedDate = parsedDate,
++                    kind = TimelineEventKind.VISIT,
++                    visit = visit,
++                    standaloneScan = null,
++                    linkedScan = linkedScan,
++                    linkIntegrityWarning = warning,
++                )
++            )
++        }
++
++        // 2. Process Standalone Ultrasounds (not consumed by any visit)
++        for (scan in patientScans) {
++            val consumedByVisit = patient.visits.any { it.linkedUltrasoundId == scan.id }
++            if (!consumedByVisit) {
++                val parsedDate = parseIsoDateOrNull(scan.date)
++                var warning: String? = null
++                if (scan.linkedVisitId != null) {
++                    val targetVisit = patient.visits.firstOrNull { it.id == scan.linkedVisitId }
++                    if (targetVisit == null) {
++                        warning = "References non-existent visit (${scan.linkedVisitId})"
++                    } else {
++                        warning = "One-way link from scan to visit (${scan.linkedVisitId})"
++                    }
++                }
++
++                events.add(
++                    LongitudinalTimelineEvent(
++                        eventKey = "scan:${scan.id}",
++                        id = scan.id,
++                        dateString = scan.date,
++                        parsedDate = parsedDate,
++                        kind = TimelineEventKind.STANDALONE_ULTRASOUND,
++                        visit = null,
++                        standaloneScan = scan,
++                        linkedScan = null,
++                        linkIntegrityWarning = warning,
++                    )
++                )
++            }
++        }
++
++        // 3. Chronological sort:
++        // Valid parsed dates first, newest at top (descending).
++        // Undated/invalid dates last, deterministic tie-break by eventKey.
++        return events.sortedWith(
++            compareByDescending<LongitudinalTimelineEvent> { it.parsedDate != null }
++                .thenByDescending { it.parsedDate }
++                .thenBy { it.eventKey }
++        )
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/model/ObstetricHistory.kt b/app/src/main/java/com/sherifradwan/ancnative/model/ObstetricHistory.kt
+new file mode 100644
+index 0000000..f6ceb66
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/model/ObstetricHistory.kt
+@@ -0,0 +1,97 @@
++package com.sherifradwan.ancnative.model
++
++data class PreviousDeliveryCounts(
++    val cesarean: Int,
++    val vaginal: Int,
++    val stillbirth: Int,
++    val earlyLoss: Int,
++)
++
++private val CS_WORD_REGEX = Regex("""\b(?:CS|Cesarean)\b""", RegexOption.IGNORE_CASE)
++private val VAGINAL_WORD_REGEX = Regex("""\b(?:SVD|Vaginal)\b""", RegexOption.IGNORE_CASE)
++
++fun isStillbirth(pregnancy: DemoPreviousPregnancy): Boolean {
++    val text = pregnancy.outcomeText
++    return pregnancy.outcome == "Stillbirth" ||
++        (text != null && (text.contains("Stillbirth", ignoreCase = true) || text.contains("IUFD", ignoreCase = true)))
++}
++
++fun isEarlyLoss(pregnancy: DemoPreviousPregnancy): Boolean {
++    val text = pregnancy.outcomeText
++    return pregnancy.outcome == "EarlyPregnancyLoss" ||
++        (text != null && (text.contains("Miscarriage", ignoreCase = true) || text.contains("Loss", ignoreCase = true)))
++}
++
++fun previousDeliveryCounts(pregnancies: List<DemoPreviousPregnancy>): PreviousDeliveryCounts {
++    var cesarean = 0
++    var vaginal = 0
++    var stillbirth = 0
++    var earlyLoss = 0
++
++    for (p in pregnancies) {
++        val bm = p.birthMethod?.trim()
++        val db = p.deliveryBy?.trim()
++
++        val isStructCs = bm.equals("Cesarean", ignoreCase = true) || db.equals("CS", ignoreCase = true)
++        val isStructVag = bm.equals("Vaginal", ignoreCase = true) || db.equals("Vaginal", ignoreCase = true)
++
++        if (isStructCs) {
++            cesarean++
++        } else if (isStructVag) {
++            vaginal++
++        } else if (bm.isNullOrBlank() && db.isNullOrBlank()) {
++            val text = p.outcomeText
++            if (text != null) {
++                if (CS_WORD_REGEX.containsMatchIn(text)) {
++                    cesarean++
++                } else if (VAGINAL_WORD_REGEX.containsMatchIn(text)) {
++                    vaginal++
++                }
++            }
++        }
++
++        if (isStillbirth(p)) {
++            stillbirth++
++        }
++
++        if (isEarlyLoss(p)) {
++            earlyLoss++
++        }
++    }
++
++    return PreviousDeliveryCounts(
++        cesarean = cesarean,
++        vaginal = vaginal,
++        stillbirth = stillbirth,
++        earlyLoss = earlyLoss,
++    )
++}
++
++private fun pluralize(count: Int, singular: String, plural: String): String =
++    "$count " + if (count == 1) singular else plural
++
++fun previousDeliverySummary(patient: DemoPatient): String {
++    val g = patient.gravida ?: 1L
++    val p = patient.parity ?: 0L
++    val a = patient.abortion ?: 0L
++    val pregnancies = patient.previousPregnancies
++    val c = previousDeliveryCounts(pregnancies)
++
++    return when {
++        g == 1L && p == 0L && a == 0L && pregnancies.isEmpty() -> "Primigravida"
++        p == 0L && pregnancies.isEmpty() -> "P0 · No prior deliveries"
++        c.cesarean > 0 || c.vaginal > 0 -> {
++            val parts = mutableListOf<String>()
++            if (c.cesarean > 0) parts.add("${c.cesarean} CS")
++            if (c.vaginal > 0) parts.add("${c.vaginal} SVD")
++            val routes = parts.joinToString(", ")
++            val iufd = if (c.stillbirth > 0) " · ${c.stillbirth} IUFD" else ""
++            "Prev $routes$iufd"
++        }
++        c.stillbirth > 0 -> "Prior Stillbirth (IUFD)"
++        c.earlyLoss > 0 -> pluralize(c.earlyLoss, "Prior Miscarriage", "Prior Miscarriages")
++        p > 0L -> "Parous (P$p)"
++        pregnancies.isNotEmpty() -> pluralize(pregnancies.size, "Prior Pregnancy", "Prior Pregnancies")
++        else -> "No prior deliveries"
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/model/Redating.kt b/app/src/main/java/com/sherifradwan/ancnative/model/Redating.kt
+new file mode 100644
+index 0000000..1837a1f
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/model/Redating.kt
+@@ -0,0 +1,31 @@
++package com.sherifradwan.ancnative.model
++
++import kotlin.math.abs
++
++data class RedatingAdvice(
++    val differenceDays: Int,
++    val thresholdDays: Int,
++)
++
++/** Wider than any real gestation gap; keeps the Int narrowing below from wrapping. */
++private const val MAX_ADVICE_SPAN_DAYS = 100_000L
++
++fun redatingThresholdDays(datingGaDays: Long): Int = when {
++    datingGaDays <= 62L -> 5
++    datingGaDays in 63L..111L -> 7
++    datingGaDays in 112L..153L -> 10
++    datingGaDays in 154L..195L -> 14
++    else -> 21
++}
++
++fun redatingAdvice(datingGaDays: Long, scanGaDays: Long): RedatingAdvice? {
++    val span = scanGaDays - datingGaDays
++    if (abs(span) > MAX_ADVICE_SPAN_DAYS) return null
++    val difference = span.toInt()
++    val threshold = redatingThresholdDays(datingGaDays)
++    return if (abs(difference) > threshold) {
++        RedatingAdvice(differenceDays = difference, thresholdDays = threshold)
++    } else {
++        null
++    }
++}

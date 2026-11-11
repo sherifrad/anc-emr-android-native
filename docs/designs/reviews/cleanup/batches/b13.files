@@ -1,0 +1,7 @@
+app/src/main/java/com/sherifradwan/ancnative/storage/AttachmentSyncManager.kt
+app/src/main/java/com/sherifradwan/ancnative/storage/BoundedBitmap.kt
+app/src/main/java/com/sherifradwan/ancnative/storage/CameraCaptureHelper.kt
+app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalDeleteRule.kt
+app/src/main/java/com/sherifradwan/ancnative/storage/DeletableRecords.kt
+app/src/main/java/com/sherifradwan/ancnative/storage/DraftCodec.kt
+app/src/main/java/com/sherifradwan/ancnative/storage/DraftRecord.kt

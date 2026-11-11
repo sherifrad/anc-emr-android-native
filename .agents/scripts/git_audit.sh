@@ -34,6 +34,10 @@ done | tee /tmp/git_audit_dirty.$$ ; [ -s /tmp/git_audit_dirty.$$ ] && issues=$(
 echo "== stashes"; s=$(git stash list | wc -l | tr -d ' '); [ "$s" -gt 0 ] && { git stash list; note "STASH: $s stash(es)"; }
 echo "== main tree: modified and untracked (ignored files excluded)"
 st=$(git status --porcelain | grep -v '^$'); [ -n "$st" ] && { echo "$st"; note "UNCLEAN main tree: $(echo "$st" | wc -l | tr -d ' ') path(s)"; }
+echo "== roadmap freshness (.agents/pipeline/HANDOFF_AGY.md)"
+h=$(git log -1 --format=%ct -- .agents/pipeline/HANDOFF_AGY.md 2>/dev/null || echo 0)
+c=$(git log -1 --format=%ct -- app 2>/dev/null || echo 0)
+if [ "$c" -gt "$h" ]; then note "ROADMAP STALE: app code changed after the last roadmap update ($(git log -1 --format=%ad --date=short -- .agents/pipeline/HANDOFF_AGY.md) vs $(git log -1 --format=%ad --date=short -- app))"; else echo "up to date"; fi
 echo "== unreachable commits (not on any branch, tag or reflog)"
 u=$(git fsck --no-reflogs --unreachable 2>/dev/null | awk '$2=="commit"{print $3}')
 [ -n "$u" ] && { for c in $u; do git log -1 --format='  %h %ad %s' --date=short "$c"; done | head -20; note "UNREACHABLE: $(echo "$u" | wc -l | tr -d ' ') commit(s)"; }

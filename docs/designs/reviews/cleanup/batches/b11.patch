@@ -1,0 +1,551 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/DraftAutosaver.kt b/app/src/main/java/com/sherifradwan/ancnative/state/DraftAutosaver.kt
+new file mode 100644
+index 0000000..c520faa
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/DraftAutosaver.kt
+@@ -0,0 +1,194 @@
++package com.sherifradwan.ancnative.state
++
++import com.sherifradwan.ancnative.storage.DraftRecord
++import kotlinx.coroutines.CoroutineScope
++import kotlinx.coroutines.Job
++import kotlinx.coroutines.delay
++import kotlinx.coroutines.launch
++import kotlinx.coroutines.sync.Mutex
++import kotlinx.coroutines.sync.withLock
++
++interface DraftStore {
++    suspend fun save(record: DraftRecord): Boolean
++    suspend fun delete(slot: DraftSlot)
++    suspend fun load(slot: DraftSlot): DraftRecord?
++}
++
++class DraftAutosaver(
++    private val scope: CoroutineScope,
++    private val store: DraftStore,
++    private val debounceMillis: Long = 1000L,
++    private val nowMillis: () -> Long = System::currentTimeMillis,
++) {
++    private val lock = Any()
++    private val saveMutex = Mutex()
++    private val pendingRecords = mutableMapOf<DraftSlot, DraftRecord>()
++    private val pendingJobs = mutableMapOf<DraftSlot, Job>()
++    private val latestRequestedFields = mutableMapOf<DraftSlot, Map<String, String>>()
++    private val slotGenerations = mutableMapOf<DraftSlot, Long>()
++    private val heldSlots = mutableMapOf<DraftSlot, String>()
++
++    fun holdSlot(slot: DraftSlot, sessionId: String) {
++        synchronized(lock) {
++            heldSlots[slot] = sessionId
++            pendingJobs.remove(slot)?.cancel()
++            pendingRecords.remove(slot)
++            latestRequestedFields.remove(slot)
++            slotGenerations[slot] = (slotGenerations[slot] ?: 0L) + 1L
++        }
++    }
++
++    fun releaseSlot(slot: DraftSlot, sessionId: String) {
++        synchronized(lock) {
++            if (heldSlots[slot] == sessionId) {
++                heldSlots.remove(slot)
++            }
++        }
++    }
++
++    suspend fun load(slot: DraftSlot): DraftRecord? = saveMutex.withLock {
++        try {
++            store.load(slot)
++        } catch (_: Throwable) {
++            null
++        }
++    }
++
++    fun onStateChanged(before: AncState, after: AncState) {
++        val currentSessionId = activeEditorSessionId(after)
++        synchronized(lock) {
++            heldSlots.entries.removeAll { it.value != currentSessionId }
++        }
++
++        val closedSlot = closedDraftSlot(before, after)
++        if (closedSlot != null) {
++            val isHeld = synchronized(lock) { heldSlots.containsKey(closedSlot) }
++            if (!isHeld) {
++                synchronized(lock) {
++                    pendingJobs.remove(closedSlot)?.cancel()
++                    pendingRecords.remove(closedSlot)
++                    latestRequestedFields.remove(closedSlot)
++                    slotGenerations[closedSlot] = (slotGenerations[closedSlot] ?: 0L) + 1L
++                }
++                scope.launch {
++                    saveMutex.withLock {
++                        try {
++                            store.delete(closedSlot)
++                        } catch (_: Throwable) {
++                        }
++                    }
++                }
++            }
++        }
++
++        val record = draftRecordFor(after, nowMillis())
++        if (record != null) {
++            val slot = DraftSlot(record.patientId, record.screenKind)
++            val shouldSchedule = synchronized(lock) {
++                if (!heldSlots.containsKey(slot) && latestRequestedFields[slot] != record.fields) {
++                    latestRequestedFields[slot] = record.fields
++                    pendingRecords[slot] = record
++                    pendingJobs.remove(slot)?.cancel()
++                    true
++                } else {
++                    false
++                }
++            }
++            if (shouldSchedule) {
++                val job = scope.launch {
++                    delay(debounceMillis)
++                    performSave(slot)
++                }
++                synchronized(lock) {
++                    if (pendingRecords.containsKey(slot)) {
++                        pendingJobs[slot] = job
++                    }
++                }
++            }
++        }
++    }
++
++    private suspend fun performSave(slot: DraftSlot) {
++        val (record, gen) = synchronized(lock) {
++            if (heldSlots.containsKey(slot)) return
++            pendingJobs.remove(slot)
++            val r = pendingRecords.remove(slot) ?: return
++            r to (slotGenerations[slot] ?: 0L)
++        }
++
++        saveMutex.withLock {
++            val isStillValid = synchronized(lock) {
++                !heldSlots.containsKey(slot) && (slotGenerations[slot] ?: 0L) == gen
++            }
++            if (!isStillValid) {
++                return
++            }
++            val success = try {
++                store.save(record)
++            } catch (_: Throwable) {
++                false
++            }
++            synchronized(lock) {
++                if (!success && (slotGenerations[slot] ?: 0L) == gen) {
++                    if (latestRequestedFields[slot] == record.fields) {
++                        latestRequestedFields.remove(slot)
++                    }
++                }
++            }
++        }
++    }
++
++    suspend fun flush() {
++        try {
++            val toSave = synchronized(lock) {
++                val nonHeldSlots = pendingRecords.keys.filter { !heldSlots.containsKey(it) }
++                val items = nonHeldSlots.mapNotNull { slot ->
++                    pendingRecords.remove(slot)?.let { record ->
++                        Triple(slot, record, slotGenerations[slot] ?: 0L)
++                    }
++                }
++                for (slot in nonHeldSlots) {
++                    pendingJobs.remove(slot)?.cancel()
++                }
++                items
++            }
++            saveMutex.withLock {
++                for ((slot, record, gen) in toSave) {
++                    val isStillValid = synchronized(lock) {
++                        !heldSlots.containsKey(slot) && (slotGenerations[slot] ?: 0L) == gen
++                    }
++                    if (!isStillValid) continue
++
++                    val success = try {
++                        store.save(record)
++                    } catch (_: Throwable) {
++                        false
++                    }
++                    synchronized(lock) {
++                        if (!success && (slotGenerations[slot] ?: 0L) == gen) {
++                            if (latestRequestedFields[slot] == record.fields) {
++                                latestRequestedFields.remove(slot)
++                            }
++                        }
++                    }
++                }
++            }
++        } catch (_: Throwable) {
++        }
++    }
++
++    fun cancelPending() {
++        synchronized(lock) {
++            heldSlots.clear()
++            for ((_, job) in pendingJobs) {
++                job.cancel()
++            }
++            pendingJobs.clear()
++            pendingRecords.clear()
++            latestRequestedFields.clear()
++            for (slot in slotGenerations.keys.toList()) {
++                slotGenerations[slot] = (slotGenerations[slot] ?: 0L) + 1L
++            }
++        }
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/DraftRecovery.kt b/app/src/main/java/com/sherifradwan/ancnative/state/DraftRecovery.kt
+new file mode 100644
+index 0000000..ea2ce4d
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/DraftRecovery.kt
+@@ -0,0 +1,61 @@
++package com.sherifradwan.ancnative.state
++
++import com.sherifradwan.ancnative.storage.DraftRecord
++
++data class DraftRecoveryPrompt(
++    val slot: DraftSlot,
++    val editorSessionId: String,
++    val record: DraftRecord,
++    val isStale: Boolean,
++)
++
++fun activeEditorSessionId(state: AncState): String? =
++    state.draft?.editorSessionId
++        ?: state.patientDraft?.editorSessionId
++        ?: state.historiesDraft?.editorSessionId
++        ?: state.pregnancyDraft?.editorSessionId
++        ?: state.statusDraft?.editorSessionId
++        ?: state.datingDraft?.editorSessionId
++        ?: state.ultrasoundDraft?.editorSessionId
++        ?: state.labDraft?.editorSessionId
++        ?: state.medicationDraft?.editorSessionId
++        ?: state.labBatchDraft?.editorSessionId
++
++fun activeEditorBaseRevision(state: AncState): Long? {
++    state.draft?.let { return it.baseRevision?.toLong() }
++    state.patientDraft?.let { return it.baseRevision }
++    state.historiesDraft?.let { return it.baseRevision }
++    state.pregnancyDraft?.let { return it.basePregnancyRevision }
++    state.statusDraft?.let { return it.baseRevision }
++    state.datingDraft?.let { return it.basePatientRevision }
++    state.ultrasoundDraft?.let { return it.baseScanRevision }
++    state.labDraft?.let { return it.baseLabRevision }
++    state.medicationDraft?.let { return it.baseMedicationRevision }
++    state.labBatchDraft?.let { return it.basePatientRevision }
++    return null
++}
++
++fun isDraftStale(record: DraftRecord, currentBaseRevision: Long?): Boolean {
++    val recordBase = record.baseRevision ?: return false
++    val currentBase = currentBaseRevision ?: return false
++    return currentBase > recordBase
++}
++
++sealed interface DraftAge {
++    data object LessThanMinute : DraftAge
++    data class Minutes(val n: Long) : DraftAge
++    data class Hours(val n: Long) : DraftAge
++    data class Days(val n: Long) : DraftAge
++}
++
++fun draftAge(nowMillis: Long, savedMillis: Long): DraftAge {
++    val deltaMillis = nowMillis - savedMillis
++    val seconds = deltaMillis / 1000L
++    if (seconds < 60L) return DraftAge.LessThanMinute
++    val minutes = seconds / 60L
++    if (minutes < 60L) return DraftAge.Minutes(minutes)
++    val hours = minutes / 60L
++    if (hours < 24L) return DraftAge.Hours(hours)
++    val days = hours / 24L
++    return DraftAge.Days(days)
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/EditorHooks.kt b/app/src/main/java/com/sherifradwan/ancnative/state/EditorHooks.kt
+new file mode 100644
+index 0000000..1540eaa
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/EditorHooks.kt
+@@ -0,0 +1,139 @@
++package com.sherifradwan.ancnative.state
++
++import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.storage.DeletableType
++
++interface EditorHook {
++    fun isOpenFor(state: AncState, recordId: String): Boolean
++    fun closeEditor(state: AncState, patientId: String): AncState
++    fun rebaseCreateDraft(state: AncState, patients: List<DemoPatient>): AncState
++}
++
++object MedicationEditorHook : EditorHook {
++    override fun isOpenFor(state: AncState, recordId: String): Boolean =
++        state.medicationDraft?.medicationId == recordId
++
++    /** The medication sheet sits over the workspace, so closing it only drops the draft; the route stays. */
++    override fun closeEditor(state: AncState, patientId: String): AncState =
++        state.copy(medicationDraft = null)
++
++    override fun rebaseCreateDraft(state: AncState, patients: List<DemoPatient>): AncState {
++        var nextDraft = state.medicationDraft
++        if (nextDraft != null && nextDraft.baseMedicationRevision == null) {
++            val p = patients.firstOrNull { it.id == nextDraft.patientId }
++            if (p != null) {
++                nextDraft = nextDraft.copy(basePatientRevision = p.revision)
++            }
++        }
++        return state.copy(medicationDraft = nextDraft)
++    }
++}
++
++object LabEditorHook : EditorHook {
++    override fun isOpenFor(state: AncState, recordId: String): Boolean =
++        state.labDraft?.labId == recordId
++
++    override fun closeEditor(state: AncState, patientId: String): AncState =
++        state.copy(
++            labDraft = null,
++            route = if (state.route is AncRoute.LabEditor) {
++                AncRoute.Workspace(patientId, WorkspaceSection.LABORATORY)
++            } else {
++                state.route
++            },
++        )
++
++    override fun rebaseCreateDraft(state: AncState, patients: List<DemoPatient>): AncState {
++        var nextDraft = state.labDraft
++        if (nextDraft != null && nextDraft.baseLabRevision == null) {
++            val p = patients.firstOrNull { it.id == nextDraft.patientId }
++            if (p != null) {
++                nextDraft = nextDraft.copy(basePatientRevision = p.revision)
++            }
++        }
++        return state.copy(labDraft = nextDraft)
++    }
++}
++
++object UltrasoundEditorHook : EditorHook {
++    override fun isOpenFor(state: AncState, recordId: String): Boolean =
++        state.ultrasoundDraft?.scanId == recordId
++
++    override fun closeEditor(state: AncState, patientId: String): AncState =
++        state.copy(
++            ultrasoundDraft = null,
++            route = if (state.route is AncRoute.UltrasoundEditor) {
++                AncRoute.Workspace(patientId, WorkspaceSection.ULTRASOUND)
++            } else {
++                state.route
++            },
++        )
++
++    override fun rebaseCreateDraft(state: AncState, patients: List<DemoPatient>): AncState {
++        var nextDraft = state.ultrasoundDraft
++        if (nextDraft != null && nextDraft.baseScanRevision == null) {
++            val p = patients.firstOrNull { it.id == nextDraft.patientId }
++            if (p != null) {
++                nextDraft = nextDraft.copy(basePatientRevision = p.revision)
++            }
++        }
++        return state.copy(ultrasoundDraft = nextDraft)
++    }
++}
++
++object VisitEditorHook : EditorHook {
++    override fun isOpenFor(state: AncState, recordId: String): Boolean =
++        state.draft?.visitId == recordId
++
++    override fun closeEditor(state: AncState, patientId: String): AncState =
++        state.copy(
++            draft = null,
++            route = if (state.route is AncRoute.VisitEditor) {
++                AncRoute.Workspace(patientId, WorkspaceSection.VISITS)
++            } else {
++                state.route
++            },
++        )
++
++    override fun rebaseCreateDraft(state: AncState, patients: List<DemoPatient>): AncState = state
++}
++
++object PreviousPregnancyEditorHook : EditorHook {
++    override fun isOpenFor(state: AncState, recordId: String): Boolean =
++        state.pregnancyDraft?.pregnancyId == recordId
++
++    override fun closeEditor(state: AncState, patientId: String): AncState =
++        state.copy(
++            pregnancyDraft = null,
++            route = if (state.route is AncRoute.PreviousPregnancyEditor) {
++                AncRoute.Workspace(patientId, WorkspaceSection.OBSTETRIC_HISTORY)
++            } else {
++                state.route
++            },
++        )
++
++    override fun rebaseCreateDraft(state: AncState, patients: List<DemoPatient>): AncState {
++        var nextDraft = state.pregnancyDraft
++        if (nextDraft != null && nextDraft.basePregnancyRevision == null) {
++            val p = patients.firstOrNull { it.id == nextDraft.patientId }
++            if (p != null) {
++                nextDraft = nextDraft.copy(basePatientRevision = p.revision)
++            }
++        }
++        return state.copy(pregnancyDraft = nextDraft)
++    }
++}
++
++object EditorHooks {
++    private val hooks: Map<DeletableType, EditorHook> = mapOf(
++        DeletableType.MEDICATION to MedicationEditorHook,
++        DeletableType.LAB to LabEditorHook,
++        DeletableType.ULTRASOUND to UltrasoundEditorHook,
++        DeletableType.VISIT to VisitEditorHook,
++        DeletableType.PREVIOUS_PREGNANCY to PreviousPregnancyEditorHook,
++    )
++
++    fun of(type: DeletableType): EditorHook? = hooks[type]
++
++    fun all(): Collection<EditorHook> = hooks.values
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/LabBatchState.kt b/app/src/main/java/com/sherifradwan/ancnative/state/LabBatchState.kt
+new file mode 100644
+index 0000000..ea1c40f
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/LabBatchState.kt
+@@ -0,0 +1,133 @@
++package com.sherifradwan.ancnative.state
++
++import com.sherifradwan.ancnative.model.ClinicalVocabulary
++import com.sherifradwan.ancnative.model.catalog.LabCategoryGroup
++import com.sherifradwan.ancnative.storage.LabBatchEntry
++import com.sherifradwan.ancnative.storage.SaveLabBatchCommand
++
++/** Which of the three batch tabs is open. A new batch starts on Add (nothing to enter yet). */
++enum class LabBatchTab { ADD, ENTER, REVIEW }
++
++/** A display section of grouped items for the Review tab and summary views. */
++data class LabBatchItemGroup(
++    val title: String,
++    val items: List<LabBatchItem>,
++)
++
++/** One row of the batch while it is still in memory. Nothing here is written until Save. */
++data class LabBatchItem(
++    val labId: String,
++    val testName: String,
++    val category: String,
++    val unit: String,
++    val result: String = "",
++    val referenceRange: String = "",
++    val isAbnormal: Boolean = false,
++    val notes: String = "",
++) {
++    val isFilled: Boolean get() = result.isNotBlank()
++}
++
++/**
++ * The whole laboratory batch before it is saved: one date and one lab for every row, and a cursor for the Enter tab.
++ * It lives in [AncState] so a recomposition never loses it; it is cleared when the batch is saved or cancelled.
++ */
++data class LabBatchDraft(
++    val patientId: String,
++    val editorSessionId: String,
++    val basePatientRevision: Long,
++    val date: String,
++    val labName: String?,
++    val items: List<LabBatchItem> = emptyList(),
++    val cursor: Int = 0,
++    val tab: LabBatchTab = LabBatchTab.ADD,
++    val errors: Set<ClinicalValidationError> = emptySet(),
++) {
++    val filledCount: Int get() = items.count { it.isFilled }
++
++    val currentItem: LabBatchItem? get() = items.getOrNull(cursor)
++
++    fun item(labId: String): LabBatchItem? = items.firstOrNull { it.labId == labId }
++
++    fun withItem(labId: String, transform: (LabBatchItem) -> LabBatchItem): LabBatchDraft =
++        copy(items = items.map { if (it.labId == labId) transform(it) else it })
++
++    /** Adding to an empty batch moves the clinician straight to Enter, where the first test is waiting. */
++    fun add(added: List<LabBatchItem>): LabBatchDraft {
++        if (added.isEmpty()) return this
++        val next = (items + added).distinctBy { it.labId }
++        val tab = if (items.isEmpty() && next.isNotEmpty()) LabBatchTab.ENTER else tab
++        return copy(items = next, cursor = cursor.coerceIn(0, (next.size - 1).coerceAtLeast(0)), tab = tab)
++    }
++
++    fun remove(labId: String): LabBatchDraft {
++        val next = items.filterNot { it.labId == labId }
++        return copy(items = next, cursor = cursor.coerceIn(0, (next.size - 1).coerceAtLeast(0)))
++    }
++
++    fun moveCursor(index: Int): LabBatchDraft =
++        copy(cursor = index.coerceIn(0, (items.size - 1).coerceAtLeast(0)))
++
++    fun toEntries(): List<LabBatchEntry> = items.filter { it.result.isNotBlank() }.map { item ->
++        LabBatchEntry(
++            labId = item.labId,
++            testName = item.testName,
++            testCategory = item.category,
++            result = item.result.trim(),
++            unit = item.unit.ifBlank { null },
++            referenceRange = item.referenceRange.trim().ifBlank { null },
++            isAbnormal = item.isAbnormal,
++            notes = item.notes.trim().ifBlank { null },
++        )
++    }
++    /** What Save would reject, so a bad date or an empty row never reaches the command. */
++    fun validationErrors(): Set<ClinicalValidationError> = buildSet {
++        val trimmedDate = date.trim()
++        if (trimmedDate.isBlank()) add(ClinicalValidationError.REQUIRED_DATE)
++        else if (!ClinicalVocabulary.isValidIsoDate(trimmedDate)) add(ClinicalValidationError.INVALID_DATE)
++        val filled = items.filter { it.result.isNotBlank() }
++        if (filled.isEmpty()) add(ClinicalValidationError.REQUIRED_RESULT)
++        if (filled.any { it.testName.isBlank() }) add(ClinicalValidationError.REQUIRED_NAME)
++        if (filled.any { it.category !in ClinicalVocabulary.testCategories }) add(ClinicalValidationError.INVALID_CATEGORY)
++    }
++
++    fun toSaveCommand(operationUuid: String, expectedPatientRevision: Long): SaveLabBatchCommand =
++        SaveLabBatchCommand(
++            editorSessionId = editorSessionId,
++            operationUuid = operationUuid,
++            patientId = patientId,
++            expectedPatientRevision = expectedPatientRevision,
++            date = date.trim(),
++            labName = labName?.trim()?.ifEmpty { null },
++            entries = toEntries(),
++        )
++}
++
++/** Pure grouping function: partitions batch items under panel headers, with leftovers grouped by category. */
++fun groupLabBatchItems(
++    items: List<LabBatchItem>,
++    groups: List<LabCategoryGroup>,
++): List<LabBatchItemGroup> {
++    if (items.isEmpty()) return emptyList()
++    val remaining = items.toMutableList()
++    val result = mutableListOf<LabBatchItemGroup>()
++
++    for (group in groups) {
++        val groupTestNames = group.testNames.map { it.trim().lowercase() }.toSet()
++        val matching = remaining.filter { it.testName.trim().lowercase() in groupTestNames }
++        if (matching.isNotEmpty()) {
++            result.add(LabBatchItemGroup(title = group.name, items = matching))
++            remaining.removeAll(matching)
++        }
++    }
++
++    if (remaining.isNotEmpty()) {
++        val byCategory = remaining.groupBy { it.category.ifBlank { "Other" } }
++        for ((cat, catItems) in byCategory) {
++            result.add(LabBatchItemGroup(title = cat, items = catItems))
++        }
++    }
++
++    return result
++}
++

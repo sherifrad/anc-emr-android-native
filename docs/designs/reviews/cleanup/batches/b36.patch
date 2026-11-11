@@ -1,0 +1,623 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/MedicationTiles.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/MedicationTiles.kt
+new file mode 100644
+index 0000000..d7197f9
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/MedicationTiles.kt
+@@ -0,0 +1,79 @@
++package com.sherifradwan.ancnative.ui.patienthub.model
++
++import com.sherifradwan.ancnative.model.DemoMedicationRecord
++import com.sherifradwan.ancnative.model.catalog.CustomChoiceItem
++import com.sherifradwan.ancnative.model.catalog.MedicationCatalogItem
++import com.sherifradwan.ancnative.model.isOngoingMedication
++import com.sherifradwan.ancnative.state.DEFAULT_MEDICATION_ROUTE
++
++/** One picker tile. Its dose, route and frequency fill a new draft; a custom-choice tile has a blank dose and frequency. */
++data class MedicationTile(
++    val id: String,
++    val name: String,
++    val dosage: String,
++    val route: String,
++    val frequency: String,
++    val isCustom: Boolean = false,
++)
++
++/** The picker's two sources: every drug on the list, or only drugs this patient has been given before. */
++const val PICKER_SOURCE_COMMON = "common"
++const val PICKER_SOURCE_RECENT = "recent"
++
++/**
++ * The one rule for "the same drug name" in the picker: trimmed and without case, the way a save stores the name
++ * (trimmed). Recent uses it, and the already-active check builds on it with the route.
++ */
++fun medicationNameKey(name: String): String = name.trim().lowercase()
++
++/** The picker's tiles: the medication list, then the doctor's own drug names (blank dose and frequency, default route). */
++fun medicationTiles(catalog: List<MedicationCatalogItem>, customNames: List<CustomChoiceItem>): List<MedicationTile> =
++    catalog.map { MedicationTile(it.id, it.name, it.dosage, it.route, it.frequency, it.isCustom) } +
++        customNames.map { MedicationTile("custom_${it.id}", it.label, "", DEFAULT_MEDICATION_ROUTE, "", isCustom = true) }
++
++/**
++ * The already-active key: the [medicationNameKey] of the name and of the route, joined by a pipe so one cannot run into the
++ * other. A different route is a different drug, so a patient on oral ferrous sulfate can still open the intramuscular tile.
++ */
++fun medicationNameRouteKey(name: String, route: String): String = "${medicationNameKey(name)}|${medicationNameKey(route)}"
++
++/** Name and route keys of the drugs this patient takes now. A tile that matches one must not start a second prescription. */
++fun activeMedicationKeys(medications: List<DemoMedicationRecord>): Set<String> =
++    medications.filter { isOngoingMedication(it.status, it.isNonCompliant) }.mapTo(HashSet()) { medicationNameRouteKey(it.name, it.route) }
++
++/**
++ * True when a drug with this tile's name is active on the same route. A blank route on either side counts as the same
++ * route: a stored row without one must not let the same drug be prescribed a second time.
++ */
++fun MedicationTile.isAlreadyActive(activeKeys: Set<String>): Boolean {
++    val tileName = medicationNameKey(name)
++    val tileRoute = medicationNameKey(route)
++    return activeKeys.any { key ->
++        val storedRoute = key.substringAfter('|')
++        key.substringBefore('|') == tileName && (tileRoute.isEmpty() || storedRoute.isEmpty() || storedRoute == tileRoute)
++    }
++}
++
++/**
++ * The tiles the picker shows for [selectedTab] and [searchQuery]. Recent keeps the tiles whose name (by
++ * [medicationNameKey]) is among [pastMedicationNames], the names of every drug the patient has had.
++ */
++fun filterMedicationTiles(
++    allTiles: List<MedicationTile>,
++    selectedTab: String,
++    searchQuery: String,
++    pastMedicationNames: Set<String>,
++): List<MedicationTile> {
++    val q = searchQuery.trim().lowercase()
++    val baseList = if (selectedTab == PICKER_SOURCE_RECENT) {
++        val past = pastMedicationNames.mapTo(HashSet(), ::medicationNameKey)
++        allTiles.filter { medicationNameKey(it.name) in past }
++    } else {
++        allTiles
++    }
++    return if (q.isEmpty()) {
++        baseList
++    } else {
++        baseList.filter { it.name.lowercase().contains(q) }
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/PastDeliveryRowModel.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/PastDeliveryRowModel.kt
+new file mode 100644
+index 0000000..37d5b9b
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/PastDeliveryRowModel.kt
+@@ -0,0 +1,66 @@
++package com.sherifradwan.ancnative.ui.patienthub.model
++
++import androidx.annotation.StringRes
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
++
++enum class OutcomeTone { Neutral, Caution, Severe }
++
++enum class RowExtraKind { PregnancyType, LossManagement, TerminationMethod }
++
++/** Display-ready, Compose-free view of one previous pregnancy. */
++data class PastDeliveryRow(
++    val year: String?,
++    val dateTextFallback: String?,
++    /** Free text (outcomeText, else the raw outcome value); render [outcomeLabelRes] first when set. */
++    val outcomeLabel: String?,
++    @StringRes val outcomeLabelRes: Int?,
++    /** Clinician-entered outcomeText when a structured outcome is also present and the text differs. */
++    val outcomeNote: String?,
++    val outcomeTone: OutcomeTone,
++    val mode: String?,
++    val placeAndDoctor: String?,
++    val notes: String?,
++    val extras: List<Pair<RowExtraKind, String>>,
++)
++
++private val YearRegex = Regex("""(?<!\d)(?:19|20)\d{2}(?!\d)""")
++
++private fun String?.clean(): String? = this?.trim()?.takeIf { it.isNotEmpty() }
++
++@StringRes
++private fun enumOutcomeLabelRes(outcome: String?): Int? = when (outcome?.trim()) {
++    "LiveBirth" -> R.string.outcome_live_birth
++    "Stillbirth" -> R.string.outcome_stillbirth
++    "EarlyPregnancyLoss" -> R.string.outcome_early_loss
++    "TerminationOfPregnancy" -> R.string.outcome_termination
++    else -> null
++}
++
++fun pastDeliveryRow(p: DemoPreviousPregnancy): PastDeliveryRow {
++    val dateText = p.dateText.clean()
++    val year = dateText?.let { YearRegex.find(it)?.value }
++    val outcomeEnum = p.outcome.clean()
++    val outcomeRes = enumOutcomeLabelRes(outcomeEnum)
++    val outcomeText = p.outcomeText.clean()
++    return PastDeliveryRow(
++        year = year,
++        dateTextFallback = if (year == null) dateText else null,
++        outcomeLabel = if (outcomeRes != null) outcomeEnum else outcomeText ?: outcomeEnum,
++        outcomeLabelRes = outcomeRes,
++        outcomeNote = if (outcomeRes != null && outcomeText != null && !outcomeText.equals(outcomeEnum, true)) outcomeText else null,
++        outcomeTone = when (outcomeEnum) {
++            "Stillbirth" -> OutcomeTone.Severe
++            "EarlyPregnancyLoss" -> OutcomeTone.Caution
++            else -> OutcomeTone.Neutral
++        },
++        mode = p.birthMethod.clean() ?: p.deliveryBy.clean(),
++        placeAndDoctor = p.placeAndDoctor.clean(),
++        notes = p.otherDetails.clean(),
++        extras = listOfNotNull(
++            p.pregnancyType.clean()?.let { RowExtraKind.PregnancyType to it },
++            p.lossManagement.clean()?.let { RowExtraKind.LossManagement to it },
++            p.terminationMethod.clean()?.let { RowExtraKind.TerminationMethod to it },
++        ),
++    )
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/LabsTab.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/LabsTab.kt
+new file mode 100644
+index 0000000..4ff5457
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/LabsTab.kt
+@@ -0,0 +1,128 @@
++package com.sherifradwan.ancnative.ui.patienthub.tabs
++
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.PaddingValues
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.Spacer
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.layout.size
++import androidx.compose.foundation.layout.width
++import androidx.compose.foundation.lazy.LazyColumn
++import androidx.compose.foundation.lazy.items
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.material.icons.Icons
++import androidx.compose.material.icons.filled.Add
++import androidx.compose.material3.Button
++import androidx.compose.material3.ButtonDefaults
++import androidx.compose.material3.Icon
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Surface
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.remember
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.state.AncEvent
++import com.sherifradwan.ancnative.storage.DeletableType
++import com.sherifradwan.ancnative.ui.minimumTouchTarget
++import com.sherifradwan.ancnative.ui.patienthub.components.LabReportItem
++import com.sherifradwan.ancnative.ui.patienthub.model.groupLabsIntoReports
++import java.util.UUID
++
++@Composable
++fun LabsTab(
++    patient: DemoPatient,
++    canEdit: Boolean,
++    onEvent: (AncEvent) -> Unit,
++    onAddInvestigation: () -> Unit,
++    modifier: Modifier = Modifier,
++) {
++    val reports = remember(patient.labInvestigations) {
++        groupLabsIntoReports(patient.labInvestigations)
++    }
++
++    LazyColumn(
++        modifier = modifier
++            .fillMaxSize()
++            .testTag("labsTabContent"),
++        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 48.dp),
++        verticalArrangement = Arrangement.spacedBy(14.dp),
++    ) {
++        // Top Action: + Add Investigation
++        item {
++            Row(
++                modifier = Modifier.fillMaxWidth(),
++                horizontalArrangement = Arrangement.SpaceBetween,
++                verticalAlignment = Alignment.CenterVertically,
++            ) {
++                Text(
++                    text = "Laboratory Reports (${reports.size})",
++                    style = MaterialTheme.typography.titleMedium,
++                    fontWeight = FontWeight.Bold,
++                    color = MaterialTheme.colorScheme.primary,
++                )
++                if (canEdit && patient.status != "archived") {
++                    Button(
++                        onClick = onAddInvestigation,
++                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
++                        shape = RoundedCornerShape(10.dp),
++                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
++                        modifier = Modifier.minimumTouchTarget().testTag("addInvestigationBtn"),
++                    ) {
++                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
++                        Spacer(Modifier.width(4.dp))
++                        Text("Add Test", fontWeight = FontWeight.Bold, softWrap = false)
++                    }
++                }
++            }
++        }
++
++        if (reports.isEmpty()) {
++            item {
++                Surface(
++                    shape = RoundedCornerShape(12.dp),
++                    color = MaterialTheme.colorScheme.surfaceContainerLow,
++                    modifier = Modifier.fillMaxWidth(),
++                ) {
++                    Text(
++                        text = "No records",
++                        style = MaterialTheme.typography.bodyMedium,
++                        color = MaterialTheme.colorScheme.onSurfaceVariant,
++                        modifier = Modifier.padding(16.dp),
++                    )
++                }
++            }
++        } else {
++            items(
++                items = reports,
++                key = { "${it.date}-${it.labName}" },
++            ) { report ->
++                LabReportItem(
++                    report = report,
++                    patient = patient,
++                    canEdit = canEdit,
++                    onEditTest = { test ->
++                        onEvent(
++                            AncEvent.StartLabEditor(
++                                patientId = patient.id,
++                                labId = test.id,
++                                newLabId = test.id,
++                                editorSessionId = UUID.randomUUID().toString(),
++                            ),
++                        )
++                    },
++                    onDeleteTest = { testId ->
++                        onEvent(AncEvent.RequestDelete(patient.id, DeletableType.LAB, testId))
++                    },
++                    onAddTestToReport = onAddInvestigation,
++                )
++            }
++        }
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt
+new file mode 100644
+index 0000000..57355ce
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt
+@@ -0,0 +1,326 @@
++package com.sherifradwan.ancnative.ui.patienthub.tabs
++
++import androidx.compose.foundation.clickable
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.ExperimentalLayoutApi
++import androidx.compose.foundation.layout.Box
++import androidx.compose.foundation.layout.FlowRow
++import androidx.compose.foundation.layout.PaddingValues
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.Spacer
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.imePadding
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.layout.size
++import androidx.compose.foundation.layout.width
++import androidx.compose.foundation.lazy.LazyColumn
++import androidx.compose.foundation.lazy.items
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.material.icons.Icons
++import androidx.compose.material.icons.filled.Add
++import androidx.compose.material.icons.filled.KeyboardArrowDown
++import androidx.compose.material.icons.filled.KeyboardArrowUp
++import androidx.compose.material3.Button
++import androidx.compose.material3.ButtonDefaults
++import androidx.compose.material3.Icon
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Surface
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.getValue
++import androidx.compose.runtime.mutableStateOf
++import androidx.compose.runtime.remember
++import androidx.compose.runtime.saveable.rememberSaveable
++import androidx.compose.runtime.setValue
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.res.pluralStringResource
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.semantics.Role
++import androidx.compose.ui.semantics.semantics
++import androidx.compose.ui.semantics.stateDescription
++import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.text.style.TextAlign
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.model.DemoMedicationRecord
++import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.model.isOngoingMedication
++import com.sherifradwan.ancnative.state.AncEvent
++import com.sherifradwan.ancnative.state.MedicationDraft
++import com.sherifradwan.ancnative.state.MedicationQuickSave
++import com.sherifradwan.ancnative.state.MedicationStopUndo
++import com.sherifradwan.ancnative.state.SavePhase
++import com.sherifradwan.ancnative.state.SaveUiError
++import com.sherifradwan.ancnative.state.blocksEditing
++import com.sherifradwan.ancnative.storage.DeletableType
++import com.sherifradwan.ancnative.ui.minimumTouchTarget
++import com.sherifradwan.ancnative.ui.patienthub.components.MedicationCard
++import com.sherifradwan.ancnative.ui.patienthub.components.MedicationStopBar
++import com.sherifradwan.ancnative.ui.patienthub.components.MedicationTapToAddSection
++import com.sherifradwan.ancnative.ui.patienthub.components.rememberMedicationPickerState
++import java.util.UUID
++
++/**
++ * The Meds tab, review first: the active list, then the collapsed "Add medication" picker, then stopped drugs behind
++ * "Show past". Adding, editing and stopping never leave it: tiles, edit and "Prescribe" open the medication sheet
++ * (hosted by the hub) through one [AncEvent.StartMedicationEditor], and the stop symbol saves at once through
++ * [AncEvent.StopMedication]. [canEdit] shows the controls (patient not archived); they are visibly disabled while
++ * [actionsAllowed] is false, a save runs or [medicationDraft] is open.
++ */
++@Composable
++fun MedsTab(
++    patient: DemoPatient,
++    canEdit: Boolean,
++    actionsAllowed: Boolean,
++    medicationDraft: MedicationDraft?,
++    savePhase: SavePhase,
++    saveError: SaveUiError?,
++    quickSave: MedicationQuickSave?,
++    stopUndo: MedicationStopUndo?,
++    onEvent: (AncEvent) -> Unit,
++    modifier: Modifier = Modifier,
++) {
++    val entryEnabled = canEdit && actionsAllowed && medicationDraft == null && !savePhase.blocksEditing()
++    // The keyboard (picker search) shortens the list instead of covering its end.
++    Column(modifier = modifier.fillMaxSize().imePadding()) {
++        MedsList(
++            patient = patient,
++            canEdit = canEdit,
++            entryEnabled = entryEnabled,
++            onEvent = onEvent,
++            modifier = Modifier.weight(1f),
++        )
++        MedicationStopBar(
++            quickSave = quickSave?.takeIf { it.draft.patientId == patient.id },
++            stopUndo = stopUndo?.takeIf { it.patientId == patient.id },
++            savePhase = savePhase,
++            saveError = saveError,
++            undoEnabled = entryEnabled,
++            onEvent = onEvent,
++        )
++    }
++}
++
++@OptIn(ExperimentalLayoutApi::class)
++@Composable
++private fun MedsList(
++    patient: DemoPatient,
++    canEdit: Boolean,
++    entryEnabled: Boolean,
++    onEvent: (AncEvent) -> Unit,
++    modifier: Modifier = Modifier,
++) {
++    val activeMeds = remember(patient.medications) {
++        patient.medications.filter { isOngoingMedication(it.status, it.isNonCompliant) }
++    }
++    val pastMeds = remember(patient.medications) {
++        patient.medications.filter { !isOngoingMedication(it.status, it.isNonCompliant) }
++    }
++
++    // Kept here, above the lazy items, in saved state per patient: adding, stopping, editing, rotation and tab swipes
++    // leave the open card, the picker and the "Show past" toggle as they were.
++    var expandedMedId by rememberSaveable(patient.id) { mutableStateOf<String?>(null) }
++    var showPast by rememberSaveable(patient.id) { mutableStateOf(false) }
++    val pickerState = rememberMedicationPickerState(patient.id)
++
++    val startBlank = {
++        onEvent(
++            AncEvent.StartMedicationEditor(
++                patientId = patient.id,
++                medicationId = null,
++                newMedicationId = UUID.randomUUID().toString(),
++                editorSessionId = UUID.randomUUID().toString(),
++            ),
++        )
++    }
++    val startEdit = { med: DemoMedicationRecord ->
++        onEvent(
++            AncEvent.StartMedicationEditor(
++                patientId = patient.id,
++                medicationId = med.id,
++                newMedicationId = med.id,
++                editorSessionId = UUID.randomUUID().toString(),
++            ),
++        )
++    }
++
++    LazyColumn(
++        modifier = modifier
++            .fillMaxWidth()
++            .testTag("medsTabContent"),
++        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 48.dp),
++        verticalArrangement = Arrangement.spacedBy(14.dp),
++    ) {
++        // Fixed keys, so the rows keep their places (and the list its scroll position) as drugs move between lists.
++        item(key = "medsActiveHeader") {
++            // Title and "Prescribe" share a line when they fit; with large text the button wraps under the title.
++            FlowRow(
++                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
++                horizontalArrangement = Arrangement.spacedBy(8.dp),
++                verticalArrangement = Arrangement.spacedBy(4.dp),
++                itemVerticalAlignment = Alignment.CenterVertically,
++            ) {
++                Text(
++                    text = pluralStringResource(R.plurals.active_prescriptions_title, activeMeds.size, activeMeds.size),
++                    style = MaterialTheme.typography.titleMedium,
++                    fontWeight = FontWeight.Bold,
++                    color = MaterialTheme.colorScheme.primary,
++                    modifier = Modifier.testTag("medsActiveTitle"),
++                )
++                // With no medication at all the empty state carries the one primary "Prescribe" action.
++                if (canEdit && patient.medications.isNotEmpty()) {
++                    // The weight gives the button the rest of the line, or a whole line when it wraps, and it sits at the end.
++                    Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
++                        Button(
++                            enabled = entryEnabled,
++                            onClick = startBlank,
++                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
++                            shape = RoundedCornerShape(10.dp),
++                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
++                            modifier = Modifier.minimumTouchTarget().testTag("addCustomMedicationBtn"),
++                        ) {
++                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
++                            Spacer(Modifier.width(4.dp))
++                            Text(stringResource(R.string.prescribe_medication), fontWeight = FontWeight.Bold)
++                        }
++                    }
++                }
++            }
++        }
++
++        if (patient.medications.isEmpty()) {
++            item(key = "medsEmpty") {
++                MedsEmptyState(canEdit = canEdit, enabled = entryEnabled, onPrescribe = startBlank)
++            }
++        } else if (activeMeds.isEmpty()) {
++            item(key = "medsNoActive") {
++                Text(
++                    text = stringResource(R.string.no_active_medications),
++                    style = MaterialTheme.typography.bodyMedium,
++                    color = MaterialTheme.colorScheme.onSurfaceVariant,
++                    modifier = Modifier.padding(horizontal = 4.dp).testTag("medsNoActive"),
++                )
++            }
++        }
++
++        items(items = activeMeds, key = { it.id }) { med ->
++            MedicationCard(
++                med = med,
++                isExpanded = expandedMedId == med.id,
++                canEdit = canEdit,
++                actionsEnabled = entryEnabled,
++                onToggle = { expandedMedId = if (expandedMedId == med.id) null else med.id },
++                onStop = { onEvent(AncEvent.StopMedication(patient.id, med.id, UUID.randomUUID().toString())) },
++                onEdit = { startEdit(med) },
++                onDelete = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.MEDICATION, med.id)) },
++            )
++        }
++
++        if (canEdit) {
++            item(key = "medsPicker") {
++                MedicationTapToAddSection(
++                    patient = patient,
++                    enabled = entryEnabled,
++                    state = pickerState,
++                    onEvent = onEvent,
++                )
++            }
++        }
++
++        if (pastMeds.isNotEmpty()) {
++            item(key = "medsPastToggle") {
++                ShowPastToggle(count = pastMeds.size, shown = showPast, onToggle = { showPast = !showPast })
++            }
++            if (showPast) {
++                // Stopped rows get no stop callback, so they never show the stop symbol.
++                items(items = pastMeds, key = { it.id }) { med ->
++                    MedicationCard(
++                        med = med,
++                        isExpanded = expandedMedId == med.id,
++                        canEdit = canEdit,
++                        actionsEnabled = entryEnabled,
++                        onToggle = { expandedMedId = if (expandedMedId == med.id) null else med.id },
++                        onEdit = { startEdit(med) },
++                        onDelete = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.MEDICATION, med.id)) },
++                    )
++                }
++            }
++        }
++    }
++}
++
++/** No medication at all: says so and offers the first prescription as the main action (none when read-only). */
++@Composable
++private fun MedsEmptyState(canEdit: Boolean, enabled: Boolean, onPrescribe: () -> Unit) {
++    Surface(
++        shape = RoundedCornerShape(12.dp),
++        color = MaterialTheme.colorScheme.surfaceContainerLow,
++        modifier = Modifier.fillMaxWidth().testTag("medsEmptyState"),
++    ) {
++        Column(
++            modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp),
++            horizontalAlignment = Alignment.CenterHorizontally,
++            verticalArrangement = Arrangement.spacedBy(8.dp),
++        ) {
++            Text(
++                text = stringResource(R.string.medications_empty_title),
++                style = MaterialTheme.typography.titleMedium,
++                fontWeight = FontWeight.Bold,
++                textAlign = TextAlign.Center,
++            )
++            Text(
++                text = stringResource(R.string.medications_empty_hint),
++                style = MaterialTheme.typography.bodyMedium,
++                color = MaterialTheme.colorScheme.onSurfaceVariant,
++                textAlign = TextAlign.Center,
++            )
++            if (canEdit) {
++                Button(
++                    onClick = onPrescribe,
++                    enabled = enabled,
++                    modifier = Modifier.minimumTouchTarget().testTag("medEmptyPrescribe"),
++                ) {
++                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
++                    Spacer(Modifier.width(6.dp))
++                    Text(stringResource(R.string.medications_empty_action), textAlign = TextAlign.Center)
++                }
++            }
++        }
++    }
++}
++
++/** The "Show past (N)" row. Viewing stopped drugs starts no action, so it stays usable while a save runs. */
++@Composable
++private fun ShowPastToggle(count: Int, shown: Boolean, onToggle: () -> Unit) {
++    val stateText = stringResource(if (shown) R.string.state_expanded else R.string.state_collapsed)
++    val actionText = stringResource(if (shown) R.string.action_collapse else R.string.action_expand)
++    Row(
++        modifier = Modifier
++            .fillMaxWidth()
++            .minimumTouchTarget()
++            .testTag("medShowPastToggle")
++            .semantics { stateDescription = stateText }
++            .clickable(role = Role.Button, onClickLabel = actionText, onClick = onToggle)
++            .padding(horizontal = 4.dp, vertical = 8.dp),
++        verticalAlignment = Alignment.CenterVertically,
++        horizontalArrangement = Arrangement.spacedBy(8.dp),
++    ) {
++        Text(
++            text = pluralStringResource(if (shown) R.plurals.medication_hide_past else R.plurals.medication_show_past, count, count),
++            style = MaterialTheme.typography.titleMedium,
++            fontWeight = FontWeight.Bold,
++            color = MaterialTheme.colorScheme.primary,
++            modifier = Modifier.weight(1f),
++        )
++        // Decorative: the row's text and state say whether the list is open.
++        Icon(
++            imageVector = if (shown) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
++            contentDescription = null,
++            tint = MaterialTheme.colorScheme.primary,
++        )
++    }
++}

@@ -1,0 +1,507 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/model/catalog/CustomChoiceModels.kt b/app/src/main/java/com/sherifradwan/ancnative/model/catalog/CustomChoiceModels.kt
+new file mode 100644
+index 0000000..62135a5
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/model/catalog/CustomChoiceModels.kt
+@@ -0,0 +1,138 @@
++package com.sherifradwan.ancnative.model.catalog
++
++import kotlinx.coroutines.flow.StateFlow
++import java.util.UUID
++
++/**
++ * Enumeration of all choice lists in the ANC app that allow user-defined choices via "+ Add other".
++ *
++ * NOTE (Clinical safety, Section 2.3):
++ * Dating methods (LMP, IVF, Scan, Clinical) are strictly fixed and must NEVER be added to this enum.
++ */
++enum class CustomChoiceList(val storageKey: String, val displayName: String) {
++    MEDICATION_NAME("custom_choice_med_name", "Medication Names"),
++    MEDICATION_DOSE("custom_choice_med_dose", "Medication Dosages"),
++    MEDICATION_ROUTE("custom_choice_med_route", "Medication Routes"),
++    LAB_TEST("custom_choice_lab_test", "Lab Tests"),
++    LAB_RESULT("custom_choice_lab_result", "Lab Result Presets"),
++    LAB_CATEGORY("custom_choice_lab_category", "Lab Categories"),
++    ULTRASOUND_PRESENTATION("custom_choice_us_presentation", "Fetal Presentations"),
++    ULTRASOUND_PLACENTA("custom_choice_us_placenta", "Placenta Sites"),
++    ULTRASOUND_LIQUOR("custom_choice_us_liquor", "Amniotic Fluid / Liquor"),
++    ULTRASOUND_FINDING("custom_choice_us_finding", "Ultrasound Findings"),
++    PREVIOUS_PREGNANCY_OUTCOME("custom_choice_prev_preg_outcome", "Pregnancy Outcomes"),
++    PREVIOUS_PREGNANCY_MODE("custom_choice_prev_preg_mode", "Delivery Modes"),
++    PREVIOUS_PREGNANCY_COMPLICATION("custom_choice_prev_preg_complication", "Pregnancy Complications"),
++    CLINICAL_ATTENTION_PHRASE("custom_choice_attention_phrase", "Clinical Attention Phrases"),
++    VISIT_OEDEMA("custom_choice_visit_oedema", "Oedema Findings"),
++    VISIT_MOVEMENTS("custom_choice_visit_movements", "Fetal Movements"),
++    VISIT_URINE("custom_choice_visit_urine", "Urinalysis Findings"),
++    VISIT_BP("custom_choice_visit_bp", "Blood Pressure Presets"),
++    VISIT_WEIGHT("custom_choice_visit_weight", "Weight Presets"),
++    VISIT_FUNDAL_HEIGHT("custom_choice_visit_fundal_height", "Fundal Height Presets"),
++}
++
++data class CustomChoiceItem(
++    val id: String = UUID.randomUUID().toString(),
++    val list: CustomChoiceList,
++    val label: String,
++    val isCustom: Boolean = true,
++)
++
++sealed interface CustomChoiceValidationResult {
++    data class Valid(val sanitizedLabel: String) : CustomChoiceValidationResult
++    data class Invalid(val reason: Reason) : CustomChoiceValidationResult {
++        enum class Reason {
++            BLANK,
++            TOO_LONG,
++            DUPLICATE,
++            INVALID_CHARACTERS,
++            NOT_FOUND,
++        }
++    }
++}
++
++fun maxCustomChoiceLength(list: CustomChoiceList): Int =
++    if (list == CustomChoiceList.CLINICAL_ATTENTION_PHRASE) 140 else 80
++
++data class RemovedCustomChoice(
++    val item: CustomChoiceItem,
++    val originalIndex: Int,
++)
++
++/**
++ * Single pure validation function for custom choice inputs.
++ * Enforces:
++ * - Rejects strings containing control characters (C0, C1, NUL, tabs, newlines, line/paragraph separators).
++ * - Trims leading/trailing whitespace.
++ * - Rejects null, blank, or empty strings.
++ * - Rejects strings exceeding [maxLength] characters.
++ * - Case-insensitive duplicate check against [existingLabels].
++ */
++fun validateCustomChoice(
++    raw: String?,
++    existingLabels: Collection<String>,
++    maxLength: Int = 80,
++): CustomChoiceValidationResult {
++    if (raw == null) {
++        return CustomChoiceValidationResult.Invalid(CustomChoiceValidationResult.Invalid.Reason.BLANK)
++    }
++    // Reject newline, carriage return, line separators, paragraph separators, or any ISO control character
++    if (raw.any { it.isISOControl() || it == '\n' || it == '\r' || it == '\u2028' || it == '\u2029' }) {
++        return CustomChoiceValidationResult.Invalid(CustomChoiceValidationResult.Invalid.Reason.INVALID_CHARACTERS)
++    }
++    val trimmed = raw.trim()
++    if (trimmed.isEmpty()) {
++        return CustomChoiceValidationResult.Invalid(CustomChoiceValidationResult.Invalid.Reason.BLANK)
++    }
++    if (trimmed.length > maxLength) {
++        return CustomChoiceValidationResult.Invalid(CustomChoiceValidationResult.Invalid.Reason.TOO_LONG)
++    }
++    val isDuplicate = existingLabels.any { existing ->
++        existing.trim().equals(trimmed, ignoreCase = true)
++    }
++    if (isDuplicate) {
++        return CustomChoiceValidationResult.Invalid(CustomChoiceValidationResult.Invalid.Reason.DUPLICATE)
++    }
++    return CustomChoiceValidationResult.Valid(trimmed)
++}
++
++interface CustomChoicesDelegate {
++    fun customChoices(list: CustomChoiceList): StateFlow<List<CustomChoiceItem>>
++
++    fun addCustomChoice(
++        list: CustomChoiceList,
++        label: String,
++        existingDefaults: Collection<String> = emptyList(),
++    ): CustomChoiceValidationResult
++
++    fun renameCustomChoice(
++        list: CustomChoiceList,
++        id: String,
++        newLabel: String,
++        existingDefaults: Collection<String> = emptyList(),
++    ): CustomChoiceValidationResult
++
++    fun removeCustomChoice(
++        list: CustomChoiceList,
++        id: String,
++    ): RemovedCustomChoice?
++
++    fun restoreCustomChoice(
++        removed: RemovedCustomChoice,
++    ): Boolean
++
++    fun restoreCustomChoice(
++        item: CustomChoiceItem,
++    ): Boolean = restoreCustomChoice(RemovedCustomChoice(item, -1))
++
++    fun clearCustomChoices(
++        list: CustomChoiceList,
++    )
++
++    fun getAllCustomChoices(): Map<CustomChoiceList, List<CustomChoiceItem>>
++
++    fun restoreAllCustomChoices(
++        data: Map<CustomChoiceList, List<CustomChoiceItem>>,
++    )
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/security/AppLockPolicy.kt b/app/src/main/java/com/sherifradwan/ancnative/security/AppLockPolicy.kt
+new file mode 100644
+index 0000000..88cb7a8
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/security/AppLockPolicy.kt
+@@ -0,0 +1,8 @@
++package com.sherifradwan.ancnative.security
++
++internal const val BACKGROUND_LOCK_MS = 600_000L
++
++internal fun shouldLockOnReturn(backgroundSinceMs: Long?, nowMs: Long): Boolean {
++    if (backgroundSinceMs == null) return false
++    return nowMs < backgroundSinceMs || nowMs - backgroundSinceMs >= BACKGROUND_LOCK_MS
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/security/BiometricAuthManager.kt b/app/src/main/java/com/sherifradwan/ancnative/security/BiometricAuthManager.kt
+new file mode 100644
+index 0000000..26e5558
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/security/BiometricAuthManager.kt
+@@ -0,0 +1,77 @@
++package com.sherifradwan.ancnative.security
++
++import android.app.Activity
++import android.content.Context
++import android.hardware.biometrics.BiometricManager
++import android.hardware.biometrics.BiometricPrompt
++import android.os.CancellationSignal
++import android.os.Build
++
++object BiometricAuthManager {
++
++    fun isBiometricAvailable(context: Context): Boolean {
++        if (Build.VERSION.SDK_INT < 28) return false
++        if (Build.VERSION.SDK_INT < 30) return false
++        val manager = context.getSystemService(BiometricManager::class.java) ?: return false
++        val canAuth = manager.canAuthenticate(
++            BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK,
++        )
++        return canAuth == BiometricManager.BIOMETRIC_SUCCESS
++    }
++
++    fun promptBiometric(
++        activity: Activity,
++        title: String = "Women's Health Clinic · Biometric Authentication",
++        subtitle: String = "Touch the fingerprint sensor to unlock the application",
++        onResult: (Boolean) -> Unit,
++    ): CancellationSignal? {
++        if (Build.VERSION.SDK_INT < 28) {
++            onResult(false)
++            return null
++        }
++        if (!isBiometricAvailable(activity)) {
++            onResult(false)
++            return null
++        }
++
++        val cancellationSignal = CancellationSignal()
++        try {
++            val builder = BiometricPrompt.Builder(activity)
++                .setTitle(title)
++                .setSubtitle(subtitle)
++                .setNegativeButton("Cancel & Use PIN", activity.mainExecutor) { _, _ ->
++                    onResult(false)
++                }
++
++            if (Build.VERSION.SDK_INT >= 30) {
++                builder.setAllowedAuthenticators(
++                    BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK,
++                )
++            }
++
++            val prompt = builder.build()
++
++            prompt.authenticate(
++                cancellationSignal,
++                activity.mainExecutor,
++                object : BiometricPrompt.AuthenticationCallback() {
++                    override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult?) {
++                        onResult(true)
++                    }
++
++                    override fun onAuthenticationError(errorCode: Int, errString: CharSequence?) {
++                        onResult(false)
++                    }
++
++                    override fun onAuthenticationFailed() {
++                        // User can retry touching the sensor
++                    }
++                },
++            )
++            return cancellationSignal
++        } catch (_: Throwable) {
++            onResult(false)
++            return null
++        }
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/security/PinPolicy.kt b/app/src/main/java/com/sherifradwan/ancnative/security/PinPolicy.kt
+new file mode 100644
+index 0000000..8fb703a
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/security/PinPolicy.kt
+@@ -0,0 +1,38 @@
++package com.sherifradwan.ancnative.security
++
++import java.security.MessageDigest
++import java.security.SecureRandom
++import javax.crypto.SecretKeyFactory
++import javax.crypto.spec.PBEKeySpec
++
++internal const val PIN_ITERATIONS = 120_000
++
++internal fun isValidNewPin(pin: String): Boolean {
++    if (pin.length != 6 || pin.any { it !in '0'..'9' }) return false
++    if (pin.all { it == pin.first() }) return false
++    val ascending = pin.zipWithNext().all { (a, b) -> b - a == 1 }
++    val descending = pin.zipWithNext().all { (a, b) -> a - b == 1 }
++    return !ascending && !descending
++}
++
++internal fun hashPin(pin: String, salt: ByteArray, iterations: Int = PIN_ITERATIONS): ByteArray {
++    val spec = PBEKeySpec(pin.toCharArray(), salt, iterations, 256)
++    return try {
++        SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded
++    } finally {
++        spec.clearPassword()
++    }
++}
++
++internal fun newSalt(): ByteArray = ByteArray(16).also(SecureRandom()::nextBytes)
++
++internal fun pinMatches(pin: String, salt: ByteArray, iterations: Int, expected: ByteArray): Boolean =
++    MessageDigest.isEqual(hashPin(pin, salt, iterations), expected)
++
++internal fun lockoutDelayMs(consecutiveFailures: Int): Long = when (consecutiveFailures) {
++    in Int.MIN_VALUE..4 -> 0L
++    5 -> 30_000L
++    6 -> 60_000L
++    7 -> 300_000L
++    else -> 900_000L
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/security/SecuritySettingsRepository.kt b/app/src/main/java/com/sherifradwan/ancnative/security/SecuritySettingsRepository.kt
+new file mode 100644
+index 0000000..53f7df4
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/security/SecuritySettingsRepository.kt
+@@ -0,0 +1,216 @@
++package com.sherifradwan.ancnative.security
++
++import android.content.Context
++import android.content.SharedPreferences
++import kotlinx.coroutines.flow.MutableStateFlow
++import kotlinx.coroutines.flow.StateFlow
++import kotlinx.coroutines.flow.asStateFlow
++import com.sherifradwan.ancnative.storage.sha256Hex
++import java.util.Base64
++
++enum class AutoLockTimeout(val displayNameAr: String, val displayNameEn: String, val durationMs: Long) {
++    IMMEDIATELY("Immediately on exit", "Immediately on exit", 0L),
++    ONE_MINUTE("After 1 minute", "After 1 minute", 60_000L),
++    FIVE_MINUTES("After 5 minutes", "After 5 minutes", 300_000L),
++    FIFTEEN_MINUTES("After 15 minutes", "After 15 minutes", 900_000L),
++    TEN_MINUTES("After 10 minutes", "After 10 minutes", 600_000L),
++}
++
++enum class AppThemeMode(val displayNameAr: String, val displayNameEn: String) {
++    SYSTEM("System Default", "System Default"),
++    LIGHT("Light Mode", "Light Mode"),
++    DARK("Dark Mode", "Dark Mode"),
++}
++
++data class SecuritySettingsState(
++    val isPinConfigured: Boolean = false,
++    val isBiometricEnabled: Boolean = false,
++    val autoLockTimeout: AutoLockTimeout = AutoLockTimeout.TEN_MINUTES,
++    val isAppLocked: Boolean = true,
++    val lastUnlockedAt: Long = 0L,
++    val clinicName: String = "Dr. Sherif Radwan Clinic",
++    val clinicSubtitle: String = "Maternal-Fetal Medicine & Obstetrics",
++    val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
++    val needsPinSetup: Boolean = true,
++    val isLegacyPin: Boolean = false,
++    val lockoutRemainingMs: Long = 0L,
++)
++
++class SecuritySettingsRepository internal constructor(
++    private val prefs: SharedPreferences,
++    private val clock: () -> Long = System::currentTimeMillis,
++) {
++    private constructor(context: Context) : this(
++        context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE),
++    )
++
++    private val _settings = MutableStateFlow(loadSettings())
++    val settings: StateFlow<SecuritySettingsState> = _settings.asStateFlow()
++
++    private fun loadSettings(): SecuritySettingsState {
++        val biometric = prefs.getBoolean(KEY_BIOMETRIC_ENABLED, false)
++        val timeoutName = prefs.getString(KEY_AUTO_LOCK_TIMEOUT, AutoLockTimeout.TEN_MINUTES.name)
++        val timeout = runCatching { AutoLockTimeout.valueOf(timeoutName ?: AutoLockTimeout.TEN_MINUTES.name) }
++            .getOrDefault(AutoLockTimeout.TEN_MINUTES).let { if (it.name == "NEVER") AutoLockTimeout.TEN_MINUTES else it }
++        val isPinSet = prefs.contains(KEY_PIN_HASH_V2)
++        val legacy = !isPinSet && prefs.contains(KEY_PIN_HASH)
++        val configured = isPinSet || legacy
++        val needsPinSetup = !configured
++        val rawClinicName = prefs.getString(KEY_CLINIC_NAME, "Dr. Sherif Radwan Clinic") ?: "Dr. Sherif Radwan Clinic"
++        val clinicName = if (rawClinicName.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.ARABIC }) "Dr. Sherif Radwan Clinic" else rawClinicName
++        val rawClinicSub = prefs.getString(KEY_CLINIC_SUBTITLE, "Maternal-Fetal Medicine & Obstetrics") ?: "Maternal-Fetal Medicine & Obstetrics"
++        val clinicSub = if (rawClinicSub.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.ARABIC }) "Maternal-Fetal Medicine & Obstetrics" else rawClinicSub
++        val themeName = prefs.getString(KEY_THEME_MODE, AppThemeMode.SYSTEM.name)
++        val themeMode = runCatching { AppThemeMode.valueOf(themeName ?: AppThemeMode.SYSTEM.name) }.getOrDefault(AppThemeMode.SYSTEM)
++
++        return SecuritySettingsState(
++            isPinConfigured = configured,
++            isBiometricEnabled = biometric,
++            autoLockTimeout = timeout,
++            isAppLocked = configured,
++            lastUnlockedAt = 0L,
++            clinicName = clinicName,
++            clinicSubtitle = clinicSub,
++            themeMode = themeMode,
++            needsPinSetup = needsPinSetup,
++            isLegacyPin = legacy,
++            lockoutRemainingMs = remainingLockoutMs(),
++        )
++    }
++
++    fun validatePin(pin: String): Boolean {
++        val remaining = remainingLockoutMs()
++        if (remaining > 0) { refreshLockout(); return false }
++        val valid = if (prefs.contains(KEY_PIN_HASH_V2)) {
++            val salt = decode(KEY_PIN_SALT_V2) ?: return false
++            val expected = decode(KEY_PIN_HASH_V2) ?: return false
++            pinMatches(pin, salt, prefs.getInt(KEY_PIN_ITERATIONS_V2, PIN_ITERATIONS), expected)
++        } else {
++            val oldHash = prefs.getString(KEY_PIN_HASH, null) ?: return false
++            legacyHashPin(pin) == oldHash
++        }
++        if (!valid) {
++            val failures = prefs.getInt(KEY_FAILURES, 0) + 1
++            val delay = lockoutDelayMs(failures)
++            prefs.edit().putInt(KEY_FAILURES, failures).putLong(KEY_LOCKOUT_END, clock() + delay).apply()
++            refreshLockout()
++            return false
++        }
++        val pinChangeRequired = !isValidNewPin(pin)
++        prefs.edit().putInt(KEY_FAILURES, 0).putLong(KEY_LOCKOUT_END, 0L).apply()
++        if (pinChangeRequired) {
++            prefs.edit().putBoolean("key_pin_change_required", true).apply()
++        } else {
++            prefs.edit().putBoolean(KEY_PIN_CHANGE_REQUIRED, false).apply()
++        }
++        if (prefs.contains(KEY_PIN_HASH)) {
++            storeV2(pin)
++        }
++        _settings.value = _settings.value.copy(
++            isPinConfigured = true,
++            isLegacyPin = false,
++            needsPinSetup = pinChangeRequired,
++            isAppLocked = if (pinChangeRequired) true else _settings.value.isAppLocked,
++        )
++        refreshLockout()
++        return true
++    }
++
++    fun updatePin(newPin: String): Boolean {
++        if (!isValidNewPin(newPin)) return false
++        storeV2(newPin)
++        prefs.edit().putBoolean(KEY_PIN_CHANGE_REQUIRED, false).apply()
++        _settings.value = _settings.value.copy(isPinConfigured = true, needsPinSetup = false, isLegacyPin = false, isAppLocked = false)
++        return true
++    }
++
++    fun setupPin(pin: String): Boolean = updatePin(pin)
++
++    private fun storeV2(pin: String) {
++        val salt = newSalt()
++        prefs.edit().putString(KEY_PIN_HASH_V2, encode(hashPin(pin, salt)))
++            .putString(KEY_PIN_SALT_V2, encode(salt)).putInt(KEY_PIN_ITERATIONS_V2, PIN_ITERATIONS)
++            .remove(KEY_PIN_HASH).apply()
++    }
++
++    private fun encode(value: ByteArray) = Base64.getEncoder().encodeToString(value)
++    private fun decode(key: String) = prefs.getString(key, null)?.let { Base64.getDecoder().decode(it) }
++    private fun remainingLockoutMs() = (prefs.getLong(KEY_LOCKOUT_END, 0L) - clock()).coerceAtLeast(0L)
++    private fun refreshLockout() { _settings.value = _settings.value.copy(lockoutRemainingMs = remainingLockoutMs()) }
++    private fun legacyHashPin(pin: String): String {
++        val salted = "ANC_CLINIC_SALT_v1_${pin}_SECURE"
++        return sha256Hex(salted)
++    }
++
++    fun setBiometricEnabled(enabled: Boolean) {
++        prefs.edit().putBoolean(KEY_BIOMETRIC_ENABLED, enabled).apply()
++        _settings.value = _settings.value.copy(isBiometricEnabled = enabled)
++    }
++
++    fun setAutoLockTimeout(timeout: AutoLockTimeout) {
++        prefs.edit().putString(KEY_AUTO_LOCK_TIMEOUT, timeout.name).apply()
++        _settings.value = _settings.value.copy(autoLockTimeout = timeout)
++    }
++
++    fun setThemeMode(mode: AppThemeMode) {
++        prefs.edit().putString(KEY_THEME_MODE, mode.name).apply()
++        _settings.value = _settings.value.copy(themeMode = mode)
++    }
++
++    fun unlockApp() {
++        if (remainingLockoutMs() > 0) return
++        val now = clock()
++        _settings.value = _settings.value.copy(
++            isAppLocked = false,
++            lastUnlockedAt = now,
++        )
++    }
++
++    fun lockApp() {
++        _settings.value = _settings.value.copy(isAppLocked = true, needsPinSetup = !_settings.value.isPinConfigured)
++    }
++
++    fun getLockoutRemainingMs(): Long = remainingLockoutMs().also { refreshLockout() }
++
++    fun recordBackgroundTime(timeMs: Long) { prefs.edit().putLong(KEY_BACKGROUND_TIME, timeMs).apply() }
++    fun backgroundTimeMs(): Long? = prefs.getLong(KEY_BACKGROUND_TIME, Long.MIN_VALUE).takeUnless { it == Long.MIN_VALUE }
++
++    fun updateClinicBranding(name: String, subtitle: String) {
++        val safeName = name.trim().ifEmpty { "Dr. Sherif Radwan Clinic" }
++        val safeSub = subtitle.trim().ifEmpty { "Dr. Sherif Radwan Clinic · Maternal-Fetal Medicine & Obstetrics" }
++        prefs.edit()
++            .putString(KEY_CLINIC_NAME, safeName)
++            .putString(KEY_CLINIC_SUBTITLE, safeSub)
++            .apply()
++        _settings.value = _settings.value.copy(
++            clinicName = safeName,
++            clinicSubtitle = safeSub,
++        )
++    }
++
++    companion object {
++        private const val PREFS_NAME = "anc_security_preferences"
++        private const val KEY_PIN_HASH = "key_pin_hash"
++        private const val KEY_PIN_HASH_V2 = "key_pin_hash_v2"
++        private const val KEY_PIN_SALT_V2 = "key_pin_salt_v2"
++        private const val KEY_PIN_ITERATIONS_V2 = "key_pin_iterations_v2"
++        private const val KEY_PIN_CHANGE_REQUIRED = "key_pin_change_required"
++        private const val KEY_FAILURES = "key_pin_failures"
++        private const val KEY_LOCKOUT_END = "key_pin_lockout_end"
++        private const val KEY_BACKGROUND_TIME = "key_background_time"
++        private const val KEY_BIOMETRIC_ENABLED = "key_biometric_enabled"
++        private const val KEY_AUTO_LOCK_TIMEOUT = "key_auto_lock_timeout"
++        private const val KEY_CLINIC_NAME = "key_clinic_name"
++        private const val KEY_CLINIC_SUBTITLE = "key_clinic_subtitle"
++        private const val KEY_THEME_MODE = "key_theme_mode"
++
++        @Volatile
++        private var instance: SecuritySettingsRepository? = null
++
++        fun getInstance(context: Context): SecuritySettingsRepository {
++            return instance ?: synchronized(this) {
++                instance ?: SecuritySettingsRepository(context).also { instance = it }
++            }
++        }
++    }
++}

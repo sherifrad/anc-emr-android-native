@@ -1,0 +1,675 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/MedicationReducer.kt b/app/src/main/java/com/sherifradwan/ancnative/state/MedicationReducer.kt
+new file mode 100644
+index 0000000..ad00314
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/MedicationReducer.kt
+@@ -0,0 +1,222 @@
++package com.sherifradwan.ancnative.state
++
++import com.sherifradwan.ancnative.model.DemoMedicationRecord
++import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
++import com.sherifradwan.ancnative.model.MEDICATION_STATUS_DISCONTINUED
++import com.sherifradwan.ancnative.model.MEDICATION_STATUS_NON_COMPLIANT
++import com.sherifradwan.ancnative.model.MedicationOnOff
++import com.sherifradwan.ancnative.model.effectiveMedicationStatus
++import com.sherifradwan.ancnative.model.isOngoingMedication
++import com.sherifradwan.ancnative.model.medicationEditorChoice
++
++/**
++ * Opens the medication sheet in one step; the navigation route does not change. A start is ignored while a save
++ * runs, while any medication draft is open, or while another draft has unsaved changes.
++ *
++ * - Edit (a stored [AncEvent.StartMedicationEditor.medicationId]): `original` and `values` are both the stored row.
++ * - Add from a catalog tile ([AncEvent.StartMedicationEditor.prefill]): `original` is the blank new-drug defaults
++ *   and `values` is the tile on top of them, so the draft is dirty (and recoverable) from the start.
++ * - Blank custom drug: both are the blank defaults.
++ *
++ * A new draft started by "Save and add another" ([AncEvent.StartMedicationEditor.keepSavedNotice]) is marked
++ * [MedicationDraft.chainedAdd].
++ */
++internal fun startMedicationEditor(state: AncState, event: AncEvent.StartMedicationEditor): AncState {
++    if (state.savePhase.blocksEditing() || state.hasDirtyDraft || state.medicationDraft != null) return state
++    if (event.medicationId != null && state.undoRunningFor(event.medicationId)) return state
++    val patient = state.patient(event.patientId)?.takeIf { it.status != "archived" } ?: return state
++    val med = event.medicationId?.let { id -> patient.medications.firstOrNull { it.id == id } }
++    if (event.medicationId != null && med == null) return state
++    val blank = MedicationDraftValues(
++        route = DEFAULT_MEDICATION_ROUTE,
++        status = MEDICATION_STATUS_ACTIVE,
++        startDate = event.defaultStartDate.ifEmpty { today() },
++    )
++    val original = med?.toDraftValues() ?: blank
++    val values = when {
++        med != null -> original
++        event.prefill != null -> blank.copy(
++            name = event.prefill.name,
++            dosage = event.prefill.dosage,
++            route = event.prefill.route.ifBlank { blank.route },
++            frequency = event.prefill.frequency,
++        )
++        else -> blank
++    }
++    return state.clearDrafts().copy(
++        medicationDraft = MedicationDraft(
++            editorSessionId = event.editorSessionId,
++            patientId = patient.id,
++            medicationId = med?.id ?: event.newMedicationId,
++            basePatientRevision = patient.revision,
++            baseMedicationRevision = med?.revision,
++            original = original,
++            values = values,
++            chainedAdd = event.keepSavedNotice && med == null,
++        ),
++        savedNotice = if (event.keepSavedNotice) state.savedNotice else false,
++        notice = if (event.keepSavedNotice) state.notice else null,
++    )
++}
++
++/** True when a one-tap stop or its Undo may start a save now: nothing else is open, saving or being undone. */
++internal fun AncState.canQuickSaveMedication(): Boolean =
++    !savePhase.blocksEditing() && !hasDirtyDraft && medicationDraft == null && !undoRunning && !deleteRunning
++
++/** One-tap stop: no draft and no sheet. The stored row is saved as Discontinued, ending today, at its current revision. */
++internal fun stopMedication(state: AncState, event: AncEvent.StopMedication): AncState {
++    if (!state.canQuickSaveMedication()) return state
++    val patient = state.patient(event.patientId)?.takeIf { it.status != "archived" } ?: return state
++    val med = patient.medications.firstOrNull { it.id == event.medicationId } ?: return state
++    if (!isOngoingMedication(med.status, med.isNonCompliant)) return state
++    val stored = med.toDraftValues()
++    val stopped = stored.copy(status = MEDICATION_STATUS_DISCONTINUED, isNonCompliant = false, endDate = today())
++    return state.copy(
++        medicationQuickSave = MedicationQuickSave(
++            draft = quickSaveDraft(event.editorSessionId, patient, med, stored, stopped),
++            undoOnSuccess = MedicationStopUndo(
++                token = event.editorSessionId,
++                patientId = patient.id,
++                medicationId = med.id,
++                medicationName = med.name,
++                previousStatus = stored.status,
++                previousEndDate = stored.endDate,
++                previousNonCompliant = stored.isNonCompliant,
++            ),
++        ),
++        medicationStopUndo = null,
++        savePhase = SavePhase.IDLE,
++        saveError = null,
++        savedNotice = false,
++        notice = null,
++    )
++}
++
++/** Undo of a one-tap stop: a second normal save of the same row, at the revision the stop produced. */
++internal fun undoMedicationStop(state: AncState, event: AncEvent.UndoMedicationStop): AncState {
++    val undo = state.medicationStopUndo?.takeIf { it.token == event.token } ?: return state
++    if (!state.canQuickSaveMedication()) return state
++    val patient = state.patient(undo.patientId)?.takeIf { it.status != "archived" }
++    val med = patient?.medications?.firstOrNull { it.id == undo.medicationId }
++    if (patient == null || med == null) return state.copy(medicationStopUndo = null)
++    val stored = med.toDraftValues()
++    val restored = stored.copy(
++        status = undo.previousStatus,
++        endDate = undo.previousEndDate,
++        isNonCompliant = undo.previousNonCompliant,
++    )
++    return state.copy(
++        medicationQuickSave = MedicationQuickSave(
++            draft = quickSaveDraft(event.editorSessionId, patient, med, stored, restored),
++            undoOnSuccess = null,
++        ),
++        medicationStopUndo = null,
++        savePhase = SavePhase.IDLE,
++        saveError = null,
++        savedNotice = false,
++        notice = null,
++    )
++}
++
++internal fun quickSaveDraft(
++    editorSessionId: String,
++    patient: DemoPatient,
++    med: DemoMedicationRecord,
++    original: MedicationDraftValues,
++    values: MedicationDraftValues,
++) = MedicationDraft(
++    editorSessionId = editorSessionId,
++    patientId = patient.id,
++    medicationId = med.id,
++    basePatientRevision = patient.revision,
++    baseMedicationRevision = med.revision,
++    original = original,
++    values = values,
++)
++
++/**
++ * The one-tap stop's Undo bar and its failure message belong to the Meds tab of one patient: both go when another
++ * action starts or the open patient changes.
++ */
++internal fun AncState.withMedicationStopUiKept(event: AncEvent): AncState {
++    var next = this
++    val undo = next.medicationStopUndo
++    if (undo != null && (event.startsAnotherAction() || route.patientIdOrNull() != undo.patientId)) {
++        next = next.copy(medicationStopUndo = null)
++    }
++    val failed = next.medicationQuickSave
++    // A tab change alone keeps the cause: the doctor has not acted on it yet and finds it again on the Meds tab.
++    val actedElsewhere = event.startsAnotherAction() && event !is AncEvent.SelectSection
++    if (failed != null && (actedElsewhere || route.patientIdOrNull() != failed.draft.patientId)) {
++        next = next.withoutFailedMedicationQuickSave()
++    }
++    return next
++}
++
++/** Drops a one-tap stop (or Undo) whose save failed, with its message. One that is still saving, or unresolved, stays. */
++internal fun AncState.withoutFailedMedicationQuickSave(): AncState =
++    if (medicationQuickSave != null && medicationDraft == null && savePhase == SavePhase.ERROR) {
++        copy(medicationQuickSave = null, savePhase = SavePhase.IDLE, saveError = null)
++    } else {
++        this
++    }
++
++internal fun updateMedicationDraft(state: AncState, event: AncEvent.MedicationDraftChanged): AncState {
++    if (state.savePhase.blocksEditing()) return state
++    val draft = state.medicationDraft ?: return state
++    val values = when (event.field) {
++        MedicationDraftField.NAME -> draft.values.copy(name = event.value)
++        MedicationDraftField.DOSAGE -> draft.values.copy(dosage = event.value)
++        MedicationDraftField.ROUTE -> draft.values.copy(route = event.value)
++        MedicationDraftField.FREQUENCY -> draft.values.copy(frequency = event.value)
++        MedicationDraftField.START_DATE -> draft.values.copy(startDate = event.value)
++        MedicationDraftField.END_DATE -> draft.values.copy(endDate = event.value)
++        MedicationDraftField.STATUS -> withMedicationStatus(draft.original, draft.values, event.value.ifBlank { MEDICATION_STATUS_ACTIVE })
++        MedicationDraftField.NOTES -> draft.values.copy(notes = event.value)
++        MedicationDraftField.ADVERSE_NOTES -> draft.values.copy(adverseNotes = event.value)
++    }
++    return state.copy(
++        medicationDraft = draft.copy(values = values, errors = emptySet(), touched = true),
++        savePhase = SavePhase.IDLE,
++        saveError = null,
++    )
++}
++
++/**
++ * A change to Stopped fills a blank end date, so the one date field is never empty: with the stored stop date when
++ * the row was stored as stopped (so Active and back to Stopped loses nothing), otherwise with today. A change from
++ * Stopped back to Active keeps the start date and clears the end date, as an active drug has none.
++ */
++internal fun withMedicationStatus(
++    original: MedicationDraftValues,
++    values: MedicationDraftValues,
++    status: String,
++): MedicationDraftValues {
++    val next = values.copy(status = status, isNonCompliant = status == MEDICATION_STATUS_NON_COMPLIANT)
++    val wasStopped = medicationEditorChoice(values.status) == MedicationOnOff.STOPPED
++    val storedStopDate = original.endDate.takeIf { medicationEditorChoice(original.status) == MedicationOnOff.STOPPED }
++    return when (medicationEditorChoice(status)) {
++        MedicationOnOff.STOPPED ->
++            if (next.endDate.isBlank()) next.copy(endDate = storedStopDate?.ifBlank { null } ?: today()) else next
++        MedicationOnOff.ON -> if (wasStopped) next.copy(endDate = "") else next
++        null -> next
++    }
++}
++
++internal fun DemoMedicationRecord.toDraftValues(): MedicationDraftValues {
++    val effStatus = effectiveMedicationStatus(status, isNonCompliant)
++    return MedicationDraftValues(
++        name = name,
++        dosage = dosage,
++        route = route,
++        frequency = frequency,
++        startDate = startDate,
++        endDate = endDate.orEmpty(),
++        status = effStatus.ifBlank { MEDICATION_STATUS_ACTIVE },
++        isProphylaxis = isProphylaxis,
++        notes = notes.orEmpty(),
++        isNonCompliant = (effStatus == MEDICATION_STATUS_NON_COMPLIANT),
++        adverseNotes = adverseNotes.orEmpty(),
++    )
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/ReducerSupport.kt b/app/src/main/java/com/sherifradwan/ancnative/state/ReducerSupport.kt
+new file mode 100644
+index 0000000..5d8d393
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/ReducerSupport.kt
+@@ -0,0 +1,49 @@
++package com.sherifradwan.ancnative.state
++
++internal fun AncEvent.startsAnotherAction(): Boolean = when (this) {
++    is AncEvent.OpenWorkspace,
++    is AncEvent.SelectSection,
++    is AncEvent.StartVisit,
++    is AncEvent.StartPatientEditor,
++    is AncEvent.StartDeliveryPlanEditor,
++    is AncEvent.StartHistoriesEditor,
++    is AncEvent.StartPregnancyEditor,
++    is AncEvent.StartStatusEditor,
++    is AncEvent.StartDatingEditor,
++    is AncEvent.StartUltrasoundEditor,
++    is AncEvent.StartLabEditor,
++    is AncEvent.StartMedicationEditor,
++    is AncEvent.StopMedication,
++    is AncEvent.StartLabBatch,
++    is AncEvent.StartLabBatchRequest,
++    is AncEvent.RequestDelete,
++    is AncEvent.UndoRequested,
++    is AncEvent.AddAttachment,
++    is AncEvent.ImportScanPhoto,
++    AncEvent.Back,
++    AncEvent.CancelEditor,
++    -> true
++    else -> false
++}
++
++internal fun today(): String = java.time.LocalDate.now().toString()
++
++internal fun AncState.clearDrafts(): AncState = copy(
++    draft = null,
++    patientDraft = null,
++    historiesDraft = null,
++    pregnancyDraft = null,
++    statusDraft = null,
++    datingDraft = null,
++    ultrasoundDraft = null,
++    labDraft = null,
++    medicationDraft = null,
++    labBatchDraft = null,
++    medicationQuickSave = null,
++    showDiscardDialog = false,
++    pendingAction = null,
++    savePhase = SavePhase.IDLE,
++    saveError = null,
++    pendingSave = null,
++    draftRecoveryPrompt = null,
++)
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/storage/AndroidVaultKeys.kt b/app/src/main/java/com/sherifradwan/ancnative/storage/AndroidVaultKeys.kt
+new file mode 100644
+index 0000000..e99f63a
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/storage/AndroidVaultKeys.kt
+@@ -0,0 +1,202 @@
++package com.sherifradwan.ancnative.storage
++
++import android.os.Build
++import android.security.keystore.KeyGenParameterSpec
++import android.security.keystore.KeyInfo
++import android.security.keystore.KeyPermanentlyInvalidatedException
++import android.security.keystore.KeyProperties
++import java.security.KeyStore
++import javax.crypto.AEADBadTagException
++import javax.crypto.Cipher
++import javax.crypto.KeyGenerator
++import javax.crypto.SecretKey
++import javax.crypto.SecretKeyFactory
++import javax.crypto.spec.GCMParameterSpec
++
++internal sealed interface KeyAccessFailure {
++    data object Missing : KeyAccessFailure
++    data object PermanentlyInvalidated : KeyAccessFailure
++    data object AuthenticationRequired : KeyAccessFailure
++    data object AuthenticationFailed : KeyAccessFailure
++    data object InvalidEnvelope : KeyAccessFailure
++}
++
++internal sealed interface KeyAccessResult<out T> {
++    data class Success<T>(val value: T) : KeyAccessResult<T>
++    data class Failure(val reason: KeyAccessFailure) : KeyAccessResult<Nothing>
++}
++
++internal data class VaultKeySecurityInfo(
++    val insideSecureHardware: Boolean,
++    val securityLevel: String?,
++)
++
++internal interface VaultKeyOperations {
++    fun hasAnyAlias(): Boolean
++    fun contains(aliasId: String): Boolean
++    fun generate(aliasId: String): KeyAccessResult<Unit>
++    fun wrap(vaultUuid: String, aliasId: String, passphrase: ByteArray): KeyAccessResult<WrappedPassphrase>
++    fun unwrap(envelope: WrappedPassphrase): KeyAccessResult<ByteArray>
++    fun securityInfo(aliasId: String): KeyAccessResult<VaultKeySecurityInfo>
++    fun deleteRegisteredTestAlias(aliasId: String)
++    fun deleteOrphanAliases()
++}
++
++internal class AndroidVaultKeys(
++    private val aliasPrefix: String,
++    private val testCleanupAllowed: Boolean = false,
++    private val orphanDetectionPrefixes: Set<String> = emptySet(),
++) : VaultKeyOperations {
++    private val keyStore: KeyStore
++        get() = KeyStore.getInstance(ANDROID_KEY_STORE).apply { load(null) }
++
++    override fun hasAnyAlias(): Boolean {
++        val aliases = keyStore.aliases()
++        while (aliases.hasMoreElements()) {
++            val alias = aliases.nextElement()
++            if (matchesOwnedAlias(alias, aliasPrefix)) return true
++            if (orphanDetectionPrefixes.any { prefix -> matchesOwnedAlias(alias, prefix) }) return true
++        }
++        return false
++    }
++
++    override fun contains(aliasId: String): Boolean = keyStore.containsAlias(fullAlias(aliasId))
++
++    override fun generate(aliasId: String): KeyAccessResult<Unit> {
++        return try {
++            val alias = fullAlias(aliasId)
++            if (keyStore.containsAlias(alias)) {
++                KeyAccessResult.Failure(KeyAccessFailure.InvalidEnvelope)
++            } else {
++                val builder = KeyGenParameterSpec.Builder(
++                    alias,
++                    KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,
++                )
++                    .setKeySize(256)
++                    .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
++                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
++                    .setRandomizedEncryptionRequired(true)
++                    .setUserAuthenticationRequired(false)
++                KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEY_STORE).run {
++                    init(builder.build())
++                    generateKey()
++                }
++                KeyAccessResult.Success(Unit)
++            }
++        } catch (_: Throwable) {
++            KeyAccessResult.Failure(KeyAccessFailure.InvalidEnvelope)
++        }
++    }
++
++    override fun wrap(
++        vaultUuid: String,
++        aliasId: String,
++        passphrase: ByteArray,
++    ): KeyAccessResult<WrappedPassphrase> = cryptResult {
++        val cipher = Cipher.getInstance(VaultFiles.ALGORITHM)
++        cipher.init(Cipher.ENCRYPT_MODE, existingKey(aliasId))
++        cipher.updateAAD(aad(vaultUuid))
++        WrappedPassphrase(
++            vaultUuid = vaultUuid,
++            aliasId = aliasId,
++            algorithm = VaultFiles.ALGORITHM,
++            iv = cipher.iv.copyOf(),
++            ciphertext = cipher.doFinal(passphrase),
++        )
++    }
++
++    override fun unwrap(envelope: WrappedPassphrase): KeyAccessResult<ByteArray> = cryptResult {
++        require(envelope.algorithm == VaultFiles.ALGORITHM)
++        val cipher = Cipher.getInstance(envelope.algorithm)
++        cipher.init(
++            Cipher.DECRYPT_MODE,
++            existingKey(envelope.aliasId),
++            GCMParameterSpec(GCM_TAG_BITS, envelope.iv),
++        )
++        cipher.updateAAD(aad(envelope.vaultUuid))
++        cipher.doFinal(envelope.ciphertext).also { require(it.size == PASSPHRASE_BYTES) }
++    }
++
++    @Suppress("DEPRECATION")
++    override fun securityInfo(aliasId: String): KeyAccessResult<VaultKeySecurityInfo> = cryptResult {
++        val key = existingKey(aliasId)
++        val keyInfo = SecretKeyFactory.getInstance(key.algorithm, ANDROID_KEY_STORE)
++            .getKeySpec(key, KeyInfo::class.java) as KeyInfo
++        VaultKeySecurityInfo(
++            insideSecureHardware = keyInfo.isInsideSecureHardware,
++            securityLevel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
++                when (keyInfo.securityLevel) {
++                    KeyProperties.SECURITY_LEVEL_SOFTWARE -> "SOFTWARE"
++                    KeyProperties.SECURITY_LEVEL_TRUSTED_ENVIRONMENT -> "TRUSTED_ENVIRONMENT"
++                    KeyProperties.SECURITY_LEVEL_STRONGBOX -> "STRONGBOX"
++                    KeyProperties.SECURITY_LEVEL_UNKNOWN_SECURE -> "UNKNOWN_SECURE"
++                    else -> "UNKNOWN"
++                }
++            } else {
++                null
++            },
++        )
++    }
++
++    override fun deleteRegisteredTestAlias(aliasId: String) {
++        check(testCleanupAllowed) { "canonical-key-cleanup-forbidden" }
++        val alias = fullAlias(aliasId)
++        require(alias.startsWith(aliasPrefix))
++        keyStore.deleteEntry(alias)
++    }
++
++    override fun deleteOrphanAliases() {
++        try {
++            val aliases = keyStore.aliases()
++            val toDelete = mutableListOf<String>()
++            while (aliases.hasMoreElements()) {
++                val alias = aliases.nextElement()
++                if (matchesOwnedAlias(alias, aliasPrefix) || orphanDetectionPrefixes.any { matchesOwnedAlias(alias, it) }) {
++                    toDelete.add(alias)
++                }
++            }
++            toDelete.forEach { keyStore.deleteEntry(it) }
++        } catch (_: Throwable) {
++        }
++    }
++
++    private fun existingKey(aliasId: String): SecretKey {
++        val alias = fullAlias(aliasId)
++        return (keyStore.getKey(alias, null) as? SecretKey) ?: throw MissingKeyException()
++    }
++
++    private inline fun <T> cryptResult(block: () -> T): KeyAccessResult<T> = try {
++        KeyAccessResult.Success(block())
++    } catch (_: MissingKeyException) {
++        KeyAccessResult.Failure(KeyAccessFailure.Missing)
++    } catch (_: KeyPermanentlyInvalidatedException) {
++        KeyAccessResult.Failure(KeyAccessFailure.PermanentlyInvalidated)
++    } catch (_: android.security.keystore.UserNotAuthenticatedException) {
++        KeyAccessResult.Failure(KeyAccessFailure.AuthenticationRequired)
++    } catch (_: AEADBadTagException) {
++        KeyAccessResult.Failure(KeyAccessFailure.AuthenticationFailed)
++    } catch (_: Throwable) {
++        KeyAccessResult.Failure(KeyAccessFailure.InvalidEnvelope)
++    }
++
++    private fun fullAlias(aliasId: String): String {
++        require(aliasId.matches(UUID_PATTERN))
++        return aliasPrefix + aliasId
++    }
++
++    private fun matchesOwnedAlias(alias: String, prefix: String): Boolean =
++        alias.startsWith(prefix) && alias.removePrefix(prefix).matches(UUID_PATTERN)
++
++    private fun aad(vaultUuid: String): ByteArray =
++        "anc-p2-envelope-v1:$vaultUuid".toByteArray(Charsets.UTF_8)
++
++    private class MissingKeyException : Exception()
++
++    private companion object {
++        const val ANDROID_KEY_STORE = "AndroidKeyStore"
++        const val AUTHORIZATION_SECONDS = 30
++        const val GCM_TAG_BITS = 128
++        const val PASSPHRASE_BYTES = 32
++        val UUID_PATTERN = Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/storage/AttachmentDeleteAdapter.kt b/app/src/main/java/com/sherifradwan/ancnative/storage/AttachmentDeleteAdapter.kt
+new file mode 100644
+index 0000000..3e55889
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/storage/AttachmentDeleteAdapter.kt
+@@ -0,0 +1,82 @@
++package com.sherifradwan.ancnative.storage
++
++import com.sherifradwan.ancnative.model.DemoAttachment
++import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.state.SavedNotice
++import com.sherifradwan.ancnative.state.WorkspaceSection
++
++object AttachmentDeleteAdapter : DeletableRecordAdapter<DemoAttachment>, PayloadFileAdapter {
++    override val type: DeletableType = DeletableType.ATTACHMENT
++    override val fingerprintTag: String = "ATT"
++    override val deleteReceiptKind: String = "ATTACHMENT_DELETE"
++    override val restoreReceiptKind: String = "ATTACHMENT_RESTORE"
++    override val section: WorkspaceSection = WorkspaceSection.ATTACHMENTS
++    override val deletedNotice: SavedNotice = SavedNotice.ATTACHMENT_DELETED
++    override val restoredNotice: SavedNotice = SavedNotice.ATTACHMENT_RESTORED
++    override val saveUndoneNotice: SavedNotice = SavedNotice.ATTACHMENT_DELETED // no save-undo flow
++
++    /**
++     * What the clinician sees in the confirm dialog, the Undo bar and the failure notice. Never the internal
++     * `att_<uuid>.webp` name: titles are optional, so fall back to the category and the capture date.
++     */
++    override fun label(record: DemoAttachment): String {
++        record.title?.trim()?.takeIf { it.isNotEmpty() }?.let { return it }
++        val category = AttachmentCategories.localizedName(record.category)
++        val day = record.capturedAt.take(10).takeIf { it.length == 10 && it[4] == '-' && it[7] == '-' }
++        return if (day != null) "$category · $day" else category
++    }
++
++    override fun canonical(record: DemoAttachment): String =
++        "${record.patientId}|${record.id}|${record.fileName}|${record.filePath}|${record.category}|${record.mimeType}|${record.fileSizeBytes}|${record.sha256Hash}|${record.title}|${record.capturedAt}|${record.linkedRecordId}|${record.syncStatus}|${record.cloudUrl}|${record.cloudSyncedAt}"
++
++    override suspend fun load(dao: RecordsDao, id: String): DemoAttachment? =
++        dao.attachment(id)?.let { e ->
++            DemoAttachment(
++                id = e.id, patientId = e.patientId, fileName = e.fileName, filePath = e.filePath,
++                category = e.category, mimeType = e.mimeType, fileSizeBytes = e.fileSizeBytes,
++                sha256Hash = e.sha256Hash, title = e.title, capturedAt = e.capturedAt,
++                linkedRecordId = e.linkedRecordId, syncStatus = e.syncStatus, cloudUrl = e.cloudUrl,
++                cloudSyncedAt = e.cloudSyncedAt, revision = e.revision,
++            )
++        }
++
++    override suspend fun deleteRow(dao: RecordsDao, id: String, patientId: String, expectedRevision: Long): Int =
++        dao.deleteAttachmentRevision(id, patientId, expectedRevision)
++
++    override suspend fun insertRow(dao: RecordsDao, record: DemoAttachment, revision: Long) {
++        dao.insertAttachment(PatientAttachmentEntity(
++            id = record.id, patientId = record.patientId, fileName = record.fileName,
++            filePath = record.filePath, category = record.category, mimeType = record.mimeType,
++            fileSizeBytes = record.fileSizeBytes, sha256Hash = record.sha256Hash, title = record.title,
++            capturedAt = record.capturedAt, linkedRecordId = record.linkedRecordId,
++            syncStatus = record.syncStatus, cloudUrl = record.cloudUrl, cloudSyncedAt = record.cloudSyncedAt,
++            revision = revision,
++        ))
++    }
++
++    override fun record(patient: DemoPatient, id: String): DemoAttachment? =
++        patient.attachments.firstOrNull { it.id == id }
++
++    override val hasPayloadFile: Boolean = true
++
++    override suspend fun finalizeDelete(record: DeletableRecord, context: android.content.Context): FinalizeResult {
++        val attachment = record as? DemoAttachment ?: return FinalizeResult.Failed("not an attachment")
++        return try {
++            val ok = PatientAttachmentVault.deleteAttachment(context, attachment.patientId, attachment.fileName)
++            if (ok) FinalizeResult.Success else FinalizeResult.Failed("delete returned false")
++        } catch (e: Exception) {
++            FinalizeResult.Failed(e.message ?: "unknown")
++        }
++    }
++}
++
++interface PayloadFileAdapter {
++    val hasPayloadFile: Boolean
++    /** Takes the shared record type so the view model never has to name a concrete kind. */
++    suspend fun finalizeDelete(record: DeletableRecord, context: android.content.Context): FinalizeResult
++}
++
++sealed class FinalizeResult {
++    object Success : FinalizeResult()
++    data class Failed(val reason: String) : FinalizeResult()
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/storage/AttachmentOrphanSweeper.kt b/app/src/main/java/com/sherifradwan/ancnative/storage/AttachmentOrphanSweeper.kt
+new file mode 100644
+index 0000000..af67d35
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/storage/AttachmentOrphanSweeper.kt
+@@ -0,0 +1,90 @@
++package com.sherifradwan.ancnative.storage
++
++import android.content.Context
++import com.sherifradwan.ancnative.model.DemoPatient
++import java.io.File
++
++/** One payload file on disk, named relative to the attachments root. */
++data class PayloadFile(
++    val patientDir: String,
++    val fileName: String,
++    val lastModifiedMillis: Long,
++) {
++    val key: String get() = payloadKey(patientDir, fileName)
++}
++
++/** The single key shape used for "this row still owns this file". */
++fun payloadKey(patientDir: String, fileName: String): String = "$patientDir/$fileName"
++
++/**
++ * Removes attachment payload files that no row points at any more.
++ *
++ * A committed delete removes its file when the Undo window closes. This sweep is the safety net for the paths that
++ * cannot finish (the app was killed inside the window, the file deletion failed, or an older session left debris):
++ * the owner decided on 2026-11-04 that the next unlock heals them.
++ *
++ * Two rules keep it safe: a file that a row still references is never touched, and a file younger than
++ * [MIN_AGE_MILLIS] is left alone so a file written just before the sweep can never be mistaken for an orphan.
++ */
++object AttachmentOrphanSweeper {
++    /** A freshly written file may not yet have its row: give it a minute before it can be called an orphan. */
++    const val MIN_AGE_MILLIS = 60_000L
++
++    /** Pure planning step: which present files have no row and are old enough to go. */
++    fun planOrphans(
++        present: List<PayloadFile>,
++        referencedKeys: Set<String>,
++        nowMillis: Long,
++        minAgeMillis: Long = MIN_AGE_MILLIS,
++    ): List<PayloadFile> = present.filter { file ->
++        // An unknown mtime (0) must never read as "very old": keep the file rather than guess.
++        val knownAge = file.lastModifiedMillis > 0L && nowMillis - file.lastModifiedMillis >= minAgeMillis
++        file.key !in referencedKeys && knownAge
++    }
++
++    /**
++     * Every file that a row still owns, in the same key shape as [PayloadFile.key].
++     *
++     * Two things write into the same per-patient folder: attachment rows, and ultrasound scan photos. A scan photo has
++     * no attachment row — it is referenced only from `ultrasound_scans.image_uris` as a `vault:<file>` ref — so reading
++     * `patient.attachments` alone would classify every scan photo as an orphan and delete clinical images.
++     */
++    fun referencedKeys(patients: List<DemoPatient>): Set<String> = buildSet {
++        for (patient in patients) {
++            val dir = PatientAttachmentVault.patientDirName(patient.id)
++            for (attachment in patient.attachments) {
++                attachment.fileName.takeIf { it.isNotBlank() }?.let { add(payloadKey(dir, it)) }
++            }
++            for (scan in patient.ultrasoundScans) {
++                for (uri in scan.imageUris) {
++                    scanPhotoFileName(uri)?.let { add(payloadKey(dir, it)) }
++                }
++            }
++        }
++    }
++
++    /**
++     * Best effort by design: a sweep may never block or fail an unlock. Returns how many files were removed.
++     * The caller is the vault open path, after the snapshot has been validated.
++     */
++    fun sweep(context: Context, patients: List<DemoPatient>, nowMillis: Long = System.currentTimeMillis()): Int =
++        try {
++            val root = PatientAttachmentVault.attachmentsRoot(context)
++            val doomed = planOrphans(currentFiles(root), referencedKeys(patients), nowMillis)
++            doomed.count { file -> File(File(root, file.patientDir), file.fileName).delete() }
++        } catch (failure: Throwable) {
++            android.util.Log.w("AttachmentSweep", "orphan sweep skipped: ${failure.message}")
++            0
++        }
++
++    /** Only direct children of the attachments root are candidates; nothing outside it is ever listed. */
++    private fun currentFiles(root: File): List<PayloadFile> {
++        if (!root.isDirectory) return emptyList()
++        val patientDirs = root.listFiles()?.filter { it.isDirectory } ?: return emptyList()
++        return patientDirs.flatMap { dir ->
++            dir.listFiles()?.filter { it.isFile }?.map { file ->
++                PayloadFile(dir.name, file.name, file.lastModified())
++            }.orEmpty()
++        }
++    }
++}

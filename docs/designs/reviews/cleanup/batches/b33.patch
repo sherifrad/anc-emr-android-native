@@ -1,0 +1,554 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt
+new file mode 100644
+index 0000000..d463a2f
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt
+@@ -0,0 +1,350 @@
++package com.sherifradwan.ancnative.ui.patienthub.components
++
++import androidx.compose.foundation.ExperimentalFoundationApi
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.ExperimentalLayoutApi
++import androidx.compose.foundation.layout.FlowRow
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.Spacer
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.size
++import androidx.compose.foundation.layout.width
++import androidx.compose.foundation.relocation.BringIntoViewRequester
++import androidx.compose.foundation.relocation.bringIntoViewRequester
++import androidx.compose.foundation.text.KeyboardActions
++import androidx.compose.foundation.text.KeyboardOptions
++import androidx.compose.material.icons.Icons
++import androidx.compose.material.icons.filled.Lock
++import androidx.compose.material3.FilterChip
++import androidx.compose.material3.Icon
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.LaunchedEffect
++import androidx.compose.runtime.getValue
++import androidx.compose.runtime.withFrameNanos
++import androidx.compose.runtime.mutableStateOf
++import androidx.compose.runtime.remember
++import androidx.compose.runtime.rememberCoroutineScope
++import androidx.compose.runtime.saveable.rememberSaveable
++import androidx.compose.runtime.setValue
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.focus.FocusRequester
++import androidx.compose.ui.focus.focusRequester
++import androidx.compose.ui.focus.onFocusChanged
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.text.input.ImeAction
++import androidx.compose.ui.text.input.KeyboardType
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.model.ClinicalVocabulary
++import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
++import com.sherifradwan.ancnative.model.MedicationOnOff
++import com.sherifradwan.ancnative.model.effectiveMedicationStatus
++import com.sherifradwan.ancnative.model.medicationEditorChoice
++import com.sherifradwan.ancnative.model.medicationStatusAfterChoice
++import com.sherifradwan.ancnative.state.AncEvent
++import com.sherifradwan.ancnative.state.ClinicalValidationError
++import com.sherifradwan.ancnative.state.DEFAULT_MEDICATION_ROUTE
++import com.sherifradwan.ancnative.state.MedicationDraftField
++import com.sherifradwan.ancnative.state.MedicationDraftValues
++import com.sherifradwan.ancnative.ui.BigChoiceButton
++import com.sherifradwan.ancnative.ui.COMMON_MEDICATION_FREQUENCIES
++import com.sherifradwan.ancnative.ui.ChoiceGroup
++import com.sherifradwan.ancnative.ui.ClinicalDateField
++import com.sherifradwan.ancnative.ui.EditorField
++import com.sherifradwan.ancnative.ui.medicationFrequencyLabel
++import com.sherifradwan.ancnative.ui.minimumTouchTarget
++import kotlinx.coroutines.launch
++
++/**
++ * The one medication form. It renders immutable draft values and errors and emits only
++ * [AncEvent.MedicationDraftChanged]; it holds no business rules.
++ *
++ * [draftKey] identifies the draft being edited; per-draft UI state (the Other-frequency mode) resets when it changes.
++ * With [focusNameOnStart] the name field takes focus for [draftKey], then [onNameFocused] tells the host so it can
++ * turn the request off (the host keeps that in saved state, so a rotation does not focus the name again).
++ * If the field is not attached yet on the first frame, the focus request is retried once after the next frame.
++ *
++ * Fields in order: name, dose, route (read-only on an existing row), frequency, status, one date
++ * (Start date while active, Stop date while stopped) and notes. Enter (IME Next) moves focus to the
++ * next text field; notes keeps Enter for a new line. Every field asks to be scrolled into view when
++ * it takes focus, so the keyboard never hides it. After a rejected save the first field in error
++ * (name, dose, frequency, then date) is scrolled into view, so the doctor sees why the save stopped.
++ */
++@OptIn(ExperimentalLayoutApi::class)
++@Composable
++fun MedicationForm(
++    values: MedicationDraftValues,
++    errors: Set<ClinicalValidationError>,
++    isExistingRow: Boolean,
++    enabled: Boolean,
++    draftKey: String,
++    onEvent: (AncEvent) -> Unit,
++    modifier: Modifier = Modifier,
++    focusNameOnStart: Boolean = false,
++    onNameFocused: () -> Unit = {},
++    revealToken: Int = 0,
++) {
++    fun change(field: MedicationDraftField, value: String) =
++        onEvent(AncEvent.MedicationDraftChanged(field, value))
++
++    val nameFocus = remember { FocusRequester() }
++    val doseFocus = remember { FocusRequester() }
++    val otherFocus = remember { FocusRequester() }
++    val dateFocus = remember { FocusRequester() }
++    val notesFocus = remember { FocusRequester() }
++
++    var otherMode by rememberSaveable(draftKey) {
++        mutableStateOf(values.frequency.isNotBlank() && values.frequency !in COMMON_MEDICATION_FREQUENCIES)
++    }
++    LaunchedEffect(draftKey, focusNameOnStart) {
++        if (focusNameOnStart) {
++            withFrameNanos { }
++            // The name field may not be attached yet after Save and add another, in which case
++            // requestFocus reports false. Wait one more frame and retry once so focus still lands.
++            if (!nameFocus.requestFocus()) {
++                withFrameNanos { }
++                nameFocus.requestFocus()
++            }
++            onNameFocused()
++        }
++    }
++    var focusOtherBox by remember { mutableStateOf(false) }
++    LaunchedEffect(focusOtherBox, otherMode) {
++        if (focusOtherBox && otherMode) {
++            withFrameNanos { }
++            otherFocus.requestFocus()
++            focusOtherBox = false
++        }
++    }
++
++    val status = effectiveMedicationStatus(values.status.ifEmpty { MEDICATION_STATUS_ACTIVE }, values.isNonCompliant)
++    val choice = medicationEditorChoice(status)
++    val stopped = choice == MedicationOnOff.STOPPED
++    val dateField = if (stopped) MedicationDraftField.END_DATE else MedicationDraftField.START_DATE
++    val dateValue = if (stopped) values.endDate else values.startDate
++    val dateError = errors.contains(ClinicalValidationError.REQUIRED_DATE) ||
++        errors.contains(ClinicalValidationError.INVALID_DATE)
++    val nameError = errors.contains(ClinicalValidationError.REQUIRED_NAME)
++    val doseError = errors.contains(ClinicalValidationError.REQUIRED_DOSAGE)
++    val frequencyMissing = errors.contains(ClinicalValidationError.REQUIRED_FREQUENCY)
++    // Only one field is revealed: the first one in error, in form order.
++    val revealDose = doseError && !nameError
++    val revealFrequency = frequencyMissing && !nameError && !doseError
++    val revealDate = dateError && !nameError && !doseError && !frequencyMissing
++
++    Column(
++        modifier = modifier.fillMaxWidth().testTag("medicationForm"),
++        verticalArrangement = Arrangement.spacedBy(12.dp),
++    ) {
++        EditorField(
++            value = values.name,
++            onValueChange = { change(MedicationDraftField.NAME, it) },
++            label = stringResource(R.string.medication_name),
++            tag = "medName",
++            modifier = Modifier.focusRequester(nameFocus).revealOnFocus().revealWhen(nameError, revealToken),
++            enabled = enabled,
++            error = nameError,
++            singleLine = true,
++            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
++            keyboardActions = KeyboardActions(onNext = { doseFocus.requestFocus() }),
++        )
++
++        EditorField(
++            value = values.dosage,
++            onValueChange = { change(MedicationDraftField.DOSAGE, it) },
++            label = stringResource(R.string.dosage),
++            tag = "medDosage",
++            modifier = Modifier.focusRequester(doseFocus).revealOnFocus().revealWhen(revealDose, revealToken),
++            enabled = enabled,
++            error = doseError,
++            singleLine = true,
++            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
++            keyboardActions = KeyboardActions(
++                onNext = { (if (otherMode) otherFocus else dateFocus).requestFocus() },
++            ),
++        )
++
++        if (isExistingRow) {
++            RouteReadOnly(route = values.route.ifBlank { DEFAULT_MEDICATION_ROUTE })
++        } else {
++            ChoiceGroup(
++                label = stringResource(R.string.route),
++                selected = values.route.ifEmpty { DEFAULT_MEDICATION_ROUTE },
++                choices = ClinicalVocabulary.medicationRoutes.toList(),
++                enabled = enabled,
++                tagPrefix = "medRouteChoice",
++                onSelected = { change(MedicationDraftField.ROUTE, it) },
++                includeUnknown = false,
++                rowGap = 0.dp,
++            )
++        }
++
++        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
++            Text(stringResource(R.string.frequency), style = MaterialTheme.typography.titleMedium)
++            FlowRow(
++                horizontalArrangement = Arrangement.spacedBy(8.dp),
++                verticalArrangement = Arrangement.spacedBy(0.dp),
++            ) {
++                COMMON_MEDICATION_FREQUENCIES.forEachIndexed { index, frequency ->
++                    FilterChip(
++                        selected = !otherMode && values.frequency == frequency,
++                        onClick = {
++                            otherMode = false
++                            change(MedicationDraftField.FREQUENCY, frequency)
++                        },
++                        enabled = enabled,
++                        label = { Text(medicationFrequencyLabel(frequency)) },
++                        modifier = Modifier.minimumTouchTarget().testTag("medFreqChoice-$index"),
++                    )
++                }
++                FilterChip(
++                    selected = otherMode,
++                    onClick = {
++                        if (!otherMode) {
++                            otherMode = true
++                            if (values.frequency in COMMON_MEDICATION_FREQUENCIES) {
++                                change(MedicationDraftField.FREQUENCY, "")
++                            }
++                        }
++                        focusOtherBox = true
++                    },
++                    enabled = enabled,
++                    label = { Text(stringResource(R.string.medication_frequency_other)) },
++                    modifier = Modifier.minimumTouchTarget().testTag("medFreqChoice-other"),
++                )
++            }
++            if (otherMode) {
++                EditorField(
++                    value = values.frequency,
++                    onValueChange = { change(MedicationDraftField.FREQUENCY, it) },
++                    label = stringResource(R.string.medication_frequency_other_label),
++                    tag = "medFreqOther",
++                    modifier = Modifier.focusRequester(otherFocus).revealOnFocus().revealWhen(revealFrequency, revealToken),
++                    enabled = enabled,
++                    error = frequencyMissing,
++                    errorMessage = if (frequencyMissing) stringResource(R.string.medication_frequency_required) else null,
++                    singleLine = true,
++                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
++                    keyboardActions = KeyboardActions(onNext = { dateFocus.requestFocus() }),
++                )
++            } else if (frequencyMissing) {
++                Text(
++                    text = stringResource(R.string.medication_frequency_required),
++                    style = MaterialTheme.typography.bodySmall,
++                    color = MaterialTheme.colorScheme.error,
++                    modifier = Modifier.revealWhen(revealFrequency, revealToken).testTag("medFreqError"),
++                )
++            }
++        }
++
++        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
++            Text(stringResource(R.string.status), style = MaterialTheme.typography.titleMedium)
++            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
++                listOf(
++                    MedicationOnOff.ON to stringResource(R.string.medication_status_active),
++                    MedicationOnOff.STOPPED to stringResource(R.string.medication_status_stopped),
++                ).forEachIndexed { index, (option, label) ->
++                    BigChoiceButton(
++                        label = label,
++                        selected = choice == option,
++                        tag = "medStatusChoice-$index",
++                        onClick = {
++                            val next = medicationStatusAfterChoice(status, option)
++                            if (next != status) change(MedicationDraftField.STATUS, next)
++                        },
++                        enabled = enabled,
++                        modifier = Modifier.weight(1f),
++                    )
++                }
++            }
++        }
++
++        ClinicalDateField(
++            value = dateValue,
++            onValueChange = { change(dateField, it) },
++            label = stringResource(if (stopped) R.string.medication_stop_date else R.string.start_date),
++            tag = "medDate",
++            enabled = enabled,
++            error = dateError,
++            modifier = Modifier.revealWhen(revealDate, revealToken),
++            fieldModifier = Modifier.focusRequester(dateFocus).revealOnFocus(),
++            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
++            keyboardActions = KeyboardActions(onNext = { notesFocus.requestFocus() }),
++        )
++
++        // Notes is multi-line: Enter inserts a new line, so it carries no IME action of its own.
++        EditorField(
++            value = values.notes,
++            onValueChange = { change(MedicationDraftField.NOTES, it) },
++            label = stringResource(R.string.medication_note),
++            tag = "medNotes",
++            modifier = Modifier.focusRequester(notesFocus).revealOnFocus(),
++            enabled = enabled,
++            singleLine = false,
++            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Default),
++        )
++    }
++}
++
++@Composable
++private fun RouteReadOnly(route: String) {
++    val label = stringResource(R.string.medication_route_locked_label)
++    Column(
++        verticalArrangement = Arrangement.spacedBy(4.dp),
++        modifier = Modifier.fillMaxWidth().testTag("medRouteReadOnly"),
++    ) {
++        Text(label, style = MaterialTheme.typography.titleMedium)
++        Row(
++            verticalAlignment = Alignment.CenterVertically,
++            modifier = Modifier,
++        ) {
++            Icon(
++                Icons.Default.Lock,
++                contentDescription = null,
++                tint = MaterialTheme.colorScheme.onSurfaceVariant,
++                modifier = Modifier.size(16.dp),
++            )
++            Spacer(Modifier.width(8.dp))
++            Text(route, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.testTag("medRouteValue"))
++        }
++        Text(
++            text = stringResource(R.string.medication_route_locked_note),
++            style = MaterialTheme.typography.bodySmall,
++            color = MaterialTheme.colorScheme.onSurfaceVariant,
++        )
++    }
++}
++
++/** Asks the enclosing scroll container to bring this field fully into view when it gains focus. */
++@OptIn(ExperimentalFoundationApi::class)
++@Composable
++internal fun Modifier.revealOnFocus(): Modifier {
++    val requester = remember { BringIntoViewRequester() }
++    val scope = rememberCoroutineScope()
++    return this
++        .bringIntoViewRequester(requester)
++        .onFocusChanged { if (it.isFocused) scope.launch { requester.bringIntoView() } }
++}
++
++/**
++ * Asks the enclosing scroll container to bring this element into view when [reveal] turns true or [token] changes, one
++ * frame later so the error text it just gained is laid out. The token goes up on every Save press, so a second
++ * rejected save with the same errors scrolls again. Used after a rejected save for the first field in error.
++ */
++@OptIn(ExperimentalFoundationApi::class)
++@Composable
++internal fun Modifier.revealWhen(reveal: Boolean, token: Int = 0): Modifier {
++    val requester = remember { BringIntoViewRequester() }
++    LaunchedEffect(reveal, token) {
++        if (reveal) {
++            withFrameNanos { }
++            requester.bringIntoView()
++        }
++    }
++    return this.bringIntoViewRequester(requester)
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationSheet.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationSheet.kt
+new file mode 100644
+index 0000000..d34eb33
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationSheet.kt
+@@ -0,0 +1,192 @@
++package com.sherifradwan.ancnative.ui.patienthub.components
++
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.PaddingValues
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.imePadding
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.rememberScrollState
++import androidx.compose.foundation.verticalScroll
++import androidx.compose.material3.ExperimentalMaterial3Api
++import androidx.compose.material3.LinearProgressIndicator
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.ModalBottomSheet
++import androidx.compose.material3.OutlinedButton
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.getValue
++import androidx.compose.runtime.mutableStateOf
++import androidx.compose.runtime.saveable.rememberSaveable
++import androidx.compose.runtime.setValue
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.semantics.heading
++import androidx.compose.ui.semantics.semantics
++import androidx.compose.ui.text.style.TextAlign
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.state.AncEvent
++import com.sherifradwan.ancnative.state.MedicationDraft
++import com.sherifradwan.ancnative.state.SavePhase
++import com.sherifradwan.ancnative.state.SaveUiError
++import com.sherifradwan.ancnative.ui.minimumTouchTarget
++
++/**
++ * Bottom sheet that hosts [MedicationForm] for one [MedicationDraft].
++ *
++ * Add (and custom) mode is a draft with no stored revision; it also offers "Save and add another".
++ * Cancel and dismiss send [AncEvent.CancelEditor] at once when the form is untouched, and ask first
++ * when [touched] is true. While a save runs the form, Cancel, Save and Save and add another are disabled; a rejected save
++ * leaves the sheet open with the doctor's values and shows the [saveError] message, scrolled into view.
++ */
++@OptIn(ExperimentalMaterial3Api::class)
++@Composable
++fun MedicationSheet(
++    draft: MedicationDraft,
++    savePhase: SavePhase,
++    saveError: SaveUiError?,
++    touched: Boolean,
++    onEvent: (AncEvent) -> Unit,
++    /** Shown under the buttons, inside the sheet: the host puts the app's Undo bar here so the sheet never hides it. */
++    footer: @Composable () -> Unit = {},
++) {
++    val isExistingRow = draft.baseMedicationRevision != null
++    val enabled = savePhase == SavePhase.IDLE || savePhase == SavePhase.ERROR
++    val saving = savePhase == SavePhase.PENDING || savePhase == SavePhase.RECONCILING
++    var confirmDiscard by rememberSaveable { mutableStateOf(false) }
++    val draftKey = "${draft.editorSessionId}:${draft.medicationId}"
++    // The draft whose name already took focus. Saved here, outside the sheet's own window, so a rotation or theme
++    // change later in the same draft does not pull focus back to the name.
++    var nameFocusedFor by rememberSaveable { mutableStateOf<String?>(null) }
++    // Goes up on every Save press, so a repeated rejected save scrolls to the first error again.
++    var saveAttempts by rememberSaveable { mutableStateOf(0) }
++
++    val requestCancel = {
++        if (touched) confirmDiscard = true else onEvent(AncEvent.CancelEditor)
++    }
++    val sheetState = rememberGuardedSheetState(
++        dismissAllowed = enabled,
++        needsConfirm = touched,
++        onNeedsConfirm = { confirmDiscard = true },
++    )
++
++    ModalBottomSheet(
++        onDismissRequest = { if (enabled) requestCancel() },
++        sheetState = sheetState,
++        modifier = Modifier.testTag("medicationSheet"),
++    ) {
++        Column(modifier = Modifier.fillMaxWidth().imePadding()) {
++            if (saving) {
++                LinearProgressIndicator(modifier = Modifier.fillMaxWidth().testTag("medSaveProgress"))
++            }
++            Text(
++                text = stringResource(if (isExistingRow) R.string.edit_medication else R.string.add_medication),
++                style = MaterialTheme.typography.titleLarge,
++                modifier = Modifier
++                    .padding(horizontal = 16.dp, vertical = 8.dp)
++                    .semantics { heading() },
++            )
++            Column(
++                modifier = Modifier
++                    .weight(1f, fill = false)
++                    .verticalScroll(rememberScrollState())
++                    // Bottom room so the last row (route or notes) is fully visible when scrolled to the end.
++                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
++                verticalArrangement = Arrangement.spacedBy(12.dp),
++            ) {
++                SheetSaveMessage(
++                    savePhase = savePhase,
++                    saveError = saveError,
++                    fieldErrorMessage = if (draft.errors.isNotEmpty()) stringResource(R.string.correct_highlighted_fields) else null,
++                    failedTitle = stringResource(R.string.medication_save_failed_title),
++                    tag = "medSaveMessage",
++                )
++                MedicationForm(
++                    values = draft.values,
++                    errors = draft.errors,
++                    isExistingRow = isExistingRow,
++                    enabled = enabled,
++                    draftKey = draftKey,
++                    // The next drug of "Save and add another": its name takes focus, so the keyboard stays up,
++                    // whether this sheet stayed on screen between the two drafts or was shown again.
++                    focusNameOnStart = draft.chainedAdd && nameFocusedFor != draftKey,
++                    onNameFocused = { nameFocusedFor = draftKey },
++                    revealToken = saveAttempts,
++                    onEvent = onEvent,
++                )
++            }
++            MedicationSheetButtons(
++                isExistingRow = isExistingRow,
++                enabled = enabled,
++                saving = saving,
++                onCancel = requestCancel,
++                onSave = {
++                    saveAttempts++
++                    onEvent(AncEvent.SubmitMedication)
++                },
++                onSaveAndAddAnother = {
++                    saveAttempts++
++                    onEvent(AncEvent.SubmitMedicationAndAddAnother)
++                },
++            )
++            footer()
++        }
++    }
++
++    if (confirmDiscard) {
++        DiscardChangesDialog(
++            onDiscard = {
++                confirmDiscard = false
++                onEvent(AncEvent.CancelEditor)
++            },
++            onKeep = { confirmDiscard = false },
++            dialogTag = "medDiscardDialog",
++            confirmTag = "medDiscardConfirm",
++            keepTag = "medDiscardKeep",
++        )
++    }
++}
++
++/** Cancel and Save share one row; "Save and add another" (new rows only) gets its own full-width row. Labels wrap rather than clip. */
++@Composable
++internal fun MedicationSheetButtons(
++    isExistingRow: Boolean,
++    enabled: Boolean,
++    saving: Boolean,
++    onCancel: () -> Unit,
++    onSave: () -> Unit,
++    onSaveAndAddAnother: () -> Unit,
++) {
++    Column(
++        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
++        verticalArrangement = Arrangement.spacedBy(8.dp),
++    ) {
++        SheetCancelSaveRow(
++            enabled = enabled,
++            saving = saving,
++            saveEnabled = true,
++            savingLabel = stringResource(if (saving) R.string.medication_saving else R.string.save),
++            onCancel = onCancel,
++            onSave = onSave,
++            cancelTag = "cancelMedication",
++            saveTag = "saveMedication",
++            spinnerTag = "medSaveSpinner",
++        )
++        if (!isExistingRow) {
++            OutlinedButton(
++                onClick = onSaveAndAddAnother,
++                enabled = enabled,
++                contentPadding = PaddingValues(horizontal = 8.dp),
++                modifier = Modifier.fillMaxWidth().minimumTouchTarget().testTag("addAnotherMedication"),
++            ) {
++                Text(
++                    stringResource(R.string.save_and_add_another_med),
++                    maxLines = 2,
++                    textAlign = TextAlign.Center,
++                )
++            }
++        }
++    }
++}

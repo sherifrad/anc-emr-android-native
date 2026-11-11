@@ -1,0 +1,561 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/VisitsTab.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/VisitsTab.kt
+new file mode 100644
+index 0000000..b0591f4
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/VisitsTab.kt
+@@ -0,0 +1,267 @@
++package com.sherifradwan.ancnative.ui.patienthub.tabs
++
++import androidx.compose.foundation.BorderStroke
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.FlowRow
++import androidx.compose.foundation.layout.PaddingValues
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.Spacer
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.layout.size
++import androidx.compose.foundation.layout.width
++import androidx.compose.foundation.lazy.LazyColumn
++import androidx.compose.foundation.lazy.items
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.material.icons.Icons
++import androidx.compose.material.icons.filled.Add
++import androidx.compose.material.icons.filled.Warning
++import androidx.compose.material3.Button
++import androidx.compose.material3.ButtonDefaults
++import androidx.compose.material3.Card
++import androidx.compose.material3.CardDefaults
++import androidx.compose.material3.Icon
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Surface
++import androidx.compose.material3.Text
++import androidx.compose.material3.TextButton
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.remember
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.model.GestationalAgeEngine
++import com.sherifradwan.ancnative.model.parseVisitFindings
++import com.sherifradwan.ancnative.model.parseWeightKg
++import com.sherifradwan.ancnative.state.AncEvent
++import com.sherifradwan.ancnative.storage.DeletableType
++import com.sherifradwan.ancnative.ui.BpAlertLabel
++import com.sherifradwan.ancnative.ui.DeleteIconButton
++import com.sherifradwan.ancnative.ui.GestationalAgeBadge
++import com.sherifradwan.ancnative.ui.minimumTouchTarget
++import com.sherifradwan.ancnative.ui.patienthub.components.BedsideVitalsGrid
++import com.sherifradwan.ancnative.ui.patienthub.model.deriveVitalsSnapshot
++
++@Composable
++fun VisitsTab(
++    patient: DemoPatient,
++    canEdit: Boolean,
++    onStartVisit: (String, String?) -> Unit,
++    onEvent: (AncEvent) -> Unit,
++    modifier: Modifier = Modifier,
++) {
++    val bookingWeightKg = remember(patient.visits) {
++        patient.visits
++            .mapNotNull { parseWeightKg(it.weight) }
++            .lastOrNull()
++    }
++
++    LazyColumn(
++        modifier = modifier
++            .fillMaxSize()
++            .testTag("visitsTabContent"),
++        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 48.dp),
++        verticalArrangement = Arrangement.spacedBy(14.dp),
++    ) {
++        // Top Action: + Record New Antenatal Visit
++        item {
++            Row(
++                modifier = Modifier.fillMaxWidth(),
++                horizontalArrangement = Arrangement.SpaceBetween,
++                verticalAlignment = Alignment.CenterVertically,
++            ) {
++                Text(
++                    text = "Antenatal Visits (${patient.visits.size})",
++                    style = MaterialTheme.typography.titleMedium,
++                    fontWeight = FontWeight.Bold,
++                    color = MaterialTheme.colorScheme.primary,
++                )
++                if (canEdit && patient.status != "archived") {
++                    Button(
++                        onClick = { onStartVisit(patient.id, null) },
++                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
++                        shape = RoundedCornerShape(10.dp),
++                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
++                        modifier = Modifier.minimumTouchTarget().testTag("recordNewVisitBtn"),
++                    ) {
++                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
++                        Spacer(Modifier.width(4.dp))
++                        Text("Record Visit", fontWeight = FontWeight.Bold, softWrap = false)
++                    }
++                }
++            }
++        }
++
++        if (patient.visits.isEmpty()) {
++            item {
++                Surface(
++                    shape = RoundedCornerShape(12.dp),
++                    color = MaterialTheme.colorScheme.surfaceContainerLow,
++                    modifier = Modifier.fillMaxWidth(),
++                ) {
++                    Text(
++                        text = "No records",
++                        style = MaterialTheme.typography.bodyMedium,
++                        color = MaterialTheme.colorScheme.onSurfaceVariant,
++                        modifier = Modifier.padding(16.dp),
++                    )
++                }
++            }
++        } else {
++            items(
++                items = patient.visits,
++                key = { it.id },
++            ) { visit ->
++                val gaAtVisit = remember(patient.dating, visit.date) {
++                    GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, visit.date)
++                }
++                val gaDisplayText = gaAtVisit?.displayText
++                val gaWeeks = gaAtVisit?.weeks
++                val parsedFindings = remember(visit.findings) { parseVisitFindings(visit.findings) }
++
++                val vitals = remember(visit.bloodPressure, visit.weight, visit.findings, gaWeeks, bookingWeightKg) {
++                    deriveVitalsSnapshot(
++                        bloodPressure = visit.bloodPressure,
++                        weight = visit.weight,
++                        findings = visit.findings,
++                        gaWeeks = gaWeeks,
++                        bookingWeightKg = bookingWeightKg,
++                    )
++                }
++
++                Card(
++                    modifier = Modifier.fillMaxWidth().testTag("visit-${visit.id}"),
++                    shape = RoundedCornerShape(16.dp),
++                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
++                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
++                ) {
++                    Column(
++                        modifier = Modifier.padding(16.dp),
++                        verticalArrangement = Arrangement.spacedBy(10.dp),
++                    ) {
++                        // Header Row: Date + GA + Badges (FlowRow to prevent 360dp collisions)
++                        FlowRow(
++                            modifier = Modifier.fillMaxWidth(),
++                            horizontalArrangement = Arrangement.SpaceBetween,
++                            verticalArrangement = Arrangement.spacedBy(6.dp),
++                        ) {
++                            Row(
++                                verticalAlignment = Alignment.CenterVertically,
++                                horizontalArrangement = Arrangement.spacedBy(8.dp),
++                            ) {
++                                Text(
++                                    text = visit.date,
++                                    style = MaterialTheme.typography.titleMedium,
++                                    fontWeight = FontWeight.Bold,
++                                    color = MaterialTheme.colorScheme.primary,
++                                )
++                                if (!gaDisplayText.isNullOrBlank()) {
++                                    GestationalAgeBadge(gaDisplayText)
++                                }
++                            }
++
++                            Row(
++                                verticalAlignment = Alignment.CenterVertically,
++                                horizontalArrangement = Arrangement.spacedBy(6.dp),
++                            ) {
++                                BpAlertLabel(visit.bloodPressure)
++
++                                if (visit.linkedUltrasoundId != null) {
++                                    Surface(
++                                        shape = RoundedCornerShape(6.dp),
++                                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
++                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f)),
++                                    ) {
++                                        Text(
++                                            text = "Scan Linked",
++                                            style = MaterialTheme.typography.labelSmall,
++                                            fontWeight = FontWeight.Bold,
++                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
++                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
++                                        )
++                                    }
++                                }
++                            }
++                        }
++
++                        // Pre-eclampsia Screening Alert
++                        if (vitals.isPreEclampsiaWarning) {
++                            Surface(
++                                shape = RoundedCornerShape(10.dp),
++                                color = MaterialTheme.colorScheme.errorContainer,
++                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
++                                modifier = Modifier.fillMaxWidth().testTag("preEclampsiaWarning-${visit.id}"),
++                            ) {
++                                Row(
++                                    modifier = Modifier.padding(10.dp),
++                                    verticalAlignment = Alignment.CenterVertically,
++                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
++                                ) {
++                                    Icon(
++                                        Icons.Default.Warning,
++                                        contentDescription = null,
++                                        tint = MaterialTheme.colorScheme.error,
++                                        modifier = Modifier.size(18.dp),
++                                    )
++                                    Column {
++                                        Text(
++                                            text = "Pre-eclampsia Risk Alert",
++                                            style = MaterialTheme.typography.labelMedium,
++                                            fontWeight = FontWeight.Bold,
++                                            color = MaterialTheme.colorScheme.onErrorContainer,
++                                        )
++                                        Text(
++                                            text = "Elevated BP (${visit.bloodPressure}) with proteinuria (${parsedFindings.urineProtein}). Clinical evaluation required.",
++                                            style = MaterialTheme.typography.bodySmall,
++                                            color = MaterialTheme.colorScheme.onErrorContainer,
++                                        )
++                                    }
++                                }
++                            }
++                        }
++
++                        // Canonical Bedside Vitals Grid
++                        BedsideVitalsGrid(vitals = vitals)
++
++                        // Additional clinical notes
++                        if (!visit.notes.isNullOrBlank()) {
++                            Text(
++                                text = visit.notes,
++                                style = MaterialTheme.typography.bodyMedium,
++                                color = MaterialTheme.colorScheme.onSurface,
++                            )
++                        }
++
++                        // Actions: Edit and Delete
++                        if (canEdit) {
++                            Row(
++                                modifier = Modifier.fillMaxWidth(),
++                                horizontalArrangement = Arrangement.End,
++                                verticalAlignment = Alignment.CenterVertically,
++                            ) {
++                                DeleteIconButton(
++                                    type = DeletableType.VISIT,
++                                    record = visit,
++                                    onClick = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.VISIT, visit.id)) },
++                                )
++                                TextButton(
++                                    onClick = { onStartVisit(patient.id, visit.id) },
++                                    modifier = Modifier.minimumTouchTarget().testTag("editVisit-${visit.id}"),
++                                ) {
++                                    Text(stringResource(R.string.edit_visit))
++                                }
++                            }
++                        }
++                    }
++                }
++            }
++        }
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/report/HtmlEscape.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/report/HtmlEscape.kt
+new file mode 100644
+index 0000000..246049a
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/report/HtmlEscape.kt
+@@ -0,0 +1,11 @@
++package com.sherifradwan.ancnative.ui.report
++
++internal fun escapeHtml(text: String?): String {
++    if (text == null) return ""
++    return text
++        .replace("&", "&amp;")
++        .replace("<", "&lt;")
++        .replace(">", "&gt;")
++        .replace("\"", "&quot;")
++        .replace("'", "&#39;")
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintManager.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintManager.kt
+new file mode 100644
+index 0000000..11399f7
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintManager.kt
+@@ -0,0 +1,47 @@
++package com.sherifradwan.ancnative.ui.report
++
++import android.content.Context
++import android.print.PrintAttributes
++import android.print.PrintManager
++import android.webkit.WebView
++import android.webkit.WebViewClient
++import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.security.SecuritySettingsState
++
++object PatientPrintManager {
++
++    fun printPatientReport(
++        context: Context,
++        patient: DemoPatient,
++        settings: SecuritySettingsState? = null,
++        onComplete: (() -> Unit)? = null,
++    ) {
++        val htmlContent = PatientPrintHtmlGenerator.generateHtml(
++            context = context,
++            patient = patient,
++            settings = settings,
++        )
++
++        val printManager = context.getSystemService(Context.PRINT_SERVICE) as? PrintManager
++            ?: return
++
++        val webView = WebView(context)
++        webView.webViewClient = object : WebViewClient() {
++            override fun onPageFinished(view: WebView?, url: String?) {
++                super.onPageFinished(view, url)
++                val jobName = "Patient_Report_${patient.displayName.replace(' ', '_')}_${patient.caseId}"
++                val printAdapter = webView.createPrintDocumentAdapter(jobName)
++                val printAttributes = PrintAttributes.Builder()
++                    .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
++                    .setResolution(PrintAttributes.Resolution("res1", "default", 300, 300))
++                    .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
++                    .build()
++
++                printManager.print(jobName, printAdapter, printAttributes)
++                onComplete?.invoke()
++            }
++        }
++
++        webView.loadDataWithBaseURL("file:///android_asset/", htmlContent, "text/html", "UTF-8", null)
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt
+new file mode 100644
+index 0000000..faff0a8
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt
+@@ -0,0 +1,212 @@
++package com.sherifradwan.ancnative.ui.report
++
++import android.annotation.SuppressLint
++import android.content.Intent
++import android.view.ViewGroup
++import android.webkit.WebView
++import android.webkit.WebViewClient
++import androidx.compose.foundation.background
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Box
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.Spacer
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.layout.size
++import androidx.compose.foundation.layout.width
++import androidx.compose.material.icons.Icons
++import androidx.compose.material.icons.filled.Close
++import androidx.compose.material.icons.filled.Print
++import androidx.compose.material.icons.filled.Share
++import androidx.compose.material3.Button
++import androidx.compose.material3.ButtonDefaults
++import androidx.compose.material3.Icon
++import androidx.compose.material3.IconButton
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Surface
++import androidx.compose.ui.text.style.TextOverflow
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.remember
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.graphics.Color
++import androidx.compose.ui.platform.LocalContext
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.unit.dp
++import androidx.compose.ui.viewinterop.AndroidView
++import androidx.compose.ui.window.Dialog
++import androidx.compose.ui.window.DialogProperties
++import com.sherifradwan.ancnative.model.ClinicalSummaryGenerator
++import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.security.SecuritySettingsState
++import com.sherifradwan.ancnative.ui.ClinicalNavy
++import com.sherifradwan.ancnative.ui.minimumTouchTarget
++
++@SuppressLint("SetJavaScriptEnabled")
++@Composable
++fun PatientTwoPageReportDialog(
++    patient: DemoPatient,
++    securitySettings: SecuritySettingsState? = null,
++    onDismiss: () -> Unit,
++) {
++    val context = LocalContext.current
++    val htmlContent = remember(patient.id) {
++        PatientPrintHtmlGenerator.generateHtml(
++            context = context,
++            patient = patient,
++            settings = securitySettings,
++        )
++    }
++
++    Dialog(
++        onDismissRequest = onDismiss,
++        properties = DialogProperties(
++            usePlatformDefaultWidth = false,
++            dismissOnBackPress = true,
++        ),
++    ) {
++        Surface(
++            modifier = Modifier
++                .fillMaxSize()
++                .testTag("patientTwoPageReportDialog"),
++            color = MaterialTheme.colorScheme.background,
++        ) {
++            Column(modifier = Modifier.fillMaxSize()) {
++                // Top Action Bar
++                Surface(
++                    color = ClinicalNavy,
++                    contentColor = Color.White,
++                    shadowElevation = 4.dp,
++                ) {
++                    Row(
++                        modifier = Modifier
++                            .fillMaxWidth()
++                            .padding(horizontal = 12.dp, vertical = 8.dp),
++                        horizontalArrangement = Arrangement.SpaceBetween,
++                        verticalAlignment = Alignment.CenterVertically,
++                    ) {
++                        Row(
++                            verticalAlignment = Alignment.CenterVertically,
++                            horizontalArrangement = Arrangement.spacedBy(8.dp),
++                            modifier = Modifier.weight(1f),
++                        ) {
++                            IconButton(
++                                onClick = onDismiss,
++                                modifier = Modifier.minimumTouchTarget().testTag("closeReportDialog"),
++                            ) {
++                                Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
++                            }
++                            Column {
++                                Text(
++                                    text = "Clinical Medical Record",
++                                    style = MaterialTheme.typography.titleMedium,
++                                    fontWeight = FontWeight.Bold,
++                                    color = Color.White,
++                                    maxLines = 2,
++                                    overflow = TextOverflow.Ellipsis,
++                                )
++                                Text(
++                                    text = patient.displayName,
++                                    style = MaterialTheme.typography.labelSmall,
++                                    color = Color.White.copy(alpha = 0.85f),
++                                    maxLines = 1,
++                                    overflow = TextOverflow.Ellipsis,
++                                )
++                            }
++                        }
++
++                        Row(
++                            horizontalArrangement = Arrangement.spacedBy(6.dp),
++                            verticalAlignment = Alignment.CenterVertically,
++                        ) {
++                            // Share text/summary button
++                            IconButton(
++                                onClick = {
++                                    val summary = ClinicalSummaryGenerator.generateTextSummary(patient)
++                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
++                                        type = "text/plain"
++                                        putExtra(Intent.EXTRA_SUBJECT, "Clinical Record - ${patient.displayName}")
++                                        putExtra(Intent.EXTRA_TEXT, summary)
++                                    }
++                                    context.startActivity(Intent.createChooser(shareIntent, "Share Clinical Record"))
++                                },
++                                modifier = Modifier.minimumTouchTarget().testTag("shareReportButton"),
++                            ) {
++                                Icon(Icons.Default.Share, contentDescription = "Share", tint = Color.White)
++                            }
++
++                            // Print / Export PDF button
++                            Button(
++                                onClick = {
++                                    PatientPrintManager.printPatientReport(
++                                        context = context,
++                                        patient = patient,
++                                        settings = securitySettings,
++                                    )
++                                },
++                                colors = ButtonDefaults.buttonColors(
++                                    containerColor = MaterialTheme.colorScheme.secondary,
++                                    contentColor = Color.White,
++                                ),
++                                contentPadding = androidx.compose.foundation.layout.PaddingValues(
++                                    horizontal = 12.dp,
++                                    vertical = 8.dp,
++                                ),
++                                modifier = Modifier.minimumTouchTarget().testTag("printReportButton"),
++                            ) {
++                                Icon(
++                                    imageVector = Icons.Default.Print,
++                                    contentDescription = "Print PDF",
++                                    modifier = Modifier.size(20.dp),
++                                )
++                                Spacer(Modifier.width(4.dp))
++                                Text(
++                                    text = "Print PDF",
++                                    maxLines = 1,
++                                    softWrap = false,
++                                    style = MaterialTheme.typography.labelLarge,
++                                    fontWeight = FontWeight.Bold,
++                                )
++                            }
++                        }
++                    }
++                }
++
++                // Interactive WebView Paper Canvas
++                Box(
++                    modifier = Modifier
++                        .fillMaxSize()
++                        .weight(1f)
++                        .background(MaterialTheme.colorScheme.surfaceVariant),
++                ) {
++                    AndroidView(
++                        factory = { ctx ->
++                            WebView(ctx).apply {
++                                layoutParams = ViewGroup.LayoutParams(
++                                    ViewGroup.LayoutParams.MATCH_PARENT,
++                                    ViewGroup.LayoutParams.MATCH_PARENT,
++                                )
++                                this.settings.apply {
++                                    javaScriptEnabled = false
++                                    domStorageEnabled = true
++                                    builtInZoomControls = true
++                                    displayZoomControls = false
++                                    useWideViewPort = false
++                                    loadWithOverviewMode = true
++                                    defaultTextEncodingName = "UTF-8"
++                                }
++                                webViewClient = WebViewClient()
++                                loadDataWithBaseURL("file:///android_asset/", htmlContent, "text/html", "UTF-8", null)
++                            }
++                        },
++                        modifier = Modifier.fillMaxSize().testTag("reportWebView"),
++                    )
++                }
++            }
++        }
++    }
++}

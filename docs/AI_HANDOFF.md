@@ -1,5 +1,7 @@
 # AI handoff: native ANC EMR for HONOR 400
 
+> **Current roadmap and handoff: `.agents/pipeline/HANDOFF_AGY.md` (top section, updated 2026-11-11). Read that first.**
+>
 > **Superseded 2026-11-05 — read this instead.** This document (2026-10-11, "46/46 tests", "Zero git commits") no longer describes the project. The attachment delete/Undo mission is closed: six record kinds, payload files included, independent review FAIL → fixes → re-review PASS WITH NITS (0 blockers). Current state at `752d4cb`: 948 unit tests in 87 classes, 0 failing; `run_build_gate.sh` GATE OK; `run_static_checks.sh` STATIC CHECKS OK; emulator API 26: `DeleteUndoUiTest` 36/36 and `ClinicalDeleteRestoreDbTest` 168/168. Branch `maca-round2`, 130 commits ahead of `origin/main`, never pushed. Current handoff: `.agents/pipeline/HANDOFF_AGY.md` (2026-11-05 status block), `.agents/pipeline/PROGRESS_LOG.md`, `.agents/AI_HANDOFF_LEDGER.md`. Next: print defects P-1/P-2, then Part B design rounds. The HONOR 400 safety rules below remain in force.
 
 Read this document first when resuming work. It describes current verified state and the next bounded steps; it is not a release or clinical-approval statement.

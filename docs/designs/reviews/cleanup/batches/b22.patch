@@ -1,0 +1,428 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt
+new file mode 100644
+index 0000000..89d9471
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt
+@@ -0,0 +1,286 @@
++package com.sherifradwan.ancnative.ui
++
++import androidx.compose.foundation.Image
++import androidx.compose.foundation.background
++import androidx.compose.foundation.border
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Box
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.height
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.layout.size
++import androidx.compose.foundation.shape.CircleShape
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.material.icons.Icons
++import androidx.compose.material.icons.filled.Close
++import androidx.compose.material.icons.filled.Delete
++import androidx.compose.material.icons.filled.Lock
++import androidx.compose.material.icons.filled.PhotoLibrary
++import androidx.compose.material.icons.filled.VerifiedUser
++import androidx.compose.material3.Card
++import androidx.compose.material3.CardDefaults
++import androidx.compose.material3.Icon
++import androidx.compose.material3.IconButton
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Surface
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.remember
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.draw.clip
++import androidx.compose.ui.graphics.Color
++import androidx.compose.ui.graphics.asImageBitmap
++import androidx.compose.ui.layout.ContentScale
++import androidx.compose.ui.platform.LocalContext
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.text.font.FontFamily
++import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.unit.dp
++import androidx.compose.ui.unit.sp
++import androidx.compose.ui.window.Dialog
++import androidx.compose.ui.window.DialogProperties
++import com.sherifradwan.ancnative.model.DemoAttachment
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.storage.AttachmentCategories
++import com.sherifradwan.ancnative.storage.AttachmentSyncManager
++import com.sherifradwan.ancnative.storage.BoundedBitmap
++import com.sherifradwan.ancnative.storage.PatientAttachmentVault
++
++@Composable
++fun ClinicalAttachmentViewerDialog(
++    patient: DemoPatient,
++    attachment: DemoAttachment,
++    canDelete: Boolean,
++    onDismiss: () -> Unit,
++    onDelete: () -> Unit,
++) {
++    val context = LocalContext.current
++
++    val loadedBitmap = remember(attachment.id) {
++        runCatching {
++            val file = PatientAttachmentVault.resolveAttachmentFile(
++                context = context,
++                patientId = patient.id,
++                fileName = attachment.fileName,
++            )
++            if (file != null && file.exists()) {
++                BoundedBitmap.decodeFile(file.absolutePath, 2048)?.asImageBitmap()
++            } else {
++                null
++            }
++        }.getOrNull()
++    }
++
++    val isIntegrityVerified = remember(attachment.id) {
++        val file = PatientAttachmentVault.resolveAttachmentFile(context, patient.id, attachment.fileName)
++        if (file != null) {
++            PatientAttachmentVault.verifyIntegrity(file, attachment.sha256Hash)
++        } else false
++    }
++
++    Dialog(
++        onDismissRequest = onDismiss,
++        properties = DialogProperties(usePlatformDefaultWidth = false),
++    ) {
++        Card(
++            modifier = Modifier
++                .fillMaxWidth(0.96f)
++                .padding(vertical = 16.dp)
++                .testTag("clinicalAttachmentViewerDialog"),
++            shape = RoundedCornerShape(20.dp),
++            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
++            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
++        ) {
++            Column(
++                modifier = Modifier
++                    .fillMaxWidth()
++                    .padding(16.dp),
++                verticalArrangement = Arrangement.spacedBy(12.dp),
++            ) {
++                // Header: Patient identity, Case ID, Category, and dismiss
++                Row(
++                    modifier = Modifier.fillMaxWidth(),
++                    horizontalArrangement = Arrangement.SpaceBetween,
++                    verticalAlignment = Alignment.CenterVertically,
++                ) {
++                    Row(
++                        verticalAlignment = Alignment.CenterVertically,
++                        horizontalArrangement = Arrangement.spacedBy(10.dp),
++                        modifier = Modifier.weight(1f),
++                    ) {
++                        Surface(
++                            shape = CircleShape,
++                            color = MaterialTheme.colorScheme.primaryContainer,
++                            modifier = Modifier.size(40.dp),
++                        ) {
++                            Box(contentAlignment = Alignment.Center) {
++                                Icon(
++                                    Icons.Default.PhotoLibrary,
++                                    contentDescription = null,
++                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
++                                    modifier = Modifier.size(20.dp),
++                                )
++                            }
++                        }
++                        Column {
++                            Row(
++                                verticalAlignment = Alignment.CenterVertically,
++                                horizontalArrangement = Arrangement.spacedBy(6.dp),
++                            ) {
++                                Text(
++                                    text = patient.displayName,
++                                    style = MaterialTheme.typography.titleMedium,
++                                    fontWeight = FontWeight.Bold,
++                                    color = MaterialTheme.colorScheme.onSurface,
++                                )
++                            }
++                            Text(
++                                text = AttachmentCategories.localizedName(attachment.category) +
++                                    (attachment.title?.trim()?.takeIf(String::isNotEmpty)?.let { " · $it" } ?: ""),
++                                style = MaterialTheme.typography.bodySmall,
++                                color = MaterialTheme.colorScheme.primary,
++                                fontWeight = FontWeight.SemiBold,
++                            )
++                        }
++                    }
++
++                    Row(verticalAlignment = Alignment.CenterVertically) {
++                        IconButton(
++                            // The shared DeleteConfirmDialog owns the confirmation: this viewer must not ask twice,
++                            // and it stays open until the record is really gone, so Cancel returns to the image.
++                            onClick = onDelete,
++                            enabled = canDelete,
++                            modifier = Modifier.testTag("deleteAttachmentBtn"),
++                        ) {
++                            Icon(
++                                Icons.Default.Delete,
++                                contentDescription = stringResource(R.string.attachment_delete_action),
++                                tint = MaterialTheme.colorScheme.error,
++                            )
++                        }
++                        IconButton(
++                            onClick = onDismiss,
++                            modifier = Modifier.testTag("dismissAttachmentBtn"),
++                        ) {
++                            Icon(
++                                Icons.Default.Close,
++                                contentDescription = stringResource(R.string.close),
++                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
++                            )
++                        }
++                    }
++                }
++
++                // Image Viewer Container
++                Box(
++                    modifier = Modifier
++                        .fillMaxWidth()
++                        .height(380.dp)
++                        .clip(RoundedCornerShape(12.dp))
++                        .background(Color.Black)
++                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp)),
++                    contentAlignment = Alignment.Center,
++                ) {
++                    if (loadedBitmap != null) {
++                        Image(
++                            bitmap = loadedBitmap,
++                            contentDescription = attachmentDisplayTitle(
++                                attachment.title,
++                                AttachmentCategories.localizedName(attachment.category),
++                                attachment.capturedAt,
++                            ),
++                            modifier = Modifier.fillMaxSize(),
++                            contentScale = ContentScale.Fit,
++                        )
++                    } else {
++                        Column(
++                            horizontalAlignment = Alignment.CenterHorizontally,
++                            verticalArrangement = Arrangement.spacedBy(8.dp),
++                        ) {
++                            Icon(
++                                Icons.Default.PhotoLibrary,
++                                contentDescription = null,
++                                tint = Color.Gray,
++                                modifier = Modifier.size(48.dp),
++                            )
++                            Text(
++                                text = stringResource(R.string.image_unavailable),
++                                style = MaterialTheme.typography.bodyMedium,
++                                color = Color.LightGray,
++                                modifier = Modifier.testTag("image_unavailable"),
++                            )
++                        }
++                    }
++                }
++
++                // Metadata & Medico-Legal Security Strip
++                Surface(
++                    shape = RoundedCornerShape(10.dp),
++                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
++                    modifier = Modifier.fillMaxWidth(),
++                ) {
++                    Column(
++                        modifier = Modifier.padding(10.dp),
++                        verticalArrangement = Arrangement.spacedBy(6.dp),
++                    ) {
++                        Row(
++                            modifier = Modifier.fillMaxWidth(),
++                            horizontalArrangement = Arrangement.SpaceBetween,
++                            verticalAlignment = Alignment.CenterVertically,
++                        ) {
++                            Row(
++                                verticalAlignment = Alignment.CenterVertically,
++                                horizontalArrangement = Arrangement.spacedBy(4.dp),
++                            ) {
++                                Icon(
++                                    if (isIntegrityVerified) Icons.Default.VerifiedUser else Icons.Default.Lock,
++                                    contentDescription = null,
++                                    tint = if (isIntegrityVerified) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
++                                    modifier = Modifier.size(16.dp),
++                                )
++                                Text(
++                                    text = if (isIntegrityVerified) {
++                                        stringResource(R.string.attachment_integrity_verified)
++                                    } else {
++                                        stringResource(R.string.attachment_vault_protected)
++                                    },
++                                    style = MaterialTheme.typography.labelSmall,
++                                    fontWeight = FontWeight.Bold,
++                                    color = if (isIntegrityVerified) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
++                                )
++                            }
++                            Text(
++                                text = stringResource(
++                                    R.string.attachment_size_format,
++                                    AttachmentSyncManager.formatFileSize(attachment.fileSizeBytes),
++                                ),
++                                style = MaterialTheme.typography.labelSmall,
++                                fontWeight = FontWeight.SemiBold,
++                                color = MaterialTheme.colorScheme.onSurfaceVariant,
++                            )
++                        }
++
++                        Text(
++                            text = stringResource(R.string.attachment_sha256_label, attachment.sha256Hash),
++                            style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace, fontSize = 9.sp),
++                            color = MaterialTheme.colorScheme.onSurfaceVariant,
++                            maxLines = 1,
++                        )
++
++                        Text(
++                            text = stringResource(R.string.attachment_saved_at, attachment.capturedAt),
++                            style = MaterialTheme.typography.labelSmall,
++                            color = MaterialTheme.colorScheme.onSurfaceVariant,
++                        )
++                    }
++                }
++            }
++        }
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt
+new file mode 100644
+index 0000000..8c78dce
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt
+@@ -0,0 +1,130 @@
++package com.sherifradwan.ancnative.ui
++
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.model.BpLevel
++import com.sherifradwan.ancnative.model.bpLevel
++
++/** True when a recorded blood group is Rh negative ("A-", "O neg", "B Rh -ve", "O minus", ...). */
++internal fun isRhNegative(bloodGroup: String?): Boolean {
++    val raw = bloodGroup?.trim()?.replace('\u2212', '-')?.lowercase() ?: return false
++    if (raw.isEmpty()) return false
++    if (raw.contains('+') || Regex("\\b(pos|positive)\\b").containsMatchIn(raw)) return false
++    return raw.contains('-') ||
++        Regex("\\b(neg|negative|minus)\\b").containsMatchIn(raw)
++}
++
++/** What the allergy field says: nothing entered, an explicit "none", or a real recorded allergy. */
++sealed interface AllergyState {
++    data object NotRecorded : AllergyState
++    data object ExplicitlyNone : AllergyState
++    data class Recorded(val text: String) : AllergyState
++}
++
++private val WhitespaceRun = Regex("\\s+")
++
++private val NoAllergyPhrases = setOf(
++    "nkda",
++    "nka",
++    "none",
++    "no",
++    "nil",
++    "no known allergies",
++    "no known drug allergies",
++    "no known drug allergies (nkda)",
++    "no known allergy",
++    "no allergies",
++)
++
++/**
++ * Classifies a free-text allergy entry. Only an entry that is wholly a known "no allergy" phrase is
++ * [AllergyState.ExplicitlyNone]; anything with other content stays [AllergyState.Recorded] so an
++ * allergy is never hidden.
++ */
++internal fun classifyAllergy(raw: String?): AllergyState {
++    val text = raw?.trim().orEmpty()
++    if (text.isEmpty()) return AllergyState.NotRecorded
++    val key = text.trimEnd { it == '.' || it.isWhitespace() }
++        .replace(WhitespaceRun, " ")
++        .lowercase(java.util.Locale.ROOT)
++    return if (key in NoAllergyPhrases) AllergyState.ExplicitlyNone else AllergyState.Recorded(text)
++}
++
++/** Mirror of [isRhNegative]: true only for an explicit Rh positive group; blank/null/"pending" are not. */
++internal fun isRhPositive(bloodGroup: String?): Boolean {
++    val raw = bloodGroup?.trim()?.replace('\u2212', '-')?.lowercase() ?: return false
++    if (raw.isEmpty() || isRhNegative(bloodGroup)) return false
++    return raw.contains('+') || Regex("\\b(pos|positive)\\b").containsMatchIn(raw)
++}
++
++/**
++ * Blood group as displayed: the trimmed value as typed, with a plain-text "(Rh negative)" marker
++ * (D1) when the group is Rh negative. Never adds emoji or glyphs (D3).
++ */
++internal fun formatBloodGroup(bloodGroup: String?): String? {
++    val value = bloodGroup?.trim().orEmpty()
++    if (value.isEmpty()) return null
++    return if (isRhNegative(value)) "$value (Rh negative)" else value
++}
++
++/** True only for an explicit high-risk record; "Not high risk" / "Low" / "Moderate" are not high. */
++internal fun isHighRisk(risk: String?): Boolean {
++    val raw = risk?.trim()?.lowercase() ?: return false
++    if (raw.isEmpty()) return false
++    if (Regex("\\bnot\\b").containsMatchIn(raw)) return false
++    return Regex("\\bhigh\\b").containsMatchIn(raw)
++}
++
++/** A whole-text age of 10..70 years, e.g. "29 years" -> "29"; any other text carries no valid age. */
++internal fun formatAgeYears(ageText: String?): String? {
++    val text = ageText?.trim().orEmpty()
++    val years = AGE_TEXT.find(text)?.groupValues?.get(1)?.toIntOrNull() ?: return null
++    return if (years in MIN_AGE_YEARS..MAX_AGE_YEARS) years.toString() else null
++}
++
++/**
++ * Attachment title as displayed (Q73): a non-blank trimmed title wins; otherwise the category,
++ * followed by " · " and the captured date when [capturedAt] starts with a yyyy-MM-dd date.
++ * A blank category falls back to "Attachment". The file name is never used as a title.
++ */
++internal fun attachmentDisplayTitle(title: String?, category: String, capturedAt: String): String {
++    val typed = title?.trim().orEmpty()
++    if (typed.isNotEmpty()) return typed
++    val label = category.trim().ifEmpty { "Attachment" }
++    val date = capturedAt.take(10)
++    return if (ISO_DATE.matches(date)) "$label \u00B7 $date" else label
++}
++
++internal fun formatFetalMetrics(fhr: String?, efw: String?): String =
++    "FHR: ${fhr ?: "-"} bpm · EFW: ${efw ?: "-"} g"
++
++/**
++ * Visit weight as displayed (Q78): the trimmed text, with " kg" appended unless it already ends
++ * with a kg / kilogram(s) unit. Null for null or blank text.
++ */
++internal fun formatWeightKg(raw: String?): String? {
++    val text = raw?.trim().orEmpty()
++    if (text.isEmpty()) return null
++    return if (WEIGHT_UNIT.containsMatchIn(text)) text else "$text kg"
++}
++
++/** A trailing kg / kilogram / kilograms unit, optionally after spaces. */
++private val WEIGHT_UNIT = Regex("(?:kg|kilograms?)$", RegexOption.IGNORE_CASE)
++
++/** Optional "Age" + optional ':', the number, optional unit y/yr/yrs/year/years, optional '.'. */
++private val AGE_TEXT = Regex(
++    "^(?:age\\s*:?\\s*)?(\\d+)\\s*(?:years|year|yrs|yr|y)?\\.?$",
++    RegexOption.IGNORE_CASE,
++)
++
++/** The first 10 characters of a capture timestamp, when they look like a yyyy-MM-dd date. */
++private val ISO_DATE = Regex("\\d{4}-\\d{2}-\\d{2}")
++
++private const val MIN_AGE_YEARS = 10
++private const val MAX_AGE_YEARS = 70
++
++/** Alert text for a blood pressure value, or null when it is normal or unreadable. */
++internal fun bpAlertResource(raw: String?): Int? = when (bpLevel(raw)) {
++    BpLevel.RAISED -> R.string.bp_alert_raised
++    BpLevel.SEVERE -> R.string.bp_alert_severe
++    BpLevel.NORMAL -> null
++}

@@ -1,0 +1,172 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/model/catalog/ClinicalCatalogModels.kt b/app/src/main/java/com/sherifradwan/ancnative/model/catalog/ClinicalCatalogModels.kt
+new file mode 100644
+index 0000000..bac657b
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/model/catalog/ClinicalCatalogModels.kt
+@@ -0,0 +1,166 @@
++package com.sherifradwan.ancnative.model.catalog
++
++import kotlinx.coroutines.flow.StateFlow
++import java.util.UUID
++
++data class LabCatalogItem(
++    val id: String = UUID.randomUUID().toString(),
++    val testName: String,
++    val category: String, // Hematology, Biochemistry, Serology, Urinalysis, Other
++    val unit: String = "",
++    val referenceRange: String = "",
++    val defaultResult: String = "",
++    val isCustom: Boolean = false,
++) {
++    val displayLabel: String
++        get() = testName
++}
++
++data class MedicationCatalogItem(
++    val id: String = UUID.randomUUID().toString(),
++    val name: String,
++    val dosage: String,
++    val route: String = "Oral", // Oral, IM, IV, Topical, Subcutaneous
++    val frequency: String = "Once daily",
++    val isProphylaxis: Boolean = true,
++    val instructions: String = "",
++    val isCustom: Boolean = false,
++) {
++    val displayLabel: String
++        get() = if (dosage.isNotBlank()) "$name $dosage" else name
++}
++
++data class LabCategoryGroup(
++    val id: String = UUID.randomUUID().toString(),
++    val name: String,
++    val description: String = "",
++    val testNames: List<String> = emptyList(),
++    val isCustom: Boolean = false,
++)
++
++data class LabItemEdit(
++    val items: List<LabCatalogItem>,
++    val groups: List<LabCategoryGroup>,
++)
++
++data class LabPanelResolution(
++    val tests: List<LabCatalogItem>,
++    val missing: List<String>,
++)
++
++fun resolveLabPanel(
++    panel: LabCategoryGroup,
++    items: List<LabCatalogItem>,
++): LabPanelResolution {
++    val tests = mutableListOf<LabCatalogItem>()
++    val missing = mutableListOf<String>()
++    val seenItemIds = mutableSetOf<String>()
++
++    for (rawName in panel.testNames) {
++        val trimmedName = rawName.trim()
++        val matchedItem = items.firstOrNull { it.testName.trim().equals(trimmedName, ignoreCase = true) }
++        if (matchedItem != null) {
++            if (seenItemIds.add(matchedItem.id)) {
++                tests.add(matchedItem)
++            }
++        } else {
++            missing.add(rawName)
++        }
++    }
++
++    return LabPanelResolution(tests = tests, missing = missing)
++}
++
++data class LabPanelStep(
++    val item: LabCatalogItem?,
++    val remainingIds: List<String>,
++)
++
++fun nextLabPanelTest(
++    remainingIds: List<String>,
++    items: List<LabCatalogItem>,
++): LabPanelStep {
++    for (i in remainingIds.indices) {
++        val id = remainingIds[i]
++        val match = items.firstOrNull { it.id == id }
++        if (match != null) {
++            return LabPanelStep(item = match, remainingIds = remainingIds.drop(i + 1))
++        }
++    }
++    return LabPanelStep(item = null, remainingIds = emptyList())
++}
++
++fun applyLabItemEdit(
++    items: List<LabCatalogItem>,
++    groups: List<LabCategoryGroup>,
++    edited: LabCatalogItem,
++): LabItemEdit? {
++    val trimmedName = edited.testName.trim()
++    if (trimmedName.isBlank()) return null
++
++    val existingIndex = items.indexOfFirst { it.id == edited.id }
++    if (existingIndex < 0) return null
++    val oldItem = items[existingIndex]
++
++    if (items.any { it.id != edited.id && it.testName.trim().equals(trimmedName, ignoreCase = true) }) {
++        return null
++    }
++
++    val updatedItem = edited.copy(
++        testName = trimmedName,
++        category = edited.category.trim(),
++        unit = edited.unit.trim(),
++        referenceRange = edited.referenceRange.trim(),
++        defaultResult = edited.defaultResult.trim(),
++        isCustom = true,
++    )
++
++    val newItems = items.toMutableList()
++    newItems[existingIndex] = updatedItem
++
++    val nameChanged = oldItem.testName.trim() != trimmedName
++    val newGroups = if (nameChanged) {
++        groups.map { group ->
++            group.copy(
++                testNames = group.testNames.map { testName ->
++                    if (testName.trim().equals(oldItem.testName.trim(), ignoreCase = true)) {
++                        trimmedName
++                    } else {
++                        testName
++                    }
++                }
++            )
++        }
++    } else {
++        groups
++    }
++
++    return LabItemEdit(items = newItems, groups = newGroups)
++}
++
++interface LabCatalogDelegate {
++    val labCatalogItems: StateFlow<List<LabCatalogItem>>
++    val labCategoryGroups: StateFlow<List<LabCategoryGroup>>
++
++    fun addLabCatalogItem(item: LabCatalogItem): Boolean
++    fun updateLabCatalogItem(item: LabCatalogItem): Boolean
++    fun deleteLabCatalogItem(itemId: String): Boolean
++    fun getLabCatalogItem(itemId: String): LabCatalogItem?
++    fun findLabCatalogItemByName(name: String): LabCatalogItem?
++    fun resetLabDefaults()
++
++    // Lab Category Groups (Panels)
++    fun addLabCategoryGroup(group: LabCategoryGroup): Boolean
++    fun deleteLabCategoryGroup(groupId: String): Boolean
++    fun getLabCategoryGroup(groupId: String): LabCategoryGroup?
++    fun resetLabCategoryGroupDefaults()
++}
++
++interface MedicationCatalogDelegate {
++    val medicationCatalogItems: StateFlow<List<MedicationCatalogItem>>
++    fun addMedicationCatalogItem(item: MedicationCatalogItem): Boolean
++    fun deleteMedicationCatalogItem(itemId: String): Boolean
++    fun getMedicationCatalogItem(itemId: String): MedicationCatalogItem?
++    fun findMedicationCatalogItemByName(name: String): MedicationCatalogItem?
++    fun resetMedicationDefaults()
++}
