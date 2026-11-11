@@ -1,6 +1,6 @@
 # Delivery outcome: delivered yes/no and the delivery date (real database fields)
 
-Status: PLAN, awaiting owner sign-off on the schema change and the protected files below. No code written.
+Status: APPROVED by the owner 2026-11-12 (schema change v6 to v7 and edits to the protected files named in section 4). Section 9 holds the owner's decisions and overrides sections 2 and 8 where they differ.
 Author: orchestrated by Claude from an alphacode draft (`reviews/delivery_outcome/design_alphacode.md`), corrected by Claude against the real code. Independent model review: NOT done (opencode and agy quotas are out; agy resets in about 65 hours). It is owed before merge.
 
 ## 1. Decision and scope
@@ -62,3 +62,10 @@ Order: 1, 2, 3, 4, 5.
 3. After delivery, replace the weeks badge in the header with "Delivered" and the date (recommended)?
 4. When marked delivered, keep the patient active (recommended; you archive when you choose)?
 5. Unknown delivery date allowed when delivered (recommended: yes, shown as "date not recorded")?
+
+## 9. Owner decisions (2026-11-12), final
+1. Four columns: `delivered` INTEGER NOT NULL DEFAULT 0, `delivery_date` TEXT NULL, `delivery_mode` TEXT NULL, `delivery_outcome` TEXT NULL. Mode values: `vaginal`, `caesarean`, `assisted_vaginal`, `other`. Outcome values: `live_birth`, `stillbirth`, `neonatal_death`. Mode and outcome may be null while delivered (not recorded yet). All four are cleared when delivered is turned off. Values live in one model file (`model/DeliveryOutcome.kt`) used by validation, the sheet and the card (one canonical set).
+2. Header: while delivered, the weeks badge is replaced by "Delivered" and the date.
+3. Delivered patients are not active and leave the main dashboard. The patient status stays `active` or `archived` (no change to that flow); delivered is derived from the new flag. The main list and its count hide delivered patients; a "Delivered" filter chip shows them with their own count; a search query still finds delivered patients so nobody is lost. The active count excludes delivered patients.
+4. Unknown date: shown as "Delivered, date ???" (the delivered flag alone is enough to save). The sheet allows an empty date when delivered is on.
+5. Everything else as sections 1 to 7.
