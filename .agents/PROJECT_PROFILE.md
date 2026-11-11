@@ -11,11 +11,11 @@
 - **Max frontier calls**: 10
 - **Max standard calls**: 50
 - **Max rounds**: 2
-- **Risk paths**: app/src/main/java/com/sherifradwan/ancnative/storage/*, app/src/main/java/com/sherifradwan/ancnative/calculation/*
+- **Risk paths**: app/src/main/java/com/sherifradwan/ancnative/storage/*, app/src/main/java/com/sherifradwan/ancnative/calculation/*, app/src/main/java/com/sherifradwan/ancnative/state/*
 - **Downgrade paths**: evidence/**=0, retry/**=0, docs/**=0
 - **Approvals**: owner
 - **Human approvers**: owner, Dr. Sherif
-- **Approved vendors**: agy, codex, gemini, opencode
+- **Approved vendors**: agy, codex, gemini, opencode, alphacode (added by owner 2026-11-10; read-only lanes, no write permission)
 - **Write-lane permissions**: none
 - **Max tier ceiling without asking**: T3
 - **Unattended policy**: strict safety; no remote pushes, no schema changes without explicit clinical approval.

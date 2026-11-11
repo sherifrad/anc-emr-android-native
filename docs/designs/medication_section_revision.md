@@ -230,6 +230,7 @@ After:   Workspace(MEDICATIONS)      the navigation route never changes
 ## Future Improvements
 
 *   **Stage 2:** favourites, dose/frequency variants with a default, and the medication settings screen. A different administration route is a separate drug, not a variant.
+*   **Saving a new drug to the picker list and form presets** (author's decision, 2026-11-11): Phase 2 removed the old editor's "add to my medication list" banner and its "Common medications" and "Previous prescriptions" preset chips. They return with the medication settings in Stage 2. Until then the picker list grows only from the settings, and the picker's Common and Recent chips cover most re-prescribing.
 *   **Change history** with a schema change that needs clinical sign-off: a record of each dose change and a link to the replaced row, with undo for stop and change.
 *   **Course length** for short courses with an automatic end, once the active/stopped rule can be changed in one shared place.
 *   **Shared Enter-to-next helper** for the other editors, adopted one editor at a time.
