@@ -4,6 +4,7 @@
 #   file is never forgotten. Read-only: it fetches and prints; it changes no branch, file or ref.
 #   Lists: local and remote branches ahead of the base (by patch, so cherry-picked work counts as merged), every worktree
 #   with its branch and uncommitted changes, stashes, untracked and modified files in the main tree, and unreachable commits.
+#   Branches named in docs/BRANCHES.md are shown as TRACKED and do not fail the audit.
 #   Exit 0 only when nothing is found; exit 1 and a summary line otherwise.
 set -u
 BASE="${1:-main}"; cd "$(git rev-parse --show-toplevel)" || exit 1
@@ -14,7 +15,11 @@ echo "== base $BASE: local $(git rev-parse --short "$BASE"), remote $(git rev-pa
 echo "== branches with work not in $BASE (by patch)"
 for ref in $(git for-each-ref --format='%(refname:short)' refs/heads refs/remotes | grep -v -E "^(origin/HEAD|origin|$BASE|origin/$BASE)$"); do
   n=$(git cherry "$BASE" "$ref" 2>/dev/null | grep -c '^+')
-  [ "$n" -gt 0 ] && note "UNMERGED $ref: $n commit(s) not in $BASE, last $(git log -1 --format='%ad %s' --date=short "$ref")"
+  [ "$n" -gt 0 ] || continue
+  # A branch listed in docs/BRANCHES.md as "- <branch>: <reason>" is known and deliberate: shown, not counted.
+  why=$(grep -E "^- ${ref#origin/}:" docs/BRANCHES.md 2>/dev/null | head -1 | cut -d: -f2- | sed 's/^ //')
+  if [ -n "$why" ]; then echo "TRACKED $ref: $n commit(s) not in $BASE. $why"
+  else note "UNMERGED $ref: $n commit(s) not in $BASE, last $(git log -1 --format='%ad %s' --date=short "$ref")"; fi
 done
 echo "== worktrees"
 git worktree list --porcelain | awk '/^worktree /{p=$2} /^branch /{b=$2} /^$/{if(p!="")print p" "b; p="";b=""} END{if(p!="")print p" "b}' | while read -r path br; do

@@ -23,6 +23,11 @@
 - **Separation of Concerns**: Keep screen orchestrators (e.g., `PatientWorkspaceScreen`) focused strictly on navigation, pager synchronization, and header collapse. Delegate tab body rendering to dedicated tab composables (`OverviewTab`, `VisitsTab`, `ScansTab`, `LabsTab`, `MedsTab`, `PlanTab`).
 - **Unidirectional MVI**: UI consumes immutable state slices and emits discrete `AncEvent` intents. No local business logic mutations inside composables.
 
+### Branch hygiene (every session)
+- **Audit before work and before every push**: run `.agents/scripts/git_audit.sh`. It lists unmerged branches, dirty worktrees, stashes, stray files and unreachable commits. Fix or record each one before building on `main`.
+- **Deliberate branches** are listed in `docs/BRANCHES.md` with the reason. Anything else the audit finds is an error, not a note.
+- **Never leave work only in a working tree.** Commit it on its branch, even as a labelled WIP commit.
+
 ### 3. Zero Legacy Baggage Invariant
 - **No Old Users = Zero Migration Overhead**: Do not maintain backward-compatibility shims, legacy route aliases, or deprecated adapters for old users when no production users exist. Deprecated code paths, duplicate screens, and dead routes must be deleted cleanly.
 
