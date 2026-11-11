@@ -186,6 +186,7 @@
     <string name="ga_days">GA days (0–6)</string>
     <string name="fetal_number">Fetal number</string>
     <string name="fetal_presentation">Presentation</string>
+    <string name="scan_presentation">Presentation: %1$s</string>
     <string name="placental_site">Placental site</string>
     <string name="amniotic_fluid">Amniotic fluid</string>
     <string name="fetal_heart_rate">Fetal heart rate</string>

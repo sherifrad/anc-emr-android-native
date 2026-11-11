@@ -15,9 +15,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.ui.ClinicalTeal
 import com.sherifradwan.ancnative.ui.patienthub.model.BiometryValues
 
@@ -72,13 +75,21 @@ fun BiometryGrid(
                 }
             }
 
-            // Anatomical Details (Placenta & Liquor) wrapped in FlowRow to avoid 360dp overflow
-            if (!values.placenta.isNullOrBlank() || !values.amnioticFluid.isNullOrBlank()) {
+            // Anatomical Details (Presentation, Placenta & Liquor) wrapped in FlowRow to avoid 360dp overflow
+            if (!values.presentation.isNullOrBlank() || !values.placenta.isNullOrBlank() || !values.amnioticFluid.isNullOrBlank()) {
                 FlowRow(
                     modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
+                    if (!values.presentation.isNullOrBlank()) {
+                        Text(
+                            text = stringResource(R.string.scan_presentation, values.presentation),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.testTag("scanPresentation"),
+                        )
+                    }
                     if (!values.placenta.isNullOrBlank()) {
                         Text(
                             text = "Placenta: ${values.placenta}",

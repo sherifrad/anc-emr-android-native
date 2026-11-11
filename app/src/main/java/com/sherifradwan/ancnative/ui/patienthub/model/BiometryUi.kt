@@ -11,6 +11,7 @@ data class BiometryValues(
     val fhr: String?,
     val amnioticFluid: String?,
     val placenta: String?,
+    val presentation: String? = null,
 ) {
     val isEmpty: Boolean
         get() = bpd.isNullOrBlank() &&
@@ -23,7 +24,8 @@ data class BiometryValues(
         get() = !isEmpty ||
             !fhr.isNullOrBlank() ||
             !amnioticFluid.isNullOrBlank() ||
-            !placenta.isNullOrBlank()
+            !placenta.isNullOrBlank() ||
+            !presentation.isNullOrBlank()
 }
 
 fun extractBiometry(scan: DemoUltrasoundScan): BiometryValues {
@@ -36,5 +38,6 @@ fun extractBiometry(scan: DemoUltrasoundScan): BiometryValues {
         fhr = scan.fetalHeartRate?.trim()?.takeIf { it.isNotEmpty() },
         amnioticFluid = scan.amnioticFluid?.trim()?.takeIf { it.isNotEmpty() },
         placenta = scan.placentalSite?.trim()?.takeIf { it.isNotEmpty() },
+        presentation = scan.presentation?.trim()?.takeIf { it.isNotEmpty() },
     )
 }

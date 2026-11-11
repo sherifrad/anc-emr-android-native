@@ -9,6 +9,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollTo
@@ -79,6 +80,13 @@ class PatientHubDesignTest {
             compose.openHubTab(tab)
             compose.onNodeWithTag(tab.contentTag()).assertIsDisplayed()
         }
+    }
+
+    @Test
+    fun patientHub_scansTabShowsTheFetalPresentation() {
+        showHub(WorkspaceSection.EPISODE_OVERVIEW)
+        compose.openHubTab(PatientHubTab.SCANS)
+        compose.onAllNodesWithTag("scanPresentation", useUnmergedTree = true)[0].performScrollTo().assertIsDisplayed()
     }
 
     @Test

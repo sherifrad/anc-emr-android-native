@@ -258,4 +258,20 @@ class PatientHubPureModelTest {
         assertTrue("a tile without a route matches the drug", MedicationTile("4", "Ferrous sulfate", "", "", "").isAlreadyActive(oral))
         assertFalse("an IM tile stays open while the oral drug is active", MedicationTile("5", "Ferrous sulfate", "", "IM", "").isAlreadyActive(oral))
     }
+
+    @Test
+    fun biometryCarriesTheFetalPresentationAndCountsItAsData() {
+        val scan = com.sherifradwan.ancnative.model.DemoUltrasoundScan(
+            id = "s1", patientId = "p", date = "2026-08-27",
+            gestationalAgeWeeks = null, gestationalAgeDays = null, fetalNumber = null,
+            presentation = "  Cephalic ", placentalSite = null, amnioticFluid = null,
+            fetalHeartRate = null, biometryBpd = null, biometryHc = null, biometryAc = null,
+            biometryFl = null, estimatedFetalWeight = null, impression = null,
+        )
+        val values = extractBiometry(scan)
+        assertEquals("Cephalic", values.presentation)
+        assertTrue("presentation alone is data", values.hasAnyData)
+        assertEquals(null, extractBiometry(scan.copy(presentation = " ")).presentation)
+    }
 }
+
