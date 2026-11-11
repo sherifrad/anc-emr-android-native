@@ -136,7 +136,9 @@ class DraftMappingTest {
         assertEquals("Mona", edit.fields["displayName"])
         assertEquals("2026-01-01", edit.fields["lmpDate"])
         assertEquals("", edit.fields["caseId"])
-        assertEquals(14, edit.fields.size)
+        assertEquals(18, edit.fields.size)
+        assertEquals("false", edit.fields["delivered"])
+        assertEquals("", edit.fields["deliveryDate"])
 
         val fresh = patient(patientValues, revision = null, id = "generated-id")
         assertEquals(DraftSlot(NEW_PATIENT_DRAFT_KEY, DraftScreenKind.PATIENT_PROFILE), activeDraftSlot(fresh))
