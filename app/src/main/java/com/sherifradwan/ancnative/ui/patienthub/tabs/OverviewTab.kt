@@ -114,7 +114,9 @@ fun OverviewTab(
         DeliveryPlanningCard(
             patient = patient,
             canEdit = canEdit,
-            onEditPatient = { startPatientEditor() },
+            onEditDeliveryPlan = {
+                onEvent(AncEvent.StartDeliveryPlanEditor(patient.id, UUID.randomUUID().toString()))
+            },
         )
 
         AttachmentsSectionCard(

@@ -1,0 +1,198 @@
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/EditorSheetParts.kt
+<<<<<<< SEARCH
+=======
+package com.sherifradwan.ancnative.ui.patienthub.components
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import com.sherifradwan.ancnative.R
+import com.sherifradwan.ancnative.state.SavePhase
+import com.sherifradwan.ancnative.state.SaveUiError
+import com.sherifradwan.ancnative.state.stringRes
+import com.sherifradwan.ancnative.ui.minimumTouchTarget
+
+/**
+ * Save status line shared by the editor sheets: a running save, an unresolved save, a rejected save
+ * ([saveError]), or a [fieldErrorMessage] already turned into text. Nothing is drawn when the sheet has
+ * no status to show.
+ */
+@Composable
+internal fun SheetSaveMessage(
+    savePhase: SavePhase,
+    saveError: SaveUiError?,
+    fieldErrorMessage: String?,
+    failedTitle: String,
+    tag: String,
+) {
+    val message = when {
+        savePhase == SavePhase.RECONCILING -> stringResource(R.string.save_reconciling)
+        savePhase == SavePhase.UNRESOLVED -> stringResource(R.string.save_unresolved)
+        savePhase == SavePhase.ERROR -> stringResource(saveError.stringRes())
+        fieldErrorMessage != null -> fieldErrorMessage
+        else -> return
+    }
+    val isFailure = savePhase == SavePhase.ERROR || savePhase == SavePhase.UNRESOLVED
+    Column(
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics { liveRegion = LiveRegionMode.Polite }
+            // A failed save is shown at the top of the body; bring it back if the doctor had scrolled down.
+            .revealWhen(isFailure)
+            .testTag(tag),
+    ) {
+        if (isFailure) {
+            Text(
+                text = failedTitle,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (isFailure || fieldErrorMessage != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
+/**
+ * Cancel and Save in one row, equal width, labels wrap rather than clip. Save is enabled only when both
+ * [enabled] and [saveEnabled] are true, and shows [savingLabel] with a spinner while [saving] is true.
+ */
+@Composable
+internal fun SheetCancelSaveRow(
+    enabled: Boolean,
+    saving: Boolean,
+    saveEnabled: Boolean,
+    savingLabel: String,
+    onCancel: () -> Unit,
+    onSave: () -> Unit,
+    cancelTag: String,
+    saveTag: String,
+    spinnerTag: String,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        OutlinedButton(
+            onClick = onCancel,
+            enabled = enabled,
+            contentPadding = PaddingValues(horizontal = 8.dp),
+            modifier = Modifier.weight(1f).minimumTouchTarget().testTag(cancelTag),
+        ) {
+            Text(stringResource(R.string.cancel), maxLines = 2, textAlign = TextAlign.Center)
+        }
+        Button(
+            onClick = onSave,
+            enabled = enabled && saveEnabled,
+            contentPadding = PaddingValues(horizontal = 8.dp),
+            modifier = Modifier.weight(1f).minimumTouchTarget().testTag(saveTag),
+        ) {
+            if (saving) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp).testTag(spinnerTag),
+                    strokeWidth = 2.dp,
+                    color = LocalContentColor.current,
+                )
+            }
+            Text(
+                text = if (saving) savingLabel else stringResource(R.string.save),
+                maxLines = 2,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(start = if (saving) 8.dp else 0.dp),
+            )
+        }
+    }
+}
+
+/** Ask before throwing away unsaved edits. Tags come from the caller so each sheet keeps its own test hooks. */
+@Composable
+internal fun DiscardChangesDialog(
+    onDiscard: () -> Unit,
+    onKeep: () -> Unit,
+    dialogTag: String,
+    confirmTag: String,
+    keepTag: String,
+) {
+    AlertDialog(
+        onDismissRequest = onKeep,
+        title = { Text(stringResource(R.string.discard_changes)) },
+        text = { Text(stringResource(R.string.discard_body)) },
+        confirmButton = {
+            TextButton(
+                onClick = onDiscard,
+                modifier = Modifier.minimumTouchTarget().testTag(confirmTag),
+            ) { Text(stringResource(R.string.discard)) }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onKeep,
+                modifier = Modifier.minimumTouchTarget().testTag(keepTag),
+            ) { Text(stringResource(R.string.keep_editing)) }
+        },
+        modifier = Modifier.testTag(dialogTag),
+    )
+}
+
+/**
+ * Sheet state that will not hide while [dismissAllowed] is false (a save is running) and, when [needsConfirm] is
+ * true, calls [onNeedsConfirm] and stays open. Drag down and Back both pass through it.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun rememberGuardedSheetState(
+    dismissAllowed: Boolean,
+    needsConfirm: Boolean,
+    onNeedsConfirm: () -> Unit,
+): SheetState {
+    val dismissAllowedNow by rememberUpdatedState(dismissAllowed)
+    val needsConfirmNow by rememberUpdatedState(needsConfirm)
+    val askToConfirm by rememberUpdatedState(onNeedsConfirm)
+    return rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+        confirmValueChange = { target ->
+            when {
+                target != SheetValue.Hidden -> true
+                !dismissAllowedNow -> false
+                needsConfirmNow -> {
+                    askToConfirm()
+                    false
+                }
+                else -> true
+            }
+        },
+    )
+}
+>>>>>>> REPLACE

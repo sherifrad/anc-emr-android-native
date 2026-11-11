@@ -205,7 +205,7 @@ class DatingGaMarkerSurfacesTest {
 
     @Test
     fun discordantPatientWithGaOutsideTheWindowShowsNoMarkerOnTheDeliveryPlanCard() {
-        show { DeliveryPlanningCard(patient = patient(outOfWindowLmp, discordant = true), canEdit = true, onEditPatient = {}) }
+        show { DeliveryPlanningCard(patient = patient(outOfWindowLmp, discordant = true), canEdit = true, onEditDeliveryPlan = {}) }
         compose.onNodeWithTag("deliveryPlanningCard", useUnmergedTree = true).assertExists()
         assertEquals(0, markerCount())
         compose.onAllNodes(hasText("??", substring = true), useUnmergedTree = true).assertCountEquals(0)

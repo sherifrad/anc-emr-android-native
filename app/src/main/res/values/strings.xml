@@ -248,6 +248,16 @@
     <string name="delivery_planning">Delivery Planning &amp; Outcome</string>
     <string name="delivery_planning_notice">Delivery planning and care episode records.</string>
     <string name="edit_delivery_plan">Edit Delivery Plan</string>
+    <string name="delivery_hospital_title" translatable="false">Agreed Delivery Hospital</string>
+    <string name="delivery_fees_title" translatable="false">Agreed Delivery Fees</string>
+    <string name="delivery_plan_title" translatable="false">Delivery Plan</string>
+    <string name="delivery_postpartum_title" translatable="false">Postpartum Note</string>
+    <string name="delivery_plan_rewrite_notice">Saving a change will rewrite this patient\'s obstetric notes as one labelled line per box. Words such as \'agreed\' or \'package\' in labels are dropped and lines are grouped by box. Check each box before saving.</string>
+    <string name="delivery_hospital_hint">Found in the notes. Edit or clear. One hospital per line.</string>
+    <string name="delivery_fees_hint">Agreed fees only. Put quotes or estimates in Delivery Plan.</string>
+    <string name="delivery_plan_save_failed_title">The delivery plan was not saved</string>
+    <string name="delivery_plan_profile_invalid">This patient\'s profile has a problem in a field not shown here. Cancel, then fix it from Edit patient on the Overview tab.</string>
+    <string name="delivery_plan_saving">Saving…</string>
     <string name="edit_clinical_alerts">Edit clinical alerts</string>
     <string name="parity_format">G%1$s P%2$s</string>
     <string name="high_risk">HIGH RISK</string>

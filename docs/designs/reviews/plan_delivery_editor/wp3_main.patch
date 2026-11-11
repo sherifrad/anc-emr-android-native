@@ -1,0 +1,792 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt
+index c626a5c..42aa229 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt
+@@ -239,8 +239,8 @@ fun AncApp(
+                         is AncRoute.LabBatchEditor -> LabBatchScreen(state, route, onEvent)
+                     }
+                 }
+-                // While the medication sheet is open it shows the Undo bar itself, under its buttons.
+-                if (state.medicationSheetDraft() == null) UndoBarHost(state, onEvent)
++                // While a sheet is open it shows the Undo bar itself, under its buttons.
++                if (state.medicationSheetDraft() == null && state.patientDraft?.deliveryPlan == null) UndoBarHost(state, onEvent)
+             }
+         }
+     }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
+index d17d8b5..0835404 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
+@@ -36,6 +36,7 @@ import com.sherifradwan.ancnative.state.AncRoute
+ import com.sherifradwan.ancnative.state.AncState
+ import com.sherifradwan.ancnative.state.PatientDraftField
+ import com.sherifradwan.ancnative.state.SavePhase
++import com.sherifradwan.ancnative.state.deliveryPlanSheetDraft
+ import com.sherifradwan.ancnative.state.medicationSheetDraft
+ import com.sherifradwan.ancnative.storage.DeletableType
+ import com.sherifradwan.ancnative.ui.AddAttachmentDialog
+@@ -43,6 +44,7 @@ import com.sherifradwan.ancnative.ui.ClinicalAttachmentViewerDialog
+ import com.sherifradwan.ancnative.ui.UltrasoundPhotoViewerDialog
+ import com.sherifradwan.ancnative.ui.UndoBarHost
+ import com.sherifradwan.ancnative.ui.patienthub.components.ClinicalAttentionDialog
++import com.sherifradwan.ancnative.ui.patienthub.components.DeliveryPlanSheet
+ import com.sherifradwan.ancnative.ui.patienthub.components.MedicationSheet
+ import com.sherifradwan.ancnative.ui.patienthub.tabs.LabsTab
+ import com.sherifradwan.ancnative.ui.patienthub.tabs.MedsTab
+@@ -148,6 +150,7 @@ fun PatientHubScreen(
+         state.savePhase == SavePhase.UNRESOLVED
+     val canModifyData = canEdit && !state.hasDirtyDraft && !isSaveBlocked && !state.deleteRunning
+     val medicationDraft = state.medicationSheetDraft()
++    val deliveryPlanDraft = state.deliveryPlanSheetDraft(patient.id)
+ 
+     // Dialog state holders
+     var viewingPhotoScan by remember(patient.id) { mutableStateOf<DemoUltrasoundScan?>(null) }
+@@ -283,6 +286,17 @@ fun PatientHubScreen(
+             )
+         }
+ 
++        // The delivery plan sheet sits above the pager the same way.
++        if (deliveryPlanDraft != null) {
++            DeliveryPlanSheet(
++                draft = deliveryPlanDraft,
++                savePhase = state.savePhase,
++                saveError = state.saveError,
++                onEvent = onEvent,
++                footer = { UndoBarHost(state, onEvent) },
++            )
++        }
++
+         // Modal Dialog Hosts
+         if (viewingPhotoScan != null) {
+             UltrasoundPhotoViewerDialog(
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanSheet.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanSheet.kt
+new file mode 100644
+index 0000000..c5a3ec0
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanSheet.kt
+@@ -0,0 +1,194 @@
++package com.sherifradwan.ancnative.ui.patienthub.components
++
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.imePadding
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.rememberScrollState
++import androidx.compose.foundation.text.KeyboardOptions
++import androidx.compose.foundation.verticalScroll
++import androidx.compose.material3.ExperimentalMaterial3Api
++import androidx.compose.material3.LinearProgressIndicator
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.ModalBottomSheet
++import androidx.compose.material3.OutlinedTextField
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.getValue
++import androidx.compose.runtime.mutableStateOf
++import androidx.compose.runtime.saveable.rememberSaveable
++import androidx.compose.runtime.setValue
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.semantics.contentDescription
++import androidx.compose.ui.semantics.heading
++import androidx.compose.ui.semantics.semantics
++import androidx.compose.ui.text.input.KeyboardCapitalization
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.state.AncEvent
++import com.sherifradwan.ancnative.state.DeliveryPlanField
++import com.sherifradwan.ancnative.state.PatientDraft
++import com.sherifradwan.ancnative.state.SavePhase
++import com.sherifradwan.ancnative.state.SaveUiError
++
++/**
++ * Bottom sheet that edits the four delivery plan boxes held in [PatientDraft.deliveryPlan].
++ * It mirrors [MedicationSheet]: while a save runs the fields, Cancel and Save are disabled, and the
++ * app's Undo bar rides in the [footer] slot. Save stays disabled until a field change makes the
++ * draft touched (A16), Cancel closes an untouched sheet at once and asks first when touched, and
++ * drag-down and back follow the same guarded rules.
++ */
++@OptIn(ExperimentalMaterial3Api::class)
++@Composable
++fun DeliveryPlanSheet(
++    draft: PatientDraft,
++    savePhase: SavePhase,
++    saveError: SaveUiError?,
++    onEvent: (AncEvent) -> Unit,
++    footer: @Composable () -> Unit = {},
++) {
++    val fields = draft.deliveryPlan ?: return
++    val enabled = savePhase == SavePhase.IDLE || savePhase == SavePhase.ERROR
++    val saving = savePhase == SavePhase.PENDING || savePhase == SavePhase.RECONCILING
++    var confirmDiscard by rememberSaveable { mutableStateOf(false) }
++    val requestCancel = {
++        if (fields.touched) confirmDiscard = true else onEvent(AncEvent.CancelEditor)
++    }
++
++    ModalBottomSheet(
++        onDismissRequest = { if (enabled) requestCancel() },
++        sheetState = rememberGuardedSheetState(
++            dismissAllowed = enabled,
++            needsConfirm = fields.touched,
++            onNeedsConfirm = { confirmDiscard = true },
++        ),
++        modifier = Modifier.testTag("deliveryPlanSheet"),
++    ) {
++        Column(modifier = Modifier.fillMaxWidth().imePadding()) {
++            if (saving) {
++                LinearProgressIndicator(modifier = Modifier.fillMaxWidth().testTag("deliveryPlanSaveProgress"))
++            }
++            Text(
++                text = stringResource(R.string.edit_delivery_plan),
++                style = MaterialTheme.typography.titleLarge,
++                modifier = Modifier
++                    .padding(horizontal = 16.dp, vertical = 8.dp)
++                    .semantics { heading() },
++            )
++            Column(
++                modifier = Modifier
++                    .weight(1f, fill = false)
++                    .verticalScroll(rememberScrollState())
++                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
++                verticalArrangement = Arrangement.spacedBy(12.dp),
++            ) {
++                SheetSaveMessage(
++                    savePhase = savePhase,
++                    saveError = saveError,
++                    fieldErrorMessage = if (draft.errors.isEmpty()) null else stringResource(R.string.delivery_plan_profile_invalid),
++                    failedTitle = stringResource(R.string.delivery_plan_save_failed_title),
++                    tag = "deliveryPlanSaveMessage",
++                )
++                if (fields.rewritesNotes) {
++                    Text(
++                        text = stringResource(R.string.delivery_plan_rewrite_notice),
++                        style = MaterialTheme.typography.bodySmall,
++                        color = MaterialTheme.colorScheme.onSurfaceVariant,
++                        modifier = Modifier.fillMaxWidth().testTag("deliveryPlanRewriteNotice"),
++                    )
++                }
++                PlanField(
++                    label = stringResource(R.string.delivery_hospital_title),
++                    value = fields.hospital,
++                    minLines = 1,
++                    enabled = enabled,
++                    fieldTag = "deliveryPlanHospitalField",
++                    hint = { Text(stringResource(R.string.delivery_hospital_hint)) },
++                ) { onEvent(AncEvent.DeliveryPlanFieldChanged(DeliveryPlanField.HOSPITAL, it)) }
++                PlanField(
++                    label = stringResource(R.string.delivery_fees_title),
++                    value = fields.fees,
++                    minLines = 1,
++                    enabled = enabled,
++                    fieldTag = "deliveryPlanFeesField",
++                    hint = { Text(stringResource(R.string.delivery_fees_hint)) },
++                ) { onEvent(AncEvent.DeliveryPlanFieldChanged(DeliveryPlanField.FEES, it)) }
++                PlanField(
++                    label = stringResource(R.string.delivery_plan_title),
++                    value = fields.plan,
++                    minLines = 3,
++                    enabled = enabled,
++                    fieldTag = "deliveryPlanPlanField",
++                ) { onEvent(AncEvent.DeliveryPlanFieldChanged(DeliveryPlanField.PLAN, it)) }
++                PlanField(
++                    label = stringResource(R.string.delivery_postpartum_title),
++                    value = fields.postpartum,
++                    minLines = 1,
++                    enabled = enabled,
++                    fieldTag = "deliveryPlanPostpartumField",
++                ) { onEvent(AncEvent.DeliveryPlanFieldChanged(DeliveryPlanField.POSTPARTUM, it)) }
++            }
++            SheetCancelSaveRow(
++                enabled = enabled,
++                saving = saving,
++                saveEnabled = fields.touched,
++                savingLabel = stringResource(R.string.delivery_plan_saving),
++                onCancel = requestCancel,
++                onSave = { onEvent(AncEvent.SubmitPatientProfile) },
++                cancelTag = "cancelDeliveryPlan",
++                saveTag = "saveDeliveryPlan",
++                spinnerTag = "deliveryPlanSaveSpinner",
++            )
++            footer()
++        }
++    }
++
++    if (confirmDiscard) {
++        DiscardChangesDialog(
++            onDiscard = {
++                confirmDiscard = false
++                onEvent(AncEvent.CancelEditor)
++            },
++            onKeep = { confirmDiscard = false },
++            dialogTag = "deliveryPlanDiscardDialog",
++            confirmTag = "deliveryPlanDiscardConfirm",
++            keepTag = "deliveryPlanDiscardKeep",
++        )
++    }
++}
++
++/** One labelled multi-line box of the sheet; the visible label above is the field's accessibility name. */
++@Composable
++private fun PlanField(
++    label: String,
++    value: String,
++    minLines: Int,
++    enabled: Boolean,
++    fieldTag: String,
++    hint: (@Composable () -> Unit)? = null,
++    onValueChange: (String) -> Unit,
++) {
++    Column(
++        verticalArrangement = Arrangement.spacedBy(4.dp),
++        modifier = Modifier.fillMaxWidth(),
++    ) {
++        Text(text = label, style = MaterialTheme.typography.titleSmall)
++        OutlinedTextField(
++            value = value,
++            onValueChange = onValueChange,
++            enabled = enabled,
++            minLines = minLines,
++            placeholder = { Text(stringResource(R.string.no_record)) },
++            supportingText = hint,
++            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
++            modifier = Modifier
++                .fillMaxWidth()
++                .revealOnFocus()
++                .semantics { contentDescription = label }
++                .testTag(fieldTag),
++        )
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt
+index b51ccbd..3b852d4 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt
+@@ -48,7 +48,7 @@ fun DeliveryPlanningCard(
+     patient: DemoPatient,
+     canEdit: Boolean,
+     modifier: Modifier = Modifier,
+-    onEditPatient: () -> Unit,
++    onEditDeliveryPlan: () -> Unit,
+ ) {
+     val sections = remember(patient.obstetricNotes) { parseDeliveryNotes(patient.obstetricNotes) }
+     val summary = remember(patient) { datingSummaryOf(patient, LocalDate.now()) }
+@@ -91,7 +91,7 @@ fun DeliveryPlanningCard(
+                 }
+                 if (canEdit) {
+                     IconButton(
+-                        onClick = onEditPatient,
++                        onClick = onEditDeliveryPlan,
+                         modifier = Modifier
+                             .minimumTouchTarget()
+                             .testTag("editDeliveryPlan"),
+@@ -156,28 +156,28 @@ fun DeliveryPlanningCard(
+             val defaultPlaceholder = stringResource(R.string.no_record)
+ 
+             DeliverySectionBox(
+-                title = "Agreed Delivery Hospital",
++                title = stringResource(R.string.delivery_hospital_title),
+                 value = sections.hospital,
+                 tone = DeliveryTone.HOSPITAL,
+                 placeholder = defaultPlaceholder,
+                 modifier = Modifier.testTag("deliveryHospital"),
+             )
+             DeliverySectionBox(
+-                title = "Agreed Delivery Fees",
++                title = stringResource(R.string.delivery_fees_title),
+                 value = sections.fees,
+                 tone = DeliveryTone.FEE,
+                 placeholder = defaultPlaceholder,
+                 modifier = Modifier.testTag("deliveryFees"),
+             )
+             DeliverySectionBox(
+-                title = "Delivery Plan",
++                title = stringResource(R.string.delivery_plan_title),
+                 value = sections.plan,
+                 tone = DeliveryTone.PLAN,
+                 placeholder = defaultPlaceholder,
+                 modifier = Modifier.testTag("deliveryPlan"),
+             )
+             DeliverySectionBox(
+-                title = "Postpartum Note",
++                title = stringResource(R.string.delivery_postpartum_title),
+                 value = sections.postpartum,
+                 tone = DeliveryTone.POSTPARTUM,
+                 placeholder = defaultPlaceholder,
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/EditorSheetParts.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/EditorSheetParts.kt
+new file mode 100644
+index 0000000..9bf488b
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/EditorSheetParts.kt
+@@ -0,0 +1,185 @@
++package com.sherifradwan.ancnative.ui.patienthub.components
++
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.PaddingValues
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.layout.size
++import androidx.compose.material3.AlertDialog
++import androidx.compose.material3.Button
++import androidx.compose.material3.CircularProgressIndicator
++import androidx.compose.material3.ExperimentalMaterial3Api
++import androidx.compose.material3.LocalContentColor
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.OutlinedButton
++import androidx.compose.material3.SheetState
++import androidx.compose.material3.SheetValue
++import androidx.compose.material3.Text
++import androidx.compose.material3.TextButton
++import androidx.compose.material3.rememberModalBottomSheetState
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.getValue
++import androidx.compose.runtime.rememberUpdatedState
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.semantics.LiveRegionMode
++import androidx.compose.ui.semantics.liveRegion
++import androidx.compose.ui.semantics.semantics
++import androidx.compose.ui.text.style.TextAlign
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.state.SavePhase
++import com.sherifradwan.ancnative.state.SaveUiError
++import com.sherifradwan.ancnative.state.stringRes
++import com.sherifradwan.ancnative.ui.minimumTouchTarget
++
++@Composable
++internal fun SheetSaveMessage(
++    savePhase: SavePhase,
++    saveError: SaveUiError?,
++    fieldErrorMessage: String?,
++    failedTitle: String,
++    tag: String,
++) {
++    val message = when {
++        savePhase == SavePhase.RECONCILING -> stringResource(R.string.save_reconciling)
++        savePhase == SavePhase.UNRESOLVED -> stringResource(R.string.save_unresolved)
++        savePhase == SavePhase.ERROR -> stringResource(saveError.stringRes())
++        fieldErrorMessage != null -> fieldErrorMessage
++        else -> return
++    }
++    val isFailure = savePhase == SavePhase.ERROR || savePhase == SavePhase.UNRESOLVED
++    Column(
++        verticalArrangement = Arrangement.spacedBy(2.dp),
++        modifier = Modifier
++            .fillMaxWidth()
++            .semantics { liveRegion = LiveRegionMode.Polite }
++            // A failed save is shown at the top of the body; bring it back if the doctor had scrolled down.
++            .revealWhen(isFailure)
++            .testTag(tag),
++    ) {
++        if (isFailure) {
++            Text(
++                text = failedTitle,
++                style = MaterialTheme.typography.titleSmall,
++                color = MaterialTheme.colorScheme.error,
++            )
++        }
++        Text(
++            text = message,
++            style = MaterialTheme.typography.bodyMedium,
++            color = if (isFailure || fieldErrorMessage != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
++        )
++    }
++}
++
++/** Cancel and Save in one row; the caller adds any extra rows below it. Labels wrap rather than clip. */
++@Composable
++internal fun SheetCancelSaveRow(
++    enabled: Boolean,
++    saving: Boolean,
++    saveEnabled: Boolean,
++    savingLabel: String,
++    onCancel: () -> Unit,
++    onSave: () -> Unit,
++    cancelTag: String,
++    saveTag: String,
++    spinnerTag: String,
++) {
++    Row(
++        modifier = Modifier.fillMaxWidth(),
++        horizontalArrangement = Arrangement.spacedBy(8.dp),
++        verticalAlignment = Alignment.CenterVertically,
++    ) {
++        OutlinedButton(
++            onClick = onCancel,
++            enabled = enabled,
++            contentPadding = PaddingValues(horizontal = 8.dp),
++            modifier = Modifier.weight(1f).minimumTouchTarget().testTag(cancelTag),
++        ) {
++            Text(stringResource(R.string.cancel), maxLines = 2, textAlign = TextAlign.Center)
++        }
++        Button(
++            onClick = onSave,
++            enabled = enabled && saveEnabled,
++            contentPadding = PaddingValues(horizontal = 8.dp),
++            modifier = Modifier.weight(1f).minimumTouchTarget().testTag(saveTag),
++        ) {
++            if (saving) {
++                CircularProgressIndicator(
++                    modifier = Modifier.size(18.dp).testTag(spinnerTag),
++                    strokeWidth = 2.dp,
++                    color = LocalContentColor.current,
++                )
++            }
++            Text(
++                savingLabel,
++                maxLines = 2,
++                textAlign = TextAlign.Center,
++                modifier = Modifier.padding(start = if (saving) 8.dp else 0.dp),
++            )
++        }
++    }
++}
++
++/** The discard dialog of an editor bottom sheet: Discard runs [onDiscard], Keep and outside taps run [onKeep]. */
++@Composable
++internal fun DiscardChangesDialog(
++    onDiscard: () -> Unit,
++    onKeep: () -> Unit,
++    dialogTag: String,
++    confirmTag: String,
++    keepTag: String,
++) {
++    AlertDialog(
++        onDismissRequest = onKeep,
++        title = { Text(stringResource(R.string.discard_changes)) },
++        text = { Text(stringResource(R.string.discard_body)) },
++        confirmButton = {
++            TextButton(
++                onClick = onDiscard,
++                modifier = Modifier.minimumTouchTarget().testTag(confirmTag),
++            ) { Text(stringResource(R.string.discard)) }
++        },
++        dismissButton = {
++            TextButton(
++                onClick = onKeep,
++                modifier = Modifier.minimumTouchTarget().testTag(keepTag),
++            ) { Text(stringResource(R.string.keep_editing)) }
++        },
++        modifier = Modifier.testTag(dialogTag),
++    )
++}
++
++/**
++ * Sheet state for an editor bottom sheet: drag-down and back close at once when [dismissAllowed]
++ * holds, ask first through [onNeedsConfirm] when [needsConfirm] holds, and are blocked otherwise.
++ */
++@OptIn(ExperimentalMaterial3Api::class)
++@Composable
++internal fun rememberGuardedSheetState(
++    dismissAllowed: Boolean,
++    needsConfirm: Boolean,
++    onNeedsConfirm: () -> Unit,
++): SheetState {
++    val allowed by rememberUpdatedState(dismissAllowed)
++    val confirmNeeded by rememberUpdatedState(needsConfirm)
++    return rememberModalBottomSheetState(
++        skipPartiallyExpanded = true,
++        confirmValueChange = { target ->
++            when {
++                target != SheetValue.Hidden -> true
++                !allowed -> false
++                confirmNeeded -> {
++                    onNeedsConfirm()
++                    false
++                }
++                else -> true
++            }
++        },
++    )
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt
+index 8992e3b..d463a2f 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt
+@@ -323,7 +323,7 @@ private fun RouteReadOnly(route: String) {
+ /** Asks the enclosing scroll container to bring this field fully into view when it gains focus. */
+ @OptIn(ExperimentalFoundationApi::class)
+ @Composable
+-private fun Modifier.revealOnFocus(): Modifier {
++internal fun Modifier.revealOnFocus(): Modifier {
+     val requester = remember { BringIntoViewRequester() }
+     val scope = rememberCoroutineScope()
+     return this
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationSheet.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationSheet.kt
+index fb30df2..37cbabe 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationSheet.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationSheet.kt
+@@ -3,40 +3,27 @@ package com.sherifradwan.ancnative.ui.patienthub.components
+ import androidx.compose.foundation.layout.Arrangement
+ import androidx.compose.foundation.layout.Column
+ import androidx.compose.foundation.layout.PaddingValues
+-import androidx.compose.foundation.layout.Row
+ import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.foundation.layout.imePadding
+ import androidx.compose.foundation.layout.padding
+-import androidx.compose.foundation.layout.size
+ import androidx.compose.foundation.rememberScrollState
+ import androidx.compose.foundation.verticalScroll
+-import androidx.compose.material3.AlertDialog
+-import androidx.compose.material3.Button
+-import androidx.compose.material3.CircularProgressIndicator
+ import androidx.compose.material3.ExperimentalMaterial3Api
+ import androidx.compose.material3.LinearProgressIndicator
+-import androidx.compose.material3.LocalContentColor
+ import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.ModalBottomSheet
+ import androidx.compose.material3.OutlinedButton
+-import androidx.compose.material3.SheetValue
+ import androidx.compose.material3.Text
+-import androidx.compose.material3.TextButton
+-import androidx.compose.material3.rememberModalBottomSheetState
+ import androidx.compose.runtime.Composable
+ import androidx.compose.runtime.getValue
+ import androidx.compose.runtime.mutableStateOf
+ import androidx.compose.runtime.remember
+-import androidx.compose.runtime.rememberUpdatedState
+ import androidx.compose.runtime.saveable.rememberSaveable
+ import androidx.compose.runtime.setValue
+-import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.platform.testTag
+ import androidx.compose.ui.res.stringResource
+-import androidx.compose.ui.semantics.LiveRegionMode
+ import androidx.compose.ui.semantics.heading
+-import androidx.compose.ui.semantics.liveRegion
+ import androidx.compose.ui.semantics.semantics
+ import androidx.compose.ui.text.style.TextAlign
+ import androidx.compose.ui.unit.dp
+@@ -45,7 +32,6 @@ import com.sherifradwan.ancnative.state.AncEvent
+ import com.sherifradwan.ancnative.state.MedicationDraft
+ import com.sherifradwan.ancnative.state.SavePhase
+ import com.sherifradwan.ancnative.state.SaveUiError
+-import com.sherifradwan.ancnative.state.stringRes
+ import com.sherifradwan.ancnative.ui.minimumTouchTarget
+ 
+ /**
+@@ -81,21 +67,10 @@ fun MedicationSheet(
+     val requestCancel = {
+         if (touched) confirmDiscard = true else onEvent(AncEvent.CancelEditor)
+     }
+-    val dismissAllowed by rememberUpdatedState(enabled)
+-    val needsConfirm by rememberUpdatedState(touched)
+-    val sheetState = rememberModalBottomSheetState(
+-        skipPartiallyExpanded = true,
+-        confirmValueChange = { target ->
+-            when {
+-                target != SheetValue.Hidden -> true
+-                !dismissAllowed -> false
+-                needsConfirm -> {
+-                    confirmDiscard = true
+-                    false
+-                }
+-                else -> true
+-            }
+-        },
++    val sheetState = rememberGuardedSheetState(
++        dismissAllowed = enabled,
++        needsConfirm = touched,
++        onNeedsConfirm = { confirmDiscard = true },
+     )
+ 
+     ModalBottomSheet(
+@@ -122,7 +97,13 @@ fun MedicationSheet(
+                     .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                 verticalArrangement = Arrangement.spacedBy(12.dp),
+             ) {
+-                SaveMessage(savePhase = savePhase, saveError = saveError, hasFieldErrors = draft.errors.isNotEmpty())
++                SheetSaveMessage(
++                    savePhase = savePhase,
++                    saveError = saveError,
++                    fieldErrorMessage = if (draft.errors.isNotEmpty()) stringResource(R.string.correct_highlighted_fields) else null,
++                    failedTitle = stringResource(R.string.medication_save_failed_title),
++                    tag = "medSaveMessage",
++                )
+                 MedicationForm(
+                     values = draft.values,
+                     errors = draft.errors,
+@@ -156,60 +137,15 @@ fun MedicationSheet(
+     }
+ 
+     if (confirmDiscard) {
+-        AlertDialog(
+-            onDismissRequest = { confirmDiscard = false },
+-            title = { Text(stringResource(R.string.discard_changes)) },
+-            text = { Text(stringResource(R.string.discard_body)) },
+-            confirmButton = {
+-                TextButton(
+-                    onClick = {
+-                        confirmDiscard = false
+-                        onEvent(AncEvent.CancelEditor)
+-                    },
+-                    modifier = Modifier.minimumTouchTarget().testTag("medDiscardConfirm"),
+-                ) { Text(stringResource(R.string.discard)) }
++        DiscardChangesDialog(
++            onDiscard = {
++                confirmDiscard = false
++                onEvent(AncEvent.CancelEditor)
+             },
+-            dismissButton = {
+-                TextButton(
+-                    onClick = { confirmDiscard = false },
+-                    modifier = Modifier.minimumTouchTarget().testTag("medDiscardKeep"),
+-                ) { Text(stringResource(R.string.keep_editing)) }
+-            },
+-            modifier = Modifier.testTag("medDiscardDialog"),
+-        )
+-    }
+-}
+-
+-@Composable
+-private fun SaveMessage(savePhase: SavePhase, saveError: SaveUiError?, hasFieldErrors: Boolean) {
+-    val message = when {
+-        savePhase == SavePhase.RECONCILING -> stringResource(R.string.save_reconciling)
+-        savePhase == SavePhase.UNRESOLVED -> stringResource(R.string.save_unresolved)
+-        savePhase == SavePhase.ERROR -> stringResource(saveError.stringRes())
+-        hasFieldErrors -> stringResource(R.string.correct_highlighted_fields)
+-        else -> return
+-    }
+-    val isFailure = savePhase == SavePhase.ERROR || savePhase == SavePhase.UNRESOLVED
+-    Column(
+-        verticalArrangement = Arrangement.spacedBy(2.dp),
+-        modifier = Modifier
+-            .fillMaxWidth()
+-            .semantics { liveRegion = LiveRegionMode.Polite }
+-            // A failed save is shown at the top of the body; bring it back if the doctor had scrolled down.
+-            .revealWhen(isFailure)
+-            .testTag("medSaveMessage"),
+-    ) {
+-        if (isFailure) {
+-            Text(
+-                text = stringResource(R.string.medication_save_failed_title),
+-                style = MaterialTheme.typography.titleSmall,
+-                color = MaterialTheme.colorScheme.error,
+-            )
+-        }
+-        Text(
+-            text = message,
+-            style = MaterialTheme.typography.bodyMedium,
+-            color = if (isFailure || hasFieldErrors) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
++            onKeep = { confirmDiscard = false },
++            dialogTag = "medDiscardDialog",
++            confirmTag = "medDiscardConfirm",
++            keepTag = "medDiscardKeep",
+         )
+     }
+ }
+@@ -228,40 +164,17 @@ internal fun MedicationSheetButtons(
+         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+         verticalArrangement = Arrangement.spacedBy(8.dp),
+     ) {
+-        Row(
+-            modifier = Modifier.fillMaxWidth(),
+-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+-            verticalAlignment = Alignment.CenterVertically,
+-        ) {
+-            OutlinedButton(
+-                onClick = onCancel,
+-                enabled = enabled,
+-                contentPadding = PaddingValues(horizontal = 8.dp),
+-                modifier = Modifier.weight(1f).minimumTouchTarget().testTag("cancelMedication"),
+-            ) {
+-                Text(stringResource(R.string.cancel), maxLines = 2, textAlign = TextAlign.Center)
+-            }
+-            Button(
+-                onClick = onSave,
+-                enabled = enabled,
+-                contentPadding = PaddingValues(horizontal = 8.dp),
+-                modifier = Modifier.weight(1f).minimumTouchTarget().testTag("saveMedication"),
+-            ) {
+-                if (saving) {
+-                    CircularProgressIndicator(
+-                        modifier = Modifier.size(18.dp).testTag("medSaveSpinner"),
+-                        strokeWidth = 2.dp,
+-                        color = LocalContentColor.current,
+-                    )
+-                }
+-                Text(
+-                    stringResource(if (saving) R.string.medication_saving else R.string.save),
+-                    maxLines = 2,
+-                    textAlign = TextAlign.Center,
+-                    modifier = Modifier.padding(start = if (saving) 8.dp else 0.dp),
+-                )
+-            }
+-        }
++        SheetCancelSaveRow(
++            enabled = enabled,
++            saving = saving,
++            saveEnabled = true,
++            savingLabel = stringResource(if (saving) R.string.medication_saving else R.string.save),
++            onCancel = onCancel,
++            onSave = onSave,
++            cancelTag = "cancelMedication",
++            saveTag = "saveMedication",
++            spinnerTag = "medSaveSpinner",
++        )
+         if (!isExistingRow) {
+             OutlinedButton(
+                 onClick = onSaveAndAddAnother,
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+index 7e57f6a..db1fd81 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+@@ -114,7 +114,9 @@ fun OverviewTab(
+         DeliveryPlanningCard(
+             patient = patient,
+             canEdit = canEdit,
+-            onEditPatient = { startPatientEditor() },
++            onEditDeliveryPlan = {
++                onEvent(AncEvent.StartDeliveryPlanEditor(patient.id, UUID.randomUUID().toString()))
++            },
+         )
+ 
+         AttachmentsSectionCard(
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt
+index 4d4bbb9..ba4c741 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt
+@@ -38,14 +38,8 @@ fun PlanTab(
+         DeliveryPlanningCard(
+             patient = patient,
+             canEdit = canEdit,
+-            onEditPatient = {
+-                onEvent(
+-                    AncEvent.StartPatientEditor(
+-                        patientId = patient.id,
+-                        newPatientId = patient.id,
+-                        editorSessionId = UUID.randomUUID().toString(),
+-                    ),
+-                )
++            onEditDeliveryPlan = {
++                onEvent(AncEvent.StartDeliveryPlanEditor(patient.id, UUID.randomUUID().toString()))
+             },
+         )
+ 
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index cc62171..457ea5d 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -248,6 +248,16 @@
+     <string name="delivery_planning">Delivery Planning &amp; Outcome</string>
+     <string name="delivery_planning_notice">Delivery planning and care episode records.</string>
+     <string name="edit_delivery_plan">Edit Delivery Plan</string>
++    <string name="delivery_hospital_title">Agreed Delivery Hospital</string>
++    <string name="delivery_fees_title">Agreed Delivery Fees</string>
++    <string name="delivery_plan_title">Delivery Plan</string>
++    <string name="delivery_postpartum_title">Postpartum Note</string>
++    <string name="delivery_plan_rewrite_notice">Saving will rewrite this patient\'s obstetric notes as one labelled line per box. Words such as \'agreed\' or \'package\' in labels are dropped and lines are grouped by box. Check each box before saving.</string>
++    <string name="delivery_hospital_hint">Found in the notes. Edit or clear. One hospital per line.</string>
++    <string name="delivery_fees_hint">Agreed fees only. Put quotes or estimates in Delivery Plan.</string>
++    <string name="delivery_plan_save_failed_title">The delivery plan was not saved</string>
++    <string name="delivery_plan_profile_invalid">This patient\'s profile has a problem in a field not shown here. Fix it from Edit patient on the Overview tab.</string>
++    <string name="delivery_plan_saving">Saving…</string>
+     <string name="edit_clinical_alerts">Edit clinical alerts</string>
+     <string name="parity_format">G%1$s P%2$s</string>
+     <string name="high_risk">HIGH RISK</string>

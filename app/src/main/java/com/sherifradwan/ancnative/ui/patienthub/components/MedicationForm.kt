@@ -323,7 +323,7 @@ private fun RouteReadOnly(route: String) {
 /** Asks the enclosing scroll container to bring this field fully into view when it gains focus. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun Modifier.revealOnFocus(): Modifier {
+internal fun Modifier.revealOnFocus(): Modifier {
     val requester = remember { BringIntoViewRequester() }
     val scope = rememberCoroutineScope()
     return this

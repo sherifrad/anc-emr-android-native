@@ -24,7 +24,7 @@ class DeliveryPlanningCardEditGateTest {
         val patient = DemoFixtures.patients.first()
         compose.setContent {
             AncTheme {
-                DeliveryPlanningCard(patient = patient, onEditPatient = {}, canEdit = false)
+                DeliveryPlanningCard(patient = patient, onEditDeliveryPlan = {}, canEdit = false)
             }
         }
         compose.waitForIdle()
@@ -37,7 +37,7 @@ class DeliveryPlanningCardEditGateTest {
         var clicks = 0
         compose.setContent {
             AncTheme {
-                DeliveryPlanningCard(patient = patient, onEditPatient = { clicks++ }, canEdit = true)
+                DeliveryPlanningCard(patient = patient, onEditDeliveryPlan = { clicks++ }, canEdit = true)
             }
         }
         compose.waitForIdle()

@@ -1,0 +1,666 @@
+```
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanSheet.kt
+<<<<<<< SEARCH
+=======
+package com.sherifradwan.ancnative.ui.patienthub.components
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.unit.dp
+import com.sherifradwan.ancnative.R
+import com.sherifradwan.ancnative.state.AncEvent
+import com.sherifradwan.ancnative.state.DeliveryPlanField
+import com.sherifradwan.ancnative.state.PatientDraft
+import com.sherifradwan.ancnative.state.SavePhase
+import com.sherifradwan.ancnative.state.SaveUiError
+
+@Composable
+fun DeliveryPlanSheet(
+    draft: PatientDraft,
+    savePhase: SavePhase,
+    saveError: SaveUiError?,
+    onEvent: (AncEvent) -> Unit,
+    footer: @Composable () -> Unit = {},
+) {
+    val values = draft.deliveryPlan
+    val touched = values?.touched == true
+    val saving = savePhase.blocksEditing()
+    val fieldsEnabled = savePhase == SavePhase.IDLE || savePhase == SavePhase.ERROR
+    var confirmDiscard by rememberSaveable { mutableStateOf(false) }
+    val sheetState = rememberGuardedSheetState(
+        dismissAllowed = !saving,
+        needsConfirm = touched,
+        onNeedsConfirm = { confirmDiscard = true },
+    )
+
+    ModalBottomSheet(
+        onDismissRequest = {
+            when {
+                saving -> Unit
+                touched -> confirmDiscard = true
+                else -> onEvent(AncEvent.CancelEditor)
+            }
+        },
+        sheetState = sheetState,
+        modifier = Modifier.testTag("deliveryPlanSheet"),
+        skipPartiallyExpanded = true,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .imePadding()
+                .padding(bottom = 16.dp),
+        ) {
+            if (saving) {
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("deliveryPlanSaveProgress"),
+                )
+            }
+            Text(
+                text = stringResource(R.string.edit_delivery_plan),
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier
+                    .padding(start = 16.dp, top = 16.dp, end = 16.dp)
+                    .semantics { heading() },
+            )
+            Column(
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                SheetSaveMessage(
+                    savePhase = savePhase,
+                    saveError = saveError,
+                    fieldErrorMessage = if (draft.errors.isNotEmpty()) {
+                        stringResource(R.string.delivery_plan_profile_invalid)
+                    } else {
+                        null
+                    },
+                    failedTitle = stringResource(R.string.delivery_plan_save_failed_title),
+                    tag = "deliveryPlanSaveMessage",
+                )
+                if (values?.rewritesNotes == true) {
+                    Text(
+                        text = stringResource(R.string.delivery_plan_rewrite_notice),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.testTag("deliveryPlanRewriteNotice"),
+                    )
+                }
+                DeliveryPlanFieldBlock(
+                    label = stringResource(R.string.delivery_hospital_title),
+                    value = values?.hospital.orEmpty(),
+                    field = DeliveryPlanField.HOSPITAL,
+                    tag = "deliveryPlanHospitalField",
+                    enabled = fieldsEnabled,
+                    minLines = 2,
+                    supporting = stringResource(R.string.delivery_hospital_hint),
+                    onEvent = onEvent,
+                )
+                DeliveryPlanFieldBlock(
+                    label = stringResource(R.string.delivery_fees_title),
+                    value = values?.fees.orEmpty(),
+                    field = DeliveryPlanField.FEES,
+                    tag = "deliveryPlanFeesField",
+                    enabled = fieldsEnabled,
+                    minLines = 2,
+                    supporting = stringResource(R.string.delivery_fees_hint),
+                    onEvent = onEvent,
+                )
+                DeliveryPlanFieldBlock(
+                    label = stringResource(R.string.delivery_plan_title),
+                    value = values?.plan.orEmpty(),
+                    field = DeliveryPlanField.PLAN,
+                    tag = "deliveryPlanPlanField",
+                    enabled = fieldsEnabled,
+                    minLines = 3,
+                    supporting = null,
+                    onEvent = onEvent,
+                )
+                DeliveryPlanFieldBlock(
+                    label = stringResource(R.string.delivery_postpartum_title),
+                    value = values?.postpartum.orEmpty(),
+                    field = DeliveryPlanField.POSTPARTUM,
+                    tag = "deliveryPlanPostpartumField",
+                    enabled = fieldsEnabled,
+                    minLines = 3,
+                    supporting = null,
+                    onEvent = onEvent,
+                )
+            }
+            SheetCancelSaveRow(
+                enabled = fieldsEnabled,
+                saving = saving,
+                saveEnabled = touched,
+                savingLabel = stringResource(R.string.delivery_plan_saving),
+                onCancel = {
+                    if (touched) confirmDiscard = true else onEvent(AncEvent.CancelEditor)
+                },
+                onSave = { onEvent(AncEvent.SubmitPatientProfile) },
+                cancelTag = "cancelDeliveryPlan",
+                saveTag = "saveDeliveryPlan",
+                spinnerTag = "deliveryPlanSaveSpinner",
+            )
+            footer()
+        }
+    }
+
+    if (confirmDiscard) {
+        DiscardChangesDialog(
+            onDiscard = {
+                confirmDiscard = false
+                onEvent(AncEvent.CancelEditor)
+            },
+            onKeep = { confirmDiscard = false },
+            dialogTag = "deliveryPlanDiscardDialog",
+            confirmTag = "deliveryPlanDiscardConfirm",
+            keepTag = "deliveryPlanDiscardKeep",
+        )
+    }
+}
+
+@Composable
+private fun DeliveryPlanFieldBlock(
+    label: String,
+    value: String,
+    field: DeliveryPlanField,
+    tag: String,
+    enabled: Boolean,
+    minLines: Int,
+    supporting: String?,
+    onEvent: (AncEvent) -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        OutlinedTextField(
+            value = value,
+            onValueChange = { onEvent(AncEvent.DeliveryPlanFieldChanged(field, it)) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .revealOnFocus()
+                .testTag(tag)
+                .semantics { contentDescription = label },
+            enabled = enabled,
+            placeholder = { Text(stringResource(R.string.no_record)) },
+            supportingText = supporting?.let { hint ->
+                { Text(hint) }
+            },
+            minLines = minLines,
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+        )
+    }
+}
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt
+<<<<<<< SEARCH
+    modifier: Modifier = Modifier,
+    onEditPatient: () -> Unit,
+) {
+=======
+    modifier: Modifier = Modifier,
+    onEditDeliveryPlan: () -> Unit,
+) {
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt
+<<<<<<< SEARCH
+                        onClick = onEditPatient,
+=======
+                        onClick = onEditDeliveryPlan,
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt
+<<<<<<< SEARCH
+            DeliverySectionBox(
+                title = "Agreed Delivery Hospital",
+                value = sections.hospital,
+=======
+            DeliverySectionBox(
+                title = stringResource(R.string.delivery_hospital_title),
+                value = sections.hospital,
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt
+<<<<<<< SEARCH
+            DeliverySectionBox(
+                title = "Agreed Delivery Fees",
+                value = sections.fees,
+=======
+            DeliverySectionBox(
+                title = stringResource(R.string.delivery_fees_title),
+                value = sections.fees,
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt
+<<<<<<< SEARCH
+            DeliverySectionBox(
+                title = "Delivery Plan",
+                value = sections.plan,
+=======
+            DeliverySectionBox(
+                title = stringResource(R.string.delivery_plan_title),
+                value = sections.plan,
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt
+<<<<<<< SEARCH
+            DeliverySectionBox(
+                title = "Postpartum Note",
+                value = sections.postpartum,
+=======
+            DeliverySectionBox(
+                title = stringResource(R.string.delivery_postpartum_title),
+                value = sections.postpartum,
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt
+<<<<<<< SEARCH
+            onEditPatient = {
+                onEvent(
+                    AncEvent.StartPatientEditor(
+                        patientId = patient.id,
+                        newPatientId = patient.id,
+                        editorSessionId = UUID.randomUUID().toString(),
+                    ),
+                )
+            },
+=======
+            onEditDeliveryPlan = {
+                onEvent(
+                    AncEvent.StartDeliveryPlanEditor(
+                        patient.id,
+                        UUID.randomUUID().toString(),
+                    ),
+                )
+            },
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
+<<<<<<< SEARCH
+package com.sherifradwan.ancnative.ui.patienthub
+=======
+package com.sherifradwan.ancnative.ui.patienthub
+
+import com.sherifradwan.ancnative.ui.patienthub.components.DeliveryPlanSheet
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
+<<<<<<< SEARCH
+    val medicationDraft = state.medicationSheetDraft()
+=======
+    val medicationDraft = state.medicationSheetDraft()
+    val deliveryPlanDraft = state.deliveryPlanSheetDraft(patient.id)
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
+<<<<<<< SEARCH
+        if (medicationDraft != null) {
+            MedicationSheet(
+                draft = medicationDraft,
+                savePhase = state.savePhase,
+                saveError = state.saveError,
+                touched = medicationDraft.touched,
+                onEvent = onEvent,
+                footer = { UndoBarHost(state, onEvent) },
+            )
+        }
+=======
+        if (medicationDraft != null) {
+            MedicationSheet(
+                draft = medicationDraft,
+                savePhase = state.savePhase,
+                saveError = state.saveError,
+                touched = medicationDraft.touched,
+                onEvent = onEvent,
+                footer = { UndoBarHost(state, onEvent) },
+            )
+        }
+
+        // The delivery plan sheet also sits above the pager and never changes the route.
+        if (deliveryPlanDraft != null) {
+            DeliveryPlanSheet(
+                draft = deliveryPlanDraft,
+                savePhase = state.savePhase,
+                saveError = state.saveError,
+                onEvent = onEvent,
+                footer = { UndoBarHost(state, onEvent) },
+            )
+        }
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt
+<<<<<<< SEARCH
+                // While the medication sheet is open it shows the Undo bar itself, under its buttons.
+                if (state.medicationSheetDraft() == null) UndoBarHost(state, onEvent)
+=======
+                // While the medication sheet or the delivery plan sheet is open, it shows the Undo bar itself.
+                if (state.medicationSheetDraft() == null && state.patientDraft?.deliveryPlan == null) {
+                    UndoBarHost(state, onEvent)
+                }
+>>>>>>> REPLACE
+
+FILE: app/src/main/res/values/strings.xml
+<<<<<<< SEARCH
+    <string name="edit_delivery_plan">Edit Delivery Plan</string>
+=======
+    <string name="edit_delivery_plan">Edit Delivery Plan</string>
+    <string name="delivery_hospital_title">Agreed Delivery Hospital</string>
+    <string name="delivery_fees_title">Agreed Delivery Fees</string>
+    <string name="delivery_plan_title">Delivery Plan</string>
+    <string name="delivery_postpartum_title">Postpartum Note</string>
+    <string name="delivery_plan_rewrite_notice">Saving will rewrite this patient\'s obstetric notes as one labelled line per box. Words such as \'agreed\' or \'package\' in labels are dropped and lines are grouped by box. Check each box before saving.</string>
+    <string name="delivery_hospital_hint">Found in the notes. Edit or clear. One hospital per line.</string>
+    <string name="delivery_fees_hint">Agreed fees only. Put quotes or estimates in Delivery Plan.</string>
+    <string name="delivery_plan_save_failed_title">The delivery plan was not saved</string>
+    <string name="delivery_plan_profile_invalid">This patient\'s profile has a problem in a field not shown here. Fix it from Edit patient on the Overview tab.</string>
+    <string name="delivery_plan_saving">Saving…</string>
+>>>>>>> REPLACE
+
+FILE: app/src/androidTest/java/com/sherifradwan/ancnative/DeliveryPlanSheetTest.kt
+<<<<<<< SEARCH
+=======
+package com.sherifradwan.ancnative
+
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.assertDoesNotExist
+import androidx.compose.ui.test.assertExists
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.sherifradwan.ancnative.model.DemoFixtures
+import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.state.AncEvent
+import com.sherifradwan.ancnative.state.AncReducer
+import com.sherifradwan.ancnative.state.AncRoute
+import com.sherifradwan.ancnative.state.AncState
+import com.sherifradwan.ancnative.state.SavePhase
+import com.sherifradwan.ancnative.state.SaveUiError
+import com.sherifradwan.ancnative.state.WorkspaceSection
+import com.sherifradwan.ancnative.ui.AncApp
+import com.sherifradwan.ancnative.ui.AncTheme
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+/**
+ * The delivery plan sheet, mounted through the real AncApp and the reducer. The store is faked by the test: on
+ * SubmitPatientProfile it commits a composed note, holds the save, or fails it.
+ */
+@RunWith(AndroidJUnit4::class)
+class DeliveryPlanSheetTest {
+    @get:Rule
+    val compose = createAndroidComposeRule<MainActivity>()
+
+    private enum class SaveMode { COMMIT, HOLD, FAIL }
+
+    private val heuristicPatient = DemoFixtures.patients.first().copy(
+        status = "active",
+        obstetricNotes = "Agreed Delivery Hospital: Al Salam\nFees: 5000 EGP",
+    )
+    private val composedPatient = DemoFixtures.patients.first().copy(
+        status = "active",
+        obstetricNotes = "Agreed Delivery Hospital: Al Salam\nAgreed Delivery Fees: 5000 EGP",
+    )
+
+    private var patient: DemoPatient = heuristicPatient
+    private var saveMode = SaveMode.COMMIT
+    private var state by mutableStateOf(workspace(heuristicPatient))
+
+    private val LABEL_HOSPITAL get() = compose.activity.getString(R.string.delivery_hospital_title)
+    private val LABEL_FEES get() = compose.activity.getString(R.string.delivery_fees_title)
+    private val LABEL_PLAN get() = compose.activity.getString(R.string.delivery_plan_title)
+    private val LABEL_POSTPARTUM get() = compose.activity.getString(R.string.delivery_postpartum_title)
+
+    private fun workspace(p: DemoPatient) =
+        AncState(patients = listOf(p), route = AncRoute.Workspace(p.id, WorkspaceSection.PLAN))
+
+    private fun onEvent(event: AncEvent) {
+        state = AncReducer.reduce(state, event)
+        if (event == AncEvent.SubmitPatientProfile) {
+            when (saveMode) {
+                SaveMode.COMMIT -> commit()
+                SaveMode.HOLD -> Unit
+                SaveMode.FAIL -> state = state.copy(savePhase = SavePhase.ERROR, saveError = SaveUiError.Unknown)
+            }
+        }
+    }
+
+    private fun commit() {
+        val values = state.patientDraft?.deliveryPlan ?: return
+        val notes = buildString {
+            append("Agreed Delivery Hospital: ").append(values.hospital.trim())
+            append('\n').append("Agreed Delivery Fees: ").append(values.fees.trim())
+            append('\n').append("Delivery Plan: ").append(values.plan.trim())
+            append('\n').append("Postpartum Note: ").append(values.postpartum.trim())
+        }
+        state = state.copy(
+            patients = state.patients.map { if (it.id == patient.id) it.copy(obstetricNotes = notes) else it },
+            patientDraft = null,
+            savePhase = SavePhase.IDLE,
+            saveError = null,
+        )
+    }
+
+    private fun start(p: DemoPatient, fontScale: Float = 1f) {
+        patient = p
+        state = workspace(p)
+        compose.activity.setContent {
+            AncTheme {
+                CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
+                    Box(Modifier.widthIn(max = if (fontScale > 1f) 360.dp else 1440.dp)) {
+                        AncApp(state = state, onEvent = ::onEvent)
+                    }
+                }
+            }
+        }
+        compose.waitForIdle()
+    }
+
+    private fun openSheet() {
+        compose.onNodeWithTag("editDeliveryPlan").performClick()
+        compose.waitForIdle()
+    }
+
+    private fun type(tag: String, text: String) {
+        compose.onNodeWithTag(tag).performScrollTo().performTextReplacement(text)
+        compose.waitForIdle()
+    }
+
+    private fun inSheet(text: String) =
+        compose.onNode(hasText(text) and hasAnyAncestor(hasTestTag("deliveryPlanSheet")))
+
+    @Test
+    fun edit_opens_the_sheet_and_stays_on_the_plan_tab() {
+        start(heuristicPatient)
+        openSheet()
+        compose.onNodeWithTag("deliveryPlanSheet").assertExists()
+        compose.onNodeWithTag("planTabContent").assertExists()
+        assertEquals(AncRoute.Workspace(patient.id, WorkspaceSection.PLAN), state.route)
+    }
+
+    @Test
+    fun notice_shows_for_hand_typed_notes_and_not_for_composed_notes() {
+        start(heuristicPatient)
+        openSheet()
+        compose.onNodeWithTag("deliveryPlanRewriteNotice").assertIsDisplayed()
+        compose.onNodeWithTag("cancelDeliveryPlan").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("deliveryPlanSheet").assertDoesNotExist()
+
+        start(composedPatient)
+        openSheet()
+        compose.onNodeWithTag("deliveryPlanRewriteNotice").assertDoesNotExist()
+    }
+
+    @Test
+    fun editing_fees_and_saving_updates_the_card_and_keeps_the_plan_tab() {
+        start(heuristicPatient)
+        openSheet()
+        type("deliveryPlanFeesField", "7000 EGP")
+        compose.onNodeWithTag("saveDeliveryPlan").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("deliveryPlanSheet").assertDoesNotExist()
+        compose.onNodeWithText("7000 EGP", substring = true).assertIsDisplayed()
+        assertEquals(AncRoute.Workspace(patient.id, WorkspaceSection.PLAN), state.route)
+        assertNull(state.patientDraft)
+    }
+
+    @Test
+    fun untouched_cancel_closes_at_once() {
+        start(heuristicPatient)
+        openSheet()
+        compose.onNodeWithTag("cancelDeliveryPlan").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("deliveryPlanSheet").assertDoesNotExist()
+        compose.onNodeWithTag("deliveryPlanDiscardDialog").assertDoesNotExist()
+    }
+
+    @Test
+    fun touched_cancel_asks_keep_stays_and_discard_leaves_the_card_unchanged() {
+        start(heuristicPatient)
+        openSheet()
+        type("deliveryPlanFeesField", "9000 EGP")
+        compose.onNodeWithTag("cancelDeliveryPlan").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("deliveryPlanDiscardDialog").assertIsDisplayed()
+
+        compose.onNodeWithTag("deliveryPlanDiscardKeep").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("deliveryPlanDiscardDialog").assertDoesNotExist()
+        compose.onNodeWithTag("deliveryPlanSheet").assertIsDisplayed()
+
+        compose.onNodeWithTag("cancelDeliveryPlan").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("deliveryPlanDiscardConfirm").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("deliveryPlanSheet").assertDoesNotExist()
+        assertEquals(heuristicPatient.obstetricNotes, state.patients.first().obstetricNotes)
+    }
+
+    @Test
+    fun save_disabled_until_a_field_changes() {
+        start(heuristicPatient)
+        openSheet()
+        compose.onNodeWithTag("saveDeliveryPlan").assertIsNotEnabled()
+        type("deliveryPlanPlanField", "Review at 38 weeks")
+        compose.onNodeWithTag("saveDeliveryPlan").assertIsEnabled()
+    }
+
+    @Test
+    fun delayed_save_disables_fields_and_buttons_and_shows_the_spinner() {
+        saveMode = SaveMode.HOLD
+        start(heuristicPatient)
+        openSheet()
+        type("deliveryPlanPlanField", "Review at 38 weeks")
+        compose.onNodeWithTag("saveDeliveryPlan").performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("deliveryPlanSaveSpinner").assertIsDisplayed()
+        compose.onNodeWithTag("deliveryPlanSaveProgress").assertIsDisplayed()
+        compose.onNodeWithTag("deliveryPlanFeesField").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithTag("cancelDeliveryPlan").assertIsNotEnabled()
+        compose.onNodeWithTag("saveDeliveryPlan").assertIsNotEnabled()
+    }
+
+    @Test
+    fun failed_save_shows_the_message_and_keeps_the_values() {
+        saveMode = SaveMode.FAIL
+        start(heuristicPatient)
+        openSheet()
+        type("deliveryPlanFeesField", "7000 EGP")
+        compose.onNodeWithTag("saveDeliveryPlan").performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("deliveryPlanSheet").assertIsDisplayed()
+        compose.onNodeWithTag("deliveryPlanSaveMessage").assertIsDisplayed()
+        compose.onNodeWithText(
+            compose.activity.getString(R.string.delivery_plan_save_failed_title),
+            substring = true,
+        ).assertIsDisplayed()
+        compose.onNodeWithTag("deliveryPlanFeesField").performScrollTo().assertTextContains("7000 EGP", substring = true)
+    }
+
+    @Test
+    fun narrow_width_and_large_font_show_the_title_labels_and_buttons_in_full() {
+        start(heuristicPatient, fontScale = 1.3f)
+        openSheet()
+        inSheet(compose.activity.getString(R.string.edit_delivery_plan)).assertIsDisplayed()
+        inSheet(LABEL_HOSPITAL).assertIsDisplayed().assertTextEquals(LABEL_HOSPITAL)
+        inSheet(LABEL_FEES).performScrollTo().assertIsDisplayed().assertTextEquals(LABEL_FEES)
+        inSheet(LABEL_PLAN).performScrollTo().assertIsDisplayed().assertTextEquals(LABEL_PLAN)
+        inSheet(LABEL_POSTPARTUM).performScrollTo().assertIsDisplayed().assertTextEquals(LABEL_POSTPARTUM)
+        compose.onNodeWithTag("cancelDeliveryPlan").assertIsDisplayed()
+        compose.onNodeWithTag("saveDeliveryPlan").assertIsDisplayed()
+    }
+
+    @Test
+    fun label_constants_match_the_card_titles_in_strings() {
+        assertEquals("Agreed Delivery Hospital", LABEL_HOSPITAL)
+        assertEquals("Agreed Delivery Fees", LABEL_FEES)
+        assertEquals("Delivery Plan", LABEL_PLAN)
+        assertEquals("Postpartum Note", LABEL_POSTPARTUM)
+        assertTrue(composedPatient.obstetricNotes.contains(LABEL_FEES))
+    }
+}
+>>>>>>> REPLACE
+```

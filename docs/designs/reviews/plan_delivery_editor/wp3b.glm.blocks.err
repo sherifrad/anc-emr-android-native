@@ -1,0 +1,73 @@
+[0m
+> plan · glm-5.3-flash-free
+[0m✱ [0mGrep "MedicationSheet|UndoBarHost|^import" [90min app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt · 56 matches[0m
+[0m✱ [0mGlob "app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/*.kt" [90m15 matches[0m
+> plan · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationSheet.kt 
+[0m✱ [0mGrep "deliveryPlanSheetDraft|DeliveryPlanField|deliveryPlan|StartDeliveryPlanEditor|DeliveryPlanFieldChanged" [90min app/src/main/java/com/sherifradwan/ancnative/state · 25 matches[0m
+> plan · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt [90m[limit=60, offset=460][0m
+[0m✱ [0mGrep "fun Modifier\.revealOnFocus|fun Modifier\.revealWhen|internal fun Modifier" [90min app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt · 2 matches[0m
+> plan · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt [90m[limit=60, offset=300][0m
+[0m✱ [0mGrep "edit_delivery_plan|discard_changes|discard_body|discard\"|keep_editing|save_reconciling|save_unresolved|correct_highlighted_fields|no_record" [90min app/src/main/res/values/strings.xml · 11 matches[0m
+> plan · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/res/values/strings.xml [90m[limit=14, offset=244][0m
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt [90m[limit=50, offset=250][0m
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt [90m[limit=18, offset=232][0m
+> plan · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanningCard.kt 
+> plan · glm-5.3-flash-free
+[0m→ [0mRead app/src/androidTest/java/com/sherifradwan/ancnative/MedsTabSheetTest.kt [90m[limit=180, offset=95][0m
+> plan · glm-5.3-flash-free
+[0m✱ [0mGrep "enum class SavePhase|sealed|data class SaveUiError|fun SaveUiError\.stringRes|PatientValidationError" [90min app/src/main/java/com/sherifradwan/ancnative/state · 12 matches[0m
+[0m✱ [0mGrep "fun Composer\.scrollHubTabTo|NARROW_HOST|fun scrollHubTabTo" [90min app/src/androidTest · 5 matches[0m
+> plan · glm-5.3-flash-free
+[0m✱ [0mGrep "SaveUiError" [90min app/src/main/java/com/sherifradwan/ancnative/state · 48 matches[0m
+[0m✱ [0mGrep "scrollHubTabTo" [90min app/src/androidTest/java/com/sherifradwan/ancnative · 11 matches[0m
+> plan · glm-5.3-flash-free
+[0m→ [0mRead app/src/androidTest/java/com/sherifradwan/ancnative/PatientHubNavigation.kt 
+[0m✱ [0mGrep "SubmitPatientProfile|PatientValidationFailed|SavePatientProfileCommand" [90min app/src/main/java/com/sherifradwan/ancnative · 27 matches[0m
+> plan · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt [90m[limit=130, offset=380][0m
+> plan · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt [90m[limit=60, offset=510][0m
+[0m✱ [0mGrep "enum class PatientValidationError|sealed interface PatientCommandPreparation|object PatientCommandPreparation|sealed interface PatientCommandOutcome" [90min app/src/main/java/com/sherifradwan/ancnative · 3 matches[0m
+> plan · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt [90m[limit=30, offset=108][0m
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt [90m[limit=70, offset=255][0m
+> plan · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncEvent.kt [90m[limit=30, offset=108][0m
+[0m✱ [0mGrep "enum class PatientEditorKind" [90min app/src/main/java/com/sherifradwan/ancnative · 1 match[0m
+> plan · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt [90m[limit=120][0m
+> plan · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/ClinicalDraftReducers.kt [90m[limit=60, offset=60][0m
+[0m✱ [0mGrep "enum class WorkspaceSection" [90min app/src/main/java/com/sherifradwan/ancnative/state · 1 match[0m
+> plan · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt [90m[limit=14, offset=16][0m
+[0m✱ [0mGrep "object DemoFixtures|val patients" [90min app/src/main/java/com/sherifradwan/ancnative/model · 2 matches[0m
+> plan · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt [90m[limit=60][0m
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt [90m[limit=20, offset=29][0m
+> plan · glm-5.3-flash-free
+[0m✱ [0mGrep "WorkspaceSection\.DELIVERY|WorkspaceSection\.MEDICATIONS ->|fun.*PatientHubTab|toHubTab" [90min app/src/main/java/com/sherifradwan/ancnative · 4 matches[0m
+> plan · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubTab.kt 
+> plan · glm-5.3-flash-free
+[0m✱ [0mGrep "fun composeDeliveryNotes|fun isComposedDeliveryNotes|fun parseDeliveryNotes|data class DeliveryNoteSections" [90min app/src/main/java/com/sherifradwan/ancnative/model · 4 matches[0m
+[0m✱ [0mGrep "fun AncState\.patient\(|fun blocksEditing|val hasDirtyDraft" [90min app/src/main/java/com/sherifradwan/ancnative/state · 1 match[0m
+> plan · glm-5.3-flash-free
+[0m✱ [0mGrep "fun patient|fun medicationSheetDraft|blocksEditing" [90min app/src/main/java/com/sherifradwan/ancnative/state · 31 matches[0m
+> plan · glm-5.3-flash-free
+[0m✱ [0mGrep "fun AncState\.medicationSheetDraft|fun AncState\.patient\(|fun AncState\.patient " [90min app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt · 1 match[0m
+[0m✱ [0mGrep "parseDeliveryNotes|composeDeliveryNotes|isComposedDeliveryNotes|internal" [90min app/src/androidTest · 2 matches[0m
+> plan · glm-5.3-flash-free
+[0m✱ [0mGrep " and |import androidx\.compose\.ui\.test\.and|assertIsSelected|onNode\(|hasAnyAncestor" [90min app/src/androidTest/java/com/sherifradwan/ancnative/MedsTabSheetTest.kt · 27 matches[0m
+> plan · glm-5.3-flash-free
+[0m→ [0mRead app/src/androidTest/java/com/sherifradwan/ancnative/MedsTabSheetTest.kt [90m[limit=92][0m
+> plan · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/PlanTab.kt [90m[limit=45, offset=22][0m
+> plan · glm-5.3-flash-free
+[0m✱ [0mGrep "val patientDraft" [90min app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt · 1 match[0m
+> plan · glm-5.3-flash-free

@@ -514,7 +514,7 @@ class OverviewTabSectionsTest {
     )
 
     private fun showDeliveryCard(patient: DemoPatient) = showContent {
-        DeliveryPlanningCard(patient = patient, canEdit = true, onEditPatient = {})
+        DeliveryPlanningCard(patient = patient, canEdit = true, onEditDeliveryPlan = {})
     }
 
     private fun cardNode(label: String) = compose.onNode(
@@ -585,7 +585,7 @@ class OverviewTabSectionsTest {
                     val base = LocalDensity.current
                     CompositionLocalProvider(LocalDensity provides Density(base.density, 1.3f)) {
                         Box(Modifier.width(360.dp)) {
-                            DeliveryPlanningCard(patient = cardPatient(discordant), canEdit = true, onEditPatient = {})
+                            DeliveryPlanningCard(patient = cardPatient(discordant), canEdit = true, onEditDeliveryPlan = {})
                         }
                     }
                 }

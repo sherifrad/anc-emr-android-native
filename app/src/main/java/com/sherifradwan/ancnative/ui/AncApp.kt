@@ -239,8 +239,8 @@ fun AncApp(
                         is AncRoute.LabBatchEditor -> LabBatchScreen(state, route, onEvent)
                     }
                 }
-                // While the medication sheet is open it shows the Undo bar itself, under its buttons.
-                if (state.medicationSheetDraft() == null) UndoBarHost(state, onEvent)
+                // While a sheet is open it shows the Undo bar itself, under its buttons.
+                if (state.medicationSheetDraft() == null && state.patientDraft?.deliveryPlan == null) UndoBarHost(state, onEvent)
             }
         }
     }

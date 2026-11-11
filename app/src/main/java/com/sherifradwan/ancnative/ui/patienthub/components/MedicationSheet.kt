@@ -3,40 +3,27 @@ package com.sherifradwan.ancnative.ui.patienthub.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -45,7 +32,6 @@ import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.MedicationDraft
 import com.sherifradwan.ancnative.state.SavePhase
 import com.sherifradwan.ancnative.state.SaveUiError
-import com.sherifradwan.ancnative.state.stringRes
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
 
 /**
@@ -81,21 +67,10 @@ fun MedicationSheet(
     val requestCancel = {
         if (touched) confirmDiscard = true else onEvent(AncEvent.CancelEditor)
     }
-    val dismissAllowed by rememberUpdatedState(enabled)
-    val needsConfirm by rememberUpdatedState(touched)
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true,
-        confirmValueChange = { target ->
-            when {
-                target != SheetValue.Hidden -> true
-                !dismissAllowed -> false
-                needsConfirm -> {
-                    confirmDiscard = true
-                    false
-                }
-                else -> true
-            }
-        },
+    val sheetState = rememberGuardedSheetState(
+        dismissAllowed = enabled,
+        needsConfirm = touched,
+        onNeedsConfirm = { confirmDiscard = true },
     )
 
     ModalBottomSheet(
@@ -122,7 +97,13 @@ fun MedicationSheet(
                     .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                SaveMessage(savePhase = savePhase, saveError = saveError, hasFieldErrors = draft.errors.isNotEmpty())
+                SheetSaveMessage(
+                    savePhase = savePhase,
+                    saveError = saveError,
+                    fieldErrorMessage = if (draft.errors.isNotEmpty()) stringResource(R.string.correct_highlighted_fields) else null,
+                    failedTitle = stringResource(R.string.medication_save_failed_title),
+                    tag = "medSaveMessage",
+                )
                 MedicationForm(
                     values = draft.values,
                     errors = draft.errors,
@@ -156,60 +137,15 @@ fun MedicationSheet(
     }
 
     if (confirmDiscard) {
-        AlertDialog(
-            onDismissRequest = { confirmDiscard = false },
-            title = { Text(stringResource(R.string.discard_changes)) },
-            text = { Text(stringResource(R.string.discard_body)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        confirmDiscard = false
-                        onEvent(AncEvent.CancelEditor)
-                    },
-                    modifier = Modifier.minimumTouchTarget().testTag("medDiscardConfirm"),
-                ) { Text(stringResource(R.string.discard)) }
+        DiscardChangesDialog(
+            onDiscard = {
+                confirmDiscard = false
+                onEvent(AncEvent.CancelEditor)
             },
-            dismissButton = {
-                TextButton(
-                    onClick = { confirmDiscard = false },
-                    modifier = Modifier.minimumTouchTarget().testTag("medDiscardKeep"),
-                ) { Text(stringResource(R.string.keep_editing)) }
-            },
-            modifier = Modifier.testTag("medDiscardDialog"),
-        )
-    }
-}
-
-@Composable
-private fun SaveMessage(savePhase: SavePhase, saveError: SaveUiError?, hasFieldErrors: Boolean) {
-    val message = when {
-        savePhase == SavePhase.RECONCILING -> stringResource(R.string.save_reconciling)
-        savePhase == SavePhase.UNRESOLVED -> stringResource(R.string.save_unresolved)
-        savePhase == SavePhase.ERROR -> stringResource(saveError.stringRes())
-        hasFieldErrors -> stringResource(R.string.correct_highlighted_fields)
-        else -> return
-    }
-    val isFailure = savePhase == SavePhase.ERROR || savePhase == SavePhase.UNRESOLVED
-    Column(
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .semantics { liveRegion = LiveRegionMode.Polite }
-            // A failed save is shown at the top of the body; bring it back if the doctor had scrolled down.
-            .revealWhen(isFailure)
-            .testTag("medSaveMessage"),
-    ) {
-        if (isFailure) {
-            Text(
-                text = stringResource(R.string.medication_save_failed_title),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.error,
-            )
-        }
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = if (isFailure || hasFieldErrors) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+            onKeep = { confirmDiscard = false },
+            dialogTag = "medDiscardDialog",
+            confirmTag = "medDiscardConfirm",
+            keepTag = "medDiscardKeep",
         )
     }
 }
@@ -228,40 +164,17 @@ internal fun MedicationSheetButtons(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            OutlinedButton(
-                onClick = onCancel,
-                enabled = enabled,
-                contentPadding = PaddingValues(horizontal = 8.dp),
-                modifier = Modifier.weight(1f).minimumTouchTarget().testTag("cancelMedication"),
-            ) {
-                Text(stringResource(R.string.cancel), maxLines = 2, textAlign = TextAlign.Center)
-            }
-            Button(
-                onClick = onSave,
-                enabled = enabled,
-                contentPadding = PaddingValues(horizontal = 8.dp),
-                modifier = Modifier.weight(1f).minimumTouchTarget().testTag("saveMedication"),
-            ) {
-                if (saving) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp).testTag("medSaveSpinner"),
-                        strokeWidth = 2.dp,
-                        color = LocalContentColor.current,
-                    )
-                }
-                Text(
-                    stringResource(if (saving) R.string.medication_saving else R.string.save),
-                    maxLines = 2,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(start = if (saving) 8.dp else 0.dp),
-                )
-            }
-        }
+        SheetCancelSaveRow(
+            enabled = enabled,
+            saving = saving,
+            saveEnabled = true,
+            savingLabel = stringResource(if (saving) R.string.medication_saving else R.string.save),
+            onCancel = onCancel,
+            onSave = onSave,
+            cancelTag = "cancelMedication",
+            saveTag = "saveMedication",
+            spinnerTag = "medSaveSpinner",
+        )
         if (!isExistingRow) {
             OutlinedButton(
                 onClick = onSaveAndAddAnother,

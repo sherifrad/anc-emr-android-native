@@ -36,6 +36,7 @@ import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.PatientDraftField
 import com.sherifradwan.ancnative.state.SavePhase
+import com.sherifradwan.ancnative.state.deliveryPlanSheetDraft
 import com.sherifradwan.ancnative.state.medicationSheetDraft
 import com.sherifradwan.ancnative.storage.DeletableType
 import com.sherifradwan.ancnative.ui.AddAttachmentDialog
@@ -43,6 +44,7 @@ import com.sherifradwan.ancnative.ui.ClinicalAttachmentViewerDialog
 import com.sherifradwan.ancnative.ui.UltrasoundPhotoViewerDialog
 import com.sherifradwan.ancnative.ui.UndoBarHost
 import com.sherifradwan.ancnative.ui.patienthub.components.ClinicalAttentionDialog
+import com.sherifradwan.ancnative.ui.patienthub.components.DeliveryPlanSheet
 import com.sherifradwan.ancnative.ui.patienthub.components.MedicationSheet
 import com.sherifradwan.ancnative.ui.patienthub.tabs.LabsTab
 import com.sherifradwan.ancnative.ui.patienthub.tabs.MedsTab
@@ -148,6 +150,7 @@ fun PatientHubScreen(
         state.savePhase == SavePhase.UNRESOLVED
     val canModifyData = canEdit && !state.hasDirtyDraft && !isSaveBlocked && !state.deleteRunning
     val medicationDraft = state.medicationSheetDraft()
+    val deliveryPlanDraft = state.deliveryPlanSheetDraft(patient.id)
 
     // Dialog state holders
     var viewingPhotoScan by remember(patient.id) { mutableStateOf<DemoUltrasoundScan?>(null) }
@@ -278,6 +281,17 @@ fun PatientHubScreen(
                 savePhase = state.savePhase,
                 saveError = state.saveError,
                 touched = medicationDraft.touched,
+                onEvent = onEvent,
+                footer = { UndoBarHost(state, onEvent) },
+            )
+        }
+
+        // The delivery plan sheet sits above the pager the same way.
+        if (deliveryPlanDraft != null) {
+            DeliveryPlanSheet(
+                draft = deliveryPlanDraft,
+                savePhase = state.savePhase,
+                saveError = state.saveError,
                 onEvent = onEvent,
                 footer = { UndoBarHost(state, onEvent) },
             )

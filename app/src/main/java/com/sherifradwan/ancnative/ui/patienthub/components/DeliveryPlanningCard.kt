@@ -48,7 +48,7 @@ fun DeliveryPlanningCard(
     patient: DemoPatient,
     canEdit: Boolean,
     modifier: Modifier = Modifier,
-    onEditPatient: () -> Unit,
+    onEditDeliveryPlan: () -> Unit,
 ) {
     val sections = remember(patient.obstetricNotes) { parseDeliveryNotes(patient.obstetricNotes) }
     val summary = remember(patient) { datingSummaryOf(patient, LocalDate.now()) }
@@ -91,7 +91,7 @@ fun DeliveryPlanningCard(
                 }
                 if (canEdit) {
                     IconButton(
-                        onClick = onEditPatient,
+                        onClick = onEditDeliveryPlan,
                         modifier = Modifier
                             .minimumTouchTarget()
                             .testTag("editDeliveryPlan"),
@@ -156,28 +156,28 @@ fun DeliveryPlanningCard(
             val defaultPlaceholder = stringResource(R.string.no_record)
 
             DeliverySectionBox(
-                title = "Agreed Delivery Hospital",
+                title = stringResource(R.string.delivery_hospital_title),
                 value = sections.hospital,
                 tone = DeliveryTone.HOSPITAL,
                 placeholder = defaultPlaceholder,
                 modifier = Modifier.testTag("deliveryHospital"),
             )
             DeliverySectionBox(
-                title = "Agreed Delivery Fees",
+                title = stringResource(R.string.delivery_fees_title),
                 value = sections.fees,
                 tone = DeliveryTone.FEE,
                 placeholder = defaultPlaceholder,
                 modifier = Modifier.testTag("deliveryFees"),
             )
             DeliverySectionBox(
-                title = "Delivery Plan",
+                title = stringResource(R.string.delivery_plan_title),
                 value = sections.plan,
                 tone = DeliveryTone.PLAN,
                 placeholder = defaultPlaceholder,
                 modifier = Modifier.testTag("deliveryPlan"),
             )
             DeliverySectionBox(
-                title = "Postpartum Note",
+                title = stringResource(R.string.delivery_postpartum_title),
                 value = sections.postpartum,
                 tone = DeliveryTone.POSTPARTUM,
                 placeholder = defaultPlaceholder,

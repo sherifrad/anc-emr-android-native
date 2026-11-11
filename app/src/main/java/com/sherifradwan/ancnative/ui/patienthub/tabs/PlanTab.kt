@@ -38,14 +38,8 @@ fun PlanTab(
         DeliveryPlanningCard(
             patient = patient,
             canEdit = canEdit,
-            onEditPatient = {
-                onEvent(
-                    AncEvent.StartPatientEditor(
-                        patientId = patient.id,
-                        newPatientId = patient.id,
-                        editorSessionId = UUID.randomUUID().toString(),
-                    ),
-                )
+            onEditDeliveryPlan = {
+                onEvent(AncEvent.StartDeliveryPlanEditor(patient.id, UUID.randomUUID().toString()))
             },
         )
 
