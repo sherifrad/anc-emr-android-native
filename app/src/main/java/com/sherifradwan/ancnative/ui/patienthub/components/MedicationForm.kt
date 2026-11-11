@@ -87,6 +87,7 @@ fun MedicationForm(
     modifier: Modifier = Modifier,
     focusNameOnStart: Boolean = false,
     onNameFocused: () -> Unit = {},
+    revealToken: Int = 0,
 ) {
     fun change(field: MedicationDraftField, value: String) =
         onEvent(AncEvent.MedicationDraftChanged(field, value))
@@ -145,7 +146,7 @@ fun MedicationForm(
             onValueChange = { change(MedicationDraftField.NAME, it) },
             label = stringResource(R.string.medication_name),
             tag = "medName",
-            modifier = Modifier.focusRequester(nameFocus).revealOnFocus().revealWhen(nameError),
+            modifier = Modifier.focusRequester(nameFocus).revealOnFocus().revealWhen(nameError, revealToken),
             enabled = enabled,
             error = nameError,
             singleLine = true,
@@ -158,7 +159,7 @@ fun MedicationForm(
             onValueChange = { change(MedicationDraftField.DOSAGE, it) },
             label = stringResource(R.string.dosage),
             tag = "medDosage",
-            modifier = Modifier.focusRequester(doseFocus).revealOnFocus().revealWhen(revealDose),
+            modifier = Modifier.focusRequester(doseFocus).revealOnFocus().revealWhen(revealDose, revealToken),
             enabled = enabled,
             error = doseError,
             singleLine = true,
@@ -223,7 +224,7 @@ fun MedicationForm(
                     onValueChange = { change(MedicationDraftField.FREQUENCY, it) },
                     label = stringResource(R.string.medication_frequency_other_label),
                     tag = "medFreqOther",
-                    modifier = Modifier.focusRequester(otherFocus).revealOnFocus().revealWhen(revealFrequency),
+                    modifier = Modifier.focusRequester(otherFocus).revealOnFocus().revealWhen(revealFrequency, revealToken),
                     enabled = enabled,
                     error = frequencyMissing,
                     errorMessage = if (frequencyMissing) stringResource(R.string.medication_frequency_required) else null,
@@ -236,7 +237,7 @@ fun MedicationForm(
                     text = stringResource(R.string.medication_frequency_required),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.revealWhen(revealFrequency).testTag("medFreqError"),
+                    modifier = Modifier.revealWhen(revealFrequency, revealToken).testTag("medFreqError"),
                 )
             }
         }
@@ -270,7 +271,7 @@ fun MedicationForm(
             tag = "medDate",
             enabled = enabled,
             error = dateError,
-            modifier = Modifier.revealWhen(revealDate),
+            modifier = Modifier.revealWhen(revealDate, revealToken),
             fieldModifier = Modifier.focusRequester(dateFocus).revealOnFocus(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
             keyboardActions = KeyboardActions(onNext = { notesFocus.requestFocus() }),
@@ -331,14 +332,15 @@ private fun Modifier.revealOnFocus(): Modifier {
 }
 
 /**
- * Asks the enclosing scroll container to bring this element into view when [reveal] turns true, one frame later so
- * the error text it just gained is laid out. Used after a rejected save for the first field in error and the message.
+ * Asks the enclosing scroll container to bring this element into view when [reveal] turns true or [token] changes, one
+ * frame later so the error text it just gained is laid out. The token goes up on every Save press, so a second
+ * rejected save with the same errors scrolls again. Used after a rejected save for the first field in error.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun Modifier.revealWhen(reveal: Boolean): Modifier {
+internal fun Modifier.revealWhen(reveal: Boolean, token: Int = 0): Modifier {
     val requester = remember { BringIntoViewRequester() }
-    LaunchedEffect(reveal) {
+    LaunchedEffect(reveal, token) {
         if (reveal) {
             withFrameNanos { }
             requester.bringIntoView()

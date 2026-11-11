@@ -247,4 +247,15 @@ class PatientHubPureModelTest {
         assertTrue(MedicationTile("6", "Iron", "", "IM", "").isAlreadyActive(both))
         assertFalse(MedicationTile("7", "Iron", "", "IV", "").isAlreadyActive(both))
     }
+
+    @Test
+    fun aStoredRowWithoutARouteStillBlocksTheSameDrugOnAnyRoute() {
+        val active = activeMedicationKeys(listOf(medRecord("Ferrous Sulfate", "Active", route = "")))
+        assertTrue("blank stored route matches the oral tile", MedicationTile("1", "Ferrous sulfate", "", "Oral", "").isAlreadyActive(active))
+        assertTrue("and the IM tile", MedicationTile("2", "Ferrous sulfate", "", "IM", "").isAlreadyActive(active))
+        assertFalse("another drug is not blocked", MedicationTile("3", "Aspirin", "", "Oral", "").isAlreadyActive(active))
+        val oral = activeMedicationKeys(listOf(medRecord("Ferrous Sulfate", "Active")))
+        assertTrue("a tile without a route matches the drug", MedicationTile("4", "Ferrous sulfate", "", "", "").isAlreadyActive(oral))
+        assertFalse("an IM tile stays open while the oral drug is active", MedicationTile("5", "Ferrous sulfate", "", "IM", "").isAlreadyActive(oral))
+    }
 }

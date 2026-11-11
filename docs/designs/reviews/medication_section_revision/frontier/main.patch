@@ -1,0 +1,1761 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt b/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+index 53dc2c1..449dc38 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+@@ -639,6 +639,11 @@ data class MedicationDraft(
+      * not saved with the draft, so crash recovery still goes by [isDirty].
+      */
+     val touched: Boolean = false,
++    /**
++     * The next blank drug of "Save and add another" (started with [AncEvent.StartMedicationEditor.keepSavedNotice]).
++     * The sheet puts focus on its name field, so the keyboard stays up for it. UI only: not saved with the draft.
++     */
++    val chainedAdd: Boolean = false,
+ ) {
+     val isDirty: Boolean get() = values != original
+ }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/MedicationReducer.kt b/app/src/main/java/com/sherifradwan/ancnative/state/MedicationReducer.kt
+index 6533b27..ad00314 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/state/MedicationReducer.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/MedicationReducer.kt
+@@ -18,6 +18,9 @@ import com.sherifradwan.ancnative.model.medicationEditorChoice
+  * - Add from a catalog tile ([AncEvent.StartMedicationEditor.prefill]): `original` is the blank new-drug defaults
+  *   and `values` is the tile on top of them, so the draft is dirty (and recoverable) from the start.
+  * - Blank custom drug: both are the blank defaults.
++ *
++ * A new draft started by "Save and add another" ([AncEvent.StartMedicationEditor.keepSavedNotice]) is marked
++ * [MedicationDraft.chainedAdd].
+  */
+ internal fun startMedicationEditor(state: AncState, event: AncEvent.StartMedicationEditor): AncState {
+     if (state.savePhase.blocksEditing() || state.hasDirtyDraft || state.medicationDraft != null) return state
+@@ -50,6 +53,7 @@ internal fun startMedicationEditor(state: AncState, event: AncEvent.StartMedicat
+             baseMedicationRevision = med?.revision,
+             original = original,
+             values = values,
++            chainedAdd = event.keepSavedNotice && med == null,
+         ),
+         savedNotice = if (event.keepSavedNotice) state.savedNotice else false,
+         notice = if (event.keepSavedNotice) state.notice else null,
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt b/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt
+index f8f1f00..a2281df 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/storage/ClinicalCommands.kt
+@@ -442,8 +442,12 @@ data class SaveMedicationCommand(
+                 errors.add(ClinicalValidationError.INVALID_ROUTE)
+             }
+ 
+-            // Frequency is optional: the editor no longer asks for it. A stored value is kept; a blank one stays blank.
++            // A new medication needs a frequency. An update keeps a stored blank one, so the one-tap stop and its
++            // Undo still save a stored row that has none.
+             val frequency = draft.values.frequency.trim()
++            if (frequency.isEmpty() && draft.baseMedicationRevision == null) {
++                errors.add(ClinicalValidationError.REQUIRED_FREQUENCY)
++            }
+ 
+             val startDate = draft.values.startDate.trim()
+             if (startDate.isEmpty()) {
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalPresets.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalPresets.kt
+index 70982cf..c555f4c 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalPresets.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalPresets.kt
+@@ -1,5 +1,6 @@
+ package com.sherifradwan.ancnative.ui
+ 
++import androidx.annotation.StringRes
+ import androidx.compose.foundation.layout.Arrangement
+ import androidx.compose.foundation.layout.Column
+ import androidx.compose.foundation.layout.FlowRow
+@@ -20,7 +21,39 @@ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.platform.testTag
+ import androidx.compose.ui.unit.dp
+ 
+-val COMMON_MEDICATION_FREQUENCIES = listOf("Once daily", "Twice daily", "Three times daily", "At bedtime", "As needed (PRN)")
++/** The fixed medication frequencies, in order: the stored value (English, saved as is) and the label the screen shows. */
++private val MEDICATION_FREQUENCY_LABELS: Map<String, Int> = linkedMapOf(
++    "Once daily" to R.string.medication_frequency_once_daily,
++    "Twice daily" to R.string.medication_frequency_twice_daily,
++    "Three times daily" to R.string.medication_frequency_three_times_daily,
++    "At bedtime" to R.string.medication_frequency_at_bedtime,
++    "As needed (PRN)" to R.string.medication_frequency_as_needed,
++)
++
++val COMMON_MEDICATION_FREQUENCIES: List<String> = MEDICATION_FREQUENCY_LABELS.keys.toList()
++
++/** The label resource for a stored value of [COMMON_MEDICATION_FREQUENCIES], or null for the doctor's own words. */
++@StringRes
++fun medicationFrequencyLabelRes(value: String): Int? = MEDICATION_FREQUENCY_LABELS[value]
++
++/** A stored frequency as the screen shows it: the label of a fixed value, otherwise the stored words unchanged. */
++@Composable
++fun medicationFrequencyLabel(value: String): String =
++    medicationFrequencyLabelRes(value)?.let { stringResource(it) } ?: value
++
++/**
++ * "dose · route · frequency" for a row or a picker tile, from one formatted string so a translation can reorder it.
++ * [frequency] is already a label. A part that is blank is left out, joined by the translatable separator.
++ */
++@Composable
++fun medicationDoseRouteFrequency(dosage: String, route: String, frequency: String): String {
++    val parts = listOf(dosage.trim(), route.trim(), frequency.trim())
++    return if (parts.all { it.isNotEmpty() }) {
++        stringResource(R.string.medication_dose_route_frequency, parts[0], parts[1], parts[2])
++    } else {
++        parts.filter { it.isNotEmpty() }.joinToString(stringResource(R.string.medication_detail_separator))
++    }
++}
+ 
+ /** Long suggestion lists (my medication list, previous prescriptions) show this many chips until expanded. */
+ const val PRESAVED_COLLAPSE_AFTER = 5
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
+index 17a8d43..84ee1f2 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
+@@ -251,10 +251,10 @@ fun PatientHubHeader(
+                     }
+ 
+                     // Patient Identity & Primary Metrics Lockup
+-                    Row(
++                    // Name owns the full row width so the GA badge stacks below instead of squeezing it
++                    Column(
+                         modifier = Modifier.fillMaxWidth(),
+-                        horizontalArrangement = Arrangement.SpaceBetween,
+-                        verticalAlignment = Alignment.CenterVertically,
++                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                     ) {
+                         Text(
+                             text = patient.displayName,
+@@ -263,25 +263,36 @@ fun PatientHubHeader(
+                             color = MaterialTheme.colorScheme.onSurface,
+                             maxLines = 2,
+                             overflow = TextOverflow.Ellipsis,
+-                            modifier = Modifier.weight(1f),
++                            modifier = Modifier
++                                .fillMaxWidth()
++                                .testTag("hubPatientName"),
+                         )
+ 
+                         if (!ga.isNullOrBlank()) {
+-                            GestationalAgeBadge(
+-                                gaText = stringResource(R.string.ga_prefix, ga),
+-                                modifier = Modifier.padding(start = 8.dp),
+-                                discordant = gaDiscordant,
+-                            )
++                            Box(
++                                modifier = Modifier
++                                    .testTag("hubGaBadge"),
++                            ) {
++                                GestationalAgeBadge(
++                                    gaText = stringResource(R.string.ga_prefix, ga),
++                                    discordant = gaDiscordant,
++                                )
++                            }
+                         }
+                     }
+ 
+-                    // Standardized Clinical Badges FlowRow (24dp height, zero truncation on 360dp)
++                    // Clinical badges flow row: pills wrap and grow with their text
+                     FlowRow(
+                         modifier = Modifier.fillMaxWidth(),
+                         horizontalArrangement = Arrangement.spacedBy(6.dp),
+                         verticalArrangement = Arrangement.spacedBy(6.dp),
+                     ) {
+-                        ClinicalRiskBadge(isHighRisk = isHighRisk(patient.riskLevel))
++                        Box(
++                            modifier = Modifier
++                                .testTag("hubRiskBadge")
++                        ) {
++                            ClinicalRiskBadge(isHighRisk = isHighRisk(patient.riskLevel))
++                        }
+                         patient.visits.firstOrNull()?.bloodPressure?.let { bp ->
+                             BpAlertLabel(bp)
+                         }
+@@ -298,7 +309,7 @@ fun PatientHubHeader(
+                             Surface(
+                                 shape = RoundedCornerShape(6.dp),
+                                 color = if (isAlert) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+-                                modifier = Modifier.height(24.dp),
++                                modifier = Modifier.testTag("hubAllergyPill"),
+                             ) {
+                                 Text(
+                                     text = if (allergy is AllergyState.Recorded) {
+@@ -309,9 +320,9 @@ fun PatientHubHeader(
+                                     style = MaterialTheme.typography.labelSmall,
+                                     fontWeight = FontWeight.Bold,
+                                     color = if (isAlert) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+-                                    maxLines = 1,
+-                                    overflow = TextOverflow.Ellipsis,
+-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
++                                    modifier = Modifier
++                                        .padding(horizontal = 6.dp, vertical = 3.dp)
++                                        .testTag("hubAllergyText"),
+                                 )
+                             }
+                         }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
+index 756fee0..d17d8b5 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
+@@ -14,6 +14,7 @@ import androidx.compose.runtime.mutableIntStateOf
+ import androidx.compose.runtime.mutableStateOf
+ import androidx.compose.runtime.remember
+ import androidx.compose.runtime.rememberCoroutineScope
++import androidx.compose.runtime.rememberUpdatedState
+ import androidx.compose.runtime.setValue
+ import androidx.compose.runtime.snapshotFlow
+ import androidx.compose.ui.Modifier
+@@ -84,14 +85,17 @@ fun PatientHubScreen(
+         }
+     }
+ 
+-    // Pager swipe -> State synchronization (loop-free via settledPage)
++    // Pager swipe -> State synchronization (loop-free via settledPage). The effect outlives route changes, so it
++    // reads the latest route and callback: with the first route, a return to the opening tab was never reported.
++    val currentRoute by rememberUpdatedState(route)
++    val currentOnEvent by rememberUpdatedState(onEvent)
+     LaunchedEffect(pagerState) {
+         snapshotFlow { pagerState.settledPage }
+             .collect { page ->
+                 val settledTab = PatientHubTab.entries[page]
+-                val currentTabNow = PatientHubTab.fromSection(route.section)
++                val currentTabNow = PatientHubTab.fromSection(currentRoute.section)
+                 if (settledTab != currentTabNow) {
+-                    onEvent(AncEvent.SelectSection(settledTab.defaultSection))
++                    currentOnEvent(AncEvent.SelectSection(settledTab.defaultSection))
+                 }
+             }
+     }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationCard.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationCard.kt
+index 8110346..4b3e442 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationCard.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationCard.kt
+@@ -4,12 +4,12 @@ import androidx.compose.foundation.BorderStroke
+ import androidx.compose.foundation.clickable
+ import androidx.compose.foundation.layout.Arrangement
+ import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.ExperimentalLayoutApi
++import androidx.compose.foundation.layout.FlowRow
+ import androidx.compose.foundation.layout.Row
+-import androidx.compose.foundation.layout.Spacer
+ import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.layout.size
+-import androidx.compose.foundation.layout.width
+ import androidx.compose.foundation.shape.RoundedCornerShape
+ import androidx.compose.material.icons.Icons
+ import androidx.compose.material.icons.filled.Edit
+@@ -29,20 +29,31 @@ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.platform.testTag
+ import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.semantics.Role
++import androidx.compose.ui.semantics.contentDescription
++import androidx.compose.ui.semantics.hideFromAccessibility
++import androidx.compose.ui.semantics.semantics
++import androidx.compose.ui.semantics.stateDescription
+ import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.text.style.TextOverflow
+ import androidx.compose.ui.unit.dp
+ import com.sherifradwan.ancnative.R
+ import com.sherifradwan.ancnative.model.DemoMedicationRecord
+ import com.sherifradwan.ancnative.model.isOngoingMedication
+-import com.sherifradwan.ancnative.model.medicationInstructions
+ import com.sherifradwan.ancnative.model.medicationStatusLabel
+ import com.sherifradwan.ancnative.storage.DeletableType
+ import com.sherifradwan.ancnative.ui.DeleteIconButton
+ import com.sherifradwan.ancnative.ui.FactRow
+ import com.sherifradwan.ancnative.ui.MedicationStatusBadge
++import com.sherifradwan.ancnative.ui.medicationDoseRouteFrequency
++import com.sherifradwan.ancnative.ui.medicationFrequencyLabel
+ import com.sherifradwan.ancnative.ui.minimumTouchTarget
+ 
++/**
++ * One medication row, the only one. Closed, it shows the name, one "dose · route · frequency" line and, when there are
++ * notes, their first line; the whole note and the other facts show when the row is opened. Active rows carry the one-tap Stop control; stopped rows do not.
++ */
++@OptIn(ExperimentalLayoutApi::class)
+ @Composable
+ fun MedicationCard(
+     med: DemoMedicationRecord,
+@@ -57,10 +68,11 @@ fun MedicationCard(
+     onDelete: (() -> Unit)? = null,
+ ) {
+     val status = medicationStatusLabel(med.status, med.isNonCompliant)
+-    // Dose and route through the shared helper (notes left out), then frequency, each on its own untruncated line;
+-    // notes follow, cut to two lines while the card is closed. The helper itself stays as the summary and print use it.
+-    val doseAndRoute = medicationInstructions(med.dosage, med.route, null)
++    val frequency = medicationFrequencyLabel(med.frequency)
++    val details = medicationDoseRouteFrequency(med.dosage, med.route, frequency)
+     val notes = med.notes?.trim().orEmpty()
++    val toggleLabel = stringResource(if (isExpanded) R.string.hide_details else R.string.show_details)
++    val toggleState = stringResource(if (isExpanded) R.string.state_expanded else R.string.state_collapsed)
+ 
+     Card(
+         modifier = modifier
+@@ -71,89 +83,93 @@ fun MedicationCard(
+         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+     ) {
+         Column(Modifier.padding(bottom = if (isExpanded) 12.dp else 0.dp)) {
+-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+-                Row(
+-                    modifier = Modifier
+-                        .weight(1f)
+-                        .minimumTouchTarget()
+-                        .testTag("medicationToggle-${med.id}")
+-                        .clickable(onClick = onToggle)
+-                        .padding(start = 12.dp, top = 8.dp, bottom = 8.dp),
+-                    verticalAlignment = Alignment.CenterVertically,
+-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+-                ) {
+-                    Icon(
+-                        imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+-                        contentDescription = stringResource(if (isExpanded) R.string.hide_details else R.string.show_details),
+-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+-                        modifier = Modifier.size(20.dp),
++            // The text takes the full card width; the status and actions share the line below it, so the buttons
++            // never narrow the name or the dose, route and frequency at 360 dp.
++            Row(
++                modifier = Modifier
++                    .fillMaxWidth()
++                    .minimumTouchTarget()
++                    .testTag("medicationToggle-${med.id}")
++                    .semantics { stateDescription = toggleState }
++                    .clickable(role = Role.Button, onClickLabel = toggleLabel, onClick = onToggle)
++                    .padding(start = 12.dp, end = 12.dp, top = 8.dp),
++                verticalAlignment = Alignment.Top,
++                horizontalArrangement = Arrangement.spacedBy(8.dp),
++            ) {
++                Icon(
++                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
++                    contentDescription = null,
++                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
++                    modifier = Modifier.padding(top = 2.dp).size(20.dp),
++                )
++                Column(Modifier.weight(1f)) {
++                    Text(
++                        med.name,
++                        style = MaterialTheme.typography.titleMedium,
++                        fontWeight = FontWeight.Bold,
++                        modifier = Modifier.testTag("medicationName-${med.id}"),
+                     )
+-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+-                        Text(med.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+-                        MedicationStatusBadge(status)
+-                        if (doseAndRoute.isNotBlank()) {
+-                            Text(
+-                                text = doseAndRoute,
+-                                style = MaterialTheme.typography.bodyMedium,
+-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+-                                modifier = Modifier.testTag("medicationInstructions-${med.id}"),
+-                            )
+-                        }
+-                        if (med.frequency.isNotBlank()) {
+-                            Text(
+-                                text = med.frequency,
+-                                style = MaterialTheme.typography.bodyMedium,
+-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+-                                modifier = Modifier.testTag("medicationFrequency-${med.id}"),
+-                            )
+-                        }
+-                        if (notes.isNotEmpty()) {
+-                            Text(
+-                                text = notes,
+-                                style = MaterialTheme.typography.bodySmall,
+-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+-                                maxLines = if (isExpanded) Int.MAX_VALUE else 2,
+-                                overflow = TextOverflow.Ellipsis,
+-                                modifier = Modifier.testTag("medicationNotes-${med.id}"),
+-                            )
+-                        }
++                    if (details.isNotBlank()) {
++                        Text(
++                            text = details,
++                            style = MaterialTheme.typography.bodyMedium,
++                            color = MaterialTheme.colorScheme.onSurfaceVariant,
++                            modifier = Modifier.testTag("medicationInstructions-${med.id}"),
++                        )
++                    }
++                    // One line of notes while closed (a warning such as "hold if SBP < 100" stays in the review list);
++                    // the whole note shows when the row is opened.
++                    if (notes.isNotEmpty() && !isExpanded) {
++                        Text(
++                            text = notes,
++                            style = MaterialTheme.typography.bodySmall,
++                            color = MaterialTheme.colorScheme.onSurfaceVariant,
++                            maxLines = 1,
++                            overflow = TextOverflow.Ellipsis,
++                            modifier = Modifier.testTag("medicationNotes-${med.id}"),
++                        )
+                     }
+                 }
++            }
+ 
++            // Status on the start side, actions on the end side; when both do not fit (large text) the actions wrap.
++            FlowRow(
++                modifier = Modifier
++                    .fillMaxWidth()
++                    .padding(start = 40.dp, end = 4.dp, bottom = if (canEdit) 0.dp else 8.dp)
++                    .testTag("medicationActions-${med.id}"),
++                horizontalArrangement = Arrangement.spacedBy(8.dp),
++                itemVerticalAlignment = Alignment.CenterVertically,
++            ) {
++                MedicationStatusBadge(status, modifier = Modifier.padding(vertical = if (canEdit) 0.dp else 4.dp))
+                 if (canEdit) {
+-                    if (isOngoingMedication(med.status, med.isNonCompliant) && onStop != null) {
+-                        IconButton(
+-                            onClick = onStop,
+-                            enabled = actionsEnabled,
+-                            modifier = Modifier.minimumTouchTarget().testTag("stopMedication-${med.id}"),
+-                        ) {
+-                            Icon(
+-                                Icons.Default.Stop,
+-                                contentDescription = stringResource(R.string.stop_medication_description, med.name),
+-                                tint = if (actionsEnabled) MaterialTheme.colorScheme.secondary else LocalContentColor.current,
+-                                modifier = Modifier.size(20.dp),
+-                            )
++                    // The weight lets the actions take the rest of the line, or a whole line when they wrap, and sit at its end.
++                    Row(
++                        modifier = Modifier.weight(1f),
++                        horizontalArrangement = Arrangement.End,
++                        verticalAlignment = Alignment.CenterVertically,
++                    ) {
++                        if (isOngoingMedication(med.status, med.isNonCompliant) && onStop != null) {
++                            StopControl(name = med.name, id = med.id, enabled = actionsEnabled, onStop = onStop)
+                         }
+-                    }
+-                    if (onDelete != null) {
+-                        DeleteIconButton(DeletableType.MEDICATION, med, onDelete, enabled = actionsEnabled)
+-                    }
+-                    if (onEdit != null) {
+-                        IconButton(
+-                            onClick = onEdit,
+-                            enabled = actionsEnabled,
+-                            modifier = Modifier.minimumTouchTarget().testTag("editMedication-${med.id}"),
+-                        ) {
+-                            Icon(
+-                                Icons.Default.Edit,
+-                                contentDescription = stringResource(R.string.edit_medication_description, med.name),
+-                                tint = if (actionsEnabled) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+-                                modifier = Modifier.size(20.dp),
+-                            )
++                        if (onDelete != null) {
++                            DeleteIconButton(DeletableType.MEDICATION, med, onDelete, enabled = actionsEnabled)
++                        }
++                        if (onEdit != null) {
++                            IconButton(
++                                onClick = onEdit,
++                                enabled = actionsEnabled,
++                                modifier = Modifier.minimumTouchTarget().testTag("editMedication-${med.id}"),
++                            ) {
++                                Icon(
++                                    Icons.Default.Edit,
++                                    contentDescription = stringResource(R.string.edit_medication_description, med.name),
++                                    tint = if (actionsEnabled) MaterialTheme.colorScheme.primary else LocalContentColor.current,
++                                    modifier = Modifier.size(20.dp),
++                                )
++                            }
+                         }
+                     }
+-                } else {
+-                    Spacer(Modifier.width(12.dp))
+                 }
+             }
+ 
+@@ -162,7 +178,7 @@ fun MedicationCard(
+                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                     FactRow(R.string.dosage, med.dosage)
+                     FactRow(R.string.route, med.route)
+-                    FactRow(R.string.frequency, med.frequency)
++                    FactRow(R.string.frequency, frequency)
+                     FactRow(R.string.start_date, med.startDate)
+                     if (!med.adverseNotes.isNullOrBlank()) {
+                         FactRow(R.string.adverse_effects, med.adverseNotes)
+@@ -173,3 +189,40 @@ fun MedicationCard(
+         }
+     }
+ }
++
++/**
++ * The one-tap stop: the stop icon over a visible "Stop" label, in the error colour (at least 4.5:1 on the card in
++ * both themes), at least 48 dp. Screen readers hear "Stop <drug>".
++ */
++@Composable
++private fun StopControl(name: String, id: String, enabled: Boolean, onStop: () -> Unit) {
++    val description = stringResource(R.string.stop_medication_description, name)
++    val color = if (enabled) {
++        MaterialTheme.colorScheme.error
++    } else {
++        MaterialTheme.colorScheme.onSurface.copy(alpha = MEDICATION_DISABLED_ALPHA)
++    }
++    Column(
++        modifier = Modifier
++            .minimumTouchTarget()
++            .testTag("stopMedication-$id")
++            .semantics { contentDescription = description }
++            .clickable(enabled = enabled, role = Role.Button, onClick = onStop)
++            .padding(horizontal = 8.dp, vertical = 2.dp),
++        horizontalAlignment = Alignment.CenterHorizontally,
++        verticalArrangement = Arrangement.Center,
++    ) {
++        Icon(Icons.Default.Stop, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
++        Text(
++            text = stringResource(R.string.stop_medication_short),
++            style = MaterialTheme.typography.labelMedium,
++            fontWeight = FontWeight.Bold,
++            color = color,
++            // Seen, not read: the control's own description already says "Stop <drug>".
++            modifier = Modifier.testTag("stopMedicationLabel-$id").semantics { hideFromAccessibility() },
++        )
++    }
++}
++
++/** Opacity of a disabled medication control or tile, shared by the card and the picker. */
++internal const val MEDICATION_DISABLED_ALPHA = 0.38f
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt
+index f8b7f0e..a8bc05a 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt
+@@ -56,6 +56,7 @@ import com.sherifradwan.ancnative.ui.COMMON_MEDICATION_FREQUENCIES
+ import com.sherifradwan.ancnative.ui.ChoiceGroup
+ import com.sherifradwan.ancnative.ui.ClinicalDateField
+ import com.sherifradwan.ancnative.ui.EditorField
++import com.sherifradwan.ancnative.ui.medicationFrequencyLabel
+ import com.sherifradwan.ancnative.ui.minimumTouchTarget
+ import kotlinx.coroutines.launch
+ 
+@@ -64,11 +65,15 @@ import kotlinx.coroutines.launch
+  * [AncEvent.MedicationDraftChanged]; it holds no business rules.
+  *
+  * [draftKey] identifies the draft being edited; per-draft UI state (the Other-frequency mode) resets when it changes.
++ * With [focusNameOnStart] the name field takes focus for [draftKey], then [onNameFocused] tells the host so it can
++ * turn the request off (the host keeps that in saved state, so a rotation does not focus the name again).
++ * If the field is not attached yet on the first frame, the focus request is retried once after the next frame.
+  *
+  * Fields in order: name, dose, route (read-only on an existing row), frequency, status, one date
+  * (Start date while active, Stop date while stopped) and notes. Enter (IME Next) moves focus to the
+  * next text field; notes keeps Enter for a new line. Every field asks to be scrolled into view when
+- * it takes focus, so the keyboard never hides it.
++ * it takes focus, so the keyboard never hides it. After a rejected save the first field in error
++ * (name, dose, frequency, then date) is scrolled into view, so the doctor sees why the save stopped.
+  */
+ @OptIn(ExperimentalLayoutApi::class)
+ @Composable
+@@ -80,6 +85,8 @@ fun MedicationForm(
+     draftKey: String,
+     onEvent: (AncEvent) -> Unit,
+     modifier: Modifier = Modifier,
++    focusNameOnStart: Boolean = false,
++    onNameFocused: () -> Unit = {},
+ ) {
+     fun change(field: MedicationDraftField, value: String) =
+         onEvent(AncEvent.MedicationDraftChanged(field, value))
+@@ -93,6 +100,18 @@ fun MedicationForm(
+     var otherMode by rememberSaveable(draftKey) {
+         mutableStateOf(values.frequency.isNotBlank() && values.frequency !in COMMON_MEDICATION_FREQUENCIES)
+     }
++    LaunchedEffect(draftKey, focusNameOnStart) {
++        if (focusNameOnStart) {
++            withFrameNanos { }
++            // The name field may not be attached yet after Save and add another, in which case
++            // requestFocus reports false. Wait one more frame and retry once so focus still lands.
++            if (!nameFocus.requestFocus()) {
++                withFrameNanos { }
++                nameFocus.requestFocus()
++            }
++            onNameFocused()
++        }
++    }
+     var focusOtherBox by remember { mutableStateOf(false) }
+     LaunchedEffect(focusOtherBox, otherMode) {
+         if (focusOtherBox && otherMode) {
+@@ -109,6 +128,13 @@ fun MedicationForm(
+     val dateValue = if (stopped) values.endDate else values.startDate
+     val dateError = errors.contains(ClinicalValidationError.REQUIRED_DATE) ||
+         errors.contains(ClinicalValidationError.INVALID_DATE)
++    val nameError = errors.contains(ClinicalValidationError.REQUIRED_NAME)
++    val doseError = errors.contains(ClinicalValidationError.REQUIRED_DOSAGE)
++    val frequencyMissing = errors.contains(ClinicalValidationError.REQUIRED_FREQUENCY)
++    // Only one field is revealed: the first one in error, in form order.
++    val revealDose = doseError && !nameError
++    val revealFrequency = frequencyMissing && !nameError && !doseError
++    val revealDate = dateError && !nameError && !doseError && !frequencyMissing
+ 
+     Column(
+         modifier = modifier.fillMaxWidth().testTag("medicationForm"),
+@@ -119,9 +145,9 @@ fun MedicationForm(
+             onValueChange = { change(MedicationDraftField.NAME, it) },
+             label = stringResource(R.string.medication_name),
+             tag = "medName",
+-            modifier = Modifier.focusRequester(nameFocus).revealOnFocus(),
++            modifier = Modifier.focusRequester(nameFocus).revealOnFocus().revealWhen(nameError),
+             enabled = enabled,
+-            error = errors.contains(ClinicalValidationError.REQUIRED_NAME),
++            error = nameError,
+             singleLine = true,
+             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+             keyboardActions = KeyboardActions(onNext = { doseFocus.requestFocus() }),
+@@ -132,9 +158,9 @@ fun MedicationForm(
+             onValueChange = { change(MedicationDraftField.DOSAGE, it) },
+             label = stringResource(R.string.dosage),
+             tag = "medDosage",
+-            modifier = Modifier.focusRequester(doseFocus).revealOnFocus(),
++            modifier = Modifier.focusRequester(doseFocus).revealOnFocus().revealWhen(revealDose),
+             enabled = enabled,
+-            error = errors.contains(ClinicalValidationError.REQUIRED_DOSAGE),
++            error = doseError,
+             singleLine = true,
+             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+             keyboardActions = KeyboardActions(
+@@ -171,7 +197,7 @@ fun MedicationForm(
+                             change(MedicationDraftField.FREQUENCY, frequency)
+                         },
+                         enabled = enabled,
+-                        label = { Text(frequency) },
++                        label = { Text(medicationFrequencyLabel(frequency)) },
+                         modifier = Modifier.minimumTouchTarget().testTag("medFreqChoice-$index"),
+                     )
+                 }
+@@ -191,16 +217,16 @@ fun MedicationForm(
+                     modifier = Modifier.minimumTouchTarget().testTag("medFreqChoice-other"),
+                 )
+             }
+-            val frequencyMissing = errors.contains(ClinicalValidationError.REQUIRED_FREQUENCY)
+             if (otherMode) {
+                 EditorField(
+                     value = values.frequency,
+                     onValueChange = { change(MedicationDraftField.FREQUENCY, it) },
+                     label = stringResource(R.string.medication_frequency_other_label),
+                     tag = "medFreqOther",
+-                    modifier = Modifier.focusRequester(otherFocus).revealOnFocus(),
++                    modifier = Modifier.focusRequester(otherFocus).revealOnFocus().revealWhen(revealFrequency),
+                     enabled = enabled,
+                     error = frequencyMissing,
++                    errorMessage = if (frequencyMissing) stringResource(R.string.medication_frequency_required) else null,
+                     singleLine = true,
+                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+                     keyboardActions = KeyboardActions(onNext = { dateFocus.requestFocus() }),
+@@ -210,7 +236,7 @@ fun MedicationForm(
+                     text = stringResource(R.string.medication_frequency_required),
+                     style = MaterialTheme.typography.bodySmall,
+                     color = MaterialTheme.colorScheme.error,
+-                    modifier = Modifier.testTag("medFreqError"),
++                    modifier = Modifier.revealWhen(revealFrequency).testTag("medFreqError"),
+                 )
+             }
+         }
+@@ -244,6 +270,7 @@ fun MedicationForm(
+             tag = "medDate",
+             enabled = enabled,
+             error = dateError,
++            modifier = Modifier.revealWhen(revealDate),
+             fieldModifier = Modifier.focusRequester(dateFocus).revealOnFocus(),
+             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+             keyboardActions = KeyboardActions(onNext = { notesFocus.requestFocus() }),
+@@ -302,3 +329,20 @@ private fun Modifier.revealOnFocus(): Modifier {
+         .bringIntoViewRequester(requester)
+         .onFocusChanged { if (it.isFocused) scope.launch { requester.bringIntoView() } }
+ }
++
++/**
++ * Asks the enclosing scroll container to bring this element into view when [reveal] turns true, one frame later so
++ * the error text it just gained is laid out. Used after a rejected save for the first field in error and the message.
++ */
++@OptIn(ExperimentalFoundationApi::class)
++@Composable
++internal fun Modifier.revealWhen(reveal: Boolean): Modifier {
++    val requester = remember { BringIntoViewRequester() }
++    LaunchedEffect(reveal) {
++        if (reveal) {
++            withFrameNanos { }
++            requester.bringIntoView()
++        }
++    }
++    return this.bringIntoViewRequester(requester)
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationSheet.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationSheet.kt
+index 669c79f..f49176b 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationSheet.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationSheet.kt
+@@ -54,7 +54,7 @@ import com.sherifradwan.ancnative.ui.minimumTouchTarget
+  * Add (and custom) mode is a draft with no stored revision; it also offers "Save and add another".
+  * Cancel and dismiss send [AncEvent.CancelEditor] at once when the form is untouched, and ask first
+  * when [touched] is true. While a save runs the form and every button are disabled; a rejected save
+- * leaves the sheet open with the doctor's values and shows the [saveError] message.
++ * leaves the sheet open with the doctor's values and shows the [saveError] message, scrolled into view.
+  */
+ @OptIn(ExperimentalMaterial3Api::class)
+ @Composable
+@@ -71,6 +71,10 @@ fun MedicationSheet(
+     val enabled = savePhase == SavePhase.IDLE || savePhase == SavePhase.ERROR
+     val saving = savePhase == SavePhase.PENDING || savePhase == SavePhase.RECONCILING
+     var confirmDiscard by rememberSaveable { mutableStateOf(false) }
++    val draftKey = "${draft.editorSessionId}:${draft.medicationId}"
++    // The draft whose name already took focus. Saved here, outside the sheet's own window, so a rotation or theme
++    // change later in the same draft does not pull focus back to the name.
++    var nameFocusedFor by rememberSaveable { mutableStateOf<String?>(null) }
+ 
+     val requestCancel = {
+         if (touched) confirmDiscard = true else onEvent(AncEvent.CancelEditor)
+@@ -112,7 +116,8 @@ fun MedicationSheet(
+                 modifier = Modifier
+                     .weight(1f, fill = false)
+                     .verticalScroll(rememberScrollState())
+-                    .padding(horizontal = 16.dp),
++                    // Bottom room so the last row (route or notes) is fully visible when scrolled to the end.
++                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                 verticalArrangement = Arrangement.spacedBy(12.dp),
+             ) {
+                 SaveMessage(savePhase = savePhase, saveError = saveError, hasFieldErrors = draft.errors.isNotEmpty())
+@@ -121,7 +126,11 @@ fun MedicationSheet(
+                     errors = draft.errors,
+                     isExistingRow = isExistingRow,
+                     enabled = enabled,
+-                    draftKey = "${draft.editorSessionId}:${draft.medicationId}",
++                    draftKey = draftKey,
++                    // The next drug of "Save and add another": its name takes focus, so the keyboard stays up,
++                    // whether this sheet stayed on screen between the two drafts or was shown again.
++                    focusNameOnStart = draft.chainedAdd && nameFocusedFor != draftKey,
++                    onNameFocused = { nameFocusedFor = draftKey },
+                     onEvent = onEvent,
+                 )
+             }
+@@ -177,6 +186,8 @@ private fun SaveMessage(savePhase: SavePhase, saveError: SaveUiError?, hasFieldE
+         modifier = Modifier
+             .fillMaxWidth()
+             .semantics { liveRegion = LiveRegionMode.Polite }
++            // A failed save is shown at the top of the body; bring it back if the doctor had scrolled down.
++            .revealWhen(isFailure)
+             .testTag("medSaveMessage"),
+     ) {
+         if (isFailure) {
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationTapToAddSection.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationTapToAddSection.kt
+index 8f23f63..9a360c4 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationTapToAddSection.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationTapToAddSection.kt
+@@ -1,31 +1,57 @@
+ package com.sherifradwan.ancnative.ui.patienthub.components
+ 
+ import androidx.compose.foundation.BorderStroke
++import androidx.compose.foundation.ExperimentalFoundationApi
++import androidx.compose.foundation.layout.ExperimentalLayoutApi
++import androidx.compose.foundation.layout.WindowInsets
++import androidx.compose.foundation.layout.isImeVisible
++import androidx.compose.foundation.relocation.BringIntoViewRequester
++import androidx.compose.foundation.relocation.bringIntoViewRequester
++import androidx.compose.foundation.text.KeyboardActions
++import androidx.compose.foundation.text.KeyboardOptions
++import androidx.compose.runtime.LaunchedEffect
++import androidx.compose.runtime.withFrameNanos
++import androidx.compose.ui.focus.onFocusChanged
++import androidx.compose.ui.geometry.Rect
++import androidx.compose.ui.platform.LocalDensity
++import androidx.compose.ui.platform.LocalSoftwareKeyboardController
++import androidx.compose.ui.text.input.ImeAction
++import androidx.compose.ui.text.input.KeyboardType
+ import androidx.compose.foundation.clickable
+ import androidx.compose.foundation.layout.Arrangement
+ import androidx.compose.foundation.layout.Column
+ import androidx.compose.foundation.layout.Row
+ import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.heightIn
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.layout.size
++import androidx.compose.foundation.rememberScrollState
+ import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.foundation.verticalScroll
+ import androidx.compose.material.icons.Icons
++import androidx.compose.material.icons.filled.Add
+ import androidx.compose.material.icons.filled.Check
++import androidx.compose.material.icons.filled.KeyboardArrowDown
++import androidx.compose.material.icons.filled.KeyboardArrowUp
+ import androidx.compose.material3.FilterChip
+ import androidx.compose.material3.Icon
+ import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.Surface
+ import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
++import androidx.compose.runtime.Stable
+ import androidx.compose.runtime.collectAsState
+ import androidx.compose.runtime.getValue
+ import androidx.compose.runtime.mutableStateOf
+ import androidx.compose.runtime.remember
++import androidx.compose.runtime.saveable.Saver
++import androidx.compose.runtime.saveable.listSaver
+ import androidx.compose.runtime.saveable.rememberSaveable
+ import androidx.compose.runtime.setValue
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.draw.alpha
++import androidx.compose.ui.draw.clip
+ import androidx.compose.ui.platform.LocalContext
+ import androidx.compose.ui.platform.testTag
+ import androidx.compose.ui.res.stringResource
+@@ -38,186 +64,291 @@ import com.sherifradwan.ancnative.R
+ import com.sherifradwan.ancnative.model.DemoPatient
+ import com.sherifradwan.ancnative.model.catalog.ClinicalCatalogRepository
+ import com.sherifradwan.ancnative.model.catalog.CustomChoiceList
+-import com.sherifradwan.ancnative.model.isOngoingMedication
+ import com.sherifradwan.ancnative.state.AncEvent
+-import com.sherifradwan.ancnative.state.DEFAULT_MEDICATION_ROUTE
+ import com.sherifradwan.ancnative.state.MedicationPrefill
+ import com.sherifradwan.ancnative.ui.EditorField
+-import com.sherifradwan.ancnative.ui.SectionCard
++import com.sherifradwan.ancnative.ui.medicationDoseRouteFrequency
++import com.sherifradwan.ancnative.ui.medicationFrequencyLabel
+ import com.sherifradwan.ancnative.ui.minimumTouchTarget
+ import com.sherifradwan.ancnative.ui.patienthub.model.MedicationTile
++import com.sherifradwan.ancnative.ui.patienthub.model.PICKER_SOURCE_COMMON
++import com.sherifradwan.ancnative.ui.patienthub.model.PICKER_SOURCE_RECENT
++import com.sherifradwan.ancnative.ui.patienthub.model.activeMedicationKeys
+ import com.sherifradwan.ancnative.ui.patienthub.model.filterMedicationTiles
++import com.sherifradwan.ancnative.ui.patienthub.model.isAlreadyActive
++import com.sherifradwan.ancnative.ui.patienthub.model.medicationTiles
+ import java.util.UUID
+ 
+-private const val DISABLED_TILE_ALPHA = 0.38f
++/** About five tiles (56 dp each with their gaps) show before the list scrolls inside itself. */
++private val PICKER_LIST_MAX_HEIGHT = 304.dp
++
++/** How much of the results is kept above the keyboard while searching: the first tile and its gap. */
++private val PICKER_FIRST_ROW = 64.dp
++
++/**
++ * What the picker shows: open or closed, the search text and the source chip. The Meds tab keeps one per patient
++ * in saved state, so adding, stopping, editing, rotation and tab swipes leave it as it was.
++ */
++@Stable
++class MedicationPickerState(expanded: Boolean = false, query: String = "", source: String = PICKER_SOURCE_COMMON) {
++    var expanded by mutableStateOf(expanded)
++    var query by mutableStateOf(query)
++    var source by mutableStateOf(source)
++
++    companion object {
++        val Saver: Saver<MedicationPickerState, Any> = listSaver(
++            save = { listOf(it.expanded, it.query, it.source) },
++            restore = { MedicationPickerState(it[0] as Boolean, it[1] as String, it[2] as String) },
++        )
++    }
++}
++
++@Composable
++fun rememberMedicationPickerState(patientId: String): MedicationPickerState =
++    rememberSaveable(patientId, saver = MedicationPickerState.Saver) { MedicationPickerState() }
+ 
+ /**
+- * The add picker. A tile opens the medication sheet filled with its dose, route and frequency through one
+- * [AncEvent.StartMedicationEditor]. A tile for a drug that is already active shows its check and does nothing.
+- * While [enabled] is false (a save runs or a draft is open) every tile is visibly disabled.
++ * The add picker: one "Add medication" row that opens to a search field, the Common and Recent chips and a list
++ * with a limited height that scrolls inside itself. A tile opens the medication sheet filled with its dose, route
++ * and frequency through one [AncEvent.StartMedicationEditor]. A tile for a drug that is already active shows its
++ * check and does nothing. While [enabled] is false (a save runs or a draft is open) every control is visibly disabled.
+  */
+ @Composable
+ fun MedicationTapToAddSection(
+     patient: DemoPatient,
+     enabled: Boolean,
++    state: MedicationPickerState,
+     onEvent: (AncEvent) -> Unit,
+     modifier: Modifier = Modifier,
++) {
++    Column(
++        modifier = modifier.fillMaxWidth().testTag("medPicker"),
++        verticalArrangement = Arrangement.spacedBy(8.dp),
++    ) {
++        PickerToggle(expanded = state.expanded, enabled = enabled, onToggle = { state.expanded = !state.expanded })
++        if (state.expanded) {
++            PickerPanel(patient = patient, enabled = enabled, state = state, onEvent = onEvent)
++        }
++    }
++}
++
++@Composable
++private fun PickerToggle(expanded: Boolean, enabled: Boolean, onToggle: () -> Unit) {
++    val stateText = stringResource(if (expanded) R.string.state_expanded else R.string.state_collapsed)
++    val actionText = stringResource(if (expanded) R.string.action_collapse else R.string.action_expand)
++    // Dimmed as a whole (border and background too) while disabled.
++    Surface(
++        modifier = Modifier
++            .fillMaxWidth()
++            .heightIn(min = 56.dp)
++            .alpha(if (enabled) 1f else MEDICATION_DISABLED_ALPHA)
++            .testTag("medPickerToggle")
++            .semantics { stateDescription = stateText }
++            .clip(RoundedCornerShape(14.dp))
++            .clickable(enabled = enabled, role = Role.Button, onClickLabel = actionText, onClick = onToggle),
++        shape = RoundedCornerShape(14.dp),
++        color = MaterialTheme.colorScheme.surfaceContainerLow,
++        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
++    ) {
++        Row(
++            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
++            verticalAlignment = Alignment.CenterVertically,
++            horizontalArrangement = Arrangement.spacedBy(10.dp),
++        ) {
++            // Both icons are decorative: the row's text, state and click label say it all.
++            Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
++            Text(
++                text = stringResource(R.string.add_medication),
++                style = MaterialTheme.typography.titleMedium,
++                fontWeight = FontWeight.Bold,
++                modifier = Modifier.weight(1f),
++            )
++            Icon(
++                imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
++                contentDescription = null,
++                tint = MaterialTheme.colorScheme.onSurfaceVariant,
++            )
++        }
++    }
++}
++
++@OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
++@Composable
++private fun PickerPanel(
++    patient: DemoPatient,
++    enabled: Boolean,
++    state: MedicationPickerState,
++    onEvent: (AncEvent) -> Unit,
+ ) {
+     val context = LocalContext.current
+     val catalogRepo = remember { ClinicalCatalogRepository.getInstance(context) }
+     val catalogMedItems by catalogRepo.medicationCatalogItems.collectAsState()
+     val customChoices by catalogRepo.customChoices(CustomChoiceList.MEDICATION_NAME).collectAsState(initial = emptyList())
+ 
+-    var searchQuery by rememberSaveable { mutableStateOf("") }
+-    var selectedTab by rememberSaveable { mutableStateOf("common") }
++    // While the doctor types with the keyboard up, the top of the results is scrolled into view above it.
++    val keyboard = LocalSoftwareKeyboardController.current
++    val resultsRequester = remember { BringIntoViewRequester() }
++    var searchFocused by remember { mutableStateOf(false) }
++    val imeVisible = WindowInsets.isImeVisible
++    val firstRowPx = with(LocalDensity.current) { PICKER_FIRST_ROW.toPx() }
++    LaunchedEffect(state.query, state.source, imeVisible, searchFocused) {
++        if (searchFocused && imeVisible) {
++            withFrameNanos { }
++            resultsRequester.bringIntoView(Rect(0f, 0f, 1f, firstRowPx))
++        }
++    }
+ 
+-    SectionCard(
+-        title = stringResource(R.string.tap_to_add),
+-        tag = "medTapToAddCard",
+-        modifier = modifier,
++    EditorField(
++        value = state.query,
++        onValueChange = { state.query = it },
++        label = stringResource(R.string.search_drugs_placeholder),
++        tag = "medSearchField",
++        modifier = Modifier.onFocusChanged { searchFocused = it.isFocused },
++        enabled = enabled,
++        singleLine = true,
++        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Search),
++        keyboardActions = KeyboardActions(onSearch = { keyboard?.hide() }),
++    )
++
++    Row(
++        modifier = Modifier.fillMaxWidth(),
++        horizontalArrangement = Arrangement.spacedBy(8.dp),
+     ) {
+-        Text(
+-            text = stringResource(R.string.tap_to_add_sub),
+-            style = MaterialTheme.typography.bodySmall,
+-            color = MaterialTheme.colorScheme.onSurfaceVariant,
++        FilterChip(
++            selected = state.source == PICKER_SOURCE_COMMON,
++            onClick = { state.source = PICKER_SOURCE_COMMON },
++            enabled = enabled,
++            label = { Text(stringResource(R.string.tab_common), maxLines = 1, softWrap = false) },
++            modifier = Modifier.minimumTouchTarget().testTag("medTab-common"),
++        )
++        FilterChip(
++            selected = state.source == PICKER_SOURCE_RECENT,
++            onClick = { state.source = PICKER_SOURCE_RECENT },
++            enabled = enabled,
++            label = { Text(stringResource(R.string.tab_recent), maxLines = 1, softWrap = false) },
++            modifier = Modifier.minimumTouchTarget().testTag("medTab-recent"),
+         )
++    }
+ 
+-        EditorField(
+-            value = searchQuery,
+-            onValueChange = { searchQuery = it },
+-            label = stringResource(R.string.search_drugs_placeholder),
+-            tag = "medSearchField",
+-            singleLine = true,
++    val allTiles = remember(catalogMedItems, customChoices) { medicationTiles(catalogMedItems, customChoices) }
++    val pastNames = remember(patient.medications) { patient.medications.mapTo(HashSet()) { it.name } }
++    val activeKeys = remember(patient.medications) { activeMedicationKeys(patient.medications) }
++    val filteredTiles = remember(state.query, state.source, allTiles, pastNames) {
++        filterMedicationTiles(
++            allTiles = allTiles,
++            selectedTab = state.source,
++            searchQuery = state.query,
++            pastMedicationNames = pastNames,
+         )
++    }
+ 
+-        Row(
+-            modifier = Modifier.fillMaxWidth(),
+-            horizontalArrangement = Arrangement.spacedBy(8.dp),
++    if (filteredTiles.isEmpty()) {
++        Text(
++            text = stringResource(
++                if (state.source == PICKER_SOURCE_RECENT && state.query.isBlank()) {
++                    R.string.no_recent_medications
++                } else {
++                    R.string.medication_picker_no_match
++                },
++                stringResource(R.string.prescribe_medication),
++            ),
++            style = MaterialTheme.typography.bodySmall,
++            color = MaterialTheme.colorScheme.onSurfaceVariant,
++            modifier = Modifier.bringIntoViewRequester(resultsRequester).padding(vertical = 8.dp).testTag("medPickerEmpty"),
++        )
++    } else {
++        Column(
++            modifier = Modifier
++                .fillMaxWidth()
++                .bringIntoViewRequester(resultsRequester)
++                .heightIn(max = PICKER_LIST_MAX_HEIGHT)
++                .verticalScroll(rememberScrollState())
++                .testTag("medTilesGrid"),
++            verticalArrangement = Arrangement.spacedBy(6.dp),
+         ) {
+-            FilterChip(
+-                selected = selectedTab == "common",
+-                onClick = { selectedTab = "common" },
+-                label = { Text(stringResource(R.string.tab_common), maxLines = 1, softWrap = false) },
+-                modifier = Modifier.minimumTouchTarget().testTag("medTab-common"),
+-            )
+-            FilterChip(
+-                selected = selectedTab == "recent",
+-                onClick = { selectedTab = "recent" },
+-                label = { Text(stringResource(R.string.tab_recent), maxLines = 1, softWrap = false) },
+-                modifier = Modifier.minimumTouchTarget().testTag("medTab-recent"),
+-            )
+-        }
+-
+-        val allTiles = remember(catalogMedItems, customChoices) {
+-            val catalog = catalogMedItems.map {
+-                MedicationTile(
+-                    id = it.id,
+-                    name = it.name,
+-                    dosage = it.dosage,
+-                    route = it.route,
+-                    frequency = it.frequency,
+-                    isCustom = it.isCustom,
+-                )
+-            }
+-            val custom = customChoices.map {
+-                MedicationTile(
+-                    id = "custom_${it.id}",
+-                    name = it.label,
+-                    dosage = "",
+-                    route = DEFAULT_MEDICATION_ROUTE,
+-                    frequency = "",
+-                    isCustom = true,
++            filteredTiles.forEach { tile ->
++                MedicationPickerTile(
++                    tile = tile,
++                    isActive = tile.isAlreadyActive(activeKeys),
++                    enabled = enabled,
++                    onClick = {
++                        onEvent(
++                            AncEvent.StartMedicationEditor(
++                                patientId = patient.id,
++                                medicationId = null,
++                                newMedicationId = UUID.randomUUID().toString(),
++                                editorSessionId = UUID.randomUUID().toString(),
++                                prefill = MedicationPrefill(
++                                    name = tile.name,
++                                    dosage = tile.dosage,
++                                    route = tile.route,
++                                    frequency = tile.frequency,
++                                ),
++                            ),
++                        )
++                    },
+                 )
+             }
+-            catalog + custom
+-        }
+-
+-        val pastMeds = remember(patient.medications) {
+-            patient.medications.map { it.name.trim() }.distinctBy { it.lowercase() }.toSet()
+-        }
+-
+-        val filteredTiles = remember(searchQuery, selectedTab, allTiles, pastMeds) {
+-            filterMedicationTiles(
+-                allTiles = allTiles,
+-                selectedTab = selectedTab,
+-                searchQuery = searchQuery,
+-                pastMedicationNames = pastMeds,
+-            )
+         }
++    }
++}
+ 
+-        if (selectedTab == "recent" && filteredTiles.isEmpty()) {
+-            Text(
+-                text = stringResource(R.string.no_recent_medications),
+-                style = MaterialTheme.typography.bodySmall,
+-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+-                modifier = Modifier.padding(vertical = 8.dp),
+-            )
++@Composable
++private fun MedicationPickerTile(tile: MedicationTile, isActive: Boolean, enabled: Boolean, onClick: () -> Unit) {
++    // "dose · route · frequency", as on the rows. A tile with no saved dose asks for one; a tile with no saved
++    // frequency says the doctor chooses it in the sheet.
++    val meta = if (tile.dosage.isBlank()) {
++        stringResource(R.string.set_dose_in_editor)
++    } else {
++        val frequency = if (tile.frequency.isBlank()) {
++            stringResource(R.string.medication_choose_frequency)
+         } else {
+-            Column(
+-                modifier = Modifier.fillMaxWidth().testTag("medTilesGrid"),
+-                verticalArrangement = Arrangement.spacedBy(6.dp),
+-            ) {
+-                filteredTiles.forEach { tile ->
+-                    val isActive = patient.medications.any {
+-                        it.name.equals(tile.name, ignoreCase = true) && isOngoingMedication(it.status, it.isNonCompliant)
+-                    }
+-                    val subtitleText = if (tile.dosage.isNotBlank()) {
+-                        "${tile.dosage} · ${tile.route}"
+-                    } else {
+-                        stringResource(R.string.set_dose_in_editor)
+-                    }
+-                    val alreadyOnList = stringResource(R.string.already_on_todays_list, tile.name)
+-                    val tileEnabled = enabled && !isActive
+-                    Surface(
+-                        modifier = Modifier
+-                            .fillMaxWidth()
+-                            .minimumTouchTarget()
+-                            .testTag("medTile-${tile.id}")
+-                            .semantics { if (isActive) stateDescription = alreadyOnList }
+-                            .alpha(if (enabled || isActive) 1f else DISABLED_TILE_ALPHA)
+-                            .clickable(enabled = tileEnabled, role = Role.Button) {
+-                                onEvent(
+-                                    AncEvent.StartMedicationEditor(
+-                                        patientId = patient.id,
+-                                        medicationId = null,
+-                                        newMedicationId = UUID.randomUUID().toString(),
+-                                        editorSessionId = UUID.randomUUID().toString(),
+-                                        prefill = MedicationPrefill(
+-                                            name = tile.name,
+-                                            dosage = tile.dosage,
+-                                            route = tile.route,
+-                                            frequency = tile.frequency,
+-                                        ),
+-                                    ),
+-                                )
+-                            },
+-                        shape = RoundedCornerShape(14.dp),
+-                        color = if (isActive) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface,
+-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+-                    ) {
+-                        Row(
+-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp).fillMaxWidth(),
+-                            horizontalArrangement = Arrangement.SpaceBetween,
+-                            verticalAlignment = Alignment.CenterVertically,
+-                        ) {
+-                            Column(modifier = Modifier.weight(1f)) {
+-                                Text(tile.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+-                                Text(
+-                                    subtitleText,
+-                                    style = MaterialTheme.typography.bodySmall,
+-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+-                                )
+-                            }
+-                            if (isActive) {
+-                                Icon(
+-                                    imageVector = Icons.Default.Check,
+-                                    contentDescription = null,
+-                                    tint = MaterialTheme.colorScheme.primary,
+-                                    modifier = Modifier.size(20.dp),
+-                                )
+-                            }
+-                        }
+-                    }
++            medicationFrequencyLabel(tile.frequency)
++        }
++        medicationDoseRouteFrequency(tile.dosage, tile.route, frequency)
++    }
++    val alreadyOnList = stringResource(R.string.already_on_todays_list, tile.name)
++    Surface(
++        modifier = Modifier
++            .fillMaxWidth()
++            .minimumTouchTarget()
++            .testTag("medTile-${tile.id}")
++            .semantics { if (isActive) stateDescription = alreadyOnList }
++            .alpha(if (enabled || isActive) 1f else MEDICATION_DISABLED_ALPHA)
++            .clip(RoundedCornerShape(14.dp))
++            .clickable(enabled = enabled && !isActive, role = Role.Button, onClick = onClick),
++        shape = RoundedCornerShape(14.dp),
++        color = if (isActive) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface,
++        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
++    ) {
++        Row(
++            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp).fillMaxWidth(),
++            horizontalArrangement = Arrangement.spacedBy(8.dp),
++            verticalAlignment = Alignment.CenterVertically,
++        ) {
++            Column(modifier = Modifier.weight(1f)) {
++                Text(tile.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
++                Text(
++                    meta,
++                    style = MaterialTheme.typography.bodySmall,
++                    color = MaterialTheme.colorScheme.onSurfaceVariant,
++                    modifier = Modifier.testTag("medTileMeta-${tile.id}"),
++                )
++            }
++            if (isActive) {
++                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
++                    Icon(
++                        imageVector = Icons.Default.Check,
++                        contentDescription = null,
++                        tint = MaterialTheme.colorScheme.primary,
++                        modifier = Modifier.size(20.dp).testTag("medTileCheck-${tile.id}"),
++                    )
++                    Text(
++                        stringResource(R.string.medication_status_active),
++                        style = MaterialTheme.typography.labelMedium,
++                        fontWeight = FontWeight.Bold,
++                        color = MaterialTheme.colorScheme.primary,
++                    )
+                 }
+             }
+         }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/MedicationTiles.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/MedicationTiles.kt
+index 7083153..ce110e0 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/MedicationTiles.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/MedicationTiles.kt
+@@ -1,5 +1,11 @@
+ package com.sherifradwan.ancnative.ui.patienthub.model
+ 
++import com.sherifradwan.ancnative.model.DemoMedicationRecord
++import com.sherifradwan.ancnative.model.catalog.CustomChoiceItem
++import com.sherifradwan.ancnative.model.catalog.MedicationCatalogItem
++import com.sherifradwan.ancnative.model.isOngoingMedication
++import com.sherifradwan.ancnative.state.DEFAULT_MEDICATION_ROUTE
++
+ /** One picker tile. Its dose, route and frequency fill a new draft; a custom-choice tile has a blank dose and frequency. */
+ data class MedicationTile(
+     val id: String,
+@@ -10,6 +16,37 @@ data class MedicationTile(
+     val isCustom: Boolean = false,
+ )
+ 
++/** The picker's two sources: every drug on the list, or only drugs this patient has been given before. */
++const val PICKER_SOURCE_COMMON = "common"
++const val PICKER_SOURCE_RECENT = "recent"
++
++/**
++ * The one rule for "the same drug name" in the picker: trimmed and without case, the way a save stores the name
++ * (trimmed). Recent uses it, and the already-active check builds on it with the route.
++ */
++fun medicationNameKey(name: String): String = name.trim().lowercase()
++
++/** The picker's tiles: the medication list, then the doctor's own drug names (blank dose and frequency, default route). */
++fun medicationTiles(catalog: List<MedicationCatalogItem>, customNames: List<CustomChoiceItem>): List<MedicationTile> =
++    catalog.map { MedicationTile(it.id, it.name, it.dosage, it.route, it.frequency, it.isCustom) } +
++        customNames.map { MedicationTile("custom_${it.id}", it.label, "", DEFAULT_MEDICATION_ROUTE, "", isCustom = true) }
++
++/**
++ * The already-active key: the [medicationNameKey] of the name and of the route, joined by a pipe so one cannot run into the
++ * other. A different route is a different drug, so a patient on oral ferrous sulfate can still open the intramuscular tile.
++ */
++fun medicationNameRouteKey(name: String, route: String): String = "${medicationNameKey(name)}|${medicationNameKey(route)}"
++
++/** Name and route keys of the drugs this patient takes now. A tile that matches one must not start a second prescription. */
++fun activeMedicationKeys(medications: List<DemoMedicationRecord>): Set<String> =
++    medications.filter { isOngoingMedication(it.status, it.isNonCompliant) }.mapTo(HashSet()) { medicationNameRouteKey(it.name, it.route) }
++
++fun MedicationTile.isAlreadyActive(activeKeys: Set<String>): Boolean = medicationNameRouteKey(name, route) in activeKeys
++
++/**
++ * The tiles the picker shows for [selectedTab] and [searchQuery]. Recent keeps the tiles whose name (by
++ * [medicationNameKey]) is among [pastMedicationNames], the names of every drug the patient has had.
++ */
+ fun filterMedicationTiles(
+     allTiles: List<MedicationTile>,
+     selectedTab: String,
+@@ -17,8 +54,9 @@ fun filterMedicationTiles(
+     pastMedicationNames: Set<String>,
+ ): List<MedicationTile> {
+     val q = searchQuery.trim().lowercase()
+-    val baseList = if (selectedTab == "recent") {
+-        allTiles.filter { it.name.trim().lowercase() in pastMedicationNames }
++    val baseList = if (selectedTab == PICKER_SOURCE_RECENT) {
++        val past = pastMedicationNames.mapTo(HashSet(), ::medicationNameKey)
++        allTiles.filter { medicationNameKey(it.name) in past }
+     } else {
+         allTiles
+     }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt
+index 9285e49..57355ce 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/MedsTab.kt
+@@ -1,12 +1,17 @@
+ package com.sherifradwan.ancnative.ui.patienthub.tabs
+ 
++import androidx.compose.foundation.clickable
+ import androidx.compose.foundation.layout.Arrangement
+ import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.ExperimentalLayoutApi
++import androidx.compose.foundation.layout.Box
++import androidx.compose.foundation.layout.FlowRow
+ import androidx.compose.foundation.layout.PaddingValues
+ import androidx.compose.foundation.layout.Row
+ import androidx.compose.foundation.layout.Spacer
+ import androidx.compose.foundation.layout.fillMaxSize
+ import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.imePadding
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.layout.size
+ import androidx.compose.foundation.layout.width
+@@ -15,6 +20,8 @@ import androidx.compose.foundation.lazy.items
+ import androidx.compose.foundation.shape.RoundedCornerShape
+ import androidx.compose.material.icons.Icons
+ import androidx.compose.material.icons.filled.Add
++import androidx.compose.material.icons.filled.KeyboardArrowDown
++import androidx.compose.material.icons.filled.KeyboardArrowUp
+ import androidx.compose.material3.Button
+ import androidx.compose.material3.ButtonDefaults
+ import androidx.compose.material3.Icon
+@@ -30,8 +37,16 @@ import androidx.compose.runtime.setValue
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.res.pluralStringResource
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.semantics.Role
++import androidx.compose.ui.semantics.semantics
++import androidx.compose.ui.semantics.stateDescription
+ import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.text.style.TextAlign
+ import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.model.DemoMedicationRecord
+ import com.sherifradwan.ancnative.model.DemoPatient
+ import com.sherifradwan.ancnative.model.isOngoingMedication
+ import com.sherifradwan.ancnative.state.AncEvent
+@@ -44,12 +59,14 @@ import com.sherifradwan.ancnative.state.blocksEditing
+ import com.sherifradwan.ancnative.storage.DeletableType
+ import com.sherifradwan.ancnative.ui.minimumTouchTarget
+ import com.sherifradwan.ancnative.ui.patienthub.components.MedicationCard
+-import com.sherifradwan.ancnative.ui.patienthub.components.MedicationTapToAddSection
+ import com.sherifradwan.ancnative.ui.patienthub.components.MedicationStopBar
++import com.sherifradwan.ancnative.ui.patienthub.components.MedicationTapToAddSection
++import com.sherifradwan.ancnative.ui.patienthub.components.rememberMedicationPickerState
+ import java.util.UUID
+ 
+ /**
+- * The Meds tab. Adding, editing and stopping never leave it: tiles, edit and "Prescribe" open the medication sheet
++ * The Meds tab, review first: the active list, then the collapsed "Add medication" picker, then stopped drugs behind
++ * "Show past". Adding, editing and stopping never leave it: tiles, edit and "Prescribe" open the medication sheet
+  * (hosted by the hub) through one [AncEvent.StartMedicationEditor], and the stop symbol saves at once through
+  * [AncEvent.StopMedication]. [canEdit] shows the controls (patient not archived); they are visibly disabled while
+  * [actionsAllowed] is false, a save runs or [medicationDraft] is open.
+@@ -68,7 +85,8 @@ fun MedsTab(
+     modifier: Modifier = Modifier,
+ ) {
+     val entryEnabled = canEdit && actionsAllowed && medicationDraft == null && !savePhase.blocksEditing()
+-    Column(modifier = modifier.fillMaxSize()) {
++    // The keyboard (picker search) shortens the list instead of covering its end.
++    Column(modifier = modifier.fillMaxSize().imePadding()) {
+         MedsList(
+             patient = patient,
+             canEdit = canEdit,
+@@ -87,6 +105,7 @@ fun MedsTab(
+     }
+ }
+ 
++@OptIn(ExperimentalLayoutApi::class)
+ @Composable
+ private fun MedsList(
+     patient: DemoPatient,
+@@ -102,7 +121,32 @@ private fun MedsList(
+         patient.medications.filter { !isOngoingMedication(it.status, it.isNonCompliant) }
+     }
+ 
+-    var expandedMedId by rememberSaveable { mutableStateOf<String?>(null) }
++    // Kept here, above the lazy items, in saved state per patient: adding, stopping, editing, rotation and tab swipes
++    // leave the open card, the picker and the "Show past" toggle as they were.
++    var expandedMedId by rememberSaveable(patient.id) { mutableStateOf<String?>(null) }
++    var showPast by rememberSaveable(patient.id) { mutableStateOf(false) }
++    val pickerState = rememberMedicationPickerState(patient.id)
++
++    val startBlank = {
++        onEvent(
++            AncEvent.StartMedicationEditor(
++                patientId = patient.id,
++                medicationId = null,
++                newMedicationId = UUID.randomUUID().toString(),
++                editorSessionId = UUID.randomUUID().toString(),
++            ),
++        )
++    }
++    val startEdit = { med: DemoMedicationRecord ->
++        onEvent(
++            AncEvent.StartMedicationEditor(
++                patientId = patient.id,
++                medicationId = med.id,
++                newMedicationId = med.id,
++                editorSessionId = UUID.randomUUID().toString(),
++            ),
++        )
++    }
+ 
+     LazyColumn(
+         modifier = modifier
+@@ -111,142 +155,172 @@ private fun MedsList(
+         contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 48.dp),
+         verticalArrangement = Arrangement.spacedBy(14.dp),
+     ) {
+-        // Fast Formulary Tap-to-Add Section
+-        if (canEdit) {
+-            item {
+-                MedicationTapToAddSection(
+-                    patient = patient,
+-                    enabled = entryEnabled,
+-                    onEvent = onEvent,
+-                )
+-            }
+-        }
+-
+-        // Active Prescriptions Header & List
+-        item {
+-            Row(
++        // Fixed keys, so the rows keep their places (and the list its scroll position) as drugs move between lists.
++        item(key = "medsActiveHeader") {
++            // Title and "Prescribe" share a line when they fit; with large text the button wraps under the title.
++            FlowRow(
+                 modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+-                horizontalArrangement = Arrangement.SpaceBetween,
+-                verticalAlignment = Alignment.CenterVertically,
++                horizontalArrangement = Arrangement.spacedBy(8.dp),
++                verticalArrangement = Arrangement.spacedBy(4.dp),
++                itemVerticalAlignment = Alignment.CenterVertically,
+             ) {
+                 Text(
+-                    text = "Active Prescriptions (${activeMeds.size})",
++                    text = pluralStringResource(R.plurals.active_prescriptions_title, activeMeds.size, activeMeds.size),
+                     style = MaterialTheme.typography.titleMedium,
+                     fontWeight = FontWeight.Bold,
+                     color = MaterialTheme.colorScheme.primary,
++                    modifier = Modifier.testTag("medsActiveTitle"),
+                 )
+-                if (canEdit) {
+-                    Button(
+-                        enabled = entryEnabled,
+-                        onClick = {
+-                            onEvent(
+-                                AncEvent.StartMedicationEditor(
+-                                    patientId = patient.id,
+-                                    medicationId = null,
+-                                    newMedicationId = UUID.randomUUID().toString(),
+-                                    editorSessionId = UUID.randomUUID().toString(),
+-                                ),
+-                            )
+-                        },
+-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+-                        shape = RoundedCornerShape(10.dp),
+-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+-                        modifier = Modifier.minimumTouchTarget().testTag("addCustomMedicationBtn"),
+-                    ) {
+-                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+-                        Spacer(Modifier.width(4.dp))
+-                        Text("Prescribe", fontWeight = FontWeight.Bold, softWrap = false)
++                // With no medication at all the empty state carries the one primary "Prescribe" action.
++                if (canEdit && patient.medications.isNotEmpty()) {
++                    // The weight gives the button the rest of the line, or a whole line when it wraps, and it sits at the end.
++                    Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
++                        Button(
++                            enabled = entryEnabled,
++                            onClick = startBlank,
++                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
++                            shape = RoundedCornerShape(10.dp),
++                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
++                            modifier = Modifier.minimumTouchTarget().testTag("addCustomMedicationBtn"),
++                        ) {
++                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
++                            Spacer(Modifier.width(4.dp))
++                            Text(stringResource(R.string.prescribe_medication), fontWeight = FontWeight.Bold)
++                        }
+                     }
+                 }
+             }
+         }
+ 
+-        if (activeMeds.isEmpty()) {
+-            item {
+-                Surface(
+-                    shape = RoundedCornerShape(12.dp),
+-                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+-                    modifier = Modifier.fillMaxWidth(),
+-                ) {
+-                    Text(
+-                        text = "No records",
+-                        style = MaterialTheme.typography.bodyMedium,
+-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+-                        modifier = Modifier.padding(16.dp),
+-                    )
+-                }
++        if (patient.medications.isEmpty()) {
++            item(key = "medsEmpty") {
++                MedsEmptyState(canEdit = canEdit, enabled = entryEnabled, onPrescribe = startBlank)
+             }
+-        } else {
+-            items(
+-                items = activeMeds,
+-                key = { it.id },
+-            ) { med ->
+-                MedicationCard(
+-                    med = med,
+-                    isExpanded = expandedMedId == med.id,
+-                    canEdit = canEdit,
+-                    actionsEnabled = entryEnabled,
+-                    onToggle = {
+-                        expandedMedId = if (expandedMedId == med.id) null else med.id
+-                    },
+-                    onStop = {
+-                        onEvent(AncEvent.StopMedication(patient.id, med.id, UUID.randomUUID().toString()))
+-                    },
+-                    onEdit = {
+-                        onEvent(
+-                            AncEvent.StartMedicationEditor(
+-                                patientId = patient.id,
+-                                medicationId = med.id,
+-                                newMedicationId = med.id,
+-                                editorSessionId = UUID.randomUUID().toString(),
+-                            ),
+-                        )
+-                    },
+-                    onDelete = {
+-                        onEvent(AncEvent.RequestDelete(patient.id, DeletableType.MEDICATION, med.id))
+-                    },
++        } else if (activeMeds.isEmpty()) {
++            item(key = "medsNoActive") {
++                Text(
++                    text = stringResource(R.string.no_active_medications),
++                    style = MaterialTheme.typography.bodyMedium,
++                    color = MaterialTheme.colorScheme.onSurfaceVariant,
++                    modifier = Modifier.padding(horizontal = 4.dp).testTag("medsNoActive"),
+                 )
+             }
+         }
+ 
+-        // Past / Discontinued Prescriptions
+-        if (pastMeds.isNotEmpty()) {
+-            item {
+-                Text(
+-                    text = "Discontinued / Past Prescriptions (${pastMeds.size})",
+-                    style = MaterialTheme.typography.titleMedium,
+-                    fontWeight = FontWeight.Bold,
+-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+-                    modifier = Modifier.padding(top = 10.dp),
++        items(items = activeMeds, key = { it.id }) { med ->
++            MedicationCard(
++                med = med,
++                isExpanded = expandedMedId == med.id,
++                canEdit = canEdit,
++                actionsEnabled = entryEnabled,
++                onToggle = { expandedMedId = if (expandedMedId == med.id) null else med.id },
++                onStop = { onEvent(AncEvent.StopMedication(patient.id, med.id, UUID.randomUUID().toString())) },
++                onEdit = { startEdit(med) },
++                onDelete = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.MEDICATION, med.id)) },
++            )
++        }
++
++        if (canEdit) {
++            item(key = "medsPicker") {
++                MedicationTapToAddSection(
++                    patient = patient,
++                    enabled = entryEnabled,
++                    state = pickerState,
++                    onEvent = onEvent,
+                 )
+             }
+-            items(
+-                items = pastMeds,
+-                key = { it.id },
+-            ) { med ->
+-                MedicationCard(
+-                    med = med,
+-                    isExpanded = expandedMedId == med.id,
+-                    canEdit = canEdit,
+-                    actionsEnabled = entryEnabled,
+-                    onToggle = {
+-                        expandedMedId = if (expandedMedId == med.id) null else med.id
+-                    },
+-                    onEdit = {
+-                        onEvent(
+-                            AncEvent.StartMedicationEditor(
+-                                patientId = patient.id,
+-                                medicationId = med.id,
+-                                newMedicationId = med.id,
+-                                editorSessionId = UUID.randomUUID().toString(),
+-                            ),
+-                        )
+-                    },
+-                    onDelete = {
+-                        onEvent(AncEvent.RequestDelete(patient.id, DeletableType.MEDICATION, med.id))
+-                    },
+-                )
++        }
++
++        if (pastMeds.isNotEmpty()) {
++            item(key = "medsPastToggle") {
++                ShowPastToggle(count = pastMeds.size, shown = showPast, onToggle = { showPast = !showPast })
++            }
++            if (showPast) {
++                // Stopped rows get no stop callback, so they never show the stop symbol.
++                items(items = pastMeds, key = { it.id }) { med ->
++                    MedicationCard(
++                        med = med,
++                        isExpanded = expandedMedId == med.id,
++                        canEdit = canEdit,
++                        actionsEnabled = entryEnabled,
++                        onToggle = { expandedMedId = if (expandedMedId == med.id) null else med.id },
++                        onEdit = { startEdit(med) },
++                        onDelete = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.MEDICATION, med.id)) },
++                    )
++                }
+             }
+         }
+     }
+ }
++
++/** No medication at all: says so and offers the first prescription as the main action (none when read-only). */
++@Composable
++private fun MedsEmptyState(canEdit: Boolean, enabled: Boolean, onPrescribe: () -> Unit) {
++    Surface(
++        shape = RoundedCornerShape(12.dp),
++        color = MaterialTheme.colorScheme.surfaceContainerLow,
++        modifier = Modifier.fillMaxWidth().testTag("medsEmptyState"),
++    ) {
++        Column(
++            modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp),
++            horizontalAlignment = Alignment.CenterHorizontally,
++            verticalArrangement = Arrangement.spacedBy(8.dp),
++        ) {
++            Text(
++                text = stringResource(R.string.medications_empty_title),
++                style = MaterialTheme.typography.titleMedium,
++                fontWeight = FontWeight.Bold,
++                textAlign = TextAlign.Center,
++            )
++            Text(
++                text = stringResource(R.string.medications_empty_hint),
++                style = MaterialTheme.typography.bodyMedium,
++                color = MaterialTheme.colorScheme.onSurfaceVariant,
++                textAlign = TextAlign.Center,
++            )
++            if (canEdit) {
++                Button(
++                    onClick = onPrescribe,
++                    enabled = enabled,
++                    modifier = Modifier.minimumTouchTarget().testTag("medEmptyPrescribe"),
++                ) {
++                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
++                    Spacer(Modifier.width(6.dp))
++                    Text(stringResource(R.string.medications_empty_action), textAlign = TextAlign.Center)
++                }
++            }
++        }
++    }
++}
++
++/** The "Show past (N)" row. Viewing stopped drugs starts no action, so it stays usable while a save runs. */
++@Composable
++private fun ShowPastToggle(count: Int, shown: Boolean, onToggle: () -> Unit) {
++    val stateText = stringResource(if (shown) R.string.state_expanded else R.string.state_collapsed)
++    val actionText = stringResource(if (shown) R.string.action_collapse else R.string.action_expand)
++    Row(
++        modifier = Modifier
++            .fillMaxWidth()
++            .minimumTouchTarget()
++            .testTag("medShowPastToggle")
++            .semantics { stateDescription = stateText }
++            .clickable(role = Role.Button, onClickLabel = actionText, onClick = onToggle)
++            .padding(horizontal = 4.dp, vertical = 8.dp),
++        verticalAlignment = Alignment.CenterVertically,
++        horizontalArrangement = Arrangement.spacedBy(8.dp),
++    ) {
++        Text(
++            text = pluralStringResource(if (shown) R.plurals.medication_hide_past else R.plurals.medication_show_past, count, count),
++            style = MaterialTheme.typography.titleMedium,
++            fontWeight = FontWeight.Bold,
++            color = MaterialTheme.colorScheme.primary,
++            modifier = Modifier.weight(1f),
++        )
++        // Decorative: the row's text and state say whether the list is open.
++        Icon(
++            imageVector = if (shown) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
++            contentDescription = null,
++            tint = MaterialTheme.colorScheme.primary,
++        )
++    }
++}
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index 12839bc..c921c11 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -470,9 +470,32 @@
+     <string name="attachment_size_format">%1$s · WebP</string>
+     <string name="show_all_count">Show all %1$d</string>
+     <string name="show_fewer">Show fewer</string>
+-    <string name="tap_to_add">Tap to add</string>
+-    <string name="tap_to_add_sub">usual dose, today</string>
+-    <string name="todays_list">Today\'s list</string>
++    <string name="state_expanded">Expanded</string>
++    <string name="state_collapsed">Collapsed</string>
++    <string name="action_expand">Expand</string>
++    <string name="action_collapse">Collapse</string>
++    <string name="medication_picker_no_match">No match. Use %1$s for a custom drug.</string>
++    <string name="medication_dose_route_frequency">%1$s · %2$s · %3$s</string>
++    <string name="medication_detail_separator">" · "</string>
++    <string name="stop_medication_short">Stop</string>
++    <string name="medication_choose_frequency">Choose frequency</string>
++    <plurals name="active_prescriptions_title">
++        <item quantity="one">Active Prescription (%1$d)</item>
++        <item quantity="other">Active Prescriptions (%1$d)</item>
++    </plurals>
++    <string name="prescribe_medication">Prescribe</string>
++    <string name="no_active_medications">No active medications</string>
++    <string name="medications_empty_title">No medications yet</string>
++    <string name="medications_empty_hint">Add the first medication for this patient.</string>
++    <string name="medications_empty_action">Prescribe the first medication</string>
++    <plurals name="medication_show_past">
++        <item quantity="one">Show past (%1$d)</item>
++        <item quantity="other">Show past (%1$d)</item>
++    </plurals>
++    <plurals name="medication_hide_past">
++        <item quantity="one">Hide past (%1$d)</item>
++        <item quantity="other">Hide past (%1$d)</item>
++    </plurals>
+     <string name="search_drugs_placeholder">Search or type a drug name</string>
+     <string name="tab_common">Common</string>
+     <string name="tab_recent">Recent</string>
+@@ -490,7 +513,7 @@
+     <string name="custom_drug_too_long_error">Name is too long</string>
+     <string name="custom_drug_invalid_chars_error">Name contains invalid characters</string>
+     <string name="custom_drug_not_found_error">Item not found</string>
+-    <string name="no_recent_medications">No past medications recorded for this patient</string>
++    <string name="no_recent_medications">No past medications recorded for this patient. Use %1$s for a new drug.</string>
+     <string name="set_dose_in_editor">Set dose in editor</string>
+     <string name="step_n_of_m">Step %1$d of %2$d</string>
+     <string name="step_date_bp">Date and blood pressure</string>
+@@ -563,6 +586,11 @@
+     <string name="medication_frequency_other">Other</string>
+     <string name="medication_frequency_other_label">Frequency in words</string>
+     <string name="medication_frequency_required">Choose a frequency.</string>
++    <string name="medication_frequency_once_daily">Once daily</string>
++    <string name="medication_frequency_twice_daily">Twice daily</string>
++    <string name="medication_frequency_three_times_daily">Three times daily</string>
++    <string name="medication_frequency_at_bedtime">At bedtime</string>
++    <string name="medication_frequency_as_needed">As needed (PRN)</string>
+     <string name="medication_saving">Saving…</string>
+     <string name="medication_save_failed_title">The medication was not saved.</string>
+     <string name="medication_stopped_undo_message">Stopped: %1$s</string>

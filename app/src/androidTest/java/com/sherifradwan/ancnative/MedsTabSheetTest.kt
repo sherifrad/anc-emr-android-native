@@ -489,6 +489,10 @@ class MedsTabSheetTest {
         compose.onNodeWithText(str(R.string.medication_frequency_required), useUnmergedTree = true).assertIsDisplayed()
         assertTrue(commands.isEmpty())
         assertNull(state.patient(patient.id)!!.medications.firstOrNull { it.name == "UiNoFreq" })
+        // The doctor scrolls away and presses Save again with nothing changed: the error is brought back into view.
+        node("medNotes").performScrollTo()
+        click("saveMedication")
+        compose.onNodeWithText(str(R.string.medication_frequency_required), useUnmergedTree = true).assertIsDisplayed()
         // Choosing a frequency clears the error; the same sheet then saves.
         node("medFreqChoice-0").performScrollTo().performClick()
         click("saveMedication")

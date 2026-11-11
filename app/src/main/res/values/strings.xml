@@ -503,7 +503,7 @@
     <string name="stop_medication_description">Stop %1$s</string>
     <string name="edit_medication_description">Edit %1$s</string>
     <string name="restart_medication">Restart</string>
-    <string name="already_on_todays_list">%1$s is already on today\'s list</string>
+    <string name="already_on_todays_list">%1$s is already active</string>
     <string name="add_other_choice">+ Add other</string>
     <string name="custom_drug_title">Add Custom Medication</string>
     <string name="custom_drug_label">Drug name</string>
@@ -514,7 +514,7 @@
     <string name="custom_drug_invalid_chars_error">Name contains invalid characters</string>
     <string name="custom_drug_not_found_error">Item not found</string>
     <string name="no_recent_medications">No past medications recorded for this patient. Use %1$s for a new drug.</string>
-    <string name="set_dose_in_editor">Set dose in editor</string>
+    <string name="set_dose_in_editor">No dose saved</string>
     <string name="step_n_of_m">Step %1$d of %2$d</string>
     <string name="step_date_bp">Date and blood pressure</string>
     <string name="step_wt_fh">Weight and fetal heart rate</string>

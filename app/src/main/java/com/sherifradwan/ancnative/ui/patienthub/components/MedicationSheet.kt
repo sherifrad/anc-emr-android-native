@@ -75,6 +75,8 @@ fun MedicationSheet(
     // The draft whose name already took focus. Saved here, outside the sheet's own window, so a rotation or theme
     // change later in the same draft does not pull focus back to the name.
     var nameFocusedFor by rememberSaveable { mutableStateOf<String?>(null) }
+    // Goes up on every Save press, so a repeated rejected save scrolls to the first error again.
+    var saveAttempts by rememberSaveable { mutableStateOf(0) }
 
     val requestCancel = {
         if (touched) confirmDiscard = true else onEvent(AncEvent.CancelEditor)
@@ -131,6 +133,7 @@ fun MedicationSheet(
                     // whether this sheet stayed on screen between the two drafts or was shown again.
                     focusNameOnStart = draft.chainedAdd && nameFocusedFor != draftKey,
                     onNameFocused = { nameFocusedFor = draftKey },
+                    revealToken = saveAttempts,
                     onEvent = onEvent,
                 )
             }
@@ -139,8 +142,14 @@ fun MedicationSheet(
                 enabled = enabled,
                 saving = saving,
                 onCancel = requestCancel,
-                onSave = { onEvent(AncEvent.SubmitMedication) },
-                onSaveAndAddAnother = { onEvent(AncEvent.SubmitMedicationAndAddAnother) },
+                onSave = {
+                    saveAttempts++
+                    onEvent(AncEvent.SubmitMedication)
+                },
+                onSaveAndAddAnother = {
+                    saveAttempts++
+                    onEvent(AncEvent.SubmitMedicationAndAddAnother)
+                },
             )
             footer()
         }

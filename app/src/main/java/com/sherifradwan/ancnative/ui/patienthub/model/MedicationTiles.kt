@@ -41,7 +41,18 @@ fun medicationNameRouteKey(name: String, route: String): String = "${medicationN
 fun activeMedicationKeys(medications: List<DemoMedicationRecord>): Set<String> =
     medications.filter { isOngoingMedication(it.status, it.isNonCompliant) }.mapTo(HashSet()) { medicationNameRouteKey(it.name, it.route) }
 
-fun MedicationTile.isAlreadyActive(activeKeys: Set<String>): Boolean = medicationNameRouteKey(name, route) in activeKeys
+/**
+ * True when a drug with this tile's name is active on the same route. A blank route on either side counts as the same
+ * route: a stored row without one must not let the same drug be prescribed a second time.
+ */
+fun MedicationTile.isAlreadyActive(activeKeys: Set<String>): Boolean {
+    val tileName = medicationNameKey(name)
+    val tileRoute = medicationNameKey(route)
+    return activeKeys.any { key ->
+        val storedRoute = key.substringAfter('|')
+        key.substringBefore('|') == tileName && (tileRoute.isEmpty() || storedRoute.isEmpty() || storedRoute == tileRoute)
+    }
+}
 
 /**
  * The tiles the picker shows for [selectedTab] and [searchQuery]. Recent keeps the tiles whose name (by

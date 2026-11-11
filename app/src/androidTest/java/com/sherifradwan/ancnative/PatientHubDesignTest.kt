@@ -108,7 +108,7 @@ class PatientHubDesignTest {
         compose.waitForIdle()
 
         val name = layout("hubPatientName")
-        assertTrue("the name takes at most two lines", name.lineCount <= 2)
+        assertTrue("the name wraps and is never cut", name.lineCount <= 4)
         assertTrue("no line of the name is cut with an ellipsis", (0 until name.lineCount).none { name.isLineEllipsized(it) })
         val allergy = layout("hubAllergyText")
         assertTrue("the allergy line is not cut", (0 until allergy.lineCount).none { allergy.isLineEllipsized(it) })
