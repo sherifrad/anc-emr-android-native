@@ -29,14 +29,15 @@ Committed locally (newest first):
 
 | Commit | What |
 | --- | --- |
+| `ab74d27` | Phase 3: collapsed picker, Show past, compact rows with labelled Stop, strings to resources, picker search above the keyboard, chained-add focus from draft state, all-tests script sets 360dp |
 | `a4137ee` | Design note about the features dropped with the old editor; `state/*` added to profile Risk paths |
 | `c32eb57` | `AncState.kt` split into `AncState.kt`, `AncEvent.kt`, `AncReducer.kt`, `MedicationReducer.kt`, `ClinicalDraftReducers.kt`, `ReducerSupport.kt` (pure move, proven by `.agents/scripts/verify_pure_move.py --ignore-visibility`) |
 | `3bd55b3` | Phase 2: sheet hosted in the patient hub, one-tap stop with Undo, old editor and `AncRoute.MedicationEditor` deleted |
 | `c9c1a82` | Phase 1: `MedicationForm.kt`, `MedicationSheet.kt` |
 
-Not committed yet: Phase 3 (collapsed picker, Show past, compact rows, strings, keyboard fixes). It is in the working tree and passes everything below. First job: confirm and commit it.
+Phase 3 is committed as `ab74d27` (committed by me on 2026-11-11 after my own full re-run). Its last small round has no frontier-tier review. First job: re-verify and get that review.
 
-Phase 3 files in the working tree (all under `app/src/`):
+Phase 3 files (all under `app/src/`, now in `ab74d27`):
 
 - `main/java/com/sherifradwan/ancnative/state/AncState.kt` (+5: `MedicationDraft.chainedAdd`) and `state/MedicationReducer.kt` (+4). Level 3.
 - `main/.../ui/ClinicalPresets.kt`, `ui/patienthub/PatientHubScreen.kt` (level 3), `ui/patienthub/components/MedicationCard.kt`, `MedicationForm.kt`, `MedicationSheet.kt`, `MedicationTapToAddSection.kt`, `ui/patienthub/model/MedicationTiles.kt`, `ui/patienthub/tabs/MedsTab.kt`, `main/res/values/strings.xml`.
@@ -50,12 +51,12 @@ Review status of Phase 3: Opus (frontier) reviewed round 1 and round 1 fixes, no
 
 ## Work for you
 
-### A. Confirm and commit Phase 3
+### A. Re-verify Phase 3 and get its missing review
 
-1. Run `git status`, then re-run the build and the full emulator suite yourself (commands below).
-2. Read the Gemini and GLM reports in `phase3r3/` if present. Fix real findings, reject false ones with a reason.
-3. Get a frontier-tier review of the final Phase 3 round. Get an independent test review of `MedsTabSheetTest.kt` and `MedicationFormTest.kt`.
-4. Commit only the Phase 3 files listed above, locally. Commit message ends with the attribution line the harness gives you.
+1. Run `git status` and `git log --oneline -5`, then re-run the build and the full emulator suite yourself (commands below).
+2. Read the GLM report in `phase3r3/` and the Gemini report if it exists (it was still running when I committed). Fix real findings, reject false ones with a reason.
+3. Get a frontier-tier review of the final Phase 3 round (diff of `ab74d27` for `MedicationForm.kt`, `MedicationSheet.kt`, `MedicationCard.kt`, `MedsTab.kt`, `MedicationTapToAddSection.kt`, `PatientHubScreen.kt`). Get an independent test review of `MedsTabSheetTest.kt` and `MedicationFormTest.kt`.
+4. Any fix goes in its own local commit. Commit messages end with the attribution line the harness gives you.
 
 ### B. Frequency required for new prescriptions
 
