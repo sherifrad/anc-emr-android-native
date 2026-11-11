@@ -51,7 +51,7 @@ class EncryptedRecordsTest {
             ),
             tables,
         )
-        assertEquals(6, db.query("PRAGMA user_version").use { it.moveToFirst(); it.getInt(0) })
+        assertEquals(7, db.query("PRAGMA user_version").use { it.moveToFirst(); it.getInt(0) })
 
         val patients = tableColumns(db, "patients")
         assertEquals(
@@ -60,7 +60,8 @@ class EncryptedRecordsTest {
                 "patient_status", "archived_at", "archived_reason", "risk_level", "age_text",
                 "address_text", "blood_group_text", "medical_history", "surgical_history",
                 "family_history", "allergy_history", "gravida", "parity", "abortion",
-                "obstetric_notes", "clinical_attention", "revision",
+                "obstetric_notes", "clinical_attention", "delivered", "delivery_date", "delivery_mode",
+                "delivery_outcome", "revision",
             ),
             patients.keys,
         )
@@ -201,6 +202,10 @@ class EncryptedRecordsTest {
                     assertNull(patient.gravida)
                     assertNull(patient.parity)
                     assertNull(patient.abortion)
+                    assertFalse("a migrated patient is not delivered", patient.delivered)
+                    assertNull(patient.deliveryDate)
+                    assertNull(patient.deliveryMode)
+                    assertNull(patient.deliveryOutcome)
                     assertEquals(1L, patient.revision)
                     assertTrue(patient.previousPregnancies.isEmpty())
                     assertEquals(1, patient.visits.size)
@@ -216,12 +221,12 @@ class EncryptedRecordsTest {
                     assertEquals("a".repeat(64), receipt.fingerprint)
                     val metadata = dao.metadataRows().single()
                     assertEquals(fixture.vaultUuid, metadata.vaultUuid)
-                    assertEquals(6, metadata.schemaVersion)
+                    assertEquals(7, metadata.schemaVersion)
                     assertTrue(metadata.isSynthetic)
                     assertTrue(metadata.initialized)
                 }
                 assertEquals(
-                    6,
+                    7,
                     opened.database.openHelper.writableDatabase.query("PRAGMA user_version").use {
                         it.moveToFirst()
                         it.getInt(0)
@@ -260,6 +265,60 @@ class EncryptedRecordsTest {
             }
         } finally {
             fixture.close()
+        }
+    }
+
+    @Test
+    fun deliveryOutcomeSavesReadsBackAndIsClearedWhenNotDelivered() = withDatabase { opened, vaultUuid ->
+        runBlocking {
+            val repository = RecordsRepository(opened.database, vaultUuid)
+            repository.seedInitialSyntheticFixtures(includeDemoPatients = true)
+            val patientId = "00000000-0000-4000-8000-000000000412"
+            val create = patientCommand("00000000-0000-4000-8000-000000000411", patientId, "DELIVERY-CASE", "Delivery Synthetic")
+            val created = repository.execute(create) as PatientCommandOutcome.Committed
+            val fresh = created.snapshot.patients.single { it.id == patientId }
+            assertFalse(fresh.delivered)
+            assertNull(fresh.deliveryDate)
+
+            val delivered = create.copy(
+                operationUuid = "00000000-0000-4000-8000-000000000413",
+                expectedPatientRevision = 1L,
+                delivered = true,
+                deliveryDate = "2026-11-05",
+                deliveryMode = "caesarean",
+                deliveryOutcome = "live_birth",
+                fingerprint = "",
+            ).withCanonicalFingerprint() as SavePatientProfileCommand
+            val saved = repository.execute(delivered) as PatientCommandOutcome.Committed
+            val stored = saved.snapshot.patients.single { it.id == patientId }
+            assertTrue(stored.delivered)
+            assertEquals("2026-11-05", stored.deliveryDate)
+            assertEquals("caesarean", stored.deliveryMode)
+            assertEquals("live_birth", stored.deliveryOutcome)
+            assertEquals(2L, stored.revision)
+
+            val changedOnlyDelivery = delivered.copy(
+                operationUuid = "00000000-0000-4000-8000-000000000414",
+                expectedPatientRevision = 2L,
+                deliveryDate = "2026-11-06",
+                fingerprint = "",
+            ).withCanonicalFingerprint() as SavePatientProfileCommand
+            assertTrue("the fingerprint covers the delivery fields", changedOnlyDelivery.fingerprint != delivered.fingerprint)
+
+            val undone = delivered.copy(
+                operationUuid = "00000000-0000-4000-8000-000000000415",
+                expectedPatientRevision = 2L,
+                delivered = false,
+                deliveryDate = null,
+                deliveryMode = null,
+                deliveryOutcome = null,
+                fingerprint = "",
+            ).withCanonicalFingerprint() as SavePatientProfileCommand
+            val cleared = (repository.execute(undone) as PatientCommandOutcome.Committed).snapshot.patients.single { it.id == patientId }
+            assertFalse(cleared.delivered)
+            assertNull(cleared.deliveryDate)
+            assertNull(cleared.deliveryMode)
+            assertNull(cleared.deliveryOutcome)
         }
     }
 

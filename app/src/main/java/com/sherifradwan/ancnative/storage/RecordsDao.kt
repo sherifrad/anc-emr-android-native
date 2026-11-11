@@ -133,6 +133,10 @@ interface RecordsDao {
             abortion = :abortion,
             obstetric_notes = :obstetricNotes,
             clinical_attention = :clinicalAttention,
+            delivered = :delivered,
+            delivery_date = :deliveryDate,
+            delivery_mode = :deliveryMode,
+            delivery_outcome = :deliveryOutcome,
             revision = revision + 1
         WHERE id = :patientId
           AND revision = :expectedRevision
@@ -155,6 +159,10 @@ interface RecordsDao {
         abortion: Long?,
         obstetricNotes: String?,
         clinicalAttention: String? = null,
+        delivered: Boolean = false,
+        deliveryDate: String? = null,
+        deliveryMode: String? = null,
+        deliveryOutcome: String? = null,
     ): Int
 
     @Query(

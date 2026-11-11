@@ -263,6 +263,10 @@ object EncryptedBackupManager {
             putNullable("abortion", p.abortion)
             putNullable("obstetricNotes", p.obstetricNotes)
             putNullable("clinicalAttention", p.clinicalAttention)
+            put("delivered", p.delivered)
+            putNullable("deliveryDate", p.deliveryDate)
+            putNullable("deliveryMode", p.deliveryMode)
+            putNullable("deliveryOutcome", p.deliveryOutcome)
             put("revision", p.revision)
             put("visits", visits.toJsonArray { it.toCanonicalJson() })
             put("previousPregnancies", previousPregnancies.toJsonArray { it.toCanonicalJson() })
@@ -297,6 +301,10 @@ object EncryptedBackupManager {
         putNullable("abortion", abortion)
         putNullable("obstetricNotes", obstetricNotes)
         putNullable("clinicalAttention", clinicalAttention)
+        put("delivered", delivered)
+        putNullable("deliveryDate", deliveryDate)
+        putNullable("deliveryMode", deliveryMode)
+        putNullable("deliveryOutcome", deliveryOutcome)
         put("revision", revision)
         put("visits", visits.toJsonArray { visit ->
             JSONObject().apply {
@@ -573,6 +581,10 @@ object EncryptedBackupManager {
                 abortion = optNullableLong("abortion"),
                 obstetricNotes = optNullableString("obstetricNotes"),
                 clinicalAttention = optNullableString("clinicalAttention"),
+                delivered = optBoolean("delivered", false),
+                deliveryDate = optNullableString("deliveryDate"),
+                deliveryMode = optNullableString("deliveryMode"),
+                deliveryOutcome = optNullableString("deliveryOutcome"),
                 revision = optLong("revision", 1),
             ),
             visits = optJSONArray("visits").toObjectListOrEmpty { index ->

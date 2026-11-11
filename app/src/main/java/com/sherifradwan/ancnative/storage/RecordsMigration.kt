@@ -382,6 +382,41 @@ internal object RecordsMigration {
         }
     }
 
+    fun from6To7(expectedVaultUuid: String): Migration = object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            validateSchemaSixTables(db)
+            validateSchemaSixMetadata(db, expectedVaultUuid)
+
+            db.execSQL(
+                "ALTER TABLE patients ADD COLUMN delivered INTEGER NOT NULL DEFAULT 0",
+            )
+            db.execSQL(
+                "ALTER TABLE patients ADD COLUMN delivery_date TEXT",
+            )
+            db.execSQL(
+                "ALTER TABLE patients ADD COLUMN delivery_mode TEXT",
+            )
+            db.execSQL(
+                "ALTER TABLE patients ADD COLUMN delivery_outcome TEXT",
+            )
+
+            val changed = db.compileStatement(
+                """
+                UPDATE vault_metadata
+                SET schema_version = 7
+                WHERE vault_uuid = ?
+                  AND schema_version = 6
+                  AND is_synthetic = 1
+                  AND initialized = 1
+                """.trimIndent(),
+            ).use { statement ->
+                statement.bindString(1, expectedVaultUuid)
+                statement.executeUpdateDelete()
+            }
+            if (changed != 1) throw RecordsMigrationFailure(VaultBlockReason.VAULT_METADATA_MISMATCH)
+        }
+    }
+
     private fun validateSchemaOneTables(db: SupportSQLiteDatabase) {
         val tables = db.query("SELECT name FROM sqlite_master WHERE type = 'table'").use { cursor ->
             buildSet {
@@ -597,6 +632,49 @@ internal object RecordsMigration {
         }
     }
 
+    private fun validateSchemaSixTables(db: SupportSQLiteDatabase) {
+        val tables = db.query("SELECT name FROM sqlite_master WHERE type = 'table'").use { cursor ->
+            buildSet {
+                while (cursor.moveToNext()) {
+                    val name = cursor.getString(0)
+                    if (!name.startsWith("sqlite_") && name !in ROOM_INTERNAL_TABLES) add(name)
+                }
+            }
+        }
+        if (tables != SCHEMA_SIX_TABLES) {
+            throw RecordsMigrationFailure(VaultBlockReason.UNKNOWN_SCHEMA)
+        }
+    }
+
+    private fun validateSchemaSixMetadata(db: SupportSQLiteDatabase, expectedVaultUuid: String) {
+        val rows = db.query(
+            "SELECT vault_uuid, schema_version, is_synthetic, initialized FROM vault_metadata LIMIT 2",
+        ).use { cursor ->
+            buildList {
+                while (cursor.moveToNext()) {
+                    add(
+                        MetadataRow(
+                            vaultUuid = cursor.getString(0),
+                            schemaVersion = cursor.getInt(1),
+                            isSynthetic = cursor.getInt(2) == 1,
+                            initialized = cursor.getInt(3) == 1,
+                        ),
+                    )
+                }
+            }
+        }
+        if (rows.isEmpty()) throw RecordsMigrationFailure(VaultBlockReason.VAULT_METADATA_MISSING)
+        val row = rows.singleOrNull()
+            ?: throw RecordsMigrationFailure(VaultBlockReason.VAULT_METADATA_MISMATCH)
+        if (
+            row.vaultUuid != expectedVaultUuid ||
+            row.schemaVersion != 6 ||
+            !row.initialized
+        ) {
+            throw RecordsMigrationFailure(VaultBlockReason.VAULT_METADATA_MISMATCH)
+        }
+    }
+
     fun failureReason(failure: Throwable): VaultBlockReason? {
         var current: Throwable? = failure
         while (current != null) {
@@ -642,5 +720,6 @@ internal object RecordsMigration {
     )
     private val SCHEMA_FOUR_TABLES = SCHEMA_THREE_TABLES
     private val SCHEMA_FIVE_TABLES = SCHEMA_THREE_TABLES + "patient_attachments"
+    private val SCHEMA_SIX_TABLES = SCHEMA_FIVE_TABLES + "drafts"
     private val ROOM_INTERNAL_TABLES = setOf("android_metadata", "room_master_table")
 }

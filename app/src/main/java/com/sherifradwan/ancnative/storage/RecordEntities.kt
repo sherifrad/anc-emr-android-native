@@ -35,6 +35,10 @@ data class PatientEntity(
     val abortion: Long? = null,
     @ColumnInfo(name = "obstetric_notes") val obstetricNotes: String? = null,
     @ColumnInfo(name = "clinical_attention") val clinicalAttention: String? = null,
+    @ColumnInfo(name = "delivered", defaultValue = "0") val delivered: Boolean = false,
+    @ColumnInfo(name = "delivery_date") val deliveryDate: String? = null,
+    @ColumnInfo(name = "delivery_mode") val deliveryMode: String? = null,
+    @ColumnInfo(name = "delivery_outcome") val deliveryOutcome: String? = null,
     @ColumnInfo(defaultValue = "1") val revision: Long = 1,
 )
 

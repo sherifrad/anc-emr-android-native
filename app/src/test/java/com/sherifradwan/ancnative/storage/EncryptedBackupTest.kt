@@ -86,6 +86,10 @@ class EncryptedBackupTest {
                 abortion = 1,
                 obstetricNotes = "Prior CS",
                 clinicalAttention = "Needs close follow-up",
+                delivered = true,
+                deliveryDate = "2026-11-05",
+                deliveryMode = "assisted_vaginal",
+                deliveryOutcome = "live_birth",
                 revision = 7,
             ),
             visits = listOf(

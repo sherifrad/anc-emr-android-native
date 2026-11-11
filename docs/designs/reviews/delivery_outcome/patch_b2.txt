@@ -1,0 +1,342 @@
+FILE: app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt
+<<<<<<< SEARCH
+    @ColumnInfo(name = "clinical_attention") val clinicalAttention: String? = null,
+    @ColumnInfo(defaultValue = "1") val revision: Long = 1,
+)
+=======
+    @ColumnInfo(name = "clinical_attention") val clinicalAttention: String? = null,
+    @ColumnInfo(name = "delivered", defaultValue = "0") val delivered: Boolean = false,
+    @ColumnInfo(name = "delivery_date") val deliveryDate: String? = null,
+    @ColumnInfo(name = "delivery_mode") val deliveryMode: String? = null,
+    @ColumnInfo(name = "delivery_outcome") val deliveryOutcome: String? = null,
+    @ColumnInfo(defaultValue = "1") val revision: Long = 1,
+)
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/storage/RecordsDao.kt
+<<<<<<< SEARCH
+    @Query(
+        """
+        UPDATE patients
+        SET case_id = :caseId,
+            display_name = :displayName,
+            date_of_birth = :dateOfBirth,
+            phone = :phone,
+            risk_level = :riskLevel,
+            age_text = :ageText,
+            address_text = :addressText,
+            blood_group_text = :bloodGroupText,
+            gravida = :gravida,
+            parity = :parity,
+            abortion = :abortion,
+            obstetric_notes = :obstetricNotes,
+            clinical_attention = :clinicalAttention,
+            revision = revision + 1
+        WHERE id = :patientId
+          AND revision = :expectedRevision
+          AND (patient_status IS NULL OR patient_status != 'archived')
+        """,
+    )
+    suspend fun updatePatientProfile(
+        patientId: String,
+        expectedRevision: Long,
+        caseId: String,
+        displayName: String,
+        dateOfBirth: String?,
+        phone: String?,
+        riskLevel: String?,
+        ageText: String?,
+        addressText: String?,
+        bloodGroupText: String?,
+        gravida: Long?,
+        parity: Long?,
+        abortion: Long?,
+        obstetricNotes: String?,
+        clinicalAttention: String? = null,
+    ): Int
+=======
+    @Query(
+        """
+        UPDATE patients
+        SET case_id = :caseId,
+            display_name = :displayName,
+            date_of_birth = :dateOfBirth,
+            phone = :phone,
+            risk_level = :riskLevel,
+            age_text = :ageText,
+            address_text = :addressText,
+            blood_group_text = :bloodGroupText,
+            gravida = :gravida,
+            parity = :parity,
+            abortion = :abortion,
+            obstetric_notes = :obstetricNotes,
+            clinical_attention = :clinicalAttention,
+            delivered = :delivered,
+            delivery_date = :deliveryDate,
+            delivery_mode = :deliveryMode,
+            delivery_outcome = :deliveryOutcome,
+            revision = revision + 1
+        WHERE id = :patientId
+          AND revision = :expectedRevision
+          AND (patient_status IS NULL OR patient_status != 'archived')
+        """,
+    )
+    suspend fun updatePatientProfile(
+        patientId: String,
+        expectedRevision: Long,
+        caseId: String,
+        displayName: String,
+        dateOfBirth: String?,
+        phone: String?,
+        riskLevel: String?,
+        ageText: String?,
+        addressText: String?,
+        bloodGroupText: String?,
+        gravida: Long?,
+        parity: Long?,
+        abortion: Long?,
+        obstetricNotes: String?,
+        clinicalAttention: String? = null,
+        delivered: Boolean = false,
+        deliveryDate: String? = null,
+        deliveryMode: String? = null,
+        deliveryOutcome: String? = null,
+    ): Int
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt
+<<<<<<< SEARCH
+            }
+            val affected = dao.updatePatientProfile(
+                patientId = command.patientId,
+                expectedRevision = command.expectedPatientRevision,
+                caseId = command.caseId,
+                displayName = command.displayName,
+                dateOfBirth = command.dateOfBirth,
+                phone = command.phone,
+                riskLevel = command.riskLevel,
+                ageText = command.ageText,
+                addressText = command.addressText,
+                bloodGroupText = command.bloodGroupText,
+                gravida = command.gravida,
+                parity = command.parity,
+                abortion = command.abortion,
+                obstetricNotes = command.obstetricNotes,
+                clinicalAttention = command.clinicalAttention,
+            )
+            if (affected != 1) {
+                return PatientCommandOutcome.Rejected(PatientCommandFailure.STALE_PATIENT_REVISION)
+=======
+            }
+            val affected = dao.updatePatientProfile(
+                patientId = command.patientId,
+                expectedRevision = command.expectedPatientRevision,
+                caseId = command.caseId,
+                displayName = command.displayName,
+                dateOfBirth = command.dateOfBirth,
+                phone = command.phone,
+                riskLevel = command.riskLevel,
+                ageText = command.ageText,
+                addressText = command.addressText,
+                bloodGroupText = command.bloodGroupText,
+                gravida = command.gravida,
+                parity = command.parity,
+                abortion = command.abortion,
+                obstetricNotes = command.obstetricNotes,
+                clinicalAttention = command.clinicalAttention,
+                delivered = command.delivered,
+                deliveryDate = command.deliveryDate,
+                deliveryMode = command.deliveryMode,
+                deliveryOutcome = command.deliveryOutcome,
+            )
+            if (affected != 1) {
+                return PatientCommandOutcome.Rejected(PatientCommandFailure.STALE_PATIENT_REVISION)
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt
+<<<<<<< SEARCH
+    private fun SavePatientProfileCommand.toEntity() = PatientEntity(
+        id = patientId,
+        caseId = caseId,
+        displayName = displayName,
+        dateOfBirth = dateOfBirth,
+        phone = phone,
+        createdAt = createdAt,
+        riskLevel = riskLevel,
+        ageText = ageText,
+        addressText = addressText,
+        bloodGroupText = bloodGroupText,
+        gravida = gravida,
+        parity = parity,
+        abortion = abortion,
+        obstetricNotes = obstetricNotes,
+        clinicalAttention = clinicalAttention,
+        revision = 1,
+    )
+=======
+    private fun SavePatientProfileCommand.toEntity() = PatientEntity(
+        id = patientId,
+        caseId = caseId,
+        displayName = displayName,
+        dateOfBirth = dateOfBirth,
+        phone = phone,
+        createdAt = createdAt,
+        riskLevel = riskLevel,
+        ageText = ageText,
+        addressText = addressText,
+        bloodGroupText = bloodGroupText,
+        gravida = gravida,
+        parity = parity,
+        abortion = abortion,
+        obstetricNotes = obstetricNotes,
+        clinicalAttention = clinicalAttention,
+        delivered = delivered,
+        deliveryDate = deliveryDate,
+        deliveryMode = deliveryMode,
+        deliveryOutcome = deliveryOutcome,
+        revision = 1,
+    )
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/storage/RecordsRepository.kt
+<<<<<<< SEARCH
+    internal fun DemoPatient.toEntity() = PatientEntity(
+        id = id,
+        caseId = caseId,
+        displayName = displayName,
+        dateOfBirth = dateOfBirth,
+        phone = phone,
+        riskLevel = riskLevel,
+        ageText = ageText,
+        addressText = addressText,
+        bloodGroupText = bloodGroupText,
+        medicalHistory = medicalHistory,
+        surgicalHistory = surgicalHistory,
+        familyHistory = familyHistory,
+        allergyHistory = allergyHistory,
+        gravida = gravida,
+        parity = parity,
+        abortion = abortion,
+        obstetricNotes = obstetricNotes,
+        clinicalAttention = clinicalAttention,
+        revision = revision,
+    )
+=======
+    internal fun DemoPatient.toEntity() = PatientEntity(
+        id = id,
+        caseId = caseId,
+        displayName = displayName,
+        dateOfBirth = dateOfBirth,
+        phone = phone,
+        riskLevel = riskLevel,
+        ageText = ageText,
+        addressText = addressText,
+        bloodGroupText = bloodGroupText,
+        medicalHistory = medicalHistory,
+        surgicalHistory = surgicalHistory,
+        familyHistory = familyHistory,
+        allergyHistory = allergyHistory,
+        gravida = gravida,
+        parity = parity,
+        abortion = abortion,
+        obstetricNotes = obstetricNotes,
+        clinicalAttention = clinicalAttention,
+        delivered = delivered,
+        deliveryDate = deliveryDate,
+        deliveryMode = deliveryMode,
+        deliveryOutcome = deliveryOutcome,
+        revision = revision,
+    )
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt
+<<<<<<< SEARCH
+data class SavePatientProfileCommand(
+    override val operationUuid: String,
+    override val editorSessionId: String,
+    override val patientId: String,
+    override val expectedPatientRevision: Long?,
+    val createdAt: String?,
+    val caseId: String,
+    val displayName: String,
+    val dateOfBirth: String?,
+    val phone: String?,
+    val riskLevel: String?,
+    val ageText: String?,
+    val addressText: String?,
+    val bloodGroupText: String?,
+    val gravida: Long?,
+    val parity: Long?,
+    val abortion: Long?,
+    val obstetricNotes: String?,
+    val clinicalAttention: String? = null,
+    override val fingerprint: String,
+) : PatientCommand {
+=======
+data class SavePatientProfileCommand(
+    override val operationUuid: String,
+    override val editorSessionId: String,
+    override val patientId: String,
+    override val expectedPatientRevision: Long?,
+    val createdAt: String?,
+    val caseId: String,
+    val displayName: String,
+    val dateOfBirth: String?,
+    val phone: String?,
+    val riskLevel: String?,
+    val ageText: String?,
+    val addressText: String?,
+    val bloodGroupText: String?,
+    val gravida: Long?,
+    val parity: Long?,
+    val abortion: Long?,
+    val obstetricNotes: String?,
+    val clinicalAttention: String? = null,
+    val delivered: Boolean = false,
+    val deliveryDate: String? = null,
+    val deliveryMode: String? = null,
+    val deliveryOutcome: String? = null,
+    override val fingerprint: String,
+) : PatientCommand {
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt
+<<<<<<< SEARCH
+internal fun PatientCommand.canonicalFingerprint(): String = when (this) {
+    is SavePatientProfileCommand -> canonicalFingerprint(
+        listOf(
+            recordKind, operationUuid, patientId, expectedPatientRevision?.toString(), createdAt,
+            caseId, displayName, dateOfBirth, phone, riskLevel, ageText, addressText, bloodGroupText,
+            gravida?.toString(), parity?.toString(), abortion?.toString(), obstetricNotes, clinicalAttention,
+        ),
+    )
+    is SaveOtherHistoriesCommand -> canonicalFingerprint(
+=======
+internal fun PatientCommand.canonicalFingerprint(): String = when (this) {
+    is SavePatientProfileCommand -> canonicalFingerprint(
+        listOf(
+            recordKind, operationUuid, patientId, expectedPatientRevision?.toString(), createdAt,
+            caseId, displayName, dateOfBirth, phone, riskLevel, ageText, addressText, bloodGroupText,
+            gravida?.toString(), parity?.toString(), abortion?.toString(), obstetricNotes, clinicalAttention,
+            delivered.toString(), deliveryDate, deliveryMode, deliveryOutcome,
+        ),
+    )
+    is SaveOtherHistoriesCommand -> canonicalFingerprint(
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt
+<<<<<<< SEARCH
+    val obstetricNotes: String? = null,
+    val clinicalAttention: String? = null,
+    val revision: Long = 1,
+=======
+    val obstetricNotes: String? = null,
+    val clinicalAttention: String? = null,
+    val delivered: Boolean = false,
+    val deliveryDate: String? = null,
+    val deliveryMode: String? = null,
+    val deliveryOutcome: String? = null,
+    val revision: Long = 1,
+>>>>>>> REPLACE
+
+

@@ -39,6 +39,10 @@ data class SavePatientProfileCommand(
     val abortion: Long?,
     val obstetricNotes: String?,
     val clinicalAttention: String? = null,
+    val delivered: Boolean = false,
+    val deliveryDate: String? = null,
+    val deliveryMode: String? = null,
+    val deliveryOutcome: String? = null,
     override val fingerprint: String,
 ) : PatientCommand {
     override val recordKind: String = if (expectedPatientRevision == null) {
@@ -353,6 +357,7 @@ internal fun PatientCommand.canonicalFingerprint(): String = when (this) {
             recordKind, operationUuid, patientId, expectedPatientRevision?.toString(), createdAt,
             caseId, displayName, dateOfBirth, phone, riskLevel, ageText, addressText, bloodGroupText,
             gravida?.toString(), parity?.toString(), abortion?.toString(), obstetricNotes, clinicalAttention,
+            delivered.toString(), deliveryDate, deliveryMode, deliveryOutcome,
         ),
     )
     is SaveOtherHistoriesCommand -> canonicalFingerprint(

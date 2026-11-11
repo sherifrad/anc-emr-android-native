@@ -419,6 +419,10 @@ internal class RecordsRepository(
                 abortion = command.abortion,
                 obstetricNotes = command.obstetricNotes,
                 clinicalAttention = command.clinicalAttention,
+                delivered = command.delivered,
+                deliveryDate = command.deliveryDate,
+                deliveryMode = command.deliveryMode,
+                deliveryOutcome = command.deliveryOutcome,
             )
             if (affected != 1) {
                 return PatientCommandOutcome.Rejected(PatientCommandFailure.STALE_PATIENT_REVISION)
@@ -642,6 +646,10 @@ internal class RecordsRepository(
         abortion = abortion,
         obstetricNotes = obstetricNotes,
         clinicalAttention = clinicalAttention,
+        delivered = delivered,
+        deliveryDate = deliveryDate,
+        deliveryMode = deliveryMode,
+        deliveryOutcome = deliveryOutcome,
         revision = 1,
     )
 
@@ -698,6 +706,10 @@ internal class RecordsRepository(
         abortion = abortion,
         obstetricNotes = obstetricNotes,
         clinicalAttention = clinicalAttention,
+        delivered = delivered,
+        deliveryDate = deliveryDate,
+        deliveryMode = deliveryMode,
+        deliveryOutcome = deliveryOutcome,
         revision = revision,
     )
 
@@ -825,6 +837,10 @@ internal class RecordsRepository(
         addressText = addressText,
         bloodGroupText = bloodGroupText,
         clinicalAttention = clinicalAttention,
+        delivered = delivered,
+        deliveryDate = deliveryDate,
+        deliveryMode = deliveryMode,
+        deliveryOutcome = deliveryOutcome,
         medicalHistory = medicalHistory,
         surgicalHistory = surgicalHistory,
         familyHistory = familyHistory,
@@ -1678,7 +1694,7 @@ internal class RecordsRepository(
     }
 
     companion object {
-        const val SCHEMA_VERSION = 6
+        const val SCHEMA_VERSION = 7
         val PREGNANCY_KINDS = setOf(
             PatientRecordKind.PREVIOUS_PREGNANCY_CREATE,
             PatientRecordKind.PREVIOUS_PREGNANCY_UPDATE,

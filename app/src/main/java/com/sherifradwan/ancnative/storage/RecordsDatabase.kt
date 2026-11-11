@@ -23,7 +23,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         PatientAttachmentEntity::class,
         DraftEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
 )
 abstract class RecordsDatabase : RoomDatabase() {
@@ -53,6 +53,7 @@ abstract class RecordsDatabase : RoomDatabase() {
                     RecordsMigration.from3To4(expectedVaultUuid = databasePath.vaultUuidFromPath()),
                     RecordsMigration.from4To5(expectedVaultUuid = databasePath.vaultUuidFromPath()),
                     RecordsMigration.from5To6(expectedVaultUuid = databasePath.vaultUuidFromPath()),
+                    RecordsMigration.from6To7(expectedVaultUuid = databasePath.vaultUuidFromPath()),
                 )
                 .setJournalMode(JournalMode.WRITE_AHEAD_LOGGING)
                 .build()

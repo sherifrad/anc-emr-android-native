@@ -1,0 +1,46 @@
+FILE: app/src/main/java/com/sherifradwan/ancnative/storage/EncryptedBackupManager.kt
+<<<<<<< SEARCH
+            putNullable("clinicalAttention", p.clinicalAttention)
+            put("revision", p.revision)
+            put("visits", visits.toJsonArray { it.toCanonicalJson() })
+=======
+            putNullable("clinicalAttention", p.clinicalAttention)
+            put("delivered", p.delivered)
+            putNullable("deliveryDate", p.deliveryDate)
+            putNullable("deliveryMode", p.deliveryMode)
+            putNullable("deliveryOutcome", p.deliveryOutcome)
+            put("revision", p.revision)
+            put("visits", visits.toJsonArray { it.toCanonicalJson() })
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/storage/EncryptedBackupManager.kt
+<<<<<<< SEARCH
+            putNullable("clinicalAttention", clinicalAttention)
+            put("revision", revision)
+            put("visits", visits.toJsonArray { visit ->
+=======
+            putNullable("clinicalAttention", clinicalAttention)
+            put("delivered", delivered)
+            putNullable("deliveryDate", deliveryDate)
+            putNullable("deliveryMode", deliveryMode)
+            putNullable("deliveryOutcome", deliveryOutcome)
+            put("revision", revision)
+            put("visits", visits.toJsonArray { visit ->
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/storage/EncryptedBackupManager.kt
+<<<<<<< SEARCH
+                clinicalAttention = optNullableString("clinicalAttention"),
+                revision = optLong("revision", 1),
+            ),
+=======
+                clinicalAttention = optNullableString("clinicalAttention"),
+                delivered = optBoolean("delivered", false),
+                deliveryDate = optNullableString("deliveryDate"),
+                deliveryMode = optNullableString("deliveryMode"),
+                deliveryOutcome = optNullableString("deliveryOutcome"),
+                revision = optLong("revision", 1),
+            ),
+>>>>>>> REPLACE
+[Tokens] upload: 9784 download: 923 cache_read: 0 cache_write: 0
+
