@@ -50,8 +50,9 @@ import com.sherifradwan.ancnative.ui.medicationFrequencyLabel
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
 
 /**
- * One medication row, the only one. Closed, it shows the name, one "dose · route · frequency" line and, when there are
- * notes, their first line; the whole note and the other facts show when the row is opened. Active rows carry the one-tap Stop control; stopped rows do not.
+ * One medication row, the only one. Closed, it shows the name, one "dose · route · frequency" line, the first line of
+ * any notes, the status badge and the actions; open, it adds the dates and the whole note. Active rows carry the one-tap
+ * Stop control; stopped rows do not.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -191,8 +192,8 @@ fun MedicationCard(
 }
 
 /**
- * The one-tap stop: the stop icon over a visible "Stop" label, in the error colour (at least 4.5:1 on the card in
- * both themes), at least 48 dp. Screen readers hear "Stop <drug>".
+ * The one-tap stop: the stop icon over a visible "Stop" label, in the error colour (a test in
+ * MedsTabSheetTest checks at least 4.5:1 on the card in both themes), at least 48 dp. Screen readers hear "Stop <drug>".
  */
 @Composable
 private fun StopControl(name: String, id: String, enabled: Boolean, onStop: () -> Unit) {

@@ -1,0 +1,3911 @@
+diff --git a/app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt b/app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt
+index 2e57fb6..af999ac 100644
+--- a/app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt
++++ b/app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt
+@@ -622 +622,2 @@ class AncWorkflowTest {
+-        // 4. Open Medication Editor
++        // 4. Open the medication sheet from the Meds tab: the route stays on the workspace
++        state = AncReducer.reduce(state, AncEvent.SelectSection(WorkspaceSection.MEDICATIONS))
+@@ -631,0 +633 @@ class AncWorkflowTest {
++        assertEquals(AncRoute.Workspace(patient.id, WorkspaceSection.MEDICATIONS), state.route)
+@@ -633 +635 @@ class AncWorkflowTest {
+-        compose.onNodeWithTag("medicationEditor").assertIsDisplayed()
++        compose.onNodeWithTag("medicationSheet").assertIsDisplayed()
+@@ -641 +643 @@ class AncWorkflowTest {
+-        // 5. Test Arabic RTL mounting for Medication Editor
++        // 5. Test Arabic RTL mounting for the medication sheet
+@@ -643 +645 @@ class AncWorkflowTest {
+-        compose.onNodeWithTag("medicationEditor").performScrollTo().assertIsDisplayed()
++        compose.onNodeWithTag("medicationSheet").assertIsDisplayed()
+diff --git a/app/src/androidTest/java/com/sherifradwan/ancnative/DeleteUndoUiTest.kt b/app/src/androidTest/java/com/sherifradwan/ancnative/DeleteUndoUiTest.kt
+index 3b8386e..3c09821 100644
+--- a/app/src/androidTest/java/com/sherifradwan/ancnative/DeleteUndoUiTest.kt
++++ b/app/src/androidTest/java/com/sherifradwan/ancnative/DeleteUndoUiTest.kt
+@@ -2,0 +3,2 @@ package com.sherifradwan.ancnative
++import android.os.SystemClock
++
+@@ -10,0 +13 @@ import androidx.compose.ui.test.assertCountEquals
++import androidx.compose.ui.test.hasAnyAncestor
+@@ -17 +19,0 @@ import androidx.compose.ui.test.performClick
+-import androidx.compose.ui.test.performScrollTo
+@@ -27 +28,0 @@ import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
+-import com.sherifradwan.ancnative.model.catalog.ClinicalCatalogRepository
+@@ -524 +525 @@ class DeleteUndoUiTest {
+-    fun undoBarShowsOverBlankMedicationEditorWithoutCoveringTheFormButtons() {
++    fun undoBarShowsInsideTheBlankMedicationSheetUnderItsButtons() {
+@@ -548 +549,3 @@ class DeleteUndoUiTest {
+-        compose.onNodeWithTag("undoBar", useUnmergedTree = true).assertIsDisplayed()
++        // The modal sheet would hide the app's bar, so the sheet shows it, once, under its own buttons.
++        compose.onAllNodes(hasTestTag("undoBar"), useUnmergedTree = true).assertCountEquals(1)
++        compose.onNode(hasTestTag("undoBar") and hasAnyAncestor(hasTestTag("medicationSheet")), useUnmergedTree = true).assertIsDisplayed()
+@@ -550,2 +553,2 @@ class DeleteUndoUiTest {
+-        compose.onNodeWithTag("addAnotherMedication", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+-        compose.onNodeWithTag("saveMedication", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
++        compose.onNodeWithTag("addAnotherMedication", useUnmergedTree = true).assertIsDisplayed()
++        compose.onNodeWithTag("saveMedication", useUnmergedTree = true).assertIsDisplayed()
+@@ -553,28 +556,2 @@ class DeleteUndoUiTest {
+-        val buttonBottom = compose.onNodeWithTag("saveMedication", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot.bottom
+-        assertTrue("bar ($barTop) must not cover the Save button (bottom $buttonBottom)", buttonBottom <= barTop + 1f)
+-    }
+-
+-    @Test
+-    fun longPresavedMedicationListCollapsesToFiveWithAShowAllToggle() {
+-        host(AncRoute.Workspace(patientA.id, med.section))
+-        compose.runOnIdle {
+-            state = AncReducer.reduce(
+-                state,
+-                AncEvent.StartMedicationEditor(patientA.id, null, "ui-med-new", "ui-session"),
+-            )
+-        }
+-        compose.waitForIdle()
+-        val total = ClinicalCatalogRepository.getInstance(compose.activity).medicationCatalogItems.value.size
+-        if (total > 5) {
+-            compose.onNodeWithTag("presavedToggle", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+-            exists("medPreset-4")
+-            missing("medPreset-5")
+-            click("presavedToggle")
+-            exists("medPreset-${total - 1}")
+-            // The editor has a pinned action bar, so the shorter form area needs a scroll before the click.
+-            compose.onNodeWithTag("presavedToggle", useUnmergedTree = true).performScrollTo()
+-            click("presavedToggle")
+-            missing("medPreset-5")
+-        } else {
+-            missing("presavedToggle")
+-        }
++        val buttonBottom = compose.onNodeWithTag("addAnotherMedication", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot.bottom
++        assertTrue("bar ($barTop) must not cover the sheet buttons (bottom $buttonBottom)", buttonBottom <= barTop + 1f)
+@@ -680,0 +658,35 @@ class DeleteUndoUiTest {
++
++    private fun undoBars() = compose.onAllNodes(hasTestTag("undoBar"), useUnmergedTree = true).fetchSemanticsNodes().size
++    private fun undoBarsInSheet() =
++        compose.onAllNodes(hasTestTag("undoBar") and hasAnyAncestor(hasTestTag("medicationSheet")), useUnmergedTree = true)
++            .fetchSemanticsNodes().size
++
++    @Test
++    fun deleteUndoBarFollowsTheSheetOnceAndKeepsItsOwnWindow() {
++        deleteConfirmsRemovesCardAndShowsUndoBar(med)
++        val shownAt = SystemClock.elapsedRealtime()
++        scrollTo("editMedication-ui-med-2")
++        click("editMedication-ui-med-2")
++        exists("medicationSheet")
++        assertEquals("one bar, inside the sheet", 1, undoBars())
++        assertEquals(1, undoBarsInSheet())
++        click("cancelMedication")
++        missing("medicationSheet")
++        assertEquals("one bar, back under the screen", 1, undoBars())
++        assertEquals(0, undoBarsInSheet())
++        // The 8 s window is the coordinator's, not the host's: opening and closing the sheet does not restart it.
++        compose.waitUntil(12_000) { undoBars() == 0 }
++        assertTrue("expired on its first window", SystemClock.elapsedRealtime() - shownAt < 9_500)
++    }
++
++    @Test
++    fun deleteUndoExpiresOnTimeWhileTheSheetIsOpen() {
++        deleteConfirmsRemovesCardAndShowsUndoBar(med)
++        val shownAt = SystemClock.elapsedRealtime()
++        scrollTo("editMedication-ui-med-2")
++        click("editMedication-ui-med-2")
++        assertEquals(1, undoBarsInSheet())
++        compose.waitUntil(12_000) { undoBars() == 0 }
++        assertTrue(SystemClock.elapsedRealtime() - shownAt < 9_500)
++        exists("medicationSheet")
++    }
+diff --git a/app/src/androidTest/java/com/sherifradwan/ancnative/MedicationEntryDesignTest.kt b/app/src/androidTest/java/com/sherifradwan/ancnative/MedicationEntryDesignTest.kt
+index 78f0d45..70474dc 100644
+--- a/app/src/androidTest/java/com/sherifradwan/ancnative/MedicationEntryDesignTest.kt
++++ b/app/src/androidTest/java/com/sherifradwan/ancnative/MedicationEntryDesignTest.kt
+@@ -6,0 +7 @@ import androidx.compose.runtime.setValue
++import androidx.compose.ui.test.assertHeightIsAtLeast
+@@ -7,0 +9 @@ import androidx.compose.ui.test.assertIsDisplayed
++import androidx.compose.ui.test.assertIsSelected
+@@ -15,0 +18 @@ import androidx.compose.ui.test.performScrollTo
++import androidx.compose.ui.unit.dp
+@@ -22,0 +26 @@ import com.sherifradwan.ancnative.state.MedicationDraftField
++import com.sherifradwan.ancnative.state.WorkspaceSection
+@@ -25,3 +29 @@ import com.sherifradwan.ancnative.ui.AncTheme
+-import com.sherifradwan.ancnative.ui.MedicationEditor
+-import androidx.compose.ui.test.assertHeightIsAtLeast
+-import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.ui.patienthub.PatientHubScreen
+@@ -33,0 +36 @@ import org.junit.runner.RunWith
++import java.time.LocalDate
+@@ -35 +38,4 @@ import org.junit.runner.RunWith
+-/** Medication editor oracles T400-T405, updated 2026-11-02 for the reduced editor (name, dose, route, On/Stopped, one Note). */
++/**
++ * Medication entry oracles T400-T405, rewritten 2026-11-10 for the medication sheet: a new medication opens the
++ * shared form in a bottom sheet over the Meds tab, and the route never changes.
++ */
+@@ -41,0 +48 @@ class MedicationEntryDesignTest {
++    private val medsTab = AncRoute.Workspace(patient.id, WorkspaceSection.MEDICATIONS)
+@@ -44 +51 @@ class MedicationEntryDesignTest {
+-    /** Opens a new medication with the real reducer; `setup` may pre-fill the draft before the screen mounts. */
++    /** Opens a new medication with the real reducer; `setup` may change the draft before the screen mounts. */
+@@ -48,0 +56 @@ class MedicationEntryDesignTest {
++            route = medsTab,
+@@ -60 +67,0 @@ class MedicationEntryDesignTest {
+-        val route = state.route as AncRoute.MedicationEditor
+@@ -64 +71 @@ class MedicationEntryDesignTest {
+-                    MedicationEditor(
++                    PatientHubScreen(
+@@ -66 +73 @@ class MedicationEntryDesignTest {
+-                        route = route,
++                        route = state.route as AncRoute.Workspace,
+@@ -67,0 +75 @@ class MedicationEntryDesignTest {
++                        onStartVisit = { _, _ -> },
+@@ -78,2 +86,2 @@ class MedicationEntryDesignTest {
+-    private fun exists(tag: String) = compose.onNodeWithTag(tag, useUnmergedTree = true).assertExists()
+-    private fun missing(tag: String) = compose.onNodeWithTag(tag, useUnmergedTree = true).assertDoesNotExist()
++    private fun node(tag: String) = compose.onNodeWithTag(tag, useUnmergedTree = true)
++    private fun missing(tag: String) = node(tag).assertDoesNotExist()
+@@ -82 +90 @@ class MedicationEntryDesignTest {
+-    fun t400_newMedicationOpensDoseRowWithRouteOralAndNoFrequencyOrStartRow() {
++    fun t400_newMedicationOpensTheSheetOverTheMedsTabWithOralAndTodaysStartDate() {
+@@ -84,13 +92,7 @@ class MedicationEntryDesignTest {
+-        exists("medOpen-dose")
+-        compose.onNodeWithTag("medDosage", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+-        exists("medRow-route")
+-        compose.onNode(
+-            hasText("Oral") and (hasTestTag("medRow-route") or hasAnyAncestor(hasTestTag("medRow-route"))),
+-            useUnmergedTree = true,
+-        ).assertExists()
+-        missing("medRow-frequency")
+-        missing("medRow-start")
+-        compose.onNode(
+-            hasTestTag("medName") and hasAnyAncestor(hasTestTag("medPickCard")),
+-            useUnmergedTree = true,
+-        ).performScrollTo().assertIsDisplayed()
++        node("medicationSheet").assertIsDisplayed()
++        node("workspaceScreen").assertExists()
++        assertEquals(medsTab, state.route)
++        node("medName").performScrollTo().assertIsDisplayed()
++        node("medRouteChoice-0").performScrollTo().assertIsSelected()
++        compose.onNode(hasText("Oral") and hasAnyAncestor(hasTestTag("medRouteChoice-0")), useUnmergedTree = true).assertExists()
++        assertEquals(LocalDate.now().toString(), state.medicationDraft!!.values.startDate)
+@@ -100 +102 @@ class MedicationEntryDesignTest {
+-    fun t401_presetFillsNameAndDoseAndClosesTheDoseRow() {
++    fun t401_cancelOnAnUntouchedSheetClosesItAndStaysOnTheTab() {
+@@ -102 +104 @@ class MedicationEntryDesignTest {
+-        compose.onNodeWithTag("medPreset-0", useUnmergedTree = true).performScrollTo().performClick()
++        node("cancelMedication").performClick()
+@@ -104,4 +106,4 @@ class MedicationEntryDesignTest {
+-        val v = state.medicationDraft!!.values
+-        assertTrue("preset should fill name", v.name.isNotBlank())
+-        assertTrue("preset should fill dose", v.dosage.isNotBlank())
+-        missing("medOpen-dose")
++        missing("medicationSheet")
++        missing("medDiscardDialog")
++        assertEquals(medsTab, state.route)
++        node("workspaceScreen").assertIsDisplayed()
+@@ -111,4 +113,4 @@ class MedicationEntryDesignTest {
+-    fun t402_tappingRouteRowOpensItAndClosesDose() {
+-        host()
+-        exists("medOpen-dose")
+-        compose.onNodeWithTag("medRow-route", useUnmergedTree = true).performScrollTo().performClick()
++    fun t402_cancelAfterAnEditAsksOnceAndDiscardStaysOnTheTab() {
++        host { change(it, MedicationDraftField.NAME, "Iron") }
++        assertTrue(state.medicationDraft!!.touched)
++        node("cancelMedication").performClick()
+@@ -116,2 +118,6 @@ class MedicationEntryDesignTest {
+-        exists("medOpen-route")
+-        missing("medOpen-dose")
++        node("medDiscardDialog").assertIsDisplayed()
++        node("medDiscardConfirm").performClick()
++        compose.waitForIdle()
++        missing("medicationSheet")
++        assertFalse("the reducer must not ask a second time", state.showDiscardDialog)
++        assertEquals(medsTab, state.route)
+@@ -121 +127 @@ class MedicationEntryDesignTest {
+-    fun t403_twoStatusButtonsOnAndStoppedNoProphylaxis() {
++    fun t403_twoStatusButtonsAndStoppedStampsTodayAsTheStopDate() {
+@@ -123,2 +129 @@ class MedicationEntryDesignTest {
+-        compose.onNodeWithTag("medStatusChoice-0", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+-        exists("medStatusChoice-1")
++        node("medStatusChoice-0").performScrollTo().assertIsDisplayed()
+@@ -126,4 +131,6 @@ class MedicationEntryDesignTest {
+-        missing("medStatusChoice-3")
+-        compose.onNode(hasText("Prophylaxis", substring = true, ignoreCase = true), useUnmergedTree = true)
+-            .assertDoesNotExist()
+-        compose.onNodeWithTag("medStatusChoice-1", useUnmergedTree = true).performScrollTo().performClick()
++        // The form has no prophylaxis control. Scoped to the sheet: the active rows under it may carry the word in their notes.
++        compose.onNode(
++            hasText("Prophylaxis", substring = true, ignoreCase = true) and hasAnyAncestor(hasTestTag("medicationSheet")),
++            useUnmergedTree = true,
++        ).assertDoesNotExist()
++        node("medStatusChoice-1").performScrollTo().performClick()
+@@ -132,2 +139,2 @@ class MedicationEntryDesignTest {
+-        assertFalse(state.medicationDraft!!.values.isNonCompliant)
+-        compose.onNodeWithTag("medStatusChoice-0", useUnmergedTree = true).performScrollTo().performClick()
++        assertEquals(LocalDate.now().toString(), state.medicationDraft!!.values.endDate)
++        node("medStatusChoice-0").performScrollTo().performClick()
+@@ -135,0 +143 @@ class MedicationEntryDesignTest {
++        assertEquals("", state.medicationDraft!!.values.endDate)
+@@ -139,6 +147,3 @@ class MedicationEntryDesignTest {
+-    fun t404_moreSectionFrequencyEndDateAdverseNotesAreGoneAndOneNoteFieldRemains() {
+-        host { change(change(it, MedicationDraftField.END_DATE, "2026-12-01"), MedicationDraftField.ADVERSE_NOTES, "Nausea") }
+-        listOf(
+-            "medMoreToggle", "medMoreSection", "medFrequency", "medRow-frequency", "medOpen-frequency",
+-            "freqPreset-0", "medEndDate", "medAdverseNotes", "medStartDate", "medRow-start",
+-        ).forEach { missing(it) }
++    fun t404_oneNotesFieldAndNoAdverseNotesFieldWhileHiddenValuesStay() {
++        host { change(it, MedicationDraftField.ADVERSE_NOTES, "Nausea") }
++        listOf("medMoreToggle", "medMoreSection", "medAdverseNotes", "medEndDate", "medStartDate").forEach { missing(it) }
+@@ -146,4 +151 @@ class MedicationEntryDesignTest {
+-        // The hidden values stay in the draft untouched.
+-        val v = state.medicationDraft!!.values
+-        assertEquals("2026-12-01", v.endDate)
+-        assertEquals("Nausea", v.adverseNotes)
++        assertEquals("Nausea", state.medicationDraft!!.values.adverseNotes)
+@@ -153 +155 @@ class MedicationEntryDesignTest {
+-    fun t404b_statusButtonsAreLabelledActiveAndStopped() {
++    fun t405_cancelSaveAndSaveAndAddAnotherAreAtLeast48dpAndStayVisible() {
+@@ -155,12 +156,0 @@ class MedicationEntryDesignTest {
+-        compose.onNode(hasText("Active") and hasAnyAncestor(hasTestTag("medStatusChoice-0")), useUnmergedTree = true).assertExists()
+-        compose.onNode(hasText("Stopped") and hasAnyAncestor(hasTestTag("medStatusChoice-1")), useUnmergedTree = true).assertExists()
+-    }
+-
+-    @Test
+-    fun t405_actionBarIsPinnedWithCancelSaveAndSaveAndAddAnotherAtLeast48dp() {
+-        host()
+-        // No scrolling: the bar is visible at once and stays so with the form scrolled to the bottom.
+-        listOf("cancelMedication", "saveMedication", "addAnotherMedication").forEach {
+-            compose.onNodeWithTag(it, useUnmergedTree = true).assertIsDisplayed().assertHeightIsAtLeast(48.dp)
+-        }
+-        compose.onNodeWithTag("medNotes", useUnmergedTree = true).performScrollTo()
+@@ -168 +158 @@ class MedicationEntryDesignTest {
+-            compose.onNodeWithTag(it, useUnmergedTree = true).assertIsDisplayed()
++            node(it).assertIsDisplayed().assertHeightIsAtLeast(48.dp)
+@@ -170,4 +160,7 @@ class MedicationEntryDesignTest {
+-        val cancel = compose.onNodeWithTag("cancelMedication", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+-        val save = compose.onNodeWithTag("saveMedication", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+-        val another = compose.onNodeWithTag("addAnotherMedication", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+-        assertTrue("order Cancel, Save, Save and add another", cancel.right <= save.left + 1f && save.right <= another.left + 1f)
++        node("medNotes").performScrollTo()
++        listOf("cancelMedication", "saveMedication", "addAnotherMedication").forEach { node(it).assertIsDisplayed() }
++        val cancel = node("cancelMedication").fetchSemanticsNode().boundsInRoot
++        val save = node("saveMedication").fetchSemanticsNode().boundsInRoot
++        val another = node("addAnotherMedication").fetchSemanticsNode().boundsInRoot
++        assertTrue("Cancel left of Save", cancel.right <= save.left + 1f)
++        assertTrue("Save and add another under them", save.bottom <= another.top + 1f)
+diff --git a/app/src/androidTest/java/com/sherifradwan/ancnative/MedicationFormTest.kt b/app/src/androidTest/java/com/sherifradwan/ancnative/MedicationFormTest.kt
+new file mode 100644
+index 0000000..32b7d10
+--- /dev/null
++++ b/app/src/androidTest/java/com/sherifradwan/ancnative/MedicationFormTest.kt
+@@ -0,0 +1,544 @@
++package com.sherifradwan.ancnative
++
++import android.view.KeyEvent
++import androidx.compose.foundation.layout.Box
++import androidx.compose.foundation.layout.width
++import androidx.compose.runtime.CompositionLocalProvider
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.platform.LocalDensity
++import androidx.compose.ui.semantics.SemanticsActions
++import androidx.compose.ui.test.assertIsSelected
++import androidx.compose.ui.test.getUnclippedBoundsInRoot
++import androidx.compose.ui.test.hasAnyAncestor
++import androidx.compose.ui.test.hasTestTag
++import androidx.compose.ui.test.hasText
++import androidx.compose.ui.test.junit4.StateRestorationTester
++import androidx.compose.ui.text.TextLayoutResult
++import androidx.compose.ui.unit.Density
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.ui.patienthub.components.MedicationSheetButtons
++import androidx.compose.runtime.getValue
++import androidx.compose.runtime.mutableStateOf
++import androidx.compose.runtime.remember
++import androidx.compose.runtime.setValue
++import androidx.compose.ui.input.key.Key
++import androidx.compose.ui.test.ExperimentalTestApi
++import androidx.compose.ui.test.assertCountEquals
++import androidx.compose.ui.test.assertIsDisplayed
++import androidx.compose.ui.test.assertIsEnabled
++import androidx.compose.ui.test.assertIsFocused
++import androidx.compose.ui.test.assertIsNotFocused
++import androidx.compose.ui.test.assertIsNotEnabled
++import androidx.compose.ui.test.assertTextContains
++import androidx.compose.ui.test.junit4.createComposeRule
++import androidx.compose.ui.test.onAllNodesWithText
++import androidx.compose.ui.test.onNodeWithTag
++import androidx.compose.ui.test.onNodeWithText
++import androidx.compose.ui.test.performClick
++import androidx.compose.ui.test.performImeAction
++import androidx.compose.ui.test.performKeyInput
++import androidx.compose.ui.test.performScrollTo
++import androidx.compose.ui.test.performTextInput
++import androidx.compose.ui.test.performTouchInput
++import androidx.compose.ui.test.pressKey
++import androidx.compose.ui.test.swipeDown
++import androidx.test.ext.junit.runners.AndroidJUnit4
++import androidx.test.platform.app.InstrumentationRegistry
++import com.sherifradwan.ancnative.model.ClinicalVocabulary
++import com.sherifradwan.ancnative.state.AncEvent
++import com.sherifradwan.ancnative.state.ClinicalValidationError
++import com.sherifradwan.ancnative.state.MedicationDraft
++import com.sherifradwan.ancnative.state.MedicationDraftField
++import com.sherifradwan.ancnative.state.MedicationDraftValues
++import com.sherifradwan.ancnative.state.SavePhase
++import com.sherifradwan.ancnative.state.SaveUiError
++import com.sherifradwan.ancnative.state.stringRes
++import com.sherifradwan.ancnative.ui.AncTheme
++import com.sherifradwan.ancnative.ui.patienthub.components.MedicationSheet
++import org.junit.Assert.assertEquals
++import org.junit.Assert.assertTrue
++import org.junit.Rule
++import org.junit.Test
++import org.junit.runner.RunWith
++
++@OptIn(ExperimentalTestApi::class)
++@RunWith(AndroidJUnit4::class)
++class MedicationFormTest {
++    @get:Rule
++    val compose = createComposeRule()
++
++    private val events = mutableListOf<AncEvent>()
++    private var phase by mutableStateOf(SavePhase.IDLE)
++    private var error by mutableStateOf<SaveUiError?>(null)
++
++    private val activeValues = MedicationDraftValues(route = "Oral", status = "Active", startDate = "2026-11-10")
++
++    private fun str(id: Int): String = InstrumentationRegistry.getInstrumentation().targetContext.getString(id)
++
++    private fun draft(existing: Boolean, values: MedicationDraftValues, errors: Set<ClinicalValidationError>, session: String = "s") =
++        MedicationDraft(
++            editorSessionId = session,
++            patientId = "p",
++            medicationId = "m",
++            basePatientRevision = 1L,
++            baseMedicationRevision = if (existing) 3L else null,
++            original = values,
++            values = values,
++            errors = errors,
++        )
++
++    /** Hosts the sheet and applies draft-field events locally, as the reducer would. */
++    private fun mount(
++        existing: Boolean,
++        touched: Boolean = false,
++        savePhase: SavePhase = SavePhase.IDLE,
++        saveError: SaveUiError? = null,
++        values: MedicationDraftValues = activeValues,
++        errors: Set<ClinicalValidationError> = emptySet(),
++    ) {
++        events.clear()
++        phase = savePhase
++        error = saveError
++        compose.setContent {
++            var current by remember { mutableStateOf(draft(existing, values, errors)) }
++            AncTheme {
++                MedicationSheet(
++                    draft = current,
++                    savePhase = phase,
++                    saveError = error,
++                    touched = touched,
++                    onEvent = { event ->
++                        events += event
++                        if (event is AncEvent.MedicationDraftChanged) {
++                            val v = current.values
++                            val next = when (event.field) {
++                                MedicationDraftField.NAME -> v.copy(name = event.value)
++                                MedicationDraftField.DOSAGE -> v.copy(dosage = event.value)
++                                MedicationDraftField.ROUTE -> v.copy(route = event.value)
++                                MedicationDraftField.FREQUENCY -> v.copy(frequency = event.value)
++                                MedicationDraftField.START_DATE -> v.copy(startDate = event.value)
++                                MedicationDraftField.END_DATE -> v.copy(endDate = event.value)
++                                MedicationDraftField.STATUS -> v.copy(status = event.value)
++                                MedicationDraftField.NOTES -> v.copy(notes = event.value)
++                                MedicationDraftField.ADVERSE_NOTES -> v.copy(adverseNotes = event.value)
++                            }
++                            current = current.copy(values = next)
++                        }
++                    },
++                )
++            }
++        }
++        compose.waitForIdle()
++    }
++
++    private fun changes(field: MedicationDraftField) =
++        events.filterIsInstance<AncEvent.MedicationDraftChanged>().filter { it.field == field }
++
++    private fun assertFocused(tag: String) {
++        compose.waitForIdle()
++        compose.waitUntil(5_000) { runCatching { compose.onNodeWithTag(tag).assertIsFocused() }.isSuccess }
++        compose.onNodeWithTag(tag).assertIsFocused()
++    }
++
++    private fun shown(tag: String) = compose.onNodeWithTag(tag).performScrollTo().assertIsDisplayed()
++
++    @Test
++    fun addModeRendersEveryFieldAndAllThreeButtons() {
++        mount(existing = false)
++        listOf(
++            "medName", "medDosage", "medRouteChoice-0", "medFreqChoice-0", "medFreqChoice-other",
++            "medStatusChoice-0", "medStatusChoice-1", "medDate", "medNotes",
++        ).forEach { shown(it) }
++        compose.onNodeWithTag("cancelMedication").assertIsDisplayed()
++        compose.onNodeWithTag("saveMedication").assertIsDisplayed()
++        compose.onNodeWithTag("addAnotherMedication").assertIsDisplayed()
++    }
++
++    @Test
++    fun editModeHasNoSaveAndAddAnother() {
++        mount(existing = true)
++        compose.onNodeWithTag("addAnotherMedication").assertDoesNotExist()
++        compose.onNodeWithText(str(R.string.edit_medication)).assertIsDisplayed()
++    }
++
++    @Test
++    fun saveSendsSubmitMedication() {
++        mount(existing = false)
++        compose.onNodeWithTag("saveMedication").performClick()
++        assertEquals(listOf<AncEvent>(AncEvent.SubmitMedication), events)
++    }
++
++    @Test
++    fun saveAndAddAnotherSendsItsOwnEvent() {
++        mount(existing = false)
++        compose.onNodeWithTag("addAnotherMedication").performClick()
++        assertEquals(listOf<AncEvent>(AncEvent.SubmitMedicationAndAddAnother), events)
++    }
++
++    @Test
++    fun enterMovesFocusFromNameToDoseToDateToNotes() {
++        mount(existing = false)
++        compose.onNodeWithTag("medName").performClick()
++        compose.onNodeWithTag("medName").performImeAction()
++        assertFocused("medDosage")
++        compose.onNodeWithTag("medDosage").performImeAction()
++        assertFocused("medDate")
++        compose.onNodeWithTag("medDate").performImeAction()
++        assertFocused("medNotes")
++    }
++
++    @Test
++    fun enterInNotesInsertsNewLineAndKeepsFocus() {
++        mount(existing = false)
++        compose.onNodeWithTag("medNotes").performScrollTo().performClick()
++        compose.onNodeWithTag("medNotes").performKeyInput { pressKey(Key.Enter) }
++        compose.waitForIdle()
++        assertFocused("medNotes")
++        assertTrue(changes(MedicationDraftField.NOTES).any { it.value.contains("\n") })
++    }
++
++    @Test
++    fun otherFrequencyTakesFocusAndEnterFromDoseGoesThere() {
++        mount(existing = false)
++        compose.onNodeWithTag("medFreqChoice-other").performScrollTo().performClick()
++        shown("medFreqOther")
++        assertFocused("medFreqOther")
++        compose.onNodeWithTag("medDosage").performScrollTo().performClick()
++        compose.onNodeWithTag("medDosage").performImeAction()
++        assertFocused("medFreqOther")
++        compose.onNodeWithTag("medFreqOther").performTextInput("Every 12 hours")
++        assertEquals("Every 12 hours", changes(MedicationDraftField.FREQUENCY).last().value)
++    }
++
++    @Test
++    fun routeIsReadOnlyOnExistingRowWithNote() {
++        mount(existing = true, values = activeValues.copy(name = "X", dosage = "1", route = "IM", frequency = "Once daily"))
++        shown("medRouteReadOnly")
++        compose.onNodeWithTag("medRouteValue").assertTextContains("IM")
++        compose.onNodeWithText(str(R.string.medication_route_locked_note)).assertIsDisplayed()
++        compose.onNodeWithTag("medRouteChoice-0").assertDoesNotExist()
++    }
++
++    @Test
++    fun routeChipSendsItsExactValue() {
++        mount(existing = false)
++        val routes = ClinicalVocabulary.medicationRoutes.toList()
++        compose.onNodeWithTag("medRouteChoice-1").performScrollTo().performClick()
++        assertEquals(listOf(routes[1]), changes(MedicationDraftField.ROUTE).map { it.value })
++        compose.onNodeWithTag("medRouteReadOnly").assertDoesNotExist()
++    }
++
++    @Test
++    fun togglingToStoppedSwapsDateLabelAndTypingWritesEndDate() {
++        mount(existing = true, values = activeValues.copy(name = "X", dosage = "1", frequency = "Once daily"))
++        compose.onNodeWithText(str(R.string.start_date)).performScrollTo().assertIsDisplayed()
++        compose.onNodeWithTag("medDate").performTextInput("1")
++        assertEquals(1, changes(MedicationDraftField.START_DATE).size)
++        assertTrue(changes(MedicationDraftField.END_DATE).isEmpty())
++
++        compose.onNodeWithTag("medStatusChoice-1").performScrollTo().performClick()
++        compose.waitForIdle()
++        assertEquals("Discontinued", changes(MedicationDraftField.STATUS).single().value)
++        compose.onNodeWithText(str(R.string.medication_stop_date)).performScrollTo().assertIsDisplayed()
++        compose.onNodeWithTag("medDate").performTextInput("2")
++        assertEquals(1, changes(MedicationDraftField.END_DATE).size)
++        assertEquals(1, changes(MedicationDraftField.START_DATE).size)
++    }
++
++    @Test
++    fun stoppedRowShowsItsStopDate() {
++        mount(existing = true, values = activeValues.copy(name = "X", dosage = "1", frequency = "Once daily", status = "Discontinued", startDate = "2026-11-01", endDate = "2026-11-09"))
++        compose.onNodeWithText(str(R.string.medication_stop_date)).performScrollTo().assertIsDisplayed()
++        compose.onNodeWithTag("medDate").assertTextContains("2026-11-09")
++    }
++
++    @Test
++    fun clickingTheAlreadySelectedStatusSendsNothing() {
++        mount(existing = true, values = activeValues.copy(name = "X", dosage = "1", frequency = "Once daily"))
++        compose.onNodeWithTag("medStatusChoice-0").performScrollTo().performClick()
++        compose.waitForIdle()
++        assertTrue(events.isEmpty())
++    }
++
++    @Test
++    fun validationErrorsShowNextToTheirFieldsAndInTheMessage() {
++        mount(
++            existing = false,
++            values = activeValues.copy(frequency = "Custom words", startDate = ""),
++            errors = setOf(
++                ClinicalValidationError.REQUIRED_NAME,
++                ClinicalValidationError.REQUIRED_DOSAGE,
++                ClinicalValidationError.REQUIRED_FREQUENCY,
++                ClinicalValidationError.REQUIRED_DATE,
++            ),
++        )
++        compose.onNodeWithText(str(R.string.correct_highlighted_fields)).assertIsDisplayed()
++        // Name, dose and the date field carry the per-field message; the Other box says what is missing.
++        compose.onAllNodesWithText(str(R.string.correct_highlighted_field)).assertCountEquals(3)
++        // The name is the first field in error, so it is the one revealed; the frequency sits below it.
++        shown("medName")
++        compose.onNodeWithText(str(R.string.medication_frequency_required), useUnmergedTree = true)
++            .performScrollTo()
++            .assertIsDisplayed()
++        shown("medFreqOther")
++    }
++
++    @Test
++    fun missingFrequencyShowsItsMessageWhenNoOtherBox() {
++        mount(existing = false, errors = setOf(ClinicalValidationError.REQUIRED_FREQUENCY))
++        shown("medFreqError")
++        compose.onNodeWithText(str(R.string.medication_frequency_required)).assertIsDisplayed()
++    }
++
++    @Test
++    fun cancelIsEnabledWhenIdle() {
++        mount(existing = false)
++        compose.onNodeWithTag("cancelMedication").assertIsEnabled()
++        compose.onNodeWithTag("saveMedication").assertIsEnabled()
++        compose.onNodeWithTag("addAnotherMedication").assertIsEnabled()
++        compose.onNodeWithTag("medSaveProgress").assertDoesNotExist()
++    }
++
++    @Test
++    fun cancelOnUntouchedFormClosesAtOnce() {
++        mount(existing = false, touched = false)
++        compose.onNodeWithTag("cancelMedication").performClick()
++        assertEquals(listOf<AncEvent>(AncEvent.CancelEditor), events)
++        compose.onNodeWithTag("medDiscardDialog").assertDoesNotExist()
++    }
++
++    @Test
++    fun cancelOnTouchedFormAsksFirstAndKeepEditingSendsNothing() {
++        mount(existing = false, touched = true)
++        compose.onNodeWithTag("cancelMedication").performClick()
++        compose.onNodeWithTag("medDiscardDialog").assertIsDisplayed()
++        assertTrue(events.isEmpty())
++        compose.onNodeWithTag("medDiscardKeep").performClick()
++        compose.onNodeWithTag("medDiscardDialog").assertDoesNotExist()
++        assertTrue(events.isEmpty())
++    }
++
++    @Test
++    fun discardingOnTouchedFormSendsCancel() {
++        mount(existing = false, touched = true)
++        compose.onNodeWithTag("cancelMedication").performClick()
++        compose.onNodeWithTag("medDiscardConfirm").performClick()
++        assertEquals(listOf<AncEvent>(AncEvent.CancelEditor), events)
++    }
++
++    @Test
++    fun swipingDownOnTouchedFormAsksInsteadOfHiding() {
++        mount(existing = false, touched = true)
++        compose.onNodeWithTag("medicationSheet").performTouchInput { swipeDown() }
++        compose.waitForIdle()
++        compose.onNodeWithTag("medDiscardDialog").assertIsDisplayed()
++        compose.onNodeWithTag("medicationSheet").assertIsDisplayed()
++        assertTrue(events.isEmpty())
++    }
++
++    @Test
++    fun buttonsAndFieldsAreDisabledWithProgressWhileSaving() {
++        mount(existing = false, savePhase = SavePhase.PENDING)
++        compose.onNodeWithTag("cancelMedication").assertIsNotEnabled()
++        compose.onNodeWithTag("saveMedication").assertIsNotEnabled()
++        compose.onNodeWithTag("addAnotherMedication").assertIsNotEnabled()
++        compose.onNodeWithTag("medName").assertIsNotEnabled()
++        compose.onNodeWithTag("medSaveProgress").assertIsDisplayed()
++        compose.onNodeWithText(str(R.string.medication_saving)).assertIsDisplayed()
++    }
++
++    @Test
++    fun sheetCannotBeDismissedWhileSaving() {
++        mount(existing = false, savePhase = SavePhase.PENDING)
++        compose.onNodeWithTag("medicationSheet").performTouchInput { swipeDown() }
++        compose.waitForIdle()
++        compose.onNodeWithTag("medicationSheet").assertIsDisplayed()
++        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
++        compose.waitForIdle()
++        compose.onNodeWithTag("medicationSheet").assertIsDisplayed()
++        assertTrue(events.isEmpty())
++        compose.runOnIdle { phase = SavePhase.RECONCILING }
++        compose.onNodeWithTag("medicationSheet").performTouchInput { swipeDown() }
++        compose.waitForIdle()
++        compose.onNodeWithTag("medicationSheet").assertIsDisplayed()
++        assertTrue(events.isEmpty())
++    }
++
++    @Test
++    fun reconcilingShowsItsMessageWithControlsDisabled() {
++        mount(existing = false, savePhase = SavePhase.RECONCILING)
++        compose.onNodeWithText(str(R.string.save_reconciling)).assertIsDisplayed()
++        compose.onNodeWithTag("saveMedication").assertIsNotEnabled()
++        compose.onNodeWithTag("cancelMedication").assertIsNotEnabled()
++    }
++
++    @Test
++    fun unresolvedShowsItsMessageAndCurrentlyDisablesEveryControl() {
++        mount(existing = false, savePhase = SavePhase.UNRESOLVED, saveError = SaveUiError.OUTCOME_UNRESOLVED)
++        compose.onNodeWithText(str(R.string.save_unresolved)).assertIsDisplayed()
++        compose.onNodeWithTag("cancelMedication").assertIsNotEnabled()
++        compose.onNodeWithTag("saveMedication").assertIsNotEnabled()
++        compose.onNodeWithTag("addAnotherMedication").assertIsNotEnabled()
++        compose.onNodeWithTag("medName").assertIsNotEnabled()
++    }
++
++    @Test
++    fun rejectedSaveShowsExistingMessageAndKeepsValues() {
++        mount(
++            existing = true,
++            savePhase = SavePhase.ERROR,
++            saveError = SaveUiError.STALE_OR_CONFLICT,
++            values = activeValues.copy(name = "Aspirin", dosage = "75 mg", frequency = "Once daily"),
++        )
++        compose.onNodeWithText(str(R.string.save_stale_conflict)).assertIsDisplayed()
++        compose.onNodeWithTag("medName").assertTextContains("Aspirin")
++        compose.onNodeWithTag("saveMedication").assertIsEnabled()
++        compose.onNodeWithTag("cancelMedication").assertIsEnabled()
++    }
++
++    @Test
++    fun everySaveErrorShowsItsOwnMessage() {
++        mount(existing = true, savePhase = SavePhase.ERROR, saveError = SaveUiError.entries.first())
++        SaveUiError.entries.forEach { e ->
++            compose.runOnIdle { error = e }
++            compose.waitForIdle()
++            compose.onNodeWithText(str(e.stringRes())).assertIsDisplayed()
++            compose.onNodeWithTag("saveMedication").assertIsEnabled()
++            compose.onNodeWithTag("cancelMedication").assertIsEnabled()
++        }
++    }
++
++    @Test
++    fun swipingDownOnUntouchedFormCancelsAtOnce() {
++        mount(existing = false, touched = false)
++        compose.onNodeWithTag("medicationSheet").performTouchInput { swipeDown() }
++        compose.waitUntil(5_000) { events.contains(AncEvent.CancelEditor) }
++        compose.onNodeWithTag("medDiscardDialog").assertDoesNotExist()
++    }
++
++    @Test
++    fun stoppedBackToActiveWritesStartDateAgain() {
++        mount(existing = true, values = activeValues.copy(name = "X", dosage = "1", frequency = "Once daily", status = "Discontinued", startDate = "2026-11-01", endDate = "2026-11-09"))
++        compose.onNodeWithTag("medStatusChoice-0").performScrollTo().performClick()
++        compose.waitForIdle()
++        assertEquals("Active", changes(MedicationDraftField.STATUS).single().value)
++        compose.onNodeWithText(str(R.string.start_date)).performScrollTo().assertIsDisplayed()
++        compose.onNodeWithTag("medDate").performTextInput("1")
++        assertEquals(1, changes(MedicationDraftField.START_DATE).size)
++        assertTrue(changes(MedicationDraftField.END_DATE).isEmpty())
++    }
++
++    @Test
++    fun otherChosenWithEmptyTextShowsTheFrequencyError() {
++        mount(existing = false, errors = setOf(ClinicalValidationError.REQUIRED_FREQUENCY))
++        compose.onNodeWithTag("medFreqChoice-other").performScrollTo().performClick()
++        compose.waitForIdle()
++        shown("medFreqOther")
++        // The message sits in the Other box, so no separate text under the chips.
++        compose.onNodeWithText(str(R.string.medication_frequency_required), useUnmergedTree = true).assertIsDisplayed()
++        compose.onNodeWithTag("medFreqError").assertDoesNotExist()
++    }
++
++    @Test
++    fun nextDraftWithCatalogFrequencyDoesNotKeepOtherMode() {
++        events.clear()
++        var current by mutableStateOf(draft(false, activeValues.copy(frequency = "Every 36 hours"), emptySet(), "s1"))
++        compose.setContent {
++            AncTheme {
++                MedicationSheet(draft = current, savePhase = SavePhase.IDLE, saveError = null, touched = false, onEvent = { events += it })
++            }
++        }
++        compose.waitForIdle()
++        shown("medFreqOther")
++        compose.runOnIdle { current = draft(false, activeValues.copy(frequency = "Once daily"), emptySet(), "s2") }
++        compose.waitForIdle()
++        compose.onNodeWithTag("medFreqOther").assertDoesNotExist()
++        compose.onNodeWithTag("medFreqChoice-0").performScrollTo().assertIsSelected()
++        compose.onNodeWithTag("medDosage").performScrollTo().performClick()
++        compose.onNodeWithTag("medDosage").performImeAction()
++        assertFocused("medDate")
++    }
++
++    @Test
++    fun theChainedNameFocusHappensOnceAndNotAgainAfterRecreation() {
++        val tester = StateRestorationTester(compose)
++        val chained = draft(false, activeValues, emptySet()).copy(chainedAdd = true)
++        tester.setContent {
++            AncTheme {
++                MedicationSheet(draft = chained, savePhase = SavePhase.IDLE, saveError = null, touched = false, onEvent = { events += it })
++            }
++        }
++        assertFocused("medName")
++        compose.onNodeWithTag("medNotes").performScrollTo().performClick()
++        assertFocused("medNotes")
++
++        // A rotation or theme change rebuilds the sheet: the same draft must not pull focus back to the name.
++        tester.emulateSavedInstanceStateRestore()
++        compose.waitForIdle()
++        repeat(5) { compose.mainClock.advanceTimeByFrame() }
++        compose.waitForIdle()
++        compose.onNodeWithTag("medName").assertIsNotFocused()
++    }
++
++    @Test
++    fun discardPromptSurvivesRecreation() {
++        val tester = StateRestorationTester(compose)
++        tester.setContent {
++            AncTheme {
++                MedicationSheet(draft = draft(false, activeValues, emptySet()), savePhase = SavePhase.IDLE, saveError = null, touched = true, onEvent = { events += it })
++            }
++        }
++        compose.onNodeWithTag("cancelMedication").performClick()
++        compose.onNodeWithTag("medDiscardDialog").assertIsDisplayed()
++        tester.emulateSavedInstanceStateRestore()
++        compose.waitForIdle()
++        compose.onNodeWithTag("medDiscardDialog").assertIsDisplayed()
++    }
++
++    @Test
++    fun bottomButtonsAreNotClippedAt360dpAnd200PercentText() = assertButtonsUnclipped(saving = false)
++
++    @Test
++    fun savingLabelIsNotClippedAt360dpAnd200PercentText() = assertButtonsUnclipped(saving = true)
++
++    private fun assertButtonsUnclipped(saving: Boolean) {
++        compose.setContent {
++            val base = LocalDensity.current
++            CompositionLocalProvider(LocalDensity provides Density(base.density, fontScale = 2f)) {
++                AncTheme {
++                    Box(Modifier.width(360.dp)) {
++                        MedicationSheetButtons(
++                            isExistingRow = false,
++                            enabled = !saving,
++                            saving = saving,
++                            onCancel = {},
++                            onSave = {},
++                            onSaveAndAddAnother = {},
++                        )
++                    }
++                }
++            }
++        }
++        compose.waitForIdle()
++        val labels = mapOf(
++            "cancelMedication" to str(R.string.cancel),
++            "saveMedication" to str(if (saving) R.string.medication_saving else R.string.save),
++            "addAnotherMedication" to str(R.string.save_and_add_another_med),
++        )
++        labels.forEach { (tag, label) ->
++            val button = compose.onNodeWithTag(tag)
++            button.assertIsDisplayed()
++            assertTrue("$tag overflows 360dp", button.getUnclippedBoundsInRoot().right <= 360.dp)
++            val text = compose.onNode(hasText(label) and hasAnyAncestor(hasTestTag(tag)), useUnmergedTree = true)
++            text.assertIsDisplayed()
++            val results = mutableListOf<TextLayoutResult>()
++            text.fetchSemanticsNode().config[SemanticsActions.GetTextLayoutResult].action?.invoke(results)
++            val layout = results.firstOrNull()
++            assertTrue("$label has no text layout", layout != null)
++            assertTrue("$label overflows its height or runs past 2 lines", !layout!!.didOverflowHeight && layout.lineCount <= 2)
++            val box = button.getUnclippedBoundsInRoot()
++            val inner = text.getUnclippedBoundsInRoot()
++            assertTrue("$label sticks out of its button", inner.left >= box.left && inner.right <= box.right && inner.top >= box.top && inner.bottom <= box.bottom)
++        }
++    }
++}
+diff --git a/app/src/androidTest/java/com/sherifradwan/ancnative/MedicationStopBarTest.kt b/app/src/androidTest/java/com/sherifradwan/ancnative/MedicationStopBarTest.kt
+new file mode 100644
+index 0000000..0538126
+--- /dev/null
++++ b/app/src/androidTest/java/com/sherifradwan/ancnative/MedicationStopBarTest.kt
+@@ -0,0 +1,96 @@
++package com.sherifradwan.ancnative
++
++import androidx.compose.runtime.getValue
++import androidx.compose.runtime.mutableStateOf
++import androidx.compose.runtime.setValue
++import androidx.compose.ui.test.assertIsDisplayed
++import androidx.compose.ui.test.junit4.createComposeRule
++import androidx.compose.ui.test.onNodeWithTag
++import androidx.test.ext.junit.runners.AndroidJUnit4
++import com.sherifradwan.ancnative.state.AncEvent
++import com.sherifradwan.ancnative.state.MedicationStopUndo
++import com.sherifradwan.ancnative.state.SavePhase
++import com.sherifradwan.ancnative.ui.AncTheme
++import com.sherifradwan.ancnative.ui.patienthub.components.MedicationStopBar
++import org.junit.Assert.assertEquals
++import org.junit.Assert.assertTrue
++import org.junit.Rule
++import org.junit.Test
++import org.junit.runner.RunWith
++
++/** The one-tap stop's Undo bar keeps the window counted from the commit, on an injected clock and duration. */
++@RunWith(AndroidJUnit4::class)
++class MedicationStopBarTest {
++    @get:Rule
++    val compose = createComposeRule()
++
++    private val events = mutableListOf<AncEvent>()
++    private var now = 0L
++    private var shown by mutableStateOf(true)
++
++    private fun undo(committedAt: Long) = MedicationStopUndo(
++        token = "t1", patientId = "p1", medicationId = "m1", medicationName = "Iron",
++        previousStatus = "Active", previousEndDate = "", previousNonCompliant = false, committedAtMillis = committedAt,
++    )
++
++    private fun mount(committedAt: Long, windowMillis: Long) {
++        compose.mainClock.autoAdvance = false
++        compose.setContent {
++            AncTheme {
++                if (shown) {
++                    MedicationStopBar(
++                        quickSave = null,
++                        stopUndo = undo(committedAt),
++                        savePhase = SavePhase.IDLE,
++                        saveError = null,
++                        undoEnabled = true,
++                        onEvent = { events += it },
++                        undoWindowMillis = windowMillis,
++                        clock = { now },
++                    )
++                }
++            }
++        }
++        compose.mainClock.advanceTimeByFrame()
++    }
++
++    private fun advance(millis: Long) {
++        now += millis
++        compose.mainClock.advanceTimeBy(millis)
++    }
++
++    private val expired get() = events.filterIsInstance<AncEvent.MedicationStopUndoExpired>()
++
++    @Test
++    fun theBarExpiresAfterTheInjectedWindow() {
++        mount(committedAt = 0L, windowMillis = 2_000L)
++        compose.onNodeWithTag("medStopUndoBar", useUnmergedTree = true).assertIsDisplayed()
++        advance(1_800L)
++        assertTrue("not yet", expired.isEmpty())
++        advance(400L)
++        assertEquals(listOf(AncEvent.MedicationStopUndoExpired("t1")), expired)
++    }
++
++    @Test
++    fun showingTheBarAgainDoesNotStartAFreshWindow() {
++        mount(committedAt = 0L, windowMillis = 10_000L)
++        advance(6_000L)
++        // Leaving the tab (or rotating) removes the bar; coming back shows it again with the same commit time.
++        shown = false
++        compose.mainClock.advanceTimeByFrame()
++        shown = true
++        compose.mainClock.advanceTimeByFrame()
++        advance(3_800L)
++        assertTrue("4 s were left, not 10", expired.isEmpty())
++        advance(400L)
++        assertEquals(1, expired.size)
++    }
++
++    @Test
++    fun aBarShownAfterItsWindowEndedGoesAtOnce() {
++        now = 20_000L
++        mount(committedAt = 0L, windowMillis = 10_000L)
++        compose.mainClock.advanceTimeByFrame()
++        assertEquals(1, expired.size)
++    }
++}
+diff --git a/app/src/androidTest/java/com/sherifradwan/ancnative/MedsTabRestorationTest.kt b/app/src/androidTest/java/com/sherifradwan/ancnative/MedsTabRestorationTest.kt
+new file mode 100644
+index 0000000..c8e4b90
+--- /dev/null
++++ b/app/src/androidTest/java/com/sherifradwan/ancnative/MedsTabRestorationTest.kt
+@@ -0,0 +1,84 @@
++package com.sherifradwan.ancnative
++
++import androidx.compose.ui.semantics.SemanticsProperties
++import androidx.compose.ui.test.assertIsNotSelected
++import androidx.compose.ui.test.assertIsSelected
++import androidx.compose.ui.test.assertTextContains
++import androidx.test.platform.app.InstrumentationRegistry
++import androidx.compose.ui.test.hasTestTag
++import androidx.compose.ui.test.junit4.StateRestorationTester
++import androidx.compose.ui.test.junit4.createComposeRule
++import androidx.compose.ui.test.onNodeWithTag
++import androidx.compose.ui.test.performClick
++import androidx.compose.ui.test.performTextInput
++import androidx.test.ext.junit.runners.AndroidJUnit4
++import com.sherifradwan.ancnative.model.DemoFixtures
++import com.sherifradwan.ancnative.model.DemoMedicationRecord
++import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
++import com.sherifradwan.ancnative.model.MEDICATION_STATUS_DISCONTINUED
++import com.sherifradwan.ancnative.state.SavePhase
++import com.sherifradwan.ancnative.ui.AncTheme
++import com.sherifradwan.ancnative.ui.patienthub.PatientHubTab
++import com.sherifradwan.ancnative.ui.patienthub.tabs.MedsTab
++import org.junit.Assert.assertEquals
++import org.junit.Rule
++import org.junit.Test
++import org.junit.runner.RunWith
++
++/** The Meds tab's own view state (picker open, search text, "Show past") is saved state: it survives recreation. */
++@RunWith(AndroidJUnit4::class)
++class MedsTabRestorationTest {
++    @get:Rule
++    val compose = createComposeRule()
++
++    private fun row(id: String, name: String, status: String) = DemoMedicationRecord(
++        id = id, patientId = DemoFixtures.patients.first().id, name = name, dosage = "100 mg", route = "Oral",
++        frequency = "Once daily", startDate = "2026-03-01", endDate = null, status = status, notes = null,
++        isProphylaxis = false, revision = 2,
++    )
++
++    private val patient = DemoFixtures.patients.first().copy(
++        medications = listOf(row("r-m1", "UiIron", MEDICATION_STATUS_ACTIVE), row("r-m2", "UiOld", MEDICATION_STATUS_DISCONTINUED)),
++        status = "active",
++    )
++
++    private fun str(id: Int) = InstrumentationRegistry.getInstrumentation().targetContext.getString(id)
++    private fun node(tag: String) = compose.onNodeWithTag(tag, useUnmergedTree = true)
++    private fun scrollTo(tag: String) = compose.scrollHubTabTo(PatientHubTab.MEDS, hasTestTag(tag))
++
++    @Test
++    fun thePickerAndShowPastSurviveRecreation() {
++        val tester = StateRestorationTester(compose)
++        tester.setContent {
++            AncTheme {
++                MedsTab(
++                    patient = patient, canEdit = true, actionsAllowed = true, medicationDraft = null,
++                    savePhase = SavePhase.IDLE, saveError = null, quickSave = null, stopUndo = null, onEvent = {},
++                )
++            }
++        }
++        scrollTo("medPickerToggle")
++        node("medPickerToggle").performClick()
++        node("medSearchField").performTextInput("Ui")
++        scrollTo("medTab-recent")
++        node("medTab-recent").performClick()
++        scrollTo("medicationToggle-r-m1")
++        node("medicationToggle-r-m1").performClick()
++        scrollTo("medShowPastToggle")
++        node("medShowPastToggle").performClick()
++        compose.waitForIdle()
++        node("medication-r-m2").assertExists()
++
++        tester.emulateSavedInstanceStateRestore()
++        compose.waitForIdle()
++
++        scrollTo("medSearchField")
++        node("medSearchField").assertTextContains("Ui")
++        compose.onNodeWithTag("medTab-recent").assertIsSelected()
++        compose.onNodeWithTag("medTab-common").assertIsNotSelected()
++        scrollTo("medicationToggle-r-m1")
++        assertEquals(str(R.string.state_expanded), compose.onNodeWithTag("medicationToggle-r-m1").fetchSemanticsNode().config[SemanticsProperties.StateDescription])
++        scrollTo("medication-r-m2")
++        node("medication-r-m2").assertExists()
++    }
++}
+diff --git a/app/src/androidTest/java/com/sherifradwan/ancnative/MedsTabSheetTest.kt b/app/src/androidTest/java/com/sherifradwan/ancnative/MedsTabSheetTest.kt
+new file mode 100644
+index 0000000..c0cf960
+--- /dev/null
++++ b/app/src/androidTest/java/com/sherifradwan/ancnative/MedsTabSheetTest.kt
+@@ -0,0 +1,1425 @@
++package com.sherifradwan.ancnative
++
++import android.os.SystemClock
++import android.view.WindowInsets
++import android.view.inspector.WindowInspector
++import androidx.compose.foundation.layout.Box
++import androidx.compose.foundation.layout.widthIn
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.CompositionLocalProvider
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.platform.LocalDensity
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.semantics.SemanticsActions
++import androidx.compose.ui.semantics.SemanticsProperties
++import androidx.compose.ui.test.performSemanticsAction
++import androidx.compose.ui.test.assertHeightIsAtLeast
++import androidx.compose.ui.test.assertWidthIsAtLeast
++import androidx.compose.ui.test.assertIsFocused
++import androidx.compose.ui.test.assertIsNotSelected
++import androidx.compose.ui.test.assertIsSelected
++import androidx.compose.ui.test.getUnclippedBoundsInRoot
++import androidx.compose.ui.test.performImeAction
++import androidx.compose.ui.test.performTouchInput
++import androidx.compose.ui.test.swipeLeft
++import androidx.compose.ui.test.swipeRight
++import androidx.compose.ui.graphics.luminance
++import com.sherifradwan.ancnative.model.catalog.CustomChoiceList
++import androidx.compose.ui.unit.Density
++import androidx.compose.ui.unit.dp
++import androidx.compose.ui.unit.width
++import androidx.test.filters.SdkSuppress
++import android.view.KeyEvent
++import androidx.activity.compose.setContent
++import androidx.compose.runtime.getValue
++import androidx.compose.runtime.mutableStateOf
++import androidx.compose.runtime.setValue
++import androidx.compose.ui.test.assertCountEquals
++import androidx.compose.ui.test.assertTextEquals
++import androidx.compose.ui.test.hasAnyAncestor
++import androidx.compose.ui.test.performScrollTo
++import androidx.compose.ui.test.performTextReplacement
++import com.sherifradwan.ancnative.model.ClinicalVocabulary
++import com.sherifradwan.ancnative.state.MedicationDraft
++import com.sherifradwan.ancnative.state.MedicationDraftValues
++import com.sherifradwan.ancnative.ui.COMMON_MEDICATION_FREQUENCIES
++import androidx.compose.ui.test.assertIsDisplayed
++import androidx.compose.ui.test.assertIsEnabled
++import androidx.compose.ui.test.assertIsNotEnabled
++import androidx.compose.ui.test.assertTextContains
++import androidx.compose.ui.test.hasTestTag
++import androidx.compose.ui.test.hasText
++import androidx.compose.ui.test.junit4.createAndroidComposeRule
++import androidx.compose.ui.test.onNodeWithTag
++import androidx.compose.ui.test.onNodeWithText
++import androidx.compose.ui.test.performClick
++import androidx.compose.ui.test.performTextInput
++import androidx.test.ext.junit.runners.AndroidJUnit4
++import androidx.test.platform.app.InstrumentationRegistry
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.model.DemoFixtures
++import com.sherifradwan.ancnative.model.DemoMedicationRecord
++import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
++import com.sherifradwan.ancnative.model.MEDICATION_STATUS_DISCONTINUED
++import com.sherifradwan.ancnative.model.catalog.ClinicalCatalogRepository
++import com.sherifradwan.ancnative.model.catalog.MedicationCatalogItem
++import com.sherifradwan.ancnative.state.AncEvent
++import com.sherifradwan.ancnative.state.AncReducer
++import com.sherifradwan.ancnative.state.AncRoute
++import com.sherifradwan.ancnative.state.AncState
++import com.sherifradwan.ancnative.state.ClinicalValidationError
++import com.sherifradwan.ancnative.state.PendingSaveToken
++import com.sherifradwan.ancnative.state.SavedNotice
++import com.sherifradwan.ancnative.state.SaveUiError
++import com.sherifradwan.ancnative.state.WorkspaceSection
++import com.sherifradwan.ancnative.storage.ClinicalCommandPreparation
++import com.sherifradwan.ancnative.storage.ClinicalRecordKind
++import com.sherifradwan.ancnative.storage.SaveMedicationCommand
++import com.sherifradwan.ancnative.storage.VaultState
++import com.sherifradwan.ancnative.ui.AncApp
++import com.sherifradwan.ancnative.ui.AncTheme
++import com.sherifradwan.ancnative.ui.patienthub.PatientHubTab
++import org.junit.Assert.assertEquals
++import org.junit.Assert.assertFalse
++import org.junit.Assert.assertNotNull
++import org.junit.Assert.assertNull
++import org.junit.Assert.assertTrue
++import org.junit.Test
++import org.junit.Rule
++import org.junit.runner.RunWith
++import java.time.LocalDate
++import java.util.UUID
++
++/**
++ * The Meds tab with the medication sheet, mounted through the real AncApp and reducer. Saves go through the real
++ * [SaveMedicationCommand.prepare]; a small in-memory store commits them (or holds them, or rejects them) the way the
++ * view model reports a store result.
++ */
++@RunWith(AndroidJUnit4::class)
++class MedsTabSheetTest {
++    @get:Rule
++    val compose = createAndroidComposeRule<MainActivity>()
++
++    private var state by mutableStateOf(AncState(patients = emptyList()))
++    // JUnit makes a new instance for every test, so this is read once per test.
++    private val today = LocalDate.now().toString()
++    private val medsTab get() = AncRoute.Workspace(patient.id, WorkspaceSection.MEDICATIONS)
++
++    /** Every command the store was given, in order. */
++    private val commands = mutableListOf<SaveMedicationCommand>()
++    private var holdSaves = false
++    private var addAnother = false
++    /** When set, "Save and add another" commits and lets a frame pass (the sheet closes) before the next start. */
++    private var chainAfterAFrame = false
++    private var deferredChain: String? = null
++    private var rejectWith: SaveUiError? = null
++    private var held: Pair<SaveMedicationCommand, PendingSaveToken>? = null
++
++    private fun row(id: String, name: String, status: String = MEDICATION_STATUS_ACTIVE) = DemoMedicationRecord(
++        id = id, patientId = DemoFixtures.patients.first().id, name = name, dosage = "100 mg", route = "Oral",
++        frequency = "Once daily", startDate = "2026-03-01", endDate = null, status = status, notes = null,
++        isProphylaxis = false, revision = 2,
++    )
++
++    private val patient = DemoFixtures.patients.first().copy(
++        medications = listOf(row("ui-m1", "UiIron"), row("ui-m2", "UiAspirin"), row("ui-m3", "UiOld", MEDICATION_STATUS_DISCONTINUED)),
++        status = "active",
++    )
++
++    private fun catalog(): List<MedicationCatalogItem> =
++        ClinicalCatalogRepository.getInstance(compose.activity).medicationCatalogItems.value
++
++    private fun onEvent(event: AncEvent) {
++        state = AncReducer.reduce(state, event)
++        when (event) {
++            is AncEvent.StopMedication -> save(event.editorSessionId, quick = true)
++            is AncEvent.UndoMedicationStop -> save(event.editorSessionId, quick = true)
++            AncEvent.SubmitMedication -> state.medicationDraft?.let { save(it.editorSessionId, quick = false) }
++            AncEvent.SubmitMedicationAndAddAnother -> state.medicationDraft?.let {
++                addAnother = true
++                save(it.editorSessionId, quick = false)
++            }
++            else -> Unit
++        }
++    }
++
++    private fun save(session: String, quick: Boolean) {
++        val draft = if (quick) state.medicationQuickSave?.draft?.takeIf { it.editorSessionId == session } else state.medicationDraft
++        draft ?: return
++        val prepared = SaveMedicationCommand.prepare(state.copy(medicationDraft = draft), UUID.randomUUID().toString(), draft.medicationId)
++        if (prepared is ClinicalCommandPreparation.Rejected) {
++            // As the view model does: the rules' errors go back to the draft.
++            state = AncReducer.reduce(state, AncEvent.ClinicalValidationFailed(ClinicalRecordKind.MEDICATION_CREATE, prepared.errors))
++            return
++        }
++        val command = (prepared as ClinicalCommandPreparation.Ready).command as SaveMedicationCommand
++        val token = PendingSaveToken(command.operationUuid, command.editorSessionId)
++        state = AncReducer.reduce(state, AncEvent.SaveStarted(token))
++        commands += command
++        if (holdSaves) held = command to token else finish(command, token)
++    }
++
++    private fun finish(command: SaveMedicationCommand, token: PendingSaveToken) {
++        val error = rejectWith
++        state = if (error != null) {
++            AncReducer.reduce(state, AncEvent.SaveFailed(token, error, unresolved = false))
++        } else {
++            AncReducer.reduce(
++                state,
++                AncEvent.RecordCommitted(token, committed(command), medsTab, SavedNotice.MEDICATIONS, SystemClock.elapsedRealtime()),
++            )
++        }
++        if (error == null && addAnother && chainAfterAFrame) {
++            deferredChain = command.patientId
++        } else if (error == null && addAnother) {
++            // As the view model does after "Save and add another": a blank draft at once.
++            state = AncReducer.reduce(
++                state,
++                AncEvent.StartMedicationEditor(command.patientId, null, UUID.randomUUID().toString(), UUID.randomUUID().toString(), keepSavedNotice = true),
++            )
++        }
++        addAnother = false
++    }
++
++    private fun releaseHeldSave() {
++        val (command, token) = held!!
++        held = null
++        compose.runOnIdle { finish(command, token) }
++        compose.waitForIdle()
++    }
++
++    private fun committed(command: SaveMedicationCommand) = state.patients.map { p ->
++        if (p.id != command.patientId) return@map p
++        val old = p.medications.firstOrNull { it.id == command.medicationId }
++        val saved = DemoMedicationRecord(
++            id = command.medicationId, patientId = p.id, name = command.name, dosage = command.dosage, route = command.route,
++            frequency = command.frequency, startDate = command.startDate, endDate = command.endDate, status = command.status,
++            notes = command.notes, isProphylaxis = command.isProphylaxis, isNonCompliant = command.isNonCompliant,
++            adverseNotes = command.adverseNotes, revision = (old?.revision ?: 0L) + 1,
++        )
++        p.copy(
++            revision = p.revision + 1,
++            medications = if (old == null) p.medications + saved else p.medications.map { if (it.id == saved.id) saved else it },
++        )
++    }
++
++    /** Mounts the app on the Meds tab. With [fontScale] the screen is also held to at most 360 dp wide. */
++    private fun host(meds: List<DemoMedicationRecord> = patient.medications, fontScale: Float? = null) {
++        state = AncState(
++            patients = listOf(patient.copy(medications = meds)),
++            vaultState = VaultState.Unlocked(sessionEpoch = 7101L),
++            route = medsTab,
++        )
++        compose.activityRule.scenario.onActivity { activity ->
++            activity.setContent {
++                val app = @Composable {
++                    AncTheme {
++                        AncApp(
++                            state = state,
++                            onEvent = ::onEvent,
++                            onStartVisit = { _, _ -> },
++                            onSaveVisit = {},
++                            onInitialize = {},
++                            onUnlock = {},
++                            onLock = {},
++                            onRetryStorage = {},
++                        )
++                    }
++                }
++                if (fontScale == null) {
++                    app()
++                } else {
++                    val base = LocalDensity.current
++                    CompositionLocalProvider(LocalDensity provides Density(base.density, fontScale)) {
++                        Box(Modifier.widthIn(max = 360.dp).testTag(NARROW_HOST)) { app() }
++                    }
++                }
++            }
++        }
++        compose.waitForIdle()
++    }
++
++    private fun node(tag: String) = compose.onNodeWithTag(tag, useUnmergedTree = true)
++    private fun scrollTo(tag: String) = compose.scrollHubTabTo(PatientHubTab.MEDS, hasTestTag(tag))
++    private fun click(tag: String) {
++        node(tag).performClick()
++        compose.waitForIdle()
++    }
++    private fun med(id: String) = state.patient(patient.id)!!.medications.first { it.id == id }
++    private fun exists(tag: String) = compose.onAllNodes(hasTestTag(tag), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
++
++    /** Opens the collapsed "Add medication" picker (a no-op when it is already open). */
++    private fun openPicker() {
++        scrollTo("medPickerToggle")
++        if (!exists("medSearchField")) click("medPickerToggle")
++        node("medSearchField").assertExists()
++    }
++
++    /** Merged node: a clickable row's text sits on the row itself. */
++    private fun merged(tag: String) = compose.onNodeWithTag(tag)
++
++    /**
++     * Brings one tile wholly into view: the picker's own list to the tile, then the tab list by the tile's unclipped
++     * position (the tab's scroll-to-node helper measures the clipped bounds, which a nested list cuts short).
++     */
++    private fun showTile(id: String) {
++        scrollTo("medTilesGrid")
++        node("medTile-$id").performScrollTo()
++        compose.waitForIdle()
++        val list = node(PatientHubTab.MEDS.contentTag())
++        val viewport = list.fetchSemanticsNode().boundsInRoot
++        val tile = node("medTile-$id").fetchSemanticsNode()
++        val top = tile.positionInRoot.y
++        val bottom = top + tile.size.height
++        val dy = when {
++            bottom > viewport.bottom -> bottom - viewport.bottom
++            top < viewport.top -> top - viewport.top
++            else -> 0f
++        }
++        if (dy != 0f) list.performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, dy) }
++        compose.waitForIdle()
++        node("medTile-$id").assertIsDisplayed()
++    }
++
++    private fun openPast() {
++        scrollTo("medShowPastToggle")
++        if (!exists("medication-ui-m3")) click("medShowPastToggle")
++    }
++
++    @Test
++    fun tappingATileOpensTheSheetWithoutLeavingTheTabAndKeepsTheSearchText() {
++        host()
++        val item = catalog().first()
++        openPicker()
++        node("medSearchField").performTextInput(item.name.take(3))
++        compose.waitForIdle()
++        showTile(item.id)
++        click("medTile-${item.id}")
++
++        node("medicationSheet").assertIsDisplayed()
++        node("workspaceScreen").assertExists()
++        assertEquals(medsTab, state.route)
++        val values = state.medicationDraft!!.values
++        assertEquals(item.name, values.name)
++        assertEquals(item.dosage, values.dosage)
++        assertEquals(item.frequency, values.frequency)
++        assertEquals(today, values.startDate)
++        // While the sheet is open the tab's entry points are visibly disabled.
++        scrollTo("addCustomMedicationBtn")
++        node("addCustomMedicationBtn").assertIsNotEnabled()
++
++        click("saveMedication")
++        node("medicationSheet").assertDoesNotExist()
++        assertEquals(medsTab, state.route)
++        assertEquals(1, commands.size)
++        assertNull(commands.single().expectedMedicationRevision)
++        assertNotNull(state.patient(patient.id)!!.medications.firstOrNull { it.name == item.name })
++        node("medSearchField").assertTextContains(item.name.take(3))
++    }
++
++    @Test
++    fun editAndPrescribeOpenTheSheetOnTheTab() {
++        host()
++        scrollTo("editMedication-ui-m1")
++        click("editMedication-ui-m1")
++        node("medicationSheet").assertIsDisplayed()
++        assertEquals("ui-m1", state.medicationDraft!!.medicationId)
++        click("cancelMedication")
++        node("medicationSheet").assertDoesNotExist()
++        assertEquals(medsTab, state.route)
++
++        scrollTo("addCustomMedicationBtn")
++        click("addCustomMedicationBtn")
++        node("medicationSheet").assertIsDisplayed()
++        assertEquals("", state.medicationDraft!!.values.name)
++        assertEquals(medsTab, state.route)
++    }
++
++    @Test
++    fun stopIsOneTapWithoutASheetAndUndoPutsTheRowBack() {
++        host()
++        scrollTo("stopMedication-ui-m1")
++        click("stopMedication-ui-m1")
++
++        node("medicationSheet").assertDoesNotExist()
++        assertNull(state.medicationDraft)
++        assertEquals(medsTab, state.route)
++        assertEquals(MEDICATION_STATUS_DISCONTINUED, med("ui-m1").status)
++        assertEquals(today, med("ui-m1").endDate)
++        node("medStopUndoBar").assertIsDisplayed()
++        compose.onNodeWithText("Stopped: UiIron", useUnmergedTree = true).assertIsDisplayed()
++        assertEquals(2L, commands.single().expectedMedicationRevision)
++
++        click("medStopUndo")
++        node("medStopUndoBar").assertDoesNotExist()
++        assertEquals(MEDICATION_STATUS_ACTIVE, med("ui-m1").status)
++        assertNull(med("ui-m1").endDate)
++        assertEquals(2, commands.size)
++        assertEquals("Undo uses the revision the stop produced", 3L, commands[1].expectedMedicationRevision)
++        assertEquals(medsTab, state.route)
++    }
++
++    @Test
++    fun everyEntryPointIsDisabledWhileAStopSaves() {
++        host()
++        openPicker()
++        holdSaves = true
++        scrollTo("stopMedication-ui-m1")
++        click("stopMedication-ui-m1")
++        node("medStopProgress").assertIsDisplayed()
++
++        scrollTo("stopMedication-ui-m2")
++        node("stopMedication-ui-m2").assertIsNotEnabled()
++        node("editMedication-ui-m2").assertIsNotEnabled()
++        node("delete-medication-ui-m2").assertIsNotEnabled()
++        scrollTo("addCustomMedicationBtn")
++        node("addCustomMedicationBtn").assertIsNotEnabled()
++        val tile = catalog().first { item -> patient.medications.none { it.name.equals(item.name, ignoreCase = true) } }
++        showTile(tile.id)
++        node("medTile-${tile.id}").assertIsNotEnabled()
++        scrollTo("medPickerToggle")
++        node("medPickerToggle").assertIsNotEnabled()
++        node("medSearchField").assertIsNotEnabled()
++
++        releaseHeldSave()
++        node("medStopProgress").assertDoesNotExist()
++        scrollTo("stopMedication-ui-m2")
++        node("stopMedication-ui-m2").assertIsEnabled()
++        node("editMedication-ui-m2").assertIsEnabled()
++    }
++
++    @Test
++    fun aFailedStopLeavesTheRowActiveAndShowsTheCause() {
++        host()
++        rejectWith = SaveUiError.STALE_OR_CONFLICT
++        scrollTo("stopMedication-ui-m1")
++        click("stopMedication-ui-m1")
++        assertEquals(MEDICATION_STATUS_ACTIVE, med("ui-m1").status)
++        node("medStopError").assertIsDisplayed()
++        node("medStopUndoBar").assertDoesNotExist()
++        scrollTo("stopMedication-ui-m1")
++        node("stopMedication-ui-m1").assertIsEnabled()
++    }
++
++    @Test
++    fun aTileForAnActiveDrugShowsItsCheckAndDoesNothing() {
++        val item = catalog().first()
++        host(patient.medications + row("ui-m4", item.name))
++        openPicker()
++        showTile(item.id)
++        node("medTileCheck-${item.id}").assertIsDisplayed()
++        node("medTile-${item.id}").assertIsNotEnabled()
++        node("medTile-${item.id}").performClick()
++        compose.waitForIdle()
++        node("medicationSheet").assertDoesNotExist()
++        assertNull(state.medicationDraft)
++    }
++
++    private fun count(tag: String) = compose.onAllNodes(hasTestTag(tag), useUnmergedTree = true).fetchSemanticsNodes().size
++    private fun top(tag: String) = node(tag).fetchSemanticsNode().boundsInRoot.top
++
++    private fun openEditAndChangeDose(id: String = "ui-m1") {
++        scrollTo("editMedication-$id")
++        click("editMedication-$id")
++        node("medDosage").performTextInput("5")
++        compose.waitForIdle()
++    }
++
++    @Test
++    fun onlyOneDiscardPromptIsEverShownWhenBackIsPressedOverTheSheetPrompt() {
++        host()
++        openEditAndChangeDose()
++        assertEquals(0, count("medDiscardDialog") + count("discardDialog"))
++        click("cancelMedication")
++        assertEquals(1, count("medDiscardDialog"))
++        assertEquals(0, count("discardDialog"))
++        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
++        compose.waitForIdle()
++        assertTrue("never two prompts", count("medDiscardDialog") + count("discardDialog") <= 1)
++        assertEquals("Back never reaches the app's own prompt", 0, count("discardDialog"))
++        assertNotNull("Back over the prompt keeps the edits", state.medicationDraft)
++        assertEquals(medsTab, state.route)
++    }
++
++    @Test
++    fun aFailedSheetSaveKeepsTheSheetOpenWithTheValuesAndTheMessage() {
++        host()
++        rejectWith = SaveUiError.STALE_OR_CONFLICT
++        openEditAndChangeDose()
++        click("saveMedication")
++        node("medicationSheet").assertIsDisplayed()
++        node("medDosage").assertTextContains("5", substring = true)
++        compose.onNodeWithText(str(R.string.save_stale_conflict), useUnmergedTree = true).assertIsDisplayed()
++        node("saveMedication").assertIsEnabled()
++        assertEquals(MEDICATION_STATUS_ACTIVE, med("ui-m1").status)
++        assertEquals("100 mg", med("ui-m1").dosage)
++    }
++
++    @Test
++    fun theEditSheetShowsTheRouteReadOnly() {
++        host()
++        scrollTo("editMedication-ui-m1")
++        click("editMedication-ui-m1")
++        node("medRouteReadOnly").assertExists()
++        node("medRouteChoice-0").assertDoesNotExist()
++    }
++
++    @Test
++    fun savingABlankSheetShowsTheErrorsNextToTheFields() {
++        host()
++        scrollTo("addCustomMedicationBtn")
++        click("addCustomMedicationBtn")
++        click("saveMedication")
++        node("medicationSheet").assertIsDisplayed()
++        compose.onNodeWithText(str(R.string.correct_highlighted_fields), useUnmergedTree = true).assertIsDisplayed()
++        // The name and the dose each carry the per-field message.
++        assertEquals(2, compose.onAllNodes(hasText(str(R.string.correct_highlighted_field)), useUnmergedTree = true).fetchSemanticsNodes().size)
++        assertTrue(commands.isEmpty())
++    }
++
++    @Test
++    fun aNewMedicationWithoutFrequencyShowsTheErrorAndKeepsTheSheetOpen() {
++        host()
++        scrollTo("addCustomMedicationBtn")
++        click("addCustomMedicationBtn")
++        node("medName").performTextInput("UiNoFreq")
++        node("medDosage").performTextInput("1 mg")
++        click("saveMedication")
++        node("medicationSheet").assertIsDisplayed()
++        compose.onNodeWithText(str(R.string.medication_frequency_required), useUnmergedTree = true).assertIsDisplayed()
++        assertTrue(commands.isEmpty())
++        assertNull(state.patient(patient.id)!!.medications.firstOrNull { it.name == "UiNoFreq" })
++        // The doctor scrolls away and presses Save again with nothing changed: the error is brought back into view.
++        node("medNotes").performScrollTo()
++        click("saveMedication")
++        compose.onNodeWithText(str(R.string.medication_frequency_required), useUnmergedTree = true).assertIsDisplayed()
++        // Choosing a frequency clears the error; the same sheet then saves.
++        node("medFreqChoice-0").performScrollTo().performClick()
++        click("saveMedication")
++        node("medicationSheet").assertDoesNotExist()
++        assertNotNull(state.patient(patient.id)!!.medications.firstOrNull { it.name == "UiNoFreq" })
++    }
++
++    @Test
++    fun otherChosenWithNoTextIsRejectedWithTheErrorOnTheOtherBox() {
++        host()
++        scrollTo("addCustomMedicationBtn")
++        click("addCustomMedicationBtn")
++        node("medName").performTextInput("UiOtherBlank")
++        node("medDosage").performTextInput("1 mg")
++        node("medFreqChoice-0").performScrollTo().performClick()
++        // Other clears the chip's value, so the box starts empty.
++        node("medFreqChoice-other").performScrollTo().performClick()
++        compose.waitForIdle()
++        assertEquals("", state.medicationDraft!!.values.frequency)
++        click("saveMedication")
++        node("medicationSheet").assertIsDisplayed()
++        assertTrue(state.medicationDraft!!.errors.contains(ClinicalValidationError.REQUIRED_FREQUENCY))
++        compose.onNodeWithText(str(R.string.medication_frequency_required), useUnmergedTree = true).assertIsDisplayed()
++        node("medFreqError").assertDoesNotExist()
++        assertTrue(commands.isEmpty())
++        // The typed text is the frequency that is saved.
++        node("medFreqOther").performTextInput("Every other day")
++        click("saveMedication")
++        node("medicationSheet").assertDoesNotExist()
++        assertEquals("Every other day", state.patient(patient.id)!!.medications.first { it.name == "UiOtherBlank" }.frequency)
++    }
++
++    @Test
++    fun theSheetButtonsAreDisabledWithProgressWhileADraftSaves() {
++        host()
++        holdSaves = true
++        openEditAndChangeDose()
++        click("saveMedication")
++        node("medSaveProgress").assertIsDisplayed()
++        node("saveMedication").assertIsNotEnabled()
++        node("cancelMedication").assertIsNotEnabled()
++        node("medDosage").assertIsNotEnabled()
++        releaseHeldSave()
++        node("medicationSheet").assertDoesNotExist()
++    }
++
++    @Test
++    fun aSecondStopTapWhileOneSavesIsIgnored() {
++        host()
++        holdSaves = true
++        scrollTo("stopMedication-ui-m1")
++        click("stopMedication-ui-m1")
++        node("stopMedication-ui-m1").assertIsNotEnabled()
++        node("stopMedication-ui-m1").performClick()
++        compose.waitForIdle()
++        assertEquals(1, commands.size)
++        releaseHeldSave()
++        assertEquals(1, commands.size)
++        node("medStopUndoBar").assertIsDisplayed()
++    }
++
++    @Test
++    fun aFailedStopMessageCanBeClosed() {
++        host()
++        rejectWith = SaveUiError.STALE_OR_CONFLICT
++        scrollTo("stopMedication-ui-m1")
++        click("stopMedication-ui-m1")
++        node("medStopError").assertIsDisplayed()
++        click("medStopErrorDismiss")
++        node("medStopError").assertDoesNotExist()
++        assertNull(state.medicationQuickSave)
++    }
++
++    private val longList = (1..12).map { row("ui-long-$it", "UiLong $it") }
++
++    @Test
++    fun theListKeepsItsScrollPositionThroughEditStopAndAdd() {
++        host(longList)
++        // Edit: the edited row stays where it was.
++        scrollTo("medication-ui-long-10")
++        val editedTop = top("medication-ui-long-10")
++        click("editMedication-ui-long-10")
++        node("medDosage").performTextInput("5")
++        click("saveMedication")
++        node("medicationSheet").assertDoesNotExist()
++        assertEquals(editedTop, top("medication-ui-long-10"), 1f)
++
++        // Stop: the row moves to the past list; the row above it does not move.
++        val aboveTop = top("medication-ui-long-9")
++        click("stopMedication-ui-long-10")
++        node("medStopUndoBar").assertIsDisplayed()
++        assertEquals(aboveTop, top("medication-ui-long-9"), 1f)
++
++        // Add: the new row joins the end of the active list; what is on screen does not move.
++        scrollTo("addCustomMedicationBtn")
++        val buttonTop = top("addCustomMedicationBtn")
++        click("addCustomMedicationBtn")
++        node("medName").performTextInput("UiNew")
++        node("medDosage").performTextInput("1 mg")
++        node("medFreqChoice-0").performScrollTo().performClick()
++        click("saveMedication")
++        node("medicationSheet").assertDoesNotExist()
++        assertNotNull(state.patient(patient.id)!!.medications.firstOrNull { it.name == "UiNew" })
++        assertEquals(buttonTop, top("addCustomMedicationBtn"), 1f)
++    }
++
++    @Test
++    fun anEditedRowShowsItsNewDoseAndFrequencyAfterSaving() {
++        host()
++        scrollTo("editMedication-ui-m1")
++        click("editMedication-ui-m1")
++        node("medDosage").performTextReplacement("250 mg")
++        val newFrequency = COMMON_MEDICATION_FREQUENCIES.first { it != "Once daily" }
++        val index = COMMON_MEDICATION_FREQUENCIES.indexOf(newFrequency)
++        node("medFreqChoice-$index").performScrollTo().performClick()
++        compose.waitForIdle()
++        click("saveMedication")
++        node("medicationSheet").assertDoesNotExist()
++        scrollTo("medication-ui-m1")
++        node("medicationInstructions-ui-m1").assertTextContains("250 mg", substring = true)
++        node("medicationInstructions-ui-m1").assertTextEquals("250 mg · Oral · $newFrequency")
++        assertEquals("the same row was updated in place", 1, state.patient(patient.id)!!.medications.count { it.id == "ui-m1" })
++        assertEquals(3L, med("ui-m1").revision)
++        compose.onAllNodes(hasText("100 mg", substring = true) and hasAnyAncestor(hasTestTag("medication-ui-m1")), useUnmergedTree = true)
++            .assertCountEquals(0)
++    }
++
++    @Test
++    fun aFailedAddKeepsTheSheetAndTheValues() {
++        host()
++        rejectWith = SaveUiError.STORAGE_ERROR
++        scrollTo("addCustomMedicationBtn")
++        click("addCustomMedicationBtn")
++        node("medName").performTextInput("UiCustom")
++        node("medDosage").performTextInput("2 mg")
++        node("medFreqChoice-0").performScrollTo().performClick()
++        click("saveMedication")
++        node("medicationSheet").assertIsDisplayed()
++        node("medName").assertTextContains("UiCustom")
++        node("medDosage").assertTextContains("2 mg")
++        compose.onNodeWithText(str(R.string.save_storage_error), useUnmergedTree = true).assertIsDisplayed()
++        assertNull(state.patient(patient.id)!!.medications.firstOrNull { it.name == "UiCustom" })
++    }
++
++    @Test
++    fun saveAndAddAnotherReopensABlankSheetAndKeepsTheTab() {
++        host(longList)
++        openPicker()
++        node("medSearchField").performTextInput("Ui")
++        // Search closes the keyboard, so the list is back to its full height before it is scrolled.
++        node("medSearchField").performImeAction()
++        compose.waitForIdle()
++        scrollTo("addCustomMedicationBtn")
++        val buttonTop = top("addCustomMedicationBtn")
++        click("addCustomMedicationBtn")
++        node("medName").performTextInput("UiFirst")
++        node("medDosage").performTextInput("1 mg")
++        node("medFreqChoice-0").performScrollTo().performClick()
++        click("addAnotherMedication")
++        node("medicationSheet").assertIsDisplayed()
++        val next = state.medicationDraft!!
++        assertEquals("", next.values.name)
++        assertEquals(next.original, next.values)
++        assertNotNull(state.patient(patient.id)!!.medications.firstOrNull { it.name == "UiFirst" })
++        click("cancelMedication")
++        node("medicationSheet").assertDoesNotExist()
++        assertEquals(buttonTop, top("addCustomMedicationBtn"), 1f)
++        scrollTo("medSearchField")
++        node("medPicker").assertExists()
++        node("medSearchField").assertTextContains("Ui")
++        assertEquals(medsTab, state.route)
++    }
++
++    @Test
++    fun everyEntryPointIsDisabledWhileAnAddSaves() {
++        host()
++        openPast()
++        openPicker()
++        holdSaves = true
++        val tile = catalog().first { item -> patient.medications.none { it.name.equals(item.name, ignoreCase = true) } }
++        showTile(tile.id)
++        click("medTile-${tile.id}")
++        click("saveMedication")
++        node("medSaveProgress").assertIsDisplayed()
++        // The tab under the sheet: every entry point is visibly disabled.
++        node("medTile-${tile.id}").assertIsNotEnabled()
++        node("medPickerToggle").assertIsNotEnabled()
++        for (id in listOf("ui-m1", "ui-m2")) {
++            scrollTo("stopMedication-$id")
++            node("stopMedication-$id").assertIsNotEnabled()
++            node("editMedication-$id").assertIsNotEnabled()
++            node("delete-medication-$id").assertIsNotEnabled()
++        }
++        scrollTo("editMedication-ui-m3")
++        node("editMedication-ui-m3").assertIsNotEnabled()
++        scrollTo("addCustomMedicationBtn")
++        node("addCustomMedicationBtn").assertIsNotEnabled()
++        releaseHeldSave()
++        node("medicationSheet").assertDoesNotExist()
++        scrollTo("addCustomMedicationBtn")
++        node("addCustomMedicationBtn").assertIsEnabled()
++    }
++
++    @Test
++    fun anArchivedPatientShowsNoEntryPoints() {
++        host()
++        compose.runOnIdle {
++            state = state.copy(patients = state.patients.map { it.copy(status = "archived") })
++        }
++        compose.waitForIdle()
++        for (tag in listOf("medPicker", "medPickerToggle", "addCustomMedicationBtn", "stopMedication-ui-m1", "editMedication-ui-m1", "delete-medication-ui-m1")) {
++            node(tag).assertDoesNotExist()
++        }
++        scrollTo("medication-ui-m1")
++        node("medication-ui-m1").assertExists()
++    }
++
++    @Test
++    fun aDraftOrAFailedStopOfOnePatientDoesNotFollowToAnother() {
++        val other = DemoFixtures.patients[1].copy(status = "active")
++        host()
++        compose.runOnIdle { state = state.copy(patients = state.patients + other) }
++        rejectWith = SaveUiError.STALE_OR_CONFLICT
++        scrollTo("stopMedication-ui-m1")
++        click("stopMedication-ui-m1")
++        node("medStopError").assertIsDisplayed()
++        compose.runOnIdle { onEvent(AncEvent.OpenWorkspace(other.id)) }
++        compose.runOnIdle { onEvent(AncEvent.SelectSection(WorkspaceSection.MEDICATIONS)) }
++        compose.waitForIdle()
++        node("medStopError").assertDoesNotExist()
++        assertNull(state.medicationQuickSave)
++        // A draft of the first patient is never shown on the second patient's screen.
++        compose.runOnIdle {
++            state = state.copy(
++                medicationDraft = MedicationDraft("s-leak", patient.id, "ui-m1", 1L, 2L, MedicationDraftValues(), MedicationDraftValues()),
++            )
++        }
++        compose.waitForIdle()
++        node("medicationSheet").assertDoesNotExist()
++    }
++
++    @Test
++    fun prescribeOpensABlankDraftAtTheDefaults() {
++        host()
++        scrollTo("addCustomMedicationBtn")
++        click("addCustomMedicationBtn")
++        val draft = state.medicationDraft!!
++        val blank = MedicationDraftValues(route = "Oral", status = MEDICATION_STATUS_ACTIVE, startDate = today)
++        assertEquals(blank, draft.original)
++        assertEquals(blank, draft.values)
++        assertNull(draft.baseMedicationRevision)
++    }
++
++    @Test
++    fun theRouteIsChoosableWhenAdding() {
++        host()
++        val routes = ClinicalVocabulary.medicationRoutes.toList()
++        val tile = catalog().first { item -> patient.medications.none { it.name.equals(item.name, ignoreCase = true) } }
++        openPicker()
++        showTile(tile.id)
++        click("medTile-${tile.id}")
++        node("medRouteReadOnly").assertDoesNotExist()
++        node("medRouteChoice-1").performScrollTo().performClick()
++        compose.waitForIdle()
++        assertEquals(routes[1], state.medicationDraft!!.values.route)
++        click("cancelMedication")
++
++        scrollTo("addCustomMedicationBtn")
++        click("addCustomMedicationBtn")
++        node("medRouteReadOnly").assertDoesNotExist()
++        node("medRouteChoice-2").performScrollTo().performClick()
++        compose.waitForIdle()
++        assertEquals(routes[2], state.medicationDraft!!.values.route)
++    }
++
++    // ---- Collapsed picker, "Show past", strings, empty state, tap counts ----
++
++    private fun str(id: Int, vararg args: Any): String =
++        InstrumentationRegistry.getInstrumentation().targetContext.getString(id, *args)
++    private fun plural(id: Int, count: Int): String =
++        InstrumentationRegistry.getInstrumentation().targetContext.resources.getQuantityString(id, count, count)
++
++    /** Catalog drugs this patient does not take, with a saved dose and frequency (so Save needs no extra tap). */
++    private fun readyTiles() = catalog().filter { item ->
++        item.dosage.isNotBlank() && item.frequency.isNotBlank() &&
++            state.patient(patient.id)!!.medications.none { it.name.equals(item.name, ignoreCase = true) }
++    }
++
++    @Test
++    fun thePickerStartsAsOneRowAndOpensToSearchChipsAndAListThatScrollsInsideItself() {
++        host()
++        scrollTo("medPickerToggle")
++        node("medPickerToggle").assertHeightIsAtLeast(48.dp).assertIsEnabled()
++        merged("medPickerToggle").assertTextContains(str(R.string.add_medication))
++        for (tag in listOf("medSearchField", "medTab-common", "medTab-recent", "medTilesGrid")) node(tag).assertDoesNotExist()
++
++        click("medPickerToggle")
++        for (tag in listOf("medSearchField", "medTab-common", "medTab-recent", "medTilesGrid")) node(tag).assertExists()
++        val grid = node("medTilesGrid").fetchSemanticsNode()
++        val density = compose.activity.resources.displayMetrics.density
++        assertTrue("the list is held to about five rows", grid.boundsInRoot.height <= 304 * density + 1f)
++        assertTrue("the demo list has more than five drugs", catalog().size > 5)
++        val range = grid.config[SemanticsProperties.VerticalScrollAxisRange]
++        assertTrue("a long list scrolls inside the picker", range.maxValue() > 0f)
++
++        click("medPickerToggle")
++        node("medSearchField").assertDoesNotExist()
++        node("medTilesGrid").assertDoesNotExist()
++    }
++
++    @Test
++    fun searchKeepsOnlyMatchingTilesAndSaysSoWhenNothingMatches() {
++        host()
++        openPicker()
++        val target = catalog().first()
++        val query = target.name.take(4)
++        node("medSearchField").performTextInput(query)
++        compose.waitForIdle()
++        for (item in catalog()) {
++            val shown = exists("medTile-${item.id}")
++            assertEquals(item.name, item.name.contains(query, ignoreCase = true), shown)
++        }
++        node("medSearchField").performTextReplacement("zzqx-no-drug")
++        compose.waitForIdle()
++        catalog().forEach { node("medTile-${it.id}").assertDoesNotExist() }
++        node("medPickerEmpty").assertTextEquals(str(R.string.medication_picker_no_match, str(R.string.prescribe_medication)))
++    }
++
++    @Test
++    fun aTileShowsItsNameAndDoseRouteAndFrequency() {
++        host()
++        openPicker()
++        val item = readyTiles().first()
++        showTile(item.id)
++        merged("medTile-${item.id}").assertTextContains(item.name)
++        val frequency = com.sherifradwan.ancnative.ui.medicationFrequencyLabelRes(item.frequency)?.let { str(it) } ?: item.frequency
++        node("medTileMeta-${item.id}").assertTextEquals("${item.dosage} · ${item.route} · $frequency")
++    }
++
++    @Test
++    fun recentListsTheDrugsThisPatientHadBefore() {
++        val item = catalog().first()
++        // Stored with a different case: the picker still counts it as recent.
++        host(patient.medications + row("ui-m5", item.name.uppercase(), MEDICATION_STATUS_DISCONTINUED))
++        openPicker()
++        scrollTo("medTab-recent")
++        click("medTab-recent")
++        showTile(item.id)
++        node("medTile-${item.id}").assertIsDisplayed()
++        merged("medTab-recent").assertIsSelected()
++        val given = state.patient(patient.id)!!.medications.map { it.name.lowercase() }
++        val wrong = catalog().filter { it.name.lowercase() !in given && exists("medTile-${it.id}") }.map { it.name }
++        assertTrue("only drugs the patient had: $wrong", wrong.isEmpty())
++    }
++
++    @Test
++    fun addingTakesThreeTapsWithThePickerClosedAndTwoWhileItStaysOpen() {
++        host()
++        val (first, second) = readyTiles().take(2)
++        var taps = 0
++        fun tap(tag: String) {
++            taps++
++            click(tag)
++        }
++
++        scrollTo("medPickerToggle")
++        tap("medPickerToggle")
++        showTile(first.id)
++        tap("medTile-${first.id}")
++        tap("saveMedication")
++        assertEquals("closed picker: open it, the tile, Save", 3, taps)
++        node("medicationSheet").assertDoesNotExist()
++        assertNotNull(state.patient(patient.id)!!.medications.firstOrNull { it.name == first.name })
++        node("medSearchField").assertExists()
++
++        taps = 0
++        showTile(second.id)
++        tap("medTile-${second.id}")
++        tap("saveMedication")
++        assertEquals("open picker: the tile, Save", 2, taps)
++        assertNotNull(state.patient(patient.id)!!.medications.firstOrNull { it.name == second.name })
++        assertEquals(2, commands.size)
++    }
++
++    @Test
++    fun thePickerStaysOpenWithItsSearchThroughAddStopEditAndTabSwipes() {
++        host()
++        openPicker()
++        scrollTo("medTab-recent")
++        click("medTab-recent")
++        merged("medTab-recent").assertIsSelected()
++        click("medTab-common")
++        merged("medTab-common").assertIsSelected()
++        val item = readyTiles().first()
++        val query = item.name.take(3)
++        node("medSearchField").performTextInput(query)
++        compose.waitForIdle()
++
++        // Add from a tile.
++        showTile(item.id)
++        click("medTile-${item.id}")
++        click("saveMedication")
++        node("medSearchField").assertTextContains(query)
++        // Stop a row.
++        scrollTo("stopMedication-ui-m1")
++        click("stopMedication-ui-m1")
++        node("medStopUndoBar").assertIsDisplayed()
++        scrollTo("medSearchField")
++        node("medSearchField").assertTextContains(query)
++        // Edit a row.
++        scrollTo("editMedication-ui-m2")
++        click("editMedication-ui-m2")
++        node("medDosage").performTextReplacement("80 mg")
++        click("saveMedication")
++        node("medicationSheet").assertDoesNotExist()
++        scrollTo("medSearchField")
++        node("medSearchField").assertTextContains(query)
++        // Swipe away to another tab and back.
++        compose.openHubTab(PatientHubTab.VISITS)
++        node("medSearchField").assertDoesNotExist()
++        compose.openHubTab(PatientHubTab.MEDS)
++        scrollTo("medSearchField")
++        node("medSearchField").assertTextContains(query)
++        assertEquals(medsTab, state.route)
++    }
++
++    @Test
++    fun stoppedDrugsSitBehindShowPastWithoutAStopSymbol() {
++        host()
++        node("medication-ui-m3").assertDoesNotExist()
++        scrollTo("medShowPastToggle")
++        merged("medShowPastToggle").assertTextContains(plural(R.plurals.medication_show_past, 1))
++        node("medShowPastToggle").assertHeightIsAtLeast(48.dp)
++        click("medShowPastToggle")
++        merged("medShowPastToggle").assertTextContains(plural(R.plurals.medication_hide_past, 1))
++        scrollTo("medication-ui-m3")
++        node("medication-ui-m3").assertIsDisplayed()
++        node("stopMedication-ui-m3").assertDoesNotExist()
++        node("editMedication-ui-m3").assertExists()
++        click("medShowPastToggle")
++        node("medication-ui-m3").assertDoesNotExist()
++    }
++
++    @Test
++    fun showPastStaysOpenThroughStopAddEditAndTabSwipes() {
++        host()
++        openPast()
++        // Stop: the row joins the past list, which stays open, and loses its stop symbol.
++        scrollTo("stopMedication-ui-m1")
++        click("stopMedication-ui-m1")
++        scrollTo("medShowPastToggle")
++        merged("medShowPastToggle").assertTextContains(plural(R.plurals.medication_hide_past, 2))
++        scrollTo("medication-ui-m1")
++        node("stopMedication-ui-m1").assertDoesNotExist()
++        scrollTo("medication-ui-m3")
++        // Add.
++        scrollTo("addCustomMedicationBtn")
++        click("addCustomMedicationBtn")
++        node("medName").performTextInput("UiNewPast")
++        node("medDosage").performTextInput("1 mg")
++        node("medFreqChoice-0").performScrollTo().performClick()
++        click("saveMedication")
++        scrollTo("medication-ui-m3")
++        node("medication-ui-m3").assertExists()
++        // Edit a past row.
++        scrollTo("editMedication-ui-m3")
++        click("editMedication-ui-m3")
++        node("medNotes").performScrollTo().performTextInput("seen")
++        click("saveMedication")
++        node("medicationSheet").assertDoesNotExist()
++        scrollTo("medication-ui-m3")
++        node("medication-ui-m3").assertExists()
++        // Tab swipe.
++        compose.openHubTab(PatientHubTab.LABS)
++        compose.openHubTab(PatientHubTab.MEDS)
++        scrollTo("medication-ui-m3")
++        node("medication-ui-m3").assertExists()
++    }
++
++    @Test
++    fun theScreenShowsItsTitlesLabelsAndFrequenciesFromTheStringsFile() {
++        host(patient.medications + row("ui-m6", "UiPrn").copy(frequency = "As needed (PRN)"))
++        node("medsActiveTitle").assertTextEquals(plural(R.plurals.active_prescriptions_title, 3))
++        merged("addCustomMedicationBtn").assertTextEquals(str(R.string.prescribe_medication))
++        scrollTo("medication-ui-m6")
++        node("medicationInstructions-ui-m6").assertTextEquals(
++            str(R.string.medication_dose_route_frequency, "100 mg", "Oral", str(R.string.medication_frequency_as_needed)),
++        )
++        scrollTo("stopMedicationLabel-ui-m6")
++        node("stopMedicationLabel-ui-m6").assertTextEquals(str(R.string.stop_medication_short))
++        scrollTo("medPickerToggle")
++        merged("medPickerToggle").assertTextEquals(str(R.string.add_medication))
++        scrollTo("medShowPastToggle")
++        merged("medShowPastToggle").assertTextEquals(plural(R.plurals.medication_show_past, 1))
++    }
++
++    @Test
++    fun theTogglesExposeTheirStateAndAClickLabel() {
++        host()
++        scrollTo("medPickerToggle")
++        val toggle = merged("medPickerToggle").fetchSemanticsNode().config
++        assertEquals(str(R.string.state_collapsed), toggle[SemanticsProperties.StateDescription])
++        assertEquals(str(R.string.action_expand), toggle[SemanticsActions.OnClick].label)
++        assertEquals(androidx.compose.ui.semantics.Role.Button, toggle[SemanticsProperties.Role])
++        click("medPickerToggle")
++        assertEquals(str(R.string.state_expanded), merged("medPickerToggle").fetchSemanticsNode().config[SemanticsProperties.StateDescription])
++
++        scrollTo("medShowPastToggle")
++        assertEquals(str(R.string.state_collapsed), merged("medShowPastToggle").fetchSemanticsNode().config[SemanticsProperties.StateDescription])
++        assertEquals(str(R.string.action_expand), merged("medShowPastToggle").fetchSemanticsNode().config[SemanticsActions.OnClick].label)
++
++        scrollTo("medicationToggle-ui-m1")
++        val row = merged("medicationToggle-ui-m1").fetchSemanticsNode().config
++        assertEquals(str(R.string.show_details), row[SemanticsActions.OnClick].label)
++        assertEquals(androidx.compose.ui.semantics.Role.Button, row[SemanticsProperties.Role])
++        assertEquals(str(R.string.state_collapsed), row[SemanticsProperties.StateDescription])
++        // Stop says which drug; its visible label is not read twice.
++        scrollTo("stopMedication-ui-m1")
++        assertEquals(listOf(str(R.string.stop_medication_description, "UiIron")),
++            merged("stopMedication-ui-m1").fetchSemanticsNode().config[SemanticsProperties.ContentDescription])
++    }
++
++    @Test
++    fun aClosedRowShowsOneLineOfNotesAndTheWholeNoteWhenOpened() {
++        val note = "UiHold if SBP < 100; recheck the blood pressure before every dose and call the clinic if dizzy"
++        host(listOf(row("ui-n1", "UiNoted").copy(notes = note), row("ui-n2", "UiPlain")))
++        scrollTo("medicationNotes-ui-n1")
++        node("medicationNotes-ui-n1").assertTextEquals(note).assertIsDisplayed()
++        val results = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
++        node("medicationNotes-ui-n1").fetchSemanticsNode().config[SemanticsActions.GetTextLayoutResult].action?.invoke(results)
++        assertEquals("one line while closed", 1, results.single().lineCount)
++        assertTrue("a long note ends in an ellipsis", results.single().isLineEllipsized(0))
++        // The preview sits under the dose, route and frequency.
++        assertTrue(node("medicationNotes-ui-n1").getUnclippedBoundsInRoot().top >= node("medicationInstructions-ui-n1").getUnclippedBoundsInRoot().bottom)
++        node("medicationNotes-ui-n2").assertDoesNotExist()
++
++        click("medicationToggle-ui-n1")
++        node("medicationNotes-ui-n1").assertDoesNotExist()
++        compose.onNode(hasText(note) and inTagged("medication-ui-n1"), useUnmergedTree = true).assertExists()
++    }
++
++    @Test
++    fun aPatientWithNoMedicationsSeesTheEmptyStateAndItsMainAction() {
++        host(emptyList())
++        node("medsEmptyState").assertIsDisplayed()
++        compose.onNode(hasText(str(R.string.medications_empty_title)) and inTagged("medsEmptyState"), useUnmergedTree = true).assertIsDisplayed()
++        compose.onNode(hasText(str(R.string.medications_empty_hint)) and inTagged("medsEmptyState"), useUnmergedTree = true).assertIsDisplayed()
++        merged("medEmptyPrescribe").assertTextContains(str(R.string.medications_empty_action)).assertIsEnabled()
++            .assertHeightIsAtLeast(48.dp)
++        node("medsActiveTitle").assertTextEquals(plural(R.plurals.active_prescriptions_title, 0))
++        node("addCustomMedicationBtn").assertDoesNotExist()
++        node("medShowPastToggle").assertDoesNotExist()
++        click("medEmptyPrescribe")
++        node("medicationSheet").assertIsDisplayed()
++        assertEquals("", state.medicationDraft!!.values.name)
++        node("medEmptyPrescribe").assertIsNotEnabled()
++    }
++
++    @Test
++    fun onlyStoppedDrugsShowNoActiveMedicationsInsteadOfTheEmptyState() {
++        host(listOf(row("ui-m3", "UiOld", MEDICATION_STATUS_DISCONTINUED)))
++        node("medsEmptyState").assertDoesNotExist()
++        node("medsNoActive").assertTextEquals(str(R.string.no_active_medications))
++        scrollTo("medShowPastToggle")
++        merged("medShowPastToggle").assertTextContains(plural(R.plurals.medication_show_past, 1))
++    }
++
++    // ---- 360 dp at 200% text ----
++
++    private val longNames = listOf(
++        row("ui-l1", "UiAmoxicillin / Clavulanate potassium extended-release"),
++        row("ui-l2", "UiMethyldopa").copy(frequency = "As needed (PRN)", dosage = "250 mg twice on bad days"),
++    )
++
++    private fun assertInside(inner: String, outer: String) {
++        val i = node(inner).getUnclippedBoundsInRoot()
++        val o = node(outer).getUnclippedBoundsInRoot()
++        assertTrue("$inner sticks out of $outer", i.left >= o.left && i.right <= o.right)
++    }
++
++    @Test
++    fun rowsKeepTheirTextWholeAndTheirButtonsAt48dpAt360dpAnd200PercentText() {
++        host(longNames, fontScale = 2f)
++        val width = node(NARROW_HOST).getUnclippedBoundsInRoot().width
++        assertTrue("held to 360 dp", width <= 360.dp)
++        for (med in longNames) {
++            scrollTo("medication-${med.id}")
++            compose.assertTextNotClipped("${med.id} name", hasTestTag("medicationName-${med.id}"))
++            compose.assertTextNotClipped("${med.id} dose, route and frequency", hasTestTag("medicationInstructions-${med.id}"))
++            for (tag in listOf("medicationName-", "medicationInstructions-")) {
++                assertInside(tag + med.id, "medication-${med.id}")
++            }
++            // The actions sit below the text, so they never narrow it. Both are measured after the same scroll.
++            for (tag in listOf("stopMedication-", "delete-medication-", "editMedication-")) {
++                scrollTo(tag + med.id)
++                val textBottom = node("medicationInstructions-${med.id}").getUnclippedBoundsInRoot().bottom
++                node(tag + med.id).assertHeightIsAtLeast(48.dp).assertWidthIsAtLeast(48.dp)
++                assertTrue("$tag${med.id} below the text", node(tag + med.id).getUnclippedBoundsInRoot().top >= textBottom)
++                assertInside(tag + med.id, "medication-${med.id}")
++            }
++            compose.assertTextNotClipped("${med.id} Stop label", hasTestTag("stopMedicationLabel-${med.id}"))
++        }
++    }
++
++    @Test
++    fun theHeaderPrescribeButtonIsNotClippedAt360dpAnd200PercentText() {
++        host(longNames, fontScale = 2f)
++        compose.assertTextNotClipped("Prescribe", hasText(str(R.string.prescribe_medication)) and inTagged("addCustomMedicationBtn"))
++        compose.assertTextNotClipped("title", hasTestTag("medsActiveTitle"))
++        assertInside("addCustomMedicationBtn", NARROW_HOST)
++        node("addCustomMedicationBtn").assertHeightIsAtLeast(48.dp)
++    }
++
++    @Test
++    fun thePickerKeepsItsTextWholeAt360dpAnd200PercentText() {
++        host(longNames, fontScale = 2f)
++        scrollTo("medPickerToggle")
++        node("medPickerToggle").assertHeightIsAtLeast(48.dp)
++        compose.assertTextNotClipped("picker row", hasText(str(R.string.add_medication)) and hasAnyAncestor(hasTestTag("medPickerToggle")))
++        click("medPickerToggle")
++        val item = readyTiles().first()
++        showTile(item.id)
++        node("medTile-${item.id}").assertHeightIsAtLeast(48.dp)
++        compose.assertTextNotClipped("tile name", hasText(item.name) and hasAnyAncestor(hasTestTag("medTile-${item.id}")))
++        compose.assertTextNotClipped("tile meta", hasTestTag("medTileMeta-${item.id}"))
++        assertInside("medTile-${item.id}", NARROW_HOST)
++        for (tag in listOf("medTab-common", "medTab-recent")) {
++            scrollTo(tag)
++            node(tag).assertHeightIsAtLeast(48.dp)
++        }
++    }
++
++    // ---- The sheet with the keyboard open at 360 dp ----
++
++    /** The window the keyboard covers: its height and the keyboard's inset, in px; null while the keyboard is hidden. */
++    private fun keyboard(): Pair<Int, Int>? {
++        var found: Pair<Int, Int>? = null
++        InstrumentationRegistry.getInstrumentation().runOnMainSync {
++            for (view in WindowInspector.getGlobalWindowViews()) {
++                val insets = view.rootWindowInsets ?: continue
++                if (!insets.isVisible(WindowInsets.Type.ime())) continue
++                val bottom = insets.getInsets(WindowInsets.Type.ime()).bottom
++                if (bottom > (found?.second ?: 0)) found = view.height to bottom
++            }
++        }
++        return found
++    }
++
++    private fun awaitKeyboard() {
++        compose.waitUntil(10_000) { keyboard() != null }
++    }
++
++    /** The node is wholly above the keyboard (after any scroll that brings the focused field into view settles). */
++    private fun assertAboveKeyboard(tag: String) {
++        compose.waitForIdle()
++        compose.waitUntil(5_000) {
++            val (height, ime) = keyboard() ?: return@waitUntil false
++            node(tag).fetchSemanticsNode().boundsInWindow.bottom <= height - ime + 1f
++        }
++        node(tag).assertIsDisplayed()
++    }
++
++    private fun assertFocused(tag: String) {
++        compose.waitForIdle()
++        compose.waitUntil(5_000) { runCatching { node(tag).assertIsFocused() }.isSuccess }
++        node(tag).assertIsFocused()
++    }
++
++    @SdkSuppress(minSdkVersion = 30)
++    @Test
++    fun withTheKeyboardOpenAt360dpTheFocusedFieldAndSaveStayVisibleAndEnterMovesOn() {
++        host()
++        assertTrue(
++            "run .agents/scripts/set_emulator_360dp.sh first",
++            compose.activity.resources.configuration.screenWidthDp <= 360,
++        )
++        scrollTo("addCustomMedicationBtn")
++        click("addCustomMedicationBtn")
++        node("medName").performClick()
++        awaitKeyboard()
++        assertFocused("medName")
++        assertAboveKeyboard("medName")
++        assertAboveKeyboard("saveMedication")
++        for ((from, to) in listOf("medName" to "medDosage", "medDosage" to "medDate", "medDate" to "medNotes")) {
++            node(from).performImeAction()
++            assertFocused(to)
++            assertTrue("the keyboard stays up on $to", keyboard() != null)
++            assertAboveKeyboard(to)
++            assertAboveKeyboard("saveMedication")
++        }
++    }
++
++    @SdkSuppress(minSdkVersion = 30)
++    @Test
++    fun saveAndAddAnotherKeepsTheKeyboardAndPutsFocusOnTheNextName() {
++        host()
++        scrollTo("addCustomMedicationBtn")
++        click("addCustomMedicationBtn")
++        node("medFreqChoice-0").performScrollTo().performClick()
++        node("medName").performClick()
++        node("medName").performTextInput("UiKeyboard")
++        node("medName").performImeAction()
++        assertFocused("medDosage")
++        node("medDosage").performTextInput("1 mg")
++        awaitKeyboard()
++        val firstSession = state.medicationDraft!!.editorSessionId
++        click("addAnotherMedication")
++        node("medicationSheet").assertIsDisplayed()
++        assertNotNull(state.patient(patient.id)!!.medications.firstOrNull { it.name == "UiKeyboard" })
++        assertFalse("a new draft", state.medicationDraft!!.editorSessionId == firstSession)
++        assertFocused("medName")
++        assertEquals("", state.medicationDraft!!.values.name)
++        assertTrue("the keyboard is still up", keyboard() != null)
++        assertAboveKeyboard("medName")
++        assertAboveKeyboard("saveMedication")
++    }
++
++    // ---- Fix round 1: tab sync, picker fallbacks, isolation, chained add, contrast ----
++
++    @Test
++    fun swipingAwayAndBackToTheOpeningTabReportsIt() {
++        host()
++        compose.onNodeWithTag(PatientHubTab.MEDS.contentTag()).performTouchInput { swipeRight() }
++        compose.waitForIdle()
++        compose.waitUntil(5_000) { state.route == AncRoute.Workspace(patient.id, WorkspaceSection.LABORATORY) }
++        compose.onNodeWithTag(PatientHubTab.LABS.contentTag()).performTouchInput { swipeLeft() }
++        compose.waitForIdle()
++        compose.waitUntil(5_000) { state.route == medsTab }
++        assertEquals("the return to the tab the screen opened on is reported", medsTab, state.route)
++        node(PatientHubTab.MEDS.contentTag()).assertIsDisplayed()
++    }
++
++    @Test
++    fun recentWithNoHistorySaysSo() {
++        host()
++        openPicker()
++        scrollTo("medTab-recent")
++        click("medTab-recent")
++        catalog().forEach { node("medTile-${it.id}").assertDoesNotExist() }
++        node("medPickerEmpty").assertTextEquals(str(R.string.no_recent_medications, str(R.string.prescribe_medication)))
++    }
++
++    @Test
++    fun tilesWithoutADoseOrFrequencySaySoAndABlankFrequencyOpensWithNoneChosen() {
++        val repo = ClinicalCatalogRepository.getInstance(compose.activity)
++        val noFrequency = MedicationCatalogItem(id = "ui-nofreq", name = "UiNoFrequency", dosage = "7 mg", route = "Oral", frequency = "")
++        repo.addMedicationCatalogItem(noFrequency)
++        repo.addCustomChoice(CustomChoiceList.MEDICATION_NAME, "UiOwnDrug", emptyList())
++        val own = repo.customChoices(CustomChoiceList.MEDICATION_NAME).value.first { it.label == "UiOwnDrug" }
++        try {
++            host()
++            openPicker()
++            node("medSearchField").performTextInput("UiNo")
++            compose.waitForIdle()
++            showTile(noFrequency.id)
++            node("medTileMeta-${noFrequency.id}").assertTextEquals(
++                str(R.string.medication_dose_route_frequency, "7 mg", "Oral", str(R.string.medication_choose_frequency)),
++            )
++            node("medSearchField").performTextReplacement("UiOwn")
++            compose.waitForIdle()
++            showTile("custom_${own.id}")
++            node("medTileMeta-custom_${own.id}").assertTextEquals(str(R.string.set_dose_in_editor))
++
++            node("medSearchField").performTextReplacement("UiNo")
++            compose.waitForIdle()
++            showTile(noFrequency.id)
++            click("medTile-${noFrequency.id}")
++            // The sheet opens with no frequency chosen, so the doctor picks one. (The save rules do not require a
++            // frequency today; ClinicalCommands is outside Stage 1, so no error on Save is asserted here.)
++            node("medicationSheet").assertIsDisplayed()
++            assertEquals("", state.medicationDraft!!.values.frequency)
++            COMMON_MEDICATION_FREQUENCIES.indices.forEach { node("medFreqChoice-$it").performScrollTo().assertIsNotSelected() }
++            node("medFreqChoice-other").assertIsNotSelected()
++        } finally {
++            repo.deleteMedicationCatalogItem(noFrequency.id)
++            repo.removeCustomChoice(CustomChoiceList.MEDICATION_NAME, own.id)
++        }
++    }
++
++    @Test
++    fun thePickerShowPastAndOpenRowOfOnePatientDoNotFollowToAnother() {
++        val otherId = DemoFixtures.patients[1].id
++        val other = DemoFixtures.patients[1].copy(
++            status = "active",
++            medications = listOf(
++                row("ui-b1", "UiOtherActive").copy(patientId = otherId),
++                row("ui-b2", "UiOtherOld", MEDICATION_STATUS_DISCONTINUED).copy(patientId = otherId),
++            ),
++        )
++        host()
++        compose.runOnIdle { state = state.copy(patients = state.patients + other) }
++        compose.waitForIdle()
++        scrollTo("medicationToggle-ui-m1")
++        click("medicationToggle-ui-m1")
++        openPast()
++        openPicker()
++        node("medSearchField").performTextInput("Ui")
++        compose.runOnIdle { onEvent(AncEvent.OpenWorkspace(other.id)) }
++        compose.runOnIdle { onEvent(AncEvent.SelectSection(WorkspaceSection.MEDICATIONS)) }
++        compose.waitForIdle()
++
++        scrollTo("medPickerToggle")
++        node("medSearchField").assertDoesNotExist()
++        merged("medPickerToggle").assertExists()
++        node("medication-ui-b2").assertDoesNotExist()
++        scrollTo("medShowPastToggle")
++        merged("medShowPastToggle").assertTextEquals(plural(R.plurals.medication_show_past, 1))
++        scrollTo("medicationToggle-ui-b1")
++        assertEquals(str(R.string.state_collapsed), merged("medicationToggle-ui-b1").fetchSemanticsNode().config[SemanticsProperties.StateDescription])
++    }
++
++    @Test
++    fun showPastStaysUsableWhileAStopSaves() {
++        host()
++        holdSaves = true
++        scrollTo("stopMedication-ui-m1")
++        click("stopMedication-ui-m1")
++        node("medStopProgress").assertIsDisplayed()
++        scrollTo("medShowPastToggle")
++        node("medShowPastToggle").assertIsEnabled()
++        click("medShowPastToggle")
++        scrollTo("medication-ui-m3")
++        node("medication-ui-m3").assertExists()
++        releaseHeldSave()
++    }
++
++    @Test
++    fun aReadOnlyPatientWithNoMedicationsSeesTheEmptyStateWithoutItsAction() {
++        host(emptyList())
++        compose.runOnIdle { state = state.copy(patients = state.patients.map { it.copy(status = "archived") }) }
++        compose.waitForIdle()
++        node("medsEmptyState").assertIsDisplayed()
++        compose.onNode(hasText(str(R.string.medications_empty_title)) and inTagged("medsEmptyState"), useUnmergedTree = true).assertIsDisplayed()
++        node("medEmptyPrescribe").assertDoesNotExist()
++        node("addCustomMedicationBtn").assertDoesNotExist()
++    }
++
++    @SdkSuppress(minSdkVersion = 30)
++    @Test
++    fun theNextNameTakesFocusEvenWhenTheSheetClosesBetweenTheTwoDrafts() {
++        host()
++        chainAfterAFrame = true
++        scrollTo("addCustomMedicationBtn")
++        click("addCustomMedicationBtn")
++        node("medFreqChoice-0").performScrollTo().performClick()
++        node("medName").performClick()
++        node("medName").performTextInput("UiGap")
++        node("medDosage").performClick()
++        node("medDosage").performTextInput("1 mg")
++        awaitKeyboard()
++        click("addAnotherMedication")
++        // The commit closed the draft and a frame passed: the sheet is gone before the next start.
++        node("medicationSheet").assertDoesNotExist()
++        assertNotNull(state.patient(patient.id)!!.medications.firstOrNull { it.name == "UiGap" })
++        val next = deferredChain!!
++        compose.runOnIdle {
++            onEvent(AncEvent.StartMedicationEditor(next, null, UUID.randomUUID().toString(), UUID.randomUUID().toString(), keepSavedNotice = true))
++        }
++        compose.waitForIdle()
++        node("medicationSheet").assertIsDisplayed()
++        assertTrue(state.medicationDraft!!.chainedAdd)
++        assertFocused("medName")
++        awaitKeyboard()
++        assertAboveKeyboard("medName")
++        assertAboveKeyboard("saveMedication")
++    }
++
++    /** The node is wholly visible (not clipped by its lists) and wholly above the keyboard. */
++    private fun assertWhollyAboveKeyboard(tag: String) {
++        compose.waitForIdle()
++        compose.waitUntil(5_000) {
++            val (height, ime) = keyboard() ?: return@waitUntil false
++            val n = node(tag).fetchSemanticsNode()
++            val shown = n.boundsInWindow
++            shown.height >= n.size.height - 1f && shown.bottom <= height - ime + 1f
++        }
++    }
++
++    @SdkSuppress(minSdkVersion = 30)
++    @Test
++    fun searchingThePickerWithTheKeyboardOpenKeepsTheResultsAboveTheKeyboard() {
++        host(longList)
++        assertTrue(compose.activity.resources.configuration.screenWidthDp <= 360)
++        openPicker()
++        scrollTo("medSearchField")
++        node("medSearchField").performClick()
++        assertFocused("medSearchField")
++        awaitKeyboard()
++        val query = readyTiles().first().name.take(4)
++        node("medSearchField").performTextInput(query)
++        // The first result (the list's order) is wholly visible above the keyboard, without closing it.
++        val first = catalog().first { it.name.contains(query, ignoreCase = true) }
++        assertWhollyAboveKeyboard("medTile-${first.id}")
++        assertTrue("the keyboard is still up", keyboard() != null)
++        // The Search key closes the keyboard; the search text stays.
++        node("medSearchField").performImeAction()
++        compose.waitUntil(5_000) { keyboard() == null }
++        node("medSearchField").assertTextContains(query)
++    }
++
++    /** WCAG contrast of two opaque colours. */
++    private fun contrast(a: androidx.compose.ui.graphics.Color, b: androidx.compose.ui.graphics.Color): Double {
++        val la = a.luminance() + 0.05
++        val lb = b.luminance() + 0.05
++        return maxOf(la, lb) / minOf(la, lb)
++    }
++
++    @Test
++    fun theStopLabelAndIconHaveEnoughContrastInBothThemes() {
++        for (dark in listOf(false, true)) {
++            var label = androidx.compose.ui.graphics.Color.Unspecified
++            var card = androidx.compose.ui.graphics.Color.Unspecified
++            compose.activityRule.scenario.onActivity { activity ->
++                activity.setContent {
++                    AncTheme(darkTheme = dark) {
++                        label = androidx.compose.material3.MaterialTheme.colorScheme.error
++                        card = androidx.compose.material3.MaterialTheme.colorScheme.surfaceContainerLow
++                    }
++                }
++            }
++            compose.waitForIdle()
++            val ratio = contrast(label, card)
++            assertTrue("Stop text (dark=$dark) $ratio < 4.5", ratio >= 4.5)
++        }
++    }
++
++    private companion object {
++        const val NARROW_HOST = "medsNarrowHost"
++    }
++}
+diff --git a/app/src/androidTest/java/com/sherifradwan/ancnative/PatientHubDesignTest.kt b/app/src/androidTest/java/com/sherifradwan/ancnative/PatientHubDesignTest.kt
+index d89a8b1..e170708 100644
+--- a/app/src/androidTest/java/com/sherifradwan/ancnative/PatientHubDesignTest.kt
++++ b/app/src/androidTest/java/com/sherifradwan/ancnative/PatientHubDesignTest.kt
+@@ -3,0 +4,6 @@ import androidx.activity.compose.setContent
++import androidx.compose.foundation.layout.Box
++import androidx.compose.foundation.layout.width
++import androidx.compose.runtime.CompositionLocalProvider
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.platform.LocalDensity
++import androidx.compose.ui.semantics.SemanticsActions
+@@ -8,0 +15,3 @@ import androidx.compose.ui.test.performScrollTo
++import androidx.compose.ui.text.TextLayoutResult
++import androidx.compose.ui.unit.Density
++import androidx.compose.ui.unit.dp
+@@ -17,0 +27,2 @@ import com.sherifradwan.ancnative.ui.patienthub.PatientHubTab
++import org.junit.Assert.assertEquals
++import org.junit.Assert.assertTrue
+@@ -71,0 +83,45 @@ class PatientHubDesignTest {
++
++    @Test
++    fun patientHub_header_largeTextAt360dpKeepsTheNameAndTheAllergyLineWhole() {
++        val longName = "Amina Abdulrahman Ogunbanjo Adeyemi"
++        val state = AncState(
++            patients = listOf(patient.copy(displayName = longName)),
++            vaultState = VaultState.Unlocked(sessionEpoch = 7001L),
++        )
++        compose.activity.runOnUiThread {
++            compose.activity.setContent {
++                AncTheme {
++                    val base = LocalDensity.current
++                    CompositionLocalProvider(LocalDensity provides Density(base.density, 2f)) {
++                        Box(Modifier.width(360.dp)) {
++                            PatientHubScreen(
++                                state = state,
++                                route = AncRoute.Workspace(patient.id, WorkspaceSection.EPISODE_OVERVIEW),
++                                onEvent = {},
++                                onStartVisit = { _, _ -> },
++                            )
++                        }
++                    }
++                }
++            }
++        }
++        compose.waitForIdle()
++
++        val name = layout("hubPatientName")
++        assertTrue("the name wraps and is never cut", name.lineCount <= 4)
++        assertTrue("no line of the name is cut with an ellipsis", (0 until name.lineCount).none { name.isLineEllipsized(it) })
++        val allergy = layout("hubAllergyText")
++        assertTrue("the allergy line is not cut", (0 until allergy.lineCount).none { allergy.isLineEllipsized(it) })
++        val pillHeight = compose.onNodeWithTag("hubAllergyPill").fetchSemanticsNode().size.height
++        assertTrue("the allergy pill is as tall as its text ($pillHeight px)", pillHeight >= allergy.size.height)
++        compose.onNodeWithTag("hubGaBadge").assertIsDisplayed()
++        compose.onNodeWithTag("hubRiskBadge").assertIsDisplayed()
++    }
++
++    private fun layout(tag: String): TextLayoutResult {
++        compose.onNodeWithTag(tag).assertIsDisplayed()
++        val results = mutableListOf<TextLayoutResult>()
++        compose.onNodeWithTag(tag).fetchSemanticsNode().config[SemanticsActions.GetTextLayoutResult].action?.invoke(results)
++        assertEquals("one text layout for $tag", 1, results.size)
++        return results.single()
++    }
+diff --git a/app/src/androidTest/java/com/sherifradwan/ancnative/state/MedicationStopViewModelTest.kt b/app/src/androidTest/java/com/sherifradwan/ancnative/state/MedicationStopViewModelTest.kt
+new file mode 100644
+index 0000000..a74c46d
+--- /dev/null
++++ b/app/src/androidTest/java/com/sherifradwan/ancnative/state/MedicationStopViewModelTest.kt
+@@ -0,0 +1,194 @@
++package com.sherifradwan.ancnative.state
++
++import android.app.Application
++import androidx.test.ext.junit.runners.AndroidJUnit4
++import androidx.test.platform.app.InstrumentationRegistry
++import com.sherifradwan.ancnative.model.DemoMedicationRecord
++import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
++import com.sherifradwan.ancnative.model.MEDICATION_STATUS_DISCONTINUED
++import com.sherifradwan.ancnative.storage.ClinicalCommandOutcome
++import com.sherifradwan.ancnative.storage.FakeVaultKeys
++import com.sherifradwan.ancnative.storage.PatientCommandOutcome
++import com.sherifradwan.ancnative.storage.PatientCommandPreparation
++import com.sherifradwan.ancnative.storage.SaveMedicationCommand
++import com.sherifradwan.ancnative.storage.SavePatientProfileCommand
++import com.sherifradwan.ancnative.storage.VaultController
++import com.sherifradwan.ancnative.storage.VaultFiles
++import com.sherifradwan.ancnative.storage.VaultState
++import kotlinx.coroutines.flow.first
++import kotlinx.coroutines.runBlocking
++import kotlinx.coroutines.withTimeout
++import org.junit.After
++import org.junit.Assert.assertEquals
++import org.junit.Assert.assertNull
++import org.junit.Assert.assertTrue
++import org.junit.Before
++import org.junit.Test
++import org.junit.runner.RunWith
++import java.time.Instant
++import java.time.LocalDate
++import java.util.UUID
++
++/**
++ * The one-tap stop and its Undo through the real [AncViewModel] and its real save path (`saveMedicationQuick` into
++ * `submitPreparedClinicalCommand`), on an isolated test vault with software keys: a real encrypted Room store, no PIN.
++ */
++@RunWith(AndroidJUnit4::class)
++class MedicationStopViewModelTest {
++    private val instrumentation = InstrumentationRegistry.getInstrumentation()
++    private val context = instrumentation.targetContext
++    private val files = VaultFiles.isolatedTest(context, UUID.randomUUID().toString())
++    private val keys = FakeVaultKeys()
++    private lateinit var controller: VaultController
++    private lateinit var vm: AncViewModel
++    private val patientId = UUID.randomUUID().toString()
++    private val medicationId = UUID.randomUUID().toString()
++
++    @Before
++    fun setUp() = runBlocking {
++        controller = VaultController(context, files, keys)
++        instrumentation.runOnMainSync { vm = AncViewModel(context.applicationContext as Application, controller) }
++        controller.onForegrounded()
++        awaitVault { it is VaultState.Uninitialized }
++        controller.beginInitialization()
++        authenticate()
++        awaitVault { it is VaultState.Locked }
++        controller.beginUnlock()
++        authenticate()
++        awaitVault { it is VaultState.Unlocked }
++        seedPatientWithActiveMedication()
++        awaitVm { s -> s.patient(patientId)?.medications?.any { it.id == medicationId } == true }
++        onMain {
++            vm.dispatch(AncEvent.OpenWorkspace(patientId))
++            vm.dispatch(AncEvent.SelectSection(WorkspaceSection.MEDICATIONS))
++        }
++    }
++
++    @After
++    fun tearDown() = runBlocking {
++        controller.lock()
++        runCatching { awaitVault { it is VaultState.Locked || it is VaultState.Uninitialized } }
++        keys.clearRegisteredTestAliases()
++        files.cleanupRegisteredTestNamespace()
++    }
++
++    private val epoch get() = (controller.view.value.state as VaultState.Unlocked).sessionEpoch
++    private fun stored(): DemoMedicationRecord =
++        controller.view.value.snapshot!!.patients.first { it.id == patientId }.medications.first { it.id == medicationId }
++
++    private fun onMain(block: () -> Unit) = instrumentation.runOnMainSync(block)
++
++    private suspend fun authenticate() {
++        val auth = awaitVault { it is VaultState.Authenticating } as VaultState.Authenticating
++        controller.completeAuthentication(auth.request.id)
++    }
++
++    private suspend fun awaitVault(predicate: (VaultState) -> Boolean): VaultState = withTimeout(15_000) {
++        controller.view.first { predicate(it.state) }.state
++    }
++
++    private suspend fun awaitVm(predicate: (AncState) -> Boolean): AncState = withTimeout(15_000) {
++        vm.state.first(predicate)
++    }
++
++    private suspend fun seedPatientWithActiveMedication() {
++        var s = AncState(patients = emptyList(), vaultState = VaultState.Unlocked(epoch))
++        s = AncReducer.reduce(s, AncEvent.StartPatientEditor(null, patientId, "vm-seed-session"))
++        s = AncReducer.reduce(s, AncEvent.PatientDraftChanged(PatientDraftField.CASE_ID, "VM-STOP-1"))
++        s = AncReducer.reduce(s, AncEvent.PatientDraftChanged(PatientDraftField.DISPLAY_NAME, "Stop Test"))
++        val prepared = SavePatientProfileCommand.prepare(s, UUID.randomUUID().toString(), Instant.now().toString())
++        assertTrue("patient seed rejected: $prepared", prepared is PatientCommandPreparation.Ready)
++        val created = controller.execute((prepared as PatientCommandPreparation.Ready).command, epoch) {}
++        assertTrue("patient seed not committed: $created", created is PatientCommandOutcome.Committed)
++        val patientRevision = controller.view.value.snapshot!!.patients.first { it.id == patientId }.revision
++        val med = controller.execute(
++            SaveMedicationCommand(
++                editorSessionId = "vm-seed-med",
++                operationUuid = UUID.randomUUID().toString(),
++                patientId = patientId,
++                expectedPatientRevision = patientRevision,
++                medicationId = medicationId,
++                expectedMedicationRevision = null,
++                name = "VmIron",
++                dosage = "200 mg",
++                route = "Oral",
++                frequency = "Once daily",
++                startDate = "2026-01-01",
++                endDate = "2027-01-01",
++                status = MEDICATION_STATUS_ACTIVE,
++                notes = null,
++                isProphylaxis = false,
++            ),
++            epoch,
++        ) {}
++        assertTrue("medication seed not committed: $med", med is ClinicalCommandOutcome.Committed)
++    }
++
++    @Test
++    fun stopSavesTheStoredRowAndUndoSavesItBackWithTheNewRevision() = runBlocking {
++        val today = LocalDate.now().toString()
++        val before = stored()
++        onMain { vm.dispatch(AncEvent.StopMedication(patientId, medicationId, UUID.randomUUID().toString())) }
++
++        val stopped = awaitVm { it.medicationStopUndo != null }
++        val afterStop = stored()
++        assertEquals(MEDICATION_STATUS_DISCONTINUED, afterStop.status)
++        assertEquals("an existing end date is overwritten by today", today, afterStop.endDate)
++        assertEquals(before.revision + 1, afterStop.revision)
++        assertEquals("200 mg", afterStop.dosage)
++        assertEquals(AncRoute.Workspace(patientId, WorkspaceSection.MEDICATIONS), stopped.route)
++        assertNull(stopped.medicationDraft)
++        assertNull(stopped.medicationQuickSave)
++        assertTrue("the view model stamps the commit time", stopped.medicationStopUndo!!.committedAtMillis > 0L)
++
++        val token = stopped.medicationStopUndo!!.token
++        onMain { vm.dispatch(AncEvent.UndoMedicationStop(token, UUID.randomUUID().toString())) }
++        val undone = awaitVm { s -> s.medicationQuickSave == null && s.patient(patientId)!!.medications.first { it.id == medicationId }.status == MEDICATION_STATUS_ACTIVE }
++        val afterUndo = stored()
++        assertEquals(MEDICATION_STATUS_ACTIVE, afterUndo.status)
++        assertEquals("2027-01-01", afterUndo.endDate)
++        assertEquals("the Undo saved at the stop's revision", afterStop.revision + 1, afterUndo.revision)
++        assertNull(undone.medicationStopUndo)
++        assertEquals(SavePhase.IDLE, undone.savePhase)
++    }
++
++    @Test
++    fun aStoreRejectionLeavesTheRowActiveAndShowsTheCause() = runBlocking {
++        val before = stored()
++        // The row changes in the store while the screen still shows the old revision: both run in one main-thread
++        // turn, so the view model cannot see the new snapshot before the stop tap and must send a stale revision.
++        onMain {
++            runBlocking {
++                val bump = controller.execute(
++                    SaveMedicationCommand(
++                        editorSessionId = "vm-bump",
++                        operationUuid = UUID.randomUUID().toString(),
++                        patientId = patientId,
++                        expectedPatientRevision = controller.view.value.snapshot!!.patients.first { it.id == patientId }.revision,
++                        medicationId = medicationId,
++                        expectedMedicationRevision = before.revision,
++                        name = before.name, dosage = before.dosage, route = before.route, frequency = before.frequency,
++                        startDate = before.startDate, endDate = before.endDate, status = before.status,
++                        notes = "changed elsewhere", isProphylaxis = before.isProphylaxis,
++                    ),
++                    epoch,
++                ) {}
++                assertTrue(bump is ClinicalCommandOutcome.Committed)
++            }
++            assertEquals("the view model has not seen the change yet", before.revision, vm.state.value.patient(patientId)!!.medications.first { it.id == medicationId }.revision)
++            vm.dispatch(AncEvent.StopMedication(patientId, medicationId, UUID.randomUUID().toString()))
++        }
++
++        val failed = awaitVm { it.savePhase == SavePhase.ERROR }
++        assertEquals(SaveUiError.STALE_OR_CONFLICT, failed.saveError)
++        assertTrue("kept for the Meds tab message", failed.medicationQuickSave != null)
++        assertNull(failed.medicationStopUndo)
++        assertEquals(MEDICATION_STATUS_ACTIVE, stored().status)
++        assertEquals("changed elsewhere", stored().notes)
++
++        onMain { vm.dispatch(AncEvent.DismissMedicationStopFailure) }
++        val dismissed = awaitVm { it.medicationQuickSave == null }
++        assertEquals(SavePhase.IDLE, dismissed.savePhase)
++        assertNull(dismissed.saveError)
++    }
++}
+diff --git a/app/src/androidTest/java/com/sherifradwan/ancnative/storage/FakeVaultKeys.kt b/app/src/androidTest/java/com/sherifradwan/ancnative/storage/FakeVaultKeys.kt
+new file mode 100644
+index 0000000..6918659
+--- /dev/null
++++ b/app/src/androidTest/java/com/sherifradwan/ancnative/storage/FakeVaultKeys.kt
+@@ -0,0 +1,107 @@
++package com.sherifradwan.ancnative.storage
++
++import java.util.concurrent.CountDownLatch
++import java.util.concurrent.TimeUnit
++import javax.crypto.AEADBadTagException
++import javax.crypto.Cipher
++import javax.crypto.KeyGenerator
++import javax.crypto.SecretKey
++import javax.crypto.spec.GCMParameterSpec
++
++/** In-memory vault keys for instrumented tests: software AES in place of the Android keystore. Shared by the vault tests. */
++internal class FakeVaultKeys : VaultKeyOperations {
++    private val aliases = mutableMapOf<String, SecretKey>()
++    private val invalidated = mutableSetOf<String>()
++    @Volatile private var unwrapGate: Pair<CountDownLatch, CountDownLatch>? = null
++    @Volatile var nextUnwrapSize: Int? = null
++
++    override fun hasAnyAlias(): Boolean = aliases.isNotEmpty()
++    override fun contains(aliasId: String): Boolean = aliases.containsKey(aliasId)
++
++    override fun generate(aliasId: String): KeyAccessResult<Unit> {
++        if (aliases.containsKey(aliasId)) return KeyAccessResult.Failure(KeyAccessFailure.InvalidEnvelope)
++        aliases[aliasId] = KeyGenerator.getInstance("AES").apply { init(256) }.generateKey()
++        return KeyAccessResult.Success(Unit)
++    }
++
++    override fun wrap(
++        vaultUuid: String,
++        aliasId: String,
++        passphrase: ByteArray,
++    ): KeyAccessResult<WrappedPassphrase> {
++        val key = aliases[aliasId] ?: return KeyAccessResult.Failure(KeyAccessFailure.Missing)
++        val cipher = Cipher.getInstance(VaultFiles.ALGORITHM)
++        cipher.init(Cipher.ENCRYPT_MODE, key)
++        cipher.updateAAD(aad(vaultUuid))
++        return KeyAccessResult.Success(
++            WrappedPassphrase(
++                vaultUuid,
++                aliasId,
++                VaultFiles.ALGORITHM,
++                cipher.iv,
++                cipher.doFinal(passphrase),
++            ),
++        )
++    }
++
++    override fun unwrap(envelope: WrappedPassphrase): KeyAccessResult<ByteArray> {
++        unwrapGate?.let { (started, release) ->
++            started.countDown()
++            release.await(10, TimeUnit.SECONDS)
++            unwrapGate = null
++        }
++        if (envelope.aliasId in invalidated) {
++            return KeyAccessResult.Failure(KeyAccessFailure.PermanentlyInvalidated)
++        }
++        val key = aliases[envelope.aliasId] ?: return KeyAccessResult.Failure(KeyAccessFailure.Missing)
++        return try {
++            val cipher = Cipher.getInstance(envelope.algorithm)
++            cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(128, envelope.iv))
++            cipher.updateAAD(aad(envelope.vaultUuid))
++            val unwrapped = cipher.doFinal(envelope.ciphertext)
++            val requestedSize = nextUnwrapSize.also { nextUnwrapSize = null }
++            KeyAccessResult.Success(requestedSize?.let { unwrapped.copyOf(it) } ?: unwrapped)
++        } catch (_: AEADBadTagException) {
++            KeyAccessResult.Failure(KeyAccessFailure.AuthenticationFailed)
++        } catch (_: Throwable) {
++            KeyAccessResult.Failure(KeyAccessFailure.InvalidEnvelope)
++        }
++    }
++
++    override fun deleteRegisteredTestAlias(aliasId: String) {
++        aliases.remove(aliasId)
++        invalidated.remove(aliasId)
++    }
++
++    override fun deleteOrphanAliases() {
++        aliases.clear()
++        invalidated.clear()
++    }
++
++    override fun securityInfo(aliasId: String): KeyAccessResult<VaultKeySecurityInfo> =
++        if (aliases.containsKey(aliasId)) {
++            KeyAccessResult.Success(VaultKeySecurityInfo(false, "TEST_SOFTWARE"))
++        } else {
++            KeyAccessResult.Failure(KeyAccessFailure.Missing)
++        }
++
++    fun invalidate(aliasId: String) {
++        check(aliases.containsKey(aliasId))
++        invalidated += aliasId
++    }
++
++    fun blockNextUnwrap(): Pair<CountDownLatch, CountDownLatch> =
++        (CountDownLatch(1) to CountDownLatch(1)).also { unwrapGate = it }
++
++    fun releaseBlockedUnwrap() {
++        unwrapGate?.second?.countDown()
++    }
++
++    fun clearRegisteredTestAliases() {
++        releaseBlockedUnwrap()
++        unwrapGate = null
++        aliases.clear()
++        invalidated.clear()
++    }
++    private fun aad(vaultUuid: String) = "anc-p2-envelope-v1:$vaultUuid".toByteArray()
++}
+diff --git a/app/src/androidTest/java/com/sherifradwan/ancnative/storage/VaultIntegrationTest.kt b/app/src/androidTest/java/com/sherifradwan/ancnative/storage/VaultIntegrationTest.kt
+index 4312070..10dc4a9 100644
+--- a/app/src/androidTest/java/com/sherifradwan/ancnative/storage/VaultIntegrationTest.kt
++++ b/app/src/androidTest/java/com/sherifradwan/ancnative/storage/VaultIntegrationTest.kt
+@@ -431,97 +430,0 @@ class VaultIntegrationTest {
+-    private class FakeVaultKeys : VaultKeyOperations {
+-        private val aliases = mutableMapOf<String, SecretKey>()
+-        private val invalidated = mutableSetOf<String>()
+-        @Volatile private var unwrapGate: Pair<CountDownLatch, CountDownLatch>? = null
+-        @Volatile var nextUnwrapSize: Int? = null
+-
+-        override fun hasAnyAlias(): Boolean = aliases.isNotEmpty()
+-        override fun contains(aliasId: String): Boolean = aliases.containsKey(aliasId)
+-
+-        override fun generate(aliasId: String): KeyAccessResult<Unit> {
+-            if (aliases.containsKey(aliasId)) return KeyAccessResult.Failure(KeyAccessFailure.InvalidEnvelope)
+-            aliases[aliasId] = KeyGenerator.getInstance("AES").apply { init(256) }.generateKey()
+-            return KeyAccessResult.Success(Unit)
+-        }
+-
+-        override fun wrap(
+-            vaultUuid: String,
+-            aliasId: String,
+-            passphrase: ByteArray,
+-        ): KeyAccessResult<WrappedPassphrase> {
+-            val key = aliases[aliasId] ?: return KeyAccessResult.Failure(KeyAccessFailure.Missing)
+-            val cipher = Cipher.getInstance(VaultFiles.ALGORITHM)
+-            cipher.init(Cipher.ENCRYPT_MODE, key)
+-            cipher.updateAAD(aad(vaultUuid))
+-            return KeyAccessResult.Success(
+-                WrappedPassphrase(
+-                    vaultUuid,
+-                    aliasId,
+-                    VaultFiles.ALGORITHM,
+-                    cipher.iv,
+-                    cipher.doFinal(passphrase),
+-                ),
+-            )
+-        }
+-
+-        override fun unwrap(envelope: WrappedPassphrase): KeyAccessResult<ByteArray> {
+-            unwrapGate?.let { (started, release) ->
+-                started.countDown()
+-                release.await(10, TimeUnit.SECONDS)
+-                unwrapGate = null
+-            }
+-            if (envelope.aliasId in invalidated) {
+-                return KeyAccessResult.Failure(KeyAccessFailure.PermanentlyInvalidated)
+-            }
+-            val key = aliases[envelope.aliasId] ?: return KeyAccessResult.Failure(KeyAccessFailure.Missing)
+-            return try {
+-                val cipher = Cipher.getInstance(envelope.algorithm)
+-                cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(128, envelope.iv))
+-                cipher.updateAAD(aad(envelope.vaultUuid))
+-                val unwrapped = cipher.doFinal(envelope.ciphertext)
+-                val requestedSize = nextUnwrapSize.also { nextUnwrapSize = null }
+-                KeyAccessResult.Success(requestedSize?.let { unwrapped.copyOf(it) } ?: unwrapped)
+-            } catch (_: AEADBadTagException) {
+-                KeyAccessResult.Failure(KeyAccessFailure.AuthenticationFailed)
+-            } catch (_: Throwable) {
+-                KeyAccessResult.Failure(KeyAccessFailure.InvalidEnvelope)
+-            }
+-        }
+-
+-        override fun deleteRegisteredTestAlias(aliasId: String) {
+-            aliases.remove(aliasId)
+-            invalidated.remove(aliasId)
+-        }
+-
+-        override fun deleteOrphanAliases() {
+-            aliases.clear()
+-            invalidated.clear()
+-        }
+-
+-        override fun securityInfo(aliasId: String): KeyAccessResult<VaultKeySecurityInfo> =
+-            if (aliases.containsKey(aliasId)) {
+-                KeyAccessResult.Success(VaultKeySecurityInfo(false, "TEST_SOFTWARE"))
+-            } else {
+-                KeyAccessResult.Failure(KeyAccessFailure.Missing)
+-            }
+-
+-        fun invalidate(aliasId: String) {
+-            check(aliases.containsKey(aliasId))
+-            invalidated += aliasId
+-        }
+-
+-        fun blockNextUnwrap(): Pair<CountDownLatch, CountDownLatch> =
+-            (CountDownLatch(1) to CountDownLatch(1)).also { unwrapGate = it }
+-
+-        fun releaseBlockedUnwrap() {
+-            unwrapGate?.second?.countDown()
+-        }
+-
+-        fun clearRegisteredTestAliases() {
+-            releaseBlockedUnwrap()
+-            unwrapGate = null
+-            aliases.clear()
+-            invalidated.clear()
+-        }
+-        private fun aad(vaultUuid: String) = "anc-p2-envelope-v1:$vaultUuid".toByteArray()
+-    }
+-
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt b/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt
+index cd877ef..aa3155b 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/state/AncDeleteUndoStateTest.kt
+@@ -40 +40,2 @@ class AncDeleteUndoStateTest {
+-            isEditorRoute = { it.route is AncRoute.MedicationEditor },
++            // The medication sheet shows while its draft exists; it has no route of its own.
++            isEditorRoute = { it.medicationDraft != null },
+@@ -292 +293 @@ class AncDeleteUndoStateTest {
+-        assertTrue(s.route is AncRoute.MedicationEditor)
++        assertEquals(base().route, s.route)
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/state/AncStateTest.kt b/app/src/test/java/com/sherifradwan/ancnative/state/AncStateTest.kt
+index f375e36..536a1f6 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/state/AncStateTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/state/AncStateTest.kt
+@@ -287,0 +288 @@ class AncStateTest {
++        state = state.reduce(AncEvent.SelectSection(WorkspaceSection.MEDICATIONS))
+@@ -296 +297,2 @@ class AncStateTest {
+-        assertEquals(AncRoute.MedicationEditor(patient.id, "med-test-1", isNew = true), state.route)
++        // The medication sheet opens over the Meds tab: the route does not change.
++        assertEquals(AncRoute.Workspace(patient.id, WorkspaceSection.MEDICATIONS), state.route)
+@@ -481,0 +484 @@ class AncStateTest {
++            .reduce(AncEvent.SelectSection(WorkspaceSection.MEDICATIONS))
+@@ -495 +498 @@ class AncStateTest {
+-        // Canceling clean draft returns to workspace without discard dialog
++        // Canceling a clean draft closes the sheet without a discard dialog and stays on the Meds tab
+@@ -497,0 +501 @@ class AncStateTest {
++        assertFalse(canceled.showDiscardDialog)
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/state/DraftRecoveryTest.kt b/app/src/test/java/com/sherifradwan/ancnative/state/DraftRecoveryTest.kt
+index 3397abf..861a6e8 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/state/DraftRecoveryTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/state/DraftRecoveryTest.kt
+@@ -60 +60,2 @@ class DraftRecoveryTest {
+-        route = AncRoute.MedicationEditor("p1", "m1", isNew = false),
++        // The medication sheet opens over the Meds tab, so its draft has no route of its own.
++        route = AncRoute.Workspace("p1", WorkspaceSection.MEDICATIONS),
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/state/MedicationSheetStateTest.kt b/app/src/test/java/com/sherifradwan/ancnative/state/MedicationSheetStateTest.kt
+new file mode 100644
+index 0000000..d969ac7
+--- /dev/null
++++ b/app/src/test/java/com/sherifradwan/ancnative/state/MedicationSheetStateTest.kt
+@@ -0,0 +1,708 @@
++package com.sherifradwan.ancnative.state
++
++import com.sherifradwan.ancnative.model.DemoMedicationRecord
++import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.model.MEDICATION_STATUS_ACTIVE
++import com.sherifradwan.ancnative.model.MEDICATION_STATUS_DISCONTINUED
++import com.sherifradwan.ancnative.model.MEDICATION_STATUS_NON_COMPLIANT
++import com.sherifradwan.ancnative.storage.ClinicalCommandPreparation
++import com.sherifradwan.ancnative.storage.ClinicalRecordKind
++import com.sherifradwan.ancnative.storage.DeletableType
++import com.sherifradwan.ancnative.storage.DraftEditorKind
++import com.sherifradwan.ancnative.storage.DraftRecord
++import com.sherifradwan.ancnative.storage.DraftScreenKind
++import com.sherifradwan.ancnative.storage.SaveMedicationCommand
++import com.sherifradwan.ancnative.storage.VaultState
++import org.junit.Assert.assertEquals
++import org.junit.Assert.assertFalse
++import org.junit.Assert.assertNotNull
++import org.junit.Assert.assertNull
++import org.junit.Assert.assertSame
++import org.junit.Assert.assertTrue
++import org.junit.Test
++import java.time.LocalDate
++
++/** The medication sheet and the one-tap stop in the reducer (design: Technical Plan Sections 1 and 4). */
++class MedicationSheetStateTest {
++    // JUnit makes a new instance for every test, so this is read once per test.
++    private val today = LocalDate.now().toString()
++    private val medsTab = AncRoute.Workspace("p1", WorkspaceSection.MEDICATIONS)
++
++    private fun med(
++        id: String = "m1",
++        status: String = MEDICATION_STATUS_ACTIVE,
++        endDate: String? = null,
++        revision: Long = 3L,
++        nonCompliant: Boolean = false,
++        frequency: String = "Once daily",
++    ) = DemoMedicationRecord(
++        id = id, patientId = "p1", name = "Iron $id", dosage = "100 mg", route = "Oral", frequency = frequency,
++        startDate = "2026-01-01", endDate = endDate, status = status, notes = "After food", isProphylaxis = true,
++        isNonCompliant = nonCompliant, revision = revision,
++    )
++
++    private fun patient(vararg meds: DemoMedicationRecord, status: String = "active", revision: Long = 5L) = DemoPatient(
++        id = "p1", caseId = "P1", displayName = "Patient One", dateOfBirth = "1995-01-01", phone = "01000000000",
++        visits = emptyList(), status = status, medications = meds.toList(), revision = revision,
++    )
++
++    private val secondPatient = DemoPatient(
++        id = "p2", caseId = "P2", displayName = "Patient Two", dateOfBirth = "1990-01-01", phone = "01000000001",
++        visits = emptyList(), status = "active",
++    )
++
++    private fun base(vararg meds: DemoMedicationRecord = arrayOf(med(), med("m2"))) =
++        AncState(patients = listOf(patient(*meds), secondPatient), vaultState = VaultState.Unlocked(1L), route = medsTab)
++
++    private fun AncState.reduce(event: AncEvent) = AncReducer.reduce(this, event)
++
++    private val prefill = MedicationPrefill(name = "Folic acid", dosage = "5 mg", route = "Oral", frequency = "Once daily")
++
++    private fun addFromTile(state: AncState = base(), session: String = "s-add") =
++        state.reduce(AncEvent.StartMedicationEditor("p1", null, "new-1", session, prefill = prefill))
++
++    private fun edit(state: AncState = base(), id: String = "m1", session: String = "s-edit") =
++        state.reduce(AncEvent.StartMedicationEditor("p1", id, id, session))
++
++    private fun custom(state: AncState = base()) =
++        state.reduce(AncEvent.StartMedicationEditor("p1", null, "new-2", "s-custom"))
++
++    private val blank = MedicationDraftValues(route = "Oral", status = MEDICATION_STATUS_ACTIVE, startDate = today)
++
++    // ---- original / values at start ----
++
++    @Test
++    fun addFromTileStartsFromBlankDefaultsWithTheTileOnTop() {
++        val draft = addFromTile().medicationDraft!!
++        assertEquals(blank, draft.original)
++        assertEquals(blank.copy(name = "Folic acid", dosage = "5 mg", frequency = "Once daily"), draft.values)
++        assertNull(draft.baseMedicationRevision)
++        assertEquals(5L, draft.basePatientRevision)
++        assertTrue("dirty on open, so it is recovered after a crash", draft.isDirty)
++        assertFalse("no field has been changed yet", draft.touched)
++    }
++
++    @Test
++    fun tileWithoutRouteKeepsTheDefaultRouteAndBlankFrequency() {
++        val bare = base().reduce(
++            AncEvent.StartMedicationEditor("p1", null, "n", "s", prefill = MedicationPrefill("Custom drug", "", "", "")),
++        ).medicationDraft!!
++        assertEquals(blank.copy(name = "Custom drug"), bare.values)
++    }
++
++    @Test
++    fun editStartsWithTheStoredRowOnBothSides() {
++        val draft = edit().medicationDraft!!
++        assertEquals(draft.original, draft.values)
++        assertEquals("Iron m1", draft.values.name)
++        assertEquals("2026-01-01", draft.values.startDate)
++        assertEquals(3L, draft.baseMedicationRevision)
++        assertFalse(draft.isDirty)
++        assertFalse(draft.touched)
++    }
++
++    @Test
++    fun prefillIsIgnoredWhenEditingAStoredRow() {
++        val draft = base().reduce(AncEvent.StartMedicationEditor("p1", "m1", "m1", "s", prefill = prefill)).medicationDraft!!
++        assertEquals("Iron m1", draft.values.name)
++        assertEquals(draft.original, draft.values)
++    }
++
++    @Test
++    fun customStartsBlankOnBothSides() {
++        val draft = custom().medicationDraft!!
++        assertEquals(blank, draft.original)
++        assertEquals(blank, draft.values)
++        assertFalse(draft.isDirty)
++    }
++
++    @Test
++    fun editOfAMissingRowIsIgnored() {
++        val state = base()
++        assertSame(state, state.reduce(AncEvent.StartMedicationEditor("p1", "gone", "gone", "s")))
++    }
++
++    @Test
++    fun startingADraftNeverChangesTheRoute() {
++        for (started in listOf(addFromTile(), edit(), custom())) {
++            assertEquals(medsTab, started.route)
++            assertNotNull(started.medicationDraft)
++        }
++        // A start from another tab also leaves the route alone.
++        val onVisits = base().copy(route = AncRoute.Workspace("p1", WorkspaceSection.VISITS))
++        assertEquals(onVisits.route, edit(onVisits).route)
++    }
++
++    // ---- touched ----
++
++    @Test
++    fun firstFieldChangeSetsTouchedWithoutAffectingDirty() {
++        val opened = edit()
++        val sameName = opened.reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.NAME, "Iron m1")).medicationDraft!!
++        assertTrue(sameName.touched)
++        assertFalse("the value did not change", sameName.isDirty)
++
++        val tile = addFromTile().reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.NOTES, "x")).medicationDraft!!
++        assertTrue(tile.touched)
++        assertTrue(tile.isDirty)
++    }
++
++    // ---- start ignored while busy ----
++
++    @Test
++    fun startIsIgnoredWhileASaveRuns() {
++        for (phase in listOf(SavePhase.PENDING, SavePhase.RECONCILING, SavePhase.UNRESOLVED)) {
++            val saving = base().copy(savePhase = phase)
++            assertNull(phase.name, addFromTile(saving).medicationDraft)
++            assertNull(phase.name, edit(saving).medicationDraft)
++            assertNull(phase.name, custom(saving).medicationDraft)
++        }
++    }
++
++    @Test
++    fun startIsIgnoredWhileAnotherMedicationDraftIsOpenEvenIfClean() {
++        val open = edit()
++        assertFalse(open.hasDirtyDraft)
++        assertSame(open, edit(open, id = "m2", session = "s-2"))
++        assertSame(open, addFromTile(open, session = "s-3"))
++    }
++
++    // ---- cancel, back and the discard prompt ----
++
++    @Test
++    fun cancelClosesTheSheetWithoutASecondPromptAndStaysOnTheTab() {
++        val untouched = addFromTile()
++        val touched = untouched.reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.DOSAGE, "1 mg"))
++        for (state in listOf(untouched, touched, edit())) {
++            val closed = state.reduce(AncEvent.CancelEditor)
++            assertNull(closed.medicationDraft)
++            assertFalse("the sheet already asked", closed.showDiscardDialog)
++            assertEquals(medsTab, closed.route)
++        }
++    }
++
++    @Test
++    fun backOnAnUntouchedDraftClosesTheSheetAndNotTheWorkspace() {
++        val closed = addFromTile().reduce(AncEvent.Back)
++        assertNull(closed.medicationDraft)
++        assertFalse(closed.showDiscardDialog)
++        assertEquals(medsTab, closed.route)
++    }
++
++    @Test
++    fun backOnATouchedDraftAsksAndDiscardStaysOnTheTab() {
++        val touched = addFromTile().reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.DOSAGE, "1 mg"))
++        val asked = touched.reduce(AncEvent.Back)
++        assertTrue(asked.showDiscardDialog)
++        assertNotNull(asked.medicationDraft)
++
++        val kept = asked.reduce(AncEvent.KeepEditing)
++        assertEquals(touched.medicationDraft, kept.medicationDraft)
++
++        val discarded = asked.reduce(AncEvent.ConfirmDiscard)
++        assertNull(discarded.medicationDraft)
++        assertEquals(medsTab, discarded.route)
++    }
++
++    @Test
++    fun backWithoutADraftStillLeavesTheWorkspace() {
++        assertEquals(AncRoute.PatientList, base().reduce(AncEvent.Back).route)
++    }
++
++    @Test
++    fun editorHookReportsTheOpenRowAndClosesOnlyTheDraft() {
++        val open = edit()
++        assertTrue(MedicationEditorHook.isOpenFor(open, "m1"))
++        assertFalse(MedicationEditorHook.isOpenFor(open, "m2"))
++        val closed = MedicationEditorHook.closeEditor(open, "p1")
++        assertNull(closed.medicationDraft)
++        assertEquals(medsTab, closed.route)
++        assertEquals(open.copy(medicationDraft = null), closed)
++    }
++
++    @Test
++    fun confirmDeleteOfTheOpenRowClosesTheSheetOnTheTab() {
++        val open = edit()
++        val confirmed = open.copy(deleteConfirmation = PendingDeletion("p1", DeletableType.MEDICATION, "m1"))
++            .reduce(AncEvent.ConfirmDelete)
++        assertNull(confirmed.medicationDraft)
++        assertEquals(medsTab, confirmed.route)
++    }
++
++    // ---- status toggle ----
++
++    @Test
++    fun switchingToStoppedFillsABlankEndDateWithToday() {
++        val stopped = edit().reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, MEDICATION_STATUS_DISCONTINUED))
++        assertEquals(today, stopped.medicationDraft!!.values.endDate)
++        assertEquals("2026-01-01", stopped.medicationDraft!!.values.startDate)
++    }
++
++    @Test
++    fun switchingToStoppedKeepsAnEndDateAlreadyGiven() {
++        val state = edit().reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.END_DATE, "2026-02-02"))
++            .reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, MEDICATION_STATUS_DISCONTINUED))
++        assertEquals("2026-02-02", state.medicationDraft!!.values.endDate)
++    }
++
++    @Test
++    fun switchingBackToActiveKeepsTheStartDateAndClearsTheEndDate() {
++        val opened = edit()
++        val back = opened
++            .reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, MEDICATION_STATUS_DISCONTINUED))
++            .reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, MEDICATION_STATUS_ACTIVE))
++            .medicationDraft!!
++        assertEquals("2026-01-01", back.values.startDate)
++        assertEquals("", back.values.endDate)
++        assertFalse("back where it started", back.isDirty)
++    }
++
++    @Test
++    fun switchingBetweenActiveAndNonCompliantLeavesTheEndDateAlone() {
++        val state = base(med(endDate = "2026-09-09"))
++        val next = edit(state).reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, MEDICATION_STATUS_NON_COMPLIANT))
++        assertEquals("2026-09-09", next.medicationDraft!!.values.endDate)
++    }
++
++    @Test
++    fun stoppedDraftPreparesAValidCommandEndingToday() {
++        val stopped = edit().reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, MEDICATION_STATUS_DISCONTINUED))
++        val command = (SaveMedicationCommand.prepare(stopped, "op", "m1") as ClinicalCommandPreparation.Ready).command as SaveMedicationCommand
++        assertEquals(today, command.endDate)
++        assertEquals(MEDICATION_STATUS_DISCONTINUED, command.status)
++    }
++
++    // ---- one-tap stop ----
++
++    private fun stop(state: AncState = base(), id: String = "m1", session: String = "stop-1") =
++        state.reduce(AncEvent.StopMedication("p1", id, session))
++
++    private fun commandOf(state: AncState): SaveMedicationCommand {
++        val quick = state.medicationQuickSave!!
++        val prepared = SaveMedicationCommand.prepare(state.copy(medicationDraft = quick.draft), "00000000-0000-4000-8000-000000000001", quick.draft.medicationId)
++        return (prepared as ClinicalCommandPreparation.Ready).command as SaveMedicationCommand
++    }
++
++    private fun tokenOf(state: AncState) = commandOf(state).let { PendingSaveToken(it.operationUuid, it.editorSessionId) }
++
++    /** The patients after the store committed [command] as revision [revision]. */
++    private fun committed(state: AncState, command: SaveMedicationCommand, revision: Long) = state.patients.map { p ->
++        if (p.id != command.patientId) p else p.copy(
++            revision = p.revision + 1,
++            medications = p.medications.map {
++                if (it.id != command.medicationId) it else it.copy(
++                    status = command.status, endDate = command.endDate, isNonCompliant = command.isNonCompliant, revision = revision,
++                )
++            },
++        )
++    }
++
++    private fun commit(state: AncState, revision: Long): AncState {
++        val command = commandOf(state)
++        val token = tokenOf(state)
++        val pending = state.reduce(AncEvent.SaveStarted(token))
++        assertEquals(SavePhase.PENDING, pending.savePhase)
++        return pending.reduce(
++            AncEvent.RecordCommitted(token, committed(state, command, revision), medsTab, SavedNotice.MEDICATIONS, committedAtMillis = 1_000L),
++        )
++    }
++
++    @Test
++    fun stopOpensNoDraftAndBuildsTheStoredRowAsStoppedTodayAtItsRevision() {
++        val state = stop()
++        assertNull(state.medicationDraft)
++        assertEquals(medsTab, state.route)
++        assertNull("not an editor session, so nothing is autosaved", activeEditorSessionId(state))
++        val command = commandOf(state)
++        assertEquals("m1", command.medicationId)
++        assertEquals(3L, command.expectedMedicationRevision)
++        assertEquals(5L, command.expectedPatientRevision)
++        assertEquals(MEDICATION_STATUS_DISCONTINUED, command.status)
++        assertEquals(today, command.endDate)
++        assertFalse(command.isNonCompliant)
++        // Everything else is the stored row.
++        assertEquals("Iron m1", command.name)
++        assertEquals("100 mg", command.dosage)
++        assertEquals("Once daily", command.frequency)
++        assertEquals("2026-01-01", command.startDate)
++        assertEquals("After food", command.notes)
++        assertTrue(command.isProphylaxis)
++    }
++
++    @Test
++    fun whileTheStopSavesEveryOtherStartIsIgnored() {
++        val pending = stop().reduce(AncEvent.SaveStarted(tokenOf(stop())))
++        assertEquals(SavePhase.PENDING, pending.savePhase)
++        assertSame(pending, addFromTile(pending))
++        assertSame(pending, edit(pending, id = "m2"))
++        assertSame(pending, stop(pending, id = "m2", session = "stop-2"))
++        assertNull(pending.reduce(AncEvent.RequestDelete("p1", DeletableType.MEDICATION, "m2")).deleteConfirmation)
++    }
++
++    @Test
++    fun stopSuccessShowsTheUndoBarAndKeepsTheScreen() {
++        val state = stop()
++        val token = tokenOf(state)
++        // The clinician swiped to another tab while it saved: the commit does not pull them back.
++        val elsewhere = state.reduce(AncEvent.SaveStarted(token)).reduce(AncEvent.SelectSection(WorkspaceSection.VISITS))
++        val done = elsewhere.reduce(AncEvent.RecordCommitted(token, committed(state, commandOf(state), 4L), medsTab, SavedNotice.MEDICATIONS))
++        assertEquals(AncRoute.Workspace("p1", WorkspaceSection.VISITS), done.route)
++        assertNull(done.medicationQuickSave)
++        assertEquals(SavePhase.IDLE, done.savePhase)
++        val undo = done.medicationStopUndo!!
++        assertEquals("m1", undo.medicationId)
++        assertEquals(MEDICATION_STATUS_ACTIVE, undo.previousStatus)
++        assertEquals("", undo.previousEndDate)
++        assertEquals(MEDICATION_STATUS_DISCONTINUED, done.patient("p1")!!.medications.first { it.id == "m1" }.status)
++    }
++
++    @Test
++    fun undoIsASecondSaveOfTheSameRowWithItsNewRevision() {
++        val stopped = commit(stop(base(med(endDate = "2026-12-31", nonCompliant = true))), revision = 4L)
++        val undo = stopped.medicationStopUndo!!
++        assertEquals(MEDICATION_STATUS_NON_COMPLIANT, undo.previousStatus)
++
++        val undoing = stopped.reduce(AncEvent.UndoMedicationStop(undo.token, "undo-1"))
++        assertNull("the bar goes as Undo starts", undoing.medicationStopUndo)
++        assertNull(undoing.medicationDraft)
++        val command = commandOf(undoing)
++        assertEquals("m1", command.medicationId)
++        assertEquals("the revision the stop produced", 4L, command.expectedMedicationRevision)
++        assertEquals(6L, command.expectedPatientRevision)
++        assertEquals(MEDICATION_STATUS_NON_COMPLIANT, command.status)
++        assertTrue(command.isNonCompliant)
++        assertEquals("2026-12-31", command.endDate)
++
++        val restored = commit(undoing, revision = 5L)
++        assertNull("an Undo offers no further Undo", restored.medicationStopUndo)
++        val row = restored.patient("p1")!!.medications.first { it.id == "m1" }
++        assertEquals(MEDICATION_STATUS_NON_COMPLIANT, row.status)
++        assertEquals("2026-12-31", row.endDate)
++        assertEquals(medsTab, restored.route)
++    }
++
++    @Test
++    fun aStoredRowWithoutFrequencyCanBeStoppedUndoneAndEditedThroughTheReducer() {
++        val legacy = base(med(frequency = ""))
++        // The one-tap stop, built by the reducer and checked by the real prepare step.
++        val stopping = stop(legacy)
++        val stopPrepared = SaveMedicationCommand.prepare(
++            stopping.copy(medicationDraft = stopping.medicationQuickSave!!.draft), "op-stop", "m1",
++        )
++        assertTrue("the stop of a row with no frequency is accepted", stopPrepared is ClinicalCommandPreparation.Ready)
++        assertEquals("", commandOf(stopping).frequency)
++        val stopped = commit(stopping, revision = 4L)
++
++        // Its Undo, the second save at the revision the stop produced.
++        val undoing = stopped.reduce(AncEvent.UndoMedicationStop(stopped.medicationStopUndo!!.token, "undo-1"))
++        val undoPrepared = SaveMedicationCommand.prepare(
++            undoing.copy(medicationDraft = undoing.medicationQuickSave!!.draft), "op-undo", "m1",
++        )
++        assertTrue("the Undo of that stop is accepted", undoPrepared is ClinicalCommandPreparation.Ready)
++        assertEquals(4L, commandOf(undoing).expectedMedicationRevision)
++        assertEquals(MEDICATION_STATUS_ACTIVE, commit(undoing, revision = 5L).patient("p1")!!.medications.first { it.id == "m1" }.status)
++
++        // Editing the same stored row in the sheet does not ask for a frequency either.
++        val editing = edit(legacy)
++        assertTrue(SaveMedicationCommand.prepare(editing, "op-edit", "m1") is ClinicalCommandPreparation.Ready)
++    }
++
++    @Test
++    fun undoWithAStaleTokenIsIgnored() {
++        val stopped = commit(stop(), revision = 4L)
++        assertSame(stopped, stopped.reduce(AncEvent.UndoMedicationStop("other", "undo-1")))
++    }
++
++    @Test
++    fun stopFailureLeavesTheRowActiveAndShowsTheCause() {
++        val state = stop()
++        val token = tokenOf(state)
++        val failed = state.reduce(AncEvent.SaveStarted(token))
++            .reduce(AncEvent.SaveFailed(token, SaveUiError.STALE_OR_CONFLICT, unresolved = false))
++        assertEquals(SavePhase.ERROR, failed.savePhase)
++        assertEquals(SaveUiError.STALE_OR_CONFLICT, failed.saveError)
++        assertNotNull("kept so the Meds tab can show the cause", failed.medicationQuickSave)
++        assertNull(failed.medicationStopUndo)
++        assertEquals(MEDICATION_STATUS_ACTIVE, failed.patient("p1")!!.medications.first { it.id == "m1" }.status)
++
++        // The next action starts cleanly and clears the failure.
++        val next = edit(failed)
++        assertNotNull(next.medicationDraft)
++        assertNull(next.medicationQuickSave)
++        assertEquals(SavePhase.IDLE, next.savePhase)
++        assertNull(next.saveError)
++        // A second stop tap is allowed after a failure.
++        assertNotNull(stop(failed, session = "stop-2").medicationQuickSave)
++    }
++
++    @Test
++    fun aStoredRowThatFailsTheSaveRulesIsReportedNotSaved() {
++        val failed = stop().reduce(AncEvent.ClinicalValidationFailed(ClinicalRecordKind.MEDICATION_UPDATE, setOf(ClinicalValidationError.REQUIRED_DOSAGE)))
++        assertEquals(SavePhase.ERROR, failed.savePhase)
++        assertEquals(SaveUiError.CONFIRMED_NOT_SAVED, failed.saveError)
++    }
++
++    @Test
++    fun aNewMedicationWithoutFrequencyIsRejectedAndTheErrorReachesTheDraft() {
++        val blankFrequency = MedicationPrefill("Folic acid", "5 mg", "Oral", "")
++        val open = base().reduce(
++            AncEvent.StartMedicationEditor("p1", null, "new-f", "s-freq", prefill = blankFrequency),
++        )
++        val prepared = SaveMedicationCommand.prepare(open, "op-freq", "new-f")
++        assertTrue("a new drug with no frequency is rejected", prepared is ClinicalCommandPreparation.Rejected)
++        val rejected = open.reduce(
++            AncEvent.ClinicalValidationFailed(ClinicalRecordKind.MEDICATION_CREATE, (prepared as ClinicalCommandPreparation.Rejected).errors),
++        )
++        assertTrue(
++            "the frequency error shows next to its field",
++            rejected.medicationDraft!!.errors.contains(ClinicalValidationError.REQUIRED_FREQUENCY),
++        )
++        assertEquals(SavePhase.IDLE, rejected.savePhase)
++        assertEquals("the doctor's values stay", "Folic acid", rejected.medicationDraft!!.values.name)
++        // The same draft with a frequency chosen saves.
++        val fixed = rejected.reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.FREQUENCY, "Once daily"))
++        assertTrue(SaveMedicationCommand.prepare(fixed, "op-freq-2", "new-f") is ClinicalCommandPreparation.Ready)
++        assertTrue(fixed.medicationDraft!!.errors.isEmpty())
++    }
++
++    @Test
++    fun stopIsIgnoredWhenItCannotRun() {
++        val stoppedRow = base(med(status = MEDICATION_STATUS_DISCONTINUED))
++        assertSame(stoppedRow, stop(stoppedRow))
++        val open = edit()
++        assertSame("a draft is open", open, stop(open, id = "m2"))
++        for (phase in listOf(SavePhase.PENDING, SavePhase.RECONCILING, SavePhase.UNRESOLVED)) {
++            val saving = base().copy(savePhase = phase)
++            assertSame(phase.name, saving, stop(saving))
++        }
++        val archived = AncState(patients = listOf(patient(med(), status = "archived")), vaultState = VaultState.Unlocked(1L), route = medsTab)
++        assertSame(archived, stop(archived))
++        val undoRunning = base().copy(
++            undoOffer = UndoOffer("t", "p1", DeletableType.MEDICATION, UndoAction.DELETE, "x", phase = UndoPhase.RUNNING, recordId = "m2"),
++        )
++        assertNull(stop(undoRunning).medicationQuickSave)
++        assertNull(stop(base(), id = "missing").medicationQuickSave)
++    }
++
++    @Test
++    fun theUndoBarIsDroppedWhenAnotherActionStartsOrThePatientChanges() {
++        val shown = commit(stop(), revision = 4L)
++        assertNotNull(shown.medicationStopUndo)
++        val drops = listOf(
++            AncEvent.StartMedicationEditor("p1", "m2", "m2", "s"),
++            AncEvent.StartMedicationEditor("p1", null, "n", "s", prefill = prefill),
++            AncEvent.StopMedication("p1", "m2", "stop-2"),
++            AncEvent.RequestDelete("p1", DeletableType.MEDICATION, "m2"),
++            AncEvent.SelectSection(WorkspaceSection.VISITS),
++            AncEvent.OpenWorkspace("p2"),
++            AncEvent.StartVisit("p1", null, "v"),
++            AncEvent.Back,
++        )
++        for (event in drops) {
++            assertNull(event.toString(), shown.reduce(event).medicationStopUndo)
++        }
++        // Unrelated events keep it, and only its own expiry removes it.
++        assertNotNull(shown.reduce(AncEvent.DismissNotice).medicationStopUndo)
++        assertNotNull(shown.reduce(AncEvent.MedicationStopUndoExpired("other")).medicationStopUndo)
++        assertNull(shown.reduce(AncEvent.MedicationStopUndoExpired(shown.medicationStopUndo!!.token)).medicationStopUndo)
++        assertNull(shown.clearedForLock().medicationStopUndo)
++    }
++
++    @Test
++    fun theUndoBarCountsFromTheCommitTimeTheEventCarries() {
++        val undo = commit(stop(), revision = 4L).medicationStopUndo!!
++        assertEquals(1_000L, undo.committedAtMillis)
++        assertEquals(MEDICATION_STOP_UNDO_MILLIS, undo.remainingMillis(1_000L))
++        assertEquals(4_000L, undo.remainingMillis(7_000L))
++        assertEquals("over: the bar goes at once when shown again", 0L, undo.remainingMillis(11_000L))
++        assertEquals("a clock that went back never gives more than the window", MEDICATION_STOP_UNDO_MILLIS, undo.remainingMillis(0L))
++        assertEquals(500L, undo.remainingMillis(1_000L, windowMillis = 500L))
++    }
++
++    @Test
++    fun aSecondStopTapOnTheSameRowWhileItSavesIsIgnored() {
++        val pending = stop().reduce(AncEvent.SaveStarted(tokenOf(stop())))
++        assertSame(pending, stop(pending, id = "m1", session = "stop-again"))
++    }
++
++    @Test
++    fun stopOverwritesAnEndDateTheActiveRowAlreadyHad() {
++        val command = commandOf(stop(base(med(endDate = "2027-05-05"))))
++        assertEquals(today, command.endDate)
++        val undo = commit(stop(base(med(endDate = "2027-05-05"))), revision = 4L).medicationStopUndo!!
++        assertEquals("Undo puts the old end date back", "2027-05-05", undo.previousEndDate)
++    }
++
++    private fun failedStop(): AncState {
++        val state = stop()
++        val token = tokenOf(state)
++        return state.reduce(AncEvent.SaveStarted(token))
++            .reduce(AncEvent.SaveFailed(token, SaveUiError.STALE_OR_CONFLICT, unresolved = false))
++    }
++
++    @Test
++    fun theFailureMessageCanBeDismissed() {
++        val dismissed = failedStop().reduce(AncEvent.DismissMedicationStopFailure)
++        assertNull(dismissed.medicationQuickSave)
++        assertEquals(SavePhase.IDLE, dismissed.savePhase)
++        assertNull(dismissed.saveError)
++        assertEquals(MEDICATION_STATUS_ACTIVE, dismissed.patient("p1")!!.medications.first { it.id == "m1" }.status)
++    }
++
++    @Test
++    fun dismissDoesNothingWhileTheStopSavesOrIsUnresolved() {
++        val pending = stop().reduce(AncEvent.SaveStarted(tokenOf(stop())))
++        assertSame(pending, pending.reduce(AncEvent.DismissMedicationStopFailure))
++        val token = tokenOf(stop())
++        val unresolved = pending.reduce(AncEvent.SaveFailed(token, SaveUiError.OUTCOME_UNRESOLVED, unresolved = true))
++        assertEquals(unresolved, unresolved.reduce(AncEvent.DismissMedicationStopFailure))
++        // A failed sheet save is the sheet's own message: the stop dismiss leaves it alone.
++        val sheetError = edit().copy(savePhase = SavePhase.ERROR, saveError = SaveUiError.STORAGE_ERROR)
++        assertSame(sheetError, sheetError.reduce(AncEvent.DismissMedicationStopFailure))
++    }
++
++    @Test
++    fun theFailureMessageGoesWhenAnotherActionStartsOrThePatientChanges() {
++        for (event in listOf(
++            AncEvent.RequestDelete("p1", DeletableType.MEDICATION, "m2"),
++            AncEvent.OpenWorkspace("p2"),
++            AncEvent.StartMedicationEditor("p1", "m2", "m2", "s"),
++            AncEvent.StartMedicationEditor("p1", null, "n", "s", prefill = prefill),
++            AncEvent.UndoRequested("t"),
++            AncEvent.Back,
++        )) {
++            val next = failedStop().reduce(event)
++            assertNull(event.toString(), next.medicationQuickSave)
++            assertNull(event.toString(), next.saveError)
++        }
++        assertNotNull(failedStop().reduce(AncEvent.DismissNotice).medicationQuickSave)
++    }
++
++    @Test
++    fun aTabChangeKeepsTheFailureCauseSoItIsNotLostUnseen() {
++        val away = failedStop().reduce(AncEvent.SelectSection(WorkspaceSection.VISITS))
++        assertNotNull(away.medicationQuickSave)
++        assertEquals(SaveUiError.STALE_OR_CONFLICT, away.saveError)
++        val back = away.reduce(AncEvent.SelectSection(WorkspaceSection.MEDICATIONS))
++        assertNotNull(back.medicationQuickSave)
++        assertEquals(SavePhase.ERROR, back.savePhase)
++    }
++
++    @Test
++    fun anotherStopOrAnEditCanStartAfterAFailedStop() {
++        val failed = failedStop()
++        assertFalse("the hidden stop draft is not a dirty draft", failed.hasDirtyDraft)
++        val dismissed = failed.reduce(AncEvent.DismissMedicationStopFailure)
++        assertEquals("m2", stop(dismissed, id = "m2", session = "stop-2").medicationQuickSave!!.draft.medicationId)
++        assertEquals("m1", edit(dismissed).medicationDraft!!.medicationId)
++        // Without dismissing first, the next action replaces the failure too.
++        assertEquals("m2", stop(failed, id = "m2", session = "stop-3").medicationQuickSave!!.draft.medicationId)
++        assertEquals("m2", edit(failed, id = "m2").medicationDraft!!.medicationId)
++    }
++
++    @Test
++    fun theHiddenStopDraftNeverCountsAsADirtyDraftSoStopsCanRepeat() {
++        val saving = stop().reduce(AncEvent.SaveStarted(tokenOf(stop())))
++        assertTrue(saving.medicationQuickSave!!.draft.isDirty)
++        assertFalse(saving.hasDirtyDraft)
++        val first = commit(stop(), revision = 4L)
++        val second = stop(first, id = "m2", session = "stop-2")
++        assertEquals("m2", second.medicationQuickSave!!.draft.medicationId)
++        assertEquals(today, commandOf(second).endDate)
++    }
++
++    @Test
++    fun aStoppedRowToggledActiveThenStoppedAgainKeepsItsStoredStopDate() {
++        val state = base(med(status = MEDICATION_STATUS_DISCONTINUED, endDate = "2026-04-04"))
++        val again = edit(state)
++            .reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, MEDICATION_STATUS_ACTIVE))
++            .reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, MEDICATION_STATUS_DISCONTINUED))
++            .medicationDraft!!
++        assertEquals("2026-04-04", again.values.endDate)
++        assertFalse("back where it started", again.isDirty)
++    }
++
++    @Test
++    fun anActiveRowWithAPlannedEndDateStopsTodayNotOnThatDate() {
++        val state = base(med(endDate = "2027-12-31"))
++        val cleared = edit(state).reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.END_DATE, ""))
++            .reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.STATUS, MEDICATION_STATUS_DISCONTINUED))
++        assertEquals(today, cleared.medicationDraft!!.values.endDate)
++    }
++
++    @Test
++    fun aLockDropsTheHiddenStopDraft() {
++        assertNull(failedStop().clearedForLock().medicationQuickSave)
++        assertNull(stop().clearedForLock().medicationQuickSave)
++    }
++
++    // ---- UNRESOLVED ----
++
++    /**
++     * Documents today's rule, kept on purpose: when a medication save's outcome is unknown, editing stays blocked.
++     * The sheet cannot be changed, closed or replaced, and no one-tap stop can start, until the vault is locked.
++     */
++    @Test
++    fun unresolvedSaveKeepsMedicationEditingBlocked() {
++        val draft = addFromTile()
++        val command = (SaveMedicationCommand.prepare(draft, "00000000-0000-4000-8000-000000000002", "new-1") as ClinicalCommandPreparation.Ready).command
++        val token = PendingSaveToken(command.operationUuid, command.editorSessionId)
++        val unresolved = draft.reduce(AncEvent.SaveStarted(token))
++            .reduce(AncEvent.SaveFailed(token, SaveUiError.OUTCOME_UNRESOLVED, unresolved = true))
++        assertEquals(SavePhase.UNRESOLVED, unresolved.savePhase)
++        assertEquals(token, unresolved.pendingSave)
++        for (event in listOf(
++            AncEvent.MedicationDraftChanged(MedicationDraftField.NAME, "x"),
++            AncEvent.CancelEditor,
++            AncEvent.Back,
++            AncEvent.ConfirmDiscard,
++            AncEvent.StartMedicationEditor("p1", "m1", "m1", "s2"),
++            AncEvent.StopMedication("p1", "m1", "stop"),
++        )) {
++            val next = unresolved.reduce(event)
++            assertEquals(event.toString(), draft.medicationDraft, next.medicationDraft)
++            assertEquals(event.toString(), SavePhase.UNRESOLVED, next.savePhase)
++            assertNull(event.toString(), next.medicationQuickSave)
++        }
++    }
++
++    // ---- recovery ----
++
++    private fun recover(open: AncState, fields: Map<String, String>): AncState {
++        val slot = activeDraftSlot(open)!!
++        val record = DraftRecord(slot.patientId, DraftScreenKind.MEDICATION, DraftEditorKind.EDIT, "m1", 3L, fields, 1000L)
++        val prompt = DraftRecoveryPrompt(slot, activeEditorSessionId(open)!!, record, isStale = false)
++        return open.reduce(AncEvent.DraftRecoveryFound(prompt)).reduce(AncEvent.AcceptDraftRecovery)
++    }
++
++    @Test
++    fun recoveringAnAddOrEditDraftReopensTheSheetOnTheTab() {
++        for (open in listOf(addFromTile(), edit())) {
++            val recovered = recover(open, mapOf("dosage" to "250 mg", "notes" to "recovered"))
++            assertEquals(medsTab, recovered.route)
++            val draft = recovered.medicationDraft!!
++            assertEquals("250 mg", draft.values.dosage)
++            assertEquals("recovered", draft.values.notes)
++            assertTrue(draft.isDirty)
++            assertTrue("recovered work asks before it is discarded", draft.touched)
++            assertNull(recovered.draftRecoveryPrompt)
++        }
++    }
++
++    // ---- "Save and add another" marks its next draft ----
++
++    @Test
++    fun onlyTheChainedBlankStartIsMarkedSoTheSheetFocusesTheName() {
++        val chained = base().reduce(AncEvent.StartMedicationEditor("p1", null, "new-3", "s-chain", keepSavedNotice = true))
++        assertTrue(chained.medicationDraft!!.chainedAdd)
++        assertEquals(blank, chained.medicationDraft!!.values)
++        assertFalse(custom().medicationDraft!!.chainedAdd)
++        assertFalse(addFromTile().medicationDraft!!.chainedAdd)
++        assertFalse(edit().medicationDraft!!.chainedAdd)
++        val editWithFlag = base().reduce(AncEvent.StartMedicationEditor("p1", "m1", "m1", "s-e", keepSavedNotice = true))
++        assertFalse("only a new drug is chained", editWithFlag.medicationDraft!!.chainedAdd)
++        // A field change keeps the mark; it is not part of the saved draft values.
++        val typed = chained.reduce(AncEvent.MedicationDraftChanged(MedicationDraftField.NAME, "X"))
++        assertTrue(typed.medicationDraft!!.chainedAdd)
++    }
++}
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt b/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt
+index e664d97..276b8e5 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/storage/ClinicalCommandsTest.kt
+@@ -323 +323 @@ class ClinicalCommandsTest {
+-        assertFalse("frequency is optional", errors.contains(com.sherifradwan.ancnative.state.ClinicalValidationError.REQUIRED_FREQUENCY))
++        assertTrue("a new medication needs a frequency", errors.contains(com.sherifradwan.ancnative.state.ClinicalValidationError.REQUIRED_FREQUENCY))
+@@ -442,0 +443,90 @@ class ClinicalCommandsTest {
++    /** A draft for one [frequency] and an optional stored revision (null = a new medication). */
++    private fun medicationState(
++        frequency: String,
++        baseMedicationRevision: Long?,
++        status: String = "Active",
++        endDate: String = "",
++    ) = com.sherifradwan.ancnative.state.AncState(
++        patients = emptyList(),
++        medicationDraft = com.sherifradwan.ancnative.state.MedicationDraft(
++            editorSessionId = "session-freq",
++            patientId = "p1",
++            medicationId = "med-freq",
++            basePatientRevision = 1,
++            baseMedicationRevision = baseMedicationRevision,
++            original = com.sherifradwan.ancnative.state.MedicationDraftValues(),
++            values = com.sherifradwan.ancnative.state.MedicationDraftValues(
++                name = "Folic Acid",
++                dosage = "5 mg",
++                route = "Oral",
++                frequency = frequency,
++                startDate = "2026-01-01",
++                endDate = endDate,
++                status = status,
++            ),
++        ),
++    )
++
++    @Test
++    fun saveMedicationPrepareRejectsNewMedicationWithoutFrequency() {
++        listOf("", "   ").forEach { blank ->
++            val prep = SaveMedicationCommand.prepare(medicationState(blank, baseMedicationRevision = null), "op-f", "med-freq")
++            assertTrue("blank '$blank' is rejected", prep is ClinicalCommandPreparation.Rejected)
++            assertEquals(
++                "only the frequency error",
++                setOf(com.sherifradwan.ancnative.state.ClinicalValidationError.REQUIRED_FREQUENCY),
++                (prep as ClinicalCommandPreparation.Rejected).errors,
++            )
++        }
++    }
++
++    @Test
++    fun saveMedicationPrepareAcceptsNewMedicationWithEachFixedFrequencyAndOtherText() {
++        val accepted = com.sherifradwan.ancnative.ui.COMMON_MEDICATION_FREQUENCIES + "Every other day after food"
++        assertTrue(com.sherifradwan.ancnative.ui.COMMON_MEDICATION_FREQUENCIES.isNotEmpty())
++        accepted.forEach { frequency ->
++            val prep = SaveMedicationCommand.prepare(medicationState(" $frequency ", baseMedicationRevision = null), "op-f", "med-freq")
++            assertTrue("'$frequency' is accepted", prep is ClinicalCommandPreparation.Ready)
++            val cmd = (prep as ClinicalCommandPreparation.Ready).command as SaveMedicationCommand
++            org.junit.Assert.assertEquals(frequency, cmd.frequency)
++            org.junit.Assert.assertEquals(null, cmd.expectedMedicationRevision)
++        }
++    }
++
++    @Test
++    fun saveMedicationPrepareAcceptsUpdateOfStoredRowWithoutFrequency() {
++        val prep = SaveMedicationCommand.prepare(
++            medicationState("", baseMedicationRevision = 3),
++            "00000000-0000-4000-8000-0000000000f3",
++            "med-freq",
++        )
++        assertTrue("an update keeps a stored blank frequency", prep is ClinicalCommandPreparation.Ready)
++        val cmd = (prep as ClinicalCommandPreparation.Ready).command as SaveMedicationCommand
++        org.junit.Assert.assertEquals("", cmd.frequency)
++        org.junit.Assert.assertEquals(3L, cmd.expectedMedicationRevision)
++        assertTrue(cmd.isStructurallyValid())
++    }
++
++    @Test
++    fun saveMedicationPrepareAcceptsStopAndUndoOfStoredRowWithoutFrequency() {
++        // What the one-tap stop builds for a legacy row with no frequency.
++        val stop = SaveMedicationCommand.prepare(
++            medicationState("", baseMedicationRevision = 2, status = "Discontinued", endDate = "2026-02-01"),
++            "op-stop",
++            "med-freq",
++        )
++        assertTrue("a legacy row can be stopped", stop is ClinicalCommandPreparation.Ready)
++        val stopCmd = (stop as ClinicalCommandPreparation.Ready).command as SaveMedicationCommand
++        org.junit.Assert.assertEquals("Discontinued", stopCmd.status)
++        org.junit.Assert.assertEquals("2026-02-01", stopCmd.endDate)
++        org.junit.Assert.assertEquals("", stopCmd.frequency)
++
++        // What its Undo builds: the second save that restores the earlier status.
++        val undo = SaveMedicationCommand.prepare(medicationState("", baseMedicationRevision = 3), "op-undo", "med-freq")
++        assertTrue("a legacy row can be restored", undo is ClinicalCommandPreparation.Ready)
++        val undoCmd = (undo as ClinicalCommandPreparation.Ready).command as SaveMedicationCommand
++        org.junit.Assert.assertEquals("Active", undoCmd.status)
++        org.junit.Assert.assertEquals(null, undoCmd.endDate)
++        org.junit.Assert.assertEquals(3L, undoCmd.expectedMedicationRevision)
++    }
++
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalPresetsTest.kt b/app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalPresetsTest.kt
+index 52fad84..6ea823a 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalPresetsTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/ui/ClinicalPresetsTest.kt
+@@ -2,0 +3 @@ package com.sherifradwan.ancnative.ui
++import com.sherifradwan.ancnative.R
+@@ -3,0 +5 @@ import org.junit.Assert.assertEquals
++import org.junit.Assert.assertNull
+@@ -13,0 +16,17 @@ class ClinicalPresetsTest {
++
++    @Test
++    fun everyFixedFrequencyHasItsOwnLabelAndFreeTextHasNone() {
++        assertEquals(
++            listOf(
++                R.string.medication_frequency_once_daily,
++                R.string.medication_frequency_twice_daily,
++                R.string.medication_frequency_three_times_daily,
++                R.string.medication_frequency_at_bedtime,
++                R.string.medication_frequency_as_needed,
++            ),
++            COMMON_MEDICATION_FREQUENCIES.map { medicationFrequencyLabelRes(it) },
++        )
++        assertNull(medicationFrequencyLabelRes("Every 12 hours"))
++        assertNull(medicationFrequencyLabelRes(""))
++        assertNull("the match is exact, not case-folded", medicationFrequencyLabelRes("once daily"))
++    }
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/ui/patienthub/model/PatientHubPureModelTest.kt b/app/src/test/java/com/sherifradwan/ancnative/ui/patienthub/model/PatientHubPureModelTest.kt
+index d5c349c..5280864 100644
+--- a/app/src/test/java/com/sherifradwan/ancnative/ui/patienthub/model/PatientHubPureModelTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/ui/patienthub/model/PatientHubPureModelTest.kt
+@@ -159,3 +159,3 @@ class PatientHubPureModelTest {
+-            MedicationTile("1", "Paracetamol", "500 mg", "Oral"),
+-            MedicationTile("2", "Ferrous Sulfate", "200 mg", "Oral"),
+-            MedicationTile("3", "Calcium Carbonate", "500 mg", "Oral"),
++            MedicationTile("1", "Paracetamol", "500 mg", "Oral", "Once daily"),
++            MedicationTile("2", "Ferrous Sulfate", "200 mg", "Oral", "Once daily"),
++            MedicationTile("3", "Calcium Carbonate", "500 mg", "Oral", "Twice daily"),
+@@ -175,0 +176,85 @@ class PatientHubPureModelTest {
++
++    @Test
++    fun recentMatchesStoredNamesWhateverTheirCaseOrSpaces() {
++        val tiles = listOf(
++            MedicationTile("1", "Paracetamol", "500 mg", "Oral", "Once daily"),
++            MedicationTile("2", "Ferrous Sulfate", "200 mg", "Oral", "Once daily"),
++        )
++        // As the picker passes them: the patient's stored names, untouched.
++        val stored = setOf("Ferrous Sulfate ", "PARACETAMOL")
++        val recent = filterMedicationTiles(tiles, selectedTab = "recent", searchQuery = "", pastMedicationNames = stored)
++        assertEquals(listOf("1", "2"), recent.map { it.id })
++        val recentSearch = filterMedicationTiles(tiles, selectedTab = "recent", searchQuery = " FERR ", pastMedicationNames = stored)
++        assertEquals(listOf("2"), recentSearch.map { it.id })
++    }
++
++    @Test
++    fun searchWithNoMatchIsEmptyInBothSources() {
++        val tiles = listOf(MedicationTile("1", "Paracetamol", "500 mg", "Oral", "Once daily"))
++        assertTrue(filterMedicationTiles(tiles, "common", "zzz", emptySet()).isEmpty())
++        assertTrue(filterMedicationTiles(tiles, "recent", "", emptySet()).isEmpty())
++    }
++
++    private fun medRecord(name: String, status: String, nonCompliant: Boolean = false, route: String = "Oral") = com.sherifradwan.ancnative.model.DemoMedicationRecord(
++        id = name, patientId = "p", name = name, dosage = "1", route = route, frequency = "Once daily",
++        startDate = "2026-01-01", endDate = null, status = status, notes = null, isProphylaxis = false,
++        isNonCompliant = nonCompliant, revision = 1,
++    )
++
++    @Test
++    fun aTileCountsAsActiveWhateverItsSpacesOrCase() {
++        val meds = listOf(
++            medRecord("Folic Acid", "Active"),
++            medRecord("Labetalol", "Active", nonCompliant = true),
++            medRecord("Aspirin", "Discontinued"),
++        )
++        val active = activeMedicationKeys(meds)
++        assertEquals(setOf("folic acid|oral", "labetalol|oral"), active)
++        assertTrue(MedicationTile("1", "  folic ACID ", "5 mg", "Oral", "Once daily").isAlreadyActive(active))
++        assertTrue("non-compliant is still active", MedicationTile("2", "LABETALOL", "", "Oral", "").isAlreadyActive(active))
++        assertFalse("stopped is not active", MedicationTile("3", "Aspirin", "75 mg", "Oral", "Once daily").isAlreadyActive(active))
++        assertFalse(MedicationTile("4", "Folic", "5 mg", "Oral", "Once daily").isAlreadyActive(active))
++        assertEquals("folic acid", medicationNameKey("\tFolic ACID \n"))
++    }
++
++    @Test
++    fun tilesAreTheListThenTheDoctorsOwnNamesWithBlankDoseAndFrequency() {
++        val tiles = medicationTiles(
++            listOf(com.sherifradwan.ancnative.model.catalog.MedicationCatalogItem("c1", "Folic Acid", "5 mg", "Oral", "Once daily")),
++            listOf(com.sherifradwan.ancnative.model.catalog.CustomChoiceItem(id = "x", list = com.sherifradwan.ancnative.model.catalog.CustomChoiceList.MEDICATION_NAME, label = "My drug")),
++        )
++        assertEquals(listOf("c1", "custom_x"), tiles.map { it.id })
++        assertEquals(MedicationTile("custom_x", "My drug", "", "Oral", "", isCustom = true), tiles[1])
++    }
++
++    @Test
++    fun theAlreadyActiveCheckMatchesNameAndRouteTogether() {
++        val active = activeMedicationKeys(
++            listOf(
++                medRecord("Ferrous Sulfate", "Active"),
++                medRecord("Aspirin", "Discontinued"),
++                medRecord("Labetalol", "Active", nonCompliant = true),
++            ),
++        )
++        assertEquals(setOf("ferrous sulfate|oral", "labetalol|oral"), active)
++        assertTrue("same name and route, spaces and case ignored", MedicationTile("1", " Ferrous SULFATE ", "200 mg", " oral ", "Once daily").isAlreadyActive(active))
++        assertFalse("same name on another route is a different drug", MedicationTile("2", "ferrous sulfate", "100 mg", "IM", "Once daily").isAlreadyActive(active))
++        assertFalse("stopped does not count on any route", MedicationTile("3", "Aspirin", "75 mg", "Oral", "Once daily").isAlreadyActive(active))
++        assertTrue("non-compliant is still active", MedicationTile("4", "labetalol", "", "Oral", "").isAlreadyActive(active))
++        assertEquals("ferrous sulfate|oral", medicationNameRouteKey("\tFerrous sulfate ", " ORAL "))
++        val both = activeMedicationKeys(listOf(medRecord("Iron", "Active"), medRecord("Iron", "Active", route = "IM")))
++        assertTrue(MedicationTile("5", "Iron", "", "Oral", "").isAlreadyActive(both))
++        assertTrue(MedicationTile("6", "Iron", "", "IM", "").isAlreadyActive(both))
++        assertFalse(MedicationTile("7", "Iron", "", "IV", "").isAlreadyActive(both))
++    }
++
++    @Test
++    fun aStoredRowWithoutARouteStillBlocksTheSameDrugOnAnyRoute() {
++        val active = activeMedicationKeys(listOf(medRecord("Ferrous Sulfate", "Active", route = "")))
++        assertTrue("blank stored route matches the oral tile", MedicationTile("1", "Ferrous sulfate", "", "Oral", "").isAlreadyActive(active))
++        assertTrue("and the IM tile", MedicationTile("2", "Ferrous sulfate", "", "IM", "").isAlreadyActive(active))
++        assertFalse("another drug is not blocked", MedicationTile("3", "Aspirin", "", "Oral", "").isAlreadyActive(active))
++        val oral = activeMedicationKeys(listOf(medRecord("Ferrous Sulfate", "Active")))
++        assertTrue("a tile without a route matches the drug", MedicationTile("4", "Ferrous sulfate", "", "", "").isAlreadyActive(oral))
++        assertFalse("an IM tile stays open while the oral drug is active", MedicationTile("5", "Ferrous sulfate", "", "IM", "").isAlreadyActive(oral))
++    }
