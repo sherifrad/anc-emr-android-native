@@ -248,16 +248,19 @@ class DeliveryPlanReducerTest {
     }
 
     @Test
-    fun `the sheet never asks for a dating update`() {
+    fun `saving the sheet changes only the notes and never touches dating or other profile fields`() {
         val withDating = patient(
             dating = DemoPatientDating(patientId = "p1", lmpDate = "2026-01-01", ultrasoundEdd = null, agreedEdd = "2026-10-08", datingMethod = "LMP", notes = null),
-        )
-        val onlyLmp = patient(dating = DemoPatientDating(patientId = "p1", lmpDate = "2026-02-01", ultrasoundEdd = null, agreedEdd = null, datingMethod = null, notes = null))
-        val subjects = listOf(withDating, onlyLmp, patient(dating = null))
-        for (subject in subjects) {
-            val draft = requireNotNull(start(base(subject)).patientDraft)
-            assertNull(intakeDatingUpdate(subject.dating, draft.values))
-        }
+        ).copy(ageText = "30 years")
+        val changed = start(base(withDating)).change(DeliveryPlanField.PLAN, "Elective caesarean")
+        val draft = requireNotNull(changed.patientDraft)
+        assertEquals(draft.original, draft.values.copy(obstetricNotes = draft.original.obstetricNotes))
+        val prepared = com.sherifradwan.ancnative.storage.SavePatientProfileCommand.prepare(changed, "op-1", "2026-11-11T08:00:00Z")
+        val command = (prepared as com.sherifradwan.ancnative.storage.PatientCommandPreparation.Ready).command
+            as com.sherifradwan.ancnative.storage.SavePatientProfileCommand
+        assertEquals(withDating.caseId, command.caseId)
+        assertEquals(withDating.displayName, command.displayName)
+        assertEquals(withDating.ageText, command.ageText)
     }
 
     @Test

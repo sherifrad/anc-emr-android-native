@@ -7,7 +7,7 @@ import com.sherifradwan.ancnative.storage.VaultState
 
 object AncReducer {
     fun reduce(state: AncState, event: AncEvent): AncState {
-        val next = reduceInternal(state, event).withDeleteUiConsistent().withMedicationStopUiKept(event)
+        val next = reduceInternal(state, event).withDeleteUiConsistent().withMedicationStopUiKept(event).withFlowConsistent(event)
         val prompt = next.draftRecoveryPrompt
         return if (prompt != null && activeEditorSessionId(next) != prompt.editorSessionId) {
             next.copy(draftRecoveryPrompt = null)
@@ -50,6 +50,8 @@ object AncReducer {
             }
             is AncEvent.StartVisit -> startVisit(state, event)
             is AncEvent.StartPatientEditor -> startPatientEditor(state, event)
+            is AncEvent.Flow -> reduceFlowEvent(state, event)
+            is AncEvent.RegistrationNext -> reduceRegistrationNext(state, event)
             is AncEvent.StartDeliveryPlanEditor -> startDeliveryPlanEditor(state, event)
             is AncEvent.StartHistoriesEditor -> startHistoriesEditor(state, event)
             is AncEvent.StartPregnancyEditor -> startPregnancyEditor(state, event)
@@ -168,7 +170,7 @@ object AncReducer {
                     pendingSave = null,
                     medicationStopUndo = quick?.undoOnSuccess?.copy(committedAtMillis = event.committedAtMillis)
                         ?: state.medicationStopUndo,
-                )
+                ).advanceFlowAfterCommit(event.token)
             } else state
             AncEvent.CancelEditor, AncEvent.Back -> requestBack(state, event)
             AncEvent.ConfirmDiscard -> confirmDiscard(state)
@@ -196,6 +198,7 @@ object AncReducer {
             AncEvent.AcceptDraftRecovery -> {
                 val prompt = state.draftRecoveryPrompt ?: return state
                 val recovered = applyDraftRecord(state, prompt.record).copy(draftRecoveryPrompt = null)
+                    .withFlowSessionFollowing(prompt.editorSessionId)
                 // Recovered work counts as the clinician's own edits: the medication sheet asks before discarding it.
                 if (prompt.record.screenKind == DraftScreenKind.MEDICATION) {
                     recovered.copy(medicationDraft = recovered.medicationDraft?.copy(touched = true))
@@ -435,7 +438,7 @@ object AncReducer {
         PatientEditorKind.STATUS -> state.copy(statusDraft = state.statusDraft?.copy(errors = event.errors))
     }.copy(savePhase = SavePhase.IDLE, saveError = null)
 
-    private fun requestBack(state: AncState, event: AncEvent): AncState {
+    internal fun requestBack(state: AncState, event: AncEvent): AncState {
         if (state.savePhase.blocksEditing()) return state
         val medicationDraft = state.medicationDraft
         if (medicationDraft != null) {
@@ -466,12 +469,13 @@ object AncReducer {
             is AncRoute.PreviousPregnancyEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.OBSTETRIC_HISTORY)
             is AncRoute.StatusEditor -> AncRoute.PatientList
             is AncRoute.DatingEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.DATING)
+            is AncRoute.PregnancyCountPrompt -> AncRoute.Workspace(route.patientId)
             is AncRoute.UltrasoundEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.ULTRASOUND)
             is AncRoute.LabEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.LABORATORY)
             is AncRoute.LabBatchEditor -> AncRoute.Workspace(route.patientId, WorkspaceSection.LABORATORY)
         }
         return if (state.hasDirtyDraft) {
-            state.copy(showDiscardDialog = true, pendingAction = PendingAction.Navigate(destination))
+            state.copy(showDiscardDialog = true, pendingAction = PendingAction.Navigate(destination), awaitingAdvance = null)
         } else {
             state.clearDrafts().copy(route = destination, savedNotice = false, notice = null)
         }
@@ -480,12 +484,17 @@ object AncReducer {
     private fun confirmDiscard(state: AncState): AncState {
         if (state.savePhase.blocksEditing()) return state
         val action = state.pendingAction
-        val discarded = state.clearDrafts().copy(savedNotice = false, notice = null)
+        val discarded = state.clearDrafts().copy(savedNotice = false, notice = null, awaitingAdvance = null)
         return when (action) {
             is PendingAction.Navigate -> discarded.copy(route = action.destination)
             is PendingAction.StartVisit -> startVisit(
                 discarded,
                 AncEvent.StartVisit(action.patientId, action.visitId, action.editorSessionId),
+            )
+            is PendingAction.FlowMove -> applyFlowMove(
+                discarded,
+                action.event,
+                FlowIds(action.editorSessionId, action.newPregnancyId),
             )
             null -> discarded
         }

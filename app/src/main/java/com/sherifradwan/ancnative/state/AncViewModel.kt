@@ -1009,6 +1009,8 @@ class AncViewModel internal constructor(
         is AncEvent.PregnancyDraftChanged,
         is AncEvent.StatusReasonChanged,
         is AncEvent.StartPatientEditor,
+        is AncEvent.Flow,
+        is AncEvent.RegistrationNext,
         is AncEvent.StartDeliveryPlanEditor,
         is AncEvent.StartHistoriesEditor,
         is AncEvent.StartPregnancyEditor,

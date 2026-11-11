@@ -18,6 +18,8 @@ sealed interface AncEvent {
         val newPatientId: String,
         val editorSessionId: String,
     ) : AncEvent
+    data class Flow(val event: FlowEvent, val editorSessionId: String, val newPregnancyId: String) : AncEvent
+    data class RegistrationNext(val editorSessionId: String, val newPregnancyId: String) : AncEvent
     data class StartDeliveryPlanEditor(val patientId: String, val editorSessionId: String) : AncEvent
     data class StartHistoriesEditor(val patientId: String, val editorSessionId: String) : AncEvent
     data class StartPregnancyEditor(

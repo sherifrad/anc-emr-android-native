@@ -5,6 +5,8 @@ internal fun AncEvent.startsAnotherAction(): Boolean = when (this) {
     is AncEvent.SelectSection,
     is AncEvent.StartVisit,
     is AncEvent.StartPatientEditor,
+    is AncEvent.Flow,
+    is AncEvent.RegistrationNext,
     is AncEvent.StartDeliveryPlanEditor,
     is AncEvent.StartHistoriesEditor,
     is AncEvent.StartPregnancyEditor,

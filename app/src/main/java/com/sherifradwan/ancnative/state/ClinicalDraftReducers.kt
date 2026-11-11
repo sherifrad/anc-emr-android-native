@@ -6,6 +6,7 @@ import com.sherifradwan.ancnative.model.DemoPatientDating
 import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.model.DemoVisit
+import com.sherifradwan.ancnative.model.PreviousPregnancyFormRules
 import com.sherifradwan.ancnative.model.composeDeliveryNotes
 import com.sherifradwan.ancnative.model.isComposedDeliveryNotes
 import com.sherifradwan.ancnative.model.parseBloodPressure
@@ -51,7 +52,7 @@ internal fun startPatientEditor(state: AncState, event: AncEvent.StartPatientEdi
         PatientDraftValues(caseId = "ANC-$year-$nextSeq")
     }
     val patientId = patient?.id ?: event.newPatientId
-    return state.clearDrafts().copy(
+    val started = state.clearDrafts().copy(
         route = AncRoute.PatientEditor(patientId, patient == null),
         patientDraft = PatientDraft(
             editorSessionId = event.editorSessionId,
@@ -64,6 +65,7 @@ internal fun startPatientEditor(state: AncState, event: AncEvent.StartPatientEdi
         savedNotice = false,
         notice = null,
     )
+    return if (patient == null) started.withNewPatientFlow(patientId, event.editorSessionId) else started
 }
 
 internal fun startDeliveryPlanEditor(state: AncState, event: AncEvent.StartDeliveryPlanEditor): AncState {
@@ -345,14 +347,6 @@ internal fun updatePatientDraft(state: AncState, event: AncEvent.PatientDraftCha
         PatientDraftField.ABORTION -> draft.values.copy(abortion = event.value)
         PatientDraftField.OBSTETRIC_NOTES -> draft.values.copy(obstetricNotes = event.value)
         PatientDraftField.CLINICAL_ATTENTION -> draft.values.copy(clinicalAttention = event.value)
-        PatientDraftField.LMP_DATE -> draft.values.copy(lmpDate = event.value)
-        PatientDraftField.DATING_METHOD -> draft.values.copy(datingMethod = event.value)
-        PatientDraftField.TRANSFER_DATE -> draft.values.copy(transferDate = event.value)
-        PatientDraftField.EMBRYO_AGE_DAYS -> draft.values.copy(embryoAgeDays = event.value)
-        PatientDraftField.AGREED_EDD -> draft.values.copy(agreedEdd = event.value)
-        PatientDraftField.SCAN_DATE -> draft.values.copy(scanDate = event.value)
-        PatientDraftField.SCAN_GA_WEEKS -> draft.values.copy(scanGaWeeks = event.value)
-        PatientDraftField.SCAN_GA_DAYS -> draft.values.copy(scanGaDays = event.value)
     }
     return state.copy(patientDraft = draft.copy(values = values, errors = emptySet()), savePhase = SavePhase.IDLE, saveError = null)
 }
@@ -374,27 +368,29 @@ internal fun updatePregnancyDraft(state: AncState, event: AncEvent.PregnancyDraf
     val draft = state.pregnancyDraft ?: return state
     val values = when (event.field) {
         PregnancyDraftField.DATE_TEXT -> draft.values.copy(dateText = event.value)
-        PregnancyDraftField.OUTCOME_TEXT -> draft.values.copy(outcomeText = event.value)
         PregnancyDraftField.PREGNANCY_TYPE -> draft.values.copy(pregnancyType = event.value)
         PregnancyDraftField.OTHER_DETAILS -> draft.values.copy(otherDetails = event.value)
         PregnancyDraftField.PLACE_AND_DOCTOR -> draft.values.copy(placeAndDoctor = event.value)
-        PregnancyDraftField.DELIVERY_BY -> draft.values.copy(deliveryBy = event.value)
-        PregnancyDraftField.OUTCOME -> draft.values.copy(
+        PregnancyDraftField.DELIVERY_BY -> PreviousPregnancyFormRules.deliveryColumns(
+            draft.values.outcome, draft.original.outcome, draft.values.deliveryBy, draft.values.birthMethod, event.value,
+        ).let { draft.values.copy(deliveryBy = it.deliveryBy.orEmpty(), birthMethod = it.birthMethod.orEmpty()) }
+        PregnancyDraftField.OUTCOME -> PreviousPregnancyFormRules.deliveryColumns(
+            event.value, draft.original.outcome, draft.values.deliveryBy, draft.values.birthMethod,
+            originalDeliveryBy = draft.original.deliveryBy, originalBirthMethod = draft.original.birthMethod,
+        ).let { columns -> draft.values.copy(
             outcome = event.value,
-            birthMethod = draft.values.birthMethod.takeIf {
-                event.value == "LiveBirth" || event.value == "Stillbirth"
-            }.orEmpty(),
+            outcomeText = if (event.value.isNotBlank()) "" else draft.values.outcomeText,
+            deliveryBy = columns.deliveryBy.orEmpty(),
+            birthMethod = columns.birthMethod.orEmpty(),
             lossManagement = draft.values.lossManagement.takeIf {
                 event.value == "EarlyPregnancyLoss"
             }.orEmpty(),
             terminationMethod = draft.values.terminationMethod.takeIf {
                 event.value == "TerminationOfPregnancy"
             }.orEmpty(),
-        )
-        PregnancyDraftField.BIRTH_METHOD -> draft.values.copy(birthMethod = event.value)
+        ) }
         PregnancyDraftField.LOSS_MANAGEMENT -> draft.values.copy(lossManagement = event.value)
         PregnancyDraftField.TERMINATION_METHOD -> draft.values.copy(terminationMethod = event.value)
-        PregnancyDraftField.CLINICIAN_ID -> draft.values.copy(clinicianId = event.value)
     }
     return state.copy(pregnancyDraft = draft.copy(values = values, errors = emptySet()), savePhase = SavePhase.IDLE, saveError = null)
 }
@@ -496,7 +492,6 @@ internal fun DemoPatient.toPatientDraftValues() = PatientDraftValues(
     deliveryDate = deliveryDate.orEmpty(),
     deliveryMode = deliveryMode.orEmpty(),
     deliveryOutcome = deliveryOutcome.orEmpty(),
-    lmpDate = dating?.lmpDate.orEmpty(),
 )
 
 internal fun DemoPreviousPregnancy.toDraftValues() = PreviousPregnancyDraftValues(

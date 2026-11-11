@@ -75,14 +75,14 @@ internal fun startFlowEditor(state: AncState, flow: RegistrationFlow, ids: FlowI
 }
 
 private fun startEditorFor(state: AncState, event: AncEvent): AncState = when (event) {
-    is AncEvent.StartPatientEditor -> AncReducer.startPatientEditor(state, event)
-    is AncEvent.StartDatingEditor -> AncReducer.startDatingEditor(state, event)
-    is AncEvent.StartHistoriesEditor -> AncReducer.startHistoriesEditor(state, event)
-    is AncEvent.StartPregnancyEditor -> AncReducer.startPregnancyEditor(state, event)
+    is AncEvent.StartPatientEditor -> startPatientEditor(state, event)
+    is AncEvent.StartDatingEditor -> startDatingEditor(state, event)
+    is AncEvent.StartHistoriesEditor -> startHistoriesEditor(state, event)
+    is AncEvent.StartPregnancyEditor -> startPregnancyEditor(state, event)
     else -> state
 }
 
-private fun AncState.withoutDrafts(): AncState = with(AncReducer) { clearDrafts() }
+private fun AncState.withoutDrafts(): AncState = clearDrafts()
 
 private fun openCountPrompt(state: AncState, patient: DemoPatient): AncState {
     if (state.savePhase.blocksEditing() || state.hasDirtyDraft || patient.status == "archived") return state
@@ -145,7 +145,7 @@ internal fun reduceFlowEvent(state: AncState, event: AncEvent.Flow): AncState {
     }
     if (isNoOp(flow, counted)) return state
     if (state.savePhase.blocksEditing()) return state
-    if (counted == FlowEvent.Back && reduce(flow, counted) == FlowResult.Exit) return AncReducer.requestBack(state)
+    if (counted == FlowEvent.Back && reduce(flow, counted) == FlowResult.Exit) return AncReducer.requestBack(state, AncEvent.Back)
     if (state.hasDirtyDraft) {
         return state.copy(
             showDiscardDialog = true,
