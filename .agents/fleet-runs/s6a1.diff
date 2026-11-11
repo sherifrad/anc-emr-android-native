@@ -1,0 +1,1126 @@
+diff --git a/app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt b/app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt
+index 9d6fe38..da3de69 100644
+--- a/app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt
++++ b/app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt
+@@ -916,28 +916,7 @@ class AncWorkflowTest {
+         )
+ 
+         if (minHeightDp >= 48f) {
+-            val touchBounds = semanticsNode.touchBoundsInRoot
+-            assertTrue(
+-                "$label touch target is too short: height=${touchBounds.height}px, " +
+-                    "expected>=${minHeightDp * fixtureDensity}px",
+-                touchBounds.height + tolerancePx >= minHeightDp * fixtureDensity,
+-            )
+-            assertTrue(
+-                "$label touch target is outside host left: touch=$touchBounds host=$host",
+-                touchBounds.left + tolerancePx >= host.left,
+-            )
+-            assertTrue(
+-                "$label touch target is outside host top: touch=$touchBounds host=$host",
+-                touchBounds.top + tolerancePx >= host.top,
+-            )
+-            assertTrue(
+-                "$label touch target is outside host right: touch=$touchBounds host=$host",
+-                touchBounds.right <= host.right + tolerancePx,
+-            )
+-            assertTrue(
+-                "$label touch target is outside host bottom: touch=$touchBounds host=$host",
+-                touchBounds.bottom <= host.bottom + tolerancePx,
+-            )
++            assertTouchTargetInsideHost(label, semanticsNode, host, fixtureDensity, minHeightDp, tolerancePx = tolerancePx)
+         } else {
+             assertTrue(
+                 "$label is too short: height=${bounds.height}px, expected>=${minHeightDp * fixtureDensity}px",
+diff --git a/app/src/androidTest/java/com/sherifradwan/ancnative/ComposeTextAsserts.kt b/app/src/androidTest/java/com/sherifradwan/ancnative/ComposeTextAsserts.kt
+index c8d49e2..42edc8a 100644
+--- a/app/src/androidTest/java/com/sherifradwan/ancnative/ComposeTextAsserts.kt
++++ b/app/src/androidTest/java/com/sherifradwan/ancnative/ComposeTextAsserts.kt
+@@ -1,6 +1,8 @@
+ package com.sherifradwan.ancnative
+ 
++import androidx.compose.ui.geometry.Rect
+ import androidx.compose.ui.semantics.SemanticsActions
++import androidx.compose.ui.semantics.SemanticsNode
+ import androidx.compose.ui.semantics.getOrNull
+ import androidx.compose.ui.test.SemanticsMatcher
+ import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
+@@ -33,3 +35,31 @@ fun SemanticsNodeInteractionsProvider.assertTextNotClipped(label: String, matche
+ 
+ fun SemanticsNodeInteractionsProvider.assertNotEllipsized(text: String, ancestorTag: String) =
+     assertTextNotClipped(text, hasText(text, substring = true) and inTagged(ancestorTag))
++
++/**
++ * Fails when the touch area of [node] is shorter than [minHeightDp] (or narrower than [minWidthDp]) or sticks out of
++ * [host]. [density] is pixels per dp of the fixture.
++ */
++fun assertTouchTargetInsideHost(
++    label: String,
++    node: SemanticsNode,
++    host: Rect,
++    density: Float,
++    minHeightDp: Float,
++    minWidthDp: Float = 0f,
++    tolerancePx: Float = 1f,
++) {
++    val touch = node.touchBoundsInRoot
++    assertTrue(
++        "$label touch target is too short: height=${touch.height}px, expected>=${minHeightDp * density}px",
++        touch.height + tolerancePx >= minHeightDp * density,
++    )
++    assertTrue(
++        "$label touch target is too narrow: width=${touch.width}px, expected>=${minWidthDp * density}px",
++        touch.width + tolerancePx >= minWidthDp * density,
++    )
++    assertTrue("$label touch target is outside host left: touch=$touch host=$host", touch.left + tolerancePx >= host.left)
++    assertTrue("$label touch target is outside host top: touch=$touch host=$host", touch.top + tolerancePx >= host.top)
++    assertTrue("$label touch target is outside host right: touch=$touch host=$host", touch.right <= host.right + tolerancePx)
++    assertTrue("$label touch target is outside host bottom: touch=$touch host=$host", touch.bottom <= host.bottom + tolerancePx)
++}
+diff --git a/app/src/androidTest/java/com/sherifradwan/ancnative/RegistrationFlowUiTest.kt b/app/src/androidTest/java/com/sherifradwan/ancnative/RegistrationFlowUiTest.kt
+new file mode 100644
+index 0000000..596edf2
+--- /dev/null
++++ b/app/src/androidTest/java/com/sherifradwan/ancnative/RegistrationFlowUiTest.kt
+@@ -0,0 +1,302 @@
++package com.sherifradwan.ancnative
++
++import androidx.activity.compose.setContent
++import androidx.compose.foundation.layout.Box
++import androidx.compose.foundation.layout.requiredSize
++import androidx.compose.runtime.CompositionLocalProvider
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.geometry.Rect
++import androidx.compose.ui.draw.clipToBounds
++import androidx.compose.ui.platform.LocalDensity
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.semantics.SemanticsProperties
++import androidx.compose.ui.semantics.getOrNull
++import androidx.compose.ui.test.SemanticsMatcher
++import androidx.compose.ui.test.assertIsDisplayed
++import androidx.compose.ui.test.assertIsEnabled
++import androidx.compose.ui.test.assertIsNotEnabled
++import androidx.compose.ui.test.assertTextContains
++import androidx.compose.ui.test.assertContentDescriptionEquals
++import androidx.compose.ui.test.hasText
++import androidx.compose.ui.test.junit4.createAndroidComposeRule
++import androidx.compose.ui.test.onNodeWithTag
++import androidx.compose.ui.test.onNodeWithText
++import androidx.compose.ui.test.performClick
++import androidx.compose.ui.unit.Density
++import androidx.compose.ui.unit.dp
++import androidx.test.ext.junit.runners.AndroidJUnit4
++import com.sherifradwan.ancnative.model.DemoFixtures
++import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.state.AncEvent
++import com.sherifradwan.ancnative.state.AncRoute
++import com.sherifradwan.ancnative.state.AncState
++import com.sherifradwan.ancnative.state.DatingDraft
++import com.sherifradwan.ancnative.state.DatingDraftValues
++import com.sherifradwan.ancnative.state.FlowEvent
++import com.sherifradwan.ancnative.state.HistoriesDraft
++import com.sherifradwan.ancnative.state.HistoriesDraftValues
++import com.sherifradwan.ancnative.state.PatientDraft
++import com.sherifradwan.ancnative.state.PatientDraftValues
++import com.sherifradwan.ancnative.state.PreviousPregnancyDraft
++import com.sherifradwan.ancnative.state.PreviousPregnancyDraftValues
++import com.sherifradwan.ancnative.state.RegistrationFlow
++import com.sherifradwan.ancnative.state.RegistrationStep
++import com.sherifradwan.ancnative.state.StepStatus
++import com.sherifradwan.ancnative.storage.VaultState
++import com.sherifradwan.ancnative.ui.AncApp
++import com.sherifradwan.ancnative.ui.AncTheme
++import org.junit.Assert.assertEquals
++import org.junit.Assert.assertTrue
++import org.junit.Rule
++import org.junit.Test
++import org.junit.runner.RunWith
++
++@RunWith(AndroidJUnit4::class)
++class RegistrationFlowUiTest {
++    @get:Rule
++    val compose = createAndroidComposeRule<MainActivity>()
++
++    private val patient: DemoPatient = DemoFixtures.patients.first()
++    private val events = mutableListOf<AncEvent>()
++    private var density = 1f
++
++    private fun flowState(
++        step: RegistrationStep,
++        statuses: Map<RegistrationStep, StepStatus> = emptyMap(),
++        inFlow: Boolean = true,
++        dialog: Boolean = false,
++        route: AncRoute? = null,
++    ): AncState {
++        val session = "session-1"
++        val id = patient.id
++        val flow = RegistrationFlow(
++            patientId = id,
++            current = step,
++            statuses = RegistrationStep.entries.associateWith { statuses[it] ?: StepStatus.PENDING },
++            pregnancyTarget = if (step == RegistrationStep.PREGNANCIES) 3 else null,
++            pregnancyIndex = 1,
++            activeEditorSessionId = session,
++        )
++        val base = AncState(
++            patients = DemoFixtures.patients,
++            vaultState = VaultState.Unlocked(sessionEpoch = 1L),
++            registrationFlow = if (inFlow) flow else null,
++            showDiscardDialog = dialog,
++        )
++        val patientValues = PatientDraftValues(displayName = patient.displayName, ageText = "28")
++        return when (step) {
++            RegistrationStep.IDENTITY, RegistrationStep.OBSTETRIC -> base.copy(
++                route = AncRoute.PatientEditor(id, isNew = false),
++                patientDraft = PatientDraft(session, id, patient.revision, null, patientValues, patientValues),
++            )
++            RegistrationStep.DATING -> base.copy(
++                route = AncRoute.DatingEditor(id),
++                datingDraft = DatingDraft(session, id, patient.revision, DatingDraftValues(), DatingDraftValues()),
++            )
++            RegistrationStep.HISTORIES -> base.copy(
++                route = AncRoute.OtherHistoriesEditor(id),
++                historiesDraft = HistoriesDraft(
++                    session, id, patient.revision, HistoriesDraftValues(), HistoriesDraftValues(),
++                ),
++            )
++            RegistrationStep.PREGNANCIES -> base.copy(
++                route = AncRoute.PreviousPregnancyEditor(id, "pregnancy-new"),
++                pregnancyDraft = PreviousPregnancyDraft(
++                    session, id, "pregnancy-new", patient.revision, null, null,
++                    PreviousPregnancyDraftValues(), PreviousPregnancyDraftValues(),
++                ),
++            )
++        }.let { if (route != null) it.copy(route = route) else it }
++    }
++
++    private fun show(state: AncState, fontScale: Float = 1f, darkTheme: Boolean = false) {
++        events.clear()
++        compose.activity.runOnUiThread {
++            val base = compose.activity.resources.displayMetrics.density
++            density = base
++            compose.activity.setContent {
++                CompositionLocalProvider(LocalDensity provides Density(base, fontScale)) {
++                    Box(Modifier.requiredSize(360.dp, 640.dp).clipToBounds().testTag(HOST_TAG)) {
++                        AncTheme(darkTheme = darkTheme) {
++                            AncApp(
++                                state = state,
++                                onEvent = { events += it },
++                                onStartVisit = { _, _ -> },
++                                onSaveVisit = {},
++                                onInitialize = {},
++                                onUnlock = {},
++                                onLock = {},
++                                onRetryStorage = {},
++                            )
++                        }
++                    }
++                }
++            }
++        }
++        compose.waitForIdle()
++    }
++
++    private fun str(id: Int, vararg args: Any): String = compose.activity.getString(id, *args)
++
++    private fun hostRect(): Rect {
++        val host = compose.onNodeWithTag(HOST_TAG).fetchSemanticsNode()
++        val origin = host.positionInRoot
++        return Rect(origin.x, origin.y, origin.x + host.size.width, origin.y + host.size.height)
++    }
++
++    private fun assertButtonUsable(tag: String, label: String) {
++        val node = compose.onNodeWithTag(tag).assertIsDisplayed().assertIsEnabled()
++        assertTouchTargetInsideHost(label, node.fetchSemanticsNode(), hostRect(), density, 48f, 48f)
++    }
++
++    // RF11
++    @Test
++    fun obstetricStepHeaderIsNotClippedAndNextNeedsNoScrolling() {
++        listOf(1f to false, 1.4f to false, 1f to true).forEach { (scale, dark) ->
++            show(flowState(RegistrationStep.OBSTETRIC), scale, dark)
++            val title = str(R.string.obstetric_risk_section_title)
++            compose.onNodeWithText("Step 3 of 5: $title", substring = true).assertIsDisplayed()
++            compose.assertTextNotClipped(
++                "header title at $scale dark=$dark",
++                hasText(title, substring = true) and inTagged("registrationStepHeader"),
++            )
++            compose.onNodeWithTag("flowNext").assertIsDisplayed()
++        }
++    }
++
++    // RF11 keyboard variant
++    @Test
++    fun segmentRowHidesWhileTheKeyboardShowsButTitleAndNextStay() {
++        show(flowState(RegistrationStep.OBSTETRIC))
++        compose.onNodeWithTag("registrationSegment-1").assertIsDisplayed()
++        compose.onNodeWithTag("patientGravida").performClick()
++        compose.waitUntil(5_000) { compose.onAllNodesWithTagCount("registrationSegment-1") == 0 }
++        compose.onNodeWithTag("registrationStepHeader").assertIsDisplayed()
++        compose.onNodeWithTag("flowNext").assertIsDisplayed()
++    }
++
++    // RF12
++    @Test
++    fun footerButtonsStayUsableOnMiddleAndLastSteps() {
++        listOf(RegistrationStep.DATING, RegistrationStep.PREGNANCIES).forEach { step ->
++            listOf(1f, 1.4f, 2f).forEach { scale ->
++                show(flowState(step), scale)
++                listOf("flowBack", "flowSkip", "flowNext").forEach { tag ->
++                    assertButtonUsable(tag, "$step $tag at $scale")
++                }
++            }
++        }
++    }
++
++    @Test
++    fun identityStepDisablesBackAndOffersNoSkip() {
++        show(flowState(RegistrationStep.IDENTITY))
++        compose.onNodeWithTag("flowBack").assertIsDisplayed().assertIsNotEnabled()
++        compose.onNodeWithTag("flowSkip").assertDoesNotExist()
++        compose.onNodeWithTag("flowNext").assertIsDisplayed().assertIsEnabled()
++    }
++
++    // RF13
++    @Test
++    fun segmentsShowStatusWordsAndSpokenDescriptions() {
++        val statuses = mapOf(
++            RegistrationStep.IDENTITY to StepStatus.DONE,
++            RegistrationStep.DATING to StepStatus.SKIPPED,
++        )
++        val identity = str(R.string.registration_step_identity)
++        val dating = str(R.string.dating)
++        listOf(1f, 1.3f).forEach { scale ->
++            show(flowState(RegistrationStep.DATING, statuses), scale)
++            compose.onNodeWithTag("registrationSegment-1").assertTextContains(str(R.string.done))
++                .assertContentDescriptionEquals("$identity, ${str(R.string.done)}")
++            compose.onNodeWithTag("registrationSegment-2")
++                .assertTextContains(str(R.string.registration_status_skipped))
++                .assertTextContains(str(R.string.registration_current))
++                .assertContentDescriptionEquals(
++                    str(R.string.registration_segment_current_cd, dating, str(R.string.registration_status_skipped)),
++                )
++            compose.onNodeWithTag("registrationSegment-3")
++                .assertTextContains(str(R.string.registration_status_pending))
++        }
++        show(flowState(RegistrationStep.DATING, statuses), 1.4f)
++        compose.onNodeWithTag("registrationSegment-1").assertIsDisplayed()
++            .assertContentDescriptionEquals("$identity, ${str(R.string.done)}")
++        compose.onNode(hasText(str(R.string.done)) and inTagged("registrationStepHeader")).assertDoesNotExist()
++        compose.onNode(hasText(str(R.string.registration_current)) and inTagged("registrationStepHeader"))
++            .assertDoesNotExist()
++        val spoken = compose.onNodeWithTag("registrationSegment-2").fetchSemanticsNode()
++            .config.getOrNull(SemanticsProperties.ContentDescription).orEmpty().joinToString()
++        assertTrue(spoken, spoken.endsWith(", current"))
++    }
++
++    // Wiring
++    @Test
++    fun nextOnEveryEditorStepSendsRegistrationNextAndNoSubmit() {
++        RegistrationStep.entries.forEach { step ->
++            show(flowState(step))
++            compose.onNodeWithTag("flowNext").performClick()
++            assertEquals("$step", 1, events.size)
++            assertTrue("$step ${events.single()}", events.single() is AncEvent.RegistrationNext)
++        }
++    }
++
++    @Test
++    fun skipSendsFlowSkipAndNothingElse() {
++        show(flowState(RegistrationStep.DATING))
++        compose.onNodeWithTag("flowSkip").performClick()
++        val event = events.single() as AncEvent.Flow
++        assertEquals(FlowEvent.Skip, event.event)
++    }
++
++    @Test
++    fun backButtonSendsFlowBack() {
++        show(flowState(RegistrationStep.DATING))
++        compose.onNodeWithTag("flowBack").performClick()
++        assertEquals(FlowEvent.Back, (events.single() as AncEvent.Flow).event)
++    }
++
++    @Test
++    fun saveButtonsAreAbsentInTheFlowAndPresentForHubStartedEditors() {
++        val tags = mapOf(
++            RegistrationStep.IDENTITY to "savePatient",
++            RegistrationStep.DATING to "saveDating",
++            RegistrationStep.HISTORIES to "saveHistories",
++            RegistrationStep.PREGNANCIES to "savePregnancy",
++        )
++        tags.forEach { (step, tag) ->
++            show(flowState(step))
++            compose.onNodeWithTag(tag).assertDoesNotExist()
++            compose.onNodeWithTag("flowNext").assertExists()
++            show(flowState(step, inFlow = false))
++            compose.onNodeWithTag(tag, useUnmergedTree = true).assertExists()
++            compose.onNodeWithTag("flowNext").assertDoesNotExist()
++        }
++    }
++
++    @Test
++    fun systemBackFollowsDialogThenFlowThenPlainBack() {
++        show(flowState(RegistrationStep.DATING, dialog = true))
++        pressSystemBack()
++        assertEquals(AncEvent.KeepEditing, events.single())
++
++        show(flowState(RegistrationStep.DATING))
++        pressSystemBack()
++        assertEquals(FlowEvent.Back, (events.single() as AncEvent.Flow).event)
++
++        show(flowState(RegistrationStep.DATING, route = AncRoute.Workspace(patient.id)))
++        pressSystemBack()
++        assertEquals(AncEvent.Back, events.single())
++    }
++
++    private fun pressSystemBack() {
++        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
++        compose.waitForIdle()
++    }
++
++    private fun androidx.compose.ui.test.junit4.ComposeTestRule.onAllNodesWithTagCount(tag: String): Int =
++        onAllNodes(androidx.compose.ui.test.hasTestTag(tag)).fetchSemanticsNodes(atLeastOneRootRequired = false).size
++
++    private companion object {
++        const val HOST_TAG = "registrationFlowHost"
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt
+index 3ff2569..78fcd91 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt
+@@ -58,6 +58,11 @@ import com.sherifradwan.ancnative.security.SecuritySettingsRepository
+ import com.sherifradwan.ancnative.state.AncEvent
+ import com.sherifradwan.ancnative.state.AncRoute
+ import com.sherifradwan.ancnative.state.AncState
++import com.sherifradwan.ancnative.state.FlowEvent
++import com.sherifradwan.ancnative.state.SystemBack
++import com.sherifradwan.ancnative.state.systemBackKind
++import com.sherifradwan.ancnative.ui.components.RegistrationFlowScaffold
++import com.sherifradwan.ancnative.ui.components.flowMoveEvent
+ import com.sherifradwan.ancnative.storage.VaultState
+ import com.sherifradwan.ancnative.ui.patienthub.PatientHubScreen
+ 
+@@ -87,7 +92,13 @@ fun AncApp(
+     }
+ 
+     BackHandler(enabled = unlocked && !isAppLocked && (state.route != AncRoute.PatientList || state.showDiscardDialog)) {
+-        onEvent(if (state.showDiscardDialog) AncEvent.KeepEditing else AncEvent.Back)
++        onEvent(
++            when (systemBackKind(state)) {
++                SystemBack.KEEP_EDITING -> AncEvent.KeepEditing
++                SystemBack.FLOW_BACK -> flowMoveEvent(FlowEvent.Back)
++                SystemBack.BACK -> AncEvent.Back
++            },
++        )
+     }
+ 
+     Surface(
+@@ -236,11 +247,19 @@ fun AncApp(
+                             onEvent = onEvent,
+                             onSave = onSaveVisit,
+                         )
+-                        is AncRoute.PatientEditor -> PatientEditor(state, route, onEvent)
+-                        is AncRoute.OtherHistoriesEditor -> OtherHistoriesEditor(state, route, onEvent)
+-                        is AncRoute.PreviousPregnancyEditor -> PreviousPregnancyEditor(state, route, onEvent)
++                        is AncRoute.PatientEditor -> RegistrationFlowScaffold(state, onEvent) {
++                            PatientEditor(state, route, onEvent)
++                        }
++                        is AncRoute.OtherHistoriesEditor -> RegistrationFlowScaffold(state, onEvent) {
++                            OtherHistoriesEditor(state, route, onEvent)
++                        }
++                        is AncRoute.PreviousPregnancyEditor -> RegistrationFlowScaffold(state, onEvent) {
++                            PreviousPregnancyEditor(state, route, onEvent)
++                        }
+                         is AncRoute.StatusEditor -> PatientStatusEditor(state, route, onEvent)
+-                        is AncRoute.DatingEditor -> DatingEditor(state, route, onEvent)
++                        is AncRoute.DatingEditor -> RegistrationFlowScaffold(state, onEvent) {
++                            DatingEditor(state, route, onEvent)
++                        }
+                         is AncRoute.UltrasoundEditor -> UltrasoundEditor(state, route, onEvent)
+                         is AncRoute.LabEditor -> LabEditor(state, route, onEvent)
+                         is AncRoute.MedicationEditor -> MedicationEditor(state, route, onEvent)
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt
+index c1eae72..6e7d326 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt
+@@ -34,6 +34,7 @@ import com.sherifradwan.ancnative.model.formatDmy
+ import com.sherifradwan.ancnative.state.AncEvent
+ import com.sherifradwan.ancnative.state.AncRoute
+ import com.sherifradwan.ancnative.state.AncState
++import com.sherifradwan.ancnative.state.activeFlowForRoute
+ import com.sherifradwan.ancnative.state.ClinicalValidationError
+ import com.sherifradwan.ancnative.state.DatingDraftField
+ import com.sherifradwan.ancnative.state.SavePhase
+@@ -49,6 +50,7 @@ fun DatingEditor(
+     val patient = state.patient(route.patientId) ?: return
+     val draft = state.datingDraft?.takeIf { it.patientId == route.patientId } ?: return
+     val enabled = state.savePhase == SavePhase.IDLE || state.savePhase == SavePhase.ERROR
++    val inFlow = state.activeFlowForRoute() != null
+ 
+     // Compute live gestational age and EDD preview from current draft inputs
+     val currentDatingPreview = remember(draft.values) {
+@@ -65,6 +67,7 @@ fun DatingEditor(
+         title = stringResource(R.string.dating_editor),
+         subtitle = "${patient.displayName} · Gestational Age & Estimated Due Date",
+         tag = "datingEditor",
++        showHeader = !inFlow,
+     ) {
+         GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
+ 
+@@ -313,12 +316,14 @@ fun DatingEditor(
+             )
+         }
+ 
+-        EditorActions(
+-            enabled = enabled,
+-            saveTag = "saveDating",
+-            onCancel = { onEvent(AncEvent.CancelEditor) },
+-            onSave = { onEvent(AncEvent.SubmitDating) },
+-        )
++        if (!inFlow) {
++            EditorActions(
++                enabled = enabled,
++                saveTag = "saveDating",
++                onCancel = { onEvent(AncEvent.CancelEditor) },
++                onSave = { onEvent(AncEvent.SubmitDating) },
++            )
++        }
+     }
+ }
+ 
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/OtherHistoriesEditor.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/OtherHistoriesEditor.kt
+index f912c31..016d5b1 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/OtherHistoriesEditor.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/OtherHistoriesEditor.kt
+@@ -29,6 +29,7 @@ import com.sherifradwan.ancnative.R
+ import com.sherifradwan.ancnative.state.AncEvent
+ import com.sherifradwan.ancnative.state.AncRoute
+ import com.sherifradwan.ancnative.state.AncState
++import com.sherifradwan.ancnative.state.activeFlowForRoute
+ import com.sherifradwan.ancnative.state.HistoriesDraftField
+ import com.sherifradwan.ancnative.state.SavePhase
+ 
+@@ -41,6 +42,7 @@ fun OtherHistoriesEditor(
+     val patient = state.patient(route.patientId) ?: return
+     val draft = state.historiesDraft?.takeIf { it.patientId == route.patientId } ?: return
+     val enabled = state.savePhase == SavePhase.IDLE || state.savePhase == SavePhase.ERROR
++    val inFlow = state.activeFlowForRoute() != null
+ 
+     val noMedical = stringResource(R.string.no_medical_history)
+     val noSurgical = stringResource(R.string.no_surgical_history)
+@@ -51,6 +53,7 @@ fun OtherHistoriesEditor(
+         title = stringResource(R.string.edit_other_histories),
+         subtitle = "${patient.displayName} · Medical, Surgical, Family & Allergy Histories",
+         tag = "otherHistoriesEditor",
++        showHeader = !inFlow,
+     ) {
+         GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
+ 
+@@ -239,11 +242,13 @@ fun OtherHistoriesEditor(
+             )
+         }
+ 
+-        EditorActions(
+-            enabled = enabled,
+-            saveTag = "saveHistories",
+-            onCancel = { onEvent(AncEvent.CancelEditor) },
+-            onSave = { onEvent(AncEvent.SubmitOtherHistories) },
+-        )
++        if (!inFlow) {
++            EditorActions(
++                enabled = enabled,
++                saveTag = "saveHistories",
++                onCancel = { onEvent(AncEvent.CancelEditor) },
++                onSave = { onEvent(AncEvent.SubmitOtherHistories) },
++            )
++        }
+     }
+ }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt
+index bfb96e5..778fb20 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt
+@@ -62,6 +62,7 @@ import com.sherifradwan.ancnative.model.PatientVocabulary
+ import com.sherifradwan.ancnative.state.AncEvent
+ import com.sherifradwan.ancnative.state.AncRoute
+ import com.sherifradwan.ancnative.state.AncState
++import com.sherifradwan.ancnative.state.activeFlowForRoute
+ import com.sherifradwan.ancnative.state.PatientDraftField
+ import com.sherifradwan.ancnative.state.SavePhase
+ import com.sherifradwan.ancnative.state.PatientDraft
+@@ -75,16 +76,24 @@ fun PatientEditor(
+     val draft = state.patientDraft?.takeIf { it.patientId == route.patientId } ?: return
+     val enabled = state.savePhase == SavePhase.IDLE || state.savePhase == SavePhase.ERROR
+ 
++    val flow = state.activeFlowForRoute()
++    val groups = patientEditorGroups(flow?.current, draft.errors)
++
+     EditorPage(
+         title = if (route.isNew) stringResource(R.string.register_patient) else stringResource(R.string.edit_patient),
+         subtitle = stringResource(R.string.patient_editor_subtitle),
+         tag = "patientEditor",
++        showHeader = flow == null,
+     ) {
+         GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
+-        IdentityFields(draft, enabled, onEvent)
+-        ObstetricFields(draft, enabled, onEvent)
++        groups.forEach { group ->
++            when (group) {
++                PatientEditorGroup.IDENTITY -> IdentityFields(draft, enabled, onEvent)
++                PatientEditorGroup.OBSTETRIC -> ObstetricFields(draft, enabled, onEvent)
++            }
++        }
+ 
+-        Row(
++        if (PatientEditorGroup.IDENTITY in groups) Row(
+             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+             horizontalArrangement = Arrangement.Center,
+             verticalAlignment = Alignment.CenterVertically,
+@@ -103,12 +112,14 @@ fun PatientEditor(
+             )
+         }
+ 
+-        EditorActions(
+-            enabled = enabled,
+-            saveTag = "savePatient",
+-            onCancel = { onEvent(AncEvent.CancelEditor) },
+-            onSave = { onEvent(AncEvent.SubmitPatientProfile) },
+-        )
++        if (flow == null) {
++            EditorActions(
++                enabled = enabled,
++                saveTag = "savePatient",
++                onCancel = { onEvent(AncEvent.CancelEditor) },
++                onSave = { onEvent(AncEvent.SubmitPatientProfile) },
++            )
++        }
+     }
+ }
+ 
+@@ -313,6 +324,7 @@ internal fun EditorPage(
+     subtitle: String,
+     tag: String,
+     bottomBar: (@Composable () -> Unit)? = null,
++    showHeader: Boolean = true,
+     content: @Composable () -> Unit,
+ ) {
+     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+@@ -331,7 +343,7 @@ internal fun EditorPage(
+                         .padding(horizontal = horizontalPadding, vertical = 16.dp),
+                     verticalArrangement = Arrangement.spacedBy(14.dp),
+                 ) {
+-                    EditorPageHeader(title, subtitle, tag)
++                    if (showHeader) EditorPageHeader(title, subtitle, tag)
+                     content()
+                 }
+                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+@@ -358,7 +370,7 @@ internal fun EditorPage(
+                     .padding(horizontal = horizontalPadding, vertical = 16.dp),
+                 verticalArrangement = Arrangement.spacedBy(14.dp),
+             ) {
+-                EditorPageHeader(title, subtitle, tag)
++                if (showHeader) EditorPageHeader(title, subtitle, tag)
+                 content()
+             }
+         }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditorGroups.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditorGroups.kt
+new file mode 100644
+index 0000000..ce36d5b
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditorGroups.kt
+@@ -0,0 +1,34 @@
++package com.sherifradwan.ancnative.ui
++
++import com.sherifradwan.ancnative.model.PatientValidationError
++import com.sherifradwan.ancnative.state.RegistrationStep
++
++enum class PatientEditorGroup { IDENTITY, OBSTETRIC }
++
++private val IDENTITY_ERRORS = setOf(
++    PatientValidationError.FULL_NAME_REQUIRED,
++    PatientValidationError.AGE_REQUIRED,
++)
++
++private val OBSTETRIC_ERRORS = setOf(
++    PatientValidationError.GPA_ALL_OR_NONE,
++    PatientValidationError.INVALID_GPA,
++    PatientValidationError.INVALID_BLOOD_GROUP,
++    PatientValidationError.INVALID_RISK_LEVEL,
++)
++
++/**
++ * Which field groups the patient editor shows, the current step's group first. Outside a flow ([step] null) both show.
++ * A group the step hides still appears when it owns one of [errors], so a failed field is never invisible.
++ */
++fun patientEditorGroups(step: RegistrationStep?, errors: Set<PatientValidationError>): Set<PatientEditorGroup> {
++    val groups = linkedSetOf<PatientEditorGroup>()
++    when (step) {
++        RegistrationStep.IDENTITY -> groups += PatientEditorGroup.IDENTITY
++        RegistrationStep.OBSTETRIC -> groups += PatientEditorGroup.OBSTETRIC
++        else -> groups += PatientEditorGroup.entries
++    }
++    if (errors.any { it in IDENTITY_ERRORS }) groups += PatientEditorGroup.IDENTITY
++    if (errors.any { it in OBSTETRIC_ERRORS }) groups += PatientEditorGroup.OBSTETRIC
++    return groups
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/PreviousPregnancyEditor.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/PreviousPregnancyEditor.kt
+index 24f44de..1c8a026 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/PreviousPregnancyEditor.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/PreviousPregnancyEditor.kt
+@@ -30,6 +30,7 @@ import com.sherifradwan.ancnative.model.PreviousPregnancyFormRules
+ import com.sherifradwan.ancnative.state.AncEvent
+ import com.sherifradwan.ancnative.state.AncRoute
+ import com.sherifradwan.ancnative.state.AncState
++import com.sherifradwan.ancnative.state.activeFlowForRoute
+ import com.sherifradwan.ancnative.state.PregnancyDraftField
+ import com.sherifradwan.ancnative.state.SavePhase
+ 
+@@ -44,6 +45,7 @@ fun PreviousPregnancyEditor(
+         it.patientId == route.patientId && it.pregnancyId == route.pregnancyId
+     } ?: return
+     val enabled = state.savePhase == SavePhase.IDLE || state.savePhase == SavePhase.ERROR
++    val inFlow = state.activeFlowForRoute() != null
+ 
+     EditorPage(
+         title = if (draft.basePregnancyRevision == null) {
+@@ -53,6 +55,7 @@ fun PreviousPregnancyEditor(
+         },
+         subtitle = "${patient.displayName} · Previous Pregnancy History & Outcomes",
+         tag = "previousPregnancyEditor",
++        showHeader = !inFlow,
+     ) {
+         GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
+ 
+@@ -226,11 +229,13 @@ fun PreviousPregnancyEditor(
+             )
+         }
+ 
+-        EditorActions(
+-            enabled = enabled,
+-            saveTag = "savePregnancy",
+-            onCancel = { onEvent(AncEvent.CancelEditor) },
+-            onSave = { onEvent(AncEvent.SubmitPreviousPregnancy) },
+-        )
++        if (!inFlow) {
++            EditorActions(
++                enabled = enabled,
++                saveTag = "savePregnancy",
++                onCancel = { onEvent(AncEvent.CancelEditor) },
++                onSave = { onEvent(AncEvent.SubmitPreviousPregnancy) },
++            )
++        }
+     }
+ }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationFlowScaffold.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationFlowScaffold.kt
+new file mode 100644
+index 0000000..2b261b4
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationFlowScaffold.kt
+@@ -0,0 +1,60 @@
++package com.sherifradwan.ancnative.ui.components
++
++import androidx.compose.foundation.layout.Box
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.ExperimentalLayoutApi
++import androidx.compose.foundation.layout.WindowInsets
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.isImeVisible
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.key
++import androidx.compose.ui.Modifier
++import com.sherifradwan.ancnative.state.AncEvent
++import com.sherifradwan.ancnative.state.AncState
++import com.sherifradwan.ancnative.state.FlowEvent
++import com.sherifradwan.ancnative.state.RegistrationStep
++import com.sherifradwan.ancnative.state.activeFlowForRoute
++import com.sherifradwan.ancnative.state.blocksEditing
++import com.sherifradwan.ancnative.state.forwardIsFinish
++import java.util.UUID
++
++/** The one place the UI makes the ids a flow move needs. */
++internal fun flowMoveEvent(move: FlowEvent): AncEvent.Flow =
++    AncEvent.Flow(move, UUID.randomUUID().toString(), UUID.randomUUID().toString())
++
++internal fun registrationNextEvent(): AncEvent.RegistrationNext =
++    AncEvent.RegistrationNext(UUID.randomUUID().toString(), UUID.randomUUID().toString())
++
++/**
++ * Wraps an editor screen with the step header and the pinned footer while the registration flow shows that screen;
++ * outside a flow it renders [content] alone. [onNext] defaults to the editor's own save through RegistrationNext.
++ */
++@OptIn(ExperimentalLayoutApi::class)
++@Composable
++fun RegistrationFlowScaffold(
++    state: AncState,
++    onEvent: (AncEvent) -> Unit,
++    nextEnabled: Boolean = true,
++    nextIsFinish: Boolean? = null,
++    onNext: (() -> Unit)? = null,
++    content: @Composable () -> Unit,
++) {
++    val flow = state.activeFlowForRoute() ?: return content()
++    val blocked = state.savePhase.blocksEditing()
++    Column(Modifier.fillMaxSize()) {
++        RegistrationStepHeader(flow, compact = WindowInsets.isImeVisible)
++        Box(Modifier.weight(1f)) {
++            key(flow.activeEditorSessionId, flow.current) { content() }
++        }
++        RegistrationStepFooter(
++            flow = flow,
++            backEnabled = !blocked && flow.current != RegistrationStep.IDENTITY,
++            skipEnabled = !blocked,
++            nextEnabled = !blocked && nextEnabled,
++            nextIsFinish = nextIsFinish ?: forwardIsFinish(flow),
++            onBack = { onEvent(flowMoveEvent(FlowEvent.Back)) },
++            onSkip = { onEvent(flowMoveEvent(FlowEvent.Skip)) },
++            onNext = onNext ?: { onEvent(registrationNextEvent()) },
++        )
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationStepFooter.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationStepFooter.kt
+new file mode 100644
+index 0000000..3c9ea3b
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationStepFooter.kt
+@@ -0,0 +1,75 @@
++package com.sherifradwan.ancnative.ui.components
++
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.ExperimentalLayoutApi
++import androidx.compose.foundation.layout.FlowRow
++import androidx.compose.foundation.layout.Spacer
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.padding
++import androidx.compose.material3.Button
++import androidx.compose.material3.HorizontalDivider
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.OutlinedButton
++import androidx.compose.material3.Surface
++import androidx.compose.material3.Text
++import androidx.compose.material3.TextButton
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.state.RegistrationFlow
++import com.sherifradwan.ancnative.state.showsSkip
++import com.sherifradwan.ancnative.ui.minimumTouchTarget
++
++/**
++ * Pinned Back, Skip and Next/Finish. Each button has its own enabled flag so an invalid count disables only Next.
++ * Skip is shown only on steps that can be skipped. A [FlowRow] lets Next wrap under the others at large font.
++ */
++@OptIn(ExperimentalLayoutApi::class)
++@Composable
++fun RegistrationStepFooter(
++    flow: RegistrationFlow,
++    backEnabled: Boolean,
++    skipEnabled: Boolean,
++    nextEnabled: Boolean,
++    nextIsFinish: Boolean,
++    onBack: () -> Unit,
++    onSkip: () -> Unit,
++    onNext: () -> Unit,
++    modifier: Modifier = Modifier,
++) {
++    Surface(modifier = modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surface) {
++        Column {
++            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
++            FlowRow(
++                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
++                horizontalArrangement = Arrangement.spacedBy(8.dp),
++                verticalArrangement = Arrangement.spacedBy(8.dp),
++            ) {
++                OutlinedButton(
++                    onClick = onBack,
++                    enabled = backEnabled,
++                    modifier = Modifier.minimumTouchTarget().testTag("flowBack"),
++                ) { Text(stringResource(R.string.back_step)) }
++                Spacer(Modifier.weight(1f))
++                if (showsSkip(flow)) {
++                    TextButton(
++                        onClick = onSkip,
++                        enabled = skipEnabled,
++                        modifier = Modifier.minimumTouchTarget().testTag("flowSkip"),
++                    ) { Text(stringResource(R.string.flow_skip)) }
++                }
++                Button(
++                    onClick = onNext,
++                    enabled = nextEnabled,
++                    modifier = Modifier.minimumTouchTarget().testTag("flowNext"),
++                ) {
++                    Text(stringResource(if (nextIsFinish) R.string.flow_finish else R.string.next_step))
++                }
++            }
++        }
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationStepHeader.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationStepHeader.kt
+new file mode 100644
+index 0000000..6c6cffc
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationStepHeader.kt
+@@ -0,0 +1,170 @@
++package com.sherifradwan.ancnative.ui.components
++
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Box
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.height
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.foundation.background
++import androidx.compose.foundation.border
++import androidx.compose.foundation.layout.Spacer
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.draw.drawBehind
++import androidx.compose.ui.geometry.CornerRadius
++import androidx.compose.ui.geometry.Size
++import androidx.compose.ui.graphics.PathEffect
++import androidx.compose.ui.graphics.drawscope.Stroke
++import androidx.compose.ui.platform.LocalDensity
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.semantics.clearAndSetSemantics
++import androidx.compose.ui.semantics.contentDescription
++import androidx.compose.ui.semantics.heading
++import androidx.compose.ui.semantics.LiveRegionMode
++import androidx.compose.ui.semantics.liveRegion
++import androidx.compose.ui.semantics.selected
++import androidx.compose.ui.semantics.semantics
++import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.text.style.TextAlign
++import androidx.compose.ui.unit.dp
++import androidx.compose.ui.unit.sp
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.state.RegistrationFlow
++import com.sherifradwan.ancnative.state.RegistrationStep
++import com.sherifradwan.ancnative.state.StepStatus
++
++/** Above this font scale the status words are dropped; the glyph and the spoken description stay. */
++private const val WORDS_MAX_FONT_SCALE = 1.3f
++
++/**
++ * Where the user is in registration: the step title (wraps, never clipped) and, unless [compact] or the font is very
++ * large, five read-only segments. Steps move only through the footer, so the segments are not tappable.
++ */
++@Composable
++fun RegistrationStepHeader(flow: RegistrationFlow, compact: Boolean, modifier: Modifier = Modifier) {
++    val fontScale = LocalDensity.current.fontScale
++    Column(
++        modifier = modifier
++            .fillMaxWidth()
++            .testTag("registrationStepHeader")
++            .padding(horizontal = 16.dp, vertical = 8.dp),
++        verticalArrangement = Arrangement.spacedBy(6.dp),
++    ) {
++        Text(
++            text = registrationHeaderText(flow),
++            style = MaterialTheme.typography.titleMedium,
++            fontWeight = FontWeight.Bold,
++            color = MaterialTheme.colorScheme.primary,
++            modifier = Modifier.semantics {
++                heading()
++                liveRegion = LiveRegionMode.Polite
++            },
++        )
++        val target = flow.pregnancyTarget
++        if (flow.current == RegistrationStep.PREGNANCIES && target != null) {
++            Text(
++                text = stringResource(R.string.registration_pregnancy_progress, flow.pregnancyIndex + 1, target),
++                style = MaterialTheme.typography.bodyMedium,
++                color = MaterialTheme.colorScheme.onSurfaceVariant,
++            )
++        }
++        if (!compact) {
++            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
++                RegistrationStep.entries.forEachIndexed { index, step ->
++                    RegistrationSegment(
++                        step = step,
++                        status = flow.statuses[step] ?: StepStatus.PENDING,
++                        isCurrent = step == flow.current,
++                        showWords = fontScale <= WORDS_MAX_FONT_SCALE,
++                        modifier = Modifier.weight(1f).testTag("registrationSegment-${index + 1}"),
++                    )
++                }
++            }
++        }
++    }
++}
++
++@Composable
++private fun RegistrationSegment(
++    step: RegistrationStep,
++    status: StepStatus,
++    isCurrent: Boolean,
++    showWords: Boolean,
++    modifier: Modifier = Modifier,
++) {
++    val title = stringResource(step.titleRes())
++    val statusWord = stringResource(status.labelRes())
++    val description = if (isCurrent) {
++        stringResource(R.string.registration_segment_current_cd, title, statusWord)
++    } else {
++        stringResource(R.string.registration_segment_cd, title, statusWord)
++    }
++    val muted = MaterialTheme.colorScheme.onSurfaceVariant
++    Column(
++        modifier = modifier.semantics(mergeDescendants = true) {
++            contentDescription = description
++            selected = isCurrent
++        },
++        horizontalAlignment = Alignment.CenterHorizontally,
++    ) {
++        SegmentBar(status = status, isCurrent = isCurrent)
++        Text(
++            text = status.glyph(),
++            style = MaterialTheme.typography.labelSmall,
++            color = if (status == StepStatus.PENDING) muted else MaterialTheme.colorScheme.onSurface,
++            modifier = Modifier.clearAndSetSemantics {},
++        )
++        if (showWords) {
++            Text(
++                text = statusWord,
++                fontSize = 11.sp,
++                color = muted,
++                textAlign = TextAlign.Center,
++            )
++            if (isCurrent) {
++                Text(
++                    text = stringResource(R.string.registration_current),
++                    fontSize = 11.sp,
++                    fontWeight = FontWeight.Bold,
++                    color = MaterialTheme.colorScheme.onSurface,
++                    textAlign = TextAlign.Center,
++                )
++            }
++        }
++    }
++}
++
++/** Solid for Done, dashed for Skipped, hollow for To do; the current segment is taller. */
++@Composable
++private fun SegmentBar(status: StepStatus, isCurrent: Boolean) {
++    val primary = MaterialTheme.colorScheme.primary
++    val outline = MaterialTheme.colorScheme.onSurfaceVariant
++    val shape = RoundedCornerShape(3.dp)
++    val barHeight = if (isCurrent) 8.dp else 6.dp
++    val base = Modifier.fillMaxWidth().height(barHeight)
++    when (status) {
++        StepStatus.DONE -> Box(base.background(primary, shape))
++        StepStatus.SKIPPED -> Spacer(
++            base.drawBehind {
++                drawRoundRect(
++                    color = outline,
++                    size = Size(size.width, size.height),
++                    cornerRadius = CornerRadius(3.dp.toPx()),
++                    style = Stroke(width = 1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 4f))),
++                )
++            },
++        )
++        StepStatus.PENDING -> Box(
++            base
++                .background(if (isCurrent) MaterialTheme.colorScheme.primaryContainer else primary.copy(alpha = 0f), shape)
++                .border(1.dp, primary, shape),
++        )
++    }
++}
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/ui/PatientEditorGroupsTest.kt b/app/src/test/java/com/sherifradwan/ancnative/ui/PatientEditorGroupsTest.kt
+new file mode 100644
+index 0000000..6030bfd
+--- /dev/null
++++ b/app/src/test/java/com/sherifradwan/ancnative/ui/PatientEditorGroupsTest.kt
+@@ -0,0 +1,83 @@
++package com.sherifradwan.ancnative.ui
++
++import com.sherifradwan.ancnative.model.PatientValidationError
++import com.sherifradwan.ancnative.state.RegistrationStep
++import org.junit.Assert.assertEquals
++import org.junit.Test
++
++class PatientEditorGroupsTest {
++    private val both = setOf(PatientEditorGroup.IDENTITY, PatientEditorGroup.OBSTETRIC)
++
++    @Test
++    fun outside_a_flow_both_groups_show() {
++        assertEquals(both, patientEditorGroups(null, emptySet()))
++    }
++
++    @Test
++    fun identity_step_shows_only_identity() {
++        assertEquals(setOf(PatientEditorGroup.IDENTITY), patientEditorGroups(RegistrationStep.IDENTITY, emptySet()))
++    }
++
++    @Test
++    fun obstetric_step_shows_only_obstetric() {
++        assertEquals(setOf(PatientEditorGroup.OBSTETRIC), patientEditorGroups(RegistrationStep.OBSTETRIC, emptySet()))
++    }
++
++    @Test
++    fun hidden_obstetric_group_is_revealed_by_each_error_it_owns() {
++        listOf(
++            PatientValidationError.INVALID_GPA,
++            PatientValidationError.GPA_ALL_OR_NONE,
++            PatientValidationError.INVALID_BLOOD_GROUP,
++            PatientValidationError.INVALID_RISK_LEVEL,
++        ).forEach { error ->
++            assertEquals(
++                error.name,
++                both,
++                patientEditorGroups(RegistrationStep.IDENTITY, setOf(error)),
++            )
++        }
++    }
++
++    @Test
++    fun hidden_identity_group_is_revealed_by_each_error_it_owns() {
++        listOf(PatientValidationError.AGE_REQUIRED, PatientValidationError.FULL_NAME_REQUIRED).forEach { error ->
++            assertEquals(error.name, both, patientEditorGroups(RegistrationStep.OBSTETRIC, setOf(error)))
++        }
++    }
++
++    @Test
++    fun current_group_comes_first_then_the_revealed_one() {
++        assertEquals(
++            listOf(PatientEditorGroup.OBSTETRIC, PatientEditorGroup.IDENTITY),
++            patientEditorGroups(RegistrationStep.OBSTETRIC, setOf(PatientValidationError.AGE_REQUIRED)).toList(),
++        )
++    }
++
++    @Test
++    fun errors_that_belong_to_no_field_reveal_nothing() {
++        listOf(
++            PatientValidationError.STALE_REVISION,
++            PatientValidationError.SAVE_FAILED,
++            PatientValidationError.CASE_ID_REQUIRED,
++            PatientValidationError.CASE_ID_CONFLICT,
++        ).forEach { error ->
++            assertEquals(
++                setOf(PatientEditorGroup.IDENTITY),
++                patientEditorGroups(RegistrationStep.IDENTITY, setOf(error)),
++            )
++            assertEquals(
++                setOf(PatientEditorGroup.OBSTETRIC),
++                patientEditorGroups(RegistrationStep.OBSTETRIC, setOf(error)),
++            )
++        }
++    }
++
++    @Test
++    fun an_error_in_the_shown_group_does_not_add_the_other_group() {
++        assertEquals(
++            setOf(PatientEditorGroup.IDENTITY),
++            patientEditorGroups(RegistrationStep.IDENTITY, setOf(PatientValidationError.AGE_REQUIRED)),
++        )
++    }
++}

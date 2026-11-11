@@ -1,0 +1,922 @@
+[0m
+> build · glm-5.3-flash-free
+[0m$ [0mls -la .agents/fleet-runs/ .agents/ 2>/dev/null | head -50
+.agents/:
+total 1704
+drwxr-xr-x@ 100 sherifgamalradwan  staff    3200 Nov 10 08:52 .
+drwxr-xr-x@  27 sherifgamalradwan  staff     864 Nov 10 08:40 ..
+-rw-r--r--@   1 sherifgamalradwan  staff   36954 Nov 10 08:54 AI_HANDOFF_LEDGER.md
+-rw-r--r--@   1 sherifgamalradwan  staff    2401 Nov  9 22:56 CONSTITUTION.md
+-rw-r--r--@   1 sherifgamalradwan  staff   33149 Nov 10 08:52 DESIGN_DELIVERY_V7.md
+-rw-r--r--@   1 sherifgamalradwan  staff   17651 Nov 10 08:15 DESIGN_S5_REGISTRATION_DRIVER.md
+-rw-r--r--@   1 sherifgamalradwan  staff   38856 Nov 10 08:53 DESIGN_S6_REGISTRATION_UI.md
+-rw-r--r--@   1 sherifgamalradwan  staff  504569 Nov  9 22:56 EVIDENCE.json
+-rw-r--r--@   1 sherifgamalradwan  staff   80900 Nov  9 22:56 PROJECT_MAP.json
+-rw-r--r--@   1 sherifgamalradwan  staff    1657 Nov  9 22:56 PROJECT_PROFILE.md
+-rw-r--r--@   1 sherifgamalradwan  staff   30761 Nov  9 22:56 SKILL_COMPLIANCE_LOG.md
+-rw-r--r--@   1 sherifgamalradwan  staff   11637 Nov  9 22:56 SPEC_AND_AUDIT.md
+-rw-r--r--@   1 sherifgamalradwan  staff    3810 Nov 10 02:18 SPEC_PREGNANCY_FORM.md
+-rw-r--r--@   1 sherifgamalradwan  staff    6109 Nov 10 03:15 SPEC_REGISTRATION_FLOW.md
+-rw-r--r--@   1 sherifgamalradwan  staff   52026 Nov 10 08:52 TEST_MANIFEST.json
+-rw-r--r--@   1 sherifgamalradwan  staff    8841 Nov  9 22:56 UNIFIED_BEDSIDE_AND_LAB_PLAN.md
+drwxr-xr-x@   7 sherifgamalradwan  staff     224 Nov  9 22:56 backup-20261029-025233
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261029-031001
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261029-031629
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261029-230415
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261029-232729
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261029-233138
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261029-233755
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261029-234257
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261029-234348
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261030-110956
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261030-114106
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261030-123728
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261030-124029
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261030-124141
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261030-145357
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261030-150323
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261030-152104
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261030-160322
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261030-160522
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261030-160822
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261030-161610
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261030-162108
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261030-164151
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261030-175143
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261030-175644
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261030-182233
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261030-210523
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261030-220718
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261030-224329
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261030-233105
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261031-003322
+drwxr-xr-x@   8 sherifgamalradwan  staff     256 Nov  9 22:56 backup-20261031-003640
+[0m✱ [0mGlob ".agents/**/*.md" [90m0 matches[0m
+> build · glm-5.3-flash-free
+[0m$ [0mls .agents/fleet-runs/ && wc -l .agents/fleet-runs/s6a1.diff .agents/DESIGN_S6_REGISTRATION_UI.md .agents/mocks/registration_flow.html
+20261029-022837
+antislop_common.md
+antislop_copy_agy.md
+antislop_copy_agy.out.txt
+antislop_ui_deepseek.md
+antislop_ui_deepseek.out.txt
+baseline_gate.txt
+checks_round.diff
+checks_round_agy.txt
+checks_round_opus.txt
+checks_round_review_brief.md
+copy_fix.diff
+copy_fix_agy_review.txt
+copy_fix_checks.done
+copy_fix_gate.txt
+copy_fix_review_brief.md
+copy_fix_static.txt
+dating.diff
+dating_brief.md
+dating_deepseek.txt
+dating_opus.txt
+dating_r2.diff
+dating_r2_brief.md
+dating_r2_opus.txt
+dating_r2_testbrief.md
+dating_r2_testreview.txt
+dating_testbrief.md
+dating_testreview.txt
+dating_zcode.txt
+delivery_plan_argon_review.txt
+delivery_plan_opus.txt
+delivery_plan_review_brief.md
+logs
+mechanical_scan.txt
+phaseA.diff
+phaseA_brief.md
+phaseA_deepseek-v4.1-flash-free.txt
+phaseA_glm-5.3-flash-free.txt
+phaseBC.diff
+phaseBC_brief.md
+phaseBC_deepseek-v4.1-flash-free.txt
+phaseBC_glm-5.3-flash-free.txt
+phaseBC_r2.diff
+phaseBC_r2_brief.md
+phaseBC_r2_deepseek-v4.1-flash-free.txt
+phaseBC_r2_glm-5.3-flash-free.txt
+plan_delivery_alphacode.txt
+plan_delivery_alphacode_BUILD_PLAN.md
+plan_delivery_argon.txt
+plan_delivery_brief.md
+plan_delivery_glm.txt
+pregnancy_form.diff
+pregnancy_form_agy.txt
+pregnancy_form_opus.txt
+pregnancy_form_opus_r2.txt
+pregnancy_form_r2.diff
+pregnancy_form_review_brief.md
+pregnancy_form_review_r2_brief.md
+regflow_s1s2_opus.txt
+regflow_s1s2_review_brief.md
+s3_dating_opus.txt
+s3_dating_review_brief.md
+s4_badges_opus.txt
+s4_badges_review_brief.md
+s5_code_alphacode.txt
+s5_code_argon.txt
+s5_code_opus.txt
+s5_code_review_brief.md
+s5_design_alphacode.txt
+s5_design_argon.txt
+s5_design_review_brief.md
+s5_design_v1.md
+s5b1.diff
+s5b1_argon.txt
+s5b1_opus.txt
+s5b1_review_brief.md
+s5b2.diff
+s5b2_argon.txt
+s5b2_opus.txt
+s5b2_review_brief.md
+s6_plan_alphacode.txt
+s6_plan_argon.txt
+s6_plan_opus.txt
+s6_plan_review_brief.md
+s6a0.diff
+s6a0_opus.txt
+s6a0_review_brief.md
+s6a0b.diff
+s6a0b_glm.txt
+s6a0b_opus.txt
+s6a0b_review_brief.md
+s6a1.diff
+s6a1_glm.txt
+s6a1_opus.txt
+s6a1_review_brief.md
+stale_suites.diff
+stale_suites_brief.md
+stale_suites_opus.txt
+static_checks_triage_alphacode.txt
+static_checks_triage_brief.md
+viewer_fix.diff
+viewer_fix_brief.md
+viewer_fix_opus.txt
+    1126 .agents/fleet-runs/s6a1.diff
+     193 .agents/DESIGN_S6_REGISTRATION_UI.md
+     228 .agents/mocks/registration_flow.html
+    1547 total
+> build · glm-5.3-flash-free
+[0m→ [0mRead .agents/fleet-runs/s6a1.diff 
+> build · glm-5.3-flash-free
+Now the design doc and mock:
+[0m→ [0mRead .agents/DESIGN_S6_REGISTRATION_UI.md 
+> build · glm-5.3-flash-free
+[0m→ [0mRead .agents/mocks/registration_flow.html 
+[0m$ [0mcat .agents/fleet-runs/s6a1_review_brief.md 2>/dev/null | head -80
+You are an independent READ-ONLY reviewer. Do NOT create, edit or delete ANY file; no gradle. Review `.agents/fleet-runs/s6a1.diff` (slice S6a-1, registration flow UI: RegistrationStepHeader/Footer/FlowScaffold, PatientEditorGroups, editors hiding EditorActions in flow, AncApp wrapping and system Back; Android antenatal EMR, Compose) against `.agents/DESIGN_S6_REGISTRATION_UI.md` revision 2 (sections 1-4, 6-9, 11) and the mock `.agents/mocks/registration_flow.html`. Open the real code, do not trust the diff. Check: (1) DATA SAFETY: any path where typed data is lost or a save is skipped without the discard dialog (Next/Skip/Back/system Back, hidden editor actions, key() resets, rotation/process death with rememberSaveable), Skip on a dirty draft, double taps, the Next ids (editorSessionId/newPregnancyId) generated per tap vs per composition; (2) correctness vs design: Back disabled on step 1, Skip hidden on step 1, Finish label rules, systemBackKind order in AncApp BackHandler (dialog first), editors started from the hub (no flow) unchanged; (3) hidden-field errors: patientEditorGroups reveals the owning group, nothing invisible; (4) 360dp and accessibility: wrapping not truncation, 48dp targets, FlowRow at font 2.0, segment words hidden above 1.3 with semantics kept, skipped vs done not by colour alone, keyboard-visible behaviour, RTL (start/end not left/right), dark theme tokens, no hard-coded colours or strings, tags kept; (5) reuse and size: duplicate components (AGENTS.md reuse rule), file sizes; (6) tests: do JVM PatientEditorGroupsTest and androidTest RegistrationFlowUiTest fail on a wrong implementation, tautologies, missing negatives; the refactor of assertFullyWithinHost; TEST_MANIFEST entries missing. Output a table `# | BLOCKER/MAJOR/NIT | file:line | problem | smallest fix` worst first, then 3 lines on what you could not verify. Final message must contain the full table.
+> build · glm-5.3-flash-free
+[0m✱ [0mGlob "app/src/main/java/com/sherifradwan/ancnative/ui/components/*.kt" [90m4 matches[0m
+[0m$ [0mgit -C . status --short | head -30; git -C . log --oneline -5
+A .agents/fleet-runs/antislop_ui_deepseek.out.txt
+ A .agents/fleet-runs/baseline_gate.txt
+ A .agents/fleet-runs/copy_fix.diff
+ A .agents/fleet-runs/delivery_plan_argon_review.txt
+ A .agents/fleet-runs/delivery_plan_opus.txt
+ A .agents/fleet-runs/logs/delivery_review_argon.log
+ A .agents/fleet-runs/logs/plan_argon.log
+ A .agents/fleet-runs/pregnancy_form.diff
+ M .agents/fleet-runs/s5b2_argon.txt
+ M app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt
+ M app/src/androidTest/java/com/sherifradwan/ancnative/ComposeTextAsserts.kt
+ A app/src/androidTest/java/com/sherifradwan/ancnative/RegistrationFlowUiTest.kt
+ M app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt
+ M app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt
+ M app/src/main/java/com/sherifradwan/ancnative/ui/OtherHistoriesEditor.kt
+ M app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt
+ A app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditorGroups.kt
+ M app/src/main/java/com/sherifradwan/ancnative/ui/PreviousPregnancyEditor.kt
+ A app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationFlowScaffold.kt
+ A app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationStepFooter.kt
+ A app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationStepHeader.kt
+ A app/src/test/java/com/sherifradwan/ancnative/ui/PatientEditorGroupsTest.kt
+?? .agents/fleet-runs/s6a1.diff
+?? .agents/fleet-runs/s6a1_glm.txt
+?? .agents/fleet-runs/s6a1_opus.txt
+?? .agents/fleet-runs/s6a1_review_brief.md
+98ae2a1 feat(state): registration flow helpers, back-gesture order and step text mapping for the flow screens
+c350b36 fix(state): Next on an untouched identity step runs the save so name and age errors show
+e137af1 refactor(state): remove the eight unused dating fields from the patient draft
+01344b6 refactor(state): remove the dead dating-at-registration path and its saved notice
+7f16290 feat(state): registration flow driver, forced age in the identity step, pregnancy recovery matches its own pregnancy
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/RegistrationFlow.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/RegistrationFlowDriver.kt 
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationFlowScaffold.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationStepHeader.kt 
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationStepFooter.kt 
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationStepText.kt 
+> build · glm-5.3-flash-free
+[0m$ [0mgrep -n "BackHandler\|showDiscardDialog\|pendingAction\|DiscardDialog\|RegistrationFlowScaffold\|systemBackKind" app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt | head -40
+3:import androidx.activity.compose.BackHandler
+63:import com.sherifradwan.ancnative.state.systemBackKind
+64:import com.sherifradwan.ancnative.ui.components.RegistrationFlowScaffold
+94:    BackHandler(enabled = unlocked && !isAppLocked && (state.route != AncRoute.PatientList || state.showDiscardDialog)) {
+96:            when (systemBackKind(state)) {
+250:                        is AncRoute.PatientEditor -> RegistrationFlowScaffold(state, onEvent) {
+253:                        is AncRoute.OtherHistoriesEditor -> RegistrationFlowScaffold(state, onEvent) {
+256:                        is AncRoute.PreviousPregnancyEditor -> RegistrationFlowScaffold(state, onEvent) {
+260:                        is AncRoute.DatingEditor -> RegistrationFlowScaffold(state, onEvent) {
+307:    if (unlocked && !isAppLocked && securitySettings?.needsPinSetup != true && state.showDiscardDialog) {
+[0m$ [0mgrep -n "fun minimumTouchTarget\|fun EditorActions" -r app/src/main/java/com/sherifradwan/ancnative/ui | head
+app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt:488:internal fun EditorActions(
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt [90m[offset=80, limit=120][0m
+[0m$ [0mgrep -rn "minimumTouchTarget" app/src/main/java/com/sherifradwan/ancnative/ui/*.kt app/src/main/java/com/sherifradwan/ancnative/ui/components/*.kt app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/*.kt 2>/dev/null | grep "fun \|import" | head
+app/src/main/java/com/sherifradwan/ancnative/ui/Components.kt:395:fun Modifier.minimumTouchTarget(): Modifier = sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationStepFooter.kt:25:import com.sherifradwan.ancnative.ui.minimumTouchTarget
+app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt:100:import com.sherifradwan.ancnative.ui.minimumTouchTarget
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt [90m[limit=120, offset=240][0m
+[0m$ [0mgrep -n "PendingAction\|FlowMove" app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt | head -20
+58:sealed interface PendingAction {
+59:    data class Navigate(val destination: AncRoute) : PendingAction
+64:    ) : PendingAction
+65:    data class FlowMove(
+69:    ) : PendingAction
+650:    val pendingAction: PendingAction? = null,
+1281:            state.copy(showDiscardDialog = true, pendingAction = PendingAction.Navigate(destination))
+1297:                pendingAction = PendingAction.StartVisit(event.patientId, event.visitId, event.editorSessionId),
+1717:            state.copy(showDiscardDialog = true, pendingAction = PendingAction.Navigate(destination), awaitingAdvance = null)
+1728:            is PendingAction.Navigate -> discarded.copy(route = action.destination)
+1729:            is PendingAction.StartVisit -> startVisit(
+1733:            is PendingAction.FlowMove -> applyFlowMove(
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt [90m[limit=60, offset=1700][0m
+[0m$ [0mgrep -n "enum class PatientValidationError" -A 25 app/src/main/java/com/sherifradwan/ancnative/model/*.kt | head -30
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt:114:enum class PatientValidationError {
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-115-    FULL_NAME_REQUIRED,
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-116-    CASE_ID_REQUIRED,
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-117-    AGE_REQUIRED,
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-118-    CASE_ID_CONFLICT,
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-119-    INVALID_BLOOD_GROUP,
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-120-    INVALID_RISK_LEVEL,
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-121-    INVALID_STATUS,
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-122-    GPA_ALL_OR_NONE,
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-123-    INVALID_GPA,
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-124-    ARCHIVE_REASON_REQUIRED,
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-125-    CLINICIAN_ID_REQUIRED,
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-126-    PLACE_AND_DOCTOR_REQUIRED,
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-127-    INVALID_PREGNANCY_TYPE,
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-128-    INVALID_DELIVERY_MODE,
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-129-    INVALID_PREGNANCY_OUTCOME,
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-130-    INVALID_BIRTH_METHOD,
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-131-    INVALID_LOSS_MANAGEMENT,
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-132-    INVALID_TERMINATION_METHOD,
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-133-    OUTCOME_METHOD_MISMATCH,
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-134-    STALE_REVISION,
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-135-    SAVE_FAILED,
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-136-}
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-137-
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-138-data class PatientClinicalInput(
+app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt-139-    val caseId: String,
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt [90m[limit=130, offset=60][0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt [90m[limit=120, offset=190][0m
+> build · glm-5.3-flash-free
+<arg_key>shell<arg_key>command</arg_key><arg_value>wc -l app/src/main/java/com/sherifradwan/ancnative/ui/components/Registration*.kt app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditorGroups.kt app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt app/src/main/java/com/sherifradwan/ancnative/ui/OtherHistoriesEditor.kt app/src/main/java/com/sherifradwan/ancnative/ui/PreviousPregnancyEditor.kt app/src/androidTest/java/com/sherifradwan/ancnative/RegistrationFlowUiTest.kt app/src/androidTest/java/com/sherifradwan/ancnative/ComposeTextAsserts.kt</arg_value></tool_call>
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt [90m[limit=100, offset=310][0m
+> build · glm-5.3-flash-free
+[91m[1mError: [0mECONNRESET: The socket connection was closed unexpectedly. For more information, pass `verbose: true` in the second argument to fetch()
+> build · glm-5.3-flash-free
+[0m✗ [0m failed
+[91m[1mError: [0mECONNRESET: The socket connection was closed unexpectedly. For more information, pass `verbose: true` in the second argument to fetch()
+[0m✗ [0m failed
+[91m[1mError: [0mECONNRESET: The socket connection was closed unexpectedly. For more information, pass `verbose: true` in the second argument to fetch()
+[91m[1mError: [0mECONNRESET: The socket connection was closed unexpectedly. For more information, pass `verbose: true` in the second argument to fetch()
+> build · glm-5.3-flash-free
+[0m$ [0mgrep -n "inFlow\|EditorActions\|showHeader\|activeFlowForRoute" app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt | head; echo ---; grep -n "registration_header\|flow_finish\|flow_skip\|registration_status_skipped\|registration_status_pending\|registration_current\|registration_segment\|registration_step_identity\|registration_step_histories\|registration_pregnancy_progress\|step_n_of_m\|back_step\|next_step\|\"done\"" app/src/main/res/values/strings.xml
+37:import com.sherifradwan.ancnative.state.activeFlowForRoute
+53:    val inFlow = state.activeFlowForRoute() != null
+70:        showHeader = !inFlow,
+319:        if (!inFlow) {
+320:            EditorActions(
+---
+516:    <string name="step_n_of_m">Step %1$d of %2$d</string>
+541:    <string name="next_step">Next</string>
+542:    <string name="back_step">Back</string>
+544:    <string name="done">Done</string>
+581:    <string name="registration_step_identity">Identity</string>
+582:    <string name="registration_step_histories">Histories</string>
+583:    <string name="registration_header">%1$s: %2$s</string>
+584:    <string name="registration_status_skipped">Skipped</string>
+585:    <string name="registration_status_pending">To do</string>
+586:    <string name="registration_current">Current</string>
+587:    <string name="registration_segment_cd">%1$s, %2$s</string>
+588:    <string name="registration_segment_current_cd">%1$s, %2$s, current</string>
+589:    <string name="registration_pregnancy_progress">Pregnancy %1$d of %2$d to add</string>
+590:    <string name="flow_skip">Skip</string>
+591:    <string name="flow_finish">Finish</string>
+> build · glm-5.3-flash-free
+[0m$ [0mgrep -n "PatientEditorGroupsTest\|RegistrationFlowUiTest\|ANDROID-registration-flow-ui\|UNIT-registration-step-text\|assertTouchTargetInsideHost" .agents/TEST_MANIFEST.json
+(no output)
+[0m$ [0mgrep -n "assertFullyWithinHost\|assertTouchTargetInsideHost" app/src/androidTest/java/com/sherifradwan/ancnative/*.kt
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:158:            assertFullyWithinHost(
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:169:                assertFullyWithinHost(action, "${fixture.layout.name} $tag", density, minHeightDp = 48f)
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:172:                assertFullyWithinHost(
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:181:                assertFullyWithinHost(
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:189:                assertFullyWithinHost(
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:237:            assertFullyWithinHost(
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:242:            assertFullyWithinHost(
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:249:            assertFullyWithinHost(status, "${fixture.layout.name} save status", density)
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:251:            assertFullyWithinHost(
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:279:                assertFullyWithinHost(field, "${fixture.layout.name} $tag", density, minHeightDp = 48f)
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:291:            assertFullyWithinHost(cancel, "${fixture.layout.name} cancel", density, minHeightDp = 48f)
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:292:            assertFullyWithinHost(save, "${fixture.layout.name} save", density, minHeightDp = 48f)
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:829:    private fun assertFullyWithinHost(
+app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:919:            assertTouchTargetInsideHost(label, semanticsNode, host, fixtureDensity, minHeightDp, tolerancePx = tolerancePx)
+app/src/androidTest/java/com/sherifradwan/ancnative/ComposeTextAsserts.kt:43:fun assertTouchTargetInsideHost(
+app/src/androidTest/java/com/sherifradwan/ancnative/RegistrationFlowUiTest.kt:149:        assertTouchTargetInsideHost(label, node.fetchSemanticsNode(), hostRect(), density, 48f, 48f)
+> build · glm-5.3-flash-free
+[0m$ [0msed -n 820,930p app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt
+lossManagement = null,
+        terminationMethod = null,
+        provenanceKind = PatientVocabulary.CLINICIAN_ENTRY,
+        clinicianId = "synthetic-clinician",
+        recordedAt = "2026-10-11T10:10:00Z",
+        updatedAt = "2026-10-11T10:10:00Z",
+        revision = 1,
+    )
+
+    private fun assertFullyWithinHost(
+        node: SemanticsNodeInteraction,
+        label: String,
+        fixtureDensity: Float,
+        minHeightDp: Float = 1f,
+    ) {
+        fun rawBounds(semanticsNode: SemanticsNode): Rect {
+            val nodePosition = semanticsNode.positionInRoot
+            return Rect(
+                left = nodePosition.x,
+                top = nodePosition.y,
+                right = nodePosition.x + semanticsNode.size.width,
+                bottom = nodePosition.y + semanticsNode.size.height,
+            )
+        }
+
+        val tolerancePx = 1f
+        var semanticsNode = node.fetchSemanticsNode()
+        var bounds = rawBounds(semanticsNode)
+        var clippedBounds = semanticsNode.boundsInRoot
+        var bottomClipPx = bounds.bottom - clippedBounds.bottom
+        var topClipPx = clippedBounds.top - bounds.top
+        var adjustments = 0
+
+        while ((bottomClipPx > tolerancePx || topClipPx > tolerancePx) && adjustments < 5) {
+            val deltaPx = if (bottomClipPx > tolerancePx) {
+                bottomClipPx + 1f
+            } else {
+                -(topClipPx + 1f)
+            }
+
+            var scrollParent = semanticsNode.parent
+            var scrollAction = scrollParent
+                ?.config
+                ?.getOrNull(SemanticsActions.ScrollBy)
+                ?.action
+            while (scrollParent != null && scrollAction == null) {
+                scrollParent = scrollParent.parent
+                scrollAction = scrollParent
+                    ?.config
+                    ?.getOrNull(SemanticsActions.ScrollBy)
+                    ?.action
+            }
+            val actualScrollBy = scrollAction ?: break
+            val scrolled = compose.runOnUiThread { actualScrollBy(0f, deltaPx) }
+
+            compose.waitForIdle()
+            semanticsNode = node.fetchSemanticsNode()
+            bounds = rawBounds(semanticsNode)
+            clippedBounds = semanticsNode.boundsInRoot
+            bottomClipPx = bounds.bottom - clippedBounds.bottom
+            topClipPx = clippedBounds.top - bounds.top
+            adjustments += 1
+            if (!scrolled) break
+        }
+
+        val hostNode = compose.onNodeWithTag(FIXTURE_HOST_TAG).fetchSemanticsNode()
+        val hostPosition = hostNode.positionInRoot
+        val host = Rect(
+            left = hostPosition.x,
+            top = hostPosition.y,
+            right = hostPosition.x + hostNode.size.width,
+            bottom = hostPosition.y + hostNode.size.height,
+        )
+
+        assertTrue("$label has no rendered width: $bounds", bounds.width > 0f)
+        assertTrue("$label has no rendered height: $bounds", bounds.height > 0f)
+        assertTrue("$label is outside host left: node=$bounds host=$host", bounds.left + tolerancePx >= host.left)
+        assertTrue("$label is outside host top: node=$bounds host=$host", bounds.top + tolerancePx >= host.top)
+        assertTrue("$label is outside host right: node=$bounds host=$host", bounds.right <= host.right + tolerancePx)
+        assertTrue("$label is outside host bottom: node=$bounds host=$host", bounds.bottom <= host.bottom + tolerancePx)
+
+        assertTrue(
+            "$label is clipped left: unclipped=$bounds clipped=$clippedBounds",
+            abs(clippedBounds.left - bounds.left) <= tolerancePx,
+        )
+        assertTrue(
+            "$label is clipped top: unclipped=$bounds clipped=$clippedBounds",
+            abs(clippedBounds.top - bounds.top) <= tolerancePx,
+        )
+        assertTrue(
+            "$label is clipped right: unclipped=$bounds clipped=$clippedBounds",
+            abs(clippedBounds.right - bounds.right) <= tolerancePx,
+        )
+        assertTrue(
+            "$label is clipped bottom: unclipped=$bounds clipped=$clippedBounds",
+            abs(clippedBounds.bottom - bounds.bottom) <= tolerancePx,
+        )
+
+        if (minHeightDp >= 48f) {
+            assertTouchTargetInsideHost(label, semanticsNode, host, fixtureDensity, minHeightDp, tolerancePx = tolerancePx)
+        } else {
+            assertTrue(
+                "$label is too short: height=${bounds.height}px, expected>=${minHeightDp * fixtureDensity}px",
+                bounds.height + tolerancePx >= minHeightDp * fixtureDensity,
+            )
+        }
+    }
+
+    private fun assertDemoBannerDisplayed() {
+        compose.onAllNodesWithText(DEMO_BANNER)[0].assertIsDisplayed()
+    }
+[0m$ [0mgrep -n "AndroidJUnit4\|junit\|src/test\|src/androidTest\|\"cmd\"" .agents/TEST_MANIFEST.json | head; echo ---; python3 -c "
+import json
+m=json.load(open('.agents/TEST_MANIFEST.json'))
+def walk(o,path=''):
+    if isinstance(o,dict):
+        for k,v in o.items(): walk(v,path+'/'+k)
+    elif isinstance(o,list):
+        for i,v in enumerate(o): walk(v,path+f'[{i}]')
+    else:
+        s=str(o)
+        if 'PatientEditorGroups' in s or 'RegistrationFlowUi' in s: print(path,':',s[:160])
+walk(m)"
+7:      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.ui.ParseDeliveryNotesSpecTest'",
+10:        "app/src/test/**/ParseDeliveryNotesSpecTest.kt"
+27:      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*DeliveryNotesParserTest'",
+30:        "app/src/test/**/DeliveryNotesParserTest.kt"
+40:      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests 'com.sherifradwan.ancnative.ui.ClinicalFormatTest'",
+43:        "app/src/test/**/ClinicalFormatTest.kt"
+55:      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*ClinicalFormatR2Test'",
+58:        "app/src/test/**/ClinicalFormatR2Test.kt"
+68:      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*PatientPrintHtmlGeneratorTest'",
+73:        "app/src/test/**/PatientPrintHtmlGeneratorTest.kt"
+---
+> build · glm-5.3-flash-free
+[0m$ [0mgrep -n "registration" .agents/TEST_MANIFEST.json | head -20
+1855:      "id": "UNIT-registration-flow",
+> build · glm-5.3-flash-free
+[0m$ [0msed -n 1840,1900p .agents/TEST_MANIFEST.json
+],
+      "covers": [
+        "ORACLE-W1",
+        "ORACLE-W2",
+        "ORACLE-W3",
+        "ORACLE-W4",
+        "ORACLE-W5",
+        "W1",
+        "W2",
+        "W3",
+        "W4",
+        "W5"
+      ]
+    },
+    {
+      "id": "UNIT-registration-flow",
+      "tier": 1,
+      "cmd": "./gradlew --offline :app:testDebugUnitTest --tests '*RegistrationFlowTest' --tests '*RegistrationFlowDeriveTest' --tests '*RegistrationFlowDriverTest' --tests '*RegistrationFlowStateTest' --tests 'com.sherifradwan.ancnative.ui.components.RegistrationStepTextTest'",
+      "deps": [
+        "app/src/main/**/state/RegistrationFlow.kt",
+        "app/src/main/**/state/RegistrationFlowDriver.kt",
+        "app/src/main/**/state/AncViewModel.kt",
+        "app/src/main/**/ui/components/RegistrationStepText.kt",
+        "app/src/main/res/values/strings.xml",
+        "app/src/test/**/RegistrationFlowTest.kt",
+        "app/src/test/**/RegistrationFlowDeriveTest.kt",
+        "app/src/test/**/RegistrationFlowDriverTest.kt",
+        "app/src/test/**/RegistrationFlowStateTest.kt",
+        "app/src/test/**/RegistrationStepTextTest.kt"
+      ],
+      "covers": [
+        "RF1",
+        "RF2",
+        "RF3",
+        "RF6",
+        "S5-1",
+        "S5-2",
+        "S5-3",
+        "S5-4",
+        "S5-5",
+        "S5-6",
+        "S5-7",
+        "S5-8",
+        "S5-9",
+        "S5-10",
+        "S5-11",
+        "S5-12",
+        "S6-1",
+        "S6-2",
+        "S6a-0"
+      ]
+    }
+  ]
+}
+> build · glm-5.3-flash-free
+> build · glm-5.3-flash-free
+[0m$ [0mgrep -n "RegistrationNext\|is AncEvent.Flow\|reduceRegistrationNext\|reduceFlowEvent\|awaitingAdvance\|advanceFlowAfterCommit" app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt | head -30
+192:            is AncEvent.RegistrationNext -> registrationNext(event)
+355:    private fun registrationNext(event: AncEvent.RegistrationNext) {
+358:        val waiting = after.awaitingAdvance ?: return
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt [90m[limit=55, offset=340][0m
+> build · glm-5.3-flash-free
+[0m$ [0mgrep -n "hasDirtyDraft" app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt | head -5
+680:    val hasDirtyDraft: Boolean
+1065:                if (patient == null || patient.status == "archived" || state.hasDirtyDraft || state.savePhase.blocksEditing() || state.undoRunning || state.deleteRunning) {
+1081:                if (state.hasDirtyDraft || state.savePhase.blocksEditing() || state.undoRunning || state.deleteRunning) return state
+1126:                    if (editorOpen && (state.hasDirtyDraft || state.savePhase.blocksEditing())) {
+1198:                if (state.savePhase.blocksEditing() || state.hasDirtyDraft) state
+[0m$ [0mgrep -n "is AncEvent.Flow\|reduceFlowEvent" app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt | head
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:932:            is AncEvent.Flow -> reduceFlowEvent(state, event)
+> build · glm-5.3-flash-free
+[0m$ [0mgrep -n "hasDirtyDraft" app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt | sed -n 3p; sed -n 670,720p app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+1081:                if (state.hasDirtyDraft || state.savePhase.blocksEditing() || state.undoRunning || state.deleteRunning) return state
+        val query = searchQuery.trim()
+        if (query.isEmpty()) return patients
+        return patients.filter {
+            it.displayName.contains(query, ignoreCase = true) ||
+                it.caseId.contains(query, ignoreCase = true) ||
+                (it.phone != null && it.phone.contains(query, ignoreCase = true)) ||
+                (it.bloodGroupText != null && it.bloodGroupText.contains(query, ignoreCase = true))
+        }
+    }
+
+    val hasDirtyDraft: Boolean
+        get() = draft?.isDirty == true ||
+            patientDraft?.isDirty == true ||
+            historiesDraft?.isDirty == true ||
+            pregnancyDraft?.isDirty == true ||
+            statusDraft?.isDirty == true ||
+            datingDraft?.isDirty == true ||
+            ultrasoundDraft?.isDirty == true ||
+            labDraft?.isDirty == true ||
+            medicationDraft?.isDirty == true ||
+            // A batch is unsaved work from the moment it holds a test, even before a result is typed.
+            labBatchDraft?.items?.isNotEmpty() == true
+}
+
+sealed interface AncEvent {
+    data class SearchChanged(val query: String) : AncEvent
+    data object ClearSearch : AncEvent
+    data object ShowNewPatientInfo : AncEvent
+    data object HideNewPatientInfo : AncEvent
+    data class OpenWorkspace(val patientId: String) : AncEvent
+    data class SelectSection(val section: WorkspaceSection) : AncEvent
+    data class StartVisit(val patientId: String, val visitId: String?, val editorSessionId: String) : AncEvent
+    data class StartPatientEditor(
+        val patientId: String?,
+        val newPatientId: String,
+        val editorSessionId: String,
+    ) : AncEvent
+    data class StartHistoriesEditor(val patientId: String, val editorSessionId: String) : AncEvent
+    data class Flow(val event: FlowEvent, val editorSessionId: String, val newPregnancyId: String) : AncEvent
+    data class RegistrationNext(val editorSessionId: String, val newPregnancyId: String) : AncEvent
+    data class StartPregnancyEditor(
+        val patientId: String,
+        val pregnancyId: String?,
+        val newPregnancyId: String,
+        val editorSessionId: String,
+    ) : AncEvent
+    data class StartStatusEditor(
+        val patientId: String,
+        val targetStatus: String,
+        val editorSessionId: String,
+    ) : AncEvent
+> build · glm-5.3-flash-free
+[91m[1mError: [0mECONNRESET: The socket connection was closed unexpectedly. For more information, pass `verbose: true` in the second argument to fetch()
+> build · glm-5.3-flash-free
+[91m[1mError: [0mECONNRESET: The socket connection was closed unexpectedly. For more information, pass `verbose: true` in the second argument to fetch()
+> build · glm-5.3-flash-free
+> build · glm-5.3-flash-free
+[91m[1mError: [0mECONNRESET: The socket connection was closed unexpectedly. For more information, pass `verbose: true` in the second argument to fetch()
+> build · glm-5.3-flash-free
+> build · glm-5.3-flash-free
+[0m$ [0mgrep -n "fun activeEditorSessionId" -A 8 app/src/main/java/com/sherifradwan/ancnative/state/*.kt; echo ---; grep -n "DraftChanged ->\|persistDraft\|saveDraftRecord\|upsertDraft" app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt | head
+app/src/main/java/com/sherifradwan/ancnative/state/DraftRecovery.kt:12:fun activeEditorSessionId(state: AncState): String? =
+app/src/main/java/com/sherifradwan/ancnative/state/DraftRecovery.kt-13-    state.draft?.editorSessionId
+app/src/main/java/com/sherifradwan/ancnative/state/DraftRecovery.kt-14-        ?: state.patientDraft?.editorSessionId
+app/src/main/java/com/sherifradwan/ancnative/state/DraftRecovery.kt-15-        ?: state.historiesDraft?.editorSessionId
+app/src/main/java/com/sherifradwan/ancnative/state/DraftRecovery.kt-16-        ?: state.pregnancyDraft?.editorSessionId
+app/src/main/java/com/sherifradwan/ancnative/state/DraftRecovery.kt-17-        ?: state.statusDraft?.editorSessionId
+app/src/main/java/com/sherifradwan/ancnative/state/DraftRecovery.kt-18-        ?: state.datingDraft?.editorSessionId
+app/src/main/java/com/sherifradwan/ancnative/state/DraftRecovery.kt-19-        ?: state.ultrasoundDraft?.editorSessionId
+app/src/main/java/com/sherifradwan/ancnative/state/DraftRecovery.kt-20-        ?: state.labDraft?.editorSessionId
+---
+> build · glm-5.3-flash-free
+[0m$ [0mgrep -n "PatientDraftChanged" app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt | head -5; grep -n "persistActiveDraft\|persistDraft\|DraftRecord(" app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt | head -8
+722:    data class PatientDraftChanged(val field: PatientDraftField, val value: String) : AncEvent
+903:        is AncEvent.PatientDraftChanged,
+942:            is AncEvent.PatientDraftChanged -> updatePatientDraft(state, event)
+1548:    private fun updatePatientDraft(state: AncState, event: AncEvent.PatientDraftChanged): AncState {
+> build · glm-5.3-flash-free
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt [90m[limit=45, offset=1548][0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt [90m[limit=60, offset=895][0m
+> build · glm-5.3-flash-free
+[0m$ [0mgrep -c "" app/src/main/java/com/sherifradwan/ancnative/ui/PatientEditor.kt; grep -n "minimumTouchTarget\|imePadding" app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationStepFooter.kt app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationFlowScaffold.kt
+506
+app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationStepFooter.kt:25:import com.sherifradwan.ancnative.ui.minimumTouchTarget
+app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationStepFooter.kt:55:                    modifier = Modifier.minimumTouchTarget().testTag("flowBack"),
+app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationStepFooter.kt:62:                        modifier = Modifier.minimumTouchTarget().testTag("flowSkip"),
+app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationStepFooter.kt:68:                    modifier = Modifier.minimumTouchTarget().testTag("flowNext"),
+[0m$ [0mgrep -n "forwardIsFinish\|showsSkip\|parsePregnancyCount\|firstNotDoneStep" app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowTest.kt | head; echo ---; grep -n "systemBackKind\|activeFlowForRoute" app/src/test/java/com/sherifradwan/ancnative/state/*.kt | head
+264:            assertFalse(step.name, forwardIsFinish(begin(step)))
+265:            assertFalse(step.name, forwardIsFinish(begin(step), remainingOnPrompt = 0))
+271:        assertFalse(forwardIsFinish(walk(null)))
+272:        assertFalse(forwardIsFinish(walk(null), remainingOnPrompt = 2))
+273:        assertTrue(forwardIsFinish(walk(null), remainingOnPrompt = 0))
+278:        assertFalse(forwardIsFinish(walk(target = 3, index = 0)))
+279:        assertFalse(forwardIsFinish(walk(target = 3, index = 1)))
+280:        assertTrue(forwardIsFinish(walk(target = 3, index = 2)))
+281:        assertTrue(forwardIsFinish(walk(target = 1, index = 0)))
+282:        assertFalse(forwardIsFinish(walk(target = 1, index = 0).copy(current = HISTORIES)))
+---
+app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt:1139:    // activeFlowForRoute and systemBackKind
+app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt:1144:        assertEquals(state.registrationFlow, state.activeFlowForRoute())
+app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt:1151:        assertNull(state.copy(route = AncRoute.Workspace("p1")).activeFlowForRoute())
+app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt:1152:        assertNull(state.copy(route = AncRoute.OtherHistoriesEditor("p1")).activeFlowForRoute())
+app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt:1153:        assertNull(state.copy(route = AncRoute.DatingEditor("other")).activeFlowForRoute())
+app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt:1154:        assertNull(state.copy(registrationFlow = null).activeFlowForRoute())
+app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt:1159:        assertEquals(SystemBack.FLOW_BACK, systemBackKind(atStep(DATING)))
+app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt:1164:        assertEquals(SystemBack.KEEP_EDITING, systemBackKind(atStep(DATING).copy(showDiscardDialog = true)))
+app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt:1171:        assertEquals(SystemBack.BACK, systemBackKind(stale))
+app/src/test/java/com/sherifradwan/ancnative/state/RegistrationFlowStateTest.kt:1178:            systemBackKind(AncState(patients = listOf(patient())).copy(showDiscardDialog = true)),
+> build · glm-5.3-flash-free
+[0m$ [0mgrep -n "pendingSave" app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt | head -12; grep -n "RecordCommitted" app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt | head -6
+656:    val pendingSave: PendingSaveToken? = null,
+997:                    pendingSave = event.token,
+1002:            is AncEvent.SaveReconciling -> if (state.pendingSave == event.token) {
+1005:            is AncEvent.SaveFailed -> if (state.pendingSave == event.token) {
+1009:                    pendingSave = if (event.unresolved) event.token else null,
+1012:            is AncEvent.SaveCommitted -> if (state.pendingSave == event.token) {
+1020:                    pendingSave = null,
+1023:            is AncEvent.RecordCommitted -> if (state.pendingSave == event.token) {
+1031:                    pendingSave = null,
+1757:        pendingSave = null,
+804:    data class RecordCommitted(
+1023:            is AncEvent.RecordCommitted -> if (state.pendingSave == event.token) {
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt [90m[limit=50, offset=990][0m
+> build · glm-5.3-flash-free
+[0m$ [0mgrep -rn "registrationFlowHost\|HOST_TAG" app/src/androidTest/java/com/sherifradwan/ancnative/RegistrationFlowUiTest.kt | head -4; grep -n "saveDating\|saveHistories\|savePregnancy" app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt app/src/main/java/com/sherifradwan/ancnative/ui/OtherHistoriesEditor.kt app/src/main/java/com/sherifradwan/ancnative/ui/PreviousPregnancyEditor.kt
+app/src/androidTest/java/com/sherifradwan/ancnative/RegistrationFlowUiTest.kt:119:                    Box(Modifier.requiredSize(360.dp, 640.dp).clipToBounds().testTag(HOST_TAG)) {
+app/src/androidTest/java/com/sherifradwan/ancnative/RegistrationFlowUiTest.kt:142:        val host = compose.onNodeWithTag(HOST_TAG).fetchSemanticsNode()
+app/src/androidTest/java/com/sherifradwan/ancnative/RegistrationFlowUiTest.kt:300:        const val HOST_TAG = "registrationFlowHost"
+app/src/main/java/com/sherifradwan/ancnative/ui/DatingEditor.kt:322:                saveTag = "saveDating",
+app/src/main/java/com/sherifradwan/ancnative/ui/OtherHistoriesEditor.kt:248:                saveTag = "saveHistories",
+app/src/main/java/com/sherifradwan/ancnative/ui/PreviousPregnancyEditor.kt:235:                saveTag = "savePregnancy",
+[0m$ [0mgrep -n "fun SavePhase.blocksEditing\|fun blocksEditing" -A 4 -r app/src/main/java/com/sherifradwan/ancnative/state/ | head -8
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt:189:fun SavePhase.blocksEditing(): Boolean =
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-190-    this == SavePhase.PENDING || this == SavePhase.RECONCILING || this == SavePhase.UNRESOLVED
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-191-enum class SaveUiError {
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-192-    CONFIRMED_NOT_SAVED,
+app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt-193-    STALE_OR_CONFLICT,
+> build · glm-5.3-flash-free
+[0m$ [0mgrep -n '"id": "ANDROID' .agents/TEST_MANIFEST.json | head -12; grep -n "AncWorkflowTest\|ComposeTextAsserts" .agents/TEST_MANIFEST.json | head -6
+(no output)
+[0m$ [0mgit diff --stat HEAD -- app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt | tail -2; git diff HEAD -- app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt | grep -E "^[-+].*(AncRoute\.|RegistrationFlowScaffold)" | head -20
+.../java/com/sherifradwan/ancnative/ui/AncApp.kt   | 29 ++++++++++++++++++----
+ 1 file changed, 24 insertions(+), 5 deletions(-)
++import com.sherifradwan.ancnative.ui.components.RegistrationFlowScaffold
+-                        is AncRoute.PatientEditor -> PatientEditor(state, route, onEvent)
+-                        is AncRoute.OtherHistoriesEditor -> OtherHistoriesEditor(state, route, onEvent)
+-                        is AncRoute.PreviousPregnancyEditor -> PreviousPregnancyEditor(state, route, onEvent)
++                        is AncRoute.PatientEditor -> RegistrationFlowScaffold(state, onEvent) {
++                        is AncRoute.OtherHistoriesEditor -> RegistrationFlowScaffold(state, onEvent) {
++                        is AncRoute.PreviousPregnancyEditor -> RegistrationFlowScaffold(state, onEvent) {
+-                        is AncRoute.DatingEditor -> DatingEditor(state, route, onEvent)
++                        is AncRoute.DatingEditor -> RegistrationFlowScaffold(state, onEvent) {
+> build · glm-5.3-flash-free
+[0m$ [0mgrep -n '"id":' .agents/TEST_MANIFEST.json | grep -iv "unit\|static" | head -12; grep -n "connectedDebugAndroidTest\|connectedAndroidTest" .agents/TEST_MANIFEST.json | head -6
+1329:      "id": "COMPILE-app",
+1399:      "id": "LINT-errors",
+1812:      "id": "DB-labbatch",
+1834:      "id": "UI-workspace-design",
+> build · glm-5.3-flash-free
+[0m$ [0msed -n 1812,1840p .agents/TEST_MANIFEST.json
+"id": "DB-labbatch",
+      "tier": 3,
+      "cmd": "bash .agents/scripts/run_emulator_test_class.sh com.sherifradwan.ancnative.storage.LabBatchDbTest emulator-5554",
+      "deps": [
+        "app/src/main/**/storage/LabBatchCommands.kt",
+        "app/src/main/**/storage/RecordsRepository.kt",
+        "app/src/androidTest/**/LabBatchDbTest.kt"
+      ],
+      "covers": [
+        "ORACLE-B1",
+        "ORACLE-B2",
+        "ORACLE-B3",
+        "ORACLE-B4",
+        "ORACLE-B5",
+        "B1",
+        "B2",
+        "B3",
+        "B4",
+        "B5"
+      ]
+    },
+    {
+      "id": "UI-workspace-design",
+      "tier": 3,
+      "cmd": "bash .agents/scripts/run_emulator_test_class.sh com.sherifradwan.ancnative.WorkspaceScreenDesignTest emulator-5554",
+      "deps": [
+        "app/src/main/**/ui/WorkspaceScreen.kt",
+        "app/src/androidTest/**/WorkspaceScreenDesignTest.kt"
+      ],
+> build · glm-5.3-flash-free
+[0m$ [0mgrep -n "data class DatingDraft\|data class PatientDraft\b\|data class HistoriesDraft\|data class PreviousPregnancyDraft" -A 10 app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt | head -50
+460:data class PatientDraft(
+461-    val editorSessionId: String,
+462-    val patientId: String,
+463-    val baseRevision: Long?,
+464-    val createdAt: String?,
+465-    val original: PatientDraftValues,
+466-    val values: PatientDraftValues,
+467-    val errors: Set<PatientValidationError> = emptySet(),
+468-) {
+469-    val isDirty: Boolean get() = values != original
+470-}
+--
+472:data class HistoriesDraftValues(
+473-    val medicalHistory: String = "",
+474-    val surgicalHistory: String = "",
+475-    val familyHistory: String = "",
+476-    val allergyHistory: String = "",
+477-)
+478-
+479:data class HistoriesDraft(
+480-    val editorSessionId: String,
+481-    val patientId: String,
+482-    val baseRevision: Long,
+483-    val original: HistoriesDraftValues,
+484-    val values: HistoriesDraftValues,
+485-    val errors: Set<PatientValidationError> = emptySet(),
+486-) {
+487-    val isDirty: Boolean get() = values != original
+488-}
+489-
+490:data class PreviousPregnancyDraftValues(
+491-    val dateText: String = "",
+492-    val outcomeText: String = "",
+493-    val pregnancyType: String = "",
+494-    val otherDetails: String = "",
+495-    val placeAndDoctor: String = "",
+496-    val deliveryBy: String = "",
+497-    val outcome: String = "",
+498-    val birthMethod: String = "",
+499-    val lossManagement: String = "",
+500-    val terminationMethod: String = "",
+--
+504:data class PreviousPregnancyDraft(
+505-    val editorSessionId: String,
+506-    val patientId: String,
+507-    val pregnancyId: String,
+508-    val basePatientRevision: Long,
+509-    val basePregnancyRevision: Long?,
+510-    val recordedAt: String?,
+511-    val original: PreviousPregnancyDraftValues,
+> build · glm-5.3-flash-free
+[0m$ [0mgrep -n "data class DatingDraft(" -A 9 app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt; grep -n "data class AncRoute" -A 3 app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt | head -6; grep -n "data class PreviousPregnancyEditor\|data class PatientEditor\|data class DatingEditor" app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+539:data class DatingDraft(
+540-    val editorSessionId: String,
+541-    val patientId: String,
+542-    val basePatientRevision: Long,
+543-    val original: DatingDraftValues,
+544-    val values: DatingDraftValues,
+545-    val errors: Set<ClinicalValidationError> = emptySet(),
+546-) {
+547-    val isDirty: Boolean get() = values != original
+548-}
+46:    data class PatientEditor(val patientId: String, val isNew: Boolean) : AncRoute
+48:    data class PreviousPregnancyEditor(val patientId: String, val pregnancyId: String) : AncRoute
+50:    data class DatingEditor(val patientId: String) : AncRoute
+> build · glm-5.3-flash-free
+[0m$ [0mgrep -n "obstetric_risk_section_title\|registration_resume\|\"dating\">" app/src/main/res/values/strings.xml | head -5
+26:    <string name="dating">Dating</string>
+120:    <string name="obstetric_risk_section_title">Obstetric history and risk</string>
+600:    <string name="registration_resume_body">Registration is not finished. Resume at: %1$s.</string>
+601:    <string name="registration_resume_button">Continue registration</string>
+[0m$ [0mgrep -rn "class DemoFixtures\|val patients" app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt | head -4; grep -n "VaultState.Unlocked" app/src/main/java/com/sherifradwan/ancnative/storage/*.kt | head -3
+app/src/main/java/com/sherifradwan/ancnative/model/DemoFixtures.kt:4:    val patients: List<DemoPatient> = listOf(
+app/src/main/java/com/sherifradwan/ancnative/storage/VaultController.kt:254:            if (_view.value.state is VaultState.Unlocked) return
+app/src/main/java/com/sherifradwan/ancnative/storage/VaultController.kt:364:                _view.value.state != VaultState.Unlocked(sessionEpoch) ||
+app/src/main/java/com/sherifradwan/ancnative/storage/VaultController.kt:375:                        _view.value.state == VaultState.Unlocked(sessionEpoch)
+> build · glm-5.3-flash-free
+[0m$ [0mgrep -n "sealed\|data object\|data class\|object " app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt | sed -n '/AncRoute/,+30p' | head -25; grep -n "AncRoute" app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt | grep -n "PregnancyCountPrompt" | head
+39:sealed interface AncRoute {
+40:    data object PatientList : AncRoute
+41:    data class Workspace(
+45:    data class VisitEditor(val patientId: String) : AncRoute
+46:    data class PatientEditor(val patientId: String, val isNew: Boolean) : AncRoute
+47:    data class OtherHistoriesEditor(val patientId: String) : AncRoute
+48:    data class PreviousPregnancyEditor(val patientId: String, val pregnancyId: String) : AncRoute
+49:    data class StatusEditor(val patientId: String, val targetStatus: String) : AncRoute
+50:    data class DatingEditor(val patientId: String) : AncRoute
+51:    data class PregnancyCountPrompt(val patientId: String) : AncRoute
+52:    data class UltrasoundEditor(val patientId: String, val scanId: String, val isNew: Boolean) : AncRoute
+53:    data class LabEditor(val patientId: String, val labId: String, val isNew: Boolean) : AncRoute
+54:    data class LabBatchEditor(val patientId: String) : AncRoute
+55:    data class MedicationEditor(val patientId: String, val medicationId: String, val isNew: Boolean) : AncRoute
+58:sealed interface PendingAction {
+59:    data class Navigate(val destination: AncRoute) : PendingAction
+60:    data class StartVisit(
+65:    data class FlowMove(
+272:data class PendingDeletion(
+288:data class UndoOffer(
+314:data class DeleteMessage(
+411:data class PendingSaveToken(
+416:data class DraftValues(
+432:data class VisitDraft(
+444:data class PatientDraftValues(
+10:51:    data class PregnancyCountPrompt(val patientId: String) : AncRoute
+25:348:    is AncRoute.PregnancyCountPrompt -> patientId
+55:1710:            is AncRoute.PregnancyCountPrompt -> AncRoute.Workspace(route.patientId)
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt [90m[limit=30, offset=205][0m
+> build · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt [90m[limit=14, offset=258][0m
+> build · glm-5.3-flash-free
+[0m$ [0mgrep -n "kotlin\|composeBom\|compose-bom\|agp" app/build.gradle.kts | head -12; grep -n "kotlin" build.gradle.kts libs.versions.toml 2>/dev/null | head -8
+5:    id("org.jetbrains.kotlin.android")
+6:    id("org.jetbrains.kotlin.plugin.compose")
+51:    kotlinOptions {
+73:    val composeBom = platform("androidx.compose:compose-bom:2025.12.01")
+74:    implementation(composeBom)
+75:    androidTestImplementation(composeBom)
+build.gradle.kts:3:    id("org.jetbrains.kotlin.android") version "2.2.21" apply false
+build.gradle.kts:4:    id("org.jetbrains.kotlin.plugin.compose") version "2.2.21" apply false
+> build · glm-5.3-flash-free
+[0m$ [0mgit log --oneline -1 -S "PregnancyCountPrompt" -- app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt; git show 98ae2a1 --stat | head -20; git show c350b36 --stat | head -12
+7f16290 feat(state): registration flow driver, forced age in the identity step, pregnancy recovery matches its own pregnancy
+commit 98ae2a1c9f9d3f3815b2f26716c17090b548834b
+Author: sherifrad <23216006+sherifrad@users.noreply.github.com>
+Date:   Tue Nov 10 08:54:41 2026 +0200
+
+    feat(state): registration flow helpers, back-gesture order and step text mapping for the flow screens
+    
+    Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+
+ .agents/AI_HANDOFF_LEDGER.md                       |   2 +
+ .agents/DESIGN_DELIVERY_V7.md                      | 246 +++++++++++
+ .agents/DESIGN_S6_REGISTRATION_UI.md               |   3 +-
+ .agents/TEST_MANIFEST.json                         |  40 +-
+ .agents/fleet-runs/delivery_plan_review_brief.md   |   1 +
+ .agents/fleet-runs/plan_delivery_argon.txt         | 339 +++++++++++++++
+ .agents/fleet-runs/s6a0b.diff                      | 466 +++++++++++++++++++++
+ .agents/fleet-runs/s6a0b_glm.txt                   | 101 +++++
+ .agents/fleet-runs/s6a0b_opus.txt                  |  34 ++
+ .agents/fleet-runs/s6a0b_review_brief.md           |   1 +
+ .../sherifradwan/ancnative/state/AncViewModel.kt   |   8 -
+ .../ancnative/state/RegistrationFlow.kt            |  46 +-
+commit c350b36c1651560121e3d478a4a7151c299c1602
+Author: sherifrad <23216006+sherifrad@users.noreply.github.com>
+Date:   Tue Nov 10 08:42:02 2026 +0200
+
+    fix(state): Next on an untouched identity step runs the save so name and age errors show
+    
+    Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+
+ .agents/AI_HANDOFF_LEDGER.md                       |   1 +
+ .agents/DESIGN_S6_REGISTRATION_UI.md               |   2 +-
+ .agents/fleet-runs/plan_delivery_alphacode.txt     | 414 +++++++++++++++++++
+ .../plan_delivery_alphacode_BUILD_PLAN.md          | 295 ++++++++++++++
+> build · glm-5.3-flash-free
+Review complete. I read the diff, the design (rev 2, sections 1–4, 6–9, 11), the mock, and the real code: `RegistrationFlowScaffold/Footer/Header/StepText.kt`, `PatientEditorGroups.kt`, the four editors, `AncApp.kt` (BackHandler + when + discard dialog), `RegistrationFlow.kt`/`RegistrationFlowDriver.kt`/`AncState.kt` reducers, `AncViewModel.registrationNext`, strings.xml, `TEST_MANIFEST.json`, both new test files, and the `assertFullyWithinHost` refactor. Data-safety paths check out: Next saves through the editor's own path (dirty → awaitingAdvance → save; validation failure clears it), Skip/Back on a dirty draft open the discard dialog with `PendingAction.FlowMove`, `systemBackKind` is dialog-first, footer buttons disable via `blocksEditing()` during a save, ids are generated inside click lambdas (per tap, not per composition), fields are draft-driven so `key(activeEditorSessionId, current)` only resets scroll/focus state, and the `assertFullyWithinHost` refactor is behavior-preserving (min-width check only activates where callers pass it).
+
+| # | Severity | file:line | problem | smallest fix |
+|---|---|---|---|---|
+| 1 | BLOCKER | app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt:227–267 | The route `when` has no `AncRoute.PregnancyCountPrompt` branch and no `else`. `PregnancyCountPrompt` exists since 7f16290 and the flow is already live for new patients (`withNewPatientFlow`), so Next on Histories (a normal user action) runs `openCountPrompt` → `route = PregnancyCountPrompt` → nothing matches → blank screen, header/footer gone. Design §2 says "In S6a the PregnancyCountPrompt branch keeps the hub placeholder until S6b"; it was dropped. (Kotlin 2.2 only warns on the non-exhaustive statement-`when`, so the gate stays green.) | Add `is AncRoute.PregnancyCountPrompt -> Box(Modifier.fillMaxSize())` placeholder (or the hub) inside a `RegistrationFlowScaffold` shell per design until S6b. |
+| 2 | MAJOR | .agents/TEST_MANIFEST.json:1855 | Both new test files are orphaned: nothing runs `PatientEditorGroupsTest` (`UNIT-registration-flow`'s `--tests` list and deps don't include it) and no emulator/UI entry exists for `RegistrationFlowUiTest`. Design §11 and Part-1 item 28 require manifest entries for every new test; the gate never executes either. | Add `--tests '*PatientEditorGroupsTest'` (+ dep) to `UNIT-registration-flow`; add a `UI-registration-flow-ui` entry using `run_emulator_test_class.sh com.sherifradwan.ancnative.RegistrationFlowUiTest` with deps on AncApp.kt, the three components, and the new androidTest file. |
+| 3 | MAJOR | app/src/androidTest/.../RegistrationFlowUiTest.kt:168–176 (keyboard variant) | `patientGravida.performClick()` relies on the device actually raising the soft IME; on emulators with a hardware keyboard (typical CI) `WindowInsets.isImeVisible` stays false, the segment row never hides, and `waitUntil(5_000)` fails — a flaky gate blocker for the design's named oracle (§10.5 marks the inset behaviour UNVERIFIED). | Show the IME explicitly (InputMethodManager/UiDevice on the focused field) or assert `isImeVisible` as a precondition before `waitUntil` so the failure names the cause instead of a silent timeout. |
+| 4 | NIT | app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationStepHeader.kt:160 | `PathEffect.dashPathEffect(floatArrayOf(6f, 4f))` uses raw pixels: dashes shrink to ~2dp/1.3dp on a 3x device while the 1.dp stroke is density-correct. | Use `floatArrayOf(6.dp.toPx(), 4.dp.toPx())` inside the DrawScope. |
+| 5 | NIT | app/src/androidTest/.../RegistrationFlowUiTest.kt:268–272 | The in-flow `savePatient`… absence checks run on the merged tree while the hub presence check uses `useUnmergedTree = true`; an absence assertion should search the unmerged tree, or a tag hidden inside a merged parent false-passes. | Pass `useUnmergedTree = true` to the `assertDoesNotExist` calls. |
+| 6 | NIT | app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationStepFooter.kt:52–71 | No debounce: a fast double-tap on Skip/Next on a clean draft fires again after the synchronous move, skipping two steps (e.g. DATING skipped unseen). Data-safe (no unsaved work involved), but surprising. | Gate the callbacks on the flow's `activeEditorSessionId` captured at composition, or ignore moves within ~300 ms of the last one. |
+| 7 | NIT | app/src/main/java/com/sherifradwan/ancnative/ui/components/RegistrationStepHeader.kt:60–64,153 | Mock fidelity: the approved mock draws the header on a rounded card (`.hdr`: card background, 1px border, radius 12) with a plain-text title; the implementation uses a bare Column on surface with a primary-coloured title, and Done bar without the mock's primary border. Design §1 doesn't require the card, so this follows the doc — flag for the emulator-walk-vs-mock comparison. | Either add the card container/border per mock or record the deviation in the design doc. |
+| 8 | NIT | app/src/androidTest/.../RegistrationFlowUiTest.kt:210–220 (`nextOnEveryEditorStepSendsRegistrationNextAndNoSubmit`) | The Finish-label rule (`nextIsFinish` → `flow_finish`) is never asserted in androidTest: at PREGNANCIES (target 3, index 1) the test clicks `flowNext` without checking it reads "Finish" (and "Next" elsewhere). JVM covers `forwardIsFinish` only. | Add one assert: `onNodeWithTag("flowNext")` has text `flow_finish` on PREGNANCIES and `next_step` on DATING. |
+
+Positives worth recording: Back disabled + Skip hidden on step 1 with tests; `showsSkip`/`forwardIsFinish`/`showsSkip`-driven footer match the design and the mock-A caption (mock D's Finish-on-pregnancy-2 is correctly not replicated); `patientEditorGroups` reveals exactly the error-owning group (all six mapped errors verified against `PatientEditor.kt`/`DemoModels.kt`; CASE_ID_*/STALE_REVISION/SAVE_FAILED stay in the generic card) with order and negative tests that would fail on a wrong implementation; no hard-coded colours/strings in the new UI; RTL-safe (start/end only); 48dp targets via shared `minimumTouchTarget`; hub-started editors byte-identical in behaviour (flow null → content alone, header + actions present); `assertFullyWithinHost` refactor adds no behaviour change for existing callers.
+
+Could not verify:
+1. Any build or test execution (read-only, no gradle): compilation of `Spacer(Modifier.weight(1f))` inside FlowRow on BOM 2025.12.01, and whether Kotlin 2.2 warns or errors on the non-exhaustive `when` — finding #1 rests on runtime fall-through, not a compile failure.
+2. On-device behaviour: the RF11 keyboard variant (IME visibility under the safeDrawing-padded AncApp, §10.5), dark-theme contrast, true 360dp/font-2.0/RTL rendering, and emulator stability of `RegistrationFlowUiTest` — fixtures exist but no emulator was run.
+3. End-to-end save→advance: the `RegistrationNext` → editor save → `RecordCommitted` → `advanceFlowAfterCommit` path for all four editors was traced in code but the androidTest/JVM suites were not executed, so real-device timing (double-tap windows, RECONCILING phase) is unconfirmed.

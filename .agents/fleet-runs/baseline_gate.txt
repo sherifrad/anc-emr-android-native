@@ -1,0 +1,2 @@
+Wrote HTML report to file:///Users/sherifgamalradwan/anc-emr-android-native/.claude/worktrees/clever-goldwasser-e086ce/app/build/reports/lint-results-debug.html
+GATE OK

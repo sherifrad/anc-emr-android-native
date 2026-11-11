@@ -30,6 +30,7 @@ import com.sherifradwan.ancnative.model.PreviousPregnancyFormRules
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
+import com.sherifradwan.ancnative.state.activeFlowForRoute
 import com.sherifradwan.ancnative.state.PregnancyDraftField
 import com.sherifradwan.ancnative.state.SavePhase
 
@@ -44,6 +45,7 @@ fun PreviousPregnancyEditor(
         it.patientId == route.patientId && it.pregnancyId == route.pregnancyId
     } ?: return
     val enabled = state.savePhase == SavePhase.IDLE || state.savePhase == SavePhase.ERROR
+    val inFlow = state.activeFlowForRoute() != null
 
     EditorPage(
         title = if (draft.basePregnancyRevision == null) {
@@ -53,6 +55,7 @@ fun PreviousPregnancyEditor(
         },
         subtitle = "${patient.displayName} · Previous Pregnancy History & Outcomes",
         tag = "previousPregnancyEditor",
+        showHeader = !inFlow,
     ) {
         GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
 
@@ -226,11 +229,13 @@ fun PreviousPregnancyEditor(
             )
         }
 
-        EditorActions(
-            enabled = enabled,
-            saveTag = "savePregnancy",
-            onCancel = { onEvent(AncEvent.CancelEditor) },
-            onSave = { onEvent(AncEvent.SubmitPreviousPregnancy) },
-        )
+        if (!inFlow) {
+            EditorActions(
+                enabled = enabled,
+                saveTag = "savePregnancy",
+                onCancel = { onEvent(AncEvent.CancelEditor) },
+                onSave = { onEvent(AncEvent.SubmitPreviousPregnancy) },
+            )
+        }
     }
 }

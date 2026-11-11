@@ -916,28 +916,7 @@ class AncWorkflowTest {
         )
 
         if (minHeightDp >= 48f) {
-            val touchBounds = semanticsNode.touchBoundsInRoot
-            assertTrue(
-                "$label touch target is too short: height=${touchBounds.height}px, " +
-                    "expected>=${minHeightDp * fixtureDensity}px",
-                touchBounds.height + tolerancePx >= minHeightDp * fixtureDensity,
-            )
-            assertTrue(
-                "$label touch target is outside host left: touch=$touchBounds host=$host",
-                touchBounds.left + tolerancePx >= host.left,
-            )
-            assertTrue(
-                "$label touch target is outside host top: touch=$touchBounds host=$host",
-                touchBounds.top + tolerancePx >= host.top,
-            )
-            assertTrue(
-                "$label touch target is outside host right: touch=$touchBounds host=$host",
-                touchBounds.right <= host.right + tolerancePx,
-            )
-            assertTrue(
-                "$label touch target is outside host bottom: touch=$touchBounds host=$host",
-                touchBounds.bottom <= host.bottom + tolerancePx,
-            )
+            assertTouchTargetInsideHost(label, semanticsNode, host, fixtureDensity, minHeightDp, tolerancePx = tolerancePx)
         } else {
             assertTrue(
                 "$label is too short: height=${bounds.height}px, expected>=${minHeightDp * fixtureDensity}px",

@@ -58,6 +58,11 @@ import com.sherifradwan.ancnative.security.SecuritySettingsRepository
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
+import com.sherifradwan.ancnative.state.FlowEvent
+import com.sherifradwan.ancnative.state.SystemBack
+import com.sherifradwan.ancnative.state.systemBackKind
+import com.sherifradwan.ancnative.ui.components.RegistrationFlowScaffold
+import com.sherifradwan.ancnative.ui.components.flowMoveEvent
 import com.sherifradwan.ancnative.storage.VaultState
 import com.sherifradwan.ancnative.ui.patienthub.PatientHubScreen
 
@@ -87,7 +92,13 @@ fun AncApp(
     }
 
     BackHandler(enabled = unlocked && !isAppLocked && (state.route != AncRoute.PatientList || state.showDiscardDialog)) {
-        onEvent(if (state.showDiscardDialog) AncEvent.KeepEditing else AncEvent.Back)
+        onEvent(
+            when (systemBackKind(state)) {
+                SystemBack.KEEP_EDITING -> AncEvent.KeepEditing
+                SystemBack.FLOW_BACK -> flowMoveEvent(FlowEvent.Back)
+                SystemBack.BACK -> AncEvent.Back
+            },
+        )
     }
 
     Surface(
@@ -236,11 +247,19 @@ fun AncApp(
                             onEvent = onEvent,
                             onSave = onSaveVisit,
                         )
-                        is AncRoute.PatientEditor -> PatientEditor(state, route, onEvent)
-                        is AncRoute.OtherHistoriesEditor -> OtherHistoriesEditor(state, route, onEvent)
-                        is AncRoute.PreviousPregnancyEditor -> PreviousPregnancyEditor(state, route, onEvent)
+                        is AncRoute.PatientEditor -> RegistrationFlowScaffold(state, onEvent) {
+                            PatientEditor(state, route, onEvent)
+                        }
+                        is AncRoute.OtherHistoriesEditor -> RegistrationFlowScaffold(state, onEvent) {
+                            OtherHistoriesEditor(state, route, onEvent)
+                        }
+                        is AncRoute.PreviousPregnancyEditor -> RegistrationFlowScaffold(state, onEvent) {
+                            PreviousPregnancyEditor(state, route, onEvent)
+                        }
                         is AncRoute.StatusEditor -> PatientStatusEditor(state, route, onEvent)
-                        is AncRoute.DatingEditor -> DatingEditor(state, route, onEvent)
+                        is AncRoute.DatingEditor -> RegistrationFlowScaffold(state, onEvent) {
+                            DatingEditor(state, route, onEvent)
+                        }
                         is AncRoute.UltrasoundEditor -> UltrasoundEditor(state, route, onEvent)
                         is AncRoute.LabEditor -> LabEditor(state, route, onEvent)
                         is AncRoute.MedicationEditor -> MedicationEditor(state, route, onEvent)

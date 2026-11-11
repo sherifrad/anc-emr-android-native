@@ -34,6 +34,7 @@ import com.sherifradwan.ancnative.model.formatDmy
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
+import com.sherifradwan.ancnative.state.activeFlowForRoute
 import com.sherifradwan.ancnative.state.ClinicalValidationError
 import com.sherifradwan.ancnative.state.DatingDraftField
 import com.sherifradwan.ancnative.state.SavePhase
@@ -49,6 +50,7 @@ fun DatingEditor(
     val patient = state.patient(route.patientId) ?: return
     val draft = state.datingDraft?.takeIf { it.patientId == route.patientId } ?: return
     val enabled = state.savePhase == SavePhase.IDLE || state.savePhase == SavePhase.ERROR
+    val inFlow = state.activeFlowForRoute() != null
 
     // Compute live gestational age and EDD preview from current draft inputs
     val currentDatingPreview = remember(draft.values) {
@@ -65,6 +67,7 @@ fun DatingEditor(
         title = stringResource(R.string.dating_editor),
         subtitle = "${patient.displayName} · Gestational Age & Estimated Due Date",
         tag = "datingEditor",
+        showHeader = !inFlow,
     ) {
         GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
 
@@ -313,12 +316,14 @@ fun DatingEditor(
             )
         }
 
-        EditorActions(
-            enabled = enabled,
-            saveTag = "saveDating",
-            onCancel = { onEvent(AncEvent.CancelEditor) },
-            onSave = { onEvent(AncEvent.SubmitDating) },
-        )
+        if (!inFlow) {
+            EditorActions(
+                enabled = enabled,
+                saveTag = "saveDating",
+                onCancel = { onEvent(AncEvent.CancelEditor) },
+                onSave = { onEvent(AncEvent.SubmitDating) },
+            )
+        }
     }
 }
 

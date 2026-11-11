@@ -62,6 +62,7 @@ import com.sherifradwan.ancnative.model.PatientVocabulary
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
+import com.sherifradwan.ancnative.state.activeFlowForRoute
 import com.sherifradwan.ancnative.state.PatientDraftField
 import com.sherifradwan.ancnative.state.SavePhase
 import com.sherifradwan.ancnative.state.PatientDraft
@@ -75,16 +76,24 @@ fun PatientEditor(
     val draft = state.patientDraft?.takeIf { it.patientId == route.patientId } ?: return
     val enabled = state.savePhase == SavePhase.IDLE || state.savePhase == SavePhase.ERROR
 
+    val flow = state.activeFlowForRoute()
+    val groups = patientEditorGroups(flow?.current, draft.errors)
+
     EditorPage(
         title = if (route.isNew) stringResource(R.string.register_patient) else stringResource(R.string.edit_patient),
         subtitle = stringResource(R.string.patient_editor_subtitle),
         tag = "patientEditor",
+        showHeader = flow == null,
     ) {
         GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
-        IdentityFields(draft, enabled, onEvent)
-        ObstetricFields(draft, enabled, onEvent)
+        groups.forEach { group ->
+            when (group) {
+                PatientEditorGroup.IDENTITY -> IdentityFields(draft, enabled, onEvent)
+                PatientEditorGroup.OBSTETRIC -> ObstetricFields(draft, enabled, onEvent)
+            }
+        }
 
-        Row(
+        if (PatientEditorGroup.IDENTITY in groups) Row(
             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
@@ -103,12 +112,14 @@ fun PatientEditor(
             )
         }
 
-        EditorActions(
-            enabled = enabled,
-            saveTag = "savePatient",
-            onCancel = { onEvent(AncEvent.CancelEditor) },
-            onSave = { onEvent(AncEvent.SubmitPatientProfile) },
-        )
+        if (flow == null) {
+            EditorActions(
+                enabled = enabled,
+                saveTag = "savePatient",
+                onCancel = { onEvent(AncEvent.CancelEditor) },
+                onSave = { onEvent(AncEvent.SubmitPatientProfile) },
+            )
+        }
     }
 }
 
@@ -313,6 +324,7 @@ internal fun EditorPage(
     subtitle: String,
     tag: String,
     bottomBar: (@Composable () -> Unit)? = null,
+    showHeader: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
@@ -331,7 +343,7 @@ internal fun EditorPage(
                         .padding(horizontal = horizontalPadding, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
-                    EditorPageHeader(title, subtitle, tag)
+                    if (showHeader) EditorPageHeader(title, subtitle, tag)
                     content()
                 }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
@@ -358,7 +370,7 @@ internal fun EditorPage(
                     .padding(horizontal = horizontalPadding, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                EditorPageHeader(title, subtitle, tag)
+                if (showHeader) EditorPageHeader(title, subtitle, tag)
                 content()
             }
         }
