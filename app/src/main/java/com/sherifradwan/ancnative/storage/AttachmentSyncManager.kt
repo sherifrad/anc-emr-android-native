@@ -1,7 +1,6 @@
 package com.sherifradwan.ancnative.storage
 
 import android.content.Context
-import java.io.File
 
 object AttachmentCategories {
     const val ULTRASOUND = "ULTRASOUND"

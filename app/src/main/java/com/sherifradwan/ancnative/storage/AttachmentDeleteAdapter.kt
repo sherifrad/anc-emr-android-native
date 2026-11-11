@@ -4,7 +4,6 @@ import com.sherifradwan.ancnative.model.DemoAttachment
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.state.SavedNotice
 import com.sherifradwan.ancnative.state.WorkspaceSection
-import java.security.MessageDigest
 
 object AttachmentDeleteAdapter : DeletableRecordAdapter<DemoAttachment>, PayloadFileAdapter {
     override val type: DeletableType = DeletableType.ATTACHMENT

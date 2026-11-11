@@ -15,7 +15,6 @@ import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.time.LocalDate
-import java.time.format.DateTimeParseException
 
 data class SaveVisitCommand(
     val operationUuid: String,

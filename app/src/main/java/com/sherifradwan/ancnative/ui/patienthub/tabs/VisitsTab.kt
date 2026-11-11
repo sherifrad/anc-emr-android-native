@@ -37,7 +37,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
-import com.sherifradwan.ancnative.model.DemoVisit
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
 import com.sherifradwan.ancnative.model.parseVisitFindings
 import com.sherifradwan.ancnative.model.parseWeightKg

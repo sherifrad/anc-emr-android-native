@@ -44,7 +44,6 @@ import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.storage.DeletableType
-import com.sherifradwan.ancnative.ui.ClinicalTeal
 import com.sherifradwan.ancnative.ui.GestationalAgeBadge
 import com.sherifradwan.ancnative.ui.DeleteIconButton
 import com.sherifradwan.ancnative.ui.FactRow

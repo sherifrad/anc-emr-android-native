@@ -19,9 +19,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.sherifradwan.ancnative.R
-import com.sherifradwan.ancnative.ui.ClinicalTeal
 import com.sherifradwan.ancnative.ui.patienthub.model.BiometryValues
 
 @OptIn(ExperimentalLayoutApi::class)

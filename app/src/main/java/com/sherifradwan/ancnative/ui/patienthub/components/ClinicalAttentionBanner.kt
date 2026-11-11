@@ -1,7 +1,6 @@
 package com.sherifradwan.ancnative.ui.patienthub.components
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.semantics.Role
 import com.sherifradwan.ancnative.ui.isDarkTheme
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -47,13 +45,7 @@ import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.SevereBpAttention
 import com.sherifradwan.ancnative.ui.ActionRose
 import com.sherifradwan.ancnative.ui.ClinicalCardTokens
-import com.sherifradwan.ancnative.ui.TagAttentionDarkText
 import com.sherifradwan.ancnative.ui.TagAttentionText
-import com.sherifradwan.ancnative.ui.TagBloodNegativeBg
-import com.sherifradwan.ancnative.ui.TagBloodNegativeDarkBg
-import com.sherifradwan.ancnative.ui.TagBloodNegativeDarkBorder
-import com.sherifradwan.ancnative.ui.TagBloodNegativeDarkText
-import com.sherifradwan.ancnative.ui.TagBloodNegativeBorder
 import com.sherifradwan.ancnative.ui.TagBloodNegativeText
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
 
