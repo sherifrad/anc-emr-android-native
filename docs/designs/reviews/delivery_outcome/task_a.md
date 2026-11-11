@@ -1,0 +1,14 @@
+Write two NEW Kotlin files for an Android app (package com.sherifradwan.ancnative.model for the first, com.sherifradwan.ancnative.model for the test, JUnit4, no Android imports, plain words in comments, no em dash character, no generic comments).
+
+FILE 1: app/src/main/java/com/sherifradwan/ancnative/model/DeliveryOutcome.kt
+- object-free top-level code. Constants (const val String): DELIVERY_MODE_VAGINAL="vaginal", DELIVERY_MODE_CAESAREAN="caesarean", DELIVERY_MODE_ASSISTED_VAGINAL="assisted_vaginal", DELIVERY_MODE_OTHER="other"; DELIVERY_OUTCOME_LIVE_BIRTH="live_birth", DELIVERY_OUTCOME_STILLBIRTH="stillbirth", DELIVERY_OUTCOME_NEONATAL_DEATH="neonatal_death". Lists deliveryModes and deliveryOutcomes (the allowed values, in display order).
+- data class DeliveryOutcomeFields(val delivered: Boolean = false, val date: String? = null, val mode: String? = null, val outcome: String? = null).
+- enum class DeliveryOutcomeError { DATE_INVALID, DATE_IN_FUTURE, DATE_BEFORE_DATING, MODE_INVALID, OUTCOME_INVALID, FIELDS_WITHOUT_DELIVERY }.
+- fun DeliveryOutcomeFields.normalized(): DeliveryOutcomeFields : trims date, mode and outcome, turns blank into null; when delivered is false returns DeliveryOutcomeFields() (all cleared).
+- fun validateDeliveryOutcome(fields: DeliveryOutcomeFields, today: java.time.LocalDate, datingStart: java.time.LocalDate?): Set<DeliveryOutcomeError>. Run on the NORMALIZED value of the input but report FIELDS_WITHOUT_DELIVERY when the raw input has delivered=false and any of date, mode, outcome non blank. Rules: date null is fine. A date must parse as ISO yyyy-MM-dd (java.time.LocalDate.parse, strict calendar date) else DATE_INVALID. A date after today plus 1 day is DATE_IN_FUTURE. A date before datingStart (when datingStart is not null) is DATE_BEFORE_DATING. mode, when not null, must be in deliveryModes else MODE_INVALID. outcome, when not null, must be in deliveryOutcomes else OUTCOME_INVALID.
+- fun daysSinceDelivery(date: String?, today: java.time.LocalDate): Long? returning null when date is null or invalid, else days between (never negative: coerceAtLeast(0)).
+
+FILE 2: app/src/test/java/com/sherifradwan/ancnative/model/DeliveryOutcomeTest.kt
+JUnit4 tests, one assertion idea per test, covering: not delivered with a date gives FIELDS_WITHOUT_DELIVERY; normalized clears everything when not delivered; blank strings become null; delivered with null date, mode and outcome is valid; invalid date text (2026-13-40, "yesterday", "2026-2-3"); today plus 1 day ok, today plus 2 days is DATE_IN_FUTURE; date before dating start; date equal to dating start ok; datingStart null skips that rule; unknown mode and outcome; every allowed mode and outcome is valid; daysSinceDelivery for null, bad text, today (0), 6 days ago (6), a future date (0). Use fixed LocalDate values, no clock.
+
+Output exactly two fenced blocks, each starting with a line "FILE: <path>" inside the block, then the complete file content.
