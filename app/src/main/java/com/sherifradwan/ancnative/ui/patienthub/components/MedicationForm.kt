@@ -67,6 +67,7 @@ import kotlinx.coroutines.launch
  * [draftKey] identifies the draft being edited; per-draft UI state (the Other-frequency mode) resets when it changes.
  * With [focusNameOnStart] the name field takes focus for [draftKey], then [onNameFocused] tells the host so it can
  * turn the request off (the host keeps that in saved state, so a rotation does not focus the name again).
+ * If the field is not attached yet on the first frame, the focus request is retried once after the next frame.
  *
  * Fields in order: name, dose, route (read-only on an existing row), frequency, status, one date
  * (Start date while active, Stop date while stopped) and notes. Enter (IME Next) moves focus to the
@@ -102,7 +103,12 @@ fun MedicationForm(
     LaunchedEffect(draftKey, focusNameOnStart) {
         if (focusNameOnStart) {
             withFrameNanos { }
-            nameFocus.requestFocus()
+            // The name field may not be attached yet after Save and add another, in which case
+            // requestFocus reports false. Wait one more frame and retry once so focus still lands.
+            if (!nameFocus.requestFocus()) {
+                withFrameNanos { }
+                nameFocus.requestFocus()
+            }
             onNameFocused()
         }
     }
