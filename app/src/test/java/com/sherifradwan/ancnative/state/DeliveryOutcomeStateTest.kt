@@ -232,14 +232,24 @@ class DeliveryOutcomeStateTest {
     }
 
     @Test
-    fun `the patient with delivered=false and stale text in the draft values is rejected by prepare only if the fields are non blank`() {
+    fun `stale delivery text on a not delivered draft is cleared and the save goes through`() {
         val started = start()
         val draft = requireNotNull(started.patientDraft)
-        val stateWithStaleDate = started.copy(
-            patientDraft = draft.copy(values = draft.values.copy(deliveryDate = "2026-01-01"))
+        val stale = started.copy(patientDraft = draft.copy(values = draft.values.copy(deliveryDate = "2026-01-01")))
+        val prep = SavePatientProfileCommand.prepare(stale, "op-1", submittedAt)
+        val command = (prep as PatientCommandPreparation.Ready).command as SavePatientProfileCommand
+        assertFalse(command.delivered)
+        assertNull(command.deliveryDate)
+    }
+
+    @Test
+    fun `an unchanged old delivery date does not block an unrelated profile save after the dating moves`() {
+        val deliveredPatient = patient(
+            dating = DemoPatientDating(patientId = "p1", lmpDate = "2026-12-01", ultrasoundEdd = null, agreedEdd = null, datingMethod = "LMP", notes = null),
+            delivered = true, deliveryDate = "2026-11-05", deliveryMode = "vaginal", deliveryOutcome = "live_birth",
         )
-        val prep = SavePatientProfileCommand.prepare(stateWithStaleDate, "op-1", submittedAt)
-        assertTrue(prep is PatientCommandPreparation.Rejected)
-        assertTrue((prep as PatientCommandPreparation.Rejected).errors.contains(PatientValidationError.SAVE_FAILED))
+        val started = start(base(deliveredPatient))
+        val prep = SavePatientProfileCommand.prepare(started, "op-1", submittedAt)
+        assertTrue(prep is PatientCommandPreparation.Ready)
     }
 }

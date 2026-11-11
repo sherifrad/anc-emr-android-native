@@ -5,6 +5,7 @@ import com.sherifradwan.ancnative.model.PatientClinicalInput
 import com.sherifradwan.ancnative.model.PatientValidationError
 import com.sherifradwan.ancnative.model.PatientVocabulary
 import com.sherifradwan.ancnative.model.PreviousPregnancyClinicalInput
+import com.sherifradwan.ancnative.model.DeliveryOutcomeFields
 import com.sherifradwan.ancnative.model.normalized
 import com.sherifradwan.ancnative.model.validateDeliveryOutcome
 import com.sherifradwan.ancnative.model.validationErrors
@@ -84,7 +85,19 @@ data class SavePatientProfileCommand(
             val deliveryFields = draft.values.toDeliveryOutcomeFields()
             val today = runCatching { Instant.parse(submittedAt).atZone(ZoneId.systemDefault()).toLocalDate() }.getOrElse { LocalDate.now() }
             val datingStart = state.patient(draft.patientId)?.dating?.lmpDate?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
-            val deliveryErrors = validateDeliveryOutcome(deliveryFields, today, datingStart)
+            val stored = state.patient(draft.patientId)
+            val storedFields = DeliveryOutcomeFields(
+                delivered = stored?.delivered == true,
+                date = stored?.deliveryDate,
+                mode = stored?.deliveryMode,
+                outcome = stored?.deliveryOutcome,
+            ).normalized()
+            // Only a changed delivery outcome is checked, so an old date never blocks an unrelated profile save.
+            val deliveryErrors = if (deliveryFields.normalized() == storedFields) {
+                emptySet()
+            } else {
+                validateDeliveryOutcome(deliveryFields.normalized(), today, datingStart)
+            }
             if (deliveryErrors.isNotEmpty()) {
                 return PatientCommandPreparation.Rejected(deliveryErrors.map { it.toPatientError() }.toSet())
             }

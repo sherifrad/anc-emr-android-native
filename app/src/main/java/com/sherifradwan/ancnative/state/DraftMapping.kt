@@ -104,10 +104,6 @@ fun draftRecordFor(state: AncState, nowMillis: Long): DraftRecord? {
             "abortion" to draft.values.abortion,
             "obstetricNotes" to draft.values.obstetricNotes,
             "clinicalAttention" to draft.values.clinicalAttention,
-            "delivered" to draft.values.delivered.toString(),
-            "deliveryDate" to draft.values.deliveryDate,
-            "deliveryMode" to draft.values.deliveryMode,
-            "deliveryOutcome" to draft.values.deliveryOutcome,
             "lmpDate" to draft.values.lmpDate,
         )
         val fields = if (isNew) {
@@ -371,10 +367,6 @@ fun applyDraftRecord(state: AncState, record: DraftRecord): AncState {
                         abortion = record.fields["abortion"] ?: v.abortion,
                         obstetricNotes = record.fields["obstetricNotes"] ?: v.obstetricNotes,
                         clinicalAttention = record.fields["clinicalAttention"] ?: v.clinicalAttention,
-                        delivered = record.fields["delivered"]?.let { it == "true" } ?: v.delivered,
-                        deliveryDate = record.fields["deliveryDate"] ?: v.deliveryDate,
-                        deliveryMode = record.fields["deliveryMode"] ?: v.deliveryMode,
-                        deliveryOutcome = record.fields["deliveryOutcome"] ?: v.deliveryOutcome,
                         lmpDate = record.fields["lmpDate"] ?: v.lmpDate,
                         datingMethod = record.fields["datingMethod"] ?: v.datingMethod,
                         transferDate = record.fields["transferDate"] ?: v.transferDate,
