@@ -1,0 +1,216 @@
+FILE: docs/designs/device_qa_plan.md
+<<<<<<< SEARCH
+=======
+# Device QA Plan: Meds Tab after Stage 1
+
+*   **Author:** sherifrad
+*   **Status:** Proposed
+*   **Date:** 2026-11-11
+
+--------------------------------------------------------------------------------
+
+## Scope
+
+Manual and script-assisted QA of the Meds tab in the patient workspace, after the Stage 1 revision: bottom sheet instead of a full-screen editor, collapsed "Add medication" picker, "Show past" toggle, one-tap Stop with a 10 second Undo bar, frequency required for new medications, first error scrolled into view after a rejected Save, keyboard behaviour at about 360dp, rotation, dark mode, large text and right-to-left layout.
+
+The QA build has the package `com.sherifradwan.anc.qa` and contains fictional demo patients only. No real patient data is used at any point.
+
+## Preconditions
+
+*   The QA build is installed on both devices and the build fingerprint (version name and commit) is recorded in the run log.
+*   Device 1, the real phone: a 360dp-class phone, signed in as far as the QA app itself requires. On this phone only app-level actions are allowed: taps inside the QA app, plus read-only adb commands (`adb shell uiautomator dump`, `adb shell screencap`, `adb shell logcat -d`). No system or security setting is changed, no other app is opened, and no PIN or credential is entered beyond what the QA app itself already shows.
+*   Device 2, the emulator: a 360dp profile (for example Pixel with a 360dp width setting). System settings may be changed here: rotation, dark mode, font scale and force RTL. The emulator-only checks (D22 to D26) run here and are skipped on the real phone.
+*   Two prepared demo patients in the QA build:
+    *   **P-A** (demo patient with history): 4 active medications (Ferrous sulfate 200 mg oral once daily, Folic acid 400 mcg oral once daily, Calcium carbonate 600 mg oral once daily, Paracetamol 500 mg oral twice daily) and 2 stopped ones (Amoxicillin, status Discontinued; Metronidazole, status Completed).
+    *   **P-B** (demo patient with no medications): used for the add, save-error and sheet-behaviour checks.
+*   Launch the app with `adb shell monkey -p com.sherifradwan.anc.qa -c android.intent.category.LAUNCHER 1` or from the launcher.
+*   For each check, keep the UI dump and the screenshot named after the check id, for example `D01_tab.xml` and `D01_tab.png`. Keep dumps unmodified.
+*   Run the checks in the given order on each patient; the order keeps the demo data valid for the next check. Record the final state of P-A and P-B in the run log.
+*   Start the app in light mode, portrait, default font scale, left-to-right, unless the check says otherwise.
+
+## Checks
+
+**D01. Open the Meds tab**
+*   Steps: On the real phone, open P-A from the patient list and tap the Meds tab.
+*   Expected: The active drugs are listed first, each active row has a stop symbol, "Show past" is off, one collapsed "Add medication" row is present, and the patient header is visible. No full-screen editor and no route change happen.
+*   Automatable with adb uiautomator dump: yes
+*   Emulator only: no
+
+**D02. Header critical text at 360dp**
+*   Steps: On the P-A Meds tab, read the patient name, gestational age, blood pressure and the high-risk alert from the dump and the screenshot.
+*   Expected: All four are present and not truncated on the 360dp screen.
+*   Automatable with adb uiautomator dump: yes
+*   Emulator only: no
+
+**D03. Picker collapsed by default**
+*   Steps: On P-B, open the workspace and tap the Meds tab. Do not tap anything else.
+*   Expected: Only one collapsed "Add medication" row is shown. No drug tile list is visible before it is tapped.
+*   Automatable with adb uiautomator dump: yes
+*   Emulator only: no
+
+**D04. Expand the picker**
+*   Steps: Tap the "Add medication" row on P-B.
+*   Expected: The search box and a tile list appear. The list has a limited height and scrolls inside itself, so the patient's list above is not pushed away. Common and Recent chips are present.
+*   Automatable with adb uiautomator dump: yes
+*   Emulator only: no
+
+**D05. Search results above the keyboard**
+*   Steps: In the open picker on P-B, tap the search box, type `fer` and keep the keyboard open.
+*   Expected: The keyboard is open and the matching tiles (Ferrous sulfate) are fully visible on screen, not hidden behind the keyboard.
+*   Automatable with adb uiautomator dump: yes
+*   Emulator only: no
+
+**D06. First add takes 3 taps**
+*   Steps: On P-B with the picker closed again: tap "Add medication" (1), tap the Ferrous sulfate tile (2). The sheet opens with dose 200 mg, route Oral and frequency once daily already filled in. Tap Save (3).
+*   Expected: The drug appears in the active list with start date today, the sheet closes, and the Meds tab was never left.
+*   Automatable with adb uiautomator dump: yes
+*   Emulator only: no
+
+**D07. Next add takes 2 taps**
+*   Steps: Immediately after D06, with the picker still open: tap the Folic acid tile (1), then Save (2) in the pre-filled sheet.
+*   Expected: The second drug is added the same way. If the app closed the picker after D06, this check fails.
+*   Automatable with adb uiautomator dump: yes
+*   Emulator only: no
+
+**D08. Tab state survives an add**
+*   Steps: On P-A, scroll the Meds list so a chosen row is the first visible one and note it. Add one drug through the sheet (for example Prescribe Vitamin C, 100 mg, oral, once daily, Save).
+*   Expected: After the save the same row is still the first visible one, the scroll did not jump, and "Show past" is still off.
+*   Automatable with adb uiautomator dump: yes
+*   Emulator only: no
+
+**D09. Frequency required for a new medication**
+*   Steps: On P-B, tap "Prescribe", fill in name `Vitamin C` and dose `100 mg`, leave the frequency blank, and tap Save.
+*   Expected: The save is rejected, an error is shown next to the frequency field, and the sheet stays open.
+*   Automatable with adb uiautomator dump: yes
+*   Emulator only: no
+
+**D10. First error scrolled into view**
+*   Steps: From the D09 state, scroll the sheet down so the frequency block is off-screen (for example by tapping into the notes field), then tap Save again.
+*   Expected: The sheet scrolls so the frequency field and its error text are fully visible without the doctor scrolling back.
+*   Automatable with adb uiautomator dump: yes (the dump shows the frequency field and error within the visible screen)
+*   Emulator only: no
+
+**D11. Values kept after a rejected Save**
+*   Steps: In the sheet after the D10 rejection, read name, dose and notes from the dump.
+*   Expected: The values are exactly what was typed, the sheet is still open, and no automatic retry has started.
+*   Automatable with adb uiautomator dump: yes
+*   Emulator only: no
+
+**D12. Cancel on an untouched form**
+*   Steps: On P-B, tap "Prescribe", change nothing, and tap Cancel.
+*   Expected: The sheet closes at once with no discard prompt.
+*   Automatable with adb uiautomator dump: yes
+*   Emulator only: no
+
+**D13. Cancel on a touched form asks**
+*   Steps: On P-B, tap "Prescribe", type a name, then tap Cancel.
+*   Expected: A discard prompt appears. "Keep editing" returns to the sheet with the typed name still there. "Discard" closes the sheet and clears the draft.
+*   Automatable with adb uiautomator dump: yes
+*   Emulator only: no
+
+**D14. Back with the sheet open stays on the tab**
+*   Steps: On P-B, open the Prescribe sheet, type a name so it is touched, and press the system Back button.
+*   Expected: The same discard path as D13 runs. After Discard the app shows the Meds tab of the same patient; the workspace was never left.
+*   Automatable with adb uiautomator dump: yes
+*   Emulator only: no
+
+**D15. One-tap Stop shows the Undo bar**
+*   Steps: On P-A, tap the stop symbol on the Paracetamol row once.
+*   Expected: No sheet opens. The row leaves the active list at once and sits under "Show past". An Undo bar appears. The header medication count drops by 1.
+*   Automatable with adb uiautomator dump: yes
+*   Emulator only: no
+
+**D16. Undo restores the row**
+*   Steps: Within 10 seconds of D15, tap Undo on the bar.
+*   Expected: Paracetamol is back in the active list with its earlier dose, frequency and no end date.
+*   Automatable with adb uiautomator dump: yes
+*   Emulator only: no
+
+**D17. Undo bar expires after 10 seconds**
+*   Steps: On P-A, tap the stop symbol on the Calcium row, then do nothing and wait 10 seconds.
+*   Expected: The Undo bar disappears on its own. Calcium stays stopped under "Show past".
+*   Automatable with adb uiautomator dump: yes (dump before and after the wait)
+*   Emulator only: no
+
+**D18. "Show past" survives add, stop and edit**
+*   Steps: On P-A, turn "Show past" on. Then, in this order: add one drug through the picker, stop one active row and undo it, and edit one row (change the dose) and save.
+*   Expected: The toggle stays on through all three actions and past rows stay visible. Then turn it off, add another drug, and confirm it is still off afterwards.
+*   Automatable with adb uiautomator dump: yes
+*   Emulator only: no
+
+**D19. Entry points disabled while saving or while a draft is open**
+*   Steps: With the Prescribe sheet open on P-B, try to tap a picker tile, a stop symbol and the "Prescribe" button behind the scrim. The part about a save running is covered by the instrumented test `MedsTabSheetTest` with a slowed save, because a real save is too fast to catch by hand.
+*   Expected: The scrim blocks all entry points while the draft is open, and no second draft or sheet opens. The instrumented test shows every entry point disabled while a save runs, and a tap during a save is never silently lost.
+*   Automatable with adb uiautomator dump: yes (the draft-open part)
+*   Emulator only: no
+
+**D20. Stopped rows have no stop control**
+*   Steps: On P-A, turn "Show past" on and inspect the stopped rows (Amoxicillin, Metronidazole, Calcium after D17).
+*   Expected: Stopped rows show a Stopped label and no stop symbol. Opening one for edit shows the date field labelled Stop date.
+*   Automatable with adb uiautomator dump: yes
+*   Emulator only: no
+
+**D21. Enter moves to the next field above the keyboard**
+*   Steps: On P-B, open a row for edit at 360dp. Tap into the dose field and press Enter on the keyboard repeatedly through the form.
+*   Expected: Focus moves field by field in form order, each focused field is fully visible above the keyboard, the Save button stays reachable, and the last field's Enter closes the keyboard or submits.
+*   Automatable with adb uiautomator dump: yes
+*   Emulator only: no
+
+**D22. Rotation keeps the typed values**
+*   Steps: On the emulator, open the Prescribe sheet on P-B, type a name and dose, then rotate the device with `adb shell settings put system accelerometer_rotation 0` and `adb shell settings put system user_rotation 1`, then back to 0.
+*   Expected: After each rotation the sheet is still open with the typed values, the tab underneath is unchanged, and the draft is not discarded.
+*   Automatable with adb uiautomator dump: yes
+*   Emulator only: yes (changes a system setting)
+
+**D23. Dark mode contrast**
+*   Steps: On the emulator, enable system dark mode, then re-run D01, D15 and open the Prescribe sheet, and take screenshots of each.
+*   Expected: All text is readable with adequate contrast, no white flash or unreadable field appears, the scrim still dims the list behind the sheet, and the Undo bar is visible.
+*   Automatable with adb uiautomator dump: no (a person judges the screenshots; the dump only proves the text is present)
+*   Emulator only: yes (changes a system setting)
+
+**D24. 200 percent text at 360dp**
+*   Steps: On the emulator, set font scale to 2.0 (`adb shell settings put system font_scale 2.0`), then open the P-A Meds tab, the picker and the sheet.
+*   Expected: No critical text is truncated: drug names, doses and frequencies in the rows, the picker tiles and the sheet fields all show their full text, and every control is still reachable.
+*   Automatable with adb uiautomator dump: yes
+*   Emulator only: yes (changes a system setting)
+
+**D25. Patient name and allergy line not cut at large text**
+*   Steps: Still at font scale 2.0 on the emulator, on the P-A Meds tab, check the header patient name and the allergy line in the dump and a screenshot.
+*   Expected: Both are shown in full, not cut and not replaced by an ellipsis, with the rest of the header still readable.
+*   Automatable with adb uiautomator dump: yes
+*   Emulator only: yes (changes a system setting)
+
+**D26. Right-to-left layout mirrors**
+*   Steps: On the emulator, enable force RTL from developer options, restart the QA app, then re-run D01, D04 and open the sheet, and take screenshots.
+*   Expected: The layout mirrors: the stop symbol, the picker row, the sheet controls and the text alignment are on the mirrored side, nothing is clipped, and the reading order stays logical.
+*   Automatable with adb uiautomator dump: no (a person reviews the screenshots; the dump cannot prove the visual reading order)
+*   Emulator only: yes (changes a system setting)
+
+## Pass criteria
+
+*   Every check that applies to a device passes on that device. D01 to D21 pass on both the real phone and the emulator; D22 to D26 pass on the emulator and are skipped on the real phone.
+*   The real phone rule was held for the whole session: no system or security setting was changed on the phone, no other app was opened, and no PIN or credential was entered beyond what the QA app itself shows.
+*   The build fingerprint of the tested QA build is recorded, and every check was run against that same build.
+*   Any failed check blocks sign-off until the cause is fixed and the check is re-run with new evidence. Partly automated checks (D19, D23, D26) pass only when both the scripted part and the person's review pass.
+
+## Evidence to keep
+
+*   For each check: the unmodified UI dump (`D<id>_<step>.xml`) and the screenshot (`D<id>_<step>.png`), collected with `adb shell uiautomator dump` and `adb shell screencap`, kept in a dated evidence folder such as `docs/qa/evidence/2026-11-11/`.
+*   A full logcat capture of the session (`adb logcat -d > run_logcat.txt`), kept with the evidence.
+*   A filled checklist that maps every D id to its evidence files and its result (pass, fail or skipped with the reason).
+*   Screenshots for the emulator-only visual checks (D23, D26) and for the large-text checks (D24, D25), even where the dump alone passes the check.
+*   The recorded build fingerprint, the device models, the Android versions, and the final demo data state of P-A and P-B.
+
+## What a script cannot check and a person must
+
+*   Contrast and visual quality in dark mode (D23) and the reading order in right-to-left layout (D26).
+*   The final say on readability at 200 percent text (D24, D25): the dump proves nothing is truncated, a person confirms it actually reads well.
+*   Whether the 10 second Undo window feels right in use, timed by hand.
+*   That no tap during a save is silently lost when a save is slow; this needs the instrumented test with a slowed save, not a shell script.
+*   Keyboard overlap in odd states, for example a mid-list scroll position with the keyboard open at 360dp; spot check by eye.
+*   Proof that the real phone rule was kept; the person running the session confirms it in the run log.
+
+--------------------------------------------------------------------------------
+
+*Drafted with EGM*
+>>>>>>> REPLACE
