@@ -1,12 +1,18 @@
 package com.sherifradwan.ancnative.storage
 
+import com.sherifradwan.ancnative.model.DeliveryOutcomeError
 import com.sherifradwan.ancnative.model.PatientClinicalInput
 import com.sherifradwan.ancnative.model.PatientValidationError
 import com.sherifradwan.ancnative.model.PatientVocabulary
 import com.sherifradwan.ancnative.model.PreviousPregnancyClinicalInput
+import com.sherifradwan.ancnative.model.normalized
+import com.sherifradwan.ancnative.model.validateDeliveryOutcome
 import com.sherifradwan.ancnative.model.validationErrors
 import com.sherifradwan.ancnative.state.AncState
+import com.sherifradwan.ancnative.state.toDeliveryOutcomeFields
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeParseException
 import java.util.UUID
 
@@ -74,6 +80,16 @@ data class SavePatientProfileCommand(
             )
             val errors = input.validationErrors()
             if (errors.isNotEmpty()) return PatientCommandPreparation.Rejected(errors)
+
+            val deliveryFields = draft.values.toDeliveryOutcomeFields()
+            val today = runCatching { Instant.parse(submittedAt).atZone(ZoneId.systemDefault()).toLocalDate() }.getOrElse { LocalDate.now() }
+            val datingStart = state.patient(draft.patientId)?.dating?.lmpDate?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+            val deliveryErrors = validateDeliveryOutcome(deliveryFields, today, datingStart)
+            if (deliveryErrors.isNotEmpty()) {
+                return PatientCommandPreparation.Rejected(deliveryErrors.map { it.toPatientError() }.toSet())
+            }
+            val normalizedDelivery = deliveryFields.normalized()
+
             val command = SavePatientProfileCommand(
                 operationUuid = operationUuid,
                 editorSessionId = draft.editorSessionId,
@@ -93,11 +109,24 @@ data class SavePatientProfileCommand(
                 abortion = input.abortion,
                 obstetricNotes = input.obstetricNotes,
                 clinicalAttention = draft.values.clinicalAttention.normalized(),
+                delivered = normalizedDelivery.delivered,
+                deliveryDate = normalizedDelivery.date,
+                deliveryMode = normalizedDelivery.mode,
+                deliveryOutcome = normalizedDelivery.outcome,
                 fingerprint = "",
             )
             return PatientCommandPreparation.Ready(command.withCanonicalFingerprint())
         }
     }
+}
+
+private fun DeliveryOutcomeError.toPatientError(): PatientValidationError = when (this) {
+    DeliveryOutcomeError.DATE_INVALID -> PatientValidationError.DELIVERY_DATE_INVALID
+    DeliveryOutcomeError.DATE_IN_FUTURE -> PatientValidationError.DELIVERY_DATE_IN_FUTURE
+    DeliveryOutcomeError.DATE_BEFORE_DATING -> PatientValidationError.DELIVERY_DATE_BEFORE_DATING
+    DeliveryOutcomeError.MODE_INVALID -> PatientValidationError.DELIVERY_MODE_NOT_ALLOWED
+    DeliveryOutcomeError.OUTCOME_INVALID -> PatientValidationError.DELIVERY_OUTCOME_NOT_ALLOWED
+    DeliveryOutcomeError.FIELDS_WITHOUT_DELIVERY -> PatientValidationError.SAVE_FAILED
 }
 
 data class SaveOtherHistoriesCommand(

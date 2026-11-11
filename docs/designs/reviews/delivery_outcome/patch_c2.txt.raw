@@ -1,0 +1,171 @@
+FILE: app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt
+<<<<<<< SEARCH
+package com.sherifradwan.ancnative.storage
+
+import com.sherifradwan.ancnative.model.PatientClinicalInput
+import com.sherifradwan.ancnative.model.PatientValidationError
+import com.sherifradwan.ancnative.model.PatientVocabulary
+import com.sherifradwan.ancnative.model.PreviousPregnancyClinicalInput
+import com.sherifradwan.ancnative.model.validationErrors
+import com.sherifradwan.ancnative.state.AncState
+import java.time.Instant
+import java.time.format.DateTimeParseException
+import java.util.UUID
+=======
+package com.sherifradwan.ancnative.storage
+
+import com.sherifradwan.ancnative.model.DeliveryOutcomeError
+import com.sherifradwan.ancnative.model.PatientClinicalInput
+import com.sherifradwan.ancnative.model.PatientValidationError
+import com.sherifradwan.ancnative.model.PatientVocabulary
+import com.sherifradwan.ancnative.model.PreviousPregnancyClinicalInput
+import com.sherifradwan.ancnative.model.validateDeliveryOutcome
+import com.sherifradwan.ancnative.model.validationErrors
+import com.sherifradwan.ancnative.state.AncState
+import com.sherifradwan.ancnative.state.toDeliveryOutcomeFields
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeParseException
+import java.util.UUID
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt
+<<<<<<< SEARCH
+            val errors = input.validationErrors()
+            if (errors.isNotEmpty()) return PatientCommandPreparation.Rejected(errors)
+            val command = SavePatientProfileCommand(
+                operationUuid = operationUuid,
+                editorSessionId = draft.editorSessionId,
+                patientId = draft.patientId,
+                expectedPatientRevision = draft.baseRevision,
+                createdAt = if (draft.baseRevision == null) submittedAt else draft.createdAt,
+                caseId = input.caseId,
+                displayName = input.displayName,
+                dateOfBirth = input.dateOfBirth,
+                phone = input.phone,
+                riskLevel = input.riskLevel,
+                ageText = input.ageText,
+                addressText = input.addressText,
+                bloodGroupText = input.bloodGroupText,
+                gravida = input.gravida,
+                parity = input.parity,
+                abortion = input.abortion,
+                obstetricNotes = input.obstetricNotes,
+                clinicalAttention = draft.values.clinicalAttention.normalized(),
+                fingerprint = "",
+            )
+            return PatientCommandPreparation.Ready(command.withCanonicalFingerprint())
+=======
+            val errors = input.validationErrors()
+            if (errors.isNotEmpty()) return PatientCommandPreparation.Rejected(errors)
+
+            val deliveryFields = draft.values.toDeliveryOutcomeFields()
+            val today = runCatching { Instant.parse(submittedAt).atZone(ZoneId.systemDefault()).toLocalDate() }.getOrElse { LocalDate.now() }
+            val datingStart = state.patient(draft.patientId)?.dating?.lmpDate?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+            val deliveryErrors = validateDeliveryOutcome(deliveryFields, today, datingStart)
+            if (deliveryErrors.isNotEmpty()) {
+                return PatientCommandPreparation.Rejected(deliveryErrors.map { it.toPatientError() }.toSet())
+            }
+            val normalizedDelivery = deliveryFields.normalized()
+
+            val command = SavePatientProfileCommand(
+                operationUuid = operationUuid,
+                editorSessionId = draft.editorSessionId,
+                patientId = draft.patientId,
+                expectedPatientRevision = draft.baseRevision,
+                createdAt = if (draft.baseRevision == null) submittedAt else draft.createdAt,
+                caseId = input.caseId,
+                displayName = input.displayName,
+                dateOfBirth = input.dateOfBirth,
+                phone = input.phone,
+                riskLevel = input.riskLevel,
+                ageText = input.ageText,
+                addressText = input.addressText,
+                bloodGroupText = input.bloodGroupText,
+                gravida = input.gravida,
+                parity = input.parity,
+                abortion = input.abortion,
+                obstetricNotes = input.obstetricNotes,
+                clinicalAttention = draft.values.clinicalAttention.normalized(),
+                delivered = normalizedDelivery.delivered,
+                deliveryDate = normalizedDelivery.date,
+                deliveryMode = normalizedDelivery.mode,
+                deliveryOutcome = normalizedDelivery.outcome,
+                fingerprint = "",
+            )
+            return PatientCommandPreparation.Ready(command.withCanonicalFingerprint())
+
+    private fun DeliveryOutcomeError.toPatientError(): PatientValidationError = when (this) {
+        DeliveryOutcomeError.DATE_INVALID -> PatientValidationError.DELIVERY_DATE_INVALID
+        DeliveryOutcomeError.DATE_IN_FUTURE -> PatientValidationError.DELIVERY_DATE_IN_FUTURE
+        DeliveryOutcomeError.DATE_BEFORE_DATING -> PatientValidationError.DELIVERY_DATE_BEFORE_DATING
+        DeliveryOutcomeError.MODE_INVALID -> PatientValidationError.DELIVERY_MODE_NOT_ALLOWED
+        DeliveryOutcomeError.OUTCOME_INVALID -> PatientValidationError.DELIVERY_OUTCOME_NOT_ALLOWED
+        DeliveryOutcomeError.FIELDS_WITHOUT_DELIVERY -> PatientValidationError.SAVE_FAILED
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt
+<<<<<<< SEARCH
+            "bloodGroupText" to draft.values.bloodGroupText,
+            "riskLevel" to draft.values.riskLevel,
+            "gravida" to draft.values.gravida,
+            "parity" to draft.values.parity,
+            "abortion" to draft.values.abortion,
+            "obstetricNotes" to draft.values.obstetricNotes,
+            "clinicalAttention" to draft.values.clinicalAttention,
+            "lmpDate" to draft.values.lmpDate,
+        )
+        val fields = if (isNew) {
+            baseFields + mapOf(
+=======
+            "bloodGroupText" to draft.values.bloodGroupText,
+            "riskLevel" to draft.values.riskLevel,
+            "gravida" to draft.values.gravida,
+            "parity" to draft.values.parity,
+            "abortion" to draft.values.abortion,
+            "obstetricNotes" to draft.values.obstetricNotes,
+            "clinicalAttention" to draft.values.clinicalAttention,
+            "delivered" to draft.values.delivered.toString(),
+            "deliveryDate" to draft.values.deliveryDate,
+            "deliveryMode" to draft.values.deliveryMode,
+            "deliveryOutcome" to draft.values.deliveryOutcome,
+            "lmpDate" to draft.values.lmpDate,
+        )
+        val fields = if (isNew) {
+            baseFields + mapOf(
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/DraftMapping.kt
+<<<<<<< SEARCH
+                        addressText = record.fields["addressText"] ?: v.addressText,
+                        bloodGroupText = record.fields["bloodGroupText"] ?: v.bloodGroupText,
+                        riskLevel = record.fields["riskLevel"] ?: v.riskLevel,
+                        gravida = record.fields["gravida"] ?: v.gravida,
+                        parity = record.fields["parity"] ?: v.parity,
+                        abortion = record.fields["abortion"] ?: v.abortion,
+                        obstetricNotes = record.fields["obstetricNotes"] ?: v.obstetricNotes,
+                        clinicalAttention = record.fields["clinicalAttention"] ?: v.clinicalAttention,
+                        lmpDate = record.fields["lmpDate"] ?: v.lmpDate,
+                        datingMethod = record.fields["datingMethod"] ?: v.datingMethod,
+                        transferDate = record.fields["transferDate"] ?: v.transferDate,
+=======
+                        addressText = record.fields["addressText"] ?: v.addressText,
+                        bloodGroupText = record.fields["bloodGroupText"] ?: v.bloodGroupText,
+                        riskLevel = record.fields["riskLevel"] ?: v.riskLevel,
+                        gravida = record.fields["gravida"] ?: v.gravida,
+                        parity = record.fields["parity"] ?: v.parity,
+                        abortion = record.fields["abortion"] ?: v.abortion,
+                        obstetricNotes = record.fields["obstetricNotes"] ?: v.obstetricNotes,
+                        clinicalAttention = record.fields["clinicalAttention"] ?: v.clinicalAttention,
+                        delivered = record.fields["delivered"]?.let { it == "true" } ?: v.delivered,
+                        deliveryDate = record.fields["deliveryDate"] ?: v.deliveryDate,
+                        deliveryMode = record.fields["deliveryMode"] ?: v.deliveryMode,
+                        deliveryOutcome = record.fields["deliveryOutcome"] ?: v.deliveryOutcome,
+                        lmpDate = record.fields["lmpDate"] ?: v.lmpDate,
+                        datingMethod = record.fields["datingMethod"] ?: v.datingMethod,
+                        transferDate = record.fields["transferDate"] ?: v.transferDate,
+>>>>>>> REPLACE
+[Tokens] upload: 10320 download: 2243 cache_read: 0 cache_write: 0
+

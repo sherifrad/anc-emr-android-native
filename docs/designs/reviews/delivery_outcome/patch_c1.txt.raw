@@ -1,0 +1,401 @@
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+<<<<<<< SEARCH
+package com.sherifradwan.ancnative.state
+
+import com.sherifradwan.ancnative.R
+import com.sherifradwan.ancnative.model.ClinicalVocabulary
+import com.sherifradwan.ancnative.model.DeliveryNoteSections
+import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.model.PatientValidationError
+import com.sherifradwan.ancnative.model.composeDeliveryNotes
+import com.sherifradwan.ancnative.storage.DeletableRecord
+import com.sherifradwan.ancnative.storage.DeletableRegistry
+import com.sherifradwan.ancnative.storage.DeletableType
+import com.sherifradwan.ancnative.storage.VaultState
+=======
+package com.sherifradwan.ancnative.state
+
+import com.sherifradwan.ancnative.R
+import com.sherifradwan.ancnative.model.ClinicalVocabulary
+import com.sherifradwan.ancnative.model.DeliveryNoteSections
+import com.sherifradwan.ancnative.model.DeliveryOutcomeFields
+import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.model.PatientValidationError
+import com.sherifradwan.ancnative.model.composeDeliveryNotes
+import com.sherifradwan.ancnative.storage.DeletableRecord
+import com.sherifradwan.ancnative.storage.DeletableRegistry
+import com.sherifradwan.ancnative.storage.DeletableType
+import com.sherifradwan.ancnative.storage.VaultState
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+<<<<<<< SEARCH
+enum class DeliveryPlanField { HOSPITAL, FEES, PLAN, POSTPARTUM }
+
+data class PendingDeletion(
+=======
+enum class DeliveryPlanField { HOSPITAL, FEES, PLAN, POSTPARTUM }
+
+enum class DeliveryOutcomeField { DATE, MODE, OUTCOME }
+
+data class PendingDeletion(
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+<<<<<<< SEARCH
+data class PatientDraftValues(
+    val caseId: String = "",
+    val displayName: String = "",
+    val dateOfBirth: String = "",
+    val phone: String = "",
+    val ageText: String = "",
+    val addressText: String = "",
+    val bloodGroupText: String = "",
+    val riskLevel: String = "",
+    val gravida: String = "",
+    val parity: String = "",
+    val abortion: String = "",
+    val obstetricNotes: String = "",
+    val clinicalAttention: String = "",
+    val lmpDate: String = "",
+    val datingMethod: String = "",
+    val transferDate: String = "",
+    val embryoAgeDays: String = "",
+    val agreedEdd: String = "",
+    val scanDate: String = "",
+    val scanGaWeeks: String = "",
+    val scanGaDays: String = "",
+)
+
+data class PatientDraft(
+    val editorSessionId: String,
+    val patientId: String,
+    val baseRevision: Long?,
+    val createdAt: String?,
+    val original: PatientDraftValues,
+    val values: PatientDraftValues,
+    val errors: Set<PatientValidationError> = emptySet(),
+    val deliveryPlan: DeliveryPlanFields? = null,
+) {
+    val isDirty: Boolean get() = values != original
+}
+=======
+data class PatientDraftValues(
+    val caseId: String = "",
+    val displayName: String = "",
+    val dateOfBirth: String = "",
+    val phone: String = "",
+    val ageText: String = "",
+    val addressText: String = "",
+    val bloodGroupText: String = "",
+    val riskLevel: String = "",
+    val gravida: String = "",
+    val parity: String = "",
+    val abortion: String = "",
+    val obstetricNotes: String = "",
+    val clinicalAttention: String = "",
+    val delivered: Boolean = false,
+    val deliveryDate: String = "",
+    val deliveryMode: String = "",
+    val deliveryOutcome: String = "",
+    val lmpDate: String = "",
+    val datingMethod: String = "",
+    val transferDate: String = "",
+    val embryoAgeDays: String = "",
+    val agreedEdd: String = "",
+    val scanDate: String = "",
+    val scanGaWeeks: String = "",
+    val scanGaDays: String = "",
+)
+
+data class PatientDraft(
+    val editorSessionId: String,
+    val patientId: String,
+    val baseRevision: Long?,
+    val createdAt: String?,
+    val original: PatientDraftValues,
+    val values: PatientDraftValues,
+    val errors: Set<PatientValidationError> = emptySet(),
+    val deliveryPlan: DeliveryPlanFields? = null,
+) {
+    val isDirty: Boolean get() = values != original
+    val deliveryPlanTouched: Boolean get() = deliveryPlan?.touched == true || values.delivered != original.delivered || values.deliveryDate != original.deliveryDate || values.deliveryMode != original.deliveryMode || values.deliveryOutcome != original.deliveryOutcome
+}
+
+fun PatientDraftValues.toDeliveryOutcomeFields() = DeliveryOutcomeFields(delivered, deliveryDate.ifBlank { null }, deliveryMode.ifBlank { null }, deliveryOutcome.ifBlank { null })
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/model/DemoModels.kt
+<<<<<<< SEARCH
+enum class PatientValidationError {
+    FULL_NAME_REQUIRED,
+    CASE_ID_REQUIRED,
+    CASE_ID_CONFLICT,
+    INVALID_BLOOD_GROUP,
+    INVALID_RISK_LEVEL,
+    INVALID_STATUS,
+    GPA_ALL_OR_NONE,
+    INVALID_GPA,
+    ARCHIVE_REASON_REQUIRED,
+    CLINICIAN_ID_REQUIRED,
+    INVALID_PREGNANCY_TYPE,
+    INVALID_DELIVERY_MODE,
+    INVALID_PREGNANCY_OUTCOME,
+    INVALID_BIRTH_METHOD,
+    INVALID_LOSS_MANAGEMENT,
+    INVALID_TERMINATION_METHOD,
+    OUTCOME_METHOD_MISMATCH,
+    STALE_REVISION,
+    SAVE_FAILED,
+}
+=======
+enum class PatientValidationError {
+    FULL_NAME_REQUIRED,
+    CASE_ID_REQUIRED,
+    CASE_ID_CONFLICT,
+    INVALID_BLOOD_GROUP,
+    INVALID_RISK_LEVEL,
+    INVALID_STATUS,
+    GPA_ALL_OR_NONE,
+    INVALID_GPA,
+    ARCHIVE_REASON_REQUIRED,
+    CLINICIAN_ID_REQUIRED,
+    INVALID_PREGNANCY_TYPE,
+    INVALID_DELIVERY_MODE,
+    DELIVERY_DATE_INVALID,
+    DELIVERY_DATE_IN_FUTURE,
+    DELIVERY_DATE_BEFORE_DATING,
+    DELIVERY_MODE_NOT_ALLOWED,
+    DELIVERY_OUTCOME_NOT_ALLOWED,
+    INVALID_PREGNANCY_OUTCOME,
+    INVALID_BIRTH_METHOD,
+    INVALID_LOSS_MANAGEMENT,
+    INVALID_TERMINATION_METHOD,
+    OUTCOME_METHOD_MISMATCH,
+    STALE_REVISION,
+    SAVE_FAILED,
+}
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/AncEvent.kt
+<<<<<<< SEARCH
+    data class DraftChanged(val field: DraftField, val value: String) : AncEvent
+    data class PatientDraftChanged(val field: PatientDraftField, val value: String) : AncEvent
+    data class DeliveryPlanFieldChanged(val field: DeliveryPlanField, val value: String) : AncEvent
+    data class HistoriesDraftChanged(val field: HistoriesDraftField, val value: String) : AncEvent
+    data class PregnancyDraftChanged(val field: PregnancyDraftField, val value: String) : AncEvent
+=======
+    data class DraftChanged(val field: DraftField, val value: String) : AncEvent
+    data class PatientDraftChanged(val field: PatientDraftField, val value: String) : AncEvent
+    data class DeliveryPlanFieldChanged(val field: DeliveryPlanField, val value: String) : AncEvent
+    data class DeliveryOutcomeToggled(val delivered: Boolean) : AncEvent
+    data class DeliveryOutcomeFieldChanged(val field: DeliveryOutcomeField, val value: String) : AncEvent
+    data class HistoriesDraftChanged(val field: HistoriesDraftField, val value: String) : AncEvent
+    data class PregnancyDraftChanged(val field: PregnancyDraftField, val value: String) : AncEvent
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/ClinicalDraftReducers.kt
+<<<<<<< SEARCH
+internal fun DemoPatient.toPatientDraftValues() = PatientDraftValues(
+    caseId = caseId,
+    displayName = displayName,
+    dateOfBirth = dateOfBirth.orEmpty(),
+    phone = phone.orEmpty(),
+    ageText = ageText.orEmpty(),
+    addressText = addressText.orEmpty(),
+    bloodGroupText = bloodGroupText.orEmpty(),
+    riskLevel = riskLevel.orEmpty(),
+    gravida = gravida?.toString().orEmpty(),
+    parity = parity?.toString().orEmpty(),
+    abortion = abortion?.toString().orEmpty(),
+    obstetricNotes = obstetricNotes.orEmpty(),
+    clinicalAttention = clinicalAttention.orEmpty(),
+    lmpDate = dating?.lmpDate.orEmpty(),
+)
+=======
+internal fun DemoPatient.toPatientDraftValues() = PatientDraftValues(
+    caseId = caseId,
+    displayName = displayName,
+    dateOfBirth = dateOfBirth.orEmpty(),
+    phone = phone.orEmpty(),
+    ageText = ageText.orEmpty(),
+    addressText = addressText.orEmpty(),
+    bloodGroupText = bloodGroupText.orEmpty(),
+    riskLevel = riskLevel.orEmpty(),
+    gravida = gravida?.toString().orEmpty(),
+    parity = parity?.toString().orEmpty(),
+    abortion = abortion?.toString().orEmpty(),
+    obstetricNotes = obstetricNotes.orEmpty(),
+    clinicalAttention = clinicalAttention.orEmpty(),
+    delivered = delivered,
+    deliveryDate = deliveryDate.orEmpty(),
+    deliveryMode = deliveryMode.orEmpty(),
+    deliveryOutcome = deliveryOutcome.orEmpty(),
+    lmpDate = dating?.lmpDate.orEmpty(),
+)
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/ClinicalDraftReducers.kt
+<<<<<<< SEARCH
+internal fun updateDeliveryPlanField(state: AncState, event: AncEvent.DeliveryPlanFieldChanged): AncState {
+    if (state.savePhase.blocksEditing()) return state
+    val draft = state.patientDraft ?: return state
+    val fields = draft.deliveryPlan ?: return state
+    val next = fields.with(event.field, event.value)
+    // An untouched draft keeps the stored notes verbatim, so a type-and-delete round trip is not a dirty draft.
+    val notes = if (next.touched) {
+        composeDeliveryNotes(next.toSections())
+    } else {
+        draft.original.obstetricNotes
+    }
+    return state.copy(
+        patientDraft = draft.copy(
+            deliveryPlan = next,
+            values = draft.values.copy(obstetricNotes = notes),
+            errors = emptySet(),
+        ),
+        savePhase = SavePhase.IDLE,
+        saveError = null,
+    )
+}
+=======
+internal fun updateDeliveryPlanField(state: AncState, event: AncEvent.DeliveryPlanFieldChanged): AncState {
+    if (state.savePhase.blocksEditing()) return state
+    val draft = state.patientDraft ?: return state
+    val fields = draft.deliveryPlan ?: return state
+    val next = fields.with(event.field, event.value)
+    // An untouched draft keeps the stored notes verbatim, so a type-and-delete round trip is not a dirty draft.
+    val notes = if (next.touched) {
+        composeDeliveryNotes(next.toSections())
+    } else {
+        draft.original.obstetricNotes
+    }
+    return state.copy(
+        patientDraft = draft.copy(
+            deliveryPlan = next,
+            values = draft.values.copy(obstetricNotes = notes),
+            errors = emptySet(),
+        ),
+        savePhase = SavePhase.IDLE,
+        saveError = null,
+    )
+}
+
+internal fun updateDeliveryOutcome(state: AncState, event: AncEvent): AncState {
+    if (state.savePhase.blocksEditing()) return state
+    val draft = state.patientDraft ?: return state
+    if (draft.deliveryPlan == null) return state
+    val newValues = when (event) {
+        is AncEvent.DeliveryOutcomeToggled -> {
+            val delivered = event.delivered
+            if (delivered) {
+                draft.values.copy(delivered = true)
+            } else {
+                draft.values.copy(delivered = false, deliveryDate = "", deliveryMode = "", deliveryOutcome = "")
+            }
+        }
+        is AncEvent.DeliveryOutcomeFieldChanged -> {
+            when (event.field) {
+                DeliveryOutcomeField.DATE -> draft.values.copy(deliveryDate = event.value)
+                DeliveryOutcomeField.MODE -> draft.values.copy(deliveryMode = event.value)
+                DeliveryOutcomeField.OUTCOME -> draft.values.copy(deliveryOutcome = event.value)
+            }
+        }
+        else -> return state
+    }
+    return state.copy(
+        patientDraft = draft.copy(
+            values = newValues,
+            errors = emptySet(),
+        ),
+        savePhase = SavePhase.IDLE,
+        saveError = null,
+    )
+}
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/AncReducer.kt
+<<<<<<< SEARCH
+    private fun isValueChangeEvent(event: AncEvent): Boolean = when (event) {
+        is AncEvent.DraftChanged,
+        is AncEvent.PatientDraftChanged,
+        is AncEvent.DeliveryPlanFieldChanged,
+        is AncEvent.HistoriesDraftChanged,
+        is AncEvent.PregnancyDraftChanged,
+        is AncEvent.StatusReasonChanged,
+        is AncEvent.DatingDraftChanged,
+=======
+    private fun isValueChangeEvent(event: AncEvent): Boolean = when (event) {
+        is AncEvent.DraftChanged,
+        is AncEvent.PatientDraftChanged,
+        is AncEvent.DeliveryPlanFieldChanged,
+        is AncEvent.DeliveryOutcomeToggled,
+        is AncEvent.DeliveryOutcomeFieldChanged,
+        is AncEvent.HistoriesDraftChanged,
+        is AncEvent.PregnancyDraftChanged,
+        is AncEvent.StatusReasonChanged,
+        is AncEvent.DatingDraftChanged,
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/AncReducer.kt
+<<<<<<< SEARCH
+            is AncEvent.DraftChanged -> updateDraft(state, event)
+            is AncEvent.PatientDraftChanged -> updatePatientDraft(state, event)
+            is AncEvent.DeliveryPlanFieldChanged -> updateDeliveryPlanField(state, event)
+            is AncEvent.HistoriesDraftChanged -> updateHistoriesDraft(state, event)
+            is AncEvent.PregnancyDraftChanged -> updatePregnancyDraft(state, event)
+=======
+            is AncEvent.DraftChanged -> updateDraft(state, event)
+            is AncEvent.PatientDraftChanged -> updatePatientDraft(state, event)
+            is AncEvent.DeliveryPlanFieldChanged -> updateDeliveryPlanField(state, event)
+            is AncEvent.DeliveryOutcomeToggled -> updateDeliveryOutcome(state, event)
+            is AncEvent.DeliveryOutcomeFieldChanged -> updateDeliveryOutcome(state, event)
+            is AncEvent.HistoriesDraftChanged -> updateHistoriesDraft(state, event)
+            is AncEvent.PregnancyDraftChanged -> updatePregnancyDraft(state, event)
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/AncReducer.kt
+<<<<<<< SEARCH
+        val deliveryPlan = state.patientDraft?.deliveryPlan
+        if (deliveryPlan != null) {
+            // The delivery sheet sits over the Plan tab, so closing it never leaves the screen. Same rule as the
+            // medication sheet: an untouched form closes at once, only a Back that bypassed the sheet asks here.
+            return if (event == AncEvent.CancelEditor || !deliveryPlan.touched) {
+                state.clearDrafts().copy(savedNotice = false, notice = null)
+            } else {
+                state.copy(showDiscardDialog = true, pendingAction = PendingAction.Navigate(state.route))
+            }
+        }
+=======
+        val deliveryPlan = state.patientDraft?.deliveryPlan
+        if (deliveryPlan != null) {
+            // The delivery sheet sits over the Plan tab, so closing it never leaves the screen. Same rule as the
+            // medication sheet: an untouched form closes at once, only a Back that bypassed the sheet asks here.
+            return if (event == AncEvent.CancelEditor || state.patientDraft?.deliveryPlanTouched != true) {
+                state.clearDrafts().copy(savedNotice = false, notice = null)
+            } else {
+                state.copy(showDiscardDialog = true, pendingAction = PendingAction.Navigate(state.route))
+            }
+        }
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
+<<<<<<< SEARCH
+    private fun AncEvent.clearsFrozenPatient(): Boolean = when (this) {
+        is AncEvent.PatientDraftChanged,
+        is AncEvent.DeliveryPlanFieldChanged,
+        is AncEvent.HistoriesDraftChanged,
+        is AncEvent.PregnancyDraftChanged,
+        is AncEvent.StatusReasonChanged,
+=======
+    private fun AncEvent.clearsFrozenPatient(): Boolean = when (this) {
+        is AncEvent.PatientDraftChanged,
+        is AncEvent.DeliveryPlanFieldChanged,
+        is AncEvent.DeliveryOutcomeToggled,
+        is AncEvent.DeliveryOutcomeFieldChanged,
+        is AncEvent.HistoriesDraftChanged,
+        is AncEvent.PregnancyDraftChanged,
+        is AncEvent.StatusReasonChanged,
+>>>>>>> REPLACE
+[Tokens] upload: 11125 download: 4233 cache_read: 0 cache_write: 0
+

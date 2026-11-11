@@ -3,6 +3,7 @@ package com.sherifradwan.ancnative.state
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.ClinicalVocabulary
 import com.sherifradwan.ancnative.model.DeliveryNoteSections
+import com.sherifradwan.ancnative.model.DeliveryOutcomeFields
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.PatientValidationError
 import com.sherifradwan.ancnative.model.composeDeliveryNotes
@@ -267,6 +268,8 @@ enum class PatientEditorKind { PROFILE, HISTORIES, PREGNANCY, STATUS }
 
 enum class DeliveryPlanField { HOSPITAL, FEES, PLAN, POSTPARTUM }
 
+enum class DeliveryOutcomeField { DATE, MODE, OUTCOME }
+
 data class PendingDeletion(
     val patientId: String,
     val type: DeletableType,
@@ -458,6 +461,10 @@ data class PatientDraftValues(
     val abortion: String = "",
     val obstetricNotes: String = "",
     val clinicalAttention: String = "",
+    val delivered: Boolean = false,
+    val deliveryDate: String = "",
+    val deliveryMode: String = "",
+    val deliveryOutcome: String = "",
     val lmpDate: String = "",
     val datingMethod: String = "",
     val transferDate: String = "",
@@ -479,7 +486,10 @@ data class PatientDraft(
     val deliveryPlan: DeliveryPlanFields? = null,
 ) {
     val isDirty: Boolean get() = values != original
+    val deliveryPlanTouched: Boolean get() = deliveryPlan?.touched == true || values.delivered != original.delivered || values.deliveryDate != original.deliveryDate || values.deliveryMode != original.deliveryMode || values.deliveryOutcome != original.deliveryOutcome
 }
+
+fun PatientDraftValues.toDeliveryOutcomeFields() = DeliveryOutcomeFields(delivered, deliveryDate.ifBlank { null }, deliveryMode.ifBlank { null }, deliveryOutcome.ifBlank { null })
 
 /**
  * The four raw strings of the delivery plan sheet, held in state so the composer never re-parses the notes

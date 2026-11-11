@@ -20,6 +20,8 @@ object AncReducer {
         is AncEvent.DraftChanged,
         is AncEvent.PatientDraftChanged,
         is AncEvent.DeliveryPlanFieldChanged,
+        is AncEvent.DeliveryOutcomeToggled,
+        is AncEvent.DeliveryOutcomeFieldChanged,
         is AncEvent.HistoriesDraftChanged,
         is AncEvent.PregnancyDraftChanged,
         is AncEvent.StatusReasonChanged,
@@ -64,6 +66,8 @@ object AncReducer {
             is AncEvent.DraftChanged -> updateDraft(state, event)
             is AncEvent.PatientDraftChanged -> updatePatientDraft(state, event)
             is AncEvent.DeliveryPlanFieldChanged -> updateDeliveryPlanField(state, event)
+            is AncEvent.DeliveryOutcomeToggled -> updateDeliveryOutcome(state, event)
+            is AncEvent.DeliveryOutcomeFieldChanged -> updateDeliveryOutcome(state, event)
             is AncEvent.HistoriesDraftChanged -> updateHistoriesDraft(state, event)
             is AncEvent.PregnancyDraftChanged -> updatePregnancyDraft(state, event)
             is AncEvent.DatingDraftChanged -> updateDatingDraft(state, event)
@@ -447,7 +451,7 @@ object AncReducer {
         if (deliveryPlan != null) {
             // The delivery sheet sits over the Plan tab, so closing it never leaves the screen. Same rule as the
             // medication sheet: an untouched form closes at once, only a Back that bypassed the sheet asks here.
-            return if (event == AncEvent.CancelEditor || !deliveryPlan.touched) {
+            return if (event == AncEvent.CancelEditor || state.patientDraft?.deliveryPlanTouched != true) {
                 state.clearDrafts().copy(savedNotice = false, notice = null)
             } else {
                 state.copy(showDiscardDialog = true, pendingAction = PendingAction.Navigate(state.route))

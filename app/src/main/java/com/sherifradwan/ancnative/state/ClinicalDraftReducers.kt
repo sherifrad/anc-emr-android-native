@@ -118,6 +118,38 @@ internal fun updateDeliveryPlanField(state: AncState, event: AncEvent.DeliveryPl
     )
 }
 
+internal fun updateDeliveryOutcome(state: AncState, event: AncEvent): AncState {
+    if (state.savePhase.blocksEditing()) return state
+    val draft = state.patientDraft ?: return state
+    if (draft.deliveryPlan == null) return state
+    val newValues = when (event) {
+        is AncEvent.DeliveryOutcomeToggled -> {
+            val delivered = event.delivered
+            if (delivered) {
+                draft.values.copy(delivered = true)
+            } else {
+                draft.values.copy(delivered = false, deliveryDate = "", deliveryMode = "", deliveryOutcome = "")
+            }
+        }
+        is AncEvent.DeliveryOutcomeFieldChanged -> {
+            when (event.field) {
+                DeliveryOutcomeField.DATE -> draft.values.copy(deliveryDate = event.value)
+                DeliveryOutcomeField.MODE -> draft.values.copy(deliveryMode = event.value)
+                DeliveryOutcomeField.OUTCOME -> draft.values.copy(deliveryOutcome = event.value)
+            }
+        }
+        else -> return state
+    }
+    return state.copy(
+        patientDraft = draft.copy(
+            values = newValues,
+            errors = emptySet(),
+        ),
+        savePhase = SavePhase.IDLE,
+        saveError = null,
+    )
+}
+
 internal fun startHistoriesEditor(state: AncState, event: AncEvent.StartHistoriesEditor): AncState {
     if (state.savePhase.blocksEditing() || state.hasDirtyDraft) return state
     val patient = state.patient(event.patientId)?.takeIf { it.status != "archived" } ?: return state
@@ -460,6 +492,10 @@ internal fun DemoPatient.toPatientDraftValues() = PatientDraftValues(
     abortion = abortion?.toString().orEmpty(),
     obstetricNotes = obstetricNotes.orEmpty(),
     clinicalAttention = clinicalAttention.orEmpty(),
+    delivered = delivered,
+    deliveryDate = deliveryDate.orEmpty(),
+    deliveryMode = deliveryMode.orEmpty(),
+    deliveryOutcome = deliveryOutcome.orEmpty(),
     lmpDate = dating?.lmpDate.orEmpty(),
 )
 
