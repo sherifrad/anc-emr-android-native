@@ -3,7 +3,7 @@ package com.sherifradwan.ancnative.ui.report
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.DemoPatientDating
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
-import com.sherifradwan.ancnative.ui.parseDeliveryNotes
+import com.sherifradwan.ancnative.model.parseDeliveryNotes
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

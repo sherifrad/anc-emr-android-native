@@ -8,7 +8,7 @@ import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.model.DemoVisit
 import com.sherifradwan.ancnative.security.SecuritySettingsState
-import com.sherifradwan.ancnative.ui.parseDeliveryNotes
+import com.sherifradwan.ancnative.model.parseDeliveryNotes
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

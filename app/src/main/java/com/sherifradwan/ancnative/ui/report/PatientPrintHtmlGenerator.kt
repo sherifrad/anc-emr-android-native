@@ -1233,7 +1233,7 @@ object PatientPrintHtmlGenerator {
                         <div class="history-list">
                             <div class="history-row">
                                 <span class="k">Planned Delivery Mode:</span>
-                                <span class="v text-rose font-bold">${escapeHtml(com.sherifradwan.ancnative.ui.parseDeliveryNotes(patient.obstetricNotes).plan?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
+                                <span class="v text-rose font-bold">${escapeHtml(com.sherifradwan.ancnative.model.parseDeliveryNotes(patient.obstetricNotes).plan?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
                             </div>
                             <div class="history-row">
                                 <span class="k">Target Delivery Timing:</span>

@@ -40,7 +40,7 @@ import com.sherifradwan.ancnative.ui.formatBloodGroup
 import com.sherifradwan.ancnative.ui.isHighRisk
 import com.sherifradwan.ancnative.ui.isRhNegative
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
-import com.sherifradwan.ancnative.ui.parseDeliveryNotes
+import com.sherifradwan.ancnative.model.parseDeliveryNotes
 import java.time.LocalDate
 
 @Composable

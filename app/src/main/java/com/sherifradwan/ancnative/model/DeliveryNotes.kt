@@ -1,4 +1,4 @@
-package com.sherifradwan.ancnative.ui
+package com.sherifradwan.ancnative.model
 
 internal data class DeliveryNoteSections(
     val hospital: String?,

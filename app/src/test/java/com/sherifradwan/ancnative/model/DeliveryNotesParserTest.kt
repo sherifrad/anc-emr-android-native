@@ -1,4 +1,4 @@
-package com.sherifradwan.ancnative.ui
+package com.sherifradwan.ancnative.model
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
