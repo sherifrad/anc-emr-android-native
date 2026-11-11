@@ -92,6 +92,10 @@ fun DeliveryPlanningCard(
                 }
             }
 
+            if (patient.delivered) {
+                DeliveredSummary(patient)
+            }
+
             val defaultPlaceholder = stringResource(R.string.no_record)
 
             DeliverySectionBox(

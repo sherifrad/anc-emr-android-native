@@ -115,6 +115,8 @@ data class PatientDashboardRowProjection(
     val latestVitalsBp: String? = null,
     val isSevereBp: Boolean = false,
     val isLateOrPostTerm: Boolean = false,
+    val isDelivered: Boolean = false,
+    val deliveryDate: String? = null,
 )
 
 fun projectDashboardRow(patient: DemoPatient): PatientDashboardRowProjection {
@@ -139,7 +141,7 @@ fun projectDashboardRow(patient: DemoPatient): PatientDashboardRowProjection {
     val latestVisit = patient.visits.maxByOrNull { it.date }
     val latestBp = latestVisit?.bloodPressure?.trim()?.takeIf { it.isNotBlank() }
     val isSevere = severeBpAttention(patient.visits) != null
-    val isLateOrPost = gaResult != null && gaResult.weeks >= 41
+    val isLateOrPost = !patient.delivered && gaResult != null && gaResult.weeks >= 41
 
     return PatientDashboardRowProjection(
         id = patient.id,
@@ -160,7 +162,19 @@ fun projectDashboardRow(patient: DemoPatient): PatientDashboardRowProjection {
         latestVitalsBp = latestBp,
         isSevereBp = isSevere,
         isLateOrPostTerm = isLateOrPost,
+        isDelivered = patient.delivered,
+        deliveryDate = patient.deliveryDate,
     )
+}
+
+/**
+ * The rows of the main dashboard. Delivered patients leave the main list and show under the Delivered filter; a search
+ * still finds them so nobody is lost.
+ */
+fun dashboardPatients(visible: List<DemoPatient>, filter: String, searching: Boolean): List<DemoPatient> = when {
+    filter == "delivered" -> visible.filter { it.delivered }
+    searching -> visible
+    else -> visible.filter { !it.delivered }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -170,21 +184,26 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
     var riskFilter by remember { mutableStateOf("all") } // "all", "high", "medium", "low"
     var sheetPatient by remember { mutableStateOf<DemoPatient?>(null) }
 
-    val filteredList = remember(visibleList, riskFilter) {
+    val searching = state.searchQuery.isNotBlank()
+    val mainList = remember(visibleList, searching) { dashboardPatients(visibleList, "all", searching) }
+    val deliveredList = remember(visibleList) { dashboardPatients(visibleList, "delivered", false) }
+    val filteredList = remember(mainList, deliveredList, riskFilter) {
         when (riskFilter) {
-            "high" -> visibleList.filter { isHighRisk(it.riskLevel) }
-            "medium" -> visibleList.filter { parseRiskTier(it.riskLevel) == PatientRiskTier.MEDIUM }
-            "low" -> visibleList.filter { parseRiskTier(it.riskLevel) == PatientRiskTier.LOW }
-            else -> visibleList
+            "delivered" -> deliveredList
+            "high" -> mainList.filter { isHighRisk(it.riskLevel) }
+            "medium" -> mainList.filter { parseRiskTier(it.riskLevel) == PatientRiskTier.MEDIUM }
+            "low" -> mainList.filter { parseRiskTier(it.riskLevel) == PatientRiskTier.LOW }
+            else -> mainList
         }
     }
 
-    val allCount = visibleList.size
-    val highRiskCount = remember(visibleList) { visibleList.count { isHighRisk(it.riskLevel) } }
-    val mediumRiskCount = remember(visibleList) { visibleList.count { parseRiskTier(it.riskLevel) == PatientRiskTier.MEDIUM } }
-    val lowRiskCount = remember(visibleList) { visibleList.count { parseRiskTier(it.riskLevel) == PatientRiskTier.LOW } }
+    val allCount = mainList.size
+    val deliveredCount = deliveredList.size
+    val highRiskCount = remember(mainList) { mainList.count { isHighRisk(it.riskLevel) } }
+    val mediumRiskCount = remember(mainList) { mainList.count { parseRiskTier(it.riskLevel) == PatientRiskTier.MEDIUM } }
+    val lowRiskCount = remember(mainList) { mainList.count { parseRiskTier(it.riskLevel) == PatientRiskTier.LOW } }
 
-    val activeCount = remember(state.patients) { state.patients.count { it.status != "archived" } }
+    val activeCount = remember(state.patients) { state.patients.count { it.status != "archived" && !it.delivered } }
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val horizontalPadding = maxOf(16.dp, (maxWidth - 880.dp) / 2)
@@ -342,6 +361,16 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
                             selectedLabelColor = MaterialTheme.colorScheme.onTertiaryContainer,
                         ),
                         modifier = Modifier.testTag("riskFilter-low"),
+                    )
+                    FilterChip(
+                        selected = riskFilter == "delivered",
+                        onClick = { riskFilter = "delivered" },
+                        label = { Text("${stringResource(R.string.patients_filter_delivered)} ($deliveredCount)") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        ),
+                        modifier = Modifier.testTag("riskFilter-delivered"),
                     )
                 }
             }

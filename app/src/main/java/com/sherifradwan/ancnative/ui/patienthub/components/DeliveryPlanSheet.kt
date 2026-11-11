@@ -2,6 +2,7 @@ package com.sherifradwan.ancnative.ui.patienthub.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -9,16 +10,19 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -27,11 +31,25 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
+import com.sherifradwan.ancnative.model.PatientValidationError
+import com.sherifradwan.ancnative.model.deliveryModes
+import com.sherifradwan.ancnative.model.deliveryOutcomes
 import com.sherifradwan.ancnative.state.AncEvent
+import com.sherifradwan.ancnative.state.DeliveryOutcomeField
 import com.sherifradwan.ancnative.state.DeliveryPlanField
 import com.sherifradwan.ancnative.state.PatientDraft
 import com.sherifradwan.ancnative.state.SavePhase
 import com.sherifradwan.ancnative.state.SaveUiError
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+
+private val deliveryErrors = setOf(
+    PatientValidationError.DELIVERY_DATE_INVALID,
+    PatientValidationError.DELIVERY_DATE_IN_FUTURE,
+    PatientValidationError.DELIVERY_DATE_BEFORE_DATING,
+    PatientValidationError.DELIVERY_MODE_NOT_ALLOWED,
+    PatientValidationError.DELIVERY_OUTCOME_NOT_ALLOWED,
+)
 
 /**
  * Bottom sheet that edits the four delivery plan boxes held in [PatientDraft.deliveryPlan].
@@ -54,14 +72,14 @@ fun DeliveryPlanSheet(
     val saving = savePhase == SavePhase.PENDING || savePhase == SavePhase.RECONCILING
     var confirmDiscard by rememberSaveable { mutableStateOf(false) }
     val requestCancel = {
-        if (fields.touched) confirmDiscard = true else onEvent(AncEvent.CancelEditor)
+        if (draft.deliveryPlanTouched) confirmDiscard = true else onEvent(AncEvent.CancelEditor)
     }
 
     ModalBottomSheet(
         onDismissRequest = { if (enabled) requestCancel() },
         sheetState = rememberGuardedSheetState(
             dismissAllowed = enabled,
-            needsConfirm = fields.touched,
+            needsConfirm = draft.deliveryPlanTouched,
             onNeedsConfirm = { confirmDiscard = true },
         ),
         modifier = Modifier.testTag("deliveryPlanSheet"),
@@ -87,9 +105,14 @@ fun DeliveryPlanSheet(
                 SheetSaveMessage(
                     savePhase = savePhase,
                     saveError = saveError,
-                    fieldErrorMessage = if (draft.errors.isEmpty()) null else stringResource(R.string.delivery_plan_profile_invalid),
+                    fieldErrorMessage = if (draft.errors.isEmpty()) null else if (draft.errors.none { it !in deliveryErrors }) null else stringResource(R.string.delivery_plan_profile_invalid),
                     failedTitle = stringResource(R.string.delivery_plan_save_failed_title),
                     tag = "deliveryPlanSaveMessage",
+                )
+                DeliveryOutcomeSection(
+                    draft = draft,
+                    enabled = enabled,
+                    onEvent = onEvent,
                 )
                 if (fields.rewritesNotes) {
                     Text(
@@ -133,7 +156,7 @@ fun DeliveryPlanSheet(
             SheetCancelSaveRow(
                 enabled = enabled,
                 saving = saving,
-                saveEnabled = fields.touched,
+                saveEnabled = draft.deliveryPlanTouched,
                 savingLabel = stringResource(if (saving) R.string.delivery_plan_saving else R.string.save),
                 onCancel = requestCancel,
                 onSave = { onEvent(AncEvent.SubmitPatientProfile) },
@@ -156,6 +179,141 @@ fun DeliveryPlanSheet(
             confirmTag = "deliveryPlanDiscardConfirm",
             keepTag = "deliveryPlanDiscardKeep",
         )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun DeliveryOutcomeSection(
+    draft: PatientDraft,
+    enabled: Boolean,
+    onEvent: (AncEvent) -> Unit,
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(
+            text = stringResource(R.string.delivery_outcome_section),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics(mergeDescendants = true) {},
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.delivery_outcome_delivered_switch),
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f),
+            )
+            Switch(
+                checked = draft.values.delivered,
+                onCheckedChange = { onEvent(AncEvent.DeliveryOutcomeToggled(it)) },
+                enabled = enabled,
+                modifier = Modifier.testTag("deliveryOutcomeSwitch"),
+            )
+        }
+        if (draft.values.delivered) {
+            val dateError = draft.errors.firstOrNull { it in setOf(
+                PatientValidationError.DELIVERY_DATE_INVALID,
+                PatientValidationError.DELIVERY_DATE_IN_FUTURE,
+                PatientValidationError.DELIVERY_DATE_BEFORE_DATING,
+            ) }
+            OutlinedTextField(
+                value = draft.values.deliveryDate,
+                onValueChange = { onEvent(AncEvent.DeliveryOutcomeFieldChanged(DeliveryOutcomeField.DATE, it)) },
+                enabled = enabled,
+                singleLine = true,
+                label = { Text(stringResource(R.string.delivery_outcome_date_label)) },
+                isError = dateError != null,
+                supportingText = {
+                    when (dateError) {
+                        PatientValidationError.DELIVERY_DATE_INVALID -> Text(stringResource(R.string.delivery_error_date_invalid), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                        PatientValidationError.DELIVERY_DATE_IN_FUTURE -> Text(stringResource(R.string.delivery_error_date_future), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                        PatientValidationError.DELIVERY_DATE_BEFORE_DATING -> Text(stringResource(R.string.delivery_error_date_before_dating), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                        else -> Text(stringResource(R.string.delivery_outcome_date_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .revealOnFocus()
+                    .testTag("deliveryOutcomeDateField"),
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None),
+            )
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    text = stringResource(R.string.delivery_outcome_mode_label),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    maxItemsInEachRow = 3,
+                ) {
+                    deliveryModes.forEach { mode ->
+                        val label = deliveryModeLabel(mode).orEmpty()
+                        FilterChip(
+                            selected = draft.values.deliveryMode == mode,
+                            onClick = { onEvent(AncEvent.DeliveryOutcomeFieldChanged(DeliveryOutcomeField.MODE, if (draft.values.deliveryMode == mode) "" else mode)) },
+                            enabled = enabled,
+                            label = { Text(text = label) },
+                            modifier = Modifier.testTag("deliveryModeChip-$mode"),
+                        )
+                    }
+                }
+                val modeError = draft.errors.contains(PatientValidationError.DELIVERY_MODE_NOT_ALLOWED)
+                if (modeError) {
+                    Text(
+                        text = stringResource(R.string.delivery_error_choice_invalid),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    text = stringResource(R.string.delivery_outcome_result_label),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    maxItemsInEachRow = 3,
+                ) {
+                    deliveryOutcomes.forEach { outcome ->
+                        val label = deliveryResultLabel(outcome).orEmpty()
+                        FilterChip(
+                            selected = draft.values.deliveryOutcome == outcome,
+                            onClick = { onEvent(AncEvent.DeliveryOutcomeFieldChanged(DeliveryOutcomeField.OUTCOME, if (draft.values.deliveryOutcome == outcome) "" else outcome)) },
+                            enabled = enabled,
+                            label = { Text(text = label) },
+                            modifier = Modifier.testTag("deliveryOutcomeChip-$outcome"),
+                        )
+                    }
+                }
+                val outcomeError = draft.errors.contains(PatientValidationError.DELIVERY_OUTCOME_NOT_ALLOWED)
+                if (outcomeError) {
+                    Text(
+                        text = stringResource(R.string.delivery_error_choice_invalid),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+        }
     }
 }
 

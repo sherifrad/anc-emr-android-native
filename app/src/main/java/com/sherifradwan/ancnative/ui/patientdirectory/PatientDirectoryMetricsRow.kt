@@ -21,6 +21,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sherifradwan.ancnative.R
+import com.sherifradwan.ancnative.ui.patienthub.components.deliveredDaysAgo
+import com.sherifradwan.ancnative.ui.patienthub.components.deliveredHeadline
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.ui.GaDiscordanceMarker
 import com.sherifradwan.ancnative.model.previousDeliverySummary
@@ -58,7 +60,7 @@ fun PatientDirectoryMetricsRow(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
-                        text = if (hasGa) row.gestationalAgeText else stringResource(R.string.pending),
+                        text = if (row.isDelivered) deliveredHeadline(row.deliveryDate) else if (hasGa) row.gestationalAgeText else stringResource(R.string.pending),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -83,7 +85,7 @@ fun PatientDirectoryMetricsRow(
                     }
                 }
                 Text(
-                    text = if (!row.eddText.isNullOrBlank()) "Due ${row.eddText}" else stringResource(R.string.edd_pending),
+                    text = if (row.isDelivered) deliveredDaysAgo(row.deliveryDate).orEmpty() else if (!row.eddText.isNullOrBlank()) "Due ${row.eddText}" else stringResource(R.string.edd_pending),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 10.sp,

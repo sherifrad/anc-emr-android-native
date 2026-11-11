@@ -47,6 +47,7 @@ import androidx.compose.runtime.derivedStateOf
 import com.sherifradwan.ancnative.ui.AllergyState
 import com.sherifradwan.ancnative.ui.BloodGroupBadge
 import com.sherifradwan.ancnative.ui.GestationalAgeBadge
+import com.sherifradwan.ancnative.ui.patienthub.components.deliveredHeadline
 import com.sherifradwan.ancnative.ui.ObstetricParityBadge
 import com.sherifradwan.ancnative.ui.TagHighRiskBg
 import com.sherifradwan.ancnative.ui.TagHighRiskDarkBg
@@ -266,7 +267,11 @@ fun PatientHubHeader(
                                 .testTag("hubPatientName"),
                         )
 
-                        if (!ga.isNullOrBlank()) {
+                        if (patient.delivered) {
+                            Box(modifier = Modifier.testTag("hubDeliveredBadge")) {
+                                GestationalAgeBadge(gaText = deliveredHeadline(patient.deliveryDate))
+                            }
+                        } else if (!ga.isNullOrBlank()) {
                             Box(
                                 modifier = Modifier
                                     .testTag("hubGaBadge"),
@@ -371,7 +376,9 @@ fun PatientHubHeader(
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.weight(1f),
                             )
-                            if (!gaCompact.isNullOrBlank()) {
+                            if (patient.delivered) {
+                                GestationalAgeBadge(deliveredHeadline(patient.deliveryDate))
+                            } else if (!gaCompact.isNullOrBlank()) {
                                 GestationalAgeBadge(gaCompact, discordant = gaDiscordant)
                             }
                             if (hasAttention) {

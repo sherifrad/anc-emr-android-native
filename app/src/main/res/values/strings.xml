@@ -605,4 +605,29 @@
     <string name="medication_saving">Saving…</string>
     <string name="medication_save_failed_title">The medication was not saved.</string>
     <string name="medication_stopped_undo_message">Stopped: %1$s</string>
+    <!-- Delivery outcome (delivered flag, date, mode, outcome) -->
+    <string name="delivery_outcome_section">Delivery outcome</string>
+    <string name="delivery_outcome_delivered_switch">Delivered</string>
+    <string name="delivery_outcome_date_label">Delivery date (YYYY-MM-DD)</string>
+    <string name="delivery_outcome_date_hint">Leave empty if the date is not known.</string>
+    <string name="delivery_outcome_mode_label">Mode of delivery</string>
+    <string name="delivery_outcome_result_label">Outcome</string>
+    <string name="delivery_mode_vaginal">Vaginal</string>
+    <string name="delivery_mode_caesarean">Caesarean</string>
+    <string name="delivery_mode_assisted_vaginal">Assisted vaginal</string>
+    <string name="delivery_mode_other">Other</string>
+    <string name="delivery_result_live_birth">Live birth</string>
+    <string name="delivery_result_stillbirth">Stillbirth</string>
+    <string name="delivery_result_neonatal_death">Neonatal death</string>
+    <string name="delivered_headline">Delivered %1$s</string>
+    <string name="delivered_date_unknown">Delivered, date ???</string>
+    <string name="delivered_today">Today</string>
+    <string name="delivered_days_ago">%1$d days ago</string>
+    <string name="delivered_one_day_ago">1 day ago</string>
+    <string name="delivery_error_date_invalid">Enter the date as YYYY-MM-DD, for example 2026-11-05.</string>
+    <string name="delivery_error_date_future">The delivery date cannot be after today.</string>
+    <string name="delivery_error_date_before_dating">The delivery date is before the last menstrual period.</string>
+    <string name="delivery_error_choice_invalid">Choose one of the listed values.</string>
+    <string name="patients_filter_delivered">Delivered</string>
+    <string name="delivered_patients_empty">No delivered patients.</string>
 </resources>

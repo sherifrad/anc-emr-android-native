@@ -25,6 +25,7 @@ import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncReducer
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
+import com.sherifradwan.ancnative.state.PatientEditorKind
 import com.sherifradwan.ancnative.state.PendingSaveToken
 import com.sherifradwan.ancnative.state.SaveUiError
 import com.sherifradwan.ancnative.state.SavedNotice
@@ -71,6 +72,10 @@ class DeliveryPlanSheetTest {
     private fun save() {
         val draft = state.patientDraft ?: return
         val prepared = SavePatientProfileCommand.prepare(state, UUID.randomUUID().toString(), "2026-11-11T08:00:00Z")
+        if (prepared is PatientCommandPreparation.Rejected) {
+            state = AncReducer.reduce(state, AncEvent.PatientValidationFailed(PatientEditorKind.PROFILE, prepared.errors))
+            return
+        }
         val command = (prepared as PatientCommandPreparation.Ready).command as SavePatientProfileCommand
         val token = PendingSaveToken(command.operationUuid, draft.editorSessionId)
         state = AncReducer.reduce(state, AncEvent.SaveStarted(token))
@@ -84,7 +89,14 @@ class DeliveryPlanSheetTest {
             AncReducer.reduce(state, AncEvent.SaveFailed(token, error, unresolved = false))
         } else {
             val saved = state.patients.map {
-                if (it.id == command.patientId) it.copy(obstetricNotes = command.obstetricNotes, revision = it.revision + 1) else it
+                if (it.id == command.patientId) it.copy(
+                    obstetricNotes = command.obstetricNotes,
+                    delivered = command.delivered,
+                    deliveryDate = command.deliveryDate,
+                    deliveryMode = command.deliveryMode,
+                    deliveryOutcome = command.deliveryOutcome,
+                    revision = it.revision + 1,
+                ) else it
             }
             AncReducer.reduce(
                 state,
@@ -120,6 +132,11 @@ class DeliveryPlanSheetTest {
     /** The Cancel and Save row is pinned under the scrolling body, so there is nothing to scroll to. */
     private fun click(tag: String) {
         node(tag).performClick()
+        compose.waitForIdle()
+    }
+    /** A control inside the scrolling body of the sheet: scroll it into view first. */
+    private fun clickInBody(tag: String) {
+        node(tag).performScrollTo().performClick()
         compose.waitForIdle()
     }
     private fun exists(tag: String) = compose.onAllNodes(androidx.compose.ui.test.hasTestTag(tag), useUnmergedTree = true)
@@ -269,6 +286,92 @@ class DeliveryPlanSheetTest {
         node("deliveryPlanSaveMessage").assertIsDisplayed()
         node("deliveryPlanFeesField").assertTextContains("25000 EGP", substring = true)
         assertEquals(freeNotes, state.patient(patient.id)!!.obstetricNotes)
+    }
+
+    @Test
+    fun deliveredSwitchRevealsTheFieldsAndSaveWritesTheFourValuesAndTheCardAndHeaderShowThem() {
+        host()
+        openSheet()
+        assertTrue(!exists("deliveryOutcomeDateField"))
+        node("saveDeliveryPlan").assertIsNotEnabled()
+        clickInBody("deliveryOutcomeSwitch")
+        node("deliveryOutcomeDateField").assertIsDisplayed()
+        node("saveDeliveryPlan").assertIsEnabled()
+        type("deliveryOutcomeDateField", "2026-11-05")
+        clickInBody("deliveryModeChip-caesarean")
+        clickInBody("deliveryOutcomeChip-live_birth")
+        click("saveDeliveryPlan")
+        assertTrue(!exists("deliveryPlanSheet"))
+        val command = commands.single()
+        assertTrue(command.delivered)
+        assertEquals("2026-11-05", command.deliveryDate)
+        assertEquals("caesarean", command.deliveryMode)
+        assertEquals("live_birth", command.deliveryOutcome)
+        assertEquals(planTab, state.route)
+        assertTrue(exists("deliveredSummary"))
+        assertTrue(exists("deliveredMode"))
+        assertTrue(exists("deliveredResult"))
+    }
+
+    @Test
+    fun deliveredWithoutADateSavesAndShowsTheQuestionMarks() {
+        host()
+        openSheet()
+        clickInBody("deliveryOutcomeSwitch")
+        click("saveDeliveryPlan")
+        assertTrue(!exists("deliveryPlanSheet"))
+        val command = commands.single()
+        assertTrue(command.delivered)
+        assertEquals(null, command.deliveryDate)
+        compose.onNode(
+            androidx.compose.ui.test.hasText("???", substring = true) and
+                androidx.compose.ui.test.hasAnyAncestor(androidx.compose.ui.test.hasTestTag("deliveredSummary")),
+            useUnmergedTree = true,
+        ).assertExists()
+    }
+
+    @Test
+    fun aBadDateKeepsTheSheetOpenAndShowsTheDateMessage() {
+        host()
+        openSheet()
+        clickInBody("deliveryOutcomeSwitch")
+        type("deliveryOutcomeDateField", "not-a-date")
+        click("saveDeliveryPlan")
+        node("deliveryPlanSheet").assertIsDisplayed()
+        compose.onNode(
+            androidx.compose.ui.test.hasText("Enter the date as", substring = true),
+            useUnmergedTree = true,
+        ).assertExists()
+        assertTrue(commands.isEmpty())
+    }
+
+    @Test
+    fun turningDeliveredOffClearsTheOtherThreeValues() {
+        host()
+        openSheet()
+        clickInBody("deliveryOutcomeSwitch")
+        type("deliveryOutcomeDateField", "2026-11-05")
+        clickInBody("deliveryModeChip-vaginal")
+        clickInBody("deliveryOutcomeSwitch")
+        assertTrue(!exists("deliveryOutcomeDateField"))
+        assertEquals("", state.patientDraft!!.values.deliveryDate)
+        assertEquals("", state.patientDraft!!.values.deliveryMode)
+        node("saveDeliveryPlan").assertIsNotEnabled()
+    }
+
+    @Test
+    fun theHeaderShowsDeliveredInPlaceOfTheWeeksBadgeForADeliveredPatient() {
+        state = AncState(patients = emptyList())
+        val delivered = patient.copy(delivered = true, deliveryDate = "2026-11-05", deliveryMode = "vaginal", deliveryOutcome = "live_birth")
+        state = AncState(patients = listOf(delivered), vaultState = VaultState.Unlocked(sessionEpoch = 7301L), route = planTab)
+        compose.activityRule.scenario.onActivity { activity ->
+            activity.setContent { AncTheme { AncApp(state = state, onEvent = ::onEvent, onStartVisit = { _, _ -> }, onSaveVisit = {}, onInitialize = {}, onUnlock = {}, onLock = {}, onRetryStorage = {}) } }
+        }
+        compose.waitForIdle()
+        compose.openHubTab(PatientHubTab.PLAN)
+        assertTrue(exists("hubDeliveredBadge"))
+        assertTrue(!exists("hubGaBadge"))
+        assertTrue(exists("deliveredSummary"))
     }
 
     @Test
