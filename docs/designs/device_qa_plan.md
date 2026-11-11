@@ -17,9 +17,7 @@ The QA build has the package `com.sherifradwan.anc.qa` and contains fictional de
 *   The QA build is installed on both devices and the build fingerprint (version name and commit) is recorded in the run log.
 *   Device 1, the real phone: a 360dp-class phone, signed in as far as the QA app itself requires. On this phone only app-level actions are allowed: taps inside the QA app, plus read-only adb commands (`adb shell uiautomator dump`, `adb shell screencap`, `adb shell logcat -d`). No system or security setting is changed, no other app is opened, and no PIN or credential is entered beyond what the QA app itself already shows.
 *   Device 2, the emulator: a 360dp profile (for example Pixel with a 360dp width setting). System settings may be changed here: rotation, dark mode, font scale and force RTL. The emulator-only checks (D22 to D26) run here and are skipped on the real phone.
-*   Two prepared demo patients in the QA build:
-    *   **P-A** (demo patient with history): 4 active medications (Ferrous sulfate 200 mg oral once daily, Folic acid 400 mcg oral once daily, Calcium carbonate 600 mg oral once daily, Paracetamol 500 mg oral twice daily) and 2 stopped ones (Amoxicillin, status Discontinued; Metronidazole, status Completed).
-    *   **P-B** (demo patient with no medications): used for the add, save-error and sheet-behaviour checks.
+*   The checks run on the first demo patient (patient-ANC-0001) of the QA build. It has no active medication at the start, so the checks that need one add Ferrous Sulfate first. The header shows the name, gestational age, risk, age, parity, blood group and allergy line; blood pressure is not in the header and is checked on the Overview tab, not here.
 *   Launch the app with `adb shell monkey -p com.sherifradwan.anc.qa -c android.intent.category.LAUNCHER 1` or from the launcher.
 *   For each check, keep the UI dump and the screenshot named after the check id, for example `D01_tab.xml` and `D01_tab.png`. Keep dumps unmodified.
 *   Run the checks in the given order on each patient; the order keeps the demo data valid for the next check. Record the final state of P-A and P-B in the run log.
@@ -210,3 +208,7 @@ The QA build has the package `com.sherifradwan.anc.qa` and contains fictional de
 --------------------------------------------------------------------------------
 
 *Drafted with EGM*
+
+## Run log, 2026-11-11 (real phone, app-level actions only)
+
+`.agents/scripts/device_qa_meds.sh` ran 15 scripted checks (its own ids D00 to D15; they do not map one to one to the ids above): 15 pass, 0 fail, 0 skip. Judges (GLM; alphacode returned nothing) found these gaps in the script, all still open: the second add taking two taps, scroll position surviving an action, Cancel on an untouched form, system Back with the sheet open, the Show past state across a full add, stop and edit sequence, the scrim blocking entry points, the Stop date field, Enter between fields, and every emulator-only check (rotation, dark mode, large text, right-to-left). They also flagged layout points to look at by eye: the last picker tile and the last past row run under the navigation bar at the end of the scroll, and the clinical alert icon in the patient header is about 18 dp wide. Screenshots and dumps stay on the machine that ran the checks and are not committed.
