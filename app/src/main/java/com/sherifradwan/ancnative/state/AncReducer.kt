@@ -19,6 +19,7 @@ object AncReducer {
     private fun isValueChangeEvent(event: AncEvent): Boolean = when (event) {
         is AncEvent.DraftChanged,
         is AncEvent.PatientDraftChanged,
+        is AncEvent.DeliveryPlanFieldChanged,
         is AncEvent.HistoriesDraftChanged,
         is AncEvent.PregnancyDraftChanged,
         is AncEvent.StatusReasonChanged,
@@ -47,6 +48,7 @@ object AncReducer {
             }
             is AncEvent.StartVisit -> startVisit(state, event)
             is AncEvent.StartPatientEditor -> startPatientEditor(state, event)
+            is AncEvent.StartDeliveryPlanEditor -> startDeliveryPlanEditor(state, event)
             is AncEvent.StartHistoriesEditor -> startHistoriesEditor(state, event)
             is AncEvent.StartPregnancyEditor -> startPregnancyEditor(state, event)
             is AncEvent.StartStatusEditor -> startStatusEditor(state, event)
@@ -61,6 +63,7 @@ object AncReducer {
             AncEvent.DismissMedicationStopFailure -> state.withoutFailedMedicationQuickSave()
             is AncEvent.DraftChanged -> updateDraft(state, event)
             is AncEvent.PatientDraftChanged -> updatePatientDraft(state, event)
+            is AncEvent.DeliveryPlanFieldChanged -> updateDeliveryPlanField(state, event)
             is AncEvent.HistoriesDraftChanged -> updateHistoriesDraft(state, event)
             is AncEvent.PregnancyDraftChanged -> updatePregnancyDraft(state, event)
             is AncEvent.DatingDraftChanged -> updateDatingDraft(state, event)
@@ -152,7 +155,8 @@ object AncReducer {
                 state.clearDrafts().copy(
                     patients = event.patients,
                     // A one-tap stop or its Undo never moves the screen: the clinician may have changed tab meanwhile.
-                    route = if (quick != null) state.route else event.destination,
+                    // A save from the delivery plan sheet also stays: the sheet sits over the Plan tab.
+                    route = if (quick != null || state.patientDraft?.deliveryPlan != null) state.route else event.destination,
                     savedNotice = true,
                     notice = event.notice,
                     savePhase = SavePhase.IDLE,
@@ -434,6 +438,16 @@ object AncReducer {
             // The sheet sits over the workspace, so closing it never leaves the screen. The sheet has already asked
             // before it sends Cancel, and an untouched form closes at once; only a Back that bypassed the sheet asks here.
             return if (event == AncEvent.CancelEditor || !medicationDraft.touched) {
+                state.clearDrafts().copy(savedNotice = false, notice = null)
+            } else {
+                state.copy(showDiscardDialog = true, pendingAction = PendingAction.Navigate(state.route))
+            }
+        }
+        val deliveryPlan = state.patientDraft?.deliveryPlan
+        if (deliveryPlan != null) {
+            // The delivery sheet sits over the Plan tab, so closing it never leaves the screen. Same rule as the
+            // medication sheet: an untouched form closes at once, only a Back that bypassed the sheet asks here.
+            return if (event == AncEvent.CancelEditor || !deliveryPlan.touched) {
                 state.clearDrafts().copy(savedNotice = false, notice = null)
             } else {
                 state.copy(showDiscardDialog = true, pendingAction = PendingAction.Navigate(state.route))

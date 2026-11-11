@@ -1,0 +1,561 @@
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+<<<<<<< SEARCH
+enum class PatientEditorKind { PROFILE, HISTORIES, PREGNANCY, STATUS }
+=======
+enum class PatientEditorKind { PROFILE, HISTORIES, PREGNANCY, STATUS }
+
+enum class DeliveryPlanField { HOSPITAL, FEES, PLAN, POSTPARTUM }
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+<<<<<<< SEARCH
+data class PatientDraft(
+    val editorSessionId: String,
+    val patientId: String,
+    val baseRevision: Long?,
+    val createdAt: String?,
+    val original: PatientDraftValues,
+    val values: PatientDraftValues,
+    val errors: Set<PatientValidationError> = emptySet(),
+) {
+    val isDirty: Boolean get() = values != original
+}
+
+data class HistoriesDraftValues(
+=======
+data class PatientDraft(
+    val editorSessionId: String,
+    val patientId: String,
+    val baseRevision: Long?,
+    val createdAt: String?,
+    val original: PatientDraftValues,
+    val values: PatientDraftValues,
+    val errors: Set<PatientValidationError> = emptySet(),
+    val deliveryPlan: DeliveryPlanFields? = null,
+) {
+    val isDirty: Boolean get() = values != original
+}
+
+/**
+ * The four raw strings of the delivery plan sheet, held in state so the composer never re-parses the notes
+ * while the doctor types. [openedNotes] is the composed text of the stored notes at the moment the sheet
+ * opened, so [touched] stays false after a type-and-delete round trip (amendment A6).
+ */
+data class DeliveryPlanFields(
+    val hospital: String,
+    val fees: String,
+    val plan: String,
+    val postpartum: String,
+    val openedNotes: String,
+    val rewritesNotes: Boolean,
+) {
+    fun with(field: DeliveryPlanField, value: String): DeliveryPlanFields = when (field) {
+        DeliveryPlanField.HOSPITAL -> copy(hospital = value)
+        DeliveryPlanField.FEES -> copy(fees = value)
+        DeliveryPlanField.PLAN -> copy(plan = value)
+        DeliveryPlanField.POSTPARTUM -> copy(postpartum = value)
+    }
+
+    internal fun toSections(): com.sherifradwan.ancnative.model.DeliveryNoteSections =
+        com.sherifradwan.ancnative.model.DeliveryNoteSections(
+            hospital = hospital.takeIf { it.isNotBlank() },
+            fees = fees.takeIf { it.isNotBlank() },
+            plan = plan.takeIf { it.isNotBlank() },
+            postpartum = postpartum.takeIf { it.isNotBlank() },
+        )
+
+    val touched: Boolean
+        get() = composedNotes() != openedNotes
+
+    private fun composedNotes(): String = com.sherifradwan.ancnative.model.composeDeliveryNotes(toSections())
+}
+
+data class HistoriesDraftValues(
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+<<<<<<< SEARCH
+            medicationDraft?.isDirty == true ||
+            // A batch is unsaved work from the moment it holds a test, even before a result is typed.
+            labBatchDraft?.items?.isNotEmpty() == true
+}
+=======
+            medicationDraft?.isDirty == true ||
+            // A batch is unsaved work from the moment it holds a test, even before a result is typed.
+            labBatchDraft?.items?.isNotEmpty() == true
+}
+
+/** The draft that drives the delivery plan sheet over the Plan tab, only while it is open for this patient. */
+fun AncState.deliveryPlanSheetDraft(patientId: String): PatientDraft? =
+    patientDraft?.takeIf { it.deliveryPlan != null && it.patientId == patientId }
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/AncEvent.kt
+<<<<<<< SEARCH
+    data class StartPatientEditor(
+        val patientId: String?,
+        val newPatientId: String,
+        val editorSessionId: String,
+    ) : AncEvent
+=======
+    data class StartPatientEditor(
+        val patientId: String?,
+        val newPatientId: String,
+        val editorSessionId: String,
+    ) : AncEvent
+    data class StartDeliveryPlanEditor(val patientId: String, val editorSessionId: String) : AncEvent
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/AncEvent.kt
+<<<<<<< SEARCH
+    data class PatientDraftChanged(val field: PatientDraftField, val value: String) : AncEvent
+=======
+    data class PatientDraftChanged(val field: PatientDraftField, val value: String) : AncEvent
+    data class DeliveryPlanFieldChanged(val field: DeliveryPlanField, val value: String) : AncEvent
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/ClinicalDraftReducers.kt
+<<<<<<< SEARCH
+        savedNotice = false,
+        notice = null,
+    )
+}
+
+internal fun startHistoriesEditor(state: AncState, event: AncEvent.StartHistoriesEditor): AncState {
+=======
+        savedNotice = false,
+        notice = null,
+    )
+}
+
+internal fun startDeliveryPlanEditor(state: AncState, event: AncEvent.StartDeliveryPlanEditor): AncState {
+    if (state.savePhase.blocksEditing() || state.hasDirtyDraft) return state
+    val patient = state.patient(event.patientId)?.takeIf { it.status != "archived" } ?: return state
+    val values = patient.toPatientDraftValues()
+    val sections = com.sherifradwan.ancnative.model.parseDeliveryNotes(patient.obstetricNotes)
+    // The sheet sits over the Plan tab, so unlike the patient form it never swaps the route.
+    return state.clearDrafts().copy(
+        patientDraft = PatientDraft(
+            editorSessionId = event.editorSessionId,
+            patientId = patient.id,
+            baseRevision = patient.revision,
+            createdAt = patient.createdAt,
+            original = values,
+            values = values,
+            deliveryPlan = DeliveryPlanFields(
+                hospital = sections.hospital.orEmpty(),
+                fees = sections.fees.orEmpty(),
+                plan = sections.plan.orEmpty(),
+                postpartum = sections.postpartum.orEmpty(),
+                openedNotes = com.sherifradwan.ancnative.model.composeDeliveryNotes(sections),
+                rewritesNotes = !com.sherifradwan.ancnative.model.isComposedDeliveryNotes(patient.obstetricNotes),
+            ),
+        ),
+        savedNotice = false,
+        notice = null,
+    )
+}
+
+internal fun updateDeliveryPlanField(state: AncState, event: AncEvent.DeliveryPlanFieldChanged): AncState {
+    if (state.savePhase.blocksEditing()) return state
+    val draft = state.patientDraft ?: return state
+    val fields = draft.deliveryPlan ?: return state
+    val next = fields.with(event.field, event.value)
+    // An untouched draft keeps the stored notes verbatim, so a type-and-delete round trip is not a dirty draft.
+    val notes = if (next.touched) {
+        com.sherifradwan.ancnative.model.composeDeliveryNotes(next.toSections())
+    } else {
+        draft.original.obstetricNotes
+    }
+    return state.copy(
+        patientDraft = draft.copy(
+            deliveryPlan = next,
+            values = draft.values.copy(obstetricNotes = notes),
+            errors = emptySet(),
+        ),
+        savePhase = SavePhase.IDLE,
+        saveError = null,
+    )
+}
+
+internal fun startHistoriesEditor(state: AncState, event: AncEvent.StartHistoriesEditor): AncState {
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/AncReducer.kt
+<<<<<<< SEARCH
+        is AncEvent.DraftChanged,
+        is AncEvent.PatientDraftChanged,
+        is AncEvent.HistoriesDraftChanged,
+=======
+        is AncEvent.DraftChanged,
+        is AncEvent.PatientDraftChanged,
+        is AncEvent.DeliveryPlanFieldChanged,
+        is AncEvent.HistoriesDraftChanged,
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/AncReducer.kt
+<<<<<<< SEARCH
+            is AncEvent.StartPatientEditor -> startPatientEditor(state, event)
+=======
+            is AncEvent.StartPatientEditor -> startPatientEditor(state, event)
+            is AncEvent.StartDeliveryPlanEditor -> startDeliveryPlanEditor(state, event)
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/AncReducer.kt
+<<<<<<< SEARCH
+            is AncEvent.PatientDraftChanged -> updatePatientDraft(state, event)
+=======
+            is AncEvent.PatientDraftChanged -> updatePatientDraft(state, event)
+            is AncEvent.DeliveryPlanFieldChanged -> updateDeliveryPlanField(state, event)
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/AncReducer.kt
+<<<<<<< SEARCH
+                val quick = state.medicationQuickSave?.takeIf { it.draft.editorSessionId == event.token.editorSessionId }
+                state.clearDrafts().copy(
+                    patients = event.patients,
+                    // A one-tap stop or its Undo never moves the screen: the clinician may have changed tab meanwhile.
+                    route = if (quick != null) state.route else event.destination,
+=======
+                val quick = state.medicationQuickSave?.takeIf { it.draft.editorSessionId == event.token.editorSessionId }
+                state.clearDrafts().copy(
+                    patients = event.patients,
+                    // A one-tap stop or its Undo never moves the screen: the clinician may have changed tab meanwhile.
+                    // A save from the delivery plan sheet also stays: the sheet sits over the Plan tab.
+                    route = if (quick != null || state.patientDraft?.deliveryPlan != null) state.route else event.destination,
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/AncReducer.kt
+<<<<<<< SEARCH
+            } else {
+                state.copy(showDiscardDialog = true, pendingAction = PendingAction.Navigate(state.route))
+            }
+        }
+        val destination = when (val route = state.route) {
+=======
+            } else {
+                state.copy(showDiscardDialog = true, pendingAction = PendingAction.Navigate(state.route))
+            }
+        }
+        val deliveryPlan = state.patientDraft?.deliveryPlan
+        if (deliveryPlan != null) {
+            // The delivery sheet sits over the Plan tab, so closing it never leaves the screen. Same rule as the
+            // medication sheet: an untouched form closes at once, only a Back that bypassed the sheet asks here.
+            return if (event == AncEvent.CancelEditor || !deliveryPlan.touched) {
+                state.clearDrafts().copy(savedNotice = false, notice = null)
+            } else {
+                state.copy(showDiscardDialog = true, pendingAction = PendingAction.Navigate(state.route))
+            }
+        }
+        val destination = when (val route = state.route) {
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/ReducerSupport.kt
+<<<<<<< SEARCH
+    is AncEvent.StartVisit,
+    is AncEvent.StartPatientEditor,
+    is AncEvent.StartHistoriesEditor,
+=======
+    is AncEvent.StartVisit,
+    is AncEvent.StartPatientEditor,
+    is AncEvent.StartDeliveryPlanEditor,
+    is AncEvent.StartHistoriesEditor,
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/state/DeliveryPlanReducerTest.kt
+<<<<<<< SEARCH
+=======
+package com.sherifradwan.ancnative.state
+
+import com.sherifradwan.ancnative.model.DemoDatingRecord
+import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.model.PatientValidationError
+import com.sherifradwan.ancnative.model.composeDeliveryNotes
+import com.sherifradwan.ancnative.model.isComposedDeliveryNotes
+import com.sherifradwan.ancnative.model.parseDeliveryNotes
+import com.sherifradwan.ancnative.storage.VaultState
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+/** The delivery plan sheet in the reducer (design: Technical Plan Section 5, amendments A6, A11 and A13). */
+class DeliveryPlanReducerTest {
+    private val planTab = AncRoute.Workspace("p1", WorkspaceSection.PLAN)
+
+    // A hand-typed note in the old free format, so the sheet would rewrite it with the notice.
+    private val heuristicNotes = "Delivery Plan: CS at 39 weeks\nFees: 5000 EGP; includes 2 nights"
+
+    private fun patient(
+        status: String = "active",
+        obstetricNotes: String = "",
+        dating: DemoDatingRecord? = null,
+        lmpDate: String? = null,
+        revision: Long = 5L,
+    ) = DemoPatient(
+        id = "p1", caseId = "P1", displayName = "Patient One", dateOfBirth = "1995-01-01", phone = "01000000000",
+        visits = emptyList(), status = status, obstetricNotes = obstetricNotes, dating = dating, lmpDate = lmpDate,
+        revision = revision,
+    )
+
+    private val secondPatient = DemoPatient(
+        id = "p2", caseId = "P2", displayName = "Patient Two", dateOfBirth = "1990-01-01", phone = "01000000001",
+        visits = emptyList(), status = "active",
+    )
+
+    private val storedDating = DemoDatingRecord(method = "LMP", lmpDate = "2025-09-01", agreedEdd = "2026-06-15")
+
+    private fun base(vararg patients: DemoPatient = arrayOf(patient())) =
+        AncState(patients = patients.toList(), vaultState = VaultState.Unlocked(1L), route = planTab)
+
+    private fun AncState.reduce(event: AncEvent) = AncReducer.reduce(this, event)
+
+    // Built through the real parser and composer, so the fixture is in the stored format by construction.
+    private fun composedNotes() = composeDeliveryNotes(
+        parseDeliveryNotes(
+            "Agreed Delivery Hospital: Seha Hospital\n" +
+                "Agreed Delivery Fees: 5000 EGP\n" +
+                "Delivery Plan: CS at 39 weeks\n" +
+                "Postpartum Note: Book the 6 week visit",
+        ),
+    )
+
+    private fun start(state: AncState = base(), session: String = "s-plan") =
+        state.reduce(AncEvent.StartDeliveryPlanEditor("p1", session))
+
+    private fun change(state: AncState, value: String = "CS at 38 weeks") =
+        state.reduce(AncEvent.DeliveryPlanFieldChanged(DeliveryPlanField.PLAN, value))
+
+    private fun profileFormDraft(session: String = "s-form") = PatientDraft(
+        editorSessionId = session,
+        patientId = "p1",
+        baseRevision = 5L,
+        createdAt = null,
+        original = PatientDraftValues(),
+        values = PatientDraftValues(),
+    )
+
+    @Test
+    fun `start sets the delivery draft and keeps the route`() {
+        val state = start(base(patient(obstetricNotes = heuristicNotes)))
+        val draft = state.patientDraft
+        assertNotNull(draft)
+        assertEquals(planTab, state.route)
+        assertEquals("s-plan", draft?.editorSessionId)
+        assertEquals("p1", draft?.patientId)
+        assertEquals(5L, draft?.baseRevision)
+        val seeded = patient(obstetricNotes = heuristicNotes).toPatientDraftValues()
+        assertEquals(seeded, draft?.values)
+        assertEquals(draft?.values, draft?.original)
+        assertEquals(true, draft?.deliveryPlan?.rewritesNotes)
+        assertEquals("CS at 39 weeks", draft?.deliveryPlan?.plan)
+    }
+
+    @Test
+    fun `start on already composed notes does not rewrite`() {
+        val notes = composedNotes()
+        assertTrue(isComposedDeliveryNotes(notes))
+        val state = start(base(patient(obstetricNotes = notes)))
+        assertFalse(state.patientDraft?.deliveryPlan?.rewritesNotes ?: true)
+    }
+
+    @Test
+    fun `start does nothing for an archived patient`() {
+        val state = base(patient(status = "archived"))
+        assertEquals(state, state.reduce(AncEvent.StartDeliveryPlanEditor("p1", "s-plan")))
+    }
+
+    @Test
+    fun `start does nothing for an unknown patient`() {
+        val state = base()
+        assertEquals(state, state.reduce(AncEvent.StartDeliveryPlanEditor("unknown", "s-plan")))
+    }
+
+    @Test
+    fun `start does nothing while a save is running`() {
+        val state = base().copy(savePhase = SavePhase.RECONCILING)
+        assertEquals(state, state.reduce(AncEvent.StartDeliveryPlanEditor("p1", "s-plan")))
+    }
+
+    @Test
+    fun `start does nothing when another draft is dirty`() {
+        val dirty = PatientDraft(
+            editorSessionId = "s-other",
+            patientId = "p2",
+            baseRevision = null,
+            createdAt = null,
+            original = PatientDraftValues(),
+            values = PatientDraftValues(displayName = "Changed"),
+        )
+        val state = base().copy(patientDraft = dirty)
+        assertEquals(state, state.reduce(AncEvent.StartDeliveryPlanEditor("p1", "s-plan")))
+    }
+
+    @Test
+    fun `changing one field changes only that field and marks touched`() {
+        val before = start().patientDraft?.deliveryPlan
+        val next = change(start())
+        val fields = next.patientDraft?.deliveryPlan
+        assertNotNull(fields)
+        assertEquals("CS at 38 weeks", fields?.plan)
+        assertEquals(before?.hospital, fields?.hospital)
+        assertEquals(before?.fees, fields?.fees)
+        assertEquals(before?.postpartum, fields?.postpartum)
+        assertTrue(fields?.touched == true)
+        assertTrue(next.patientDraft?.isDirty == true)
+        assertTrue(next.hasDirtyDraft)
+    }
+
+    @Test
+    fun `a real change composes the notes into the draft values`() {
+        val state = start(base(patient(obstetricNotes = heuristicNotes)))
+        val next = change(state)
+        val fields = next.patientDraft?.deliveryPlan
+        assertEquals(composeDeliveryNotes(fields?.toSections()), next.patientDraft?.values?.obstetricNotes)
+        assertNotEquals(next.patientDraft?.original?.obstetricNotes, next.patientDraft?.values?.obstetricNotes)
+    }
+
+    @Test
+    fun `typing a character and deleting it is not touched and keeps the original notes`() {
+        val notes = composedNotes()
+        val typed = change(start(base(patient(obstetricNotes = notes))), "CS at 39 weeks!")
+        assertTrue(typed.patientDraft?.deliveryPlan?.touched == true)
+        val back = change(typed, "CS at 39 weeks")
+        assertFalse(back.patientDraft?.deliveryPlan?.touched ?: true)
+        assertEquals(notes, back.patientDraft?.values?.obstetricNotes)
+        assertFalse(back.patientDraft?.isDirty ?: true)
+        assertFalse(back.hasDirtyDraft)
+    }
+
+    @Test
+    fun `a field change clears errors and resets the save phase`() {
+        val started = start()
+        val failing = started.copy(
+            patientDraft = started.patientDraft?.copy(errors = setOf(PatientValidationError.DISPLAY_NAME)),
+            savePhase = SavePhase.ERROR,
+            saveError = SaveUiError.CONFIRMED_NOT_SAVED,
+        )
+        val next = change(failing)
+        assertEquals(emptySet<PatientValidationError>(), next.patientDraft?.errors)
+        assertEquals(SavePhase.IDLE, next.savePhase)
+        assertNull(next.saveError)
+    }
+
+    @Test
+    fun `a field change is ignored while a save is running`() {
+        val state = start().copy(savePhase = SavePhase.RECONCILING)
+        assertEquals(state, change(state))
+    }
+
+    @Test
+    fun `a field change is ignored when the draft has no delivery plan`() {
+        val state = base().copy(patientDraft = profileFormDraft())
+        assertEquals(state, change(state))
+    }
+
+    @Test
+    fun `a committed save from the sheet keeps the route`() {
+        val token = PendingSaveToken(editorSessionId = "s-plan")
+        val state = start().copy(pendingSave = token)
+        val committed = state.reduce(
+            AncEvent.RecordCommitted(token, listOf(patient(), secondPatient), AncRoute.PatientList, SavedNotice.VISIT),
+        )
+        assertEquals(planTab, committed.route)
+        assertNull(committed.patientDraft)
+    }
+
+    @Test
+    fun `a committed save from the profile form moves the route`() {
+        val token = PendingSaveToken(editorSessionId = "s-form")
+        val state = base().copy(
+            route = AncRoute.PatientEditor("p1", false),
+            patientDraft = profileFormDraft(),
+            pendingSave = token,
+        )
+        val committed = state.reduce(
+            AncEvent.RecordCommitted(token, listOf(patient(), secondPatient), AncRoute.PatientList, SavedNotice.VISIT),
+        )
+        assertEquals(AncRoute.PatientList, committed.route)
+    }
+
+    @Test
+    fun `cancel on an untouched sheet clears the drafts and keeps the route`() {
+        val state = start()
+        val next = state.reduce(AncEvent.CancelEditor)
+        assertEquals(planTab, next.route)
+        assertNull(next.patientDraft)
+        assertFalse(next.hasDirtyDraft)
+    }
+
+    @Test
+    fun `back on an untouched sheet closes at once and keeps the route`() {
+        val state = start()
+        val next = state.reduce(AncEvent.Back)
+        assertEquals(planTab, next.route)
+        assertNull(next.patientDraft)
+    }
+
+    @Test
+    fun `back on a touched sheet asks before discarding and confirm keeps the route`() {
+        val touched = change(start(base(patient(obstetricNotes = heuristicNotes))))
+        val asked = touched.reduce(AncEvent.Back)
+        assertTrue(asked.showDiscardDialog)
+        assertEquals(PendingAction.Navigate(planTab), asked.pendingAction)
+        assertEquals(planTab, asked.route)
+        assertNotNull(asked.patientDraft)
+        val kept = asked.reduce(AncEvent.KeepEditing)
+        assertFalse(kept.showDiscardDialog)
+        assertNull(kept.pendingAction)
+        val cleared = asked.reduce(AncEvent.ConfirmDiscard)
+        assertEquals(planTab, cleared.route)
+        assertNull(cleared.patientDraft)
+    }
+
+    @Test
+    fun `starting the patient editor still swaps the route`() {
+        val next = base().reduce(AncEvent.StartPatientEditor("p1", "new-1", "s-form"))
+        assertEquals(AncRoute.PatientEditor("p1", false), next.route)
+        assertNotNull(next.patientDraft)
+    }
+
+    @Test
+    fun `the sheet draft helper only matches its own patient`() {
+        val state = start(base(patient(), secondPatient))
+        assertNotNull(state.deliveryPlanSheetDraft("p1"))
+        assertNull(state.deliveryPlanSheetDraft("p2"))
+        assertNull(base().deliveryPlanSheetDraft("p1"))
+    }
+
+    @Test
+    fun `hasDirtyDraft stays false after start and turns true on a real change`() {
+        val state = start(base(patient(obstetricNotes = heuristicNotes)))
+        assertFalse(state.hasDirtyDraft)
+        val next = change(state)
+        assertTrue(next.hasDirtyDraft)
+    }
+
+    @Test
+    fun `intake dating update is null with a stored dating record`() {
+        val dated = patient(dating = storedDating)
+        val draft = checkNotNull(start(base(dated, secondPatient)).patientDraft)
+        assertNull(intakeDatingUpdate(dated.dating, draft.values))
+    }
+
+    @Test
+    fun `intake dating update is null with only an LMP`() {
+        val lmpOnly = patient(lmpDate = "2025-09-01")
+        val draft = checkNotNull(start(base(lmpOnly, secondPatient)).patientDraft)
+        assertNull(intakeDatingUpdate(lmpOnly.dating, draft.values))
+    }
+
+    @Test
+    fun `intake dating update is null with no dating at all`() {
+        val plain = patient()
+        val draft = checkNotNull(start(base(plain, secondPatient)).patientDraft)
+        assertNull(intakeDatingUpdate(plain.dating, draft.values))
+    }
+}
+>>>>>>> REPLACE

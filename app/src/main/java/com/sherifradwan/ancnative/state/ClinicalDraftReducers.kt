@@ -6,7 +6,10 @@ import com.sherifradwan.ancnative.model.DemoPatientDating
 import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
 import com.sherifradwan.ancnative.model.DemoUltrasoundScan
 import com.sherifradwan.ancnative.model.DemoVisit
+import com.sherifradwan.ancnative.model.composeDeliveryNotes
+import com.sherifradwan.ancnative.model.isComposedDeliveryNotes
 import com.sherifradwan.ancnative.model.parseBloodPressure
+import com.sherifradwan.ancnative.model.parseDeliveryNotes
 import com.sherifradwan.ancnative.model.parseVisitFindings
 
 internal fun startVisit(state: AncState, event: AncEvent.StartVisit): AncState {
@@ -60,6 +63,58 @@ internal fun startPatientEditor(state: AncState, event: AncEvent.StartPatientEdi
         ),
         savedNotice = false,
         notice = null,
+    )
+}
+
+internal fun startDeliveryPlanEditor(state: AncState, event: AncEvent.StartDeliveryPlanEditor): AncState {
+    if (state.savePhase.blocksEditing() || state.hasDirtyDraft) return state
+    val patient = state.patient(event.patientId)?.takeIf { it.status != "archived" } ?: return state
+    val values = patient.toPatientDraftValues()
+    val sections = parseDeliveryNotes(patient.obstetricNotes)
+    // The sheet sits over the Plan tab, so unlike the patient form it never swaps the route.
+    return state.clearDrafts().copy(
+        patientDraft = PatientDraft(
+            editorSessionId = event.editorSessionId,
+            patientId = patient.id,
+            baseRevision = patient.revision,
+            createdAt = patient.createdAt,
+            original = values,
+            values = values,
+            deliveryPlan = DeliveryPlanFields(
+                hospital = sections.hospital.orEmpty(),
+                fees = sections.fees.orEmpty(),
+                plan = sections.plan.orEmpty(),
+                postpartum = sections.postpartum.orEmpty(),
+                openedNotes = composeDeliveryNotes(sections),
+                rewritesNotes = !isComposedDeliveryNotes(patient.obstetricNotes),
+            ),
+        ),
+        savePhase = SavePhase.IDLE,
+        saveError = null,
+        savedNotice = false,
+        notice = null,
+    )
+}
+
+internal fun updateDeliveryPlanField(state: AncState, event: AncEvent.DeliveryPlanFieldChanged): AncState {
+    if (state.savePhase.blocksEditing()) return state
+    val draft = state.patientDraft ?: return state
+    val fields = draft.deliveryPlan ?: return state
+    val next = fields.with(event.field, event.value)
+    // An untouched draft keeps the stored notes verbatim, so a type-and-delete round trip is not a dirty draft.
+    val notes = if (next.touched) {
+        composeDeliveryNotes(next.toSections())
+    } else {
+        draft.original.obstetricNotes
+    }
+    return state.copy(
+        patientDraft = draft.copy(
+            deliveryPlan = next,
+            values = draft.values.copy(obstetricNotes = notes),
+            errors = emptySet(),
+        ),
+        savePhase = SavePhase.IDLE,
+        saveError = null,
     )
 }
 

@@ -1,0 +1,239 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/AncEvent.kt b/app/src/main/java/com/sherifradwan/ancnative/state/AncEvent.kt
+index 9e7a1f8..b5c5fa2 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/state/AncEvent.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/AncEvent.kt
+@@ -18,6 +18,7 @@ sealed interface AncEvent {
+         val newPatientId: String,
+         val editorSessionId: String,
+     ) : AncEvent
++    data class StartDeliveryPlanEditor(val patientId: String, val editorSessionId: String) : AncEvent
+     data class StartHistoriesEditor(val patientId: String, val editorSessionId: String) : AncEvent
+     data class StartPregnancyEditor(
+         val patientId: String,
+@@ -32,6 +33,7 @@ sealed interface AncEvent {
+     ) : AncEvent
+     data class DraftChanged(val field: DraftField, val value: String) : AncEvent
+     data class PatientDraftChanged(val field: PatientDraftField, val value: String) : AncEvent
++    data class DeliveryPlanFieldChanged(val field: DeliveryPlanField, val value: String) : AncEvent
+     data class HistoriesDraftChanged(val field: HistoriesDraftField, val value: String) : AncEvent
+     data class PregnancyDraftChanged(val field: PregnancyDraftField, val value: String) : AncEvent
+     data class StatusReasonChanged(val value: String) : AncEvent
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/AncReducer.kt b/app/src/main/java/com/sherifradwan/ancnative/state/AncReducer.kt
+index 7894e32..b2315dc 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/state/AncReducer.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/AncReducer.kt
+@@ -19,6 +19,7 @@ object AncReducer {
+     private fun isValueChangeEvent(event: AncEvent): Boolean = when (event) {
+         is AncEvent.DraftChanged,
+         is AncEvent.PatientDraftChanged,
++        is AncEvent.DeliveryPlanFieldChanged,
+         is AncEvent.HistoriesDraftChanged,
+         is AncEvent.PregnancyDraftChanged,
+         is AncEvent.StatusReasonChanged,
+@@ -47,6 +48,7 @@ object AncReducer {
+             }
+             is AncEvent.StartVisit -> startVisit(state, event)
+             is AncEvent.StartPatientEditor -> startPatientEditor(state, event)
++            is AncEvent.StartDeliveryPlanEditor -> startDeliveryPlanEditor(state, event)
+             is AncEvent.StartHistoriesEditor -> startHistoriesEditor(state, event)
+             is AncEvent.StartPregnancyEditor -> startPregnancyEditor(state, event)
+             is AncEvent.StartStatusEditor -> startStatusEditor(state, event)
+@@ -61,6 +63,7 @@ object AncReducer {
+             AncEvent.DismissMedicationStopFailure -> state.withoutFailedMedicationQuickSave()
+             is AncEvent.DraftChanged -> updateDraft(state, event)
+             is AncEvent.PatientDraftChanged -> updatePatientDraft(state, event)
++            is AncEvent.DeliveryPlanFieldChanged -> updateDeliveryPlanField(state, event)
+             is AncEvent.HistoriesDraftChanged -> updateHistoriesDraft(state, event)
+             is AncEvent.PregnancyDraftChanged -> updatePregnancyDraft(state, event)
+             is AncEvent.DatingDraftChanged -> updateDatingDraft(state, event)
+@@ -152,7 +155,8 @@ object AncReducer {
+                 state.clearDrafts().copy(
+                     patients = event.patients,
+                     // A one-tap stop or its Undo never moves the screen: the clinician may have changed tab meanwhile.
+-                    route = if (quick != null) state.route else event.destination,
++                    // A save from the delivery plan sheet also stays: the sheet sits over the Plan tab.
++                    route = if (quick != null || state.patientDraft?.deliveryPlan != null) state.route else event.destination,
+                     savedNotice = true,
+                     notice = event.notice,
+                     savePhase = SavePhase.IDLE,
+@@ -439,6 +443,16 @@ object AncReducer {
+                 state.copy(showDiscardDialog = true, pendingAction = PendingAction.Navigate(state.route))
+             }
+         }
++        val deliveryPlan = state.patientDraft?.deliveryPlan
++        if (deliveryPlan != null) {
++            // The delivery sheet sits over the Plan tab, so closing it never leaves the screen. Same rule as the
++            // medication sheet: an untouched form closes at once, only a Back that bypassed the sheet asks here.
++            return if (event == AncEvent.CancelEditor || !deliveryPlan.touched) {
++                state.clearDrafts().copy(savedNotice = false, notice = null)
++            } else {
++                state.copy(showDiscardDialog = true, pendingAction = PendingAction.Navigate(state.route))
++            }
++        }
+         val destination = when (val route = state.route) {
+             AncRoute.PatientList -> return state
+             is AncRoute.Workspace -> AncRoute.PatientList
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt b/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+index 449dc38..ca90e0d 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+@@ -1,9 +1,11 @@
+ package com.sherifradwan.ancnative.state
+ 
+ import com.sherifradwan.ancnative.R
+-import com.sherifradwan.ancnative.model.DemoPatient
+ import com.sherifradwan.ancnative.model.ClinicalVocabulary
++import com.sherifradwan.ancnative.model.DeliveryNoteSections
++import com.sherifradwan.ancnative.model.DemoPatient
+ import com.sherifradwan.ancnative.model.PatientValidationError
++import com.sherifradwan.ancnative.model.composeDeliveryNotes
+ import com.sherifradwan.ancnative.storage.DeletableRecord
+ import com.sherifradwan.ancnative.storage.DeletableRegistry
+ import com.sherifradwan.ancnative.storage.DeletableType
+@@ -263,6 +265,8 @@ fun SavedNotice?.stringRes(): Int = when (this) {
+ }
+ enum class PatientEditorKind { PROFILE, HISTORIES, PREGNANCY, STATUS }
+ 
++enum class DeliveryPlanField { HOSPITAL, FEES, PLAN, POSTPARTUM }
++
+ data class PendingDeletion(
+     val patientId: String,
+     val type: DeletableType,
+@@ -472,10 +476,45 @@ data class PatientDraft(
+     val original: PatientDraftValues,
+     val values: PatientDraftValues,
+     val errors: Set<PatientValidationError> = emptySet(),
++    val deliveryPlan: DeliveryPlanFields? = null,
+ ) {
+     val isDirty: Boolean get() = values != original
+ }
+ 
++/**
++ * The four raw strings of the delivery plan sheet, held in state so the composer never re-parses the notes
++ * while the doctor types. [openedNotes] is the composed text of the stored notes at the moment the sheet
++ * opened, so [touched] stays false after a type-and-delete round trip (amendment A6).
++ */
++data class DeliveryPlanFields(
++    val hospital: String,
++    val fees: String,
++    val plan: String,
++    val postpartum: String,
++    val openedNotes: String,
++    val rewritesNotes: Boolean,
++) {
++    fun with(field: DeliveryPlanField, value: String): DeliveryPlanFields = when (field) {
++        DeliveryPlanField.HOSPITAL -> copy(hospital = value)
++        DeliveryPlanField.FEES -> copy(fees = value)
++        DeliveryPlanField.PLAN -> copy(plan = value)
++        DeliveryPlanField.POSTPARTUM -> copy(postpartum = value)
++    }
++
++    internal fun toSections(): DeliveryNoteSections =
++        DeliveryNoteSections(
++            hospital = hospital.takeIf { it.isNotBlank() },
++            fees = fees.takeIf { it.isNotBlank() },
++            plan = plan.takeIf { it.isNotBlank() },
++            postpartum = postpartum.takeIf { it.isNotBlank() },
++        )
++
++    val touched: Boolean
++        get() = composedNotes() != openedNotes
++
++    private fun composedNotes(): String = composeDeliveryNotes(toSections())
++}
++
+ data class HistoriesDraftValues(
+     val medicalHistory: String = "",
+     val surgicalHistory: String = "",
+@@ -752,3 +791,7 @@ data class AncState(
+             // A batch is unsaved work from the moment it holds a test, even before a result is typed.
+             labBatchDraft?.items?.isNotEmpty() == true
+ }
++
++/** The draft that drives the delivery plan sheet over the Plan tab, only while it is open for this patient. */
++fun AncState.deliveryPlanSheetDraft(patientId: String): PatientDraft? =
++    patientDraft?.takeIf { it.deliveryPlan != null && it.patientId == patientId }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/ClinicalDraftReducers.kt b/app/src/main/java/com/sherifradwan/ancnative/state/ClinicalDraftReducers.kt
+index 951f16c..3cc0899 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/state/ClinicalDraftReducers.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/ClinicalDraftReducers.kt
+@@ -6,7 +6,10 @@ import com.sherifradwan.ancnative.model.DemoPatientDating
+ import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
+ import com.sherifradwan.ancnative.model.DemoUltrasoundScan
+ import com.sherifradwan.ancnative.model.DemoVisit
++import com.sherifradwan.ancnative.model.composeDeliveryNotes
++import com.sherifradwan.ancnative.model.isComposedDeliveryNotes
+ import com.sherifradwan.ancnative.model.parseBloodPressure
++import com.sherifradwan.ancnative.model.parseDeliveryNotes
+ import com.sherifradwan.ancnative.model.parseVisitFindings
+ 
+ internal fun startVisit(state: AncState, event: AncEvent.StartVisit): AncState {
+@@ -63,6 +66,56 @@ internal fun startPatientEditor(state: AncState, event: AncEvent.StartPatientEdi
+     )
+ }
+ 
++internal fun startDeliveryPlanEditor(state: AncState, event: AncEvent.StartDeliveryPlanEditor): AncState {
++    if (state.savePhase.blocksEditing() || state.hasDirtyDraft) return state
++    val patient = state.patient(event.patientId)?.takeIf { it.status != "archived" } ?: return state
++    val values = patient.toPatientDraftValues()
++    val sections = parseDeliveryNotes(patient.obstetricNotes)
++    // The sheet sits over the Plan tab, so unlike the patient form it never swaps the route.
++    return state.clearDrafts().copy(
++        patientDraft = PatientDraft(
++            editorSessionId = event.editorSessionId,
++            patientId = patient.id,
++            baseRevision = patient.revision,
++            createdAt = patient.createdAt,
++            original = values,
++            values = values,
++            deliveryPlan = DeliveryPlanFields(
++                hospital = sections.hospital.orEmpty(),
++                fees = sections.fees.orEmpty(),
++                plan = sections.plan.orEmpty(),
++                postpartum = sections.postpartum.orEmpty(),
++                openedNotes = composeDeliveryNotes(sections),
++                rewritesNotes = !isComposedDeliveryNotes(patient.obstetricNotes),
++            ),
++        ),
++        savedNotice = false,
++        notice = null,
++    )
++}
++
++internal fun updateDeliveryPlanField(state: AncState, event: AncEvent.DeliveryPlanFieldChanged): AncState {
++    if (state.savePhase.blocksEditing()) return state
++    val draft = state.patientDraft ?: return state
++    val fields = draft.deliveryPlan ?: return state
++    val next = fields.with(event.field, event.value)
++    // An untouched draft keeps the stored notes verbatim, so a type-and-delete round trip is not a dirty draft.
++    val notes = if (next.touched) {
++        composeDeliveryNotes(next.toSections())
++    } else {
++        draft.original.obstetricNotes
++    }
++    return state.copy(
++        patientDraft = draft.copy(
++            deliveryPlan = next,
++            values = draft.values.copy(obstetricNotes = notes),
++            errors = emptySet(),
++        ),
++        savePhase = SavePhase.IDLE,
++        saveError = null,
++    )
++}
++
+ internal fun startHistoriesEditor(state: AncState, event: AncEvent.StartHistoriesEditor): AncState {
+     if (state.savePhase.blocksEditing() || state.hasDirtyDraft) return state
+     val patient = state.patient(event.patientId)?.takeIf { it.status != "archived" } ?: return state
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/ReducerSupport.kt b/app/src/main/java/com/sherifradwan/ancnative/state/ReducerSupport.kt
+index 89ef643..5d8d393 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/state/ReducerSupport.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/ReducerSupport.kt
+@@ -5,6 +5,7 @@ internal fun AncEvent.startsAnotherAction(): Boolean = when (this) {
+     is AncEvent.SelectSection,
+     is AncEvent.StartVisit,
+     is AncEvent.StartPatientEditor,
++    is AncEvent.StartDeliveryPlanEditor,
+     is AncEvent.StartHistoriesEditor,
+     is AncEvent.StartPregnancyEditor,
+     is AncEvent.StartStatusEditor,

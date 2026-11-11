@@ -18,6 +18,7 @@ sealed interface AncEvent {
         val newPatientId: String,
         val editorSessionId: String,
     ) : AncEvent
+    data class StartDeliveryPlanEditor(val patientId: String, val editorSessionId: String) : AncEvent
     data class StartHistoriesEditor(val patientId: String, val editorSessionId: String) : AncEvent
     data class StartPregnancyEditor(
         val patientId: String,
@@ -32,6 +33,7 @@ sealed interface AncEvent {
     ) : AncEvent
     data class DraftChanged(val field: DraftField, val value: String) : AncEvent
     data class PatientDraftChanged(val field: PatientDraftField, val value: String) : AncEvent
+    data class DeliveryPlanFieldChanged(val field: DeliveryPlanField, val value: String) : AncEvent
     data class HistoriesDraftChanged(val field: HistoriesDraftField, val value: String) : AncEvent
     data class PregnancyDraftChanged(val field: PregnancyDraftField, val value: String) : AncEvent
     data class StatusReasonChanged(val value: String) : AncEvent

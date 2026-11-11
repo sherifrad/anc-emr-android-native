@@ -1,9 +1,11 @@
 package com.sherifradwan.ancnative.state
 
 import com.sherifradwan.ancnative.R
-import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.ClinicalVocabulary
+import com.sherifradwan.ancnative.model.DeliveryNoteSections
+import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.PatientValidationError
+import com.sherifradwan.ancnative.model.composeDeliveryNotes
 import com.sherifradwan.ancnative.storage.DeletableRecord
 import com.sherifradwan.ancnative.storage.DeletableRegistry
 import com.sherifradwan.ancnative.storage.DeletableType
@@ -263,6 +265,8 @@ fun SavedNotice?.stringRes(): Int = when (this) {
 }
 enum class PatientEditorKind { PROFILE, HISTORIES, PREGNANCY, STATUS }
 
+enum class DeliveryPlanField { HOSPITAL, FEES, PLAN, POSTPARTUM }
+
 data class PendingDeletion(
     val patientId: String,
     val type: DeletableType,
@@ -472,8 +476,43 @@ data class PatientDraft(
     val original: PatientDraftValues,
     val values: PatientDraftValues,
     val errors: Set<PatientValidationError> = emptySet(),
+    val deliveryPlan: DeliveryPlanFields? = null,
 ) {
     val isDirty: Boolean get() = values != original
+}
+
+/**
+ * The four raw strings of the delivery plan sheet, held in state so the composer never re-parses the notes
+ * while the doctor types. [openedNotes] is the composed text of the stored notes at the moment the sheet
+ * opened, so [touched] stays false after a type-and-delete round trip (amendment A6).
+ */
+data class DeliveryPlanFields(
+    val hospital: String,
+    val fees: String,
+    val plan: String,
+    val postpartum: String,
+    val openedNotes: String,
+    val rewritesNotes: Boolean,
+) {
+    fun with(field: DeliveryPlanField, value: String): DeliveryPlanFields = when (field) {
+        DeliveryPlanField.HOSPITAL -> copy(hospital = value)
+        DeliveryPlanField.FEES -> copy(fees = value)
+        DeliveryPlanField.PLAN -> copy(plan = value)
+        DeliveryPlanField.POSTPARTUM -> copy(postpartum = value)
+    }
+
+    internal fun toSections(): DeliveryNoteSections =
+        DeliveryNoteSections(
+            hospital = hospital.takeIf { it.isNotBlank() },
+            fees = fees.takeIf { it.isNotBlank() },
+            plan = plan.takeIf { it.isNotBlank() },
+            postpartum = postpartum.takeIf { it.isNotBlank() },
+        )
+
+    val touched: Boolean
+        get() = composedNotes() != openedNotes
+
+    private fun composedNotes(): String = composeDeliveryNotes(toSections())
 }
 
 data class HistoriesDraftValues(
@@ -752,3 +791,7 @@ data class AncState(
             // A batch is unsaved work from the moment it holds a test, even before a result is typed.
             labBatchDraft?.items?.isNotEmpty() == true
 }
+
+/** The draft that drives the delivery plan sheet over the Plan tab, only while it is open for this patient. */
+fun AncState.deliveryPlanSheetDraft(patientId: String): PatientDraft? =
+    patientDraft?.takeIf { it.deliveryPlan != null && it.patientId == patientId }

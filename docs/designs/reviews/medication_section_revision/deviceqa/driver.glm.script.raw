@@ -1,0 +1,463 @@
+```bash
+#!/usr/bin/env bash
+# device_qa_meds.sh <adb-serial> <out_dir> [--system-checks]
+# QA driver for the ANC Meds tab on the fictional demo patient in the QA app.
+# Without --system-checks only app level actions are used (tap, input, keyevent,
+# swipe, screencap, uiautomator dump). System settings are touched only with
+# --system-checks and only on an emulator- serial, and every changed setting is
+# restored, including on exit through a trap.
+set -u
+
+SERIAL="${1:?usage: device_qa_meds.sh <adb-serial> <out_dir> [--system-checks]}"
+OUT_DIR="${2:?usage: device_qa_meds.sh <adb-serial> <out_dir> [--system-checks]}"
+SYSTEM_CHECKS=0
+[ "${3:-}" = "--system-checks" ] && SYSTEM_CHECKS=1
+
+APP="com.sherifradwan.anc.qa/com.sherifradwan.ancnative.MainActivity"
+RESULTS="$OUT_DIR/results.txt"
+
+HERE="$(cd "$(dirname "$0")" && pwd)"
+if [ -f "$HERE/../.agents/scripts/tap_text_on_device.sh" ]; then
+  HELPER="$HERE/../.agents/scripts/tap_text_on_device.sh"
+else
+  HELPER=".agents/scripts/tap_text_on_device.sh"
+fi
+
+SNAPSHOT=0
+CHECKNO=0
+FAILS=0
+DUMP=""
+
+mkdir -p "$OUT_DIR"
+: > "$RESULTS"
+
+SYSTEM_OK=0
+if [ "$SYSTEM_CHECKS" = 1 ]; then
+  case "$SERIAL" in
+    emulator-*) SYSTEM_OK=1 ;;
+    *) echo "REFUSED system checks on a real device" ;;
+  esac
+fi
+
+# Saved settings values, only used when SYSTEM_OK is 1.
+SAVED_ACCEL=""
+SAVED_ROT=""
+SAVED_NIGHT=""
+SAVED_FONT=""
+
+save_settings() {
+  SAVED_ACCEL=$(adb -s "$SERIAL" settings get system accelerometer_rotation 2>/dev/null)
+  SAVED_ROT=$(adb -s "$SERIAL" settings get system user_rotation 2>/dev/null)
+  SAVED_FONT=$(adb -s "$SERIAL" settings get system font_scale 2>/dev/null)
+  SAVED_NIGHT=$(adb -s "$SERIAL" shell cmd uimode night 2>/dev/null | grep -oE '(yes|no)' | tail -n1)
+  # Fall back to known defaults when a value cannot be read.
+  [ -n "$SAVED_ACCEL" ] || SAVED_ACCEL="1"
+  [ -n "$SAVED_ROT" ] || SAVED_ROT="0"
+  [ -n "$SAVED_FONT" ] || SAVED_FONT="1.0"
+  [ -n "$SAVED_NIGHT" ] || SAVED_NIGHT="no"
+}
+
+restore_settings() {
+  [ "$SYSTEM_OK" = 1 ] || return 0
+  adb -s "$SERIAL" settings put system accelerometer_rotation "$SAVED_ACCEL" >/dev/null 2>&1
+  adb -s "$SERIAL" settings put system user_rotation "$SAVED_ROT" >/dev/null 2>&1
+  adb -s "$SERIAL" settings put system font_scale "$SAVED_FONT" >/dev/null 2>&1
+  adb -s "$SERIAL" shell cmd uimode night "$SAVED_NIGHT" >/dev/null 2>&1
+}
+trap restore_settings EXIT
+
+# dump <name>: fresh uiautomator dump saved as NN_name.xml and set as current DUMP
+dump() {
+  SNAPSHOT=$((SNAPSHOT+1))
+  local f
+  f="$OUT_DIR/$(printf '%02d' "$SNAPSHOT")_$1.xml"
+  adb -s "$SERIAL" shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
+  adb -s "$SERIAL" pull /sdcard/ui.xml "$f" >/dev/null 2>&1
+  DUMP="$f"
+}
+
+# shot <name>: screenshot saved as NN_name.png, same number as the last dump
+shot() {
+  local f
+  f="$OUT_DIR/$(printf '%02d' "$SNAPSHOT")_$1.png"
+  adb -s "$SERIAL" shell screencap -p /sdcard/ui_shot.png >/dev/null 2>&1
+  adb -s "$SERIAL" pull /sdcard/ui_shot.png "$f" >/dev/null 2>&1
+}
+
+tap() { # tap <substring of text, content-desc or resource-id>
+  "$HELPER" "$SERIAL" "$1"
+}
+
+has_id() { # exact resource-id present in current dump
+  [ -f "$DUMP" ] && grep -q "resource-id=\"$1\"" "$DUMP"
+}
+
+count_ids() { # count_ids <resource-id prefix>
+  [ -f "$DUMP" ] || { echo 0; return; }
+  grep -o "resource-id=\"$1[^\"]*\"" "$DUMP" 2>/dev/null | wc -l | tr -d ' '
+}
+
+check() { # check <short text> <reason on failure> <condition command...>
+  local short="$1" reason="$2"
+  shift 2
+  local id
+  CHECKNO=$((CHECKNO+1))
+  id=$(printf 'D%02d' "$CHECKNO")
+  if "$@" >/dev/null 2>&1; then
+    echo "PASS $id $short" | tee -a "$RESULTS" >/dev/null
+  else
+    echo "FAIL $id $short - $reason" | tee -a "$RESULTS" >/dev/null
+    FAILS=$((FAILS+1))
+  fi
+}
+
+skip() { # skip <short text>
+  local id
+  CHECKNO=$((CHECKNO+1))
+  id=$(printf 'D%02d' "$CHECKNO")
+  echo "SKIP $id $1" | tee -a "$RESULTS" >/dev/null
+}
+
+screen_wh() { # prints "W H" from the dump root bounds
+python3 - "$DUMP" <<'PY'
+import sys,re,xml.etree.ElementTree as ET
+for n in ET.parse(sys.argv[1]).iter('node'):
+    m=re.findall(r'\d+',n.get('bounds') or '')
+    if len(m)==4:
+        print(int(m[2])-int(m[0]),int(m[3])-int(m[1])); sys.exit(0)
+sys.exit(1)
+PY
+}
+
+screen_dims() { # sets SWID and SHEI with fallback
+  local d
+  d=$(screen_wh 2>/dev/null || true)
+  SWID=${d% *}
+  SHEI=${d#* }
+  case "$SWID" in ''|*[!0-9]*) SWID=1080 ;; esac
+  case "$SHEI" in ''|*[!0-9]*) SHEI=2400 ;; esac
+}
+
+node_bounds() { # node_bounds <exact resource-id> prints x0 y0 x1 y1
+python3 - "$DUMP" "$1" <<'PY'
+import sys,re,xml.etree.ElementTree as ET
+want=sys.argv[2]
+for n in ET.parse(sys.argv[1]).iter('node'):
+    if (n.get('resource-id') or '')==want:
+        b=' '.join(re.findall(r'-?\d+',n.get('bounds') or ''))
+        if b: print(b); sys.exit(0)
+sys.exit(1)
+PY
+}
+
+id_text_contains() { # id_text_contains <resource-id> <substring>, searches node and descendants
+python3 - "$DUMP" "$1" "$2" <<'PY'
+import sys,xml.etree.ElementTree as ET
+want,sub=sys.argv[2],sys.argv[3]
+for n in ET.parse(sys.argv[1]).iter('node'):
+    if (n.get('resource-id') or '')==want:
+        stack=[n]
+        while stack:
+            t=stack.pop()
+            if sub in (t.get('text') or ''): sys.exit(0)
+            stack.extend(list(t))
+sys.exit(1)
+PY
+}
+
+keyboard_top() { # top y of the soft keyboard from dumpsys window, empty when unreadable
+  local out top
+  out=$(adb -s "$SERIAL" shell dumpsys window 2>/dev/null | awk '
+    /InputMethod/ {im=1}
+    im && /frame=\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]/ {print; exit}
+    im && /^  Window #[0-9]+ Window/ && !/InputMethod/ {im=0}
+  ' | head -n1)
+  [ -n "$out" ] || return 1
+  top=$(printf '%s' "$out" | sed -E 's/.*frame=\[[0-9]+,([0-9]+)\]\[[0-9]+,[0-9]+\].*/\1/')
+  case "$top" in ''|*[!0-9]*) return 1 ;; esac
+  echo "$top"
+}
+
+tile_bottom() { # bottom y of the first medTile- node
+python3 - "$DUMP" <<'PY'
+import sys,re,xml.etree.ElementTree as ET
+for n in ET.parse(sys.argv[1]).iter('node'):
+    if (n.get('resource-id') or '').startswith('medTile-'):
+        m=re.findall(r'\d+',n.get('bounds') or '')
+        if len(m)==4: print(m[3]); sys.exit(0)
+sys.exit(1)
+PY
+}
+
+tap_first_inactive_tile() { # coords of first medTile- with no medTileCheck- child
+python3 - "$DUMP" <<'PY'
+import sys,re,xml.etree.ElementTree as ET
+for n in ET.parse(sys.argv[1]).iter('node'):
+    r=n.get('resource-id') or ''
+    if not r.startswith('medTile-'):
+        continue
+    if any((c.get('resource-id') or '').startswith('medTileCheck-') for c in n.iter('node') if c is not n):
+        continue
+    m=re.findall(r'\d+',n.get('bounds') or '')
+    if len(m)==4:
+        print((int(m[0])+int(m[2]))//2,(int(m[1])+int(m[3]))//2); sys.exit(0)
+sys.exit(3)
+PY
+}
+
+wait_for_id() { # wait_for_id <id> <seconds>, poll without saving dumps
+  local id="$1" t="${2:-15}" i=0
+  while [ "$i" -lt "$t" ]; do
+    if adb -s "$SERIAL" shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 \
+       && adb -s "$SERIAL" shell cat /sdcard/ui.xml 2>/dev/null | grep -q "resource-id=\"$id\""; then
+      return 0
+    fi
+    i=$((i+1)); sleep 1
+  done
+  return 1
+}
+
+# predicates used by check
+meds_list_visible() { has_id medsTabContent && has_id medsActiveTitle; }
+picker_collapsed() { has_id medPickerToggle && ! has_id medSearchField; }
+tile_above_keyboard() { [ -n "$TILE_BOTTOM" ] && [ "$TILE_BOTTOM" -lt "$KTOP" ]; }
+inactive_tile_tapped() { [ "$TILE_TAPPED" = 1 ]; }
+sheet_closed() { ! has_id medicationSheet; }
+count_grew_by_one() { [ "$MEDS_AFTER" -eq $((MEDS_BEFORE+1)) ]; }
+active_list_restored() { [ "$UNDONE_COUNT" -eq "$MEDS_AFTER" ]; }
+sheet_has_chosen_freq() {
+python3 - "$DUMP" <<'PY'
+import sys,xml.etree.ElementTree as ET
+for n in ET.parse(sys.argv[1]).iter('node'):
+    r=n.get('resource-id') or ''
+    if r.startswith('medFreqChoice-') and (n.get('checked')=='true' or n.get('selected')=='true'):
+        sys.exit(0)
+sys.exit(1)
+PY
+}
+past_list_open() {
+python3 - "$DUMP" <<'PY'
+import sys,xml.etree.ElementTree as ET
+for n in ET.parse(sys.argv[1]).iter('node'):
+    if (n.get('resource-id') or '').startswith('medPast'):
+        sys.exit(0)
+sys.exit(1)
+PY
+}
+sheet_still_open_with_error() { has_id medicationSheet && has_id medFreqError; }
+freq_error_on_screen() {
+  local y
+  y=$(node_bounds medFreqError 2>/dev/null | awk '{print $4}')
+  [ -n "$y" ] && [ "$y" -le "$SHEI" ]
+}
+patient_name_not_cut() { [ -n "$PNW" ] && [ "$PNW" -ge $((SWID*6/10)) ]; }
+dark_mode_on() { adb -s "$SERIAL" shell cmd uimode night 2>/dev/null | grep -qi yes; }
+
+# ---------- main flow ----------
+
+adb -s "$SERIAL" shell am start -n "$APP" >/dev/null 2>&1
+sleep 4
+
+tap "patient-ANC-0001" || true
+wait_for_id hubPatientName 15 || true
+sleep 1
+dump open_patient
+shot open_patient
+check "Patient opened" "hubPatientName missing after opening patient-ANC-0001" has_id hubPatientName
+
+screen_dims
+dump hub_tabs
+shot hub_tabs
+if ! has_id tab-meds; then
+  # swipe the tab bar left to reveal more tabs
+  adb -s "$SERIAL" shell input swipe $((SWID*85/100)) $((SHEI*35/100)) $((SWID*20/100)) $((SHEI*35/100)) 250
+  sleep 1
+  dump hub_tabs_swiped
+  if ! has_id tab-meds; then
+    adb -s "$SERIAL" shell input swipe $((SWID*85/100)) $((SHEI*45/100)) $((SWID*20/100)) $((SHEI*45/100)) 250
+    sleep 1
+    dump hub_tabs_swiped2
+  fi
+fi
+tap "tab-meds" || true
+wait_for_id medsTabContent 10 || true
+sleep 1
+dump meds_tab
+shot meds_tab
+check "Meds tab shows active list" "medsTabContent or medsActiveTitle missing" meds_list_visible
+
+check "Med picker collapsed" "medPickerToggle missing or medSearchField already visible" picker_collapsed
+
+tap "medPickerToggle" || true
+sleep 1
+dump picker_open
+shot picker_open
+check "Search field appears" "medSearchField missing after medPickerToggle tap" has_id medSearchField
+
+if has_id medSearchField; then tap "=medSearchField" || true; fi
+adb -s "$SERIAL" shell input text "fer"
+sleep 2
+dump search_results
+shot search_results
+
+TILE_BOTTOM=$(tile_bottom 2>/dev/null || true)
+KTOP=$(keyboard_top 2>/dev/null || true)
+if [ -z "$KTOP" ]; then
+  skip "med tiles above keyboard (keyboard top unreadable)"
+else
+  check "Med tiles above keyboard" "no medTile- node or tile bottom not above keyboard top" tile_above_keyboard
+fi
+
+adb -s "$SERIAL" shell input keyevent 4
+sleep 1
+
+TILE_TAPPED=0
+TILE_COORDS=$(tap_first_inactive_tile 2>/dev/null || true)
+if [ -n "$TILE_COORDS" ]; then
+  TILE_TAPPED=1
+  adb -s "$SERIAL" shell input tap $TILE_COORDS
+fi
+sleep 1
+dump tile_sheet
+shot tile_sheet
+check "Tapped an inactive med tile" "no medTile- node without medTileCheck- found" inactive_tile_tapped
+check "Medication sheet opened" "medicationSheet missing after tile tap" has_id medicationSheet
+
+if ! sheet_has_chosen_freq; then
+  tap "medFreqChoice-0" || true
+  sleep 1
+  dump freq_chosen
+  shot freq_chosen
+fi
+
+MEDS_BEFORE=$(count_ids "medication-")
+tap "saveMedication" || true
+sleep 2
+dump med_saved
+shot med_saved
+MEDS_AFTER=$(count_ids "medication-")
+check "Sheet closed after save" "medicationSheet still visible after saveMedication" sheet_closed
+check "Medication count grew by one" "medication- cards before=$MEDS_BEFORE after=$MEDS_AFTER" count_grew_by_one
+
+tap "stopMedication-" || true
+sleep 1
+dump med_stopped
+shot med_stopped
+check "Undo bar appears after stop" "medStopUndoBar missing" has_id medStopUndoBar
+
+tap "medStopUndo" || true
+sleep 1
+dump med_undone
+shot med_undone
+UNDONE_COUNT=$(count_ids "medication-")
+check "Active list restored after undo" "medication- cards after undo=$UNDONE_COUNT expected=$MEDS_AFTER" active_list_restored
+
+tap "medShowPastToggle" || true
+sleep 1
+dump past_open
+shot past_open
+check "Past list opens" "no medPast* rows visible after medShowPastToggle" past_list_open
+
+tap "stopMedication-" || true
+sleep 1
+tap "medStopUndo" || true
+sleep 1
+dump past_after_stop_undo
+shot past_after_stop_undo
+check "Show past toggle survives stop and undo" "medShowPastToggle missing" has_id medShowPastToggle
+
+tap "addCustomMedicationBtn" || true
+sleep 1
+dump custom_open
+if has_id medName; then tap "=medName" || true; fi
+adb -s "$SERIAL" shell input text "QaCustomMed"
+if has_id medDosage; then tap "=medDosage" || true; fi
+adb -s "$SERIAL" shell input text "500mg"
+adb -s "$SERIAL" shell input keyevent 4
+sleep 1
+dump custom_filled
+shot custom_filled
+
+tap "saveMedication" || true
+sleep 1
+dump freq_error
+shot freq_error
+screen_dims
+check "Sheet stays open without frequency" "medicationSheet or medFreqError missing" sheet_still_open_with_error
+check "Frequency error on screen" "medFreqError bounds below screen height" freq_error_on_screen
+
+tap "cancelMedication" || true
+sleep 1
+dump discard_dialog
+shot discard_dialog
+check "Discard dialog appears" "medDiscardDialog missing after cancel with edits" has_id medDiscardDialog
+
+tap "medDiscardConfirm" || true
+sleep 1
+dump discarded
+shot discarded
+check "Sheet closed after discard" "medicationSheet still visible after medDiscardConfirm" sheet_closed
+
+# ---------- optional system checks, emulator only ----------
+
+if [ "$SYSTEM_OK" = 1 ]; then
+  save_settings
+
+  # rotation with a filled custom sheet
+  tap "addCustomMedicationBtn" || true
+  sleep 1
+  if has_id medName; then tap "=medName" || true; fi
+  adb -s "$SERIAL" shell input text "RotateMed"
+  adb -s "$SERIAL" shell input keyevent 4
+  sleep 1
+  adb -s "$SERIAL" settings put system accelerometer_rotation 0
+  adb -s "$SERIAL" settings put system user_rotation 1
+  sleep 3
+  dump rotated_landscape
+  shot rotated_landscape
+  check "Name survives rotation in custom sheet" "medName no longer contains RotateMed in landscape" id_text_contains medName RotateMed
+
+  # restore rotation to portrait before the next checks
+  adb -s "$SERIAL" settings put system accelerometer_rotation "$SAVED_ACCEL"
+  adb -s "$SERIAL" settings put system user_rotation "$SAVED_ROT"
+  sleep 2
+  tap "cancelMedication" || true
+  sleep 1
+  if has_id medDiscardDialog; then
+    tap "medDiscardConfirm" || true
+    sleep 1
+  fi
+  dump back_portrait
+
+  # dark mode
+  adb -s "$SERIAL" shell cmd uimode night yes >/dev/null 2>&1
+  sleep 3
+  dump dark_mode
+  shot dark_mode
+  check "Dark mode enabled" "cmd uimode night does not report yes" dark_mode_on
+  adb -s "$SERIAL" shell cmd uimode night "$SAVED_NIGHT" >/dev/null 2>&1
+  sleep 2
+
+  # font scale 2.0, patient name must not be cut
+  adb -s "$SERIAL" settings put system font_scale 2.0
+  sleep 3
+  dump font_large
+  if ! has_id hubPatientName; then
+    tap "patient-ANC-0001" || true
+    sleep 2
+    dump font_large
+  fi
+  shot font_large
+  screen_dims
+  PNW=$(node_bounds hubPatientName 2>/dev/null | awk '{print $3-$1}')
+  check "Patient name not cut at font scale 2.0" "hubPatientName width too small or missing" patient_name_not_cut
+fi
+
+# final restore also runs through the EXIT trap
+restore_settings
+
+if [ "$FAILS" -gt 0 ]; then
+  exit 1
+fi
+exit 0
+```
