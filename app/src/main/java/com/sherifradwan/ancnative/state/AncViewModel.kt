@@ -1007,10 +1007,12 @@ class AncViewModel internal constructor(
 
     private fun AncEvent.clearsFrozenPatient(): Boolean = when (this) {
         is AncEvent.PatientDraftChanged,
+        is AncEvent.DeliveryPlanFieldChanged,
         is AncEvent.HistoriesDraftChanged,
         is AncEvent.PregnancyDraftChanged,
         is AncEvent.StatusReasonChanged,
         is AncEvent.StartPatientEditor,
+        is AncEvent.StartDeliveryPlanEditor,
         is AncEvent.StartHistoriesEditor,
         is AncEvent.StartPregnancyEditor,
         is AncEvent.StartStatusEditor,

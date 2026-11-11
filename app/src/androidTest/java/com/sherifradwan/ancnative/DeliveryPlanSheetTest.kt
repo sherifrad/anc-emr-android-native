@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -158,6 +159,20 @@ class DeliveryPlanSheetTest {
         node("saveDeliveryPlan").assertIsNotEnabled()
         type("deliveryPlanFeesField", "25000 EGP")
         node("saveDeliveryPlan").assertIsEnabled()
+    }
+
+    @Test
+    fun theSaveButtonSaysSaveUntilASaveRuns() {
+        holdSave = true
+        host()
+        openSheet()
+        compose.onNodeWithTag("saveDeliveryPlan").assertTextEquals("Save")
+        type("deliveryPlanFeesField", "25000 EGP")
+        click("saveDeliveryPlan")
+        compose.onNodeWithTag("saveDeliveryPlan").assertTextEquals("Saving…")
+        val (command, token) = held!!
+        held = null
+        compose.runOnIdle { finish(command, token) }
     }
 
     @Test

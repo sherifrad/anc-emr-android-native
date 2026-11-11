@@ -134,7 +134,7 @@ fun DeliveryPlanSheet(
                 enabled = enabled,
                 saving = saving,
                 saveEnabled = fields.touched,
-                savingLabel = stringResource(R.string.delivery_plan_saving),
+                savingLabel = stringResource(if (saving) R.string.delivery_plan_saving else R.string.save),
                 onCancel = requestCancel,
                 onSave = { onEvent(AncEvent.SubmitPatientProfile) },
                 cancelTag = "cancelDeliveryPlan",
