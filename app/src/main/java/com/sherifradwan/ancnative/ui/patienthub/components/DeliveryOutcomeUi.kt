@@ -12,39 +12,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
-import com.sherifradwan.ancnative.model.DELIVERY_MODE_ASSISTED_VAGINAL
-import com.sherifradwan.ancnative.model.DELIVERY_MODE_CAESAREAN
-import com.sherifradwan.ancnative.model.DELIVERY_MODE_OTHER
-import com.sherifradwan.ancnative.model.DELIVERY_MODE_VAGINAL
-import com.sherifradwan.ancnative.model.DELIVERY_OUTCOME_LIVE_BIRTH
-import com.sherifradwan.ancnative.model.DELIVERY_OUTCOME_NEONATAL_DEATH
-import com.sherifradwan.ancnative.model.DELIVERY_OUTCOME_STILLBIRTH
 import com.sherifradwan.ancnative.model.daysSinceDelivery
+import com.sherifradwan.ancnative.model.deliveryModeText
+import com.sherifradwan.ancnative.model.deliveryResultText
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.util.Locale
 
-@Composable
-fun deliveryModeLabel(value: String?): String? {
-    return when (value) {
-        DELIVERY_MODE_VAGINAL -> stringResource(R.string.delivery_mode_vaginal)
-        DELIVERY_MODE_CAESAREAN -> stringResource(R.string.delivery_mode_caesarean)
-        DELIVERY_MODE_ASSISTED_VAGINAL -> stringResource(R.string.delivery_mode_assisted_vaginal)
-        DELIVERY_MODE_OTHER -> stringResource(R.string.delivery_mode_other)
-        else -> null
-    }
-}
+fun deliveryModeLabel(value: String?): String? = deliveryModeText(value)
 
-@Composable
-fun deliveryResultLabel(value: String?): String? {
-    return when (value) {
-        DELIVERY_OUTCOME_LIVE_BIRTH -> stringResource(R.string.delivery_result_live_birth)
-        DELIVERY_OUTCOME_STILLBIRTH -> stringResource(R.string.delivery_result_stillbirth)
-        DELIVERY_OUTCOME_NEONATAL_DEATH -> stringResource(R.string.delivery_result_neonatal_death)
-        else -> null
-    }
-}
+fun deliveryResultLabel(value: String?): String? = deliveryResultText(value)
 
 @Composable
 fun deliveredHeadline(date: String?): String {

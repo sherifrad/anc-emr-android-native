@@ -20,6 +20,7 @@ import com.sherifradwan.ancnative.model.formatIsoDate
 import com.sherifradwan.ancnative.model.isEarlyLoss
 import com.sherifradwan.ancnative.model.isStillbirth
 import com.sherifradwan.ancnative.model.parseIsoDateOrNull
+import com.sherifradwan.ancnative.model.deliveryOutcomeLine
 import com.sherifradwan.ancnative.model.previousDeliverySummary
 import com.sherifradwan.ancnative.security.SecuritySettingsState
 import com.sherifradwan.ancnative.ui.AllergyState
@@ -1231,6 +1232,10 @@ object PatientPrintHtmlGenerator {
                 <div class="attestation-grid">
                     <div class="plan-box">
                         <div class="history-list">
+                            ${patient.deliveryOutcomeLine()?.let { line -> """<div class="history-row">
+                                <span class="k">Delivery Outcome:</span>
+                                <span class="v text-navy font-bold">${escapeHtml(line)}</span>
+                            </div>""" }.orEmpty()}
                             <div class="history-row">
                                 <span class="k">Planned Delivery Mode:</span>
                                 <span class="v text-rose font-bold">${escapeHtml(com.sherifradwan.ancnative.model.parseDeliveryNotes(patient.obstetricNotes).plan?.takeUnless(String::isBlank) ?: "Not recorded")}</span>

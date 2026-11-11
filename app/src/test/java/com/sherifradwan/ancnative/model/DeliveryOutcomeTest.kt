@@ -178,4 +178,35 @@ class DeliveryOutcomeTest {
     fun `daysSinceDelivery future date returns 0`() {
         assertEquals(0L, daysSinceDelivery("2026-11-15", today))
     }
+
+    private fun patient(delivered: Boolean, date: String? = null, mode: String? = null, outcome: String? = null) = DemoPatient(
+        id = "p1", caseId = "P1", displayName = "Patient One", dateOfBirth = null, phone = null, visits = emptyList(),
+        delivered = delivered, deliveryDate = date, deliveryMode = mode, deliveryOutcome = outcome,
+    )
+
+    @Test
+    fun `outcome line is null for a patient who has not delivered`() {
+        assertNull(patient(delivered = false).deliveryOutcomeLine())
+    }
+
+    @Test
+    fun `outcome line joins date, mode and result`() {
+        assertEquals(
+            "Delivered 05 Nov 2026 · Caesarean · Live birth",
+            patient(true, "2026-11-05", DELIVERY_MODE_CAESAREAN, DELIVERY_OUTCOME_LIVE_BIRTH).deliveryOutcomeLine(),
+        )
+    }
+
+    @Test
+    fun `outcome line shows question marks when the date is unknown`() {
+        assertEquals("Delivered, date ???", patient(true).deliveryOutcomeLine())
+    }
+
+    @Test
+    fun `summary text carries the delivery line`() {
+        val text = ClinicalSummaryGenerator.generateTextSummary(patient(true, "2026-11-05", DELIVERY_MODE_VAGINAL, DELIVERY_OUTCOME_STILLBIRTH))
+        assertTrue(text, text.contains("Delivery: Delivered 05 Nov 2026 · Vaginal · Stillbirth"))
+        assertTrue(!ClinicalSummaryGenerator.generateTextSummary(patient(false)).contains("Delivery:"))
+    }
 }
+

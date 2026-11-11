@@ -16,6 +16,7 @@ object ClinicalSummaryGenerator {
         val p = patient.parity ?: "-"
         val a = patient.abortion ?: "-"
         sb.appendLine("Obstetric Profile: Gravida $g · Parity $p · Abortion $a")
+        patient.deliveryOutcomeLine()?.let { sb.appendLine("Delivery: $it") }
         sb.appendLine()
 
         val dating = patient.dating

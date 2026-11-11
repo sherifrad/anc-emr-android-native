@@ -612,13 +612,6 @@
     <string name="delivery_outcome_date_hint">Leave empty if the date is not known.</string>
     <string name="delivery_outcome_mode_label">Mode of delivery</string>
     <string name="delivery_outcome_result_label">Outcome</string>
-    <string name="delivery_mode_vaginal">Vaginal</string>
-    <string name="delivery_mode_caesarean">Caesarean</string>
-    <string name="delivery_mode_assisted_vaginal">Assisted vaginal</string>
-    <string name="delivery_mode_other">Other</string>
-    <string name="delivery_result_live_birth">Live birth</string>
-    <string name="delivery_result_stillbirth">Stillbirth</string>
-    <string name="delivery_result_neonatal_death">Neonatal death</string>
     <string name="delivered_headline">Delivered %1$s</string>
     <string name="delivered_date_unknown">Delivered, date ???</string>
     <string name="delivered_today">Today</string>

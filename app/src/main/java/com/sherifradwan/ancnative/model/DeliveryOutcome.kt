@@ -120,3 +120,39 @@ fun daysSinceDelivery(date: String?, today: LocalDate): Long? {
     }
     return null
 }
+
+/** English label of a stored delivery mode, or null when the value is empty or unknown. The one source for screens, print and summary. */
+fun deliveryModeText(value: String?): String? = when (value) {
+    DELIVERY_MODE_VAGINAL -> "Vaginal"
+    DELIVERY_MODE_CAESAREAN -> "Caesarean"
+    DELIVERY_MODE_ASSISTED_VAGINAL -> "Assisted vaginal"
+    DELIVERY_MODE_OTHER -> "Other"
+    else -> null
+}
+
+/** English label of a stored delivery result, or null when the value is empty or unknown. */
+fun deliveryResultText(value: String?): String? = when (value) {
+    DELIVERY_OUTCOME_LIVE_BIRTH -> "Live birth"
+    DELIVERY_OUTCOME_STILLBIRTH -> "Stillbirth"
+    DELIVERY_OUTCOME_NEONATAL_DEATH -> "Neonatal death"
+    else -> null
+}
+
+/** The delivery date as shown to people, for example 05 Nov 2026; null when the text is not an ISO date. */
+fun formatDeliveryDate(date: String?): String? = date?.trim()?.let {
+    try {
+        LocalDate.parse(it).format(java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy", java.util.Locale.ENGLISH))
+    } catch (e: DateTimeParseException) {
+        null
+    }
+}
+
+/** One line for print and summary: "Delivered 05 Nov 2026 · Caesarean · Live birth". Null when the patient has not delivered. */
+fun DemoPatient.deliveryOutcomeLine(): String? {
+    if (!delivered) return null
+    return listOfNotNull(
+        formatDeliveryDate(deliveryDate)?.let { "Delivered $it" } ?: "Delivered, date ???",
+        deliveryModeText(deliveryMode),
+        deliveryResultText(deliveryOutcome),
+    ).joinToString(" · ")
+}
