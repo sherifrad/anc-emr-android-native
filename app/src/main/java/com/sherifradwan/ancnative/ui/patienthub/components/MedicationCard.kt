@@ -138,12 +138,17 @@ fun MedicationCard(
                     .fillMaxWidth()
                     .padding(start = 40.dp, end = 4.dp, bottom = if (canEdit) 0.dp else 8.dp)
                     .testTag("medicationActions-${med.id}"),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 itemVerticalAlignment = Alignment.CenterVertically,
             ) {
                 MedicationStatusBadge(status, modifier = Modifier.padding(vertical = if (canEdit) 0.dp else 4.dp))
                 if (canEdit) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    // The weight lets the actions take the rest of the line, or a whole line when they wrap, and sit at its end.
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         if (isOngoingMedication(med.status, med.isNonCompliant) && onStop != null) {
                             StopControl(name = med.name, id = med.id, enabled = actionsEnabled, onStop = onStop)
                         }
@@ -195,7 +200,7 @@ private fun StopControl(name: String, id: String, enabled: Boolean, onStop: () -
     val color = if (enabled) {
         MaterialTheme.colorScheme.error
     } else {
-        MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED_CONTENT_ALPHA)
+        MaterialTheme.colorScheme.onSurface.copy(alpha = MEDICATION_DISABLED_ALPHA)
     }
     Column(
         modifier = Modifier
@@ -219,4 +224,5 @@ private fun StopControl(name: String, id: String, enabled: Boolean, onStop: () -
     }
 }
 
-private const val DISABLED_CONTENT_ALPHA = 0.38f
+/** Opacity of a disabled medication control or tile, shared by the card and the picker. */
+internal const val MEDICATION_DISABLED_ALPHA = 0.38f

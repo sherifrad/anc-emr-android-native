@@ -51,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -72,13 +73,11 @@ import com.sherifradwan.ancnative.ui.minimumTouchTarget
 import com.sherifradwan.ancnative.ui.patienthub.model.MedicationTile
 import com.sherifradwan.ancnative.ui.patienthub.model.PICKER_SOURCE_COMMON
 import com.sherifradwan.ancnative.ui.patienthub.model.PICKER_SOURCE_RECENT
-import com.sherifradwan.ancnative.ui.patienthub.model.activeMedicationNameKeys
+import com.sherifradwan.ancnative.ui.patienthub.model.activeMedicationKeys
 import com.sherifradwan.ancnative.ui.patienthub.model.filterMedicationTiles
 import com.sherifradwan.ancnative.ui.patienthub.model.isAlreadyActive
 import com.sherifradwan.ancnative.ui.patienthub.model.medicationTiles
 import java.util.UUID
-
-private const val DISABLED_TILE_ALPHA = 0.38f
 
 /** About five tiles (56 dp each with their gaps) show before the list scrolls inside itself. */
 private val PICKER_LIST_MAX_HEIGHT = 304.dp
@@ -142,9 +141,10 @@ private fun PickerToggle(expanded: Boolean, enabled: Boolean, onToggle: () -> Un
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
-            .alpha(if (enabled) 1f else DISABLED_TILE_ALPHA)
+            .alpha(if (enabled) 1f else MEDICATION_DISABLED_ALPHA)
             .testTag("medPickerToggle")
             .semantics { stateDescription = stateText }
+            .clip(RoundedCornerShape(14.dp))
             .clickable(enabled = enabled, role = Role.Button, onClickLabel = actionText, onClick = onToggle),
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -232,7 +232,7 @@ private fun PickerPanel(
 
     val allTiles = remember(catalogMedItems, customChoices) { medicationTiles(catalogMedItems, customChoices) }
     val pastNames = remember(patient.medications) { patient.medications.mapTo(HashSet()) { it.name } }
-    val activeNames = remember(patient.medications) { activeMedicationNameKeys(patient.medications) }
+    val activeKeys = remember(patient.medications) { activeMedicationKeys(patient.medications) }
     val filteredTiles = remember(state.query, state.source, allTiles, pastNames) {
         filterMedicationTiles(
             allTiles = allTiles,
@@ -269,7 +269,7 @@ private fun PickerPanel(
             filteredTiles.forEach { tile ->
                 MedicationPickerTile(
                     tile = tile,
-                    isActive = tile.isAlreadyActive(activeNames),
+                    isActive = tile.isAlreadyActive(activeKeys),
                     enabled = enabled,
                     onClick = {
                         onEvent(
@@ -314,7 +314,8 @@ private fun MedicationPickerTile(tile: MedicationTile, isActive: Boolean, enable
             .minimumTouchTarget()
             .testTag("medTile-${tile.id}")
             .semantics { if (isActive) stateDescription = alreadyOnList }
-            .alpha(if (enabled || isActive) 1f else DISABLED_TILE_ALPHA)
+            .alpha(if (enabled || isActive) 1f else MEDICATION_DISABLED_ALPHA)
+            .clip(RoundedCornerShape(14.dp))
             .clickable(enabled = enabled && !isActive, role = Role.Button, onClick = onClick),
         shape = RoundedCornerShape(14.dp),
         color = if (isActive) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface,

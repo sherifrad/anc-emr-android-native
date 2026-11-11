@@ -1,0 +1,71 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt
+@@ -66,6 +66,7 @@
+  *
+  * [draftKey] identifies the draft being edited; per-draft UI state (the Other-frequency mode) resets when it changes.
+  * With [focusNameOnStart] the name field takes focus for [draftKey], then [onNameFocused] tells the host so it can
+  * turn the request off (the host keeps that in saved state, so a rotation does not focus the name again).
++ * If the first focus request does not land (the field is not attached to the composition yet), the form retries
++ * once after the next frame.
+  *
+  * Fields in order: name, dose, route (read-only on an existing row), frequency, status, one date
+@@ -99,18 +100,33 @@
+     var otherMode by rememberSaveable(draftKey) {
+         mutableStateOf(values.frequency.isNotBlank() && values.frequency !in COMMON_MEDICATION_FREQUENCIES)
+     }
+-    LaunchedEffect(draftKey, focusNameOnStart) {
+-        if (focusNameOnStart) {
+-            withFrameNanos { }
+-            nameFocus.requestFocus()
+-            onNameFocused()
+-        }
+-    }
++    // The name field can miss the first requestFocus right after Save and add another, when the host swaps the
++    // draft and the field is not attached to the composition yet. If the request did not take, wait one frame and
++    // retry once. onNameFocused runs last so the host turning the request off cannot cancel the retry.
++    val nameFocusTaken = remember { booleanArrayOf(false) }
++    LaunchedEffect(draftKey, focusNameOnStart) {
++        if (focusNameOnStart) {
++            nameFocusTaken[0] = false
++            withFrameNanos { }
++            try {
++                nameFocus.requestFocus()
++            } catch (ignored: IllegalStateException) {
++                // The field is not attached to the composition yet; the retry below covers this.
++            }
++            if (!nameFocusTaken[0]) {
++                withFrameNanos { }
++                try {
++                    nameFocus.requestFocus()
++                } catch (ignored: IllegalStateException) {
++                }
++            }
++            onNameFocused()
++        }
++    }
+     var focusOtherBox by remember { mutableStateOf(false) }
+     LaunchedEffect(focusOtherBox, otherMode) {
+         if (focusOtherBox && otherMode) {
+             withFrameNanos { }
+             otherFocus.requestFocus()
+             focusOtherBox = false
+         }
+     }
+@@ -137,12 +153,15 @@
+         EditorField(
+             value = values.name,
+             onValueChange = { change(MedicationDraftField.NAME, it) },
+             label = stringResource(R.string.medication_name),
+             tag = "medName",
+-            modifier = Modifier.focusRequester(nameFocus).revealOnFocus().revealWhen(nameError),
++            modifier = Modifier.focusRequester(nameFocus)
++                .onFocusChanged { if (it.hasFocus) nameFocusTaken[0] = true }
++                .revealOnFocus()
++                .revealWhen(nameError),
+             enabled = enabled,
+             error = nameError,
+             singleLine = true,
+             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+             keyboardActions = KeyboardActions(onNext = { doseFocus.requestFocus() }),
+         )

@@ -22,7 +22,7 @@ const val PICKER_SOURCE_RECENT = "recent"
 
 /**
  * The one rule for "the same drug name" in the picker: trimmed and without case, the way a save stores the name
- * (trimmed). Recent and the already-active check both use it.
+ * (trimmed). Recent uses it, and the already-active check builds on it with the route.
  */
 fun medicationNameKey(name: String): String = name.trim().lowercase()
 
@@ -31,11 +31,17 @@ fun medicationTiles(catalog: List<MedicationCatalogItem>, customNames: List<Cust
     catalog.map { MedicationTile(it.id, it.name, it.dosage, it.route, it.frequency, it.isCustom) } +
         customNames.map { MedicationTile("custom_${it.id}", it.label, "", DEFAULT_MEDICATION_ROUTE, "", isCustom = true) }
 
-/** Name keys of the drugs this patient takes now. A tile whose name is among them must not start a second prescription. */
-fun activeMedicationNameKeys(medications: List<DemoMedicationRecord>): Set<String> =
-    medications.filter { isOngoingMedication(it.status, it.isNonCompliant) }.mapTo(HashSet()) { medicationNameKey(it.name) }
+/**
+ * The already-active key: the [medicationNameKey] of the name and of the route, joined by a pipe so one cannot run into the
+ * other. A different route is a different drug, so a patient on oral ferrous sulfate can still open the intramuscular tile.
+ */
+fun medicationNameRouteKey(name: String, route: String): String = "${medicationNameKey(name)}|${medicationNameKey(route)}"
 
-fun MedicationTile.isAlreadyActive(activeNameKeys: Set<String>): Boolean = medicationNameKey(name) in activeNameKeys
+/** Name and route keys of the drugs this patient takes now. A tile that matches one must not start a second prescription. */
+fun activeMedicationKeys(medications: List<DemoMedicationRecord>): Set<String> =
+    medications.filter { isOngoingMedication(it.status, it.isNonCompliant) }.mapTo(HashSet()) { medicationNameRouteKey(it.name, it.route) }
+
+fun MedicationTile.isAlreadyActive(activeKeys: Set<String>): Boolean = medicationNameRouteKey(name, route) in activeKeys
 
 /**
  * The tiles the picker shows for [selectedTab] and [searchQuery]. Recent keeps the tiles whose name (by

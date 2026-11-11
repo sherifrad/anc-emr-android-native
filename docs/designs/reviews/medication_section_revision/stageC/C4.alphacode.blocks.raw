@@ -1,0 +1,15 @@
+
+[Tokens] upload: 17731 download: 121 cache_read: 0 cache_write: 0
+
+[Tokens] upload: 17798 download: 5 cache_read: 17536 cache_write: 0
+
+[Tokens] upload: 17865 download: 13 cache_read: 17536 cache_write: 0
+
+[Tokens] upload: 17932 download: 2 cache_read: 17536 cache_write: 0
+
+[Tokens] upload: 17999 download: 7 cache_read: 17536 cache_write: 0
+
+[Tokens] upload: 18066 download: 6 cache_read: 17536 cache_write: 0
+
+[provider guardrail] The model ended its turn without any visible output after producing only internal reasoning (stop_reason: stop). The provider returned an empty response; this is usually a transient upstream failure rather than a content filter. Retrying the request may help.
+

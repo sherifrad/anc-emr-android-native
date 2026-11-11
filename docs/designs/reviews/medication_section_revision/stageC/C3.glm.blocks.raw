@@ -1,0 +1,39 @@
+```kotlin
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt
+<<<<<<< SEARCH
+ * [draftKey] identifies the draft being edited; per-draft UI state (the Other-frequency mode) resets when it changes.
+ * With [focusNameOnStart] the name field takes focus for [draftKey], then [onNameFocused] tells the host so it can
+ * turn the request off (the host keeps that in saved state, so a rotation does not focus the name again).
+=======
+ * [draftKey] identifies the draft being edited; per-draft UI state (the Other-frequency mode) resets when it changes.
+ * With [focusNameOnStart] the name field takes focus for [draftKey], then [onNameFocused] tells the host so it can
+ * turn the request off (the host keeps that in saved state, so a rotation does not focus the name again).
+ * If the field is not attached yet on the first frame, the focus request is retried once after the next frame.
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/MedicationForm.kt
+<<<<<<< SEARCH
+    LaunchedEffect(draftKey, focusNameOnStart) {
+        if (focusNameOnStart) {
+            withFrameNanos { }
+            nameFocus.requestFocus()
+            onNameFocused()
+        }
+    }
+=======
+    LaunchedEffect(draftKey, focusNameOnStart) {
+        if (focusNameOnStart) {
+            withFrameNanos { }
+            // The name field may not be attached yet after Save and add another, in which case
+            // requestFocus reports false. Wait one more frame and retry once so focus still lands.
+            if (!nameFocus.requestFocus()) {
+                withFrameNanos { }
+                nameFocus.requestFocus()
+            }
+            onNameFocused()
+        }
+    }
+>>>>>>> REPLACE
+```
+
+No test added: simulating a name field that is not attached on the first frame cannot be done reliably in a Compose test without flaky timing, and the task says to add a test only when it is reliable. The change keeps the existing `MedicationFormTest` and `MedsTabSheetTest` behavior intact: when the first request succeeds the flow is identical to before, and `onNameFocused()` still runs after the focus attempt.

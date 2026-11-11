@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -159,7 +160,7 @@ private fun MedsList(
             // Title and "Prescribe" share a line when they fit; with large text the button wraps under the title.
             FlowRow(
                 modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 itemVerticalAlignment = Alignment.CenterVertically,
             ) {
@@ -168,21 +169,24 @@ private fun MedsList(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(end = 8.dp).testTag("medsActiveTitle"),
+                    modifier = Modifier.testTag("medsActiveTitle"),
                 )
                 // With no medication at all the empty state carries the one primary "Prescribe" action.
                 if (canEdit && patient.medications.isNotEmpty()) {
-                    Button(
-                        enabled = entryEnabled,
-                        onClick = startBlank,
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                        shape = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                        modifier = Modifier.minimumTouchTarget().testTag("addCustomMedicationBtn"),
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.prescribe_medication), fontWeight = FontWeight.Bold)
+                    // The weight gives the button the rest of the line, or a whole line when it wraps, and it sits at the end.
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+                        Button(
+                            enabled = entryEnabled,
+                            onClick = startBlank,
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                            shape = RoundedCornerShape(10.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                            modifier = Modifier.minimumTouchTarget().testTag("addCustomMedicationBtn"),
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(stringResource(R.string.prescribe_medication), fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }

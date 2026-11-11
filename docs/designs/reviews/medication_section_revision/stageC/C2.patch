@@ -1,0 +1,83 @@
+diff --git a/app/src/main/java/com/sherifradwan.ancnative/ui/patienthub/model/MedicationTiles.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/MedicationTiles.kt
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/MedicationTiles.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/MedicationTiles.kt
+@@ -20,22 +20,28 @@
+ const val PICKER_SOURCE_COMMON = "common"
+ const val PICKER_SOURCE_RECENT = "recent"
+ 
+-/**
+- * The one rule for "the same drug name" in the picker: trimmed and without case, the way a save stores the name
+- * (trimmed). Recent and the already-active check both use it.
+- */
++/**
++ * The one rule for "the same drug name" in the picker: trimmed and without case, the way a save stores the name
++ * (trimmed). Recent uses it. The already-active check keys on [medicationActiveKey], name plus route.
++ */
+ fun medicationNameKey(name: String): String = name.trim().lowercase()
++
++/**
++ * The one rule for "the same medication" in the already-active check: the name key plus the route, trimmed and
++ * without case. A different route is a different drug, so oral ferrous sulfate does not block intramuscular iron.
++ */
++fun medicationActiveKey(name: String, route: String): String = "${medicationNameKey(name)}|${route.trim().lowercase()}"
+ 
+ /** The picker's tiles: the medication list, then the doctor's own drug names (blank dose and frequency, default route). */
+ fun medicationTiles(catalog: List<MedicationCatalogItem>, customNames: List<CustomChoiceItem>): List<MedicationTile> =
+     catalog.map { MedicationTile(it.id, it.name, it.dosage, it.route, it.frequency, it.isCustom) } +
+         customNames.map { MedicationTile("custom_${it.id}", it.label, "", DEFAULT_MEDICATION_ROUTE, "", isCustom = true) }
+ 
+-/** Name keys of the drugs this patient takes now. A tile whose name is among them must not start a second prescription. */
+-fun activeMedicationNameKeys(medications: List<DemoMedicationRecord>): Set<String> =
+-    medications.filter { isOngoingMedication(it.status, it.isNonCompliant) }.mapTo(HashSet()) { medicationNameKey(it.name) }
++/** Keys (name plus route) of the drugs this patient takes now. A tile with one of these must not start a second prescription. */
++fun activeMedicationNameKeys(medications: List<DemoMedicationRecord>): Set<String> =
++    medications.filter { isOngoingMedication(it.status, it.isNonCompliant) }.mapTo(HashSet()) { medicationActiveKey(it.name, it.route) }
+ 
+-fun MedicationTile.isAlreadyActive(activeNameKeys: Set<String>): Boolean = medicationNameKey(name) in activeNameKeys
++fun MedicationTile.isAlreadyActive(activeNameKeys: Set<String>): Boolean = medicationActiveKey(name, route) in activeNameKeys
+ 
+ /**
+  * The tiles the picker shows for [selectedTab] and [searchQuery]. Recent keeps the tiles whose name (by
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/ui/patienthub/model/PatientHubPureModelTest.kt b/app/src/test/java/com/sherifradwan/ancnative/ui/patienthub/model/PatientHubPureModelTest.kt
+--- a/app/src/test/java/com/sherifradwan/ancnative/ui/patienthub/model/PatientHubPureModelTest.kt
++++ b/app/src/test/java/com/sherifradwan/ancnative/ui/patienthub/model/PatientHubPureModelTest.kt
+@@ -196,7 +196,7 @@
+         assertTrue(filterMedicationTiles(tiles, "recent", "", emptySet()).isEmpty())
+     }
+ 
+-    private fun medRecord(name: String, status: String, nonCompliant: Boolean = false) = com.sherifradwan.ancnative.model.DemoMedicationRecord(
+-        id = name, patientId = "p", name = name, dosage = "1", route = "Oral", frequency = "Once daily",
++    private fun medRecord(name: String, status: String, nonCompliant: Boolean = false, route: String = "Oral") = com.sherifradwan.ancnative.model.DemoMedicationRecord(
++        id = name, patientId = "p", name = name, dosage = "1", route = route, frequency = "Once daily",
+         startDate = "2026-01-01", endDate = null, status = status, notes = null, isProphylaxis = false,
+         isNonCompliant = nonCompliant, revision = 1,
+     )
+@@ -209,13 +209,28 @@
+             medRecord("Aspirin", "Discontinued"),
+         )
+         val active = activeMedicationNameKeys(meds)
+-        assertEquals(setOf("folic acid", "labetalol"), active)
++        assertEquals(setOf("folic acid|oral", "labetalol|oral"), active)
+         assertTrue(MedicationTile("1", "  folic ACID ", "5 mg", "Oral", "Once daily").isAlreadyActive(active))
+         assertTrue("non-compliant is still active", MedicationTile("2", "LABETALOL", "", "Oral", "").isAlreadyActive(active))
+         assertFalse("stopped is not active", MedicationTile("3", "Aspirin", "75 mg", "Oral", "Once daily").isAlreadyActive(active))
+         assertFalse(MedicationTile("4", "Folic", "5 mg", "Oral", "Once daily").isAlreadyActive(active))
+         assertEquals("folic acid", medicationNameKey("\tFolic ACID \n"))
+     }
+ 
++    @Test
++    fun alreadyActiveKeysOnNamePlusRouteSoADifferentRouteIsADifferentDrug() {
++        val meds = listOf(
++            medRecord("Ferrous Sulfate", "Active", route = "Oral"),
++            medRecord("Zinc", "Active", nonCompliant = true, route = " Oral "),
++            medRecord("Aspirin", "Discontinued"),
++        )
++        val active = activeMedicationNameKeys(meds)
++        assertTrue(MedicationTile("1", " ferrous SULFATE ", "200 mg", " oral ", "Once daily").isAlreadyActive(active))
++        assertTrue("non-compliant ongoing counts as before", MedicationTile("2", "Zinc", "", "oral", "").isAlreadyActive(active))
++        assertFalse("a different route is a separate drug", MedicationTile("3", "Ferrous Sulfate", "200 mg", "Intramuscular", "Once daily").isAlreadyActive(active))
++        assertFalse("a stopped drug does not count", MedicationTile("4", "Aspirin", "75 mg", "Oral", "Once daily").isAlreadyActive(active))
++    }
++
+     @Test
+     fun tilesAreTheListThenTheDoctorsOwnNamesWithBlankDoseAndFrequency() {

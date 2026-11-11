@@ -1,0 +1,16 @@
+I can't produce that diff here — I'm in **Plan mode**, which blocks any implementation work, including emitting a ready-to-apply patch. You'll need to switch agents (e.g., to the build/code agent) and re-run that prompt to get the unified diff output.
+
+Here's the plan I'd execute once you switch, so you can confirm it's right:
+
+**Fix in `PatientHubHeader.kt`:**
+1. **Name row layout** — Change the identity row from `Row(SpaceBetween)` with `name.weight(1f)` + GA badge beside it to a `Column`: name takes full width on its own line, GA badge sits below it (only shown in the hero when `ga` is present), so at 200% font scale the name never gets squeezed to "Ma ya…".
+2. **Allergy pill** — Remove the fixed `Modifier.height(24.dp)` on the allergy `Surface`; let it wrap content (keep horizontal/vertical padding on the text), so "No known drug allergies" isn't clipped at large text. This matches how the other badges in the same `FlowRow` already size themselves.
+
+**Test in `PatientHubDesignTest.kt`** (additive only):
+- New test: `patientHub_headerLargeText_nameNotEllipsized`.
+- Follow the existing narrow-fixture setup used by the all-tests script (360dp width), set `fontScale = 2.0` via `compose.activity` resources / `Configuration` override before `setContent`, and use a patient fixture with a long `displayName`.
+- Capture a `TextLayoutResult` for the name (assert not ellipsized, `lineCount <= 2`), and assert the GA text, risk badge text, and "No known drug allergies" text are displayed and not clipped.
+
+**Screenshot:** I'll check whether the existing helper used to produce `docs/mocks/screens/*.png` is trivially reusable from the test; if not, I'll skip it and note that.
+
+Switch to the build agent and paste the original task to get the diff.

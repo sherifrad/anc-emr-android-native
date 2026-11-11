@@ -1,0 +1,109 @@
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
+<<<<<<< SEARCH
+                    // Patient Identity & Primary Metrics Lockup
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = patient.displayName,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+
+                        if (!ga.isNullOrBlank()) {
+                            GestationalAgeBadge(
+                                gaText = stringResource(R.string.ga_prefix, ga),
+                                modifier = Modifier.padding(start = 8.dp),
+                                discordant = gaDiscordant,
+                            )
+                        }
+                    }
+=======
+                    // Patient Identity & Primary Metrics Lockup
+                    // Name owns the full row width so the GA badge stacks below instead of squeezing it
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text(
+                            text = patient.displayName,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("hubPatientName"),
+                        )
+
+                        if (!ga.isNullOrBlank()) {
+                            Box(
+                                modifier = Modifier
+                                    .testTag("hubGaBadge"),
+                            ) {
+                                GestationalAgeBadge(
+                                    gaText = stringResource(R.string.ga_prefix, ga),
+                                    discordant = gaDiscordant,
+                                )
+                            }
+                        }
+                    }
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
+<<<<<<< SEARCH
+                    // Standardized Clinical Badges FlowRow (24dp height, zero truncation on 360dp)
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        ClinicalRiskBadge(isHighRisk = isHighRisk(patient.riskLevel))
+=======
+                    // Clinical badges flow row: pills wrap and grow with their text
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .testTag("hubRiskBadge")
+                        ) {
+                            ClinicalRiskBadge(isHighRisk = isHighRisk(patient.riskLevel))
+                        }
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
+<<<<<<< SEARCH
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = if (isAlert) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                                modifier = Modifier.height(24.dp),
+                            ) {
+=======
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = if (isAlert) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                            ) {
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
+<<<<<<< SEARCH
+                                    color = if (isAlert) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+=======
+                                    color = if (isAlert) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier
+                                        .padding(horizontal = 6.dp, vertical = 3.dp)
+                                        .testTag("hubAllergyText"),
+>>>>>>> REPLACE

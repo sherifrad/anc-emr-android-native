@@ -195,8 +195,8 @@ class PatientHubPureModelTest {
         assertTrue(filterMedicationTiles(tiles, "recent", "", emptySet()).isEmpty())
     }
 
-    private fun medRecord(name: String, status: String, nonCompliant: Boolean = false) = com.sherifradwan.ancnative.model.DemoMedicationRecord(
-        id = name, patientId = "p", name = name, dosage = "1", route = "Oral", frequency = "Once daily",
+    private fun medRecord(name: String, status: String, nonCompliant: Boolean = false, route: String = "Oral") = com.sherifradwan.ancnative.model.DemoMedicationRecord(
+        id = name, patientId = "p", name = name, dosage = "1", route = route, frequency = "Once daily",
         startDate = "2026-01-01", endDate = null, status = status, notes = null, isProphylaxis = false,
         isNonCompliant = nonCompliant, revision = 1,
     )
@@ -208,8 +208,8 @@ class PatientHubPureModelTest {
             medRecord("Labetalol", "Active", nonCompliant = true),
             medRecord("Aspirin", "Discontinued"),
         )
-        val active = activeMedicationNameKeys(meds)
-        assertEquals(setOf("folic acid", "labetalol"), active)
+        val active = activeMedicationKeys(meds)
+        assertEquals(setOf("folic acid|oral", "labetalol|oral"), active)
         assertTrue(MedicationTile("1", "  folic ACID ", "5 mg", "Oral", "Once daily").isAlreadyActive(active))
         assertTrue("non-compliant is still active", MedicationTile("2", "LABETALOL", "", "Oral", "").isAlreadyActive(active))
         assertFalse("stopped is not active", MedicationTile("3", "Aspirin", "75 mg", "Oral", "Once daily").isAlreadyActive(active))
@@ -225,5 +225,26 @@ class PatientHubPureModelTest {
         )
         assertEquals(listOf("c1", "custom_x"), tiles.map { it.id })
         assertEquals(MedicationTile("custom_x", "My drug", "", "Oral", "", isCustom = true), tiles[1])
+    }
+
+    @Test
+    fun theAlreadyActiveCheckMatchesNameAndRouteTogether() {
+        val active = activeMedicationKeys(
+            listOf(
+                medRecord("Ferrous Sulfate", "Active"),
+                medRecord("Aspirin", "Discontinued"),
+                medRecord("Labetalol", "Active", nonCompliant = true),
+            ),
+        )
+        assertEquals(setOf("ferrous sulfate|oral", "labetalol|oral"), active)
+        assertTrue("same name and route, spaces and case ignored", MedicationTile("1", " Ferrous SULFATE ", "200 mg", " oral ", "Once daily").isAlreadyActive(active))
+        assertFalse("same name on another route is a different drug", MedicationTile("2", "ferrous sulfate", "100 mg", "IM", "Once daily").isAlreadyActive(active))
+        assertFalse("stopped does not count on any route", MedicationTile("3", "Aspirin", "75 mg", "Oral", "Once daily").isAlreadyActive(active))
+        assertTrue("non-compliant is still active", MedicationTile("4", "labetalol", "", "Oral", "").isAlreadyActive(active))
+        assertEquals("ferrous sulfate|oral", medicationNameRouteKey("\tFerrous sulfate ", " ORAL "))
+        val both = activeMedicationKeys(listOf(medRecord("Iron", "Active"), medRecord("Iron", "Active", route = "IM")))
+        assertTrue(MedicationTile("5", "Iron", "", "Oral", "").isAlreadyActive(both))
+        assertTrue(MedicationTile("6", "Iron", "", "IM", "").isAlreadyActive(both))
+        assertFalse(MedicationTile("7", "Iron", "", "IV", "").isAlreadyActive(both))
     }
 }
