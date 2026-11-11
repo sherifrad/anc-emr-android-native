@@ -1,0 +1,231 @@
+
+=== CONFLICTS IN app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt: 5 hunk(s) (ours = main, theirs = registration branch) ===
+<<<<<<< main
+import com.sherifradwan.ancnative.model.composeDeliveryNotes
+=======
+import com.sherifradwan.ancnative.model.PreviousPregnancyFormRules
+import com.sherifradwan.ancnative.model.effectiveMedicationStatus
+import com.sherifradwan.ancnative.model.parseBloodPressure
+import com.sherifradwan.ancnative.model.parseVisitFindings
+import com.sherifradwan.ancnative.storage.ClinicalRecordKind
+>>>>>>> claude/clever-goldwasser-e086ce
+
+<<<<<<< main
+        medicationStopUndo = null,
+        medicationQuickSave = null,
+=======
+        registrationFlow = null,
+        awaitingAdvance = null,
+>>>>>>> claude/clever-goldwasser-e086ce
+
+<<<<<<< main
+    val delivered: Boolean = false,
+    val deliveryDate: String = "",
+    val deliveryMode: String = "",
+    val deliveryOutcome: String = "",
+    val lmpDate: String = "",
+    val datingMethod: String = "",
+    val transferDate: String = "",
+    val embryoAgeDays: String = "",
+    val agreedEdd: String = "",
+    val scanDate: String = "",
+    val scanGaWeeks: String = "",
+    val scanGaDays: String = "",
+=======
+>>>>>>> claude/clever-goldwasser-e086ce
+
+<<<<<<< main
+    /** A one-tap stop or its Undo in flight; it stays after a failed save so the Meds tab can show the cause. */
+    val medicationQuickSave: MedicationQuickSave? = null,
+    val medicationStopUndo: MedicationStopUndo? = null,
+=======
+    val registrationFlow: RegistrationFlow? = null,
+    val awaitingAdvance: AwaitingAdvance? = null,
+>>>>>>> claude/clever-goldwasser-e086ce
+
+<<<<<<< main
+/** The draft that drives the delivery plan sheet over the Plan tab, only while it is open for this patient. */
+fun AncState.deliveryPlanSheetDraft(patientId: String): PatientDraft? =
+    patientDraft?.takeIf { it.deliveryPlan != null && it.patientId == patientId }
+=======
+sealed interface AncEvent {
+    data class SearchChanged(val query: String) : AncEvent
+    data object ClearSearch : AncEvent
+    data object ShowNewPatientInfo : AncEvent
+    data object HideNewPatientInfo : AncEvent
+    data class OpenWorkspace(val patientId: String) : AncEvent
+    data class SelectSection(val section: WorkspaceSection) : AncEvent
+    data class StartVisit(val patientId: String, val visitId: String?, val editorSessionId: String) : AncEvent
+    data class StartPatientEditor(
+        val patientId: String?,
+        val newPatientId: String,
+        val editorSessionId: String,
+    ) : AncEvent
+    data class StartHistoriesEditor(val patientId: String, val editorSessionId: String) : AncEvent
+    data class Flow(val event: FlowEvent, val editorSessionId: String, val newPregnancyId: String) : AncEvent
+    data class RegistrationNext(val editorSessionId: String, val newPregnancyId: String) : AncEvent
+    data class StartPregnancyEditor(
+        val patientId: String,
+        val pregnancyId: String?,
+        val newPregnancyId: String,
+        val editorSessionId: String,
+    ) : AncEvent
+    data class StartStatusEditor(
+        val patientId: String,
+        val targetStatus: String,
+        val editorSessionId: String,
+    ) : AncEvent
+    data class DraftChanged(val field: DraftField, val value: String) : AncEvent
+    data class PatientDraftChanged(val field: PatientDraftField, val value: String) : AncEvent
+    data class HistoriesDraftChanged(val field: HistoriesDraftField, val value: String) : AncEvent
+    data class PregnancyDraftChanged(val field: PregnancyDraftField, val value: String) : AncEvent
+    data class StatusReasonChanged(val value: String) : AncEvent
+    data object SubmitPatientProfile : AncEvent
+    data object SubmitOtherHistories : AncEvent
+    data object SubmitPreviousPregnancy : AncEvent
+    data object SubmitPatientStatus : AncEvent
+    data class StartDatingEditor(val patientId: String, val editorSessionId: String) : AncEvent
+    data class StartUltrasoundEditor(
+        val patientId: String,
+        val scanId: String?,
+        val newScanId: String,
+        val editorSessionId: String,
+    ) : AncEvent
+    data class StartLabEditor(
+        val patientId: String,
+        val labId: String?,
+        val newLabId: String,
+        val editorSessionId: String,
+        val defaultDate: String = "",
+        val defaultLabName: String = "",
+    ) : AncEvent
+    data class StartMedicationEditor(
+        val patientId: String,
+        val medicationId: String?,
+        val newMedicationId: String,
+        val editorSessionId: String,
+        val defaultStartDate: String = "",
+        /** "Save and add another": open the blank editor but keep the just-shown saved notice. */
+        val keepSavedNotice: Boolean = false,
+    ) : AncEvent
+    data class DatingDraftChanged(val field: DatingDraftField, val value: String) : AncEvent
+    data class UltrasoundDraftChanged(val field: UltrasoundDraftField, val value: String) : AncEvent
+    data class LabDraftChanged(val field: LabDraftField, val value: String) : AncEvent
+    data class LabAbnormalChanged(val isAbnormal: Boolean) : AncEvent
+    data class MedicationDraftChanged(val 
+
+=== CONFLICTS IN app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt: 1 hunk(s) (ours = main, theirs = registration branch) ===
+<<<<<<< main
+import com.sherifradwan.ancnative.model.DeliveryOutcomeFields
+import com.sherifradwan.ancnative.model.normalized
+import com.sherifradwan.ancnative.model.validateDeliveryOutcome
+=======
+import com.sherifradwan.ancnative.model.PreviousPregnancyFormRules
+>>>>>>> claude/clever-goldwasser-e086ce
+
+
+=== CONFLICTS IN app/src/main/java/com/sherifradwan/ancnative/ui/AncApp.kt: 1 hunk(s) (ours = main, theirs = registration branch) ===
+<<<<<<< main
+import com.sherifradwan.ancnative.state.medicationSheetDraft
+=======
+import com.sherifradwan.ancnative.state.FlowEvent
+import com.sherifradwan.ancnative.state.SystemBack
+import com.sherifradwan.ancnative.state.systemBackKind
+import com.sherifradwan.ancnative.ui.components.RegistrationFlowScaffold
+import com.sherifradwan.ancnative.ui.components.flowMoveEvent
+>>>>>>> claude/clever-goldwasser-e086ce
+
+
+=== CONFLICTS IN app/src/main/java/com/sherifradwan/ancnative/ui/AncDatePicker.kt: 1 hunk(s) (ours = main, theirs = registration branch) ===
+<<<<<<< main
+                    label = { Text("⚡ " + stringResource(R.string.today) + " (" + LocalDate.now().toString() + ")") },
+                    modifier = Modifier.minimumTouchTarget().testTag("${tag}TodayButton"),
+=======
+                    label = { Text(stringResource(R.string.today) + " (" + LocalDate.now().toString() + ")") },
+                    modifier = Modifier.testTag("${tag}TodayButton"),
+>>>>>>> claude/clever-goldwasser-e086ce
+
+
+=== CONFLICTS IN app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt: 2 hunk(s) (ours = main, theirs = registration branch) ===
+<<<<<<< main
+    val isDelivered: Boolean = false,
+    val deliveryDate: String? = null,
+=======
+    val isIncomplete: Boolean = false,
+>>>>>>> claude/clever-goldwasser-e086ce
+
+<<<<<<< main
+        isDelivered = patient.delivered,
+        deliveryDate = patient.deliveryDate,
+=======
+        isIncomplete = isRegistrationIncomplete(patient),
+>>>>>>> claude/clever-goldwasser-e086ce
+
+
+=== CONFLICTS IN app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt: 1 hunk(s) (ours = main, theirs = registration branch) ===
+<<<<<<< main
+                        Box(
+                            modifier = Modifier
+                                .testTag("hubRiskBadge")
+                        ) {
+                            ClinicalRiskBadge(isHighRisk = isHighRisk(patient.riskLevel))
+                        }
+=======
+                        ClinicalRiskBadge(
+                            isHighRisk = isHighRisk(patient.riskLevel),
+                            isModerate = parseRiskTier(patient.riskLevel) == PatientRiskTier.MEDIUM,
+                        )
+>>>>>>> claude/clever-goldwasser-e086ce
+
+
+=== CONFLICTS IN app/src/main/res/values/strings.xml: 1 hunk(s) (ours = main, theirs = registration branch) ===
+<<<<<<< main
+    <string name="medication_route_locked_note">A different route is a new drug.</string>
+    <string name="medication_route_locked_label">Route (read-only)</string>
+    <string name="medication_stop_date">Stop date</string>
+    <string name="medication_frequency_other">Other</string>
+    <string name="medication_frequency_other_label">Frequency in words</string>
+    <string name="medication_frequency_required">Choose a frequency.</string>
+    <string name="medication_frequency_once_daily">Once daily</string>
+    <string name="medication_frequency_twice_daily">Twice daily</string>
+    <string name="medication_frequency_three_times_daily">Three times daily</string>
+    <string name="medication_frequency_at_bedtime">At bedtime</string>
+    <string name="medication_frequency_as_needed">As needed (PRN)</string>
+    <string name="medication_saving">Saving…</string>
+    <string name="medication_save_failed_title">The medication was not saved.</string>
+    <string name="medication_stopped_undo_message">Stopped: %1$s</string>
+    <!-- Delivery outcome (delivered flag, date, mode, outcome) -->
+    <string name="delivery_outcome_section">Delivery outcome</string>
+    <string name="delivery_outcome_delivered_switch">Delivered</string>
+    <string name="delivery_outcome_date_label">Delivery date (YYYY-MM-DD)</string>
+    <string name="delivery_outcome_date_hint">Leave empty if the date is not known.</string>
+    <string name="delivery_outcome_mode_label">Mode of delivery</string>
+    <string name="delivery_outcome_result_label">Outcome</string>
+    <string name="delivered_headline">Delivered %1$s</string>
+    <string name="delivered_date_unknown">Delivered, date ???</string>
+    <string name="delivered_today">Today</string>
+    <string name="delivered_days_ago">%1$d days ago</string>
+    <string name="delivered_one_day_ago">1 day ago</string>
+    <string name="delivery_error_date_invalid">Enter the date as YYYY-MM-DD, for example 2026-11-05.</string>
+    <string name="delivery_error_date_future">The delivery date cannot be after today.</string>
+    <string name="delivery_error_date_before_dating">The delivery date is before the last menstrual period.</string>
+    <string name="delivery_error_choice_invalid">Choose one of the listed values.</string>
+    <string name="patients_filter_delivered">Delivered</string>
+    <string name="delivered_patients_empty">No delivered patients.</string>
+=======
+    <string name="registration_step_identity">Identity</string>
+    <string name="registration_step_histories">Histories</string>
+    <string name="registration_header">%1$s: %2$s</string>
+    <string name="registration_status_skipped">Skipped</string>
+    <string name="registration_status_pending">To do</string>
+    <string name="registration_current">Current</string>
+    <string name="registration_segment_cd">%1$s, %2$s</string>
+    <string name="registration_segment_current_cd">%1$s, %2$s, current</string>
+    <string name="registration_pregnancy_progress">Pregnancy %1$d of %2$d to add</string>
+    <string name="flow_skip">Skip</string>
+    <string name="flow_finish">Finish</string>
+    <string name="registration_count_title">How many previous pregnancies?</string>
+    <string name="registration_count_label">Number of previous pregnancies</string>
+    <string name="registration_count_hint">Suggested from the gravida count. Change it if the record differs. 0 to %1$d.</string>
+    <plurals name="registration_count_existing">
+        <item quanti
