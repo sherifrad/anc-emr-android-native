@@ -495,107 +495,27 @@ class OverviewTabSectionsTest {
         assertEquals(0, markerCount())
     }
 
-    // Delivery Plan card (U8). Dates are relative to now so the current GA is always within 0 to 320 days.
-    private val today: LocalDate = LocalDate.now()
-    private val cardLmp: LocalDate = today.minusDays(150)
-    private val cardLmpEdd: LocalDate = cardLmp.plusDays(280)
-    private val dmy = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy", java.util.Locale.ROOT)
-
-    private fun cardPatient(d: DemoPatientDating): DemoPatient = withDating(d).copy(
-        ultrasoundScans = listOf(
-            DemoUltrasoundScan(
-                id = "card-anchor-scan", patientId = multiparous.id, date = cardLmp.plusDays(80).toString(),
-                gestationalAgeWeeks = null, gestationalAgeDays = null, fetalNumber = null,
-                presentation = null, placentalSite = null, amnioticFluid = null,
-                fetalHeartRate = null, biometryBpd = null, biometryHc = null, biometryAc = null,
-                biometryFl = null, estimatedFetalWeight = null, impression = null,
-            ),
-        ),
-    )
-
-    private fun showDeliveryCard(patient: DemoPatient) = showContent {
-        DeliveryPlanningCard(patient = patient, canEdit = true, onEditDeliveryPlan = {})
-    }
-
-    private fun cardNode(label: String) = compose.onNode(
-        hasText(label, ignoreCase = true) and hasAnyAncestor(hasTestTag("deliveryPlanningCard")),
-        useUnmergedTree = true,
-    )
-
-    private fun cardValue(value: String) = compose.onNode(
-        hasText(value) and hasAnyAncestor(hasTestTag("deliveryPlanningCard")),
-        useUnmergedTree = true,
-    )
-
-    /** The value sits in the same tile as the label: same left edge, directly below it. */
-    private fun assertTile(label: String, value: String) {
-        val l = cardNode(label).assertExists("tile label '$label' missing").fetchSemanticsNode().boundsInRoot
-        val v = cardValue(value).assertExists("tile value '$value' missing").fetchSemanticsNode().boundsInRoot
-        assertTrue("'$value' must start at the left edge of the '$label' tile", kotlin.math.abs(v.left - l.left) < 2f)
-        assertTrue("'$value' must sit below '$label'", v.top >= l.bottom - 1f)
-        assertTrue("'$value' is too far below '$label'", v.top - l.bottom < 40f)
-    }
-
+    // Delivery Plan card: only the four boxes. The facts it used to repeat (blood group, GA, EDD, risk,
+    // presentation, placental site) live in the header, the Dating section and the Scans tab.
     @Test
-    fun deliveryCardShowsTheSharedEddInDmyWithPlainLabel() {
-        showDeliveryCard(cardPatient(dating(lmp = cardLmp.toString(), method = "LMP")))
-        assertTile("EDD", cardLmpEdd.format(dmy))
-        compose.onAllNodes(hasText("Confirmed EDD", ignoreCase = true), useUnmergedTree = true).assertCountEquals(0)
-        compose.onAllNodes(hasText(cardLmpEdd.toString(), substring = true), useUnmergedTree = true).assertCountEquals(0)
-    }
-
-    @Test
-    fun deliveryCardUsesTheSharedEddNotTheScanEddWhenAgreedEddIsMissing() {
-        val scanEdd = cardLmpEdd.plusDays(3)
-        showDeliveryCard(cardPatient(dating(lmp = cardLmp.toString(), us = scanEdd.toString(), agreed = null, method = "LMP")))
-        assertTile("EDD", cardLmpEdd.format(dmy))
-        compose.onAllNodes(hasText(scanEdd.format(dmy), substring = true), useUnmergedTree = true).assertCountEquals(0)
-        compose.onAllNodes(hasText(scanEdd.toString(), substring = true), useUnmergedTree = true).assertCountEquals(0)
-    }
-
-    @Test
-    fun deliveryCardShowsConfirmedEddLabelForAReferredPatient() {
-        showDeliveryCard(cardPatient(dating(agreed = "2027-04-02", method = "Clinical")))
-        assertTile("Confirmed EDD", "02/04/2027")
-    }
-
-    @Test
-    fun deliveryCardGaTileCarriesTheMarkerOnlyWhenDiscordant() {
-        // 25 d gap exceeds every tier limit (5 to 21 d), so the result does not depend on the anchor date.
-        val discordant = dating(lmp = cardLmp.toString(), us = cardLmpEdd.plusDays(25).toString(), method = "LMP")
-        showDeliveryCard(cardPatient(discordant))
-        assertEquals(1, markerCount())
-        val label = cardNode(compose.activity.getString(R.string.current_gestational_age))
-            .fetchSemanticsNode().boundsInRoot
-        val eddLabel = cardNode("EDD").fetchSemanticsNode().boundsInRoot
-        val marker = compose.onNode(hasTestTag(markerTag), useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-        assertTrue("marker must sit in the GA tile, below its label", marker.top >= label.bottom - 1f && marker.left >= label.left)
-        assertTrue("marker must not drift into the EDD tile", marker.bottom <= eddLabel.top + 1f)
-
-        showDeliveryCard(cardPatient(dating(lmp = cardLmp.toString(), method = "LMP")))
+    fun deliveryCardShowsOnlyTheFourBoxesAndNoRepeatedFacts() {
+        showContent { DeliveryPlanningCard(patient = withDating(variantA), canEdit = true, onEditDeliveryPlan = {}) }
+        listOf("deliveryHospital", "deliveryFees", "deliveryPlan", "deliveryPostpartum")
+            .forEach { compose.onNodeWithTag(it, useUnmergedTree = true).assertExists() }
+        listOf("EDD", "Blood group", "Current gestational age", "Manual risk", "Fetal presentation", "Placental site")
+            .forEach { label ->
+                compose.onAllNodes(
+                    hasText(label, ignoreCase = true) and hasAnyAncestor(hasTestTag("deliveryPlanningCard")),
+                    useUnmergedTree = true,
+                ).assertCountEquals(0)
+            }
         assertEquals(0, markerCount())
     }
 
     @Test
-    fun deliveryCardMarkerIsUnclippedAt360dpFontScale13() {
-        val discordant = dating(lmp = cardLmp.toString(), us = cardLmpEdd.plusDays(25).toString(), method = "LMP")
-        compose.activity.runOnUiThread {
-            compose.activity.setContent {
-                AncTheme {
-                    val base = LocalDensity.current
-                    CompositionLocalProvider(LocalDensity provides Density(base.density, 1.3f)) {
-                        Box(Modifier.width(360.dp)) {
-                            DeliveryPlanningCard(patient = cardPatient(discordant), canEdit = true, onEditDeliveryPlan = {})
-                        }
-                    }
-                }
-            }
-        }
-        compose.waitForIdle()
-        compose.onNode(hasTestTag(markerTag), useUnmergedTree = true).assertExists().assertIsDisplayed()
-        compose.assertNotEllipsized("??", markerTag)
-        val card = compose.onNodeWithTag("deliveryPlanningCard", useUnmergedTree = true).getUnclippedBoundsInRoot()
-        val marker = compose.onNode(hasTestTag(markerTag), useUnmergedTree = true).getUnclippedBoundsInRoot()
-        assertTrue("marker overflows the card (right=${marker.right}, card=${card.right})", marker.right <= card.right)
+    fun datingSectionUsesTheSharedEddNotTheScanEddWhenAgreedEddIsMissing() {
+        show(withDating(dating(lmp = "2026-06-08", us = "2027-03-24", agreed = null, method = "LMP")))
+        assertTrue(datingRows().any { it == listOf("EDD", "15/03/2027") })
+        assertTrue(datingRows().none { row -> row.any { it.contains("24/03/2027") } })
     }
 }

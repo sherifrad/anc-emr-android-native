@@ -13,7 +13,6 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,18 +29,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
-import com.sherifradwan.ancnative.model.datingSummaryOf
-import com.sherifradwan.ancnative.model.datingTextRows
 import com.sherifradwan.ancnative.ui.DeliverySectionBox
 import com.sherifradwan.ancnative.ui.DeliveryTone
-import com.sherifradwan.ancnative.ui.GaDiscordanceMarker
-import com.sherifradwan.ancnative.ui.KeyFactTile
-import com.sherifradwan.ancnative.ui.formatBloodGroup
-import com.sherifradwan.ancnative.ui.isHighRisk
-import com.sherifradwan.ancnative.ui.isRhNegative
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
 import com.sherifradwan.ancnative.model.parseDeliveryNotes
-import java.time.LocalDate
 
 @Composable
 fun DeliveryPlanningCard(
@@ -51,11 +42,6 @@ fun DeliveryPlanningCard(
     onEditDeliveryPlan: () -> Unit,
 ) {
     val sections = remember(patient.obstetricNotes) { parseDeliveryNotes(patient.obstetricNotes) }
-    val summary = remember(patient) { datingSummaryOf(patient, LocalDate.now()) }
-    val eddRow = remember(summary) { datingTextRows(summary).first { it.isEdd } }
-    val latestScan = patient.ultrasoundScans.maxByOrNull { it.date }
-    val gaText = remember(patient) { patient.dating?.calculateGestationalAge() }
-    val rhNegative = isRhNegative(patient.bloodGroupText)
 
     Card(
         modifier = modifier
@@ -105,53 +91,6 @@ fun DeliveryPlanningCard(
                     }
                 }
             }
-
-            // Key clinical facts: label above, bold value, each in its own tile
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                KeyFactTile(
-                    label = stringResource(R.string.blood_group),
-                    value = formatBloodGroup(patient.bloodGroupText),
-                    emphasize = rhNegative,
-                    modifier = Modifier.weight(1f),
-                )
-                KeyFactTile(
-                    label = stringResource(R.string.current_gestational_age),
-                    value = gaText,
-                    modifier = Modifier.weight(1f),
-                    trailing = if (gaText != null && summary.discordance != null) {
-                        { GaDiscordanceMarker(style = MaterialTheme.typography.titleSmall) }
-                    } else {
-                        null
-                    },
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                KeyFactTile(
-                    label = eddRow.label,
-                    value = eddRow.value,
-                    modifier = Modifier.weight(1f),
-                )
-                KeyFactTile(
-                    label = stringResource(R.string.manual_risk),
-                    value = patient.riskLevel,
-                    emphasize = isHighRisk(patient.riskLevel),
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                KeyFactTile(
-                    label = stringResource(R.string.fetal_presentation),
-                    value = latestScan?.presentation,
-                    modifier = Modifier.weight(1f),
-                )
-                KeyFactTile(
-                    label = stringResource(R.string.placental_site),
-                    value = latestScan?.placentalSite,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-
-            HorizontalDivider()
 
             val defaultPlaceholder = stringResource(R.string.no_record)
 

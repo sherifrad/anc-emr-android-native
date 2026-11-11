@@ -135,42 +135,6 @@ fun DeliverySectionBox(
     }
 }
 
-/** Compact label-over-value tile used for key delivery facts (blood group, EDD, GA...). */
-@Composable
-fun KeyFactTile(
-    label: String,
-    value: String?,
-    modifier: Modifier = Modifier,
-    emphasize: Boolean = false,
-    trailing: (@Composable () -> Unit)? = null,
-) {
-    Surface(
-        shape = RoundedCornerShape(10.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        modifier = modifier,
-    ) {
-        Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
-            Text(
-                text = label.uppercase(),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = value?.takeIf { it.isNotBlank() } ?: "-",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = if (emphasize) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-                trailing?.invoke()
-            }
-        }
-    }
-}
-
 /**
  * Alert badge for abnormal blood pressure (Q87). Renders nothing when bpAlertResource is null.
  * Severe-range BP uses errorContainer/onErrorContainer; raised BP uses tertiaryContainer/onTertiaryContainer.
