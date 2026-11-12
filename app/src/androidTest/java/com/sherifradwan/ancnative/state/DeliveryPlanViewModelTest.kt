@@ -91,6 +91,7 @@ class DeliveryPlanViewModelTest {
         s = AncReducer.reduce(s, AncEvent.StartPatientEditor(null, patientId, "vm-seed-session"))
         s = AncReducer.reduce(s, AncEvent.PatientDraftChanged(PatientDraftField.CASE_ID, "VM-PLAN-1"))
         s = AncReducer.reduce(s, AncEvent.PatientDraftChanged(PatientDraftField.DISPLAY_NAME, "Plan Test"))
+        s = AncReducer.reduce(s, AncEvent.PatientDraftChanged(PatientDraftField.AGE_TEXT, "30"))
         s = AncReducer.reduce(s, AncEvent.PatientDraftChanged(PatientDraftField.OBSTETRIC_NOTES, freeNotes))
         val prepared = SavePatientProfileCommand.prepare(s, UUID.randomUUID().toString(), Instant.now().toString())
         assertTrue("patient seed rejected: $prepared", prepared is PatientCommandPreparation.Ready)
