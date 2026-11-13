@@ -315,14 +315,14 @@ class ReportSectionsTest {
     }
 
     @Test
-    fun s13_detail_joins_instructions_frequency_prophylaxis_and_adverse() {
+    fun s13_detail_joins_instructions_prophylaxis_and_adverse_and_never_the_frequency() {
         val medication = medication(
             id = "m1", name = "Iron", status = "Active", startDate = "2026-01-01",
             dosage = "500 mg", route = "PO", frequency = "Twice daily", notes = "after meals",
             isProphylaxis = true, adverseNotes = "Nausea",
         )
         assertEquals(
-            "500 mg · PO · after meals · Twice daily · Prophylaxis · Adverse: Nausea",
+            "500 mg · PO · after meals · Prophylaxis · Adverse: Nausea",
             medicationDetail(medication),
         )
     }

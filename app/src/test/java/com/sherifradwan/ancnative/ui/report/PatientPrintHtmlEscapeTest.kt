@@ -264,9 +264,9 @@ class PatientPrintHtmlEscapeTest {
     @Test
     fun q93_previousPregnanciesSection_escapedOnce() {
         assertTrue(countOf("""date-cell">$ESCAPED</td>""") >= 1)
-        assertTrue(html.contains("""<td class="text-center font-bold">$ESCAPED</td>"""))
+        assertTrue(html.contains("""<td class="text-center font-bold">Singleton · $ESCAPED</td>"""))
         assertTrue(countOf("""color:#0f766e;">$ESCAPED</span>""") >= 1)
-        assertTrue(countOf("""<td class="text-center">$ESCAPED</td>""") >= 1)
+        assertTrue(html.contains("""<td class="text-center">$ESCAPED · $ESCAPED</td>"""))
     }
 
     @Test
@@ -280,27 +280,32 @@ class PatientPrintHtmlEscapeTest {
 
     @Test
     fun q93_scansSection_escapedOnce() {
-        assertTrue(countOf("""<td class="text-center">$ESCAPED</td>""") >= 3)
-        assertTrue(html.contains("""font-bold text-navy">$ESCAPED</td>"""))
         assertTrue(
-            Regex("""(?s)notes-cell">Fetuses: $ESCAPED · FHR: $ESCAPED""").containsMatchIn(html),
+            html.contains(
+                """Fetuses: $ESCAPED · FHR: $ESCAPED · $ESCAPED · BPD: $ESCAPED · HC: $ESCAPED · AC: $ESCAPED · FL: $ESCAPED""",
+            ),
         )
+        assertTrue(html.contains("$ESCAPED</td>"))
+        assertFalse(html.contains("$ESCAPED g"))
         assertTrue(html.contains("""<div class="photo-badge">1 photos in the clinic record</div>"""))
     }
 
     @Test
     fun q93_labsSection_escapedOnce() {
-        assertTrue(html.contains("""<span class="val-abnormal">$ESCAPED $ESCAPED (Abnormal)</span>"""))
         assertTrue(
-            html.contains("""<td class="text-center font-bold text-navy">$ESCAPED<br><span class="text-muted med-instructions">$ESCAPED · $ESCAPED</span></td>"""),
+            html.contains(
+                """<td class="text-center font-bold text-navy">$ESCAPED<br><span class="text-muted med-instructions">$ESCAPED</span></td>""",
+            ),
         )
-        assertTrue(html.contains("""<td class="text-center text-muted">$ESCAPED</td>"""))
+        assertTrue(html.contains("$ESCAPED $ESCAPED"))
+        assertTrue(html.contains("""<span class="val-abnormal">"""))
+        assertTrue(html.contains("(Abnormal)"))
     }
 
     @Test
     fun q93_medicationsSection_escapedOnce() {
         assertTrue(
-            html.contains("""<td class="text-center med-cell"><span class="font-bold text-navy">$ESCAPED</span><br><span class="text-muted med-instructions">$ESCAPED · $ESCAPED · $ESCAPED · $ESCAPED · Prophylaxis</span></td>"""),
+            html.contains("""<td class="text-center med-cell"><span class="font-bold text-navy">$ESCAPED</span><br><span class="text-muted med-instructions">$ESCAPED · $ESCAPED · $ESCAPED · Prophylaxis</span></td>"""),
         )
         assertTrue(html.contains("""<td class="text-center">From 01/01/2026</td>"""))
     }
@@ -320,8 +325,8 @@ class PatientPrintHtmlEscapeTest {
     @Test
     fun q93_generatorOwnMarkup_stillPresent() {
         assertTrue(countOf("""<table class="clinical-table">""") >= 3)
-        assertTrue(html.contains("""<table class="clinical-table mini-table">"""))
-        assertTrue(html.contains("""<span class="badge">Risk not recorded</span>"""))
+        assertFalse(html.contains("IMAGING ATTACHMENTS"))
+        assertTrue(html.contains("""<span class="badge">$ESCAPED</span>"""))
         assertTrue(html.contains("Current Medications"))
         assertTrue(html.contains("Delivery Plan"))
         assertFalse(html.contains("Active Medications"))

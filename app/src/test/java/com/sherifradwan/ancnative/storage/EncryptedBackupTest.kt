@@ -291,13 +291,13 @@ class EncryptedBackupTest {
         val patient = DemoFixtures.patients.first()
         val text = patientShareText(patient)
 
-        assertTrue(text.contains("ANTENATAL CARE CLINICAL SUMMARY"))
+        assertTrue(text.contains("ANTENATAL CARE SUMMARY"))
         assertTrue(text.contains(patient.displayName))
         assertTrue(text.contains(patient.caseId))
         assertTrue(text.contains("PREGNANCY DATING"))
-        assertTrue(text.contains("RECENT VISITS"))
+        assertTrue(text.contains("VISITS ("))
         assertTrue(text.contains("ULTRASOUND SCANS"))
-        assertTrue(text.contains("LABORATORY INVESTIGATIONS"))
-        assertTrue(text.contains("MEDICATIONS & PRESCRIPTIONS"))
+        assertTrue(text.contains("LABORATORY RESULTS"))
+        assertTrue(text.contains("CURRENT MEDICATIONS"))
     }
 }

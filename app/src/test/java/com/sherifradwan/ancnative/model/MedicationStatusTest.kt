@@ -134,7 +134,8 @@ class MedicationStatusTest {
         val summary = patientShareText(patient)
         assertTrue(summary.contains("• Methyldopa 250 mg · Oral · Take with water"))
         assertFalse(summary.contains("TDS"))
-        assertTrue(summary.contains("• Aspirin 75 mg · Oral (Stopped)"))
+        assertTrue(summary.substringAfter("STOPPED MEDICATIONS").contains("• Aspirin 75 mg · Oral"))
+        assertFalse(summary.substringBefore("STOPPED MEDICATIONS").contains("Aspirin"))
         assertFalse(summary.contains("OD"))
     }
 }

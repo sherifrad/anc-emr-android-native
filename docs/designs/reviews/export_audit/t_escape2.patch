@@ -1,0 +1,55 @@
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun q93_scansSection_escapedOnce() {
+        assertTrue(countOf("""<td class="text-center">$ESCAPED</td>""") >= 3)
+        assertTrue(html.contains("""font-bold text-navy">$ESCAPED</td>"""))
+        assertTrue(
+            Regex("""(?s)notes-cell">Fetuses: $ESCAPED · FHR: $ESCAPED""").containsMatchIn(html),
+        )
+        assertTrue(html.contains("""<div class="photo-badge">1 photos in the clinic record</div>"""))
+    }
+=======
+    @Test
+    fun q93_scansSection_escapedOnce() {
+        assertTrue(
+            html.contains(
+                """Fetuses: $ESCAPED · FHR: $ESCAPED · $ESCAPED · BPD: $ESCAPED · HC: $ESCAPED · AC: $ESCAPED · FL: $ESCAPED""",
+            ),
+        )
+        assertTrue(html.contains("$ESCAPED</td>"))
+        assertFalse(html.contains("$ESCAPED g"))
+        assertTrue(html.contains("""<div class="photo-badge">1 photos in the clinic record</div>"""))
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun q93_labsSection_escapedOnce() {
+        assertTrue(html.contains("""<span class="val-abnormal">$ESCAPED $ESCAPED (Abnormal)</span>"""))
+        assertTrue(
+            html.contains("""<td class="text-center font-bold text-navy">$ESCAPED<br><span class="text-muted med-instructions">$ESCAPED · $ESCAPED</span></td>"""),
+        )
+        assertTrue(html.contains("""<td class="text-center text-muted">$ESCAPED</td>"""))
+    }
+=======
+    @Test
+    fun q93_labsSection_escapedOnce() {
+        assertTrue(
+            html.contains(
+                """<td class="text-center font-bold text-navy">$ESCAPED<br><span class="text-muted med-instructions">$ESCAPED · $ESCAPED</span></td>""",
+            ),
+        )
+        assertTrue(html.contains("$ESCAPED $ESCAPED"))
+        assertTrue(html.contains("""<span class="val-abnormal">"""))
+        assertTrue(html.contains("(Abnormal)"))
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt
+<<<<<<< SEARCH
+        assertTrue(html.contains("""<table class="clinical-table mini-table">"""))
+=======
+        assertFalse(html.contains("IMAGING ATTACHMENTS"))
+>>>>>>> REPLACE

@@ -206,8 +206,8 @@ class DeliveryOutcomeTest {
     @Test
     fun `summary text carries the delivery line`() {
         val text = patientShareText(patient(true, "2026-11-05", DELIVERY_MODE_VAGINAL, DELIVERY_OUTCOME_STILLBIRTH))
-        assertTrue(text, text.contains("Delivery: Delivered 05 Nov 2026 · Vaginal · Stillbirth"))
-        assertTrue(!patientShareText(patient(false)).contains("Delivery:"))
+        assertTrue(text, text.contains("Status: Delivered 05 Nov 2026 · Vaginal · Stillbirth"))
+        assertTrue(!patientShareText(patient(false)).contains("Status:"))
     }
 }
 

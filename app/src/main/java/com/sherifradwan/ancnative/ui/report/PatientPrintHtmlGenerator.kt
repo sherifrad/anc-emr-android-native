@@ -240,9 +240,9 @@ object PatientPrintHtmlGenerator {
                         """
                         <tr>
                             <td class="text-center date-cell">${escapeHtml(pp.dateText ?: "-")}</td>
-                            <td class="text-center font-bold">${escapeHtml(methodText)}</td>
+                            <td class="text-center font-bold">${escapeHtml(listOfNotNull(pp.pregnancyType?.takeUnless(String::isBlank), methodText.takeUnless { it == "-" }).joinToString(" · ").ifEmpty { "-" })}</td>
                             <td class="text-center">${outcomeBadge}</td>
-                            <td class="text-center">${escapeHtml(pp.placeAndDoctor?.takeUnless(String::isBlank) ?: pp.otherDetails?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                            <td class="text-center">${escapeHtml(listOfNotNull(pp.placeAndDoctor?.takeUnless(String::isBlank), pp.otherDetails?.takeUnless(String::isBlank)).joinToString(" · ").ifEmpty { "Not recorded" })}</td>
                         </tr>
                         """.trimIndent()
                     }.joinToString("\n")}

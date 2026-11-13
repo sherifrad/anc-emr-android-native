@@ -1,0 +1,105 @@
+```
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    // U9: "Target Delivery Timing" is the shared EDD in dd/mm/yyyy.
+    @Test
+    fun targetDeliveryTiming_lmpOnlyPatientShowsTheLmpEddWhateverTheAgreedEddIsMissingAs() {
+        for (agreed in MISSING) {
+            val html = printDating(printDatingFields(lmp = "2026-06-08", agreed = agreed, method = "LMP"), scanDate = null)
+            assertEquals("agreed '$agreed'", "15/03/2027", rowValue(html, "Target Delivery Timing:"))
+        }
+    }
+=======
+    // U9: "Estimated due date:" is the shared EDD in dd/mm/yyyy.
+    @Test
+    fun estimatedDueDate_lmpOnlyPatientShowsTheLmpEddWhateverTheAgreedEddIsMissingAs() {
+        for (agreed in MISSING) {
+            val html = printDating(printDatingFields(lmp = "2026-06-08", agreed = agreed, method = "LMP"), scanDate = null)
+            assertEquals("agreed '$agreed'", "15/03/2027", rowValue(html, "Estimated due date:"))
+        }
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun targetDeliveryTiming_malformedAgreedEddFallsBackToTheMethodEdd() {
+        val html = printDating(printDatingFields(lmp = "2026-06-08", agreed = "garbage", method = "LMP"), scanDate = null)
+        assertEquals("15/03/2027", rowValue(html, "Target Delivery Timing:"))
+    }
+=======
+    @Test
+    fun estimatedDueDate_malformedAgreedEddFallsBackToTheMethodEdd() {
+        val html = printDating(printDatingFields(lmp = "2026-06-08", agreed = "garbage", method = "LMP"), scanDate = null)
+        assertEquals("15/03/2027", rowValue(html, "Estimated due date:"))
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun targetDeliveryTiming_agreedEddWinsAndIsNeverRawIso() {
+        val html = printDating(printDatingFields(lmp = "2026-06-08", agreed = "2027-03-20", method = "LMP"), scanDate = null)
+        assertEquals("20/03/2027", rowValue(html, "Target Delivery Timing:"))
+        assertFalse(html.contains("2027-03-20"))
+    }
+=======
+    @Test
+    fun estimatedDueDate_agreedEddWinsAndIsNeverRawIso() {
+        val html = printDating(printDatingFields(lmp = "2026-06-08", agreed = "2027-03-20", method = "LMP"), scanDate = null)
+        assertEquals("20/03/2027", rowValue(html, "Estimated due date:"))
+        assertFalse(html.contains("2027-03-20"))
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun targetDeliveryTiming_scanOnlyDatingShowsTheScanEdd() {
+        val html = printDating(printDatingFields(us = "2027-03-24"), scanDate = null)
+        assertEquals("24/03/2027", rowValue(html, "Target Delivery Timing:"))
+    }
+=======
+    @Test
+    fun estimatedDueDate_scanOnlyDatingShowsTheScanEdd() {
+        val html = printDating(printDatingFields(us = "2027-03-24"), scanDate = null)
+        assertEquals("24/03/2027", rowValue(html, "Estimated due date:"))
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun targetDeliveryTiming_ivfPatientShowsTheTransferEdd() {
+        val html = printDating(
+            printDatingFields(method = "IVF_TRANSFER", transfer = "2026-06-20", embryoAge = 5),
+            scanDate = null,
+        )
+        assertEquals("08/03/2027", rowValue(html, "Target Delivery Timing:"))
+    }
+=======
+    @Test
+    fun estimatedDueDate_ivfPatientShowsTheTransferEdd() {
+        val html = printDating(
+            printDatingFields(method = "IVF_TRANSFER", transfer = "2026-06-20", embryoAge = 5),
+            scanDate = null,
+        )
+        assertEquals("08/03/2027", rowValue(html, "Estimated due date:"))
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun targetDeliveryTiming_noEddAnywhereIsNotRecorded() {
+        val html = printDating(printDatingFields(agreed = "garbage", method = "LMP"), scanDate = null)
+        assertEquals(NOT_RECORDED, rowValue(html, "Target Delivery Timing:"))
+    }
+=======
+    @Test
+    fun estimatedDueDate_noEddAnywhereRowIsAbsent() {
+        val html = printDating(printDatingFields(agreed = "garbage", method = "LMP"), scanDate = null)
+        assertFalse(html.contains("Estimated due date:"))
+    }
+>>>>>>> REPLACE
+```

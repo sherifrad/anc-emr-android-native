@@ -126,13 +126,13 @@ internal fun scanWeight(scan: DemoUltrasoundScan): String {
     return if (weight.any { it.isLetter() }) weight else "$weight g"
 }
 
+/** The stored frequency is a legacy default and is never printed; the note carries the real schedule. */
 internal fun medicationDetail(m: DemoMedicationRecord): String {
     val parts = medicationInstructions(m.dosage, m.route, m.notes)
         .split(" · ")
         .map { it.trim() }
         .filter { it.isNotEmpty() }
         .toMutableList()
-    m.frequency?.trim()?.takeIf { it.isNotEmpty() }?.let { parts.add(it) }
     if (m.isProphylaxis) parts.add("Prophylaxis")
     m.adverseNotes?.trim()?.takeIf { it.isNotEmpty() }?.let { parts.add("Adverse: $it") }
     return parts.joinToString(" · ")
