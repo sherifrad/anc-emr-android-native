@@ -16,7 +16,10 @@ case "${1:-}" in
     ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug --rerun-tasks > /tmp/push_gate_unit.log 2>&1 && ok "assemble, unit tests, lint" || bad "assemble, unit tests, lint (see /tmp/push_gate_unit.log)"
     ./gradlew :app:compileDebugAndroidTestKotlin > /tmp/push_gate_compile.log 2>&1 && ok "androidTest compile" || bad "androidTest compile"
     .agents/scripts/run_emulator_all_tests.sh > /tmp/push_gate_emulator.log 2>&1; tail -3 /tmp/push_gate_emulator.log | grep TOTAL
-    grep -q "failures=0" /tmp/push_gate_emulator.log && ok "emulator suite, 0 failures" || bad "emulator suite (see /tmp/push_gate_emulator.log)";;
+    # Zero tests means no emulator was attached: that is a failed gate, not a pass.
+    if grep -q "TOTAL tests=0 " /tmp/push_gate_emulator.log || ! grep -q "TOTAL tests=" /tmp/push_gate_emulator.log; then bad "emulator suite ran no tests (is emulator-5554 running?)"
+    elif grep -q "failures=0" /tmp/push_gate_emulator.log; then ok "emulator suite, 0 failures"
+    else bad "emulator suite (see /tmp/push_gate_emulator.log)"; fi;;
   post)
     git fetch origin > /dev/null 2>&1
     [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ] && ok "origin/main equals local HEAD ($(git rev-parse --short HEAD))" || bad "origin/main differs from local HEAD"
