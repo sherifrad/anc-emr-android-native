@@ -172,10 +172,7 @@ object PatientPrintHtmlGenerator {
                 """
                 <tr>
                     <td class="text-center date-cell">${escapeHtml(reportDate(l.date))}</td>
-                    <td class="text-center font-bold text-navy">
-                        ${escapeHtml(l.testName)}
-                        $extraHtml
-                    </td>
+                    <td class="text-center font-bold text-navy">${escapeHtml(l.testName)}$extraHtml</td>
                     <td class="text-center">${resultHtml}</td>
                     <td class="text-center text-muted">${escapeHtml(l.referenceRange ?: "-")}</td>
                 </tr>
@@ -632,6 +629,8 @@ object PatientPrintHtmlGenerator {
         .attention-box .k { font-weight: 700; white-space: nowrap; }
 
         .doc-sign { font-family: 'Arslan Wessam B', 'Noto Naskh Arabic', serif; font-size: 20pt; line-height: 1.3; color: #1e293b; }
+        .doc-sign-title { font-size: 11pt; line-height: 1.4; }
+        .med-cell { overflow-wrap: anywhere; word-break: break-word; }
 
         .val-abnormal {
             color: var(--danger-text);
@@ -932,7 +931,7 @@ object PatientPrintHtmlGenerator {
                         ReportRisk.HIGH -> """<span class="badge badge-danger">${risk.label}</span>"""
                         ReportRisk.MEDIUM -> """<span class="badge badge-warning">${risk.label}</span>"""
                         ReportRisk.LOW -> """<span class="badge badge-success">${risk.label}</span>"""
-                        ReportRisk.UNRECORDED -> """<span class="badge">${risk.label}</span>"""
+                        ReportRisk.UNRECORDED -> """<span class="badge">${escapeHtml(reportRiskLabel(patient.riskLevel))}</span>"""
                     }}
                 </div>
             </section>
@@ -1175,7 +1174,8 @@ object PatientPrintHtmlGenerator {
                     <div class="signature-box">
                         <div>
                             <div class="doc-name">Dr. Sherif Radwan</div>
-                            <div class="doc-sign" lang="ar" dir="rtl">شريف رضوان</div>
+                            <div class="doc-sign" lang="ar" dir="rtl">شريف جمال رضوان</div>
+                            <div class="doc-sign doc-sign-title" lang="ar" dir="rtl">أخصائي التوليد وأمراض النساء وتأخر الحمل</div>
                             <div class="doc-title">$doctorOfficialTitle</div>
                             <div class="stamp-placeholder">Stamp</div>
                         </div>

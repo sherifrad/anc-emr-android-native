@@ -22,7 +22,7 @@ internal fun patientShareText(patient: DemoPatient, asOf: LocalDate = LocalDate.
     if (!patient.dateOfBirth.isNullOrBlank()) sb.appendLine("Date of birth: ${reportDate(patient.dateOfBirth)}")
     if (!patient.phone.isNullOrBlank()) sb.appendLine("Phone: ${patient.phone}")
     if (!patient.bloodGroupText.isNullOrBlank()) sb.appendLine("Blood group: ${patient.bloodGroupText}")
-    sb.appendLine("Risk: ${reportRisk(patient.riskLevel).label}")
+    sb.appendLine("Risk: ${reportRiskLabel(patient.riskLevel)}")
     sb.appendLine("Obstetric: G${patient.gravida ?: "-"} P${patient.parity ?: "-"} A${patient.abortion ?: "-"}")
     reportStatusLine(patient)?.let { sb.appendLine("Status: $it") }
     if (!patient.clinicalAttention.isNullOrBlank()) sb.appendLine("Clinical attention: ${patient.clinicalAttention}")

@@ -50,8 +50,6 @@ class PrintSectionTitlesTest {
         "ULTRASOUND ATTACHMENTS",
     )
 
-    private val PHOTO_TITLE = "Clinical Imaging & Ultrasound Scans"
-
     private fun dating(agreedEdd: String?) = DemoPatientDating(
         patientId = "r3p-print-1", lmpDate = "2026-02-01", ultrasoundEdd = null,
         agreedEdd = agreedEdd, datingMethod = "LMP", notes = null,
@@ -152,13 +150,4 @@ class PrintSectionTitlesTest {
         }
     }
 
-    @Test
-    fun q94_photoSectionTitle_appearsOnceWithScanPhoto() {
-        val generated = html()
-        assertEquals(
-            "'$PHOTO_TITLE' must be printed exactly once when the patient has scan photos",
-            1,
-            spanCount(generated, PHOTO_TITLE),
-        )
-    }
 }

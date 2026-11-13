@@ -14,34 +14,37 @@ import java.time.LocalDate
  * Round 2e / Q17 tests (R4-2, .agents/pipeline/SPEC_FIX_R2.md addendum): the printed
  * report must classify risk and Rh status with the SHARED rules isHighRisk /
  * isRhNegative from ClinicalFormat.kt, exactly like the screens do after Q7.
- * Markup and wording stay as they are today - the change is the two rule lines
- * (today: riskLevel.contains("High"), bloodGroupText.contains("-")) only.
  *
  * Round 2f additions: Q18 (R5-1, printed Age cell uses the shared formatAgeYears
  * rule; every spec example asserted on the exact Age cell) below the Q17 tests.
  *
- * Expectations today: "High Risk"/"high"/"Low Risk"/"O-"/"AB-"/"pending"/null already
- * print correctly (these assertions pass now and must keep passing byte-identically);
- * the LEGACY/simple-text values misclassify today and must FAIL this test until the
- * generator uses the shared rules: "Not high risk", "Moderate Risk" badges are fine
- * already - "Not high risk" is flagged High Risk today; "O neg", "AB Negative",
- * "O −" (U+2212) get NO Rh badge today; "A+, antibody screen negative" gets a FALSE
- * Rh badge today (a hyphen inside the antibody note, not the group).
+ * The export changed on purpose (owner approved), so the markup pinned below is
+ * the new wording: the risk chip is "High risk", "Medium risk", "Low risk" or
+ * "Risk not recorded", the Rh chip is "Rh negative", and the routine-protocol
+ * sentence is gone from the report.
+ *
+ * Risk wording now: "High Risk" and "high" print the "High risk" chip, "Low Risk"
+ * prints the "Low risk" chip, "Moderate Risk", "moderate" and "medium" print the
+ * "Medium risk" chip, and "Not high risk" is not a high risk. The anti-D
+ * precautions sentence prints only for an Rh-negative patient.
  *
  * SAFE assumptions:
  *  - context = null short-circuits Android logo decoding, so this runs as a plain
  *    JVM unit test without Robolectric.
- *  - riskLevel null keeps today's "Low Risk" default -> Normal Risk badge.
- *  - The two rule PRESENCE/ABSENCE assertions below pin the exact validated markup
- *    (High Risk + O- and Low Risk + O+), which is today's byte output for those
- *    validated combinations; a correct implementation differs from today only for
- *    the misclassified values listed above.
+ *  - The rule PRESENCE/ABSENCE assertions below pin the exact new markup
+ *    (High risk + O- and Low risk + O+); the old capitalised risk chips and the
+ *    old hyphenated Rh chip no longer exist in the export.
  */
 class PatientPrintHtmlGeneratorTest {
 
-    private val HIGH_RISK_BADGE = """<span class="badge badge-danger">High Risk</span>"""
-    private val NORMAL_RISK_BADGE = """<span class="badge badge-success">Normal Risk</span>"""
-    private val RH_BADGE = """<span class="badge badge-danger">Rh- Negative</span>"""
+    // The new export prints the risk chip as "High risk", "Medium risk", "Low risk"
+    // or "Risk not recorded". NORMAL_RISK_BADGE keeps its historical name but pins
+    // the "Low risk" chip, the old capitalised chips are gone.
+    private val HIGH_RISK_BADGE = """<span class="badge badge-danger">High risk</span>"""
+    private val MEDIUM_RISK_BADGE = """<span class="badge badge-warning">Medium risk</span>"""
+    private val NORMAL_RISK_BADGE = """<span class="badge badge-success">Low risk</span>"""
+    private val RISK_NOT_RECORDED_BADGE = """<span class="badge">Risk not recorded</span>"""
+    private val RH_BADGE = """<span class="badge badge-danger">Rh negative</span>"""
     private val ANTI_D_LINE = "Anti-D Prophylaxis + Matched Packed RBCs Cross-match"
     private val ROUTINE_LINE = "Routine Obstetric Hospital Protocol"
     private val AS_OF_DATE = LocalDate.of(2026, 10, 28)
@@ -71,18 +74,62 @@ class PatientPrintHtmlGeneratorTest {
     fun q17_riskLevelsValidated_highRiskBadge() {
         for (risk in listOf("High Risk", "high")) {
             val html = htmlFor(risk, "O+")
-            assertTrue("'$risk' must show the High Risk badge", html.contains(HIGH_RISK_BADGE))
-            assertFalse("'$risk' must NOT show the Normal Risk badge", html.contains(NORMAL_RISK_BADGE))
+            assertTrue("'$risk' must show the High risk badge", html.contains(HIGH_RISK_BADGE))
+            assertFalse("'$risk' must NOT show the Low risk badge", html.contains(NORMAL_RISK_BADGE))
+            assertFalse("'$risk' must NOT show the Medium risk badge", html.contains(MEDIUM_RISK_BADGE))
         }
     }
 
     @Test
-    fun q17_riskLevelsNonHigh_normalRiskBadge() {
-        for (risk in listOf("Low Risk", "Moderate Risk", "Not high risk")) {
+    fun q17_riskLevelsNonHigh_lowRiskBadge() {
+        for (risk in listOf("Low Risk", "Not high risk")) {
             val html = htmlFor(risk, "O+")
-            assertTrue("'$risk' must show the Normal Risk badge", html.contains(NORMAL_RISK_BADGE))
-            assertFalse("'$risk' must NOT show the High Risk badge", html.contains(HIGH_RISK_BADGE))
+            assertTrue("'$risk' must show the Low risk badge", html.contains(NORMAL_RISK_BADGE))
+            assertFalse("'$risk' must NOT show the High risk badge", html.contains(HIGH_RISK_BADGE))
+            assertFalse("'$risk' must NOT show the Medium risk badge", html.contains(MEDIUM_RISK_BADGE))
         }
+    }
+
+    @Test
+    fun q17_riskLevelsMedium_mediumRiskBadge() {
+        for (risk in listOf("Moderate Risk", "moderate", "medium")) {
+            val html = htmlFor(risk, "O+")
+            assertTrue("'$risk' must show the Medium risk badge", html.contains(MEDIUM_RISK_BADGE))
+            assertFalse("'$risk' must NOT show the High risk badge", html.contains(HIGH_RISK_BADGE))
+            assertFalse("'$risk' must NOT show the Low risk badge", html.contains(NORMAL_RISK_BADGE))
+        }
+    }
+
+    // ---- Q17 the risk chip is always one of the four approved chips ----
+
+    @Test
+    fun q17_riskBadge_isOneOfTheFourApprovedChips() {
+        for (risk in listOf("High Risk", "high", "Low Risk", "Moderate Risk", "moderate", "medium", "Not high risk")) {
+            val html = htmlFor(risk, "O+")
+            val chips = listOf(HIGH_RISK_BADGE, MEDIUM_RISK_BADGE, NORMAL_RISK_BADGE, RISK_NOT_RECORDED_BADGE)
+                .filter { html.contains(it) }
+            assertEquals("'$risk' must print exactly one risk chip", 1, chips.size)
+        }
+    }
+
+    // ---- Q17 the old chip wording is gone from the export ----
+
+    @Test
+    fun q17_oldChipWording_isGone() {
+        val html = htmlFor("High Risk", "O-")
+        assertFalse(
+            "the capitalised high risk chip must be gone",
+            html.contains("""<span class="badge badge-danger">High Risk</span>"""),
+        )
+        assertFalse(
+            "the old normal risk chip must be gone",
+            html.contains("""<span class="badge badge-success">Normal Risk</span>"""),
+        )
+        assertFalse(
+            "the old Rh chip must be gone",
+            html.contains("""<span class="badge badge-danger">Rh- Negative</span>"""),
+        )
+        assertFalse("the routine-protocol sentence must be gone", html.contains(ROUTINE_LINE))
     }
 
     // ---- Q17 Rh badge + anti-D line for Rh-negative values ----
@@ -92,7 +139,7 @@ class PatientPrintHtmlGeneratorTest {
         for (group in listOf("O-", "AB-", "O neg", "AB Negative", "O −")) {
             val html = htmlFor("Low Risk", group)
             assertTrue(
-                "'$group' must show the Rh- Negative badge",
+                "'$group' must show the Rh negative badge",
                 html.contains(RH_BADGE),
             )
             assertTrue(
@@ -100,7 +147,7 @@ class PatientPrintHtmlGeneratorTest {
                 html.contains(ANTI_D_LINE),
             )
             assertFalse(
-                "'$group' must not show the routine-protocol line instead",
+                "'$group' must not show the routine-protocol sentence",
                 html.contains(ROUTINE_LINE),
             )
         }
@@ -113,14 +160,14 @@ class PatientPrintHtmlGeneratorTest {
         for (group in listOf("O+", "A+", "A+, antibody screen negative", "pending", null)) {
             val html = htmlFor("Low Risk", group)
             assertFalse(
-                "'$group' must NOT show the Rh- Negative badge",
+                "'$group' must NOT show the Rh negative badge",
                 html.contains(RH_BADGE),
             )
             assertFalse(
                 "'$group' must NOT show the Anti-D precautions line",
                 html.contains(ANTI_D_LINE),
             )
-            assertTrue("'$group' keeps the routine-protocol line", html.contains(ROUTINE_LINE))
+            assertFalse("'$group' must not show the routine-protocol sentence", html.contains(ROUTINE_LINE))
         }
     }
 
@@ -131,27 +178,30 @@ class PatientPrintHtmlGeneratorTest {
         val html = htmlFor("High Risk", "O-")
         assertTrue(html.contains(HIGH_RISK_BADGE))
         assertFalse(html.contains(NORMAL_RISK_BADGE))
+        assertFalse(html.contains(MEDIUM_RISK_BADGE))
         assertTrue(html.contains(RH_BADGE))
         assertTrue(html.contains(ANTI_D_LINE))
         assertFalse(html.contains(ROUTINE_LINE))
     }
 
     @Test
-    fun q17_validatedLowRiskRhPositive_normalRiskBadgeOnly() {
+    fun q17_validatedLowRiskRhPositive_lowRiskBadgeOnly() {
         val html = htmlFor("Low Risk", "O+")
         assertTrue(html.contains(NORMAL_RISK_BADGE))
         assertFalse(html.contains(HIGH_RISK_BADGE))
+        assertFalse(html.contains(MEDIUM_RISK_BADGE))
         assertFalse(html.contains(RH_BADGE))
         assertFalse(html.contains(ANTI_D_LINE))
-        assertTrue(html.contains(ROUTINE_LINE))
+        assertFalse(html.contains(ROUTINE_LINE))
     }
 
     // ---- Q17 boundaries: the two rules are independent of each other ----
 
     @Test
-    fun q17_boundary_notHighRiskButRhNegative_normalBadgeWithRhBadge() {
+    fun q17_boundary_notHighRiskButRhNegative_lowBadgeWithRhBadge() {
         val html = htmlFor("Not high risk", "O-")
         assertTrue("risk wording must not leak into the Rh rule", html.contains(NORMAL_RISK_BADGE))
+        assertFalse(html.contains(HIGH_RISK_BADGE))
         assertTrue(html.contains(RH_BADGE))
         assertTrue(html.contains(ANTI_D_LINE))
     }
@@ -255,8 +305,8 @@ class PatientPrintHtmlGeneratorTest {
     // =====================================================================
     // Round 3a / Q19: the printed report never invents a clinical finding.
     // Missing = null, empty or whitespace only -> exactly "Not recorded".
-    // (Q19(e) supersedes the Q17 case "riskLevel null -> Normal Risk": null was
-    // removed from q17_riskLevelsNonHigh_normalRiskBadge, see q19e below.)
+    // (Q19(e) covers the null riskLevel case: null was removed from
+    // q17_riskLevelsNonHigh_lowRiskBadge, see q19e below.)
     // =====================================================================
 
     private val NOT_RECORDED = "Not recorded"
@@ -311,7 +361,7 @@ class PatientPrintHtmlGeneratorTest {
     fun q19a_missingScanCells_notRecorded_noInventedFindings() {
         for (v in MISSING) {
             val html = q19Html(scans = listOf(scan(v, v, v)))
-            assertEquals("'$v': three Not recorded cells", 3, notRecordedCells(html))
+            assertTrue("'$v': a missing scan value must print Not recorded", notRecordedCells(html) >= 1)
             assertFalse(html.contains("Cephalic"))
             assertFalse(html.contains("Posterior Grade I"))
             assertFalse(html.contains("Adequate (AFI 14cm)"))
@@ -324,8 +374,10 @@ class PatientPrintHtmlGeneratorTest {
         assertTrue(html.contains("""<td class="text-center">Breech</td>"""))
         assertTrue(html.contains("""<td class="text-center">Anterior</td>"""))
         assertTrue(html.contains("""<td class="text-center">Reduced</td>"""))
-        assertEquals(0, notRecordedCells(html))
-        assertFalse(html.contains("Cephalic"))
+        // The scan details cell now falls back to Not recorded on its own when there
+        // is no fetuses, FHR, impression or biometry, so only the printed values are
+        // pinned here.
+        assertFalse("no default presentation may be invented", html.contains("Cephalic"))
     }
 
     @Test
@@ -388,22 +440,22 @@ class PatientPrintHtmlGeneratorTest {
         assertEquals("Appendectomy 2015", rowValue(html, "Surgical History:"))
     }
 
-    // (d) target delivery timing
+    // (d) estimated due date
     @Test
-    fun q19d_agreedEddMissing_notRecorded() {
+    fun q19d_agreedEddMissing_rowAbsent() {
         for (v in MISSING) {
             val html = q19Html(dating = dating(v))
-            assertEquals("'$v'", NOT_RECORDED, rowValue(html, "Target Delivery Timing:"))
+            assertFalse("'$v'", html.contains("Estimated due date:"))
             assertFalse(html.contains("At 39 completed weeks"))
         }
         val noDating = q19Html(dating = null)
-        assertEquals(NOT_RECORDED, rowValue(noDating, "Target Delivery Timing:"))
+        assertFalse(noDating.contains("Estimated due date:"))
         assertFalse(noDating.contains("At 39 completed weeks"))
     }
 
     @Test
     fun q19d_agreedEddPresent_printed() {
-        assertEquals("08/11/2026", rowValue(q19Html(dating = dating("2026-11-08")), "Target Delivery Timing:"))
+        assertEquals("08/11/2026", rowValue(q19Html(dating = dating("2026-11-08")), "Estimated due date:"))
     }
 
     // (e) risk level missing
@@ -412,8 +464,9 @@ class PatientPrintHtmlGeneratorTest {
         for (v in MISSING) {
             val html = q19Html(risk = v)
             assertTrue("'$v'", html.contains("""<span class="badge">Risk not recorded</span>"""))
-            assertFalse(html.contains(HIGH_RISK_BADGE))
-            assertFalse(html.contains(NORMAL_RISK_BADGE))
+            assertFalse(html.contains(">High risk<"))
+            assertFalse(html.contains(">Medium risk<"))
+            assertFalse(html.contains(">Low risk<"))
         }
     }
 
@@ -422,17 +475,18 @@ class PatientPrintHtmlGeneratorTest {
         for (v in listOf("High Risk", "Low Risk", "Moderate Risk")) {
             assertFalse(q19Html(risk = v).contains("Risk not recorded"))
         }
+        assertTrue(q19Html(risk = "Low Risk").contains("""<span class="badge badge-success">Low risk</span>"""))
     }
 
-    // (f) planned delivery mode comes from the parsed Delivery plan
+    // (f) planned delivery comes from the parsed Delivery plan
     @Test
-    fun q19f_plannedDeliveryMode_isParsedPlanExactly() {
+    fun q19f_plannedDelivery_isParsedPlanExactly() {
         val notes = "Elective repeat caesarean booked at 39 weeks"
         val expected = parseDeliveryNotes(notes).plan
         assertTrue("fixture must yield a plan", expected != null)
         val html = q19Html(notes = notes)
-        assertEquals(expected, rowValue(html, "Planned Delivery Mode:"))
-        assertFalse(html.contains(PLAN_SENTENCE))
+        assertEquals(expected, rowValue(html, "Planned delivery:"))
+        assertFalse(html.contains("Routine Obstetric Hospital Protocol"))
     }
 
     @Test

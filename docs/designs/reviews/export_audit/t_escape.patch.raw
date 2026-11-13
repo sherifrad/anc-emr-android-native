@@ -1,0 +1,159 @@
+```
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt
+<<<<<<< SEARCH
+ *  - settings.clinicName today is NOT interpolated into the HTML (the header
+ *    uses the generator's constant English clinic name), so the clinic-name
+ *    marker cannot appear in the output either raw or escaped; the test still
+ *    carries it to prove no raw leak ever happens.
+=======
+ *  - settings.clinicName is printed escaped in the title, both page headers
+ *    and both footers; a non blank value replaces the fallback English clinic
+ *    name, and the marker must never appear raw in any of those places.
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt
+<<<<<<< SEARCH
+        assertTrue(html.contains("Clinical Record - $ESCAPED - Dr. Sherif Radwan Clinic"))
+=======
+        assertTrue(html.contains("Clinical Record - $ESCAPED - $ESCAPED"))
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun q93_settingsClinicName_neverLeaksRaw() {
+        // Today the header clinic text is the generator constant; the settings
+        // clinicName carries the marker yet nothing raw may ever appear.
+        assertTrue(html.contains("Dr. Sherif Radwan Clinic"))
+        assertFalse(html.contains("<b>&"))
+    }
+=======
+    @Test
+    fun q93_settingsClinicName_neverLeaksRaw() {
+        // The settings clinic name is printed escaped in the title, both page
+        // headers and both footers, so nothing raw may ever appear there.
+        assertTrue(countOf("""<h1[^>]*>$ESCAPED</h1>""") == 2)
+        assertTrue(countOf(Regex.escape("Confidential medical record · $ESCAPED ·")) == 1)
+        assertTrue(countOf(Regex.escape("$ESCAPED · Consultant of Obstetrics")) == 2)
+        assertFalse(html.contains("<b>&"))
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt
+<<<<<<< SEARCH
+        escapedRow("Drug Allergies:")
+        escapedRow("Medical History:")
+        escapedRow("Surgical History:")
+=======
+        escapedRow("Drug Allergies:")
+        escapedRow("Medical History:")
+        escapedRow("Surgical History:")
+        escapedRow("Family History:")
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt
+<<<<<<< SEARCH
+        assertTrue(countOf("""date-cell">$ESCAPED</td>""") >= 1)
+        assertTrue(countOf(Regex.escape("$ESCAPED kg")) >= 2)
+        assertTrue(html.contains("""text-navy">$ESCAPED</td>"""))
+        assertTrue(
+            Regex("""(?s)notes-cell">BP &lt;90 systolic $ESCAPED""").containsMatchIn(html),
+        )
+=======
+        assertTrue(countOf("""date-cell">$ESCAPED</td>""") >= 1)
+        assertTrue(countOf(Regex.escape("$ESCAPED kg")) >= 2)
+        assertTrue(
+            Regex("""(?s)notes-cell">BP &lt;90 systolic $ESCAPED · $ESCAPED""").containsMatchIn(html),
+        )
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt
+<<<<<<< SEARCH
+        assertTrue(countOf("""<td class="text-center">$ESCAPED</td>""") >= 3)
+        assertTrue(html.contains("""font-bold text-navy">$ESCAPED g</td>"""))
+        assertTrue(
+            Regex("""(?s)notes-cell">\s*$ESCAPED""").containsMatchIn(html),
+        )
+=======
+        assertTrue(countOf("""<td class="text-center">$ESCAPED</td>""") >= 3)
+        assertTrue(html.contains("""font-bold text-navy">$ESCAPED</td>"""))
+        assertTrue(
+            Regex("""(?s)notes-cell">Fetuses: $ESCAPED · FHR: $ESCAPED""").containsMatchIn(html),
+        )
+        assertTrue(html.contains("""<div class="photo-badge">1 photos in the clinic record</div>"""))
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt
+<<<<<<< SEARCH
+        assertTrue(html.contains("""<span class="val-abnormal">$ESCAPED $ESCAPED (Abnormal)</span>"""))
+        assertTrue(html.contains("""<span class="font-bold text-navy">$ESCAPED $ESCAPED</span>"""))
+        assertTrue(html.contains("""<td class="text-center text-muted">$ESCAPED</td>"""))
+=======
+        assertTrue(html.contains("""<span class="val-abnormal">$ESCAPED $ESCAPED (Abnormal)</span>"""))
+        assertTrue(
+            html.contains("""<td class="text-center font-bold text-navy">$ESCAPED<br><span class="text-muted med-instructions">$ESCAPED · $ESCAPED</span></td>"""),
+        )
+        assertTrue(html.contains("""<td class="text-center text-muted">$ESCAPED</td>"""))
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun q93_medicationsSection_escapedOnce() {
+        assertTrue(html.contains("""<span class="font-bold text-navy">$ESCAPED</span><br><span class="text-muted med-instructions">$ESCAPED · $ESCAPED · $ESCAPED</span>"""))
+    }
+=======
+    @Test
+    fun q93_medicationsSection_escapedOnce() {
+        assertTrue(
+            html.contains("""<td class="text-center med-cell"><span class="font-bold text-navy">$ESCAPED</span><br><span class="text-muted med-instructions">$ESCAPED · $ESCAPED · $ESCAPED · $ESCAPED · Prophylaxis</span></td>"""),
+        )
+        assertTrue(html.contains("""<td class="text-center">From 01/01/2026</td>"""))
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt
+<<<<<<< SEARCH
+        assertTrue(
+            "the parsed plan must print escaped in the Planned Delivery Mode row",
+            html.contains("""<span class="v text-rose font-bold">""" + escapeHtml(plan) + "</span>"),
+        )
+=======
+        assertTrue(
+            "the parsed plan must print escaped in the Planned delivery row",
+            Regex("""Planned delivery:</span>\s*<span class="v[^"]*">""" + Regex.escape(escapeHtml(plan)) + "</span>")
+                .containsMatchIn(html),
+        )
+        assertFalse(html.contains("Planned Delivery Mode:"))
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun q93_appendixPage3_escapedOnce() {
+        assertTrue(countOf("""Case ID:</span> <span class="v">$ESCAPED</span>""") >= 1)
+        assertTrue(countOf(Regex.escape("Patient:</span> <span class=\"v\">$ESCAPED")) >= 2)
+        assertTrue(Regex("""(?s)photo-caption">[^<]*$ESCAPED""").containsMatchIn(html))
+    }
+
+    @Test
+    fun q93_generatorOwnMarkup_stillPresent() {
+=======
+    @Test
+    fun q93_generatorOwnMarkup_stillPresent() {
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlEscapeTest.kt
+<<<<<<< SEARCH
+        assertTrue(html.contains("""<span class="badge badge-success">Normal Risk</span>"""))
+        assertTrue(html.contains("""<span class="badge badge-teal">Active</span>"""))
+        assertTrue(html.contains("""<div class="photo-badge">📷 1 scan photos attached</div>"""))
+=======
+        assertTrue(html.contains("""<span class="badge">Risk not recorded</span>"""))
+        assertTrue(html.contains("Current Medications"))
+        assertTrue(html.contains("Delivery Plan"))
+        assertFalse(html.contains("Active Medications"))
+        assertTrue(html.contains("""<td class="text-center med-cell">"""))
+        assertTrue(html.contains("""<div class="photo-badge">1 photos in the clinic record</div>"""))
+>>>>>>> REPLACE
+```

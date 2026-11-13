@@ -1,0 +1,38 @@
+```
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintSectionTitlesTest.kt
+<<<<<<< SEARCH
+    private val PHOTO_TITLE = "Clinical Imaging & Ultrasound Scans"
+
+    private fun dating(agreedEdd: String?) = DemoPatientDating(
+=======
+    private fun dating(agreedEdd: String?) = DemoPatientDating(
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintSectionTitlesTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun q94_photoSectionTitle_appearsOnceWithScanPhoto() {
+        val generated = html()
+        assertEquals(
+            "'$PHOTO_TITLE' must be printed exactly once when the patient has scan photos",
+            1,
+            spanCount(generated, PHOTO_TITLE),
+        )
+    }
+}
+=======
+}
+>>>>>>> REPLACE
+```
+
+Two deletions only, both because the behaviour they pinned no longer exists:
+
+1. **`PHOTO_TITLE` constant** removed together with its blank line.
+2. **`q94_photoSectionTitle_appearsOnceWithScanPhoto`** deleted: the imaging appendix page 3 ("IMAGING ATTACHMENTS" / "Clinical Imaging & Ultrasound Scans" / photo cards) is removed entirely, so a title span for it can never be counted again.
+
+Everything else still holds under the new behaviour and is left untouched:
+
+- `TITLES` already carries the new wording ("Current Medications", "Delivery Plan"), so `q94_everyCoreSectionTitle_appearsExactlyOnce` remains valid.
+- `CAPITAL_DUPLICATES` pins the *absence* of old capital wording, which is still correct (those strings are never printed in the new export), so `q94_noCapitalTitleDuplicate_printedAsText` keeps its intent, including "ULTRASOUND ATTACHMENTS", which is now guaranteed absent since the appendix is gone.
+- `q94_noEnSub_anywhereInGeneratedHtml` is unaffected by the export change.
+- The builders (`scanWithPhoto` with its photo URI, `med()` with status `"active"`, `fullPatient()` with `"Low Risk"`) remain valid inputs; a scan with photos now only adds a photo badge in the scan table, which this file never asserts on.

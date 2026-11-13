@@ -1,0 +1,98 @@
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    // (d) target delivery timing
+    @Test
+    fun q19d_agreedEddMissing_notRecorded() {
+        for (v in MISSING) {
+            val html = q19Html(dating = dating(v))
+            assertEquals("'$v'", NOT_RECORDED, rowValue(html, "Target Delivery Timing:"))
+            assertFalse(html.contains("At 39 completed weeks"))
+        }
+        val noDating = q19Html(dating = null)
+        assertEquals(NOT_RECORDED, rowValue(noDating, "Target Delivery Timing:"))
+        assertFalse(noDating.contains("At 39 completed weeks"))
+    }
+=======
+    // (d) estimated due date
+    @Test
+    fun q19d_agreedEddMissing_rowAbsent() {
+        for (v in MISSING) {
+            val html = q19Html(dating = dating(v))
+            assertFalse("'$v'", html.contains("Estimated due date:"))
+            assertFalse(html.contains("At 39 completed weeks"))
+        }
+        val noDating = q19Html(dating = null)
+        assertFalse(noDating.contains("Estimated due date:"))
+        assertFalse(noDating.contains("At 39 completed weeks"))
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun q19d_agreedEddPresent_printed() {
+        assertEquals("08/11/2026", rowValue(q19Html(dating = dating("2026-11-08")), "Target Delivery Timing:"))
+    }
+=======
+    @Test
+    fun q19d_agreedEddPresent_printed() {
+        assertEquals("08/11/2026", rowValue(q19Html(dating = dating("2026-11-08")), "Estimated due date:"))
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+            assertTrue("'$v'", html.contains("""<span class="badge">Risk not recorded</span>"""))
+            assertFalse(html.contains(HIGH_RISK_BADGE))
+            assertFalse(html.contains(NORMAL_RISK_BADGE))
+=======
+            assertTrue("'$v'", html.contains("""<span class="badge">Risk not recorded</span>"""))
+            assertFalse(html.contains(">High risk<"))
+            assertFalse(html.contains(">Medium risk<"))
+            assertFalse(html.contains(">Low risk<"))
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun q19e_riskPresent_noRiskNotRecordedBadge() {
+        for (v in listOf("High Risk", "Low Risk", "Moderate Risk")) {
+            assertFalse(q19Html(risk = v).contains("Risk not recorded"))
+        }
+    }
+=======
+    @Test
+    fun q19e_riskPresent_noRiskNotRecordedBadge() {
+        for (v in listOf("High Risk", "Low Risk", "Moderate Risk")) {
+            assertFalse(q19Html(risk = v).contains("Risk not recorded"))
+        }
+        assertTrue(q19Html(risk = "Low Risk").contains("""<span class="badge badge-success">Low risk</span>"""))
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    // (f) planned delivery mode comes from the parsed Delivery plan
+    @Test
+    fun q19f_plannedDeliveryMode_isParsedPlanExactly() {
+        val notes = "Elective repeat caesarean booked at 39 weeks"
+        val expected = parseDeliveryNotes(notes).plan
+        assertTrue("fixture must yield a plan", expected != null)
+        val html = q19Html(notes = notes)
+        assertEquals(expected, rowValue(html, "Planned Delivery Mode:"))
+        assertFalse(html.contains(PLAN_SENTENCE))
+    }
+=======
+    // (f) planned delivery comes from the parsed Delivery plan
+    @Test
+    fun q19f_plannedDelivery_isParsedPlanExactly() {
+        val notes = "Elective repeat caesarean booked at 39 weeks"
+        val expected = parseDeliveryNotes(notes).plan
+        assertTrue("fixture must yield a plan", expected != null)
+        val html = q19Html(notes = notes)
+        assertEquals(expected, rowValue(html, "Planned delivery:"))
+        assertFalse(html.contains("Routine Obstetric Hospital Protocol"))
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt

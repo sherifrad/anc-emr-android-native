@@ -1,0 +1,313 @@
+```
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    // (d) target delivery timing
+    @Test
+    fun q19d_agreedEddMissing_notRecorded() {
+        for (v in MISSING) {
+            val html = q19Html(dating = dating(v))
+            assertEquals("'$v'", NOT_RECORDED, rowValue(html, "Target Delivery Timing:"))
+            assertFalse(html.contains("At 39 completed weeks"))
+        }
+        val noDating = q19Html(dating = null)
+        assertEquals(NOT_RECORDED, rowValue(noDating, "Target Delivery Timing:"))
+        assertFalse(noDating.contains("At 39 completed weeks"))
+    }
+=======
+    // (d) estimated due date
+    @Test
+    fun q19d_agreedEddMissing_rowAbsent() {
+        for (v in MISSING) {
+            val html = q19Html(dating = dating(v))
+            assertFalse("'$v'", html.contains("Estimated due date:"))
+            assertFalse(html.contains("At 39 completed weeks"))
+        }
+        val noDating = q19Html(dating = null)
+        assertFalse(noDating.contains("Estimated due date:"))
+        assertFalse(noDating.contains("At 39 completed weeks"))
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun q19d_agreedEddPresent_printed() {
+        assertEquals("08/11/2026", rowValue(q19Html(dating = dating("2026-11-08")), "Target Delivery Timing:"))
+    }
+=======
+    @Test
+    fun q19d_agreedEddPresent_printed() {
+        assertEquals("08/11/2026", rowValue(q19Html(dating = dating("2026-11-08")), "Estimated due date:"))
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+            assertTrue("'$v'", html.contains("""<span class="badge">Risk not recorded</span>"""))
+            assertFalse(html.contains(HIGH_RISK_BADGE))
+            assertFalse(html.contains(NORMAL_RISK_BADGE))
+=======
+            assertTrue("'$v'", html.contains("""<span class="badge">Risk not recorded</span>"""))
+            assertFalse(html.contains(">High risk<"))
+            assertFalse(html.contains(">Medium risk<"))
+            assertFalse(html.contains(">Low risk<"))
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun q19e_riskPresent_noRiskNotRecordedBadge() {
+        for (v in listOf("High Risk", "Low Risk", "Moderate Risk")) {
+            assertFalse(q19Html(risk = v).contains("Risk not recorded"))
+        }
+    }
+=======
+    @Test
+    fun q19e_riskPresent_noRiskNotRecordedBadge() {
+        for (v in listOf("High Risk", "Low Risk", "Moderate Risk")) {
+            assertFalse(q19Html(risk = v).contains("Risk not recorded"))
+        }
+        assertTrue(q19Html(risk = "Low Risk").contains("""<span class="badge badge-success">Low risk</span>"""))
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    // (f) planned delivery mode comes from the parsed Delivery plan
+    @Test
+    fun q19f_plannedDeliveryMode_isParsedPlanExactly() {
+        val notes = "Elective repeat caesarean booked at 39 weeks"
+        val expected = parseDeliveryNotes(notes).plan
+        assertTrue("fixture must yield a plan", expected != null)
+        val html = q19Html(notes = notes)
+        assertEquals(expected, rowValue(html, "Planned Delivery Mode:"))
+        assertFalse(html.contains(PLAN_SENTENCE))
+    }
+=======
+    // (f) planned delivery comes from the parsed Delivery plan
+    @Test
+    fun q19f_plannedDelivery_isParsedPlanExactly() {
+        val notes = "Elective repeat caesarean booked at 39 weeks"
+        val expected = parseDeliveryNotes(notes).plan
+        assertTrue("fixture must yield a plan", expected != null)
+        val html = q19Html(notes = notes)
+        assertEquals(expected, rowValue(html, "Planned delivery:"))
+        assertFalse(html.contains("Routine Obstetric Hospital Protocol"))
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+```
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun q19f_noPlan_notRecorded() {
+        for (v in MISSING) {
+            assertTrue(parseDeliveryNotes(v).plan == null)
+            val html = q19Html(notes = v)
+            assertEquals("'$v'", NOT_RECORDED, rowValue(html, "Planned Delivery Mode:"))
+            assertFalse(html.contains(PLAN_SENTENCE))
+        }
+    }
+=======
+    @Test
+    fun q19f_noPlan_notRecorded() {
+        for (v in MISSING) {
+            assertTrue(parseDeliveryNotes(v).plan == null)
+            val html = q19Html(notes = v)
+            assertEquals("'$v'", NOT_RECORDED, rowValue(html, "Plan:"))
+            assertFalse("'$v'", html.contains("Planned delivery:"))
+            assertFalse(html.contains("Routine Obstetric Hospital Protocol"))
+        }
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    // (g) owner wording unchanged
+    @Test
+    fun q19g_ownerWordingUnchanged() {
+        assertTrue(htmlFor("Low Risk", "O-").contains(ANTI_D_LINE))
+        assertTrue(htmlFor("Low Risk", "O+").contains(ROUTINE_LINE))
+    }
+=======
+    // (g) blood bank precautions follow the Rh status
+    @Test
+    fun q19g_rhNegativePrintsAntiDAndCrossMatch() {
+        assertTrue(htmlFor("Low Risk", "O-").contains("Anti-D Prophylaxis + Matched Packed RBCs Cross-match"))
+        assertFalse(htmlFor("Low Risk", "O+").contains("Anti-D Prophylaxis"))
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun medicationPrintsNameThenOneInstructionsLineWithNothingInvented() {
+        val full = htmlWith { it.copy(medications = listOf(med("1 tab twice daily"))) }
+        assertTrue(full.contains("""<span class="text-muted med-instructions">5 mg · PO · 1 tab twice daily</span>"""))
+        for (v in MISSING) {
+            val html = htmlWith { it.copy(medications = listOf(med(v).copy(dosage = "", route = ""))) }
+            assertFalse("'$v'", html.contains("med-instructions"))
+            assertFalse("'$v'", html.contains("Once daily"))
+            assertTrue("'$v'", html.contains("Folic acid"))
+        }
+    }
+=======
+    @Test
+    fun medicationPrintsNameThenOneInstructionsLineWithNothingInvented() {
+        val full = htmlWith { it.copy(medications = listOf(med("1 tab twice daily"))) }
+        assertTrue(full.contains("""<span class="font-bold text-navy">Folic acid</span>"""))
+        assertTrue(full.contains("""<span class="text-muted med-instructions">5 mg · PO · 1 tab twice daily · OD</span>"""))
+        for (v in MISSING) {
+            val html = htmlWith { it.copy(medications = listOf(med(v).copy(dosage = "", route = ""))) }
+            assertTrue("'$v'", html.contains(""">OD</span>"""))
+            assertFalse("'$v'", html.contains("Once daily"))
+            assertTrue("'$v'", html.contains("Folic acid"))
+        }
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun q19h_visitFindingsThenNotes_printed() {
+        val a = htmlWith { it.copy(visits = listOf(visit("Fundal height ok", "side note"))) }
+        assertTrue(a.contains("""<td class="text-center notes-cell">Fundal height ok</td>"""))
+        assertFalse(a.contains("side note"))
+=======
+    @Test
+    fun q19h_visitFindingsThenNotes_printed() {
+        val a = htmlWith { it.copy(visits = listOf(visit("Fundal height ok", "side note"))) }
+        assertTrue(a.contains("""<td class="text-center notes-cell">Fundal height ok · side note</td>"""))
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun q19k_imageLabelNoImpression_noParensNoInvention() {
+        for (v in MISSING) {
+            val html = htmlWith { it.copy(ultrasoundScans = listOf(scanWithImage(v))) }
+            assertTrue("'$v'", html.contains("""<div class="photo-caption">Ultrasound Scan 1.1 - 2026-09-01</div>"""))
+            assertFalse("'$v'", html.contains("Fetal Growth Surveillance"))
+        }
+    }
+
+    @Test
+    fun q19k_imageLabelWithImpression_unchanged() {
+        val html = htmlWith { it.copy(ultrasoundScans = listOf(scanWithImage("Normal growth"))) }
+        assertTrue(html.contains("""<div class="photo-caption">Ultrasound Scan 1.1 - 2026-09-01 (Normal growth)</div>"""))
+    }
+=======
+    @Test
+    fun scanWithPhoto_printsInlinePhotoBadgeAndNoAppendix() {
+        val html = htmlWith { it.copy(ultrasoundScans = listOf(scanWithImage(null))) }
+        assertTrue(html.contains("""<div class="photo-badge">1 photos in the clinic record</div>"""))
+        assertFalse(html.contains("IMAGING ATTACHMENTS"))
+        assertFalse(html.contains("photo-caption"))
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    // U9: "Target Delivery Timing" is the shared EDD in dd/mm/yyyy.
+    @Test
+    fun targetDeliveryTiming_lmpOnlyPatientShowsTheLmpEddWhateverTheAgreedEddIsMissingAs() {
+        for (agreed in MISSING) {
+            val html = printDating(printDatingFields(lmp = "2026-06-08", agreed = agreed, method = "LMP"), scanDate = null)
+            assertEquals("agreed '$agreed'", "15/03/2027", rowValue(html, "Target Delivery Timing:"))
+        }
+    }
+=======
+    // U9: "Estimated due date" is the shared EDD in dd/mm/yyyy.
+    @Test
+    fun estimatedDueDate_lmpOnlyPatientShowsTheLmpEddWhateverTheAgreedEddIsMissingAs() {
+        for (agreed in MISSING) {
+            val html = printDating(printDatingFields(lmp = "2026-06-08", agreed = agreed, method = "LMP"), scanDate = null)
+            assertEquals("agreed '$agreed'", "15/03/2027", rowValue(html, "Estimated due date:"))
+        }
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun targetDeliveryTiming_malformedAgreedEddFallsBackToTheMethodEdd() {
+        val html = printDating(printDatingFields(lmp = "2026-06-08", agreed = "garbage", method = "LMP"), scanDate = null)
+        assertEquals("15/03/2027", rowValue(html, "Target Delivery Timing:"))
+    }
+=======
+    @Test
+    fun estimatedDueDate_malformedAgreedEddFallsBackToTheMethodEdd() {
+        val html = printDating(printDatingFields(lmp = "2026-06-08", agreed = "garbage", method = "LMP"), scanDate = null)
+        assertEquals("15/03/2027", rowValue(html, "Estimated due date:"))
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun targetDeliveryTiming_agreedEddWinsAndIsNeverRawIso() {
+        val html = printDating(printDatingFields(lmp = "2026-06-08", agreed = "2027-03-20", method = "LMP"), scanDate = null)
+        assertEquals("20/03/2027", rowValue(html, "Target Delivery Timing:"))
+        assertFalse(html.contains("2027-03-20"))
+    }
+=======
+    @Test
+    fun estimatedDueDate_agreedEddWinsAndIsNeverRawIso() {
+        val html = printDating(printDatingFields(lmp = "2026-06-08", agreed = "2027-03-20", method = "LMP"), scanDate = null)
+        assertEquals("20/03/2027", rowValue(html, "Estimated due date:"))
+        assertFalse(html.contains("2027-03-20"))
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun targetDeliveryTiming_scanOnlyDatingShowsTheScanEdd() {
+        val html = printDating(printDatingFields(us = "2027-03-24"), scanDate = null)
+        assertEquals("24/03/2027", rowValue(html, "Target Delivery Timing:"))
+    }
+=======
+    @Test
+    fun estimatedDueDate_scanOnlyDatingShowsTheScanEdd() {
+        val html = printDating(printDatingFields(us = "2027-03-24"), scanDate = null)
+        assertEquals("24/03/2027", rowValue(html, "Estimated due date:"))
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun targetDeliveryTiming_ivfPatientShowsTheTransferEdd() {
+        val html = printDating(
+            printDatingFields(method = "IVF_TRANSFER", transfer = "2026-06-20", embryoAge = 5),
+            scanDate = null,
+        )
+        assertEquals("08/03/2027", rowValue(html, "Target Delivery Timing:"))
+    }
+=======
+    @Test
+    fun estimatedDueDate_ivfPatientShowsTheTransferEdd() {
+        val html = printDating(
+            printDatingFields(method = "IVF_TRANSFER", transfer = "2026-06-20", embryoAge = 5),
+            scanDate = null,
+        )
+        assertEquals("08/03/2027", rowValue(html, "Estimated due date:"))
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGeneratorTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun targetDeliveryTiming_noEddAnywhereIsNotRecorded() {
+        val html = printDating(printDatingFields(agreed = "garbage", method = "LMP"), scanDate = null)
+        assertEquals(NOT_RECORDED, rowValue(html, "Target Delivery Timing:"))
+    }
+=======
+    @Test
+    fun estimatedDueDate_noEddAnywhere_rowAbsent() {
+        val html = printDating(printDatingFields(agreed = "garbage", method = "LMP"), scanDate = null)
+        assertFalse(html.contains("Estimated due date:"))
+    }
+>>>>>>> REPLACE
+```

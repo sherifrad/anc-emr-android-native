@@ -52,7 +52,7 @@ class PrintSampleDumpTest {
             DemoMedicationRecord(
                 id = "dump-med-$i", patientId = "dump-1", name = "Medication $i", dosage = "500 mg",
                 route = "PO", frequency = "Twice daily", startDate = "2026-01-01", endDate = null,
-                status = "active", notes = if (i == 0) longValue else "after meals", isProphylaxis = i % 2 == 0,
+                status = "Active", notes = if (i == 0) longValue else "after meals", isProphylaxis = i % 2 == 0,
             )
         }
         val previous = (0 until 3).map { i ->

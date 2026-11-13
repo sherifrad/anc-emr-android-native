@@ -1,0 +1,135 @@
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintLayoutTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun q116_stampText_printedOnce() {
+        val rendered = withoutHtmlComments(html(patient()))
+        assertEquals(1, Regex.escape("Official Stamp & Signature").toRegex().findAll(rendered).count())
+    }
+=======
+    @Test
+    fun q116_stampText_printedOnce() {
+        val rendered = withoutHtmlComments(html(patient()))
+        assertEquals(1, Regex.escape("<div class=\"stamp-placeholder\">Stamp</div>").toRegex().findAll(rendered).count())
+    }
+>>>>>>> REPLACE
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintLayoutTest.kt
+<<<<<<< SEARCH
+    private fun assertCap(
+        title: String,
+        cap: Int,
+        rowMarker: String,
+        build: (Int) -> DemoPatient,
+    ) {
+        val over = tableAfter(html(build(cap + 3)), title)
+        assertTrue("${cap + 3} rows must say 'and 3 more not shown'", over.contains("and 3 more not shown"))
+        assertEquals(cap, rowCount(over, rowMarker))
+        assertEquals("more-row colspan must equal the column count", listOf(columnCount(over)), moreRowColspans(over))
+
+        val one = tableAfter(html(build(cap + 1)), title)
+        assertTrue("${cap + 1} rows must say 'and 1 more not shown'", one.contains("and 1 more not shown"))
+
+        val exact = tableAfter(html(build(cap)), title)
+        assertFalse("exactly $cap rows must not say 'more not shown'", exact.contains("more not shown"))
+        assertEquals(cap, rowCount(exact, rowMarker))
+
+        val under = tableAfter(html(build(cap - 1)), title)
+        assertFalse("fewer than $cap rows must not say 'more not shown'", under.contains("more not shown"))
+        assertTrue(moreRowColspans(under).isEmpty())
+    }
+=======
+    private fun assertCap(
+        title: String,
+        cap: Int,
+        rowMarker: String,
+        hidden: (Int) -> String,
+        build: (Int) -> DemoPatient,
+    ) {
+        val over = tableAfter(html(build(cap + 3)), title)
+        assertTrue("${cap + 3} rows must say '${hidden(3)}'", over.contains(hidden(3)))
+        assertEquals(cap, rowCount(over, rowMarker))
+        assertEquals("hidden count colspan must equal the column count", listOf(columnCount(over)), moreRowColspans(over))
+
+        val one = tableAfter(html(build(cap + 1)), title)
+        assertTrue("${cap + 1} rows must say '${hidden(1)}'", one.contains(hidden(1)))
+
+        val exact = tableAfter(html(build(cap)), title)
+        assertFalse("exactly $cap rows must not show a hidden count", exact.contains("not shown"))
+        assertEquals(cap, rowCount(exact, rowMarker))
+
+        val under = tableAfter(html(build(cap - 1)), title)
+        assertFalse("fewer than $cap rows must not show a hidden count", under.contains("not shown"))
+        assertTrue(moreRowColspans(under).isEmpty())
+    }
+>>>>>>> REPLACE
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintLayoutTest.kt
+<<<<<<< SEARCH
+        // Lab name cell wraps: no nowrap
+        val labRow = Regex("""<tr>\s*<td[^>]*class="[^"]*date-cell[^"]*"[^>]*>.*?Test 0</td>""", RegexOption.DOT_MATCHES_ALL).find(generated)?.value
+        assertTrue("lab row found", labRow != null)
+        val labNameCell = Regex("""<td[^>]*>Test 0</td>""").find(labRow!!)?.value
+        assertTrue("lab name cell found", labNameCell != null)
+        assertFalse("lab name cell must not carry nowrap", labNameCell!!.contains("nowrap"))
+=======
+        // Lab name cell wraps: no nowrap
+        val labNameCell = Regex("""<td[^>]*class="[^"]*font-bold[^"]*"[^>]*>Test 0.*?</td>""", RegexOption.DOT_MATCHES_ALL).find(generated)?.value
+        assertTrue("lab name cell found", labNameCell != null)
+        assertFalse("lab name cell must not carry nowrap", labNameCell!!.contains("nowrap"))
+>>>>>>> REPLACE
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintLayoutTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun q117_visits_capAndMoreRow() {
+        assertCap(VISITS_TITLE, 12, "date-cell") { patient(visits = it) }
+    }
+=======
+    @Test
+    fun q117_visits_capAndMoreRow() {
+        assertCap(VISITS_TITLE, 12, "date-cell", { "$it earlier visits not shown" }) { patient(visits = it) }
+    }
+>>>>>>> REPLACE
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintLayoutTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun q117_scans_capAndMoreRow() {
+        assertCap(SCANS_TITLE, 7, "date-cell") { patient(scans = it) }
+    }
+=======
+    @Test
+    fun q117_scans_capAndMoreRow() {
+        assertCap(SCANS_TITLE, 7, "date-cell", { "$it earlier scans not shown" }) { patient(scans = it) }
+    }
+>>>>>>> REPLACE
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintLayoutTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun q117_labs_capAndMoreRow() {
+        assertCap(LABS_TITLE, 10, "date-cell") { patient(labs = it) }
+    }
+=======
+    @Test
+    fun q117_labs_capAndMoreRow() {
+        assertCap(LABS_TITLE, 10, "date-cell", { "$it older results not shown" }) { patient(labs = it) }
+    }
+>>>>>>> REPLACE
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintLayoutTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun q117_emptyStates_unchanged() {
+        val generated = html(patient())
+        assertTrue(generated.contains("No clinical visits recorded yet"))
+        assertTrue(generated.contains("No ultrasound scans recorded yet"))
+        assertTrue(generated.contains("No laboratory test results recorded yet"))
+        assertTrue(generated.contains("No active medications or supplements recorded"))
+        assertFalse(generated.contains("more not shown"))
+    }
+=======
+    @Test
+    fun q117_emptyStates_unchanged() {
+        val generated = html(patient())
+        assertTrue(generated.contains("No clinical visits recorded yet"))
+        assertTrue(generated.contains("No ultrasound scans recorded yet"))
+        assertTrue(generated.contains("No laboratory test results recorded yet"))
+        assertTrue(generated.contains("No current medications recorded"))
+        assertFalse(generated.contains("not shown"))
+    }
+>>>>>>> REPLACE

@@ -50,7 +50,7 @@ class PrintLayoutTest {
     private fun med(i: Int) = DemoMedicationRecord(
         id = "r3x-med-$i", patientId = "r3x-print-1", name = "Drug$i", dosage = "5 mg",
         route = "PO", frequency = "OD", startDate = "2026-01-01", endDate = null,
-        status = "active", notes = "after meals", isProphylaxis = false,
+        status = "Active", notes = "after meals", isProphylaxis = false,
     )
 
     private fun patient(
@@ -130,29 +130,30 @@ class PrintLayoutTest {
     @Test
     fun q116_stampText_printedOnce() {
         val rendered = withoutHtmlComments(html(patient()))
-        assertEquals(1, Regex.escape("Official Stamp & Signature").toRegex().findAll(rendered).count())
+        assertEquals(1, Regex.escape("<div class=\"stamp-placeholder\">Stamp</div>").toRegex().findAll(rendered).count())
     }
 
     private fun assertCap(
         title: String,
         cap: Int,
         rowMarker: String,
+        hidden: (Int) -> String,
         build: (Int) -> DemoPatient,
     ) {
         val over = tableAfter(html(build(cap + 3)), title)
-        assertTrue("${cap + 3} rows must say 'and 3 more not shown'", over.contains("and 3 more not shown"))
+        assertTrue("${cap + 3} rows must say '${hidden(3)}'", over.contains(hidden(3)))
         assertEquals(cap, rowCount(over, rowMarker))
-        assertEquals("more-row colspan must equal the column count", listOf(columnCount(over)), moreRowColspans(over))
+        assertEquals("hidden count colspan must equal the column count", listOf(columnCount(over)), moreRowColspans(over))
 
         val one = tableAfter(html(build(cap + 1)), title)
-        assertTrue("${cap + 1} rows must say 'and 1 more not shown'", one.contains("and 1 more not shown"))
+        assertTrue("${cap + 1} rows must say '${hidden(1)}'", one.contains(hidden(1)))
 
         val exact = tableAfter(html(build(cap)), title)
-        assertFalse("exactly $cap rows must not say 'more not shown'", exact.contains("more not shown"))
+        assertFalse("exactly $cap rows must not show a hidden count", exact.contains("not shown"))
         assertEquals(cap, rowCount(exact, rowMarker))
 
         val under = tableAfter(html(build(cap - 1)), title)
-        assertFalse("fewer than $cap rows must not say 'more not shown'", under.contains("more not shown"))
+        assertFalse("fewer than $cap rows must not show a hidden count", under.contains("not shown"))
         assertTrue(moreRowColspans(under).isEmpty())
     }
 
@@ -208,9 +209,7 @@ class PrintLayoutTest {
         val generated = html(p)
 
         // Lab name cell wraps: no nowrap
-        val labRow = Regex("""<tr>\s*<td[^>]*class="[^"]*date-cell[^"]*"[^>]*>.*?Test 0</td>""", RegexOption.DOT_MATCHES_ALL).find(generated)?.value
-        assertTrue("lab row found", labRow != null)
-        val labNameCell = Regex("""<td[^>]*>Test 0</td>""").find(labRow!!)?.value
+        val labNameCell = Regex("""<td[^>]*class="[^"]*font-bold[^"]*"[^>]*>Test 0.*?</td>""", RegexOption.DOT_MATCHES_ALL).find(generated)?.value
         assertTrue("lab name cell found", labNameCell != null)
         assertFalse("lab name cell must not carry nowrap", labNameCell!!.contains("nowrap"))
 
@@ -233,17 +232,17 @@ class PrintLayoutTest {
 
     @Test
     fun q117_visits_capAndMoreRow() {
-        assertCap(VISITS_TITLE, 12, "date-cell") { patient(visits = it) }
+        assertCap(VISITS_TITLE, 12, "date-cell", { "$it earlier visits not shown" }) { patient(visits = it) }
     }
 
     @Test
     fun q117_scans_capAndMoreRow() {
-        assertCap(SCANS_TITLE, 7, "date-cell") { patient(scans = it) }
+        assertCap(SCANS_TITLE, 7, "date-cell", { "$it earlier scans not shown" }) { patient(scans = it) }
     }
 
     @Test
     fun q117_labs_capAndMoreRow() {
-        assertCap(LABS_TITLE, 10, "date-cell") { patient(labs = it) }
+        assertCap(LABS_TITLE, 10, "date-cell", { "$it older results not shown" }) { patient(labs = it) }
     }
 
     @Test
@@ -252,8 +251,8 @@ class PrintLayoutTest {
         assertTrue(generated.contains("No clinical visits recorded yet"))
         assertTrue(generated.contains("No ultrasound scans recorded yet"))
         assertTrue(generated.contains("No laboratory test results recorded yet"))
-        assertTrue(generated.contains("No active medications or supplements recorded"))
-        assertFalse(generated.contains("more not shown"))
+        assertTrue(generated.contains("No current medications recorded"))
+        assertFalse(generated.contains("not shown"))
     }
 
     @Test

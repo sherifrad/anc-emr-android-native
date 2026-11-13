@@ -28,10 +28,9 @@ import java.time.LocalDate
  *  - context = null short-circuits Android logo decoding (plain JVM test,
  *    same trick as PatientPrintHtmlGeneratorTest).
  *  - MARKER = "<b>&"'". Its escaped form is "&lt;b&gt;&amp;&quot;&#39;".
- *  - settings.clinicName today is NOT interpolated into the HTML (the header
- *    uses the generator's constant English clinic name), so the clinic-name
- *    marker cannot appear in the output either raw or escaped; the test still
- *    carries it to prove no raw leak ever happens.
+ *  - settings.clinicName is printed escaped in the title, both page headers
+ *    and both footers; a non blank value replaces the fallback English clinic
+ *    name, and the marker must never appear raw in any of those places.
  *  - Dating/scan/lab/visit "date" fields are typed as free strings; the fixture
  *    puts the marker in them, so the GA engine yields no result for those rows.
  */
@@ -187,7 +186,7 @@ class PatientPrintHtmlEscapeTest {
 
     @Test
     fun q93_patientIdentitySection_escapedOnce() {
-        assertTrue(html.contains("Clinical Record - $ESCAPED - Dr. Sherif Radwan Clinic"))
+        assertTrue(html.contains("Clinical Record - $ESCAPED - $ESCAPED"))
         assertTrue(countOf("""<h3>$ESCAPED</h3>""") == 1)
         assertTrue(html.contains("Patient ID: $ESCAPED"))
         assertTrue(html.contains("Phone: $ESCAPED</div>"))
@@ -202,9 +201,11 @@ class PatientPrintHtmlEscapeTest {
 
     @Test
     fun q93_settingsClinicName_neverLeaksRaw() {
-        // Today the header clinic text is the generator constant; the settings
-        // clinicName carries the marker yet nothing raw may ever appear.
-        assertTrue(html.contains("Dr. Sherif Radwan Clinic"))
+        // The settings clinic name is printed escaped in the title, both page
+        // headers and both footers, so nothing raw may ever appear there.
+        assertTrue(countOf("""<h1[^>]*>$ESCAPED</h1>""") == 2)
+        assertTrue(countOf(Regex.escape("Confidential medical record · $ESCAPED ·")) == 1)
+        assertTrue(countOf(Regex.escape("$ESCAPED · Consultant of Obstetrics")) == 2)
         assertFalse(html.contains("<b>&"))
     }
 
@@ -257,6 +258,7 @@ class PatientPrintHtmlEscapeTest {
         escapedRow("Drug Allergies:")
         escapedRow("Medical History:")
         escapedRow("Surgical History:")
+        escapedRow("Family History:")
     }
 
     @Test
@@ -271,31 +273,36 @@ class PatientPrintHtmlEscapeTest {
     fun q93_visitsSection_escapedOnce() {
         assertTrue(countOf("""date-cell">$ESCAPED</td>""") >= 1)
         assertTrue(countOf(Regex.escape("$ESCAPED kg")) >= 2)
-        assertTrue(html.contains("""text-navy">$ESCAPED</td>"""))
         assertTrue(
-            Regex("""(?s)notes-cell">BP &lt;90 systolic $ESCAPED""").containsMatchIn(html),
+            Regex("""(?s)notes-cell">BP &lt;90 systolic $ESCAPED · $ESCAPED""").containsMatchIn(html),
         )
     }
 
     @Test
     fun q93_scansSection_escapedOnce() {
         assertTrue(countOf("""<td class="text-center">$ESCAPED</td>""") >= 3)
-        assertTrue(html.contains("""font-bold text-navy">$ESCAPED g</td>"""))
+        assertTrue(html.contains("""font-bold text-navy">$ESCAPED</td>"""))
         assertTrue(
-            Regex("""(?s)notes-cell">\s*$ESCAPED""").containsMatchIn(html),
+            Regex("""(?s)notes-cell">Fetuses: $ESCAPED · FHR: $ESCAPED""").containsMatchIn(html),
         )
+        assertTrue(html.contains("""<div class="photo-badge">1 photos in the clinic record</div>"""))
     }
 
     @Test
     fun q93_labsSection_escapedOnce() {
         assertTrue(html.contains("""<span class="val-abnormal">$ESCAPED $ESCAPED (Abnormal)</span>"""))
-        assertTrue(html.contains("""<span class="font-bold text-navy">$ESCAPED $ESCAPED</span>"""))
+        assertTrue(
+            html.contains("""<td class="text-center font-bold text-navy">$ESCAPED<br><span class="text-muted med-instructions">$ESCAPED · $ESCAPED</span></td>"""),
+        )
         assertTrue(html.contains("""<td class="text-center text-muted">$ESCAPED</td>"""))
     }
 
     @Test
     fun q93_medicationsSection_escapedOnce() {
-        assertTrue(html.contains("""<span class="font-bold text-navy">$ESCAPED</span><br><span class="text-muted med-instructions">$ESCAPED · $ESCAPED · $ESCAPED</span>"""))
+        assertTrue(
+            html.contains("""<td class="text-center med-cell"><span class="font-bold text-navy">$ESCAPED</span><br><span class="text-muted med-instructions">$ESCAPED · $ESCAPED · $ESCAPED · $ESCAPED · Prophylaxis</span></td>"""),
+        )
+        assertTrue(html.contains("""<td class="text-center">From 01/01/2026</td>"""))
     }
 
     @Test
@@ -303,25 +310,23 @@ class PatientPrintHtmlEscapeTest {
         val plan = parseDeliveryNotes("Plan: $MARKER").plan
         assertTrue("fixture plan must survive parsing", plan != null && plan.contains(MARKER))
         assertTrue(
-            "the parsed plan must print escaped in the Planned Delivery Mode row",
-            html.contains("""<span class="v text-rose font-bold">""" + escapeHtml(plan) + "</span>"),
+            "the parsed plan must print escaped in the Planned delivery row",
+            Regex("""Planned delivery:</span>\s*<span class="v[^"]*">""" + Regex.escape(escapeHtml(plan)) + "</span>")
+                .containsMatchIn(html),
         )
-    }
-
-    @Test
-    fun q93_appendixPage3_escapedOnce() {
-        assertTrue(countOf("""Case ID:</span> <span class="v">$ESCAPED</span>""") >= 1)
-        assertTrue(countOf(Regex.escape("Patient:</span> <span class=\"v\">$ESCAPED")) >= 2)
-        assertTrue(Regex("""(?s)photo-caption">[^<]*$ESCAPED""").containsMatchIn(html))
+        assertFalse(html.contains("Planned Delivery Mode:"))
     }
 
     @Test
     fun q93_generatorOwnMarkup_stillPresent() {
         assertTrue(countOf("""<table class="clinical-table">""") >= 3)
         assertTrue(html.contains("""<table class="clinical-table mini-table">"""))
-        assertTrue(html.contains("""<span class="badge badge-success">Normal Risk</span>"""))
-        assertTrue(html.contains("""<span class="badge badge-teal">Active</span>"""))
-        assertTrue(html.contains("""<div class="photo-badge">📷 1 scan photos attached</div>"""))
+        assertTrue(html.contains("""<span class="badge">Risk not recorded</span>"""))
+        assertTrue(html.contains("Current Medications"))
+        assertTrue(html.contains("Delivery Plan"))
+        assertFalse(html.contains("Active Medications"))
+        assertTrue(html.contains("""<td class="text-center med-cell">"""))
+        assertTrue(html.contains("""<div class="photo-badge">1 photos in the clinic record</div>"""))
         assertTrue(html.contains("""<div class="logo-fallback">DR</div>"""))
         assertTrue(html.contains("""CLINICAL RECORD</div>"""))
         assertTrue(html.contains("class=\"section-title\""))

@@ -70,6 +70,13 @@ internal fun reportRisk(riskLevel: String?): ReportRisk =
         PatientRiskTier.UNRECORDED -> ReportRisk.UNRECORDED
     }
 
+/** A risk text the app cannot place in a tier is printed as written, never as "not recorded". */
+internal fun reportRiskLabel(riskLevel: String?): String {
+    val risk = reportRisk(riskLevel)
+    val written = riskLevel?.trim().orEmpty()
+    return if (risk == ReportRisk.UNRECORDED && written.isNotEmpty()) written else risk.label
+}
+
 internal fun reportStatusLine(patient: DemoPatient): String? {
     val archived = "Archived record".takeIf { patient.status == "archived" }
     return listOfNotNull(archived, patient.deliveryOutcomeLine()).joinToString(" · ").ifEmpty { null }
