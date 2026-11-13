@@ -40,7 +40,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.sherifradwan.ancnative.model.ClinicalSummaryGenerator
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.security.SecuritySettingsState
 import com.sherifradwan.ancnative.ui.ClinicalNavy
@@ -126,7 +125,7 @@ fun PatientTwoPageReportDialog(
                             // Share text/summary button
                             IconButton(
                                 onClick = {
-                                    val summary = ClinicalSummaryGenerator.generateTextSummary(patient)
+                                    val summary = patientShareText(patient)
                                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                                         type = "text/plain"
                                         putExtra(Intent.EXTRA_SUBJECT, "Clinical Record - ${patient.displayName}")

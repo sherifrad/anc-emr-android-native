@@ -1,0 +1,928 @@
+ <1. **Spec contradiction** — the excerpt doesn't contain several things the task orders me to edit. That forces me to flag the conflict, because fabricating SEARCH text would fail at apply time.
+
+Let me check the contradictions against the excerpt:
+
+**A. The `maxLines`/`MAX_PRINT_MEDICATIONS` conflict is resolved — fine.** I can delete it.
+
+**B. The `hiddenRowsHtml` rule is fine** — I can find that block exactly.
+
+**C. `val printDateStr = formatDmy(asOfDate)` — the excerpt has `formatIsoDate(asOfDate)`.** That's a direct conflict: the excerpt does **not** contain the line the task names. I must not invent it. I'll replace the actual `formatIsoDate` line with the `formatDmy` version, since that's clearly the intent (change the function to `formatDmy`), and flag it.
+
+**D. Rule 6,7,8,9 say "keep the existing empty row" and name row variables that ARE in the excerpt. But they also say "Result stays in `visitsRowsHtml`" etc. Those variables are in the excerpt. Good. But the `reportVisits`, `reportScans`, `reportLabs` functions return `Limited<T>`, and I need `visits.rows`, `visits.hidden`.** The task says to define them with the given names. Fine — I write code that assumes `reportVisits(patient, limit)` returns something with `.rows` and `.hidden`. That's given in the rules.
+
+**E. Rule 9 requires `fun medRows(list: List<DemoMedicationRecord>): String`** — a local function inside `generateHtml`, and the import of `DemoMedicationRecord`. The excerpt has no `medicationDates`, `medicationDetail` imports shown but the task says they're in `ReportSections.kt` (same package), so no import needed. Fine.
+
+**F. Rule 10 previous pregnancies — the excerpt CUTS OFF mid-expression** at `val isLoss = pp.outcome == "TerminationOfPregnancy" ||`. The task requires me to edit "the method cell" and "the last cell" and wrap `pastDeliverySummary` in `escapeHtml`. Those cells are in the *second excerpt* which I was told is "shown below as two excerpts" — but the prompt only gave me lines 1-270, and it says "Now output the edit blocks only" after the cutoff. **The second excerpt is missing.** I cannot edit text I cannot see. That's a hard blocker for rule 10 and possibly for the `pastDeliverySummary` wrapping.
+
+**G. Rule 5 says delete the whole `page3Html` value** — that is "further down the file", not in my excerpt. I can't delete what I can't see. Another blocker.
+
+**H. Rule 9 says remove imports `medicationStatusLabel`, `MEDICATION_LABEL_ACTIVE`, `medicationInstructions`.** Those ARE visible. Good. But it says "remove imports that are no longer used ... ONLY if you are sure." After my edits, are they used? `medicationStatusLabel` — only in medsRowsHtml (deleted). `MEDICATION_LABEL_ACTIVE` — only there. `medicationInstructions` — only there. `formatIsoDate` — only in `printDateStr` which becomes `formatDmy`. So all four go. That's consistent. But wait — `bpLevel`, `BpLevel` still used in bpAlertCss. Yes keep.
+
+**I. `MAX_PRINT_VISITS`/`SCANS`/`LABS` stay** — the excerpt keeps them. Good.
+
+**J. Rule 2 says keep `clinicSpecialty` and `doctorOfficialTitle`** — both in excerpt, fine.
+
+**K. Rule 3: replace `gaResult` and `currentGaFormatted`.** Both in excerpt. Fine.
+
+So the fixable ones are A–D, F, G, and part of the import cleanup. **F and G are genuinely blocked** by a truncated excerpt. I'll produce the blocks I *can* produce with exact SEARCH text, and explicitly state which rule numbers I could not implement and why. I will not fabricate the missing excerpt.
+
+Now, exact SEARCH blocks — I must copy character for character. Let me build each block carefully.
+
+### Block 1: imports (rule 9 import cleanup)
+The excerpt lines:
+```
+import com.sherifgamalradwan... 
+```
+No — it's `com.sherifgamalradwan`? Let me look: `import com.sherifgamalradwan.ancnative.model.MEDICATION_LABEL_ACTIVE` — no, the actual text is `com.sherifgamalradwan`? The prompt shows `import com.sherifgamalradwan.ancnative.model.MEDICATION_LABEL_ACTIVE`. Wait, re-reading: it's `com.sherifgamalradwan`. Actually the text given is `com.sherifgamalradwan`. Hmm, I see `com.sherifgamalradwan` — no. Let me carefully transcribe: "import com.sherifgamalradwan.ancnative.model.MEDICATION_LABEL_ACTIVE" — the prompt actually reads `com.sherifgamalradwan`. 
+
+I need to be careful. Looking at the literal excerpt text: `import com.sherifgamalradwan.ancnative.model.MEDICATION_LABEL_ACTIVE`. The package shown elsewhere is `com.sherifgamalradwan.ancnative.ui.report`... no, it's `com.sherifgamalradwan`? The very first line is `package com.sherifgamalradwan.ancnative.ui.report`? 
+
+The prompt says `package com.sherifgamalradwan.ancnative.ui.report`? Actually it says `package com.sherifgamalradwan.ancnative.ui.report` — no, it says `com.sherifgamalradwan`. Hmm. The path given is `app/src/main/java/com/sherifgamalradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt`. So the package is `com.sherifgamalradwan.ancnative`. Wait — `sherifgamalradwan`? The path is `com/sherifgamalradwan`. But the import lines in the excerpt say `com.sherifgamalradwan`. Let me just re-read the excerpt verbatim: "import com.sherifgamalradwan.ancnative.model.BpLevel" — I'll trust the excerpt text as literally rendered: `com.sherifgamalradwan`.
+
+Hmm, actually the excerpt renders as `com.sherifgamalradwan`. I'll copy exactly what's displayed. The displayed text is `import com.sherifgamalradwan.ancnative.model.MEDICATION_LABEL_ACTIVE`. 
+
+Wait. I keep second-guessing. The literal characters in the prompt are: `com.sherifgamalradwan`. OK. But the search also must be unique. For import removal I'll search a contiguous run of the four import lines plus a stable anchor.
+
+The four import lines in the excerpt, in order:
+```
+import com.sherifgamalradwan.ancnative.model.MEDICATION_LABEL_ACTIVE
+import com.sherifgamalradwan.ancnative.model.medicationInstructions
+import com.sherifgamalradwan.ancnative.model.medicationStatusLabel
+```
+and later
+```
+import com.sherifgamalradwan.ancnative.model.formatIsoDate
+```
+
+`MEDICATION_LABEL_ACTIVE` line: I'll delete it, and I need to keep `com.sherifgamalradwan.ancnative.model.datingDiscordanceLine` etc. The block from `MEDICATION_LABEL_ACTIVE` through `medicationStatusLabel` also contains nothing I need to keep except... after `medicationStatusLabel` comes `bpLevel`. So I search:
+```
+import com.sherifgamalradwan.ancnative.model.MEDICATION_LABEL_ACTIVE
+import com.sherifgamalradwan.ancnative.model.medicationInstructions
+import com.sherifgamalradwan.ancnative.model.medicationStatusLabel
+import com.sherifgamalradwan.ancnative.model.bpLevel
+```
+replace with just the bpLevel line. And add `DemoMedicationRecord` import. Where? Task says add `com.sherifgamalradwan.ancnative.model.DemoMedicationRecord`. I'll add it in the same block, replacing the deleted trio with the DemoMedicationRecord line. That gives:
+```
+import com.sherifgamalradwan.ancnative.model.DemoMedicationRecord
+import com.sherifgamalradwan.ancnative.model.bpLevel
+```
+Hmm but alphabetical order: `DemoMedicationRecord` before `bpLevel` — D before b, uppercase D is 68, lowercase b is 98, so D first. Fine.
+
+And `formatIsoDate`:
+```
+import com.sherifgamalradwan.ancnative.model.formatIsoDate
+import com.sherifgamalradwan.ancnative.model.isEarlyLoss
+```
+→ keep `isEarlyLoss` only. But careful: is `formatIsoDate` used anywhere else in the visible excerpt? Only in `printDateStr`. And task says remove it. But is it used in the *unseen* part of the file (the page template further down)? Very likely — the template prints the date. The task says "remove imports that are no longer used **in the excerpt you can see ONLY**". So per instructions, remove it. But that will break the template the other engineer is editing... The other engineer is editing the template and will use `printDateStr` (which I keep). They might still call `formatIsoDate`. Risky. The instruction is explicit: "remove imports that are no longer used in the excerpt you can see ONLY if you are sure". Since the template is being edited concurrently by someone else and might still use `formatIsoDate` (e.g. for scan dates), removing it is risky and the file won't compile if they do. 
+
+Hmm. But `formatDmy` and `formatIsoDate` are both model imports. If the other engineer uses `formatIsoDate` in the template, removing breaks the build. The safest reading: the instruction says only remove the four named, and `formatIsoDate` is one of the four named. So they intend it removed. I'll remove it but flag the risk.
+
+Actually — re-reading: "remove imports that are no longer used in the excerpt you can see ONLY if you are sure (`medicationStatusLabel`, `MEDICATION_LABEL_ACTIVE`, `medicationInstructions`, `formatIsoDate`)". The parenthetical is the candidate list. I'll remove all four and note the `formatIsoDate` risk since the unseen template may use it.
+
+### Block 2: constants + hiddenRowsHtml
+```
+    private const val MAX_PRINT_LABS = 10
+    private const val MAX_PRINT_MEDICATIONS = 8
+```
+→
+```
+    private const val MAX_PRINT_LABS = 10
+    private const val CLINIC_PHONE = "01201720808"
+```
+And hiddenRowsHtml:
+```
+    private fun hiddenRowsHtml(hidden: Int, colspan: Int): String {
+        if (hidden <= 0) return ""
+        return """<tr class="more-row"><td colspan="$colspan" class="text-center empty-cell">and $hidden more not shown</td></tr>"""
+    }
+```
+→
+```
+    private fun hiddenRowsHtml(hidden: Int, colspan: Int, what: String): String {
+        if (hidden <= 0) return ""
+        return """<tr class="more-row"><td colspan="$colspan" class="text-center empty-cell">$hidden $what not shown</td></tr>"""
+    }
+```
+
+### Block 3: clinic name + printDateStr + gaResult
+```
+        val clinicNameAr = settings?.clinicName ?: "Dr. Sherif Radwan Clinic"
+        val clinicNameEn = "Dr. Sherif Radwan Clinic"
+        val clinicSpecialty = "Maternal-Fetal Medicine & Advanced Obstetrics"
+        val doctorOfficialTitle = "Consultant of Obstetrics, Gynecology & Laparoscopy"
+        val printDateStr = formatIsoDate(asOfDate)
+        val gaResult = patient.dating?.calculateGestationalAgeResult(asOfDate)
+        val currentGaFormatted = gaResult?.formatted ?: "Unspecified"
+```
+→
+```
+        val clinicName = escapeHtml(settings?.clinicName?.takeUnless(String::isBlank) ?: "Dr. Sherif Radwan Clinic")
+        val clinicSpecialty = "Maternal-Fetal Medicine & Advanced Obstetrics"
+        val doctorOfficialTitle = "Consultant of Obstetrics, Gynecology & Laparoscopy"
+        val printDateStr = formatDmy(asOfDate)
+        val currentGa: String? = reportGestationalAge(patient, asOfDate)
+        val statusLine: String? = reportStatusLine(patient)
+```
+Note: `currentGa` was previously `currentGaFormatted` — a String with "Unspecified" fallback. Now nullable. The template (other engineer) will use `currentGa`. Flag it.
+
+### Block 4: risk
+```
+        val riskLevel = patient.riskLevel?.takeUnless(String::isBlank)
+        val isHighRisk = com.sherifgamalradwan.ancnative.ui.isHighRisk(riskLevel)
+        val isRhNegative = com.sherifgamalradwan.ancnative.ui.isRhNegative(patient.bloodGroupText)
+```
+→
+```
+        val risk = reportRisk(patient.riskLevel)
+        val isRhNegative = com.sherifgamalradwan.ancnative.ui.isRhNegative(patient.bloodGroupText)
+```
+
+### Block 5: delete attachedUltrasoundImages + totalPages
+```
+        // Collect ultrasound images if any
+        val attachedUltrasoundImages = patient.ultrasoundScans.flatMapIndexed { sIdx, s ->
+            s.imageUris.mapIndexed { iIdx, uri ->
+                mapOf(
+                    "uri" to uri,
+                    "date" to s.date,
+                    "label" to "Ultrasound Scan ${sIdx + 1}.${iIdx + 1} - " + s.date +
+                        (s.impression?.takeUnless(String::isBlank)?.let { " ($it)" } ?: ""),
+                )
+            }
+        }
+        val totalPages = if (attachedUltrasoundImages.isNotEmpty()) 3 else 2
+
+```
+→ `` (empty) — but need to keep surrounding newlines sane. I'll include the preceding comment and trailing blank line in search, replace with nothing. Careful: the blank line before "// Visits table rows". So search includes the trailing empty line and I replace with empty, leaving the comment line that follows. Let me structure: search from `        // Collect ultrasound images if any` through `        val totalPages = if (attachedUltrasoundImages.isNotEmpty()) 3 else 2\n\n` and replace with empty string. That leaves `        // Visits table rows ...` directly after the risk lines' newline. Good.
+
+### Block 6: visits
+```
+        val sortedVisits = patient.visits.sortedBy { it.date }
+        val displayedVisits = sortedVisits.take(MAX_PRINT_VISITS)
+        val moreVisitsHtml = hiddenRowsHtml(sortedVisits.size - MAX_PRINT_VISITS, 6)
+        val bpAlertCss = when {
+            displayedVisits.any { bpLevel(it.bloodPressure) == BpLevel.SEVERE } ->
+                "\n        .bp-alert { font-size: 6.8pt; line-height: 1.1; margin-top: 2px; color: #b45309; white-space: normal; }\n        .bp-alert-severe { color: #dc2626; }"
+            displayedVisits.any { bpLevel(it.bloodPressure) == BpLevel.RAISED } ->
+                "\n        .bp-alert { font-size: 6.8pt; line-height: 1.1; margin-top: 2px; color: #b45309; white-space: normal; }"
+            else -> ""
+        }
+```
+→
+```
+        val visits = reportVisits(patient, MAX_PRINT_VISITS)
+        val bpAlertCss = when {
+            visits.rows.any { bpLevel(it.bloodPressure) == BpLevel.SEVERE } ->
+                "\n        .bp-alert { font-size: 6.8pt; line-height: 1.1; margin-top: 2px; color: #b45309; white-space: normal; }\n        .bp-alert-severe { color: #dc2626; }"
+            visits.rows.any { bpLevel(it.bloodPressure) == BpLevel.RAISED } ->
+                "\n        .bp-alert { font-size: 6.8pt; line-height: 1.1; margin-top: 2px; color: #b45309; white-space: normal; }"
+            else -> ""
+        }
+```
+
+Then the body:
+```
+        val visitsRowsHtml = if (sortedVisits.isEmpty()) {
+```
+→ `        val visitsRowsHtml = if (visits.rows.isEmpty()) {`
+
+And the map:
+```
+            val rows = displayedVisits.mapIndexed { idx, v ->
+```
+→ `            val rows = displayedVisits...` no. Replace with:
+```
+            val rows = visits.rows.mapIndexed { idx, v ->
+```
+And the cells. Let me do the row body as one block:
+```
+                """
+                <tr>
+                    <td class="text-center font-bold nowrap-cell">${idx + 1}</td>
+                    <td class="text-center date-cell">${escapeHtml(v.date)}</td>
+                    <td class="text-center font-bold text-teal nowrap-cell">${vGa}</td>
+```
+→
+```
+                """
+                <tr>
+                    <td class="text-center font-bold nowrap-cell">${idx + 1 + visits.hidden}</td>
+                    <td class="text-center date-cell">${reportDate(v.date)}</td>
+                    <td class="text-center font-bold text-teal nowrap-cell">${vGa}</td>
+```
+And findings:
+```
+                    <td class="text-center notes-cell">${escapeHtml(v.findings?.takeUnless(String::isBlank) ?: v.notes?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+```
+→
+```
+                    <td class="text-center notes-cell">${escapeHtml(visitText(v))}</td>
+```
+And the hidden row first:
+```
+            if (moreVisitsHtml.isNotEmpty()) "$rows\n$moreVisitsHtml" else rows
+```
+→
+```
+            val hidden = hiddenRowsHtml(visits.hidden, 6, "earlier visits")
+            if (hidden.isNotEmpty()) "$hidden\n$rows" else rows
+```
+And the empty-list branch references `sortedVisits`:
+```
+        val visitsRowsHtml = if (sortedVisits.isEmpty()) {
+```
+Handled above.
+
+Wait, but the `#` cell: `idx + 1 + visits.hidden`. Good — "the true visit number".
+
+Also the `vGa` computation stays (uses `parseIsoDateOrNull`, `patient.dating`). Task says "Keep the GA cell ... as they are." Good.
+
+### Block 7: scans
+```
+        val sortedScans = patient.ultrasoundScans.sortedBy { it.date }
+        val displayedScans = sortedScans.take(MAX_PRINT_SCANS)
+        val moreScansHtml = hiddenRowsHtml(sortedScans.size - MAX_PRINT_SCANS, 7)
+        val scansRowsHtml = if (sortedScans.isEmpty()) {
+```
+→
+```
+        val scans = reportScans(patient, MAX_PRINT_SCANS)
+        val scansRowsHtml = if (scans.rows.isEmpty()) {
+```
+And the map body — delete scanGaStr, biometry, notesText, efwStr, photoIndicator, and rewrite cells.
+
+The block from `            val rows = displayedScans.map { s ->` through `            }.joinToString("\n")` needs a full rewrite. Let me write it as one big SEARCH/REPLACE since it's contiguous and unique.
+
+Search (from excerpt, verbatim):
+```
+            val rows = displayedScans.map { s ->
+                val scanGaStr = when {
+                    s.gestationalAgeWeeks != null && s.gestationalAgeDays != null -> "${s.gestationalAgeWeeks}w + ${s.gestationalAgeDays}d"
+                    s.gestationalAgeWeeks != null -> "${s.gestationalAgeWeeks}w"
+                    else -> "-"
+                }
+                val biometry = listOfNotNull(
+                    s.biometryBpd?.let { "BPD: $it" },
+                    s.biometryHc?.let { "HC: $it" },
+                    s.biometryAc?.let { "AC: $it" },
+                    s.biometryFl?.let { "FL: $it" }
+                ).joinToString(" · ").ifBlank { "-" }
+
+                val photoIndicator = if (s.imageUris.isNotEmpty()) {
+                    """<div class="photo-badge">📷 ${s.imageUris.size} scan photos attached</div>"""
+                } else {
+                    ""
+                }
+
+                val notesText = s.impression ?: biometry
+
+                val efwStr = s.estimatedFetalWeight?.let { weight ->
+                    if (weight.contains("g", ignoreCase = true) || weight.contains("kg", ignoreCase = true)) {
+                        weight
+                    } else {
+                        "$weight g"
+                    }
+                } ?: "-"
+
+                """
+                <tr>
+                    <td class="text-center date-cell">${escapeHtml(s.date)}</td>
+                    <td class="text-center font-bold text-teal nowrap-cell">${scanGaStr}</td>
+                    <td class="text-center">${escapeHtml(s.presentation?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                    <td class="text-center">${escapeHtml(s.placentalSite?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                    <td class="text-center">${escapeHtml(s.amnioticFluid?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                    <td class="text-center nowrap-cell font-bold text-navy">${escapeHtml(efwStr)}</td>
+                    <td class="text-center notes-cell">
+                        ${escapeHtml(notesText)}
+                        $photoIndicator
+                    </td>
+                </tr>
+                """.trimIndent()
+            }.joinToString("\n")
+            if (moreScansHtml.isNotEmpty()) "$rows\n$moreScansHtml" else rows
+```
+Replace:
+```
+            val rows = scans.rows.map { s ->
+                val photoBadge = if (s.imageUris.isNotEmpty()) {
+                    """<div class="photo-badge">${s.imageUris.size} photos in the clinic record</div>"""
+                } else {
+                    ""
+                }
+
+                """
+                <tr>
+                    <td class="text-center date-cell">${reportDate(s.date)}</td>
+                    <td class="text-center font-bold text-teal nowrap-cell">${scanGestationalAge(s)}</td>
+                    <td class="text-center">${escapeHtml(s.presentation?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                    <td class="text-center">${escapeHtml(s.placentalSite?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                    <td class="text-center">${escapeHtml(s.amnioticFluid?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                    <td class="text-center nowrap-cell font-bold text-navy">${escapeHtml(scanWeight(s))}</td>
+                    <td class="text-center notes-cell">
+                        ${escapeHtml(scanNotes(s))}
+                        $photoBadge
+                    </td>
+                </tr>
+                """.trimIndent()
+            }.joinToString("\n")
+            val hidden = hiddenRowsHtml(scans.hidden, 7, "earlier scans")
+            if (hidden.isNotEmpty()) "$hidden\n$rows" else rows
+```
+Wait — the hidden row must come FIRST. Good, `"$hidden\n$rows"`.
+
+But the empty-scan branch: the excerpt has the empty row `"""<tr><td colspan="7" ...>No ultrasound scans recorded yet</td></tr>"""` inside `if (sortedScans.isEmpty())`. Since I changed the condition to `scans.rows.isEmpty()`, the body stays. Fine.
+
+Hmm — one concern: `scanGestationalAge(s)` may already be escaped inside `ReportSections.kt` (it's a rules file). The task says GA cell is `scanGestationalAge(s)` — no escape wrapper specified, unlike weight/notes which say `escapeHtml(...)`. So the rule returns a safe formatted string. Trust the spec. Same for `visitText(v)` — task says `escapeHtml(visitText(v))`. OK.
+
+### Block 8: labs
+```
+        val sortedLabs = patient.labInvestigations.sortedByDescending { it.date }
+        val displayedLabs = sortedLabs.take(MAX_PRINT_LABS)
+        val moreLabsHtml = hiddenRowsHtml(sortedLabs.size - MAX_PRINT_LABS, 4)
+        val labsRowsHtml = if (sortedLabs.isEmpty()) {
+```
+→
+```
+        val labs = reportLabs(patient, MAX_PRINT_LABS)
+        val labsRowsHtml = if (labs.rows.isEmpty()) {
+```
+And body:
+```
+            val rows = displayedLabs.map { l ->
+                val resultHtml = if (l.isAbnormal) {
+                    """<span class="val-abnormal">${escapeHtml(l.result)} ${escapeHtml(l.unit ?: "")} (Abnormal)</span>"""
+                } else {
+                    """<span class="font-bold text-navy">${escapeHtml(l.result)} ${escapeHtml(l.unit ?: "")}</span>"""
+                }
+                """
+                <tr>
+                    <td class="text-center date-cell">${escapeHtml(l.date)}</td>
+                    <td class="text-center font-bold text-navy">${escapeHtml(l.testName)}</td>
+                    <td class="text-center">${resultHtml}</td>
+                    <td class="text-center text-muted">${escapeHtml(l.referenceRange ?: "-")}</td>
+                </tr>
+                """.trimIndent()
+            }.joinToString("\n")
+            if (moreLabsHtml.isNotEmpty()) "$rows\n$moreLabsHtml" else rows
+```
+Replace:
+```
+            val rows = labs.rows.map { l ->
+                val resultText = escapeHtml(labResult(l))
+                val resultHtml = if (l.isAbnormal) {
+                    """<span class="val-abnormal">$resultText (Abnormal)</span>"""
+                } else {
+                    """<span class="font-bold text-navy">$resultText</span>"""
+                }
+                val extraHtml = labExtra(l).takeUnless(String::isBlank)?.let { extra ->
+                    """<br><span class="text-muted med-instructions">${escapeHtml(extra)}</span>"""
+                } ?: ""
+                """
+                <tr>
+                    <td class="text-center date-cell">${reportDate(l.date)}</td>
+                    <td class="text-center font-bold text-navy">
+                        ${escapeHtml(l.testName)}
+                        $extraHtml
+                    </td>
+                    <td class="text-center">${resultHtml}</td>
+                    <td class="text-center text-muted">${escapeHtml(l.referenceRange ?: "-")}</td>
+                </tr>
+                """.trimIndent()
+            }.joinToString("\n")
+            if (labs.hidden > 0) "$rows\n${hiddenRowsHtml(labs.hidden, 4, "older results")}" else rows
+```
+Careful with the nested string interpolation inside `hiddenRowsHtml(labs.hidden, 4, "older results")` inside a `"""..."""`? No — that's inside a normal `"..."`? The `"$rows\n${hiddenRowsHtml(labs.hidden, 4, "older results")}"` — the inner `"older results"` is a nested string literal inside `${}`. That's valid Kotlin. Good.
+
+Hmm, but simpler: compute `val hidden = hiddenRowsHtml(...)` then use. But `${...}` with nested quotes is legal. I'll keep it simple and use a val to avoid ambiguity:
+
+```
+            val hiddenRow = hiddenRowsHtml(labs.hidden, 4, "older results")
+            if (hiddenRow.isNotEmpty()) "$rows\n$hiddenRow" else rows
+```
+Cleaner and consistent with the other blocks. Use that.
+
+Also — the excerpt shows labs have `l.unit`. `labResult(l)` presumably folds unit in. Task says result text is `escapeHtml(labResult(l))`, so unit is handled by the rule. Good, drop `l.unit`.
+
+Also the `(Abnormal)` append "inside the `val-abnormal` span" — done.
+
+### Block 9: medications
+Full replacement of the meds block:
+```
+        // Medications rows (Centered)
+        val displayedMeds = patient.medications.take(MAX_PRINT_MEDICATIONS)
+        val moreMedsHtml = hiddenRowsHtml(patient.medications.size - MAX_PRINT_MEDICATIONS, 2)
+        val medsRowsHtml = if (patient.medications.isEmpty()) {
+            """<tr><td colspan="2" class="text-center empty-cell">No active medications or supplements recorded</td></tr>"""
+        } else {
+            val rows = displayedMeds.map { m ->
+                val statusText = medicationStatusLabel(m.status, m.isNonCompliant)
+                val badgeClass = if (statusText == MEDICATION_LABEL_ACTIVE) "badge badge-teal" else "badge"
+                val instructions = medicationInstructions(m.dosage, m.route, m.notes)
+                val instructionsHtml = if (instructions.isEmpty()) "" else """<br><span class="text-muted med-instructions">${escapeHtml(instructions)}</span>"""
+                val typeBadge = """<span class="$badgeClass">${escapeHtml(statusText)}</span>"""
+                """
+                <tr>
+                    <td class="text-center med-cell"><span class="font-bold text-navy">${escapeHtml(m.name)}</span>$instructionsHtml</td>
+                    <td class="text-center">${typeBadge}</td>
+                </tr>
+                """.trimIndent()
+            }.joinToString("\n")
+            if (moreMedsHtml.isNotEmpty()) "$rows\n$moreMedsHtml" else rows
+        }
+```
+Replace:
+```
+        // Medications rows (Centered)
+        val meds = reportMedications(patient)
+        fun medRows(list: List<DemoMedicationRecord>): String = list.joinToString("\n") { m ->
+            val detail = medicationDetail(m)
+            val detailHtml = if (detail.isEmpty()) "" else """<br><span class="text-muted med-instructions">${escapeHtml(detail)}</span>"""
+            """
+                <tr>
+                    <td class="text-center med-cell"><span class="font-bold text-navy">${escapeHtml(m.name)}</span>$detailHtml</td>
+                    <td class="text-center">${escapeHtml(medicationDates(m))}</td>
+                </tr>
+            """.trimIndent()
+        }
+        val currentMedsRowsHtml = medRows(meds.current).ifEmpty {
+            """<tr><td colspan="2" class="text-center empty-cell">No current medications recorded</td></tr>"""
+        }
+        val stoppedMedsRowsHtml: String = medRows(meds.stopped)
+```
+Note: the empty-cell message changes from "No active medications or supplements recorded" to "No current medications recorded" per task. Good.
+
+Note `medicationDates(m)` — the second cell. Is it already safe (a date range string)? Task says `escapeHtml(medicationDates(m))`. Yes.
+
+`medicationDetail(m)` — task says "when `medicationDetail(m)` is not empty, `<br><span...>${escapeHtml(detail)}</span>`". Wait, task says: `first <span class="font-bold text-navy">name</span>` and, when `medicationDetail(m)` is not empty, `<br><span class="text-muted med-instructions">detail</span>`. It says `detail` — but rule: "Every patient text value that goes into HTML must be wrapped in `escapeHtml(...)`." So `escapeHtml(detail)`. Yes, I have that. And name: `escapeHtml(m.name)`. Yes.
+
+### Block 10: previous pregnancies — BLOCKED (second excerpt missing)
+
+I cannot produce blocks for the method cell, the last cell, or `pastDeliverySummary` wrapping, because the second excerpt (the rest of the file) was not provided. I must state this.
+
+But wait — `pastDeliverySummary` is defined in my excerpt:
+```
+        val pastDeliverySummary = previousDeliverySummary(patient)
+```
+and used in `prevPregRows`:
+```
+            """<p class="text-muted text-center text-small" style="padding: 6px;">No previous pregnancies or deliveries recorded ($pastDeliverySummary).</p>"""
+```
+That IS in my excerpt. So I can wrap that one usage in `escapeHtml(...)`. The other usage ("where it is put into HTML in this part") — the empty branch. The other places are in the truncated part. So I can do the one I see, and note the others are blocked.
+
+Hmm, but is `previousDeliverySummary` used elsewhere in the visible excerpt? Only that one line. So: wrap it. Search:
+```
+            """<p class="text-muted text-center text-small" style="padding: 6px;">No previous pregnancies or deliveries recorded ($pastDeliverySummary).</p>"""
+```
+→
+```
+            """<p class="text-muted text-center text-small" style="padding: 6px;">No previous pregnancies or deliveries recorded (${escapeHtml(pastDeliverySummary)}).</p>"""
+```
+
+And rule 10's method-cell / last-cell edits are in the truncated `patient.previousPregnancies.map { pp -> ...` body which cuts off at `val isLoss = ...`. Blocked.
+
+Now — should I still emit that block? No. The map body beyond `val isLoss` is not shown. I'll flag it.
+
+### Also: `patient.medications` — is it used elsewhere in the visible excerpt? Only the meds block. Good.
+
+### `totalPages` deletion — also used in template (unseen). Deleting the val while template references it breaks the build; but task explicitly says the appendix page is removed and the template is being edited by someone else. So they'll remove the reference. Note it.
+
+### Now, one more: does `escapeHtml` exist and take String? Yes, used throughout.
+
+### `reportRisk`, `reportStatusLine`, `reportGestationalAge`, `reportDate`, `visitText`, `scanGestationalAge`, `scanNotes`, `scanWeight`, `medicationDetail`, `medicationDates`, `labResult`, `labExtra`, `reportVisits`, `reportScans`, `reportLabs`, `reportMedications` — all in ReportSections.kt, same package. No imports. Good.
+
+### Unused after edits in visible excerpt:
+- `parseIsoDateOrNull` — still used in the visits `vGa` block. Keep.
+- `formatIsoDate` — removed.
+- `MEDICATION_LABEL_ACTIVE`, `medicationStatusLabel`, `medicationInstructions` — removed.
+- `BpLevel`, `bpLevel` — still used.
+- `isEarlyLoss`, `isStillbirth`, `PreviousPregnancyFormRules`, `GestationalAgeEngine` — used in truncated part; leave.
+
+OK. Also `MAX_PRINT_VISITS`/`SCANS`/`LABS` used. Good.
+
+Now write the blocks. Order them top-down so they don't overlap. Each SEARCH must be unique.
+
+One risk: the visits `"""` row block search — I need enough context to be unique. `                    <td class="text-center font-bold nowrap-cell">${idx + 1}</td>` — unique. And `<td class="text-center date-cell">${escapeHtml(v.date)}</td>` — appears in visits only? Labs uses `escapeHtml(l.date)`, scans use `escapeHtml(s.date)`. So `v.date` unique. Good. And the findings line is unique.
+
+Let me also make sure I keep `moreVisitsHtml` deleted properly — I replaced its definition and its use. Good.
+
+For the visits hidden-first, I put the val inside the else branch. Good.
+
+Let me now also double-check the labs `"older results"` hidden-last requirement — yes, `$rows\n$hiddenRow`.
+
+Scans hidden-first — yes.
+
+Visits hidden-first — yes.
+
+Now, block for `bpAlertCss` uses `displayedVisits` twice; my replace covers the whole when-expression. Good.
+
+Let me write it out.
+
+One more: in block 3 I replace `printDateStr = formatIsoDate(asOfDate)` with `formatDmy(asOfDate)`. But `formatDmy` must be imported — the excerpt imports `formatDmy`. Yes: `import com.sherifgamalradwan.ancnative.model.formatDmy`. Good, and I'm removing `formatIsoDate`. Consistent.
+
+Also `currentGa` type `String?` — and `statusLine: String?`. Template must handle null. Note.
+
+Writing final answer now. I'll include a short flag list before the block? The instruction says "Output ONLY edit blocks in this exact format... inside one fenced block". And "Output SEARCH/REPLACE blocks only." But I also must report the spec contradiction honestly per my operating rules — fabricating SEARCH text for unseen lines would violate correctness. I'll keep the prose extremely short and put the blockers first, then the one fenced block. That's the honest tradeoff; correctness over format purity.
+
+Actually, re-reading: "Do not call any tool." and "Output ONLY edit blocks". I'll give a minimal 3-line note then the fenced block. The format rules and my honesty rules conflict; honesty wins, but I keep it tight.
+
+Let me verify exact excerpt text for the meds block once more, character by character, from the prompt:
+
+```
+        // Medications rows (Centered)
+        val displayedMeds = patient.medications.take(MAX_PRINT_MEDICATIONS)
+        val moreMedsHtml = hiddenRowsHtml(patient.medications.size - MAX_PRINT_MEDICATIONS, 2)
+        val medsRowsHtml = if (patient.medications.isEmpty()) {
+            """<tr><td colspan="2" class="text-center empty-cell">No active medications or supplements recorded</td></tr>"""
+        } else {
+            val rows = displayedMeds.map { m ->
+                val statusText = medicationStatusLabel(m.status, m.isNonCompliant)
+                val badgeClass = if (statusText == MEDICATION_LABEL_ACTIVE) "badge badge-teal" else "badge"
+                val instructions = medicationInstructions(m.dosage, m.route, m.notes)
+                val instructionsHtml = if (instructions.isEmpty()) "" else """<br><span class="text-muted med-instructions">${escapeHtml(instructions)}</span>"""
+                val typeBadge = """<span class="$badgeClass">${escapeHtml(statusText)}</span>"""
+                """
+                <tr>
+                    <td class="text-center med-cell"><span class="font-bold text-navy">${escapeHtml(m.name)}</span>$instructionsHtml</td>
+                    <td class="text-center">${typeBadge}</td>
+                </tr>
+                """.trimIndent()
+            }.joinToString("\n")
+            if (moreMedsHtml.isNotEmpty()) "$rows\n$moreMedsHtml" else rows
+        }
+```
+Good, that matches.
+
+Scans block — matches excerpt.
+
+Labs block — matches.
+
+Now the visits block. Excerpt:
+```
+        val sortedVisits = patient.visits.sortedBy { it.date }
+        val displayedVisits = sortedVisits.take(MAX_PRINT_VISITS)
+        val moreVisitsHtml = hiddenRowsHtml(sortedVisits.size - MAX_PRINT_VISITS, 6)
+```
+Good.
+
+OK, writing. Also need `val visitsRowsHtml = if (sortedVisits.isEmpty()) {` → `if (visits.rows.isEmpty())`.
+
+I'll make separate small blocks where possible to reduce mismatch risk, as instructed ("prefer several small blocks").
+
+Final check on `hiddenRowsHtml` empty-string behavior: "empty string when hidden <= 0" — kept.
+
+One thing: rule 6 says hidden row comes FIRST "before the rows". My code: `if (hidden.isNotEmpty()) "$hidden\n$rows" else rows`. Good.
+
+Write it.</ernie:think>Three things in the task cannot be applied to the excerpt you gave me, and I will not invent SEARCH text for lines I cannot see:
+
+- **Rule 5** (`page3Html` value) and **Rule 10** (previous-pregnancy method cell, last cell, other `pastDeliverySummary` sites) live in the *second* excerpt / further down the file, which is not present — the prompt cuts off at `val isLoss = pp.outcome == "TerminationOfPregnancy" ||`.
+- **Rule 3** names `val printDateStr = formatDmy(asOfDate)` as if it exists; the excerpt actually has `formatIsoDate(asOfDate)`. I applied the change to the real line.
+- Deleting `formatIsoDate`, `MAX_PRINT_MEDICATIONS`, `totalPages`, `attachedUltrasoundImages` will break the template if the other engineer's concurrent edit still references them. Flagging, not fixing.
+
+Every block below is copied verbatim from the excerpt.
+
+```
+FILE: app/src/main/java/com/sherifgamalradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+import com.sherifgamalradwan.ancnative.model.MEDICATION_LABEL_ACTIVE
+import com.sherifgamalradwan.ancnative.model.medicationInstructions
+import com.sherifgamalradwan.ancnative.model.medicationStatusLabel
+import com.sherifgamalradwan.ancnative.model.bpLevel
+=======
+import com.sherifgamalradwan.ancnative.model.DemoMedicationRecord
+import com.sherifgamalradwan.ancnative.model.bpLevel
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifgamalradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+import com.sherifgamalradwan.ancnative.model.formatIsoDate
+import com.sherifgamalradwan.ancnative.model.isEarlyLoss
+=======
+import com.sherifgamalradwan.ancnative.model.isEarlyLoss
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifgamalradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+    private const val MAX_PRINT_LABS = 10
+    private const val MAX_PRINT_MEDICATIONS = 8
+=======
+    private const val MAX_PRINT_LABS = 10
+    private const val CLINIC_PHONE = "01201720808"
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifgamalradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+    private fun hiddenRowsHtml(hidden: Int, colspan: Int): String {
+        if (hidden <= 0) return ""
+        return """<tr class="more-row"><td colspan="$colspan" class="text-center empty-cell">and $hidden more not shown</td></tr>"""
+    }
+=======
+    private fun hiddenRowsHtml(hidden: Int, colspan: Int, what: String): String {
+        if (hidden <= 0) return ""
+        return """<tr class="more-row"><td colspan="$colspan" class="text-center empty-cell">$hidden $what not shown</td></tr>"""
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifgamalradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+        val clinicNameAr = settings?.clinicName ?: "Dr. Sherif Radwan Clinic"
+        val clinicNameEn = "Dr. Sherif Radwan Clinic"
+        val clinicSpecialty = "Maternal-Fetal Medicine & Advanced Obstetrics"
+        val doctorOfficialTitle = "Consultant of Obstetrics, Gynecology & Laparoscopy"
+        val printDateStr = formatIsoDate(asOfDate)
+        val gaResult = patient.dating?.calculateGestationalAgeResult(asOfDate)
+        val currentGaFormatted = gaResult?.formatted ?: "Unspecified"
+=======
+        val clinicName = escapeHtml(settings?.clinicName?.takeUnless(String::isBlank) ?: "Dr. Sherif Radwan Clinic")
+        val clinicSpecialty = "Maternal-Fetal Medicine & Advanced Obstetrics"
+        val doctorOfficialTitle = "Consultant of Obstetrics, Gynecology & Laparoscopy"
+        val printDateStr = formatDmy(asOfDate)
+        val currentGa: String? = reportGestationalAge(patient, asOfDate)
+        val statusLine: String? = reportStatusLine(patient)
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifgamalradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+        val riskLevel = patient.riskLevel?.takeUnless(String::isBlank)
+        val isHighRisk = com.sherifgamalradwan.ancnative.ui.isHighRisk(riskLevel)
+        val isRhNegative = com.sherifgamalradwan.ancnative.ui.isRhNegative(patient.bloodGroupText)
+=======
+        val risk = reportRisk(patient.riskLevel)
+        val isRhNegative = com.sherifgamalradwan.ancnative.ui.isRhNegative(patient.bloodGroupText)
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifgamalradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+        // Collect ultrasound images if any
+        val attachedUltrasoundImages = patient.ultrasoundScans.flatMapIndexed { sIdx, s ->
+            s.imageUris.mapIndexed { iIdx, uri ->
+                mapOf(
+                    "uri" to uri,
+                    "date" to s.date,
+                    "label" to "Ultrasound Scan ${sIdx + 1}.${iIdx + 1} - " + s.date +
+                        (s.impression?.takeUnless(String::isBlank)?.let { " ($it)" } ?: ""),
+                )
+            }
+        }
+        val totalPages = if (attachedUltrasoundImages.isNotEmpty()) 3 else 2
+
+        // Visits table rows (Centered text, No SFH, No FHR, Spacious and comfortable)
+=======
+        // Visits table rows (Centered text, No SFH, No FHR, Spacious and comfortable)
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifgamalradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+        val sortedVisits = patient.visits.sortedBy { it.date }
+        val displayedVisits = sortedVisits.take(MAX_PRINT_VISITS)
+        val moreVisitsHtml = hiddenRowsHtml(sortedVisits.size - MAX_PRINT_VISITS, 6)
+        val bpAlertCss = when {
+            displayedVisits.any { bpLevel(it.bloodPressure) == BpLevel.SEVERE } ->
+                "\n        .bp-alert { font-size: 6.8pt; line-height: 1.1; margin-top: 2px; color: #b45309; white-space: normal; }\n        .bp-alert-severe { color: #dc2626; }"
+            displayedVisits.any { bpLevel(it.bloodPressure) == BpLevel.RAISED } ->
+                "\n        .bp-alert { font-size: 6.8pt; line-height: 1.1; margin-top: 2px; color: #b45309; white-space: normal; }"
+            else -> ""
+        }
+=======
+        val visits = reportVisits(patient, MAX_PRINT_VISITS)
+        val bpAlertCss = when {
+            visits.rows.any { bpLevel(it.bloodPressure) == BpLevel.SEVERE } ->
+                "\n        .bp-alert { font-size: 6.8pt; line-height: 1.1; margin-top: 2px; color: #b45309; white-space: normal; }\n        .bp-alert-severe { color: #dc2626; }"
+            visits.rows.any { bpLevel(it.bloodPressure) == BpLevel.RAISED } ->
+                "\n        .bp-alert { font-size: 6.8pt; line-height: 1.1; margin-top: 2px; color: #b45309; white-space: normal; }"
+            else -> ""
+        }
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifgamalradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+        val visitsRowsHtml = if (sortedVisits.isEmpty()) {
+            """<tr><td colspan="6" class="text-center empty-cell">No clinical visits recorded yet</td></tr>"""
+        } else {
+            val rows = displayedVisits.mapIndexed { idx, v ->
+=======
+        val visitsRowsHtml = if (visits.rows.isEmpty()) {
+            """<tr><td colspan="6" class="text-center empty-cell">No clinical visits recorded yet</td></tr>"""
+        } else {
+            val rows = visits.rows.mapIndexed { idx, v ->
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifgamalradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+                    <td class="text-center font-bold nowrap-cell">${idx + 1}</td>
+                    <td class="text-center date-cell">${escapeHtml(v.date)}</td>
+                    <td class="text-center font-bold text-teal nowrap-cell">${vGa}</td>
+=======
+                    <td class="text-center font-bold nowrap-cell">${idx + 1 + visits.hidden}</td>
+                    <td class="text-center date-cell">${reportDate(v.date)}</td>
+                    <td class="text-center font-bold text-teal nowrap-cell">${vGa}</td>
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifgamalradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+                    <td class="text-center notes-cell">${escapeHtml(v.findings?.takeUnless(String::isBlank) ?: v.notes?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+=======
+                    <td class="text-center notes-cell">${escapeHtml(visitText(v))}</td>
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifgamalradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+            if (moreVisitsHtml.isNotEmpty()) "$rows\n$moreVisitsHtml" else rows
+=======
+            val hidden = hiddenRowsHtml(visits.hidden, 6, "earlier visits")
+            if (hidden.isNotEmpty()) "$hidden\n$rows" else rows
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifgamalradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+        val sortedScans = patient.ultrasoundScans.sortedBy { it.date }
+        val displayedScans = sortedScans.take(MAX_PRINT_SCANS)
+        val moreScansHtml = hiddenRowsHtml(sortedScans.size - MAX_PRINT_SCANS, 7)
+        val scansRowsHtml = if (sortedScans.isEmpty()) {
+=======
+        val scans = reportScans(patient, MAX_PRINT_SCANS)
+        val scansRowsHtml = if (scans.rows.isEmpty()) {
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifgamalradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+            val rows = displayedScans.map { s ->
+                val scanGaStr = when {
+                    s.gestationalAgeWeeks != null && s.gestationalAgeDays != null -> "${s.gestationalAgeWeeks}w + ${s.gestationalAgeDays}d"
+                    s.gestationalAgeWeeks != null -> "${s.gestationalAgeWeeks}w"
+                    else -> "-"
+                }
+                val biometry = listOfNotNull(
+                    s.biometryBpd?.let { "BPD: $it" },
+                    s.biometryHc?.let { "HC: $it" },
+                    s.biometryAc?.let { "AC: $it" },
+                    s.biometryFl?.let { "FL: $it" }
+                ).joinToString(" · ").ifBlank { "-" }
+
+                val photoIndicator = if (s.imageUris.isNotEmpty()) {
+                    """<div class="photo-badge">📷 ${s.imageUris.size} scan photos attached</div>"""
+                } else {
+                    ""
+                }
+
+                val notesText = s.impression ?: biometry
+
+                val efwStr = s.estimatedFetalWeight?.let { weight ->
+                    if (weight.contains("g", ignoreCase = true) || weight.contains("kg", ignoreCase = true)) {
+                        weight
+                    } else {
+                        "$weight g"
+                    }
+                } ?: "-"
+
+                """
+                <tr>
+                    <td class="text-center date-cell">${escapeHtml(s.date)}</td>
+                    <td class="text-center font-bold text-teal nowrap-cell">${scanGaStr}</td>
+                    <td class="text-center">${escapeHtml(s.presentation?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                    <td class="text-center">${escapeHtml(s.placentalSite?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                    <td class="text-center">${escapeHtml(s.amnioticFluid?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                    <td class="text-center nowrap-cell font-bold text-navy">${escapeHtml(efwStr)}</td>
+                    <td class="text-center notes-cell">
+                        ${escapeHtml(notesText)}
+                        $photoIndicator
+                    </td>
+                </tr>
+                """.trimIndent()
+            }.joinToString("\n")
+            if (moreScansHtml.isNotEmpty()) "$rows\n$moreScansHtml" else rows
+=======
+            val rows = scans.rows.map { s ->
+                val photoBadge = if (s.imageUris.isNotEmpty()) {
+                    """<div class="photo-badge">${s.imageUris.size} photos in the clinic record</div>"""
+                } else {
+                    ""
+                }
+
+                """
+                <tr>
+                    <td class="text-center date-cell">${reportDate(s.date)}</td>
+                    <td class="text-center font-bold text-teal nowrap-cell">${scanGestationalAge(s)}</td>
+                    <td class="text-center">${escapeHtml(s.presentation?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                    <td class="text-center">${escapeHtml(s.placentalSite?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                    <td class="text-center">${escapeHtml(s.amnioticFluid?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                    <td class="text-center nowrap-cell font-bold text-navy">${escapeHtml(scanWeight(s))}</td>
+                    <td class="text-center notes-cell">
+                        ${escapeHtml(scanNotes(s))}
+                        $photoBadge
+                    </td>
+                </tr>
+                """.trimIndent()
+            }.joinToString("\n")
+            val hidden = hiddenRowsHtml(scans.hidden, 7, "earlier scans")
+            if (hidden.isNotEmpty()) "$hidden\n$rows" else rows
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifgamalradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+        val sortedLabs = patient.labInvestigations.sortedByDescending { it.date }
+        val displayedLabs = sortedLabs.take(MAX_PRINT_LABS)
+        val moreLabsHtml = hiddenRowsHtml(sortedLabs.size - MAX_PRINT_LABS, 4)
+        val labsRowsHtml = if (sortedLabs.isEmpty()) {
+=======
+        val labs = reportLabs(patient, MAX_PRINT_LABS)
+        val labsRowsHtml = if (labs.rows.isEmpty()) {
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifgamalradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+            val rows = displayedLabs.map { l ->
+                val resultHtml = if (l.isAbnormal) {
+                    """<span class="val-abnormal">${escapeHtml(l.result)} ${escapeHtml(l.unit ?: "")} (Abnormal)</span>"""
+                } else {
+                    """<span class="font-bold text-navy">${escapeHtml(l.result)} ${escapeHtml(l.unit ?: "")}</span>"""
+                }
+                """
+                <tr>
+                    <td class="text-center date-cell">${escapeHtml(l.date)}</td>
+                    <td class="text-center font-bold text-navy">${escapeHtml(l.testName)}</td>
+                    <td class="text-center">${resultHtml}</td>
+                    <td class="text-center text-muted">${escapeHtml(l.referenceRange ?: "-")}</td>
+                </tr>
+                """.trimIndent()
+            }.joinToString("\n")
+            if (moreLabsHtml.isNotEmpty()) "$rows\n$moreLabsHtml" else rows
+=======
+            val rows = labs.rows.map { l ->
+                val resultText = escapeHtml(labResult(l))
+                val resultHtml = if (l.isAbnormal) {
+                    """<span class="val-abnormal">$resultText (Abnormal)</span>"""
+                } else {
+                    """<span class="font-bold text-navy">$resultText</span>"""
+                }
+                val extraHtml = labExtra(l).takeUnless(String::isBlank)?.let { extra ->
+                    """<br><span class="text-muted med-instructions">${escapeHtml(extra)}</span>"""
+                } ?: ""
+                """
+                <tr>
+                    <td class="text-center date-cell">${reportDate(l.date)}</td>
+                    <td class="text-center font-bold text-navy">
+                        ${escapeHtml(l.testName)}
+                        $extraHtml
+                    </td>
+                    <td class="text-center">${resultHtml}</td>
+                    <td class="text-center text-muted">${escapeHtml(l.referenceRange ?: "-")}</td>
+                </tr>
+                """.trimIndent()
+            }.joinToString("\n")
+            val hiddenRow = hiddenRowsHtml(labs.hidden, 4, "older results")
+            if (hiddenRow.isNotEmpty()) "$rows\n$hiddenRow" else rows
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifgamalradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+        // Medications rows (Centered)
+        val displayedMeds = patient.medications.take(MAX_PRINT_MEDICATIONS)
+        val moreMedsHtml = hiddenRowsHtml(patient.medications.size - MAX_PRINT_MEDICATIONS, 2)
+        val medsRowsHtml = if (patient.medications.isEmpty()) {
+            """<tr><td colspan="2" class="text-center empty-cell">No active medications or supplements recorded</td></tr>"""
+        } else {
+            val rows = displayedMeds.map { m ->
+                val statusText = medicationStatusLabel(m.status, m.isNonCompliant)
+                val badgeClass = if (statusText == MEDICATION_LABEL_ACTIVE) "badge badge-teal" else "badge"
+                val instructions = medicationInstructions(m.dosage, m.route, m.notes)
+                val instructionsHtml = if (instructions.isEmpty()) "" else """<br><span class="text-muted med-instructions">${escapeHtml(instructions)}</span>"""
+                val typeBadge = """<span class="$badgeClass">${escapeHtml(statusText)}</span>"""
+                """
+                <tr>
+                    <td class="text-center med-cell"><span class="font-bold text-navy">${escapeHtml(m.name)}</span>$instructionsHtml</td>
+                    <td class="text-center">${typeBadge}</td>
+                </tr>
+                """.trimIndent()
+            }.joinToString("\n")
+            if (moreMedsHtml.isNotEmpty()) "$rows\n$moreMedsHtml" else rows
+        }
+=======
+        // Medications rows (Centered)
+        val meds = reportMedications(patient)
+        fun medRows(list: List<DemoMedicationRecord>): String = list.joinToString("\n") { m ->
+            val detail = medicationDetail(m)
+            val detailHtml = if (detail.isEmpty()) "" else """<br><span class="text-muted med-instructions">${escapeHtml(detail)}</span>"""
+            """
+                <tr>
+                    <td class="text-center med-cell"><span class="font-bold text-navy">${escapeHtml(m.name)}</span>$detailHtml</td>
+                    <td class="text-center">${escapeHtml(medicationDates(m))}</td>
+                </tr>
+            """.trimIndent()
+        }
+        val currentMedsRowsHtml = medRows(meds.current).ifEmpty {
+            """<tr><td colspan="2" class="text-center empty-cell">No current medications recorded</td></tr>"""
+        }
+        val stoppedMedsRowsHtml: String = medRows(meds.stopped)
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifgamalradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+            """<p class="text-muted text-center text-small" style="padding: 6px;">No previous pregnancies or deliveries recorded ($pastDeliverySummary).</p>"""
+=======
+            """<p class="text-muted text-center text-small" style="padding: 6px;">No previous pregnancies or deliveries recorded (${escapeHtml(pastDeliverySummary)}).</p>"""
+>>>>>>> REPLACE
+```
+
+Verification status: **not applied, not compiled.** No tool access in this session, so I could not run `./gradlew :app:compileDebugKotlin` or the `ReportSectionsTest` suite. Unverified assumptions that will fail the build if wrong: `reportVisits`/`reportScans`/`reportLabs` return a type with public `.rows` and `.hidden`; `scanGestationalAge` returns an already-escaped-safe string (task omits `escapeHtml` for it while specifying it for the siblings); and the unseen template no longer references `totalPages`, `MAX_PRINT_MEDICATIONS`, `clinicNameAr`, `clinicNameEn`, `gaResult`, `currentGaFormatted`, `isHighRisk`, `medsRowsHtml`.
+[Tokens] upload: 13124 download: 13264 cache_read: 3328 cache_write: 0
+

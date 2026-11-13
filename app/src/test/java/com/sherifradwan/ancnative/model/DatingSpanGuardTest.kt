@@ -1,5 +1,6 @@
 package com.sherifradwan.ancnative.model
 
+import com.sherifradwan.ancnative.ui.report.patientShareText
 import com.sherifradwan.ancnative.ui.report.PatientPrintHtmlGenerator
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
@@ -39,7 +40,7 @@ class DatingSpanGuardTest {
             val p = patient(d)
             val html = PatientPrintHtmlGenerator.generateHtml(context = null, patient = p, asOfDate = anchor)
             assertFalse(html, html.contains("gap "))
-            val share = ClinicalSummaryGenerator.generateTextSummary(p)
+            val share = patientShareText(p)
             assertFalse(share, share.contains("gap "))
         }
     }

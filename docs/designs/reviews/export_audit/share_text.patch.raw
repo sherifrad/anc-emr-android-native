@@ -1,0 +1,128 @@
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientShareText.kt
+<<<<<<< SEARCH
+=======
+package com.sherifgamalradwan.ancnative.ui.report
+
+import com.sherifgamalradwan.ancnative.model.DemoPatient
+import com.sherifgamalradwan.ancnative.model.datingSummaryOf
+import com.sherifgamalradwan.ancnative.model.datingTextRows
+import com.sherifgamalradwan.ancnative.model.datingDiscordanceLine
+import java.time.LocalDate
+
+internal fun patientShareText(patient: DemoPatient, asOf: LocalDate = LocalDate.now()): String {
+    val sb = StringBuilder()
+
+    sb.appendLine("ANTENATAL CARE SUMMARY")
+    sb.appendLine("Patient: ${patient.displayName}")
+    sb.appendLine("Case ID: ${patient.caseId}")
+    sb.appendLine("Date of birth: ${reportDate(patient.dateOfBirth)}")
+    if (!patient.phone.isNullOrBlank()) sb.appendLine("Phone: ${patient.phone}")
+    if (!patient.bloodGroupText.isNullOrBlank()) sb.appendLine("Blood group: ${patient.bloodGroupText}")
+    sb.appendLine("Risk: ${reportRisk(patient.riskLevel).label}")
+    sb.appendLine("Obstetric: G${patient.gravida ?: "-"} P${patient.parity ?: "-"} A${patient.abortion ?: "-"}")
+    reportStatusLine(patient)?.let { sb.appendLine("Status: $it") }
+    if (!patient.clinicalAttention.isNullOrBlank()) sb.appendLine("Clinical attention: ${patient.clinicalAttention}")
+    if (!patient.allergyHistory.isNullOrBlank()) sb.appendLine("Allergies: ${patient.allergyHistory}")
+    if (!patient.medicalHistory.isNullOrBlank()) sb.appendLine("Medical history: ${patient.medicalHistory}")
+    if (!patient.surgicalHistory.isNullOrBlank()) sb.appendLine("Surgical history: ${patient.surgicalHistory}")
+    if (!patient.familyHistory.isNullOrBlank()) sb.appendLine("Family history: ${patient.familyHistory}")
+    sb.appendLine()
+
+    sb.appendLine("PREGNANCY DATING")
+    reportGestationalAge(patient, asOf)?.let { sb.appendLine("Gestational age today: $it") }
+    val summary = datingSummaryOf(patient, asOf)
+    if (patient.dating != null) {
+        datingTextRows(summary).forEach { row ->
+            sb.appendLine("${row.label}: ${row.value ?: "Not recorded"}")
+        }
+    } else {
+        sb.appendLine("Dating: Not recorded")
+    }
+    datingDiscordanceLine(patient.dating, summary)?.let { sb.appendLine(it) }
+    sb.appendLine()
+
+    val visits = patient.visits.sortedByDescending { it.date }
+    val visitRows = reportVisits(patient, visits.size)
+    sb.appendLine("VISITS (${visitRows.rows.size})")
+    if (visitRows.rows.isEmpty()) {
+        sb.appendLine("No visits recorded.")
+    } else {
+        visitRows.rows.forEach { visit ->
+            val sbLine = StringBuilder("• ${reportDate(visit.date)}")
+            if (!visit.bloodPressure.isNullOrBlank()) sbLine.append(" | BP: ${visit.bloodPressure}")
+            if (!visit.weight.isNullOrBlank()) sbLine.append(" | Wt: ${visit.weight}")
+            sbLine.append(" | ${visitText(visit)}")
+            sb.appendLine(sbLine.toString())
+        }
+    }
+    sb.appendLine()
+
+    val scans = patient.ultrasoundScans.sortedByDescending { it.date }
+    val scanRows = reportScans(patient, scans.size)
+    sb.appendLine("ULTRASOUND SCANS (${scanRows.rows.size})")
+    if (scanRows.rows.isEmpty()) {
+        sb.appendLine("No scans recorded.")
+    } else {
+        scanRows.rows.forEach { scan ->
+            val parts = mutableListOf<String>()
+            val ga = scanGestationalAge(scan)
+            if (ga != "-") parts.add("GA: $ga")
+            if (!scan.presentation.isNullOrBlank()) parts.add("Pres: ${scan.presentation}")
+            if (!scan.placentalSite.isNullOrBlank()) parts.add("Placenta: ${scan.placentalSite}")
+            val efw = scanWeight(scan)
+            if (efw != "-") parts.add("EFW: $efw")
+            scanNotes(scan).let { if (it.isNotBlank()) parts.add(it) }
+            sb.appendLine("• ${reportDate(scan.date)} | ${parts.joinToString(" | ")}")
+        }
+    }
+    sb.appendLine()
+
+    val labs = patient.labInvestigations.sortedByDescending { it.date }
+    val labRows = reportLabs(patient, labs.size)
+    sb.appendLine("LABORATORY RESULTS (${labRows.rows.size})")
+    if (labRows.rows.isEmpty()) {
+        sb.appendLine("No laboratory results recorded.")
+    } else {
+        labRows.rows.forEach { lab ->
+            val flag = if (lab.isAbnormal) "[ABNORMAL] " else ""
+            val ref = if (!lab.referenceRange.isNullOrBlank()) " (Ref: ${lab.referenceRange})" else ""
+            val extra = labExtra(lab)
+            sb.appendLine("• $flag${lab.testName}: ${labResult(lab)}$ref [${reportDate(lab.date)}]${if (extra.isNotBlank()) " $extra" else ""}")
+        }
+    }
+    sb.appendLine()
+
+    val meds = reportMedications(patient)
+    sb.appendLine("CURRENT MEDICATIONS (${meds.current.size})")
+    if (meds.current.isEmpty()) {
+        sb.appendLine("No current medications recorded.")
+    } else {
+        meds.current.forEach { m ->
+            val detail = medicationDetail(m)
+            val dates = medicationDates(m)
+            sb.appendLine("• ${m.name}${if (detail.isNotBlank()) " $detail" else ""} ($dates)")
+        }
+    }
+    sb.appendLine()
+
+    if (meds.stopped.isNotEmpty()) {
+        sb.appendLine("STOPPED MEDICATIONS (${meds.stopped.size})")
+        meds.stopped.forEach { m ->
+            val detail = medicationDetail(m)
+            val dates = medicationDates(m)
+            sb.appendLine("• ${m.name}${if (detail.isNotBlank()) " $detail" else ""} ($dates)")
+        }
+        sb.appendLine()
+    }
+
+    val planRows = deliveryPlanRows(patient)
+    if (planRows.isNotEmpty()) {
+        sb.appendLine("DELIVERY PLAN")
+        planRows.forEach { row -> sb.appendLine("${row.label}: ${row.value}") }
+    }
+
+    return sb.toString()
+}
+>>>>>>> REPLACE
+[Tokens] upload: 10462 download: 1415 cache_read: 0 cache_write: 0
+

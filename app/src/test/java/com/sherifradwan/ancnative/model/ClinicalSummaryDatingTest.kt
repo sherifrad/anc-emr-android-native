@@ -1,5 +1,6 @@
 package com.sherifradwan.ancnative.model
 
+import com.sherifradwan.ancnative.ui.report.patientShareText
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -37,7 +38,7 @@ class ClinicalSummaryDatingTest {
     }
 
     private fun datingBlock(p: DemoPatient): String {
-        val text = ClinicalSummaryGenerator.generateTextSummary(p).replace(' ', ' ')
+        val text = patientShareText(p).replace(' ', ' ')
         val after = text.substringAfter("--- PREGNANCY DATING ---")
         return after.substringBefore("--- RECENT VISITS")
     }

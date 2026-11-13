@@ -1,5 +1,6 @@
 package com.sherifradwan.ancnative.model
 
+import com.sherifradwan.ancnative.ui.report.patientShareText
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -130,7 +131,7 @@ class MedicationStatusTest {
                 ),
             ),
         )
-        val summary = ClinicalSummaryGenerator.generateTextSummary(patient)
+        val summary = patientShareText(patient)
         assertTrue(summary.contains("• Methyldopa 250 mg · Oral · Take with water"))
         assertFalse(summary.contains("TDS"))
         assertTrue(summary.contains("• Aspirin 75 mg · Oral (Stopped)"))

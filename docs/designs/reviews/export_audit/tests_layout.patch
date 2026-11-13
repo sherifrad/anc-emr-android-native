@@ -1,0 +1,262 @@
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintLayoutTest.kt
+<<<<<<< SEARCH
+/**
+ * Round 3x / Q115-Q117 (.agents/pipeline/SPEC_FIX_R3.md, section "Round 3x"): printed
+ * cells never break inside a word, number or date; the stamp label is printed once; a
+ * list that is cut says "and K more not shown". Builders copy the shapes of
+ * PrintSectionTitlesTest.kt. context = null keeps the test JVM-only.
+ */
+class PrintLayoutTest {
+
+    private val AS_OF_DATE = LocalDate.of(2026, 10, 31)
+
+    private val VISITS_TITLE = "Antenatal Care Visits Log"
+    private val SCANS_TITLE = "Ultrasound Biometry & Fetal Surveillance"
+    private val LABS_TITLE = "Laboratory Investigations"
+    private val MEDS_TITLE = "Active Medications"
+=======
+/**
+ * Round 3x / Q115-Q117 (.agents/pipeline/SPEC_FIX_R3.md, section "Round 3x"): printed
+ * cells never break inside a word, number or date; the stamp label is printed once; a
+ * list over its cap keeps the newest rows and adds one hidden-count row. Builders
+ * copy the shapes of PrintSectionTitlesTest.kt. context = null keeps the test
+ * JVM-only.
+ */
+class PrintLayoutTest {
+
+    private val AS_OF_DATE = LocalDate.of(2026, 10, 31)
+
+    private val VISITS_TITLE = "Antenatal Care Visits Log"
+    private val SCANS_TITLE = "Ultrasound Biometry & Fetal Surveillance"
+    private val LABS_TITLE = "Laboratory Investigations"
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    @Test
+    fun q116_stampText_printedOnce() {
+        val rendered = withoutHtmlComments(html(patient()))
+        assertEquals(1, Regex.escape("Official Stamp & Signature").toRegex().findAll(rendered).count())
+    }
+=======
+    @Test
+    fun q116_stampText_printedOnce() {
+        val rendered = withoutHtmlComments(html(patient()))
+        assertEquals(
+            1,
+            Regex.escape("<div class=\"stamp-placeholder\">Stamp</div>").toRegex().findAll(rendered).count(),
+        )
+    }
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    private fun assertCap(
+        title: String,
+        cap: Int,
+        rowMarker: String,
+        build: (Int) -> DemoPatient,
+    ) {
+        val over = tableAfter(html(build(cap + 3)), title)
+        assertTrue("${cap + 3} rows must say 'and 3 more not shown'", over.contains("and 3 more not shown"))
+        assertEquals(cap, rowCount(over, rowMarker))
+        assertEquals("more-row colspan must equal the column count", listOf(columnCount(over)), moreRowColspans(over))
+
+        val one = tableAfter(html(build(cap + 1)), title)
+        assertTrue("${cap + 1} rows must say 'and 1 more not shown'", one.contains("and 1 more not shown"))
+
+        val exact = tableAfter(html(build(cap)), title)
+        assertFalse("exactly $cap rows must not say 'more not shown'", exact.contains("more not shown"))
+        assertEquals(cap, rowCount(exact, rowMarker))
+
+        val under = tableAfter(html(build(cap - 1)), title)
+        assertFalse("fewer than $cap rows must not say 'more not shown'", under.contains("more not shown"))
+        assertTrue(moreRowColspans(under).isEmpty())
+    }
+=======
+    private fun assertCap(
+        title: String,
+        cap: Int,
+        hiddenText: String,
+        rowMarker: String,
+        build: (Int) -> DemoPatient,
+    ) {
+        val over = tableAfter(html(build(cap + 3)), title)
+        assertTrue("${cap + 3} rows must say '3 $hiddenText'", over.contains("3 $hiddenText"))
+        assertEquals(cap, rowCount(over, rowMarker))
+        assertEquals("hidden row colspan must equal the column count", listOf(columnCount(over)), moreRowColspans(over))
+
+        val one = tableAfter(html(build(cap + 1)), title)
+        assertTrue("${cap + 1} rows must say '1 $hiddenText'", one.contains("1 $hiddenText"))
+
+        val exact = tableAfter(html(build(cap)), title)
+        assertFalse("exactly $cap rows must not have a hidden row", exact.contains("not shown"))
+        assertEquals(cap, rowCount(exact, rowMarker))
+
+        val under = tableAfter(html(build(cap - 1)), title)
+        assertFalse("fewer than $cap rows must not have a hidden row", under.contains("not shown"))
+        assertTrue(moreRowColspans(under).isEmpty())
+    }
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    @Test
+    fun q115_fiveTables_insideTableScroll() {
+        val p = patient(visits = 1, scans = 1, labs = 1, meds = 1).copy(
+            previousPregnancies = listOf(prevPreg(1)),
+        )
+        val generated = html(p)
+        val tableScrollMatches = Regex("""<div class="table-scroll">\s*<table class="clinical-table"""").findAll(generated).count()
+        assertEquals(5, tableScrollMatches)
+    }
+=======
+    @Test
+    fun q115_fiveTables_insideTableScroll() {
+        val p = patient(visits = 1, scans = 1, labs = 1, meds = 1).copy(
+            previousPregnancies = listOf(prevPreg(1)),
+        )
+        val generated = html(p)
+        val tableScrollMatches = Regex("""<div class="table-scroll">\s*<table class="clinical-table"""").findAll(generated).count()
+        assertEquals(5, tableScrollMatches)
+
+        val stopped = med(2).copy(status = "stopped", endDate = "2026-06-01")
+        val withStopped = html(p.copy(medications = p.medications + stopped))
+        assertEquals(6, Regex("""<div class="table-scroll">\s*<table class="clinical-table"""").findAll(withStopped).count())
+    }
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        // Lab name cell wraps: no nowrap
+        val labRow = Regex("""<tr>\s*<td[^>]*class="[^"]*date-cell[^"]*"[^>]*>.*?Test 0</td>""", RegexOption.DOT_MATCHES_ALL).find(generated)?.value
+        assertTrue("lab row found", labRow != null)
+        val labNameCell = Regex("""<td[^>]*>Test 0</td>""").find(labRow!!)?.value
+        assertTrue("lab name cell found", labNameCell != null)
+        assertFalse("lab name cell must not carry nowrap", labNameCell!!.contains("nowrap"))
+=======
+        // Lab name cell wraps: no nowrap
+        val labNameCell = Regex("""<td class="text-center font-bold text-navy">Test 0</td>""").find(generated)?.value
+        assertTrue("lab name cell found", labNameCell != null)
+        assertFalse("lab name cell must not carry nowrap", labNameCell!!.contains("nowrap"))
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+        // Medication name cell wraps: no nowrap
+        val medRow = Regex("""<tr>\s*<td[^>]*><span class="font-bold text-navy">Drug0</span>.*?</tr>""", RegexOption.DOT_MATCHES_ALL).find(generated)?.value
+        assertTrue("med row found", medRow != null)
+        val medNameCell = Regex("""<td[^>]*><span class="font-bold text-navy">Drug0</span>""").find(medRow!!)?.value
+        assertTrue("med name cell found", medNameCell != null)
+        assertFalse("med name cell must not carry nowrap", medNameCell!!.contains("nowrap"))
+=======
+        // Medication name cell wraps: no nowrap
+        val medNameCell = Regex("""<td[^>]*>(?:<span class="font-bold text-navy">)?Drug0""").find(generated)?.value
+        assertTrue("med name cell found", medNameCell != null)
+        assertFalse("med name cell must not carry nowrap", medNameCell!!.contains("nowrap"))
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    @Test
+    fun q117_visits_capAndMoreRow() {
+        assertCap(VISITS_TITLE, 12, "date-cell") { patient(visits = it) }
+    }
+
+    @Test
+    fun q117_scans_capAndMoreRow() {
+        assertCap(SCANS_TITLE, 7, "date-cell") { patient(scans = it) }
+    }
+
+    @Test
+    fun q117_labs_capAndMoreRow() {
+        assertCap(LABS_TITLE, 10, "date-cell") { patient(labs = it) }
+    }
+
+    @Test
+    fun q117_medications_capAndMoreRow() {
+        assertCap(MEDS_TITLE, 8, "Drug") { patient(meds = it) }
+    }
+=======
+    @Test
+    fun q117_visits_capAndMoreRow() {
+        val over = tableAfter(html(patient(visits = 15)), VISITS_TITLE)
+        assertTrue("15 visits must say '3 earlier visits not shown'", over.contains("3 earlier visits not shown"))
+        assertEquals(12, rowCount(over, "date-cell"))
+        assertEquals("hidden row colspan must equal the column count", listOf(columnCount(over)), moreRowColspans(over))
+        assertTrue("the newest visit must be kept", over.contains("15/01/2026"))
+        assertFalse("the oldest visit must be dropped", over.contains("01/01/2026"))
+
+        val exact = tableAfter(html(patient(visits = 12)), VISITS_TITLE)
+        assertFalse("exactly 12 visits must not have a hidden row", exact.contains("not shown"))
+        assertEquals(12, rowCount(exact, "date-cell"))
+    }
+
+    @Test
+    fun q117_scans_capAndMoreRow() {
+        assertCap(SCANS_TITLE, 7, "earlier scans not shown", "date-cell") { patient(scans = it) }
+    }
+
+    @Test
+    fun q117_labs_capAndMoreRow() {
+        assertCap(LABS_TITLE, 10, "older results not shown", "date-cell") { patient(labs = it) }
+    }
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    @Test
+    fun q117_emptyStates_unchanged() {
+        val generated = html(patient())
+        assertTrue(generated.contains("No clinical visits recorded yet"))
+        assertTrue(generated.contains("No ultrasound scans recorded yet"))
+        assertTrue(generated.contains("No laboratory test results recorded yet"))
+        assertTrue(generated.contains("No active medications or supplements recorded"))
+        assertFalse(generated.contains("more not shown"))
+    }
+=======
+    @Test
+    fun q117_emptyStates_unchanged() {
+        val generated = html(patient())
+        assertTrue(generated.contains("No clinical visits recorded yet"))
+        assertTrue(generated.contains("No ultrasound scans recorded yet"))
+        assertTrue(generated.contains("No laboratory test results recorded yet"))
+        assertTrue(generated.contains("No current medications recorded"))
+        assertFalse(generated.contains("not shown"))
+    }
+>>>>>>> REPLACE
+
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/PrintSectionTitlesTest.kt
+<<<<<<< SEARCH
+        "Laboratory Investigations",
+        "Active Medications",
+        "Delivery Management Plan & Attestation",
+    )
+=======
+        "Laboratory Investigations",
+        "Current Medications",
+        "Delivery Plan",
+    )
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    @Test
+    fun q94_photoSectionTitle_appearsOnceWithScanPhoto() {
+        val generated = html()
+        assertEquals(
+            "'$PHOTO_TITLE' must be printed exactly once when the patient has scan photos",
+            1,
+            spanCount(generated, PHOTO_TITLE),
+        )
+    }
+}
+=======
+    @Test
+    fun q94_scanPhotos_noteInRow_noAppendix() {
+        val generated = html()
+        assertFalse("the photo appendix section must be removed", generated.contains(PHOTO_TITLE))
+        assertTrue(
+            "a scan with photos must show the count in its row",
+            generated.contains("1 photos in the clinic record"),
+        )
+    }
+
+    @Test
+    fun q94_stoppedMedsSection_absentWithoutStoppedMeds() {
+        assertFalse(html().contains("Stopped Medications"))
+    }
+}
+>>>>>>> REPLACE

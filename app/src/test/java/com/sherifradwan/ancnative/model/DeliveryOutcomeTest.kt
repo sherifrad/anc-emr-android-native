@@ -1,5 +1,6 @@
 package com.sherifradwan.ancnative.model
 
+import com.sherifradwan.ancnative.ui.report.patientShareText
 import org.junit.Test
 import org.junit.Assert.*
 import java.time.LocalDate
@@ -204,9 +205,9 @@ class DeliveryOutcomeTest {
 
     @Test
     fun `summary text carries the delivery line`() {
-        val text = ClinicalSummaryGenerator.generateTextSummary(patient(true, "2026-11-05", DELIVERY_MODE_VAGINAL, DELIVERY_OUTCOME_STILLBIRTH))
+        val text = patientShareText(patient(true, "2026-11-05", DELIVERY_MODE_VAGINAL, DELIVERY_OUTCOME_STILLBIRTH))
         assertTrue(text, text.contains("Delivery: Delivered 05 Nov 2026 · Vaginal · Stillbirth"))
-        assertTrue(!ClinicalSummaryGenerator.generateTextSummary(patient(false)).contains("Delivery:"))
+        assertTrue(!patientShareText(patient(false)).contains("Delivery:"))
     }
 }
 

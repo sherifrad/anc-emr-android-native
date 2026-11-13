@@ -1,0 +1,460 @@
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+    <title>Clinical Record - ${escapeHtml(patient.displayName)} - $clinicNameEn</title>
+    <style>
+        :root {
+=======
+    <title>Clinical Record - ${escapeHtml(patient.displayName)} - $clinicName</title>
+    <style>
+        @font-face { font-family: 'Aref Ruqaa'; src: url('fonts/ArefRuqaa-Regular.ttf'); }
+        :root {
+>>>>>>> REPLACE
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+        .badge-navy {
+            background-color: #EFF6FF;
+            color: var(--navy-primary);
+            border: 1px solid #BFDBFE;
+        }
+
+        .val-abnormal {
+=======
+        .badge-navy {
+            background-color: #EFF6FF;
+            color: var(--navy-primary);
+            border: 1px solid #BFDBFE;
+        }
+
+        .badge-warning { background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; }
+
+        .status-banner { background: #1e293b; color: #ffffff; font-weight: 700; font-size: 10pt; padding: 5px 10px; border-radius: 4px; margin-bottom: 6px; }
+
+        .attention-box { background: #fff7ed; border: 1px solid #c2410c; color: #7c2d12; font-size: 9pt; padding: 5px 10px; border-radius: 4px; margin-bottom: 6px; display: flex; gap: 8px; }
+
+        .attention-box .k { font-weight: 700; white-space: nowrap; }
+
+        .doc-sign { font-family: 'Aref Ruqaa', 'Noto Naskh Arabic', serif; font-size: 20pt; line-height: 1.3; color: #1e293b; }
+
+        .val-abnormal {
+>>>>>>> REPLACE
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+        /* Photos Grid on Appendix Page */
+        .photos-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .photo-card {
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            padding: 8px;
+            background: #F8FAFC;
+            text-align: center;
+        }
+
+        .photo-preview-placeholder {
+            height: 170px;
+            background: #0F172A;
+            color: #94A3B8;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9pt;
+            font-weight: 600;
+        }
+
+        .photo-caption {
+            margin-top: 6px;
+            font-size: 8pt;
+            font-weight: 700;
+            color: var(--navy-primary);
+        }
+
+        /* Signature block on Page 2 */
+=======
+        /* Signature block on Page 2 */
+>>>>>>> REPLACE
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+                <div class="clinic-brand">
+                    $logoImgTag
+                    <div class="clinic-title-box">
+                        <h1>$clinicNameEn</h1>
+                        <h2>$clinicSpecialty</h2>
+                        <p>$doctorOfficialTitle</p>
+                    </div>
+                </div>
+                <div class="header-meta uniform-meta">
+                    <div class="doc-badge">CLINICAL RECORD</div>
+                    <div class="meta-row"><span class="k">Type:</span> <span class="v">Certified Record</span></div>
+                    <div class="meta-row"><span class="k">Patient ID:</span> <span class="v">${escapeHtml(patient.caseId)}</span></div>
+                    <div class="meta-row"><span class="k">Print Date:</span> <span class="v">$printDateStr</span></div>
+                    <div class="meta-row"><span class="k">Page:</span> <span class="v">1 of $totalPages</span></div>
+                </div>
+            </header>
+
+            <!-- Patient Identity Banner: Refined with phone on new line, age only -->
+            <section class="patient-card">
+=======
+                <div class="clinic-brand">
+                    $logoImgTag
+                    <div class="clinic-title-box">
+                        <h1>$clinicName</h1>
+                        <h2>$clinicSpecialty</h2>
+                        <p>$doctorOfficialTitle</p>
+                    </div>
+                </div>
+                <div class="header-meta uniform-meta">
+                    <div class="doc-badge">CLINICAL RECORD</div>
+                    <div class="meta-row"><span class="k">Patient ID:</span> <span class="v">${escapeHtml(patient.caseId)}</span></div>
+                    <div class="meta-row"><span class="k">Print Date:</span> <span class="v">$printDateStr</span></div>
+                    <div class="meta-row"><span class="k">Page:</span> <span class="v">1</span></div>
+                </div>
+            </header>
+
+            ${if (statusLine != null) """<div class="status-banner">${escapeHtml(statusLine)}</div>""" else ""}
+
+            <!-- Patient Identity Banner: Refined with phone on new line, age only -->
+            <section class="patient-card">
+>>>>>>> REPLACE
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+                <div class="pt-name-box">
+                    <h3>${escapeHtml(patient.displayName)}</h3>
+                    <div class="pt-code">Patient ID: ${escapeHtml(patient.caseId)}</div>
+                    <div class="pt-phone">Phone: ${escapeHtml(patient.phone ?: "Unspecified")}</div>
+                </div>
+                <div class="data-point">
+                    <span class="data-label">Age</span>
+                    <span class="data-value">${escapeHtml(ageFormatted)}</span>
+                </div>
+                <div class="data-point">
+                    <span class="data-label">Blood Group</span>
+                    <span class="data-value ${if (isRhNegative) "text-rose" else "text-navy"}">
+                        ${escapeHtml(patient.bloodGroupText ?: "-")}
+                        ${if (isRhNegative) """<span class="badge badge-danger">Rh- Negative</span>""" else ""}
+                    </span>
+                </div>
+                <div class="data-point" style="align-items: flex-end;">
+                    <span class="data-label">Clinical Risk Level</span>
+                    ${when {
+                        riskLevel.isNullOrBlank() -> """<span class="badge">Risk not recorded</span>"""
+                        isHighRisk -> """<span class="badge badge-danger">High Risk</span>"""
+                        else -> """<span class="badge badge-success">Normal Risk</span>"""
+                    }}
+                </div>
+            </section>
+
+            <!-- Dating & Obstetric Profile Grid -->
+=======
+                <div class="pt-name-box">
+                    <h3>${escapeHtml(patient.displayName)}</h3>
+                    <div class="pt-code">Patient ID: ${escapeHtml(patient.caseId)}</div>
+                    <div class="pt-phone">Phone: ${escapeHtml(patient.phone ?: "Unspecified")}</div>
+                    ${if (patient.addressText.isNotBlank()) """<div class="pt-phone">Address: ${escapeHtml(patient.addressText)}</div>""" else ""}
+                    ${if (patient.dateOfBirth.isNotBlank()) """<div class="pt-phone">Date of birth: ${escapeHtml(reportDate(patient.dateOfBirth))}</div>""" else ""}
+                </div>
+                <div class="data-point">
+                    <span class="data-label">Age</span>
+                    <span class="data-value">${escapeHtml(ageFormatted)}</span>
+                </div>
+                <div class="data-point">
+                    <span class="data-label">Blood Group</span>
+                    <span class="data-value ${if (isRhNegative) "text-rose" else "text-navy"}">
+                        ${escapeHtml(patient.bloodGroupText ?: "-")}
+                        ${if (isRhNegative) """<span class="badge badge-danger">Rh negative</span>""" else ""}
+                    </span>
+                </div>
+                <div class="data-point" style="align-items: flex-end;">
+                    <span class="data-label">Clinical Risk Level</span>
+                    ${when (risk) {
+                        ReportRisk.HIGH -> """<span class="badge badge-danger">${risk.label}</span>"""
+                        ReportRisk.MEDIUM -> """<span class="badge badge-warning">${risk.label}</span>"""
+                        ReportRisk.LOW -> """<span class="badge badge-success">${risk.label}</span>"""
+                        ReportRisk.UNRECORDED -> """<span class="badge">${risk.label}</span>"""
+                    }}
+                </div>
+            </section>
+
+            ${if (patient.clinicalAttention.isNotBlank()) """<div class="attention-box"><span class="k">Clinical attention</span><span class="v">${escapeHtml(patient.clinicalAttention)}</span></div>""" else ""}
+
+            <!-- Dating & Obstetric Profile Grid -->
+>>>>>>> REPLACE
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+                    <div class="ga-highlight">
+                        Current Gestational Age (GA): $currentGaFormatted
+                    </div>
+=======
+                    <div class="ga-highlight">
+                        ${when {
+                            currentGa != null -> "Gestational age today: $currentGa"
+                            patient.delivered -> escapeHtml(statusLine)
+                            else -> "Gestational age: not recorded"
+                        }}
+                    </div>
+>>>>>>> REPLACE
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+                    <div class="history-list">
+                        <div class="history-row">
+                            <span class="k">GPA Formula:</span>
+                            <span class="v text-navy">G$g P$p + A$a (${pastDeliverySummary})</span>
+                        </div>
+                        <div class="history-row">
+                            <span class="k">Drug Allergies:</span>
+                            <span class="v ${if (classifyAllergy(patient.allergyHistory) is AllergyState.Recorded) "text-rose font-bold" else ""}">${escapeHtml(patient.allergyHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
+                        </div>
+                        <div class="history-row">
+                            <span class="k">Medical History:</span>
+                            <span class="v">${escapeHtml(patient.medicalHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
+                        </div>
+                        <div class="history-row">
+                            <span class="k">Surgical History:</span>
+                            <span class="v">${escapeHtml(patient.surgicalHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
+                        </div>
+                    </div>
+=======
+                    <div class="history-list">
+                        <div class="history-row">
+                            <span class="k">GPA Formula:</span>
+                            <span class="v text-navy">G$g P$p + A$a (${escapeHtml(pastDeliverySummary)})</span>
+                        </div>
+                        <div class="history-row">
+                            <span class="k">Drug Allergies:</span>
+                            <span class="v ${if (classifyAllergy(patient.allergyHistory) is AllergyState.Recorded) "text-rose font-bold" else ""}">${escapeHtml(patient.allergyHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
+                        </div>
+                        <div class="history-row">
+                            <span class="k">Medical History:</span>
+                            <span class="v">${escapeHtml(patient.medicalHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
+                        </div>
+                        <div class="history-row">
+                            <span class="k">Surgical History:</span>
+                            <span class="v">${escapeHtml(patient.surgicalHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
+                        </div>
+                        <div class="history-row">
+                            <span class="k">Family History:</span>
+                            <span class="v">${escapeHtml(patient.familyHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
+                        </div>
+                    </div>
+>>>>>>> REPLACE
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+        <!-- Page 1 Footer -->
+        <footer class="page-footer">
+            <span>Confidential Medical Record · Certified electronically by $clinicNameEn · $doctorOfficialTitle</span>
+            <span>Page 1 of $totalPages</span>
+        </footer>
+=======
+        <!-- Page 1 Footer -->
+        <footer class="page-footer">
+            <span>Confidential medical record · $clinicName · $doctorOfficialTitle · Tel $CLINIC_PHONE</span>
+            <span>Page 1</span>
+        </footer>
+>>>>>>> REPLACE
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+            <!-- Compact Header Runner -->
+            <header class="clinic-header" style="margin-bottom: 2px;">
+                <div class="clinic-brand">
+                    $logoImgTag
+                    <div class="clinic-title-box">
+                        <h1>$clinicNameEn</h1>
+                        <h2>Diagnostic Surveillance, Ultrasound, Labs & Delivery Plan</h2>
+                    </div>
+                </div>
+                <div class="header-meta uniform-meta">
+                    <div class="doc-badge" style="background: var(--rose-accent);">Page 2 of $totalPages</div>
+                    <div class="meta-row"><span class="k">Patient:</span> <span class="v">${escapeHtml(patient.displayName)}</span></div>
+                    <div class="meta-row"><span class="k">Patient ID:</span> <span class="v">${escapeHtml(patient.caseId)}</span></div>
+                    <div class="meta-row"><span class="k">Print Date:</span> <span class="v">$printDateStr</span></div>
+                </div>
+            </header>
+=======
+            <!-- Compact Header Runner -->
+            <header class="clinic-header" style="margin-bottom: 2px;">
+                <div class="clinic-brand">
+                    $logoImgTag
+                    <div class="clinic-title-box">
+                        <h1>$clinicName</h1>
+                        <h2>Scans, laboratory results, medications and delivery plan</h2>
+                    </div>
+                </div>
+                <div class="header-meta uniform-meta">
+                    <div class="doc-badge" style="background: var(--rose-accent);">Page 2</div>
+                    <div class="meta-row"><span class="k">Patient:</span> <span class="v">${escapeHtml(patient.displayName)}</span></div>
+                    <div class="meta-row"><span class="k">Patient ID:</span> <span class="v">${escapeHtml(patient.caseId)}</span></div>
+                    <div class="meta-row"><span class="k">Print Date:</span> <span class="v">$printDateStr</span></div>
+                </div>
+            </header>
+>>>>>>> REPLACE
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+            <!-- Active Medications -->
+            <div class="section-box">
+                <div class="section-title">
+                    <span>Active Medications</span>
+                </div>
+                <div class="table-scroll">
+                <table class="clinical-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 75%;">Medication and instructions</th>
+                            <th style="width: 25%;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        $medsRowsHtml
+                    </tbody>
+                </table>
+                </div>
+            </div>
+=======
+            <!-- Current Medications -->
+            <div class="section-box">
+                <div class="section-title">
+                    <span>Current Medications</span>
+                </div>
+                <div class="table-scroll">
+                <table class="clinical-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 70%;">Medication and instructions</th>
+                            <th style="width: 30%;">Dates</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        $currentMedsRowsHtml
+                    </tbody>
+                </table>
+                </div>
+            </div>
+            ${if (stoppedMedsRowsHtml.isNotEmpty()) """
+            <!-- Stopped Medications -->
+            <div class="section-box">
+                <div class="section-title">
+                    <span>Stopped Medications</span>
+                </div>
+                <div class="table-scroll">
+                <table class="clinical-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 70%;">Medication and instructions</th>
+                            <th style="width: 30%;">Dates</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        $stoppedMedsRowsHtml
+                    </tbody>
+                </table>
+                </div>
+            </div>
+            """ else ""}
+>>>>>>> REPLACE
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+            <!-- Delivery Management Plan & Attestation -->
+            <div class="section-box" style="margin-top: auto;">
+                <div class="section-title">
+                    <span>Delivery Management Plan & Attestation</span>
+                </div>
+                <div class="attestation-grid">
+                    <div class="plan-box">
+                        <div class="history-list">
+                            ${patient.deliveryOutcomeLine()?.let { line -> """<div class="history-row">
+                                <span class="k">Delivery Outcome:</span>
+                                <span class="v text-navy font-bold">${escapeHtml(line)}</span>
+                            </div>""" }.orEmpty()}
+                            <div class="history-row">
+                                <span class="k">Planned Delivery Mode:</span>
+                                <span class="v text-rose font-bold">${escapeHtml(com.sherifradwan.ancnative.model.parseDeliveryNotes(patient.obstetricNotes).plan?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
+                            </div>
+                            <div class="history-row">
+                                <span class="k">Target Delivery Timing:</span>
+                                <span class="v text-navy font-bold">${escapeHtml(datingSummary.edd?.let(::formatDmy) ?: "Not recorded")}</span>
+                            </div>
+                            <div class="history-row">
+                                <span class="k">Hospital & Blood Bank Precautions:</span>
+                                <span class="v font-bold">${if (isRhNegative) "Anti-D Prophylaxis + Matched Packed RBCs Cross-match" else "Routine Obstetric Hospital Protocol"}</span>
+                            </div>
+                            <div class="history-row">
+                                <span class="k">Special Recommendations:</span>
+                                <span class="v">Regular fetal kick counts; immediate hospital evaluation for bleeding, ruptured membranes, or severe pain.</span>
+                            </div>
+                        </div>
+                    </div>
+=======
+            <!-- Delivery Plan -->
+            <div class="section-box" style="margin-top: auto;">
+                <div class="section-title">
+                    <span>Delivery Plan</span>
+                </div>
+                <div class="attestation-grid">
+                    <div class="plan-box">
+                        <div class="history-list">
+                            ${patient.deliveryOutcomeLine()?.let { line -> """<div class="history-row">
+                                <span class="k">Delivery Outcome:</span>
+                                <span class="v text-navy font-bold">${escapeHtml(line)}</span>
+                            </div>""" }.orEmpty()}
+                            ${deliveryPlanRows(patient).joinToString("") { row -> """<div class="history-row">
+                                <span class="k">${escapeHtml(row.label)}:</span>
+                                <span class="v">${escapeHtml(row.value)}</span>
+                            </div>""" }}
+                            ${if (!patient.delivered && datingSummary.edd != null) """<div class="history-row">
+                                <span class="k">Estimated due date:</span>
+                                <span class="v text-navy font-bold">${formatDmy(datingSummary.edd)}</span>
+                            </div>""" else ""}
+                            ${if (!patient.delivered && deliveryPlanRows(patient).isEmpty()) """<div class="history-row">
+                                <span class="k">Plan:</span>
+                                <span class="v">Not recorded</span>
+                            </div>""" else ""}
+                        </div>
+                    </div>
+>>>>>>> REPLACE
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+                    <div class="signature-box">
+                        <div>
+                            <div class="doc-name">${escapeHtml(PreviousPregnancyFormRules.DEFAULT_CLINICIAN_ID)}</div>
+                            <div class="doc-title">$doctorOfficialTitle</div>
+                            <div class="stamp-placeholder">Official Stamp & Signature</div>
+                        </div>
+                    </div>
+=======
+                    <div class="signature-box">
+                        <div>
+                            <div class="doc-name">Dr. Sherif Radwan</div>
+                            <div class="doc-sign" lang="ar" dir="rtl">شريف رضوان</div>
+                            <div class="doc-title">$doctorOfficialTitle</div>
+                            <div class="stamp-placeholder">Stamp</div>
+                        </div>
+                    </div>
+>>>>>>> REPLACE
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+<<<<<<< SEARCH
+        <!-- Page 2 Footer -->
+        <footer class="page-footer">
+            <span>$clinicNameEn · $doctorOfficialTitle · Contact: +20 100 000 0000 · Integrated Antenatal Care</span>
+            <span>Page 2 of $totalPages</span>
+        </footer>
+    </div>
+
+    $page3Html
+
+</body>
+=======
+        <!-- Page 2 Footer -->
+        <footer class="page-footer">
+            <span>$clinicName · $doctorOfficialTitle · Tel $CLINIC_PHONE</span>
+            <span>Page 2</span>
+        </footer>
+    </div>
+
+</body>
+>>>>>>> REPLACE
+
+

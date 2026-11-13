@@ -33,8 +33,8 @@ class PrintSectionTitlesTest {
         "Antenatal Care Visits Log",
         "Ultrasound Biometry & Fetal Surveillance",
         "Laboratory Investigations",
-        "Active Medications",
-        "Delivery Management Plan & Attestation",
+        "Current Medications",
+        "Delivery Plan",
     )
 
     // The capital duplicate wording the removed en-sub spans carried.

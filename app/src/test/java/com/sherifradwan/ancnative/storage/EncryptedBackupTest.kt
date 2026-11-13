@@ -1,6 +1,6 @@
 package com.sherifradwan.ancnative.storage
 
-import com.sherifradwan.ancnative.model.ClinicalSummaryGenerator
+import com.sherifradwan.ancnative.ui.report.patientShareText
 import com.sherifradwan.ancnative.model.DemoFixtures
 import java.util.UUID
 import org.junit.Assert.assertEquals
@@ -289,7 +289,7 @@ class EncryptedBackupTest {
     @Test
     fun clinicalSummaryGeneratorOutputsComprehensiveText() {
         val patient = DemoFixtures.patients.first()
-        val text = ClinicalSummaryGenerator.generateTextSummary(patient)
+        val text = patientShareText(patient)
 
         assertTrue(text.contains("ANTENATAL CARE CLINICAL SUMMARY"))
         assertTrue(text.contains(patient.displayName))

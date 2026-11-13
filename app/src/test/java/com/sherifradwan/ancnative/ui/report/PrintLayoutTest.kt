@@ -14,8 +14,9 @@ import java.time.LocalDate
 /**
  * Round 3x / Q115-Q117 (.agents/pipeline/SPEC_FIX_R3.md, section "Round 3x"): printed
  * cells never break inside a word, number or date; the stamp label is printed once; a
- * list that is cut says "and K more not shown". Builders copy the shapes of
- * PrintSectionTitlesTest.kt. context = null keeps the test JVM-only.
+ * list over its cap keeps the newest rows and adds one hidden-count row. Builders
+ * copy the shapes of PrintSectionTitlesTest.kt. context = null keeps the test
+ * JVM-only.
  */
 class PrintLayoutTest {
 
@@ -24,7 +25,6 @@ class PrintLayoutTest {
     private val VISITS_TITLE = "Antenatal Care Visits Log"
     private val SCANS_TITLE = "Ultrasound Biometry & Fetal Surveillance"
     private val LABS_TITLE = "Laboratory Investigations"
-    private val MEDS_TITLE = "Active Medications"
 
     private fun date(i: Int): String = LocalDate.of(2026, 1, 1).plusDays(i.toLong()).toString()
 
@@ -244,11 +244,6 @@ class PrintLayoutTest {
     @Test
     fun q117_labs_capAndMoreRow() {
         assertCap(LABS_TITLE, 10, "date-cell") { patient(labs = it) }
-    }
-
-    @Test
-    fun q117_medications_capAndMoreRow() {
-        assertCap(MEDS_TITLE, 8, "Drug") { patient(meds = it) }
     }
 
     @Test
