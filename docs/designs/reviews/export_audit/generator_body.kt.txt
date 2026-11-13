@@ -1,0 +1,286 @@
+<body>
+
+    <!-- ========================================== -->
+    <!-- PAGE 1: MATERNAL FOUNDATION & VISITS       -->
+    <!-- ========================================== -->
+    <div class="page-sheet">
+        <div class="watermark"></div>
+        <div class="page-content">
+
+            <!-- Clinic Top Header: Refined per Dr. Sherif Radwan -->
+            <header class="clinic-header">
+                <div class="clinic-brand">
+                    $logoImgTag
+                    <div class="clinic-title-box">
+                        <h1>$clinicNameEn</h1>
+                        <h2>$clinicSpecialty</h2>
+                        <p>$doctorOfficialTitle</p>
+                    </div>
+                </div>
+                <div class="header-meta uniform-meta">
+                    <div class="doc-badge">CLINICAL RECORD</div>
+                    <div class="meta-row"><span class="k">Type:</span> <span class="v">Certified Record</span></div>
+                    <div class="meta-row"><span class="k">Patient ID:</span> <span class="v">${escapeHtml(patient.caseId)}</span></div>
+                    <div class="meta-row"><span class="k">Print Date:</span> <span class="v">$printDateStr</span></div>
+                    <div class="meta-row"><span class="k">Page:</span> <span class="v">1 of $totalPages</span></div>
+                </div>
+            </header>
+
+            <!-- Patient Identity Banner: Refined with phone on new line, age only -->
+            <section class="patient-card">
+                <div class="pt-name-box">
+                    <h3>${escapeHtml(patient.displayName)}</h3>
+                    <div class="pt-code">Patient ID: ${escapeHtml(patient.caseId)}</div>
+                    <div class="pt-phone">Phone: ${escapeHtml(patient.phone ?: "Unspecified")}</div>
+                </div>
+                <div class="data-point">
+                    <span class="data-label">Age</span>
+                    <span class="data-value">${escapeHtml(ageFormatted)}</span>
+                </div>
+                <div class="data-point">
+                    <span class="data-label">Blood Group</span>
+                    <span class="data-value ${if (isRhNegative) "text-rose" else "text-navy"}">
+                        ${escapeHtml(patient.bloodGroupText ?: "-")}
+                        ${if (isRhNegative) """<span class="badge badge-danger">Rh- Negative</span>""" else ""}
+                    </span>
+                </div>
+                <div class="data-point" style="align-items: flex-end;">
+                    <span class="data-label">Clinical Risk Level</span>
+                    ${when {
+                        riskLevel.isNullOrBlank() -> """<span class="badge">Risk not recorded</span>"""
+                        isHighRisk -> """<span class="badge badge-danger">High Risk</span>"""
+                        else -> """<span class="badge badge-success">Normal Risk</span>"""
+                    }}
+                </div>
+            </section>
+
+            <!-- Dating & Obstetric Profile Grid -->
+            <div class="grid-two-col">
+                <!-- Pregnancy Dating (PREGNANCY DATING without Matrix) -->
+                <div class="section-box">
+                    <div class="section-title">
+                        <span>Pregnancy Dating</span>
+                    </div>
+                    <div class="dating-matrix">
+                        $datingMatrixHtml
+                    </div>
+                    <div class="ga-highlight">
+                        Current Gestational Age (GA): $currentGaFormatted
+                    </div>
+                </div>
+
+                <!-- Obstetric Summary & History -->
+                <div class="section-box">
+                    <div class="section-title">
+                        <span>Obstetric & Medical History</span>
+                    </div>
+                    <div class="history-list">
+                        <div class="history-row">
+                            <span class="k">GPA Formula:</span>
+                            <span class="v text-navy">G$g P$p + A$a (${pastDeliverySummary})</span>
+                        </div>
+                        <div class="history-row">
+                            <span class="k">Drug Allergies:</span>
+                            <span class="v ${if (classifyAllergy(patient.allergyHistory) is AllergyState.Recorded) "text-rose font-bold" else ""}">${escapeHtml(patient.allergyHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
+                        </div>
+                        <div class="history-row">
+                            <span class="k">Medical History:</span>
+                            <span class="v">${escapeHtml(patient.medicalHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
+                        </div>
+                        <div class="history-row">
+                            <span class="k">Surgical History:</span>
+                            <span class="v">${escapeHtml(patient.surgicalHistory?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Previous Pregnancies & Outcomes -->
+            <div class="section-box">
+                <div class="section-title">
+                    <span>Previous Pregnancies & Obstetric Outcomes</span>
+                </div>
+                $prevPregRows
+            </div>
+
+            <!-- Antenatal Care Visits Log -->
+            <div class="section-box" style="flex-grow: 1;">
+                <div class="section-title">
+                    <span>Antenatal Care Visits Log</span>
+                </div>
+                <div class="table-scroll">
+                <table class="clinical-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 4%;">#</th>
+                            <th style="width: 16%;">Date</th>
+                            <th style="width: 17%;">Gestational Age (GA)</th>
+                            <th style="width: 15%;">Blood Pressure (BP)</th>
+                            <th style="width: 10%;">Weight</th>
+                            <th style="width: 38%;">Clinical Findings & Observations</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        $visitsRowsHtml
+                    </tbody>
+                </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Page 1 Footer -->
+        <footer class="page-footer">
+            <span>Confidential Medical Record · Certified electronically by $clinicNameEn · $doctorOfficialTitle</span>
+            <span>Page 1 of $totalPages</span>
+        </footer>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- PAGE 2: ULTRASOUND, LABS, MEDS & PLAN      -->
+    <!-- ========================================== -->
+    <div class="page-sheet">
+        <div class="watermark"></div>
+        <div class="page-content">
+
+            <!-- Compact Header Runner -->
+            <header class="clinic-header" style="margin-bottom: 2px;">
+                <div class="clinic-brand">
+                    $logoImgTag
+                    <div class="clinic-title-box">
+                        <h1>$clinicNameEn</h1>
+                        <h2>Diagnostic Surveillance, Ultrasound, Labs & Delivery Plan</h2>
+                    </div>
+                </div>
+                <div class="header-meta uniform-meta">
+                    <div class="doc-badge" style="background: var(--rose-accent);">Page 2 of $totalPages</div>
+                    <div class="meta-row"><span class="k">Patient:</span> <span class="v">${escapeHtml(patient.displayName)}</span></div>
+                    <div class="meta-row"><span class="k">Patient ID:</span> <span class="v">${escapeHtml(patient.caseId)}</span></div>
+                    <div class="meta-row"><span class="k">Print Date:</span> <span class="v">$printDateStr</span></div>
+                </div>
+            </header>
+
+            <!-- Ultrasound Biometry & Surveillance -->
+            <div class="section-box">
+                <div class="section-title">
+                    <span>Ultrasound Biometry & Fetal Surveillance</span>
+                </div>
+                <div class="table-scroll">
+                <table class="clinical-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 11%;">Date</th>
+                            <th style="width: 14%;">Gestational Age</th>
+                            <th style="width: 13%;">Presentation</th>
+                            <th style="width: 12%;">Placenta</th>
+                            <th style="width: 14%;">Amniotic Fluid</th>
+                            <th style="width: 12%;">EFW (g)</th>
+                            <th style="width: 24%;">Clinical Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        $scansRowsHtml
+                    </tbody>
+                </table>
+                </div>
+            </div>
+
+            <!-- Laboratory Investigations -->
+            <div class="section-box">
+                <div class="section-title">
+                    <span>Laboratory Investigations</span>
+                </div>
+                <div class="table-scroll">
+                <table class="clinical-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 16%;">Date</th>
+                            <th style="width: 36%;">Investigation / Test Name</th>
+                            <th style="width: 26%;">Result & Unit</th>
+                            <th style="width: 22%;">Reference Range</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        $labsRowsHtml
+                    </tbody>
+                </table>
+                </div>
+            </div>
+
+            <!-- Active Medications -->
+            <div class="section-box">
+                <div class="section-title">
+                    <span>Active Medications</span>
+                </div>
+                <div class="table-scroll">
+                <table class="clinical-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 75%;">Medication and instructions</th>
+                            <th style="width: 25%;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        $medsRowsHtml
+                    </tbody>
+                </table>
+                </div>
+            </div>
+
+            <!-- Delivery Management Plan & Attestation -->
+            <div class="section-box" style="margin-top: auto;">
+                <div class="section-title">
+                    <span>Delivery Management Plan & Attestation</span>
+                </div>
+                <div class="attestation-grid">
+                    <div class="plan-box">
+                        <div class="history-list">
+                            ${patient.deliveryOutcomeLine()?.let { line -> """<div class="history-row">
+                                <span class="k">Delivery Outcome:</span>
+                                <span class="v text-navy font-bold">${escapeHtml(line)}</span>
+                            </div>""" }.orEmpty()}
+                            <div class="history-row">
+                                <span class="k">Planned Delivery Mode:</span>
+                                <span class="v text-rose font-bold">${escapeHtml(com.sherifradwan.ancnative.model.parseDeliveryNotes(patient.obstetricNotes).plan?.takeUnless(String::isBlank) ?: "Not recorded")}</span>
+                            </div>
+                            <div class="history-row">
+                                <span class="k">Target Delivery Timing:</span>
+                                <span class="v text-navy font-bold">${escapeHtml(datingSummary.edd?.let(::formatDmy) ?: "Not recorded")}</span>
+                            </div>
+                            <div class="history-row">
+                                <span class="k">Hospital & Blood Bank Precautions:</span>
+                                <span class="v font-bold">${if (isRhNegative) "Anti-D Prophylaxis + Matched Packed RBCs Cross-match" else "Routine Obstetric Hospital Protocol"}</span>
+                            </div>
+                            <div class="history-row">
+                                <span class="k">Special Recommendations:</span>
+                                <span class="v">Regular fetal kick counts; immediate hospital evaluation for bleeding, ruptured membranes, or severe pain.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="signature-box">
+                        <div>
+                            <div class="doc-name">${escapeHtml(PreviousPregnancyFormRules.DEFAULT_CLINICIAN_ID)}</div>
+                            <div class="doc-title">$doctorOfficialTitle</div>
+                            <div class="stamp-placeholder">Official Stamp & Signature</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Page 2 Footer -->
+        <footer class="page-footer">
+            <span>$clinicNameEn · $doctorOfficialTitle · Contact: +20 100 000 0000 · Integrated Antenatal Care</span>
+            <span>Page 2 of $totalPages</span>
+        </footer>
+    </div>
+
+    $page3Html
+
+</body>
+</html>
+        """.trimIndent()
+    }
+}

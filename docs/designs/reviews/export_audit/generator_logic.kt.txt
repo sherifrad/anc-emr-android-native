@@ -1,0 +1,337 @@
+object PatientPrintHtmlGenerator {
+
+    private const val MAX_PRINT_VISITS = 12
+    private const val MAX_PRINT_SCANS = 7
+    private const val MAX_PRINT_LABS = 10
+    private const val MAX_PRINT_MEDICATIONS = 8
+
+    private const val BP_ALERT_RAISED = "Raised BP - recheck"
+    private const val BP_ALERT_SEVERE = "Severe-range BP - urgent assessment"
+
+    private fun hiddenRowsHtml(hidden: Int, colspan: Int): String {
+        if (hidden <= 0) return ""
+        return """<tr class="more-row"><td colspan="$colspan" class="text-center empty-cell">and $hidden more not shown</td></tr>"""
+    }
+
+    private fun getLogoBase64(context: Context?): String {
+        if (context == null) return ""
+        return try {
+            val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.clinic_logo_foreground)
+            val outputStream = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+            Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
+        } catch (_: Exception) {
+            ""
+        }
+    }
+
+    fun generateHtml(
+        context: Context? = null,
+        patient: DemoPatient,
+        settings: SecuritySettingsState? = null,
+        asOfDate: LocalDate = LocalDate.now(),
+    ): String {
+        val logoBase64 = getLogoBase64(context)
+        val clinicNameAr = settings?.clinicName ?: "Dr. Sherif Radwan Clinic"
+        val clinicNameEn = "Dr. Sherif Radwan Clinic"
+        val clinicSpecialty = "Maternal-Fetal Medicine & Advanced Obstetrics"
+        val doctorOfficialTitle = "Consultant of Obstetrics, Gynecology & Laparoscopy"
+        val printDateStr = formatIsoDate(asOfDate)
+        val gaResult = patient.dating?.calculateGestationalAgeResult(asOfDate)
+        val currentGaFormatted = gaResult?.formatted ?: "Unspecified"
+        val datingSummary = datingSummaryOf(patient, asOfDate)
+        val datingMatrixHtml = buildString {
+            datingTextRows(datingSummary).forEach { row ->
+                val valueClass = if (row.isEdd) "val text-rose" else "val"
+                append("""<div class="matrix-item"><div class="label">${escapeHtml(row.label)}</div>""")
+                append("""<div class="$valueClass">${escapeHtml(row.value ?: "Not recorded")}</div></div>""")
+            }
+            datingDiscordanceLine(patient.dating, datingSummary)?.let {
+                append("""<div class="matrix-item" style="grid-column: 1 / -1"><div class="val">${escapeHtml(it)}</div></div>""")
+            }
+        }
+
+        // Format Obstetric summary
+        val g = patient.gravida ?: "-"
+        val p = patient.parity ?: "-"
+        val a = patient.abortion ?: "-"
+        val pastDeliverySummary = previousDeliverySummary(patient)
+
+        val riskLevel = patient.riskLevel?.takeUnless(String::isBlank)
+        val isHighRisk = com.sherifradwan.ancnative.ui.isHighRisk(riskLevel)
+        val isRhNegative = com.sherifradwan.ancnative.ui.isRhNegative(patient.bloodGroupText)
+
+        // Collect ultrasound images if any
+        val attachedUltrasoundImages = patient.ultrasoundScans.flatMapIndexed { sIdx, s ->
+            s.imageUris.mapIndexed { iIdx, uri ->
+                mapOf(
+                    "uri" to uri,
+                    "date" to s.date,
+                    "label" to "Ultrasound Scan ${sIdx + 1}.${iIdx + 1} - " + s.date +
+                        (s.impression?.takeUnless(String::isBlank)?.let { " ($it)" } ?: ""),
+                )
+            }
+        }
+        val totalPages = if (attachedUltrasoundImages.isNotEmpty()) 3 else 2
+
+        // Visits table rows (Centered text, No SFH, No FHR, Spacious and comfortable)
+        val sortedVisits = patient.visits.sortedBy { it.date }
+        val displayedVisits = sortedVisits.take(MAX_PRINT_VISITS)
+        val moreVisitsHtml = hiddenRowsHtml(sortedVisits.size - MAX_PRINT_VISITS, 6)
+        val bpAlertCss = when {
+            displayedVisits.any { bpLevel(it.bloodPressure) == BpLevel.SEVERE } ->
+                "\n        .bp-alert { font-size: 6.8pt; line-height: 1.1; margin-top: 2px; color: #b45309; white-space: normal; }\n        .bp-alert-severe { color: #dc2626; }"
+            displayedVisits.any { bpLevel(it.bloodPressure) == BpLevel.RAISED } ->
+                "\n        .bp-alert { font-size: 6.8pt; line-height: 1.1; margin-top: 2px; color: #b45309; white-space: normal; }"
+            else -> ""
+        }
+        val visitsRowsHtml = if (sortedVisits.isEmpty()) {
+            """<tr><td colspan="6" class="text-center empty-cell">No clinical visits recorded yet</td></tr>"""
+        } else {
+            val rows = displayedVisits.mapIndexed { idx, v ->
+                val vGa = parseIsoDateOrNull(v.date)?.let { vDate ->
+                    patient.dating?.calculateGestationalAgeResult(vDate)?.formatted
+                } ?: "-"
+                val bpAlert = when (bpLevel(v.bloodPressure)) {
+                    BpLevel.RAISED -> """<div class="bp-alert">$BP_ALERT_RAISED</div>"""
+                    BpLevel.SEVERE -> """<div class="bp-alert bp-alert-severe">$BP_ALERT_SEVERE</div>"""
+                    BpLevel.NORMAL -> ""
+                }
+                """
+                <tr>
+                    <td class="text-center font-bold nowrap-cell">${idx + 1}</td>
+                    <td class="text-center date-cell">${escapeHtml(v.date)}</td>
+                    <td class="text-center font-bold text-teal nowrap-cell">${vGa}</td>
+                    <td class="text-center nowrap-cell font-bold text-navy">${escapeHtml(v.bloodPressure ?: "-")}$bpAlert</td>
+                    <td class="text-center nowrap-cell">${escapeHtml(v.weight?.let { "$it kg" } ?: "-")}</td>
+                    <td class="text-center notes-cell">${escapeHtml(v.findings?.takeUnless(String::isBlank) ?: v.notes?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                </tr>
+                """.trimIndent()
+            }.joinToString("\n")
+            if (moreVisitsHtml.isNotEmpty()) "$rows\n$moreVisitsHtml" else rows
+        }
+
+        // Ultrasound Scans rows (Centered, EFW (g), Clinical Notes, image badge if photos exist)
+        val sortedScans = patient.ultrasoundScans.sortedBy { it.date }
+        val displayedScans = sortedScans.take(MAX_PRINT_SCANS)
+        val moreScansHtml = hiddenRowsHtml(sortedScans.size - MAX_PRINT_SCANS, 7)
+        val scansRowsHtml = if (sortedScans.isEmpty()) {
+            """<tr><td colspan="7" class="text-center empty-cell">No ultrasound scans recorded yet</td></tr>"""
+        } else {
+            val rows = displayedScans.map { s ->
+                val scanGaStr = when {
+                    s.gestationalAgeWeeks != null && s.gestationalAgeDays != null -> "${s.gestationalAgeWeeks}w + ${s.gestationalAgeDays}d"
+                    s.gestationalAgeWeeks != null -> "${s.gestationalAgeWeeks}w"
+                    else -> "-"
+                }
+                val biometry = listOfNotNull(
+                    s.biometryBpd?.let { "BPD: $it" },
+                    s.biometryHc?.let { "HC: $it" },
+                    s.biometryAc?.let { "AC: $it" },
+                    s.biometryFl?.let { "FL: $it" }
+                ).joinToString(" · ").ifBlank { "-" }
+
+                val photoIndicator = if (s.imageUris.isNotEmpty()) {
+                    """<div class="photo-badge">📷 ${s.imageUris.size} scan photos attached</div>"""
+                } else {
+                    ""
+                }
+
+                val notesText = s.impression ?: biometry
+
+                val efwStr = s.estimatedFetalWeight?.let { weight ->
+                    if (weight.contains("g", ignoreCase = true) || weight.contains("kg", ignoreCase = true)) {
+                        weight
+                    } else {
+                        "$weight g"
+                    }
+                } ?: "-"
+
+                """
+                <tr>
+                    <td class="text-center date-cell">${escapeHtml(s.date)}</td>
+                    <td class="text-center font-bold text-teal nowrap-cell">${scanGaStr}</td>
+                    <td class="text-center">${escapeHtml(s.presentation?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                    <td class="text-center">${escapeHtml(s.placentalSite?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                    <td class="text-center">${escapeHtml(s.amnioticFluid?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                    <td class="text-center nowrap-cell font-bold text-navy">${escapeHtml(efwStr)}</td>
+                    <td class="text-center notes-cell">
+                        ${escapeHtml(notesText)}
+                        $photoIndicator
+                    </td>
+                </tr>
+                """.trimIndent()
+            }.joinToString("\n")
+            if (moreScansHtml.isNotEmpty()) "$rows\n$moreScansHtml" else rows
+        }
+
+        // Labs rows (Centered, NO status column, Abnormal result displayed in RED)
+        val sortedLabs = patient.labInvestigations.sortedByDescending { it.date }
+        val displayedLabs = sortedLabs.take(MAX_PRINT_LABS)
+        val moreLabsHtml = hiddenRowsHtml(sortedLabs.size - MAX_PRINT_LABS, 4)
+        val labsRowsHtml = if (sortedLabs.isEmpty()) {
+            """<tr><td colspan="4" class="text-center empty-cell">No laboratory test results recorded yet</td></tr>"""
+        } else {
+            val rows = displayedLabs.map { l ->
+                val resultHtml = if (l.isAbnormal) {
+                    """<span class="val-abnormal">${escapeHtml(l.result)} ${escapeHtml(l.unit ?: "")} (Abnormal)</span>"""
+                } else {
+                    """<span class="font-bold text-navy">${escapeHtml(l.result)} ${escapeHtml(l.unit ?: "")}</span>"""
+                }
+                """
+                <tr>
+                    <td class="text-center date-cell">${escapeHtml(l.date)}</td>
+                    <td class="text-center font-bold text-navy">${escapeHtml(l.testName)}</td>
+                    <td class="text-center">${resultHtml}</td>
+                    <td class="text-center text-muted">${escapeHtml(l.referenceRange ?: "-")}</td>
+                </tr>
+                """.trimIndent()
+            }.joinToString("\n")
+            if (moreLabsHtml.isNotEmpty()) "$rows\n$moreLabsHtml" else rows
+        }
+
+        // Medications rows (Centered)
+        val displayedMeds = patient.medications.take(MAX_PRINT_MEDICATIONS)
+        val moreMedsHtml = hiddenRowsHtml(patient.medications.size - MAX_PRINT_MEDICATIONS, 2)
+        val medsRowsHtml = if (patient.medications.isEmpty()) {
+            """<tr><td colspan="2" class="text-center empty-cell">No active medications or supplements recorded</td></tr>"""
+        } else {
+            val rows = displayedMeds.map { m ->
+                val statusText = medicationStatusLabel(m.status, m.isNonCompliant)
+                val badgeClass = if (statusText == MEDICATION_LABEL_ACTIVE) "badge badge-teal" else "badge"
+                val instructions = medicationInstructions(m.dosage, m.route, m.notes)
+                val instructionsHtml = if (instructions.isEmpty()) "" else """<br><span class="text-muted med-instructions">${escapeHtml(instructions)}</span>"""
+                val typeBadge = """<span class="$badgeClass">${escapeHtml(statusText)}</span>"""
+                """
+                <tr>
+                    <td class="text-center med-cell"><span class="font-bold text-navy">${escapeHtml(m.name)}</span>$instructionsHtml</td>
+                    <td class="text-center">${typeBadge}</td>
+                </tr>
+                """.trimIndent()
+            }.joinToString("\n")
+            if (moreMedsHtml.isNotEmpty()) "$rows\n$moreMedsHtml" else rows
+        }
+
+        // Previous Pregnancies (Centered)
+        val prevPregRows = if (patient.previousPregnancies.isEmpty()) {
+            """<p class="text-muted text-center text-small" style="padding: 6px;">No previous pregnancies or deliveries recorded ($pastDeliverySummary).</p>"""
+        } else {
+            """
+            <div class="table-scroll">
+            <table class="clinical-table mini-table">
+                <thead>
+                    <tr>
+                        <th style="width: 14%; text-align: center;">Year / Date</th>
+                        <th style="width: 26%; text-align: center;">Type & Delivery Mode</th>
+                        <th style="width: 25%; text-align: center;">Outcome & Status</th>
+                        <th style="width: 35%; text-align: center;">Hospital & Clinical Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${patient.previousPregnancies.map { pp ->
+                        val outcomeLabel = when (pp.outcome) {
+                            "Stillbirth" -> pp.outcomeText ?: "Stillbirth / IUFD"
+                            "EarlyPregnancyLoss" -> pp.outcomeText ?: "Miscarriage"
+                            "TerminationOfPregnancy" -> pp.outcomeText ?: "Therapeutic Termination"
+                            "LiveBirth" -> pp.outcomeText ?: "Live Birth"
+                            else -> pp.outcomeText ?: pp.outcome ?: "-"
+                        }
+                        val isLoss = pp.outcome == "TerminationOfPregnancy" ||
+                            isStillbirth(pp) ||
+                            isEarlyLoss(pp)
+                        val outcomeBadge = if (isLoss) {
+                            """<span class="badge" style="background:#fee2e2;color:#991b1b;border:1px solid #f87171;font-weight:bold;padding:2px 6px;border-radius:4px;">${escapeHtml(outcomeLabel)}</span>"""
+                        } else {
+                            """<span style="font-weight:600;color:#0f766e;">${escapeHtml(outcomeLabel)}</span>"""
+                        }
+                        val methodText = pp.birthMethod ?: pp.deliveryBy ?: pp.lossManagement ?: pp.terminationMethod ?: "-"
+                        """
+                        <tr>
+                            <td class="text-center date-cell">${escapeHtml(pp.dateText ?: "-")}</td>
+                            <td class="text-center font-bold">${escapeHtml(methodText)}</td>
+                            <td class="text-center">${outcomeBadge}</td>
+                            <td class="text-center">${escapeHtml(pp.placeAndDoctor?.takeUnless(String::isBlank) ?: pp.otherDetails?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                        </tr>
+                        """.trimIndent()
+                    }.joinToString("\n")}
+                </tbody>
+            </table>
+            </div>
+            """.trimIndent()
+        }
+
+        val logoImgTag = if (logoBase64.isNotEmpty()) {
+            """<img src="data:image/png;base64,$logoBase64" alt="Clinic Logo" class="clinic-logo" />"""
+        } else {
+            """<div class="logo-fallback">DR</div>"""
+        }
+
+        val watermarkImg = if (logoBase64.isNotEmpty()) {
+            """background-image: url('data:image/png;base64,$logoBase64');"""
+        } else {
+            ""
+        }
+
+        // Age string format
+        val ageFormatted = patient.ageText?.trim()?.takeIf(String::isNotEmpty)?.let { ageText -> com.sherifradwan.ancnative.ui.formatAgeYears(ageText)?.let { "$it yrs" } ?: ageText } ?: "-"
+
+        // Appendix Page 3 HTML (if attached photos exist)
+        val page3Html = if (attachedUltrasoundImages.isNotEmpty()) {
+            """
+            <!-- ========================================== -->
+            <!-- PAGE 3: CLINICAL IMAGING & ATTACHMENTS     -->
+            <!-- ========================================== -->
+            <div class="page-sheet">
+                <div class="watermark"></div>
+                <div class="page-content">
+                    <header class="clinic-header" style="margin-bottom: 6px;">
+                        <div class="clinic-brand">
+                            $logoImgTag
+                            <div class="clinic-title-box">
+                                <h1>$clinicNameEn</h1>
+                                <p>$clinicSpecialty</p>
+                            </div>
+                        </div>
+                        <div class="header-meta uniform-meta">
+                            <div class="doc-badge">IMAGING ATTACHMENTS</div>
+                            <div class="meta-row"><span class="k">Patient:</span> <span class="v">${escapeHtml(patient.displayName)}</span></div>
+                            <div class="meta-row"><span class="k">Case ID:</span> <span class="v">${escapeHtml(patient.caseId)}</span></div>
+                            <div class="meta-row"><span class="k">Print Date:</span> <span class="v">$printDateStr</span></div>
+                            <div class="meta-row"><span class="k">Page:</span> <span class="v">3 of $totalPages</span></div>
+                        </div>
+                    </header>
+
+                    <div class="section-box" style="flex-grow: 1;">
+                        <div class="section-title">
+                            <span>Clinical Imaging & Ultrasound Scans</span>
+                        </div>
+                        <div class="photos-grid">
+                            ${attachedUltrasoundImages.map { photo ->
+                                """
+                                <div class="photo-card">
+                                    <div class="photo-preview-placeholder">📷 [Original Ultrasound Scan Stored in Secure System]</div>
+                                    <div class="photo-caption">${escapeHtml(photo["label"])}</div>
+                                </div>
+                                """.trimIndent()
+                            }.joinToString("\n")}
+                        </div>
+                    </div>
+                </div>
+
+                <footer class="page-footer">
+                    <span>$clinicNameEn · $doctorOfficialTitle · Contact: +20 100 000 0000</span>
+                    <span>Page 3 of $totalPages · End of Appendix</span>
+                </footer>
+            </div>
+            """.trimIndent()
+        } else {
+            ""
+        }
+
+        return """
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinical Record - ${escapeHtml(patient.displayName)} - $clinicNameEn</title>
