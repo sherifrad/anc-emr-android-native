@@ -1,0 +1,133 @@
+```text
+FILE: app/src/test/java/com/sherifradwan/ancnative/state/DeliveryThroughRegistrationFlowTest.kt
+<<<<<<< SEARCH
+=======
+package com.sherifradwan.ancnative.state
+
+import com.sherifradwan.ancnative.model.*
+import com.sherifradwan.ancnative.storage.SavePatientProfileCommand
+import com.sherifradwan.ancnative.storage.PatientCommandPreparation
+import com.sherifradwan.ancnative.storage.VaultState
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
+/** Beginning a registration flow on a delivered patient and carrying the delivery values through the profile save. */
+class DeliveryThroughRegistrationFlowTest {
+    private val planTab = AncRoute.Workspace("p1")
+    private val freeNotes = "Delivery agreed with City Hospital. Fees 5000 EGP, review at six weeks."
+    private val lmpDate = "2026-01-01"
+    private val submittedAt = "2026-10-10T12:00:00Z"
+
+    private fun patient(
+        notes: String? = freeNotes,
+        status: String = "active",
+        dating: DemoPatientDating? = DemoPatientDating(patientId = "p1", lmpDate = lmpDate, ultrasoundEdd = null, agreedEdd = "2026-10-08", datingMethod = "LMP", notes = null),
+        revision: Long = 5L,
+        delivered: Boolean = false,
+        deliveryDate: String? = null,
+        deliveryMode: String? = null,
+        deliveryOutcome: String? = null,
+    ) = DemoPatient(
+        id = "p1", caseId = "P1", displayName = "Patient One", dateOfBirth = "1995-01-01", phone = "01000000000",
+        visits = emptyList(), status = status, obstetricNotes = notes, dating = dating, revision = revision,
+        delivered = delivered, deliveryDate = deliveryDate, deliveryMode = deliveryMode, deliveryOutcome = deliveryOutcome,
+    )
+
+    private fun base(vararg patients: DemoPatient = arrayOf(patient())) =
+        AncState(patients = patients.toList(), vaultState = VaultState.Unlocked(1L), route = planTab)
+
+    private fun AncState.reduce(event: AncEvent) = AncReducer.reduce(this, event)
+
+    private fun deliveredPatient() = patient(
+        delivered = true,
+        deliveryDate = "2026-10-08",
+        deliveryMode = "vaginal",
+        deliveryOutcome = "live_birth",
+    )
+
+    private fun begin(state: AncState) =
+        state.reduce(AncEvent.Flow(FlowEvent.Begin("p1"), "s-flow", "preg-1"))
+
+    private fun typeAge(state: AncState, age: String = "30") =
+        state.reduce(AncEvent.PatientDraftChanged(PatientDraftField.AGE_TEXT, age))
+
+    private fun readyCommand(state: AncState, forceAgeRequired: Boolean, operationUuid: String = "op-1"): SavePatientProfileCommand {
+        val preparation = SavePatientProfileCommand.prepare(state, operationUuid, submittedAt, forceAgeRequired = forceAgeRequired)
+        assertTrue("expected a ready command, got $preparation", preparation is PatientCommandPreparation.Ready)
+        return (preparation as PatientCommandPreparation.Ready).command as SavePatientProfileCommand
+    }
+
+    @Test
+    fun flow_begin_on_a_delivered_incomplete_patient_opens_identity() {
+        val state = begin(base(deliveredPatient()))
+
+        assertEquals(RegistrationStep.IDENTITY, state.registrationFlow?.current)
+        assertNotNull(state.patientDraft)
+        assertTrue(state.forcesAgeRequired())
+    }
+
+    @Test
+    fun identity_step_rejects_a_blank_age() {
+        val state = begin(base(deliveredPatient()))
+
+        val preparation = SavePatientProfileCommand.prepare(state, "op-1", submittedAt, forceAgeRequired = true)
+
+        assertTrue(preparation is PatientCommandPreparation.Rejected)
+    }
+
+    @Test
+    fun identity_step_save_keeps_all_four_delivery_values() {
+        val state = typeAge(begin(base(deliveredPatient())))
+
+        val command = readyCommand(state, forceAgeRequired = true)
+
+        assertEquals(true, command.delivered)
+        assertEquals("2026-10-08", command.deliveryDate)
+        assertEquals("vaginal", command.deliveryMode)
+        assertEquals("live_birth", command.deliveryOutcome)
+    }
+
+    @Test
+    fun same_draft_gives_the_same_fingerprint() {
+        val state = typeAge(begin(base(deliveredPatient())))
+
+        val first = readyCommand(state, forceAgeRequired = true)
+        val second = readyCommand(state, forceAgeRequired = true)
+
+        assertEquals(first.fingerprint, second.fingerprint)
+        assertTrue(first.fingerprint.isNotBlank())
+    }
+
+    @Test
+    fun a_changed_delivery_date_changes_the_fingerprint() {
+        val opened = base(deliveredPatient())
+            .reduce(AncEvent.StartDeliveryPlanEditor("p1", "s-plan"))
+            .reduce(AncEvent.DeliveryOutcomeToggled(true))
+        val first = readyCommand(opened, forceAgeRequired = false)
+
+        val changed = opened.reduce(AncEvent.DeliveryOutcomeFieldChanged(DeliveryOutcomeField.DATE, "2026-10-09"))
+        val second = readyCommand(changed, forceAgeRequired = false)
+
+        assertTrue(first.fingerprint != second.fingerprint)
+        assertEquals("2026-10-09", second.deliveryDate)
+    }
+
+    @Test
+    fun begin_on_an_archived_patient_changes_nothing() {
+        val before = base(patient(status = "archived"))
+
+        val after = begin(before)
+
+        assertEquals(before.route, after.route)
+        assertNull(after.registrationFlow)
+        assertNull(after.patientDraft)
+    }
+}
+>>>>>>> REPLACE
+```

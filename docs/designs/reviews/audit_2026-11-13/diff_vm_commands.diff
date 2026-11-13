@@ -1,0 +1,198 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt b/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
+index f54d8df..acb2072 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/AncViewModel.kt
+@@ -151,7 +151,9 @@ class AncViewModel internal constructor(
+                 val stateAfterLoad = _state.value
+                 val currentSessionId = activeEditorSessionId(stateAfterLoad)
+                 val currentSlot = activeDraftSlot(stateAfterLoad)
+-                if (record != null && currentSessionId == afterSession && currentSlot == slot) {
++                if (record != null && currentSessionId == afterSession && currentSlot == slot &&
++                    draftRecordBelongsToOpenEditor(stateAfterLoad, record)
++                ) {
+                     val isStale = isDraftStale(record, activeEditorBaseRevision(stateAfterLoad))
+                     val prompt = DraftRecoveryPrompt(
+                         slot = slot,
+@@ -192,6 +194,7 @@ class AncViewModel internal constructor(
+         if (_state.value.vaultState !is VaultState.Unlocked) return
+         when (event) {
+             AncEvent.SubmitPatientProfile -> savePatientProfile()
++            is AncEvent.RegistrationNext -> registrationNext(event)
+             AncEvent.SubmitOtherHistories -> saveOtherHistories()
+             AncEvent.SubmitPreviousPregnancy -> savePreviousPregnancy()
+             AncEvent.SubmitPatientStatus -> savePatientStatus()
+@@ -358,6 +361,23 @@ class AncViewModel internal constructor(
+         }
+     }
+ 
++    /**
++     * Runs the current editor's own save, but only when the reducer accepted Next (it recorded the advance for this
++     * editor session). A Next that was ignored, or that already moved the flow, saves nothing.
++     */
++    private fun registrationNext(event: AncEvent.RegistrationNext) {
++        updateState { AncReducer.reduce(it, event) }
++        val after = _state.value
++        val waiting = after.awaitingAdvance ?: return
++        if (waiting != AwaitingAdvance(activeEditorSessionId(after) ?: return, FlowIds(event.editorSessionId, event.newPregnancyId))) return
++        when {
++            after.patientDraft != null -> savePatientProfile()
++            after.datingDraft != null -> saveDating()
++            after.historiesDraft != null -> saveOtherHistories()
++            after.pregnancyDraft != null -> savePreviousPregnancy()
++        }
++    }
++
+     fun startVisit(patientId: String, visitId: String? = null) {
+         frozenVisitCommand = null
+         dispatch(AncEvent.StartVisit(patientId, visitId, UUID.randomUUID().toString()))
+@@ -389,6 +409,7 @@ class AncViewModel internal constructor(
+             current,
+             same?.operationUuid ?: UUID.randomUUID().toString(),
+             timestamp,
++            forceAgeRequired = current.forcesAgeRequired(),
+         )) {
+             is PatientCommandPreparation.Rejected -> dispatch(
+                 AncEvent.PatientValidationFailed(PatientEditorKind.PROFILE, prepared.errors),
+@@ -482,34 +503,8 @@ class AncViewModel internal constructor(
+             when (result) {
+                 is PatientCommandOutcome.Committed -> {
+                     frozenPatientCommand = null
+-                    var patients = result.snapshot.patients
+-                    var notice = command.savedNotice()
+-                    if (command is SavePatientProfileCommand) {
+-                        val currentDraft = _state.value.patientDraft
+-                        val committedPatient = result.snapshot.patients.firstOrNull { it.id == command.patientId }
+-                        val datingUpdate = currentDraft?.let { intakeDatingUpdate(committedPatient?.dating, it.values) }
+-                        if (datingUpdate != null) {
+-                            val datingCmd = SaveDatingCommand(
+-                                operationUuid = UUID.randomUUID().toString(),
+-                                editorSessionId = UUID.randomUUID().toString(),
+-                                patientId = command.patientId,
+-                                expectedPatientRevision = committedPatient?.revision ?: 1L,
+-                                lmpDate = datingUpdate.lmpDate,
+-                                ultrasoundEdd = datingUpdate.ultrasoundEdd,
+-                                agreedEdd = datingUpdate.agreedEdd,
+-                                datingMethod = datingUpdate.datingMethod,
+-                                notes = committedPatient?.dating?.notes ?: datingUpdate.note,
+-                                transferDate = datingUpdate.transferDate,
+-                                embryoAgeDays = datingUpdate.embryoAgeDays,
+-                            )
+-                            val datingResult = controller.execute(datingCmd, sessionEpoch, onReconciliation = {})
+-                            val datingSaved = datingResult is ClinicalCommandOutcome.Committed
+-                            if (datingResult is ClinicalCommandOutcome.Committed) {
+-                                patients = datingResult.snapshot.patients
+-                            }
+-                            notice = profileSavedNotice(datingAttempted = true, datingSaved = datingSaved)
+-                        }
+-                    }
++                    val patients = result.snapshot.patients
++                    val notice = command.savedNotice()
+                     updateState {
+                         AncReducer.reduce(
+                             it,
+@@ -1014,6 +1009,8 @@ class AncViewModel internal constructor(
+         is AncEvent.PregnancyDraftChanged,
+         is AncEvent.StatusReasonChanged,
+         is AncEvent.StartPatientEditor,
++        is AncEvent.Flow,
++        is AncEvent.RegistrationNext,
+         is AncEvent.StartDeliveryPlanEditor,
+         is AncEvent.StartHistoriesEditor,
+         is AncEvent.StartPregnancyEditor,
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt b/app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt
+index b5cfe71..7bdd34f 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt
+@@ -2,12 +2,14 @@ package com.sherifradwan.ancnative.storage
+ 
+ import com.sherifradwan.ancnative.model.DeliveryOutcomeError
+ import com.sherifradwan.ancnative.model.PatientClinicalInput
++import com.sherifradwan.ancnative.model.PatientProfileRules
+ import com.sherifradwan.ancnative.model.PatientValidationError
+ import com.sherifradwan.ancnative.model.PatientVocabulary
+ import com.sherifradwan.ancnative.model.PreviousPregnancyClinicalInput
+ import com.sherifradwan.ancnative.model.DeliveryOutcomeFields
+ import com.sherifradwan.ancnative.model.normalized
+ import com.sherifradwan.ancnative.model.validateDeliveryOutcome
++import com.sherifradwan.ancnative.model.PreviousPregnancyFormRules
+ import com.sherifradwan.ancnative.model.validationErrors
+ import com.sherifradwan.ancnative.state.AncState
+ import com.sherifradwan.ancnative.state.toDeliveryOutcomeFields
+@@ -60,7 +62,12 @@ data class SavePatientProfileCommand(
+     override val recordId: String = patientId
+ 
+     companion object {
+-        fun prepare(state: AncState, operationUuid: String, submittedAt: String): PatientCommandPreparation {
++        fun prepare(
++            state: AncState,
++            operationUuid: String,
++            submittedAt: String,
++            forceAgeRequired: Boolean = false,
++        ): PatientCommandPreparation {
+             val draft = state.patientDraft
+                 ?: return PatientCommandPreparation.Rejected(setOf(PatientValidationError.SAVE_FAILED))
+             val gpa = parseGpa(draft.values.gravida, draft.values.parity, draft.values.abortion)
+@@ -78,6 +85,11 @@ data class SavePatientProfileCommand(
+                 parity = gpa.parity,
+                 abortion = gpa.abortion,
+                 obstetricNotes = draft.values.obstetricNotes.normalized(),
++                ageRequired = PatientProfileRules.ageRequired(
++                    draft.baseRevision == null,
++                    draft.original.ageText,
++                    forceAgeRequired,
++                ),
+             )
+             val errors = input.validationErrors()
+             if (errors.isNotEmpty()) return PatientCommandPreparation.Rejected(errors)
+@@ -253,15 +265,31 @@ data class SavePreviousPregnancyCommand(
+         fun prepare(state: AncState, operationUuid: String, submittedAt: String): PatientCommandPreparation {
+             val draft = state.pregnancyDraft
+                 ?: return PatientCommandPreparation.Rejected(setOf(PatientValidationError.SAVE_FAILED))
++            val isNew = draft.basePregnancyRevision == null
++            val outcome = draft.values.outcome.normalized()
++            val delivery = PreviousPregnancyFormRules.deliveryColumns(
++                outcome,
++                draft.original.outcome.normalized(),
++                draft.values.deliveryBy.normalized(),
++                draft.values.birthMethod.normalized(),
++                originalDeliveryBy = draft.original.deliveryBy.normalized(),
++                originalBirthMethod = draft.original.birthMethod.normalized(),
++            )
+             val input = PreviousPregnancyClinicalInput(
+                 pregnancyType = draft.values.pregnancyType.normalized(),
+-                deliveryBy = draft.values.deliveryBy.normalized(),
+-                outcome = draft.values.outcome.normalized(),
+-                birthMethod = draft.values.birthMethod.normalized(),
++                deliveryBy = delivery.deliveryBy,
++                outcome = outcome,
++                birthMethod = delivery.birthMethod,
+                 lossManagement = draft.values.lossManagement.normalized(),
+                 terminationMethod = draft.values.terminationMethod.normalized(),
+                 provenanceKind = PatientVocabulary.CLINICIAN_ENTRY,
+-                clinicianId = draft.values.clinicianId.trim(),
++                clinicianId = PreviousPregnancyFormRules.clinicianIdFor(isNew, draft.original.clinicianId),
++                placeAndDoctor = draft.values.placeAndDoctor.normalized(),
++                storedRow = !isNew,
++                placeAndDoctorRequired = PreviousPregnancyFormRules.placeAndDoctorRequired(
++                    isNew,
++                    draft.original.placeAndDoctor,
++                ),
+             )
+             val errors = input.validationErrors()
+             if (errors.isNotEmpty()) return PatientCommandPreparation.Rejected(errors)
+@@ -362,6 +390,7 @@ internal fun PatientCommand.isStructurallyValid(): Boolean {
+                 parity,
+                 abortion,
+                 obstetricNotes,
++                ageRequired = PatientProfileRules.ageRequired(expectedPatientRevision == null, null),
+             )
+             input.validationErrors().isEmpty() &&
+                 listOf(dateOfBirth, phone, ageText, addressText, obstetricNotes).all { it == it.normalized() } &&
+@@ -382,6 +411,7 @@ internal fun PatientCommand.isStructurallyValid(): Boolean {
+                 terminationMethod,
+                 provenanceKind,
+                 clinicianId,
++                storedRow = expectedPregnancyRevision != null,
+             )
+             modelVersion == 3 &&
+                 expectedPregnancyRevision?.let { it >= 1 } != false &&
