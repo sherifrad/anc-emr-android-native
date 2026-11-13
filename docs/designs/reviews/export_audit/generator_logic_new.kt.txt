@@ -1,0 +1,204 @@
+    }
+
+    fun generateHtml(
+        context: Context? = null,
+        patient: DemoPatient,
+        settings: SecuritySettingsState? = null,
+        asOfDate: LocalDate = LocalDate.now(),
+    ): String {
+        val logoBase64 = getLogoBase64(context)
+        val clinicName = escapeHtml(settings?.clinicName?.takeUnless(String::isBlank) ?: "Dr. Sherif Radwan Clinic")
+        val clinicSpecialty = "Maternal-Fetal Medicine & Advanced Obstetrics"
+        val doctorOfficialTitle = "Specialist of Obstetrics, Gynecology & Laparoscopy"
+        val printDateStr = formatDmy(asOfDate)
+        val currentGa: String? = reportGestationalAge(patient, asOfDate)
+        val statusLine: String? = reportStatusLine(patient)
+        val datingSummary = datingSummaryOf(patient, asOfDate)
+        val datingMatrixHtml = buildString {
+            datingTextRows(datingSummary).forEach { row ->
+                val valueClass = if (row.isEdd) "val text-rose" else "val"
+                append("""<div class="matrix-item"><div class="label">${escapeHtml(row.label)}</div>""")
+                append("""<div class="$valueClass">${escapeHtml(row.value ?: "Not recorded")}</div></div>""")
+            }
+            datingDiscordanceLine(patient.dating, datingSummary)?.let {
+                append("""<div class="matrix-item" style="grid-column: 1 / -1"><div class="val">${escapeHtml(it)}</div></div>""")
+            }
+        }
+
+        // Format Obstetric summary
+        val g = patient.gravida ?: "-"
+        val p = patient.parity ?: "-"
+        val a = patient.abortion ?: "-"
+        val pastDeliverySummary = previousDeliverySummary(patient)
+
+        val risk = reportRisk(patient.riskLevel)
+        val isRhNegative = com.sherifradwan.ancnative.ui.isRhNegative(patient.bloodGroupText)
+
+        // Visits table rows (Centered text, No SFH, No FHR, Spacious and comfortable)
+        val visits = reportVisits(patient, MAX_PRINT_VISITS)
+        val bpAlertCss = when {
+            visits.rows.any { bpLevel(it.bloodPressure) == BpLevel.SEVERE } ->
+                "\n        .bp-alert { font-size: 6.8pt; line-height: 1.1; margin-top: 2px; color: #b45309; white-space: normal; }\n        .bp-alert-severe { color: #dc2626; }"
+            visits.rows.any { bpLevel(it.bloodPressure) == BpLevel.RAISED } ->
+                "\n        .bp-alert { font-size: 6.8pt; line-height: 1.1; margin-top: 2px; color: #b45309; white-space: normal; }"
+            else -> ""
+        }
+        val visitsRowsHtml = if (visits.rows.isEmpty()) {
+            """<tr><td colspan="6" class="text-center empty-cell">No clinical visits recorded yet</td></tr>"""
+        } else {
+            val rows = visits.rows.mapIndexed { idx, v ->
+                val vGa = parseIsoDateOrNull(v.date)?.let { vDate ->
+                    patient.dating?.calculateGestationalAgeResult(vDate)?.formatted
+                } ?: "-"
+                val bpAlert = when (bpLevel(v.bloodPressure)) {
+                    BpLevel.RAISED -> """<div class="bp-alert">$BP_ALERT_RAISED</div>"""
+                    BpLevel.SEVERE -> """<div class="bp-alert bp-alert-severe">$BP_ALERT_SEVERE</div>"""
+                    BpLevel.NORMAL -> ""
+                }
+                """
+                <tr>
+                    <td class="text-center font-bold nowrap-cell">${idx + 1 + visits.hidden}</td>
+                    <td class="text-center date-cell">${escapeHtml(reportDate(v.date))}</td>
+                    <td class="text-center font-bold text-teal nowrap-cell">${vGa}</td>
+                    <td class="text-center nowrap-cell font-bold text-navy">${escapeHtml(v.bloodPressure ?: "-")}$bpAlert</td>
+                    <td class="text-center nowrap-cell">${escapeHtml(v.weight?.let { "$it kg" } ?: "-")}</td>
+                    <td class="text-center notes-cell">${escapeHtml(visitText(v))}</td>
+                </tr>
+                """.trimIndent()
+            }.joinToString("\n")
+            val hidden = hiddenRowsHtml(visits.hidden, 6, "earlier visits")
+            if (hidden.isNotEmpty()) "$hidden\n$rows" else rows
+        }
+
+        // Ultrasound Scans rows (Centered, EFW (g), Clinical Notes, image badge if photos exist)
+        val scans = reportScans(patient, MAX_PRINT_SCANS)
+        val scansRowsHtml = if (scans.rows.isEmpty()) {
+            """<tr><td colspan="7" class="text-center empty-cell">No ultrasound scans recorded yet</td></tr>"""
+        } else {
+            val rows = scans.rows.map { s ->
+                val photoBadge = if (s.imageUris.isNotEmpty()) {
+                    """<div class="photo-badge">${s.imageUris.size} photos in the clinic record</div>"""
+                } else {
+                    ""
+                }
+
+                """
+                <tr>
+                    <td class="text-center date-cell">${escapeHtml(reportDate(s.date))}</td>
+                    <td class="text-center font-bold text-teal nowrap-cell">${scanGestationalAge(s)}</td>
+                    <td class="text-center">${escapeHtml(s.presentation?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                    <td class="text-center">${escapeHtml(s.placentalSite?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                    <td class="text-center">${escapeHtml(s.amnioticFluid?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                    <td class="text-center nowrap-cell font-bold text-navy">${escapeHtml(scanWeight(s))}</td>
+                    <td class="text-center notes-cell">
+                        ${escapeHtml(scanNotes(s))}
+                        $photoBadge
+                    </td>
+                </tr>
+                """.trimIndent()
+            }.joinToString("\n")
+            val hidden = hiddenRowsHtml(scans.hidden, 7, "earlier scans")
+            if (hidden.isNotEmpty()) "$hidden\n$rows" else rows
+        }
+
+        // Labs rows (Centered, NO status column, Abnormal result displayed in RED)
+        val labs = reportLabs(patient, MAX_PRINT_LABS)
+        val labsRowsHtml = if (labs.rows.isEmpty()) {
+            """<tr><td colspan="4" class="text-center empty-cell">No laboratory test results recorded yet</td></tr>"""
+        } else {
+            val rows = labs.rows.map { l ->
+                val resultText = escapeHtml(labResult(l))
+                val resultHtml = if (l.isAbnormal) {
+                    """<span class="val-abnormal">$resultText (Abnormal)</span>"""
+                } else {
+                    """<span class="font-bold text-navy">$resultText</span>"""
+                }
+                val extraHtml = labExtra(l).takeUnless(String::isBlank)?.let { extra ->
+                    """<br><span class="text-muted med-instructions">${escapeHtml(extra)}</span>"""
+                } ?: ""
+                """
+                <tr>
+                    <td class="text-center date-cell">${escapeHtml(reportDate(l.date))}</td>
+                    <td class="text-center font-bold text-navy">${escapeHtml(l.testName)}$extraHtml</td>
+                    <td class="text-center">${resultHtml}</td>
+                    <td class="text-center text-muted">${escapeHtml(l.referenceRange ?: "-")}</td>
+                </tr>
+                """.trimIndent()
+            }.joinToString("\n")
+            val hiddenRow = hiddenRowsHtml(labs.hidden, 4, "older results")
+            if (hiddenRow.isNotEmpty()) "$rows\n$hiddenRow" else rows
+        }
+
+        // Medications rows (Centered)
+        val meds = reportMedications(patient)
+        fun medRows(list: List<DemoMedicationRecord>): String = list.joinToString("\n") { m ->
+            val detail = medicationDetail(m)
+            val detailHtml = if (detail.isEmpty()) "" else """<br><span class="text-muted med-instructions">${escapeHtml(detail)}</span>"""
+            """
+                <tr>
+                    <td class="text-center med-cell"><span class="font-bold text-navy">${escapeHtml(m.name)}</span>$detailHtml</td>
+                    <td class="text-center">${escapeHtml(medicationDates(m))}</td>
+                </tr>
+            """.trimIndent()
+        }
+        val currentMedsRowsHtml = medRows(meds.current).ifEmpty {
+            """<tr><td colspan="2" class="text-center empty-cell">No current medications recorded</td></tr>"""
+        }
+        val stoppedMedsRowsHtml: String = medRows(meds.stopped)
+
+        // Previous Pregnancies (Centered)
+        val prevPregRows = if (patient.previousPregnancies.isEmpty()) {
+            """<p class="text-muted text-center text-small" style="padding: 6px;">No previous pregnancies or deliveries recorded (${escapeHtml(pastDeliverySummary)}).</p>"""
+        } else {
+            """
+            <div class="table-scroll">
+            <table class="clinical-table mini-table">
+                <thead>
+                    <tr>
+                        <th style="width: 14%; text-align: center;">Year / Date</th>
+                        <th style="width: 26%; text-align: center;">Type & Delivery Mode</th>
+                        <th style="width: 25%; text-align: center;">Outcome & Status</th>
+                        <th style="width: 35%; text-align: center;">Hospital & Clinical Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${patient.previousPregnancies.map { pp ->
+                        val outcomeLabel = when (pp.outcome) {
+                            "Stillbirth" -> pp.outcomeText ?: "Stillbirth / IUFD"
+                            "EarlyPregnancyLoss" -> pp.outcomeText ?: "Miscarriage"
+                            "TerminationOfPregnancy" -> pp.outcomeText ?: "Therapeutic Termination"
+                            "LiveBirth" -> pp.outcomeText ?: "Live Birth"
+                            else -> pp.outcomeText ?: pp.outcome ?: "-"
+                        }
+                        val isLoss = pp.outcome == "TerminationOfPregnancy" ||
+                            isStillbirth(pp) ||
+                            isEarlyLoss(pp)
+                        val outcomeBadge = if (isLoss) {
+                            """<span class="badge" style="background:#fee2e2;color:#991b1b;border:1px solid #f87171;font-weight:bold;padding:2px 6px;border-radius:4px;">${escapeHtml(outcomeLabel)}</span>"""
+                        } else {
+                            """<span style="font-weight:600;color:#0f766e;">${escapeHtml(outcomeLabel)}</span>"""
+                        }
+                        val methodText = pp.birthMethod ?: pp.deliveryBy ?: pp.lossManagement ?: pp.terminationMethod ?: "-"
+                        """
+                        <tr>
+                            <td class="text-center date-cell">${escapeHtml(pp.dateText ?: "-")}</td>
+                            <td class="text-center font-bold">${escapeHtml(listOfNotNull(pp.pregnancyType?.takeUnless(String::isBlank), methodText.takeUnless { it == "-" }).joinToString(" · ").ifEmpty { "-" })}</td>
+                            <td class="text-center">${outcomeBadge}</td>
+                            <td class="text-center">${escapeHtml(listOfNotNull(pp.placeAndDoctor?.takeUnless(String::isBlank), pp.otherDetails?.takeUnless(String::isBlank)).joinToString(" · ").ifEmpty { "Not recorded" })}</td>
+                        </tr>
+                        """.trimIndent()
+                    }.joinToString("\n")}
+                </tbody>
+            </table>
+            </div>
+            """.trimIndent()
+        }
+
+        val logoImgTag = if (logoBase64.isNotEmpty()) {
+            """<img src="data:image/png;base64,$logoBase64" alt="Clinic Logo" class="clinic-logo" />"""
+        } else {
+            """<div class="logo-fallback">DR</div>"""
+        }
+
+        val watermarkImg = if (logoBase64.isNotEmpty()) {
+            """background-image: url('data:image/png;base64,$logoBase64');"""

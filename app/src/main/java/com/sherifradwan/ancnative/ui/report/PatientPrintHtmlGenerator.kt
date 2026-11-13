@@ -83,7 +83,6 @@ object PatientPrintHtmlGenerator {
             }
         }
 
-        // Format Obstetric summary
         val g = patient.gravida ?: "-"
         val p = patient.parity ?: "-"
         val a = patient.abortion ?: "-"
@@ -92,7 +91,6 @@ object PatientPrintHtmlGenerator {
         val risk = reportRisk(patient.riskLevel)
         val isRhNegative = com.sherifradwan.ancnative.ui.isRhNegative(patient.bloodGroupText)
 
-        // Visits table rows (Centered text, No SFH, No FHR, Spacious and comfortable)
         val visits = reportVisits(patient, MAX_PRINT_VISITS)
         val bpAlertCss = when {
             visits.rows.any { bpLevel(it.bloodPressure) == BpLevel.SEVERE } ->
@@ -128,7 +126,6 @@ object PatientPrintHtmlGenerator {
             if (hidden.isNotEmpty()) "$hidden\n$rows" else rows
         }
 
-        // Ultrasound Scans rows (Centered, EFW (g), Clinical Notes, image badge if photos exist)
         val scans = reportScans(patient, MAX_PRINT_SCANS)
         val scansRowsHtml = if (scans.rows.isEmpty()) {
             """<tr><td colspan="7" class="text-center empty-cell">No ultrasound scans recorded yet</td></tr>"""
@@ -159,7 +156,6 @@ object PatientPrintHtmlGenerator {
             if (hidden.isNotEmpty()) "$hidden\n$rows" else rows
         }
 
-        // Labs rows (Centered, NO status column, Abnormal result displayed in RED)
         val labs = reportLabs(patient, MAX_PRINT_LABS)
         val labsRowsHtml = if (labs.rows.isEmpty()) {
             """<tr><td colspan="4" class="text-center empty-cell">No laboratory test results recorded yet</td></tr>"""
@@ -187,7 +183,6 @@ object PatientPrintHtmlGenerator {
             if (hiddenRow.isNotEmpty()) "$rows\n$hiddenRow" else rows
         }
 
-        // Medications rows (Centered)
         val meds = reportMedications(patient)
         fun medRows(list: List<DemoMedicationRecord>): String = list.joinToString("\n") { m ->
             val detail = medicationDetail(m)
@@ -204,7 +199,6 @@ object PatientPrintHtmlGenerator {
         }
         val stoppedMedsRowsHtml: String = medRows(meds.stopped)
 
-        // Previous Pregnancies (Centered)
         val prevPregRows = if (patient.previousPregnancies.isEmpty()) {
             """<p class="text-muted text-center text-small" style="padding: 6px;">No previous pregnancies or deliveries recorded (${escapeHtml(pastDeliverySummary)}).</p>"""
         } else {
@@ -858,7 +852,7 @@ object PatientPrintHtmlGenerator {
         .stamp-placeholder {
             margin-top: 10px;
             font-size: 7.5pt;
-            color: #94A3B8;
+            color: #475569;
             font-style: italic;
         }
 
@@ -879,14 +873,10 @@ object PatientPrintHtmlGenerator {
 </head>
 <body>
 
-    <!-- ========================================== -->
-    <!-- PAGE 1: MATERNAL FOUNDATION & VISITS       -->
-    <!-- ========================================== -->
     <div class="page-sheet">
         <div class="watermark"></div>
         <div class="page-content">
 
-            <!-- Clinic Top Header: Refined per Dr. Sherif Radwan -->
             <header class="clinic-header">
                 <div class="clinic-brand">
                     $logoImgTag
@@ -906,7 +896,6 @@ object PatientPrintHtmlGenerator {
 
             ${if (statusLine != null) """<div class="status-banner">${escapeHtml(statusLine)}</div>""" else ""}
 
-            <!-- Patient Identity Banner: Refined with phone on new line, age only -->
             <section class="patient-card">
                 <div class="pt-name-box">
                     <h3>${escapeHtml(patient.displayName)}</h3>
@@ -939,9 +928,7 @@ object PatientPrintHtmlGenerator {
 
             ${if (!patient.clinicalAttention.isNullOrBlank()) """<div class="attention-box"><span class="k">Clinical attention</span><span class="v">${escapeHtml(patient.clinicalAttention)}</span></div>""" else ""}
 
-            <!-- Dating & Obstetric Profile Grid -->
             <div class="grid-two-col">
-                <!-- Pregnancy Dating (PREGNANCY DATING without Matrix) -->
                 <div class="section-box">
                     <div class="section-title">
                         <span>Pregnancy Dating</span>
@@ -958,7 +945,6 @@ object PatientPrintHtmlGenerator {
                     </div>
                 </div>
 
-                <!-- Obstetric Summary & History -->
                 <div class="section-box">
                     <div class="section-title">
                         <span>Obstetric & Medical History</span>
@@ -988,7 +974,6 @@ object PatientPrintHtmlGenerator {
                 </div>
             </div>
 
-            <!-- Previous Pregnancies & Outcomes -->
             <div class="section-box">
                 <div class="section-title">
                     <span>Previous Pregnancies & Obstetric Outcomes</span>
@@ -996,7 +981,6 @@ object PatientPrintHtmlGenerator {
                 $prevPregRows
             </div>
 
-            <!-- Antenatal Care Visits Log -->
             <div class="section-box" style="flex-grow: 1;">
                 <div class="section-title">
                     <span>Antenatal Care Visits Log</span>
@@ -1022,21 +1006,16 @@ object PatientPrintHtmlGenerator {
 
         </div>
 
-        <!-- Page 1 Footer -->
         <footer class="page-footer">
             <span>Confidential medical record · $clinicName · $doctorOfficialTitle · Tel $CLINIC_PHONE</span>
             <span>Page 1</span>
         </footer>
     </div>
 
-    <!-- ========================================== -->
-    <!-- PAGE 2: ULTRASOUND, LABS, MEDS & PLAN      -->
-    <!-- ========================================== -->
     <div class="page-sheet">
         <div class="watermark"></div>
         <div class="page-content">
 
-            <!-- Compact Header Runner -->
             <header class="clinic-header" style="margin-bottom: 2px;">
                 <div class="clinic-brand">
                     $logoImgTag
@@ -1053,7 +1032,6 @@ object PatientPrintHtmlGenerator {
                 </div>
             </header>
 
-            <!-- Ultrasound Biometry & Surveillance -->
             <div class="section-box">
                 <div class="section-title">
                     <span>Ultrasound Biometry & Fetal Surveillance</span>
@@ -1078,7 +1056,6 @@ object PatientPrintHtmlGenerator {
                 </div>
             </div>
 
-            <!-- Laboratory Investigations -->
             <div class="section-box">
                 <div class="section-title">
                     <span>Laboratory Investigations</span>
@@ -1100,7 +1077,6 @@ object PatientPrintHtmlGenerator {
                 </div>
             </div>
 
-            <!-- Current Medications -->
             <div class="section-box">
                 <div class="section-title">
                     <span>Current Medications</span>
@@ -1120,7 +1096,6 @@ object PatientPrintHtmlGenerator {
                 </div>
             </div>
             ${if (stoppedMedsRowsHtml.isNotEmpty()) """
-            <!-- Stopped Medications -->
             <div class="section-box">
                 <div class="section-title">
                     <span>Stopped Medications</span>
@@ -1141,7 +1116,6 @@ object PatientPrintHtmlGenerator {
             </div>
             """ else ""}
 
-            <!-- Delivery Plan -->
             <div class="section-box" style="margin-top: auto;">
                 <div class="section-title">
                     <span>Delivery Plan</span>
@@ -1185,7 +1159,6 @@ object PatientPrintHtmlGenerator {
 
         </div>
 
-        <!-- Page 2 Footer -->
         <footer class="page-footer">
             <span>$clinicName · $doctorOfficialTitle · Tel $CLINIC_PHONE</span>
             <span>Page 2</span>
