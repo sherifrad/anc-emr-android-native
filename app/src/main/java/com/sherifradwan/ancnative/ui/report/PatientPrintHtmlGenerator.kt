@@ -32,6 +32,7 @@ object PatientPrintHtmlGenerator {
     private const val MAX_PRINT_SCANS = 7
     private const val MAX_PRINT_LABS = 10
     private const val CLINIC_PHONE = "01201720808"
+    private const val LOGO_PRINT_HEIGHT_PX = 360
 
     private const val BP_ALERT_RAISED = "Raised BP - recheck"
     private const val BP_ALERT_SEVERE = "Severe-range BP - urgent assessment"
@@ -44,7 +45,11 @@ object PatientPrintHtmlGenerator {
     private fun getLogoBase64(context: Context?): String {
         if (context == null) return ""
         return try {
-            val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.clinic_logo_foreground)
+            val full = BitmapFactory.decodeResource(context.resources, R.drawable.clinic_logo_mark)
+            // The page embeds the logo three times, so it is scaled down once here.
+            val height = LOGO_PRINT_HEIGHT_PX
+            val width = (full.width * height.toFloat() / full.height).toInt().coerceAtLeast(1)
+            val bitmap = Bitmap.createScaledBitmap(full, width, height, true)
             val outputStream = ByteArrayOutputStream()
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
             Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
@@ -62,7 +67,7 @@ object PatientPrintHtmlGenerator {
         val logoBase64 = getLogoBase64(context)
         val clinicName = escapeHtml(settings?.clinicName?.takeUnless(String::isBlank) ?: "Dr. Sherif Radwan Clinic")
         val clinicSpecialty = "Maternal-Fetal Medicine & Advanced Obstetrics"
-        val doctorOfficialTitle = "Consultant of Obstetrics, Gynecology & Laparoscopy"
+        val doctorOfficialTitle = "Specialist of Obstetrics, Gynecology & Laparoscopy"
         val printDateStr = formatDmy(asOfDate)
         val currentGa: String? = reportGestationalAge(patient, asOfDate)
         val statusLine: String? = reportStatusLine(patient)
@@ -460,13 +465,9 @@ object PatientPrintHtmlGenerator {
         }
 
         .clinic-logo {
-            width: 58px;
-            height: 58px;
+            width: 46px;
+            height: 64px;
             object-fit: contain;
-            border-radius: 50%;
-            border: 1px solid var(--border-hairline);
-            padding: 2px;
-            background: #fff;
         }
 
         .clinic-title-box h1 {
@@ -1176,7 +1177,6 @@ object PatientPrintHtmlGenerator {
                             <div class="doc-name">Dr. Sherif Radwan</div>
                             <div class="doc-sign" lang="ar" dir="rtl">شريف جمال رضوان</div>
                             <div class="doc-sign doc-sign-title" lang="ar" dir="rtl">أخصائي التوليد وأمراض النساء وتأخر الحمل</div>
-                            <div class="doc-title">$doctorOfficialTitle</div>
                             <div class="stamp-placeholder">Stamp</div>
                         </div>
                     </div>

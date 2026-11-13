@@ -205,7 +205,7 @@ class PatientPrintHtmlEscapeTest {
         // headers and both footers, so nothing raw may ever appear there.
         assertTrue(countOf("""<h1[^>]*>$ESCAPED</h1>""") == 2)
         assertTrue(countOf(Regex.escape("Confidential medical record · $ESCAPED ·")) == 1)
-        assertTrue(countOf(Regex.escape("$ESCAPED · Consultant of Obstetrics")) == 2)
+        assertTrue(countOf(Regex.escape("$ESCAPED · Specialist of Obstetrics")) == 2)
         assertFalse(html.contains("<b>&"))
     }
 
