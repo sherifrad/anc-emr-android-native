@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.state.AncEvent
+import com.sherifradwan.ancnative.state.editPatientEvent
 import com.sherifradwan.ancnative.ui.isDarkTheme
 import com.sherifradwan.ancnative.ui.TagHighRiskBg
 import com.sherifradwan.ancnative.ui.TagHighRiskDarkBg
@@ -168,13 +169,7 @@ fun PatientActionsModalSheet(
                         .clip(RoundedCornerShape(12.dp))
                         .clickable {
                             onDismissRequest()
-                            onEvent(
-                                AncEvent.StartPatientEditor(
-                                    patientId = patient.id,
-                                    newPatientId = patient.id,
-                                    editorSessionId = UUID.randomUUID().toString(),
-                                ),
-                            )
+                            editPatientEvent(patient, UUID.randomUUID().toString(), UUID.randomUUID().toString())?.let(onEvent)
                         }
                         .testTag("editPatient-${patient.caseId}"),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),

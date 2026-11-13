@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.model.DemoAttachment
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.state.AncEvent
+import com.sherifradwan.ancnative.state.editPatientEvent
 import com.sherifradwan.ancnative.storage.DeletableType
 import com.sherifradwan.ancnative.ui.patienthub.components.AttachmentsSectionCard
 import com.sherifradwan.ancnative.ui.patienthub.components.DatingSection
@@ -43,13 +44,9 @@ fun OverviewTab(
     onViewAttachment: (DemoAttachment) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    fun startPatientEditor() = onEvent(
-        AncEvent.StartPatientEditor(
-            patientId = patient.id,
-            newPatientId = patient.id,
-            editorSessionId = UUID.randomUUID().toString(),
-        ),
-    )
+    fun startPatientEditor() {
+        editPatientEvent(patient, UUID.randomUUID().toString(), UUID.randomUUID().toString())?.let(onEvent)
+    }
 
     fun startPregnancyEditor(pregnancyId: String?) = onEvent(
         AncEvent.StartPregnancyEditor(

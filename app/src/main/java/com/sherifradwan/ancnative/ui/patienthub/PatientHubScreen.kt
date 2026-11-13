@@ -38,6 +38,7 @@ import com.sherifradwan.ancnative.state.PatientDraftField
 import com.sherifradwan.ancnative.state.SavePhase
 import com.sherifradwan.ancnative.state.deliveryPlanSheetDraft
 import com.sherifradwan.ancnative.state.medicationSheetDraft
+import com.sherifradwan.ancnative.state.editPatientEvent
 import com.sherifradwan.ancnative.storage.DeletableType
 import com.sherifradwan.ancnative.ui.AddAttachmentDialog
 import com.sherifradwan.ancnative.ui.ClinicalAttachmentViewerDialog
@@ -191,13 +192,7 @@ fun PatientHubScreen(
                 severeBp = severeBp,
                 onBack = { onEvent(AncEvent.Back) },
                 onEditPatient = {
-                    onEvent(
-                        AncEvent.StartPatientEditor(
-                            patientId = patient.id,
-                            newPatientId = patient.id,
-                            editorSessionId = UUID.randomUUID().toString(),
-                        ),
-                    )
+                    editPatientEvent(patient, UUID.randomUUID().toString(), UUID.randomUUID().toString())?.let(onEvent)
                 },
                 onOpenReport = { showReportDialog = true },
                 onOpenAttentionDialog = { showAttentionDialog = true },

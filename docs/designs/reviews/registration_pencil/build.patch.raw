@@ -1,0 +1,317 @@
+
+
+```txt
+FILE: app/src/main/java/com/sherifradwan/ancnative/state/PatientEditEntry.kt
+<<<<<<< SEARCH
+=======
+package com.sherifradwan.ancnative.state
+
+import com.sherifradwan.ancnative.model.DemoPatient
+
+/**
+ * The single rule every "edit patient" control uses: resume an incomplete registration
+ * at the first unfinished step, or open the editor for a complete patient.
+ * Archived patients are not editable and return null.
+ */
+fun editPatientEvent(patient: DemoPatient, editorSessionId: String, newPregnancyId: String): AncEvent? {
+    if (patient.status == "archived") return null
+    if (isRegistrationIncomplete(patient)) {
+        return AncEvent.Flow(
+            FlowEvent.Begin(
+                patient.id,
+                firstNotDoneStep(patient) ?: RegistrationStep.IDENTITY,
+            ),
+            editorSessionId,
+            newPregnancyId,
+        )
+    }
+    return AncEvent.StartPatientEditor(patient.id, patient.id, editorSessionId)
+}
+>>>>>>> REPLACE
+```
+
+```txt
+FILE: app/src/test/java/com/sherifradwan/ancnative/state/PatientEditEntryTest.kt
+<<<<<<< SEARCH
+=======
+package com.sherifradwan.ancnative.state
+
+import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.model.DemoPatientDating
+import com.sherifradwan.ancnative.state.AncEvent
+import com.sherifradwan.ancnative.state.AncReducer
+import com.sherifradwan.ancnative.state.AncRoute
+import com.sherifradwan.ancnative.state.AncState
+import com.sherifradwan.ancnative.state.FlowEvent
+import com.sherifradwan.ancnative.state.RegistrationStep.DATING
+import com.sherifradwan.ancnative.state.RegistrationStep.IDENTITY
+import com.sherifradwan.ancnative.state.RegistrationStep.OBSTETRIC
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class PatientEditEntryTest {
+    @Test
+    fun complete_patient_gives_start_patient_editor() {
+        val patient = DemoPatient(
+            id = "p1", caseId = "c", displayName = "Mona", dateOfBirth = null, phone = null,
+            visits = emptyList(), status = "active", ageText = "30", gravida = 1, parity = 0,
+            abortion = 0,
+            dating = DemoPatientDating(
+                patientId = "p1", lmpDate = "2026-06-01", ultrasoundEdd = null, agreedEdd = null,
+                datingMethod = "LMP", notes = null,
+            ),
+        )
+        val event = editPatientEvent(patient, "s1", "g1")
+        assertEquals(AncEvent.StartPatientEditor("p1", "p1", "s1"), event)
+    }
+
+    @Test
+    fun patient_with_null_ageText_gives_begin_at_identity() {
+        val patient = DemoPatient(
+            id = "p1", caseId = "c", displayName = "Mona", dateOfBirth = null, phone = null,
+            visits = emptyList(), status = "active", ageText = null, gravida = 1, parity = 0,
+            abortion = 0,
+            dating = DemoPatientDating(
+                patientId = "p1", lmpDate = "2026-06-01", ultrasoundEdd = null, agreedEdd = null,
+                datingMethod = "LMP", notes = null,
+            ),
+        )
+        val event = editPatientEvent(patient, "s1", "g1")
+        assertEquals(AncEvent.Flow(FlowEvent.Begin("p1", IDENTITY), "s1", "g1"), event)
+    }
+
+    @Test
+    fun patient_with_null_dating_gives_begin_at_dating() {
+        val patient = DemoPatient(
+            id = "p1", caseId = "c", displayName = "Mona", dateOfBirth = null, phone = null,
+            visits = emptyList(), status = "active", ageText = "30", gravida = 1, parity = 0,
+            abortion = 0,
+            dating = null,
+        )
+        val event = editPatientEvent(patient, "s1", "g1")
+        assertEquals(AncEvent.Flow(FlowEvent.Begin("p1", DATING), "s1", "g1"), event)
+    }
+
+    @Test
+    fun patient_with_null_gravida_gives_begin_at_obstetric() {
+        val patient = DemoPatient(
+            id = "p1", caseId = "c", displayName = "Mona", dateOfBirth = null, phone = null,
+            visits = emptyList(), status = "active", ageText = "30", gravida = null, parity = 0,
+            abortion = 0,
+            dating = DemoPatientDating(
+                patientId = "p1", lmpDate = "2026-06-01", ultrasoundEdd = null, agreedEdd = null,
+                datingMethod = "LMP", notes = null,
+            ),
+        )
+        val event = editPatientEvent(patient, "s1", "g1")
+        assertEquals(AncEvent.Flow(FlowEvent.Begin("p1", OBSTETRIC), "s1", "g1"), event)
+    }
+
+    @Test
+    fun archived_patient_gives_null() {
+        val patient = DemoPatient(
+            id = "p1", caseId = "c", displayName = "Mona", dateOfBirth = null, phone = null,
+            visits = emptyList(), status = "archived", ageText = null, gravida = 1, parity = 0,
+            abortion = 0,
+            dating = DemoPatientDating(
+                patientId = "p1", lmpDate = "2026-06-01", ultrasoundEdd = null, agreedEdd = null,
+                datingMethod = "LMP", notes = null,
+            ),
+        )
+        assertNull(editPatientEvent(patient, "s1", "g1"))
+    }
+
+    @Test
+    fun reducing_incomplete_event_sets_registration_flow() {
+        val patient = DemoPatient(
+            id = "p1", caseId = "c", displayName = "Mona", dateOfBirth = null, phone = null,
+            visits = emptyList(), status = "active", ageText = "30", gravida = 1, parity = 0,
+            abortion = 0,
+            dating = null,
+        )
+        val event = editPatientEvent(patient, "s1", "g1")!!
+        val state = AncReducer.reduce(AncState(patients = listOf(patient)), event)
+        assertEquals("p1", state.registrationFlow?.patientId)
+        assertEquals(DATING, state.registrationFlow?.current)
+        assertEquals(AncRoute.DatingEditor("p1"), state.route)
+    }
+
+    @Test
+    fun reducing_complete_event_leaves_registration_flow_null() {
+        val patient = DemoPatient(
+            id = "p1", caseId = "c", displayName = "Mona", dateOfBirth = null, phone = null,
+            visits = emptyList(), status = "active", ageText = "30", gravida = 1, parity = 0,
+            abortion = 0,
+            dating = DemoPatientDating(
+                patientId = "p1", lmpDate = "2026-06-01", ultrasoundEdd = null, agreedEdd = null,
+                datingMethod = "LMP", notes = null,
+            ),
+        )
+        val event = editPatientEvent(patient, "s1", "g1")!!
+        val state = AncReducer.reduce(AncState(patients = listOf(patient)), event)
+        assertNull(state.registrationFlow)
+        assertTrue(state.route is AncRoute.PatientEditor)
+    }
+}
+>>>>>>> REPLACE
+```
+
+```txt
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
+<<<<<<< SEARCH
+import com.sherifradwan.ancnative.state.medicationSheetDraft
+=======
+import com.sherifradwan.ancnative.state.medicationSheetDraft
+import com.sherifradwan.ancnative.state.editPatientEvent
+>>>>>>> REPLACE
+```
+
+```txt
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
+<<<<<<< SEARCH
+                onEditPatient = {
+                    onEvent(
+                        AncEvent.StartPatientEditor(
+                            patientId = patient.id,
+                            newPatientId = patient.id,
+                            editorSessionId = UUID.randomUUID().toString(),
+                        ),
+                    )
+                },
+=======
+                onEditPatient = {
+                    editPatientEvent(patient, UUID.randomUUID().toString(), UUID.randomUUID().toString())?.let(onEvent)
+                },
+>>>>>>> REPLACE
+```
+
+```txt
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+<<<<<<< SEARCH
+import com.sherifradwan.ancnative.state.AncEvent
+=======
+import com.sherifradwan.ancnative.state.AncEvent
+import com.sherifradwan.ancnative.state.editPatientEvent
+>>>>>>> REPLACE
+```
+
+```txt
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+<<<<<<< SEARCH
+    fun startPatientEditor() = onEvent(
+        AncEvent.StartPatientEditor(
+            patientId = patient.id,
+            newPatientId = patient.id,
+            editorSessionId = UUID.randomUUID().toString(),
+        ),
+    )
+=======
+    fun startPatientEditor() {
+        editPatientEvent(patient, UUID.randomUUID().toString(), UUID.randomUUID().toString())?.let(onEvent)
+    }
+>>>>>>> REPLACE
+```
+
+```txt
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientActionsModalSheet.kt
+<<<<<<< SEARCH
+import com.sherifradwan.ancnative.state.AncEvent
+=======
+import com.sherifradwan.ancnative.state.AncEvent
+import com.sherifradwan.ancnative.state.editPatientEvent
+>>>>>>> REPLACE
+```
+
+```txt
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientActionsModalSheet.kt
+<<<<<<< SEARCH
+                        .clickable {
+                            onDismissRequest()
+                            onEvent(
+                                AncEvent.StartPatientEditor(
+                                    patientId = patient.id,
+                                    newPatientId = patient.id,
+                                    editorSessionId = UUID.randomUUID().toString(),
+                                ),
+                            )
+                        }
+=======
+                        .clickable {
+                            onDismissRequest()
+                            editPatientEvent(patient, UUID.randomUUID().toString(), UUID.randomUUID().toString())?.let(onEvent)
+                        }
+>>>>>>> REPLACE
+```
+
+```txt
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt
+<<<<<<< SEARCH
+import com.sherifradwan.ancnative.state.AncEvent
+=======
+import com.sherifradwan.ancnative.state.AncEvent
+import com.sherifradwan.ancnative.state.editPatientEvent
+>>>>>>> REPLACE
+```
+
+```txt
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt
+<<<<<<< SEARCH
+import com.sherifradwan.ancnative.ui.ClinicalCardTokens
+=======
+import com.sherifradwan.ancnative.ui.ClinicalCardTokens
+import java.util.UUID
+>>>>>>> REPLACE
+```
+
+```txt
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt
+<<<<<<< SEARCH
+                if (row.isIncomplete) {
+                    ClinicalTagBadge(
+                        text = stringResource(R.string.registration_incomplete_chip),
+                        isError = false,
+                        isWarning = true,
+                        modifier = Modifier.testTag("incompleteChip"),
+                    )
+                }
+=======
+                if (row.isIncomplete) {
+                    Box(
+                        modifier = Modifier
+                            .minimumTouchTarget()
+                            .clickable(
+                                onClickLabel = stringResource(R.string.registration_incomplete_chip_action),
+                            ) {
+                                editPatientEvent(
+                                    patient,
+                                    UUID.randomUUID().toString(),
+                                    UUID.randomUUID().toString(),
+                                )?.let(onEvent)
+                            }
+                            .testTag("incompleteChipAction"),
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        ClinicalTagBadge(
+                            text = stringResource(R.string.registration_incomplete_chip),
+                            isError = false,
+                            isWarning = true,
+                            modifier = Modifier.testTag("incompleteChip"),
+                        )
+                    }
+                }
+>>>>>>> REPLACE
+```
+
+```txt
+FILE: app/src/main/res/values/strings.xml
+<<<<<<< SEARCH
+    <string name="registration_incomplete_chip">Incomplete</string>
+=======
+    <string name="registration_incomplete_chip">Incomplete</string>
+    <string name="registration_incomplete_chip_action">Continue registration</string>
+>>>>>>> REPLACE
+```
+[Tokens] upload: 13236 download: 13559 cache_read: 0 cache_write: 0
+

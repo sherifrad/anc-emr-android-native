@@ -1,0 +1,306 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/state/PatientEditEntry.kt b/app/src/main/java/com/sherifradwan/ancnative/state/PatientEditEntry.kt
+new file mode 100644
+index 0000000..2f5bdf2
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/state/PatientEditEntry.kt
+@@ -0,0 +1,23 @@
++package com.sherifradwan.ancnative.state
++
++import com.sherifradwan.ancnative.model.DemoPatient
++
++/**
++ * The single rule every "edit patient" control uses: resume an incomplete registration
++ * at the first unfinished step, or open the editor for a complete patient.
++ * Archived patients are not editable and return null.
++ */
++fun editPatientEvent(patient: DemoPatient, editorSessionId: String, newPregnancyId: String): AncEvent? {
++    if (patient.status == "archived") return null
++    if (isRegistrationIncomplete(patient)) {
++        return AncEvent.Flow(
++            FlowEvent.Begin(
++                patient.id,
++                firstNotDoneStep(patient) ?: RegistrationStep.IDENTITY,
++            ),
++            editorSessionId,
++            newPregnancyId,
++        )
++    }
++    return AncEvent.StartPatientEditor(patient.id, patient.id, editorSessionId)
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientActionsModalSheet.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientActionsModalSheet.kt
+index dfd28d8..2ff2883 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientActionsModalSheet.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientActionsModalSheet.kt
+@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
+ import com.sherifradwan.ancnative.R
+ import com.sherifradwan.ancnative.model.DemoPatient
+ import com.sherifradwan.ancnative.state.AncEvent
++import com.sherifradwan.ancnative.state.editPatientEvent
+ import com.sherifradwan.ancnative.ui.isDarkTheme
+ import com.sherifradwan.ancnative.ui.TagHighRiskBg
+ import com.sherifradwan.ancnative.ui.TagHighRiskDarkBg
+@@ -168,13 +169,7 @@ fun PatientActionsModalSheet(
+                         .clip(RoundedCornerShape(12.dp))
+                         .clickable {
+                             onDismissRequest()
+-                            onEvent(
+-                                AncEvent.StartPatientEditor(
+-                                    patientId = patient.id,
+-                                    newPatientId = patient.id,
+-                                    editorSessionId = UUID.randomUUID().toString(),
+-                                ),
+-                            )
++                            editPatientEvent(patient, UUID.randomUUID().toString(), UUID.randomUUID().toString())?.let(onEvent)
+                         }
+                         .testTag("editPatient-${patient.caseId}"),
+                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt
+index 106b82e..5ec5a0b 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt
+@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
+ import com.sherifradwan.ancnative.R
+ import com.sherifradwan.ancnative.model.DemoPatient
+ import com.sherifradwan.ancnative.state.AncEvent
++import com.sherifradwan.ancnative.state.editPatientEvent
+ import com.sherifradwan.ancnative.ui.BpAlertChip
+ import com.sherifradwan.ancnative.ui.ClinicalRiskBadge
+ import com.sherifradwan.ancnative.ui.ClinicalTagBadge
+@@ -47,6 +48,7 @@ import com.sherifradwan.ancnative.ui.PatientRiskTier
+ import com.sherifradwan.ancnative.ui.minimumTouchTarget
+ import com.sherifradwan.ancnative.ui.ActionRose
+ import com.sherifradwan.ancnative.ui.ClinicalCardTokens
++import java.util.UUID
+ 
+ /**
+  * Standardized High-Density Patient Directory Card.
+@@ -163,12 +165,28 @@ fun PatientDirectoryCard(
+                 }
+ 
+                 if (row.isIncomplete) {
+-                    ClinicalTagBadge(
+-                        text = stringResource(R.string.registration_incomplete_chip),
+-                        isError = false,
+-                        isWarning = true,
+-                        modifier = Modifier.testTag("incompleteChip"),
+-                    )
++                    Box(
++                        modifier = Modifier
++                            .minimumTouchTarget()
++                            .clickable(
++                                onClickLabel = stringResource(R.string.registration_incomplete_chip_action),
++                            ) {
++                                editPatientEvent(
++                                    patient,
++                                    UUID.randomUUID().toString(),
++                                    UUID.randomUUID().toString(),
++                                )?.let(onEvent)
++                            }
++                            .testTag("incompleteChipAction"),
++                        contentAlignment = Alignment.CenterStart,
++                    ) {
++                        ClinicalTagBadge(
++                            text = stringResource(R.string.registration_incomplete_chip),
++                            isError = false,
++                            isWarning = true,
++                            modifier = Modifier.testTag("incompleteChip"),
++                        )
++                    }
+                 }
+ 
+                 // Body: Structured 3-Column Clinical Micro-Grid (GA & EDD, Parity, Vitals)
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
+index 0835404..5150d86 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
+@@ -38,6 +38,7 @@ import com.sherifradwan.ancnative.state.PatientDraftField
+ import com.sherifradwan.ancnative.state.SavePhase
+ import com.sherifradwan.ancnative.state.deliveryPlanSheetDraft
+ import com.sherifradwan.ancnative.state.medicationSheetDraft
++import com.sherifradwan.ancnative.state.editPatientEvent
+ import com.sherifradwan.ancnative.storage.DeletableType
+ import com.sherifradwan.ancnative.ui.AddAttachmentDialog
+ import com.sherifradwan.ancnative.ui.ClinicalAttachmentViewerDialog
+@@ -191,13 +192,7 @@ fun PatientHubScreen(
+                 severeBp = severeBp,
+                 onBack = { onEvent(AncEvent.Back) },
+                 onEditPatient = {
+-                    onEvent(
+-                        AncEvent.StartPatientEditor(
+-                            patientId = patient.id,
+-                            newPatientId = patient.id,
+-                            editorSessionId = UUID.randomUUID().toString(),
+-                        ),
+-                    )
++                    editPatientEvent(patient, UUID.randomUUID().toString(), UUID.randomUUID().toString())?.let(onEvent)
+                 },
+                 onOpenReport = { showReportDialog = true },
+                 onOpenAttentionDialog = { showAttentionDialog = true },
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+index db1fd81..21f3d62 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
+ import com.sherifradwan.ancnative.model.DemoAttachment
+ import com.sherifradwan.ancnative.model.DemoPatient
+ import com.sherifradwan.ancnative.state.AncEvent
++import com.sherifradwan.ancnative.state.editPatientEvent
+ import com.sherifradwan.ancnative.storage.DeletableType
+ import com.sherifradwan.ancnative.ui.patienthub.components.AttachmentsSectionCard
+ import com.sherifradwan.ancnative.ui.patienthub.components.DatingSection
+@@ -43,13 +44,9 @@ fun OverviewTab(
+     onViewAttachment: (DemoAttachment) -> Unit,
+     modifier: Modifier = Modifier,
+ ) {
+-    fun startPatientEditor() = onEvent(
+-        AncEvent.StartPatientEditor(
+-            patientId = patient.id,
+-            newPatientId = patient.id,
+-            editorSessionId = UUID.randomUUID().toString(),
+-        ),
+-    )
++    fun startPatientEditor() {
++        editPatientEvent(patient, UUID.randomUUID().toString(), UUID.randomUUID().toString())?.let(onEvent)
++    }
+ 
+     fun startPregnancyEditor(pregnancyId: String?) = onEvent(
+         AncEvent.StartPregnancyEditor(
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index 7199e51..cb4c172 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -395,6 +395,7 @@
+     <string name="ga_discordance_marker_cd">Gestational age uncertain: LMP and scan due dates disagree</string>
+     <string name="redating_hint">Dating delta: %1$d d (&gt;%2$d d threshold). Re-dating indicated.</string>
+     <string name="registration_incomplete_chip">Incomplete</string>
++    <string name="registration_incomplete_chip_action">Continue registration</string>
+     <string name="bp_badge_severe">Severe BP</string>
+     <string name="bp_attention_severe">Severe-range blood pressure at the last visit: %1$s (%2$s)</string>
+     <string name="draft_recovery_title">Unsaved draft found</string>
+diff --git a/app/src/test/java/com/sherifradwan/ancnative/state/PatientEditEntryTest.kt b/app/src/test/java/com/sherifradwan/ancnative/state/PatientEditEntryTest.kt
+new file mode 100644
+index 0000000..cc58cb8
+--- /dev/null
++++ b/app/src/test/java/com/sherifradwan/ancnative/state/PatientEditEntryTest.kt
+@@ -0,0 +1,121 @@
++package com.sherifradwan.ancnative.state
++
++import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.model.DemoPatientDating
++import com.sherifradwan.ancnative.state.AncEvent
++import com.sherifradwan.ancnative.state.AncReducer
++import com.sherifradwan.ancnative.state.AncRoute
++import com.sherifradwan.ancnative.state.AncState
++import com.sherifradwan.ancnative.state.FlowEvent
++import com.sherifradwan.ancnative.state.RegistrationStep.DATING
++import com.sherifradwan.ancnative.state.RegistrationStep.IDENTITY
++import com.sherifradwan.ancnative.state.RegistrationStep.OBSTETRIC
++import org.junit.Assert.assertEquals
++import org.junit.Assert.assertNull
++import org.junit.Assert.assertTrue
++import org.junit.Test
++
++class PatientEditEntryTest {
++    @Test
++    fun complete_patient_gives_start_patient_editor() {
++        val patient = DemoPatient(
++            id = "p1", caseId = "c", displayName = "Mona", dateOfBirth = null, phone = null,
++            visits = emptyList(), status = "active", ageText = "30", gravida = 1, parity = 0,
++            abortion = 0,
++            dating = DemoPatientDating(
++                patientId = "p1", lmpDate = "2026-06-01", ultrasoundEdd = null, agreedEdd = null,
++                datingMethod = "LMP", notes = null,
++            ),
++        )
++        val event = editPatientEvent(patient, "s1", "g1")
++        assertEquals(AncEvent.StartPatientEditor("p1", "p1", "s1"), event)
++    }
++
++    @Test
++    fun patient_with_null_ageText_gives_begin_at_identity() {
++        val patient = DemoPatient(
++            id = "p1", caseId = "c", displayName = "Mona", dateOfBirth = null, phone = null,
++            visits = emptyList(), status = "active", ageText = null, gravida = 1, parity = 0,
++            abortion = 0,
++            dating = DemoPatientDating(
++                patientId = "p1", lmpDate = "2026-06-01", ultrasoundEdd = null, agreedEdd = null,
++                datingMethod = "LMP", notes = null,
++            ),
++        )
++        val event = editPatientEvent(patient, "s1", "g1")
++        assertEquals(AncEvent.Flow(FlowEvent.Begin("p1", IDENTITY), "s1", "g1"), event)
++    }
++
++    @Test
++    fun patient_with_null_dating_gives_begin_at_dating() {
++        val patient = DemoPatient(
++            id = "p1", caseId = "c", displayName = "Mona", dateOfBirth = null, phone = null,
++            visits = emptyList(), status = "active", ageText = "30", gravida = 1, parity = 0,
++            abortion = 0,
++            dating = null,
++        )
++        val event = editPatientEvent(patient, "s1", "g1")
++        assertEquals(AncEvent.Flow(FlowEvent.Begin("p1", DATING), "s1", "g1"), event)
++    }
++
++    @Test
++    fun patient_with_null_gravida_gives_begin_at_obstetric() {
++        val patient = DemoPatient(
++            id = "p1", caseId = "c", displayName = "Mona", dateOfBirth = null, phone = null,
++            visits = emptyList(), status = "active", ageText = "30", gravida = null, parity = 0,
++            abortion = 0,
++            dating = DemoPatientDating(
++                patientId = "p1", lmpDate = "2026-06-01", ultrasoundEdd = null, agreedEdd = null,
++                datingMethod = "LMP", notes = null,
++            ),
++        )
++        val event = editPatientEvent(patient, "s1", "g1")
++        assertEquals(AncEvent.Flow(FlowEvent.Begin("p1", OBSTETRIC), "s1", "g1"), event)
++    }
++
++    @Test
++    fun archived_patient_gives_null() {
++        val patient = DemoPatient(
++            id = "p1", caseId = "c", displayName = "Mona", dateOfBirth = null, phone = null,
++            visits = emptyList(), status = "archived", ageText = null, gravida = 1, parity = 0,
++            abortion = 0,
++            dating = DemoPatientDating(
++                patientId = "p1", lmpDate = "2026-06-01", ultrasoundEdd = null, agreedEdd = null,
++                datingMethod = "LMP", notes = null,
++            ),
++        )
++        assertNull(editPatientEvent(patient, "s1", "g1"))
++    }
++
++    @Test
++    fun reducing_incomplete_event_sets_registration_flow() {
++        val patient = DemoPatient(
++            id = "p1", caseId = "c", displayName = "Mona", dateOfBirth = null, phone = null,
++            visits = emptyList(), status = "active", ageText = "30", gravida = 1, parity = 0,
++            abortion = 0,
++            dating = null,
++        )
++        val event = editPatientEvent(patient, "s1", "g1")!!
++        val state = AncReducer.reduce(AncState(patients = listOf(patient)), event)
++        assertEquals("p1", state.registrationFlow?.patientId)
++        assertEquals(DATING, state.registrationFlow?.current)
++        assertEquals(AncRoute.DatingEditor("p1"), state.route)
++    }
++
++    @Test
++    fun reducing_complete_event_leaves_registration_flow_null() {
++        val patient = DemoPatient(
++            id = "p1", caseId = "c", displayName = "Mona", dateOfBirth = null, phone = null,
++            visits = emptyList(), status = "active", ageText = "30", gravida = 1, parity = 0,
++            abortion = 0,
++            dating = DemoPatientDating(
++                patientId = "p1", lmpDate = "2026-06-01", ultrasoundEdd = null, agreedEdd = null,
++                datingMethod = "LMP", notes = null,
++            ),
++        )
++        val event = editPatientEvent(patient, "s1", "g1")!!
++        val state = AncReducer.reduce(AncState(patients = listOf(patient)), event)
++        assertNull(state.registrationFlow)
++        assertTrue(state.route is AncRoute.PatientEditor)
++    }
++}

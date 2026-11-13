@@ -27,7 +27,8 @@ else:
 r = subprocess.run(cmd, capture_output=True, text=True, timeout=1500)
 open(out + ".raw", "w").write(r.stdout); open(out + ".err", "w").write(r.stderr)
 t = re.sub(r"^\[Tokens\].*$", "", r.stdout, flags=re.M)
-m = re.search(r"```[a-z]*\n(.*?)```", t, re.S)
-d = m.group(1) if m else (t if "<<<<<<< SEARCH" in t else "")
+# A lane may put every block in its own fence: keep all fenced parts that hold a block, in order.
+fenced = [x for x in re.findall(r"```[a-z]*\n(.*?)```", t, re.S) if "<<<<<<< SEARCH" in x]
+d = "\n".join(x.rstrip("\n") for x in fenced) if fenced else (t if "<<<<<<< SEARCH" in t else "")
 open(out, "w").write(d if d.endswith("\n") or not d else d + "\n")
 print("prompt bytes:", len(prompt), "block lines:", len(d.splitlines()))

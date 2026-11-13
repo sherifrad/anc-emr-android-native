@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.state.AncEvent
+import com.sherifradwan.ancnative.state.editPatientEvent
 import com.sherifradwan.ancnative.ui.BpAlertChip
 import com.sherifradwan.ancnative.ui.ClinicalRiskBadge
 import com.sherifradwan.ancnative.ui.ClinicalTagBadge
@@ -47,6 +48,7 @@ import com.sherifradwan.ancnative.ui.PatientRiskTier
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
 import com.sherifradwan.ancnative.ui.ActionRose
 import com.sherifradwan.ancnative.ui.ClinicalCardTokens
+import java.util.UUID
 
 /**
  * Standardized High-Density Patient Directory Card.
@@ -163,12 +165,28 @@ fun PatientDirectoryCard(
                 }
 
                 if (row.isIncomplete) {
-                    ClinicalTagBadge(
-                        text = stringResource(R.string.registration_incomplete_chip),
-                        isError = false,
-                        isWarning = true,
-                        modifier = Modifier.testTag("incompleteChip"),
-                    )
+                    Box(
+                        modifier = Modifier
+                            .minimumTouchTarget()
+                            .clickable(
+                                onClickLabel = stringResource(R.string.registration_incomplete_chip_action),
+                            ) {
+                                editPatientEvent(
+                                    patient,
+                                    UUID.randomUUID().toString(),
+                                    UUID.randomUUID().toString(),
+                                )?.let(onEvent)
+                            }
+                            .testTag("incompleteChipAction"),
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        ClinicalTagBadge(
+                            text = stringResource(R.string.registration_incomplete_chip),
+                            isError = false,
+                            isWarning = true,
+                            modifier = Modifier.testTag("incompleteChip"),
+                        )
+                    }
                 }
 
                 // Body: Structured 3-Column Clinical Micro-Grid (GA & EDD, Parity, Vitals)
