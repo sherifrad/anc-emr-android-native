@@ -261,3 +261,11 @@ Every mock follows mock D's rules: one self-contained HTML file, 360 px frames, 
 4. **"HIGH RISK" in caps.** Slice 1B changes `R.string.high_risk` to "High risk", which also changes the hub header badge text. No test asserts the caps text.
 5. **Blank history fields.** Mock D showed "Not recorded" for every blank history field. Today blank fields are hidden. Slice 1A keeps today's rule; showing them is a content change.
 6. **BP alert copy** ("▲ Raised BP (≥140/90) · Recheck"): the triangle and middle dot break the antislop copy rules. Copy change, owner, slice 6.
+
+## 6. Owner decisions (2026-11-15)
+1. Identity and Medications are not added to Overview: accepted.
+2. The card keeps the GPA summary line under Parity (previous delivery summary, "Nulliparous" when none): the owner said it is important. Mock D's removal is overruled. Slice 1 follow-up restores it as the second line of the Parity cell.
+3. The app is English by default; no Arabic strings.
+4. "High risk" sentence case (also on the hub header): accepted.
+5. Blank history fields stay hidden: accepted.
+6. BP alert copy loses the triangle and middle dots (slice 6): accepted.
