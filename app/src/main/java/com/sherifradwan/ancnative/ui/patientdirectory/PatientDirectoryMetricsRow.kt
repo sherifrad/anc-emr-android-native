@@ -24,9 +24,12 @@ import com.sherifradwan.ancnative.ui.ActionRose
 import com.sherifradwan.ancnative.ui.GaDiscordanceMarker
 import com.sherifradwan.ancnative.ui.PatientDashboardRowProjection
 import com.sherifradwan.ancnative.ui.StatusHighDarkText
+import com.sherifradwan.ancnative.ui.components.MetricCell
+import com.sherifradwan.ancnative.ui.components.MetricValue
 import com.sherifradwan.ancnative.ui.components.RecordShapes
 import com.sherifradwan.ancnative.ui.components.RecordType
 import com.sherifradwan.ancnative.ui.components.ltrIsolate
+import com.sherifradwan.ancnative.ui.components.parityText
 import com.sherifradwan.ancnative.ui.isDarkTheme
 import com.sherifradwan.ancnative.ui.patienthub.components.deliveredDaysAgo
 import com.sherifradwan.ancnative.ui.patienthub.components.deliveredHeadline
@@ -86,41 +89,6 @@ fun PatientDirectoryMetricsRow(
 }
 
 @Composable
-private fun MetricCell(
-    label: String,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
-    Column(modifier = modifier) {
-        Text(
-            text = label,
-            style = RecordType.MetricLabel,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        content()
-    }
-}
-
-@Composable
-private fun MetricValue(
-    value: String,
-    modifier: Modifier = Modifier,
-    isMissing: Boolean = false,
-    color: Color = if (isMissing) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-) {
-    Text(
-        text = value,
-        style = if (isMissing) RecordType.Missing else RecordType.MetricValue,
-        color = color,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-        modifier = modifier,
-    )
-}
-
-@Composable
 private fun GestationalAgeCell(
     row: PatientDashboardRowProjection,
     modifier: Modifier = Modifier,
@@ -176,12 +144,9 @@ private fun ParityCell(
         label = stringResource(R.string.parity),
         modifier = modifier,
     ) {
-        val g = patient.gravida ?: 1L
-        val p = patient.parity ?: 0L
-        val a = patient.abortion ?: 0L
-        val parityText = if (a > 0L) "G$g P$p A$a" else "G$g P$p"
+        val text = parityText(patient.gravida, patient.parity, patient.abortion)
         MetricValue(
-            value = ltrIsolate(parityText),
+            value = ltrIsolate(text),
         )
         val prevDelivery = previousDeliverySummary(patient)
         Text(

@@ -1,0 +1,54 @@
+### Redesign Slice 4: Implementation Summary
+
+All requirements of `docs/designs/redesign/slice_04_hub_header.md` and owner decisions from `docs/designs/redesign/PLAN.md` sections 6 & 7 have been implemented.
+
+---
+
+### Files Changed
+
+1. [MetricCell.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/components/MetricCell.kt) *(New)*
+   - Extracted shared `MetricCell` and `MetricValue` composables from `PatientDirectoryMetricsRow.kt` into `ui.components`.
+   - Added canonical `parityText(gravida: Long?, parity: Long?, abortion: Long?): String` helper (`G$g P$p` plus ` A$a` when $a > 0$).
+
+2. [PatientDirectoryMetricsRow.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt)
+   - Removed duplicate private `MetricCell` and `MetricValue`.
+   - Imported shared `MetricCell`, `MetricValue`, and `parityText` from `ui.components`. Visual presentation and behavior remain identical.
+
+3. [RecordTokens.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/components/RecordTokens.kt)
+   - Added `RecordType.HeaderName` (`fontSize = 22.sp`, `lineHeight = 28.sp`, `fontWeight = FontWeight.Bold`).
+
+4. [strings.xml](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/res/values/strings.xml)
+   - Appended new string resources: `status_normal_risk`, `rh_negative_tag`, `needs_attention`, `action_back`, `action_two_page_report`, `age_label`.
+
+5. [PatientHubHeader.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt)
+   - **Hero Header Restyling**:
+     - Padding updated to `start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp` with `Arrangement.spacedBy(10.dp)`.
+     - Action bar content descriptions updated to localized strings (`action_back`, `action_two_page_report`, `edit_patient`, `clinical_attention`); kept tag ordering (`workspaceReportButton` first).
+     - Patient name updated to `RecordType.HeaderName` with no `maxLines`.
+     - Tags `FlowRow`:
+       - Shows `StatusTag` for `StatusKind.HighRisk` or `StatusKind.ModerateRisk` under `testTag("hubRiskBadge")`; low/normal risk shows no tag per owner decision 11 (no `NormalRisk` added).
+       - Kept `BpAlertLabel`.
+       - Restyled `hubAllergyPill` to `RecordShapes.Small`, error container/border when recorded, neutral when none, with `RecordType.Tag.copy(fontWeight = Bold)` and no line truncations.
+     - Facts Row:
+       - 3 equal-width columns (`weight(1f)`):
+         - GA: Displays `shortWeeksText` ("27+2 wks") inside `hubGaBadge` with `gestationalAgeBadge` Row and `GaDiscordanceMarker` when discordant. When delivered, displays `hubDeliveredBadge` with delivery date headline. When unknown/not delivered, preserves alignment with a spacer.
+         - Parity: Displays canonical `parityText` via `MetricCell`.
+         - Blood Group: Displays `formatBloodGroup(...) ?: "--"` with missing style when absent; displays `StatusTag(StatusKind.HighRisk, text = "Rh negative")` below value when Rh-negative.
+       - Age: Displays a second row with `MetricCell("Age")` and two spacers when `formatAgeYears` is non-null.
+     - Attention strip: `CompactClinicalAttentionStrip` untouched.
+   - **Sticky Top Bar**:
+     - Replaced `GestationalAgeBadge` with `Text(ltrIsolate(...), style = RecordType.Action.copy(fontWeight = SemiBold))` using `shortWeeksText` ("27+2 wks") or delivered headline, retaining `GaDiscordanceMarker` when discordant and not delivered. Name styled with `RecordType.CardName` (max 1 line with ellipsis).
+   - **Tab Bar**:
+     - Removed tab icons, 999 dp pills, and 6 dp dot.
+     - Count badge styled as `RecordShapes.Small` (10 dp radius) with `RecordType.Tag`, using alert high tokens when active or patient family container when neutral. Abnormal labs show `$badgeCount▲`.
+     - Alert with no count shows `!` badge with `contentDescription = stringResource(R.string.needs_attention)`.
+   - **Untouched**:
+     - `PatientHubHeaderState`, collapse math (`layout`, `onSizeChanged`, `graphicsLayer`), touch targets, and level-3 files (`ClinicalBadges.kt`, `ClinicalFormat.kt`).
+
+---
+
+### Anything Not Done / Handed Off to Test Lane
+
+- **Test lane fixture note for `PatientHubDesignTest`**:
+  `PatientHubDesignTest.kt` line 126 asserts `compose.onNodeWithTag("hubRiskBadge").assertIsDisplayed()` against `DemoFixtures.patients.first()` which has `riskLevel = "Low Risk"`. Per owner decision 11, the header now shows a risk tag **only** for Moderate and High risk patients (no tag for normal risk). The test lane will update this test or test against a Moderate/High risk patient fixture.
+- **`StatusTag.kt`**: Not edited, as `StatusKind.NormalRisk` was explicitly excluded per owner decision 11.

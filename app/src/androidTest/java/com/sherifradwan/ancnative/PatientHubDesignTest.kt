@@ -123,7 +123,7 @@ class PatientHubDesignTest {
         val pillHeight = compose.onNodeWithTag("hubAllergyPill").fetchSemanticsNode().size.height
         assertTrue("the allergy pill is as tall as its text ($pillHeight px)", pillHeight >= allergy.size.height)
         compose.onNodeWithTag("hubGaBadge").assertIsDisplayed()
-        compose.onNodeWithTag("hubRiskBadge").assertIsDisplayed()
+        compose.onNodeWithTag("hubRiskBadge").assertDoesNotExist()
     }
 
     private fun layout(tag: String): TextLayoutResult {

@@ -1,0 +1,12 @@
+e: app/src/androidTest/java/com/sherifradwan/ancnative/HubHeaderRedesignTest.kt:26:41 Unresolved reference 'DemoLabResult'.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/HubHeaderRedesignTest.kt:56:23 Argument type mismatch: actual type is 'String', but 'Long?' was expected.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/HubHeaderRedesignTest.kt:57:22 Argument type mismatch: actual type is 'String', but 'Long?' was expected.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/HubHeaderRedesignTest.kt:58:24 Argument type mismatch: actual type is 'String', but 'Long?' was expected.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/HubHeaderRedesignTest.kt:155:13 No parameter with name 'labs' found.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/HubHeaderRedesignTest.kt:155:20 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/HubHeaderRedesignTest.kt:184:13 No parameter with name 'labs' found.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/HubHeaderRedesignTest.kt:184:20 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/HubHeaderRedesignTest.kt:185:17 Unresolved reference 'DemoLabResult'.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/HubHeaderRedesignTest.kt:224:37 No value passed for parameter 'ancestorTag'.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/HubHeaderRedesignTest.kt:225:37 No value passed for parameter 'ancestorTag'.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/HubHeaderRedesignTest.kt:226:37 No value passed for parameter 'ancestorTag'.
