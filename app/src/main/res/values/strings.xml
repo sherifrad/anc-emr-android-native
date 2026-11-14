@@ -257,7 +257,7 @@
     <string name="copy_clinical_summary">Copy Clinical Summary</string>
     <string name="summary_copied">Clinical summary copied to clipboard.</string>
     <string name="quick_actions">Quick Actions</string>
-    <string name="delivery_planning">Delivery Planning &amp; Outcome</string>
+    <string name="delivery_planning">Delivery planning &amp; outcome</string>
     <string name="delivery_planning_notice">Delivery planning and care episode records.</string>
     <string name="edit_delivery_plan">Edit Delivery Plan</string>
     <string name="delivery_hospital_title" translatable="false">Agreed Delivery Hospital</string>
@@ -300,7 +300,7 @@
     <string name="add_another_test">Add investigation (+)</string>
     <string name="adverse_effects">Side effects &amp; patient notes</string>
     <string name="add_another_medication">Add medication (+)</string>
-    <string name="clinical_attention">Clinical Attention</string>
+    <string name="clinical_attention">Clinical attention</string>
     <string name="critical_badge">CRITICAL</string>
     <string name="alert_badge">ALERT</string>
     <string name="note_badge">NOTE</string>
@@ -687,4 +687,11 @@
     <string name="action_add">Add</string>
     <string name="obstetric_history_title">Obstetric history</string>
     <string name="post_term_badge">Post</string>
+    <string name="nulliparous">Nulliparous</string>
+    <string name="delivery_hospital_label">Agreed delivery hospital</string>
+    <string name="delivery_fees_label">Agreed delivery fees</string>
+    <string name="delivery_plan_label">Delivery plan</string>
+    <string name="delivery_postpartum_label">Postpartum note</string>
+    <string name="delivery_date_label">Delivery date</string>
+    <string name="delivery_date_unknown_value">\?\?\?</string>
 </resources>

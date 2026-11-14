@@ -2,19 +2,21 @@ package com.sherifradwan.ancnative.ui.patienthub.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.daysSinceDelivery
 import com.sherifradwan.ancnative.model.deliveryModeText
 import com.sherifradwan.ancnative.model.deliveryResultText
+import com.sherifradwan.ancnative.ui.components.LabeledValue
+import com.sherifradwan.ancnative.ui.components.LabeledValueRow
+import com.sherifradwan.ancnative.ui.components.RecordSpacing
+import com.sherifradwan.ancnative.ui.components.StatusKind
+import com.sherifradwan.ancnative.ui.components.StatusTag
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -24,15 +26,17 @@ fun deliveryModeLabel(value: String?): String? = deliveryModeText(value)
 
 fun deliveryResultLabel(value: String?): String? = deliveryResultText(value)
 
+private fun parseDeliveryDate(date: String?): LocalDate? = date?.let {
+    try {
+        LocalDate.parse(it.trim(), DateTimeFormatter.ISO_LOCAL_DATE)
+    } catch (e: DateTimeParseException) {
+        null
+    }
+}
+
 @Composable
 fun deliveredHeadline(date: String?): String {
-    val parsed = date?.let {
-        try {
-            LocalDate.parse(it.trim(), DateTimeFormatter.ISO_LOCAL_DATE)
-        } catch (e: DateTimeParseException) {
-            null
-        }
-    }
+    val parsed = parseDeliveryDate(date)
     return if (parsed != null) {
         val formatted = parsed.format(DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH))
         stringResource(R.string.delivered_headline, formatted)
@@ -53,44 +57,65 @@ fun deliveredDaysAgo(date: String?, today: LocalDate = LocalDate.now()): String?
 }
 
 @Composable
+fun deliveredDateText(date: String?): String? {
+    val parsed = parseDeliveryDate(date) ?: return null
+    val formatted = parsed.format(DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH))
+    val ago = deliveredDaysAgo(date)
+    return if (ago != null) "$formatted, $ago" else formatted
+}
+
+@Composable
 fun DeliveredSummary(
     patient: DemoPatient,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    val headlineText = deliveredHeadline(patient.deliveryDate)
-    val daysAgoText = deliveredDaysAgo(patient.deliveryDate)
-    val combinedHeadline = if (daysAgoText != null) {
-        "$headlineText · $daysAgoText"
-    } else {
-        headlineText
-    }
-    val modeLabel = deliveryModeLabel(patient.deliveryMode)
-    val resultLabel = deliveryResultLabel(patient.deliveryOutcome)
+    val modeLabel = stringResource(R.string.delivery_outcome_mode_label)
+    val resultLabel = stringResource(R.string.delivery_outcome_result_label)
+    val mode = deliveryModeLabel(patient.deliveryMode)
+    val result = deliveryResultLabel(patient.deliveryOutcome)
 
     Column(
         modifier = modifier.testTag("deliveredSummary"),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(RecordSpacing.M),
     ) {
-        Text(
-            text = combinedHeadline,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.testTag("deliveredHeadline")
+        StatusTag(StatusKind.Delivered)
+        LabeledValue(
+            label = stringResource(R.string.delivery_date_label),
+            value = deliveredDateText(patient.deliveryDate),
+            emphasis = true,
+            missingText = stringResource(R.string.delivery_date_unknown_value),
+            modifier = Modifier.testTag("deliveredHeadline"),
         )
-        modeLabel?.let { mode ->
-            val labelText = stringResource(R.string.delivery_outcome_mode_label) + ": $mode"
-            Text(
-                text = labelText,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.testTag("deliveredMode")
+        when {
+            mode != null && result != null -> LabeledValueRow {
+                LabeledValue(
+                    label = modeLabel,
+                    value = mode,
+                    stretch = true,
+                    modifier = Modifier
+                        .testTag("deliveredMode")
+                        .weight(1f)
+                        .fillMaxHeight(),
+                )
+                LabeledValue(
+                    label = resultLabel,
+                    value = result,
+                    stretch = true,
+                    modifier = Modifier
+                        .testTag("deliveredResult")
+                        .weight(1f)
+                        .fillMaxHeight(),
+                )
+            }
+            mode != null -> LabeledValue(
+                label = modeLabel,
+                value = mode,
+                modifier = Modifier.testTag("deliveredMode"),
             )
-        }
-        resultLabel?.let { result ->
-            val labelText = stringResource(R.string.delivery_outcome_result_label) + ": $result"
-            Text(
-                text = labelText,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.testTag("deliveredResult")
+            result != null -> LabeledValue(
+                label = resultLabel,
+                value = result,
+                modifier = Modifier.testTag("deliveredResult"),
             )
         }
     }

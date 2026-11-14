@@ -18,6 +18,7 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -149,6 +150,7 @@ class OverviewTabSectionsTest {
         show(patient, widthDp = 360, fontScale = 1.3f)
 
         val rowTag = "pregnancy-${longRow.id}"
+        compose.onNodeWithTag(rowTag, useUnmergedTree = true).performScrollTo()
         val rowBounds = compose.onNodeWithTag(rowTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
         val deleteBounds = compose
             .onNodeWithTag("delete-previous_pregnancy-${longRow.id}", useUnmergedTree = true)
@@ -185,7 +187,7 @@ class OverviewTabSectionsTest {
         )
         show(multiparous.copy(previousPregnancies = listOf(row)), widthDp = 360, fontScale = 1.3f)
         val extrasTag = "pregnancyExtras-${row.id}"
-        compose.onNodeWithTag(extrasTag, useUnmergedTree = true).assertExists().assertIsDisplayed()
+        compose.onNodeWithTag(extrasTag, useUnmergedTree = true).assertExists().performScrollTo().assertIsDisplayed()
         listOf("Twin", "Expectant", "Medical").forEach { t ->
             compose.onNode(
                 hasText(t, substring = true) and inTagged(extrasTag),

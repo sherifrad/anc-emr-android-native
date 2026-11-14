@@ -29,7 +29,6 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
@@ -74,63 +73,6 @@ fun PatientAgeBadge(ageText: String?, modifier: Modifier = Modifier, large: Bool
                 fontWeight = FontWeight.Bold,
                 color = text,
                 modifier = Modifier.padding(horizontal = 7.dp, vertical = if (large) 4.dp else 2.dp),
-            )
-        }
-    }
-}
-
-enum class DeliveryTone { HOSPITAL, FEE, PLAN, POSTPARTUM }
-
-private data class ToneColors(val bg: Color, val border: Color, val text: Color)
-
-@Composable
-private fun DeliveryTone.colors(): ToneColors {
-    val dark = isDarkTheme()
-    return when (this) {
-        DeliveryTone.HOSPITAL -> if (dark) ToneColors(DeliveryHospitalDarkBg, DeliveryHospitalDarkBorder, DeliveryHospitalDarkText)
-        else ToneColors(DeliveryHospitalBg, DeliveryHospitalBorder, DeliveryHospitalText)
-        DeliveryTone.FEE -> if (dark) ToneColors(DeliveryFeeDarkBg, DeliveryFeeDarkBorder, DeliveryFeeDarkText)
-        else ToneColors(DeliveryFeeBg, DeliveryFeeBorder, DeliveryFeeText)
-        DeliveryTone.PLAN -> if (dark) ToneColors(DeliveryPlanDarkBg, DeliveryPlanDarkBorder, DeliveryPlanDarkText)
-        else ToneColors(DeliveryPlanBg, DeliveryPlanBorder, DeliveryPlanText)
-        DeliveryTone.POSTPARTUM -> if (dark) ToneColors(DeliveryPostpartumDarkBg, DeliveryPostpartumDarkBorder, DeliveryPostpartumDarkText)
-        else ToneColors(DeliveryPostpartumBg, DeliveryPostpartumBorder, DeliveryPostpartumText)
-    }
-}
-
-/**
- * A titled delivery subsection: small uppercase colored title, value in its own tinted box.
- */
-@Composable
-fun DeliverySectionBox(
-    title: String,
-    value: String?,
-    tone: DeliveryTone,
-    placeholder: String,
-    modifier: Modifier = Modifier,
-) {
-    val c = tone.colors()
-    val hasValue = !value.isNullOrBlank()
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(
-            text = title.uppercase(),
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
-            color = c.text,
-        )
-        Surface(
-            shape = RoundedCornerShape(10.dp),
-            color = c.bg,
-            border = BorderStroke(1.dp, c.border),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(
-                text = if (hasValue) value!! else placeholder,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (hasValue) FontWeight.SemiBold else FontWeight.Normal,
-                fontStyle = if (hasValue) FontStyle.Normal else FontStyle.Italic,
-                color = c.text,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
             )
         }
     }

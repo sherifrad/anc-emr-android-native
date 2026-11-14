@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.model.previousDeliverySummary
 import com.sherifradwan.ancnative.ui.ActionRose
 import com.sherifradwan.ancnative.ui.GaDiscordanceMarker
 import com.sherifradwan.ancnative.ui.PatientDashboardRowProjection
@@ -181,6 +182,15 @@ private fun ParityCell(
         val parityText = if (a > 0L) "G$g P$p A$a" else "G$g P$p"
         MetricValue(
             value = ltrIsolate(parityText),
+        )
+        val prevDelivery = previousDeliverySummary(patient).takeIf { it.isNotBlank() }
+            ?: stringResource(R.string.nulliparous)
+        Text(
+            text = prevDelivery,
+            style = RecordType.MetricLabel,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }

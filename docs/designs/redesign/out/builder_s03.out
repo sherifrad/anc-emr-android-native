@@ -1,0 +1,35 @@
+### Files Changed
+
+1. **`app/src/main/res/values/strings.xml`**
+   - Changed `<string name="clinical_attention">Clinical Attention</string>` to `<string name="clinical_attention">Clinical attention</string>` (single in-place value change; no other strings modified).
+
+2. **`app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionEntries.kt`**
+   - Added canonical `levelWord(level: ClinicalAttentionLevel): String` helper to eliminate duplicated level-label mappings across card, strip, dialog, and dropdown.
+   - Added `AttentionEntryBox(level, text, modifier)` using `RecordShapes.Small`, `RecordType.FieldLabel` (bold accent), `RecordType.FieldValue`, and TalkBack descendant merging (`Modifier.semantics(mergeDescendants = true)`).
+   - Preserved all parsing, sorting, severe BP detection, and composing logic intact.
+
+3. **`app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt`**
+   - Updated `attentionColors(ClinicalAttentionLevel.ALERT)` to use `StatusModerate*` tokens (`StatusModerateBg`, `StatusModerateText`, `StatusModerateBorder`) in light theme and `StatusModerateDark*` tokens in dark theme (contrast >= 7:1).
+   - Updated `ClinicalAttentionLevel.NOTE` border to unalpha'd `outlineVariant`.
+   - Deleted the unused `ClinicalAttentionBanner` composable.
+   - Restyled `ClinicalAttentionDialog`: section title style on surface, `RecordShapes.Large` (16 dp), read-only rows rendered via `AttentionEntryBox`, character counter at `RecordType.Tag`, `OutlinedButton` for Add and Cancel, default primary `Button` for Save/Close.
+   - Restyled `AttentionLevelDropdown`: removed leading warning/info icons, retained `KeyboardArrowDown`, shape `RecordShapes.Small`, label `RecordType.Action` (bold), and text-only menu items in option colors.
+
+4. **`app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionCard.kt`**
+   - Rewrote `ClinicalAttentionCard` on `RecordSectionCard` with `family = FieldFamilies.patient()` and `SectionTextAction`.
+   - Severe BP rendered first as `AttentionEntryBox(CRITICAL, ...)` tagged `severeBpAttention`.
+   - Sorted entries rendered as `AttentionEntryBox` tagged `attentionEntry-$index`.
+   - Empty state styled with `no_clinical_attention_recorded` and `OutlinedButton` (48 dp, `RecordShapes.Small`) tagged `addClinicalAttention`.
+   - Removed header icon tile, per-entry warning/info icons, and pencil icon.
+
+5. **`app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalGroupSection.kt`**
+   - Deleted file (no callers remaining).
+
+6. **`app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt`**
+   - Restyled `CompactClinicalAttentionStrip` only: `Surface` (min 48 dp, `RecordShapes.Small`, tags `clinicalAttentionStrip` then `clinicalAttentionBanner`), two-line layout with `levelWord` above unclamped text (max 2 lines with ellipsis), count badge in accent-bordered `Surface`, full-alpha mirrored chevron (`Icons.AutoMirrored.Filled.KeyboardArrowRight`). Removed leading warning/info icon and `"$levelLabel: "` string concatenation.
+
+---
+
+### Anything Not Done
+
+- **None**. All requirements, acceptance criteria, tokens, shapes, and test tags specified in [slice_03_attention.md](file:///Users/sherifgamalradwan/anc-emr-android-native/docs/designs/redesign/slice_03_attention.md) were implemented exactly. No tests or protected files were modified, and no git, gradle, or network operations were performed.

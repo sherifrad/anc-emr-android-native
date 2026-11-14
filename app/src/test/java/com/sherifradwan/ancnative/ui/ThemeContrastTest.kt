@@ -77,23 +77,15 @@ class ThemeContrastTest {
         // Age badge, light
         "TagAgeText" to "TagAgeBg",
         "TagAgeLabelText" to "TagAgeLabelBg",
-        // Delivery boxes, light
-        "DeliveryHospitalText" to "DeliveryHospitalBg",
-        "DeliveryFeeText" to "DeliveryFeeBg",
-        "DeliveryPlanText" to "DeliveryPlanBg",
-        "DeliveryPostpartumText" to "DeliveryPostpartumBg",
+        "FieldDeliveryLabel" to "FieldDeliveryBg",
         // Age badge, dark (label text stays TagAgeLabelText/white)
         "TagAgeDarkText" to "TagAgeDarkBg",
         "TagAgeLabelText" to "TagAgeLabelDarkBg",
-        // Delivery boxes, dark
-        "DeliveryHospitalDarkText" to "DeliveryHospitalDarkBg",
-        "DeliveryFeeDarkText" to "DeliveryFeeDarkBg",
-        "DeliveryPlanDarkText" to "DeliveryPlanDarkBg",
-        "DeliveryPostpartumDarkText" to "DeliveryPostpartumDarkBg",
+        "FieldDeliveryDarkLabel" to "FieldDeliveryDarkBg",
     )
 
     @Test
-    fun ageBadge_andDeliveryTone_pairs_meetWcagAa_4_5() {
+    fun ageBadge_andDeliveryFamily_pairs_meetWcagAa_4_5() {
         val tokens = parseColorTokens()
         for ((textToken, bgToken) in expectedPairs()) {
             val t = tokens[textToken]

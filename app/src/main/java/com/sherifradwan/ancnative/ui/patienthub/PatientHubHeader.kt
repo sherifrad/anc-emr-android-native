@@ -55,6 +55,10 @@ import com.sherifradwan.ancnative.ui.patienthub.components.clinicalAttentionLeve
 import com.sherifradwan.ancnative.ui.patienthub.components.deliveredHeadline
 import com.sherifradwan.ancnative.ui.patienthub.components.parseAttentionEntries
 import com.sherifradwan.ancnative.ui.patienthub.components.sortedForDisplay
+import com.sherifradwan.ancnative.ui.patienthub.components.levelWord
+import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordType
+import androidx.compose.ui.graphics.Color
 import com.sherifradwan.ancnative.ui.ObstetricParityBadge
 import com.sherifradwan.ancnative.ui.TagHighRiskBg
 import com.sherifradwan.ancnative.ui.TagHighRiskDarkBg
@@ -506,28 +510,17 @@ fun CompactClinicalAttentionStrip(
     val sorted = remember(entries) { sortedForDisplay(entries) }
     val firstEntry = sorted.firstOrNull()
 
-    val bpText = if (severeBp != null) {
+    val itemLevel = if (severeBp != null) ClinicalAttentionLevel.CRITICAL else (firstEntry?.level ?: ClinicalAttentionLevel.NOTE)
+    val shownText = if (severeBp != null) {
         stringResource(R.string.bp_attention_severe, severeBp.bloodPressure, severeBp.date)
     } else {
-        null
+        firstEntry?.text.orEmpty()
     }
-    val firstEntryText = if (firstEntry != null) {
-        val levelLabel = when (firstEntry.level) {
-            ClinicalAttentionLevel.CRITICAL -> stringResource(R.string.attention_level_critical)
-            ClinicalAttentionLevel.ALERT -> stringResource(R.string.attention_level_alert)
-            ClinicalAttentionLevel.NOTE -> stringResource(R.string.attention_level_note)
-        }
-        "$levelLabel: ${firstEntry.text}"
-    } else {
-        null
-    }
-
-    val baseText = bpText ?: firstEntryText.orEmpty()
     val remainingCount = if (severeBp != null) entries.size else (entries.size - 1).coerceAtLeast(0)
 
     Surface(
         onClick = onOpenDialog,
-        shape = RoundedCornerShape(8.dp),
+        shape = RecordShapes.Small,
         color = colors.container,
         border = BorderStroke(colors.borderWidth, colors.border),
         modifier = modifier
@@ -537,37 +530,42 @@ fun CompactClinicalAttentionStrip(
             .testTag("clinicalAttentionBanner"),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            modifier = Modifier.padding(start = 12.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Icon(
-                imageVector = if (level == ClinicalAttentionLevel.NOTE) Icons.Default.Info else Icons.Default.Warning,
-                contentDescription = null,
-                tint = colors.accent,
-                modifier = Modifier.size(16.dp),
-            )
-            Text(
-                text = baseText,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = colors.content,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-            if (remainingCount > 0) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = stringResource(R.string.attention_remaining_count, remainingCount),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
+                    text = levelWord(itemLevel),
+                    style = RecordType.FieldLabel.copy(fontWeight = FontWeight.Bold),
                     color = colors.accent,
                 )
+                Text(
+                    text = shownText,
+                    style = RecordType.Secondary,
+                    color = colors.content,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            if (remainingCount > 0) {
+                Surface(
+                    shape = RecordShapes.Small,
+                    color = Color.Transparent,
+                    border = BorderStroke(1.dp, colors.accent),
+                ) {
+                    Text(
+                        text = stringResource(R.string.attention_remaining_count, remainingCount),
+                        style = RecordType.Tag,
+                        color = colors.accent,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
+                    )
+                }
             }
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
-                tint = colors.content.copy(alpha = 0.7f),
+                tint = colors.content,
                 modifier = Modifier.size(18.dp),
             )
         }
