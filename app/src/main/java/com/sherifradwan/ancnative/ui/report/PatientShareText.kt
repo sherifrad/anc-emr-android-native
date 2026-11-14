@@ -45,7 +45,7 @@ internal fun patientShareText(patient: DemoPatient, asOf: LocalDate = LocalDate.
     datingDiscordanceLine(patient.dating, summary)?.let { sb.appendLine(it) }
     sb.appendLine()
 
-    val visits = patient.visits.sortedByDescending { it.date }
+    val visits = patient.visits.sortedByDescending { reportSortKey(it.date) }
     sb.appendLine("VISITS (${visits.size})")
     if (visits.isEmpty()) {
         sb.appendLine("No visits recorded.")
@@ -60,7 +60,7 @@ internal fun patientShareText(patient: DemoPatient, asOf: LocalDate = LocalDate.
     }
     sb.appendLine()
 
-    val scans = patient.ultrasoundScans.sortedByDescending { it.date }
+    val scans = patient.ultrasoundScans.sortedByDescending { reportSortKey(it.date) }
     sb.appendLine("ULTRASOUND SCANS (${scans.size})")
     if (scans.isEmpty()) {
         sb.appendLine("No scans recorded.")
@@ -79,7 +79,7 @@ internal fun patientShareText(patient: DemoPatient, asOf: LocalDate = LocalDate.
     }
     sb.appendLine()
 
-    val labs = patient.labInvestigations.sortedByDescending { it.date }
+    val labs = patient.labInvestigations.sortedByDescending { reportSortKey(it.date) }
     sb.appendLine("LABORATORY RESULTS (${labs.size})")
     if (labs.isEmpty()) {
         sb.appendLine("No laboratory results recorded.")

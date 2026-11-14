@@ -11,6 +11,7 @@ import com.sherifradwan.ancnative.model.formatDmy
 import com.sherifradwan.ancnative.model.medicationInstructions
 import com.sherifradwan.ancnative.model.medicationStatusLabel
 import com.sherifradwan.ancnative.model.parseDeliveryNotes
+import com.sherifradwan.ancnative.model.parseIsoDateOrNull
 import com.sherifradwan.ancnative.ui.PatientRiskTier
 import com.sherifradwan.ancnative.ui.parseRiskTier
 import java.time.LocalDate
@@ -33,9 +34,12 @@ internal enum class ReportRisk(val label: String) {
 
 internal data class ReportRow(val label: String, val value: String)
 
+internal fun reportSortKey(date: String?): java.time.LocalDate =
+    parseIsoDateOrNull(date) ?: LocalDate.MAX
+
 /** Newest kept oldest first; hidden counts the older rows left out. */
 private fun <T> keepNewest(rows: List<T>, limit: Int, dateOf: (T) -> String?): Limited<T> {
-    val ordered = rows.sortedBy { dateOf(it) ?: "" }
+    val ordered = rows.sortedBy { reportSortKey(dateOf(it)) }
     if (ordered.size <= limit) return Limited(ordered, 0)
     return Limited(ordered.takeLast(limit), ordered.size - limit)
 }
@@ -47,7 +51,7 @@ internal fun reportScans(patient: DemoPatient, limit: Int): Limited<DemoUltrasou
     keepNewest(patient.ultrasoundScans, limit) { it.date }
 
 internal fun reportLabs(patient: DemoPatient, limit: Int): Limited<DemoLabInvestigation> {
-    val ordered = patient.labInvestigations.sortedByDescending { it.date ?: "" }
+    val ordered = patient.labInvestigations.sortedByDescending { reportSortKey(it.date) }
     if (ordered.size <= limit) return Limited(ordered, 0)
     return Limited(ordered.take(limit), ordered.size - limit)
 }
@@ -57,8 +61,8 @@ internal fun reportMedications(patient: DemoPatient): ReportMedications {
         medicationStatusLabel(it.status, it.isNonCompliant) == MEDICATION_LABEL_ACTIVE
     }
     return ReportMedications(
-        current = current.sortedByDescending { it.startDate ?: "" },
-        stopped = stopped.sortedByDescending { it.startDate ?: "" },
+        current = current.sortedByDescending { reportSortKey(it.startDate) },
+        stopped = stopped.sortedByDescending { reportSortKey(it.startDate) },
     )
 }
 
@@ -147,14 +151,9 @@ internal fun medicationDates(m: DemoMedicationRecord): String {
 
 internal fun labResult(lab: DemoLabInvestigation): String {
     val result = lab.result?.trim()
+    if (result.isNullOrBlank()) return NOT_RECORDED
     val unit = lab.unit?.trim()
-    return buildString {
-        append(result.orEmpty())
-        if (!unit.isNullOrBlank()) {
-            if (isNotEmpty()) append(" ")
-            append(unit)
-        }
-    }
+    return if (!unit.isNullOrBlank()) "$result $unit" else result
 }
 
 internal fun labExtra(lab: DemoLabInvestigation): String {

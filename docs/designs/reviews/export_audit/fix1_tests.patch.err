@@ -1,0 +1,9 @@
+[0m
+> plan · glm-5.3-flash-free
+[0m✱ [0mGrep "fun reportMedications|fun reportVisits|fun reportScans|fun reportLabs|fun labResult|data class" [90min app/src/main/java/com/sherifradwan/ancnative/ui/report/ReportSections.kt · 8 matches[0m
+[0m✱ [0mGrep "reportMedications|labResult|medication\(" [90min app/src/test/java/com/sherifradwan/ancnative/ui/report/ReportSectionsTest.kt · 16 matches[0m
+> plan · glm-5.3-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/report/ReportSections.kt [90m[limit=60, offset=18][0m
+[0m→ [0mRead app/src/test/java/com/sherifradwan/ancnative/ui/report/ReportSectionsTest.kt [90m[limit=40, offset=118][0m
+[0m→ [0mRead app/src/test/java/com/sherifradwan/ancnative/ui/report/ReportSectionsTest.kt [90m[limit=102, offset=310][0m
+> plan · glm-5.3-flash-free

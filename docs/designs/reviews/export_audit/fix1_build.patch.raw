@@ -1,0 +1,132 @@
+```text
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/report/ReportSections.kt
+<<<<<<< SEARCH
+import com.sherifradwan.ancnative.model.deliveryOutcomeLine
+import com.sherifradwan.ancnative.model.formatDmy
+import com.sherifradwan.ancnative.model.medicationInstructions
+import com.sherifradwan.ancnative.model.medicationStatusLabel
+import com.sherifradwan.ancnative.model.parseDeliveryNotes
+=======
+import com.sherifradwan.ancnative.model.deliveryOutcomeLine
+import com.sherifradwan.ancnative.model.formatDmy
+import com.sherifradwan.ancnative.model.medicationInstructions
+import com.sherifradwan.ancnative.model.medicationStatusLabel
+import com.sherifradwan.ancnative.model.parseDeliveryNotes
+import com.sherifradwan.ancnative.model.parseIsoDateOrNull
+>>>>>>> REPLACE
+
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/report/ReportSections.kt
+<<<<<<< SEARCH
+internal data class ReportRow(val label: String, val value: String)
+
+/** Newest kept oldest first; hidden counts the older rows left out. */
+private fun <T> keepNewest(rows: List<T>, limit: Int, dateOf: (T) -> String?): Limited<T> {
+    val ordered = rows.sortedBy { dateOf(it) ?: "" }
+    if (ordered.size <= limit) return Limited(ordered, 0)
+    return Limited(ordered.takeLast(limit), ordered.size - limit)
+}
+
+internal fun reportVisits(patient: DemoPatient, limit: Int): Limited<DemoVisit> =
+    keepNewest(patient.visits, limit) { it.date }
+
+internal fun reportScans(patient: DemoPatient, limit: Int): Limited<DemoUltrasoundScan> =
+    keepNewest(patient.ultrasoundScans, limit) { it.date }
+
+internal fun reportLabs(patient: DemoPatient, limit: Int): Limited<DemoLabInvestigation> {
+    val ordered = patient.labInvestigations.sortedByDescending { it.date ?: "" }
+    if (ordered.size <= limit) return Limited(ordered, 0)
+    return Limited(ordered.take(limit), ordered.size - limit)
+}
+
+internal fun reportMedications(patient: DemoPatient): ReportMedications {
+    val (current, stopped) = patient.medications.partition {
+        medicationStatusLabel(it.status, it.isNonCompliant) == MEDICATION_LABEL_ACTIVE
+    }
+    return ReportMedications(
+        current = current.sortedByDescending { it.startDate ?: "" },
+        stopped = stopped.sortedByDescending { it.startDate ?: "" },
+    )
+}
+=======
+internal data class ReportRow(val label: String, val value: String)
+
+internal fun reportSortKey(date: String?): java.time.LocalDate =
+    parseIsoDateOrNull(date) ?: LocalDate.MAX
+
+/** Newest kept oldest first; hidden counts the older rows left out. */
+private fun <T> keepNewest(rows: List<T>, limit: Int, dateOf: (T) -> String?): Limited<T> {
+    val ordered = rows.sortedBy { reportSortKey(dateOf(it)) }
+    if (ordered.size <= limit) return Limited(ordered, 0)
+    return Limited(ordered.takeLast(limit), ordered.size - limit)
+}
+
+internal fun reportVisits(patient: DemoPatient, limit: Int): Limited<DemoVisit> =
+    keepNewest(patient.visits, limit) { it.date }
+
+internal fun reportScans(patient: DemoPatient, limit: Int): Limited<DemoUltrasoundScan> =
+    keepNewest(patient.ultrasoundScans, limit) { it.date }
+
+internal fun reportLabs(patient: DemoPatient, limit: Int): Limited<DemoLabInvestigation> {
+    val ordered = patient.labInvestigations.sortedByDescending { reportSortKey(it.date) }
+    if (ordered.size <= limit) return Limited(ordered, 0)
+    return Limited(ordered.take(limit), ordered.size - limit)
+}
+
+internal fun reportMedications(patient: DemoPatient): ReportMedications {
+    val (current, stopped) = patient.medications.partition {
+        medicationStatusLabel(it.status, it.isNonCompliant) == MEDICATION_LABEL_ACTIVE
+    }
+    return ReportMedications(
+        current = current.sortedByDescending { reportSortKey(it.startDate) },
+        stopped = stopped.sortedByDescending { reportSortKey(it.startDate) },
+    )
+}
+>>>>>>> REPLACE
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/report/ReportSections.kt
+<<<<<<< SEARCH
+internal fun labResult(lab: DemoLabInvestigation): String {
+    val result = lab.result?.trim()
+    val unit = lab.unit?.trim()
+    return buildString {
+        append(result.orEmpty())
+        if (!unit.isNullOrBlank()) {
+            if (isNotEmpty()) append(" ")
+            append(unit)
+        }
+    }
+}
+=======
+internal fun labResult(lab: DemoLabInvestigation): String {
+    val result = lab.result?.trim()
+    if (result.isNullOrBlank()) return NOT_RECORDED
+    val unit = lab.unit?.trim()
+    return if (!unit.isNullOrBlank()) "$result $unit" else result
+}
+>>>>>>> REPLACE
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientShareText.kt
+<<<<<<< SEARCH
+    val visits = patient.visits.sortedByDescending { it.date }
+    sb.appendLine("VISITS (${visits.size})")
+=======
+    val visits = patient.visits.sortedByDescending { reportSortKey(it.date) }
+    sb.appendLine("VISITS (${visits.size})")
+>>>>>>> REPLACE
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientShareText.kt
+<<<<<<< SEARCH
+    val scans = patient.ultrasoundScans.sortedByDescending { it.date }
+    sb.appendLine("ULTRASOUND SCANS (${scans.size})")
+=======
+    val scans = patient.ultrasoundScans.sortedByDescending { reportSortKey(it.date) }
+    sb.appendLine("ULTRASOUND SCANS (${scans.size})")
+>>>>>>> REPLACE
+FILE: app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientShareText.kt
+<<<<<<< SEARCH
+    val labs = patient.labInvestigations.sortedByDescending { it.date }
+    sb.appendLine("LABORATORY RESULTS (${labs.size})")
+=======
+    val labs = patient.labInvestigations.sortedByDescending { reportSortKey(it.date) }
+    sb.appendLine("LABORATORY RESULTS (${labs.size})")
+>>>>>>> REPLACE
+```
+[Tokens] upload: 10429 download: 1613 cache_read: 0 cache_write: 0
+

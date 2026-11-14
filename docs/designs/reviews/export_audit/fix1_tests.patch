@@ -1,0 +1,71 @@
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/report/ReportSectionsTest.kt
+<<<<<<< SEARCH
+    @Test
+    fun s16_no_notes_means_no_rows() {
+        assertTrue(deliveryPlanRows(patient()).isEmpty())
+    }
+}
+=======
+    @Test
+    fun s16_no_notes_means_no_rows() {
+        assertTrue(deliveryPlanRows(patient()).isEmpty())
+    }
+
+    @Test
+    fun f1_visits_limit_uses_parsed_date() {
+        val visits = listOf(
+            visit(0).copy(id = "v-iso-jan", date = "2026-01-10"),
+            visit(1).copy(id = "v-not-iso", date = "12/03/2026"),
+            visit(2).copy(id = "v-iso-feb", date = "2026-02-01"),
+        )
+        val result = reportVisits(patient(visits), 2)
+        assertEquals(listOf("v-iso-feb", "v-not-iso"), result.rows.map { it.id })
+        assertEquals(1, result.hidden)
+    }
+
+    @Test
+    fun f1_labs_limit_uses_parsed_date() {
+        val labs = listOf(
+            lab(0).copy(id = "l-iso-jan", date = "2026-01-10"),
+            lab(1).copy(id = "l-blank", date = ""),
+            lab(2).copy(id = "l-iso-feb", date = "2026-02-01"),
+        )
+        val result = reportLabs(patient().copy(labInvestigations = labs), 2)
+        assertEquals(listOf("l-blank", "l-iso-feb"), result.rows.map { it.id })
+        assertEquals(1, result.hidden)
+    }
+
+    @Test
+    fun f1_blank_medication_start_date_sorts_first_in_current_list() {
+        val meds = listOf(
+            medication(id = "m-iso", name = "Iron", status = "Active", startDate = "2026-02-01"),
+            medication(id = "m-blank", name = "Calcium", status = "Active", startDate = ""),
+        )
+        val result = reportMedications(patient().copy(medications = meds))
+        assertEquals(listOf("m-blank", "m-iso"), result.current.map { it.id })
+    }
+
+    @Test
+    fun f1_all_iso_dates_keep_existing_order() {
+        val visits = reportVisits(patient(listOf(visit(2), visit(0), visit(1))), 12)
+        assertEquals(listOf("v-0", "v-1", "v-2"), visits.rows.map { it.id })
+        assertEquals(0, visits.hidden)
+        val labs = reportLabs(patient().copy(labInvestigations = (0 until 3).map { lab(it) }), 5)
+        assertEquals(listOf("l-2", "l-1", "l-0"), labs.rows.map { it.id })
+        assertEquals(0, labs.hidden)
+    }
+
+    @Test
+    fun f4_blank_result_is_not_recorded_even_with_unit() {
+        assertEquals(NOT_RECORDED, labResult(lab(0).copy(result = "", unit = "g/dL")))
+        assertEquals(NOT_RECORDED, labResult(lab(0).copy(result = "   ", unit = "g/dL")))
+    }
+
+    @Test
+    fun f4_result_then_unit_only_when_unit_present() {
+        assertEquals("11.2", labResult(lab(0).copy(result = "11.2", unit = "")))
+        assertEquals("11.2", labResult(lab(0).copy(result = "11.2", unit = null)))
+        assertEquals("11.2 g/dL", labResult(lab(0).copy(result = "11.2", unit = "g/dL")))
+    }
+}
+>>>>>>> REPLACE
