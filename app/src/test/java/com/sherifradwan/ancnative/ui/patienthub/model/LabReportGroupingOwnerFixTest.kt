@@ -258,4 +258,30 @@ class LabReportGroupingOwnerFixTest {
         assertTrue("Expected no composite groups for empty input", partitioned.filter { it.isComposite }.isEmpty())
         assertTrue("Expected no individual items for empty input", partitioned.filter { !it.isComposite }.flatMap { it.items }.isEmpty())
     }
+
+    private fun titlesOf(items: List<DemoLabInvestigation>) =
+        partitionReportIntoCompositeGroups(items).associate { it.title to it.items.map { i -> i.testName } }
+
+    @Test
+    fun hba1cRdwUrineCultureAndCrpAreGroupedByTheirOwnPanel() {
+        val g = titlesOf(
+            listOf(
+                lab("1", "Biochemistry", "Hemoglobin A1c"),
+                lab("2", "Hematology", "Platelets (PLT)"),
+                lab("3", "Hematology", "Red Cell Distribution Width (RDW)"),
+                lab("4", "Urinalysis", "Urine Protein"),
+                lab("5", "Urinalysis", "Urine Culture & Sensitivity"),
+                lab("6", "Biochemistry", "C-Reactive Protein (CRP)"),
+                lab("7", "Hematology", "Leukocyte Count"),
+            ),
+        )
+        val cbc = g["Complete Blood Count (CBC)"].orEmpty()
+        assertTrue("RDW belongs to CBC", "Red Cell Distribution Width (RDW)" in cbc)
+        assertTrue("HbA1c is not CBC", "Hemoglobin A1c" !in cbc)
+        val individual = g["Individual Investigations"].orEmpty()
+        assertTrue("HbA1c individual", "Hemoglobin A1c" in individual)
+        assertTrue("CRP individual", "C-Reactive Protein (CRP)" in individual)
+        assertTrue("Urine culture individual", "Urine Culture & Sensitivity" in individual)
+        assertTrue("Leukocyte count is not urine", "Leukocyte Count" !in g["Complete Urine Analysis"].orEmpty())
+    }
 }

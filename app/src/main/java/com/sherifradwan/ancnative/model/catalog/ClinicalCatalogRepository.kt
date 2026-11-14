@@ -35,7 +35,7 @@ class ClinicalCatalogRepository internal constructor(
         loadCatalogData()
     }
 
-    private fun loadCatalogData() {
+    private fun loadCatalogData() = synchronized(customChoicesLock) {
         val loadedLabs = loadLabItems()
         _labCatalogItems.value = if (loadedLabs.isEmpty()) {
             val defaults = defaultLabCatalogItems()
@@ -43,7 +43,7 @@ class ClinicalCatalogRepository internal constructor(
             defaults
         } else {
             val deduplicated = loadedLabs.associateBy { it.id }.values.toList()
-            if (deduplicated.size != loadedLabs.size) {
+            if (deduplicated != loadedLabs) {
                 saveLabItems(deduplicated)
             }
             deduplicated
@@ -56,7 +56,7 @@ class ClinicalCatalogRepository internal constructor(
             defaults
         } else {
             val deduplicated = loadedGroups.associateBy { it.id }.values.toList()
-            if (deduplicated.size != loadedGroups.size) {
+            if (deduplicated != loadedGroups) {
                 saveLabCategoryGroups(deduplicated)
             }
             deduplicated
@@ -69,7 +69,7 @@ class ClinicalCatalogRepository internal constructor(
             defaults
         } else {
             val deduplicated = loadedMeds.associateBy { it.id }.values.toList()
-            if (deduplicated.size != loadedMeds.size) {
+            if (deduplicated != loadedMeds) {
                 saveMedicationItems(deduplicated)
             }
             deduplicated
@@ -84,8 +84,8 @@ class ClinicalCatalogRepository internal constructor(
     // Lab Catalog Delegate Implementation
     // ==========================================
 
-    override fun addLabCatalogItem(item: LabCatalogItem): Boolean {
-        if (item.testName.isBlank()) return false
+    override fun addLabCatalogItem(item: LabCatalogItem): Boolean = synchronized(customChoicesLock) {
+        if (item.testName.isBlank()) return@synchronized false
         val current = _labCatalogItems.value.toMutableList()
         val existingIndex = current.indexOfFirst { it.testName.equals(item.testName.trim(), ignoreCase = true) }
         val finalItem = item.copy(testName = item.testName.trim(), isCustom = true)
@@ -96,38 +96,38 @@ class ClinicalCatalogRepository internal constructor(
         }
         _labCatalogItems.value = current
         saveLabItems(current)
-        return true
+        true
     }
 
-    override fun updateLabCatalogItem(item: LabCatalogItem): Boolean {
-        val edit = applyLabItemEdit(_labCatalogItems.value, _labCategoryGroups.value, item) ?: return false
+    override fun updateLabCatalogItem(item: LabCatalogItem): Boolean = synchronized(customChoicesLock) {
+        val edit = applyLabItemEdit(_labCatalogItems.value, _labCategoryGroups.value, item) ?: return@synchronized false
         _labCatalogItems.value = edit.items
         _labCategoryGroups.value = edit.groups
         saveLabItems(edit.items)
         saveLabCategoryGroups(edit.groups)
-        return true
+        true
     }
 
-    override fun deleteLabCatalogItem(itemId: String): Boolean {
+    override fun deleteLabCatalogItem(itemId: String): Boolean = synchronized(customChoicesLock) {
         val current = _labCatalogItems.value.toMutableList()
         val removed = current.removeAll { it.id == itemId }
         if (removed) {
             _labCatalogItems.value = current
             saveLabItems(current)
         }
-        return removed
+        removed
     }
 
-    override fun getLabCatalogItem(itemId: String): LabCatalogItem? {
-        return _labCatalogItems.value.firstOrNull { it.id == itemId }
+    override fun getLabCatalogItem(itemId: String): LabCatalogItem? = synchronized(customChoicesLock) {
+        _labCatalogItems.value.firstOrNull { it.id == itemId }
     }
 
-    override fun findLabCatalogItemByName(name: String): LabCatalogItem? {
-        if (name.isBlank()) return null
-        return _labCatalogItems.value.firstOrNull { it.testName.equals(name.trim(), ignoreCase = true) }
+    override fun findLabCatalogItemByName(name: String): LabCatalogItem? = synchronized(customChoicesLock) {
+        if (name.isBlank()) return@synchronized null
+        _labCatalogItems.value.firstOrNull { it.testName.equals(name.trim(), ignoreCase = true) }
     }
 
-    override fun resetLabDefaults() {
+    override fun resetLabDefaults() = synchronized(customChoicesLock) {
         val defaults = defaultLabCatalogItems()
         _labCatalogItems.value = defaults
         saveLabItems(defaults)
@@ -137,8 +137,8 @@ class ClinicalCatalogRepository internal constructor(
     // Lab Category Groups (Panels) Implementation
     // ==========================================
 
-    override fun addLabCategoryGroup(group: LabCategoryGroup): Boolean {
-        if (group.name.isBlank()) return false
+    override fun addLabCategoryGroup(group: LabCategoryGroup): Boolean = synchronized(customChoicesLock) {
+        if (group.name.isBlank()) return@synchronized false
         val current = _labCategoryGroups.value.toMutableList()
         val existingIndex = current.indexOfFirst { it.name.equals(group.name.trim(), ignoreCase = true) }
         val finalGroup = group.copy(name = group.name.trim(), isCustom = true)
@@ -149,31 +149,31 @@ class ClinicalCatalogRepository internal constructor(
         }
         _labCategoryGroups.value = current
         saveLabCategoryGroups(current)
-        return true
+        true
     }
 
-    override fun updateLabCategoryGroup(group: LabCategoryGroup): Boolean {
-        val updated = applyLabCategoryGroupEdit(_labCategoryGroups.value, group) ?: return false
+    override fun updateLabCategoryGroup(group: LabCategoryGroup): Boolean = synchronized(customChoicesLock) {
+        val updated = applyLabCategoryGroupEdit(_labCategoryGroups.value, group) ?: return@synchronized false
         _labCategoryGroups.value = updated
         saveLabCategoryGroups(updated)
-        return true
+        true
     }
 
-    override fun deleteLabCategoryGroup(groupId: String): Boolean {
+    override fun deleteLabCategoryGroup(groupId: String): Boolean = synchronized(customChoicesLock) {
         val current = _labCategoryGroups.value.toMutableList()
         val removed = current.removeAll { it.id == groupId }
         if (removed) {
             _labCategoryGroups.value = current
             saveLabCategoryGroups(current)
         }
-        return removed
+        removed
     }
 
-    override fun getLabCategoryGroup(groupId: String): LabCategoryGroup? {
-        return _labCategoryGroups.value.firstOrNull { it.id == groupId }
+    override fun getLabCategoryGroup(groupId: String): LabCategoryGroup? = synchronized(customChoicesLock) {
+        _labCategoryGroups.value.firstOrNull { it.id == groupId }
     }
 
-    override fun resetLabCategoryGroupDefaults() {
+    override fun resetLabCategoryGroupDefaults() = synchronized(customChoicesLock) {
         val defaults = defaultLabCategoryGroups()
         _labCategoryGroups.value = defaults
         saveLabCategoryGroups(defaults)
@@ -183,8 +183,8 @@ class ClinicalCatalogRepository internal constructor(
     // Medication Catalog Delegate Implementation
     // ==========================================
 
-    override fun addMedicationCatalogItem(item: MedicationCatalogItem): Boolean {
-        if (item.name.isBlank()) return false
+    override fun addMedicationCatalogItem(item: MedicationCatalogItem): Boolean = synchronized(customChoicesLock) {
+        if (item.name.isBlank()) return@synchronized false
         val current = _medicationCatalogItems.value.toMutableList()
         val existingIndex = current.indexOfFirst {
             it.name.equals(item.name.trim(), ignoreCase = true) &&
@@ -198,36 +198,36 @@ class ClinicalCatalogRepository internal constructor(
         }
         _medicationCatalogItems.value = current
         saveMedicationItems(current)
-        return true
+        true
     }
 
-    override fun updateMedicationCatalogItem(item: MedicationCatalogItem): Boolean {
-        val updated = applyMedicationItemEdit(_medicationCatalogItems.value, item) ?: return false
+    override fun updateMedicationCatalogItem(item: MedicationCatalogItem): Boolean = synchronized(customChoicesLock) {
+        val updated = applyMedicationItemEdit(_medicationCatalogItems.value, item) ?: return@synchronized false
         _medicationCatalogItems.value = updated
         saveMedicationItems(updated)
-        return true
+        true
     }
 
-    override fun deleteMedicationCatalogItem(itemId: String): Boolean {
+    override fun deleteMedicationCatalogItem(itemId: String): Boolean = synchronized(customChoicesLock) {
         val current = _medicationCatalogItems.value.toMutableList()
         val removed = current.removeAll { it.id == itemId }
         if (removed) {
             _medicationCatalogItems.value = current
             saveMedicationItems(current)
         }
-        return removed
+        removed
     }
 
-    override fun getMedicationCatalogItem(itemId: String): MedicationCatalogItem? {
-        return _medicationCatalogItems.value.firstOrNull { it.id == itemId }
+    override fun getMedicationCatalogItem(itemId: String): MedicationCatalogItem? = synchronized(customChoicesLock) {
+        _medicationCatalogItems.value.firstOrNull { it.id == itemId }
     }
 
-    override fun findMedicationCatalogItemByName(name: String): MedicationCatalogItem? {
-        if (name.isBlank()) return null
-        return _medicationCatalogItems.value.firstOrNull { it.name.equals(name.trim(), ignoreCase = true) }
+    override fun findMedicationCatalogItemByName(name: String): MedicationCatalogItem? = synchronized(customChoicesLock) {
+        if (name.isBlank()) return@synchronized null
+        _medicationCatalogItems.value.firstOrNull { it.name.equals(name.trim(), ignoreCase = true) }
     }
 
-    override fun resetMedicationDefaults() {
+    override fun resetMedicationDefaults() = synchronized(customChoicesLock) {
         val defaults = defaultMedicationCatalogItems()
         _medicationCatalogItems.value = defaults
         saveMedicationItems(defaults)

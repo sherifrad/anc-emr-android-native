@@ -2,6 +2,8 @@ package com.sherifradwan.ancnative.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -693,7 +695,13 @@ private fun AddLabCategoryGroupDialog(
 ) {
     var groupName by remember(initial) { mutableStateOf(initial?.name ?: "") }
     var groupDescription by remember(initial) { mutableStateOf(initial?.description ?: "") }
-    val selectedTests = remember(initial) { mutableStateOf(initial?.testNames?.toSet() ?: emptySet()) }
+    val selectedTests = remember(initial, availableTests) {
+        mutableStateOf(
+            initial?.testNames.orEmpty().map { raw ->
+                availableTests.firstOrNull { it.testName.trim().equals(raw.trim(), ignoreCase = true) }?.testName ?: raw.trim()
+            }.toSet()
+        )
+    }
     var testSearch by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -720,7 +728,9 @@ private fun AddLabCategoryGroupDialog(
         },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 OutlinedTextField(
@@ -1124,7 +1134,9 @@ private fun AddMedicationDialog(
             initial?.route?.takeIf { it.isNotBlank() } ?: ClinicalVocabulary.medicationRoutes.first()
         )
     }
-    var frequency by remember(initial) { mutableStateOf(initial?.frequency ?: "Once daily") }
+    var frequency by remember(initial) {
+        mutableStateOf(initial?.frequency?.takeIf { it.isNotBlank() } ?: "Once daily")
+    }
     var instructions by remember(initial) { mutableStateOf(initial?.instructions ?: "") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -1137,7 +1149,12 @@ private fun AddMedicationDialog(
             )
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -1190,7 +1207,7 @@ private fun AddMedicationDialog(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    COMMON_MEDICATION_FREQUENCIES.forEach { freq ->
+                    (COMMON_MEDICATION_FREQUENCIES + listOfNotNull(initial?.frequency?.takeIf { it.isNotBlank() })).distinct().forEach { freq ->
                         FilterChip(
                             selected = frequency == freq,
                             onClick = { frequency = freq },

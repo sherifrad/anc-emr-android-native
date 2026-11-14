@@ -121,15 +121,21 @@ fun applyLabItemEdit(
     val nameChanged = oldItem.testName.trim() != trimmedName
     val newGroups = if (nameChanged) {
         groups.map { group ->
-            group.copy(
-                testNames = group.testNames.map { testName ->
-                    if (testName.trim().equals(oldItem.testName.trim(), ignoreCase = true)) {
-                        trimmedName
-                    } else {
-                        testName
-                    }
+            val updatedTestNames = group.testNames.map { testName ->
+                if (testName.trim().equals(oldItem.testName.trim(), ignoreCase = true)) {
+                    trimmedName
+                } else {
+                    testName
                 }
-            )
+            }.distinctBy { it.lowercase() }
+            if (updatedTestNames != group.testNames) {
+                group.copy(
+                    testNames = updatedTestNames,
+                    isCustom = true,
+                )
+            } else {
+                group
+            }
         }
     } else {
         groups
@@ -145,7 +151,7 @@ fun applyLabCategoryGroupEdit(
     val trimmedName = edited.name.trim()
     if (trimmedName.isBlank()) return null
 
-    val cleanedTestNames = edited.testNames.map { it.trim() }.filter { it.isNotBlank() }.distinct()
+    val cleanedTestNames = edited.testNames.map { it.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() }
     if (cleanedTestNames.isEmpty()) return null
 
     val existingIndex = groups.indexOfFirst { it.id == edited.id }
