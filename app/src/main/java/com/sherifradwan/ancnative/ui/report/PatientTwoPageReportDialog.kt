@@ -53,7 +53,7 @@ fun PatientTwoPageReportDialog(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    val htmlContent = remember(patient.id) {
+    val htmlContent = remember(patient, securitySettings) {
         PatientPrintHtmlGenerator.generateHtml(
             context = context,
             patient = patient,
@@ -149,7 +149,7 @@ fun PatientTwoPageReportDialog(
                                 },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.secondary,
-                                    contentColor = Color.White,
+                                    contentColor = MaterialTheme.colorScheme.onSecondary,
                                 ),
                                 contentPadding = androidx.compose.foundation.layout.PaddingValues(
                                     horizontal = 12.dp,
@@ -159,7 +159,7 @@ fun PatientTwoPageReportDialog(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Print,
-                                    contentDescription = "Print PDF",
+                                    contentDescription = null,
                                     modifier = Modifier.size(20.dp),
                                 )
                                 Spacer(Modifier.width(4.dp))
@@ -199,7 +199,14 @@ fun PatientTwoPageReportDialog(
                                     defaultTextEncodingName = "UTF-8"
                                 }
                                 webViewClient = WebViewClient()
+                                tag = htmlContent
                                 loadDataWithBaseURL("file:///android_asset/", htmlContent, "text/html", "UTF-8", null)
+                            }
+                        },
+                        update = { webView ->
+                            if (webView.tag != htmlContent) {
+                                webView.tag = htmlContent
+                                webView.loadDataWithBaseURL("file:///android_asset/", htmlContent, "text/html", "UTF-8", null)
                             }
                         },
                         modifier = Modifier.fillMaxSize().testTag("reportWebView"),

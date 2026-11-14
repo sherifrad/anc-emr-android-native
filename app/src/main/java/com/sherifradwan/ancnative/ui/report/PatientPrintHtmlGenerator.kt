@@ -23,6 +23,7 @@ import com.sherifradwan.ancnative.model.previousDeliverySummary
 import com.sherifradwan.ancnative.security.SecuritySettingsState
 import com.sherifradwan.ancnative.ui.AllergyState
 import com.sherifradwan.ancnative.ui.classifyAllergy
+import com.sherifradwan.ancnative.ui.formatWeightKg
 import java.io.ByteArrayOutputStream
 import java.time.LocalDate
 
@@ -42,17 +43,22 @@ object PatientPrintHtmlGenerator {
         return """<tr class="more-row"><td colspan="$colspan" class="text-center empty-cell">$hidden $what not shown</td></tr>"""
     }
 
+    @Volatile
+    private var cachedLogoBase64: String? = null
+
     private fun getLogoBase64(context: Context?): String {
         if (context == null) return ""
+        cachedLogoBase64?.let { return it }
         return try {
-            val full = BitmapFactory.decodeResource(context.resources, R.drawable.clinic_logo_mark)
-            // The page embeds the logo three times, so it is scaled down once here.
+            val full = BitmapFactory.decodeResource(context.resources, R.drawable.clinic_logo_mark) ?: return ""
             val height = LOGO_PRINT_HEIGHT_PX
             val width = (full.width * height.toFloat() / full.height).toInt().coerceAtLeast(1)
             val bitmap = Bitmap.createScaledBitmap(full, width, height, true)
             val outputStream = ByteArrayOutputStream()
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-            Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
+            val encoded = Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
+            cachedLogoBase64 = encoded
+            encoded
         } catch (_: Exception) {
             ""
         }
@@ -115,9 +121,9 @@ object PatientPrintHtmlGenerator {
                 <tr>
                     <td class="text-center font-bold nowrap-cell">${idx + 1 + visits.hidden}</td>
                     <td class="text-center date-cell">${escapeHtml(reportDate(v.date))}</td>
-                    <td class="text-center font-bold text-teal nowrap-cell">${vGa}</td>
-                    <td class="text-center nowrap-cell font-bold text-navy">${escapeHtml(v.bloodPressure ?: "-")}$bpAlert</td>
-                    <td class="text-center nowrap-cell">${escapeHtml(v.weight?.let { "$it kg" } ?: "-")}</td>
+                    <td class="text-center font-bold text-teal nowrap-cell">${escapeHtml(vGa)}</td>
+                    <td class="text-center nowrap-cell font-bold text-navy">${escapeHtml(v.bloodPressure?.takeUnless(String::isBlank) ?: "-")}$bpAlert</td>
+                    <td class="text-center nowrap-cell">${escapeHtml(formatWeightKg(v.weight) ?: "-")}</td>
                     <td class="text-center notes-cell">${escapeHtml(visitText(v))}</td>
                 </tr>
                 """.trimIndent()
@@ -140,7 +146,7 @@ object PatientPrintHtmlGenerator {
                 """
                 <tr>
                     <td class="text-center date-cell">${escapeHtml(reportDate(s.date))}</td>
-                    <td class="text-center font-bold text-teal nowrap-cell">${scanGestationalAge(s)}</td>
+                    <td class="text-center font-bold text-teal nowrap-cell">${escapeHtml(scanGestationalAge(s))}</td>
                     <td class="text-center">${escapeHtml(s.presentation?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
                     <td class="text-center">${escapeHtml(s.placentalSite?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
                     <td class="text-center">${escapeHtml(s.amnioticFluid?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
@@ -175,7 +181,7 @@ object PatientPrintHtmlGenerator {
                     <td class="text-center date-cell">${escapeHtml(reportDate(l.date))}</td>
                     <td class="text-center font-bold text-navy">${escapeHtml(l.testName)}$extraHtml</td>
                     <td class="text-center">${resultHtml}</td>
-                    <td class="text-center text-muted">${escapeHtml(l.referenceRange ?: "-")}</td>
+                    <td class="text-center text-muted">${escapeHtml(l.referenceRange?.takeUnless(String::isBlank) ?: "-")}</td>
                 </tr>
                 """.trimIndent()
             }.joinToString("\n")
@@ -215,12 +221,13 @@ object PatientPrintHtmlGenerator {
                 </thead>
                 <tbody>
                     ${patient.previousPregnancies.map { pp ->
+                        val outcomeText = pp.outcomeText?.takeUnless(String::isBlank)
                         val outcomeLabel = when (pp.outcome) {
-                            "Stillbirth" -> pp.outcomeText ?: "Stillbirth / IUFD"
-                            "EarlyPregnancyLoss" -> pp.outcomeText ?: "Miscarriage"
-                            "TerminationOfPregnancy" -> pp.outcomeText ?: "Therapeutic Termination"
-                            "LiveBirth" -> pp.outcomeText ?: "Live Birth"
-                            else -> pp.outcomeText ?: pp.outcome ?: "-"
+                            "Stillbirth" -> outcomeText ?: "Stillbirth / IUFD"
+                            "EarlyPregnancyLoss" -> outcomeText ?: "Miscarriage"
+                            "TerminationOfPregnancy" -> outcomeText ?: "Therapeutic Termination"
+                            "LiveBirth" -> outcomeText ?: "Live Birth"
+                            else -> outcomeText ?: pp.outcome?.takeUnless(String::isBlank) ?: "-"
                         }
                         val isLoss = pp.outcome == "TerminationOfPregnancy" ||
                             isStillbirth(pp) ||
@@ -230,10 +237,15 @@ object PatientPrintHtmlGenerator {
                         } else {
                             """<span style="font-weight:600;color:#0f766e;">${escapeHtml(outcomeLabel)}</span>"""
                         }
-                        val methodText = pp.birthMethod ?: pp.deliveryBy ?: pp.lossManagement ?: pp.terminationMethod ?: "-"
+                        val methodText = pp.birthMethod?.takeUnless(String::isBlank)
+                            ?: pp.deliveryBy?.takeUnless(String::isBlank)
+                            ?: pp.lossManagement?.takeUnless(String::isBlank)
+                            ?: pp.terminationMethod?.takeUnless(String::isBlank)
+                            ?: "-"
+                        val dateFormatted = formatDmy(pp.dateText) ?: "-"
                         """
                         <tr>
-                            <td class="text-center date-cell">${escapeHtml(pp.dateText ?: "-")}</td>
+                            <td class="text-center date-cell">${escapeHtml(dateFormatted)}</td>
                             <td class="text-center font-bold">${escapeHtml(listOfNotNull(pp.pregnancyType?.takeUnless(String::isBlank), methodText.takeUnless { it == "-" }).joinToString(" · ").ifEmpty { "-" })}</td>
                             <td class="text-center">${outcomeBadge}</td>
                             <td class="text-center">${escapeHtml(listOfNotNull(pp.placeAndDoctor?.takeUnless(String::isBlank), pp.otherDetails?.takeUnless(String::isBlank)).joinToString(" · ").ifEmpty { "Not recorded" })}</td>
@@ -247,7 +259,7 @@ object PatientPrintHtmlGenerator {
         }
 
         val logoImgTag = if (logoBase64.isNotEmpty()) {
-            """<img src="data:image/png;base64,$logoBase64" alt="Clinic Logo" class="clinic-logo" />"""
+            """<img src="data:image/png;base64,$logoBase64" alt="Clinic Logo" class="clinic-logo" width="46" height="64" />"""
         } else {
             """<div class="logo-fallback">DR</div>"""
         }
@@ -281,7 +293,7 @@ object PatientPrintHtmlGenerator {
             --text-main: #0F172A;
             --text-muted: #475569;
             --danger-bg: #FEE2E2;
-            --danger-text: #DC2626;
+            --danger-text: #B91C1C;
             --success-bg: #DCFCE7;
             --success-text: #166534;
         }
@@ -313,7 +325,6 @@ object PatientPrintHtmlGenerator {
             justify-content: space-between;
         }
 
-        /* Subtle Authentic Watermark */
         .watermark {
             position: absolute;
             top: 50%;
@@ -395,8 +406,8 @@ object PatientPrintHtmlGenerator {
             }
         }
 
-        /* Pixel-Perfect ISO A4 Print / PDF Layout */
         @media print {
+            @page { size: A4; margin: 0; }
             body {
                 background: transparent;
                 margin: 0;
@@ -405,20 +416,21 @@ object PatientPrintHtmlGenerator {
             .page-sheet {
                 margin: 0;
                 width: 210mm;
-                height: 297mm;
                 min-height: 297mm;
-                max-height: 297mm;
                 box-sizing: border-box;
                 box-shadow: none;
                 page-break-after: always;
                 break-after: page;
                 padding: 8mm 12mm 6mm 12mm;
                 border-radius: 0;
-                overflow: hidden;
             }
             .page-sheet:last-child {
                 page-break-after: avoid;
                 break-after: avoid;
+            }
+            tr, .section-box, .patient-card, .attestation-grid {
+                break-inside: avoid;
+                page-break-inside: avoid;
             }
             .patient-card {
                 grid-template-columns: 2.2fr 1.1fr 1.2fr 1.4fr !important;
@@ -464,6 +476,14 @@ object PatientPrintHtmlGenerator {
             object-fit: contain;
         }
 
+        .logo-fallback {
+            color: var(--navy-primary);
+            font-size: 14pt;
+            font-weight: bold;
+            width: 46px;
+            text-align: center;
+        }
+
         .clinic-title-box h1 {
             color: var(--navy-primary);
             font-size: 14.5pt;
@@ -486,7 +506,6 @@ object PatientPrintHtmlGenerator {
             font-weight: 600;
         }
 
-        /* Header Meta: Perfectly uniform alignment */
         .uniform-meta {
             text-align: left;
             direction: ltr;
@@ -529,7 +548,6 @@ object PatientPrintHtmlGenerator {
             color: var(--navy-primary);
         }
 
-        /* Identity Banner: Name, Case ID, Phone on new line, Age only */
         .patient-card {
             background: #F8FAFC;
             border: 1.5px solid var(--border-light);
@@ -698,7 +716,6 @@ object PatientPrintHtmlGenerator {
             color: var(--rose-accent);
         }
 
-        /* History lines with Arabic on right, English/values on left */
         .history-list {
             font-size: 8.5pt;
             display: flex;
@@ -727,7 +744,6 @@ object PatientPrintHtmlGenerator {
             direction: ltr;
         }
 
-        /* Clinical Tables: Perfectly Centered Contents, Zero-Overflow Fixed Layout */
         .clinical-table {
             width: 100%;
             table-layout: fixed;
@@ -782,7 +798,7 @@ object PatientPrintHtmlGenerator {
         .text-teal { color: var(--teal-clinical); }
         .text-muted { color: var(--text-muted); }
         .empty-cell { padding: 12px; color: var(--text-muted); font-style: italic; }
-        .date-cell { font-family: monospace; font-size: 7.8pt; white-space: nowrap; }
+        .date-cell { font-variant-numeric: tabular-nums; font-size: 7.8pt; white-space: nowrap; }
         .nowrap-cell { white-space: nowrap; }
         .clinical-table .more-row td {
             text-align: left !important;
@@ -810,7 +826,6 @@ object PatientPrintHtmlGenerator {
             border-radius: 3px;
         }
 
-        /* Signature block on Page 2 */
         .attestation-grid {
             display: grid;
             grid-template-columns: 1.8fr 1.2fr;
@@ -890,7 +905,6 @@ object PatientPrintHtmlGenerator {
                     <div class="doc-badge">CLINICAL RECORD</div>
                     <div class="meta-row"><span class="k">Patient ID:</span> <span class="v">${escapeHtml(patient.caseId)}</span></div>
                     <div class="meta-row"><span class="k">Print Date:</span> <span class="v">$printDateStr</span></div>
-                    <div class="meta-row"><span class="k">Page:</span> <span class="v">1</span></div>
                 </div>
             </header>
 
@@ -939,7 +953,7 @@ object PatientPrintHtmlGenerator {
                     <div class="ga-highlight">
                         ${when {
                             currentGa != null -> "Gestational age today: $currentGa"
-                            patient.delivered -> escapeHtml(statusLine)
+                            patient.delivered -> escapeHtml(patient.deliveryOutcomeLine())
                             else -> "Gestational age: not recorded"
                         }}
                     </div>
@@ -1008,7 +1022,6 @@ object PatientPrintHtmlGenerator {
 
         <footer class="page-footer">
             <span>Confidential medical record · $clinicName · $doctorOfficialTitle · Tel $CLINIC_PHONE</span>
-            <span>Page 1</span>
         </footer>
     </div>
 
@@ -1025,7 +1038,7 @@ object PatientPrintHtmlGenerator {
                     </div>
                 </div>
                 <div class="header-meta uniform-meta">
-                    <div class="doc-badge" style="background: var(--rose-accent);">Page 2</div>
+                    <div class="doc-badge" style="background: var(--rose-accent);">CONTINUED</div>
                     <div class="meta-row"><span class="k">Patient:</span> <span class="v">${escapeHtml(patient.displayName)}</span></div>
                     <div class="meta-row"><span class="k">Patient ID:</span> <span class="v">${escapeHtml(patient.caseId)}</span></div>
                     <div class="meta-row"><span class="k">Print Date:</span> <span class="v">$printDateStr</span></div>
@@ -1123,26 +1136,16 @@ object PatientPrintHtmlGenerator {
                 <div class="attestation-grid">
                     <div class="plan-box">
                         <div class="history-list">
-                            ${patient.deliveryOutcomeLine()?.let { line -> """<div class="history-row">
-                                <span class="k">Delivery Outcome:</span>
-                                <span class="v text-navy font-bold">${escapeHtml(line)}</span>
-                            </div>""" }.orEmpty()}
-                            ${deliveryPlanRows(patient).joinToString("") { row -> """<div class="history-row">
+                            ${reportDeliveryRows(patient, datingSummary.edd?.let(::formatDmy)).joinToString("\n") { row ->
+                                val vClass = when (row.label) {
+                                    "Delivery Outcome", "Estimated due date" -> "v text-navy font-bold"
+                                    else -> "v"
+                                }
+                                """<div class="history-row">
                                 <span class="k">${escapeHtml(row.label)}:</span>
-                                <span class="v">${escapeHtml(row.value)}</span>
-                            </div>""" }}
-                            ${if (isRhNegative) """<div class="history-row">
-                                <span class="k">Blood bank precautions:</span>
-                                <span class="v font-bold">Anti-D Prophylaxis + Matched Packed RBCs Cross-match</span>
-                            </div>""" else ""}
-                            ${if (!patient.delivered && datingSummary.edd != null) """<div class="history-row">
-                                <span class="k">Estimated due date:</span>
-                                <span class="v text-navy font-bold">${formatDmy(datingSummary.edd)}</span>
-                            </div>""" else ""}
-                            ${if (!patient.delivered && deliveryPlanRows(patient).isEmpty()) """<div class="history-row">
-                                <span class="k">Plan:</span>
-                                <span class="v">Not recorded</span>
-                            </div>""" else ""}
+                                <span class="$vClass">${escapeHtml(row.value)}</span>
+                            </div>"""
+                            }}
                         </div>
                     </div>
 
@@ -1161,7 +1164,6 @@ object PatientPrintHtmlGenerator {
 
         <footer class="page-footer">
             <span>$clinicName · $doctorOfficialTitle · Tel $CLINIC_PHONE</span>
-            <span>Page 2</span>
         </footer>
     </div>
 

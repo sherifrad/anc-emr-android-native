@@ -5,6 +5,7 @@ import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.datingSummaryOf
 import com.sherifradwan.ancnative.model.datingTextRows
 import com.sherifradwan.ancnative.model.datingDiscordanceLine
+import com.sherifradwan.ancnative.model.formatDmy
 import java.time.LocalDate
 
 private fun medicationShareLine(m: DemoMedicationRecord): String {
@@ -71,10 +72,13 @@ internal fun patientShareText(patient: DemoPatient, asOf: LocalDate = LocalDate.
             if (ga != "-") parts.add("GA: $ga")
             if (!scan.presentation.isNullOrBlank()) parts.add("Pres: ${scan.presentation}")
             if (!scan.placentalSite.isNullOrBlank()) parts.add("Placenta: ${scan.placentalSite}")
+            if (!scan.amnioticFluid.isNullOrBlank()) parts.add("Fluid: ${scan.amnioticFluid}")
             val efw = scanWeight(scan)
             if (efw != "-") parts.add("EFW: $efw")
-            scanNotes(scan).let { if (it.isNotBlank()) parts.add(it) }
-            sb.appendLine("• ${reportDate(scan.date)} | ${parts.joinToString(" | ")}")
+            val notes = scanNotes(scan)
+            if (notes != NOT_RECORDED) parts.add(notes)
+            val details = if (parts.isEmpty()) NOT_RECORDED else parts.joinToString(" | ")
+            sb.appendLine("• ${reportDate(scan.date)} | $details")
         }
     }
     sb.appendLine()
@@ -112,10 +116,10 @@ internal fun patientShareText(patient: DemoPatient, asOf: LocalDate = LocalDate.
         sb.appendLine()
     }
 
-    val planRows = deliveryPlanRows(patient)
-    if (planRows.isNotEmpty()) {
+    val deliveryRows = reportDeliveryRows(patient, summary.edd?.let(::formatDmy))
+    if (deliveryRows.isNotEmpty()) {
         sb.appendLine("DELIVERY PLAN")
-        planRows.forEach { row -> sb.appendLine("${row.label}: ${row.value}") }
+        deliveryRows.forEach { row -> sb.appendLine("${row.label}: ${row.value}") }
     }
 
     return sb.toString()

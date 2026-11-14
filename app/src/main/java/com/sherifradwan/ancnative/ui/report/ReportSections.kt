@@ -13,6 +13,7 @@ import com.sherifradwan.ancnative.model.medicationStatusLabel
 import com.sherifradwan.ancnative.model.parseDeliveryNotes
 import com.sherifradwan.ancnative.model.parseIsoDateOrNull
 import com.sherifradwan.ancnative.ui.PatientRiskTier
+import com.sherifradwan.ancnative.ui.isRhNegative
 import com.sherifradwan.ancnative.ui.parseRiskTier
 import java.time.LocalDate
 
@@ -173,5 +174,22 @@ internal fun deliveryPlanRows(patient: DemoPatient): List<ReportRow> {
         sections.plan?.trim()?.takeIf { it.isNotEmpty() }?.let { add(ReportRow("Planned delivery", it)) }
         sections.hospital?.trim()?.takeIf { it.isNotEmpty() }?.let { add(ReportRow("Hospital", it)) }
         sections.postpartum?.trim()?.takeIf { it.isNotEmpty() }?.let { add(ReportRow("Postpartum", it)) }
+    }
+}
+
+internal fun reportDeliveryRows(patient: DemoPatient, eddText: String?): List<ReportRow> = buildList {
+    if (patient.delivered) {
+        patient.deliveryOutcomeLine()?.let { add(ReportRow("Delivery Outcome", it)) }
+    }
+    val planRows = deliveryPlanRows(patient)
+    addAll(planRows)
+    if (isRhNegative(patient.bloodGroupText)) {
+        add(ReportRow("Blood bank precautions", "Anti-D Prophylaxis + Matched Packed RBCs Cross-match"))
+    }
+    if (!patient.delivered && !eddText.isNullOrBlank()) {
+        add(ReportRow("Estimated due date", eddText))
+    }
+    if (!patient.delivered && planRows.isEmpty()) {
+        add(ReportRow("Plan", NOT_RECORDED))
     }
 }
