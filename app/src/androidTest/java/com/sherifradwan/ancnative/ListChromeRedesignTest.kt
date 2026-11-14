@@ -104,7 +104,7 @@ class PatientListChromeRedesignTest {
             assertTrue(chip.getUnclippedBoundsInRoot().height >= 31.9.dp)
         }
 
-        mediumChip.performClick()
+        mediumChip.performScrollTo().performClick()
         compose.waitForIdle()
         mediumChip.assertIsSelected()
         all.assertIsNotSelected()
