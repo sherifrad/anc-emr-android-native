@@ -36,6 +36,7 @@ import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.datingSummaryOf
 import com.sherifradwan.ancnative.model.datingTextRows
 import com.sherifradwan.ancnative.model.previousDeliverySummary
+import com.sherifradwan.ancnative.ui.components.DueDateBox
 import com.sherifradwan.ancnative.ui.AllergyState
 import com.sherifradwan.ancnative.ui.FactRow
 import com.sherifradwan.ancnative.ui.ObstetricParityBadge
@@ -84,7 +85,15 @@ fun DatingSection(
             return@ClinicalGroupSection
         }
         datingTextRows(summary).forEach { row ->
-            FactRow(row.label, row.value, isEmphasized = row.isEdd)
+            if (row.isEdd) {
+                DueDateBox(
+                    label = row.label,
+                    value = row.value,
+                    modifier = Modifier.padding(vertical = 4.dp),
+                )
+            } else {
+                FactRow(row.label, row.value)
+            }
         }
         summary.discordance?.let { advice ->
             val dark = isDarkTheme()
@@ -170,7 +179,6 @@ fun ParityPregnanciesSection(
                 )
             }
         }
-        if (!patient.obstetricNotes.isNullOrBlank()) FactRow(R.string.obstetric_notes, patient.obstetricNotes)
     }
 }
 

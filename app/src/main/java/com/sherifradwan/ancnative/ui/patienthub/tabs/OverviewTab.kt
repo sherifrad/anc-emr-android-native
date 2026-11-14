@@ -10,16 +10,19 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.model.DemoAttachment
 import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.model.severeBpAttention
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.editPatientEvent
 import com.sherifradwan.ancnative.storage.DeletableType
 import com.sherifradwan.ancnative.ui.patienthub.components.AttachmentsSectionCard
+import com.sherifradwan.ancnative.ui.patienthub.components.ClinicalAttentionCard
 import com.sherifradwan.ancnative.ui.patienthub.components.DatingSection
 import com.sherifradwan.ancnative.ui.patienthub.components.DeliveryPlanningCard
 import com.sherifradwan.ancnative.ui.patienthub.components.MedicalHistoriesSection
@@ -43,6 +46,7 @@ fun OverviewTab(
     onAddAttachment: () -> Unit,
     onViewAttachment: (DemoAttachment) -> Unit,
     modifier: Modifier = Modifier,
+    onEditAttention: (() -> Unit)? = null,
 ) {
     fun startPatientEditor() {
         editPatientEvent(patient, UUID.randomUUID().toString(), UUID.randomUUID().toString())?.let(onEvent)
@@ -65,6 +69,13 @@ fun OverviewTab(
             .testTag("overviewTabContent"),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
+        val severeBp = remember(patient.visits) { severeBpAttention(patient.visits) }
+        ClinicalAttentionCard(
+            attention = patient.clinicalAttention,
+            severeBp = severeBp,
+            onEdit = if (canEdit) onEditAttention else null,
+        )
+
         Surface(
             color = MaterialTheme.colorScheme.surface,
             modifier = Modifier.fillMaxWidth(),

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -31,6 +32,7 @@ import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Unarchive
@@ -38,6 +40,8 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -46,6 +50,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -55,6 +60,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -175,36 +181,50 @@ fun projectDashboardRow(patient: DemoPatient): PatientDashboardRowProjection {
  * still finds them so nobody is lost.
  */
 fun dashboardPatients(visible: List<DemoPatient>, filter: String, searching: Boolean): List<DemoPatient> = when {
-    filter == "delivered" -> visible.filter { it.delivered }
-    searching -> visible
-    else -> visible.filter { !it.delivered }
+    filter == "archived" -> visible.filter { it.status == "archived" }
+    filter == "delivered" -> visible.filter { it.delivered && it.status != "archived" }
+    filter == "all" && searching -> visible
+    else -> visible.filter { !it.delivered && it.status != "archived" }
+}
+
+@Composable
+private fun dashboardSortLabel(sort: DashboardSort): String = when (sort) {
+    DashboardSort.NEWEST_ADDED -> stringResource(R.string.dashboard_sort_newest)
+    DashboardSort.RECENTLY_SEEN -> stringResource(R.string.dashboard_sort_recent)
+    DashboardSort.NAME -> stringResource(R.string.dashboard_sort_name)
+    DashboardSort.DUE_DATE -> stringResource(R.string.dashboard_sort_due)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
     val visibleList = remember(state.patients, state.searchQuery) { state.visiblePatients() }
-    var riskFilter by remember { mutableStateOf("all") } // "all", "high", "medium", "low"
+    var riskFilter by rememberSaveable { mutableStateOf("all") }
+    var currentSort by rememberSaveable { mutableStateOf(DashboardSort.NEWEST_ADDED) }
     var sheetPatient by remember { mutableStateOf<DemoPatient?>(null) }
 
     val searching = state.searchQuery.isNotBlank()
-    val mainList = remember(visibleList, searching) { dashboardPatients(visibleList, "all", searching) }
-    val deliveredList = remember(visibleList) { dashboardPatients(visibleList, "delivered", false) }
-    val filteredList = remember(mainList, deliveredList, riskFilter) {
+    val filteredList = remember(visibleList, riskFilter, searching) {
         when (riskFilter) {
-            "delivered" -> deliveredList
-            "high" -> mainList.filter { isHighRisk(it.riskLevel) }
-            "medium" -> mainList.filter { parseRiskTier(it.riskLevel) == PatientRiskTier.MEDIUM }
-            "low" -> mainList.filter { parseRiskTier(it.riskLevel) == PatientRiskTier.LOW }
-            else -> mainList
+            "archived" -> dashboardPatients(visibleList, "archived", searching)
+            "delivered" -> dashboardPatients(visibleList, "delivered", searching)
+            "high" -> dashboardPatients(visibleList, "high", searching).filter { isHighRisk(it.riskLevel) }
+            "medium" -> dashboardPatients(visibleList, "medium", searching).filter { parseRiskTier(it.riskLevel) == PatientRiskTier.MEDIUM }
+            "low" -> dashboardPatients(visibleList, "low", searching).filter { parseRiskTier(it.riskLevel) == PatientRiskTier.LOW }
+            else -> dashboardPatients(visibleList, "all", searching)
         }
     }
+    val sortedList = remember(filteredList, currentSort) {
+        sortDashboardPatients(filteredList, currentSort)
+    }
 
-    val allCount = mainList.size
-    val deliveredCount = deliveredList.size
-    val highRiskCount = remember(mainList) { mainList.count { isHighRisk(it.riskLevel) } }
-    val mediumRiskCount = remember(mainList) { mainList.count { parseRiskTier(it.riskLevel) == PatientRiskTier.MEDIUM } }
-    val lowRiskCount = remember(mainList) { mainList.count { parseRiskTier(it.riskLevel) == PatientRiskTier.LOW } }
+    val archivedCount = remember(visibleList) { visibleList.count { it.status == "archived" } }
+    val deliveredCount = remember(visibleList) { visibleList.count { it.delivered && it.status != "archived" } }
+    val activePatients = remember(visibleList) { visibleList.filter { !it.delivered && it.status != "archived" } }
+    val allCount = activePatients.size
+    val highRiskCount = remember(activePatients) { activePatients.count { isHighRisk(it.riskLevel) } }
+    val mediumRiskCount = remember(activePatients) { activePatients.count { parseRiskTier(it.riskLevel) == PatientRiskTier.MEDIUM } }
+    val lowRiskCount = remember(activePatients) { activePatients.count { parseRiskTier(it.riskLevel) == PatientRiskTier.LOW } }
 
     val activeCount = remember(state.patients) { state.patients.count { it.status != "archived" && !it.delivered } }
 
@@ -375,11 +395,86 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
                         ),
                         modifier = Modifier.testTag("riskFilter-delivered"),
                     )
+                    FilterChip(
+                        selected = riskFilter == "archived",
+                        onClick = { riskFilter = "archived" },
+                        label = { Text("${stringResource(R.string.patients_filter_archived)} ($archivedCount)") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        ),
+                        modifier = Modifier.testTag("riskFilter-archived"),
+                    )
+                }
+            }
+
+            // Sort Control
+            item {
+                var sortMenuExpanded by remember { mutableStateOf(false) }
+                Box {
+                    OutlinedButton(
+                        onClick = { sortMenuExpanded = true },
+                        modifier = Modifier
+                            .minimumTouchTarget()
+                            .heightIn(min = 48.dp)
+                            .testTag("dashboardSortButton"),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.dashboard_sort_format, dashboardSortLabel(currentSort)),
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Icon(
+                            Icons.Default.KeyboardArrowDown,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = sortMenuExpanded,
+                        onDismissRequest = { sortMenuExpanded = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.dashboard_sort_newest)) },
+                            onClick = {
+                                currentSort = DashboardSort.NEWEST_ADDED
+                                sortMenuExpanded = false
+                            },
+                            modifier = Modifier.testTag("dashboardSort-newest"),
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.dashboard_sort_recent)) },
+                            onClick = {
+                                currentSort = DashboardSort.RECENTLY_SEEN
+                                sortMenuExpanded = false
+                            },
+                            modifier = Modifier.testTag("dashboardSort-recent"),
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.dashboard_sort_name)) },
+                            onClick = {
+                                currentSort = DashboardSort.NAME
+                                sortMenuExpanded = false
+                            },
+                            modifier = Modifier.testTag("dashboardSort-name"),
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.dashboard_sort_due)) },
+                            onClick = {
+                                currentSort = DashboardSort.DUE_DATE
+                                sortMenuExpanded = false
+                            },
+                            modifier = Modifier.testTag("dashboardSort-due"),
+                        )
+                    }
                 }
             }
 
             // Patient List Items
-            if (filteredList.isEmpty()) {
+            if (sortedList.isEmpty()) {
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -395,7 +490,7 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
                     }
                 }
             } else {
-                items(filteredList, key = { it.id }) { patient ->
+                items(sortedList, key = { it.id }) { patient ->
                     val projection = remember(patient) { projectDashboardRow(patient) }
                     PatientDirectoryCard(
                         patient = patient,

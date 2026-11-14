@@ -212,6 +212,7 @@ fun PatientHubScreen(
                             onEvent = onEvent,
                             onAddAttachment = { showAddAttachmentDialog = true },
                             onViewAttachment = { viewingAttachment = it },
+                            onEditAttention = if (canModifyData) { { showAttentionDialog = true } } else null,
                         )
                     }
                     PatientHubTab.VISITS -> {

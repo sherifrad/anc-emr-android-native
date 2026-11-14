@@ -5,6 +5,7 @@ import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.storage.BoundedBitmap
 import com.sherifradwan.ancnative.storage.PatientAttachmentVault
 import com.sherifradwan.ancnative.storage.scanPhotoFileName
+import com.sherifradwan.ancnative.ui.components.ZoomableImage
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -167,17 +169,17 @@ fun UltrasoundPhotoViewerDialog(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(280.dp)
+                        .heightIn(min = 280.dp)
                         .clip(RoundedCornerShape(14.dp))
                         .background(MaterialTheme.colorScheme.surfaceContainerLowest)
                         .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (loadedBitmap != null) {
-                        Image(
+                        ZoomableImage(
                             bitmap = loadedBitmap,
                             contentDescription = "Ultrasound Scan Photo ${currentIndex + 1}",
-                            contentScale = ContentScale.Fit,
+                            resetKey = currentIndex,
                             modifier = Modifier.fillMaxSize(),
                         )
                     } else {

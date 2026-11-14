@@ -1,5 +1,6 @@
 package com.sherifradwan.ancnative.ui
 
+import com.sherifradwan.ancnative.ui.components.ZoomableImage
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -181,22 +183,22 @@ fun ClinicalAttachmentViewerDialog(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(380.dp)
+                        .heightIn(min = 380.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(Color.Black)
                         .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (loadedBitmap != null) {
-                        Image(
+                        ZoomableImage(
                             bitmap = loadedBitmap,
                             contentDescription = attachmentDisplayTitle(
                                 attachment.title,
                                 AttachmentCategories.localizedName(attachment.category),
                                 attachment.capturedAt,
                             ),
+                            resetKey = attachment.id,
                             modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Fit,
                         )
                     } else {
                         Column(

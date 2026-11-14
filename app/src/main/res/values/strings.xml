@@ -662,4 +662,19 @@
     <string name="registration_count_error">Enter a number from 0 to %1$d.</string>
     <string name="registration_resume_body">Registration is not finished. Resume at: %1$s.</string>
     <string name="registration_resume_button">Continue registration</string>
+    <string name="patients_filter_archived">Archived</string>
+    <string name="dashboard_sort_format">Sort: %1$s</string>
+    <string name="dashboard_sort_newest">Newest added</string>
+    <string name="dashboard_sort_recent">Recently seen</string>
+    <string name="dashboard_sort_name">Name A to Z</string>
+    <string name="dashboard_sort_due">Due date soonest</string>
+    <string name="zoom_reset">Reset zoom</string>
+    <string name="attention_level_critical">Critical</string>
+    <string name="attention_level_alert">Alert</string>
+    <string name="attention_level_note">Note</string>
+    <string name="attention_remaining_count">+%1$d</string>
+    <string name="add_clinical_attention">Add attention</string>
+    <string name="delete_attention_entry">Delete entry</string>
+    <string name="attention_new_label">What should the next doctor know?</string>
+    <string name="attention_add_button">Add</string>
 </resources>

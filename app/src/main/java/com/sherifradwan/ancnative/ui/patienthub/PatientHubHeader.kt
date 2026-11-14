@@ -27,6 +27,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
@@ -47,7 +48,13 @@ import androidx.compose.runtime.derivedStateOf
 import com.sherifradwan.ancnative.ui.AllergyState
 import com.sherifradwan.ancnative.ui.BloodGroupBadge
 import com.sherifradwan.ancnative.ui.GestationalAgeBadge
+import com.sherifradwan.ancnative.ui.patienthub.components.ClinicalAttentionLevel
+import com.sherifradwan.ancnative.ui.patienthub.components.attentionColors
+import com.sherifradwan.ancnative.ui.patienthub.components.clinicalAttentionColors
+import com.sherifradwan.ancnative.ui.patienthub.components.clinicalAttentionLevel
 import com.sherifradwan.ancnative.ui.patienthub.components.deliveredHeadline
+import com.sherifradwan.ancnative.ui.patienthub.components.parseAttentionEntries
+import com.sherifradwan.ancnative.ui.patienthub.components.sortedForDisplay
 import com.sherifradwan.ancnative.ui.ObstetricParityBadge
 import com.sherifradwan.ancnative.ui.TagHighRiskBg
 import com.sherifradwan.ancnative.ui.TagHighRiskDarkBg
@@ -147,7 +154,8 @@ fun PatientHubHeader(
     val ga = patient.dating?.calculateGestationalAge()
     val gaDiscordant = remember(patient) { datingSummaryOf(patient, LocalDate.now()).discordance != null }
     val isRhNeg = isRhNegative(patient.bloodGroupText)
-    val hasAttention = !patient.clinicalAttention.isNullOrBlank() || severeBp != null
+    val attentionEntries = remember(patient.clinicalAttention) { parseAttentionEntries(patient.clinicalAttention) }
+    val hasAttention = attentionEntries.isNotEmpty() || severeBp != null
 
     Surface(
         color = MaterialTheme.colorScheme.surface,
@@ -490,28 +498,36 @@ fun CompactClinicalAttentionStrip(
     onOpenDialog: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isSevere = severeBp != null
-    val containerColor = if (isSevere) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.tertiaryContainer
-    val contentColor = if (isSevere) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onTertiaryContainer
-    val iconTint = if (isSevere) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary
+    val entries = remember(attention) { parseAttentionEntries(attention) }
+    if (entries.isEmpty() && severeBp == null) return
 
-    val alertText = when {
-        severeBp != null -> "Severe BP: ${severeBp.bloodPressure} (${severeBp.date})" +
-            if (!attention.isNullOrBlank()) " • $attention" else ""
-        !attention.isNullOrBlank() -> attention
+    val level = clinicalAttentionLevel(attention, severeBp)
+    val colors = attentionColors(level)
+    val sorted = remember(entries) { sortedForDisplay(entries) }
+    val firstEntry = sorted.firstOrNull()
+
+    val bpText = if (severeBp != null) "Severe BP: ${severeBp.bloodPressure} (${severeBp.date})" else null
+    val firstEntryText = firstEntry?.text
+
+    val baseText = when {
+        bpText != null && firstEntryText != null -> "$bpText • $firstEntryText"
+        bpText != null -> bpText
+        firstEntryText != null -> firstEntryText
         else -> ""
     }
+
+    val remainingCount = if (firstEntry != null) (entries.size - 1).coerceAtLeast(0) else 0
 
     Surface(
         onClick = onOpenDialog,
         shape = RoundedCornerShape(8.dp),
-        color = containerColor.copy(alpha = 0.85f),
-        border = BorderStroke(1.dp, contentColor.copy(alpha = 0.25f)),
+        color = colors.container,
+        border = BorderStroke(colors.borderWidth, colors.border),
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 36.dp)
-            .testTag("clinicalAttentionBanner")
-            .testTag("clinicalAttentionStrip"),
+            .heightIn(min = 48.dp)
+            .testTag("clinicalAttentionStrip")
+            .testTag("clinicalAttentionBanner"),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
@@ -519,24 +535,32 @@ fun CompactClinicalAttentionStrip(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Icon(
-                imageVector = Icons.Default.Warning,
-                contentDescription = "Alert Icon",
-                tint = iconTint,
+                imageVector = if (level == ClinicalAttentionLevel.NOTE) Icons.Default.Info else Icons.Default.Warning,
+                contentDescription = null,
+                tint = colors.accent,
                 modifier = Modifier.size(16.dp),
             )
             Text(
-                text = alertText,
+                text = baseText,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = contentColor,
-                maxLines = 3,
+                color = colors.content,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
+            if (remainingCount > 0) {
+                Text(
+                    text = stringResource(R.string.attention_remaining_count, remainingCount),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.accent,
+                )
+            }
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = "View clinical alert details",
-                tint = contentColor.copy(alpha = 0.7f),
+                contentDescription = null,
+                tint = colors.content.copy(alpha = 0.7f),
                 modifier = Modifier.size(18.dp),
             )
         }
