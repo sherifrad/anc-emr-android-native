@@ -1,0 +1,640 @@
+## OverviewRedesignTest.kt
+```kotlin
+package com.sherifradwan.ancnative
+
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isHeading
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.sherifradwan.ancnative.model.DemoFixtures
+import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.ui.AncTheme
+import com.sherifradwan.ancnative.ui.patienthub.tabs.OverviewTab
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@RunWith(AndroidJUnit4::class)
+class OverviewRedesignTest {
+    @get:Rule
+    val compose = createAndroidComposeRule<MainActivity>()
+
+    /** Seeded multiparous patient: the first fixture with at least two previous pregnancies. */
+    private val multiparous: DemoPatient =
+        DemoFixtures.patients.first { it.previousPregnancies.size >= 2 }
+
+    private fun show(
+        patient: DemoPatient,
+        canEdit: Boolean = true,
+        widthDp: Int? = null,
+        fontScale: Float? = null,
+        layoutDirection: LayoutDirection = LayoutDirection.Ltr,
+    ) {
+        compose.activity.runOnUiThread {
+            compose.activity.setContent {
+                AncTheme {
+                    val base = LocalDensity.current
+                    val density = if (fontScale != null) Density(base.density, fontScale) else base
+                    CompositionLocalProvider(
+                        LocalDensity provides density,
+                        LocalLayoutDirection provides layoutDirection,
+                    ) {
+                        val sized = if (widthDp != null) Modifier.width(widthDp.dp) else Modifier
+                        Box(sized) {
+                            OverviewTab(
+                                patient = patient,
+                                canEdit = canEdit,
+                                onEvent = {},
+                                onAddAttachment = {},
+                                onViewAttachment = {},
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        compose.waitForIdle()
+    }
+
+    private fun inTagged(tag: String) = hasAnyAncestor(hasTestTag(tag))
+
+    private fun assertNotEllipsized(text: String, ancestorTag: String) {
+        val nodes = compose.onAllNodes(
+            hasText(text, substring = true) and inTagged(ancestorTag),
+            useUnmergedTree = true,
+        ).fetchSemanticsNodes()
+        assertTrue("text '$text' not found in $ancestorTag", nodes.isNotEmpty())
+        nodes.forEach { node ->
+            val layoutResults = mutableListOf<TextLayoutResult>()
+            node.config.getOrNull(SemanticsActions.GetTextLayoutResult)
+                ?.action
+                ?.invoke(layoutResults)
+            val ellipsized = layoutResults.any { result ->
+                (0 until result.lineCount).any { line -> result.isLineEllipsized(line) }
+            }
+            assertFalse("text '$text' is ellipsized in $ancestorTag", ellipsized)
+        }
+    }
+
+    @Test
+    fun everyOverviewSectionCardHasHeadingTitleInItsOwnNonOverlappingCard() {
+        show(multiparous)
+        val cardTags = listOf(
+            "datingCard",
+            "obstetricHistoryCard",
+            "obstetricParityCard",
+            "medicalHistoriesCard",
+            "deliveryPlanningCard",
+            "attachmentsSectionCard",
+        )
+        cardTags.forEach { tag ->
+            compose.onNodeWithTag(tag, useUnmergedTree = true).assertExists()
+            compose.onNode(
+                isHeading() and inTagged(tag),
+                useUnmergedTree = true,
+            ).assertExists("missing heading in $tag")
+        }
+
+        val bounds = cardTags.map { tag ->
+            tag to compose.onNodeWithTag(tag, useUnmergedTree = true).getUnclippedBoundsInRoot()
+        }
+        for (i in bounds.indices) {
+            for (j in i + 1 until bounds.size) {
+                val (tagA, a) = bounds[i]
+                val (tagB, b) = bounds[j]
+                val separatedVertically = a.bottom <= b.top || b.bottom <= a.top
+                assertTrue(
+                    "cards $tagA and $tagB must not overlap (a=$a, b=$b)",
+                    separatedVertically,
+                )
+            }
+        }
+    }
+
+    @Test
+    fun gpaAppearsOnceInsideObstetricHistoryCard() {
+        show(multiparous)
+        compose.onAllNodes(
+            hasText("Gravida", substring = false) and inTagged("overviewTabContent"),
+            useUnmergedTree = true,
+        ).assertCountEquals(1)
+        compose.onNode(
+            hasText("Gravida", substring = false) and inTagged("obstetricHistoryCard"),
+            useUnmergedTree = true,
+        ).assertExists()
+    }
+
+    @Test
+    fun editAndAddActionsAndPregnancyRowsMeetMinimumTouchTargets() {
+        show(multiparous)
+
+        listOf("editDating", "addPregnancyButton", "editMedicalHistoryButton").forEach { tag ->
+            val bounds = compose.onNodeWithTag(tag, useUnmergedTree = true).getUnclippedBoundsInRoot()
+            assertTrue("$tag width < 48dp (${bounds.width})", bounds.width >= 48.dp)
+            assertTrue("$tag height < 48dp (${bounds.height})", bounds.height >= 48.dp)
+        }
+
+        multiparous.previousPregnancies.forEach { pregnancy ->
+            val rowTag = "pregnancy-${pregnancy.id}"
+            val bounds = compose.onNodeWithTag(rowTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
+            assertTrue("$rowTag height < 56dp (${bounds.height})", bounds.height >= 56.dp)
+        }
+    }
+
+    @Test
+    fun blankMedicalHistoryHiddenNotRecordedAllergyLabeledAndRecordedShowsBanner() {
+        val base = multiparous.copy(
+            medicalHistory = "",
+            surgicalHistory = "   ",
+            familyHistory = null,
+        )
+
+        show(base.copy(allergyHistory = "  "))
+        compose.onNodeWithTag("medicalHistoriesCard", useUnmergedTree = true).assertExists()
+        compose.onAllNodes(
+            hasText("Medical history", substring = true) and inTagged("medicalHistoriesCard"),
+            useUnmergedTree = true,
+        ).assertCountEquals(0)
+        compose.onAllNodes(
+            hasText("Surgical history", substring = true) and inTagged("medicalHistoriesCard"),
+            useUnmergedTree = true,
+        ).assertCountEquals(0)
+        compose.onAllNodes(
+            hasText("Family history", substring = true) and inTagged("medicalHistoriesCard"),
+            useUnmergedTree = true,
+        ).assertCountEquals(0)
+        compose.onNode(
+            hasText("Allergy history", substring = true) and inTagged("medicalHistoriesCard"),
+            useUnmergedTree = true,
+        ).assertExists()
+        compose.onNode(
+            hasText("Not recorded", substring = true) and inTagged("medicalHistoriesCard"),
+            useUnmergedTree = true,
+        ).assertExists().assertIsDisplayed()
+        compose.onAllNodes(
+            hasText("Allergy:", substring = true) and inTagged("medicalHistoriesCard"),
+            useUnmergedTree = true,
+        ).assertCountEquals(0)
+
+        show(base.copy(allergyHistory = "Penicillin"))
+        compose.onNode(
+            hasText("Allergy: Penicillin", substring = true) and inTagged("medicalHistoriesCard"),
+            useUnmergedTree = true,
+        ).assertExists().assertIsDisplayed()
+    }
+
+    @Test
+    fun narrowViewportLargeFontTitlesNotEllipsized() {
+        show(multiparous, widthDp = 360, fontScale = 1.3f)
+        val titleChecks = listOf(
+            "datingCard" to "Pregnancy dating",
+            "obstetricHistoryCard" to "Obstetric history",
+            "obstetricParityCard" to "Previous pregnancies",
+            "medicalHistoriesCard" to "Medical histories",
+        )
+        titleChecks.forEach { (tag, title) ->
+            compose.onNodeWithTag(tag, useUnmergedTree = true).assertExists()
+            compose.onNode(
+                isHeading() and hasText(title, substring = false) and inTagged(tag),
+                useUnmergedTree = true,
+            ).assertExists()
+            assertNotEllipsized(title, tag)
+        }
+    }
+
+    @Test
+    fun rtlLayoutPlacesTitleRightOfAction() {
+        show(multiparous, layoutDirection = LayoutDirection.Rtl)
+        val checks = listOf(
+            Triple("datingCard", "Pregnancy dating", "editDating"),
+            Triple("obstetricParityCard", "Previous pregnancies", "addPregnancyButton"),
+            Triple("medicalHistoriesCard", "Medical histories", "editMedicalHistoryButton"),
+        )
+        checks.forEach { (cardTag, title, actionTag) ->
+            val titleBounds = compose.onNode(
+                isHeading() and hasText(title, substring = false) and inTagged(cardTag),
+                useUnmergedTree = true,
+            ).getUnclippedBoundsInRoot()
+            val actionBounds = compose.onNodeWithTag(actionTag, useUnmergedTree = true)
+                .getUnclippedBoundsInRoot()
+            assertTrue(
+                "RTL: title '$title' should be right of action '$actionTag' (title=$titleBounds, action=$actionBounds)",
+                titleBounds.left >= actionBounds.right,
+            )
+        }
+    }
+}
+```
+
+## PatientCardRedesignTest.kt
+```kotlin
+package com.sherifradwan.ancnative
+
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getBoundsInRoot
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodes
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.sherifradwan.ancnative.model.DemoFixtures
+import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.model.DemoPatientDating
+import com.sherifradwan.ancnative.model.DemoVisit
+import com.sherifradwan.ancnative.ui.AncTheme
+import com.sherifradwan.ancnative.ui.patientdirectory.PatientDirectoryCard
+import com.sherifradwan.ancnative.ui.projectDashboardRow
+import java.time.LocalDate
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@RunWith(AndroidJUnit4::class)
+class PatientCardRedesignTest {
+    @get:Rule
+    val compose = createAndroidComposeRule<MainActivity>()
+
+    private val today: LocalDate = LocalDate.now()
+    private val base: DemoPatient = DemoFixtures.patients.first()
+
+    private fun show(
+        widthDp: Int? = null,
+        fontScale: Float? = null,
+        layoutDirection: LayoutDirection? = null,
+        content: @Composable () -> Unit,
+    ) {
+        compose.activity.runOnUiThread {
+            compose.activity.setContent {
+                AncTheme {
+                    val density = LocalDensity.current
+                    val scaled = if (fontScale != null) Density(density.density, fontScale) else density
+                    val direction = layoutDirection ?: LocalLayoutDirection.current
+                    CompositionLocalProvider(
+                        LocalDensity provides scaled,
+                        LocalLayoutDirection provides direction,
+                    ) {
+                        val sized = if (widthDp != null) Modifier.width(widthDp.dp) else Modifier
+                        Box(sized) { content() }
+                    }
+                }
+            }
+        }
+        compose.waitForIdle()
+    }
+
+    private fun showListCard(
+        p: DemoPatient,
+        widthDp: Int? = null,
+        fontScale: Float? = null,
+        layoutDirection: LayoutDirection? = null,
+    ) = show(widthDp, fontScale, layoutDirection) {
+        Box(Modifier.padding(horizontal = 8.dp)) {
+            PatientDirectoryCard(
+                patient = p,
+                row = projectDashboardRow(p),
+                onEvent = {},
+                onOpenMenu = {},
+            )
+        }
+    }
+
+    private fun nonDeliveredPatient(
+        riskLevel: String = "low",
+        latestBp: String? = "110/70",
+        displayName: String = base.displayName,
+        bloodGroupText: String? = "A+",
+    ): DemoPatient {
+        val lmp = today.minusDays(150)
+        return base.copy(
+            displayName = displayName,
+            bloodGroupText = bloodGroupText,
+            riskLevel = riskLevel,
+            delivered = false,
+            deliveryDate = null,
+            status = "active",
+            dating = DemoPatientDating(
+                patientId = base.id,
+                lmpDate = lmp.toString(),
+                ultrasoundEdd = null,
+                agreedEdd = lmp.plusDays(280).toString(),
+                datingMethod = "LMP",
+                notes = null,
+            ),
+            visits = listOf(
+                DemoVisit(
+                    id = "v-bp",
+                    date = today.minusDays(7).toString(),
+                    bloodPressure = latestBp,
+                    weight = "70",
+                    findings = null,
+                    notes = null,
+                ),
+            ),
+        )
+    }
+
+    private fun deliveredPatient(): DemoPatient {
+        val lmp = today.minusDays(320)
+        return base.copy(
+            riskLevel = "low",
+            delivered = true,
+            deliveryDate = today.minusDays(10).toString(),
+            status = "active",
+            dating = DemoPatientDating(
+                patientId = base.id,
+                lmpDate = lmp.toString(),
+                ultrasoundEdd = null,
+                agreedEdd = lmp.plusDays(280).toString(),
+                datingMethod = "LMP",
+                notes = null,
+            ),
+            visits = listOf(
+                DemoVisit(
+                    id = "v-bp-delivered",
+                    date = today.minusDays(5).toString(),
+                    bloodPressure = "110/70",
+                    weight = "70",
+                    findings = null,
+                    notes = null,
+                ),
+            ),
+        )
+    }
+
+    private fun normalPatient() = nonDeliveredPatient()
+
+    private fun moderateRiskPatient() =
+        nonDeliveredPatient(riskLevel = "moderate")
+
+    private fun highRiskPatient() =
+        nonDeliveredPatient(riskLevel = "high")
+
+    private fun incompletePatient(): DemoPatient {
+        val lmp = today.minusDays(150)
+        return base.copy(
+            displayName = base.displayName,
+            bloodGroupText = null,
+            riskLevel = "low",
+            delivered = false,
+            deliveryDate = null,
+            status = "active",
+            gravida = null,
+            parity = null,
+            phone = "",
+            address = null,
+            dating = DemoPatientDating(
+                patientId = base.id,
+                lmpDate = lmp.toString(),
+                ultrasoundEdd = null,
+                agreedEdd = lmp.plusDays(280).toString(),
+                datingMethod = "LMP",
+                notes = null,
+            ),
+            visits = listOf(
+                DemoVisit(
+                    id = "v-bp-incomplete",
+                    date = today.minusDays(7).toString(),
+                    bloodPressure = "110/70",
+                    weight = "70",
+                    findings = null,
+                    notes = null,
+                ),
+            ),
+        )
+    }
+
+    private fun severeBpPatient() =
+        nonDeliveredPatient(latestBp = "160/110")
+
+    private fun incompletePlusHighPatient(): DemoPatient {
+        return incompletePatient().copy(riskLevel = "high")
+    }
+
+    private fun assertCoreTagsPresent(p: DemoPatient) {
+        compose.onNodeWithTag("patient-${p.id}", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("workspace-${p.id}", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("patientMenu-${p.id}", useUnmergedTree = true).assertExists()
+    }
+
+    private fun firstMetricLabelTop(): Float {
+        val ga = compose.onNodeWithText("GA", substring = false, useUnmergedTree = true)
+            .getUnclippedBoundsInRoot().top.value
+        val delivery = runCatching {
+            compose.onNodeWithText("Delivery outcome", substring = false, useUnmergedTree = true)
+                .getUnclippedBoundsInRoot().top.value
+        }.getOrNull()
+        return listOfNotNull(ga, delivery).minOrNull() ?: ga
+    }
+
+    private fun assertTagsInsideNameRowAndAboveFirstMetric(p: DemoPatient, vararg tagTexts: String) {
+        val nameBounds = compose.onNodeWithText(p.displayName, substring = false, useUnmergedTree = true)
+            .getUnclippedBoundsInRoot()
+        val menuBounds = compose.onNodeWithTag("patientMenu-${p.id}", useUnmergedTree = true)
+            .getUnclippedBoundsInRoot()
+        val nameRowTop = minOf(nameBounds.top.value, menuBounds.top.value)
+        val nameRowBottom = maxOf(nameBounds.bottom.value, menuBounds.bottom.value)
+        val metricTop = firstMetricLabelTop()
+
+        tagTexts.forEach { text ->
+            val tagBounds = compose.onNode(hasText(text, substring = false), useUnmergedTree = true)
+                .getUnclippedBoundsInRoot()
+            val centerY = (tagBounds.top.value + tagBounds.bottom.value) / 2f
+            assertTrue(
+                "Tag '$text' center must lie inside the name row",
+                centerY >= nameRowTop && centerY <= nameRowBottom,
+            )
+            assertTrue(
+                "Tag '$text' must be above the first metric label",
+                tagBounds.bottom.value <= metricTop,
+            )
+        }
+    }
+
+    @Test
+    fun normalStateShowsNoTagAndCoreMetrics() {
+        val p = normalPatient()
+        showListCard(p)
+        assertCoreTagsPresent(p)
+
+        compose.onAllNodes(hasText("High risk", substring = false), useUnmergedTree = true)
+            .fetchSemanticsNodes().also { assertEquals(0, it.size) }
+        compose.onAllNodes(hasText("Moderate risk", substring = false), useUnmergedTree = true)
+            .fetchSemanticsNodes().also { assertEquals(0, it.size) }
+        compose.onAllNodes(hasText("Incomplete", substring = false), useUnmergedTree = true)
+            .fetchSemanticsNodes().also { assertEquals(0, it.size) }
+        compose.onAllNodes(hasText("Delivered", substring = false), useUnmergedTree = true)
+            .fetchSemanticsNodes().also { assertEquals(0, it.size) }
+
+        compose.onNodeWithText("GA", substring = false, useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText("Parity", substring = false, useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText("BP", substring = false, useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText("Blood group", substring = false, useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText("Due date", substring = false, useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun moderateRiskStateShowsModerateRiskTagInNameRow() {
+        val p = moderateRiskPatient()
+        showListCard(p)
+        assertCoreTagsPresent(p)
+        compose.onNodeWithText("Moderate risk", substring = false, useUnmergedTree = true).assertIsDisplayed()
+        assertTagsInsideNameRowAndAboveFirstMetric(p, "Moderate risk")
+    }
+
+    @Test
+    fun highRiskStateShowsHighRiskTagInNameRow() {
+        val p = highRiskPatient()
+        showListCard(p)
+        assertCoreTagsPresent(p)
+        compose.onNodeWithText("High risk", substring = false, useUnmergedTree = true).assertIsDisplayed()
+        assertTagsInsideNameRowAndAboveFirstMetric(p, "High risk")
+    }
+
+    @Test
+    fun incompleteStateShowsIncompleteTagInNameRow() {
+        val p = incompletePatient()
+        showListCard(p)
+        assertCoreTagsPresent(p)
+        compose.onNodeWithTag("incompleteChipAction", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("incompleteChip", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Incomplete", substring = false, useUnmergedTree = true).assertIsDisplayed()
+        assertTagsInsideNameRowAndAboveFirstMetric(p, "Incomplete")
+    }
+
+    @Test
+    fun deliveredStateShowsDeliveredTagAndDeliveryOutcomeMetric() {
+        val p = deliveredPatient()
+        showListCard(p)
+        assertCoreTagsPresent(p)
+        compose.onNodeWithTag("deliveredTag", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Delivered", substring = false, useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText("Delivery outcome", substring = false, useUnmergedTree = true).assertIsDisplayed()
+        assertTagsInsideNameRowAndAboveFirstMetric(p, "Delivered")
+    }
+
+    @Test
+    fun severeBpStateShowsTagInNameRow() {
+        val p = severeBpPatient()
+        showListCard(p)
+        assertCoreTagsPresent(p)
+        val severeBpNode = compose.onAllNodes(hasText("Severe", substring = true), useUnmergedTree = true)
+            .fetchSemanticsNodes()
+        assertTrue("Expected a severe BP tag to be present", severeBpNode.isNotEmpty())
+        val severeBounds = compose.onNode(hasText("Severe", substring = true), useUnmergedTree = true)
+            .getUnclippedBoundsInRoot()
+        val nameBounds = compose.onNodeWithText(p.displayName, substring = false, useUnmergedTree = true)
+            .getUnclippedBoundsInRoot()
+        val menuBounds = compose.onNodeWithTag("patientMenu-${p.id}", useUnmergedTree = true)
+            .getUnclippedBoundsInRoot()
+        val nameRowTop = minOf(nameBounds.top.value, menuBounds.top.value)
+        val nameRowBottom = maxOf(nameBounds.bottom.value, menuBounds.bottom.value)
+        val centerY = (severeBounds.top.value + severeBounds.bottom.value) / 2f
+        assertTrue(centerY >= nameRowTop && centerY <= nameRowBottom)
+        assertTrue(severeBounds.bottom.value <= firstMetricLabelTop())
+    }
+
+    @Test
+    fun incompletePlusHighStateShowsBothTagsInNameRow() {
+        val p = incompletePlusHighPatient()
+        showListCard(p)
+        assertCoreTagsPresent(p)
+        compose.onNodeWithText("High risk", substring = false, useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText("Incomplete", substring = false, useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithTag("incompleteChipAction", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("incompleteChip", useUnmergedTree = true).assertExists()
+        assertTagsInsideNameRowAndAboveFirstMetric(p, "High risk", "Incomplete")
+    }
+
+    @Test
+    fun rtlLayoutPlacesNameRightOfMenuAndIsolatesBloodGroup() {
+        val p = normalPatient().copy(bloodGroupText = "A+")
+        showListCard(p, layoutDirection = LayoutDirection.Rtl)
+        assertCoreTagsPresent(p)
+
+        val nameBounds = compose.onNodeWithText(p.displayName, substring = false, useUnmergedTree = true)
+            .getUnclippedBoundsInRoot()
+        val menuBounds = compose.onNodeWithTag("patientMenu-${p.id}", useUnmergedTree = true)
+            .getUnclippedBoundsInRoot()
+        assertTrue(
+            "Name must be to the right of the menu in RTL layout",
+            nameBounds.left > menuBounds.right,
+        )
+
+        compose.onNodeWithText("⁦A+⁩", substring = false, useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun narrowViewportFontScale13KeepsNameAndTagsUnclipped() {
+        val longName = "A very long patient name that should wrap to two lines without being clipped"
+        val p = incompletePlusHighPatient().copy(displayName = longName)
+        showListCard(p, widthDp = 360, fontScale = 1.3f)
+        assertCoreTagsPresent(p)
+
+        val nameNode = compose.onNodeWithText(longName, substring = false, useUnmergedTree = true)
+        nameNode.assertExists().assertIsDisplayed()
+        val nameBounds = nameNode.getBoundsInRoot()
+        assertTrue("Name height should allow wrapping to two lines", nameBounds.height >= 32.dp)
+
+        compose.onNodeWithText("High risk", substring = false, useUnmergedTree = true)
+            .assertIsDisplayed()
+            .getUnclippedBoundsInRoot()
+            .also { bounds ->
+                assertTrue(bounds.right <= 360.dp)
+                assertTrue(bounds.left >= 0.dp)
+            }
+
+        compose.onNodeWithText("Incomplete", substring = false, useUnmergedTree = true)
+            .assertIsDisplayed()
+            .getUnclippedBoundsInRoot()
+            .also { bounds ->
+                assertTrue(bounds.right <= 360.dp)
+                assertTrue(bounds.left >= 0.dp)
+            }
+    }
+}
+```
+[Tokens] upload: 33446 download: 8263 cache_read: 0 cache_write: 0
+

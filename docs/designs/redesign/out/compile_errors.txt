@@ -1,0 +1,32 @@
+e: app/src/androidTest/java/com/sherifradwan/ancnative/OverviewRedesignTest.kt:22:33 Unresolved reference 'onAllNodes'.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/OverviewRedesignTest.kt:125:35 Argument type mismatch: actual type is 'IntRange', but 'Int' was expected.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/OverviewRedesignTest.kt:156:53 Function invocation 'width(...)' expected.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/OverviewRedesignTest.kt:156:70 Function invocation 'width(...)' expected.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/OverviewRedesignTest.kt:156:76 'operator' modifier is required on 'fun <T> Comparable<T>.compareTo(other: T): Int'.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/OverviewRedesignTest.kt:157:54 Unresolved reference 'height'.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/OverviewRedesignTest.kt:157:72 Unresolved reference 'height'.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/OverviewRedesignTest.kt:163:57 Unresolved reference 'height'.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/OverviewRedesignTest.kt:163:75 Unresolved reference 'height'.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/PatientCardRedesignTest.kt:29:41 Unresolved reference 'PatientRiskTier'.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/PatientCardRedesignTest.kt:90:19 Unresolved reference 'PatientRiskTier'.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/PatientCardRedesignTest.kt:90:37 Unresolved reference 'PatientRiskTier'.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/PatientCardRedesignTest.kt:94:29 Unresolved reference 'name'.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/PatientCardRedesignTest.kt:99:13 No parameter with name 'name' found.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/PatientCardRedesignTest.kt:100:13 No parameter with name 'bloodGroup' found.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/PatientCardRedesignTest.kt:101:13 No parameter with name 'riskTier' found.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/PatientCardRedesignTest.kt:102:13 No parameter with name 'isHighRisk' found.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/PatientCardRedesignTest.kt:103:13 No parameter with name 'isIncomplete' found.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/PatientCardRedesignTest.kt:105:13 No parameter with name 'outcome' found.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/PatientCardRedesignTest.kt:130:13 No parameter with name 'isHighRisk' found.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/PatientCardRedesignTest.kt:131:13 No parameter with name 'riskTier' found.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/PatientCardRedesignTest.kt:131:24 Unresolved reference 'PatientRiskTier'.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/PatientCardRedesignTest.kt:132:13 No parameter with name 'isIncomplete' found.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/PatientCardRedesignTest.kt:134:13 No parameter with name 'outcome' found.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/PatientCardRedesignTest.kt:159:40 Unresolved reference 'PatientRiskTier'.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/PatientCardRedesignTest.kt:162:40 Unresolved reference 'PatientRiskTier'.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/PatientCardRedesignTest.kt:171:80 Unresolved reference 'PatientRiskTier'.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/PatientCardRedesignTest.kt:190:54 Unresolved reference 'name'.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/PatientCardRedesignTest.kt:285:54 Unresolved reference 'name'.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/PatientCardRedesignTest.kt:310:38 No parameter with name 'bloodGroup' found.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/PatientCardRedesignTest.kt:314:51 Unresolved reference 'name'.
+e: app/src/androidTest/java/com/sherifradwan/ancnative/PatientCardRedesignTest.kt:329:50 No parameter with name 'name' found.

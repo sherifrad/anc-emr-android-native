@@ -6,12 +6,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -26,17 +22,9 @@ import com.sherifradwan.ancnative.ui.patienthub.components.ClinicalAttentionCard
 import com.sherifradwan.ancnative.ui.patienthub.components.DatingSection
 import com.sherifradwan.ancnative.ui.patienthub.components.DeliveryPlanningCard
 import com.sherifradwan.ancnative.ui.patienthub.components.MedicalHistoriesSection
+import com.sherifradwan.ancnative.ui.patienthub.components.ObstetricHistorySection
 import com.sherifradwan.ancnative.ui.patienthub.components.ParityPregnanciesSection
 import java.util.UUID
-
-@Composable
-private fun SectionDivider() {
-    HorizontalDivider(
-        modifier = Modifier.padding(vertical = 8.dp),
-        thickness = 0.75.dp,
-        color = MaterialTheme.colorScheme.outlineVariant,
-    )
-}
 
 @Composable
 fun OverviewTab(
@@ -67,7 +55,7 @@ fun OverviewTab(
             .verticalScroll(rememberScrollState())
             .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 48.dp)
             .testTag("overviewTabContent"),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         val severeBp = remember(patient.visits) { severeBpAttention(patient.visits) }
         ClinicalAttentionCard(
@@ -76,48 +64,45 @@ fun OverviewTab(
             onEdit = if (canEdit) onEditAttention else null,
         )
 
-        Surface(
-            color = MaterialTheme.colorScheme.surface,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column {
-                DatingSection(
-                    patient = patient,
-                    onEdit = if (canEdit) {
-                        {
-                            onEvent(
-                                AncEvent.StartDatingEditor(
-                                    patientId = patient.id,
-                                    editorSessionId = UUID.randomUUID().toString(),
-                                ),
-                            )
-                        }
-                    } else null,
-                )
-                SectionDivider()
-                ParityPregnanciesSection(
-                    patient = patient,
-                    onAddPregnancy = if (canEdit) ({ startPregnancyEditor(null) }) else null,
-                    onEditPregnancy = if (canEdit) ({ startPregnancyEditor(it) }) else null,
-                    onDeletePregnancy = if (canEdit) {
-                        {
-                            onEvent(
-                                AncEvent.RequestDelete(
-                                    patientId = patient.id,
-                                    type = DeletableType.PREVIOUS_PREGNANCY,
-                                    recordId = it,
-                                ),
-                            )
-                        }
-                    } else null,
-                )
-                SectionDivider()
-                MedicalHistoriesSection(
-                    patient = patient,
-                    onEdit = if (canEdit) ({ startPatientEditor() }) else null,
-                )
-            }
-        }
+        DatingSection(
+            patient = patient,
+            onEdit = if (canEdit) {
+                {
+                    onEvent(
+                        AncEvent.StartDatingEditor(
+                            patientId = patient.id,
+                            editorSessionId = UUID.randomUUID().toString(),
+                        ),
+                    )
+                }
+            } else null,
+        )
+
+        ObstetricHistorySection(
+            patient = patient,
+        )
+
+        ParityPregnanciesSection(
+            patient = patient,
+            onAddPregnancy = if (canEdit) ({ startPregnancyEditor(null) }) else null,
+            onEditPregnancy = if (canEdit) ({ startPregnancyEditor(it) }) else null,
+            onDeletePregnancy = if (canEdit) {
+                {
+                    onEvent(
+                        AncEvent.RequestDelete(
+                            patientId = patient.id,
+                            type = DeletableType.PREVIOUS_PREGNANCY,
+                            recordId = it,
+                        ),
+                    )
+                }
+            } else null,
+        )
+
+        MedicalHistoriesSection(
+            patient = patient,
+            onEdit = if (canEdit) ({ startPatientEditor() }) else null,
+        )
 
         DeliveryPlanningCard(
             patient = patient,

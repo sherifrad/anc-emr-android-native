@@ -1,0 +1,28 @@
+### Files Changed
+
+1. [strings.xml](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/res/values/strings.xml#L685-L689)
+   - Appended `action_edit`, `action_add`, and `obstetric_history_title` before `</resources>` without rewriting the rest of the file.
+
+2. [DueDateBox.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/components/DueDateBox.kt)
+   - Deleted (replaced by canonical `LabeledValue` with `testTag("dueDateBox")`).
+
+3. [PastDeliveryMicroRow.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PastDeliveryMicroRow.kt)
+   - Restyled onto `RecordRow` with `testTag("pregnancy-${pregnancy.id}")`, `clickTag = "editPregnancy-${pregnancy.id}"`, `RecordShapes.Small` outcome chip, `RecordType` typography, and trailing `DeleteIconButton`.
+
+4. [OverviewSections.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt)
+   - Rewrote `DatingSection` using `RecordSectionCard`, `LabeledValueRow` with `Box(Modifier.testTag("datingField-${row.label}"))`, `dueDateBox` tag on EDD `LabeledValue`, `datingField-Method`, restyled `SectionBanner` with `datingDiscordanceAlert`, and full-width `notes`.
+   - Added `ObstetricHistorySection` using `RecordSectionCard(family = FieldFamilies.obstetric())`, `LabeledValueRow(Modifier.testTag("obstetricParityBadge"))`, and Gravida, Parity, Abortion `LabeledValue`s.
+   - Rewrote `ParityPregnanciesSection` on `RecordSectionCard(family = FieldFamilies.obstetric())` with `SectionTextAction` (`addPregnancyButton`), removed old `ObstetricParityBadge`, and kept empty/non-empty list rendering.
+   - Rewrote `MedicalHistoriesSection` on `RecordSectionCard(family = FieldFamilies.background())` with `SectionTextAction` (`editMedicalHistoryButton`), classified allergy handling (`SectionBanner` for recorded, `LabeledValue` for NKDA / Not recorded), and full-width `LabeledValue`s for medical, surgical, and family history.
+   - Removed `SectionIconAction` and unused icon imports.
+
+5. [OverviewTab.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt)
+   - Removed shared `Surface` and `SectionDivider`.
+   - Set column spacing to `Arrangement.spacedBy(12.dp)`.
+   - Updated order to: `ClinicalAttentionCard`, `DatingSection`, `ObstetricHistorySection`, `ParityPregnanciesSection`, `MedicalHistoriesSection`, `DeliveryPlanningCard`, `AttachmentsSectionCard`.
+
+---
+
+### Anything Not Done
+
+- **None** — all requirements for Lane 1A specified in `docs/designs/redesign/slice_01_overview_and_card.md` have been implemented.

@@ -1,15 +1,9 @@
 package com.sherifradwan.ancnative.ui.patienthub.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -18,14 +12,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
 import com.sherifradwan.ancnative.storage.DeletableType
 import com.sherifradwan.ancnative.ui.DeleteIconButton
-import com.sherifradwan.ancnative.ui.minimumTouchTarget
+import com.sherifradwan.ancnative.ui.components.RecordRow
+import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordType
 import com.sherifradwan.ancnative.ui.patienthub.model.OutcomeTone
 import com.sherifradwan.ancnative.ui.patienthub.model.RowExtraKind
 import com.sherifradwan.ancnative.ui.patienthub.model.pastDeliveryRow
@@ -62,68 +57,57 @@ fun PastDeliveryMicroRow(
     val editLabel = stringResource(R.string.correct_previous_pregnancy)
     val outcomeText = row.outcomeLabelRes?.let { stringResource(it) } ?: row.outcomeLabel
 
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .testTag("pregnancy-${pregnancy.id}"),
-        verticalAlignment = Alignment.Top,
+    RecordRow(
+        onClick = onEdit,
+        onClickLabel = editLabel,
+        modifier = modifier.testTag("pregnancy-${pregnancy.id}"),
+        clickTag = if (onEdit != null) "editPregnancy-${pregnancy.id}" else null,
+        trailing = onDelete?.let { { DeleteIconButton(DeletableType.PREVIOUS_PREGNANCY, pregnancy, it) } },
     ) {
-        val editClick = if (onEdit != null) {
-            Modifier.clickable(onClickLabel = editLabel, onClick = onEdit).minimumTouchTarget().testTag("editPregnancy-${pregnancy.id}")
-        } else {
-            Modifier
-        }
-        Column(
-            modifier = Modifier.weight(1f).then(editClick).padding(vertical = 6.dp),
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
+            itemVerticalAlignment = Alignment.CenterVertically,
         ) {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-                itemVerticalAlignment = Alignment.CenterVertically,
-            ) {
+            Text(
+                text = yearText,
+                style = RecordType.KeyValue.copy(fontFeatureSettings = "tnum"),
+                color = scheme.onSurface,
+            )
+            outcomeText?.let {
+                Surface(shape = RecordShapes.Small, color = chipBg) {
+                    Text(
+                        text = it,
+                        style = RecordType.Tag,
+                        color = chipFg,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                    )
+                }
+            }
+            row.mode?.let {
                 Text(
-                    text = yearText,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
-                    fontWeight = FontWeight.Bold,
+                    text = it,
+                    style = RecordType.FieldValue,
                     color = scheme.onSurface,
                 )
-                outcomeText?.let {
-                    Surface(shape = RoundedCornerShape(6.dp), color = chipBg) {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = chipFg,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        )
-                    }
-                }
-                row.mode?.let {
-                    Text(text = it, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurface)
-                }
-            }
-            if (line2.isNotEmpty()) {
-                Text(
-                    text = line2,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = scheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            if (line3.isNotEmpty()) {
-                Text(
-                    text = line3,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = scheme.onSurfaceVariant,
-                    modifier = Modifier.testTag("pregnancyExtras-${pregnancy.id}"),
-                )
             }
         }
-        if (onDelete != null) {
-            DeleteIconButton(DeletableType.PREVIOUS_PREGNANCY, pregnancy, onDelete)
+        if (line2.isNotEmpty()) {
+            Text(
+                text = line2,
+                style = RecordType.Secondary,
+                color = scheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        if (line3.isNotEmpty()) {
+            Text(
+                text = line3,
+                style = RecordType.Secondary,
+                color = scheme.onSurfaceVariant,
+                modifier = Modifier.testTag("pregnancyExtras-${pregnancy.id}"),
+            )
         }
     }
 }

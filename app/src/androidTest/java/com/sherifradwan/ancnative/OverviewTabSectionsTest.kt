@@ -307,26 +307,24 @@ class OverviewTabSectionsTest {
     )
     private val variantF = dating(agreed = "2027-04-02", method = "Clinical")
 
-    /** Text nodes inside the dating card grouped into visual rows, left to right, header row dropped. */
+    /** One [label, value] pair per `datingField-<label>` node in the dating card, top to bottom then left to right. */
     private fun datingRows(): List<List<String>> {
-        val nodes = compose.onAllNodes(
-            hasAnyAncestor(hasTestTag("datingCard")) and SemanticsMatcher.keyIsDefined(SemanticsProperties.Text),
+        val tagged = compose.onAllNodes(
+            hasAnyAncestor(hasTestTag("datingCard")) and SemanticsMatcher("datingField tag") { node ->
+                node.config.getOrNull(SemanticsProperties.TestTag)?.startsWith("datingField-") == true
+            },
             useUnmergedTree = true,
         ).fetchSemanticsNodes().sortedWith(compareBy({ it.boundsInRoot.top }, { it.boundsInRoot.left }))
-        val rows = mutableListOf<MutableList<androidx.compose.ui.semantics.SemanticsNode>>()
-        var rowBottom = Float.NEGATIVE_INFINITY
-        nodes.forEach { n ->
-            if (rows.isEmpty() || n.boundsInRoot.top >= rowBottom - 1f) {
-                rows.add(mutableListOf(n))
-                rowBottom = n.boundsInRoot.bottom
-            } else {
-                rows.last().add(n)
-                rowBottom = maxOf(rowBottom, n.boundsInRoot.bottom)
+        return tagged.map { node ->
+            val label = node.config[SemanticsProperties.TestTag].removePrefix("datingField-")
+            val texts = mutableListOf<String>()
+            fun walk(n: androidx.compose.ui.semantics.SemanticsNode) {
+                n.config.getOrNull(SemanticsProperties.Text)?.let { texts.add(it.joinToString("") { t -> t.text }) }
+                n.children.forEach { walk(it) }
             }
-        }
-        return rows.drop(1).map { row ->
-            row.sortedBy { it.boundsInRoot.left }
-                .map { it.config[SemanticsProperties.Text].joinToString("") { t -> t.text } }
+            walk(node)
+            val value = texts.filterNot { it == label }.joinToString(" ")
+            listOf(label, value)
         }
     }
 
@@ -354,9 +352,12 @@ class OverviewTabSectionsTest {
             listOf(listOf("LMP", "08/06/2026"), listOf("EDD", "15/03/2027"), listOf("Method", "LMP")),
             rows.take(3),
         )
-        assertEquals(4, rows.size)
+        assertEquals(3, rows.size)
         assertEquals(1, alertCount())
-        val alertText = rows[3].single()
+        val alertText = compose.onAllNodes(
+            hasAnyAncestor(hasTestTag(alertTag)) and SemanticsMatcher.keyIsDefined(SemanticsProperties.Text),
+            useUnmergedTree = true,
+        ).fetchSemanticsNodes().first().config[SemanticsProperties.Text].joinToString("") { it.text }
         assertEquals(
             "EDD discordance: LMP and scan differ by 9 d (limit 7 d)",
             alertText.replace(nbsp, " "),

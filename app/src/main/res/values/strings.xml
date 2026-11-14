@@ -272,7 +272,7 @@
     <string name="delivery_plan_saving">Saving…</string>
     <string name="edit_clinical_alerts">Edit clinical alerts</string>
     <string name="parity_format">G%1$s P%2$s</string>
-    <string name="high_risk">HIGH RISK</string>
+    <string name="high_risk">High risk</string>
     <string name="normal_risk">STANDARD RISK</string>
     <string name="today">Today</string>
     <string name="pick_date">Select date</string>
@@ -683,4 +683,7 @@
     <string name="status_delivered">Delivered</string>
     <string name="field_label_due_date">Due date</string>
     <string name="field_label_bp">BP</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_add">Add</string>
+    <string name="obstetric_history_title">Obstetric history</string>
 </resources>
