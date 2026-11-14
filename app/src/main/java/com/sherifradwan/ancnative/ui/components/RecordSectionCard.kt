@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -41,7 +40,7 @@ fun RecordSectionCard(
     ) {
         CompositionLocalProvider(LocalFieldFamily provides family) {
             Column(
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),
+                modifier = Modifier.padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(RecordSpacing.M),
             ) {
                 Row(
@@ -61,7 +60,13 @@ fun RecordSectionCard(
                     )
                     action?.invoke()
                 }
-                content()
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(end = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(RecordSpacing.M),
+                    content = content,
+                )
             }
         }
     }
@@ -78,7 +83,6 @@ fun SectionTextAction(
         onClick = onClick,
         modifier = modifier
             .minimumTouchTarget()
-            .offset(x = 12.dp)
             .semantics { this.contentDescription = contentDescription },
         shape = RecordShapes.Small,
         contentPadding = PaddingValues(horizontal = 12.dp),

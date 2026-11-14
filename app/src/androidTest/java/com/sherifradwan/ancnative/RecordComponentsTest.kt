@@ -1,6 +1,7 @@
 package com.sherifradwan.ancnative
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
@@ -169,7 +170,8 @@ class RecordComponentsTest {
                                     modifier = Modifier
                                         .weight(1f)
                                         .fillMaxHeight(),
-                                    boxTag = "boxG"
+                                    boxTag = "boxG",
+                                    stretch = true
                                 )
                                 LabeledValue(
                                     label = "P",
@@ -177,7 +179,8 @@ class RecordComponentsTest {
                                     modifier = Modifier
                                         .weight(1f)
                                         .fillMaxHeight(),
-                                    boxTag = "boxP"
+                                    boxTag = "boxP",
+                                    stretch = true
                                 )
                                 LabeledValue(
                                     label = "A",
@@ -185,7 +188,8 @@ class RecordComponentsTest {
                                     modifier = Modifier
                                         .weight(1f)
                                         .fillMaxHeight(),
-                                    boxTag = "boxA"
+                                    boxTag = "boxA",
+                                    stretch = true
                                 )
                             }
                         }
@@ -218,7 +222,8 @@ class RecordComponentsTest {
                                     modifier = Modifier
                                         .weight(1f)
                                         .fillMaxHeight(),
-                                    boxTag = "boxG"
+                                    boxTag = "boxG",
+                                    stretch = true
                                 )
                                 LabeledValue(
                                     label = "P",
@@ -226,7 +231,8 @@ class RecordComponentsTest {
                                     modifier = Modifier
                                         .weight(1f)
                                         .fillMaxHeight(),
-                                    boxTag = "boxP"
+                                    boxTag = "boxP",
+                                    stretch = true
                                 )
                                 LabeledValue(
                                     label = "A",
@@ -234,7 +240,8 @@ class RecordComponentsTest {
                                     modifier = Modifier
                                         .weight(1f)
                                         .fillMaxHeight(),
-                                    boxTag = "boxA"
+                                    boxTag = "boxA",
+                                    stretch = true
                                 )
                             }
                         }
@@ -558,5 +565,21 @@ class RecordComponentsTest {
             hasText("Blank field", substring = true) and hasText("Not recorded", substring = true),
             useUnmergedTree = false
         ).assertExists()
+    }
+
+    @Test
+    fun standaloneLabeledValueKeepsItsBoxInsideAScrollingColumn() {
+        composeTestRule.setContent {
+            AncTheme(darkTheme = false) {
+                androidx.compose.foundation.layout.Column(
+                    modifier = Modifier.width(360.dp).verticalScroll(androidx.compose.foundation.rememberScrollState()),
+                ) {
+                    LabeledValue(label = "First", value = "One", boxTag = "scrollBox1")
+                    LabeledValue(label = "Second", value = "Two", boxTag = "scrollBox2")
+                }
+            }
+        }
+        composeTestRule.onNodeWithTag("scrollBox1", useUnmergedTree = true).assertIsDisplayed().assertHeightIsAtLeast(44.dp)
+        composeTestRule.onNodeWithTag("scrollBox2", useUnmergedTree = true).assertIsDisplayed().assertHeightIsAtLeast(44.dp)
     }
 }

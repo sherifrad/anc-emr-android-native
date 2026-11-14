@@ -1,0 +1,1965 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt
+index b7b49e6..214da9b 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/Theme.kt
+@@ -142,6 +142,46 @@ val DeliveryPostpartumDarkBg = Color(0xFF500724)
+ val DeliveryPostpartumDarkBorder = Color(0xFF9D174D)
+ val DeliveryPostpartumDarkText = Color(0xFFFBCFE8)
+ 
++// Record redesign (mock D): field families. Light.
++val FieldPatientBg = Color(0xFFE9EEF8)
++val FieldPatientLabel = Color(0xFF23407A)
++val FieldObstetricBg = Color(0xFFE3F0EE)
++val FieldObstetricLabel = Color(0xFF1D5149)
++val FieldBackgroundBg = Color(0xFFF1EDE4)
++val FieldBackgroundLabel = Color(0xFF594A2C)
++val FieldDeliveryBg = Color(0xFFEEE9F5)
++val FieldDeliveryLabel = Color(0xFF4E3A78)
++// Dark.
++val FieldPatientDarkBg = Color(0xFF22304A)
++val FieldPatientDarkLabel = Color(0xFFAFC6F2)
++val FieldObstetricDarkBg = Color(0xFF1D3836)
++val FieldObstetricDarkLabel = Color(0xFF9FD6CC)
++val FieldBackgroundDarkBg = Color(0xFF36301F)
++val FieldBackgroundDarkLabel = Color(0xFFE0CFA6)
++val FieldDeliveryDarkBg = Color(0xFF2E2842)
++val FieldDeliveryDarkLabel = Color(0xFFCDBDF0)
++
++// Record redesign: status tags. Light.
++val StatusIncompleteBg = Color(0xFFEEF0F4)
++val StatusIncompleteBorder = Color(0xFF8C95A5)
++val StatusIncompleteText = Color(0xFF333B4A)
++val StatusModerateBg = Color(0xFFFCEFD6)
++val StatusModerateBorder = Color(0xFFB9862C)
++val StatusModerateText = Color(0xFF6E4708)
++val StatusHighBg = Color(0xFFFBE3E3)
++val StatusHighBorder = Color(0xFFC26666)
++val StatusHighText = Color(0xFF8E1B1B)
++// Dark.
++val StatusIncompleteDarkBg = Color(0xFF2A3140)
++val StatusIncompleteDarkBorder = Color(0xFF5B6578)
++val StatusIncompleteDarkText = Color(0xFFD5DAE3)
++val StatusModerateDarkBg = Color(0xFF3A2A0E)
++val StatusModerateDarkBorder = Color(0xFFA87A2A)
++val StatusModerateDarkText = Color(0xFFF3D18E)
++val StatusHighDarkBg = Color(0xFF4A1616)
++val StatusHighDarkBorder = Color(0xFFB45A5A)
++val StatusHighDarkText = Color(0xFFFFC9C9)
++
+ /**
+  * Visual Distinction Design System (VDDS) Semantic Tokens
+  * Provides domain-scoped container, border, and accent colors for clinical cards and alert banners.
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/components/DueDateBox.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/components/DueDateBox.kt
+deleted file mode 100644
+index e0da757..0000000
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/components/DueDateBox.kt
++++ /dev/null
+@@ -1,72 +0,0 @@
+-package com.sherifradwan.ancnative.ui.components
+-
+-import androidx.compose.foundation.layout.Arrangement
+-import androidx.compose.foundation.layout.Row
+-import androidx.compose.foundation.layout.fillMaxWidth
+-import androidx.compose.foundation.layout.heightIn
+-import androidx.compose.foundation.layout.padding
+-import androidx.compose.foundation.shape.RoundedCornerShape
+-import androidx.compose.material3.MaterialTheme
+-import androidx.compose.material3.Surface
+-import androidx.compose.material3.Text
+-import androidx.compose.runtime.Composable
+-import androidx.compose.ui.Alignment
+-import androidx.compose.ui.Modifier
+-import androidx.compose.ui.platform.testTag
+-import androidx.compose.ui.res.stringResource
+-import androidx.compose.ui.text.font.FontWeight
+-import androidx.compose.ui.text.style.TextOverflow
+-import androidx.compose.ui.unit.dp
+-import com.sherifradwan.ancnative.R
+-import com.sherifradwan.ancnative.ui.minimumTouchTarget
+-
+-@Composable
+-fun DueDateBox(
+-    label: String,
+-    value: String?,
+-    modifier: Modifier = Modifier,
+-) {
+-    val colorScheme = MaterialTheme.colorScheme
+-    val isMissing = value.isNullOrBlank()
+-    val displayValue = if (isMissing) stringResource(R.string.not_recorded) else value
+-    val valueColor = if (isMissing) {
+-        colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+-    } else {
+-        colorScheme.onPrimaryContainer
+-    }
+-
+-    Surface(
+-        shape = RoundedCornerShape(12.dp),
+-        color = colorScheme.primaryContainer,
+-        modifier = modifier
+-            .fillMaxWidth()
+-            .minimumTouchTarget()
+-            .heightIn(min = 48.dp)
+-            .testTag("dueDateBox"),
+-    ) {
+-        Row(
+-            modifier = Modifier
+-                .fillMaxWidth()
+-                .padding(horizontal = 12.dp, vertical = 8.dp),
+-            horizontalArrangement = Arrangement.SpaceBetween,
+-            verticalAlignment = Alignment.CenterVertically,
+-        ) {
+-            Text(
+-                text = label,
+-                style = MaterialTheme.typography.labelMedium,
+-                color = colorScheme.onPrimaryContainer,
+-                maxLines = 1,
+-                overflow = TextOverflow.Ellipsis,
+-                modifier = Modifier.weight(1f, fill = false),
+-            )
+-            Text(
+-                text = displayValue,
+-                style = MaterialTheme.typography.titleMedium,
+-                fontWeight = FontWeight.Bold,
+-                color = valueColor,
+-                maxLines = 1,
+-                overflow = TextOverflow.Ellipsis,
+-            )
+-        }
+-    }
+-}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/components/LabeledValue.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/components/LabeledValue.kt
+new file mode 100644
+index 0000000..fd19859
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/components/LabeledValue.kt
+@@ -0,0 +1,147 @@
++package com.sherifradwan.ancnative.ui.components
++
++import androidx.compose.foundation.clickable
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Box
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.ColumnScope
++import androidx.compose.foundation.layout.IntrinsicSize
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.RowScope
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.height
++import androidx.compose.foundation.layout.heightIn
++import androidx.compose.foundation.layout.padding
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Surface
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.semantics.Role
++import androidx.compose.ui.semantics.semantics
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.ui.minimumTouchTarget
++
++@Composable
++fun LabeledValue(
++    label: String,
++    value: String?,
++    modifier: Modifier = Modifier,
++    emphasis: Boolean = false,
++    family: FieldFamily = currentFieldFamily(),
++    missingText: String = stringResource(R.string.not_recorded),
++    boxTag: String? = null,
++) {
++    Column(
++        modifier = modifier.semantics(mergeDescendants = true) {},
++        verticalArrangement = Arrangement.spacedBy(RecordSpacing.XS),
++    ) {
++        Text(
++            text = label,
++            style = RecordType.FieldLabel,
++            color = family.label,
++        )
++        Surface(
++            shape = RecordShapes.Small,
++            color = family.container,
++            modifier = Modifier
++                .fillMaxWidth()
++                .weight(1f, fill = true)
++                .heightIn(min = 44.dp)
++                .then(if (boxTag != null) Modifier.testTag(boxTag) else Modifier),
++        ) {
++            Box(
++                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
++                contentAlignment = Alignment.CenterStart,
++            ) {
++                if (value.isNullOrBlank()) {
++                    Text(
++                        text = missingText,
++                        style = RecordType.Missing,
++                        color = MaterialTheme.colorScheme.onSurfaceVariant,
++                    )
++                } else {
++                    Text(
++                        text = value,
++                        style = if (emphasis) RecordType.KeyValue else RecordType.FieldValue,
++                        color = MaterialTheme.colorScheme.onSurface,
++                    )
++                }
++            }
++        }
++    }
++}
++
++/**
++ * Equal-width fields side by side (pairs, the G P A triple).
++ *
++ * Callers pass `Modifier.weight(1f).fillMaxHeight()` to each [LabeledValue]
++ * so boxes in one row are equal height.
++ */
++@Composable
++fun LabeledValueRow(
++    modifier: Modifier = Modifier,
++    content: @Composable RowScope.() -> Unit,
++) {
++    Row(
++        modifier = modifier
++            .fillMaxWidth()
++            .height(IntrinsicSize.Min),
++        horizontalArrangement = Arrangement.spacedBy(RecordSpacing.S),
++        content = content,
++    )
++}
++
++/** Tappable record (previous pregnancy, later visits and scans). */
++@Composable
++fun RecordRow(
++    onClick: (() -> Unit)?,
++    onClickLabel: String?,
++    modifier: Modifier = Modifier,
++    family: FieldFamily = currentFieldFamily(),
++    clickTag: String? = null,
++    trailing: (@Composable () -> Unit)? = null,
++    content: @Composable ColumnScope.() -> Unit,
++) {
++    val clickModifier = if (onClick != null) {
++        Modifier
++            .clickable(
++                onClickLabel = onClickLabel,
++                role = Role.Button,
++                onClick = onClick,
++            )
++            .minimumTouchTarget()
++    } else {
++        Modifier
++    }
++    val tagModifier = if (clickTag != null) Modifier.testTag(clickTag) else Modifier
++
++    Surface(
++        shape = RecordShapes.Small,
++        color = family.container,
++        modifier = modifier
++            .fillMaxWidth()
++            .heightIn(min = 56.dp),
++    ) {
++        Row(
++            modifier = Modifier.fillMaxWidth(),
++            verticalAlignment = Alignment.CenterVertically,
++        ) {
++            Column(
++                modifier = Modifier
++                    .weight(1f)
++                    .then(clickModifier)
++                    .then(tagModifier)
++                    .heightIn(min = 56.dp)
++                    .padding(start = 12.dp, top = 8.dp, bottom = 8.dp, end = 8.dp),
++                verticalArrangement = Arrangement.spacedBy(2.dp),
++                content = content,
++            )
++            trailing?.invoke()
++        }
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/components/RecordSectionCard.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/components/RecordSectionCard.kt
+new file mode 100644
+index 0000000..7bc6308
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/components/RecordSectionCard.kt
+@@ -0,0 +1,92 @@
++package com.sherifradwan.ancnative.ui.components
++
++import androidx.compose.foundation.BorderStroke
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.ColumnScope
++import androidx.compose.foundation.layout.PaddingValues
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.heightIn
++import androidx.compose.foundation.layout.offset
++import androidx.compose.foundation.layout.padding
++import androidx.compose.material3.CardDefaults
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.OutlinedCard
++import androidx.compose.material3.Text
++import androidx.compose.material3.TextButton
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.CompositionLocalProvider
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.semantics.contentDescription
++import androidx.compose.ui.semantics.heading
++import androidx.compose.ui.semantics.semantics
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.ui.minimumTouchTarget
++
++@Composable
++fun RecordSectionCard(
++    title: String,
++    family: FieldFamily,
++    modifier: Modifier = Modifier,
++    action: (@Composable () -> Unit)? = null,
++    content: @Composable ColumnScope.() -> Unit,
++) {
++    OutlinedCard(
++        modifier = modifier.fillMaxWidth(),
++        shape = RecordShapes.Large,
++        colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface),
++        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
++    ) {
++        CompositionLocalProvider(LocalFieldFamily provides family) {
++            Column(
++                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),
++                verticalArrangement = Arrangement.spacedBy(RecordSpacing.M),
++            ) {
++                Row(
++                    modifier = Modifier
++                        .fillMaxWidth()
++                        .heightIn(min = 48.dp),
++                    verticalAlignment = Alignment.CenterVertically,
++                ) {
++                    Text(
++                        text = title,
++                        style = RecordType.SectionTitle,
++                        color = MaterialTheme.colorScheme.primary,
++                        modifier = Modifier
++                            .weight(1f)
++                            .padding(vertical = 6.dp)
++                            .semantics { heading() },
++                    )
++                    action?.invoke()
++                }
++                content()
++            }
++        }
++    }
++}
++
++@Composable
++fun SectionTextAction(
++    text: String,
++    contentDescription: String,
++    onClick: () -> Unit,
++    modifier: Modifier = Modifier,
++) {
++    TextButton(
++        onClick = onClick,
++        modifier = modifier
++            .minimumTouchTarget()
++            .offset(x = 12.dp)
++            .semantics { this.contentDescription = contentDescription },
++        shape = RecordShapes.Small,
++        contentPadding = PaddingValues(horizontal = 12.dp),
++    ) {
++        Text(
++            text = text,
++            style = RecordType.Action,
++            color = MaterialTheme.colorScheme.primary,
++        )
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/components/RecordTokens.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/components/RecordTokens.kt
+new file mode 100644
+index 0000000..ac9a888
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/components/RecordTokens.kt
+@@ -0,0 +1,74 @@
++package com.sherifradwan.ancnative.ui.components
++
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.Immutable
++import androidx.compose.runtime.compositionLocalOf
++import androidx.compose.ui.graphics.Color
++import androidx.compose.ui.text.TextStyle
++import androidx.compose.ui.text.font.FontStyle
++import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.unit.dp
++import androidx.compose.ui.unit.sp
++import com.sherifradwan.ancnative.ui.FieldBackgroundBg
++import com.sherifradwan.ancnative.ui.FieldBackgroundDarkBg
++import com.sherifradwan.ancnative.ui.FieldBackgroundDarkLabel
++import com.sherifradwan.ancnative.ui.FieldBackgroundLabel
++import com.sherifradwan.ancnative.ui.FieldDeliveryBg
++import com.sherifradwan.ancnative.ui.FieldDeliveryDarkBg
++import com.sherifradwan.ancnative.ui.FieldDeliveryDarkLabel
++import com.sherifradwan.ancnative.ui.FieldDeliveryLabel
++import com.sherifradwan.ancnative.ui.FieldObstetricBg
++import com.sherifradwan.ancnative.ui.FieldObstetricDarkBg
++import com.sherifradwan.ancnative.ui.FieldObstetricDarkLabel
++import com.sherifradwan.ancnative.ui.FieldObstetricLabel
++import com.sherifradwan.ancnative.ui.FieldPatientBg
++import com.sherifradwan.ancnative.ui.FieldPatientDarkBg
++import com.sherifradwan.ancnative.ui.FieldPatientDarkLabel
++import com.sherifradwan.ancnative.ui.FieldPatientLabel
++import com.sherifradwan.ancnative.ui.isDarkTheme
++
++@Immutable
++data class FieldFamily(val container: Color, val label: Color)
++
++object FieldFamilies {
++    @Composable fun patient() = if (isDarkTheme()) FieldFamily(FieldPatientDarkBg, FieldPatientDarkLabel) else FieldFamily(FieldPatientBg, FieldPatientLabel)
++    @Composable fun obstetric() = if (isDarkTheme()) FieldFamily(FieldObstetricDarkBg, FieldObstetricDarkLabel) else FieldFamily(FieldObstetricBg, FieldObstetricLabel)
++    @Composable fun background() = if (isDarkTheme()) FieldFamily(FieldBackgroundDarkBg, FieldBackgroundDarkLabel) else FieldFamily(FieldBackgroundBg, FieldBackgroundLabel)
++    @Composable fun delivery() = if (isDarkTheme()) FieldFamily(FieldDeliveryDarkBg, FieldDeliveryDarkLabel) else FieldFamily(FieldDeliveryBg, FieldDeliveryLabel)
++}
++
++/** Family for fields inside a RecordSectionCard. Default: patient. */
++val LocalFieldFamily = compositionLocalOf<FieldFamily?> { null }
++
++@Composable
++fun currentFieldFamily(): FieldFamily = LocalFieldFamily.current ?: FieldFamilies.patient()
++
++object RecordShapes {
++    val Small = RoundedCornerShape(10.dp)
++    val Large = RoundedCornerShape(16.dp)
++}
++
++object RecordSpacing {
++    val XS = 4.dp
++    val S = 8.dp
++    val M = 12.dp
++    val L = 16.dp
++}
++
++object RecordType {
++    val SectionTitle = TextStyle(fontSize = 18.sp, lineHeight = 24.sp, fontWeight = FontWeight.Bold)
++    val FieldLabel = TextStyle(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.sp)
++    val FieldValue = TextStyle(fontSize = 16.sp, lineHeight = 22.sp, fontWeight = FontWeight.Normal, letterSpacing = 0.sp)
++    val KeyValue = FieldValue.copy(fontWeight = FontWeight.SemiBold)
++    val Missing = FieldValue.copy(fontStyle = FontStyle.Italic)
++    val Secondary = TextStyle(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Normal, letterSpacing = 0.sp)
++    val Action = TextStyle(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.sp)
++    val Tag = TextStyle(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.sp)
++    val CardName = TextStyle(fontSize = 16.sp, lineHeight = 22.sp, fontWeight = FontWeight.Bold)
++    val MetricLabel = TextStyle(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.sp)
++    val MetricValue = TextStyle(fontSize = 16.sp, lineHeight = 22.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.sp)
++}
++
++/** Keeps codes and numbers (A+, 110/70, G4 P1 A2, dates) in left-to-right order inside RTL text. */
++fun ltrIsolate(text: String): String = "\u2066$text\u2069"
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/components/StatusTag.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/components/StatusTag.kt
+new file mode 100644
+index 0000000..3e44f9d
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/components/StatusTag.kt
+@@ -0,0 +1,90 @@
++package com.sherifradwan.ancnative.ui.components
++
++import androidx.compose.foundation.BorderStroke
++import androidx.compose.foundation.layout.heightIn
++import androidx.compose.foundation.layout.padding
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Surface
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.ui.StatusHighBg
++import com.sherifradwan.ancnative.ui.StatusHighBorder
++import com.sherifradwan.ancnative.ui.StatusHighDarkBg
++import com.sherifradwan.ancnative.ui.StatusHighDarkBorder
++import com.sherifradwan.ancnative.ui.StatusHighDarkText
++import com.sherifradwan.ancnative.ui.StatusHighText
++import com.sherifradwan.ancnative.ui.StatusIncompleteBg
++import com.sherifradwan.ancnative.ui.StatusIncompleteBorder
++import com.sherifradwan.ancnative.ui.StatusIncompleteDarkBg
++import com.sherifradwan.ancnative.ui.StatusIncompleteDarkBorder
++import com.sherifradwan.ancnative.ui.StatusIncompleteDarkText
++import com.sherifradwan.ancnative.ui.StatusIncompleteText
++import com.sherifradwan.ancnative.ui.StatusModerateBg
++import com.sherifradwan.ancnative.ui.StatusModerateBorder
++import com.sherifradwan.ancnative.ui.StatusModerateDarkBg
++import com.sherifradwan.ancnative.ui.StatusModerateDarkBorder
++import com.sherifradwan.ancnative.ui.StatusModerateDarkText
++import com.sherifradwan.ancnative.ui.StatusModerateText
++import com.sherifradwan.ancnative.ui.isDarkTheme
++
++enum class StatusKind { HighRisk, ModerateRisk, Incomplete, Delivered }
++
++@Composable
++fun defaultText(kind: StatusKind): String = when (kind) {
++    StatusKind.HighRisk -> stringResource(R.string.high_risk)
++    StatusKind.ModerateRisk -> stringResource(R.string.moderate_risk)
++    StatusKind.Incomplete -> stringResource(R.string.registration_incomplete_chip)
++    StatusKind.Delivered -> stringResource(R.string.status_delivered)
++}
++
++@Composable
++fun StatusTag(
++    kind: StatusKind,
++    modifier: Modifier = Modifier,
++    text: String = defaultText(kind),
++) {
++    val dark = isDarkTheme()
++    val (bg, border, fg) = when (kind) {
++        StatusKind.HighRisk -> if (dark) {
++            Triple(StatusHighDarkBg, StatusHighDarkBorder, StatusHighDarkText)
++        } else {
++            Triple(StatusHighBg, StatusHighBorder, StatusHighText)
++        }
++        StatusKind.ModerateRisk -> if (dark) {
++            Triple(StatusModerateDarkBg, StatusModerateDarkBorder, StatusModerateDarkText)
++        } else {
++            Triple(StatusModerateBg, StatusModerateBorder, StatusModerateText)
++        }
++        StatusKind.Incomplete -> if (dark) {
++            Triple(StatusIncompleteDarkBg, StatusIncompleteDarkBorder, StatusIncompleteDarkText)
++        } else {
++            Triple(StatusIncompleteBg, StatusIncompleteBorder, StatusIncompleteText)
++        }
++        StatusKind.Delivered -> {
++            val scheme = MaterialTheme.colorScheme
++            Triple(scheme.surface, scheme.primary, scheme.primary)
++        }
++    }
++
++    Surface(
++        shape = RecordShapes.Small,
++        color = bg,
++        border = BorderStroke(1.dp, border),
++        modifier = modifier.heightIn(min = 24.dp),
++    ) {
++        Text(
++            text = text,
++            style = RecordType.Tag.copy(
++                fontWeight = if (kind == StatusKind.HighRisk) FontWeight.Bold else FontWeight.SemiBold,
++            ),
++            color = fg,
++            maxLines = 1,
++            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
++        )
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt
+index 5ec5a0b..4cedda6 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryCard.kt
+@@ -1,22 +1,15 @@
+ package com.sherifradwan.ancnative.ui.patientdirectory
+ 
+ import androidx.compose.foundation.BorderStroke
+-import androidx.compose.foundation.background
+ import androidx.compose.foundation.clickable
+ import androidx.compose.foundation.layout.Arrangement
+ import androidx.compose.foundation.layout.Box
+ import androidx.compose.foundation.layout.Column
+-import androidx.compose.foundation.layout.IntrinsicSize
+ import androidx.compose.foundation.layout.Row
+-import androidx.compose.foundation.layout.Spacer
+-import androidx.compose.foundation.layout.fillMaxHeight
+ import androidx.compose.foundation.layout.fillMaxWidth
+-import androidx.compose.foundation.layout.height
+ import androidx.compose.foundation.layout.heightIn
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.layout.size
+-import androidx.compose.foundation.layout.width
+-import androidx.compose.foundation.shape.RoundedCornerShape
+ import androidx.compose.material.icons.Icons
+ import androidx.compose.material.icons.filled.MoreVert
+ import androidx.compose.material3.Card
+@@ -28,11 +21,8 @@ import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+-import androidx.compose.ui.graphics.Color
+-import androidx.compose.ui.graphics.lerp
+ import androidx.compose.ui.platform.testTag
+ import androidx.compose.ui.res.stringResource
+-import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.text.style.TextAlign
+ import androidx.compose.ui.text.style.TextOverflow
+ import androidx.compose.ui.unit.dp
+@@ -41,19 +31,18 @@ import com.sherifradwan.ancnative.model.DemoPatient
+ import com.sherifradwan.ancnative.state.AncEvent
+ import com.sherifradwan.ancnative.state.editPatientEvent
+ import com.sherifradwan.ancnative.ui.BpAlertChip
+-import com.sherifradwan.ancnative.ui.ClinicalRiskBadge
+-import com.sherifradwan.ancnative.ui.ClinicalTagBadge
+ import com.sherifradwan.ancnative.ui.PatientDashboardRowProjection
+ import com.sherifradwan.ancnative.ui.PatientRiskTier
++import com.sherifradwan.ancnative.ui.components.RecordShapes
++import com.sherifradwan.ancnative.ui.components.RecordType
++import com.sherifradwan.ancnative.ui.components.StatusKind
++import com.sherifradwan.ancnative.ui.components.StatusTag
+ import com.sherifradwan.ancnative.ui.minimumTouchTarget
+-import com.sherifradwan.ancnative.ui.ActionRose
+-import com.sherifradwan.ancnative.ui.ClinicalCardTokens
+ import java.util.UUID
+ 
+ /**
+  * Standardized High-Density Patient Directory Card.
+  * Adheres to 360dp narrow viewport first and the Rule of Reusability.
+- * Replaces bloated legacy cards (~220dp) with a clean, un-truncated ~108-112dp resting height.
+  */
+ @Composable
+ fun PatientDirectoryCard(
+@@ -63,138 +52,116 @@ fun PatientDirectoryCard(
+     onOpenMenu: () -> Unit,
+     modifier: Modifier = Modifier,
+ ) {
+-    val isArabic = row.displayName.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.ARABIC }
+-
+-    // Ambient 3.5dp leading severity accent color
+-    val accentColor: Color = when {
+-        row.isSevereBp || row.isHighRisk -> ActionRose
+-        row.riskTier == PatientRiskTier.MEDIUM -> ClinicalCardTokens.WarningAccent
+-        else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+-    }
+-
+-    val cardBgColor = if (row.isHighRisk) {
+-        lerp(
+-            MaterialTheme.colorScheme.surface,
+-            MaterialTheme.colorScheme.errorContainer,
+-            0.04f,
+-        )
+-    } else {
+-        MaterialTheme.colorScheme.surface
+-    }
+-
+     Card(
+         modifier = modifier
+             .fillMaxWidth()
+-            .heightIn(min = 104.dp)
+             .testTag("patient-${patient.caseId}")
+             .testTag("workspace-${patient.caseId}")
+             .testTag("profile-${patient.caseId}")
+             .clickable { onEvent(AncEvent.OpenWorkspace(patient.id)) },
+-        shape = RoundedCornerShape(14.dp),
+-        colors = CardDefaults.cardColors(containerColor = cardBgColor),
+-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
++        shape = RecordShapes.Large,
++        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
++        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
++        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+     ) {
+-        Row(
++        Column(
+             modifier = Modifier
+                 .fillMaxWidth()
+-                .height(IntrinsicSize.Min),
++                .padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 12.dp),
++            verticalArrangement = Arrangement.spacedBy(2.dp),
+         ) {
+-            // Ambient 3.5dp leading-edge severity indicator strip
+-            Box(
+-                modifier = Modifier
+-                    .width(3.5.dp)
+-                    .fillMaxHeight()
+-                    .background(accentColor),
+-            )
++            val isArabic = row.displayName.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.ARABIC }
++            val hasTags = row.isHighRisk ||
++                row.riskTier == PatientRiskTier.MEDIUM ||
++                row.isSevereBp ||
++                row.isIncomplete ||
++                row.isDelivered
+ 
+-            Column(
++            // Name row: 48dp min touch target height, vertically centered
++            Row(
+                 modifier = Modifier
+                     .fillMaxWidth()
+-                    .padding(start = 12.dp, top = 10.dp, end = 8.dp, bottom = 10.dp),
+-                verticalArrangement = Arrangement.spacedBy(6.dp),
++                    .heightIn(min = 48.dp),
++                verticalAlignment = Alignment.CenterVertically,
++                horizontalArrangement = Arrangement.spacedBy(8.dp),
+             ) {
+-                // Header: leading Risk badge (High / Moderate) + Patient Name + Severe BP chip + MoreVert Menu
+-                Row(
+-                    modifier = Modifier.fillMaxWidth(),
+-                    verticalAlignment = Alignment.CenterVertically,
+-                ) {
+-                    if (row.isHighRisk) {
+-                        ClinicalRiskBadge(isHighRisk = true)
+-                        Spacer(Modifier.width(6.dp))
+-                    } else if (row.riskTier == PatientRiskTier.MEDIUM) {
+-                        ClinicalRiskBadge(isHighRisk = false, isModerate = true)
+-                        Spacer(Modifier.width(6.dp))
+-                    }
+-
+-                    Text(
+-                        text = row.displayName,
+-                        style = MaterialTheme.typography.titleMedium,
+-                        fontWeight = FontWeight.Bold,
+-                        color = MaterialTheme.colorScheme.onSurface,
+-                        maxLines = 2,
+-                        overflow = TextOverflow.Ellipsis,
+-                        textAlign = if (isArabic) TextAlign.End else TextAlign.Start,
+-                        modifier = Modifier.weight(1f),
+-                    )
+-
+-                    Spacer(Modifier.width(8.dp))
++                Text(
++                    text = row.displayName,
++                    style = RecordType.CardName,
++                    color = MaterialTheme.colorScheme.onSurface,
++                    maxLines = 2,
++                    overflow = TextOverflow.Ellipsis,
++                    textAlign = if (isArabic) TextAlign.End else TextAlign.Start,
++                    modifier = Modifier.weight(1f),
++                )
+ 
+-                    Row(
+-                        verticalAlignment = Alignment.CenterVertically,
+-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
++                if (hasTags) {
++                    Column(
++                        horizontalAlignment = Alignment.End,
++                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                     ) {
++                        if (row.isHighRisk) {
++                            StatusTag(StatusKind.HighRisk)
++                        } else if (row.riskTier == PatientRiskTier.MEDIUM) {
++                            StatusTag(StatusKind.ModerateRisk)
++                        }
++
+                         if (row.isSevereBp) {
+                             BpAlertChip(R.string.bp_badge_severe, isSevere = true)
+                         }
+ 
+-                        IconButton(
+-                            onClick = onOpenMenu,
+-                            modifier = Modifier
+-                                .minimumTouchTarget()
+-                                .testTag("patientMenu-${patient.caseId}"),
+-                        ) {
+-                            Icon(
+-                                Icons.Default.MoreVert,
+-                                contentDescription = stringResource(R.string.more_actions),
+-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+-                                modifier = Modifier.size(20.dp),
++                        if (row.isIncomplete) {
++                            Box(
++                                modifier = Modifier
++                                    .minimumTouchTarget()
++                                    .clickable(
++                                        onClickLabel = stringResource(R.string.registration_incomplete_chip_action),
++                                    ) {
++                                        editPatientEvent(
++                                            patient,
++                                            UUID.randomUUID().toString(),
++                                            UUID.randomUUID().toString(),
++                                        )?.let(onEvent)
++                                    }
++                                    .testTag("incompleteChipAction"),
++                                contentAlignment = Alignment.CenterEnd,
++                            ) {
++                                StatusTag(
++                                    kind = StatusKind.Incomplete,
++                                    modifier = Modifier.testTag("incompleteChip"),
++                                )
++                            }
++                        }
++
++                        if (row.isDelivered) {
++                            StatusTag(
++                                kind = StatusKind.Delivered,
++                                modifier = Modifier.testTag("deliveredTag"),
+                             )
+                         }
+                     }
+                 }
+ 
+-                if (row.isIncomplete) {
+-                    Box(
+-                        modifier = Modifier
+-                            .minimumTouchTarget()
+-                            .clickable(
+-                                onClickLabel = stringResource(R.string.registration_incomplete_chip_action),
+-                            ) {
+-                                editPatientEvent(
+-                                    patient,
+-                                    UUID.randomUUID().toString(),
+-                                    UUID.randomUUID().toString(),
+-                                )?.let(onEvent)
+-                            }
+-                            .testTag("incompleteChipAction"),
+-                        contentAlignment = Alignment.CenterStart,
+-                    ) {
+-                        ClinicalTagBadge(
+-                            text = stringResource(R.string.registration_incomplete_chip),
+-                            isError = false,
+-                            isWarning = true,
+-                            modifier = Modifier.testTag("incompleteChip"),
+-                        )
+-                    }
++                IconButton(
++                    onClick = onOpenMenu,
++                    modifier = Modifier
++                        .minimumTouchTarget()
++                        .testTag("patientMenu-${patient.caseId}"),
++                ) {
++                    Icon(
++                        Icons.Default.MoreVert,
++                        contentDescription = stringResource(R.string.more_actions),
++                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
++                        modifier = Modifier.size(20.dp),
++                    )
+                 }
+-
+-                // Body: Structured 3-Column Clinical Micro-Grid (GA & EDD, Parity, Vitals)
+-                PatientDirectoryMetricsRow(
+-                    patient = patient,
+-                    row = row,
+-                )
+             }
++
++            PatientDirectoryMetricsRow(
++                patient = patient,
++                row = row,
++                modifier = Modifier.padding(end = 8.dp),
++            )
+         }
+     }
+ }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt
+index 968b35f..019e5ec 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt
+@@ -2,36 +2,35 @@ package com.sherifradwan.ancnative.ui.patientdirectory
+ 
+ import androidx.compose.foundation.layout.Arrangement
+ import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.FlowRow
+ import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.Spacer
+ import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.foundation.layout.padding
+-import androidx.compose.foundation.shape.RoundedCornerShape
+ import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.Surface
+ import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
+-import androidx.compose.runtime.CompositionLocalProvider
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+-import androidx.compose.ui.platform.LocalLayoutDirection
++import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.res.stringResource
+-import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.text.style.TextOverflow
+-import androidx.compose.ui.unit.LayoutDirection
+ import androidx.compose.ui.unit.dp
+-import androidx.compose.ui.unit.sp
+ import com.sherifradwan.ancnative.R
+-import com.sherifradwan.ancnative.ui.patienthub.components.deliveredDaysAgo
+-import com.sherifradwan.ancnative.ui.patienthub.components.deliveredHeadline
+ import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.ui.ActionRose
+ import com.sherifradwan.ancnative.ui.GaDiscordanceMarker
+-import com.sherifradwan.ancnative.model.previousDeliverySummary
+ import com.sherifradwan.ancnative.ui.PatientDashboardRowProjection
+-import com.sherifradwan.ancnative.ui.ActionRose
++import com.sherifradwan.ancnative.ui.components.RecordShapes
++import com.sherifradwan.ancnative.ui.components.RecordType
++import com.sherifradwan.ancnative.ui.components.ltrIsolate
++import com.sherifradwan.ancnative.ui.patienthub.components.deliveredDaysAgo
++import com.sherifradwan.ancnative.ui.patienthub.components.deliveredHeadline
+ 
+ /**
+- * Standardized 3-Column Clinical Micro-Grid (~102dp width per column on 360dp).
+- * Enforces strict LTR layout direction to prevent column order mirroring on RTL locales.
++ * Standardized High-Density Clinical Metrics Grid for Patient Directory Card.
++ * Mirrors with layout direction (RTL-aware).
+  */
+ @Composable
+ fun PatientDirectoryMetricsRow(
+@@ -39,118 +38,239 @@ fun PatientDirectoryMetricsRow(
+     row: PatientDashboardRowProjection,
+     modifier: Modifier = Modifier,
+ ) {
+-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+-        Row(
+-            modifier = modifier.fillMaxWidth(),
+-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+-            verticalAlignment = Alignment.Top,
++    Column(
++        modifier = modifier.fillMaxWidth(),
++        verticalArrangement = Arrangement.spacedBy(8.dp),
++    ) {
++        if (row.isDelivered) {
++            Row(
++                modifier = Modifier.fillMaxWidth(),
++                horizontalArrangement = Arrangement.spacedBy(8.dp),
++                verticalAlignment = Alignment.Top,
++            ) {
++                DeliveryCell(row = row, modifier = Modifier.weight(2f))
++                ParityCell(patient = patient, modifier = Modifier.weight(1f))
++            }
++            Row(
++                modifier = Modifier.fillMaxWidth(),
++                horizontalArrangement = Arrangement.spacedBy(8.dp),
++                verticalAlignment = Alignment.Top,
++            ) {
++                BloodPressureCell(row = row, modifier = Modifier.weight(1f))
++                BloodGroupCell(row = row, modifier = Modifier.weight(1f))
++                Spacer(modifier = Modifier.weight(1f))
++            }
++        } else {
++            Row(
++                modifier = Modifier.fillMaxWidth(),
++                horizontalArrangement = Arrangement.spacedBy(8.dp),
++                verticalAlignment = Alignment.Top,
++            ) {
++                GestationalAgeCell(row = row, modifier = Modifier.weight(1f))
++                ParityCell(patient = patient, modifier = Modifier.weight(1f))
++                BloodPressureCell(row = row, modifier = Modifier.weight(1f))
++            }
++            Row(
++                modifier = Modifier.fillMaxWidth(),
++                horizontalArrangement = Arrangement.spacedBy(8.dp),
++                verticalAlignment = Alignment.Top,
++            ) {
++                BloodGroupCell(row = row, modifier = Modifier.weight(1f))
++                DueDateCell(row = row, modifier = Modifier.weight(2f))
++            }
++        }
++    }
++}
++
++@Composable
++private fun MetricCell(
++    label: String,
++    modifier: Modifier = Modifier,
++    content: @Composable () -> Unit,
++) {
++    Column(modifier = modifier) {
++        Text(
++            text = label,
++            style = RecordType.MetricLabel,
++            color = MaterialTheme.colorScheme.onSurfaceVariant,
++            maxLines = 1,
++            overflow = TextOverflow.Ellipsis,
++        )
++        content()
++    }
++}
++
++@Composable
++private fun MetricValue(
++    value: String,
++    modifier: Modifier = Modifier,
++    isMissing: Boolean = false,
++    color: Color = if (isMissing) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
++) {
++    Text(
++        text = value,
++        style = if (isMissing) RecordType.Missing else RecordType.MetricValue,
++        color = color,
++        maxLines = 1,
++        overflow = TextOverflow.Ellipsis,
++        modifier = modifier,
++    )
++}
++
++@Composable
++private fun GestationalAgeCell(
++    row: PatientDashboardRowProjection,
++    modifier: Modifier = Modifier,
++) {
++    MetricCell(
++        label = stringResource(R.string.ga_label),
++        modifier = modifier,
++    ) {
++        val hasGa = row.gestationalAgeText.isNotBlank() && row.gestationalAgeText != "-"
++        FlowRow(
++            horizontalArrangement = Arrangement.spacedBy(4.dp),
++            verticalArrangement = Arrangement.spacedBy(2.dp),
++            itemVerticalAlignment = Alignment.CenterVertically,
+         ) {
+-            // Column 1: Gestational Age & EDD
+-            Column(modifier = Modifier.weight(1f)) {
+-                Text(
+-                    text = stringResource(R.string.ga_label),
+-                    style = MaterialTheme.typography.labelSmall,
+-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+-                    fontWeight = FontWeight.Medium,
+-                    fontSize = 10.sp,
++            if (hasGa) {
++                MetricValue(
++                    value = ltrIsolate(row.gestationalAgeText),
++                )
++            } else {
++                MetricValue(
++                    value = stringResource(R.string.pending),
++                    isMissing = true,
+                 )
+-                val hasGa = row.gestationalAgeText.isNotBlank() && row.gestationalAgeText != "-"
+-                Row(
+-                    verticalAlignment = Alignment.CenterVertically,
+-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
++            }
++
++            if (hasGa && row.isDatingDiscordant) {
++                GaDiscordanceMarker(style = RecordType.MetricValue)
++            }
++
++            if (row.isLateOrPostTerm) {
++                Surface(
++                    shape = RecordShapes.Small,
++                    color = MaterialTheme.colorScheme.errorContainer,
+                 ) {
+                     Text(
+-                        text = if (row.isDelivered) deliveredHeadline(row.deliveryDate) else if (hasGa) row.gestationalAgeText else stringResource(R.string.pending),
+-                        style = MaterialTheme.typography.bodyMedium,
+-                        fontWeight = FontWeight.Bold,
+-                        color = MaterialTheme.colorScheme.onSurface,
+-                        maxLines = 1,
+-                        modifier = Modifier.weight(1f, fill = false),
++                        text = "Post",
++                        style = RecordType.Tag,
++                        color = MaterialTheme.colorScheme.onErrorContainer,
++                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
+                     )
+-                    if (hasGa && row.isDatingDiscordant) GaDiscordanceMarker(style = MaterialTheme.typography.bodyMedium)
+-                    if (row.isLateOrPostTerm) {
+-                        Surface(
+-                            shape = RoundedCornerShape(4.dp),
+-                            color = MaterialTheme.colorScheme.errorContainer,
+-                        ) {
+-                            Text(
+-                                text = "Post",
+-                                style = MaterialTheme.typography.labelSmall,
+-                                color = MaterialTheme.colorScheme.onErrorContainer,
+-                                fontWeight = FontWeight.Bold,
+-                                fontSize = 9.sp,
+-                                modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp),
+-                            )
+-                        }
+-                    }
+                 }
+-                Text(
+-                    text = if (row.isDelivered) deliveredDaysAgo(row.deliveryDate).orEmpty() else if (!row.eddText.isNullOrBlank()) "Due ${row.eddText}" else stringResource(R.string.edd_pending),
+-                    style = MaterialTheme.typography.labelSmall,
+-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+-                    fontSize = 10.sp,
+-                    maxLines = 1,
+-                    overflow = TextOverflow.Ellipsis,
+-                )
+             }
++        }
++    }
++}
+ 
+-            // Column 2: Obstetric Parity & History
+-            Column(modifier = Modifier.weight(1f)) {
+-                Text(
+-                    text = "Parity",
+-                    style = MaterialTheme.typography.labelSmall,
+-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+-                    fontWeight = FontWeight.Medium,
+-                    fontSize = 10.sp,
+-                )
+-                val g = patient.gravida ?: 1L
+-                val p = patient.parity ?: 0L
+-                val a = patient.abortion ?: 0L
+-                val parityText = if (a > 0L) "G$g P$p A$a" else "G$g P$p"
+-                Text(
+-                    text = parityText,
+-                    style = MaterialTheme.typography.bodyMedium,
+-                    fontWeight = FontWeight.Bold,
+-                    color = MaterialTheme.colorScheme.onSurface,
+-                    maxLines = 1,
+-                )
+-                val prevDelivery = previousDeliverySummary(patient).takeIf { it.isNotBlank() } ?: "Nulliparous"
+-                Text(
+-                    text = prevDelivery,
+-                    style = MaterialTheme.typography.labelSmall,
+-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+-                    fontSize = 10.sp,
+-                    maxLines = 1,
+-                    overflow = TextOverflow.Ellipsis,
+-                )
+-            }
++@Composable
++private fun ParityCell(
++    patient: DemoPatient,
++    modifier: Modifier = Modifier,
++) {
++    MetricCell(
++        label = stringResource(R.string.parity),
++        modifier = modifier,
++    ) {
++        val g = patient.gravida ?: 1L
++        val p = patient.parity ?: 0L
++        val a = patient.abortion ?: 0L
++        val parityText = if (a > 0L) "G$g P$p A$a" else "G$g P$p"
++        MetricValue(
++            value = ltrIsolate(parityText),
++        )
++    }
++}
+ 
+-            // Column 3: Bedside Vitals (Latest BP & Blood Group)
+-            Column(modifier = Modifier.weight(1f)) {
+-                Text(
+-                    text = "Vitals / BP",
+-                    style = MaterialTheme.typography.labelSmall,
+-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+-                    fontWeight = FontWeight.Medium,
+-                    fontSize = 10.sp,
+-                )
+-                Text(
+-                    text = row.latestVitalsBp ?: "--/--",
+-                    style = MaterialTheme.typography.bodyMedium,
+-                    fontWeight = FontWeight.Bold,
+-                    color = if (row.isSevereBp) ActionRose else MaterialTheme.colorScheme.onSurface,
+-                    maxLines = 1,
+-                )
+-                val bgText = if (!row.bloodGroup.isNullOrBlank()) "Blood: ${row.bloodGroup}" else "Blood: --"
+-                Text(
+-                    text = bgText,
+-                    style = MaterialTheme.typography.labelSmall,
+-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+-                    fontSize = 10.sp,
+-                    maxLines = 1,
+-                    overflow = TextOverflow.Ellipsis,
+-                )
+-            }
++@Composable
++private fun BloodPressureCell(
++    row: PatientDashboardRowProjection,
++    modifier: Modifier = Modifier,
++) {
++    MetricCell(
++        label = stringResource(R.string.field_label_bp),
++        modifier = modifier,
++    ) {
++        if (!row.latestVitalsBp.isNullOrBlank()) {
++            MetricValue(
++                value = ltrIsolate(row.latestVitalsBp),
++                color = if (row.isSevereBp) ActionRose else MaterialTheme.colorScheme.onSurface,
++            )
++        } else {
++            MetricValue(
++                value = "--/--",
++                isMissing = true,
++            )
++        }
++    }
++}
++
++@Composable
++private fun BloodGroupCell(
++    row: PatientDashboardRowProjection,
++    modifier: Modifier = Modifier,
++) {
++    MetricCell(
++        label = stringResource(R.string.blood_group),
++        modifier = modifier,
++    ) {
++        if (!row.bloodGroup.isNullOrBlank()) {
++            MetricValue(
++                value = ltrIsolate(row.bloodGroup),
++            )
++        } else {
++            MetricValue(
++                value = "--",
++                isMissing = true,
++            )
++        }
++    }
++}
++
++@Composable
++private fun DueDateCell(
++    row: PatientDashboardRowProjection,
++    modifier: Modifier = Modifier,
++) {
++    MetricCell(
++        label = stringResource(R.string.field_label_due_date),
++        modifier = modifier,
++    ) {
++        if (!row.eddText.isNullOrBlank()) {
++            MetricValue(
++                value = ltrIsolate(row.eddText),
++            )
++        } else {
++            MetricValue(
++                value = stringResource(R.string.pending),
++                isMissing = true,
++            )
++        }
++    }
++}
++
++@Composable
++private fun DeliveryCell(
++    row: PatientDashboardRowProjection,
++    modifier: Modifier = Modifier,
++) {
++    MetricCell(
++        label = stringResource(R.string.delivery_outcome_section),
++        modifier = modifier,
++    ) {
++        MetricValue(
++            value = deliveredHeadline(row.deliveryDate),
++        )
++        val daysAgo = deliveredDaysAgo(row.deliveryDate)
++        if (daysAgo != null) {
++            Text(
++                text = daysAgo,
++                style = RecordType.MetricLabel,
++                color = MaterialTheme.colorScheme.onSurfaceVariant,
++                maxLines = 1,
++                overflow = TextOverflow.Ellipsis,
++            )
+         }
+     }
+ }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt
+index b1bea21..b807e01 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt
+@@ -1,61 +1,47 @@
+ package com.sherifradwan.ancnative.ui.patienthub.components
+ 
+ import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Box
+ import androidx.compose.foundation.layout.Column
+ import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.fillMaxHeight
++import androidx.compose.foundation.layout.fillMaxSize
+ import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.layout.size
+-import androidx.compose.foundation.shape.RoundedCornerShape
+ import androidx.compose.material.icons.Icons
+-import androidx.compose.material.icons.filled.Add
+-import androidx.compose.material.icons.filled.DateRange
+-import androidx.compose.material.icons.filled.Edit
+-import androidx.compose.material.icons.filled.Healing
+-import androidx.compose.material.icons.filled.Person
+ import androidx.compose.material.icons.filled.Warning
+ import androidx.compose.material3.Icon
+-import androidx.compose.material3.IconButton
+ import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.Surface
+ import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
+ import androidx.compose.runtime.remember
+-import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+-import androidx.compose.ui.graphics.vector.ImageVector
++import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.platform.testTag
+ import androidx.compose.ui.res.stringResource
+ import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.unit.dp
+ import com.sherifradwan.ancnative.R
+-import java.time.LocalDate
+-import kotlin.math.abs
+ import com.sherifradwan.ancnative.model.DemoPatient
+ import com.sherifradwan.ancnative.model.datingSummaryOf
+ import com.sherifradwan.ancnative.model.datingTextRows
+ import com.sherifradwan.ancnative.model.previousDeliverySummary
+-import com.sherifradwan.ancnative.ui.components.DueDateBox
+ import com.sherifradwan.ancnative.ui.AllergyState
+-import com.sherifradwan.ancnative.ui.FactRow
+-import com.sherifradwan.ancnative.ui.ObstetricParityBadge
+-import com.sherifradwan.ancnative.ui.classifyAllergy
+ import com.sherifradwan.ancnative.ui.ClinicalCardTokens
++import com.sherifradwan.ancnative.ui.classifyAllergy
++import com.sherifradwan.ancnative.ui.components.FieldFamilies
++import com.sherifradwan.ancnative.ui.components.LabeledValue
++import com.sherifradwan.ancnative.ui.components.LabeledValueRow
++import com.sherifradwan.ancnative.ui.components.RecordSectionCard
++import com.sherifradwan.ancnative.ui.components.RecordShapes
++import com.sherifradwan.ancnative.ui.components.RecordType
++import com.sherifradwan.ancnative.ui.components.SectionTextAction
+ import com.sherifradwan.ancnative.ui.isDarkTheme
+-import com.sherifradwan.ancnative.ui.minimumTouchTarget
+-
+-@Composable
+-private fun SectionIconAction(
+-    onClick: () -> Unit,
+-    icon: ImageVector,
+-    description: String,
+-    tag: String,
+-) {
+-    IconButton(onClick = onClick, modifier = Modifier.minimumTouchTarget().testTag(tag)) {
+-        Icon(icon, contentDescription = description, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+-    }
+-}
++import java.time.LocalDate
++import kotlin.math.abs
+ 
+ @Composable
+ fun DatingSection(
+@@ -63,38 +49,101 @@ fun DatingSection(
+     onEdit: (() -> Unit)?,
+     modifier: Modifier = Modifier,
+ ) {
+-    val scheme = MaterialTheme.colorScheme
+     val dating = patient.dating
+     val summary = remember(patient) { datingSummaryOf(patient, LocalDate.now()) }
+-    ClinicalGroupSection(
++    RecordSectionCard(
+         title = stringResource(R.string.pregnancy_dating_title),
+-        icon = Icons.Default.DateRange,
+-        iconTint = scheme.onPrimaryContainer,
+-        iconBgColor = scheme.primaryContainer,
+-        actionButton = onEdit?.let {
+-            { SectionIconAction(it, Icons.Default.Edit, stringResource(R.string.edit_dating), "editDating") }
+-        },
++        family = FieldFamilies.patient(),
+         modifier = modifier.testTag("datingCard"),
++        action = onEdit?.let {
++            {
++                SectionTextAction(
++                    text = stringResource(R.string.action_edit),
++                    contentDescription = stringResource(R.string.edit_dating),
++                    onClick = it,
++                    modifier = Modifier.testTag("editDating"),
++                )
++            }
++        },
+     ) {
+         if (dating == null) {
+             Text(
+                 text = stringResource(R.string.no_dating_recorded),
+-                style = MaterialTheme.typography.bodyMedium,
+-                color = scheme.onSurfaceVariant,
++                style = RecordType.Missing,
++                color = MaterialTheme.colorScheme.onSurfaceVariant,
+             )
+-            return@ClinicalGroupSection
++            return@RecordSectionCard
++        }
++
++        val rows = datingTextRows(summary)
++        val originRow = rows.firstOrNull { !it.isEdd && it.label != "Method" }
++        val eddRow = rows.firstOrNull { it.isEdd }
++        val methodRow = rows.firstOrNull { it.label == "Method" }
++
++        if (originRow != null) {
++            LabeledValueRow {
++                Box(
++                    modifier = Modifier
++                        .weight(1f)
++                        .fillMaxHeight()
++                        .testTag("datingField-${originRow.label}"),
++                ) {
++                    LabeledValue(
++                        label = originRow.label,
++                        value = originRow.value,
++                        emphasis = true,
++                        modifier = Modifier.fillMaxSize(),
++                    )
++                }
++                if (eddRow != null) {
++                    Box(
++                        modifier = Modifier
++                            .weight(1f)
++                            .fillMaxHeight()
++                            .testTag("datingField-${eddRow.label}"),
++                    ) {
++                        LabeledValue(
++                            label = eddRow.label,
++                            value = eddRow.value,
++                            emphasis = true,
++                            modifier = Modifier
++                                .fillMaxSize()
++                                .testTag("dueDateBox"),
++                        )
++                    }
++                }
++            }
++        } else if (eddRow != null) {
++            Box(
++                modifier = Modifier
++                    .fillMaxWidth()
++                    .testTag("datingField-${eddRow.label}"),
++            ) {
++                LabeledValue(
++                    label = eddRow.label,
++                    value = eddRow.value,
++                    emphasis = true,
++                    modifier = Modifier
++                        .fillMaxWidth()
++                        .testTag("dueDateBox"),
++                )
++            }
+         }
+-        datingTextRows(summary).forEach { row ->
+-            if (row.isEdd) {
+-                DueDateBox(
++
++        methodRow?.let { row ->
++            Box(
++                modifier = Modifier
++                    .fillMaxWidth()
++                    .testTag("datingField-Method"),
++            ) {
++                LabeledValue(
+                     label = row.label,
+                     value = row.value,
+-                    modifier = Modifier.padding(vertical = 4.dp),
++                    modifier = Modifier.fillMaxWidth(),
+                 )
+-            } else {
+-                FactRow(row.label, row.value)
+             }
+         }
++
+         summary.discordance?.let { advice ->
+             val dark = isDarkTheme()
+             SectionBanner(
+@@ -106,10 +155,17 @@ fun DatingSection(
+                 container = if (dark) ClinicalCardTokens.WarningDarkBg else ClinicalCardTokens.WarningBg,
+                 accent = if (dark) ClinicalCardTokens.WarningDarkAccent else ClinicalCardTokens.WarningAccent,
+                 content = if (dark) ClinicalCardTokens.WarningDarkText else ClinicalCardTokens.WarningText,
+-                modifier = Modifier.padding(top = 4.dp).testTag("datingDiscordanceAlert"),
++                modifier = Modifier.testTag("datingDiscordanceAlert"),
++            )
++        }
++
++        if (!dating.notes.isNullOrBlank()) {
++            LabeledValue(
++                label = stringResource(R.string.notes),
++                value = dating.notes,
++                modifier = Modifier.fillMaxWidth().testTag("datingField-Notes"),
+             )
+         }
+-        if (!dating.notes.isNullOrBlank()) FactRow(R.string.notes, dating.notes)
+     }
+ }
+ 
+@@ -123,9 +179,9 @@ private fun SectionBanner(
+     modifier: Modifier = Modifier,
+ ) {
+     Surface(
+-        shape = RoundedCornerShape(8.dp),
++        shape = RecordShapes.Small,
+         color = container,
+-        modifier = modifier.fillMaxWidth().padding(bottom = 6.dp),
++        modifier = modifier.fillMaxWidth(),
+     ) {
+         Row(
+             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+@@ -135,14 +191,54 @@ private fun SectionBanner(
+             Icon(Icons.Default.Warning, contentDescription = null, tint = accent, modifier = Modifier.size(16.dp))
+             Text(
+                 text = text,
+-                style = MaterialTheme.typography.bodyMedium,
+-                fontWeight = FontWeight.Bold,
++                style = RecordType.Secondary.copy(fontWeight = FontWeight.Bold),
+                 color = content,
+             )
+         }
+     }
+ }
+ 
++@Composable
++fun ObstetricHistorySection(
++    patient: DemoPatient,
++    modifier: Modifier = Modifier,
++) {
++    RecordSectionCard(
++        title = stringResource(R.string.obstetric_history_title),
++        family = FieldFamilies.obstetric(),
++        modifier = modifier.testTag("obstetricHistoryCard"),
++    ) {
++        LabeledValueRow(
++            modifier = Modifier.testTag("obstetricParityBadge"),
++        ) {
++            LabeledValue(
++                label = stringResource(R.string.gravida),
++                value = (patient.gravida ?: 1L).toString(),
++                emphasis = true,
++                modifier = Modifier
++                    .weight(1f)
++                    .fillMaxHeight(),
++            )
++            LabeledValue(
++                label = stringResource(R.string.parity),
++                value = (patient.parity ?: 0L).toString(),
++                emphasis = true,
++                modifier = Modifier
++                    .weight(1f)
++                    .fillMaxHeight(),
++            )
++            LabeledValue(
++                label = stringResource(R.string.abortion),
++                value = (patient.abortion ?: 0L).toString(),
++                emphasis = true,
++                modifier = Modifier
++                    .weight(1f)
++                    .fillMaxHeight(),
++            )
++        }
++    }
++}
++
+ @Composable
+ fun ParityPregnanciesSection(
+     patient: DemoPatient,
+@@ -151,32 +247,36 @@ fun ParityPregnanciesSection(
+     onDeletePregnancy: ((String) -> Unit)?,
+     modifier: Modifier = Modifier,
+ ) {
+-    val scheme = MaterialTheme.colorScheme
+-    ClinicalGroupSection(
++    RecordSectionCard(
+         title = stringResource(R.string.previous_pregnancies),
+-        icon = Icons.Default.Person,
+-        iconTint = scheme.onPrimaryContainer,
+-        iconBgColor = scheme.primaryContainer,
+-        actionButton = onAddPregnancy?.let {
+-            { SectionIconAction(it, Icons.Default.Add, stringResource(R.string.add_previous_pregnancy), "addPregnancyButton") }
+-        },
++        family = FieldFamilies.obstetric(),
+         modifier = modifier.testTag("obstetricParityCard"),
++        action = onAddPregnancy?.let {
++            {
++                SectionTextAction(
++                    text = stringResource(R.string.action_add),
++                    contentDescription = stringResource(R.string.add_previous_pregnancy),
++                    onClick = it,
++                    modifier = Modifier.testTag("addPregnancyButton"),
++                )
++            }
++        },
+     ) {
+-        ObstetricParityBadge(patient.gravida, patient.parity, patient.abortion)
+         if (patient.previousPregnancies.isEmpty()) {
+             Text(
+                 text = previousDeliverySummary(patient),
+-                style = MaterialTheme.typography.bodyMedium,
+-                color = scheme.onSurfaceVariant,
+-                modifier = Modifier.padding(vertical = 6.dp),
++                style = RecordType.Secondary,
++                color = MaterialTheme.colorScheme.onSurfaceVariant,
+             )
+         } else {
+-            patient.previousPregnancies.forEach { pregnancy ->
+-                PastDeliveryMicroRow(
+-                    pregnancy = pregnancy,
+-                    onEdit = onEditPregnancy?.let { edit -> { edit(pregnancy.id) } },
+-                    onDelete = onDeletePregnancy?.let { del -> { del(pregnancy.id) } },
+-                )
++            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
++                patient.previousPregnancies.forEach { pregnancy ->
++                    PastDeliveryMicroRow(
++                        pregnancy = pregnancy,
++                        onEdit = onEditPregnancy?.let { edit -> { edit(pregnancy.id) } },
++                        onDelete = onDeletePregnancy?.let { del -> { del(pregnancy.id) } },
++                    )
++                }
+             }
+         }
+     }
+@@ -189,15 +289,20 @@ fun MedicalHistoriesSection(
+     modifier: Modifier = Modifier,
+ ) {
+     val scheme = MaterialTheme.colorScheme
+-    ClinicalGroupSection(
++    RecordSectionCard(
+         title = stringResource(R.string.medical_histories_title),
+-        icon = Icons.Default.Healing,
+-        iconTint = scheme.onPrimaryContainer,
+-        iconBgColor = scheme.primaryContainer,
+-        actionButton = onEdit?.let {
+-            { SectionIconAction(it, Icons.Default.Edit, stringResource(R.string.edit_patient), "editMedicalHistoryButton") }
+-        },
++        family = FieldFamilies.background(),
+         modifier = modifier.testTag("medicalHistoriesCard"),
++        action = onEdit?.let {
++            {
++                SectionTextAction(
++                    text = stringResource(R.string.action_edit),
++                    contentDescription = stringResource(R.string.edit_patient),
++                    onClick = it,
++                    modifier = Modifier.testTag("editMedicalHistoryButton"),
++                )
++            }
++        },
+     ) {
+         when (val allergy = classifyAllergy(patient.allergyHistory)) {
+             is AllergyState.Recorded -> SectionBanner(
+@@ -206,23 +311,37 @@ fun MedicalHistoriesSection(
+                 accent = scheme.error,
+                 content = scheme.onErrorContainer,
+             )
+-            AllergyState.ExplicitlyNone -> Text(
+-                text = stringResource(R.string.no_allergy_history),
+-                style = MaterialTheme.typography.bodyMedium,
+-                color = scheme.onSurfaceVariant,
+-                modifier = Modifier.padding(bottom = 6.dp),
++            AllergyState.ExplicitlyNone -> LabeledValue(
++                label = stringResource(R.string.allergy_history),
++                value = stringResource(R.string.no_allergy_history),
++                modifier = Modifier.fillMaxWidth(),
+             )
+-            AllergyState.NotRecorded -> Text(
+-                text = stringResource(R.string.not_recorded),
+-                style = MaterialTheme.typography.bodyMedium,
+-                color = scheme.onSurfaceVariant,
+-                modifier = Modifier.padding(bottom = 6.dp),
++            AllergyState.NotRecorded -> LabeledValue(
++                label = stringResource(R.string.allergy_history),
++                value = null,
++                modifier = Modifier.fillMaxWidth(),
++            )
++        }
++        if (!patient.medicalHistory.isNullOrBlank()) {
++            LabeledValue(
++                label = stringResource(R.string.medical_history),
++                value = patient.medicalHistory,
++                modifier = Modifier.fillMaxWidth(),
+             )
+         }
+-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+-            if (!patient.medicalHistory.isNullOrBlank()) FactRow(R.string.medical_history, patient.medicalHistory)
+-            if (!patient.surgicalHistory.isNullOrBlank()) FactRow(R.string.surgical_history, patient.surgicalHistory)
+-            if (!patient.familyHistory.isNullOrBlank()) FactRow(R.string.family_history, patient.familyHistory)
++        if (!patient.surgicalHistory.isNullOrBlank()) {
++            LabeledValue(
++                label = stringResource(R.string.surgical_history),
++                value = patient.surgicalHistory,
++                modifier = Modifier.fillMaxWidth(),
++            )
++        }
++        if (!patient.familyHistory.isNullOrBlank()) {
++            LabeledValue(
++                label = stringResource(R.string.family_history),
++                value = patient.familyHistory,
++                modifier = Modifier.fillMaxWidth(),
++            )
+         }
+     }
+ }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PastDeliveryMicroRow.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PastDeliveryMicroRow.kt
+index f8456cd..70b1008 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PastDeliveryMicroRow.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/PastDeliveryMicroRow.kt
+@@ -1,15 +1,9 @@
+ package com.sherifradwan.ancnative.ui.patienthub.components
+ 
+-import androidx.compose.foundation.clickable
+ import androidx.compose.foundation.layout.Arrangement
+-import androidx.compose.foundation.layout.Column
+ import androidx.compose.foundation.layout.ExperimentalLayoutApi
+ import androidx.compose.foundation.layout.FlowRow
+-import androidx.compose.foundation.layout.Row
+-import androidx.compose.foundation.layout.fillMaxWidth
+-import androidx.compose.foundation.layout.heightIn
+ import androidx.compose.foundation.layout.padding
+-import androidx.compose.foundation.shape.RoundedCornerShape
+ import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.Surface
+ import androidx.compose.material3.Text
+@@ -18,14 +12,15 @@ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.platform.testTag
+ import androidx.compose.ui.res.stringResource
+-import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.text.style.TextOverflow
+ import androidx.compose.ui.unit.dp
+ import com.sherifradwan.ancnative.R
+ import com.sherifradwan.ancnative.model.DemoPreviousPregnancy
+ import com.sherifradwan.ancnative.storage.DeletableType
+ import com.sherifradwan.ancnative.ui.DeleteIconButton
+-import com.sherifradwan.ancnative.ui.minimumTouchTarget
++import com.sherifradwan.ancnative.ui.components.RecordRow
++import com.sherifradwan.ancnative.ui.components.RecordShapes
++import com.sherifradwan.ancnative.ui.components.RecordType
+ import com.sherifradwan.ancnative.ui.patienthub.model.OutcomeTone
+ import com.sherifradwan.ancnative.ui.patienthub.model.RowExtraKind
+ import com.sherifradwan.ancnative.ui.patienthub.model.pastDeliveryRow
+@@ -62,68 +57,57 @@ fun PastDeliveryMicroRow(
+     val editLabel = stringResource(R.string.correct_previous_pregnancy)
+     val outcomeText = row.outcomeLabelRes?.let { stringResource(it) } ?: row.outcomeLabel
+ 
+-    Row(
+-        modifier = modifier
+-            .fillMaxWidth()
+-            .heightIn(min = 48.dp)
+-            .testTag("pregnancy-${pregnancy.id}"),
+-        verticalAlignment = Alignment.Top,
++    RecordRow(
++        onClick = onEdit,
++        onClickLabel = editLabel,
++        modifier = modifier.testTag("pregnancy-${pregnancy.id}"),
++        clickTag = if (onEdit != null) "editPregnancy-${pregnancy.id}" else null,
++        trailing = onDelete?.let { { DeleteIconButton(DeletableType.PREVIOUS_PREGNANCY, pregnancy, it) } },
+     ) {
+-        val editClick = if (onEdit != null) {
+-            Modifier.clickable(onClickLabel = editLabel, onClick = onEdit).minimumTouchTarget().testTag("editPregnancy-${pregnancy.id}")
+-        } else {
+-            Modifier
+-        }
+-        Column(
+-            modifier = Modifier.weight(1f).then(editClick).padding(vertical = 6.dp),
++        FlowRow(
++            horizontalArrangement = Arrangement.spacedBy(6.dp),
+             verticalArrangement = Arrangement.spacedBy(2.dp),
++            itemVerticalAlignment = Alignment.CenterVertically,
+         ) {
+-            FlowRow(
+-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+-                verticalArrangement = Arrangement.spacedBy(2.dp),
+-                itemVerticalAlignment = Alignment.CenterVertically,
+-            ) {
+-                Text(
+-                    text = yearText,
+-                    style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
+-                    fontWeight = FontWeight.Bold,
+-                    color = scheme.onSurface,
+-                )
+-                outcomeText?.let {
+-                    Surface(shape = RoundedCornerShape(6.dp), color = chipBg) {
+-                        Text(
+-                            text = it,
+-                            style = MaterialTheme.typography.labelMedium,
+-                            fontWeight = FontWeight.SemiBold,
+-                            color = chipFg,
+-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+-                        )
+-                    }
+-                }
+-                row.mode?.let {
+-                    Text(text = it, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurface)
++            Text(
++                text = yearText,
++                style = RecordType.KeyValue.copy(fontFeatureSettings = "tnum"),
++                color = scheme.onSurface,
++            )
++            outcomeText?.let {
++                Surface(shape = RecordShapes.Small, color = chipBg) {
++                    Text(
++                        text = it,
++                        style = RecordType.Tag,
++                        color = chipFg,
++                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
++                    )
+                 }
+             }
+-            if (line2.isNotEmpty()) {
++            row.mode?.let {
+                 Text(
+-                    text = line2,
+-                    style = MaterialTheme.typography.bodySmall,
+-                    color = scheme.onSurfaceVariant,
+-                    maxLines = 2,
+-                    overflow = TextOverflow.Ellipsis,
+-                )
+-            }
+-            if (line3.isNotEmpty()) {
+-                Text(
+-                    text = line3,
+-                    style = MaterialTheme.typography.bodySmall,
+-                    color = scheme.onSurfaceVariant,
+-                    modifier = Modifier.testTag("pregnancyExtras-${pregnancy.id}"),
++                    text = it,
++                    style = RecordType.FieldValue,
++                    color = scheme.onSurface,
+                 )
+             }
+         }
+-        if (onDelete != null) {
+-            DeleteIconButton(DeletableType.PREVIOUS_PREGNANCY, pregnancy, onDelete)
++        if (line2.isNotEmpty()) {
++            Text(
++                text = line2,
++                style = RecordType.Secondary,
++                color = scheme.onSurfaceVariant,
++                maxLines = 2,
++                overflow = TextOverflow.Ellipsis,
++            )
++        }
++        if (line3.isNotEmpty()) {
++            Text(
++                text = line3,
++                style = RecordType.Secondary,
++                color = scheme.onSurfaceVariant,
++                modifier = Modifier.testTag("pregnancyExtras-${pregnancy.id}"),
++            )
+         }
+     }
+ }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+index 652e726..c7e6856 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+@@ -6,12 +6,8 @@ import androidx.compose.foundation.layout.fillMaxSize
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.rememberScrollState
+ import androidx.compose.foundation.verticalScroll
+-import androidx.compose.material3.HorizontalDivider
+-import androidx.compose.material3.MaterialTheme
+-import androidx.compose.material3.Surface
+ import androidx.compose.runtime.Composable
+ import androidx.compose.runtime.remember
+-import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.platform.testTag
+ import androidx.compose.ui.unit.dp
+@@ -26,18 +22,10 @@ import com.sherifradwan.ancnative.ui.patienthub.components.ClinicalAttentionCard
+ import com.sherifradwan.ancnative.ui.patienthub.components.DatingSection
+ import com.sherifradwan.ancnative.ui.patienthub.components.DeliveryPlanningCard
+ import com.sherifradwan.ancnative.ui.patienthub.components.MedicalHistoriesSection
++import com.sherifradwan.ancnative.ui.patienthub.components.ObstetricHistorySection
+ import com.sherifradwan.ancnative.ui.patienthub.components.ParityPregnanciesSection
+ import java.util.UUID
+ 
+-@Composable
+-private fun SectionDivider() {
+-    HorizontalDivider(
+-        modifier = Modifier.padding(vertical = 8.dp),
+-        thickness = 0.75.dp,
+-        color = MaterialTheme.colorScheme.outlineVariant,
+-    )
+-}
+-
+ @Composable
+ fun OverviewTab(
+     patient: DemoPatient,
+@@ -67,7 +55,7 @@ fun OverviewTab(
+             .verticalScroll(rememberScrollState())
+             .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 48.dp)
+             .testTag("overviewTabContent"),
+-        verticalArrangement = Arrangement.spacedBy(14.dp),
++        verticalArrangement = Arrangement.spacedBy(12.dp),
+     ) {
+         val severeBp = remember(patient.visits) { severeBpAttention(patient.visits) }
+         ClinicalAttentionCard(
+@@ -76,48 +64,45 @@ fun OverviewTab(
+             onEdit = if (canEdit) onEditAttention else null,
+         )
+ 
+-        Surface(
+-            color = MaterialTheme.colorScheme.surface,
+-            modifier = Modifier.fillMaxWidth(),
+-        ) {
+-            Column {
+-                DatingSection(
+-                    patient = patient,
+-                    onEdit = if (canEdit) {
+-                        {
+-                            onEvent(
+-                                AncEvent.StartDatingEditor(
+-                                    patientId = patient.id,
+-                                    editorSessionId = UUID.randomUUID().toString(),
+-                                ),
+-                            )
+-                        }
+-                    } else null,
+-                )
+-                SectionDivider()
+-                ParityPregnanciesSection(
+-                    patient = patient,
+-                    onAddPregnancy = if (canEdit) ({ startPregnancyEditor(null) }) else null,
+-                    onEditPregnancy = if (canEdit) ({ startPregnancyEditor(it) }) else null,
+-                    onDeletePregnancy = if (canEdit) {
+-                        {
+-                            onEvent(
+-                                AncEvent.RequestDelete(
+-                                    patientId = patient.id,
+-                                    type = DeletableType.PREVIOUS_PREGNANCY,
+-                                    recordId = it,
+-                                ),
+-                            )
+-                        }
+-                    } else null,
+-                )
+-                SectionDivider()
+-                MedicalHistoriesSection(
+-                    patient = patient,
+-                    onEdit = if (canEdit) ({ startPatientEditor() }) else null,
+-                )
+-            }
+-        }
++        DatingSection(
++            patient = patient,
++            onEdit = if (canEdit) {
++                {
++                    onEvent(
++                        AncEvent.StartDatingEditor(
++                            patientId = patient.id,
++                            editorSessionId = UUID.randomUUID().toString(),
++                        ),
++                    )
++                }
++            } else null,
++        )
++
++        ObstetricHistorySection(
++            patient = patient,
++        )
++
++        ParityPregnanciesSection(
++            patient = patient,
++            onAddPregnancy = if (canEdit) ({ startPregnancyEditor(null) }) else null,
++            onEditPregnancy = if (canEdit) ({ startPregnancyEditor(it) }) else null,
++            onDeletePregnancy = if (canEdit) {
++                {
++                    onEvent(
++                        AncEvent.RequestDelete(
++                            patientId = patient.id,
++                            type = DeletableType.PREVIOUS_PREGNANCY,
++                            recordId = it,
++                        ),
++                    )
++                }
++            } else null,
++        )
++
++        MedicalHistoriesSection(
++            patient = patient,
++            onEdit = if (canEdit) ({ startPatientEditor() }) else null,
++        )
+ 
+         DeliveryPlanningCard(
+             patient = patient,
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index 2880d30..ae8c219 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -272,7 +272,7 @@
+     <string name="delivery_plan_saving">Saving…</string>
+     <string name="edit_clinical_alerts">Edit clinical alerts</string>
+     <string name="parity_format">G%1$s P%2$s</string>
+-    <string name="high_risk">HIGH RISK</string>
++    <string name="high_risk">High risk</string>
+     <string name="normal_risk">STANDARD RISK</string>
+     <string name="today">Today</string>
+     <string name="pick_date">Select date</string>
+@@ -680,4 +680,10 @@
+     <string name="edit_diagnostic_panel">Edit diagnostic panel</string>
+     <string name="create_diagnostic_panel">Create New Diagnostic Panel</string>
+     <string name="edit_medication_title">Edit medication</string>
++    <string name="status_delivered">Delivered</string>
++    <string name="field_label_due_date">Due date</string>
++    <string name="field_label_bp">BP</string>
++    <string name="action_edit">Edit</string>
++    <string name="action_add">Add</string>
++    <string name="obstetric_history_title">Obstetric history</string>
+ </resources>

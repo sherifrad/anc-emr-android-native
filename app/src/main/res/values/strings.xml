@@ -686,4 +686,5 @@
     <string name="action_edit">Edit</string>
     <string name="action_add">Add</string>
     <string name="obstetric_history_title">Obstetric history</string>
+    <string name="post_term_badge">Post</string>
 </resources>

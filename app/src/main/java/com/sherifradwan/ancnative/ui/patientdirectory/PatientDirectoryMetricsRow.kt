@@ -22,9 +22,11 @@ import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.ui.ActionRose
 import com.sherifradwan.ancnative.ui.GaDiscordanceMarker
 import com.sherifradwan.ancnative.ui.PatientDashboardRowProjection
+import com.sherifradwan.ancnative.ui.StatusHighDarkText
 import com.sherifradwan.ancnative.ui.components.RecordShapes
 import com.sherifradwan.ancnative.ui.components.RecordType
 import com.sherifradwan.ancnative.ui.components.ltrIsolate
+import com.sherifradwan.ancnative.ui.isDarkTheme
 import com.sherifradwan.ancnative.ui.patienthub.components.deliveredDaysAgo
 import com.sherifradwan.ancnative.ui.patienthub.components.deliveredHeadline
 
@@ -153,7 +155,7 @@ private fun GestationalAgeCell(
                     color = MaterialTheme.colorScheme.errorContainer,
                 ) {
                     Text(
-                        text = "Post",
+                        text = stringResource(R.string.post_term_badge),
                         style = RecordType.Tag,
                         color = MaterialTheme.colorScheme.onErrorContainer,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
@@ -195,7 +197,7 @@ private fun BloodPressureCell(
         if (!row.latestVitalsBp.isNullOrBlank()) {
             MetricValue(
                 value = ltrIsolate(row.latestVitalsBp),
-                color = if (row.isSevereBp) ActionRose else MaterialTheme.colorScheme.onSurface,
+                color = if (row.isSevereBp) (if (isDarkTheme()) StatusHighDarkText else ActionRose) else MaterialTheme.colorScheme.onSurface,
             )
         } else {
             MetricValue(

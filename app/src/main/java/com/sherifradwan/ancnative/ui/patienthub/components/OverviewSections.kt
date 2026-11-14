@@ -92,6 +92,7 @@ fun DatingSection(
                         label = originRow.label,
                         value = originRow.value,
                         emphasis = true,
+                        stretch = true,
                         modifier = Modifier.fillMaxSize(),
                     )
                 }
@@ -106,6 +107,7 @@ fun DatingSection(
                             label = eddRow.label,
                             value = eddRow.value,
                             emphasis = true,
+                            stretch = true,
                             modifier = Modifier
                                 .fillMaxSize()
                                 .testTag("dueDateBox"),
@@ -215,6 +217,7 @@ fun ObstetricHistorySection(
                 label = stringResource(R.string.gravida),
                 value = (patient.gravida ?: 1L).toString(),
                 emphasis = true,
+                stretch = true,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight(),
@@ -223,6 +226,7 @@ fun ObstetricHistorySection(
                 label = stringResource(R.string.parity),
                 value = (patient.parity ?: 0L).toString(),
                 emphasis = true,
+                stretch = true,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight(),
@@ -231,6 +235,7 @@ fun ObstetricHistorySection(
                 label = stringResource(R.string.abortion),
                 value = (patient.abortion ?: 0L).toString(),
                 emphasis = true,
+                stretch = true,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight(),

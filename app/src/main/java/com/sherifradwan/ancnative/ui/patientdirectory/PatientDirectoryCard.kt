@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -70,14 +71,12 @@ fun PatientDirectoryCard(
                 .padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            val isArabic = row.displayName.any { Character.UnicodeBlock.of(it) == Character.UnicodeBlock.ARABIC }
             val hasTags = row.isHighRisk ||
                 row.riskTier == PatientRiskTier.MEDIUM ||
                 row.isSevereBp ||
                 row.isIncomplete ||
                 row.isDelivered
 
-            // Name row: 48dp min touch target height, vertically centered
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -91,14 +90,15 @@ fun PatientDirectoryCard(
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    textAlign = if (isArabic) TextAlign.End else TextAlign.Start,
+                    textAlign = TextAlign.Start,
                     modifier = Modifier.weight(1f),
                 )
 
                 if (hasTags) {
-                    Column(
-                        horizontalAlignment = Alignment.End,
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
                         verticalArrangement = Arrangement.spacedBy(4.dp),
+                        itemVerticalAlignment = Alignment.CenterVertically,
                     ) {
                         if (row.isHighRisk) {
                             StatusTag(StatusKind.HighRisk)

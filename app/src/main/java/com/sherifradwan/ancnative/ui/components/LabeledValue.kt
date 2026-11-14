@@ -32,6 +32,7 @@ fun LabeledValue(
     value: String?,
     modifier: Modifier = Modifier,
     emphasis: Boolean = false,
+    stretch: Boolean = false,
     family: FieldFamily = currentFieldFamily(),
     missingText: String = stringResource(R.string.not_recorded),
     boxTag: String? = null,
@@ -50,7 +51,7 @@ fun LabeledValue(
             color = family.container,
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f, fill = true)
+                .then(if (stretch) Modifier.weight(1f, fill = true) else Modifier)
                 .heightIn(min = 44.dp)
                 .then(if (boxTag != null) Modifier.testTag(boxTag) else Modifier),
         ) {
@@ -79,8 +80,8 @@ fun LabeledValue(
 /**
  * Equal-width fields side by side (pairs, the G P A triple).
  *
- * Callers pass `Modifier.weight(1f).fillMaxHeight()` to each [LabeledValue]
- * so boxes in one row are equal height.
+ * Callers pass `stretch = true` and `Modifier.weight(1f).fillMaxHeight()` to each
+ * [LabeledValue] so boxes in one row are equal height.
  */
 @Composable
 fun LabeledValueRow(
