@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Mock S04: Hub header</title>
+<style>
+  /* Tokens: the app's real scheme values (Theme.kt) plus the slice 0 record tokens. */
+  :root{
+    --primary:#0D1B3D; --on:#0D1B3D; --onv:#4C3F43; --onprimary:#FFFFFF;
+    --surface:#FFFFFF; --bg:#FBF8F5; --outv:#CAC4D0; --outline:#79747E; --sch:#EFE9E4;
+    --err:#BA1A1A; --errc:#FFDAD6; --onerrc:#410002;
+    --pt-bg:#E9EEF8; --pt-lb:#23407A; --ob-bg:#E3F0EE; --ob-lb:#1D5149;
+    --hx-bg:#F1EDE4; --hx-lb:#594A2C; --dl-bg:#EEE9F5; --dl-lb:#4E3A78;
+    --inc-bg:#EEF0F4; --inc-bd:#757E8E; --inc-fg:#333B4A;
+    --mod-bg:#FCEFD6; --mod-bd:#9E6F1E; --mod-fg:#6E4708;
+    --hi-bg:#FBE3E3; --hi-bd:#C26666; --hi-fg:#8E1B1B;
+    --r-s:10px; --r-l:16px;
+  }
+  .dark{
+    --primary:#B4C5FF; --on:#E2E2EA; --onv:#CDC3C6; --onprimary:#002A78;
+    --surface:#1A202E; --bg:#0E121B; --outv:#3A4459; --outline:#8E95A5; --sch:#283248;
+    --err:#FFB4AB; --errc:#5C141D; --onerrc:#FFDAD6;
+    --pt-bg:#22304A; --pt-lb:#AFC6F2; --ob-bg:#1D3836; --ob-lb:#9FD6CC;
+    --hx-bg:#36301F; --hx-lb:#E0CFA6; --dl-bg:#2E2842; --dl-lb:#CDBDF0;
+    --inc-bg:#2A3140; --inc-bd:#7D889E; --inc-fg:#D5DAE3;
+    --mod-bg:#3A2A0E; --mod-bd:#A87A2A; --mod-fg:#F3D18E;
+    --hi-bg:#4A1616; --hi-bd:#B45A5A; --hi-fg:#FFC9C9;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:#FFFFFF;color:#0D1B3D;font-family:Roboto,"Noto Sans","Noto Sans Arabic","Segoe UI",system-ui,-apple-system,Arial,sans-serif;font-size:15px;line-height:1.5;padding:32px 16px 64px}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-size:26px;line-height:1.25;margin:0 0 8px}
+  h2{font-size:20px;line-height:1.3;margin:44px 0 6px}
+  h3.sub{font-size:16px;margin:18px 0 6px}
+  .lede,p,li{max-width:76ch}
+  .lede{color:#4C3F43;margin:0 0 4px}
+  .reason{border:1px solid #CAC4D0;border-radius:16px;padding:18px 20px;margin-top:18px;background:#FDFCFB}
+  .reason h2{margin-top:0}
+  .reason ul{margin:4px 0 0;padding-inline-start:20px}
+  .pair{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-top:14px}
+  figure{margin:0;width:360px;max-width:100%;flex:0 0 auto}
+  figcaption{font-size:14px;color:#4C3F43;margin:0 0 8px}
+  figcaption b{color:#0D1B3D}
+  .note{font-size:14px;color:#4C3F43;margin:10px 0 0}
+  .phone{width:100%;background:var(--bg);border:1px solid #B9B4BE;border-radius:16px;overflow:hidden;color:var(--on)}
+  .screen{padding:16px;display:flex;flex-direction:column;gap:12px}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  bdi{unicode-bidi:isolate}
+
+  /* record components (slice 0) */
+  .sec{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:4px 4px 16px 16px}
+  .sec-head{display:flex;align-items:center;min-height:48px;gap:8px}
+  .sec-head h4{flex:1 1 auto;margin:0;padding:6px 0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .sec-body{display:flex;flex-direction:column;gap:12px;padding-inline-end:12px}
+  .act{min-width:48px;min-height:48px;padding:0 12px;border-radius:var(--r-s);font-size:14px;font-weight:600;color:var(--primary);display:inline-flex;align-items:center;justify-content:center}
+  .act:hover{background:rgba(13,27,61,.06)}
+  .f{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .flab{font-size:12px;line-height:16px;font-weight:600;color:var(--flb)}
+  .fval{margin:0;min-height:44px;padding:10px 12px;border-radius:var(--r-s);background:var(--fbg);font-size:16px;line-height:22px;color:var(--on);overflow-wrap:anywhere}
+  .fval.key{font-weight:600}
+  .fval.miss{color:var(--onv);font-style:italic}
+  .frow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .fam-pt{--fbg:var(--pt-bg);--flb:var(--pt-lb)} .fam-ob{--fbg:var(--ob-bg);--flb:var(--ob-lb)}
+  .fam-hx{--fbg:var(--hx-bg);--flb:var(--hx-lb)} .fam-dl{--fbg:var(--dl-bg);--flb:var(--dl-lb)}
+  .tag{display:inline-flex;align-items:center;min-height:24px;padding:3px 8px;border-radius:var(--r-s);font-size:12px;line-height:16px;font-weight:600;border:1px solid;white-space:nowrap}
+  .t-hi{background:var(--hi-bg);border-color:var(--hi-bd);color:var(--hi-fg);font-weight:700}
+  .t-mod{background:var(--mod-bg);border-color:var(--mod-bd);color:var(--mod-fg)}
+  .t-inc{background:var(--inc-bg);border-color:var(--inc-bd);color:var(--inc-fg)}
+  .t-del{background:var(--surface);border-color:var(--primary);color:var(--primary)}
+  .t-norm{background:var(--surface);border-color:var(--inc-bd);color:var(--onv)}
+  .t-err{background:var(--errc);border-color:var(--err);color:var(--onerrc);font-weight:700}
+  .mlab{font-size:12px;line-height:16px;font-weight:500;color:var(--onv)}
+  .mval{font-size:16px;line-height:22px;font-weight:600;color:var(--on);white-space:nowrap}
+
+  /* tables */
+  .tablewrap{overflow-x:auto;max-width:100%}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin-top:10px}
+  th,td{border-bottom:1px solid #E6E1E5;padding:7px 8px;text-align:start;vertical-align:top}
+  th{background:#F7F5F3}
+  td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+  ol.map li{margin:7px 0}
+  code{font-family:"Roboto Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:#F3F0EE;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+  .hdr{background:var(--surface);border-bottom:1px solid var(--outv)}
+  .hero{padding:4px 16px 12px;display:flex;flex-direction:column;gap:10px}
+  .bar{display:flex;align-items:center;justify-content:space-between;min-height:48px;margin:0 -12px}
+  .ib{width:48px;height:48px;border-radius:24px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--primary)}
+  .ib.att{background:var(--errc);color:var(--err)}
+  .name{margin:0;font-size:22px;line-height:28px;font-weight:700;color:var(--on);overflow-wrap:anywhere}
+  .tags{display:flex;flex-wrap:wrap;gap:6px}
+  .facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .facts > div{min-width:0}
+  .tabs{display:flex;gap:0;overflow-x:auto;padding:0 4px;border-top:1px solid var(--outv)}
+  .tab{min-height:48px;padding:0 14px;font-size:14px;font-weight:500;color:var(--onv);white-space:nowrap;display:inline-flex;align-items:center;gap:6px;border-bottom:3px solid transparent}
+  .tab.sel{color:var(--primary);font-weight:700;border-bottom-color:var(--primary)}
+  .cnt{font-size:12px;line-height:16px;font-weight:600;padding:1px 6px;border-radius:var(--r-s);background:var(--pt-bg);color:var(--on)}
+  .cnt.al{background:var(--hi-bg);color:var(--hi-fg);border:1px solid var(--hi-bd)}
+  .sticky{display:flex;align-items:center;gap:8px;height:56px;padding:0 8px;background:var(--surface);border-bottom:1px solid var(--outv)}
+  .sticky .nm{flex:1 1 auto;min-width:0;font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sticky .ga{font-size:14px;font-weight:600;color:var(--on);white-space:nowrap}
+  /* before */
+  .b-hero{background:#fff;padding:10px 14px;display:flex;flex-direction:column;gap:8px}
+  .b-bar{display:flex;justify-content:space-between;align-items:center}
+  .b-name{margin:0;font-size:20px;font-weight:800;color:#0D1B3D}
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 6px;border-radius:6px;border:1px solid}
+  .b-tabs{display:flex;overflow-x:auto;background:#fff;border-top:1px solid #eee}
+  .b-tab{min-height:48px;padding:0 12px;font-size:13px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;color:#4C3F43}
+  .b-tab i{width:16px;height:16px;border-radius:3px;background:currentColor;opacity:.6}
+  .b-tab.sel{color:#0D1B3D;font-weight:700;border-bottom:2px solid #0D1B3D}
+</style>
+</head>
+<body>
+<main class="wrap">
+<h1>Mock S04: Patient hub header and tab bar</h1>
+<p class="lede">For slice 4. Sample: Mona Ragab, <bdi lang="ar">منى رجب</bdi>, G4 P1 A2, A+, BP 110/70 (not raised, so no BP chip). The expanded header prints GA through the app's own formatter (<code>calculateGestationalAge()</code>, "27w 2d"); the sticky bar and the list card use <code>shortWeeksText</code> ("27+2 wks"). Mona is shown as Moderate risk so the risk tag is visible. She has no attention entries and no recorded allergy, so those appear only in the layout-only frame with bracketed placeholders.</p>
+
+<section class="reason" aria-labelledby="r">
+  <h2 id="r">Design reasoning</h2>
+  <p>Reading this as: the always-visible identity block of a patient record, dial ENERGY 1 / RHYTHM 1 / MOTION 1 (the existing collapse animation is kept, nothing new moves).</p>
+  <ul>
+    <li><b>Facts as a metric row, not a rainbow of pills.</b> Today GA is sky blue, parity purple, blood group blue, age indigo, risk red. After: GA, Parity, Blood group (and Age when recorded) use the list card's metric cell: 12 sp label, 16 sp value. Same entity, same component as the patient card.</li>
+    <li><b>Status as words in tags.</b> Risk uses <code>StatusTag</code>. Normal risk shows a neutral "Normal risk" tag here (the header is the full record; the list hides it). Recorded allergy stays a red alert tag with its text, "No known drug allergies" a neutral tag.</li>
+    <li><b>Rh negative stops being colour only.</b> Today an Rh-negative blood group is only tinted rose. After, the cell adds a High-tone "Rh negative" tag.</li>
+    <li><b>Name 22 sp bold</b> (was 20 sp extra bold), wraps, never cut (a test checks up to four lines at font scale 2).</li>
+    <li><b>Tabs: words only.</b> The six tab icons repeat the words and cost width on a 360 dp scrolling row. Count badges use the 10 dp radius (was a 999 dp pill). An alert without a count was a 6 dp rose dot (colour only); it becomes a High-tone "!" tag with the label "needs attention". Labs keeps "N▲" for abnormal results.</li>
+    <li><b>Kept as they are:</b> the collapse behaviour, the sticky bar at 56 dp, the action icons (back, attention, report, edit: each is a real action with a label), all tags.</li>
+  </ul>
+</section>
+
+<h2>1. Expanded header</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today</figcaption>
+    <div class="phone">
+      <div class="b-hero">
+        <div class="b-bar"><span class="ib" aria-hidden="true">Back</span><span><span class="ib" aria-hidden="true">Print</span><span class="ib" aria-hidden="true">Edit</span></span></div>
+        <h4 class="b-name">Mona Ragab</h4>
+        <span><span class="pill" style="background:#E0F2FE;border-color:#BAE6FD;color:#0369A1">GA 27w 2d</span></span>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <span class="pill" style="background:#FEF2F2;border-color:#EF4444;color:#B91C1C">Moderate risk</span>
+          <span class="pill" style="background:#F3E8FF;border-color:#DDD6FE;color:#6B21A8">G4 P1 A2</span>
+          <span class="pill" style="background:#EFF6FF;border-color:#BFDBFE;color:#1D4ED8">A+</span>
+        </div>
+      </div>
+      <div class="b-tabs"><span class="b-tab sel"><i></i>Overview</span><span class="b-tab"><i></i>Visits</span><span class="b-tab"><i></i>Scans</span><span class="b-tab"><i></i>Labs</span></div>
+    </div>
+    <p class="note">Five colour families in one block, 11 sp pill text, GA on its own line, an icon before every tab word.</p>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, slice 4</figcaption>
+    <div class="phone">
+      <div class="hdr">
+        <div class="hero">
+          <div class="bar"><button type="button" class="ib" aria-label="Back">Back</button><span><button type="button" class="ib" aria-label="Two-page report">Print</button><button type="button" class="ib" aria-label="Edit patient">Edit</button></span></div>
+          <h4 class="name">Mona Ragab</h4>
+          <div class="tags"><span class="tag t-mod">Moderate risk</span></div>
+          <div class="facts">
+            <div><div class="mlab">GA</div><div class="mval">27w 2d</div></div>
+            <div><div class="mlab">Parity</div><div class="mval">G4 P1 A2</div></div>
+            <div><div class="mlab">Blood group</div><div class="mval">A+</div></div>
+          </div>
+        </div>
+        <div class="tabs" role="tablist"><span class="tab sel" role="tab" aria-selected="true">Overview</span><span class="tab" role="tab">Visits</span><span class="tab" role="tab">Scans</span><span class="tab" role="tab">Labs</span><span class="tab" role="tab">Meds</span><span class="tab" role="tab">Plan</span></div>
+      </div>
+    </div>
+    <p class="note">Back, report and edit are icon buttons in the app (48 dp, labelled); drawn as words here. No "GA" prefix inside the value: the label says it. Tabs scroll as today.</p>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, Arabic name, High risk, layout-only extras</figcaption>
+    <div class="phone">
+      <div class="hdr">
+        <div class="hero">
+          <div class="bar"><button type="button" class="ib" aria-label="Back">Back</button><span><button type="button" class="ib att" aria-label="Clinical attention">Alert</button><button type="button" class="ib" aria-label="Two-page report">Print</button><button type="button" class="ib" aria-label="Edit patient">Edit</button></span></div>
+          <h4 class="name" lang="ar" dir="rtl" style="text-align:right">منى رجب</h4>
+          <div class="tags"><span class="tag t-hi">High risk</span><span class="tag t-err">Allergy: [allergy text]</span></div>
+          <div class="facts">
+            <div><div class="mlab">GA</div><div class="mval">27w 2d</div></div>
+            <div><div class="mlab">Parity</div><div class="mval">G4 P1 A2</div></div>
+            <div><div class="mlab">Blood group</div><div class="mval">A+</div></div>
+            <div><div class="mlab">Age</div><div class="mval">[age]</div></div>
+          </div>
+        </div>
+        <div class="tabs" role="tablist"><span class="tab sel" role="tab">Overview</span><span class="tab" role="tab">Visits <span class="cnt">[n]</span></span><span class="tab" role="tab">Scans <span class="cnt">[n]</span></span><span class="tab" role="tab">Labs <span class="cnt al">[n]▲</span></span></div>
+      </div>
+    </div>
+    <p class="note">Bracketed values are placeholders (not in the sample). English-locale layout stays LTR; only the Arabic name shapes right to left. The attention strip from slice 3 sits under the facts when entries exist.</p>
+  </figure>
+</div>
+
+<h2>2. Sticky bar (collapsed) and dark</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>After</b>, collapsed sticky bar, light</figcaption>
+    <div class="phone"><div class="sticky"><button type="button" class="ib" aria-label="Back">Back</button><span class="nm">Mona Ragab</span><span class="ga">27+2 wks</span></div>
+      <div class="tabs" style="background:var(--surface)"><span class="tab sel">Overview</span><span class="tab">Visits</span><span class="tab">Scans</span></div></div>
+    <p class="note">56 dp as today. GA as plain 14 sp semibold text instead of a sky pill. The attention icon appears at the end only when entries exist.</p>
+  </figure>
+  <figure>
+    <figcaption><b>Dark</b>, after, expanded</figcaption>
+    <div class="phone dark">
+      <div class="hdr">
+        <div class="hero">
+          <div class="bar"><button type="button" class="ib" aria-label="Back">Back</button><span><button type="button" class="ib" aria-label="Two-page report">Print</button><button type="button" class="ib" aria-label="Edit patient">Edit</button></span></div>
+          <h4 class="name">Mona Ragab</h4>
+          <div class="tags"><span class="tag t-mod">Moderate risk</span></div>
+          <div class="facts">
+            <div><div class="mlab">GA</div><div class="mval">27w 2d</div></div>
+            <div><div class="mlab">Parity</div><div class="mval">G4 P1 A2</div></div>
+            <div><div class="mlab">Blood group</div><div class="mval">A+</div></div>
+          </div>
+        </div>
+        <div class="tabs"><span class="tab sel">Overview</span><span class="tab">Visits</span><span class="tab">Scans</span><span class="tab">Labs</span></div>
+      </div>
+    </div>
+  </figure>
+</div>
+
+<h2>3. Contrast (computed)</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Pair</th><th>Text</th><th>Background</th><th>Ratio</th></tr></thead>
+<tbody>
+<tr><td>Name, selected tab, metric value</td><td>#0D1B3D</td><td>#FFFFFF</td><td class="n">16.92</td></tr>
+<tr><td>Metric label, unselected tab, Normal risk tag</td><td>#4C3F43</td><td>#FFFFFF</td><td class="n">10.00</td></tr>
+<tr><td>Moderate risk tag</td><td>#6E4708</td><td>#FCEFD6</td><td class="n">7.19</td></tr>
+<tr><td>High risk tag, alert count</td><td>#8E1B1B</td><td>#FBE3E3</td><td class="n">7.40</td></tr>
+<tr><td>Allergy tag</td><td>#410002</td><td>#FFDAD6</td><td class="n">13.26</td></tr>
+<tr><td>Neutral count</td><td>#0D1B3D</td><td>#E9EEF8</td><td class="n">14.54</td></tr>
+<tr><td>Normal risk tag border (non-text)</td><td>#757E8E</td><td>#FFFFFF</td><td class="n">4.09</td></tr>
+<tr><td>Dark name / metric label</td><td>#E2E2EA / #CDC3C6</td><td>#1A202E</td><td class="n">12.64 / 9.47</td></tr>
+<tr><td>Dark selected tab</td><td>#B4C5FF</td><td>#1A202E</td><td class="n">9.59</td></tr>
+<tr><td>Dark Moderate tag / alert count / neutral count</td><td>#F3D18E / #FFC9C9 / #E2E2EA</td><td>#3A2A0E / #4A1616 / #22304A</td><td class="n">9.44 / 10.19 / 10.25</td></tr>
+<tr><td>Today, for reference: GA pill, parity pill, blood pill</td><td>#0369A1 / #6B21A8 / #1D4ED8</td><td>their tints</td><td class="n">5.17 / 7.39 / 6.16</td></tr>
+</tbody></table></div>
+
+<h2>4. Compose mapping</h2>
+<ol class="map">
+  <li>Extract the list card's metric cell into <code>ui/components/MetricCell.kt</code>: <code>MetricCell(label, modifier, content)</code> and <code>MetricValue(text, missing = false, color = onSurface)</code> exactly as <code>PatientDirectoryMetricsRow</code> builds them now (12 sp <code>RecordType.MetricLabel</code> onSurfaceVariant; 16 sp <code>RecordType.MetricValue</code>, one line, ellipsis). The card and the header both call it.</li>
+  <li>Hero <code>Column(padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp), spacedBy(10.dp))</code>; action bar <code>Row(heightIn(min = 48.dp))</code> with the existing icon buttons and tags; content descriptions move to strings (<code>action_back</code>, <code>action_report</code>, <code>edit_patient</code>, <code>clinical_attention</code>).</li>
+  <li>Name: <code>Text(style = RecordType.HeaderName /* new: 22 sp / 28 sp, Bold */, color = onSurface, modifier = fillMaxWidth().testTag("hubPatientName"))</code>, no maxLines.</li>
+  <li>Tags: <code>FlowRow(spacedBy(6.dp))</code>: <code>Box(Modifier.testTag("hubRiskBadge")) { StatusTag(High / Moderate / NormalRisk) }</code> (new <code>StatusKind.NormalRisk</code>: surface, border <code>StatusIncompleteBorder</code>, text onSurfaceVariant, word <code>normal_risk</code> "Normal risk"); <code>BpAlertLabel(bp)</code> unchanged; allergy <code>Surface(shape = RecordShapes.Small, ..., Modifier.testTag("hubAllergyPill"))</code> holding <code>Text(RecordType.Tag, Modifier.padding(8.dp, 3.dp).testTag("hubAllergyText"))</code>, error colours when recorded, surfaceContainerHigh with onSurfaceVariant when explicitly none.</li>
+  <li>Facts: <code>Row(spacedBy(8.dp))</code> of <code>MetricCell</code> with <code>weight(1f)</code>: GA (not delivered): <code>Box(Modifier.testTag("hubGaBadge"))</code> around a <code>Row(Modifier.testTag("gestationalAgeBadge"))</code> holding <code>MetricValue(ga)</code> and <code>GaDiscordanceMarker</code> when discordant; delivered: <code>Box(Modifier.testTag("hubDeliveredBadge"))</code> with label "Delivered" and value <code>deliveredHeadline(...)</code> date; Parity <code>G P A</code> (same fallbacks as <code>ObstetricParityBadge</code>); Blood group <code>formatBloodGroup</code> plus <code>StatusTag(HighRisk, text = "Rh negative")</code> below it when <code>isRhNeg</code>; Age when <code>ageText</code> not blank goes to a second row.</li>
+  <li>Sticky bar unchanged in structure: GA as <code>Text(RecordType.Action.copy(fontWeight = SemiBold), onSurface)</code> instead of <code>GestationalAgeBadge</code>.</li>
+  <li>Tabs: <code>Tab(text = { Row(spacedBy(6.dp)) { Text(tab.title, RecordType.Action, maxLines = 1); count } })</code>, no icon; count <code>Surface(shape = RecordShapes.Small, color = FieldPatientBg or StatusHighBg)</code> with <code>RecordType.Tag</code>; alert without count: same High surface with "!" and <code>contentDescription = needs_attention</code>. Badge and alert rules unchanged.</li>
+</ol>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Mock S03: Clinical attention</title>
+<style>
+  /* Tokens: the app's real scheme values (Theme.kt) plus the slice 0 record tokens. */
+  :root{
+    --primary:#0D1B3D; --on:#0D1B3D; --onv:#4C3F43; --onprimary:#FFFFFF;
+    --surface:#FFFFFF; --bg:#FBF8F5; --outv:#CAC4D0; --outline:#79747E; --sch:#EFE9E4;
+    --err:#BA1A1A; --errc:#FFDAD6; --onerrc:#410002;
+    --pt-bg:#E9EEF8; --pt-lb:#23407A; --ob-bg:#E3F0EE; --ob-lb:#1D5149;
+    --hx-bg:#F1EDE4; --hx-lb:#594A2C; --dl-bg:#EEE9F5; --dl-lb:#4E3A78;
+    --inc-bg:#EEF0F4; --inc-bd:#757E8E; --inc-fg:#333B4A;
+    --mod-bg:#FCEFD6; --mod-bd:#9E6F1E; --mod-fg:#6E4708;
+    --hi-bg:#FBE3E3; --hi-bd:#C26666; --hi-fg:#8E1B1B;
+    --r-s:10px; --r-l:16px;
+  }
+  .dark{
+    --primary:#B4C5FF; --on:#E2E2EA; --onv:#CDC3C6; --onprimary:#002A78;
+    --surface:#1A202E; --bg:#0E121B; --outv:#3A4459; --outline:#8E95A5; --sch:#283248;
+    --err:#FFB4AB; --errc:#5C141D; --onerrc:#FFDAD6;
+    --pt-bg:#22304A; --pt-lb:#AFC6F2; --ob-bg:#1D3836; --ob-lb:#9FD6CC;
+    --hx-bg:#36301F; --hx-lb:#E0CFA6; --dl-bg:#2E2842; --dl-lb:#CDBDF0;
+    --inc-bg:#2A3140; --inc-bd:#7D889E; --inc-fg:#D5DAE3;
+    --mod-bg:#3A2A0E; --mod-bd:#A87A2A; --mod-fg:#F3D18E;
+    --hi-bg:#4A1616; --hi-bd:#B45A5A; --hi-fg:#FFC9C9;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:#FFFFFF;color:#0D1B3D;font-family:Roboto,"Noto Sans","Noto Sans Arabic","Segoe UI",system-ui,-apple-system,Arial,sans-serif;font-size:15px;line-height:1.5;padding:32px 16px 64px}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-size:26px;line-height:1.25;margin:0 0 8px}
+  h2{font-size:20px;line-height:1.3;margin:44px 0 6px}
+  h3.sub{font-size:16px;margin:18px 0 6px}
+  .lede,p,li{max-width:76ch}
+  .lede{color:#4C3F43;margin:0 0 4px}
+  .reason{border:1px solid #CAC4D0;border-radius:16px;padding:18px 20px;margin-top:18px;background:#FDFCFB}
+  .reason h2{margin-top:0}
+  .reason ul{margin:4px 0 0;padding-inline-start:20px}
+  .pair{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-top:14px}
+  figure{margin:0;width:360px;max-width:100%;flex:0 0 auto}
+  figcaption{font-size:14px;color:#4C3F43;margin:0 0 8px}
+  figcaption b{color:#0D1B3D}
+  .note{font-size:14px;color:#4C3F43;margin:10px 0 0}
+  .phone{width:100%;background:var(--bg);border:1px solid #B9B4BE;border-radius:16px;overflow:hidden;color:var(--on)}
+  .screen{padding:16px;display:flex;flex-direction:column;gap:12px}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  bdi{unicode-bidi:isolate}
+
+  /* record components (slice 0) */
+  .sec{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:4px 4px 16px 16px}
+  .sec-head{display:flex;align-items:center;min-height:48px;gap:8px}
+  .sec-head h4{flex:1 1 auto;margin:0;padding:6px 0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .sec-body{display:flex;flex-direction:column;gap:12px;padding-inline-end:12px}
+  .act{min-width:48px;min-height:48px;padding:0 12px;border-radius:var(--r-s);font-size:14px;font-weight:600;color:var(--primary);display:inline-flex;align-items:center;justify-content:center}
+  .act:hover{background:rgba(13,27,61,.06)}
+  .f{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .flab{font-size:12px;line-height:16px;font-weight:600;color:var(--flb)}
+  .fval{margin:0;min-height:44px;padding:10px 12px;border-radius:var(--r-s);background:var(--fbg);font-size:16px;line-height:22px;color:var(--on);overflow-wrap:anywhere}
+  .fval.key{font-weight:600}
+  .fval.miss{color:var(--onv);font-style:italic}
+  .frow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .fam-pt{--fbg:var(--pt-bg);--flb:var(--pt-lb)} .fam-ob{--fbg:var(--ob-bg);--flb:var(--ob-lb)}
+  .fam-hx{--fbg:var(--hx-bg);--flb:var(--hx-lb)} .fam-dl{--fbg:var(--dl-bg);--flb:var(--dl-lb)}
+  .tag{display:inline-flex;align-items:center;min-height:24px;padding:3px 8px;border-radius:var(--r-s);font-size:12px;line-height:16px;font-weight:600;border:1px solid;white-space:nowrap}
+  .t-hi{background:var(--hi-bg);border-color:var(--hi-bd);color:var(--hi-fg);font-weight:700}
+  .t-mod{background:var(--mod-bg);border-color:var(--mod-bd);color:var(--mod-fg)}
+  .t-inc{background:var(--inc-bg);border-color:var(--inc-bd);color:var(--inc-fg)}
+  .t-del{background:var(--surface);border-color:var(--primary);color:var(--primary)}
+  .t-norm{background:var(--surface);border-color:var(--inc-bd);color:var(--onv)}
+  .t-err{background:var(--errc);border-color:var(--err);color:var(--onerrc);font-weight:700}
+  .mlab{font-size:12px;line-height:16px;font-weight:500;color:var(--onv)}
+  .mval{font-size:16px;line-height:22px;font-weight:600;color:var(--on);white-space:nowrap}
+
+  /* tables */
+  .tablewrap{overflow-x:auto;max-width:100%}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin-top:10px}
+  th,td{border-bottom:1px solid #E6E1E5;padding:7px 8px;text-align:start;vertical-align:top}
+  th{background:#F7F5F3}
+  td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+  ol.map li{margin:7px 0}
+  code{font-family:"Roboto Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:#F3F0EE;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+  .ent{border-radius:var(--r-s);padding:10px 12px;display:flex;flex-direction:column;gap:2px;border:1px solid transparent}
+  .ent .lv{font-size:12px;line-height:16px;font-weight:700}
+  .ent .tx{font-size:16px;line-height:22px}
+  .e-crit{background:var(--errc);border:1.5px solid var(--err)} .e-crit .lv{color:var(--err)} .e-crit .tx{color:var(--onerrc)}
+  .e-alert{background:var(--mod-bg);border-color:var(--mod-bd)} .e-alert .lv,.e-alert .tx{color:var(--mod-fg)}
+  .e-note{background:var(--sch);border-color:var(--outv)} .e-note .lv{color:var(--onv)} .e-note .tx{color:var(--on)}
+  .empty{margin:0;font-size:16px;line-height:22px;color:var(--onv)}
+  .obtn{min-height:48px;padding:0 16px;border:1px solid var(--outline);border-radius:var(--r-s);font-size:14px;font-weight:600;color:var(--primary);align-self:flex-start}
+  .strip{width:100%;min-height:48px;border-radius:var(--r-s);display:flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;text-align:start}
+  .strip .st{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
+  .strip .lv{font-size:12px;line-height:16px;font-weight:700}
+  .strip .tx{font-size:14px;line-height:20px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .strip .more{font-size:12px;font-weight:700;padding:2px 6px;border-radius:var(--r-s);border:1px solid currentColor}
+  .strip .chev{font-size:18px;line-height:1}
+  /* before */
+  .ob{background:#fff;padding:4px 12px 12px}
+  .ob-head{display:flex;align-items:center;gap:8px;min-height:48px}
+  .ob-ico{width:24px;height:24px;border-radius:8px;background:#FFDAD6;flex:0 0 auto}
+  .ob-head h4{flex:1;margin:0;font-size:15px;font-weight:700}
+  .ob-ent{display:flex;gap:8px;padding:8px 10px;border-radius:8px;font-size:13px;line-height:18px;margin-top:8px}
+  .ob-ent i{width:16px;height:16px;border-radius:50%;flex:0 0 auto;margin-top:1px}
+  .ob-ent b{font-size:11px}
+  .os{display:flex;align-items:center;gap:8px;min-height:48px;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:600}
+  /* dialog */
+  .dlg{background:var(--surface);border-radius:var(--r-l);padding:20px 16px 12px;display:flex;flex-direction:column;gap:12px;border:1px solid var(--outv)}
+  .dlg h4{margin:0;font-size:18px;line-height:24px;color:var(--on)}
+  .drow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .dd{min-height:48px;padding:0 12px;border-radius:var(--r-s);font-size:14px;font-weight:700;display:inline-flex;align-items:center;gap:6px}
+  .del{width:48px;height:48px;border-radius:24px;color:var(--onv);font-size:14px}
+  .tf{border:1px solid var(--outline);border-radius:4px;padding:12px;font-size:16px;color:var(--on);min-height:56px}
+  .cnt{font-size:12px;color:var(--onv);margin:-8px 0 0 12px}
+  .dbtns{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+  .fbtn{min-height:48px;padding:0 20px;border-radius:var(--r-s);background:var(--primary);color:var(--onprimary);font-size:14px;font-weight:600}
+</style>
+</head>
+<body>
+<main class="wrap">
+<h1>Mock S03: Clinical attention card, strip and dialog</h1>
+<p class="lede">For slice 3. The owner's sample (Mona Ragab) has no attention entries and a normal BP (110/70), so the entry texts below are the in-repo test fixtures from <code>ClinicalAttentionUiTest</code>: "Severe PIH" (Critical), "Anaemia" (Alert), "Prefers female doctor" (Note) and the severe BP 165/105 on 2026-11-10. They are fixtures, not patient facts. The empty state shows Mona's real state.</p>
+
+<section class="reason" aria-labelledby="r">
+  <h2 id="r">Design reasoning</h2>
+  <p>Reading this as: the safety block a doctor must not miss, calm but unmistakable, dial ENERGY 1 / RHYTHM 1 / MOTION 1.</p>
+  <ul>
+    <li><b>An entry reads like a field.</b> Level word on top (12 sp bold, the "label"), the text below (16 sp, the "value"), in a tinted 10 dp box. The doctor learns one pattern for the whole record.</li>
+    <li><b>Level colours stay separate from field families.</b> Critical keeps the scheme error colours with a 1.5 dp error border. Alert moves from the pale #FFFBEB with #B45309 text (4.84:1) to the amber Moderate tokens (#FCEFD6, #6E4708, 7.19:1), so amber means "concern" everywhere. Note is neutral (#EFE9E4).</li>
+    <li><b>The word carries the level.</b> The warning and info icons go: "Critical", "Alert", "Note" already say it, and the icon repeated the colour. The level never depends on colour.</li>
+    <li><b>Order unchanged:</b> severe BP first, then Critical, Alert, Note (<code>sortedForDisplay</code>).</li>
+    <li><b>Strip in the header</b> uses the same two-line pattern: level word, then the text clamped to two lines, then "+N" and a mirrored chevron (it opens the dialog, so the chevron is an affordance, not decoration).</li>
+    <li><b>Title in sentence case:</b> "Clinical attention" (string value change, no test asserts the old casing).</li>
+  </ul>
+</section>
+
+<h2>1. Overview card</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, fixtures</figcaption>
+    <div class="phone"><div class="screen">
+      <div class="ob">
+        <div class="ob-head"><span class="ob-ico" aria-hidden="true"></span><h4>Clinical Attention</h4><span aria-hidden="true" style="font-size:13px;width:48px;text-align:center">Edit</span></div>
+        <div class="ob-ent" style="background:#FFDAD6;border:1.5px solid #BA1A1A"><i style="background:#BA1A1A"></i><b style="color:#BA1A1A">Critical</b><span style="color:#410002">Severe-range blood pressure at the last visit: 165/105 (2026-11-10)</span></div>
+        <div class="ob-ent" style="background:#FFDAD6;border:1.5px solid #BA1A1A"><i style="background:#BA1A1A"></i><b style="color:#BA1A1A">Critical</b><span style="color:#410002">Severe PIH</span></div>
+        <div class="ob-ent" style="background:#FFFBEB;border:1px solid #FDE68A"><i style="background:#B45309"></i><b style="color:#B45309">Alert</b><span style="color:#B45309">Anaemia</span></div>
+        <div class="ob-ent" style="background:#EFE9E4;border:1px solid #CAC4D0"><i style="background:#4C3F43"></i><b style="color:#4C3F43">Note</b><span style="color:#0D1B3D">Prefers female doctor</span></div>
+      </div>
+    </div></div>
+    <p class="note">Flat section with an icon tile; entries at 13 sp with an icon, an 11 sp level word and text squeezed onto one line; Alert text at 4.84:1.</p>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, slice 3, fixtures</figcaption>
+    <div class="phone"><div class="screen">
+      <section class="sec" aria-label="Clinical attention">
+        <div class="sec-head"><h4>Clinical attention</h4><button type="button" class="act" aria-label="Edit clinical alerts">Edit</button></div>
+        <div class="sec-body" style="gap:8px">
+          <div class="ent e-crit"><span class="lv">Critical</span><span class="tx">Severe-range blood pressure at the last visit: 165/105 (2026-11-10)</span></div>
+          <div class="ent e-crit"><span class="lv">Critical</span><span class="tx">Severe PIH</span></div>
+          <div class="ent e-alert"><span class="lv">Alert</span><span class="tx">Anaemia</span></div>
+          <div class="ent e-note"><span class="lv">Note</span><span class="tx">Prefers female doctor</span></div>
+        </div>
+      </section>
+    </div></div>
+    <p class="note">Outlined card like every Overview section. Each entry: level word over a 16 sp sentence. Critical keeps the thicker error border, so it still stands out in greyscale.</p>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, empty, Mona Ragab today</figcaption>
+    <div class="phone"><div class="screen">
+      <section class="sec" aria-label="Clinical attention empty">
+        <div class="sec-head"><h4>Clinical attention</h4></div>
+        <div class="sec-body">
+          <p class="empty">No clinical attention recorded</p>
+          <button type="button" class="obtn">Add attention</button>
+        </div>
+      </section>
+    </div></div>
+    <p class="note">Empty state keeps its text and its "Add attention" button (48 dp), now an outlined 10 dp button. When the user cannot edit, the card stays hidden (today's rule).</p>
+  </figure>
+</div>
+
+<h2>2. Header strip</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, strip under the hub header</figcaption>
+    <div class="phone"><div class="screen" style="background:#fff">
+      <div class="os" style="background:#FFDAD6;border:1.5px solid #BA1A1A;color:#410002"><span style="width:16px;height:16px;border-radius:50%;background:#BA1A1A;flex:0 0 auto"></span><span style="flex:1">Severe-range blood pressure at the last visit: 165/105 (2026-11-10)</span><b style="color:#BA1A1A">+3</b><span aria-hidden="true">›</span></div>
+    </div></div>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, strip</figcaption>
+    <div class="phone"><div class="screen" style="background:var(--surface)">
+      <button type="button" class="strip e-crit" aria-label="Clinical attention, Critical, open all entries">
+        <span class="st"><span class="lv" style="color:var(--err)">Critical</span><span class="tx" style="color:var(--onerrc)">Severe-range blood pressure at the last visit: 165/105 (2026-11-10)</span></span>
+        <span class="more" style="color:var(--err)">+3</span><span class="chev" aria-hidden="true" style="color:var(--onerrc)">›</span>
+      </button>
+      <button type="button" class="strip e-alert" aria-label="Clinical attention, Alert, open all entries">
+        <span class="st"><span class="lv">Alert</span><span class="tx">Anaemia</span></span>
+        <span class="more">+1</span><span class="chev" aria-hidden="true">›</span>
+      </button>
+    </div></div>
+    <p class="note">Same anatomy as an entry. 48 dp minimum, whole strip is the button. "+N" stays (a test finds "+1").</p>
+  </figure>
+</div>
+
+<h2>3. Dialog (edit mode)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>After</b>, edit dialog, fixtures</figcaption>
+    <div class="phone"><div class="screen">
+      <div class="dlg" role="group" aria-label="Clinical attention dialog">
+        <h4>Clinical attention</h4>
+        <div class="drow"><button type="button" class="dd e-crit" style="border-width:1.5px;border-style:solid">Critical <span aria-hidden="true">▾</span></button><button type="button" class="del" aria-label="Delete entry">Delete</button></div>
+        <div class="tf">Severe PIH</div><p class="cnt">10/140</p>
+        <div class="drow"><button type="button" class="dd e-note" style="border:1px solid var(--outv);color:var(--on)">Note <span aria-hidden="true">▾</span></button><button type="button" class="del" aria-label="Delete entry">Delete</button></div>
+        <div class="tf">Prefers female doctor</div><p class="cnt">21/140</p>
+        <div class="drow"><button type="button" class="dd e-alert" style="border:1px solid var(--mod-bd)">Alert <span aria-hidden="true">▾</span></button><button type="button" class="obtn" style="align-self:auto">Add</button></div>
+        <div class="tf" style="color:var(--onv)">What should the next doctor know?</div>
+        <div class="dbtns"><button type="button" class="obtn" style="align-self:auto">Cancel</button><button type="button" class="fbtn">Save</button></div>
+      </div>
+    </div></div>
+    <p class="note">Level picker shows the word in its level colours, no icon. Delete is an icon button in the app (48 dp, "Delete entry" label); drawn as a word here. Save becomes the filled primary button so the main action is clear; Cancel stays outlined.</p>
+  </figure>
+  <figure>
+    <figcaption><b>Dark</b>, after card, fixtures</figcaption>
+    <div class="phone dark"><div class="screen">
+      <section class="sec" aria-label="Clinical attention dark">
+        <div class="sec-head"><h4>Clinical attention</h4><button type="button" class="act" aria-label="Edit clinical alerts">Edit</button></div>
+        <div class="sec-body" style="gap:8px">
+          <div class="ent e-crit"><span class="lv">Critical</span><span class="tx">Severe PIH</span></div>
+          <div class="ent e-alert"><span class="lv">Alert</span><span class="tx">Anaemia</span></div>
+          <div class="ent e-note"><span class="lv">Note</span><span class="tx">Prefers female doctor</span></div>
+        </div>
+      </section>
+    </div></div>
+  </figure>
+</div>
+
+<h2>4. Contrast (computed)</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Pair</th><th>Text</th><th>Background</th><th>Ratio</th></tr></thead>
+<tbody>
+<tr><td>Critical word / text</td><td>#BA1A1A / #410002</td><td>#FFDAD6</td><td class="n">5.00 / 13.26</td></tr>
+<tr><td>Alert word and text (new)</td><td>#6E4708</td><td>#FCEFD6</td><td class="n">7.19</td></tr>
+<tr><td>Alert border (non-text, new)</td><td>#9E6F1E</td><td>#FFFFFF</td><td class="n">4.42</td></tr>
+<tr><td>Note word / text</td><td>#4C3F43 / #0D1B3D</td><td>#EFE9E4</td><td class="n">8.31 / 14.05</td></tr>
+<tr><td>Critical border (non-text)</td><td>#BA1A1A</td><td>#FFFFFF</td><td class="n">6.46</td></tr>
+<tr><td>Title, Edit, Add attention</td><td>#0D1B3D</td><td>#FFFFFF</td><td class="n">16.92</td></tr>
+<tr><td>Empty text</td><td>#4C3F43</td><td>#FFFFFF</td><td class="n">10.00</td></tr>
+<tr><td>Save (onPrimary on primary)</td><td>#FFFFFF</td><td>#0D1B3D</td><td class="n">16.92</td></tr>
+<tr><td>Dark Critical word / text</td><td>#FFB4AB / #FFDAD6</td><td>#5C141D</td><td class="n">7.86 / 10.33</td></tr>
+<tr><td>Dark Alert</td><td>#F3D18E</td><td>#3A2A0E</td><td class="n">9.44</td></tr>
+<tr><td>Dark Note word / text</td><td>#CDC3C6 / #E2E2EA</td><td>#283248</td><td class="n">7.45 / 9.94</td></tr>
+<tr><td>Today, for reference: Alert text</td><td>#B45309</td><td>#FFFBEB</td><td class="n">4.84</td></tr>
+</tbody></table></div>
+
+<h2>5. Compose mapping</h2>
+<ol class="map">
+  <li><code>attentionColors(level)</code> (in <code>ClinicalAttentionBanner.kt</code>): CRITICAL unchanged (errorContainer, onErrorContainer, error accent, error border 1.5 dp); ALERT becomes <code>StatusModerate*</code> light and <code>StatusModerateDark*</code> dark (container Bg, content Text, accent Text, border Border, 1 dp); NOTE unchanged (surfaceContainerHigh, onSurface, onSurfaceVariant accent, outlineVariant border, alpha removed).</li>
+  <li>New shared <code>AttentionEntryBox(level, text, modifier)</code> in <code>ui/patienthub/components/ClinicalAttentionEntries.kt</code>: <code>Surface(shape = RecordShapes.Small, color = c.container, border = BorderStroke(c.borderWidth, c.border))</code>, <code>Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), spacedBy(2.dp))</code>, level word <code>RecordType.FieldLabel.copy(fontWeight = Bold)</code> in <code>c.accent</code>, text <code>RecordType.FieldValue</code> in <code>c.content</code>. Used by the card (tags <code>severeBpAttention</code>, <code>attentionEntry-N</code>) and the read-only dialog.</li>
+  <li><code>ClinicalAttentionCard</code>: <code>RecordSectionCard(title = stringResource(R.string.clinical_attention), family = FieldFamilies.patient(), modifier = modifier.testTag("clinicalAttentionCard"), action = onEdit?.let { { SectionTextAction(stringResource(R.string.action_edit), stringResource(R.string.edit_clinical_alerts), it, Modifier.testTag("editClinicalAttention")) } })</code>; entries in <code>Column(spacedBy(8.dp))</code>. Empty: <code>Text(no_clinical_attention_recorded, RecordType.FieldValue, onSurfaceVariant)</code> plus <code>OutlinedButton(shape = RecordShapes.Small, Modifier.heightIn(min = 48.dp).testTag("addClinicalAttention"))</code>. The family is unused by entries; pass patient.</li>
+  <li><code>CompactClinicalAttentionStrip</code> (stays in <code>PatientHubHeader.kt</code>, same name and package; slice 4 does not move it): <code>Surface(onClick, shape = RecordShapes.Small, color, border, Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("clinicalAttentionStrip").testTag("clinicalAttentionBanner"))</code>; <code>Row(padding(start = 12.dp, end = 8.dp, vertical = 6.dp), spacedBy(8.dp))</code>: <code>Column(weight(1f))</code> of level word (FieldLabel bold, accent) and text (<code>RecordType.Secondary</code>, content, <code>maxLines = 2</code>, Ellipsis); "+N" as <code>Text(RecordType.Tag, accent)</code> inside a 1 dp accent-border Surface radius 10; <code>Icons.AutoMirrored.Filled.KeyboardArrowRight</code> 18 dp, content colour full alpha. Leading icon removed.</li>
+  <li><code>ClinicalAttentionDialog</code>: title <code>RecordType.SectionTitle</code> onSurface; <code>AttentionLevelDropdown</code> drops the leading icon, keeps the arrow, shape <code>RecordShapes.Small</code>, word <code>RecordType.Action.copy(fontWeight = Bold)</code>; Save becomes <code>Button</code> default colours (primary) with <code>RecordShapes.Small</code>; Cancel <code>OutlinedButton</code> <code>RecordShapes.Small</code>; read-only entries use <code>AttentionEntryBox</code>. Every tag kept.</li>
+  <li>Delete the unused <code>ClinicalAttentionBanner</code> composable (no caller in <code>app/src/main</code>, no test uses it); keep <code>attentionColors</code> and <code>ClinicalAttentionLevel</code> in that file. Delete <code>ClinicalGroupSection.kt</code> once the card no longer calls it.</li>
+</ol>
+
+</main>
+</body>
+</html>

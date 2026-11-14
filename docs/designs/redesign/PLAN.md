@@ -17,7 +17,8 @@ antislop: DURING, dials ENERGY 1 / RHYTHM 1 / MOTION 1 (motion: pressed and focu
 9. **No em dashes, no all-caps labels, no decorative icons, no gradients or glow, two radii only (10 dp, 16 dp).**
 10. **File size ceiling 1,500 lines.** If a slice would push a file past it, split first in a separate commit.
 11. **Branch hygiene** (AGENTS.md): one branch per slice, `.agents/scripts/git_audit.sh` before work and before push, and `.agents/pipeline/HANDOFF_AGY.md` updated in the same commit (mission row, artifact, log line). This plan does not edit HANDOFF; the first builder commit must.
-12. **Review:** an edit to a level-3 path (see `.agents/PROJECT_MAP.json` via the project's tools: `ClinicalBadges.kt`, `PatientListScreen.kt`, `PatientEditor.kt`, `PreviousPregnancyEditor.kt`, `DatingEditor.kt`, `ClinicalFormat.kt`, `ClinicalPresets.kt`, `ClinicalAttachmentViewerDialog.kt`, `SecuritySettingsDialog.kt`, `VaultGateScreen.kt`, `PatientTwoPageReportDialog.kt`, `PatientPrintManager.kt`) needs a frontier-tier review and an independent test review.
+12. **Lessons from slices 0 and 1:** `LabeledValue(stretch = true)` only inside `LabeledValueRow` with `Modifier.weight(1f).fillMaxHeight()` (weight in an unbounded scrolling column collapsed boxes to 0 px; tests must assert height or `assertIsDisplayed`, not only existence). With several `testTag` modifiers on one node, the first (outermost) wins in tests.
+13. **Review:** an edit to a level-3 path (see `.agents/PROJECT_MAP.json` via the project's tools: `ClinicalBadges.kt`, `PatientListScreen.kt`, `PatientEditor.kt`, `PreviousPregnancyEditor.kt`, `DatingEditor.kt`, `ClinicalFormat.kt`, `ClinicalPresets.kt`, `ClinicalAttachmentViewerDialog.kt`, `SecuritySettingsDialog.kt`, `VaultGateScreen.kt`, `PatientTwoPageReportDialog.kt`, `PatientPrintManager.kt`) needs a frontier-tier review and an independent test review.
 
 ## 1. Screen inventory (surveyed 2026-11-14, `ui/**`, 23,004 lines)
 
@@ -148,29 +149,29 @@ Each slice is one builder lane, one branch, at most about five main files. "Mock
 - Depends on: slice 0. Risk: medium (no level-3 file; card used on the main list). Mock: done (mock D).
 - Brief: `slice_01_overview_and_card.md`.
 
-### Slice 2. Delivery planning card and delivered summary
-- Scope: `DeliveryPlanningCard` becomes a `RecordSectionCard` in the Delivery family with four `LabeledValue`s (hospital, fees short pair; plan, postpartum wide). `DeliveredSummary` uses the same fields. Display labels in sentence case through new display strings; the existing `delivery_*_title` strings stay untouched because `model/DeliveryNotes.kt` parses notes with the Title Case labels.
-- Files: `components/DeliveryPlanningCard.kt`, `components/DeliveryOutcomeUi.kt`, `ui/ClinicalBadges.kt` (remove `DeliverySectionBox` and `DeliveryTone`), `ui/Theme.kt` (remove the 24 `Delivery*` colours), `res/values/strings.xml`.
-- Tests: keep tags `deliveryPlanningCard`, `deliveryHospital`, `deliveryFees`, `deliveryPlan`, `deliveryPostpartum`, `editDeliveryPlan`. Update `ThemeContrastTest` (it parses the `Delivery*` tokens) to check the `FieldDelivery*` tokens instead. Check `OverviewTabSectionsTest.deliveryCardShowsOnlyTheFourBoxesAndNoRepeatedFacts`, `DeliveryPlanningCardEditGateTest`, `DeliveryPlanTabsEditGateTest`.
-- Depends on: 1A. Risk: medium (`ClinicalBadges.kt` is level 3). Mock: the delivered state (outcome fields with a real delivery date) needs a small mock; brief: "Delivery planning card, delivered state, 360 dp, light and dark, Delivery family, fields from `DeliveredSummary` only".
+### Slice 2. Delivery planning card and delivered state
+- Brief: `slice_02_delivery.md`. Mock: `mocks/mock_s02_delivery.html` (done).
+- Scope: `DeliveryPlanningCard` on `RecordSectionCard`, Delivery family, four full-width `LabeledValue`s; `DeliveredSummary` as a "Delivered" tag, a "Delivery date" field ("???" kept when unknown), mode and outcome fields when present. New sentence-case display strings; `delivery_*_title` untouched (sheet labels, note keys).
+- Files: `components/DeliveryPlanningCard.kt`, `components/DeliveryOutcomeUi.kt`, `ui/ClinicalBadges.kt` (level 3, deletions only), `ui/Theme.kt` (delete 24 `Delivery*` colours), `strings.xml`.
+- Tests needing edits: `ThemeContrastTest` (its `Delivery*` pairs move to `FieldDelivery*`). Depends on: 1A. Risk: medium.
 
-### Slice 3. Clinical attention card, banner and dialog
-- Scope: attention keeps its own level colours (Critical, Alert, Note words stay), restyled to the 10/16 radii, 12 sp floor, no header icon tile; `ClinicalGroupSection` is deleted once nothing uses it.
-- Files: `components/ClinicalAttentionCard.kt`, `ClinicalAttentionEntries.kt`, `ClinicalAttentionBanner.kt`, `ClinicalGroupSection.kt` (delete), `ui/Theme.kt` if level colours need contrast fixes.
-- Tests: `ClinicalAttentionUiTest` tags (`clinicalAttentionCard`, `severeBpAttention`, `attentionEntry-N`, `editClinicalAttention`, `addClinicalAttention`, `clinicalAttentionBanner`, `clinicalAttentionStrip`).
-- Depends on: 0, 1A. Risk: medium (clinical safety meaning). Mock first: attention card with all three levels plus severe BP, banner collapsed and expanded, dialog; light and dark; 360 dp.
+### Slice 3. Clinical attention card, header strip and dialog
+- Brief: `slice_03_attention.md`. Mock: `mocks/mock_s03_attention.html` (done).
+- Scope: entries as level word over a 16 sp sentence (`AttentionEntryBox`); Alert moves to the amber Moderate tokens (4.84:1 to 7.19:1); icons removed (the word carries the level); strip and dialog restyled; unused `ClinicalAttentionBanner` composable and `ClinicalGroupSection.kt` deleted.
+- Files: `components/ClinicalAttentionBanner.kt`, `ClinicalAttentionEntries.kt`, `ClinicalAttentionCard.kt`, `ClinicalGroupSection.kt` (delete), `patienthub/PatientHubHeader.kt` (`CompactClinicalAttentionStrip` only), `strings.xml`.
+- Tests needing edits: none expected. Depends on: 0, 1A. Risk: medium (clinical meaning; frontier review advised).
 
 ### Slice 4. Patient hub header and tab bar
-- Scope: header name, GA, risk and allergy pills, report and edit actions, sticky collapsed header, tab bar; risk uses `StatusTag`; pills use `RecordType.Tag`.
-- Files: `patienthub/PatientHubHeader.kt`, `PatientHubScreen.kt`, `PatientHubTab.kt`.
-- Tests: tags `hubPatientName`, `hubGaBadge`, `hubRiskBadge`, `hubDeliveredBadge`, `hubAllergyPill`, `hubAllergyText`, `hubBackButton`, `hubReportButton`, `editPatientButton`, `patientHubTabBar`, `tab-*`, `stickyBackButton`, `stickyAttentionButton`, `workspaceAttentionButton`; `PatientHubDesignTest`, `DatingGaMarkerSurfacesTest` (header marker), `PatientHubNavigation`.
-- Depends on: 0, 1B (StatusTag in use). Risk: medium (575-line header, collapse logic must not change). Mock first: expanded and collapsed header, English and Arabic name, High risk with allergy, delivered, 360 dp.
+- Brief: `slice_04_hub_header.md`. Mock: `mocks/mock_s04_hub_header.html` (done).
+- Scope: name 22 sp; risk as `StatusTag` (new `NormalRisk` kind); GA, Parity, Blood group, Age as metric cells shared with the list card (`ui/components/MetricCell.kt`, moved out of `PatientDirectoryMetricsRow`); "Rh negative" as a word; tab labels without icons, count badges radius 10, "!" instead of a colour-only dot. Collapse logic untouched.
+- Files: `ui/components/MetricCell.kt` (new), `patientdirectory/PatientDirectoryMetricsRow.kt` (move only), `patienthub/PatientHubHeader.kt`, `ui/components/StatusTag.kt`, `ui/components/RecordTokens.kt`, `strings.xml`. Reads level-3 `ClinicalBadges.kt` and `ClinicalFormat.kt` without editing them.
+- Tests needing edits: none expected. Depends on: 3. Risk: medium-high.
 
-### Slice 5. Patient list screen chrome and actions sheet
-- Scope: search field, filter chips (including archived, delivered, high risk), sort control, empty and filtered-empty states, list padding and gaps, actions sheet rows.
-- Files: `PatientListScreen.kt` (UI parts only, level 3), `DashboardSort.kt`, `patientdirectory/PatientActionsModalSheet.kt`, `res/values/strings.xml`.
-- Tests: `OwnerFixesUiTest.archivedFilterAndDashboardSort`, `AncWorkflowTest` list steps, `DashboardPatientsTest` (unit).
-- Depends on: 1B. Risk: medium-high (level 3; `projectDashboardRow` logic is not touched). Mock first: list with five cards, search active, filter row, empty and no-match states, actions sheet; 360 dp.
+### Slice 5. Patient list chrome and actions sheet
+- Brief: `slice_05_list_chrome.md`. Mock: `mocks/mock_s05_list_chrome.html` (done).
+- Scope: one chip style (selected filled primary), "Moderate risk" filter label, 10 dp radii, count as text, New patient without icon, sort as a text button, empty states from strings, sheet rows 56 dp without icons or chevrons, no trailing separator in the sheet header.
+- Files: `ui/PatientListScreen.kt` (level 3, drawing code only, logic untouched), `patientdirectory/PatientActionsModalSheet.kt`, `strings.xml`. `DashboardSort.kt` is not touched.
+- Tests needing edits: none expected. Depends on: 1B (and `RecordType.HeaderName` from 4, or adds it). Risk: medium-high.
 
 ### Slice 6. Visits tab
 - Scope: visit records as `RecordRow`s on the timeline, vitals as `LabeledValue` grid in a new Vitals family or the Patient family (mock decides), BP alert words kept.
@@ -251,7 +252,7 @@ Each slice is one builder lane, one branch, at most about five main files. "Mock
 
 ## 4. Mock queue (before the slice that needs it)
 
-Every mock follows mock D's rules: one self-contained HTML file, 360 px frames, before and after, light plus one dark frame, computed contrast table, Compose mapping, real sample data only (Mona Ragab / منى رجب, 27+2 wks, G4 P1 A2, 110/70, A+, EDD 11/02/2027, Mothercare, 12000) and the app's own empty strings. Order: slice 2 delivered state, 3 attention, 4 header, 5 list chrome, 6 visits, 7 scans, 8 labs, 9 meds, 10 plan, 11 sheets, then editors. Mocks for 12 to 20 can wait until slices 2 to 11 land.
+Every mock follows mock D's rules: one self-contained HTML file, 360 px frames, before and after, light plus one dark frame, computed contrast table, Compose mapping, real sample data only (Mona Ragab / منى رجب, 27+2 wks, G4 P1 A2, 110/70, A+, EDD 11/02/2027, Mothercare, 12000) and the app's own empty strings. Done: slices 2, 3, 4, 5 (`docs/designs/redesign/mocks/`). Next: 6 visits, 7 scans, 8 labs, 9 meds, 10 plan, 11 sheets, then editors. Mocks for 12 to 20 can wait until slices 2 to 11 land.
 
 ## 5. Owner decisions found while planning
 
@@ -269,3 +270,16 @@ Every mock follows mock D's rules: one self-contained HTML file, 360 px frames, 
 4. "High risk" sentence case (also on the hub header): accepted.
 5. Blank history fields stay hidden: accepted.
 6. BP alert copy loses the triangle and middle dots (slice 6): accepted.
+
+7. **Filter wording.** The list filter says "Medium Risk", the card tag "Moderate risk". Slice 5 changes the filter to "Moderate risk" and sentence case. Say if "Medium" must stay.
+8. **Plural.** `active_patients_count` reads "1 Patients". A plurals resource would fix it; slice 5 leaves the text as is.
+9. **GA text in the header.** The expanded header prints "27w 2d" (`calculateGestationalAge()`), the sticky bar and the card "27+2 wks" (`shortWeeksText`). Slice 4 keeps both; say if the header should match the card.
+10. **Unknown delivery date.** The card shows "???" (a test asserts it). Slice 2 keeps it; "Date not recorded" would match the rest of the record.
+11. **Normal risk in the header.** Slice 4 shows a neutral "Normal risk" tag in the header (the list shows none). The existing `normal_risk` string reads "STANDARD RISK" and is left alone.
+
+## 7. Owner decisions 7 to 11 (2026-11-15)
+7. Filter wording: "Moderate risk" (not "Medium").
+8. "1 patient" singular fixed.
+9. Gestational age format everywhere (header, sticky bar, card, reports): "27+2 wks" (weeks+days, the RCOG, NICE and FIGO convention; ACOG's "27w2d" and "27 2/7" are equivalent). Slice 4 changes the header's "27w 2d" to "27+2 wks".
+10. Unknown delivery date keeps "???".
+11. No "Normal risk" tag in the header for low-risk patients: the header shows a risk tag only for Moderate and High risk. The `NormalRisk` StatusKind is not needed; remove it from the slice 4 brief.

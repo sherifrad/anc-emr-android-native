@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Mock S05: Patient list chrome</title>
+<style>
+  /* Tokens: the app's real scheme values (Theme.kt) plus the slice 0 record tokens. */
+  :root{
+    --primary:#0D1B3D; --on:#0D1B3D; --onv:#4C3F43; --onprimary:#FFFFFF;
+    --surface:#FFFFFF; --bg:#FBF8F5; --outv:#CAC4D0; --outline:#79747E; --sch:#EFE9E4;
+    --err:#BA1A1A; --errc:#FFDAD6; --onerrc:#410002;
+    --pt-bg:#E9EEF8; --pt-lb:#23407A; --ob-bg:#E3F0EE; --ob-lb:#1D5149;
+    --hx-bg:#F1EDE4; --hx-lb:#594A2C; --dl-bg:#EEE9F5; --dl-lb:#4E3A78;
+    --inc-bg:#EEF0F4; --inc-bd:#757E8E; --inc-fg:#333B4A;
+    --mod-bg:#FCEFD6; --mod-bd:#9E6F1E; --mod-fg:#6E4708;
+    --hi-bg:#FBE3E3; --hi-bd:#C26666; --hi-fg:#8E1B1B;
+    --r-s:10px; --r-l:16px;
+  }
+  .dark{
+    --primary:#B4C5FF; --on:#E2E2EA; --onv:#CDC3C6; --onprimary:#002A78;
+    --surface:#1A202E; --bg:#0E121B; --outv:#3A4459; --outline:#8E95A5; --sch:#283248;
+    --err:#FFB4AB; --errc:#5C141D; --onerrc:#FFDAD6;
+    --pt-bg:#22304A; --pt-lb:#AFC6F2; --ob-bg:#1D3836; --ob-lb:#9FD6CC;
+    --hx-bg:#36301F; --hx-lb:#E0CFA6; --dl-bg:#2E2842; --dl-lb:#CDBDF0;
+    --inc-bg:#2A3140; --inc-bd:#7D889E; --inc-fg:#D5DAE3;
+    --mod-bg:#3A2A0E; --mod-bd:#A87A2A; --mod-fg:#F3D18E;
+    --hi-bg:#4A1616; --hi-bd:#B45A5A; --hi-fg:#FFC9C9;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:#FFFFFF;color:#0D1B3D;font-family:Roboto,"Noto Sans","Noto Sans Arabic","Segoe UI",system-ui,-apple-system,Arial,sans-serif;font-size:15px;line-height:1.5;padding:32px 16px 64px}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-size:26px;line-height:1.25;margin:0 0 8px}
+  h2{font-size:20px;line-height:1.3;margin:44px 0 6px}
+  h3.sub{font-size:16px;margin:18px 0 6px}
+  .lede,p,li{max-width:76ch}
+  .lede{color:#4C3F43;margin:0 0 4px}
+  .reason{border:1px solid #CAC4D0;border-radius:16px;padding:18px 20px;margin-top:18px;background:#FDFCFB}
+  .reason h2{margin-top:0}
+  .reason ul{margin:4px 0 0;padding-inline-start:20px}
+  .pair{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-top:14px}
+  figure{margin:0;width:360px;max-width:100%;flex:0 0 auto}
+  figcaption{font-size:14px;color:#4C3F43;margin:0 0 8px}
+  figcaption b{color:#0D1B3D}
+  .note{font-size:14px;color:#4C3F43;margin:10px 0 0}
+  .phone{width:100%;background:var(--bg);border:1px solid #B9B4BE;border-radius:16px;overflow:hidden;color:var(--on)}
+  .screen{padding:16px;display:flex;flex-direction:column;gap:12px}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  bdi{unicode-bidi:isolate}
+
+  /* record components (slice 0) */
+  .sec{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:4px 4px 16px 16px}
+  .sec-head{display:flex;align-items:center;min-height:48px;gap:8px}
+  .sec-head h4{flex:1 1 auto;margin:0;padding:6px 0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .sec-body{display:flex;flex-direction:column;gap:12px;padding-inline-end:12px}
+  .act{min-width:48px;min-height:48px;padding:0 12px;border-radius:var(--r-s);font-size:14px;font-weight:600;color:var(--primary);display:inline-flex;align-items:center;justify-content:center}
+  .act:hover{background:rgba(13,27,61,.06)}
+  .f{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .flab{font-size:12px;line-height:16px;font-weight:600;color:var(--flb)}
+  .fval{margin:0;min-height:44px;padding:10px 12px;border-radius:var(--r-s);background:var(--fbg);font-size:16px;line-height:22px;color:var(--on);overflow-wrap:anywhere}
+  .fval.key{font-weight:600}
+  .fval.miss{color:var(--onv);font-style:italic}
+  .frow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .fam-pt{--fbg:var(--pt-bg);--flb:var(--pt-lb)} .fam-ob{--fbg:var(--ob-bg);--flb:var(--ob-lb)}
+  .fam-hx{--fbg:var(--hx-bg);--flb:var(--hx-lb)} .fam-dl{--fbg:var(--dl-bg);--flb:var(--dl-lb)}
+  .tag{display:inline-flex;align-items:center;min-height:24px;padding:3px 8px;border-radius:var(--r-s);font-size:12px;line-height:16px;font-weight:600;border:1px solid;white-space:nowrap}
+  .t-hi{background:var(--hi-bg);border-color:var(--hi-bd);color:var(--hi-fg);font-weight:700}
+  .t-mod{background:var(--mod-bg);border-color:var(--mod-bd);color:var(--mod-fg)}
+  .t-inc{background:var(--inc-bg);border-color:var(--inc-bd);color:var(--inc-fg)}
+  .t-del{background:var(--surface);border-color:var(--primary);color:var(--primary)}
+  .t-norm{background:var(--surface);border-color:var(--inc-bd);color:var(--onv)}
+  .t-err{background:var(--errc);border-color:var(--err);color:var(--onerrc);font-weight:700}
+  .mlab{font-size:12px;line-height:16px;font-weight:500;color:var(--onv)}
+  .mval{font-size:16px;line-height:22px;font-weight:600;color:var(--on);white-space:nowrap}
+
+  /* tables */
+  .tablewrap{overflow-x:auto;max-width:100%}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin-top:10px}
+  th,td{border-bottom:1px solid #E6E1E5;padding:7px 8px;text-align:start;vertical-align:top}
+  th{background:#F7F5F3}
+  td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+  ol.map li{margin:7px 0}
+  code{font-family:"Roboto Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:#F3F0EE;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+  .ttl{display:flex;align-items:center;gap:12px;justify-content:space-between}
+  .ttl h4{margin:0;font-size:22px;line-height:28px;font-weight:700;color:var(--primary)}
+  .ttl .c{font-size:14px;color:var(--onv);margin:0}
+  .pbtn{min-height:48px;padding:0 16px;border-radius:var(--r-s);background:var(--primary);color:var(--onprimary);font-size:14px;font-weight:600;white-space:nowrap}
+  .search{display:flex;align-items:center;gap:8px;min-height:56px;padding:0 12px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);color:var(--onv);font-size:16px}
+  .search i{width:18px;height:18px;border:2px solid var(--onv);border-radius:50%;flex:0 0 auto}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;margin:0 -16px;padding-inline:16px}
+  .chip{flex:0 0 auto;min-height:48px;display:inline-flex;align-items:center}
+  .chip span{display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:var(--r-s);border:1px solid var(--outline);background:var(--surface);color:var(--on);font-size:14px;font-weight:500;white-space:nowrap}
+  .chip.sel span{background:var(--primary);border-color:var(--primary);color:var(--onprimary);font-weight:600}
+  .sort{min-height:48px;padding:0 4px;font-size:14px;font-weight:600;color:var(--primary);align-self:flex-start}
+  .pc{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:4px 4px 12px 12px}
+  .pc-top{display:flex;align-items:center;gap:8px;min-height:48px}
+  .pc-top b{flex:1;font-size:16px;line-height:22px}
+  .more{width:48px;height:48px;font-size:20px;color:var(--onv)}
+  .pc-m{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding-inline-end:8px}
+  .pc-m .s2{grid-column:span 2}
+  .empty{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:24px 16px;text-align:center;font-size:16px;color:var(--onv);margin:0}
+  .sheet{background:var(--surface);border-radius:16px 16px 0 0;border-top:1px solid var(--outv);padding:8px 16px 16px;display:flex;flex-direction:column;gap:8px}
+  .handle{width:32px;height:4px;border-radius:2px;background:var(--outline);align-self:center;margin:4px 0 8px}
+  .sh-top{display:flex;align-items:flex-start;gap:8px}
+  .sh-top div{flex:1}
+  .sh-top b{display:block;font-size:18px;line-height:24px}
+  .sh-top span{font-size:14px;color:var(--onv)}
+  .arow{min-height:56px;width:100%;border-radius:var(--r-s);background:var(--sch);display:flex;flex-direction:column;justify-content:center;padding:8px 16px;text-align:start}
+  .arow b{font-size:16px;font-weight:600;color:var(--on)}
+  .arow.pri{background:var(--pt-bg)} .arow.pri b{color:var(--primary)}
+  .arow.dng b{color:var(--err)}
+  .arow small{font-size:14px;color:var(--onv)}
+  /* before */
+  .b-chip{flex:0 0 auto;font-size:13px;padding:6px 12px;border-radius:8px;border:1px solid #79747E;white-space:nowrap}
+</style>
+</head>
+<body>
+<main class="wrap">
+<h1>Mock S05: Patient list chrome and the actions sheet</h1>
+<p class="lede">For slice 5. The list holds one real patient, Mona Ragab, shown as Moderate risk so the counts are honest for that list: All 1, High risk 0, Moderate risk 1, Low risk 0, Delivered 0, Archived 0. Her case ID and age are not in the sample, so the sheet shows "[case ID]". Cards are the slice 1 card, unchanged.</p>
+
+<section class="reason" aria-labelledby="r">
+  <h2 id="r">Design reasoning</h2>
+  <p>Reading this as: the clinic's home screen, scanned many times a day, dial ENERGY 1 / RHYTHM 1 / MOTION 1.</p>
+  <ul>
+    <li><b>One chip style.</b> Today every filter selects in its own colour (navy, red, pink, teal). After: every chip is outlined, the selected one is filled navy with white text. Risk is a word in the chip; colour does not carry it.</li>
+    <li><b>Words match the cards.</b> The card says "Moderate risk"; the filter said "Medium Risk". The filter reads "Moderate risk", and all chips use sentence case (string values, owner decision 7).</li>
+    <li><b>Two radii.</b> Search pill (24 dp), count pill (12 dp), sheet rows (12 dp) and chips (8 dp) become 10 dp; cards and the sheet top stay 16 dp.</li>
+    <li><b>Count as text.</b> "1 Patients" in a tinted pill becomes plain 14 sp text under the title (the plural bug is listed as owner decision 8; the string stays as is in this slice).</li>
+    <li><b>No decoration.</b> The "+" before "New patient", the "›" at the end of each sheet row and the icons before sheet actions repeat the words, so they go. The search icon stays: it marks the field.</li>
+    <li><b>Sheet:</b> rows 56 dp, neutral, the primary action (Record visit) in the patient tint, Archive keeps red text plus its subtitle (word plus colour). The header line "Case: X · " drops the trailing dot when age is missing.</li>
+    <li><b>Empty states</b> keep their sentences, now from string resources, in an outlined 16 dp card.</li>
+  </ul>
+</section>
+
+<h2>1. List screen</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today</figcaption>
+    <div class="phone"><div class="screen" style="background:#FBF8F5">
+      <div class="ttl"><div style="display:flex;align-items:center;gap:8px"><h4 style="font-size:24px;margin:0">Patients</h4><span style="font-size:11px;font-weight:600;padding:4px 8px;border-radius:12px;background:#D6DFFF;color:#041334">1 Patients</span></div><span style="padding:10px 14px;border-radius:20px;background:#0D1B3D;color:#fff;font-size:13px;font-weight:600;white-space:nowrap">+ New patient</span></div>
+      <div class="search" style="border-radius:24px;border-color:#79747E;background:#fff"><i></i>Search patients or case ID</div>
+      <div class="chips" style="gap:6px"><span class="b-chip" style="background:#0D1B3D;color:#fff;border-color:#0D1B3D">All (1)</span><span class="b-chip">High Risk (0)</span><span class="b-chip">Medium Risk (1)</span><span class="b-chip">Low Risk (0)</span><span class="b-chip">Delivered (0)</span></div>
+      <span style="align-self:flex-start;border:1px solid #79747E;border-radius:20px;padding:10px 12px;font-size:12px">Sort: Newest added ▾</span>
+      <div class="pc" style="padding:16px;color:#4C3F43;font-size:13px">Patient card (slice 1)</div>
+    </div></div>
+    <p class="note">Each risk chip selects in its own colour; four different radii on one screen; "Medium Risk" disagrees with the card's "Moderate risk".</p>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, slice 5</figcaption>
+    <div class="phone"><div class="screen">
+      <div class="ttl"><div><h4>Patients</h4><p class="c">1 Patients</p></div><button type="button" class="pbtn">New patient</button></div>
+      <label class="search"><i aria-hidden="true"></i>Search patients or case ID</label>
+      <div class="chips" role="group" aria-label="Filter patients">
+        <button type="button" class="chip sel" aria-pressed="true"><span>All (1)</span></button>
+        <button type="button" class="chip"><span>High risk (0)</span></button>
+        <button type="button" class="chip"><span>Moderate risk (1)</span></button>
+        <button type="button" class="chip"><span>Low risk (0)</span></button>
+        <button type="button" class="chip"><span>Delivered (0)</span></button>
+        <button type="button" class="chip"><span>Archived (0)</span></button>
+      </div>
+      <button type="button" class="sort">Sort: Newest added ▾</button>
+      <article class="pc">
+        <div class="pc-top"><b>Mona Ragab</b><span class="tag t-mod">Moderate risk</span><button type="button" class="more" aria-label="More actions">⋮</button></div>
+        <div class="pc-m">
+          <div><div class="mlab">GA</div><div class="mval">27+2 wks</div></div>
+          <div><div class="mlab">Parity</div><div class="mval">G4 P1 A2</div></div>
+          <div><div class="mlab">BP</div><div class="mval">110/70</div></div>
+          <div><div class="mlab">Blood group</div><div class="mval">A+</div></div>
+          <div class="s2"><div class="mlab">Due date</div><div class="mval">11/02/2027</div></div>
+        </div>
+      </article>
+    </div></div>
+    <p class="note">Title 22 sp, count as plain text, New patient as a 48 dp filled button. Chips are 32 dp visible inside 48 dp touch targets and scroll sideways as today. Sort is a 48 dp text button.</p>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, empty states</figcaption>
+    <div class="phone"><div class="screen">
+      <label class="search"><i aria-hidden="true"></i><span style="color:var(--on)">[search text]</span><span style="margin-inline-start:auto;font-size:14px;color:var(--primary)">Clear</span></label>
+      <p class="empty">No matching patients found</p>
+      <div class="chips"><button type="button" class="chip"><span>All (1)</span></button><button type="button" class="chip sel"><span>Archived (0)</span></button></div>
+      <p class="empty">No patients in this category</p>
+    </div></div>
+    <p class="note">"[search text]" stands for any search with no match. Both sentences are today's text, moved into string resources.</p>
+  </figure>
+</div>
+
+<h2>2. Actions sheet</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today</figcaption>
+    <div class="phone"><div class="screen" style="padding:0">
+      <div class="sheet" style="background:#fff">
+        <div class="sh-top"><div><b>Mona Ragab</b><span>Case: [case ID] · </span></div><span class="more" aria-hidden="true" style="font-size:13px;text-align:center;line-height:48px">Close</span></div>
+        <div style="border-top:1px solid #E6E1E5"></div>
+        <div style="padding:14px 16px;border-radius:12px;background:#E9EEF8;border:1px solid #B6BCCB;font-weight:700;font-size:13px;color:#0D1B3D">+ Record Visit <span style="float:right">›</span></div>
+        <div style="padding:14px 16px;border-radius:12px;background:#F4EFEB;border:1px solid #E4E0E6;font-weight:600;font-size:13px">Open Workspace <span style="float:right">›</span></div>
+        <div style="padding:14px 16px;border-radius:12px;background:#F4EFEB;border:1px solid #E4E0E6;font-weight:600;font-size:13px">Edit patient <span style="float:right">›</span></div>
+        <div style="padding:14px 16px;border-radius:12px;background:#FEE2E2;border:1px solid #F0B4B4;font-size:13px"><b style="color:#BA1A1A">Archive patient</b><br><small>Hidden from this list; can be restored</small><span style="float:right">›</span></div>
+      </div>
+    </div></div>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, slice 5</figcaption>
+    <div class="phone"><div class="screen" style="padding:0">
+      <div class="sheet">
+        <span class="handle" aria-hidden="true"></span>
+        <div class="sh-top"><div><b>Mona Ragab</b><span>Case: [case ID]</span></div><button type="button" class="more" aria-label="Close" style="font-size:14px">Close</button></div>
+        <button type="button" class="arow pri"><b>Record Visit</b></button>
+        <button type="button" class="arow"><b>Open Workspace</b></button>
+        <button type="button" class="arow"><b>Edit patient</b></button>
+        <button type="button" class="arow dng"><b>Archive patient</b><small>Hidden from this list; can be restored</small></button>
+        <button type="button" class="sort" style="align-self:stretch;text-align:center">Cancel</button>
+      </div>
+    </div></div>
+    <p class="note">Same four actions, same order, same conditions (Record visit and Edit hidden for archived patients). The close button is an icon in the app.</p>
+  </figure>
+  <figure>
+    <figcaption><b>Dark</b>, after, list</figcaption>
+    <div class="phone dark"><div class="screen">
+      <div class="ttl"><div><h4>Patients</h4><p class="c">1 Patients</p></div><button type="button" class="pbtn">New patient</button></div>
+      <label class="search"><i aria-hidden="true"></i>Search patients or case ID</label>
+      <div class="chips"><button type="button" class="chip sel"><span>All (1)</span></button><button type="button" class="chip"><span>High risk (0)</span></button><button type="button" class="chip"><span>Moderate risk (1)</span></button></div>
+      <button type="button" class="sort">Sort: Newest added ▾</button>
+      <p class="empty" style="text-align:start;font-size:14px">Patient card as slice 1, dark tokens.</p>
+    </div></div>
+  </figure>
+</div>
+
+<h2>3. Contrast (computed)</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Pair</th><th>Text</th><th>Background</th><th>Ratio</th></tr></thead>
+<tbody>
+<tr><td>Title on page</td><td>#0D1B3D</td><td>#FBF8F5</td><td class="n">15.99</td></tr>
+<tr><td>Count text on page</td><td>#4C3F43</td><td>#FBF8F5</td><td class="n">9.45</td></tr>
+<tr><td>New patient, selected chip (onPrimary on primary)</td><td>#FFFFFF</td><td>#0D1B3D</td><td class="n">16.92</td></tr>
+<tr><td>Unselected chip text</td><td>#0D1B3D</td><td>#FFFFFF</td><td class="n">16.92</td></tr>
+<tr><td>Chip and search border (non-text, outline)</td><td>#79747E</td><td>#FFFFFF / #FBF8F5</td><td class="n">4.55 / 4.30</td></tr>
+<tr><td>Search label, empty text</td><td>#4C3F43</td><td>#FFFFFF</td><td class="n">10.00</td></tr>
+<tr><td>Sheet action text on neutral row</td><td>#0D1B3D</td><td>#EFE9E4</td><td class="n">14.05</td></tr>
+<tr><td>Record visit on patient tint</td><td>#0D1B3D</td><td>#E9EEF8</td><td class="n">14.54</td></tr>
+<tr><td>Archive (error) on neutral row</td><td>#BA1A1A</td><td>#EFE9E4</td><td class="n">5.37</td></tr>
+<tr><td>Dark title / count on page</td><td>#B4C5FF / #CDC3C6</td><td>#0E121B</td><td class="n">11.04 / 10.90</td></tr>
+<tr><td>Dark New patient, selected chip</td><td>#002A78</td><td>#B4C5FF</td><td class="n">7.72</td></tr>
+<tr><td>Dark unselected chip</td><td>#E2E2EA</td><td>#1A202E</td><td class="n">12.64</td></tr>
+<tr><td>Dark chip border</td><td>#8E95A5</td><td>#1A202E</td><td class="n">5.42</td></tr>
+<tr><td>Dark Archive on neutral row</td><td>#FFB4AB</td><td>#283248</td><td class="n">7.54</td></tr>
+</tbody></table></div>
+
+<h2>4. Compose mapping</h2>
+<ol class="map">
+  <li>Title row: <code>Row(SpaceBetween, CenterVertically)</code>; <code>Column(weight(1f, fill = false))</code> of <code>Text(patients, RecordType.HeaderName, primary, semantics { heading() })</code> and <code>Text(active_patients_count, RecordType.Secondary, onSurfaceVariant)</code>; <code>Button(shape = RecordShapes.Small, Modifier.heightIn(min = 48.dp).testTag("newPatient"))</code> with the word only.</li>
+  <li>Search: <code>OutlinedTextField(shape = RecordShapes.Small, ...)</code>, everything else unchanged (tag <code>patientSearch</code>, clear button, events).</li>
+  <li>Filters: one private <code>ListFilterChip(selected, label, onClick, tag)</code> built on <code>FilterChip(shape = RecordShapes.Small, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = primary, selectedLabelColor = onPrimary, labelColor = onSurface), border = FilterChipDefaults.filterChipBorder(enabled = true, selected, borderColor = outline, selectedBorderColor = primary), label = { Text(..., RecordType.Action.copy(fontWeight = if (selected) SemiBold else Medium)) })</code>. Same six filters, same tags <code>riskFilter-*</code>, same counts and state.</li>
+  <li>Sort: <code>TextButton(shape = RecordShapes.Small, Modifier.minimumTouchTarget().testTag("dashboardSortButton"))</code> with <code>Text(dashboard_sort_format, RecordType.Action)</code> and the existing arrow icon; menu items and tags unchanged.</li>
+  <li>Notice (archived/unarchived): <code>OutlinedCard(shape = RecordShapes.Large)</code> with <code>RecordType.Secondary</code> text.</li>
+  <li>Empty: <code>OutlinedCard(shape = RecordShapes.Large)</code>, <code>Text(stringResource(R.string.no_matching_patients or R.string.no_patients_in_category), RecordType.FieldValue, onSurfaceVariant, TextAlign.Center, padding(24.dp))</code>.</li>
+  <li><code>PatientActionsModalSheet</code>: header name <code>RecordType.SectionTitle</code> onSurface; second line <code>"Case: " + caseId</code> plus <code>", " + ageText</code> only when present, <code>RecordType.Secondary</code>; rows: private <code>SheetActionRow(title, subtitle?, tone, tag, onClick)</code> = <code>Surface(onClick, shape = RecordShapes.Small, color = FieldPatientBg (primary tone) or surfaceContainerHigh, Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag(tag))</code>, <code>Column(padding(16.dp, 8.dp))</code> title <code>RecordType.FieldValue.copy(fontWeight = SemiBold)</code> (error colour for archive), subtitle <code>RecordType.Secondary</code>. Remove the leading icons, the "›" texts and the divider. Same events and tags (<code>actionNewVisit-</code>, <code>workspace-</code>, <code>editPatient-</code>, <code>statusPatient-</code>).</li>
+</ol>
+
+</main>
+</body>
+</html>

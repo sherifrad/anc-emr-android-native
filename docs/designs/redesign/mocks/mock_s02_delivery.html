@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Mock S02: Delivery card</title>
+<style>
+  /* Tokens: the app's real scheme values (Theme.kt) plus the slice 0 record tokens. */
+  :root{
+    --primary:#0D1B3D; --on:#0D1B3D; --onv:#4C3F43; --onprimary:#FFFFFF;
+    --surface:#FFFFFF; --bg:#FBF8F5; --outv:#CAC4D0; --outline:#79747E; --sch:#EFE9E4;
+    --err:#BA1A1A; --errc:#FFDAD6; --onerrc:#410002;
+    --pt-bg:#E9EEF8; --pt-lb:#23407A; --ob-bg:#E3F0EE; --ob-lb:#1D5149;
+    --hx-bg:#F1EDE4; --hx-lb:#594A2C; --dl-bg:#EEE9F5; --dl-lb:#4E3A78;
+    --inc-bg:#EEF0F4; --inc-bd:#757E8E; --inc-fg:#333B4A;
+    --mod-bg:#FCEFD6; --mod-bd:#9E6F1E; --mod-fg:#6E4708;
+    --hi-bg:#FBE3E3; --hi-bd:#C26666; --hi-fg:#8E1B1B;
+    --r-s:10px; --r-l:16px;
+  }
+  .dark{
+    --primary:#B4C5FF; --on:#E2E2EA; --onv:#CDC3C6; --onprimary:#002A78;
+    --surface:#1A202E; --bg:#0E121B; --outv:#3A4459; --outline:#8E95A5; --sch:#283248;
+    --err:#FFB4AB; --errc:#5C141D; --onerrc:#FFDAD6;
+    --pt-bg:#22304A; --pt-lb:#AFC6F2; --ob-bg:#1D3836; --ob-lb:#9FD6CC;
+    --hx-bg:#36301F; --hx-lb:#E0CFA6; --dl-bg:#2E2842; --dl-lb:#CDBDF0;
+    --inc-bg:#2A3140; --inc-bd:#7D889E; --inc-fg:#D5DAE3;
+    --mod-bg:#3A2A0E; --mod-bd:#A87A2A; --mod-fg:#F3D18E;
+    --hi-bg:#4A1616; --hi-bd:#B45A5A; --hi-fg:#FFC9C9;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:#FFFFFF;color:#0D1B3D;font-family:Roboto,"Noto Sans","Noto Sans Arabic","Segoe UI",system-ui,-apple-system,Arial,sans-serif;font-size:15px;line-height:1.5;padding:32px 16px 64px}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-size:26px;line-height:1.25;margin:0 0 8px}
+  h2{font-size:20px;line-height:1.3;margin:44px 0 6px}
+  h3.sub{font-size:16px;margin:18px 0 6px}
+  .lede,p,li{max-width:76ch}
+  .lede{color:#4C3F43;margin:0 0 4px}
+  .reason{border:1px solid #CAC4D0;border-radius:16px;padding:18px 20px;margin-top:18px;background:#FDFCFB}
+  .reason h2{margin-top:0}
+  .reason ul{margin:4px 0 0;padding-inline-start:20px}
+  .pair{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-top:14px}
+  figure{margin:0;width:360px;max-width:100%;flex:0 0 auto}
+  figcaption{font-size:14px;color:#4C3F43;margin:0 0 8px}
+  figcaption b{color:#0D1B3D}
+  .note{font-size:14px;color:#4C3F43;margin:10px 0 0}
+  .phone{width:100%;background:var(--bg);border:1px solid #B9B4BE;border-radius:16px;overflow:hidden;color:var(--on)}
+  .screen{padding:16px;display:flex;flex-direction:column;gap:12px}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  bdi{unicode-bidi:isolate}
+
+  /* record components (slice 0) */
+  .sec{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:4px 4px 16px 16px}
+  .sec-head{display:flex;align-items:center;min-height:48px;gap:8px}
+  .sec-head h4{flex:1 1 auto;margin:0;padding:6px 0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .sec-body{display:flex;flex-direction:column;gap:12px;padding-inline-end:12px}
+  .act{min-width:48px;min-height:48px;padding:0 12px;border-radius:var(--r-s);font-size:14px;font-weight:600;color:var(--primary);display:inline-flex;align-items:center;justify-content:center}
+  .act:hover{background:rgba(13,27,61,.06)}
+  .f{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .flab{font-size:12px;line-height:16px;font-weight:600;color:var(--flb)}
+  .fval{margin:0;min-height:44px;padding:10px 12px;border-radius:var(--r-s);background:var(--fbg);font-size:16px;line-height:22px;color:var(--on);overflow-wrap:anywhere}
+  .fval.key{font-weight:600}
+  .fval.miss{color:var(--onv);font-style:italic}
+  .frow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .fam-pt{--fbg:var(--pt-bg);--flb:var(--pt-lb)} .fam-ob{--fbg:var(--ob-bg);--flb:var(--ob-lb)}
+  .fam-hx{--fbg:var(--hx-bg);--flb:var(--hx-lb)} .fam-dl{--fbg:var(--dl-bg);--flb:var(--dl-lb)}
+  .tag{display:inline-flex;align-items:center;min-height:24px;padding:3px 8px;border-radius:var(--r-s);font-size:12px;line-height:16px;font-weight:600;border:1px solid;white-space:nowrap}
+  .t-hi{background:var(--hi-bg);border-color:var(--hi-bd);color:var(--hi-fg);font-weight:700}
+  .t-mod{background:var(--mod-bg);border-color:var(--mod-bd);color:var(--mod-fg)}
+  .t-inc{background:var(--inc-bg);border-color:var(--inc-bd);color:var(--inc-fg)}
+  .t-del{background:var(--surface);border-color:var(--primary);color:var(--primary)}
+  .t-norm{background:var(--surface);border-color:var(--inc-bd);color:var(--onv)}
+  .t-err{background:var(--errc);border-color:var(--err);color:var(--onerrc);font-weight:700}
+  .mlab{font-size:12px;line-height:16px;font-weight:500;color:var(--onv)}
+  .mval{font-size:16px;line-height:22px;font-weight:600;color:var(--on);white-space:nowrap}
+
+  /* tables */
+  .tablewrap{overflow-x:auto;max-width:100%}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin-top:10px}
+  th,td{border-bottom:1px solid #E6E1E5;padding:7px 8px;text-align:start;vertical-align:top}
+  th{background:#F7F5F3}
+  td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+  ol.map li{margin:7px 0}
+  code{font-family:"Roboto Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:#F3F0EE;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+  .old-card{background:#F9F5F3;border:1px solid #CAC4D0;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+  .old-head{display:flex;align-items:center;gap:8px;min-height:48px;margin:-8px 0 -4px}
+  .old-ico{width:20px;height:20px;border-radius:4px;background:#0D1B3D;opacity:.85;flex:0 0 auto}
+  .old-head h4{flex:1;margin:0;font-size:15px;font-weight:700;color:#0D1B3D}
+  .old-pen{width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;color:#0D1B3D}
+  .old-t{margin:0 0 4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+  .old-v{padding:10px 12px;border:1px solid;border-radius:10px;font-size:13px;font-weight:600}
+  .old-v.ph{font-weight:400;font-style:italic}
+  .old-del{display:flex;flex-direction:column;gap:4px}
+  .old-del b{font-size:14px}
+  .delhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<main class="wrap">
+<h1>Mock S02: Delivery planning card and delivered state</h1>
+<p class="lede">For slice 2. Builds on mock D and the slice 0 components as built (<code>RecordSectionCard</code>, <code>LabeledValue</code>, <code>StatusTag</code>). Sample data: Mothercare, 12000 for Mona Ragab. The sample has no delivery, so the delivered frames show what the app prints today for a delivered flag with no date ("???"), and one layout-only frame uses bracketed placeholders.</p>
+
+<section class="reason" aria-labelledby="r">
+  <h2 id="r">Design reasoning</h2>
+  <p>Reading this as: the Overview and Plan tab delivery card for doctors, calm Material 3 clinical, dial ENERGY 1 / RHYTHM 1 / MOTION 1.</p>
+  <ul>
+    <li><b>One family, not four hues.</b> Today's card uses purple, green, blue and pink boxes with uppercase titles. It becomes a <code>RecordSectionCard</code> in the Delivery family (plum tint #EEE9F5, label #4E3A78), the same pattern as every other Overview section.</li>
+    <li><b>Labels in sentence case</b> through new display strings. The existing <code>delivery_*_title</code> strings stay exactly as they are: <code>model/DeliveryNotes.kt</code> parses notes with "Agreed Delivery Hospital:" and the plan sheet uses them as field labels.</li>
+    <li><b>All four fields full width.</b> Hospital names and fee text are free text, and "Agreed delivery hospital" wrapped at half width in mock D's own check.</li>
+    <li><b>Missing value</b> reads "Not recorded" (the shared <code>LabeledValue</code> default) instead of "No record". One wording across the record.</li>
+    <li><b>Delivered state.</b> A <code>StatusTag</code> "Delivered" and a "Delivery date" field lead the card; mode and outcome follow as fields when recorded, hidden when not (today's rule). The unknown date keeps the owner's "???" convention, which a test asserts.</li>
+    <li><b>Dropped:</b> the calendar icon before the title, the pencil icon (replaced by the word "Edit", 48 dp), the tinted card background, the one-line "Delivered, date ??? · 3 days ago" headline with a middle dot.</li>
+  </ul>
+</section>
+
+<h2>1. Not delivered</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today</figcaption>
+    <div class="phone"><div class="screen">
+      <div class="old-card">
+        <div class="old-head"><span class="old-ico" aria-hidden="true"></span><h4>Delivery Planning &amp; Outcome</h4><span class="old-pen" aria-hidden="true">Edit</span></div>
+        <div><p class="old-t" style="color:#6B21A8">Agreed Delivery Hospital</p><div class="old-v" style="background:#F3E8FF;border-color:#D8B4FE;color:#6B21A8">Mothercare</div></div>
+        <div><p class="old-t" style="color:#166534">Agreed Delivery Fees</p><div class="old-v" style="background:#DCFCE7;border-color:#86EFAC;color:#166534">12000</div></div>
+        <div><p class="old-t" style="color:#075985">Delivery Plan</p><div class="old-v ph" style="background:#E0F2FE;border-color:#7DD3FC;color:#075985">No record</div></div>
+        <div><p class="old-t" style="color:#9D174D">Postpartum Note</p><div class="old-v ph" style="background:#FCE7F3;border-color:#F9A8D4;color:#9D174D">No record</div></div>
+      </div>
+    </div></div>
+    <p class="note">Four hues, uppercase tracked titles, 13 sp values, a tinted card that differs from every other section.</p>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, slice 2</figcaption>
+    <div class="phone"><div class="screen">
+      <section class="sec fam-dl" aria-label="Delivery planning and outcome">
+        <div class="sec-head"><h4>Delivery planning &amp; outcome</h4><button type="button" class="act" aria-label="Edit delivery plan">Edit</button></div>
+        <div class="sec-body">
+          <div class="f"><span class="flab">Agreed delivery hospital</span><p class="fval">Mothercare</p></div>
+          <div class="f"><span class="flab">Agreed delivery fees</span><p class="fval">12000</p></div>
+          <div class="f"><span class="flab">Delivery plan</span><p class="fval miss">Not recorded</p></div>
+          <div class="f"><span class="flab">Postpartum note</span><p class="fval miss">Not recorded</p></div>
+        </div>
+      </section>
+    </div></div>
+    <p class="note">Same card as the other Overview sections: navy 18 sp title, plum labels, 16 sp values, "Edit" as a 48 dp word. The Plan tab shows the same component.</p>
+  </figure>
+</div>
+
+<h2>2. Delivered</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, delivered, no date recorded</figcaption>
+    <div class="phone"><div class="screen">
+      <div class="old-card">
+        <div class="old-head"><span class="old-ico" aria-hidden="true"></span><h4>Delivery Planning &amp; Outcome</h4><span class="old-pen" aria-hidden="true">Edit</span></div>
+        <div class="old-del"><b>Delivered, date ???</b></div>
+        <div><p class="old-t" style="color:#6B21A8">Agreed Delivery Hospital</p><div class="old-v" style="background:#F3E8FF;border-color:#D8B4FE;color:#6B21A8">Mothercare</div></div>
+        <div><p class="old-t" style="color:#166534">Agreed Delivery Fees</p><div class="old-v" style="background:#DCFCE7;border-color:#86EFAC;color:#166534">12000</div></div>
+        <div><p class="old-t" style="color:#075985">Delivery Plan</p><div class="old-v ph" style="background:#E0F2FE;border-color:#7DD3FC;color:#075985">No record</div></div>
+        <div><p class="old-t" style="color:#9D174D">Postpartum Note</p><div class="old-v ph" style="background:#FCE7F3;border-color:#F9A8D4;color:#9D174D">No record</div></div>
+      </div>
+    </div></div>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, delivered, no date recorded</figcaption>
+    <div class="phone"><div class="screen">
+      <section class="sec fam-dl" aria-label="Delivery planning and outcome, delivered">
+        <div class="sec-head"><h4>Delivery planning &amp; outcome</h4><button type="button" class="act" aria-label="Edit delivery plan">Edit</button></div>
+        <div class="sec-body">
+          <div class="delhead"><span class="tag t-del">Delivered</span></div>
+          <div class="f"><span class="flab">Delivery date</span><p class="fval miss">???</p></div>
+          <div class="f"><span class="flab">Agreed delivery hospital</span><p class="fval">Mothercare</p></div>
+          <div class="f"><span class="flab">Agreed delivery fees</span><p class="fval">12000</p></div>
+          <div class="f"><span class="flab">Delivery plan</span><p class="fval miss">Not recorded</p></div>
+          <div class="f"><span class="flab">Postpartum note</span><p class="fval miss">Not recorded</p></div>
+        </div>
+      </section>
+    </div></div>
+    <p class="note">The word "Delivered" leads, then the date field. "???" stays (owner's convention for an unknown delivery date; <code>DeliveryPlanSheetTest</code> asserts it inside <code>deliveredSummary</code>). Mode and outcome are not recorded here, so they stay hidden as today.</p>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, delivered, every field present (layout only)</figcaption>
+    <div class="phone"><div class="screen">
+      <section class="sec fam-dl" aria-label="Delivered layout with placeholders">
+        <div class="sec-head"><h4>Delivery planning &amp; outcome</h4><button type="button" class="act" aria-label="Edit delivery plan">Edit</button></div>
+        <div class="sec-body">
+          <div class="delhead"><span class="tag t-del">Delivered</span></div>
+          <div class="f"><span class="flab">Delivery date</span><p class="fval key">[delivery date], [n] days ago</p></div>
+          <div class="frow">
+            <div class="f"><span class="flab">Mode of delivery</span><p class="fval">[mode]</p></div>
+            <div class="f"><span class="flab">Outcome</span><p class="fval">[outcome]</p></div>
+          </div>
+          <div class="f"><span class="flab">Agreed delivery hospital</span><p class="fval">Mothercare</p></div>
+          <div class="f"><span class="flab">Agreed delivery fees</span><p class="fval">12000</p></div>
+        </div>
+      </section>
+    </div></div>
+    <p class="note">Bracketed values are placeholders: the sample has no delivery. Date and days-ago come from the existing <code>deliveredHeadline</code> date part and <code>deliveredDaysAgo</code>; mode and outcome from <code>deliveryModeLabel</code> and <code>deliveryResultLabel</code>. Plan and postpartum rows sit below as in the frame to the left.</p>
+  </figure>
+</div>
+
+<h2>3. Dark theme</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Dark</b>, after, not delivered</figcaption>
+    <div class="phone dark"><div class="screen">
+      <section class="sec fam-dl" aria-label="Delivery planning dark">
+        <div class="sec-head"><h4>Delivery planning &amp; outcome</h4><button type="button" class="act" aria-label="Edit delivery plan">Edit</button></div>
+        <div class="sec-body">
+          <div class="f"><span class="flab">Agreed delivery hospital</span><p class="fval">Mothercare</p></div>
+          <div class="f"><span class="flab">Agreed delivery fees</span><p class="fval">12000</p></div>
+          <div class="f"><span class="flab">Delivery plan</span><p class="fval miss">Not recorded</p></div>
+          <div class="f"><span class="flab">Postpartum note</span><p class="fval miss">Not recorded</p></div>
+        </div>
+      </section>
+    </div></div>
+  </figure>
+</div>
+
+<h2>4. Contrast (computed, WCAG formula)</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Pair</th><th>Text</th><th>Background</th><th>Ratio</th></tr></thead>
+<tbody>
+<tr><td>Title, Edit (primary)</td><td>#0D1B3D</td><td>#FFFFFF</td><td class="n">16.92</td></tr>
+<tr><td>Delivery label on box / on surface</td><td>#4E3A78</td><td>#EEE9F5 / #FFFFFF</td><td class="n">8.00 / 9.54</td></tr>
+<tr><td>Value (onSurface) on box</td><td>#0D1B3D</td><td>#EEE9F5</td><td class="n">14.19</td></tr>
+<tr><td>Not recorded, ??? (onSurfaceVariant) on box</td><td>#4C3F43</td><td>#EEE9F5</td><td class="n">8.39</td></tr>
+<tr><td>Delivered tag</td><td>#0D1B3D</td><td>#FFFFFF</td><td class="n">16.92</td></tr>
+<tr><td>Dark title, Edit, Delivered tag</td><td>#B4C5FF</td><td>#1A202E</td><td class="n">9.59</td></tr>
+<tr><td>Dark label / value / missing on box</td><td>#CDBDF0 / #E2E2EA / #CDC3C6</td><td>#2E2842</td><td class="n">8.10 / 10.88 / 8.15</td></tr>
+<tr><td>Today, for reference: hospital / fees / plan / postpartum</td><td>#6B21A8 / #166534 / #075985 / #9D174D</td><td>their tints</td><td class="n">7.39 / 6.49 / 6.59 / 6.71</td></tr>
+</tbody></table></div>
+
+<h2>5. Compose mapping</h2>
+<ol class="map">
+  <li><code>DeliveryPlanningCard</code>: <code>RecordSectionCard(title = stringResource(R.string.delivery_planning_title), family = FieldFamilies.delivery(), modifier = modifier.testTag("deliveryPlanningCard"), action = if (canEdit) { { SectionTextAction(stringResource(R.string.action_edit), stringResource(R.string.edit_delivery_plan), onEditDeliveryPlan, Modifier.testTag("editDeliveryPlan")) } } else null)</code>.</li>
+  <li>Four <code>LabeledValue(label, value)</code> full width, no <code>stretch</code>, each with its existing tag on the modifier: <code>deliveryHospital</code>, <code>deliveryFees</code>, <code>deliveryPlan</code>, <code>deliveryPostpartum</code>. Values from <code>parseDeliveryNotes</code> unchanged; null shows "Not recorded".</li>
+  <li><code>DeliveredSummary</code> (tag <code>deliveredSummary</code> on a <code>Column(spacedBy(12.dp))</code>): <code>StatusTag(StatusKind.Delivered)</code>; <code>LabeledValue(R.string.delivery_date_label, dateText, emphasis = true, modifier = Modifier.testTag("deliveredHeadline"))</code>; then, when present, a <code>LabeledValueRow</code> with mode (<code>deliveredMode</code>) and outcome (<code>deliveredResult</code>), <code>stretch = true</code>, <code>Modifier.weight(1f).fillMaxHeight()</code>. If only one exists it is full width.</li>
+  <li><code>dateText</code>: known date: <code>"dd MMM yyyy"</code> (same formatter as <code>deliveredHeadline</code>) plus <code>", " + deliveredDaysAgo(...)</code> when not null; unknown date: <code>"???"</code> from a new string <code>delivery_date_unknown_value</code>, shown in the missing style (pass it as <code>value = null, missingText = ...</code>).</li>
+  <li>Dark mode comes from <code>FieldFamilies.delivery()</code> and <code>StatusTag</code>; nothing hard-coded.</li>
+</ol>
+
+</main>
+</body>
+</html>
