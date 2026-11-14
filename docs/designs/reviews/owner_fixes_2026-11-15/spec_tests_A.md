@@ -1,0 +1,6 @@
+Write ONE Kotlin JUnit4 test file (package com.sherifradwan.ancnative.ui.patienthub.model, file LabReportGroupingOwnerFixTest.kt) for the function partitionReportIntoCompositeGroups(items: List<DemoLabInvestigation>) in LabReportGrouping.kt (signature and result types are in the excerpt below; if you need the result type fields, they are shown). Write tests from this SPEC only, do not guess the implementation:
+ S1 "Haemoglobin (Hb)" (category Hematology) belongs to the Complete Blood Count (CBC) group.
+ S2 Full report: 6 CBC tests (Haemoglobin (Hb) abnormal, Haematocrit (Hct), MCV, MCH, White Cell Count (WBC), Platelets (PLT)), 8 urine tests in category "Urinalysis" including "RBCs (Urine)" (2 abnormal), plus 3 others (Blood Grouping & Rh Factor, Fasting Blood Sugar (FBS), Thyroid Stimulating Hormone (TSH)). Expect CBC size 6 with 1 abnormal and not containing "RBCs (Urine)"; Urine size 8 with 2 abnormal; Individual size 3 and not containing Hb.
+ S3 "Fasting Blood Sugar (FBS)" next to "Alanine Aminotransferase (ALT)" and "Aspartate Aminotransferase (AST)": FBS stays individual, liver group has exactly the two liver tests.
+ S4 Empty list gives no groups and no individual items.
+Build DemoLabInvestigation with named arguments exactly as the excerpt shows. Output only the file in one fenced kotlin block.

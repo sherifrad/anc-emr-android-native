@@ -30,11 +30,37 @@ data class CompositeTestGroup(
         }
 }
 
-private val CBC_KEYWORDS = listOf("hemoglobin", "platelet", "wbc", "white blood", "rbc", "red blood", "hematocrit", "hct", "mcv", "mch", "mchc")
+private val CBC_KEYWORDS = listOf(
+    "haemoglobin",
+    "hemoglobin",
+    "hb",
+    "haematocrit",
+    "hematocrit",
+    "hct",
+    "mcv",
+    "mch",
+    "mchc",
+    "white cell",
+    "white blood",
+    "wbc",
+    "platelet",
+    "plt",
+    "rbc",
+    "red blood",
+)
 private val URINE_KEYWORDS = listOf("urine", "pus cells", "nitrite", "leukocyte", "protein")
 private val STOOL_KEYWORDS = listOf("stool", "occult blood", "ova", "parasite")
 private val LFT_KEYWORDS = listOf("alt", "ast", "sgpt", "sgot", "bilirubin", "alkaline phosphatase")
 private val KFT_KEYWORDS = listOf("creatinine", "urea", "uric acid", "bun")
+private val WHOLE_TOKEN_KEYWORDS = setOf("hb", "plt", "alt", "ast")
+
+private fun matchesKeyword(nameLower: String, tokens: Set<String>, keyword: String): Boolean {
+    return if (keyword in WHOLE_TOKEN_KEYWORDS) {
+        tokens.contains(keyword)
+    } else {
+        nameLower.contains(keyword)
+    }
+}
 
 fun partitionReportIntoCompositeGroups(
     items: List<DemoLabInvestigation>,
@@ -49,11 +75,12 @@ fun partitionReportIntoCompositeGroups(
     items.forEach { lab ->
         val nameLower = lab.testName.lowercase()
         val catLower = lab.testCategory.lowercase()
+        val tokens = nameLower.split(Regex("[^a-z]+")).filter { it.isNotEmpty() }.toSet()
         when {
-            CBC_KEYWORDS.any { nameLower.contains(it) } -> cbcItems.add(lab)
-            catLower.contains("urine") || URINE_KEYWORDS.any { nameLower.contains(it) } -> urineItems.add(lab)
+            catLower == "urinalysis" || catLower.contains("urine") || catLower.contains("urinalysis") || nameLower.contains("urine") || URINE_KEYWORDS.any { nameLower.contains(it) } -> urineItems.add(lab)
             catLower.contains("stool") || STOOL_KEYWORDS.any { nameLower.contains(it) } -> stoolItems.add(lab)
-            LFT_KEYWORDS.any { nameLower.contains(it) } -> lftItems.add(lab)
+            CBC_KEYWORDS.any { matchesKeyword(nameLower, tokens, it) } -> cbcItems.add(lab)
+            LFT_KEYWORDS.any { matchesKeyword(nameLower, tokens, it) } -> lftItems.add(lab)
             KFT_KEYWORDS.any { nameLower.contains(it) } -> kftItems.add(lab)
             else -> standaloneItems.add(lab)
         }

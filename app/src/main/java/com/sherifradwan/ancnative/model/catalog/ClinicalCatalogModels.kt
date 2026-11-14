@@ -138,6 +138,68 @@ fun applyLabItemEdit(
     return LabItemEdit(items = newItems, groups = newGroups)
 }
 
+fun applyLabCategoryGroupEdit(
+    groups: List<LabCategoryGroup>,
+    edited: LabCategoryGroup,
+): List<LabCategoryGroup>? {
+    val trimmedName = edited.name.trim()
+    if (trimmedName.isBlank()) return null
+
+    val cleanedTestNames = edited.testNames.map { it.trim() }.filter { it.isNotBlank() }.distinct()
+    if (cleanedTestNames.isEmpty()) return null
+
+    val existingIndex = groups.indexOfFirst { it.id == edited.id }
+    if (existingIndex < 0) return null
+
+    if (groups.any { it.id != edited.id && it.name.trim().equals(trimmedName, ignoreCase = true) }) {
+        return null
+    }
+
+    val updatedGroup = edited.copy(
+        name = trimmedName,
+        description = edited.description.trim(),
+        testNames = cleanedTestNames,
+        isCustom = true,
+    )
+
+    val newGroups = groups.toMutableList()
+    newGroups[existingIndex] = updatedGroup
+    return newGroups
+}
+
+fun applyMedicationItemEdit(
+    items: List<MedicationCatalogItem>,
+    edited: MedicationCatalogItem,
+): List<MedicationCatalogItem>? {
+    val trimmedName = edited.name.trim()
+    if (trimmedName.isBlank()) return null
+    val trimmedDosage = edited.dosage.trim()
+
+    val existingIndex = items.indexOfFirst { it.id == edited.id }
+    if (existingIndex < 0) return null
+
+    if (items.any {
+        it.id != edited.id &&
+            it.name.trim().equals(trimmedName, ignoreCase = true) &&
+            it.dosage.trim().equals(trimmedDosage, ignoreCase = true)
+    }) {
+        return null
+    }
+
+    val updatedItem = edited.copy(
+        name = trimmedName,
+        dosage = trimmedDosage,
+        route = edited.route.trim(),
+        frequency = edited.frequency.trim(),
+        instructions = edited.instructions.trim(),
+        isCustom = true,
+    )
+
+    val newItems = items.toMutableList()
+    newItems[existingIndex] = updatedItem
+    return newItems
+}
+
 interface LabCatalogDelegate {
     val labCatalogItems: StateFlow<List<LabCatalogItem>>
     val labCategoryGroups: StateFlow<List<LabCategoryGroup>>
@@ -151,6 +213,7 @@ interface LabCatalogDelegate {
 
     // Lab Category Groups (Panels)
     fun addLabCategoryGroup(group: LabCategoryGroup): Boolean
+    fun updateLabCategoryGroup(group: LabCategoryGroup): Boolean = false
     fun deleteLabCategoryGroup(groupId: String): Boolean
     fun getLabCategoryGroup(groupId: String): LabCategoryGroup?
     fun resetLabCategoryGroupDefaults()
@@ -159,6 +222,7 @@ interface LabCatalogDelegate {
 interface MedicationCatalogDelegate {
     val medicationCatalogItems: StateFlow<List<MedicationCatalogItem>>
     fun addMedicationCatalogItem(item: MedicationCatalogItem): Boolean
+    fun updateMedicationCatalogItem(item: MedicationCatalogItem): Boolean = false
     fun deleteMedicationCatalogItem(itemId: String): Boolean
     fun getMedicationCatalogItem(itemId: String): MedicationCatalogItem?
     fun findMedicationCatalogItemByName(name: String): MedicationCatalogItem?

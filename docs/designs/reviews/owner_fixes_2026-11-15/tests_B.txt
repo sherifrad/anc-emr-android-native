@@ -1,0 +1,245 @@
+```kotlin
+package com.sherifradwan.ancnative.model.catalog
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class CatalogEditHelpersTest {
+
+    private fun labGroup(
+        id: String = "g1",
+        name: String = "Panel",
+        description: String = "desc",
+        testNames: List<String> = listOf("CBC", "Hb"),
+        isCustom: Boolean = false,
+    ): LabCategoryGroup = LabCategoryGroup(
+        id = id,
+        name = name,
+        description = description,
+        testNames = testNames,
+        isCustom = isCustom,
+    )
+
+    private fun medItem(
+        id: String = "m1",
+        name: String = "Folic Acid",
+        dosage: String = "5 mg",
+        route: String = "Oral",
+        frequency: String = "Once daily",
+        isProphylaxis: Boolean = true,
+        instructions: String = "Take with food",
+        isCustom: Boolean = false,
+    ): MedicationCatalogItem = MedicationCatalogItem(
+        id = id,
+        name = name,
+        dosage = dosage,
+        route = route,
+        frequency = frequency,
+        isProphylaxis = isProphylaxis,
+        instructions = instructions,
+        isCustom = isCustom,
+    )
+
+    @Test
+    fun `applyLabCategoryGroupEdit matches by id, replaces only entry, keeps size and order, sets isCustom`() {
+        val first = labGroup(id = "g1", name = "First")
+        val second = labGroup(id = "g2", name = "Second", isCustom = false)
+        val third = labGroup(id = "g3", name = "Third")
+        val original = listOf(first, second, third)
+
+        val result = applyLabCategoryGroupEdit(
+            groups = original,
+            edited = labGroup(id = "g2", name = "Renamed", description = "d", testNames = listOf("A")),
+        )
+
+        requireNotNull(result)
+        assertEquals(3, result.size)
+        assertEquals(first, result[0])
+        assertEquals(third, result[2])
+        assertEquals("Renamed", result[1].name)
+        assertEquals("g2", result[1].id)
+        assertTrue(result[1].isCustom)
+        assertEquals(listOf(first, second, third), original)
+    }
+
+    @Test
+    fun `applyLabCategoryGroupEdit returns null when id is not found`() {
+        val original = listOf(labGroup(id = "g1"), labGroup(id = "g2"))
+
+        val result = applyLabCategoryGroupEdit(
+            groups = original,
+            edited = labGroup(id = "missing", name = "Other"),
+        )
+
+        assertNull(result)
+    }
+
+    @Test
+    fun `applyLabCategoryGroupEdit trims fields, deduplicates test names keeping order`() {
+        val original = listOf(labGroup(id = "g1"))
+
+        val result = applyLabCategoryGroupEdit(
+            groups = original,
+            edited = labGroup(
+                id = "g1",
+                name = "  Antenatal Panel  ",
+                description = "  Routine  ",
+                testNames = listOf(" CBC ", "Hb", "CBC", "  ", "Hb ", "Ferritin"),
+            ),
+        )
+
+        requireNotNull(result)
+        val edited = result.single()
+        assertEquals("Antenatal Panel", edited.name)
+        assertEquals("Routine", edited.description)
+        assertEquals(listOf("CBC", "Hb", "Ferritin"), edited.testNames)
+        assertTrue(edited.isCustom)
+    }
+
+    @Test
+    fun `applyLabCategoryGroupEdit returns null for blank name`() {
+        val original = listOf(labGroup(id = "g1"))
+
+        val result = applyLabCategoryGroupEdit(
+            groups = original,
+            edited = labGroup(id = "g1", name = "   "),
+        )
+
+        assertNull(result)
+    }
+
+    @Test
+    fun `applyLabCategoryGroupEdit returns null when test names are empty or all blank`() {
+        val original = listOf(labGroup(id = "g1"))
+
+        val empty = applyLabCategoryGroupEdit(
+            groups = original,
+            edited = labGroup(id = "g1", testNames = emptyList()),
+        )
+        val allBlank = applyLabCategoryGroupEdit(
+            groups = original,
+            edited = labGroup(id = "g1", testNames = listOf(" ", "   ", "")),
+        )
+
+        assertNull(empty)
+        assertNull(allBlank)
+    }
+
+    @Test
+    fun `applyLabCategoryGroupEdit returns null when name equals another entry ignoring case`() {
+        val original = listOf(
+            labGroup(id = "g1", name = "Antenatal"),
+            labGroup(id = "g2", name = "Postnatal"),
+        )
+
+        val result = applyLabCategoryGroupEdit(
+            groups = original,
+            edited = labGroup(id = "g2", name = " antenatal "),
+        )
+
+        assertNull(result)
+    }
+
+    @Test
+    fun `applyLabCategoryGroupEdit allows renaming entry to its own current name`() {
+        val original = listOf(labGroup(id = "g1", name = "Antenatal", isCustom = false))
+
+        val result = applyLabCategoryGroupEdit(
+            groups = original,
+            edited = labGroup(id = "g1", name = " antenatal ", testNames = listOf("CBC")),
+        )
+
+        requireNotNull(result)
+        assertEquals("antenatal", result.single().name)
+        assertTrue(result.single().isCustom)
+        assertFalse(original.single().isCustom)
+    }
+
+    @Test
+    fun `applyMedicationItemEdit matches by id, trims fields, keeps size and order, sets isCustom`() {
+        val first = medItem(id = "m1", name = "First")
+        val second = medItem(id = "m2", name = "Second", isCustom = false)
+        val third = medItem(id = "m3", name = "Third")
+        val original = listOf(first, second, third)
+
+        val result = applyMedicationItemEdit(
+            items = original,
+            edited = medItem(
+                id = "m2",
+                name = "  Iron  ",
+                dosage = " 30 mg ",
+                route = " Oral ",
+                frequency = " Twice daily ",
+                instructions = "  After meals  ",
+            ),
+        )
+
+        requireNotNull(result)
+        assertEquals(3, result.size)
+        assertEquals(first, result[0])
+        assertEquals(third, result[2])
+        val edited = result[1]
+        assertEquals("m2", edited.id)
+        assertEquals("Iron", edited.name)
+        assertEquals("30 mg", edited.dosage)
+        assertEquals("Oral", edited.route)
+        assertEquals("Twice daily", edited.frequency)
+        assertEquals("After meals", edited.instructions)
+        assertTrue(edited.isCustom)
+        assertEquals(listOf(first, second, third), original)
+    }
+
+    @Test
+    fun `applyMedicationItemEdit returns null when id is not found or name is blank`() {
+        val original = listOf(medItem(id = "m1"))
+
+        val notFound = applyMedicationItemEdit(
+            items = original,
+            edited = medItem(id = "missing", name = "Other"),
+        )
+        val blankName = applyMedicationItemEdit(
+            items = original,
+            edited = medItem(id = "m1", name = "   "),
+        )
+
+        assertNull(notFound)
+        assertNull(blankName)
+    }
+
+    @Test
+    fun `applyMedicationItemEdit returns null when name and dosage equal another item ignoring case`() {
+        val original = listOf(
+            medItem(id = "m1", name = "Folic Acid", dosage = "5 mg"),
+            medItem(id = "m2", name = "Iron", dosage = "30 mg"),
+        )
+
+        val result = applyMedicationItemEdit(
+            items = original,
+            edited = medItem(id = "m2", name = " folic acid ", dosage = " 5 MG "),
+        )
+
+        assertNull(result)
+    }
+
+    @Test
+    fun `applyMedicationItemEdit allows renaming item to its own current name and dosage`() {
+        val original = listOf(medItem(id = "m1", name = "Folic Acid", dosage = "5 mg", isCustom = false))
+
+        val result = applyMedicationItemEdit(
+            items = original,
+            edited = medItem(id = "m1", name = " FOLIC ACID ", dosage = " 5 mg "),
+        )
+
+        requireNotNull(result)
+        assertEquals("FOLIC ACID", result.single().name)
+        assertEquals("5 mg", result.single().dosage)
+        assertTrue(result.single().isCustom)
+        assertFalse(original.single().isCustom)
+    }
+}
+```
+[Tokens] upload: 8883 download: 2383 cache_read: 0 cache_write: 0
+

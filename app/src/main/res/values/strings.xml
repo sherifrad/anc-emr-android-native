@@ -677,4 +677,7 @@
     <string name="delete_attention_entry">Delete entry</string>
     <string name="attention_new_label">What should the next doctor know?</string>
     <string name="attention_add_button">Add</string>
+    <string name="edit_diagnostic_panel">Edit diagnostic panel</string>
+    <string name="create_diagnostic_panel">Create New Diagnostic Panel</string>
+    <string name="edit_medication_title">Edit medication</string>
 </resources>

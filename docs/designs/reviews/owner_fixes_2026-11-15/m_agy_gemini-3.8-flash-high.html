@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Antenatal EMR UI Specification: 360dp Viewport</title>
+<style>
+  :root {
+    --r-s: 6px;
+    --r-m: 12px;
+    --navy-primary: #1F2F5C;
+    --navy-dark: #121C38;
+    --navy-surface: #F0F4FA;
+    --navy-border: #D1DDEE;
+    --navy-label: #22375D;
+    --dating-surface: #EBF5F8;
+    --dating-border: #C4E1E9;
+    --dating-label: #135266;
+    --bg-app: #F5F7FA;
+    --surface-card: #FFFFFF;
+    --border-subtle: #DDE3EC;
+    --text-primary: #151C26;
+    --text-secondary: #48566A;
+    --text-muted: #59677B;
+    --warning-bg: #FEF3D6;
+    --warning-text: #704300;
+    --warning-border: #ECD18C;
+    --alert-bg: #FEECEB;
+    --alert-text: #8A1C1A;
+    --alert-border: #F5C2BF;
+    --touch-min: 48px;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background-color: #E9EDF4;
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
+    padding: 24px 12px;
+  }
+
+  .page-container {
+    max-width: 1160px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .page-header {
+    text-align: center;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  .page-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--navy-primary);
+    margin-bottom: 6px;
+  }
+
+  .page-subtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  .showcase-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .phone-column {
+    width: 360px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .column-label-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 4px;
+  }
+
+  .column-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--navy-primary);
+  }
+
+  .badge-state {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: var(--r-s);
+  }
+
+  .badge-state.before {
+    background-color: #E2E6ED;
+    color: #434E5E;
+  }
+
+  .badge-state.after {
+    background-color: #DDEBF7;
+    color: var(--navy-primary);
+    border: 1px solid #BACFE2;
+  }
+
+  .phone-frame {
+    width: 360px;
+    background-color: var(--bg-app);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--r-m);
+    box-shadow: 0 2px 8px rgba(20, 30, 50, 0.08);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .phone-status-bar {
+    height: 28px;
+    background-color: var(--navy-dark);
+    color: #FFFFFF;
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+  }
+
+  .phone-screen {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .clinical-card {
+    background-color: var(--surface-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--r-m);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .section-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: var(--touch-min);
+  }
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--navy-primary);
+  }
+
+  .btn-touch {
+    min-width: var(--touch-min);
+    min-height: var(--touch-min);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: var(--r-s);
+    color: var(--navy-primary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+
+  .btn-touch:hover {
+    background-color: var(--navy-surface);
+  }
+
+  .before-fact-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 1px solid #EEF1F5;
+    font-size: 14px;
+  }
+
+  .before-fact-row:last-child {
+    border-bottom: none;
+  }
+
+  .before-label {
+    color: #6C7A8C;
+    width: 44%;
+    padding-right: 8px;
+  }
+
+  .before-value {
+    color: var(--text-primary);
+    font-weight: 500;
+    width: 56%;
+    text-align: right;
+  }
+
+  .allergy-banner-before {
+    background-color: #FDF1F0;
+    color: var(--alert-text);
+    border-radius: var(--r-s);
+    padding: 8px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .field-family-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .field-box-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .field-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--navy-label);
+    line-height: 1.2;
+    padding-left: 2px;
+  }
+
+  .field-box {
+    background-color: var(--navy-surface);
+    border: 1px solid var(--navy-border);
+    border-radius: var(--r-s);
+    padding: 10px 12px;
+    min-height: var(--touch-min);
+    display: flex;
+    align-items: center;
+  }
+
+  .field-box.dating-family {
+    background-color: var(--dating-surface);
+    border-color: var(--dating-border);
+  }
+
+  .field-box.dating-family + .field-label {
+    color: var(--dating-label);
+  }
+
+  .field-value {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.35;
+    word-break: break-word;
+  }
+
+  .clinical-banner-after {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--alert-bg);
+    border: 1px solid var(--alert-border);
+    border-radius: var(--r-s);
+    padding: 9px 12px;
+  }
+
+  .banner-tag {
+    font-size: 11px;
+    font-weight: 700;
+    color: #FFFFFF;
+    background-color: var(--alert-text);
+    padding: 2px 6px;
+    border-radius: var(--r-s);
+  }
+
+  .banner-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--alert-text);
+  }
+
+  .patient-card {
+    background-color: var(--surface-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--r-m);
+    display: flex;
+    overflow: hidden;
+  }
+
+  .severity-bar {
+    width: 4px;
+    flex-shrink: 0;
+  }
+
+  .severity-bar.moderate {
+    background-color: #B26B00;
+  }
+
+  .severity-bar.incomplete {
+    background-color: #A05A10;
+  }
+
+  .patient-card-body {
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .card-header-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 28px;
+  }
+
+  .header-leading-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .patient-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .status-chip {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    padding: 4px 7px;
+    border-radius: var(--r-s);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .status-chip.moderate {
+    background-color: var(--warning-bg);
+    color: var(--warning-text);
+    border: 1px solid var(--warning-border);
+  }
+
+  .status-chip.incomplete {
+    background-color: #FFF2E3;
+    color: #8C4700;
+    border: 1px solid #ECCAA5;
+  }
+
+  .menu-btn {
+    width: var(--touch-min);
+    height: var(--touch-min);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 18px;
+    font-weight: 700;
+    background: transparent;
+    border: none;
+    border-radius: var(--r-s);
+    cursor: pointer;
+    margin: -10px -8px -10px 0;
+  }
+
+  .isolated-tag-row {
+    padding: 2px 0 6px 0;
+    min-height: 28px;
+  }
+
+  .dead-space-indicator {
+    background-color: #FFF9E6;
+    border: 1px dashed #D6B265;
+    border-radius: var(--r-s);
+    padding: 4px 6px;
+    font-size: 10px;
+    color: #855302;
+    margin-top: 2px;
+  }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    background-color: #F8FAFC;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--r-s);
+    padding: 8px 10px;
+  }
+
+  .metric-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .metric-item.align-center {
+    align-items: center;
+    text-align: center;
+  }
+
+  .metric-item.align-end {
+    align-items: flex-end;
+    text-align: right;
+  }
+
+  .metric-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+
+  .metric-val {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .metric-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .rtl-card {
+    direction: rtl;
+    text-align: right;
+  }
+
+  .rtl-card .menu-btn {
+    margin: -10px 0 -10px -8px;
+  }
+
+  .rtl-card .header-leading-group {
+    flex-direction: row;
+  }
+
+  .rtl-card .metrics-grid {
+    direction: rtl;
+  }
+
+  .comparison-note {
+    font-size: 12px;
+    color: var(--text-secondary);
+    padding: 6px 8px;
+    background-color: #E2E8F0;
+    border-radius: var(--r-s);
+    line-height: 1.35;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-container">
+
+  <header class="page-header">
+    <h1 class="page-title">Antenatal EMR UI Redesign: 360dp System</h1>
+    <p class="page-subtitle">Material 3 light clinical theme (#1F2F5C primary, 2-radius token system, no decorative clutter)</p>
+  </header>
+
+  <section class="showcase-grid">
+
+    <!-- Column 1: Medical History Section Before -->
+    <div class="phone-column">
+      <div class="column-label-bar">
+        <span class="column-title">1. Overview History</span>
+        <span class="badge-state before">Current (Plain Rows)</span>
+      </div>
+      <div class="phone-frame">
+        <div class="phone-status-bar">
+          <span>09:41</span>
+          <span>ANC Hub</span>
+          <span>100%</span>
+        </div>
+        <div class="phone-screen">
+          <div class="clinical-card">
+            <div class="section-header-row">
+              <span class="section-title">Medical, surgical & family</span>
+              <button class="btn-touch" type="button">Edit</button>
+            </div>
+            <div class="allergy-banner-before">
+              Allergy: Penicillin (severe rash)
+            </div>
+            <div>
+              <div class="before-fact-row">
+                <span class="before-label">Medical history</span>
+                <span class="before-value">Chronic hypertension on Methyldopa</span>
+              </div>
+              <div class="before-fact-row">
+                <span class="before-label">Surgical history</span>
+                <span class="before-value">Appendectomy (2018), Cesarean section (2021)</span>
+              </div>
+              <div class="before-fact-row">
+                <span class="before-label">Family history</span>
+                <span class="before-value">Type 2 diabetes (mother)</span>
+              </div>
+            </div>
+          </div>
+          <div class="comparison-note">
+            Weak hierarchy: grey left label competes with right value. Long clinical values wrap awkwardly without boundaries.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Column 2: Medical History Section After -->
+    <div class="phone-column">
+      <div class="column-label-bar">
+        <span class="column-title">1. Overview History</span>
+        <span class="badge-state after">Redesigned (Calm Family Boxes)</span>
+      </div>
+      <div class="phone-frame">
+        <div class="phone-status-bar">
+          <span>09:41</span>
+          <span>ANC Hub</span>
+          <span>100%</span>
+        </div>
+        <div class="phone-screen">
+          <div class="clinical-card">
+            <div class="section-header-row">
+              <span class="section-title">Medical, surgical & family</span>
+              <button class="btn-touch" type="button">Edit</button>
+            </div>
+
+            <div class="clinical-banner-after">
+              <span class="banner-tag">Safety Alert</span>
+              <span class="banner-text">Allergy: Penicillin (severe rash)</span>
+            </div>
+
+            <div class="field-family-group">
+              <div class="field-box-wrapper">
+                <span class="field-label">Medical history</span>
+                <div class="field-box">
+                  <span class="field-value">Chronic hypertension on Methyldopa</span>
+                </div>
+              </div>
+
+              <div class="field-box-wrapper">
+                <span class="field-label">Surgical history</span>
+                <div class="field-box">
+                  <span class="field-value">Appendectomy (2018), Cesarean section (2021)</span>
+                </div>
+              </div>
+
+              <div class="field-box-wrapper">
+                <span class="field-label">Family history</span>
+                <div class="field-box">
+                  <span class="field-value">Type 2 diabetes (mother)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="comparison-note">
+            One cohesive tint per clinical family. Contrast 7.8:1 on labels, values 16px, 48px touch targets, 6px box corners.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Column 3: English Dashboard Card Comparison -->
+    <div class="phone-column">
+      <div class="column-label-bar">
+        <span class="column-title">2. Patient Card (English)</span>
+        <span class="badge-state after">Before vs After</span>
+      </div>
+      <div class="phone-frame">
+        <div class="phone-status-bar">
+          <span>09:41</span>
+          <span>Directory</span>
+          <span>100%</span>
+        </div>
+        <div class="phone-screen">
+
+          <!-- BEFORE CARD -->
+          <div class="patient-card">
+            <div class="severity-bar moderate"></div>
+            <div class="patient-card-body">
+              <div class="card-header-line">
+                <span class="patient-name">Mona Ragab</span>
+                <button class="menu-btn" type="button">&#8942;</button>
+              </div>
+              <div class="isolated-tag-row">
+                <span class="status-chip moderate">Moderate risk</span>
+              </div>
+              <div class="dead-space-indicator">
+                Current card: isolated row causes 28px dead empty space
+              </div>
+              <div class="metrics-grid">
+                <div class="metric-item">
+                  <span class="metric-label">GA</span>
+                  <span class="metric-val">27+2</span>
+                  <span class="metric-sub">EDD 11/02/2027</span>
+                </div>
+                <div class="metric-item align-center">
+                  <span class="metric-label">Parity</span>
+                  <span class="metric-val">G4 P1 A2</span>
+                  <span class="metric-sub">Blood A+</span>
+                </div>
+                <div class="metric-item align-end">
+                  <span class="metric-label">Vitals</span>
+                  <span class="metric-val">110/70</span>
+                  <span class="metric-sub">Normal BP</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AFTER COMPACT CARD -->
+          <div class="patient-card">
+            <div class="severity-bar moderate"></div>
+            <div class="patient-card-body">
+              <div class="card-header-line">
+                <div class="header-leading-group">
+                  <span class="patient-name">Mona Ragab</span>
+                  <span class="status-chip moderate">Moderate risk</span>
+                </div>
+                <button class="menu-btn" type="button" aria-label="More actions">&#8942;</button>
+              </div>
+              <div class="metrics-grid">
+                <div class="metric-item">
+                  <span class="metric-label">Gestational age</span>
+                  <span class="metric-val">27+2 wks</span>
+                  <span class="metric-sub">EDD 11/02/2027</span>
+                </div>
+                <div class="metric-item align-center">
+                  <span class="metric-label">Parity</span>
+                  <span class="metric-val">G4 P1 A2</span>
+                  <span class="metric-sub">Blood A+</span>
+                </div>
+                <div class="metric-item align-end">
+                  <span class="metric-label">Vitals / BP</span>
+                  <span class="metric-val">110/70</span>
+                  <span class="metric-sub">Normal BP</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="comparison-note">
+            Compact header unifies name and status on one row, removing 28px dead space while keeping 48px touch menu.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Column 4: Arabic RTL Dashboard Card Comparison -->
+    <div class="phone-column">
+      <div class="column-label-bar">
+        <span class="column-title">2. Patient Card (Arabic RTL)</span>
+        <span class="badge-state after">Before vs After</span>
+      </div>
+      <div class="phone-frame">
+        <div class="phone-status-bar">
+          <span>09:41</span>
+          <span>سجل الحوامل</span>
+          <span>100%</span>
+        </div>
+        <div class="phone-screen">
+
+          <!-- BEFORE CARD RTL -->
+          <div class="patient-card rtl-card">
+            <div class="severity-bar incomplete"></div>
+            <div class="patient-card-body">
+              <div class="card-header-line">
+                <span class="patient-name">منى رجب</span>
+                <button class="menu-btn" type="button">&#8942;</button>
+              </div>
+              <div class="isolated-tag-row">
+                <span class="status-chip incomplete">قيد استكمال التسجيل</span>
+              </div>
+              <div class="dead-space-indicator">
+                الوضع الحالي: فراغ أبيض غير مستغل على يسار شارة الحالة
+              </div>
+              <div class="metrics-grid">
+                <div class="metric-item">
+                  <span class="metric-label">عمر الحمل</span>
+                  <span class="metric-val">27+2</span>
+                  <span class="metric-sub">11/02/2027</span>
+                </div>
+                <div class="metric-item align-center">
+                  <span class="metric-label">الولادات</span>
+                  <span class="metric-val">G4 P1 A2</span>
+                  <span class="metric-sub">فصيلة A+</span>
+                </div>
+                <div class="metric-item align-end">
+                  <span class="metric-label">العلامات الحيوية</span>
+                  <span class="metric-val">110/70</span>
+                  <span class="metric-sub">ضغط طبيعي</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AFTER COMPACT CARD RTL -->
+          <div class="patient-card rtl-card">
+            <div class="severity-bar incomplete"></div>
+            <div class="patient-card-body">
+              <div class="card-header-line">
+                <div class="header-leading-group">
+                  <span class="patient-name">منى رجب</span>
+                  <span class="status-chip incomplete">قيد استكمال التسجيل</span>
+                </div>
+                <button class="menu-btn" type="button" aria-label="إجراءات إضافية">&#8942;</button>
+              </div>
+              <div class="metrics-grid">
+                <div class="metric-item">
+                  <span class="metric-label">عمر الحمل</span>
+                  <span class="metric-val">27+2 أسبوع</span>
+                  <span class="metric-sub">متوقع 11/02/2027</span>
+                </div>
+                <div class="metric-item align-center">
+                  <span class="metric-label">الولادات</span>
+                  <span class="metric-val">G4 P1 A2</span>
+                  <span class="metric-sub">فصيلة A+</span>
+                </div>
+                <div class="metric-item align-end">
+                  <span class="metric-label">العلامات الحيوية</span>
+                  <span class="metric-val">110/70</span>
+                  <span class="metric-sub">ضغط طبيعي</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="comparison-note">
+            RTL layout pairs Arabic name with status tag immediately on the right edge, maintaining natural eye tracking.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+</div>
+
+</body>
+</html>

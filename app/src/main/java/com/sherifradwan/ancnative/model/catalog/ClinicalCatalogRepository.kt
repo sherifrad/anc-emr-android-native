@@ -42,11 +42,11 @@ class ClinicalCatalogRepository internal constructor(
             saveLabItems(defaults)
             defaults
         } else {
-            val defaults = defaultLabCatalogItems()
-            val customLabs = loadedLabs.filter { it.isCustom }
-            val merged = defaults + customLabs
-            saveLabItems(merged)
-            merged
+            val deduplicated = loadedLabs.associateBy { it.id }.values.toList()
+            if (deduplicated.size != loadedLabs.size) {
+                saveLabItems(deduplicated)
+            }
+            deduplicated
         }
 
         val loadedGroups = loadLabCategoryGroups()
@@ -55,11 +55,11 @@ class ClinicalCatalogRepository internal constructor(
             saveLabCategoryGroups(defaults)
             defaults
         } else {
-            val defaults = defaultLabCategoryGroups()
-            val customGroups = loadedGroups.filter { it.isCustom }
-            val merged = defaults + customGroups
-            saveLabCategoryGroups(merged)
-            merged
+            val deduplicated = loadedGroups.associateBy { it.id }.values.toList()
+            if (deduplicated.size != loadedGroups.size) {
+                saveLabCategoryGroups(deduplicated)
+            }
+            deduplicated
         }
 
         val loadedMeds = loadMedicationItems()
@@ -68,7 +68,11 @@ class ClinicalCatalogRepository internal constructor(
             saveMedicationItems(defaults)
             defaults
         } else {
-            loadedMeds
+            val deduplicated = loadedMeds.associateBy { it.id }.values.toList()
+            if (deduplicated.size != loadedMeds.size) {
+                saveMedicationItems(deduplicated)
+            }
+            deduplicated
         }
 
         for (listKind in CustomChoiceList.entries) {
@@ -148,6 +152,13 @@ class ClinicalCatalogRepository internal constructor(
         return true
     }
 
+    override fun updateLabCategoryGroup(group: LabCategoryGroup): Boolean {
+        val updated = applyLabCategoryGroupEdit(_labCategoryGroups.value, group) ?: return false
+        _labCategoryGroups.value = updated
+        saveLabCategoryGroups(updated)
+        return true
+    }
+
     override fun deleteLabCategoryGroup(groupId: String): Boolean {
         val current = _labCategoryGroups.value.toMutableList()
         val removed = current.removeAll { it.id == groupId }
@@ -187,6 +198,13 @@ class ClinicalCatalogRepository internal constructor(
         }
         _medicationCatalogItems.value = current
         saveMedicationItems(current)
+        return true
+    }
+
+    override fun updateMedicationCatalogItem(item: MedicationCatalogItem): Boolean {
+        val updated = applyMedicationItemEdit(_medicationCatalogItems.value, item) ?: return false
+        _medicationCatalogItems.value = updated
+        saveMedicationItems(updated)
         return true
     }
 

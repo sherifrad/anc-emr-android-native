@@ -44,9 +44,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.ClinicalVocabulary
 import com.sherifradwan.ancnative.model.catalog.LabCategoryGroup
 import com.sherifradwan.ancnative.model.catalog.LabCatalogDelegate
@@ -71,6 +73,7 @@ fun LabCatalogSettingsSection(
     var showAddTestDialog by remember { mutableStateOf(false) }
     var itemToEdit by remember { mutableStateOf<LabCatalogItem?>(null) }
     var showAddGroupDialog by remember { mutableStateOf(false) }
+    var groupToEdit by remember { mutableStateOf<LabCategoryGroup?>(null) }
     var itemToDelete by remember { mutableStateOf<LabCatalogItem?>(null) }
     var groupToDelete by remember { mutableStateOf<LabCategoryGroup?>(null) }
     var showResetDialog by remember { mutableStateOf(false) }
@@ -332,16 +335,34 @@ fun LabCatalogSettingsSection(
                                         }
                                     }
 
-                                    IconButton(
-                                        onClick = { groupToDelete = group },
-                                        modifier = Modifier.testTag("deleteLabGroupBtn-${group.id}"),
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Delete,
-                                            contentDescription = "Delete Panel",
-                                            tint = MaterialTheme.colorScheme.error,
-                                            modifier = Modifier.size(20.dp),
-                                        )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        IconButton(
+                                            onClick = { groupToEdit = group },
+                                            modifier = Modifier
+                                                .size(48.dp)
+                                                .testTag("editLabGroupBtn-${group.id}"),
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Edit,
+                                                contentDescription = stringResource(R.string.edit_diagnostic_panel),
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(20.dp),
+                                            )
+                                        }
+
+                                        IconButton(
+                                            onClick = { groupToDelete = group },
+                                            modifier = Modifier
+                                                .size(48.dp)
+                                                .testTag("deleteLabGroupBtn-${group.id}"),
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Delete,
+                                                contentDescription = "Delete Panel",
+                                                tint = MaterialTheme.colorScheme.error,
+                                                modifier = Modifier.size(20.dp),
+                                            )
+                                        }
                                     }
                                 }
 
@@ -423,8 +444,27 @@ fun LabCatalogSettingsSection(
             availableTests = items,
             onDismiss = { showAddGroupDialog = false },
             onSave = { newGroup ->
-                catalogDelegate.addLabCategoryGroup(newGroup)
-                showAddGroupDialog = false
+                val success = catalogDelegate.addLabCategoryGroup(newGroup)
+                if (success) {
+                    showAddGroupDialog = false
+                }
+                success
+            },
+        )
+    }
+
+    // Edit Category Group Dialog
+    if (groupToEdit != null) {
+        AddLabCategoryGroupDialog(
+            initial = groupToEdit,
+            availableTests = items,
+            onDismiss = { groupToEdit = null },
+            onSave = { editedGroup ->
+                val success = catalogDelegate.updateLabCategoryGroup(editedGroup)
+                if (success) {
+                    groupToEdit = null
+                }
+                success
             },
         )
     }
@@ -646,24 +686,38 @@ private fun AddLabTestDialog(
 
 @Composable
 private fun AddLabCategoryGroupDialog(
+    initial: LabCategoryGroup? = null,
     availableTests: List<LabCatalogItem>,
     onDismiss: () -> Unit,
-    onSave: (LabCategoryGroup) -> Unit,
+    onSave: (LabCategoryGroup) -> Boolean,
 ) {
-    var groupName by remember { mutableStateOf("") }
-    var groupDescription by remember { mutableStateOf("") }
-    val selectedTests = remember { mutableStateOf(setOf<String>()) }
+    var groupName by remember(initial) { mutableStateOf(initial?.name ?: "") }
+    var groupDescription by remember(initial) { mutableStateOf(initial?.description ?: "") }
+    val selectedTests = remember(initial) { mutableStateOf(initial?.testNames?.toSet() ?: emptySet()) }
     var testSearch by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    val filteredTests = remember(availableTests, testSearch) {
-        if (testSearch.isBlank()) availableTests
-        else availableTests.filter { it.testName.contains(testSearch, ignoreCase = true) }
+    val allSelectableTests = remember(availableTests, initial) {
+        val existingNames = availableTests.map { it.testName.trim().lowercase() }.toSet()
+        val legacy = initial?.testNames.orEmpty()
+            .filter { it.trim().lowercase() !in existingNames }
+            .map { LabCatalogItem(id = "custom-$it", testName = it, category = "Other", isCustom = true) }
+        availableTests + legacy
+    }
+
+    val filteredTests = remember(allSelectableTests, testSearch) {
+        if (testSearch.isBlank()) allSelectableTests
+        else allSelectableTests.filter { it.testName.contains(testSearch, ignoreCase = true) }
     }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Create New Diagnostic Panel") },
+        title = {
+            Text(
+                if (initial != null) stringResource(R.string.edit_diagnostic_panel)
+                else stringResource(R.string.create_diagnostic_panel)
+            )
+        },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -671,7 +725,10 @@ private fun AddLabCategoryGroupDialog(
             ) {
                 OutlinedTextField(
                     value = groupName,
-                    onValueChange = { groupName = it },
+                    onValueChange = {
+                        groupName = it
+                        errorMessage = null
+                    },
                     label = { Text("Panel Name (Required)") },
                     placeholder = { Text("e.g. Hypertension Follow-up or Diabetes Screening") },
                     modifier = Modifier.fillMaxWidth().testTag("addLabGroupNameField"),
@@ -741,24 +798,40 @@ private fun AddLabCategoryGroupDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (groupName.trim().isBlank()) {
+                    val trimmed = groupName.trim()
+                    if (trimmed.isBlank()) {
                         errorMessage = "Please enter panel name."
                     } else if (selectedTests.value.isEmpty()) {
                         errorMessage = "Please select at least one test."
                     } else {
-                        onSave(
-                            LabCategoryGroup(
-                                name = groupName.trim(),
+                        val groupToSave = if (initial != null) {
+                            initial.copy(
+                                name = trimmed,
                                 description = groupDescription.trim(),
                                 testNames = selectedTests.value.toList(),
                                 isCustom = true,
                             )
-                        )
+                        } else {
+                            LabCategoryGroup(
+                                name = trimmed,
+                                description = groupDescription.trim(),
+                                testNames = selectedTests.value.toList(),
+                                isCustom = true,
+                            )
+                        }
+                        val success = onSave(groupToSave)
+                        if (!success) {
+                            errorMessage = if (initial != null) {
+                                "Panel name already used or invalid"
+                            } else {
+                                "Unable to save panel"
+                            }
+                        }
                     }
                 },
                 modifier = Modifier.testTag("saveLabGroupConfirmBtn"),
             ) {
-                Text("Save Panel")
+                Text(if (initial != null) "Save" else "Save Panel")
             }
         },
         dismissButton = {
@@ -777,6 +850,7 @@ fun MedicationCatalogSettingsSection(
     val items by catalogDelegate.medicationCatalogItems.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     var showAddDialog by remember { mutableStateOf(false) }
+    var itemToEdit by remember { mutableStateOf<MedicationCatalogItem?>(null) }
     var itemToDelete by remember { mutableStateOf<MedicationCatalogItem?>(null) }
     var showResetDialog by remember { mutableStateOf(false) }
 
@@ -913,16 +987,34 @@ fun MedicationCatalogSettingsSection(
                                 }
                             }
 
-                            IconButton(
-                                onClick = { itemToDelete = med },
-                                modifier = Modifier.testTag("deleteMedCodexBtn-${med.id}"),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete Medication",
-                                    tint = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.size(20.dp),
-                                )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(
+                                    onClick = { itemToEdit = med },
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .testTag("editMedCodexBtn-${med.id}"),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = stringResource(R.string.edit_medication_title),
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                }
+
+                                IconButton(
+                                    onClick = { itemToDelete = med },
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .testTag("deleteMedCodexBtn-${med.id}"),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Delete Medication",
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                }
                             }
                         }
                     }
@@ -946,8 +1038,26 @@ fun MedicationCatalogSettingsSection(
         AddMedicationDialog(
             onDismiss = { showAddDialog = false },
             onSave = { newItem ->
-                catalogDelegate.addMedicationCatalogItem(newItem)
-                showAddDialog = false
+                val success = catalogDelegate.addMedicationCatalogItem(newItem)
+                if (success) {
+                    showAddDialog = false
+                }
+                success
+            },
+        )
+    }
+
+    // Edit Medication Dialog
+    if (itemToEdit != null) {
+        AddMedicationDialog(
+            initial = itemToEdit,
+            onDismiss = { itemToEdit = null },
+            onSave = { editedItem ->
+                val success = catalogDelegate.updateMedicationCatalogItem(editedItem)
+                if (success) {
+                    itemToEdit = null
+                }
+                success
             },
         )
     }
@@ -1003,19 +1113,29 @@ fun MedicationCatalogSettingsSection(
 
 @Composable
 private fun AddMedicationDialog(
+    initial: MedicationCatalogItem? = null,
     onDismiss: () -> Unit,
-    onSave: (MedicationCatalogItem) -> Unit,
+    onSave: (MedicationCatalogItem) -> Boolean,
 ) {
-    var name by remember { mutableStateOf("") }
-    var dosage by remember { mutableStateOf("") }
-    var selectedRoute by remember { mutableStateOf(ClinicalVocabulary.medicationRoutes.first()) }
-    var frequency by remember { mutableStateOf("Once daily") }
-    var instructions by remember { mutableStateOf("") }
+    var name by remember(initial) { mutableStateOf(initial?.name ?: "") }
+    var dosage by remember(initial) { mutableStateOf(initial?.dosage ?: "") }
+    var selectedRoute by remember(initial) {
+        mutableStateOf(
+            initial?.route?.takeIf { it.isNotBlank() } ?: ClinicalVocabulary.medicationRoutes.first()
+        )
+    }
+    var frequency by remember(initial) { mutableStateOf(initial?.frequency ?: "Once daily") }
+    var instructions by remember(initial) { mutableStateOf(initial?.instructions ?: "") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add new medication") },
+        title = {
+            Text(
+                if (initial != null) stringResource(R.string.edit_medication_title)
+                else "Add new medication"
+            )
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(
@@ -1024,7 +1144,10 @@ private fun AddMedicationDialog(
                 ) {
                     OutlinedTextField(
                         value = name,
-                        onValueChange = { name = it },
+                        onValueChange = {
+                            name = it
+                            errorMessage = null
+                        },
                         label = { Text("Medication Name (Required)") },
                         placeholder = { Text("e.g. Folic Acid") },
                         modifier = Modifier.weight(1.5f).testTag("addMedNameField"),
@@ -1098,12 +1221,22 @@ private fun AddMedicationDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (name.trim().isBlank()) {
+                    val trimmedName = name.trim()
+                    if (trimmedName.isBlank()) {
                         errorMessage = "Please enter medication name."
                     } else {
-                        onSave(
+                        val itemToSave = if (initial != null) {
+                            initial.copy(
+                                name = trimmedName,
+                                dosage = dosage.trim(),
+                                route = selectedRoute,
+                                frequency = frequency.trim(),
+                                instructions = instructions.trim(),
+                                isCustom = true,
+                            )
+                        } else {
                             MedicationCatalogItem(
-                                name = name.trim(),
+                                name = trimmedName,
                                 dosage = dosage.trim(),
                                 route = selectedRoute,
                                 frequency = frequency.trim(),
@@ -1111,12 +1244,20 @@ private fun AddMedicationDialog(
                                 instructions = instructions.trim(),
                                 isCustom = true,
                             )
-                        )
+                        }
+                        val success = onSave(itemToSave)
+                        if (!success) {
+                            errorMessage = if (initial != null) {
+                                "Medication already exists or invalid"
+                            } else {
+                                "Unable to save medication"
+                            }
+                        }
                     }
                 },
                 modifier = Modifier.testTag("saveMedCodexConfirmBtn"),
             ) {
-                Text("Add to my list")
+                Text(if (initial != null) "Save" else "Add to my list")
             }
         },
         dismissButton = {

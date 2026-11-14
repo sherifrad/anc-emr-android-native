@@ -1,0 +1,7 @@
+# Builder B (edit ONLY: model/catalog/ClinicalCatalogModels.kt, model/catalog/ClinicalCatalogRepository.kt, ui/CatalogSettingsSections.kt, and res/values/strings.xml add keys only). No git, no gradle. Package com.sherifradwan.ancnative.
+Implement editing of lab panels and medication catalog items per docs/designs/reviews/owner_fixes_2026-11-15/lab_investigation.md "Bug B", section "Smallest Fix Plan" (read it fully). Required:
+- pure fns applyLabCategoryGroupEdit(groups, edited): List<LabCategoryGroup>? and applyMedicationItemEdit(items, edited): List<MedicationCatalogItem>? exactly as described (match by id, trim, reject blank name, reject empty testNames for panels, reject duplicate name on a different id, set isCustom=true).
+- delegate and repository methods updateLabCategoryGroup(group): Boolean and updateMedicationCatalogItem(item): Boolean.
+- fix loadCatalogData so an edited default panel/test is not duplicated on next launch: use the stored list when non-empty, de-duplicate by id keeping the last.
+- UI: Edit IconButton on each panel card (testTag "editLabGroupBtn-<id>") and each medication card (testTag "editMedCodexBtn-<id>"); the create dialogs get an optional initial item to prefill, title "Edit diagnostic panel" / "Edit medication" when editing, same Save path calling update. Use stringResource for new strings, no em dashes, 48dp targets.
+Output: files changed and one line per change.
