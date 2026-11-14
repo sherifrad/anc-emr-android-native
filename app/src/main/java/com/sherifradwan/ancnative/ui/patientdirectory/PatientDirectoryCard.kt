@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
@@ -96,6 +97,7 @@ fun PatientDirectoryCard(
 
                 if (hasTags) {
                     FlowRow(
+                        modifier = Modifier.widthIn(max = 120.dp),
                         horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                         itemVerticalAlignment = Alignment.CenterVertically,

@@ -1,0 +1,200 @@
+package com.sherifradwan.ancnative
+
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.getBoundsInRoot
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.sherifradwan.ancnative.model.DemoFixtures
+import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.state.AncEvent
+import com.sherifradwan.ancnative.state.AncRoute
+import com.sherifradwan.ancnative.state.AncState
+import com.sherifradwan.ancnative.storage.VaultState
+import com.sherifradwan.ancnative.ui.AncTheme
+import com.sherifradwan.ancnative.ui.PatientListScreen
+import com.sherifradwan.ancnative.ui.projectDashboardRow
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import androidx.activity.compose.setContent
+import com.sherifradwan.ancnative.ui.PatientRiskTier
+import androidx.compose.ui.test.performScrollTo
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@RunWith(AndroidJUnit4::class)
+class PatientListChromeRedesignTest {
+    @get:Rule
+    val compose = createAndroidComposeRule<MainActivity>()
+
+    private val events = mutableListOf<AncEvent>()
+
+    private fun showList(patients: List<DemoPatient>, searchQuery: String = "") {
+        events.clear()
+        compose.activity.runOnUiThread {
+            compose.activity.setContent {
+                AncTheme {
+                    PatientListScreen(
+                        state = AncState(
+                            patients = patients,
+                            searchQuery = searchQuery,
+                            vaultState = VaultState.Unlocked(sessionEpoch = 1L),
+                            route = AncRoute.PatientList,
+                        ),
+                        onEvent = { events += it },
+                    )
+                }
+            }
+        }
+        compose.waitForIdle()
+    }
+
+    private fun highPatient(): DemoPatient =
+        DemoFixtures.patients.first { projectDashboardRow(it).isHighRisk && it.status != "archived" }
+
+    private fun moderatePatient(): DemoPatient =
+        highPatient().copy(riskLevel = "medium")
+
+    private fun archivedPatient(base: DemoPatient): DemoPatient =
+        base.copy(
+            id = "${base.id}-arch",
+            caseId = "${base.caseId}-ARCH",
+            status = "archived",
+        )
+
+    @Test
+    fun chipLabelsCountsSelectionAndHeight() {
+        val high = highPatient().copy(id = "high-1", caseId = "H1")
+        val moderate = moderatePatient().copy(id = "mod-1", caseId = "M1")
+        showList(listOf(high, moderate))
+
+        val all = compose.onNodeWithTag("riskFilter-all")
+        val highChip = compose.onNodeWithTag("riskFilter-high")
+        val mediumChip = compose.onNodeWithTag("riskFilter-medium")
+        val lowChip = compose.onNodeWithTag("riskFilter-low")
+        val deliveredChip = compose.onNodeWithTag("riskFilter-delivered")
+        val archivedChip = compose.onNodeWithTag("riskFilter-archived")
+
+        listOf(all, highChip, mediumChip, lowChip, deliveredChip, archivedChip).forEach { it.performScrollTo() }
+        all.assert(hasText("All (2)"))
+        highChip.assert(hasText("High risk (1)"))
+        mediumChip.assert(hasText("Moderate risk (1)"))
+        lowChip.assert(hasText("Low risk (0)"))
+        deliveredChip.assert(hasText("Delivered (0)"))
+        archivedChip.assert(hasText("Archived (0)"))
+
+        listOf(all, highChip, mediumChip, lowChip, deliveredChip, archivedChip).forEach { chip ->
+            assertTrue(chip.getUnclippedBoundsInRoot().height >= 31.9.dp)
+        }
+
+        mediumChip.performClick()
+        compose.waitForIdle()
+        mediumChip.assertIsSelected()
+        all.assertIsNotSelected()
+        compose.onNodeWithTag("patient-${moderate.caseId}").assertIsDisplayed()
+        compose.onNodeWithTag("patient-${high.caseId}").assertDoesNotExist()
+    }
+
+    @Test
+    fun emptyStatesForSearchAndEmptyCategory() {
+        showList(listOf(highPatient().copy(id = "h1", caseId = "H1")), searchQuery = "zzzz-no-match")
+        compose.onNodeWithText("No matching patients found").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun emptyCategoryShowsItsOwnMessage() {
+        showList(listOf(highPatient().copy(id = "h1", caseId = "H1")))
+        compose.onNodeWithTag("riskFilter-archived").performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("No patients in this category").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun newPatientButtonHeightAndNoIconChild() {
+        showList(listOf(highPatient()))
+        val newPatient = compose.onNodeWithTag("newPatient")
+        newPatient.assertIsDisplayed()
+        assertTrue(newPatient.getUnclippedBoundsInRoot().height >= 48.dp)
+        compose.onAllNodes(
+            hasAnyAncestor(hasTestTag("newPatient")) and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Image),
+            useUnmergedTree = true,
+        ).assertCountEquals(0)
+    }
+
+    @Test
+    fun actionsSheetRowsHeightArchivedVisibilityAndHeaderWithoutTrailingSeparator() {
+        val base = moderatePatient()
+        val archived = archivedPatient(base).copy(ageText = null)
+        val active = highPatient().copy(
+            id = "active-1",
+            caseId = "ACT1",
+            ageText = null,
+        )
+        showList(listOf(active, archived))
+
+        compose.onNodeWithTag("patientMenu-${active.caseId}").performClick()
+        compose.waitForIdle()
+        assertTrue(compose.onNodeWithTag("actionNewVisit-${active.caseId}").getUnclippedBoundsInRoot().height >= 56.dp)
+        assertTrue(compose.onNodeWithTag("workspace-${active.caseId}").getUnclippedBoundsInRoot().height >= 56.dp)
+        assertTrue(compose.onNodeWithTag("editPatient-${active.caseId}").getUnclippedBoundsInRoot().height >= 56.dp)
+        assertTrue(compose.onNodeWithTag("statusPatient-${active.caseId}").getUnclippedBoundsInRoot().height >= 56.dp)
+        compose.onNodeWithText("Case: ${active.caseId}").assertIsDisplayed()
+        compose.onAllNodes(hasText("Case: ${active.caseId} ·", substring = true)).assertCountEquals(0)
+        compose.onNode(hasContentDescription("Close")).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("riskFilter-archived").performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("patientMenu-${archived.caseId}").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("workspace-${archived.caseId}").assertIsDisplayed()
+        compose.onNodeWithTag("statusPatient-${archived.caseId}").assertIsDisplayed()
+        compose.onNodeWithTag("actionNewVisit-${archived.caseId}").assertDoesNotExist()
+        compose.onNodeWithTag("editPatient-${archived.caseId}").assertDoesNotExist()
+        compose.onNodeWithText("Case: ${archived.caseId}").assertIsDisplayed()
+    }
+
+    @Test
+    fun rtlNewPatientIsLeftOfPatientsTitle() {
+        compose.activity.runOnUiThread {
+            compose.activity.setContent {
+                androidx.compose.runtime.CompositionLocalProvider(
+                    androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Rtl,
+                ) {
+                    AncTheme {
+                        PatientListScreen(
+                            state = AncState(
+                                patients = listOf(highPatient()),
+                                vaultState = VaultState.Unlocked(sessionEpoch = 1L),
+                                route = AncRoute.PatientList,
+                            ),
+                            onEvent = { events += it },
+                        )
+                    }
+                }
+            }
+        }
+        compose.waitForIdle()
+
+        val newPatientRight = compose.onNodeWithTag("newPatient").getBoundsInRoot().right
+        val titleLeft = compose.onNodeWithText("Patients").getBoundsInRoot().left
+        assertTrue(newPatientRight <= titleLeft)
+    }
+}

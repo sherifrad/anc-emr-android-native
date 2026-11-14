@@ -518,6 +518,12 @@ fun CompactClinicalAttentionStrip(
     }
     val remainingCount = if (severeBp != null) entries.size else (entries.size - 1).coerceAtLeast(0)
 
+    val prefix = ""
+    val headline = shownText
+    val moreSuffix = if (remainingCount > 0) stringResource(R.string.attention_remaining_count, remainingCount) else ""
+    @Suppress("UNUSED_VARIABLE")
+    val bodyText = "$prefix⁨$headline⁩⁨$moreSuffix⁩"
+
     Surface(
         onClick = onOpenDialog,
         shape = RecordShapes.Small,
@@ -541,7 +547,7 @@ fun CompactClinicalAttentionStrip(
                     color = colors.accent,
                 )
                 Text(
-                    text = shownText,
+                    text = "⁨$headline⁩",
                     style = RecordType.Secondary,
                     color = colors.content,
                     maxLines = 2,
@@ -555,7 +561,7 @@ fun CompactClinicalAttentionStrip(
                     border = BorderStroke(1.dp, colors.accent),
                 ) {
                     Text(
-                        text = stringResource(R.string.attention_remaining_count, remainingCount),
+                        text = "⁨$moreSuffix⁩",
                         style = RecordType.Tag,
                         color = colors.accent,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),

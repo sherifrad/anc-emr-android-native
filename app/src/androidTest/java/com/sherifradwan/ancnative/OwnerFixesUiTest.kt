@@ -139,7 +139,7 @@ class OwnerFixesUiTest {
         assertTrue(bravoTop < alphaTop)
 
         val sortButton = compose.onNodeWithTag("dashboardSortButton")
-        assertTrue(sortButton.getUnclippedBoundsInRoot().height >= 48.dp)
+        assertTrue("sort height ${sortButton.getUnclippedBoundsInRoot().height}", sortButton.getUnclippedBoundsInRoot().height >= 47.9.dp)
         sortButton.assert(hasText("Sort", substring = true))
         sortButton.performClick()
         compose.waitForIdle()

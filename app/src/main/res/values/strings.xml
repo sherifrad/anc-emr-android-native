@@ -328,10 +328,10 @@
     <string name="save_and_add_another_med">Save &amp; add another</string>
     <string name="advanced_med_options">Route &amp; End date (optional)</string>
     <string name="all_filter">All</string>
-    <string name="high_risk_filter">High Risk</string>
-    <string name="medium_risk_filter">Medium Risk</string>
+    <string name="high_risk_filter">High risk</string>
+    <string name="medium_risk_filter">Moderate risk</string>
     <string name="moderate_risk">Moderate risk</string>
-    <string name="low_risk_filter">Low Risk</string>
+    <string name="low_risk_filter">Low risk</string>
     <string name="normal_risk_filter">Normal Risk</string>
     <string name="no_clinical_attention_recorded">No clinical attention recorded</string>
     <string name="archive_patient_subtitle">Hidden from this list; can be restored</string>
@@ -687,11 +687,19 @@
     <string name="action_add">Add</string>
     <string name="obstetric_history_title">Obstetric history</string>
     <string name="post_term_badge">Post</string>
-    <string name="nulliparous">Nulliparous</string>
     <string name="delivery_hospital_label">Agreed delivery hospital</string>
     <string name="delivery_fees_label">Agreed delivery fees</string>
     <string name="delivery_plan_label">Delivery plan</string>
     <string name="delivery_postpartum_label">Postpartum note</string>
     <string name="delivery_date_label">Delivery date</string>
     <string name="delivery_date_unknown_value">\?\?\?</string>
+    <string name="no_matching_patients">No matching patients found</string>
+    <string name="no_patients_in_category">No patients in this category</string>
+    <string name="case_id_line">Case: %1$s</string>
+    <string name="attention_items">Items</string>
+    <string name="attention_desc_critical">Critical: life or fetus threatening (PPH, eclampsia, allergy)</string>
+    <string name="attention_desc_alert">Alert: needs active management (GDM, Rh-, placenta previa)</string>
+    <string name="attention_desc_note">Note: context to keep in mind</string>
+    <string name="attention_update_item">Update item</string>
+    <string name="attention_add_item">Add item</string>
 </resources>

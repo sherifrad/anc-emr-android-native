@@ -166,6 +166,14 @@ fun ClinicalAttentionDialog(
                     )
                 }
 
+                if (canEdit && entries.isNotEmpty()) {
+                    Text(
+                        text = stringResource(R.string.attention_items),
+                        style = RecordType.MetricLabel,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
                 entries.forEachIndexed { index, entry ->
                     if (canEdit) {
                         Column(
@@ -194,7 +202,7 @@ fun ClinicalAttentionDialog(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Delete,
-                                        contentDescription = stringResource(R.string.delete_attention_entry),
+                                        contentDescription = stringResource(R.string.delete),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(20.dp),
                                     )
@@ -209,6 +217,7 @@ fun ClinicalAttentionDialog(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .testTag("attentionText-$index"),
+                                label = { Text(stringResource(R.string.attention_update_item)) },
                                 singleLine = false,
                                 maxLines = 3,
                                 supportingText = {
@@ -261,7 +270,7 @@ fun ClinicalAttentionDialog(
                                     .testTag("attentionAdd"),
                             ) {
                                 Text(
-                                    text = stringResource(R.string.attention_add_button),
+                                    text = stringResource(R.string.attention_add_item),
                                     style = RecordType.Action,
                                 )
                             }
@@ -272,7 +281,7 @@ fun ClinicalAttentionDialog(
                                 newText = updated.replace("\n", " ").take(ATTENTION_TEXT_MAX)
                             },
                             enabled = entries.count { it.text.isNotBlank() } < ATTENTION_ENTRIES_MAX,
-                            label = { Text(stringResource(R.string.attention_new_label)) },
+                            label = { Text(stringResource(R.string.attention_add_item)) },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .testTag("attentionNewText"),
@@ -393,13 +402,25 @@ private fun AttentionLevelDropdown(
             )
             options.forEach { (level, tag) ->
                 val optionColors = attentionColors(level)
+                val descRes = when (level) {
+                    ClinicalAttentionLevel.CRITICAL -> R.string.attention_desc_critical
+                    ClinicalAttentionLevel.ALERT -> R.string.attention_desc_alert
+                    ClinicalAttentionLevel.NOTE -> R.string.attention_desc_note
+                }
                 DropdownMenuItem(
                     text = {
-                        Text(
-                            text = levelWord(level),
-                            style = RecordType.FieldValue,
-                            color = optionColors.content,
-                        )
+                        Column {
+                            Text(
+                                text = levelWord(level),
+                                style = RecordType.FieldValue,
+                                color = optionColors.content,
+                            )
+                            Text(
+                                text = stringResource(descRes),
+                                style = RecordType.Tag,
+                                color = optionColors.content,
+                            )
+                        }
                     },
                     onClick = {
                         onLevelSelected(level)

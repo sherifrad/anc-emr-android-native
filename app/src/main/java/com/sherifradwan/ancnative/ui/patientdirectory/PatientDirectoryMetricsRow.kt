@@ -183,14 +183,11 @@ private fun ParityCell(
         MetricValue(
             value = ltrIsolate(parityText),
         )
-        val prevDelivery = previousDeliverySummary(patient).takeIf { it.isNotBlank() }
-            ?: stringResource(R.string.nulliparous)
+        val prevDelivery = previousDeliverySummary(patient)
         Text(
             text = prevDelivery,
             style = RecordType.MetricLabel,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
         )
     }
 }

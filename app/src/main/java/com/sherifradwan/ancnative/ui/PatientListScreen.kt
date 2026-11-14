@@ -51,6 +51,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -72,6 +73,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -88,6 +90,8 @@ import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.isRegistrationIncomplete
 import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.SavedNotice
+import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordType
 import com.sherifradwan.ancnative.ui.patientdirectory.PatientActionsModalSheet
 import com.sherifradwan.ancnative.ui.patientdirectory.PatientDirectoryCard
 import java.util.UUID
@@ -234,7 +238,7 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
         LazyColumn(
             modifier = Modifier.fillMaxSize().testTag("patientListTable"),
             contentPadding = PaddingValues(start = horizontalPadding, top = 12.dp, end = horizontalPadding, bottom = 48.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // Dashboard Header with Active Count & New Patient Action
             item {
@@ -244,32 +248,18 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f, fill = false)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Text(
-                                text = stringResource(R.string.patients),
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.semantics { heading() },
-                            )
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.active_patients_count, activeCount),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                    maxLines = 1,
-                                    softWrap = false,
-                                )
-                            }
-                        }
+                        Text(
+                            text = stringResource(R.string.patients),
+                            style = RecordType.HeaderName,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.semantics { heading() },
+                        )
+                        Text(
+                            text = stringResource(R.string.active_patients_count, activeCount),
+                            style = RecordType.Secondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                        )
                     }
 
                     Spacer(Modifier.width(12.dp))
@@ -284,12 +274,18 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
                                 ),
                             )
                         },
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
-                        modifier = Modifier.testTag("newPatient"),
+                        shape = RecordShapes.Small,
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        modifier = Modifier
+                            .heightIn(min = 48.dp)
+                            .testTag("newPatient"),
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.new_patient), maxLines = 1, softWrap = false)
+                        Text(
+                            text = stringResource(R.string.new_patient),
+                            style = RecordType.Action,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
                     }
                 }
             }
@@ -297,17 +293,18 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
             // Save / Archive Notices
             if (state.savedNotice && state.notice in setOf(SavedNotice.ARCHIVED, SavedNotice.UNARCHIVED)) {
                 item {
-                    Card(
+                    OutlinedCard(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+                        shape = RecordShapes.Large,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                     ) {
                         Text(
                             text = stringResource(
                                 if (state.notice == SavedNotice.ARCHIVED) R.string.patient_archived_notice
                                 else R.string.patient_unarchived_notice,
                             ),
-                            color = MaterialTheme.colorScheme.onTertiaryContainer,
-                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            style = RecordType.Secondary,
                             modifier = Modifier.padding(16.dp),
                         )
                     }
@@ -325,12 +322,15 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
                     },
                     trailingIcon = {
                         if (state.searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { onEvent(AncEvent.ClearSearch) }) {
+                            IconButton(
+                                onClick = { onEvent(AncEvent.ClearSearch) },
+                                modifier = Modifier.minimumTouchTarget(),
+                            ) {
                                 Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.clear_search))
                             }
                         }
                     },
-                    shape = RoundedCornerShape(24.dp),
+                    shape = RecordShapes.Small,
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth().testTag("patientSearch"),
                 )
@@ -345,65 +345,41 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    FilterChip(
+                    ListFilterChip(
                         selected = riskFilter == "all",
+                        label = "${stringResource(R.string.all_filter)} ($allCount)",
                         onClick = { riskFilter = "all" },
-                        label = { Text("${stringResource(R.string.all_filter)} ($allCount)") },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                        ),
-                        modifier = Modifier.testTag("riskFilter-all"),
+                        tag = "riskFilter-all",
                     )
-                    FilterChip(
+                    ListFilterChip(
                         selected = riskFilter == "high",
+                        label = "${stringResource(R.string.high_risk_filter)} ($highRiskCount)",
                         onClick = { riskFilter = "high" },
-                        label = { Text("${stringResource(R.string.high_risk_filter)} ($highRiskCount)") },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.errorContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onErrorContainer,
-                        ),
-                        modifier = Modifier.testTag("riskFilter-high"),
+                        tag = "riskFilter-high",
                     )
-                    FilterChip(
+                    ListFilterChip(
                         selected = riskFilter == "medium",
+                        label = "${stringResource(R.string.medium_risk_filter)} ($mediumRiskCount)",
                         onClick = { riskFilter = "medium" },
-                        label = { Text("${stringResource(R.string.medium_risk_filter)} ($mediumRiskCount)") },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        ),
-                        modifier = Modifier.testTag("riskFilter-medium"),
+                        tag = "riskFilter-medium",
                     )
-                    FilterChip(
+                    ListFilterChip(
                         selected = riskFilter == "low",
+                        label = "${stringResource(R.string.low_risk_filter)} ($lowRiskCount)",
                         onClick = { riskFilter = "low" },
-                        label = { Text("${stringResource(R.string.low_risk_filter)} ($lowRiskCount)") },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                        ),
-                        modifier = Modifier.testTag("riskFilter-low"),
+                        tag = "riskFilter-low",
                     )
-                    FilterChip(
+                    ListFilterChip(
                         selected = riskFilter == "delivered",
+                        label = "${stringResource(R.string.patients_filter_delivered)} ($deliveredCount)",
                         onClick = { riskFilter = "delivered" },
-                        label = { Text("${stringResource(R.string.patients_filter_delivered)} ($deliveredCount)") },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        ),
-                        modifier = Modifier.testTag("riskFilter-delivered"),
+                        tag = "riskFilter-delivered",
                     )
-                    FilterChip(
+                    ListFilterChip(
                         selected = riskFilter == "archived",
+                        label = "${stringResource(R.string.patients_filter_archived)} ($archivedCount)",
                         onClick = { riskFilter = "archived" },
-                        label = { Text("${stringResource(R.string.patients_filter_archived)} ($archivedCount)") },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        ),
-                        modifier = Modifier.testTag("riskFilter-archived"),
+                        tag = "riskFilter-archived",
                     )
                 }
             }
@@ -411,17 +387,18 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
             item {
                 var sortMenuExpanded by remember { mutableStateOf(false) }
                 Box {
-                    OutlinedButton(
+                    TextButton(
                         onClick = { sortMenuExpanded = true },
+                        shape = RecordShapes.Small,
+                        contentPadding = PaddingValues(horizontal = 8.dp),
                         modifier = Modifier
                             .minimumTouchTarget()
                             .heightIn(min = 48.dp)
                             .testTag("dashboardSortButton"),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                     ) {
                         Text(
                             text = stringResource(R.string.dashboard_sort_format, dashboardSortLabel(currentSort)),
-                            style = MaterialTheme.typography.labelMedium,
+                            style = RecordType.Action,
                             maxLines = 1,
                             softWrap = false,
                             overflow = TextOverflow.Ellipsis,
@@ -476,15 +453,20 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
             // Patient List Items
             if (sortedList.isEmpty()) {
                 item {
-                    Card(
+                    OutlinedCard(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        shape = RecordShapes.Large,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                     ) {
                         Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
                             Text(
-                                text = if (state.searchQuery.isNotBlank()) "No matching patients found" else "No patients in this category",
-                                style = MaterialTheme.typography.bodyLarge,
+                                text = stringResource(
+                                    if (state.searchQuery.isNotBlank()) R.string.no_matching_patients
+                                    else R.string.no_patients_in_category,
+                                ),
+                                style = RecordType.FieldValue,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
                             )
                         }
                     }
@@ -514,4 +496,39 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
         )
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ListFilterChip(selected: Boolean, label: String, onClick: () -> Unit, tag: String) {
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = {
+            Text(
+                text = label,
+                style = RecordType.Action.copy(fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium),
+                maxLines = 1,
+                softWrap = false,
+            )
+        },
+        shape = RecordShapes.Small,
+        colors = FilterChipDefaults.filterChipColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            labelColor = MaterialTheme.colorScheme.onSurface,
+            selectedContainerColor = MaterialTheme.colorScheme.primary,
+            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+        ),
+        border = FilterChipDefaults.filterChipBorder(
+            enabled = true,
+            selected = selected,
+            borderColor = MaterialTheme.colorScheme.outline,
+            selectedBorderColor = MaterialTheme.colorScheme.primary,
+        ),
+        modifier = Modifier.testTag(tag),
+    )
+}
+
+private val RecordType.HeaderName: TextStyle
+    get() = TextStyle(fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold)
+
 

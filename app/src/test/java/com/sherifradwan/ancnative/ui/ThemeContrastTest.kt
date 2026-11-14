@@ -72,7 +72,7 @@ class ThemeContrastTest {
         return (lighter + 0.05) / (darker + 0.05)
     }
 
-    /** (textToken, bgToken) pairs as used by PatientAgeBadge and the DeliveryTone box colours. */
+    /** (textToken, bgToken) pairs as used by PatientAgeBadge and the FieldDelivery tokens. */
     private fun expectedPairs(): List<Pair<String, String>> = listOf(
         // Age badge, light
         "TagAgeText" to "TagAgeBg",
