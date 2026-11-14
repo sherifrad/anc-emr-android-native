@@ -1,0 +1,676 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+index 5b408f4..d4cd814 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+@@ -23,6 +23,7 @@ import com.sherifradwan.ancnative.model.previousDeliverySummary
+ import com.sherifradwan.ancnative.security.SecuritySettingsState
+ import com.sherifradwan.ancnative.ui.AllergyState
+ import com.sherifradwan.ancnative.ui.classifyAllergy
++import com.sherifradwan.ancnative.ui.formatWeightKg
+ import java.io.ByteArrayOutputStream
+ import java.time.LocalDate
+ 
+@@ -42,17 +43,22 @@ object PatientPrintHtmlGenerator {
+         return """<tr class="more-row"><td colspan="$colspan" class="text-center empty-cell">$hidden $what not shown</td></tr>"""
+     }
+ 
++    @Volatile
++    private var cachedLogoBase64: String? = null
++
+     private fun getLogoBase64(context: Context?): String {
+         if (context == null) return ""
++        cachedLogoBase64?.let { return it }
+         return try {
+-            val full = BitmapFactory.decodeResource(context.resources, R.drawable.clinic_logo_mark)
+-            // The page embeds the logo three times, so it is scaled down once here.
++            val full = BitmapFactory.decodeResource(context.resources, R.drawable.clinic_logo_mark) ?: return ""
+             val height = LOGO_PRINT_HEIGHT_PX
+             val width = (full.width * height.toFloat() / full.height).toInt().coerceAtLeast(1)
+             val bitmap = Bitmap.createScaledBitmap(full, width, height, true)
+             val outputStream = ByteArrayOutputStream()
+             bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+-            Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
++            val encoded = Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
++            cachedLogoBase64 = encoded
++            encoded
+         } catch (_: Exception) {
+             ""
+         }
+@@ -83,7 +89,6 @@ object PatientPrintHtmlGenerator {
+             }
+         }
+ 
+-        // Format Obstetric summary
+         val g = patient.gravida ?: "-"
+         val p = patient.parity ?: "-"
+         val a = patient.abortion ?: "-"
+@@ -92,7 +97,6 @@ object PatientPrintHtmlGenerator {
+         val risk = reportRisk(patient.riskLevel)
+         val isRhNegative = com.sherifradwan.ancnative.ui.isRhNegative(patient.bloodGroupText)
+ 
+-        // Visits table rows (Centered text, No SFH, No FHR, Spacious and comfortable)
+         val visits = reportVisits(patient, MAX_PRINT_VISITS)
+         val bpAlertCss = when {
+             visits.rows.any { bpLevel(it.bloodPressure) == BpLevel.SEVERE } ->
+@@ -117,9 +121,9 @@ object PatientPrintHtmlGenerator {
+                 <tr>
+                     <td class="text-center font-bold nowrap-cell">${idx + 1 + visits.hidden}</td>
+                     <td class="text-center date-cell">${escapeHtml(reportDate(v.date))}</td>
+-                    <td class="text-center font-bold text-teal nowrap-cell">${vGa}</td>
+-                    <td class="text-center nowrap-cell font-bold text-navy">${escapeHtml(v.bloodPressure ?: "-")}$bpAlert</td>
+-                    <td class="text-center nowrap-cell">${escapeHtml(v.weight?.let { "$it kg" } ?: "-")}</td>
++                    <td class="text-center font-bold text-teal nowrap-cell">${escapeHtml(vGa)}</td>
++                    <td class="text-center nowrap-cell font-bold text-navy">${escapeHtml(v.bloodPressure?.takeUnless(String::isBlank) ?: "-")}$bpAlert</td>
++                    <td class="text-center nowrap-cell">${escapeHtml(formatWeightKg(v.weight) ?: "-")}</td>
+                     <td class="text-center notes-cell">${escapeHtml(visitText(v))}</td>
+                 </tr>
+                 """.trimIndent()
+@@ -128,7 +132,6 @@ object PatientPrintHtmlGenerator {
+             if (hidden.isNotEmpty()) "$hidden\n$rows" else rows
+         }
+ 
+-        // Ultrasound Scans rows (Centered, EFW (g), Clinical Notes, image badge if photos exist)
+         val scans = reportScans(patient, MAX_PRINT_SCANS)
+         val scansRowsHtml = if (scans.rows.isEmpty()) {
+             """<tr><td colspan="7" class="text-center empty-cell">No ultrasound scans recorded yet</td></tr>"""
+@@ -143,7 +146,7 @@ object PatientPrintHtmlGenerator {
+                 """
+                 <tr>
+                     <td class="text-center date-cell">${escapeHtml(reportDate(s.date))}</td>
+-                    <td class="text-center font-bold text-teal nowrap-cell">${scanGestationalAge(s)}</td>
++                    <td class="text-center font-bold text-teal nowrap-cell">${escapeHtml(scanGestationalAge(s))}</td>
+                     <td class="text-center">${escapeHtml(s.presentation?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                     <td class="text-center">${escapeHtml(s.placentalSite?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+                     <td class="text-center">${escapeHtml(s.amnioticFluid?.takeUnless(String::isBlank) ?: "Not recorded")}</td>
+@@ -159,7 +162,6 @@ object PatientPrintHtmlGenerator {
+             if (hidden.isNotEmpty()) "$hidden\n$rows" else rows
+         }
+ 
+-        // Labs rows (Centered, NO status column, Abnormal result displayed in RED)
+         val labs = reportLabs(patient, MAX_PRINT_LABS)
+         val labsRowsHtml = if (labs.rows.isEmpty()) {
+             """<tr><td colspan="4" class="text-center empty-cell">No laboratory test results recorded yet</td></tr>"""
+@@ -179,7 +181,7 @@ object PatientPrintHtmlGenerator {
+                     <td class="text-center date-cell">${escapeHtml(reportDate(l.date))}</td>
+                     <td class="text-center font-bold text-navy">${escapeHtml(l.testName)}$extraHtml</td>
+                     <td class="text-center">${resultHtml}</td>
+-                    <td class="text-center text-muted">${escapeHtml(l.referenceRange ?: "-")}</td>
++                    <td class="text-center text-muted">${escapeHtml(l.referenceRange?.takeUnless(String::isBlank) ?: "-")}</td>
+                 </tr>
+                 """.trimIndent()
+             }.joinToString("\n")
+@@ -187,7 +189,6 @@ object PatientPrintHtmlGenerator {
+             if (hiddenRow.isNotEmpty()) "$rows\n$hiddenRow" else rows
+         }
+ 
+-        // Medications rows (Centered)
+         val meds = reportMedications(patient)
+         fun medRows(list: List<DemoMedicationRecord>): String = list.joinToString("\n") { m ->
+             val detail = medicationDetail(m)
+@@ -204,7 +205,6 @@ object PatientPrintHtmlGenerator {
+         }
+         val stoppedMedsRowsHtml: String = medRows(meds.stopped)
+ 
+-        // Previous Pregnancies (Centered)
+         val prevPregRows = if (patient.previousPregnancies.isEmpty()) {
+             """<p class="text-muted text-center text-small" style="padding: 6px;">No previous pregnancies or deliveries recorded (${escapeHtml(pastDeliverySummary)}).</p>"""
+         } else {
+@@ -221,12 +221,13 @@ object PatientPrintHtmlGenerator {
+                 </thead>
+                 <tbody>
+                     ${patient.previousPregnancies.map { pp ->
++                        val outcomeText = pp.outcomeText?.takeUnless(String::isBlank)
+                         val outcomeLabel = when (pp.outcome) {
+-                            "Stillbirth" -> pp.outcomeText ?: "Stillbirth / IUFD"
+-                            "EarlyPregnancyLoss" -> pp.outcomeText ?: "Miscarriage"
+-                            "TerminationOfPregnancy" -> pp.outcomeText ?: "Therapeutic Termination"
+-                            "LiveBirth" -> pp.outcomeText ?: "Live Birth"
+-                            else -> pp.outcomeText ?: pp.outcome ?: "-"
++                            "Stillbirth" -> outcomeText ?: "Stillbirth / IUFD"
++                            "EarlyPregnancyLoss" -> outcomeText ?: "Miscarriage"
++                            "TerminationOfPregnancy" -> outcomeText ?: "Therapeutic Termination"
++                            "LiveBirth" -> outcomeText ?: "Live Birth"
++                            else -> outcomeText ?: pp.outcome?.takeUnless(String::isBlank) ?: "-"
+                         }
+                         val isLoss = pp.outcome == "TerminationOfPregnancy" ||
+                             isStillbirth(pp) ||
+@@ -236,10 +237,15 @@ object PatientPrintHtmlGenerator {
+                         } else {
+                             """<span style="font-weight:600;color:#0f766e;">${escapeHtml(outcomeLabel)}</span>"""
+                         }
+-                        val methodText = pp.birthMethod ?: pp.deliveryBy ?: pp.lossManagement ?: pp.terminationMethod ?: "-"
++                        val methodText = pp.birthMethod?.takeUnless(String::isBlank)
++                            ?: pp.deliveryBy?.takeUnless(String::isBlank)
++                            ?: pp.lossManagement?.takeUnless(String::isBlank)
++                            ?: pp.terminationMethod?.takeUnless(String::isBlank)
++                            ?: "-"
++                        val dateFormatted = formatDmy(pp.dateText) ?: "-"
+                         """
+                         <tr>
+-                            <td class="text-center date-cell">${escapeHtml(pp.dateText ?: "-")}</td>
++                            <td class="text-center date-cell">${escapeHtml(dateFormatted)}</td>
+                             <td class="text-center font-bold">${escapeHtml(listOfNotNull(pp.pregnancyType?.takeUnless(String::isBlank), methodText.takeUnless { it == "-" }).joinToString(" · ").ifEmpty { "-" })}</td>
+                             <td class="text-center">${outcomeBadge}</td>
+                             <td class="text-center">${escapeHtml(listOfNotNull(pp.placeAndDoctor?.takeUnless(String::isBlank), pp.otherDetails?.takeUnless(String::isBlank)).joinToString(" · ").ifEmpty { "Not recorded" })}</td>
+@@ -253,7 +259,7 @@ object PatientPrintHtmlGenerator {
+         }
+ 
+         val logoImgTag = if (logoBase64.isNotEmpty()) {
+-            """<img src="data:image/png;base64,$logoBase64" alt="Clinic Logo" class="clinic-logo" />"""
++            """<img src="data:image/png;base64,$logoBase64" alt="Clinic Logo" class="clinic-logo" width="46" height="64" />"""
+         } else {
+             """<div class="logo-fallback">DR</div>"""
+         }
+@@ -287,7 +293,7 @@ object PatientPrintHtmlGenerator {
+             --text-main: #0F172A;
+             --text-muted: #475569;
+             --danger-bg: #FEE2E2;
+-            --danger-text: #DC2626;
++            --danger-text: #B91C1C;
+             --success-bg: #DCFCE7;
+             --success-text: #166534;
+         }
+@@ -319,7 +325,6 @@ object PatientPrintHtmlGenerator {
+             justify-content: space-between;
+         }
+ 
+-        /* Subtle Authentic Watermark */
+         .watermark {
+             position: absolute;
+             top: 50%;
+@@ -401,8 +406,8 @@ object PatientPrintHtmlGenerator {
+             }
+         }
+ 
+-        /* Pixel-Perfect ISO A4 Print / PDF Layout */
+         @media print {
++            @page { size: A4; margin: 0; }
+             body {
+                 background: transparent;
+                 margin: 0;
+@@ -411,21 +416,22 @@ object PatientPrintHtmlGenerator {
+             .page-sheet {
+                 margin: 0;
+                 width: 210mm;
+-                height: 297mm;
+                 min-height: 297mm;
+-                max-height: 297mm;
+                 box-sizing: border-box;
+                 box-shadow: none;
+                 page-break-after: always;
+                 break-after: page;
+                 padding: 8mm 12mm 6mm 12mm;
+                 border-radius: 0;
+-                overflow: hidden;
+             }
+             .page-sheet:last-child {
+                 page-break-after: avoid;
+                 break-after: avoid;
+             }
++            tr, .section-box, .patient-card, .attestation-grid {
++                break-inside: avoid;
++                page-break-inside: avoid;
++            }
+             .patient-card {
+                 grid-template-columns: 2.2fr 1.1fr 1.2fr 1.4fr !important;
+             }
+@@ -470,6 +476,14 @@ object PatientPrintHtmlGenerator {
+             object-fit: contain;
+         }
+ 
++        .logo-fallback {
++            color: var(--navy-primary);
++            font-size: 14pt;
++            font-weight: bold;
++            width: 46px;
++            text-align: center;
++        }
++
+         .clinic-title-box h1 {
+             color: var(--navy-primary);
+             font-size: 14.5pt;
+@@ -492,7 +506,6 @@ object PatientPrintHtmlGenerator {
+             font-weight: 600;
+         }
+ 
+-        /* Header Meta: Perfectly uniform alignment */
+         .uniform-meta {
+             text-align: left;
+             direction: ltr;
+@@ -535,7 +548,6 @@ object PatientPrintHtmlGenerator {
+             color: var(--navy-primary);
+         }
+ 
+-        /* Identity Banner: Name, Case ID, Phone on new line, Age only */
+         .patient-card {
+             background: #F8FAFC;
+             border: 1.5px solid var(--border-light);
+@@ -704,7 +716,6 @@ object PatientPrintHtmlGenerator {
+             color: var(--rose-accent);
+         }
+ 
+-        /* History lines with Arabic on right, English/values on left */
+         .history-list {
+             font-size: 8.5pt;
+             display: flex;
+@@ -733,7 +744,6 @@ object PatientPrintHtmlGenerator {
+             direction: ltr;
+         }
+ 
+-        /* Clinical Tables: Perfectly Centered Contents, Zero-Overflow Fixed Layout */
+         .clinical-table {
+             width: 100%;
+             table-layout: fixed;
+@@ -788,7 +798,7 @@ object PatientPrintHtmlGenerator {
+         .text-teal { color: var(--teal-clinical); }
+         .text-muted { color: var(--text-muted); }
+         .empty-cell { padding: 12px; color: var(--text-muted); font-style: italic; }
+-        .date-cell { font-family: monospace; font-size: 7.8pt; white-space: nowrap; }
++        .date-cell { font-variant-numeric: tabular-nums; font-size: 7.8pt; white-space: nowrap; }
+         .nowrap-cell { white-space: nowrap; }
+         .clinical-table .more-row td {
+             text-align: left !important;
+@@ -816,7 +826,6 @@ object PatientPrintHtmlGenerator {
+             border-radius: 3px;
+         }
+ 
+-        /* Signature block on Page 2 */
+         .attestation-grid {
+             display: grid;
+             grid-template-columns: 1.8fr 1.2fr;
+@@ -858,7 +867,7 @@ object PatientPrintHtmlGenerator {
+         .stamp-placeholder {
+             margin-top: 10px;
+             font-size: 7.5pt;
+-            color: #94A3B8;
++            color: #475569;
+             font-style: italic;
+         }
+ 
+@@ -879,14 +888,10 @@ object PatientPrintHtmlGenerator {
+ </head>
+ <body>
+ 
+-    <!-- ========================================== -->
+-    <!-- PAGE 1: MATERNAL FOUNDATION & VISITS       -->
+-    <!-- ========================================== -->
+     <div class="page-sheet">
+         <div class="watermark"></div>
+         <div class="page-content">
+ 
+-            <!-- Clinic Top Header: Refined per Dr. Sherif Radwan -->
+             <header class="clinic-header">
+                 <div class="clinic-brand">
+                     $logoImgTag
+@@ -900,13 +905,11 @@ object PatientPrintHtmlGenerator {
+                     <div class="doc-badge">CLINICAL RECORD</div>
+                     <div class="meta-row"><span class="k">Patient ID:</span> <span class="v">${escapeHtml(patient.caseId)}</span></div>
+                     <div class="meta-row"><span class="k">Print Date:</span> <span class="v">$printDateStr</span></div>
+-                    <div class="meta-row"><span class="k">Page:</span> <span class="v">1</span></div>
+                 </div>
+             </header>
+ 
+             ${if (statusLine != null) """<div class="status-banner">${escapeHtml(statusLine)}</div>""" else ""}
+ 
+-            <!-- Patient Identity Banner: Refined with phone on new line, age only -->
+             <section class="patient-card">
+                 <div class="pt-name-box">
+                     <h3>${escapeHtml(patient.displayName)}</h3>
+@@ -939,9 +942,7 @@ object PatientPrintHtmlGenerator {
+ 
+             ${if (!patient.clinicalAttention.isNullOrBlank()) """<div class="attention-box"><span class="k">Clinical attention</span><span class="v">${escapeHtml(patient.clinicalAttention)}</span></div>""" else ""}
+ 
+-            <!-- Dating & Obstetric Profile Grid -->
+             <div class="grid-two-col">
+-                <!-- Pregnancy Dating (PREGNANCY DATING without Matrix) -->
+                 <div class="section-box">
+                     <div class="section-title">
+                         <span>Pregnancy Dating</span>
+@@ -952,13 +953,12 @@ object PatientPrintHtmlGenerator {
+                     <div class="ga-highlight">
+                         ${when {
+                             currentGa != null -> "Gestational age today: $currentGa"
+-                            patient.delivered -> escapeHtml(statusLine)
++                            patient.delivered -> escapeHtml(patient.deliveryOutcomeLine())
+                             else -> "Gestational age: not recorded"
+                         }}
+                     </div>
+                 </div>
+ 
+-                <!-- Obstetric Summary & History -->
+                 <div class="section-box">
+                     <div class="section-title">
+                         <span>Obstetric & Medical History</span>
+@@ -988,7 +988,6 @@ object PatientPrintHtmlGenerator {
+                 </div>
+             </div>
+ 
+-            <!-- Previous Pregnancies & Outcomes -->
+             <div class="section-box">
+                 <div class="section-title">
+                     <span>Previous Pregnancies & Obstetric Outcomes</span>
+@@ -996,7 +995,6 @@ object PatientPrintHtmlGenerator {
+                 $prevPregRows
+             </div>
+ 
+-            <!-- Antenatal Care Visits Log -->
+             <div class="section-box" style="flex-grow: 1;">
+                 <div class="section-title">
+                     <span>Antenatal Care Visits Log</span>
+@@ -1022,21 +1020,15 @@ object PatientPrintHtmlGenerator {
+ 
+         </div>
+ 
+-        <!-- Page 1 Footer -->
+         <footer class="page-footer">
+             <span>Confidential medical record · $clinicName · $doctorOfficialTitle · Tel $CLINIC_PHONE</span>
+-            <span>Page 1</span>
+         </footer>
+     </div>
+ 
+-    <!-- ========================================== -->
+-    <!-- PAGE 2: ULTRASOUND, LABS, MEDS & PLAN      -->
+-    <!-- ========================================== -->
+     <div class="page-sheet">
+         <div class="watermark"></div>
+         <div class="page-content">
+ 
+-            <!-- Compact Header Runner -->
+             <header class="clinic-header" style="margin-bottom: 2px;">
+                 <div class="clinic-brand">
+                     $logoImgTag
+@@ -1046,14 +1038,13 @@ object PatientPrintHtmlGenerator {
+                     </div>
+                 </div>
+                 <div class="header-meta uniform-meta">
+-                    <div class="doc-badge" style="background: var(--rose-accent);">Page 2</div>
++                    <div class="doc-badge" style="background: var(--rose-accent);">CONTINUED</div>
+                     <div class="meta-row"><span class="k">Patient:</span> <span class="v">${escapeHtml(patient.displayName)}</span></div>
+                     <div class="meta-row"><span class="k">Patient ID:</span> <span class="v">${escapeHtml(patient.caseId)}</span></div>
+                     <div class="meta-row"><span class="k">Print Date:</span> <span class="v">$printDateStr</span></div>
+                 </div>
+             </header>
+ 
+-            <!-- Ultrasound Biometry & Surveillance -->
+             <div class="section-box">
+                 <div class="section-title">
+                     <span>Ultrasound Biometry & Fetal Surveillance</span>
+@@ -1078,7 +1069,6 @@ object PatientPrintHtmlGenerator {
+                 </div>
+             </div>
+ 
+-            <!-- Laboratory Investigations -->
+             <div class="section-box">
+                 <div class="section-title">
+                     <span>Laboratory Investigations</span>
+@@ -1100,7 +1090,6 @@ object PatientPrintHtmlGenerator {
+                 </div>
+             </div>
+ 
+-            <!-- Current Medications -->
+             <div class="section-box">
+                 <div class="section-title">
+                     <span>Current Medications</span>
+@@ -1120,7 +1109,6 @@ object PatientPrintHtmlGenerator {
+                 </div>
+             </div>
+             ${if (stoppedMedsRowsHtml.isNotEmpty()) """
+-            <!-- Stopped Medications -->
+             <div class="section-box">
+                 <div class="section-title">
+                     <span>Stopped Medications</span>
+@@ -1141,7 +1129,6 @@ object PatientPrintHtmlGenerator {
+             </div>
+             """ else ""}
+ 
+-            <!-- Delivery Plan -->
+             <div class="section-box" style="margin-top: auto;">
+                 <div class="section-title">
+                     <span>Delivery Plan</span>
+@@ -1149,26 +1136,16 @@ object PatientPrintHtmlGenerator {
+                 <div class="attestation-grid">
+                     <div class="plan-box">
+                         <div class="history-list">
+-                            ${patient.deliveryOutcomeLine()?.let { line -> """<div class="history-row">
+-                                <span class="k">Delivery Outcome:</span>
+-                                <span class="v text-navy font-bold">${escapeHtml(line)}</span>
+-                            </div>""" }.orEmpty()}
+-                            ${deliveryPlanRows(patient).joinToString("") { row -> """<div class="history-row">
++                            ${reportDeliveryRows(patient, datingSummary.edd?.let(::formatDmy)).joinToString("\n") { row ->
++                                val vClass = when (row.label) {
++                                    "Delivery Outcome", "Estimated due date" -> "v text-navy font-bold"
++                                    else -> "v"
++                                }
++                                """<div class="history-row">
+                                 <span class="k">${escapeHtml(row.label)}:</span>
+-                                <span class="v">${escapeHtml(row.value)}</span>
+-                            </div>""" }}
+-                            ${if (isRhNegative) """<div class="history-row">
+-                                <span class="k">Blood bank precautions:</span>
+-                                <span class="v font-bold">Anti-D Prophylaxis + Matched Packed RBCs Cross-match</span>
+-                            </div>""" else ""}
+-                            ${if (!patient.delivered && datingSummary.edd != null) """<div class="history-row">
+-                                <span class="k">Estimated due date:</span>
+-                                <span class="v text-navy font-bold">${formatDmy(datingSummary.edd)}</span>
+-                            </div>""" else ""}
+-                            ${if (!patient.delivered && deliveryPlanRows(patient).isEmpty()) """<div class="history-row">
+-                                <span class="k">Plan:</span>
+-                                <span class="v">Not recorded</span>
+-                            </div>""" else ""}
++                                <span class="$vClass">${escapeHtml(row.value)}</span>
++                            </div>"""
++                            }}
+                         </div>
+                     </div>
+ 
+@@ -1185,10 +1162,8 @@ object PatientPrintHtmlGenerator {
+ 
+         </div>
+ 
+-        <!-- Page 2 Footer -->
+         <footer class="page-footer">
+             <span>$clinicName · $doctorOfficialTitle · Tel $CLINIC_PHONE</span>
+-            <span>Page 2</span>
+         </footer>
+     </div>
+ 
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientShareText.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientShareText.kt
+index 0d45c6d..6bc9876 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientShareText.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientShareText.kt
+@@ -5,6 +5,7 @@ import com.sherifradwan.ancnative.model.DemoPatient
+ import com.sherifradwan.ancnative.model.datingSummaryOf
+ import com.sherifradwan.ancnative.model.datingTextRows
+ import com.sherifradwan.ancnative.model.datingDiscordanceLine
++import com.sherifradwan.ancnative.model.formatDmy
+ import java.time.LocalDate
+ 
+ private fun medicationShareLine(m: DemoMedicationRecord): String {
+@@ -45,7 +46,7 @@ internal fun patientShareText(patient: DemoPatient, asOf: LocalDate = LocalDate.
+     datingDiscordanceLine(patient.dating, summary)?.let { sb.appendLine(it) }
+     sb.appendLine()
+ 
+-    val visits = patient.visits.sortedByDescending { it.date }
++    val visits = patient.visits.sortedByDescending { reportSortKey(it.date) }
+     sb.appendLine("VISITS (${visits.size})")
+     if (visits.isEmpty()) {
+         sb.appendLine("No visits recorded.")
+@@ -60,7 +61,7 @@ internal fun patientShareText(patient: DemoPatient, asOf: LocalDate = LocalDate.
+     }
+     sb.appendLine()
+ 
+-    val scans = patient.ultrasoundScans.sortedByDescending { it.date }
++    val scans = patient.ultrasoundScans.sortedByDescending { reportSortKey(it.date) }
+     sb.appendLine("ULTRASOUND SCANS (${scans.size})")
+     if (scans.isEmpty()) {
+         sb.appendLine("No scans recorded.")
+@@ -71,15 +72,18 @@ internal fun patientShareText(patient: DemoPatient, asOf: LocalDate = LocalDate.
+             if (ga != "-") parts.add("GA: $ga")
+             if (!scan.presentation.isNullOrBlank()) parts.add("Pres: ${scan.presentation}")
+             if (!scan.placentalSite.isNullOrBlank()) parts.add("Placenta: ${scan.placentalSite}")
++            if (!scan.amnioticFluid.isNullOrBlank()) parts.add("Fluid: ${scan.amnioticFluid}")
+             val efw = scanWeight(scan)
+             if (efw != "-") parts.add("EFW: $efw")
+-            scanNotes(scan).let { if (it.isNotBlank()) parts.add(it) }
+-            sb.appendLine("• ${reportDate(scan.date)} | ${parts.joinToString(" | ")}")
++            val notes = scanNotes(scan)
++            if (notes != NOT_RECORDED) parts.add(notes)
++            val details = if (parts.isEmpty()) NOT_RECORDED else parts.joinToString(" | ")
++            sb.appendLine("• ${reportDate(scan.date)} | $details")
+         }
+     }
+     sb.appendLine()
+ 
+-    val labs = patient.labInvestigations.sortedByDescending { it.date }
++    val labs = patient.labInvestigations.sortedByDescending { reportSortKey(it.date) }
+     sb.appendLine("LABORATORY RESULTS (${labs.size})")
+     if (labs.isEmpty()) {
+         sb.appendLine("No laboratory results recorded.")
+@@ -112,10 +116,10 @@ internal fun patientShareText(patient: DemoPatient, asOf: LocalDate = LocalDate.
+         sb.appendLine()
+     }
+ 
+-    val planRows = deliveryPlanRows(patient)
+-    if (planRows.isNotEmpty()) {
++    val deliveryRows = reportDeliveryRows(patient, summary.edd?.let(::formatDmy))
++    if (deliveryRows.isNotEmpty()) {
+         sb.appendLine("DELIVERY PLAN")
+-        planRows.forEach { row -> sb.appendLine("${row.label}: ${row.value}") }
++        deliveryRows.forEach { row -> sb.appendLine("${row.label}: ${row.value}") }
+     }
+ 
+     return sb.toString()
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt
+index 227e923..d722b5a 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt
+@@ -53,7 +53,7 @@ fun PatientTwoPageReportDialog(
+     onDismiss: () -> Unit,
+ ) {
+     val context = LocalContext.current
+-    val htmlContent = remember(patient.id) {
++    val htmlContent = remember(patient, securitySettings) {
+         PatientPrintHtmlGenerator.generateHtml(
+             context = context,
+             patient = patient,
+@@ -149,7 +149,7 @@ fun PatientTwoPageReportDialog(
+                                 },
+                                 colors = ButtonDefaults.buttonColors(
+                                     containerColor = MaterialTheme.colorScheme.secondary,
+-                                    contentColor = Color.White,
++                                    contentColor = MaterialTheme.colorScheme.onSecondary,
+                                 ),
+                                 contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                                     horizontal = 12.dp,
+@@ -159,7 +159,7 @@ fun PatientTwoPageReportDialog(
+                             ) {
+                                 Icon(
+                                     imageVector = Icons.Default.Print,
+-                                    contentDescription = "Print PDF",
++                                    contentDescription = null,
+                                     modifier = Modifier.size(20.dp),
+                                 )
+                                 Spacer(Modifier.width(4.dp))
+@@ -199,9 +199,16 @@ fun PatientTwoPageReportDialog(
+                                     defaultTextEncodingName = "UTF-8"
+                                 }
+                                 webViewClient = WebViewClient()
++                                tag = htmlContent
+                                 loadDataWithBaseURL("file:///android_asset/", htmlContent, "text/html", "UTF-8", null)
+                             }
+                         },
++                        update = { webView ->
++                            if (webView.tag != htmlContent) {
++                                webView.tag = htmlContent
++                                webView.loadDataWithBaseURL("file:///android_asset/", htmlContent, "text/html", "UTF-8", null)
++                            }
++                        },
+                         modifier = Modifier.fillMaxSize().testTag("reportWebView"),
+                     )
+                 }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/report/ReportSections.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/report/ReportSections.kt
+index 2749cbe..1311b9b 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/report/ReportSections.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/report/ReportSections.kt
+@@ -11,7 +11,9 @@ import com.sherifradwan.ancnative.model.formatDmy
+ import com.sherifradwan.ancnative.model.medicationInstructions
+ import com.sherifradwan.ancnative.model.medicationStatusLabel
+ import com.sherifradwan.ancnative.model.parseDeliveryNotes
++import com.sherifradwan.ancnative.model.parseIsoDateOrNull
+ import com.sherifradwan.ancnative.ui.PatientRiskTier
++import com.sherifradwan.ancnative.ui.isRhNegative
+ import com.sherifradwan.ancnative.ui.parseRiskTier
+ import java.time.LocalDate
+ 
+@@ -33,9 +35,12 @@ internal enum class ReportRisk(val label: String) {
+ 
+ internal data class ReportRow(val label: String, val value: String)
+ 
++internal fun reportSortKey(date: String?): java.time.LocalDate =
++    parseIsoDateOrNull(date) ?: LocalDate.MAX
++
+ /** Newest kept oldest first; hidden counts the older rows left out. */
+ private fun <T> keepNewest(rows: List<T>, limit: Int, dateOf: (T) -> String?): Limited<T> {
+-    val ordered = rows.sortedBy { dateOf(it) ?: "" }
++    val ordered = rows.sortedBy { reportSortKey(dateOf(it)) }
+     if (ordered.size <= limit) return Limited(ordered, 0)
+     return Limited(ordered.takeLast(limit), ordered.size - limit)
+ }
+@@ -47,7 +52,7 @@ internal fun reportScans(patient: DemoPatient, limit: Int): Limited<DemoUltrasou
+     keepNewest(patient.ultrasoundScans, limit) { it.date }
+ 
+ internal fun reportLabs(patient: DemoPatient, limit: Int): Limited<DemoLabInvestigation> {
+-    val ordered = patient.labInvestigations.sortedByDescending { it.date ?: "" }
++    val ordered = patient.labInvestigations.sortedByDescending { reportSortKey(it.date) }
+     if (ordered.size <= limit) return Limited(ordered, 0)
+     return Limited(ordered.take(limit), ordered.size - limit)
+ }
+@@ -57,8 +62,8 @@ internal fun reportMedications(patient: DemoPatient): ReportMedications {
+         medicationStatusLabel(it.status, it.isNonCompliant) == MEDICATION_LABEL_ACTIVE
+     }
+     return ReportMedications(
+-        current = current.sortedByDescending { it.startDate ?: "" },
+-        stopped = stopped.sortedByDescending { it.startDate ?: "" },
++        current = current.sortedByDescending { reportSortKey(it.startDate) },
++        stopped = stopped.sortedByDescending { reportSortKey(it.startDate) },
+     )
+ }
+ 
+@@ -147,14 +152,9 @@ internal fun medicationDates(m: DemoMedicationRecord): String {
+ 
+ internal fun labResult(lab: DemoLabInvestigation): String {
+     val result = lab.result?.trim()
++    if (result.isNullOrBlank()) return NOT_RECORDED
+     val unit = lab.unit?.trim()
+-    return buildString {
+-        append(result.orEmpty())
+-        if (!unit.isNullOrBlank()) {
+-            if (isNotEmpty()) append(" ")
+-            append(unit)
+-        }
+-    }
++    return if (!unit.isNullOrBlank()) "$result $unit" else result
+ }
+ 
+ internal fun labExtra(lab: DemoLabInvestigation): String {
+@@ -176,3 +176,20 @@ internal fun deliveryPlanRows(patient: DemoPatient): List<ReportRow> {
+         sections.postpartum?.trim()?.takeIf { it.isNotEmpty() }?.let { add(ReportRow("Postpartum", it)) }
+     }
+ }
++
++internal fun reportDeliveryRows(patient: DemoPatient, eddText: String?): List<ReportRow> = buildList {
++    if (patient.delivered) {
++        patient.deliveryOutcomeLine()?.let { add(ReportRow("Delivery Outcome", it)) }
++    }
++    val planRows = deliveryPlanRows(patient)
++    addAll(planRows)
++    if (isRhNegative(patient.bloodGroupText)) {
++        add(ReportRow("Blood bank precautions", "Anti-D Prophylaxis + Matched Packed RBCs Cross-match"))
++    }
++    if (!patient.delivered && !eddText.isNullOrBlank()) {
++        add(ReportRow("Estimated due date", eddText))
++    }
++    if (!patient.delivered && planRows.isEmpty()) {
++        add(ReportRow("Plan", NOT_RECORDED))
++    }
++}

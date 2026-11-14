@@ -1,0 +1,78 @@
+[0m
+> plan · deepseek-v4.1-flash-free
+[0m⚙ [0mexecute {"code":"const a = await tools.search({query: \"read file contents\"});\nreturn a;"} 
+> plan · deepseek-v4.1-flash-free
+[0m$ [0mls app/src/main/java/com/sherifradwan/ancnative/ui/report/
+HtmlEscape.kt
+PatientPrintHtmlGenerator.kt
+PatientPrintManager.kt
+PatientShareText.kt
+PatientTwoPageReportDialog.kt
+ReportSections.kt
+> plan · deepseek-v4.1-flash-free
+[0m$ [0mwc -l app/src/main/java/com/sherifradwan/ancnative/ui/report/*.kt
+11 app/src/main/java/com/sherifradwan/ancnative/ui/report/HtmlEscape.kt
+    1174 app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+      47 app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintManager.kt
+     126 app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientShareText.kt
+     218 app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientTwoPageReportDialog.kt
+     195 app/src/main/java/com/sherifradwan/ancnative/ui/report/ReportSections.kt
+    1771 total
+> plan · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientShareText.kt 
+> plan · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/report/ReportSections.kt 
+> plan · deepseek-v4.1-flash-free
+[0m$ [0mgrep -n "phone\|bloodGroup\|data-value\|Unspecified\|@media print\|@page\|watermark\|page-footer\|table-header-group\|section-box\|break-inside" app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt
+98:        val isRhNegative = com.sherifradwan.ancnative.ui.isRhNegative(patient.bloodGroupText)
+267:        val watermarkImg = if (logoBase64.isNotEmpty()) {
+328:        .watermark {
+341:            $watermarkImg
+409:        @media print {
+410:            @page { size: A4; margin: 0; }
+431:            tr, .section-box, .patient-card, .attestation-grid {
+432:                break-inside: avoid;
+433:                page-break-inside: avoid;
+576:        .pt-name-box .pt-phone {
+596:        .data-value {
+664:        .section-box {
+875:        .page-footer {
+892:        <div class="watermark"></div>
+917:                    <div class="pt-phone">Phone: ${escapeHtml(patient.phone ?: "Unspecified")}</div>
+918:                    ${if (!patient.addressText.isNullOrBlank()) """<div class="pt-phone">Address: ${escapeHtml(patient.addressText)}</div>""" else ""}
+919:                    ${if (!patient.dateOfBirth.isNullOrBlank()) """<div class="pt-phone">Date of birth: ${escapeHtml(reportDate(patient.dateOfBirth))}</div>""" else ""}
+923:                    <span class="data-value">${escapeHtml(ageFormatted)}</span>
+927:                    <span class="data-value ${if (isRhNegative) "text-rose" else "text-navy"}">
+928:                        ${escapeHtml(patient.bloodGroupText ?: "-")}
+946:                <div class="section-box">
+962:                <div class="section-box">
+991:            <div class="section-box">
+998:            <div class="section-box" style="flex-grow: 1;">
+1023:        <footer class="page-footer">
+1029:        <div class="watermark"></div>
+1048:            <div class="section-box">
+1072:            <div class="section-box">
+1093:            <div class="section-box">
+1112:            <div class="section-box">
+1132:            <div class="section-box" style="margin-top: auto;">
+1165:        <footer class="page-footer">
+> plan · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt [90m[offset=400, limit=60][0m
+> plan · deepseek-v4.1-flash-free
+[0m$ [0mgrep -rn "fun formatWeightKg" app/src/main/java | head -5
+app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt:104:internal fun formatWeightKg(raw: String?): String? {
+> plan · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalFormat.kt [90m[offset=96, limit=30][0m
+> plan · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt [90m[limit=45, offset=900][0m
+> plan · deepseek-v4.1-flash-free
+[0m$ [0mgrep -rn "fun formatDmy" -A 8 app/src/main/java | head -20
+app/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt:38:fun formatDmy(date: LocalDate): String = date.format(DmyFormatter)
+app/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt-39-
+app/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt:40:fun formatDmy(iso: String?): String? {
+app/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt-41-    if (iso.isNullOrBlank()) return null
+app/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt-42-    return parseIsoDateOrNull(iso)?.let(::formatDmy) ?: iso.trim()
+app/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt-43-}
+> plan · deepseek-v4.1-flash-free
+[0m→ [0mRead app/src/main/java/com/sherifradwan/ancnative/model/IsoDates.kt [90m[limit=40][0m
+> plan · deepseek-v4.1-flash-free

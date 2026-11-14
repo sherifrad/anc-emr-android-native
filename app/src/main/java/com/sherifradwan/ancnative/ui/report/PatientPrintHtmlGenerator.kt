@@ -315,7 +315,6 @@ object PatientPrintHtmlGenerator {
             print-color-adjust: exact;
         }
 
-        /* Base page-sheet layout */
         .page-sheet {
             background: var(--surface-white);
             position: relative;
@@ -350,7 +349,6 @@ object PatientPrintHtmlGenerator {
             flex-grow: 1;
         }
 
-        /* On-Screen Mobile Preview (In-App WebView) */
         @media screen {
             body {
                 background-color: #E2E8F0;
@@ -407,28 +405,36 @@ object PatientPrintHtmlGenerator {
         }
 
         @media print {
-            @page { size: A4; margin: 0; }
+            @page { size: A4; margin: 8mm 0 8mm 0; }
             body {
                 background: transparent;
                 margin: 0;
                 padding: 0;
             }
+            .page-sheet, .page-content {
+                display: block;
+            }
             .page-sheet {
                 margin: 0;
                 width: 210mm;
-                min-height: 297mm;
+                min-height: 0;
                 box-sizing: border-box;
                 box-shadow: none;
-                page-break-after: always;
-                break-after: page;
-                padding: 8mm 12mm 6mm 12mm;
+                padding: 0 12mm;
                 border-radius: 0;
             }
-            .page-sheet:last-child {
-                page-break-after: avoid;
-                break-after: avoid;
+            .page-sheet + .page-sheet {
+                break-before: page;
+                page-break-before: always;
             }
-            tr, .section-box, .patient-card, .attestation-grid {
+            thead {
+                display: table-header-group;
+            }
+            .section-title {
+                break-after: avoid;
+                page-break-after: avoid;
+            }
+            tr, .patient-card, .attestation-grid, .history-row, .status-banner, .attention-box {
                 break-inside: avoid;
                 page-break-inside: avoid;
             }
@@ -452,9 +458,20 @@ object PatientPrintHtmlGenerator {
             .attestation-grid {
                 grid-template-columns: 1.8fr 1.2fr !important;
             }
+            .page-footer {
+                position: static;
+                margin-top: 6mm;
+            }
+            .watermark {
+                position: fixed;
+                top: 148mm;
+                left: 50%;
+            }
+            .page-sheet + .page-sheet .watermark {
+                display: none;
+            }
         }
 
-        /* Clinic Top Header */
         .clinic-header {
             display: flex;
             justify-content: space-between;
@@ -599,7 +616,6 @@ object PatientPrintHtmlGenerator {
             font-weight: 800;
         }
 
-        /* Badges */
         .badge {
             display: inline-block;
             padding: 3px 8px;
@@ -643,7 +659,6 @@ object PatientPrintHtmlGenerator {
 
         .doc-sign { font-family: 'Arslan Wessam B', 'Noto Naskh Arabic', serif; font-size: 20pt; line-height: 1.3; color: #1e293b; }
         .doc-sign-title { font-size: 11pt; line-height: 1.4; }
-        .med-cell { overflow-wrap: anywhere; word-break: break-word; }
 
         .val-abnormal {
             color: var(--danger-text);
@@ -654,7 +669,6 @@ object PatientPrintHtmlGenerator {
             display: inline-block;
         }
 
-        /* Grid sections */
         .grid-two-col {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -815,6 +829,16 @@ object PatientPrintHtmlGenerator {
             max-width: 100%;
         }$bpAlertCss
 
+        .med-cell,
+        .med-cell span {
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+        table td.med-cell {
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
         .photo-badge {
             display: inline-block;
             margin-top: 3px;
@@ -871,7 +895,6 @@ object PatientPrintHtmlGenerator {
             font-style: italic;
         }
 
-        /* Footer */
         .page-footer {
             border-top: 1px solid var(--border-hairline);
             padding-top: 6px;
@@ -914,7 +937,7 @@ object PatientPrintHtmlGenerator {
                 <div class="pt-name-box">
                     <h3>${escapeHtml(patient.displayName)}</h3>
                     <div class="pt-code">Patient ID: ${escapeHtml(patient.caseId)}</div>
-                    <div class="pt-phone">Phone: ${escapeHtml(patient.phone ?: "Unspecified")}</div>
+                    <div class="pt-phone">Phone: ${escapeHtml(patient.phone?.takeUnless(String::isBlank) ?: "Unspecified")}</div>
                     ${if (!patient.addressText.isNullOrBlank()) """<div class="pt-phone">Address: ${escapeHtml(patient.addressText)}</div>""" else ""}
                     ${if (!patient.dateOfBirth.isNullOrBlank()) """<div class="pt-phone">Date of birth: ${escapeHtml(reportDate(patient.dateOfBirth))}</div>""" else ""}
                 </div>
@@ -925,7 +948,7 @@ object PatientPrintHtmlGenerator {
                 <div class="data-point">
                     <span class="data-label">Blood Group</span>
                     <span class="data-value ${if (isRhNegative) "text-rose" else "text-navy"}">
-                        ${escapeHtml(patient.bloodGroupText ?: "-")}
+                        ${escapeHtml(patient.bloodGroupText?.takeUnless(String::isBlank) ?: "-")}
                         ${if (isRhNegative) """<span class="badge badge-danger">Rh negative</span>""" else ""}
                     </span>
                 </div>

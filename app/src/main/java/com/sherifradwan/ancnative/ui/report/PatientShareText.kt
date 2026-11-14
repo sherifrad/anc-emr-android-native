@@ -6,6 +6,7 @@ import com.sherifradwan.ancnative.model.datingSummaryOf
 import com.sherifradwan.ancnative.model.datingTextRows
 import com.sherifradwan.ancnative.model.datingDiscordanceLine
 import com.sherifradwan.ancnative.model.formatDmy
+import com.sherifradwan.ancnative.ui.formatWeightKg
 import java.time.LocalDate
 
 private fun medicationShareLine(m: DemoMedicationRecord): String {
@@ -46,7 +47,7 @@ internal fun patientShareText(patient: DemoPatient, asOf: LocalDate = LocalDate.
     datingDiscordanceLine(patient.dating, summary)?.let { sb.appendLine(it) }
     sb.appendLine()
 
-    val visits = patient.visits.sortedByDescending { reportSortKey(it.date) }
+    val visits = reportVisits(patient, Int.MAX_VALUE).rows.asReversed()
     sb.appendLine("VISITS (${visits.size})")
     if (visits.isEmpty()) {
         sb.appendLine("No visits recorded.")
@@ -54,14 +55,15 @@ internal fun patientShareText(patient: DemoPatient, asOf: LocalDate = LocalDate.
         visits.forEach { visit ->
             val sbLine = StringBuilder("• ${reportDate(visit.date)}")
             if (!visit.bloodPressure.isNullOrBlank()) sbLine.append(" | BP: ${visit.bloodPressure}")
-            if (!visit.weight.isNullOrBlank()) sbLine.append(" | Wt: ${visit.weight}")
+            val formattedWeight = formatWeightKg(visit.weight)
+            if (formattedWeight != null) sbLine.append(" | Wt: $formattedWeight")
             sbLine.append(" | ${visitText(visit)}")
             sb.appendLine(sbLine.toString())
         }
     }
     sb.appendLine()
 
-    val scans = patient.ultrasoundScans.sortedByDescending { reportSortKey(it.date) }
+    val scans = reportScans(patient, Int.MAX_VALUE).rows.asReversed()
     sb.appendLine("ULTRASOUND SCANS (${scans.size})")
     if (scans.isEmpty()) {
         sb.appendLine("No scans recorded.")
@@ -83,7 +85,7 @@ internal fun patientShareText(patient: DemoPatient, asOf: LocalDate = LocalDate.
     }
     sb.appendLine()
 
-    val labs = patient.labInvestigations.sortedByDescending { reportSortKey(it.date) }
+    val labs = reportLabs(patient, Int.MAX_VALUE).rows
     sb.appendLine("LABORATORY RESULTS (${labs.size})")
     if (labs.isEmpty()) {
         sb.appendLine("No laboratory results recorded.")

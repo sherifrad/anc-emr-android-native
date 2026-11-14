@@ -391,4 +391,65 @@ class ExportFixRoundTwoTest {
         assertTrue(s.contains("Status: Delivered"))
         assertFalse(s.contains("Gestational age today"))
     }
+
+    @Test
+    fun p4_shareTextWeightsUseFormatWeightKg() {
+        val patient = basePatient(
+            visits = listOf(
+                visit("v1", "2026-10-01", weight = "68.5"),
+                visit("v2", "2026-10-02", weight = "63 kg"),
+                visit("v3", "2026-10-03", weight = ""),
+            ),
+        )
+        val s = share(patient)
+        assertTrue(s.contains(" | Wt: 68.5 kg | "))
+        assertTrue(s.contains(" | Wt: 63 kg | "))
+        assertFalse(s.contains("kg kg"))
+        val blankWeightLine = s.lines().first { it.contains("03/10/2026") }
+        assertFalse(blankWeightLine.contains("Wt:"))
+    }
+
+    @Test
+    fun p5_shareTextVisitsNewestFirstWithUndatedFirst() {
+        val patient = basePatient(
+            visits = listOf(
+                visit("v1", "2026-01-10"),
+                visit("v2", "2026-03-01"),
+                visit("v3", "2026-02-01"),
+                visit("v4", ""),
+            ),
+        )
+        val s = share(patient)
+        val visitsBlock = s.substringAfter("VISITS (").substringBefore("ULTRASOUND SCANS")
+        val undated = visitsBlock.indexOf("Not recorded")
+        val march = visitsBlock.indexOf("01/03/2026")
+        val february = visitsBlock.indexOf("01/02/2026")
+        val january = visitsBlock.indexOf("10/01/2026")
+        assertTrue(undated >= 0)
+        assertTrue(march >= 0)
+        assertTrue(february >= 0)
+        assertTrue(january >= 0)
+        assertTrue(undated < march)
+        assertTrue(march < february)
+        assertTrue(february < january)
+    }
+
+    @Test
+    fun p6_blankIdentityFieldsPrintPlaceholders() {
+        val h = html(basePatient(bloodGroupText = ""))
+        assertTrue(h.contains("Phone: Unspecified"))
+        val bloodGroupCell = h
+            .substringAfter("<span class=\"data-label\">Blood Group</span>")
+            .substringBefore("</div>")
+        assertEquals("-", bloodGroupCell.replace(Regex("<[^>]*>"), "").trim())
+    }
+
+    @Test
+    fun p123_printCssKeepsTablesWholeAndMarginsOnEverySheet() {
+        val h = html(basePatient())
+        val printCss = h.substringAfter("@media print")
+        assertTrue(printCss.contains("table-header-group"))
+        assertTrue(printCss.contains("@page { size: A4; margin: 8mm 0 8mm 0; }"))
+        assertFalse(printCss.contains("tr, .section-box"))
+    }
 }
