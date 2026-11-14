@@ -1,0 +1,153 @@
+FILE: app/src/androidTest/java/com/sherifradwan/ancnative/OwnerFixesUiTest.kt
+<<<<<<< SEARCH
+=======
+package com.sherifradwan.ancnative
+
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertDoesNotExist
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.sherifradwan.ancnative.model.DemoFixtures
+import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.state.AncEvent
+import com.sherifradwan.ancnative.state.AncRoute
+import com.sherifradwan.ancnative.state.AncState
+import com.sherifradwan.ancnative.storage.VaultState
+import com.sherifradwan.ancnative.ui.AncTheme
+import com.sherifradwan.ancnative.ui.PatientListScreen
+import com.sherifradwan.ancnative.ui.patienthub.tabs.OverviewTab
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@RunWith(AndroidJUnit4::class)
+class OwnerFixesUiTest {
+    @get:Rule
+    val compose = createAndroidComposeRule<MainActivity>()
+
+    private val events = mutableListOf<AncEvent>()
+
+    private fun show(patient: DemoPatient) {
+        compose.activity.runOnUiThread {
+            compose.activity.setContent {
+                AncTheme {
+                    Box(Modifier.width(360.dp)) {
+                        OverviewTab(
+                            patient = patient,
+                            canEdit = true,
+                            onEvent = {},
+                            onAddAttachment = {},
+                            onViewAttachment = {},
+                        )
+                    }
+                }
+            }
+        }
+        compose.waitForIdle()
+    }
+
+    private fun showList(patients: List<DemoPatient>) {
+        compose.activity.runOnUiThread {
+            compose.activity.setContent {
+                AncTheme {
+                    PatientListScreen(
+                        state = AncState(
+                            patients = patients,
+                            vaultState = VaultState.Unlocked(sessionEpoch = 1L),
+                            route = AncRoute.PatientList,
+                        ),
+                        onEvent = { events += it },
+                    )
+                }
+            }
+        }
+        compose.waitForIdle()
+    }
+
+    // ORACLE-F1
+    @Test
+    fun previousPregnanciesSectionHidesObstetricNotes() {
+        val patient = DemoFixtures.patients
+            .first { it.previousPregnancies.isNotEmpty() }
+            .copy(obstetricNotes = "Delivery planned at City Hospital QZ9")
+        show(patient)
+        compose.onAllNodesWithText("Delivery planned at City Hospital QZ9").assertCountEquals(0)
+        compose.onAllNodesWithText("Obstetric notes").assertCountEquals(0)
+    }
+
+    // ORACLE-F3
+    @Test
+    fun dueDateBoxIsDisplayedTallAndWithinNarrowViewport() {
+        val patient = DemoFixtures.patients.first { it.dating != null }
+        show(patient)
+        val box = compose.onNodeWithTag("dueDateBox")
+        box.assertIsDisplayed()
+        val bounds = box.getUnclippedBoundsInRoot()
+        assertTrue(bounds.height >= 48.dp)
+        assertTrue(bounds.width <= 360.dp)
+    }
+
+    // ORACLE-F5c
+    @Test
+    fun archivedFilterAndDashboardSort() {
+        val base = DemoFixtures.patients.first()
+        val alpha = base.copy(
+            id = "a1",
+            caseId = "A1",
+            displayName = "Alpha",
+            createdAt = "2026-11-01T08:00:00Z",
+        )
+        val bravo = base.copy(
+            id = "b2",
+            caseId = "B2",
+            displayName = "Bravo",
+            createdAt = "2026-11-05T08:00:00Z",
+        )
+        val charlie = base.copy(
+            id = "c3",
+            caseId = "C3",
+            displayName = "Charlie",
+            createdAt = "2026-11-09T08:00:00Z",
+            status = "archived",
+        )
+        showList(listOf(alpha, bravo, charlie))
+
+        compose.onNodeWithTag("patient-C3").assertDoesNotExist()
+        compose.onNodeWithTag("riskFilter-archived").assertIsDisplayed()
+        compose.onNodeWithTag("riskFilter-archived").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("patient-C3").assertIsDisplayed()
+        compose.onNodeWithTag("patient-A1").assertDoesNotExist()
+
+        compose.onNodeWithTag("riskFilter-all").performClick()
+        compose.waitForIdle()
+        val bravoTop = compose.onNodeWithTag("patient-B2").getUnclippedBoundsInRoot().top
+        val alphaTop = compose.onNodeWithTag("patient-A1").getUnclippedBoundsInRoot().top
+        assertTrue(bravoTop < alphaTop)
+
+        val sortButton = compose.onNodeWithTag("dashboardSortButton")
+        assertTrue(sortButton.getUnclippedBoundsInRoot().height >= 48.dp)
+        sortButton.assert(hasText("Sort", substring = true))
+        sortButton.performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("dashboardSort-name").performClick()
+        compose.waitForIdle()
+        val alphaTopAfterNameSort = compose.onNodeWithTag("patient-A1").getUnclippedBoundsInRoot().top
+        val bravoTopAfterNameSort = compose.onNodeWithTag("patient-B2").getUnclippedBoundsInRoot().top
+        assertTrue(alphaTopAfterNameSort < bravoTopAfterNameSort)
+    }
+}
+>>>>>>> REPLACE

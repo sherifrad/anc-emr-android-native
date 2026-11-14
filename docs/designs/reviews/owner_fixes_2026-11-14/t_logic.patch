@@ -1,0 +1,308 @@
+FILE: app/src/test/java/com/sherifradwan/ancnative/ui/OwnerFixesLogicTest.kt
+<<<<<<< SEARCH
+=======
+package com.sherifradwan.ancnative.ui
+
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import com.sherifradwan.ancnative.model.DemoPatient
+import com.sherifradwan.ancnative.model.DemoPatientDating
+import com.sherifradwan.ancnative.model.DemoVisit
+import com.sherifradwan.ancnative.model.SevereBpAttention
+import com.sherifradwan.ancnative.ui.components.ZOOM_MAX
+import com.sherifradwan.ancnative.ui.components.ZOOM_MIN
+import com.sherifradwan.ancnative.ui.components.clampOffset
+import com.sherifradwan.ancnative.ui.components.clampZoom
+import com.sherifradwan.ancnative.ui.components.nextZoomOnDoubleTap
+import com.sherifradwan.ancnative.ui.patienthub.components.ClinicalAttentionLevel
+import com.sherifradwan.ancnative.ui.patienthub.components.clinicalAttentionLevel
+import java.time.LocalDate
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class OwnerFixesLogicTest {
+
+    private val noDating = DemoPatientDating(
+        patientId = "p",
+        lmpDate = null,
+        ultrasoundEdd = null,
+        agreedEdd = null,
+        datingMethod = null,
+        notes = null,
+    )
+
+    private fun patient(
+        id: String,
+        delivered: Boolean = false,
+        displayName: String = id,
+        status: String = "active",
+        createdAt: String = "",
+        visits: List<DemoVisit> = emptyList(),
+        dating: DemoPatientDating = noDating,
+    ) = DemoPatient(
+        id = id,
+        caseId = id,
+        displayName = displayName,
+        dateOfBirth = null,
+        phone = null,
+        visits = visits,
+        delivered = delivered,
+        status = status,
+        createdAt = createdAt,
+        dating = dating,
+    )
+
+    private fun archived(id: String, delivered: Boolean = false) =
+        patient(id = id, delivered = delivered, status = "archived")
+
+    private fun visitOn(id: String, date: String) = DemoVisit(
+        id = id,
+        date = date,
+        bloodPressure = null,
+        weight = null,
+        findings = null,
+        notes = null,
+        revision = 1,
+        isSyntheticEdit = false,
+    )
+
+    private fun datingOn(patientId: String, agreedEdd: String) = DemoPatientDating(
+        patientId = patientId,
+        lmpDate = null,
+        ultrasoundEdd = null,
+        agreedEdd = agreedEdd,
+        datingMethod = null,
+        notes = null,
+    )
+
+    @Test
+    fun severeBpIsCriticalWhateverTheText() {
+        val severe = SevereBpAttention(bloodPressure = "160/110", date = "2026-11-10")
+        assertEquals(ClinicalAttentionLevel.CRITICAL, clinicalAttentionLevel("NOTE: reviewed in triage", severe))
+        assertEquals(ClinicalAttentionLevel.CRITICAL, clinicalAttentionLevel(null, severe))
+        assertEquals(ClinicalAttentionLevel.CRITICAL, clinicalAttentionLevel("Previous cesarean", severe))
+    }
+
+    @Test
+    fun blankAttentionTextIsNote() {
+        assertEquals(ClinicalAttentionLevel.NOTE, clinicalAttentionLevel(null, null))
+        assertEquals(ClinicalAttentionLevel.NOTE, clinicalAttentionLevel("", null))
+        assertEquals(ClinicalAttentionLevel.NOTE, clinicalAttentionLevel("   ", null))
+    }
+
+    @Test
+    fun criticalPrefixesAreCritical() {
+        assertEquals(ClinicalAttentionLevel.CRITICAL, clinicalAttentionLevel("CRITICAL: severe headache", null))
+        assertEquals(ClinicalAttentionLevel.CRITICAL, clinicalAttentionLevel("[critical] low platelets", null))
+    }
+
+    @Test
+    fun alertAndWarningPrefixesAreAlert() {
+        assertEquals(ClinicalAttentionLevel.ALERT, clinicalAttentionLevel("ALERT: bleeding", null))
+        assertEquals(ClinicalAttentionLevel.ALERT, clinicalAttentionLevel("WARNING: high blood pressure", null))
+    }
+
+    @Test
+    fun explicitNotePrefixIsNote() {
+        assertEquals(ClinicalAttentionLevel.NOTE, clinicalAttentionLevel("NOTE: patient called", null))
+    }
+
+    @Test
+    fun freeTextWithoutPrefixIsAlert() {
+        assertEquals(ClinicalAttentionLevel.ALERT, clinicalAttentionLevel("Previous cesarean", null))
+        assertEquals(ClinicalAttentionLevel.ALERT, clinicalAttentionLevel("Alertness training", null))
+    }
+
+    @Test
+    fun zoomLimitsAreOneAndFive() {
+        assertEquals(1f, ZOOM_MIN, 0f)
+        assertEquals(5f, ZOOM_MAX, 0f)
+    }
+
+    @Test
+    fun clampZoomKeepsScaleInsideTheLimits() {
+        assertEquals(1f, clampZoom(0.2f), 0f)
+        assertEquals(5f, clampZoom(9f), 0f)
+        assertEquals(2.5f, clampZoom(2.5f), 0f)
+    }
+
+    @Test
+    fun clampOffsetIsZeroAtFitScaleForAnyInput() {
+        val container = Size(300f, 200f)
+        assertEquals(Offset.Zero, clampOffset(Offset(999f, -999f), 1f, container))
+        assertEquals(Offset.Zero, clampOffset(Offset(-40f, 12f), 1f, container))
+    }
+
+    @Test
+    fun clampOffsetLimitsEachAxisToHalfTheOverflow() {
+        val container = Size(300f, 200f)
+        assertEquals(Offset(300f, -200f), clampOffset(Offset(999f, -999f), 3f, container))
+        assertEquals(Offset(-300f, 200f), clampOffset(Offset(-999f, 999f), 3f, container))
+    }
+
+    @Test
+    fun clampOffsetKeepsAnOffsetInsideTheLimit() {
+        val container = Size(300f, 200f)
+        assertEquals(Offset(120f, -80f), clampOffset(Offset(120f, -80f), 3f, container))
+    }
+
+    @Test
+    fun doubleTapTogglesBetweenFitAndTwoAndAHalf() {
+        assertEquals(2.5f, nextZoomOnDoubleTap(1f), 0f)
+        assertEquals(2.5f, nextZoomOnDoubleTap(1.9f), 0f)
+        assertEquals(1f, nextZoomOnDoubleTap(2f), 0f)
+        assertEquals(1f, nextZoomOnDoubleTap(4f), 0f)
+    }
+
+    private val visible = listOf(
+        patient(id = "active"),
+        patient(id = "delivered", delivered = true),
+        archived(id = "archived"),
+        archived(id = "archivedDelivered", delivered = true),
+    )
+
+    @Test
+    fun archivedFilterShowsBothArchivedPatientsWithAndWithoutSearch() {
+        assertEquals(
+            listOf("archived", "archivedDelivered"),
+            dashboardPatients(visible, "archived", searching = false).map { it.id },
+        )
+        assertEquals(
+            listOf("archived", "archivedDelivered"),
+            dashboardPatients(visible, "archived", searching = true).map { it.id },
+        )
+    }
+
+    @Test
+    fun deliveredFilterSkipsArchivedAndDeliveredPatients() {
+        assertEquals(listOf("delivered"), dashboardPatients(visible, "delivered", searching = false).map { it.id })
+        assertEquals(listOf("delivered"), dashboardPatients(visible, "delivered", searching = true).map { it.id })
+    }
+
+    @Test
+    fun allFilterWithSearchFindsEveryPatient() {
+        assertEquals(
+            listOf("active", "delivered", "archived", "archivedDelivered"),
+            dashboardPatients(visible, "all", searching = true).map { it.id },
+        )
+    }
+
+    @Test
+    fun everyOtherFilterShowsOnlyActivePatients() {
+        listOf("all", "high", "medium", "low").forEach { filter ->
+            assertEquals(listOf("active"), dashboardPatients(visible, filter, searching = false).map { it.id })
+        }
+        listOf("high", "medium", "low").forEach { filter ->
+            assertEquals(listOf("active"), dashboardPatients(visible, filter, searching = true).map { it.id })
+        }
+    }
+
+    private fun mixedList() = listOf(
+        patient(
+            id = "added-late",
+            createdAt = "2026-11-01T08:00:00Z",
+            displayName = "Zara",
+            visits = listOf(visitOn("v1", "2026-10-01")),
+            dating = datingOn("added-late", "2027-01-05"),
+        ),
+        archived(id = "archived-case", delivered = true),
+        patient(
+            id = "added-early",
+            createdAt = "2026-01-05T08:00:00Z",
+            displayName = "amira",
+            dating = datingOn("added-early", "2026-12-15"),
+        ),
+        archived(id = "archived-open"),
+        patient(
+            id = "fresh",
+            createdAt = "2026-11-10T08:00:00Z",
+            displayName = "Basma",
+            visits = listOf(visitOn("v2", "2026-11-08"), visitOn("v3", "2026-11-09")),
+        ),
+    )
+
+    @Test
+    fun newestAddedSortsNewestFirstAndKeepsUndatedInOriginalOrder() {
+        val patients = listOf(
+            patient(id = "old", createdAt = "2026-01-01T08:00:00Z"),
+            patient(id = "missing"),
+            patient(id = "new", createdAt = "2026-11-01T08:00:00Z"),
+            patient(id = "broken", createdAt = "not-a-date"),
+            patient(id = "mid", createdAt = "2026-06-01T08:00:00Z"),
+        )
+        val sorted = sortDashboardPatients(patients, DashboardSort.NEWEST_ADDED).map { it.id }
+        assertEquals(listOf("new", "mid", "old", "missing", "broken"), sorted)
+    }
+
+    @Test
+    fun recentlySeenSortsByNewestVisitThenByNewestAdded() {
+        val patients = listOf(
+            patient(id = "older-visit", createdAt = "2026-01-01T08:00:00Z", visits = listOf(visitOn("v1", "2026-09-01"))),
+            patient(id = "no-visit-old", createdAt = "2026-02-01T08:00:00Z"),
+            patient(id = "newest-visit", createdAt = "2026-01-01T08:00:00Z", visits = listOf(visitOn("v2", "2026-11-02"))),
+            patient(id = "no-visit-new", createdAt = "2026-10-01T08:00:00Z"),
+            patient(
+                id = "mid-visit",
+                createdAt = "2026-01-01T08:00:00Z",
+                visits = listOf(visitOn("v3", "2026-05-05"), visitOn("v4", "2026-10-10")),
+            ),
+        )
+        val sorted = sortDashboardPatients(patients, DashboardSort.RECENTLY_SEEN).map { it.id }
+        assertEquals(listOf("newest-visit", "mid-visit", "older-visit", "no-visit-new", "no-visit-old"), sorted)
+    }
+
+    @Test
+    fun nameSortIsCaseInsensitiveAndPutsBlankNamesLast() {
+        val patients = listOf(
+            patient(id = "carol", displayName = "carol"),
+            patient(id = "blank", displayName = "   "),
+            patient(id = "alice", displayName = "Alice"),
+            patient(id = "bob", displayName = "bob"),
+        )
+        val sorted = sortDashboardPatients(patients, DashboardSort.NAME).map { it.id }
+        assertEquals(listOf("alice", "bob", "carol", "blank"), sorted)
+    }
+
+    @Test
+    fun dueDateSortPutsTheEarliestEddFirstAndPatientsWithoutEddLast() {
+        val today = LocalDate.of(2026, 11, 14)
+        val patients = listOf(
+            patient(id = "late", createdAt = "2026-05-01T08:00:00Z", dating = datingOn("late", "2027-03-01")),
+            patient(id = "no-edd-old", createdAt = "2026-01-01T08:00:00Z"),
+            patient(id = "soon", createdAt = "2026-01-01T08:00:00Z", dating = datingOn("soon", "2026-12-01")),
+            patient(id = "no-edd-new", createdAt = "2026-10-01T08:00:00Z"),
+        )
+        val sorted = sortDashboardPatients(patients, DashboardSort.DUE_DATE, today).map { it.id }
+        assertEquals(listOf("soon", "late", "no-edd-new", "no-edd-old"), sorted)
+    }
+
+    @Test
+    fun everySortKeepsTheSamePatients() {
+        val patients = mixedList()
+        val expected = patients.map { it.id }.sorted()
+        DashboardSort.values().forEach { sort ->
+            val actual = sortDashboardPatients(patients, sort).map { it.id }
+            assertEquals(expected, actual.sorted())
+            assertEquals(patients.size, actual.size)
+        }
+    }
+
+    @Test
+    fun sortingAnEmptyListGivesAnEmptyList() {
+        DashboardSort.values().forEach { sort ->
+            assertTrue(sortDashboardPatients(emptyList(), sort).isEmpty())
+        }
+    }
+
+    @Test
+    fun dueDateSortWorksWithTheDefaultToday() {
+        val patients = listOf(
+            patient(id = "with-edd", dating = datingOn("with-edd", "2027-01-01")),
+            patient(id = "without-edd"),
+        )
+        val sorted = sortDashboardPatients(patients, DashboardSort.DUE_DATE).map { it.id }
+        assertEquals(listOf("with-edd", "without-edd"), sorted)
+    }
+}
+>>>>>>> REPLACE

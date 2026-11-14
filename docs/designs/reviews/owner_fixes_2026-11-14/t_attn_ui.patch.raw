@@ -1,0 +1,174 @@
+```
+FILE: app/src/androidTest/java/com/sherifradwan/ancnative/ClinicalAttentionUiTest.kt
+<<<<<<< SEARCH
+=======
+package com.sherifradwan.ancnative
+
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.assertDoesNotExist
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.unit.dp
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.sherifradwan.ancnative.model.*
+import com.sherifradwan.ancnative.ui.AncTheme
+import com.sherifradwan.ancnative.ui.patienthub.*
+import com.sherifradwan.ancnative.ui.patienthub.components.*
+import java.time.LocalDate
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@RunWith(AndroidJUnit4::class)
+class ClinicalAttentionUiTest {
+    @get:Rule
+    val compose = createAndroidComposeRule<MainActivity>()
+
+    private val sampleSevereBp = SevereBpAttention(165, 105, LocalDate.now())
+
+    private fun showCard(attention: String?, severeBp: SevereBpAttention?, onEdit: (() -> Unit)?) {
+        compose.activity.runOnUiThread {
+            compose.activity.setContent {
+                AncTheme {
+                    ClinicalAttentionCard(attention = attention, severeBp = severeBp, onEdit = onEdit)
+                }
+            }
+        }
+        compose.waitForIdle()
+    }
+
+    private fun showDialog(currentAttention: String, onSave: (String) -> Unit) {
+        compose.activity.runOnUiThread {
+            compose.activity.setContent {
+                AncTheme {
+                    ClinicalAttentionDialog(
+                        currentAttention = currentAttention,
+                        onDismiss = {},
+                        onSave = onSave,
+                    )
+                }
+            }
+        }
+        compose.waitForIdle()
+    }
+
+    @Test
+    fun cardShowsEntriesInDisplayOrder() {
+        showCard(attention = "CRITICAL: Severe PIH\nNOTE: Prefers female doctor", severeBp = null, onEdit = {})
+        compose.onNodeWithTag("clinicalAttentionCard").assertExists().assertIsDisplayed()
+        compose.onNodeWithTag("attentionEntry-0").assertExists()
+        compose.onNodeWithTag("attentionEntry-1").assertExists()
+        compose.onNodeWithText("Critical").assertIsDisplayed()
+        compose.onNodeWithText("Note").assertIsDisplayed()
+        compose.onNodeWithTag("editClinicalAttention").assertExists()
+    }
+
+    @Test
+    fun cardEmptyStateShowsAddAction() {
+        showCard(attention = null, severeBp = null, onEdit = {})
+        compose.onNodeWithText("No clinical attention recorded").assertIsDisplayed()
+        compose.onNodeWithTag("addClinicalAttention").assertExists()
+    }
+
+    @Test
+    fun cardHiddenWhenEmptyAndNotEditable() {
+        showCard(attention = null, severeBp = null, onEdit = null)
+        compose.onNodeWithTag("clinicalAttentionCard").assertDoesNotExist()
+    }
+
+    @Test
+    fun cardShowsSevereBpAsFirstEntry() {
+        showCard(attention = "NOTE: Prefers female doctor", severeBp = sampleSevereBp, onEdit = null)
+        compose.onNodeWithTag("attentionEntry-0").assertExists()
+        compose.onNodeWithText("Severe BP", substring = true).assertExists()
+    }
+
+    @Test
+    fun dialogAddsEntryAndSavesComposedString() {
+        var saved: String? = null
+        showDialog(currentAttention = "NOTE: Prefers female doctor", onSave = { saved = it })
+        compose.onNodeWithTag("attentionText-0").assertExists()
+        compose.onNodeWithTag("attentionAdd").assertIsNotEnabled()
+        compose.onNodeWithTag("attentionNewText").performTextInput("Severe PIH")
+        compose.onNodeWithTag("attentionNewLevel").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("attentionLevelOption-critical").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("attentionAdd").assertIsEnabled()
+        compose.onNodeWithTag("attentionAdd").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("attentionText-1").assertExists()
+        compose.onNodeWithTag("attentionSave").performClick()
+        compose.waitForIdle()
+        assertEquals("NOTE: Prefers female doctor\nCRITICAL: Severe PIH", saved)
+    }
+
+    @Test
+    fun dialogDeleteKeepsOnlyRemainingEntry() {
+        var saved: String? = null
+        showDialog(currentAttention = "ALERT: Anaemia\nNOTE: x", onSave = { saved = it })
+        compose.onNodeWithTag("attentionText-0").assertExists()
+        compose.onNodeWithTag("attentionDelete-0").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("attentionText-1").assertDoesNotExist()
+        compose.onNodeWithTag("attentionSave").performClick()
+        compose.waitForIdle()
+        assertEquals("NOTE: x", saved)
+    }
+
+    @Test
+    fun stripShowsOverflowAndOpensDialog() {
+        var opened = false
+        compose.activity.runOnUiThread {
+            compose.activity.setContent {
+                AncTheme {
+                    CompactClinicalAttentionStrip(
+                        attention = "ALERT: Anaemia\nNOTE: x",
+                        severeBp = null,
+                        onOpenDialog = { opened = true },
+                        modifier = Modifier,
+                    )
+                }
+            }
+        }
+        compose.waitForIdle()
+        val strip = compose.onNodeWithTag("clinicalAttentionStrip")
+        strip.assertExists().assertIsDisplayed()
+        compose.onNodeWithText("+1", substring = true).assertExists()
+        assertTrue(strip.getUnclippedBoundsInRoot().height >= 48.dp)
+        strip.performClick()
+        compose.waitForIdle()
+        assertTrue(opened)
+    }
+
+    @Test
+    fun stripHiddenWhenNoEntriesAndNoSevereBp() {
+        compose.activity.runOnUiThread {
+            compose.activity.setContent {
+                AncTheme {
+                    CompactClinicalAttentionStrip(
+                        attention = null,
+                        severeBp = null,
+                        onOpenDialog = {},
+                        modifier = Modifier,
+                    )
+                }
+            }
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag("clinicalAttentionStrip").assertDoesNotExist()
+    }
+}
+>>>>>>> REPLACE
+```
+
+Two assumptions the builder should verify against the real source, since I had no file access: `SevereBpAttention(165, 105, LocalDate.now())` (positional systolic/diastolic/date guess) and that `ClinicalAttentionDialog` / `CompactClinicalAttentionStrip` live in the `ui.patienthub` or `ui.patienthub.components` packages (hence the star imports). If `SevereBpAttention` has a different constructor, adjust that one line.
