@@ -680,4 +680,7 @@
     <string name="edit_diagnostic_panel">Edit diagnostic panel</string>
     <string name="create_diagnostic_panel">Create New Diagnostic Panel</string>
     <string name="edit_medication_title">Edit medication</string>
+    <string name="status_delivered">Delivered</string>
+    <string name="field_label_due_date">Due date</string>
+    <string name="field_label_bp">BP</string>
 </resources>

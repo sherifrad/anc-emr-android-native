@@ -142,6 +142,46 @@ val DeliveryPostpartumDarkBg = Color(0xFF500724)
 val DeliveryPostpartumDarkBorder = Color(0xFF9D174D)
 val DeliveryPostpartumDarkText = Color(0xFFFBCFE8)
 
+// Record redesign (mock D): field families. Light.
+val FieldPatientBg = Color(0xFFE9EEF8)
+val FieldPatientLabel = Color(0xFF23407A)
+val FieldObstetricBg = Color(0xFFE3F0EE)
+val FieldObstetricLabel = Color(0xFF1D5149)
+val FieldBackgroundBg = Color(0xFFF1EDE4)
+val FieldBackgroundLabel = Color(0xFF594A2C)
+val FieldDeliveryBg = Color(0xFFEEE9F5)
+val FieldDeliveryLabel = Color(0xFF4E3A78)
+// Dark.
+val FieldPatientDarkBg = Color(0xFF22304A)
+val FieldPatientDarkLabel = Color(0xFFAFC6F2)
+val FieldObstetricDarkBg = Color(0xFF1D3836)
+val FieldObstetricDarkLabel = Color(0xFF9FD6CC)
+val FieldBackgroundDarkBg = Color(0xFF36301F)
+val FieldBackgroundDarkLabel = Color(0xFFE0CFA6)
+val FieldDeliveryDarkBg = Color(0xFF2E2842)
+val FieldDeliveryDarkLabel = Color(0xFFCDBDF0)
+
+// Record redesign: status tags. Light.
+val StatusIncompleteBg = Color(0xFFEEF0F4)
+val StatusIncompleteBorder = Color(0xFF8C95A5)
+val StatusIncompleteText = Color(0xFF333B4A)
+val StatusModerateBg = Color(0xFFFCEFD6)
+val StatusModerateBorder = Color(0xFFB9862C)
+val StatusModerateText = Color(0xFF6E4708)
+val StatusHighBg = Color(0xFFFBE3E3)
+val StatusHighBorder = Color(0xFFC26666)
+val StatusHighText = Color(0xFF8E1B1B)
+// Dark.
+val StatusIncompleteDarkBg = Color(0xFF2A3140)
+val StatusIncompleteDarkBorder = Color(0xFF5B6578)
+val StatusIncompleteDarkText = Color(0xFFD5DAE3)
+val StatusModerateDarkBg = Color(0xFF3A2A0E)
+val StatusModerateDarkBorder = Color(0xFFA87A2A)
+val StatusModerateDarkText = Color(0xFFF3D18E)
+val StatusHighDarkBg = Color(0xFF4A1616)
+val StatusHighDarkBorder = Color(0xFFB45A5A)
+val StatusHighDarkText = Color(0xFFFFC9C9)
+
 /**
  * Visual Distinction Design System (VDDS) Semantic Tokens
  * Provides domain-scoped container, border, and accent colors for clinical cards and alert banners.
