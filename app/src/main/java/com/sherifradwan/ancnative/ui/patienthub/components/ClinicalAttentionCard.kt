@@ -49,7 +49,7 @@ fun ClinicalAttentionCard(
     val overallColors = attentionColors(overallLevel)
 
     ClinicalGroupSection(
-        title = "Clinical attention",
+        title = stringResource(R.string.clinical_attention),
         icon = if (overallLevel == ClinicalAttentionLevel.NOTE) Icons.Default.Info else Icons.Default.Warning,
         iconTint = overallColors.accent,
         iconBgColor = overallColors.container,

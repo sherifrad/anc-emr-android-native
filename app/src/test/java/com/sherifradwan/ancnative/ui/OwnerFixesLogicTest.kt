@@ -178,9 +178,9 @@ class OwnerFixesLogicTest {
     }
 
     @Test
-    fun allFilterWithSearchFindsEveryPatient() {
+    fun allFilterWithSearchNeverShowsArchivedPatients() {
         assertEquals(
-            listOf("active", "delivered", "archived", "archivedDelivered"),
+            listOf("active", "delivered"),
             dashboardPatients(visible, "all", searching = true).map { it.id },
         )
     }

@@ -23,14 +23,14 @@ fun parseAttentionEntries(raw: String?): List<AttentionEntry> {
 
             if (match != null) {
                 level = match.level
-                cleanText = stripBullet(match.remainder)
+                currentLevel = level
+                cleanText = match.remainder.trim()
             } else {
                 level = currentLevel ?: ClinicalAttentionLevel.ALERT
                 cleanText = lineWithoutBullet
             }
 
             if (cleanText.isNotBlank()) {
-                currentLevel = level
                 result.add(AttentionEntry(level = level, text = cleanText))
             }
         }
@@ -41,13 +41,10 @@ fun parseAttentionEntries(raw: String?): List<AttentionEntry> {
 }
 
 fun composeAttentionEntries(entries: List<AttentionEntry>): String {
-    val valid = entries
-        .filter { it.text.isNotBlank() }
-        .take(ATTENTION_ENTRIES_MAX)
+    val valid = entries.filter { it.text.isNotBlank() }
     if (valid.isEmpty()) return ""
     return valid.joinToString("\n") { entry ->
-        val text = entry.text.trim().take(ATTENTION_TEXT_MAX)
-        "${entry.level.name}: $text"
+        "${entry.level.name}: ${entry.text.trim()}"
     }
 }
 
@@ -105,9 +102,5 @@ private fun matchPrefix(line: String): PrefixMatch? {
 }
 
 private fun stripBullet(text: String): String {
-    var t = text.trim()
-    while (t.isNotEmpty() && (t.startsWith('•') || t.startsWith('-') || t.startsWith('*'))) {
-        t = t.substring(1).trim()
-    }
-    return t
+    return text.trim().replaceFirst(Regex("^[•\\-*]+\\s+"), "")
 }

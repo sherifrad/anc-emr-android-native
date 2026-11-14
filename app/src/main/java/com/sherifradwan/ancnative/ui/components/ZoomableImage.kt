@@ -8,7 +8,6 @@ import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -78,7 +77,6 @@ fun ZoomableImage(
         offset = Offset.Zero
     }
 
-    val isZoomed = scale > 1f
     val resetLabel = stringResource(R.string.zoom_reset)
 
     Box(
@@ -103,56 +101,50 @@ fun ZoomableImage(
                     }
                 )
             }
-            .pointerInput(resetKey, isZoomed) {
-                if (isZoomed) {
-                    detectTransformGestures { centroid, pan, zoom, _ ->
-                        val oldScale = scale
-                        val newScale = clampZoom(oldScale * zoom)
-                        scale = newScale
-                        if (newScale > 1f) {
-                            val center = Offset(containerSize.width / 2f, containerSize.height / 2f)
-                            val newOffset = if (zoom != 1f) {
-                                (offset + centroid - center) * (newScale / oldScale) - (centroid - center) + pan
+            .pointerInput(resetKey) {
+                awaitEachGesture {
+                    awaitFirstDown(requireUnconsumed = false)
+                    do {
+                        val event = awaitPointerEvent()
+                        val downCount = event.changes.count { it.pressed }
+                        if (downCount >= 2) {
+                            val zoom = event.calculateZoom()
+                            val pan = event.calculatePan()
+                            val centroid = event.calculateCentroid()
+                            val shouldTransform = if (scale > 1f) {
+                                zoom != 1f || pan != Offset.Zero
                             } else {
-                                offset + pan
+                                zoom != 1f
                             }
-                            offset = clampOffset(newOffset, newScale, containerSize)
-                        } else {
-                            offset = Offset.Zero
-                        }
-                    }
-                } else {
-                    awaitEachGesture {
-                        awaitFirstDown(requireUnconsumed = false)
-                        do {
-                            val event = awaitPointerEvent()
-                            val downCount = event.changes.count { it.pressed }
-                            if (downCount >= 2) {
-                                val zoom = event.calculateZoom()
-                                val pan = event.calculatePan()
-                                val centroid = event.calculateCentroid()
-                                if (zoom != 1f || pan != Offset.Zero) {
-                                    val oldScale = scale
-                                    val newScale = clampZoom(oldScale * zoom)
-                                    scale = newScale
-                                    if (newScale > 1f) {
-                                        val center = Offset(containerSize.width / 2f, containerSize.height / 2f)
-                                        val newOffset = if (zoom != 1f) {
-                                            (offset + centroid - center) * (newScale / oldScale) - (centroid - center) + pan
-                                        } else {
-                                            offset + pan
-                                        }
-                                        offset = clampOffset(newOffset, newScale, containerSize)
+                            if (shouldTransform) {
+                                val oldScale = scale
+                                val newScale = clampZoom(oldScale * zoom)
+                                scale = newScale
+                                if (newScale > 1f) {
+                                    val center = Offset(containerSize.width / 2f, containerSize.height / 2f)
+                                    val newOffset = if (zoom != 1f) {
+                                        (offset + centroid - center) * (newScale / oldScale) - (centroid - center) + pan
                                     } else {
-                                        offset = Offset.Zero
+                                        offset + pan
                                     }
-                                    event.changes.forEach {
-                                        if (it.positionChanged()) it.consume()
-                                    }
+                                    offset = clampOffset(newOffset, newScale, containerSize)
+                                } else {
+                                    offset = Offset.Zero
+                                }
+                                event.changes.forEach {
+                                    if (it.positionChanged()) it.consume()
                                 }
                             }
-                        } while (event.changes.any { it.pressed })
-                    }
+                        } else if (downCount == 1 && scale > 1f) {
+                            val pan = event.calculatePan()
+                            if (pan != Offset.Zero) {
+                                offset = clampOffset(offset + pan, scale, containerSize)
+                                event.changes.forEach {
+                                    if (it.positionChanged()) it.consume()
+                                }
+                            }
+                        }
+                    } while (event.changes.any { it.pressed })
                 }
             },
         contentAlignment = Alignment.Center,

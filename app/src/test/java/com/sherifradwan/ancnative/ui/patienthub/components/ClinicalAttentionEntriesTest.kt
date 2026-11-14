@@ -95,27 +95,30 @@ class ClinicalAttentionEntriesTest {
     }
 
     @Test
-    fun composeCutsTextToMaxLength() {
+    fun composeNeverDropsExistingTextOrEntries() {
         val longText = "x".repeat(ATTENTION_TEXT_MAX + 20)
-        val result = composeAttentionEntries(
-            listOf(AttentionEntry(ClinicalAttentionLevel.ALERT, longText))
-        )
-        assertEquals("ALERT: " + "x".repeat(ATTENTION_TEXT_MAX), result)
-        val parsed = parseAttentionEntries(result)
-        assertEquals(1, parsed.size)
-        assertEquals(ATTENTION_TEXT_MAX, parsed[0].text.length)
+        val entries = (1..ATTENTION_ENTRIES_MAX + 3).map { i ->
+            AttentionEntry(ClinicalAttentionLevel.ALERT, if (i == 1) longText else "entry $i")
+        }
+        val parsed = parseAttentionEntries(composeAttentionEntries(entries))
+        assertEquals(ATTENTION_ENTRIES_MAX + 3, parsed.size)
+        assertEquals(longText, parsed[0].text)
     }
 
     @Test
-    fun composeKeepsAtMostMaxEntries() {
-        val entries = (1..ATTENTION_ENTRIES_MAX + 3).map { i ->
-            AttentionEntry(ClinicalAttentionLevel.ALERT, "entry $i")
-        }
-        val result = composeAttentionEntries(entries)
-        val parsed = parseAttentionEntries(result)
-        assertEquals(ATTENTION_ENTRIES_MAX, parsed.size)
-        assertEquals("entry 1", parsed[0].text)
-        assertEquals("entry ${ATTENTION_ENTRIES_MAX}", parsed[ATTENTION_ENTRIES_MAX - 1].text)
+    fun leadingMinusInTextSurvivesTheRoundTrip() {
+        val e = listOf(
+            AttentionEntry(ClinicalAttentionLevel.CRITICAL, "-ve Rh, needs anti-D"),
+            AttentionEntry(ClinicalAttentionLevel.ALERT, "---"),
+        )
+        assertEquals(e, parseAttentionEntries(composeAttentionEntries(e)))
+    }
+
+    @Test
+    fun loneLevelHeaderLineSetsTheLevelOfFollowingLines() {
+        val parsed = parseAttentionEntries("NOTE: Prefers female doctor\n[CRITICAL]\n\u2022 Placenta previa")
+        val previa = parsed.first { it.text == "Placenta previa" }
+        assertEquals(ClinicalAttentionLevel.CRITICAL, previa.level)
     }
 
     @Test

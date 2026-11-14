@@ -183,7 +183,7 @@ fun projectDashboardRow(patient: DemoPatient): PatientDashboardRowProjection {
 fun dashboardPatients(visible: List<DemoPatient>, filter: String, searching: Boolean): List<DemoPatient> = when {
     filter == "archived" -> visible.filter { it.status == "archived" }
     filter == "delivered" -> visible.filter { it.delivered && it.status != "archived" }
-    filter == "all" && searching -> visible
+    filter == "all" && searching -> visible.filter { it.status != "archived" }
     else -> visible.filter { !it.delivered && it.status != "archived" }
 }
 
@@ -221,7 +221,7 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
     val archivedCount = remember(visibleList) { visibleList.count { it.status == "archived" } }
     val deliveredCount = remember(visibleList) { visibleList.count { it.delivered && it.status != "archived" } }
     val activePatients = remember(visibleList) { visibleList.filter { !it.delivered && it.status != "archived" } }
-    val allCount = activePatients.size
+    val allCount = if (searching) visibleList.count { it.status != "archived" } else activePatients.size
     val highRiskCount = remember(activePatients) { activePatients.count { isHighRisk(it.riskLevel) } }
     val mediumRiskCount = remember(activePatients) { activePatients.count { parseRiskTier(it.riskLevel) == PatientRiskTier.MEDIUM } }
     val lowRiskCount = remember(activePatients) { activePatients.count { parseRiskTier(it.riskLevel) == PatientRiskTier.LOW } }
@@ -408,7 +408,6 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
                 }
             }
 
-            // Sort Control
             item {
                 var sortMenuExpanded by remember { mutableStateOf(false) }
                 Box {
@@ -425,6 +424,7 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
                             style = MaterialTheme.typography.labelMedium,
                             maxLines = 1,
                             softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
                         )
                         Spacer(Modifier.width(4.dp))
                         Icon(

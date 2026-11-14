@@ -506,17 +506,24 @@ fun CompactClinicalAttentionStrip(
     val sorted = remember(entries) { sortedForDisplay(entries) }
     val firstEntry = sorted.firstOrNull()
 
-    val bpText = if (severeBp != null) "Severe BP: ${severeBp.bloodPressure} (${severeBp.date})" else null
-    val firstEntryText = firstEntry?.text
-
-    val baseText = when {
-        bpText != null && firstEntryText != null -> "$bpText • $firstEntryText"
-        bpText != null -> bpText
-        firstEntryText != null -> firstEntryText
-        else -> ""
+    val bpText = if (severeBp != null) {
+        stringResource(R.string.bp_attention_severe, severeBp.bloodPressure, severeBp.date)
+    } else {
+        null
+    }
+    val firstEntryText = if (firstEntry != null) {
+        val levelLabel = when (firstEntry.level) {
+            ClinicalAttentionLevel.CRITICAL -> stringResource(R.string.attention_level_critical)
+            ClinicalAttentionLevel.ALERT -> stringResource(R.string.attention_level_alert)
+            ClinicalAttentionLevel.NOTE -> stringResource(R.string.attention_level_note)
+        }
+        "$levelLabel: ${firstEntry.text}"
+    } else {
+        null
     }
 
-    val remainingCount = if (firstEntry != null) (entries.size - 1).coerceAtLeast(0) else 0
+    val baseText = bpText ?: firstEntryText.orEmpty()
+    val remainingCount = if (severeBp != null) entries.size else (entries.size - 1).coerceAtLeast(0)
 
     Surface(
         onClick = onOpenDialog,
@@ -545,7 +552,7 @@ fun CompactClinicalAttentionStrip(
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = colors.content,
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )

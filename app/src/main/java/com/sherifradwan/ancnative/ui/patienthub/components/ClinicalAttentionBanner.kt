@@ -125,7 +125,7 @@ fun attentionColors(level: ClinicalAttentionLevel): AttentionColors {
         ClinicalAttentionLevel.NOTE -> AttentionColors(
             container = MaterialTheme.colorScheme.surfaceContainerHigh,
             content = MaterialTheme.colorScheme.onSurface,
-            accent = MaterialTheme.colorScheme.outline,
+            accent = MaterialTheme.colorScheme.onSurfaceVariant,
             border = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
             borderWidth = 1.dp,
         )
@@ -176,6 +176,11 @@ fun ClinicalAttentionBanner(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
+                        val levelLabel = when (level) {
+                            ClinicalAttentionLevel.CRITICAL -> stringResource(R.string.attention_level_critical)
+                            ClinicalAttentionLevel.ALERT -> stringResource(R.string.attention_level_alert)
+                            ClinicalAttentionLevel.NOTE -> stringResource(R.string.attention_level_note)
+                        }
                         Icon(
                             imageVector = if (level == ClinicalAttentionLevel.NOTE) Icons.Default.Info else Icons.Default.Warning,
                             contentDescription = null,
@@ -183,11 +188,16 @@ fun ClinicalAttentionBanner(
                             modifier = Modifier.size(16.dp),
                         )
                         Text(
-                            text = stringResource(R.string.clinical_attention).uppercase(),
+                            text = levelLabel,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = colors.accent,
-                            letterSpacing = 0.8.sp,
+                        )
+                        Text(
+                            text = stringResource(R.string.clinical_attention),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.accent,
                         )
                     }
                     IconButton(
@@ -231,6 +241,7 @@ fun ClinicalAttentionDialog(
     currentAttention: String,
     onDismiss: () -> Unit,
     onSave: (String) -> Unit,
+    canEdit: Boolean = true,
 ) {
     val entries = remember(currentAttention) {
         parseAttentionEntries(currentAttention).toMutableStateList()
@@ -255,11 +266,118 @@ fun ClinicalAttentionDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
+                if (entries.isEmpty() && !canEdit) {
+                    Text(
+                        text = stringResource(R.string.no_clinical_attention_recorded),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
                 entries.forEachIndexed { index, entry ->
+                    if (canEdit) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 2.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                AttentionLevelDropdown(
+                                    selectedLevel = entry.level,
+                                    onLevelSelected = { newLvl ->
+                                        entries[index] = entry.copy(level = newLvl)
+                                    },
+                                    modifier = Modifier.testTag("attentionLevel-$index"),
+                                )
+                                IconButton(
+                                    onClick = { entries.removeAt(index) },
+                                    modifier = Modifier
+                                        .minimumTouchTarget()
+                                        .testTag("attentionDelete-$index"),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = stringResource(R.string.delete_attention_entry),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                }
+                            }
+                            OutlinedTextField(
+                                value = entry.text,
+                                onValueChange = { updated ->
+                                    val clean = updated.replace("\n", " ").take(ATTENTION_TEXT_MAX)
+                                    entries[index] = entry.copy(text = clean)
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("attentionText-$index"),
+                                singleLine = false,
+                                maxLines = 3,
+                                supportingText = {
+                                    Text(
+                                        text = "${entry.text.length}/$ATTENTION_TEXT_MAX",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                },
+                            )
+                        }
+                    } else {
+                        val colors = attentionColors(entry.level)
+                        val levelLabel = when (entry.level) {
+                            ClinicalAttentionLevel.CRITICAL -> stringResource(R.string.attention_level_critical)
+                            ClinicalAttentionLevel.ALERT -> stringResource(R.string.attention_level_alert)
+                            ClinicalAttentionLevel.NOTE -> stringResource(R.string.attention_level_note)
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = colors.container,
+                            border = BorderStroke(colors.borderWidth, colors.border),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("attentionEntry-$index"),
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.Top,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Icon(
+                                    imageVector = if (entry.level == ClinicalAttentionLevel.NOTE) Icons.Default.Info else Icons.Default.Warning,
+                                    contentDescription = null,
+                                    tint = colors.accent,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                                Text(
+                                    text = levelLabel,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = colors.accent,
+                                )
+                                Text(
+                                    text = entry.text,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = colors.content,
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (canEdit) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 2.dp),
+                            .padding(top = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Row(
@@ -268,40 +386,47 @@ fun ClinicalAttentionDialog(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             AttentionLevelDropdown(
-                                selectedLevel = entry.level,
-                                onLevelSelected = { newLvl ->
-                                    entries[index] = entry.copy(level = newLvl)
-                                },
-                                modifier = Modifier.testTag("attentionLevel-$index"),
+                                selectedLevel = newLevel,
+                                onLevelSelected = { newLevel = it },
+                                modifier = Modifier.testTag("attentionNewLevel"),
                             )
-                            IconButton(
-                                onClick = { entries.removeAt(index) },
+                            Button(
+                                onClick = {
+                                    if (newText.isNotBlank() && entries.count { it.text.isNotBlank() } < ATTENTION_ENTRIES_MAX) {
+                                        entries.add(AttentionEntry(newLevel, newText.trim()))
+                                        newText = ""
+                                        newLevel = ClinicalAttentionLevel.ALERT
+                                    }
+                                },
+                                enabled = newText.isNotBlank() && entries.count { it.text.isNotBlank() } < ATTENTION_ENTRIES_MAX,
                                 modifier = Modifier
-                                    .minimumTouchTarget()
-                                    .testTag("attentionDelete-$index"),
+                                    .heightIn(min = 48.dp)
+                                    .testTag("attentionAdd"),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    contentColor = MaterialTheme.colorScheme.onSurface,
+                                    disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.4f),
+                                    disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                                ),
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = stringResource(R.string.delete_attention_entry),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(20.dp),
-                                )
+                                Text(stringResource(R.string.attention_add_button))
                             }
                         }
                         OutlinedTextField(
-                            value = entry.text,
+                            value = newText,
                             onValueChange = { updated ->
-                                val clean = updated.replace("\n", " ").take(ATTENTION_TEXT_MAX)
-                                entries[index] = entry.copy(text = clean)
+                                newText = updated.replace("\n", " ").take(ATTENTION_TEXT_MAX)
                             },
+                            enabled = entries.count { it.text.isNotBlank() } < ATTENTION_ENTRIES_MAX,
+                            label = { Text(stringResource(R.string.attention_new_label)) },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .testTag("attentionText-$index"),
+                                .testTag("attentionNewText"),
                             singleLine = false,
                             maxLines = 3,
                             supportingText = {
                                 Text(
-                                    text = "${entry.text.length}/$ATTENTION_TEXT_MAX",
+                                    text = "${newText.length}/$ATTENTION_TEXT_MAX",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -309,101 +434,59 @@ fun ClinicalAttentionDialog(
                         )
                     }
                 }
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        AttentionLevelDropdown(
-                            selectedLevel = newLevel,
-                            onLevelSelected = { newLevel = it },
-                            modifier = Modifier.testTag("attentionNewLevel"),
-                        )
-                        Button(
-                            onClick = {
-                                if (newText.isNotBlank() && entries.size < ATTENTION_ENTRIES_MAX) {
-                                    entries.add(AttentionEntry(newLevel, newText.trim()))
-                                    newText = ""
-                                    newLevel = ClinicalAttentionLevel.ALERT
-                                }
-                            },
-                            enabled = newText.isNotBlank() && entries.size < ATTENTION_ENTRIES_MAX,
-                            modifier = Modifier
-                                .heightIn(min = 48.dp)
-                                .testTag("attentionAdd"),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                contentColor = MaterialTheme.colorScheme.onSurface,
-                                disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.4f),
-                                disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-                            ),
-                        ) {
-                            Text(stringResource(R.string.attention_add_button))
-                        }
-                    }
-                    OutlinedTextField(
-                        value = newText,
-                        onValueChange = { updated ->
-                            newText = updated.replace("\n", " ").take(ATTENTION_TEXT_MAX)
-                        },
-                        label = { Text(stringResource(R.string.attention_new_label)) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("attentionNewText"),
-                        singleLine = false,
-                        maxLines = 3,
-                        supportingText = {
-                            Text(
-                                text = "${newText.length}/$ATTENTION_TEXT_MAX",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        },
-                    )
-                }
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    val all = entries.toMutableList()
-                    if (newText.isNotBlank() && all.size < ATTENTION_ENTRIES_MAX) {
-                        all.add(AttentionEntry(newLevel, newText.trim()))
-                    }
-                    onSave(composeAttentionEntries(all))
-                },
-                modifier = Modifier
-                    .heightIn(min = 48.dp)
-                    .testTag("attentionSave"),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                ),
-            ) {
-                Text(stringResource(R.string.save))
+            if (canEdit) {
+                Button(
+                    onClick = {
+                        val all = entries.filter { it.text.isNotBlank() }.toMutableList()
+                        if (newText.isNotBlank() && all.size < ATTENTION_ENTRIES_MAX) {
+                            all.add(AttentionEntry(newLevel, newText.trim()))
+                        }
+                        onSave(composeAttentionEntries(all))
+                    },
+                    modifier = Modifier
+                        .heightIn(min = 48.dp)
+                        .testTag("attentionSave"),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
+                ) {
+                    Text(stringResource(R.string.save))
+                }
+            } else {
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .heightIn(min = 48.dp)
+                        .testTag("attentionClose"),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
+                ) {
+                    Text(stringResource(R.string.close))
+                }
             }
         },
-        dismissButton = {
-            OutlinedButton(
-                onClick = onDismiss,
-                modifier = Modifier
-                    .heightIn(min = 48.dp)
-                    .testTag("attentionCancel"),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            ) {
-                Text(stringResource(R.string.cancel))
+        dismissButton = if (canEdit) {
+            {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .heightIn(min = 48.dp)
+                        .testTag("attentionCancel"),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                ) {
+                    Text(stringResource(R.string.cancel))
+                }
             }
-        },
+        } else null,
     )
 }
 

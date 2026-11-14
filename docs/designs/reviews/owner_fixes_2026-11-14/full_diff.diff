@@ -1,0 +1,1779 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt
+index 89d9471..fc9ffa4 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt
+@@ -1,5 +1,6 @@
+ package com.sherifradwan.ancnative.ui
+ 
++import com.sherifradwan.ancnative.ui.components.ZoomableImage
+ import androidx.compose.foundation.Image
+ import androidx.compose.foundation.background
+ import androidx.compose.foundation.border
+@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.Row
+ import androidx.compose.foundation.layout.fillMaxSize
+ import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.foundation.layout.height
++import androidx.compose.foundation.layout.heightIn
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.layout.size
+ import androidx.compose.foundation.shape.CircleShape
+@@ -181,22 +183,22 @@ fun ClinicalAttachmentViewerDialog(
+                 Box(
+                     modifier = Modifier
+                         .fillMaxWidth()
+-                        .height(380.dp)
++                        .heightIn(min = 380.dp)
+                         .clip(RoundedCornerShape(12.dp))
+                         .background(Color.Black)
+                         .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp)),
+                     contentAlignment = Alignment.Center,
+                 ) {
+                     if (loadedBitmap != null) {
+-                        Image(
++                        ZoomableImage(
+                             bitmap = loadedBitmap,
+                             contentDescription = attachmentDisplayTitle(
+                                 attachment.title,
+                                 AttachmentCategories.localizedName(attachment.category),
+                                 attachment.capturedAt,
+                             ),
++                            resetKey = attachment.id,
+                             modifier = Modifier.fillMaxSize(),
+-                            contentScale = ContentScale.Fit,
+                         )
+                     } else {
+                         Column(
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/DashboardSort.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/DashboardSort.kt
+new file mode 100644
+index 0000000..c3cecbf
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/DashboardSort.kt
+@@ -0,0 +1,69 @@
++package com.sherifradwan.ancnative.ui
++
++import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.model.datingSummaryOf
++import com.sherifradwan.ancnative.model.parseIsoDateOrNull
++import java.time.Instant
++import java.time.LocalDate
++
++enum class DashboardSort {
++    NEWEST_ADDED,
++    RECENTLY_SEEN,
++    NAME,
++    DUE_DATE,
++}
++
++private fun parseCreatedAtOrNull(raw: String?): Instant? {
++    if (raw.isNullOrBlank()) return null
++    return try {
++        Instant.parse(raw)
++    } catch (_: Exception) {
++        null
++    }
++}
++
++fun sortDashboardPatients(
++    patients: List<DemoPatient>,
++    sort: DashboardSort,
++    today: LocalDate = LocalDate.now(),
++): List<DemoPatient> {
++    if (patients.isEmpty()) return emptyList()
++    return when (sort) {
++        DashboardSort.NEWEST_ADDED -> {
++            val (dated, undated) = patients.partition { parseCreatedAtOrNull(it.createdAt) != null }
++            dated.sortedByDescending { parseCreatedAtOrNull(it.createdAt) } + undated
++        }
++        DashboardSort.RECENTLY_SEEN -> {
++            val preSorted = sortDashboardPatients(patients, DashboardSort.NEWEST_ADDED, today)
++            val withVisit = mutableListOf<Pair<DemoPatient, LocalDate>>()
++            val withoutVisit = mutableListOf<DemoPatient>()
++            for (patient in preSorted) {
++                val latestVisitDate = patient.visits.mapNotNull { parseIsoDateOrNull(it.date) }.maxOrNull()
++                if (latestVisitDate != null) {
++                    withVisit.add(patient to latestVisitDate)
++                } else {
++                    withoutVisit.add(patient)
++                }
++            }
++            withVisit.sortedByDescending { it.second }.map { it.first } + withoutVisit
++        }
++        DashboardSort.NAME -> {
++            val (named, blank) = patients.partition { it.displayName.isNotBlank() }
++            named.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.displayName.trim() }) + blank
++        }
++        DashboardSort.DUE_DATE -> {
++            val preSorted = sortDashboardPatients(patients, DashboardSort.NEWEST_ADDED, today)
++            val withEdd = mutableListOf<Pair<DemoPatient, LocalDate>>()
++            val withoutEdd = mutableListOf<DemoPatient>()
++            for (patient in preSorted) {
++                val edd = datingSummaryOf(patient, today).edd
++                if (edd != null) {
++                    withEdd.add(patient to edd)
++                } else {
++                    withoutEdd.add(patient)
++                }
++            }
++            withEdd.sortedBy { it.second }.map { it.first } + withoutEdd
++        }
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt
+index fdc76b8..0d8b009 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt
+@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
+ import androidx.compose.foundation.layout.fillMaxSize
+ import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.foundation.layout.height
++import androidx.compose.foundation.layout.heightIn
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.layout.size
+ import androidx.compose.foundation.layout.width
+@@ -31,6 +32,7 @@ import androidx.compose.material.icons.filled.Archive
+ import androidx.compose.material.icons.filled.Clear
+ import androidx.compose.material.icons.filled.Edit
+ import androidx.compose.material.icons.filled.EditNote
++import androidx.compose.material.icons.filled.KeyboardArrowDown
+ import androidx.compose.material.icons.filled.MoreVert
+ import androidx.compose.material.icons.filled.Search
+ import androidx.compose.material.icons.filled.Unarchive
+@@ -38,6 +40,8 @@ import androidx.compose.material.icons.filled.Warning
+ import androidx.compose.material3.Button
+ import androidx.compose.material3.Card
+ import androidx.compose.material3.CardDefaults
++import androidx.compose.material3.DropdownMenu
++import androidx.compose.material3.DropdownMenuItem
+ import androidx.compose.material3.ExperimentalMaterial3Api
+ import androidx.compose.material3.FilterChip
+ import androidx.compose.material3.FilterChipDefaults
+@@ -46,6 +50,7 @@ import androidx.compose.material3.Icon
+ import androidx.compose.material3.IconButton
+ import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.ModalBottomSheet
++import androidx.compose.material3.OutlinedButton
+ import androidx.compose.material3.OutlinedTextField
+ import androidx.compose.material3.Surface
+ import androidx.compose.material3.Text
+@@ -55,6 +60,7 @@ import androidx.compose.runtime.Composable
+ import androidx.compose.runtime.getValue
+ import androidx.compose.runtime.mutableStateOf
+ import androidx.compose.runtime.remember
++import androidx.compose.runtime.saveable.rememberSaveable
+ import androidx.compose.runtime.setValue
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+@@ -175,36 +181,50 @@ fun projectDashboardRow(patient: DemoPatient): PatientDashboardRowProjection {
+  * still finds them so nobody is lost.
+  */
+ fun dashboardPatients(visible: List<DemoPatient>, filter: String, searching: Boolean): List<DemoPatient> = when {
+-    filter == "delivered" -> visible.filter { it.delivered }
+-    searching -> visible
+-    else -> visible.filter { !it.delivered }
++    filter == "archived" -> visible.filter { it.status == "archived" }
++    filter == "delivered" -> visible.filter { it.delivered && it.status != "archived" }
++    filter == "all" && searching -> visible
++    else -> visible.filter { !it.delivered && it.status != "archived" }
++}
++
++@Composable
++private fun dashboardSortLabel(sort: DashboardSort): String = when (sort) {
++    DashboardSort.NEWEST_ADDED -> stringResource(R.string.dashboard_sort_newest)
++    DashboardSort.RECENTLY_SEEN -> stringResource(R.string.dashboard_sort_recent)
++    DashboardSort.NAME -> stringResource(R.string.dashboard_sort_name)
++    DashboardSort.DUE_DATE -> stringResource(R.string.dashboard_sort_due)
+ }
+ 
+ @OptIn(ExperimentalMaterial3Api::class)
+ @Composable
+ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
+     val visibleList = remember(state.patients, state.searchQuery) { state.visiblePatients() }
+-    var riskFilter by remember { mutableStateOf("all") } // "all", "high", "medium", "low"
++    var riskFilter by rememberSaveable { mutableStateOf("all") }
++    var currentSort by rememberSaveable { mutableStateOf(DashboardSort.NEWEST_ADDED) }
+     var sheetPatient by remember { mutableStateOf<DemoPatient?>(null) }
+ 
+     val searching = state.searchQuery.isNotBlank()
+-    val mainList = remember(visibleList, searching) { dashboardPatients(visibleList, "all", searching) }
+-    val deliveredList = remember(visibleList) { dashboardPatients(visibleList, "delivered", false) }
+-    val filteredList = remember(mainList, deliveredList, riskFilter) {
++    val filteredList = remember(visibleList, riskFilter, searching) {
+         when (riskFilter) {
+-            "delivered" -> deliveredList
+-            "high" -> mainList.filter { isHighRisk(it.riskLevel) }
+-            "medium" -> mainList.filter { parseRiskTier(it.riskLevel) == PatientRiskTier.MEDIUM }
+-            "low" -> mainList.filter { parseRiskTier(it.riskLevel) == PatientRiskTier.LOW }
+-            else -> mainList
++            "archived" -> dashboardPatients(visibleList, "archived", searching)
++            "delivered" -> dashboardPatients(visibleList, "delivered", searching)
++            "high" -> dashboardPatients(visibleList, "high", searching).filter { isHighRisk(it.riskLevel) }
++            "medium" -> dashboardPatients(visibleList, "medium", searching).filter { parseRiskTier(it.riskLevel) == PatientRiskTier.MEDIUM }
++            "low" -> dashboardPatients(visibleList, "low", searching).filter { parseRiskTier(it.riskLevel) == PatientRiskTier.LOW }
++            else -> dashboardPatients(visibleList, "all", searching)
+         }
+     }
++    val sortedList = remember(filteredList, currentSort) {
++        sortDashboardPatients(filteredList, currentSort)
++    }
+ 
+-    val allCount = mainList.size
+-    val deliveredCount = deliveredList.size
+-    val highRiskCount = remember(mainList) { mainList.count { isHighRisk(it.riskLevel) } }
+-    val mediumRiskCount = remember(mainList) { mainList.count { parseRiskTier(it.riskLevel) == PatientRiskTier.MEDIUM } }
+-    val lowRiskCount = remember(mainList) { mainList.count { parseRiskTier(it.riskLevel) == PatientRiskTier.LOW } }
++    val archivedCount = remember(visibleList) { visibleList.count { it.status == "archived" } }
++    val deliveredCount = remember(visibleList) { visibleList.count { it.delivered && it.status != "archived" } }
++    val activePatients = remember(visibleList) { visibleList.filter { !it.delivered && it.status != "archived" } }
++    val allCount = activePatients.size
++    val highRiskCount = remember(activePatients) { activePatients.count { isHighRisk(it.riskLevel) } }
++    val mediumRiskCount = remember(activePatients) { activePatients.count { parseRiskTier(it.riskLevel) == PatientRiskTier.MEDIUM } }
++    val lowRiskCount = remember(activePatients) { activePatients.count { parseRiskTier(it.riskLevel) == PatientRiskTier.LOW } }
+ 
+     val activeCount = remember(state.patients) { state.patients.count { it.status != "archived" && !it.delivered } }
+ 
+@@ -375,11 +395,86 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
+                         ),
+                         modifier = Modifier.testTag("riskFilter-delivered"),
+                     )
++                    FilterChip(
++                        selected = riskFilter == "archived",
++                        onClick = { riskFilter = "archived" },
++                        label = { Text("${stringResource(R.string.patients_filter_archived)} ($archivedCount)") },
++                        colors = FilterChipDefaults.filterChipColors(
++                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
++                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
++                        ),
++                        modifier = Modifier.testTag("riskFilter-archived"),
++                    )
++                }
++            }
++
++            // Sort Control
++            item {
++                var sortMenuExpanded by remember { mutableStateOf(false) }
++                Box {
++                    OutlinedButton(
++                        onClick = { sortMenuExpanded = true },
++                        modifier = Modifier
++                            .minimumTouchTarget()
++                            .heightIn(min = 48.dp)
++                            .testTag("dashboardSortButton"),
++                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
++                    ) {
++                        Text(
++                            text = stringResource(R.string.dashboard_sort_format, dashboardSortLabel(currentSort)),
++                            style = MaterialTheme.typography.labelMedium,
++                            maxLines = 1,
++                            softWrap = false,
++                        )
++                        Spacer(Modifier.width(4.dp))
++                        Icon(
++                            Icons.Default.KeyboardArrowDown,
++                            contentDescription = null,
++                            modifier = Modifier.size(16.dp),
++                        )
++                    }
++                    DropdownMenu(
++                        expanded = sortMenuExpanded,
++                        onDismissRequest = { sortMenuExpanded = false },
++                    ) {
++                        DropdownMenuItem(
++                            text = { Text(stringResource(R.string.dashboard_sort_newest)) },
++                            onClick = {
++                                currentSort = DashboardSort.NEWEST_ADDED
++                                sortMenuExpanded = false
++                            },
++                            modifier = Modifier.testTag("dashboardSort-newest"),
++                        )
++                        DropdownMenuItem(
++                            text = { Text(stringResource(R.string.dashboard_sort_recent)) },
++                            onClick = {
++                                currentSort = DashboardSort.RECENTLY_SEEN
++                                sortMenuExpanded = false
++                            },
++                            modifier = Modifier.testTag("dashboardSort-recent"),
++                        )
++                        DropdownMenuItem(
++                            text = { Text(stringResource(R.string.dashboard_sort_name)) },
++                            onClick = {
++                                currentSort = DashboardSort.NAME
++                                sortMenuExpanded = false
++                            },
++                            modifier = Modifier.testTag("dashboardSort-name"),
++                        )
++                        DropdownMenuItem(
++                            text = { Text(stringResource(R.string.dashboard_sort_due)) },
++                            onClick = {
++                                currentSort = DashboardSort.DUE_DATE
++                                sortMenuExpanded = false
++                            },
++                            modifier = Modifier.testTag("dashboardSort-due"),
++                        )
++                    }
+                 }
+             }
+ 
+             // Patient List Items
+-            if (filteredList.isEmpty()) {
++            if (sortedList.isEmpty()) {
+                 item {
+                     Card(
+                         modifier = Modifier.fillMaxWidth(),
+@@ -395,7 +490,7 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
+                     }
+                 }
+             } else {
+-                items(filteredList, key = { it.id }) { patient ->
++                items(sortedList, key = { it.id }) { patient ->
+                     val projection = remember(patient) { projectDashboardRow(patient) }
+                     PatientDirectoryCard(
+                         patient = patient,
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt
+index ded0a1a..8a108c6 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt
+@@ -5,6 +5,7 @@ import com.sherifradwan.ancnative.R
+ import com.sherifradwan.ancnative.storage.BoundedBitmap
+ import com.sherifradwan.ancnative.storage.PatientAttachmentVault
+ import com.sherifradwan.ancnative.storage.scanPhotoFileName
++import com.sherifradwan.ancnative.ui.components.ZoomableImage
+ import android.net.Uri
+ import androidx.compose.foundation.Image
+ import androidx.compose.foundation.background
+@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.Spacer
+ import androidx.compose.foundation.layout.fillMaxSize
+ import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.foundation.layout.height
++import androidx.compose.foundation.layout.heightIn
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.layout.size
+ import androidx.compose.foundation.layout.width
+@@ -167,17 +169,17 @@ fun UltrasoundPhotoViewerDialog(
+                 Box(
+                     modifier = Modifier
+                         .fillMaxWidth()
+-                        .height(280.dp)
++                        .heightIn(min = 280.dp)
+                         .clip(RoundedCornerShape(14.dp))
+                         .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                         .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp)),
+                     contentAlignment = Alignment.Center,
+                 ) {
+                     if (loadedBitmap != null) {
+-                        Image(
++                        ZoomableImage(
+                             bitmap = loadedBitmap,
+                             contentDescription = "Ultrasound Scan Photo ${currentIndex + 1}",
+-                            contentScale = ContentScale.Fit,
++                            resetKey = currentIndex,
+                             modifier = Modifier.fillMaxSize(),
+                         )
+                     } else {
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/components/DueDateBox.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/components/DueDateBox.kt
+new file mode 100644
+index 0000000..e0da757
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/components/DueDateBox.kt
+@@ -0,0 +1,72 @@
++package com.sherifradwan.ancnative.ui.components
++
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.heightIn
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Surface
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.text.style.TextOverflow
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.ui.minimumTouchTarget
++
++@Composable
++fun DueDateBox(
++    label: String,
++    value: String?,
++    modifier: Modifier = Modifier,
++) {
++    val colorScheme = MaterialTheme.colorScheme
++    val isMissing = value.isNullOrBlank()
++    val displayValue = if (isMissing) stringResource(R.string.not_recorded) else value
++    val valueColor = if (isMissing) {
++        colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
++    } else {
++        colorScheme.onPrimaryContainer
++    }
++
++    Surface(
++        shape = RoundedCornerShape(12.dp),
++        color = colorScheme.primaryContainer,
++        modifier = modifier
++            .fillMaxWidth()
++            .minimumTouchTarget()
++            .heightIn(min = 48.dp)
++            .testTag("dueDateBox"),
++    ) {
++        Row(
++            modifier = Modifier
++                .fillMaxWidth()
++                .padding(horizontal = 12.dp, vertical = 8.dp),
++            horizontalArrangement = Arrangement.SpaceBetween,
++            verticalAlignment = Alignment.CenterVertically,
++        ) {
++            Text(
++                text = label,
++                style = MaterialTheme.typography.labelMedium,
++                color = colorScheme.onPrimaryContainer,
++                maxLines = 1,
++                overflow = TextOverflow.Ellipsis,
++                modifier = Modifier.weight(1f, fill = false),
++            )
++            Text(
++                text = displayValue,
++                style = MaterialTheme.typography.titleMedium,
++                fontWeight = FontWeight.Bold,
++                color = valueColor,
++                maxLines = 1,
++                overflow = TextOverflow.Ellipsis,
++            )
++        }
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/components/ZoomableImage.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/components/ZoomableImage.kt
+new file mode 100644
+index 0000000..385c9ba
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/components/ZoomableImage.kt
+@@ -0,0 +1,205 @@
++package com.sherifradwan.ancnative.ui.components
++
++import androidx.compose.foundation.BorderStroke
++import androidx.compose.foundation.Image
++import androidx.compose.foundation.gestures.awaitEachGesture
++import androidx.compose.foundation.gestures.awaitFirstDown
++import androidx.compose.foundation.gestures.calculateCentroid
++import androidx.compose.foundation.gestures.calculatePan
++import androidx.compose.foundation.gestures.calculateZoom
++import androidx.compose.foundation.gestures.detectTapGestures
++import androidx.compose.foundation.gestures.detectTransformGestures
++import androidx.compose.foundation.layout.Box
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.layout.sizeIn
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Surface
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.LaunchedEffect
++import androidx.compose.runtime.getValue
++import androidx.compose.runtime.mutableFloatStateOf
++import androidx.compose.runtime.mutableStateOf
++import androidx.compose.runtime.remember
++import androidx.compose.runtime.setValue
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.draw.clipToBounds
++import androidx.compose.ui.geometry.Offset
++import androidx.compose.ui.geometry.Size
++import androidx.compose.ui.graphics.ImageBitmap
++import androidx.compose.ui.graphics.graphicsLayer
++import androidx.compose.ui.input.pointer.pointerInput
++import androidx.compose.ui.input.pointer.positionChanged
++import androidx.compose.ui.layout.ContentScale
++import androidx.compose.ui.layout.onSizeChanged
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.semantics.contentDescription
++import androidx.compose.ui.semantics.semantics
++import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.R
++
++const val ZOOM_MIN = 1f
++const val ZOOM_MAX = 5f
++
++internal fun clampZoom(scale: Float): Float = scale.coerceIn(ZOOM_MIN, ZOOM_MAX)
++
++internal fun clampOffset(offset: Offset, scale: Float, container: Size): Offset {
++    if (scale <= 1f) return Offset.Zero
++    val maxX = (container.width * (scale - 1f) / 2f).coerceAtLeast(0f)
++    val maxY = (container.height * (scale - 1f) / 2f).coerceAtLeast(0f)
++    return Offset(
++        x = offset.x.coerceIn(-maxX, maxX),
++        y = offset.y.coerceIn(-maxY, maxY),
++    )
++}
++
++internal fun nextZoomOnDoubleTap(current: Float): Float {
++    return if (current < 2f) 2.5f else 1f
++}
++
++@Composable
++fun ZoomableImage(
++    bitmap: ImageBitmap,
++    contentDescription: String,
++    modifier: Modifier = Modifier,
++    resetKey: Any? = null,
++) {
++    var scale by remember(resetKey) { mutableFloatStateOf(1f) }
++    var offset by remember(resetKey) { mutableStateOf(Offset.Zero) }
++    var containerSize by remember { mutableStateOf(Size.Zero) }
++
++    LaunchedEffect(resetKey) {
++        scale = 1f
++        offset = Offset.Zero
++    }
++
++    val isZoomed = scale > 1f
++    val resetLabel = stringResource(R.string.zoom_reset)
++
++    Box(
++        modifier = modifier
++            .clipToBounds()
++            .onSizeChanged { size ->
++                containerSize = Size(size.width.toFloat(), size.height.toFloat())
++            }
++            .pointerInput(resetKey) {
++                detectTapGestures(
++                    onDoubleTap = { centroid ->
++                        val targetScale = nextZoomOnDoubleTap(scale)
++                        if (targetScale > 1f) {
++                            scale = targetScale
++                            val center = Offset(containerSize.width / 2f, containerSize.height / 2f)
++                            val diff = center - centroid
++                            offset = clampOffset(diff * (targetScale - 1f), targetScale, containerSize)
++                        } else {
++                            scale = 1f
++                            offset = Offset.Zero
++                        }
++                    }
++                )
++            }
++            .pointerInput(resetKey, isZoomed) {
++                if (isZoomed) {
++                    detectTransformGestures { centroid, pan, zoom, _ ->
++                        val oldScale = scale
++                        val newScale = clampZoom(oldScale * zoom)
++                        scale = newScale
++                        if (newScale > 1f) {
++                            val center = Offset(containerSize.width / 2f, containerSize.height / 2f)
++                            val newOffset = if (zoom != 1f) {
++                                (offset + centroid - center) * (newScale / oldScale) - (centroid - center) + pan
++                            } else {
++                                offset + pan
++                            }
++                            offset = clampOffset(newOffset, newScale, containerSize)
++                        } else {
++                            offset = Offset.Zero
++                        }
++                    }
++                } else {
++                    awaitEachGesture {
++                        awaitFirstDown(requireUnconsumed = false)
++                        do {
++                            val event = awaitPointerEvent()
++                            val downCount = event.changes.count { it.pressed }
++                            if (downCount >= 2) {
++                                val zoom = event.calculateZoom()
++                                val pan = event.calculatePan()
++                                val centroid = event.calculateCentroid()
++                                if (zoom != 1f || pan != Offset.Zero) {
++                                    val oldScale = scale
++                                    val newScale = clampZoom(oldScale * zoom)
++                                    scale = newScale
++                                    if (newScale > 1f) {
++                                        val center = Offset(containerSize.width / 2f, containerSize.height / 2f)
++                                        val newOffset = if (zoom != 1f) {
++                                            (offset + centroid - center) * (newScale / oldScale) - (centroid - center) + pan
++                                        } else {
++                                            offset + pan
++                                        }
++                                        offset = clampOffset(newOffset, newScale, containerSize)
++                                    } else {
++                                        offset = Offset.Zero
++                                    }
++                                    event.changes.forEach {
++                                        if (it.positionChanged()) it.consume()
++                                    }
++                                }
++                            }
++                        } while (event.changes.any { it.pressed })
++                    }
++                }
++            },
++        contentAlignment = Alignment.Center,
++    ) {
++        Image(
++            bitmap = bitmap,
++            contentDescription = contentDescription,
++            contentScale = ContentScale.Fit,
++            modifier = Modifier
++                .fillMaxSize()
++                .graphicsLayer {
++                    scaleX = scale
++                    scaleY = scale
++                    translationX = offset.x
++                    translationY = offset.y
++                },
++        )
++
++        if (scale > 1f) {
++            Surface(
++                onClick = {
++                    scale = 1f
++                    offset = Offset.Zero
++                },
++                shape = RoundedCornerShape(8.dp),
++                color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.9f),
++                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
++                modifier = Modifier
++                    .align(Alignment.BottomEnd)
++                    .padding(8.dp)
++                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
++                    .semantics { this.contentDescription = resetLabel }
++                    .testTag("zoomResetButton")
++                    .testTag("zoom_reset"),
++            ) {
++                Box(
++                    contentAlignment = Alignment.Center,
++                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
++                ) {
++                    Text(
++                        text = "1x",
++                        style = MaterialTheme.typography.labelMedium,
++                        fontWeight = FontWeight.Bold,
++                        color = MaterialTheme.colorScheme.onSurface,
++                    )
++                }
++            }
++        }
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
+index 32581f7..e9f811f 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
+@@ -27,6 +27,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
+ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+ import androidx.compose.material.icons.filled.Add
+ import androidx.compose.material.icons.filled.Edit
++import androidx.compose.material.icons.filled.Info
+ import androidx.compose.material.icons.filled.Print
+ import androidx.compose.material.icons.filled.Warning
+ import androidx.compose.material3.Button
+@@ -47,7 +48,13 @@ import androidx.compose.runtime.derivedStateOf
+ import com.sherifradwan.ancnative.ui.AllergyState
+ import com.sherifradwan.ancnative.ui.BloodGroupBadge
+ import com.sherifradwan.ancnative.ui.GestationalAgeBadge
++import com.sherifradwan.ancnative.ui.patienthub.components.ClinicalAttentionLevel
++import com.sherifradwan.ancnative.ui.patienthub.components.attentionColors
++import com.sherifradwan.ancnative.ui.patienthub.components.clinicalAttentionColors
++import com.sherifradwan.ancnative.ui.patienthub.components.clinicalAttentionLevel
+ import com.sherifradwan.ancnative.ui.patienthub.components.deliveredHeadline
++import com.sherifradwan.ancnative.ui.patienthub.components.parseAttentionEntries
++import com.sherifradwan.ancnative.ui.patienthub.components.sortedForDisplay
+ import com.sherifradwan.ancnative.ui.ObstetricParityBadge
+ import com.sherifradwan.ancnative.ui.TagHighRiskBg
+ import com.sherifradwan.ancnative.ui.TagHighRiskDarkBg
+@@ -147,7 +154,8 @@ fun PatientHubHeader(
+     val ga = patient.dating?.calculateGestationalAge()
+     val gaDiscordant = remember(patient) { datingSummaryOf(patient, LocalDate.now()).discordance != null }
+     val isRhNeg = isRhNegative(patient.bloodGroupText)
+-    val hasAttention = !patient.clinicalAttention.isNullOrBlank() || severeBp != null
++    val attentionEntries = remember(patient.clinicalAttention) { parseAttentionEntries(patient.clinicalAttention) }
++    val hasAttention = attentionEntries.isNotEmpty() || severeBp != null
+ 
+     Surface(
+         color = MaterialTheme.colorScheme.surface,
+@@ -490,28 +498,36 @@ fun CompactClinicalAttentionStrip(
+     onOpenDialog: () -> Unit,
+     modifier: Modifier = Modifier,
+ ) {
+-    val isSevere = severeBp != null
+-    val containerColor = if (isSevere) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.tertiaryContainer
+-    val contentColor = if (isSevere) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onTertiaryContainer
+-    val iconTint = if (isSevere) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary
++    val entries = remember(attention) { parseAttentionEntries(attention) }
++    if (entries.isEmpty() && severeBp == null) return
+ 
+-    val alertText = when {
+-        severeBp != null -> "Severe BP: ${severeBp.bloodPressure} (${severeBp.date})" +
+-            if (!attention.isNullOrBlank()) " • $attention" else ""
+-        !attention.isNullOrBlank() -> attention
++    val level = clinicalAttentionLevel(attention, severeBp)
++    val colors = attentionColors(level)
++    val sorted = remember(entries) { sortedForDisplay(entries) }
++    val firstEntry = sorted.firstOrNull()
++
++    val bpText = if (severeBp != null) "Severe BP: ${severeBp.bloodPressure} (${severeBp.date})" else null
++    val firstEntryText = firstEntry?.text
++
++    val baseText = when {
++        bpText != null && firstEntryText != null -> "$bpText • $firstEntryText"
++        bpText != null -> bpText
++        firstEntryText != null -> firstEntryText
+         else -> ""
+     }
+ 
++    val remainingCount = if (firstEntry != null) (entries.size - 1).coerceAtLeast(0) else 0
++
+     Surface(
+         onClick = onOpenDialog,
+         shape = RoundedCornerShape(8.dp),
+-        color = containerColor.copy(alpha = 0.85f),
+-        border = BorderStroke(1.dp, contentColor.copy(alpha = 0.25f)),
++        color = colors.container,
++        border = BorderStroke(colors.borderWidth, colors.border),
+         modifier = modifier
+             .fillMaxWidth()
+-            .heightIn(min = 36.dp)
+-            .testTag("clinicalAttentionBanner")
+-            .testTag("clinicalAttentionStrip"),
++            .heightIn(min = 48.dp)
++            .testTag("clinicalAttentionStrip")
++            .testTag("clinicalAttentionBanner"),
+     ) {
+         Row(
+             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+@@ -519,24 +535,32 @@ fun CompactClinicalAttentionStrip(
+             horizontalArrangement = Arrangement.spacedBy(8.dp),
+         ) {
+             Icon(
+-                imageVector = Icons.Default.Warning,
+-                contentDescription = "Alert Icon",
+-                tint = iconTint,
++                imageVector = if (level == ClinicalAttentionLevel.NOTE) Icons.Default.Info else Icons.Default.Warning,
++                contentDescription = null,
++                tint = colors.accent,
+                 modifier = Modifier.size(16.dp),
+             )
+             Text(
+-                text = alertText,
++                text = baseText,
+                 style = MaterialTheme.typography.labelMedium,
+                 fontWeight = FontWeight.SemiBold,
+-                color = contentColor,
+-                maxLines = 3,
++                color = colors.content,
++                maxLines = 1,
+                 overflow = TextOverflow.Ellipsis,
+                 modifier = Modifier.weight(1f),
+             )
++            if (remainingCount > 0) {
++                Text(
++                    text = stringResource(R.string.attention_remaining_count, remainingCount),
++                    style = MaterialTheme.typography.labelSmall,
++                    fontWeight = FontWeight.Bold,
++                    color = colors.accent,
++                )
++            }
+             Icon(
+                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+-                contentDescription = "View clinical alert details",
+-                tint = contentColor.copy(alpha = 0.7f),
++                contentDescription = null,
++                tint = colors.content.copy(alpha = 0.7f),
+                 modifier = Modifier.size(18.dp),
+             )
+         }
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
+index 5150d86..a56e46c 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt
+@@ -212,6 +212,7 @@ fun PatientHubScreen(
+                             onEvent = onEvent,
+                             onAddAttachment = { showAddAttachmentDialog = true },
+                             onViewAttachment = { viewingAttachment = it },
++                            onEditAttention = if (canModifyData) { { showAttentionDialog = true } } else null,
+                         )
+                     }
+                     PatientHubTab.VISITS -> {
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt
+index b119cd4..74f893c 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt
+@@ -1,26 +1,31 @@
+ package com.sherifradwan.ancnative.ui.patienthub.components
+ 
+ import androidx.compose.foundation.BorderStroke
+-import androidx.compose.foundation.clickable
+-import androidx.compose.ui.semantics.Role
+-import com.sherifradwan.ancnative.ui.isDarkTheme
+-import com.sherifradwan.ancnative.ui.minimumTouchTarget
+ import androidx.compose.foundation.layout.Arrangement
+ import androidx.compose.foundation.layout.Box
+ import androidx.compose.foundation.layout.Column
+ import androidx.compose.foundation.layout.Row
+ import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.heightIn
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.layout.size
+-import androidx.compose.foundation.layout.width
++import androidx.compose.foundation.layout.widthIn
++import androidx.compose.foundation.rememberScrollState
+ import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.foundation.verticalScroll
+ import androidx.compose.material.icons.Icons
++import androidx.compose.material.icons.filled.Delete
+ import androidx.compose.material.icons.filled.Edit
++import androidx.compose.material.icons.filled.Info
++import androidx.compose.material.icons.filled.KeyboardArrowDown
+ import androidx.compose.material.icons.filled.Warning
+ import androidx.compose.material3.AlertDialog
+ import androidx.compose.material3.Button
++import androidx.compose.material3.ButtonDefaults
+ import androidx.compose.material3.Card
+ import androidx.compose.material3.CardDefaults
++import androidx.compose.material3.DropdownMenu
++import androidx.compose.material3.DropdownMenuItem
+ import androidx.compose.material3.Icon
+ import androidx.compose.material3.IconButton
+ import androidx.compose.material3.MaterialTheme
+@@ -30,23 +35,24 @@ import androidx.compose.material3.Surface
+ import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
+ import androidx.compose.runtime.getValue
++import androidx.compose.runtime.mutableStateListOf
+ import androidx.compose.runtime.mutableStateOf
+ import androidx.compose.runtime.remember
+ import androidx.compose.runtime.setValue
++import androidx.compose.runtime.toMutableStateList
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
++import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.platform.testTag
+ import androidx.compose.ui.res.stringResource
+ import androidx.compose.ui.text.font.FontWeight
+-import androidx.compose.ui.text.style.TextAlign
++import androidx.compose.ui.unit.Dp
+ import androidx.compose.ui.unit.dp
+ import androidx.compose.ui.unit.sp
+ import com.sherifradwan.ancnative.R
+ import com.sherifradwan.ancnative.model.SevereBpAttention
+-import com.sherifradwan.ancnative.ui.ActionRose
+ import com.sherifradwan.ancnative.ui.ClinicalCardTokens
+-import com.sherifradwan.ancnative.ui.TagAttentionText
+-import com.sherifradwan.ancnative.ui.TagBloodNegativeText
++import com.sherifradwan.ancnative.ui.isDarkTheme
+ import com.sherifradwan.ancnative.ui.minimumTouchTarget
+ 
+ enum class ClinicalAttentionLevel {
+@@ -58,6 +64,8 @@ enum class ClinicalAttentionLevel {
+         fun parse(raw: String): Pair<ClinicalAttentionLevel, String> {
+             val trimmed = raw.trim()
+             val prefixes = listOf(
++                "[CRITICAL ALERT]" to CRITICAL,
++                "CRITICAL ALERT:" to CRITICAL,
+                 "CRITICAL:" to CRITICAL,
+                 "[CRITICAL]" to CRITICAL,
+                 "ALERT:" to ALERT,
+@@ -78,6 +86,52 @@ enum class ClinicalAttentionLevel {
+     }
+ }
+ 
++data class AttentionColors(
++    val container: Color,
++    val content: Color,
++    val accent: Color,
++    val border: Color,
++    val borderWidth: Dp = 1.dp,
++) {
++    val containerColor: Color get() = container
++    val textColor: Color get() = content
++    val iconColor: Color get() = accent
++    val borderColor: Color get() = border
++}
++
++typealias ClinicalAttentionColors = AttentionColors
++
++@Composable
++fun clinicalAttentionColors(level: ClinicalAttentionLevel): AttentionColors = attentionColors(level)
++
++@Composable
++fun attentionColors(level: ClinicalAttentionLevel): AttentionColors {
++    val isDark = isDarkTheme()
++    return when (level) {
++        ClinicalAttentionLevel.CRITICAL -> AttentionColors(
++            container = MaterialTheme.colorScheme.errorContainer,
++            content = MaterialTheme.colorScheme.onErrorContainer,
++            accent = MaterialTheme.colorScheme.error,
++            border = MaterialTheme.colorScheme.error,
++            borderWidth = 1.5.dp,
++        )
++        ClinicalAttentionLevel.ALERT -> AttentionColors(
++            container = if (isDark) ClinicalCardTokens.WarningDarkBg else ClinicalCardTokens.WarningBg,
++            content = if (isDark) ClinicalCardTokens.WarningDarkText else ClinicalCardTokens.WarningText,
++            accent = if (isDark) ClinicalCardTokens.WarningDarkAccent else ClinicalCardTokens.WarningAccent,
++            border = if (isDark) ClinicalCardTokens.WarningDarkBorder else ClinicalCardTokens.WarningBorder,
++            borderWidth = 1.dp,
++        )
++        ClinicalAttentionLevel.NOTE -> AttentionColors(
++            container = MaterialTheme.colorScheme.surfaceContainerHigh,
++            content = MaterialTheme.colorScheme.onSurface,
++            accent = MaterialTheme.colorScheme.outline,
++            border = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
++            borderWidth = 1.dp,
++        )
++    }
++}
++
+ @Composable
+ fun ClinicalAttentionBanner(
+     attention: String?,
+@@ -86,43 +140,20 @@ fun ClinicalAttentionBanner(
+     onEdit: () -> Unit,
+ ) {
+     val hasStored = !attention.isNullOrBlank()
+-    val (parsedLevel, narrative) = if (hasStored) {
+-        ClinicalAttentionLevel.parse(attention!!)
++    val narrative = if (hasStored) {
++        ClinicalAttentionLevel.parse(attention!!).second
+     } else {
+-        ClinicalAttentionLevel.NOTE to ""
+-    }
+-    val level = if (severeBp != null) ClinicalAttentionLevel.CRITICAL else parsedLevel
+-    val isDark = isDarkTheme()
+-
+-    val (containerColor, borderColor, accentBarColor, textColor) = when (level) {
+-        ClinicalAttentionLevel.CRITICAL -> {
+-            val bg = if (isDark) ClinicalCardTokens.CriticalDarkBg else ClinicalCardTokens.CriticalBg
+-            val b = if (isDark) ClinicalCardTokens.CriticalDarkBorder else ClinicalCardTokens.CriticalBorder
+-            val t = if (isDark) ClinicalCardTokens.CriticalDarkText else TagBloodNegativeText
+-            val accent = if (isDark) ClinicalCardTokens.CriticalDarkAccent else ActionRose
+-            listOf(bg, b, accent, t)
+-        }
+-        ClinicalAttentionLevel.ALERT -> {
+-            val bg = if (isDark) ClinicalCardTokens.WarningDarkBg else ClinicalCardTokens.WarningBg
+-            val b = if (isDark) ClinicalCardTokens.WarningDarkBorder else ClinicalCardTokens.WarningBorder
+-            val t = if (isDark) ClinicalCardTokens.WarningDarkText else TagAttentionText
+-            val accent = if (isDark) ClinicalCardTokens.WarningDarkAccent else ClinicalCardTokens.WarningAccent
+-            listOf(bg, b, accent, t)
+-        }
+-        ClinicalAttentionLevel.NOTE -> {
+-            val bg = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainerLow
+-            val b = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+-            val t = MaterialTheme.colorScheme.onSurface
+-            listOf(bg, b, MaterialTheme.colorScheme.primary, t)
+-        }
++        ""
+     }
++    val level = clinicalAttentionLevel(attention, severeBp)
++    val colors = attentionColors(level)
+ 
+     Card(
+         modifier = modifier
+             .fillMaxWidth()
+             .testTag("clinicalAttentionBanner"),
+-        colors = CardDefaults.cardColors(containerColor = containerColor),
+-        border = BorderStroke(if (level == ClinicalAttentionLevel.CRITICAL) 1.5.dp else 1.dp, borderColor),
++        colors = CardDefaults.cardColors(containerColor = colors.container),
++        border = BorderStroke(colors.borderWidth, colors.border),
+         shape = RoundedCornerShape(12.dp),
+     ) {
+         Row(
+@@ -146,16 +177,16 @@ fun ClinicalAttentionBanner(
+                         horizontalArrangement = Arrangement.spacedBy(6.dp),
+                     ) {
+                         Icon(
+-                            imageVector = Icons.Default.Warning,
++                            imageVector = if (level == ClinicalAttentionLevel.NOTE) Icons.Default.Info else Icons.Default.Warning,
+                             contentDescription = null,
+-                            tint = accentBarColor,
++                            tint = colors.accent,
+                             modifier = Modifier.size(16.dp),
+                         )
+                         Text(
+                             text = stringResource(R.string.clinical_attention).uppercase(),
+                             style = MaterialTheme.typography.labelSmall,
+                             fontWeight = FontWeight.Bold,
+-                            color = accentBarColor,
++                            color = colors.accent,
+                             letterSpacing = 0.8.sp,
+                         )
+                     }
+@@ -166,7 +197,7 @@ fun ClinicalAttentionBanner(
+                         Icon(
+                             imageVector = Icons.Default.Edit,
+                             contentDescription = stringResource(R.string.edit_clinical_alerts),
+-                            tint = accentBarColor,
++                            tint = colors.accent,
+                             modifier = Modifier.size(16.dp),
+                         )
+                     }
+@@ -187,7 +218,7 @@ fun ClinicalAttentionBanner(
+                         text = narrative,
+                         style = MaterialTheme.typography.bodySmall,
+                         fontWeight = FontWeight.Medium,
+-                        color = textColor,
++                        color = colors.content,
+                     )
+                 }
+             }
+@@ -201,106 +232,268 @@ fun ClinicalAttentionDialog(
+     onDismiss: () -> Unit,
+     onSave: (String) -> Unit,
+ ) {
+-    val (parsedLevel, parsedNarrative) = ClinicalAttentionLevel.parse(currentAttention)
+-    var selectedLevel by remember { mutableStateOf(parsedLevel) }
+-    var text by remember { mutableStateOf(parsedNarrative) }
++    val entries = remember(currentAttention) {
++        parseAttentionEntries(currentAttention).toMutableStateList()
++    }
++    var newLevel by remember { mutableStateOf(ClinicalAttentionLevel.ALERT) }
++    var newText by remember { mutableStateOf("") }
+ 
+     AlertDialog(
+         onDismissRequest = onDismiss,
+         title = {
+             Text(
+-                text = "Clinical Attention & Alerts",
++                text = stringResource(R.string.clinical_attention),
+                 style = MaterialTheme.typography.titleMedium,
+                 fontWeight = FontWeight.Bold,
++                color = MaterialTheme.colorScheme.onSurface,
+             )
+         },
+         text = {
+             Column(
+-                modifier = Modifier.fillMaxWidth(),
++                modifier = Modifier
++                    .fillMaxWidth()
++                    .verticalScroll(rememberScrollState()),
+                 verticalArrangement = Arrangement.spacedBy(10.dp),
+             ) {
+-                Text(
+-                    text = "Select alert severity, and enter clinical notes (one per line):",
+-                    style = MaterialTheme.typography.bodySmall,
+-                    color = MaterialTheme.colorScheme.tertiary,
+-                )
+-
+-                Row(
+-                    modifier = Modifier.fillMaxWidth(),
+-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+-                ) {
+-                    val levels = listOf(
+-                        Triple(ClinicalAttentionLevel.CRITICAL, "CRITICAL", MaterialTheme.colorScheme.error),
+-                        Triple(ClinicalAttentionLevel.ALERT, "ALERT", MaterialTheme.colorScheme.tertiary),
+-                        Triple(ClinicalAttentionLevel.NOTE, "NOTE", MaterialTheme.colorScheme.primary),
+-                    )
+-                    levels.forEach { (lvl, title, color) ->
+-                        val isSelected = selectedLevel == lvl
+-                        Surface(
+-                            shape = RoundedCornerShape(8.dp),
+-                            color = if (isSelected) color else color.copy(alpha = 0.08f),
+-                            border = BorderStroke(
+-                                width = if (isSelected) 2.dp else 1.dp,
+-                                color = if (isSelected) color else color.copy(alpha = 0.35f),
+-                            ),
+-                            modifier = Modifier
+-                                .weight(1f)
+-                                .minimumTouchTarget()
+-                                .clickable(
+-                                    role = Role.Button,
+-                                    onClick = { selectedLevel = lvl },
+-                                ),
++                entries.forEachIndexed { index, entry ->
++                    Column(
++                        modifier = Modifier
++                            .fillMaxWidth()
++                            .padding(vertical = 2.dp),
++                        verticalArrangement = Arrangement.spacedBy(4.dp),
++                    ) {
++                        Row(
++                            modifier = Modifier.fillMaxWidth(),
++                            horizontalArrangement = Arrangement.SpaceBetween,
++                            verticalAlignment = Alignment.CenterVertically,
+                         ) {
+-                            Box(
++                            AttentionLevelDropdown(
++                                selectedLevel = entry.level,
++                                onLevelSelected = { newLvl ->
++                                    entries[index] = entry.copy(level = newLvl)
++                                },
++                                modifier = Modifier.testTag("attentionLevel-$index"),
++                            )
++                            IconButton(
++                                onClick = { entries.removeAt(index) },
+                                 modifier = Modifier
+-                                    .fillMaxWidth()
+-                                    .padding(vertical = 10.dp, horizontal = 4.dp),
+-                                contentAlignment = Alignment.Center,
++                                    .minimumTouchTarget()
++                                    .testTag("attentionDelete-$index"),
+                             ) {
+-                                Text(
+-                                    text = title,
+-                                    style = MaterialTheme.typography.labelMedium,
+-                                    fontWeight = FontWeight.Bold,
+-                                    color = if (isSelected) MaterialTheme.colorScheme.surface else color,
+-                                    textAlign = TextAlign.Center,
+-                                    maxLines = 1,
+-                                    softWrap = false,
++                                Icon(
++                                    imageVector = Icons.Default.Delete,
++                                    contentDescription = stringResource(R.string.delete_attention_entry),
++                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
++                                    modifier = Modifier.size(20.dp),
+                                 )
+                             }
+                         }
++                        OutlinedTextField(
++                            value = entry.text,
++                            onValueChange = { updated ->
++                                val clean = updated.replace("\n", " ").take(ATTENTION_TEXT_MAX)
++                                entries[index] = entry.copy(text = clean)
++                            },
++                            modifier = Modifier
++                                .fillMaxWidth()
++                                .testTag("attentionText-$index"),
++                            singleLine = false,
++                            maxLines = 3,
++                            supportingText = {
++                                Text(
++                                    text = "${entry.text.length}/$ATTENTION_TEXT_MAX",
++                                    style = MaterialTheme.typography.labelSmall,
++                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
++                                )
++                            },
++                        )
+                     }
+                 }
+ 
+-                OutlinedTextField(
+-                    value = text,
+-                    onValueChange = { text = it },
+-                    label = { Text("Alerts narrative (one item per line)") },
+-                    placeholder = { Text("Example:\n• Mild anemia at 34w (Hb 10.6 g/dL)\n• Non-compliant with Calcium") },
+-                    minLines = 4,
+-                    maxLines = 8,
+-                    modifier = Modifier.fillMaxWidth(),
+-                )
++                Column(
++                    modifier = Modifier
++                        .fillMaxWidth()
++                        .padding(top = 8.dp),
++                    verticalArrangement = Arrangement.spacedBy(4.dp),
++                ) {
++                    Row(
++                        modifier = Modifier.fillMaxWidth(),
++                        horizontalArrangement = Arrangement.SpaceBetween,
++                        verticalAlignment = Alignment.CenterVertically,
++                    ) {
++                        AttentionLevelDropdown(
++                            selectedLevel = newLevel,
++                            onLevelSelected = { newLevel = it },
++                            modifier = Modifier.testTag("attentionNewLevel"),
++                        )
++                        Button(
++                            onClick = {
++                                if (newText.isNotBlank() && entries.size < ATTENTION_ENTRIES_MAX) {
++                                    entries.add(AttentionEntry(newLevel, newText.trim()))
++                                    newText = ""
++                                    newLevel = ClinicalAttentionLevel.ALERT
++                                }
++                            },
++                            enabled = newText.isNotBlank() && entries.size < ATTENTION_ENTRIES_MAX,
++                            modifier = Modifier
++                                .heightIn(min = 48.dp)
++                                .testTag("attentionAdd"),
++                            colors = ButtonDefaults.buttonColors(
++                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
++                                contentColor = MaterialTheme.colorScheme.onSurface,
++                                disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.4f),
++                                disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
++                            ),
++                        ) {
++                            Text(stringResource(R.string.attention_add_button))
++                        }
++                    }
++                    OutlinedTextField(
++                        value = newText,
++                        onValueChange = { updated ->
++                            newText = updated.replace("\n", " ").take(ATTENTION_TEXT_MAX)
++                        },
++                        label = { Text(stringResource(R.string.attention_new_label)) },
++                        modifier = Modifier
++                            .fillMaxWidth()
++                            .testTag("attentionNewText"),
++                        singleLine = false,
++                        maxLines = 3,
++                        supportingText = {
++                            Text(
++                                text = "${newText.length}/$ATTENTION_TEXT_MAX",
++                                style = MaterialTheme.typography.labelSmall,
++                                color = MaterialTheme.colorScheme.onSurfaceVariant,
++                            )
++                        },
++                    )
++                }
+             }
+         },
+         confirmButton = {
+             Button(
+                 onClick = {
+-                    val prefix = when (selectedLevel) {
+-                        ClinicalAttentionLevel.CRITICAL -> "[CRITICAL] "
+-                        ClinicalAttentionLevel.ALERT -> "[ALERT] "
+-                        ClinicalAttentionLevel.NOTE -> "[NOTE] "
++                    val all = entries.toMutableList()
++                    if (newText.isNotBlank() && all.size < ATTENTION_ENTRIES_MAX) {
++                        all.add(AttentionEntry(newLevel, newText.trim()))
+                     }
+-                    val fullText = if (text.isBlank()) "" else "$prefix${text.trim()}"
+-                    onSave(fullText)
++                    onSave(composeAttentionEntries(all))
+                 },
++                modifier = Modifier
++                    .heightIn(min = 48.dp)
++                    .testTag("attentionSave"),
++                colors = ButtonDefaults.buttonColors(
++                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
++                    contentColor = MaterialTheme.colorScheme.onSurface,
++                ),
+             ) {
+                 Text(stringResource(R.string.save))
+             }
+         },
+         dismissButton = {
+-            OutlinedButton(onClick = onDismiss) {
++            OutlinedButton(
++                onClick = onDismiss,
++                modifier = Modifier
++                    .heightIn(min = 48.dp)
++                    .testTag("attentionCancel"),
++                colors = ButtonDefaults.outlinedButtonColors(
++                    contentColor = MaterialTheme.colorScheme.onSurface,
++                ),
++                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
++            ) {
+                 Text(stringResource(R.string.cancel))
+             }
+         },
+     )
+ }
++
++@Composable
++private fun AttentionLevelDropdown(
++    selectedLevel: ClinicalAttentionLevel,
++    onLevelSelected: (ClinicalAttentionLevel) -> Unit,
++    modifier: Modifier = Modifier,
++) {
++    var expanded by remember { mutableStateOf(false) }
++    val colors = attentionColors(selectedLevel)
++    val label = when (selectedLevel) {
++        ClinicalAttentionLevel.CRITICAL -> stringResource(R.string.attention_level_critical)
++        ClinicalAttentionLevel.ALERT -> stringResource(R.string.attention_level_alert)
++        ClinicalAttentionLevel.NOTE -> stringResource(R.string.attention_level_note)
++    }
++
++    Box(modifier = modifier) {
++        Surface(
++            onClick = { expanded = true },
++            shape = RoundedCornerShape(8.dp),
++            color = colors.container,
++            border = BorderStroke(colors.borderWidth, colors.border),
++            modifier = Modifier
++                .heightIn(min = 48.dp)
++                .minimumTouchTarget(),
++        ) {
++            Row(
++                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
++                verticalAlignment = Alignment.CenterVertically,
++                horizontalArrangement = Arrangement.spacedBy(4.dp),
++            ) {
++                Icon(
++                    imageVector = if (selectedLevel == ClinicalAttentionLevel.NOTE) Icons.Default.Info else Icons.Default.Warning,
++                    contentDescription = null,
++                    tint = colors.accent,
++                    modifier = Modifier.size(16.dp),
++                )
++                Text(
++                    text = label,
++                    style = MaterialTheme.typography.labelMedium,
++                    fontWeight = FontWeight.Bold,
++                    color = colors.content,
++                )
++                Icon(
++                    imageVector = Icons.Default.KeyboardArrowDown,
++                    contentDescription = null,
++                    tint = colors.content,
++                    modifier = Modifier.size(18.dp),
++                )
++            }
++        }
++        DropdownMenu(
++            expanded = expanded,
++            onDismissRequest = { expanded = false },
++        ) {
++            val options = listOf(
++                Triple(ClinicalAttentionLevel.CRITICAL, "attentionLevelOption-critical", R.string.attention_level_critical),
++                Triple(ClinicalAttentionLevel.ALERT, "attentionLevelOption-alert", R.string.attention_level_alert),
++                Triple(ClinicalAttentionLevel.NOTE, "attentionLevelOption-note", R.string.attention_level_note),
++            )
++            options.forEach { (level, tag, textRes) ->
++                val optionColors = attentionColors(level)
++                DropdownMenuItem(
++                    text = {
++                        Row(
++                            verticalAlignment = Alignment.CenterVertically,
++                            horizontalArrangement = Arrangement.spacedBy(8.dp),
++                        ) {
++                            Icon(
++                                imageVector = if (level == ClinicalAttentionLevel.NOTE) Icons.Default.Info else Icons.Default.Warning,
++                                contentDescription = null,
++                                tint = optionColors.accent,
++                                modifier = Modifier.size(16.dp),
++                            )
++                            Text(
++                                text = stringResource(textRes),
++                                style = MaterialTheme.typography.bodyMedium,
++                                fontWeight = FontWeight.Medium,
++                                color = optionColors.content,
++                            )
++                        }
++                    },
++                    onClick = {
++                        onLevelSelected(level)
++                        expanded = false
++                    },
++                    modifier = Modifier.testTag(tag),
++                )
++            }
++        }
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionCard.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionCard.kt
+new file mode 100644
+index 0000000..f4bdf48
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionCard.kt
+@@ -0,0 +1,194 @@
++package com.sherifradwan.ancnative.ui.patienthub.components
++
++import androidx.compose.foundation.BorderStroke
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.heightIn
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.layout.size
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.material.icons.Icons
++import androidx.compose.material.icons.filled.Edit
++import androidx.compose.material.icons.filled.Info
++import androidx.compose.material.icons.filled.Warning
++import androidx.compose.material3.Button
++import androidx.compose.material3.ButtonDefaults
++import androidx.compose.material3.Icon
++import androidx.compose.material3.IconButton
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Surface
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.remember
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.platform.testTag
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.unit.dp
++import com.sherifradwan.ancnative.R
++import com.sherifradwan.ancnative.model.SevereBpAttention
++import com.sherifradwan.ancnative.ui.minimumTouchTarget
++
++@Composable
++fun ClinicalAttentionCard(
++    attention: String?,
++    severeBp: SevereBpAttention?,
++    onEdit: (() -> Unit)?,
++    modifier: Modifier = Modifier,
++) {
++    val entries = remember(attention) { parseAttentionEntries(attention) }
++    val isEmpty = entries.isEmpty() && severeBp == null
++    if (isEmpty && onEdit == null) {
++        return
++    }
++
++    val overallLevel = clinicalAttentionLevel(attention, severeBp)
++    val overallColors = attentionColors(overallLevel)
++
++    ClinicalGroupSection(
++        title = "Clinical attention",
++        icon = if (overallLevel == ClinicalAttentionLevel.NOTE) Icons.Default.Info else Icons.Default.Warning,
++        iconTint = overallColors.accent,
++        iconBgColor = overallColors.container,
++        actionButton = onEdit?.let {
++            {
++                IconButton(
++                    onClick = it,
++                    modifier = Modifier
++                        .minimumTouchTarget()
++                        .testTag("editClinicalAttention"),
++                ) {
++                    Icon(
++                        imageVector = Icons.Default.Edit,
++                        contentDescription = stringResource(R.string.edit_clinical_alerts),
++                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
++                        modifier = Modifier.size(20.dp),
++                    )
++                }
++            }
++        },
++        modifier = modifier.testTag("clinicalAttentionCard"),
++    ) {
++        if (isEmpty) {
++            Column(
++                modifier = Modifier
++                    .fillMaxWidth()
++                    .padding(vertical = 4.dp),
++                verticalArrangement = Arrangement.spacedBy(8.dp),
++            ) {
++                Text(
++                    text = stringResource(R.string.no_clinical_attention_recorded),
++                    style = MaterialTheme.typography.bodyMedium,
++                    color = MaterialTheme.colorScheme.onSurfaceVariant,
++                )
++                if (onEdit != null) {
++                    Button(
++                        onClick = onEdit,
++                        modifier = Modifier
++                            .heightIn(min = 48.dp)
++                            .testTag("addClinicalAttention"),
++                        colors = ButtonDefaults.buttonColors(
++                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
++                            contentColor = MaterialTheme.colorScheme.onSurface,
++                        ),
++                    ) {
++                        Text(stringResource(R.string.add_clinical_attention))
++                    }
++                }
++            }
++            return@ClinicalGroupSection
++        }
++
++        Column(
++            modifier = Modifier.fillMaxWidth(),
++            verticalArrangement = Arrangement.spacedBy(8.dp),
++        ) {
++            if (severeBp != null) {
++                val bpColors = attentionColors(ClinicalAttentionLevel.CRITICAL)
++                Surface(
++                    shape = RoundedCornerShape(8.dp),
++                    color = bpColors.container,
++                    border = BorderStroke(bpColors.borderWidth, bpColors.border),
++                    modifier = Modifier
++                        .fillMaxWidth()
++                        .testTag("severeBpAttention"),
++                ) {
++                    Row(
++                        modifier = Modifier
++                            .fillMaxWidth()
++                            .padding(horizontal = 10.dp, vertical = 8.dp),
++                        verticalAlignment = Alignment.Top,
++                        horizontalArrangement = Arrangement.spacedBy(8.dp),
++                    ) {
++                        Icon(
++                            imageVector = Icons.Default.Warning,
++                            contentDescription = null,
++                            tint = bpColors.accent,
++                            modifier = Modifier.size(16.dp),
++                        )
++                        Text(
++                            text = stringResource(R.string.attention_level_critical),
++                            style = MaterialTheme.typography.labelMedium,
++                            fontWeight = FontWeight.Bold,
++                            color = bpColors.accent,
++                        )
++                        Text(
++                            text = stringResource(R.string.bp_attention_severe, severeBp.bloodPressure, severeBp.date),
++                            style = MaterialTheme.typography.bodySmall,
++                            color = bpColors.content,
++                            modifier = Modifier.weight(1f),
++                        )
++                    }
++                }
++            }
++
++            val sorted = remember(entries) { sortedForDisplay(entries) }
++            sorted.forEachIndexed { index, entry ->
++                val colors = attentionColors(entry.level)
++                val levelLabel = when (entry.level) {
++                    ClinicalAttentionLevel.CRITICAL -> stringResource(R.string.attention_level_critical)
++                    ClinicalAttentionLevel.ALERT -> stringResource(R.string.attention_level_alert)
++                    ClinicalAttentionLevel.NOTE -> stringResource(R.string.attention_level_note)
++                }
++                Surface(
++                    shape = RoundedCornerShape(8.dp),
++                    color = colors.container,
++                    border = BorderStroke(colors.borderWidth, colors.border),
++                    modifier = Modifier
++                        .fillMaxWidth()
++                        .testTag("attentionEntry-$index"),
++                ) {
++                    Row(
++                        modifier = Modifier
++                            .fillMaxWidth()
++                            .padding(horizontal = 10.dp, vertical = 8.dp),
++                        verticalAlignment = Alignment.Top,
++                        horizontalArrangement = Arrangement.spacedBy(8.dp),
++                    ) {
++                        Icon(
++                            imageVector = if (entry.level == ClinicalAttentionLevel.NOTE) Icons.Default.Info else Icons.Default.Warning,
++                            contentDescription = null,
++                            tint = colors.accent,
++                            modifier = Modifier.size(16.dp),
++                        )
++                        Text(
++                            text = levelLabel,
++                            style = MaterialTheme.typography.labelMedium,
++                            fontWeight = FontWeight.Bold,
++                            color = colors.accent,
++                        )
++                        Text(
++                            text = entry.text,
++                            style = MaterialTheme.typography.bodySmall,
++                            color = colors.content,
++                            modifier = Modifier.weight(1f),
++                        )
++                    }
++                }
++            }
++        }
++    }
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionEntries.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionEntries.kt
+new file mode 100644
+index 0000000..114aabf
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionEntries.kt
+@@ -0,0 +1,113 @@
++package com.sherifradwan.ancnative.ui.patienthub.components
++
++import com.sherifradwan.ancnative.model.SevereBpAttention
++
++data class AttentionEntry(val level: ClinicalAttentionLevel, val text: String)
++
++const val ATTENTION_TEXT_MAX = 140
++const val ATTENTION_ENTRIES_MAX = 10
++
++fun parseAttentionEntries(raw: String?): List<AttentionEntry> {
++    if (raw.isNullOrBlank()) return emptyList()
++    val result = mutableListOf<AttentionEntry>()
++    var currentLevel: ClinicalAttentionLevel? = null
++
++    try {
++        for (rawLine in raw.lines()) {
++            val lineWithoutBullet = stripBullet(rawLine)
++            if (lineWithoutBullet.isBlank()) continue
++
++            val match = matchPrefix(lineWithoutBullet)
++            val level: ClinicalAttentionLevel
++            val cleanText: String
++
++            if (match != null) {
++                level = match.level
++                cleanText = stripBullet(match.remainder)
++            } else {
++                level = currentLevel ?: ClinicalAttentionLevel.ALERT
++                cleanText = lineWithoutBullet
++            }
++
++            if (cleanText.isNotBlank()) {
++                currentLevel = level
++                result.add(AttentionEntry(level = level, text = cleanText))
++            }
++        }
++    } catch (_: Throwable) {
++        return emptyList()
++    }
++    return result
++}
++
++fun composeAttentionEntries(entries: List<AttentionEntry>): String {
++    val valid = entries
++        .filter { it.text.isNotBlank() }
++        .take(ATTENTION_ENTRIES_MAX)
++    if (valid.isEmpty()) return ""
++    return valid.joinToString("\n") { entry ->
++        val text = entry.text.trim().take(ATTENTION_TEXT_MAX)
++        "${entry.level.name}: $text"
++    }
++}
++
++fun sortedForDisplay(entries: List<AttentionEntry>): List<AttentionEntry> {
++    return entries.sortedWith(compareBy { entry ->
++        when (entry.level) {
++            ClinicalAttentionLevel.CRITICAL -> 0
++            ClinicalAttentionLevel.ALERT -> 1
++            ClinicalAttentionLevel.NOTE -> 2
++        }
++    })
++}
++
++fun clinicalAttentionLevel(
++    attention: String?,
++    severeBp: SevereBpAttention?,
++): ClinicalAttentionLevel {
++    if (severeBp != null) return ClinicalAttentionLevel.CRITICAL
++    val entries = parseAttentionEntries(attention)
++    if (entries.isEmpty()) return ClinicalAttentionLevel.NOTE
++    return when {
++        entries.any { it.level == ClinicalAttentionLevel.CRITICAL } -> ClinicalAttentionLevel.CRITICAL
++        entries.any { it.level == ClinicalAttentionLevel.ALERT } -> ClinicalAttentionLevel.ALERT
++        else -> ClinicalAttentionLevel.NOTE
++    }
++}
++
++private data class PrefixMatch(val level: ClinicalAttentionLevel, val remainder: String)
++
++private fun matchPrefix(line: String): PrefixMatch? {
++    val candidates = listOf(
++        "[CRITICAL ALERT]:" to ClinicalAttentionLevel.CRITICAL,
++        "[CRITICAL ALERT]" to ClinicalAttentionLevel.CRITICAL,
++        "CRITICAL ALERT:" to ClinicalAttentionLevel.CRITICAL,
++        "[CRITICAL]:" to ClinicalAttentionLevel.CRITICAL,
++        "[CRITICAL]" to ClinicalAttentionLevel.CRITICAL,
++        "CRITICAL:" to ClinicalAttentionLevel.CRITICAL,
++        "[ALERT]:" to ClinicalAttentionLevel.ALERT,
++        "[ALERT]" to ClinicalAttentionLevel.ALERT,
++        "ALERT:" to ClinicalAttentionLevel.ALERT,
++        "[WARNING]:" to ClinicalAttentionLevel.ALERT,
++        "[WARNING]" to ClinicalAttentionLevel.ALERT,
++        "WARNING:" to ClinicalAttentionLevel.ALERT,
++        "[NOTE]:" to ClinicalAttentionLevel.NOTE,
++        "[NOTE]" to ClinicalAttentionLevel.NOTE,
++        "NOTE:" to ClinicalAttentionLevel.NOTE,
++    )
++    for ((prefix, level) in candidates) {
++        if (line.startsWith(prefix, ignoreCase = true)) {
++            val rem = line.substring(prefix.length)
++            return PrefixMatch(level, rem)
++        }
++    }
++    return null
++}
++
++private fun stripBullet(text: String): String {
++    var t = text.trim()
++    while (t.isNotEmpty() && (t.startsWith('•') || t.startsWith('-') || t.startsWith('*'))) {
++        t = t.substring(1).trim()
++    }
++    return t
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt
+index c31f3ff..b1bea21 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/OverviewSections.kt
+@@ -36,6 +36,7 @@ import com.sherifradwan.ancnative.model.DemoPatient
+ import com.sherifradwan.ancnative.model.datingSummaryOf
+ import com.sherifradwan.ancnative.model.datingTextRows
+ import com.sherifradwan.ancnative.model.previousDeliverySummary
++import com.sherifradwan.ancnative.ui.components.DueDateBox
+ import com.sherifradwan.ancnative.ui.AllergyState
+ import com.sherifradwan.ancnative.ui.FactRow
+ import com.sherifradwan.ancnative.ui.ObstetricParityBadge
+@@ -84,7 +85,15 @@ fun DatingSection(
+             return@ClinicalGroupSection
+         }
+         datingTextRows(summary).forEach { row ->
+-            FactRow(row.label, row.value, isEmphasized = row.isEdd)
++            if (row.isEdd) {
++                DueDateBox(
++                    label = row.label,
++                    value = row.value,
++                    modifier = Modifier.padding(vertical = 4.dp),
++                )
++            } else {
++                FactRow(row.label, row.value)
++            }
+         }
+         summary.discordance?.let { advice ->
+             val dark = isDarkTheme()
+@@ -170,7 +179,6 @@ fun ParityPregnanciesSection(
+                 )
+             }
+         }
+-        if (!patient.obstetricNotes.isNullOrBlank()) FactRow(R.string.obstetric_notes, patient.obstetricNotes)
+     }
+ }
+ 
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+index 21f3d62..652e726 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/tabs/OverviewTab.kt
+@@ -10,16 +10,19 @@ import androidx.compose.material3.HorizontalDivider
+ import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.Surface
+ import androidx.compose.runtime.Composable
++import androidx.compose.runtime.remember
+ import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.platform.testTag
+ import androidx.compose.ui.unit.dp
+ import com.sherifradwan.ancnative.model.DemoAttachment
+ import com.sherifradwan.ancnative.model.DemoPatient
++import com.sherifradwan.ancnative.model.severeBpAttention
+ import com.sherifradwan.ancnative.state.AncEvent
+ import com.sherifradwan.ancnative.state.editPatientEvent
+ import com.sherifradwan.ancnative.storage.DeletableType
+ import com.sherifradwan.ancnative.ui.patienthub.components.AttachmentsSectionCard
++import com.sherifradwan.ancnative.ui.patienthub.components.ClinicalAttentionCard
+ import com.sherifradwan.ancnative.ui.patienthub.components.DatingSection
+ import com.sherifradwan.ancnative.ui.patienthub.components.DeliveryPlanningCard
+ import com.sherifradwan.ancnative.ui.patienthub.components.MedicalHistoriesSection
+@@ -43,6 +46,7 @@ fun OverviewTab(
+     onAddAttachment: () -> Unit,
+     onViewAttachment: (DemoAttachment) -> Unit,
+     modifier: Modifier = Modifier,
++    onEditAttention: (() -> Unit)? = null,
+ ) {
+     fun startPatientEditor() {
+         editPatientEvent(patient, UUID.randomUUID().toString(), UUID.randomUUID().toString())?.let(onEvent)
+@@ -65,6 +69,13 @@ fun OverviewTab(
+             .testTag("overviewTabContent"),
+         verticalArrangement = Arrangement.spacedBy(14.dp),
+     ) {
++        val severeBp = remember(patient.visits) { severeBpAttention(patient.visits) }
++        ClinicalAttentionCard(
++            attention = patient.clinicalAttention,
++            severeBp = severeBp,
++            onEdit = if (canEdit) onEditAttention else null,
++        )
++
+         Surface(
+             color = MaterialTheme.colorScheme.surface,
+             modifier = Modifier.fillMaxWidth(),
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index cb4c172..22d3dbd 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -662,4 +662,19 @@
+     <string name="registration_count_error">Enter a number from 0 to %1$d.</string>
+     <string name="registration_resume_body">Registration is not finished. Resume at: %1$s.</string>
+     <string name="registration_resume_button">Continue registration</string>
++    <string name="patients_filter_archived">Archived</string>
++    <string name="dashboard_sort_format">Sort: %1$s</string>
++    <string name="dashboard_sort_newest">Newest added</string>
++    <string name="dashboard_sort_recent">Recently seen</string>
++    <string name="dashboard_sort_name">Name A to Z</string>
++    <string name="dashboard_sort_due">Due date soonest</string>
++    <string name="zoom_reset">Reset zoom</string>
++    <string name="attention_level_critical">Critical</string>
++    <string name="attention_level_alert">Alert</string>
++    <string name="attention_level_note">Note</string>
++    <string name="attention_remaining_count">+%1$d</string>
++    <string name="add_clinical_attention">Add attention</string>
++    <string name="delete_attention_entry">Delete entry</string>
++    <string name="attention_new_label">What should the next doctor know?</string>
++    <string name="attention_add_button">Add</string>
+ </resources>

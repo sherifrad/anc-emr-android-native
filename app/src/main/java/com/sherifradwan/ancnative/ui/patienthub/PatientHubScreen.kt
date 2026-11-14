@@ -370,6 +370,7 @@ fun PatientHubScreen(
                     onEvent(AncEvent.SubmitPatientProfile)
                     showAttentionDialog = false
                 },
+                canEdit = canModifyData && patient.status != "archived",
             )
         }
     }

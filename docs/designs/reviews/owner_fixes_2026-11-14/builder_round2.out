@@ -1,0 +1,20 @@
+### Files Changed
+- [UltrasoundPhotoViewerDialog.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/UltrasoundPhotoViewerDialog.kt)
+- [ClinicalAttachmentViewerDialog.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/ClinicalAttachmentViewerDialog.kt)
+- [ClinicalAttentionEntries.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionEntries.kt)
+- [ClinicalAttentionBanner.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionBanner.kt)
+- [ClinicalAttentionCard.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/ClinicalAttentionCard.kt)
+- [PatientHubHeader.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt)
+- [PatientHubScreen.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubScreen.kt)
+- [ZoomableImage.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/components/ZoomableImage.kt)
+- [PatientListScreen.kt](file:///Users/sherifgamalradwan/anc-emr-android-native/app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt)
+
+### Fix Summary
+- **A. Viewport heights**: Restored fixed `.height(280.dp)` in `UltrasoundPhotoViewerDialog.kt` and `.height(380.dp)` in `ClinicalAttachmentViewerDialog.kt`, removing unused `heightIn` imports.
+- **B. Attention entries parsing & composition**: Updated prefix matching to update `currentLevel` unconditionally, trimmed matched prefix remainders directly, constrained `stripBullet` to bullets followed by whitespace (`^[•\\-*]+\\s+`), and updated `composeAttentionEntries` to output all trimmed non-blank entries without truncation.
+- **C. Clinical attention banner & dialog**: Filtered blank rows prior to `ATTENTION_ENTRIES_MAX` check on Save, set Note accent color to `onSurfaceVariant`, removed `.uppercase()` and letter spacing from the title, displayed the text level word beside the banner icon, and added `canEdit: Boolean = true` to `ClinicalAttentionDialog` to hide add/edit/delete controls and Save when disabled.
+- **D. Clinical attention card**: Replaced hardcoded title with `stringResource(R.string.clinical_attention)` and ensured Note accent resolves to `onSurfaceVariant`.
+- **E. Patient hub header strip**: Displayed level word first on the primary entry, localized the severe BP alert using `R.string.bp_attention_severe`, set `maxLines = 2`, and included the first entry in `remainingCount` when severe BP is rendered.
+- **F. Patient hub screen editing gate**: Passed `canEdit = canModifyData && patient.status != "archived"` to `ClinicalAttentionDialog`.
+- **G. Zoomable image gesture handling**: Removed `isZoomed` from `pointerInput` keys, combined two-finger gestures across all scales into one block, and restricted single-finger panning to `scale > 1f`.
+- **H. Patient list search & sort**: Excluded archived patients from the search "all" filter, synchronized the "All" chip count with the displayed list size, added `overflow = TextOverflow.Ellipsis` to the sort button text, and removed the redundant `// Sort Control` comment.
