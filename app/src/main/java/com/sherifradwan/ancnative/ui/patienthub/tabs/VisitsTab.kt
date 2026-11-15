@@ -3,49 +3,45 @@ package com.sherifradwan.ancnative.ui.patienthub.tabs
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
+import com.sherifradwan.ancnative.model.BpLevel
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
 import com.sherifradwan.ancnative.model.parseVisitFindings
 import com.sherifradwan.ancnative.model.parseWeightKg
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.storage.DeletableType
-import com.sherifradwan.ancnative.ui.BpAlertLabel
 import com.sherifradwan.ancnative.ui.DeleteIconButton
-import com.sherifradwan.ancnative.ui.GestationalAgeBadge
-import com.sherifradwan.ancnative.ui.minimumTouchTarget
+import com.sherifradwan.ancnative.ui.components.BandChip
+import com.sherifradwan.ancnative.ui.components.FieldFamilies
+import com.sherifradwan.ancnative.ui.components.RecordBandCard
+import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordType
+import com.sherifradwan.ancnative.ui.components.SectionTextAction
+import com.sherifradwan.ancnative.ui.components.StatusTone
+import com.sherifradwan.ancnative.ui.components.StatusWord
+import com.sherifradwan.ancnative.ui.components.ltrIsolate
 import com.sherifradwan.ancnative.ui.patienthub.components.BedsideVitalsGrid
 import com.sherifradwan.ancnative.ui.patienthub.model.deriveVitalsSnapshot
 
@@ -68,9 +64,8 @@ fun VisitsTab(
             .fillMaxSize()
             .testTag("visitsTabContent"),
         contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 48.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // Top Action: + Record New Antenatal Visit
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -78,22 +73,21 @@ fun VisitsTab(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Antenatal Visits (${patient.visits.size})",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    text = stringResource(R.string.visits_tab_title, patient.visits.size),
+                    style = RecordType.SectionTitle,
                     color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.weight(1f, fill = false),
                 )
                 if (canEdit && patient.status != "archived") {
                     Button(
                         onClick = { onStartVisit(patient.id, null) },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                        shape = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                        modifier = Modifier.minimumTouchTarget().testTag("recordNewVisitBtn"),
+                        shape = RecordShapes.Small,
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        modifier = Modifier
+                            .heightIn(min = 48.dp)
+                            .testTag("recordNewVisitBtn"),
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text("Record Visit", fontWeight = FontWeight.Bold, softWrap = false)
+                        Text(stringResource(R.string.record_visit_action), style = RecordType.Action)
                     }
                 }
             }
@@ -101,14 +95,15 @@ fun VisitsTab(
 
         if (patient.visits.isEmpty()) {
             item {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                OutlinedCard(
+                    shape = RecordShapes.Large,
+                    colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
-                        text = "No records",
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = stringResource(R.string.no_records),
+                        style = RecordType.FieldValue,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(16.dp),
                     )
@@ -122,7 +117,7 @@ fun VisitsTab(
                 val gaAtVisit = remember(patient.dating, visit.date) {
                     GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, visit.date)
                 }
-                val gaDisplayText = gaAtVisit?.displayText
+                val gaText = gaAtVisit?.shortWeeksText
                 val gaWeeks = gaAtVisit?.weeks
                 val parsedFindings = remember(visit.findings) { parseVisitFindings(visit.findings) }
 
@@ -135,130 +130,75 @@ fun VisitsTab(
                         bookingWeightKg = bookingWeightKg,
                     )
                 }
+                val preEclampsiaLabel = stringResource(R.string.pre_eclampsia_risk_label)
+                val severeBpLabel = stringResource(R.string.band_severe_bp)
+                val raisedBpLabel = stringResource(R.string.band_raised_bp)
+                val worstFlag: Pair<String, StatusTone>? = when {
+                    vitals.isPreEclampsiaWarning -> preEclampsiaLabel to StatusTone.High
+                    vitals.bpLevel == BpLevel.SEVERE -> severeBpLabel to StatusTone.High
+                    vitals.bpLevel == BpLevel.RAISED -> raisedBpLabel to StatusTone.Moderate
+                    else -> null
+                }
+                val linked = visit.linkedUltrasoundId != null
 
-                Card(
-                    modifier = Modifier.fillMaxWidth().testTag("visit-${visit.id}"),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                RecordBandCard(
+                    title = visit.date,
+                    family = FieldFamilies.patient(),
+                    modifier = Modifier.testTag("visit-${visit.id}"),
+                    chips = if (gaText != null || linked || worstFlag != null) {
+                        {
+                            gaText?.let {
+                                BandChip(ltrIsolate(it), tone = null, modifier = Modifier.testTag("gestationalAgeBadge"))
+                            }
+                            if (linked) BandChip(stringResource(R.string.scan_linked), tone = null)
+                            worstFlag?.let { (text, tone) -> BandChip(text, tone) }
+                        }
+                    } else {
+                        null
+                    },
+                    actions = if (canEdit) {
+                        {
+                            DeleteIconButton(
+                                type = DeletableType.VISIT,
+                                record = visit,
+                                onClick = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.VISIT, visit.id)) },
+                            )
+                            SectionTextAction(
+                                text = stringResource(R.string.action_edit),
+                                contentDescription = stringResource(R.string.edit_visit),
+                                onClick = { onStartVisit(patient.id, visit.id) },
+                                modifier = Modifier.testTag("editVisit-${visit.id}"),
+                            )
+                        }
+                    } else {
+                        null
+                    },
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        // Header Row: Date + GA + Badges (FlowRow to prevent 360dp collisions)
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                    if (vitals.isPreEclampsiaWarning) {
+                        Column(
+                            modifier = Modifier
+                                .testTag("preEclampsiaWarning-${visit.id}")
+                                .semantics(mergeDescendants = true) {},
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Text(
-                                    text = visit.date,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
-                                if (!gaDisplayText.isNullOrBlank()) {
-                                    GestationalAgeBadge(gaDisplayText)
-                                }
-                            }
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            ) {
-                                BpAlertLabel(visit.bloodPressure)
-
-                                if (visit.linkedUltrasoundId != null) {
-                                    Surface(
-                                        shape = RoundedCornerShape(6.dp),
-                                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
-                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f)),
-                                    ) {
-                                        Text(
-                                            text = "Scan Linked",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        // Pre-eclampsia Screening Alert
-                        if (vitals.isPreEclampsiaWarning) {
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = MaterialTheme.colorScheme.errorContainer,
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
-                                modifier = Modifier.fillMaxWidth().testTag("preEclampsiaWarning-${visit.id}"),
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(10.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                ) {
-                                    Icon(
-                                        Icons.Default.Warning,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.size(18.dp),
-                                    )
-                                    Column {
-                                        Text(
-                                            text = "Pre-eclampsia Risk Alert",
-                                            style = MaterialTheme.typography.labelMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onErrorContainer,
-                                        )
-                                        Text(
-                                            text = "Elevated BP (${visit.bloodPressure}) with proteinuria (${parsedFindings.urineProtein}). Clinical evaluation required.",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onErrorContainer,
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        // Canonical Bedside Vitals Grid
-                        BedsideVitalsGrid(vitals = vitals)
-
-                        // Additional clinical notes
-                        if (!visit.notes.isNullOrBlank()) {
+                            StatusWord(preEclampsiaLabel, StatusTone.High)
                             Text(
-                                text = visit.notes,
-                                style = MaterialTheme.typography.bodyMedium,
+                                text = stringResource(
+                                    R.string.pre_eclampsia_risk_text,
+                                    visit.bloodPressure.orEmpty(),
+                                    parsedFindings.urineProtein.orEmpty(),
+                                ),
+                                style = RecordType.FieldValue,
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
                         }
-
-                        // Actions: Edit and Delete
-                        if (canEdit) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.End,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                DeleteIconButton(
-                                    type = DeletableType.VISIT,
-                                    record = visit,
-                                    onClick = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.VISIT, visit.id)) },
-                                )
-                                TextButton(
-                                    onClick = { onStartVisit(patient.id, visit.id) },
-                                    modifier = Modifier.minimumTouchTarget().testTag("editVisit-${visit.id}"),
-                                ) {
-                                    Text(stringResource(R.string.edit_visit))
-                                }
-                            }
-                        }
+                    }
+                    BedsideVitalsGrid(vitals = vitals)
+                    if (!visit.notes.isNullOrBlank()) {
+                        Text(
+                            text = visit.notes,
+                            style = RecordType.FieldValue,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
                     }
                 }
             }

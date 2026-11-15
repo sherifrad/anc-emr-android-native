@@ -8,8 +8,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.ui.StatusHighBg
@@ -31,6 +33,8 @@ import com.sherifradwan.ancnative.ui.StatusModerateDarkBorder
 import com.sherifradwan.ancnative.ui.StatusModerateDarkText
 import com.sherifradwan.ancnative.ui.StatusModerateText
 import com.sherifradwan.ancnative.ui.isDarkTheme
+
+enum class StatusTone { High, Moderate, Neutral }
 
 enum class StatusKind { HighRisk, ModerateRisk, Incomplete, Delivered }
 
@@ -85,6 +89,61 @@ fun StatusTag(
             color = fg,
             maxLines = 1,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+        )
+    }
+}
+
+@Composable
+fun StatusWord(text: String, tone: StatusTone, modifier: Modifier = Modifier) {
+    val dark = isDarkTheme()
+    val color = when (tone) {
+        StatusTone.High -> MaterialTheme.colorScheme.error
+        StatusTone.Moderate -> if (dark) StatusModerateDarkText else StatusModerateText
+        StatusTone.Neutral -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    Text(
+        text = text,
+        style = RecordType.Tag.copy(fontWeight = if (tone == StatusTone.Neutral) FontWeight.SemiBold else FontWeight.Bold),
+        color = color,
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun BandChip(
+    text: String,
+    tone: StatusTone?,
+    modifier: Modifier = Modifier,
+    family: FieldFamily = currentFieldFamily(),
+) {
+    val dark = isDarkTheme()
+    val (bg, border, fg) = when (tone) {
+        null -> Triple(MaterialTheme.colorScheme.surface, Color.Transparent, family.label)
+        StatusTone.Neutral -> Triple(MaterialTheme.colorScheme.surface, Color.Transparent, MaterialTheme.colorScheme.onSurfaceVariant)
+        StatusTone.Moderate -> if (dark) {
+            Triple(StatusModerateDarkBg, StatusModerateDarkBorder, StatusModerateDarkText)
+        } else {
+            Triple(StatusModerateBg, StatusModerateBorder, StatusModerateText)
+        }
+        StatusTone.High -> if (dark) {
+            Triple(StatusHighDarkBg, StatusHighDarkBorder, StatusHighDarkText)
+        } else {
+            Triple(StatusHighBg, StatusHighBorder, StatusHighText)
+        }
+    }
+    Surface(
+        shape = RecordShapes.Small,
+        color = bg,
+        border = BorderStroke(1.dp, border),
+        modifier = modifier.heightIn(min = 24.dp),
+    ) {
+        Text(
+            text = text,
+            style = RecordType.Tag.copy(fontWeight = FontWeight.Bold),
+            color = fg,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
         )
     }
 }

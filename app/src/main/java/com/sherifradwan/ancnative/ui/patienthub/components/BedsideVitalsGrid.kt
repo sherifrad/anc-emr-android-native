@@ -1,37 +1,26 @@
 package com.sherifradwan.ancnative.ui.patienthub.components
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.BpLevel
 import com.sherifradwan.ancnative.model.FhrLevel
 import com.sherifradwan.ancnative.model.SfhConcordance
-import com.sherifradwan.ancnative.ui.TagNormalRiskBg
-import com.sherifradwan.ancnative.ui.TagNormalRiskDarkBg
-import com.sherifradwan.ancnative.ui.TagNormalRiskDarkText
-import com.sherifradwan.ancnative.ui.TagNormalRiskText
+import com.sherifradwan.ancnative.ui.components.PlainField
+import com.sherifradwan.ancnative.ui.components.RecordType
+import com.sherifradwan.ancnative.ui.components.StatusTone
+import com.sherifradwan.ancnative.ui.components.StatusWord
+import com.sherifradwan.ancnative.ui.components.ltrIsolate
 import com.sherifradwan.ancnative.ui.formatWeightKg
-import com.sherifradwan.ancnative.ui.isDarkTheme
 import com.sherifradwan.ancnative.ui.patienthub.model.VitalsSnapshot
 
 @Composable
@@ -40,224 +29,71 @@ fun BedsideVitalsGrid(
     modifier: Modifier = Modifier,
     compact: Boolean = false,
 ) {
-    val isDark = isDarkTheme()
-    val normalBg = if (isDark) TagNormalRiskDarkBg else TagNormalRiskBg
-    val normalText = if (isDark) TagNormalRiskDarkText else TagNormalRiskText
+    val hasFhr = !vitals.fhrText.isNullOrBlank()
+    val hasLegacySfh = !vitals.sfhCm.isNullOrBlank()
+    val rowGap = if (compact) 6.dp else 10.dp
 
-    Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        Column(
-            modifier = Modifier.padding(if (compact) 8.dp else 12.dp),
-            verticalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 10.dp),
-        ) {
-            // Row 1: Maternal Vitals (BP + Weight)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(IntrinsicSize.Min),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top,
-            ) {
-                // Blood Pressure Column
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Blood Pressure",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    val bpWord: (@Composable () -> Unit)? = when (vitals.bpLevel) {
+        BpLevel.SEVERE -> { { StatusWord(stringResource(R.string.vital_bp_severe), StatusTone.High) } }
+        BpLevel.RAISED -> { { StatusWord(stringResource(R.string.vital_bp_raised), StatusTone.Moderate) } }
+        BpLevel.NORMAL -> null
+    }
+    val fhrWord: (@Composable () -> Unit)? = when (vitals.fhrLevel) {
+        FhrLevel.BRADYCARDIA -> { { StatusWord(stringResource(R.string.vital_fhr_brady), StatusTone.High) } }
+        FhrLevel.TACHYCARDIA -> { { StatusWord(stringResource(R.string.vital_fhr_tachy), StatusTone.High) } }
+        FhrLevel.NORMAL, null -> null
+    }
+    val sfhWord: (@Composable () -> Unit)? = when (vitals.sfhConcordance) {
+        SfhConcordance.DISCREPANT_LARGE -> { { StatusWord(stringResource(R.string.vital_sfh_large), StatusTone.Moderate) } }
+        SfhConcordance.DISCREPANT_SMALL -> { { StatusWord(stringResource(R.string.vital_sfh_small), StatusTone.High) } }
+        SfhConcordance.CONCORDANT, null -> null
+    }
+    val weightDelta: (@Composable () -> Unit)? = vitals.weightDeltaText?.let { delta ->
+        {
+            Text(delta, style = RecordType.Secondary, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(rowGap)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            PlainField(
+                label = stringResource(R.string.vital_blood_pressure),
+                value = vitals.bpText?.takeIf { it.isNotBlank() }?.let { ltrIsolate(stringResource(R.string.unit_mmhg, it)) },
+                modifier = Modifier.weight(1f),
+                emphasis = true,
+                extra = bpWord,
+            )
+            PlainField(
+                label = stringResource(R.string.vital_weight),
+                value = formatWeightKg(vitals.weightText)?.let(::ltrIsolate),
+                modifier = Modifier.weight(1f),
+                emphasis = true,
+                extra = weightDelta,
+            )
+        }
+        if (hasFhr || hasLegacySfh) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (hasFhr) {
+                    PlainField(
+                        label = stringResource(R.string.vital_fetal_heart_rate),
+                        value = ltrIsolate(stringResource(R.string.unit_bpm, vitals.fhrText.orEmpty())),
+                        modifier = Modifier.weight(1f),
+                        emphasis = true,
+                        extra = fhrWord,
                     )
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        text = vitals.bpText?.let { "$it mmHg" } ?: "-",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontFeatureSettings = "tnum",
-                        ),
-                        color = when (vitals.bpLevel) {
-                            BpLevel.SEVERE -> MaterialTheme.colorScheme.error
-                            BpLevel.RAISED -> MaterialTheme.colorScheme.tertiary
-                            BpLevel.NORMAL -> MaterialTheme.colorScheme.primary
-                        },
-                    )
-                    Spacer(Modifier.height(2.dp))
-                    Surface(
-                        shape = RoundedCornerShape(4.dp),
-                        color = when (vitals.bpLevel) {
-                            BpLevel.SEVERE -> MaterialTheme.colorScheme.errorContainer
-                            BpLevel.RAISED -> MaterialTheme.colorScheme.tertiaryContainer
-                            BpLevel.NORMAL -> normalBg
-                        },
-                    ) {
-                        Text(
-                            text = when (vitals.bpLevel) {
-                                BpLevel.SEVERE -> "▲ Severe · Urgent ⚠️"
-                                BpLevel.RAISED -> "▲ Raised · Recheck"
-                                BpLevel.NORMAL -> "Normal ✓"
-                            },
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = when (vitals.bpLevel) {
-                                BpLevel.SEVERE -> MaterialTheme.colorScheme.onErrorContainer
-                                BpLevel.RAISED -> MaterialTheme.colorScheme.onTertiaryContainer
-                                BpLevel.NORMAL -> normalText
-                            },
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
-                        )
-                    }
+                } else {
+                    Spacer(Modifier.weight(1f))
                 }
-
-                Box(
-                    Modifier
-                        .width(1.dp)
-                        .fillMaxHeight()
-                        .padding(vertical = 4.dp)
-                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
-                )
-
-                Spacer(Modifier.width(12.dp))
-
-                // Maternal Weight Column
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Maternal Weight",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                if (hasLegacySfh) {
+                    PlainField(
+                        label = stringResource(R.string.vital_fundal_height),
+                        value = ltrIsolate(stringResource(R.string.unit_cm, vitals.sfhCm.orEmpty())),
+                        modifier = Modifier.weight(1f),
+                        emphasis = true,
+                        extra = sfhWord,
                     )
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        text = formatWeightKg(vitals.weightText) ?: "-",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontFeatureSettings = "tnum",
-                        ),
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    if (vitals.weightDeltaText != null) {
-                        Spacer(Modifier.height(2.dp))
-                        Surface(
-                            shape = RoundedCornerShape(4.dp),
-                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
-                        ) {
-                            Text(
-                                text = vitals.weightDeltaText,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Row 2: Fetal Assessment (FHR + optional legacy SFH)
-            val hasFhr = !vitals.fhrText.isNullOrBlank()
-            val hasLegacySfh = !vitals.sfhCm.isNullOrBlank()
-            if (hasFhr || hasLegacySfh) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(IntrinsicSize.Min),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top,
-                ) {
-                    if (hasFhr) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Fetal Heart Rate",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Spacer(Modifier.height(2.dp))
-                            Text(
-                                text = "${vitals.fhrText} bpm",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontFeatureSettings = "tnum",
-                                ),
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                            if (vitals.fhrLevel != null) {
-                                Spacer(Modifier.height(2.dp))
-                                val (fhrText, fhrColor, fhrBg) = when (vitals.fhrLevel) {
-                                    FhrLevel.NORMAL -> Triple("110-160 normal ✓", normalText, normalBg)
-                                    FhrLevel.BRADYCARDIA -> Triple("Bradycardia (<110) ⚠️", MaterialTheme.colorScheme.onErrorContainer, MaterialTheme.colorScheme.errorContainer)
-                                    FhrLevel.TACHYCARDIA -> Triple("Tachycardia (>160) ⚠️", MaterialTheme.colorScheme.onErrorContainer, MaterialTheme.colorScheme.errorContainer)
-                                }
-                                Surface(
-                                    shape = RoundedCornerShape(4.dp),
-                                    color = fhrBg,
-                                ) {
-                                    Text(
-                                        text = fhrText,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = fhrColor,
-                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    if (hasFhr && hasLegacySfh) {
-                        Box(
-                            Modifier
-                                .width(1.dp)
-                                .fillMaxHeight()
-                                .padding(vertical = 4.dp)
-                                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
-                        )
-                        Spacer(Modifier.width(12.dp))
-                    }
-
-                    if (hasLegacySfh) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Fundal Height",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Spacer(Modifier.height(2.dp))
-                            Text(
-                                text = "${vitals.sfhCm} cm",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontFeatureSettings = "tnum",
-                                ),
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                            if (vitals.sfhConcordance != null) {
-                                Spacer(Modifier.height(2.dp))
-                                val (sfhText, sfhColor, sfhBg) = when (vitals.sfhConcordance) {
-                                    SfhConcordance.CONCORDANT -> Triple("Concordant ✓", normalText, normalBg)
-                                    SfhConcordance.DISCREPANT_LARGE -> Triple("Large for dates ▲", MaterialTheme.colorScheme.onTertiaryContainer, MaterialTheme.colorScheme.tertiaryContainer)
-                                    SfhConcordance.DISCREPANT_SMALL -> Triple("Small for dates ▼", MaterialTheme.colorScheme.onErrorContainer, MaterialTheme.colorScheme.errorContainer)
-                                }
-                                Surface(
-                                    shape = RoundedCornerShape(4.dp),
-                                    color = sfhBg,
-                                ) {
-                                    Text(
-                                        text = sfhText,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = sfhColor,
-                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
-                                    )
-                                }
-                            }
-                        }
-                    }
+                } else {
+                    Spacer(Modifier.weight(1f))
                 }
             }
         }

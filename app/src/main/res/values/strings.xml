@@ -388,8 +388,8 @@
     <string name="visit_date_in_future">Visit date cannot be in the future.</string>
     <string name="blood_pressure_invalid">Invalid (e.g. 120/80)</string>
     <string name="weight_invalid">Invalid (30 – 250)</string>
-    <string name="bp_alert_raised">▲ Raised BP (≥140/90) · Recheck</string>
-    <string name="bp_alert_severe">▲ Severe BP (≥160/110) · Urgent</string>
+    <string name="bp_alert_raised">Raised BP (≥140/90), recheck</string>
+    <string name="bp_alert_severe">Severe BP (≥160/110), urgent</string>
     <string name="embryo_day_6">Day 6</string>
     <string name="dating_discordance_alert">EDD discordance: LMP and scan differ by %1$d&#160;d (limit %2$d&#160;d)</string>
     <string name="ga_discordance_marker_cd">Gestational age uncertain: LMP and scan due dates disagree</string>
@@ -712,4 +712,24 @@
         <item quantity="other">Show all (%d)</item>
     </plurals>
     <string name="medication_picker_show_less">Show less</string>
+    <string name="visits_tab_title">Antenatal visits (%1$d)</string>
+    <string name="record_visit_action">Record visit</string>
+    <string name="scan_linked">Scan linked</string>
+    <string name="band_severe_bp">Severe BP</string>
+    <string name="band_raised_bp">Raised BP</string>
+    <string name="pre_eclampsia_risk_label">Pre-eclampsia risk</string>
+    <string name="pre_eclampsia_risk_text">Elevated BP (%1$s) with proteinuria (%2$s). Clinical evaluation required.</string>
+    <string name="vital_blood_pressure">Blood pressure</string>
+    <string name="vital_weight">Weight</string>
+    <string name="vital_fetal_heart_rate">Fetal heart rate</string>
+    <string name="vital_fundal_height">Fundal height</string>
+    <string name="vital_bp_raised">Raised, recheck</string>
+    <string name="vital_bp_severe">Severe, urgent</string>
+    <string name="vital_fhr_brady">Bradycardia (&lt;110)</string>
+    <string name="vital_fhr_tachy">Tachycardia (&gt;160)</string>
+    <string name="vital_sfh_large">Large for dates</string>
+    <string name="vital_sfh_small">Small for dates</string>
+    <string name="unit_mmhg">%1$s mmHg</string>
+    <string name="unit_bpm">%1$s bpm</string>
+    <string name="unit_cm">%1$s cm</string>
 </resources>
