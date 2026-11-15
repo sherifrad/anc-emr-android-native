@@ -1,0 +1,684 @@
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/components/MetricCell.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/components/MetricCell.kt
+new file mode 100644
+index 0000000..58af8c8
+--- /dev/null
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/components/MetricCell.kt
+@@ -0,0 +1,51 @@
++package com.sherifradwan.ancnative.ui.components
++
++import androidx.compose.foundation.layout.Column
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.graphics.Color
++import androidx.compose.ui.text.style.TextOverflow
++
++@Composable
++fun MetricCell(
++    label: String,
++    modifier: Modifier = Modifier,
++    content: @Composable () -> Unit,
++) {
++    Column(modifier = modifier) {
++        Text(
++            text = label,
++            style = RecordType.MetricLabel,
++            color = MaterialTheme.colorScheme.onSurfaceVariant,
++            maxLines = 1,
++            overflow = TextOverflow.Ellipsis,
++        )
++        content()
++    }
++}
++
++@Composable
++fun MetricValue(
++    value: String,
++    modifier: Modifier = Modifier,
++    isMissing: Boolean = false,
++    color: Color = if (isMissing) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
++) {
++    Text(
++        text = value,
++        style = if (isMissing) RecordType.Missing else RecordType.MetricValue,
++        color = color,
++        maxLines = 1,
++        overflow = TextOverflow.Ellipsis,
++        modifier = modifier,
++    )
++}
++
++fun parityText(gravida: Long?, parity: Long?, abortion: Long?): String {
++    val g = gravida ?: 1L
++    val p = parity ?: 0L
++    val a = abortion ?: 0L
++    return if (a > 0L) "G$g P$p A$a" else "G$g P$p"
++}
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/components/RecordTokens.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/components/RecordTokens.kt
+index ac9a888..c928cda 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/components/RecordTokens.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/components/RecordTokens.kt
+@@ -57,6 +57,7 @@ object RecordSpacing {
+ }
+ 
+ object RecordType {
++    val HeaderName = TextStyle(fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold)
+     val SectionTitle = TextStyle(fontSize = 18.sp, lineHeight = 24.sp, fontWeight = FontWeight.Bold)
+     val FieldLabel = TextStyle(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.sp)
+     val FieldValue = TextStyle(fontSize = 16.sp, lineHeight = 22.sp, fontWeight = FontWeight.Normal, letterSpacing = 0.sp)
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt
+index a307378..6d97f3e 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patientdirectory/PatientDirectoryMetricsRow.kt
+@@ -24,9 +24,12 @@ import com.sherifradwan.ancnative.ui.ActionRose
+ import com.sherifradwan.ancnative.ui.GaDiscordanceMarker
+ import com.sherifradwan.ancnative.ui.PatientDashboardRowProjection
+ import com.sherifradwan.ancnative.ui.StatusHighDarkText
++import com.sherifradwan.ancnative.ui.components.MetricCell
++import com.sherifradwan.ancnative.ui.components.MetricValue
+ import com.sherifradwan.ancnative.ui.components.RecordShapes
+ import com.sherifradwan.ancnative.ui.components.RecordType
+ import com.sherifradwan.ancnative.ui.components.ltrIsolate
++import com.sherifradwan.ancnative.ui.components.parityText
+ import com.sherifradwan.ancnative.ui.isDarkTheme
+ import com.sherifradwan.ancnative.ui.patienthub.components.deliveredDaysAgo
+ import com.sherifradwan.ancnative.ui.patienthub.components.deliveredHeadline
+@@ -85,41 +88,6 @@ fun PatientDirectoryMetricsRow(
+     }
+ }
+ 
+-@Composable
+-private fun MetricCell(
+-    label: String,
+-    modifier: Modifier = Modifier,
+-    content: @Composable () -> Unit,
+-) {
+-    Column(modifier = modifier) {
+-        Text(
+-            text = label,
+-            style = RecordType.MetricLabel,
+-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+-            maxLines = 1,
+-            overflow = TextOverflow.Ellipsis,
+-        )
+-        content()
+-    }
+-}
+-
+-@Composable
+-private fun MetricValue(
+-    value: String,
+-    modifier: Modifier = Modifier,
+-    isMissing: Boolean = false,
+-    color: Color = if (isMissing) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+-) {
+-    Text(
+-        text = value,
+-        style = if (isMissing) RecordType.Missing else RecordType.MetricValue,
+-        color = color,
+-        maxLines = 1,
+-        overflow = TextOverflow.Ellipsis,
+-        modifier = modifier,
+-    )
+-}
+-
+ @Composable
+ private fun GestationalAgeCell(
+     row: PatientDashboardRowProjection,
+@@ -176,12 +144,9 @@ private fun ParityCell(
+         label = stringResource(R.string.parity),
+         modifier = modifier,
+     ) {
+-        val g = patient.gravida ?: 1L
+-        val p = patient.parity ?: 0L
+-        val a = patient.abortion ?: 0L
+-        val parityText = if (a > 0L) "G$g P$p A$a" else "G$g P$p"
++        val text = parityText(patient.gravida, patient.parity, patient.abortion)
+         MetricValue(
+-            value = ltrIsolate(parityText),
++            value = ltrIsolate(text),
+         )
+         val prevDelivery = previousDeliverySummary(patient)
+         Text(
+diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
+index aa2e610..3fcf2df 100644
+--- a/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
++++ b/app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/PatientHubHeader.kt
+@@ -1,17 +1,11 @@
+ package com.sherifradwan.ancnative.ui.patienthub
+ 
+-import androidx.compose.animation.AnimatedVisibility
+-import androidx.compose.animation.fadeIn
+-import androidx.compose.animation.fadeOut
+ import androidx.compose.foundation.BorderStroke
+-import androidx.compose.foundation.background
+-import androidx.compose.foundation.clickable
+ import androidx.compose.foundation.layout.Arrangement
+ import androidx.compose.foundation.layout.Box
+ import androidx.compose.foundation.layout.Column
+ import androidx.compose.foundation.layout.ExperimentalLayoutApi
+ import androidx.compose.foundation.layout.FlowRow
+-import androidx.compose.foundation.layout.PaddingValues
+ import androidx.compose.foundation.layout.Row
+ import androidx.compose.foundation.layout.Spacer
+ import androidx.compose.foundation.layout.fillMaxSize
+@@ -20,18 +14,12 @@ import androidx.compose.foundation.layout.height
+ import androidx.compose.foundation.layout.heightIn
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.layout.size
+-import androidx.compose.foundation.layout.width
+-import androidx.compose.foundation.shape.RoundedCornerShape
+ import androidx.compose.material.icons.Icons
+ import androidx.compose.material.icons.automirrored.filled.ArrowBack
+ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+-import androidx.compose.material.icons.filled.Add
+ import androidx.compose.material.icons.filled.Edit
+-import androidx.compose.material.icons.filled.Info
+ import androidx.compose.material.icons.filled.Print
+ import androidx.compose.material.icons.filled.Warning
+-import androidx.compose.material3.Button
+-import androidx.compose.material3.ButtonDefaults
+ import androidx.compose.material3.FilledTonalIconButton
+ import androidx.compose.material3.Icon
+ import androidx.compose.material3.IconButton
+@@ -44,28 +32,6 @@ import androidx.compose.material3.Tab
+ import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
+ import androidx.compose.runtime.Stable
+-import androidx.compose.runtime.derivedStateOf
+-import com.sherifradwan.ancnative.ui.AllergyState
+-import com.sherifradwan.ancnative.ui.BloodGroupBadge
+-import com.sherifradwan.ancnative.ui.GestationalAgeBadge
+-import com.sherifradwan.ancnative.ui.patienthub.components.ClinicalAttentionLevel
+-import com.sherifradwan.ancnative.ui.patienthub.components.attentionColors
+-import com.sherifradwan.ancnative.ui.patienthub.components.clinicalAttentionColors
+-import com.sherifradwan.ancnative.ui.patienthub.components.clinicalAttentionLevel
+-import com.sherifradwan.ancnative.ui.patienthub.components.deliveredHeadline
+-import com.sherifradwan.ancnative.ui.patienthub.components.parseAttentionEntries
+-import com.sherifradwan.ancnative.ui.patienthub.components.sortedForDisplay
+-import com.sherifradwan.ancnative.ui.patienthub.components.levelWord
+-import com.sherifradwan.ancnative.ui.components.RecordShapes
+-import com.sherifradwan.ancnative.ui.components.RecordType
+-import androidx.compose.ui.graphics.Color
+-import com.sherifradwan.ancnative.ui.ObstetricParityBadge
+-import com.sherifradwan.ancnative.ui.TagHighRiskBg
+-import com.sherifradwan.ancnative.ui.TagHighRiskDarkBg
+-import com.sherifradwan.ancnative.ui.TagHighRiskText
+-import com.sherifradwan.ancnative.ui.TagHighRiskDarkText
+-import com.sherifradwan.ancnative.ui.classifyAllergy
+-import com.sherifradwan.ancnative.ui.isDarkTheme
+ import androidx.compose.runtime.getValue
+ import androidx.compose.runtime.mutableFloatStateOf
+ import androidx.compose.runtime.remember
+@@ -73,43 +39,57 @@ import androidx.compose.runtime.setValue
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.draw.clipToBounds
++import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.graphics.graphicsLayer
+ import androidx.compose.ui.layout.layout
+ import androidx.compose.ui.layout.onSizeChanged
+ import androidx.compose.ui.platform.testTag
+ import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.semantics.contentDescription
++import androidx.compose.ui.semantics.semantics
+ import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.text.style.TextOverflow
+ import androidx.compose.ui.unit.dp
+-import androidx.compose.ui.unit.sp
+ import com.sherifradwan.ancnative.R
+ import com.sherifradwan.ancnative.model.DemoPatient
+ import com.sherifradwan.ancnative.model.SevereBpAttention
+ import com.sherifradwan.ancnative.model.datingSummaryOf
+-import java.time.LocalDate
+ import com.sherifradwan.ancnative.model.isOngoingMedication
+ import com.sherifradwan.ancnative.ui.ActionRose
++import com.sherifradwan.ancnative.ui.AllergyState
+ import com.sherifradwan.ancnative.ui.BpAlertLabel
+-import com.sherifradwan.ancnative.ui.ClinicalRiskBadge
++import com.sherifradwan.ancnative.ui.FieldPatientBg
++import com.sherifradwan.ancnative.ui.FieldPatientDarkBg
++import com.sherifradwan.ancnative.ui.GaDiscordanceMarker
+ import com.sherifradwan.ancnative.ui.PatientRiskTier
+-import com.sherifradwan.ancnative.ui.parseRiskTier
+-import com.sherifradwan.ancnative.ui.ClinicalTeal
+-import com.sherifradwan.ancnative.ui.PatientAgeBadge
+-import com.sherifradwan.ancnative.ui.TagBloodNegativeBg
+-import com.sherifradwan.ancnative.ui.TagBloodNegativeBorder
+-import com.sherifradwan.ancnative.ui.TagBloodNegativeText
+-import com.sherifradwan.ancnative.ui.TagBloodPositiveBg
+-import com.sherifradwan.ancnative.ui.TagBloodPositiveBorder
+-import com.sherifradwan.ancnative.ui.TagBloodPositiveText
+-import com.sherifradwan.ancnative.ui.TagGestationalAgeBg
+-import com.sherifradwan.ancnative.ui.TagGestationalAgeBorder
+-import com.sherifradwan.ancnative.ui.TagGestationalAgeText
+-import com.sherifradwan.ancnative.ui.TagHighRiskBg
+-import com.sherifradwan.ancnative.ui.TagHighRiskText
++import com.sherifradwan.ancnative.ui.StatusHighBg
++import com.sherifradwan.ancnative.ui.StatusHighDarkBg
++import com.sherifradwan.ancnative.ui.StatusHighDarkText
++import com.sherifradwan.ancnative.ui.StatusHighText
++import com.sherifradwan.ancnative.ui.classifyAllergy
++import com.sherifradwan.ancnative.ui.components.MetricCell
++import com.sherifradwan.ancnative.ui.components.MetricValue
++import com.sherifradwan.ancnative.ui.components.RecordShapes
++import com.sherifradwan.ancnative.ui.components.RecordType
++import com.sherifradwan.ancnative.ui.components.StatusKind
++import com.sherifradwan.ancnative.ui.components.StatusTag
++import com.sherifradwan.ancnative.ui.components.ltrIsolate
++import com.sherifradwan.ancnative.ui.components.parityText
++import com.sherifradwan.ancnative.ui.formatAgeYears
+ import com.sherifradwan.ancnative.ui.formatBloodGroup
++import com.sherifradwan.ancnative.ui.isDarkTheme
+ import com.sherifradwan.ancnative.ui.isHighRisk
+ import com.sherifradwan.ancnative.ui.isRhNegative
+ import com.sherifradwan.ancnative.ui.minimumTouchTarget
++import com.sherifradwan.ancnative.ui.parseRiskTier
++import com.sherifradwan.ancnative.ui.patienthub.components.ClinicalAttentionLevel
++import com.sherifradwan.ancnative.ui.patienthub.components.attentionColors
++import com.sherifradwan.ancnative.ui.patienthub.components.clinicalAttentionLevel
++import com.sherifradwan.ancnative.ui.patienthub.components.deliveredHeadline
++import com.sherifradwan.ancnative.ui.patienthub.components.levelWord
++import com.sherifradwan.ancnative.ui.patienthub.components.parseAttentionEntries
++import com.sherifradwan.ancnative.ui.patienthub.components.sortedForDisplay
++import java.time.LocalDate
+ import kotlin.math.roundToInt
+ 
+ @Stable
+@@ -155,7 +135,7 @@ fun PatientHubHeader(
+     onOpenAttentionDialog: () -> Unit,
+     modifier: Modifier = Modifier,
+ ) {
+-    val ga = patient.dating?.calculateGestationalAge()
++    val ga = patient.dating?.calculateGestationalAgeResult()?.shortWeeksText ?: patient.dating?.calculateGestationalAge()
+     val gaDiscordant = remember(patient) { datingSummaryOf(patient, LocalDate.now()).discordance != null }
+     val isRhNeg = isRhNegative(patient.bloodGroupText)
+     val attentionEntries = remember(patient.clinicalAttention) { parseAttentionEntries(patient.clinicalAttention) }
+@@ -202,8 +182,8 @@ fun PatientHubHeader(
+                             alpha = headerState.heroAlpha
+                             translationY = headerState.offsetPx * 0.35f
+                         }
+-                        .padding(horizontal = 14.dp, vertical = 10.dp),
+-                    verticalArrangement = Arrangement.spacedBy(8.dp),
++                        .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp),
++                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                 ) {
+                     // Top Action Bar
+                     Row(
+@@ -215,7 +195,10 @@ fun PatientHubHeader(
+                             onClick = onBack,
+                             modifier = Modifier.minimumTouchTarget().testTag("hubBackButton"),
+                         ) {
+-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
++                            Icon(
++                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
++                                contentDescription = stringResource(R.string.action_back),
++                            )
+                         }
+ 
+                         Row(
+@@ -233,7 +216,7 @@ fun PatientHubHeader(
+                                 ) {
+                                     Icon(
+                                         Icons.Default.Warning,
+-                                        contentDescription = "Clinical Attention",
++                                        contentDescription = stringResource(R.string.clinical_attention),
+                                         tint = ActionRose,
+                                         modifier = Modifier.size(20.dp),
+                                     )
+@@ -246,7 +229,7 @@ fun PatientHubHeader(
+                             ) {
+                                 Icon(
+                                     Icons.Default.Print,
+-                                    contentDescription = "2-Page Report",
++                                    contentDescription = stringResource(R.string.action_two_page_report),
+                                     tint = MaterialTheme.colorScheme.primary,
+                                     modifier = Modifier.size(20.dp),
+                                 )
+@@ -257,7 +240,7 @@ fun PatientHubHeader(
+                             ) {
+                                 Icon(
+                                     Icons.Default.Edit,
+-                                    contentDescription = "Edit Patient",
++                                    contentDescription = stringResource(R.string.edit_patient),
+                                     tint = MaterialTheme.colorScheme.primary,
+                                     modifier = Modifier.size(20.dp),
+                                 )
+@@ -265,89 +248,138 @@ fun PatientHubHeader(
+                         }
+                     }
+ 
+-                    // Patient Identity & Primary Metrics Lockup
+-                    // Name owns the full row width so the GA badge stacks below instead of squeezing it
+-                    Column(
+-                        modifier = Modifier.fillMaxWidth(),
+-                        verticalArrangement = Arrangement.spacedBy(6.dp),
+-                    ) {
+-                        Text(
+-                            text = patient.displayName,
+-                            style = MaterialTheme.typography.headlineSmall,
+-                            fontWeight = FontWeight.ExtraBold,
+-                            color = MaterialTheme.colorScheme.onSurface,
+-                            modifier = Modifier
+-                                .fillMaxWidth()
+-                                .testTag("hubPatientName"),
+-                        )
+-
+-                        if (patient.delivered) {
+-                            Box(modifier = Modifier.testTag("hubDeliveredBadge")) {
+-                                GestationalAgeBadge(gaText = deliveredHeadline(patient.deliveryDate))
+-                            }
+-                        } else if (!ga.isNullOrBlank()) {
+-                            Box(
+-                                modifier = Modifier
+-                                    .testTag("hubGaBadge"),
+-                            ) {
+-                                GestationalAgeBadge(
+-                                    gaText = stringResource(R.string.ga_prefix, ga),
+-                                    discordant = gaDiscordant,
+-                                )
+-                            }
+-                        }
+-                    }
++                    // Patient Name
++                    Text(
++                        text = patient.displayName,
++                        style = RecordType.HeaderName,
++                        color = MaterialTheme.colorScheme.onSurface,
++                        modifier = Modifier
++                            .fillMaxWidth()
++                            .testTag("hubPatientName"),
++                    )
+ 
+-                    // Clinical badges flow row: pills wrap and grow with their text
++                    // Clinical badges / tags flow row
+                     FlowRow(
+                         modifier = Modifier.fillMaxWidth(),
+                         horizontalArrangement = Arrangement.spacedBy(6.dp),
+                         verticalArrangement = Arrangement.spacedBy(6.dp),
+                     ) {
+-                        Box(
+-                            modifier = Modifier
+-                                .testTag("hubRiskBadge")
+-                        ) {
+-                            ClinicalRiskBadge(
+-                                isHighRisk = isHighRisk(patient.riskLevel),
+-                                isModerate = parseRiskTier(patient.riskLevel) == PatientRiskTier.MEDIUM,
+-                            )
++                        val isHigh = isHighRisk(patient.riskLevel)
++                        val isModerate = !isHigh && parseRiskTier(patient.riskLevel) == PatientRiskTier.MEDIUM
++                        if (isHigh) {
++                            Box(modifier = Modifier.testTag("hubRiskBadge")) {
++                                StatusTag(StatusKind.HighRisk)
++                            }
++                        } else if (isModerate) {
++                            Box(modifier = Modifier.testTag("hubRiskBadge")) {
++                                StatusTag(StatusKind.ModerateRisk)
++                            }
+                         }
++
+                         patient.visits.firstOrNull()?.bloodPressure?.let { bp ->
+                             BpAlertLabel(bp)
+                         }
+-                        if (!patient.ageText.isNullOrBlank()) {
+-                            PatientAgeBadge(ageText = patient.ageText)
+-                        }
+-                        ObstetricParityBadge(patient.gravida, patient.parity, patient.abortion)
+-                        if (!patient.bloodGroupText.isNullOrBlank()) {
+-                            BloodGroupBadge(patient.bloodGroupText)
+-                        }
++
+                         val allergy = classifyAllergy(patient.allergyHistory)
+                         if (allergy !is AllergyState.NotRecorded) {
+                             val isAlert = allergy is AllergyState.Recorded
+                             Surface(
+-                                shape = RoundedCornerShape(6.dp),
++                                shape = RecordShapes.Small,
+                                 color = if (isAlert) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
++                                border = if (isAlert) BorderStroke(1.dp, MaterialTheme.colorScheme.error) else null,
+                                 modifier = Modifier.testTag("hubAllergyPill"),
+                             ) {
+                                 Text(
+-                                    text = if (allergy is AllergyState.Recorded) {
+-                                        "Allergy: ${allergy.text}"
++                                    text = if (isAlert) {
++                                        stringResource(R.string.allergy_banner, allergy.text)
+                                     } else {
+                                         stringResource(R.string.no_allergy_history)
+                                     },
+-                                    style = MaterialTheme.typography.labelSmall,
+-                                    fontWeight = FontWeight.Bold,
++                                    style = RecordType.Tag.copy(fontWeight = FontWeight.Bold),
+                                     color = if (isAlert) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                     modifier = Modifier
+-                                        .padding(horizontal = 6.dp, vertical = 3.dp)
++                                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                                         .testTag("hubAllergyText"),
+                                 )
+                             }
+                         }
+                     }
+ 
++                    // Facts row
++                    Row(
++                        modifier = Modifier.fillMaxWidth(),
++                        horizontalArrangement = Arrangement.spacedBy(8.dp),
++                    ) {
++                        if (patient.delivered) {
++                            Box(modifier = Modifier.weight(1f).testTag("hubDeliveredBadge")) {
++                                MetricCell(stringResource(R.string.delivery)) {
++                                    MetricValue(deliveredHeadline(patient.deliveryDate))
++                                }
++                            }
++                        } else if (!ga.isNullOrBlank()) {
++                            Box(modifier = Modifier.weight(1f).testTag("hubGaBadge")) {
++                                MetricCell(stringResource(R.string.ga_label)) {
++                                    Row(
++                                        modifier = Modifier.testTag("gestationalAgeBadge"),
++                                        verticalAlignment = Alignment.CenterVertically,
++                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
++                                    ) {
++                                        MetricValue(ltrIsolate(ga))
++                                        if (gaDiscordant) {
++                                            GaDiscordanceMarker(style = RecordType.MetricValue)
++                                        }
++                                    }
++                                }
++                            }
++                        } else {
++                            Spacer(modifier = Modifier.weight(1f))
++                        }
++
++                        MetricCell(
++                            label = stringResource(R.string.parity),
++                            modifier = Modifier.weight(1f),
++                        ) {
++                            MetricValue(
++                                value = ltrIsolate(parityText(patient.gravida, patient.parity, patient.abortion)),
++                            )
++                        }
++
++                        val bgFormatted = formatBloodGroup(patient.bloodGroupText)
++                        MetricCell(
++                            label = stringResource(R.string.blood_group),
++                            modifier = Modifier.weight(1f),
++                        ) {
++                            MetricValue(
++                                value = ltrIsolate(bgFormatted ?: "--"),
++                                isMissing = bgFormatted == null,
++                            )
++                            if (isRhNeg) {
++                                StatusTag(
++                                    kind = StatusKind.HighRisk,
++                                    text = stringResource(R.string.rh_negative_tag),
++                                    modifier = Modifier.padding(top = 4.dp),
++                                )
++                            }
++                        }
++                    }
++
++                    val ageYears = formatAgeYears(patient.ageText)
++                    if (ageYears != null) {
++                        Row(
++                            modifier = Modifier.fillMaxWidth(),
++                            horizontalArrangement = Arrangement.spacedBy(8.dp),
++                        ) {
++                            MetricCell(
++                                label = stringResource(R.string.age_label),
++                                modifier = Modifier.weight(1f),
++                            ) {
++                                MetricValue(ltrIsolate(ageYears))
++                            }
++                            Spacer(modifier = Modifier.weight(1f))
++                            Spacer(modifier = Modifier.weight(1f))
++                        }
++                    }
++
+                     // Compact Clinical Attention Strip (36dp min height)
+                     if (hasAttention) {
+                         CompactClinicalAttentionStrip(
+@@ -383,20 +415,41 @@ fun PatientHubHeader(
+                                 onClick = onBack,
+                                 modifier = Modifier.minimumTouchTarget().testTag("stickyBackButton"),
+                             ) {
+-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
++                                Icon(
++                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
++                                    contentDescription = stringResource(R.string.action_back),
++                                )
+                             }
+                             Text(
+                                 text = patient.displayName,
+-                                style = MaterialTheme.typography.titleMedium,
+-                                fontWeight = FontWeight.Bold,
++                                style = RecordType.CardName,
++                                color = MaterialTheme.colorScheme.onSurface,
+                                 maxLines = 1,
+                                 overflow = TextOverflow.Ellipsis,
+                                 modifier = Modifier.weight(1f),
+                             )
+                             if (patient.delivered) {
+-                                GestationalAgeBadge(deliveredHeadline(patient.deliveryDate))
++                                Text(
++                                    text = ltrIsolate(deliveredHeadline(patient.deliveryDate)),
++                                    style = RecordType.Action.copy(fontWeight = FontWeight.SemiBold),
++                                    color = MaterialTheme.colorScheme.onSurface,
++                                    maxLines = 1,
++                                )
+                             } else if (!gaCompact.isNullOrBlank()) {
+-                                GestationalAgeBadge(gaCompact, discordant = gaDiscordant)
++                                Row(
++                                    verticalAlignment = Alignment.CenterVertically,
++                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
++                                ) {
++                                    Text(
++                                        text = ltrIsolate(gaCompact),
++                                        style = RecordType.Action.copy(fontWeight = FontWeight.SemiBold),
++                                        color = MaterialTheme.colorScheme.onSurface,
++                                        maxLines = 1,
++                                    )
++                                    if (gaDiscordant) {
++                                        GaDiscordanceMarker(style = RecordType.Action.copy(fontWeight = FontWeight.SemiBold))
++                                    }
++                                }
+                             }
+                             if (hasAttention) {
+                                 IconButton(
+@@ -405,7 +458,7 @@ fun PatientHubHeader(
+                                 ) {
+                                     Icon(
+                                         imageVector = Icons.Default.Warning,
+-                                        contentDescription = "Attention Alert",
++                                        contentDescription = stringResource(R.string.clinical_attention),
+                                         tint = ActionRose,
+                                         modifier = Modifier.size(20.dp),
+                                     )
+@@ -422,6 +475,8 @@ fun PatientHubHeader(
+                 edgePadding = 12.dp,
+                 modifier = Modifier.fillMaxWidth().testTag("patientHubTabBar"),
+             ) {
++                val dark = isDarkTheme()
++                val needsAttention = stringResource(R.string.needs_attention)
+                 PatientHubTab.entries.forEach { tab ->
+                     val isSelected = selectedTab == tab
+                     val badgeCount: Int? = when (tab) {
+@@ -450,37 +505,45 @@ fun PatientHubHeader(
+                                 verticalAlignment = Alignment.CenterVertically,
+                                 horizontalArrangement = Arrangement.spacedBy(6.dp),
+                             ) {
+-                                Icon(
+-                                    imageVector = tab.icon,
+-                                    contentDescription = null,
+-                                    modifier = Modifier.size(16.dp),
+-                                )
+                                 Text(
+                                     text = tab.title,
+-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
++                                    style = RecordType.Action.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium),
+                                     maxLines = 1,
+                                     softWrap = false,
+                                 )
+                                 if (badgeCount != null && badgeCount > 0) {
+-                                    val isDark = isDarkTheme()
+                                     Surface(
+-                                        shape = RoundedCornerShape(999.dp),
+-                                        color = if (hasTabAlert) (if (isDark) TagHighRiskDarkBg else TagHighRiskBg) else MaterialTheme.colorScheme.secondaryContainer,
++                                        shape = RecordShapes.Small,
++                                        color = if (hasTabAlert) {
++                                            if (dark) StatusHighDarkBg else StatusHighBg
++                                        } else {
++                                            if (dark) FieldPatientDarkBg else FieldPatientBg
++                                        },
+                                     ) {
+                                         Text(
+                                             text = if (hasTabAlert && tab == PatientHubTab.LABS) "$badgeCount▲" else "$badgeCount",
+-                                            style = MaterialTheme.typography.labelSmall,
+-                                            fontWeight = FontWeight.Bold,
+-                                            color = if (hasTabAlert) (if (isDark) TagHighRiskDarkText else TagHighRiskText) else MaterialTheme.colorScheme.onSecondaryContainer,
+-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
++                                            style = RecordType.Tag,
++                                            color = if (hasTabAlert) {
++                                                if (dark) StatusHighDarkText else StatusHighText
++                                            } else {
++                                                MaterialTheme.colorScheme.onSurface
++                                            },
++                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
+                                         )
+                                     }
+                                 } else if (hasTabAlert) {
+-                                    Box(
+-                                        modifier = Modifier
+-                                            .size(6.dp)
+-                                            .background(ActionRose, RoundedCornerShape(3.dp)),
+-                                    )
++                                    Surface(
++                                        shape = RecordShapes.Small,
++                                        color = if (dark) StatusHighDarkBg else StatusHighBg,
++                                        modifier = Modifier.semantics { contentDescription = needsAttention },
++                                    ) {
++                                        Text(
++                                            text = "!",
++                                            style = RecordType.Tag.copy(fontWeight = FontWeight.Bold),
++                                            color = if (dark) StatusHighDarkText else StatusHighText,
++                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
++                                        )
++                                    }
+                                 }
+                             }
+                         },
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index 9d25723..27e3216 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -702,4 +702,10 @@
+     <string name="attention_desc_note">Note: context to keep in mind</string>
+     <string name="attention_update_item">Update item</string>
+     <string name="attention_add_item">Add item</string>
++    <string name="status_normal_risk">Normal risk</string>
++    <string name="rh_negative_tag">Rh negative</string>
++    <string name="needs_attention">Needs attention</string>
++    <string name="action_back">Back</string>
++    <string name="action_two_page_report">Two-page report</string>
++    <string name="age_label">Age</string>
+ </resources>

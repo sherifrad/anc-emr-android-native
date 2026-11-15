@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Mock S06: Visits tab</title>
+<style>
+  /* Tokens: the app's real scheme values (Theme.kt) plus the slice 0 record tokens. */
+  :root{
+    --primary:#0D1B3D; --on:#0D1B3D; --onv:#4C3F43; --onprimary:#FFFFFF;
+    --surface:#FFFFFF; --bg:#FBF8F5; --outv:#CAC4D0; --outline:#79747E; --sch:#EFE9E4;
+    --err:#BA1A1A; --errc:#FFDAD6; --onerrc:#410002;
+    --pt-bg:#E9EEF8; --pt-lb:#23407A; --ob-bg:#E3F0EE; --ob-lb:#1D5149;
+    --hx-bg:#F1EDE4; --hx-lb:#594A2C; --dl-bg:#EEE9F5; --dl-lb:#4E3A78;
+    --inc-bg:#EEF0F4; --inc-bd:#757E8E; --inc-fg:#333B4A;
+    --mod-bg:#FCEFD6; --mod-bd:#9E6F1E; --mod-fg:#6E4708;
+    --hi-bg:#FBE3E3; --hi-bd:#C26666; --hi-fg:#8E1B1B;
+    --r-s:10px; --r-l:16px;
+  }
+  .dark{
+    --primary:#B4C5FF; --on:#E2E2EA; --onv:#CDC3C6; --onprimary:#002A78;
+    --surface:#1A202E; --bg:#0E121B; --outv:#3A4459; --outline:#8E95A5; --sch:#283248;
+    --err:#FFB4AB; --errc:#5C141D; --onerrc:#FFDAD6;
+    --pt-bg:#22304A; --pt-lb:#AFC6F2; --ob-bg:#1D3836; --ob-lb:#9FD6CC;
+    --hx-bg:#36301F; --hx-lb:#E0CFA6; --dl-bg:#2E2842; --dl-lb:#CDBDF0;
+    --inc-bg:#2A3140; --inc-bd:#7D889E; --inc-fg:#D5DAE3;
+    --mod-bg:#3A2A0E; --mod-bd:#A87A2A; --mod-fg:#F3D18E;
+    --hi-bg:#4A1616; --hi-bd:#B45A5A; --hi-fg:#FFC9C9;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:#FFFFFF;color:#0D1B3D;font-family:Roboto,"Noto Sans","Noto Sans Arabic","Segoe UI",system-ui,-apple-system,Arial,sans-serif;font-size:15px;line-height:1.5;padding:32px 16px 64px}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-size:26px;line-height:1.25;margin:0 0 8px}
+  h2{font-size:20px;line-height:1.3;margin:44px 0 6px}
+  h3.sub{font-size:16px;margin:18px 0 6px}
+  .lede,p,li{max-width:76ch}
+  .lede{color:#4C3F43;margin:0 0 4px}
+  .reason{border:1px solid #CAC4D0;border-radius:16px;padding:18px 20px;margin-top:18px;background:#FDFCFB}
+  .reason h2{margin-top:0}
+  .reason ul{margin:4px 0 0;padding-inline-start:20px}
+  .pair{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-top:14px}
+  figure{margin:0;width:360px;max-width:100%;flex:0 0 auto}
+  figcaption{font-size:14px;color:#4C3F43;margin:0 0 8px}
+  figcaption b{color:#0D1B3D}
+  .note{font-size:14px;color:#4C3F43;margin:10px 0 0}
+  .phone{width:100%;background:var(--bg);border:1px solid #B9B4BE;border-radius:16px;overflow:hidden;color:var(--on)}
+  .screen{padding:16px;display:flex;flex-direction:column;gap:12px}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  bdi{unicode-bidi:isolate}
+
+  /* record components (slice 0) */
+  .sec{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:4px 4px 16px 16px}
+  .sec-head{display:flex;align-items:center;min-height:48px;gap:8px}
+  .sec-head h4{flex:1 1 auto;margin:0;padding:6px 0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .sec-body{display:flex;flex-direction:column;gap:12px;padding-inline-end:12px}
+  .act{min-width:48px;min-height:48px;padding:0 12px;border-radius:var(--r-s);font-size:14px;font-weight:600;color:var(--primary);display:inline-flex;align-items:center;justify-content:center}
+  .act:hover{background:rgba(13,27,61,.06)}
+  .f{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .flab{font-size:12px;line-height:16px;font-weight:600;color:var(--flb)}
+  .fval{margin:0;min-height:44px;padding:10px 12px;border-radius:var(--r-s);background:var(--fbg);font-size:16px;line-height:22px;color:var(--on);overflow-wrap:anywhere}
+  .fval.key{font-weight:600}
+  .fval.miss{color:var(--onv);font-style:italic}
+  .frow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .fam-pt{--fbg:var(--pt-bg);--flb:var(--pt-lb)} .fam-ob{--fbg:var(--ob-bg);--flb:var(--ob-lb)}
+  .fam-hx{--fbg:var(--hx-bg);--flb:var(--hx-lb)} .fam-dl{--fbg:var(--dl-bg);--flb:var(--dl-lb)}
+  .tag{display:inline-flex;align-items:center;min-height:24px;padding:3px 8px;border-radius:var(--r-s);font-size:12px;line-height:16px;font-weight:600;border:1px solid;white-space:nowrap}
+  .t-hi{background:var(--hi-bg);border-color:var(--hi-bd);color:var(--hi-fg);font-weight:700}
+  .t-mod{background:var(--mod-bg);border-color:var(--mod-bd);color:var(--mod-fg)}
+  .t-inc{background:var(--inc-bg);border-color:var(--inc-bd);color:var(--inc-fg)}
+  .t-del{background:var(--surface);border-color:var(--primary);color:var(--primary)}
+  .t-norm{background:var(--surface);border-color:var(--inc-bd);color:var(--onv)}
+  .t-err{background:var(--errc);border-color:var(--err);color:var(--onerrc);font-weight:700}
+  .mlab{font-size:12px;line-height:16px;font-weight:500;color:var(--onv)}
+  .mval{font-size:16px;line-height:22px;font-weight:600;color:var(--on);white-space:nowrap}
+
+  /* tables */
+  .tablewrap{overflow-x:auto;max-width:100%}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin-top:10px}
+  th,td{border-bottom:1px solid #E6E1E5;padding:7px 8px;text-align:start;vertical-align:top}
+  th{background:#F7F5F3}
+  td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+  ol.map li{margin:7px 0}
+  code{font-family:"Roboto Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:#F3F0EE;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  /* tab pages (slices 6 to 9) */
+  .tabhead{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .tabhead h4{margin:0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .pbtn{min-height:48px;padding:0 16px;border-radius:var(--r-s);background:var(--primary);color:var(--onprimary);font-size:14px;font-weight:600;white-space:nowrap}
+  .obtn{min-height:48px;padding:0 16px;border:1px solid var(--outline);border-radius:var(--r-s);font-size:14px;font-weight:600;color:var(--primary);background:var(--surface)}
+  .emptyc{margin:0;background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:20px 16px;font-size:16px;color:var(--onv)}
+  .t-neu{background:var(--surface);border-color:var(--inc-bd);color:var(--onv)}
+  .tags{display:flex;flex-wrap:wrap;gap:6px}
+  .mgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 8px}
+  .mgrid.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .mgrid > div{min-width:0;display:flex;flex-direction:column;gap:2px;align-items:flex-start}
+  .del{width:48px;height:48px;border-radius:24px;color:var(--onv);font-size:13px}
+  .hact{display:flex;align-items:center}
+  .sectxt{margin:0;font-size:14px;line-height:20px;color:var(--onv)}
+  .bodytxt{margin:0;font-size:16px;line-height:22px;color:var(--on)}
+  .old{background:#F9F5F3;border:1px solid #E4DFE6;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px;color:#0D1B3D}
+  .old .d{font-size:15px;font-weight:700}
+  .opill{display:inline-block;font-size:11px;font-weight:700;padding:2px 6px;border-radius:6px}
+  .ogrid{background:#fff;border:1px solid #EDE8EC;border-radius:12px;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:11px}
+  .ogrid b{display:block;font-size:15px}
+  .olab{font-size:11px;font-weight:700;color:#4C3F43}
+  /* flat lists (owner feedback 2026-11-15: no box inside a box, no tinted box per field in lists) */
+  .flat{background:var(--surface);padding:12px 16px 16px;display:flex;flex-direction:column;color:var(--on)}
+  .flat .tabhead{padding-bottom:8px}
+  .rec{padding:12px 0;border-top:1px solid var(--outv);display:flex;flex-direction:column;gap:8px}
+  .rec:first-of-type{border-top:0}
+  .rh{display:flex;align-items:center;gap:4px;min-height:48px;margin:-8px 0 -8px}
+  .rh .t{flex:1 1 auto;min-width:0;font-size:16px;line-height:22px;font-weight:700;color:var(--on)}
+  .sub2{margin:0;font-size:14px;line-height:20px;color:var(--onv)}
+  .pgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px}
+  .pgrid.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .pgrid > div,.pf{min-width:0;display:flex;flex-direction:column}
+  .pf .l,.pgrid .l{font-size:12px;line-height:16px;font-weight:500;color:var(--onv)}
+  .pf .v,.pgrid .v{font-size:16px;line-height:22px;color:var(--on);overflow-wrap:anywhere}
+  .pgrid .v.k{font-weight:600}
+  .sw{font-size:12px;line-height:16px;font-weight:700}
+  .sw-hi{color:var(--err)} .sw-mod{color:var(--mod-fg)} .sw-neu{color:var(--onv);font-weight:600}
+  .dark .sw-mod{color:#F3D18E}
+  .subhead{margin:4px 0 0;font-size:14px;line-height:20px;font-weight:700;color:var(--primary)}
+
+  .alertline{display:flex;flex-direction:column;gap:2px}
+  .alertline .tx{font-size:16px;line-height:22px;color:var(--on)}
+</style>
+</head>
+<body>
+<main class="wrap">
+<h1>Mock S06: Visits tab</h1>
+<p class="lede">For slice 6. Revised after the owner's feedback on the meds mock ("more elaborating than needed with all these squares"): visits are a flat list. Owner sample: Mona Ragab has BP 110/70; the date of that visit and her other vitals are not in the sample, so her row shows "[visit date]" and "Not recorded". The second row uses the in-repo demo fixture <code>DemoFixtures</code> visit <code>...0106</code> (2026-07-25, BP 120/78, 71.5 kg, fundal height 28 cm), labelled as a fixture; its GA (28+0 wks) follows from that fixture's EDD 2026-10-17. Flagged states use bracketed placeholders.</p>
+
+<section class="reason" aria-labelledby="r">
+  <h2 id="r">Design reasoning</h2>
+  <p>Reading this as: a timeline of bedside checks a doctor scans for the one abnormal number, dial ENERGY 1 / RHYTHM 1 / MOTION 1.</p>
+  <ul>
+    <li><b>A flat list, not cards.</b> Each visit is a row on the white tab surface: the date as a 16 sp bold heading with Delete and Edit at its end, one grey line under it ("28+0 wks, scan linked"), then the vitals as plain label-over-value text. Visits are separated by a hairline. No card, no box inside a box, no tinted square per field.</li>
+    <li><b>Vitals in two plain columns:</b> Blood pressure, Weight, Fetal heart rate, Fundal height (12 sp grey label, 16 sp value).</li>
+    <li><b>Flags as coloured words, not pills:</b> "Raised, recheck" (amber word), "Severe, urgent", "Bradycardia (&lt;110)", "Small for dates" (red words), "Large for dates" (amber). Normal values carry no word. The "▲", "✓", "⚠️" and "·" go; owner decision 6 also cleans the <code>bp_alert_*</code> strings.</li>
+    <li><b>Pre-eclampsia</b> is a red label "Pre-eclampsia risk" over the existing sentence, at the top of the row, without a filled box.</li>
+    <li><b>GA as "28+0 wks"</b> (owner decision 9), in the grey line under the date.</li>
+    <li><b>Dropped:</b> the tinted card per visit, the bordered grid box inside it, the column dividers, the 11 sp labels, the green "Normal ✓" pills, the duplicate BP alert in the visit header, the "+" on Record visit.</li>
+  </ul>
+</section>
+
+<h2>1. Visits tab</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, fixture visit</figcaption>
+    <div class="phone"><div class="screen">
+      <div class="tabhead"><h4 style="font-size:15px">Antenatal Visits (1)</h4><span class="pbtn" style="display:inline-flex;align-items:center;font-size:13px">+ Record Visit</span></div>
+      <div class="old">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="d">2026-07-25</span><span class="opill" style="background:#E0F2FE;color:#0369A1">28w 0d</span></div>
+        <div class="ogrid">
+          <div><span class="olab">Blood Pressure</span><b>120/78 mmHg</b><span class="opill" style="background:#DCFCE7;color:#166534">Normal ✓</span></div>
+          <div><span class="olab">Maternal Weight</span><b>71.5 kg</b></div>
+          <div><span class="olab">Fundal Height</span><b>28 cm</b><span class="opill" style="background:#DCFCE7;color:#166534">Concordant ✓</span></div>
+        </div>
+        <span style="font-size:13px">GDM ruled out; Hb 11.6 g/dL reassuring</span>
+        <span style="align-self:flex-end;font-size:13px">Delete &nbsp; Edit visit</span>
+      </div>
+    </div></div>
+    <p class="note">A tinted card holding a bordered box holding pills: three layers for four numbers.</p>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, slice 6</figcaption>
+    <div class="phone"><div class="flat">
+      <div class="tabhead"><h4>Antenatal visits (2)</h4><button type="button" class="pbtn">Record visit</button></div>
+      <div class="rec">
+        <div class="rh"><span class="t">[visit date]</span><button type="button" class="del" aria-label="Delete visit">Delete</button><button type="button" class="act" aria-label="Edit visit">Edit</button></div>
+        <div class="pgrid">
+          <div><span class="l">Blood pressure</span><span class="v k">110/70 mmHg</span></div>
+          <div><span class="l">Weight</span><span class="v" style="font-style:italic;color:var(--onv)">Not recorded</span></div>
+        </div>
+      </div>
+      <div class="rec">
+        <div class="rh"><span class="t">2026-07-25</span><button type="button" class="del" aria-label="Delete visit">Delete</button><button type="button" class="act" aria-label="Edit visit">Edit</button></div>
+        <p class="sub2">28+0 wks</p>
+        <div class="pgrid">
+          <div><span class="l">Blood pressure</span><span class="v k">120/78 mmHg</span></div>
+          <div><span class="l">Weight</span><span class="v k">71.5 kg</span></div>
+          <div><span class="l">Fundal height</span><span class="v k">28 cm</span></div>
+        </div>
+        <p class="bodytxt">GDM ruled out; Hb 11.6 g/dL reassuring</p>
+      </div>
+    </div></div>
+    <p class="note">One surface, rows split by hairlines. Delete is an icon button in the app (48 dp, labelled); drawn as a word here.</p>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, flagged row (layout only) and empty</figcaption>
+    <div class="phone"><div class="flat">
+      <div class="rec">
+        <div class="rh"><span class="t">[visit date]</span><button type="button" class="del" aria-label="Delete visit">Delete</button><button type="button" class="act" aria-label="Edit visit">Edit</button></div>
+        <p class="sub2">[GA], scan linked</p>
+        <div class="alertline"><span class="sw sw-hi">Pre-eclampsia risk</span><span class="tx">Elevated BP ([BP]) with proteinuria ([protein]). Clinical evaluation required.</span></div>
+        <div class="pgrid">
+          <div><span class="l">Blood pressure</span><span class="v k">[BP] mmHg</span><span class="sw sw-hi">Severe, urgent</span></div>
+          <div><span class="l">Weight</span><span class="v k">[weight] kg</span><span class="sub2">Δ [change] kg</span></div>
+          <div><span class="l">Fetal heart rate</span><span class="v k">[rate] bpm</span><span class="sw sw-hi">Bradycardia (&lt;110)</span></div>
+          <div><span class="l">Fundal height</span><span class="v k">[cm] cm</span><span class="sw sw-mod">Large for dates</span></div>
+        </div>
+      </div>
+      <div class="rec"><p class="sub2" style="font-size:16px">No records</p></div>
+    </div></div>
+    <p class="note">Bracketed values are placeholders. Raised BP reads "Raised, recheck" in amber. Empty keeps today's text.</p>
+  </figure>
+</div>
+
+<h2>2. Dark</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Dark</b>, after</figcaption>
+    <div class="phone dark"><div class="flat">
+      <div class="tabhead"><h4>Antenatal visits (1)</h4><button type="button" class="pbtn">Record visit</button></div>
+      <div class="rec">
+        <div class="rh"><span class="t">2026-07-25</span><button type="button" class="del" aria-label="Delete visit">Delete</button><button type="button" class="act" aria-label="Edit visit">Edit</button></div>
+        <p class="sub2">28+0 wks</p>
+        <div class="pgrid">
+          <div><span class="l">Blood pressure</span><span class="v k">[BP] mmHg</span><span class="sw sw-mod">Raised, recheck</span></div>
+          <div><span class="l">Weight</span><span class="v k">71.5 kg</span></div>
+        </div>
+      </div>
+    </div></div>
+  </figure>
+</div>
+
+<h2>3. Contrast (computed)</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Pair</th><th>Text</th><th>Background</th><th>Ratio</th></tr></thead>
+<tbody>
+<tr><td>Date heading, values</td><td>#0D1B3D</td><td>#FFFFFF</td><td class="n">16.92</td></tr>
+<tr><td>Labels, grey line, Δ line, Not recorded</td><td>#4C3F43</td><td>#FFFFFF</td><td class="n">10.00</td></tr>
+<tr><td>Red flag words (error)</td><td>#BA1A1A</td><td>#FFFFFF</td><td class="n">6.46</td></tr>
+<tr><td>Amber flag words</td><td>#6E4708</td><td>#FFFFFF</td><td class="n">8.18</td></tr>
+<tr><td>Record visit (onPrimary on primary)</td><td>#FFFFFF</td><td>#0D1B3D</td><td class="n">16.92</td></tr>
+<tr><td>Dark heading / label / red word / amber word</td><td>#E2E2EA / #CDC3C6 / #FFB4AB / #F3D18E</td><td>#1A202E</td><td class="n">12.64 / 9.47 / 9.59 / 11.10</td></tr>
+<tr><td>Hairline (decorative, non-text)</td><td>#CAC4D0</td><td>#FFFFFF</td><td class="n">1.70</td></tr>
+</tbody></table></div>
+
+<h2>4. Compose mapping</h2>
+<ol class="map">
+  <li>Tab: <code>LazyColumn</code> on <code>colorScheme.surface</code>; header item with <code>RecordType.SectionTitle</code> and the Record visit button (48 dp, word only); <code>HorizontalDivider(color = outlineVariant)</code> between visit items.</li>
+  <li>Visit item: shared <code>RecordListItem(title = visit.date, subtitle = "28+0 wks, scan linked", actions = { DeleteIconButton; SectionTextAction(Edit) })</code> (new, slice 6): heading row min 48 dp, title <code>RecordType.CardName</code>, subtitle <code>RecordType.Secondary</code>.</li>
+  <li>Vitals: shared <code>PlainField(label, value, flag)</code> (new in <code>MetricCell.kt</code>): 12 sp label, 16 sp value that wraps, optional <code>StatusWord</code>; two per row with <code>weight(1f)</code>.</li>
+  <li>Flags: shared <code>StatusWord(text, tone)</code> (new in <code>StatusTag.kt</code>): plain <code>Text(RecordType.Tag.copy(fontWeight = Bold))</code> in error, amber (<code>StatusModerateText</code> / dark) or onSurfaceVariant; no fill, no border.</li>
+  <li>Pre-eclampsia: <code>StatusWord(High, "Pre-eclampsia risk")</code> over <code>Text(RecordType.FieldValue)</code>, tag <code>preEclampsiaWarning-${id}</code> on the column.</li>
+</ol>
+
+</main>
+</body>
+</html>

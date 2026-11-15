@@ -173,28 +173,25 @@ Each slice is one builder lane, one branch, at most about five main files. "Mock
 - Files: `ui/PatientListScreen.kt` (level 3, drawing code only, logic untouched), `patientdirectory/PatientActionsModalSheet.kt`, `strings.xml`. `DashboardSort.kt` is not touched.
 - Tests needing edits: none expected. Depends on: 1B (and `RecordType.HeaderName` from 4, or adds it). Risk: medium-high.
 
-### Slice 6. Visits tab
-- Scope: visit records as `RecordRow`s on the timeline, vitals as `LabeledValue` grid in a new Vitals family or the Patient family (mock decides), BP alert words kept.
-- Files: `tabs/VisitsTab.kt`, `components/BedsideVitalsGrid.kt`, `model/BedsideVitalsUi.kt`, `ui/TimelineSpine.kt`.
-- Tests: `VisitEntryDesignTest` (known flaky `bloodPressureHighBpShowsWarningBox`), `AncWorkflowTest` visit steps.
-- Depends on: 0, 1A. Risk: medium. Mock first: visits tab with three visits (one raised BP, one severe), empty state; 360 dp. Also decide: do the `bp_alert_*` strings lose their "▲" and middle dots (copy change, owner).
+### Slice 6. Visits tab (flat list) and the shared flat-list pieces
+- Brief: `slice_06_visits.md`. Mock: `mocks/mock_s06_visits.html` (done, flat-list version).
+- Scope: visits as flat rows (date heading with Delete and Edit, grey GA line, vitals as plain label-over-value, hairline dividers); flags as coloured words; pre-eclampsia as a red label over its sentence; BP alert copy without "▲" and "·" (owner decision 6). Adds the shared `RecordListItem`, `RecordListDivider` (`ui/components/RecordList.kt`), `PlainField` (`MetricCell.kt`) and `StatusWord` / `StatusTone` (`StatusTag.kt`).
+- Files: the three shared files above, `tabs/VisitsTab.kt`, `components/BedsideVitalsGrid.kt`, `strings.xml`. Risk: medium. Depends on: 0 to 5.
 
-### Slice 7. Scans tab
-- Files: `tabs/ScansTab.kt`, `components/BiometryGrid.kt`, `model/BiometryUi.kt`, `ui/UltrasoundPhotoViewerDialog.kt`.
-- Scope: scan records as `RecordRow`, biometry as `LabeledValue` grid, `FactRow` uses in `ScansTab` replaced.
-- Tests: `UltrasoundGuidedFlowTest`, scan tags in `AncWorkflowTest`.
-- Depends on: 0, 1A. Risk: medium. Mock first: scans tab with two scans, one with photos, biometry grid, empty state; photo viewer chrome.
+### Slice 7. Scans tab (flat list)
+- Brief: `slice_07_scans.md`. Mock: `mocks/mock_s07_scans.html` (done).
+- Scope: scans as flat rows; biometry and anatomy as plain fields in three columns; impression as a plain field; photo buttons kept.
+- Files: `tabs/ScansTab.kt`, `components/BiometryGrid.kt`, `strings.xml`. Risk: low-medium. Depends on: 6.
 
-### Slice 8. Labs tab
-- Files: `tabs/LabsTab.kt`, `components/LabReportItem.kt`, `model/LabReportGrouping.kt` (display grouping only, no rule change).
-- Tests: `LabEntryDesignTest`, `LabBatchUiTest`, `LabReportGroupingOwnerFixTest` (unit).
-- Depends on: 0, and the branch `lab-fixes-2026-11-15` merged first (it edits the same files). Risk: medium. Mock first: labs tab with CBC group, urine, FBS, an abnormal flag, empty state.
+### Slice 8. Labs tab (flat list)
+- Brief: `slice_08_labs.md`. Mock: `mocks/mock_s08_labs.html` (done).
+- Scope: reports as flat rows with a grey line (lab, "n tests", GA) and a status word; panels as sub-headings that open and close, not boxes; test rows split by hairlines; abnormal results red with the word "Abnormal". Grouping rule untouched (a panel needs at least two members).
+- Files: `tabs/LabsTab.kt`, `components/LabReportItem.kt`, `strings.xml`. Risk: medium. Depends on: 6.
 
-### Slice 9. Meds tab
-- Files: `tabs/MedsTab.kt`, `components/MedicationCard.kt`, `MedicationTapToAddSection.kt`, `MedicationStopBar.kt`, `model/MedicationTiles.kt`.
-- Scope: medication cards on the Background family, status words neutral (Active, Completed, Discontinued) with non-compliant kept as an error word; `FactRow` in `MedicationCard` replaced.
-- Tests: `MedicationEntryDesignTest`, `MedsTabRestorationTest`, `MedsTabSheetTest`, `MedicationStopBarTest`.
-- Depends on: 0. Risk: medium; mission M1b (Meds stage 2) is not started and needs its own design, so this slice restyles only. Mock first: meds tab with active, completed, discontinued and non-compliant, tap-to-add, stop bar.
+### Slice 9. Meds tab (flat rows, restyle only)
+- Brief: `slice_09_meds.md`. Mock: `mocks/mock_s09_meds.html` (done, revised after the owner's feedback).
+- Scope: one row per drug (name and dose; route and frequency; status word at the end; Stop one tap); Edit and Delete in the opened row; compact picker and undo bar. No Meds stage 2.
+- Files: `components/MedicationCard.kt`, `tabs/MedsTab.kt`, `components/MedicationTapToAddSection.kt`, `components/MedicationStopBar.kt`, `strings.xml`. Tests needing edits: `MedsTabSheetTest` (instructions text, open-before-edit). Risk: medium. Depends on: 6.
 
 ### Slice 10. Plan tab and attachments
 - Files: `tabs/PlanTab.kt`, `components/AttachmentsSectionCard.kt`, `ui/AddAttachmentDialog.kt`, `ui/ClinicalAttachmentViewerDialog.kt` (level 3).
@@ -252,7 +249,7 @@ Each slice is one builder lane, one branch, at most about five main files. "Mock
 
 ## 4. Mock queue (before the slice that needs it)
 
-Every mock follows mock D's rules: one self-contained HTML file, 360 px frames, before and after, light plus one dark frame, computed contrast table, Compose mapping, real sample data only (Mona Ragab / منى رجب, 27+2 wks, G4 P1 A2, 110/70, A+, EDD 11/02/2027, Mothercare, 12000) and the app's own empty strings. Done: slices 2, 3, 4, 5 (`docs/designs/redesign/mocks/`). Next: 6 visits, 7 scans, 8 labs, 9 meds, 10 plan, 11 sheets, then editors. Mocks for 12 to 20 can wait until slices 2 to 11 land.
+Every mock follows mock D's rules: one self-contained HTML file, 360 px frames, before and after, light plus one dark frame, computed contrast table, Compose mapping, real sample data only (Mona Ragab / منى رجب, 27+2 wks, G4 P1 A2, 110/70, A+, EDD 11/02/2027, Mothercare, 12000) and the app's own empty strings. Done: slices 2 to 9 (`docs/designs/redesign/mocks/`). Next: 10 plan, 11 sheets, then editors. Mocks for 12 to 20 can wait until slices 2 to 11 land.
 
 ## 5. Owner decisions found while planning
 
@@ -283,3 +280,12 @@ Every mock follows mock D's rules: one self-contained HTML file, 360 px frames, 
 9. Gestational age format everywhere (header, sticky bar, card, reports): "27+2 wks" (weeks+days, the RCOG, NICE and FIGO convention; ACOG's "27w2d" and "27 2/7" are equivalent). Slice 4 changes the header's "27w 2d" to "27+2 wks".
 10. Unknown delivery date keeps "???".
 11. No "Normal risk" tag in the header for low-risk patients: the header shows a risk tag only for Moderate and High risk. The `NormalRisk` StatusKind is not needed; remove it from the slice 4 brief.
+
+
+## 8. Owner rule for lists (2026-11-15)
+
+Feedback on the first meds mock: "more elaborating than needed with all these squares". From now on:
+- Tinted `LabeledValue` boxes only where the user edits or where a few key facts sit (the Overview sections, the delivery card).
+- Dense lists (visits, scans, labs, medications, and later lists) are flat: rows on the tab surface, a heading per record, label-over-value in plain text, hairline dividers between records. No card per record, no box inside a box, no filled pill per value.
+- Status in lists is a coloured word (`StatusWord`), not a filled tag; only what needs attention is coloured; non-compliant stays an error word.
+- Entry stays fast and low-fatigue: Stop one tap on the row, compact picker and undo bar.

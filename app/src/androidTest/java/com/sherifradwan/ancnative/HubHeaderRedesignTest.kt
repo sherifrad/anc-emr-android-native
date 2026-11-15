@@ -234,4 +234,11 @@ class HubHeaderRedesignTest {
         compose.assertNotEllipsized("G4 P1 A2", "workspaceScreen")
         compose.assertNotEllipsized("\u2066A+\u2069", "workspaceScreen")
     }
+
+    @Test
+    fun narrow360dpFontScale13_rhNegativeBloodGroupIsShortAndNotEllipsized() {
+        showHub(baseWithGa().copy(bloodGroupText = "A-"), widthDp = 360, fontScale = 1.3f)
+        compose.assertNotEllipsized("\u2066A-\u2069", "workspaceScreen")
+        compose.onAllNodes(hasText("Rh negative", substring = true)).assertCountEquals(1)
+    }
 }

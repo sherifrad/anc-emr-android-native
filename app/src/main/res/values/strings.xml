@@ -702,7 +702,6 @@
     <string name="attention_desc_note">Note: context to keep in mind</string>
     <string name="attention_update_item">Update item</string>
     <string name="attention_add_item">Add item</string>
-    <string name="status_normal_risk">Normal risk</string>
     <string name="rh_negative_tag">Rh negative</string>
     <string name="needs_attention">Needs attention</string>
     <string name="action_back">Back</string>

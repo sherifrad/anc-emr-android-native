@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Mock S09 v2: Meds options</title>
+<style>
+  /* Tokens: the app's real scheme values (Theme.kt) plus the slice 0 record tokens. */
+  :root{
+    --primary:#0D1B3D; --on:#0D1B3D; --onv:#4C3F43; --onprimary:#FFFFFF;
+    --surface:#FFFFFF; --bg:#FBF8F5; --outv:#CAC4D0; --outline:#79747E; --sch:#EFE9E4;
+    --err:#BA1A1A; --errc:#FFDAD6; --onerrc:#410002;
+    --pt-bg:#E9EEF8; --pt-lb:#23407A; --ob-bg:#E3F0EE; --ob-lb:#1D5149;
+    --hx-bg:#F1EDE4; --hx-lb:#594A2C; --dl-bg:#EEE9F5; --dl-lb:#4E3A78;
+    --inc-bg:#EEF0F4; --inc-bd:#757E8E; --inc-fg:#333B4A;
+    --mod-bg:#FCEFD6; --mod-bd:#9E6F1E; --mod-fg:#6E4708;
+    --hi-bg:#FBE3E3; --hi-bd:#C26666; --hi-fg:#8E1B1B;
+    --r-s:10px; --r-l:16px;
+  }
+  .dark{
+    --primary:#B4C5FF; --on:#E2E2EA; --onv:#CDC3C6; --onprimary:#002A78;
+    --surface:#1A202E; --bg:#0E121B; --outv:#3A4459; --outline:#8E95A5; --sch:#283248;
+    --err:#FFB4AB; --errc:#5C141D; --onerrc:#FFDAD6;
+    --pt-bg:#22304A; --pt-lb:#AFC6F2; --ob-bg:#1D3836; --ob-lb:#9FD6CC;
+    --hx-bg:#36301F; --hx-lb:#E0CFA6; --dl-bg:#2E2842; --dl-lb:#CDBDF0;
+    --inc-bg:#2A3140; --inc-bd:#7D889E; --inc-fg:#D5DAE3;
+    --mod-bg:#3A2A0E; --mod-bd:#A87A2A; --mod-fg:#F3D18E;
+    --hi-bg:#4A1616; --hi-bd:#B45A5A; --hi-fg:#FFC9C9;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:#FFFFFF;color:#0D1B3D;font-family:Roboto,"Noto Sans","Noto Sans Arabic","Segoe UI",system-ui,-apple-system,Arial,sans-serif;font-size:15px;line-height:1.5;padding:32px 16px 64px}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-size:26px;line-height:1.25;margin:0 0 8px}
+  h2{font-size:20px;line-height:1.3;margin:44px 0 6px}
+  h3.sub{font-size:16px;margin:18px 0 6px}
+  .lede,p,li{max-width:76ch}
+  .lede{color:#4C3F43;margin:0 0 4px}
+  .reason{border:1px solid #CAC4D0;border-radius:16px;padding:18px 20px;margin-top:18px;background:#FDFCFB}
+  .reason h2{margin-top:0}
+  .reason ul{margin:4px 0 0;padding-inline-start:20px}
+  .pair{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-top:14px}
+  figure{margin:0;width:360px;max-width:100%;flex:0 0 auto}
+  figcaption{font-size:14px;color:#4C3F43;margin:0 0 8px}
+  figcaption b{color:#0D1B3D}
+  .note{font-size:14px;color:#4C3F43;margin:10px 0 0}
+  .phone{width:100%;background:var(--bg);border:1px solid #B9B4BE;border-radius:16px;overflow:hidden;color:var(--on)}
+  .screen{padding:16px;display:flex;flex-direction:column;gap:12px}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  bdi{unicode-bidi:isolate}
+
+  /* record components (slice 0) */
+  .sec{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:4px 4px 16px 16px}
+  .sec-head{display:flex;align-items:center;min-height:48px;gap:8px}
+  .sec-head h4{flex:1 1 auto;margin:0;padding:6px 0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .sec-body{display:flex;flex-direction:column;gap:12px;padding-inline-end:12px}
+  .act{min-width:48px;min-height:48px;padding:0 12px;border-radius:var(--r-s);font-size:14px;font-weight:600;color:var(--primary);display:inline-flex;align-items:center;justify-content:center}
+  .act:hover{background:rgba(13,27,61,.06)}
+  .f{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .flab{font-size:12px;line-height:16px;font-weight:600;color:var(--flb)}
+  .fval{margin:0;min-height:44px;padding:10px 12px;border-radius:var(--r-s);background:var(--fbg);font-size:16px;line-height:22px;color:var(--on);overflow-wrap:anywhere}
+  .fval.key{font-weight:600}
+  .fval.miss{color:var(--onv);font-style:italic}
+  .frow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .fam-pt{--fbg:var(--pt-bg);--flb:var(--pt-lb)} .fam-ob{--fbg:var(--ob-bg);--flb:var(--ob-lb)}
+  .fam-hx{--fbg:var(--hx-bg);--flb:var(--hx-lb)} .fam-dl{--fbg:var(--dl-bg);--flb:var(--dl-lb)}
+  .tag{display:inline-flex;align-items:center;min-height:24px;padding:3px 8px;border-radius:var(--r-s);font-size:12px;line-height:16px;font-weight:600;border:1px solid;white-space:nowrap}
+  .t-hi{background:var(--hi-bg);border-color:var(--hi-bd);color:var(--hi-fg);font-weight:700}
+  .t-mod{background:var(--mod-bg);border-color:var(--mod-bd);color:var(--mod-fg)}
+  .t-inc{background:var(--inc-bg);border-color:var(--inc-bd);color:var(--inc-fg)}
+  .t-del{background:var(--surface);border-color:var(--primary);color:var(--primary)}
+  .t-norm{background:var(--surface);border-color:var(--inc-bd);color:var(--onv)}
+  .t-err{background:var(--errc);border-color:var(--err);color:var(--onerrc);font-weight:700}
+  .mlab{font-size:12px;line-height:16px;font-weight:500;color:var(--onv)}
+  .mval{font-size:16px;line-height:22px;font-weight:600;color:var(--on);white-space:nowrap}
+
+  /* tables */
+  .tablewrap{overflow-x:auto;max-width:100%}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin-top:10px}
+  th,td{border-bottom:1px solid #E6E1E5;padding:7px 8px;text-align:start;vertical-align:top}
+  th{background:#F7F5F3}
+  td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+  ol.map li{margin:7px 0}
+  code{font-family:"Roboto Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:#F3F0EE;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  /* tab pages (slices 6 to 9) */
+  .tabhead{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .tabhead h4{margin:0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .pbtn{min-height:48px;padding:0 16px;border-radius:var(--r-s);background:var(--primary);color:var(--onprimary);font-size:14px;font-weight:600;white-space:nowrap}
+  .obtn{min-height:48px;padding:0 16px;border:1px solid var(--outline);border-radius:var(--r-s);font-size:14px;font-weight:600;color:var(--primary);background:var(--surface)}
+  .emptyc{margin:0;background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:20px 16px;font-size:16px;color:var(--onv)}
+  .t-neu{background:var(--surface);border-color:var(--inc-bd);color:var(--onv)}
+  .tags{display:flex;flex-wrap:wrap;gap:6px}
+  .mgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 8px}
+  .mgrid.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .mgrid > div{min-width:0;display:flex;flex-direction:column;gap:2px;align-items:flex-start}
+  .del{width:48px;height:48px;border-radius:24px;color:var(--onv);font-size:13px}
+  .hact{display:flex;align-items:center}
+  .sectxt{margin:0;font-size:14px;line-height:20px;color:var(--onv)}
+  .bodytxt{margin:0;font-size:16px;line-height:22px;color:var(--on)}
+  .old{background:#F9F5F3;border:1px solid #E4DFE6;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px;color:#0D1B3D}
+  .old .d{font-size:15px;font-weight:700}
+  .opill{display:inline-block;font-size:11px;font-weight:700;padding:2px 6px;border-radius:6px}
+  .ogrid{background:#fff;border:1px solid #EDE8EC;border-radius:12px;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:11px}
+  .ogrid b{display:block;font-size:15px}
+  .olab{font-size:11px;font-weight:700;color:#4C3F43}
+  /* flat lists (owner feedback 2026-11-15: no box inside a box, no tinted box per field in lists) */
+  .flat{background:var(--surface);padding:12px 16px 16px;display:flex;flex-direction:column;color:var(--on)}
+  .flat .tabhead{padding-bottom:8px}
+  .rec{padding:12px 0;border-top:1px solid var(--outv);display:flex;flex-direction:column;gap:8px}
+  .rec:first-of-type{border-top:0}
+  .rh{display:flex;align-items:center;gap:4px;min-height:48px;margin:-8px 0 -8px}
+  .rh .t{flex:1 1 auto;min-width:0;font-size:16px;line-height:22px;font-weight:700;color:var(--on)}
+  .sub2{margin:0;font-size:14px;line-height:20px;color:var(--onv)}
+  .pgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px}
+  .pgrid.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .pgrid > div,.pf{min-width:0;display:flex;flex-direction:column}
+  .pf .l,.pgrid .l{font-size:12px;line-height:16px;font-weight:500;color:var(--onv)}
+  .pf .v,.pgrid .v{font-size:16px;line-height:22px;color:var(--on);overflow-wrap:anywhere}
+  .pgrid .v.k{font-weight:600}
+  .sw{font-size:12px;line-height:16px;font-weight:700}
+  .sw-hi{color:var(--err)} .sw-mod{color:var(--mod-fg)} .sw-neu{color:var(--onv);font-weight:600}
+  .dark .sw-mod{color:#F3D18E}
+  .subhead{margin:4px 0 0;font-size:14px;line-height:20px;font-weight:700;color:var(--primary)}
+
+  .opt{border:1px solid #CAC4D0;border-radius:16px;padding:16px 18px;margin-top:14px;background:#FDFCFB}
+  .opt h2{margin-top:0}
+  .lst{display:flex;flex-direction:column;gap:10px}
+  .chip{display:inline-flex;align-items:center;min-height:24px;padding:2px 10px;border-radius:var(--r-s);font-size:12px;line-height:16px;font-weight:700;white-space:nowrap}
+  .ch-act{background:var(--pt-bg);color:var(--pt-lb)}
+  .ch-comp{background:var(--sch);color:var(--onv)}
+  .ch-disc{background:var(--surface);color:var(--onv);border:1px solid var(--inc-bd)}
+  .ch-nc{background:var(--hi-bg);color:var(--hi-fg);border:1px solid var(--hi-bd)}
+  .stopbtn{min-height:48px;display:inline-flex;align-items:center}
+  .stopbtn span{display:inline-flex;align-items:center;height:32px;padding:0 14px;border:1.5px solid var(--err);border-radius:var(--r-s);color:var(--err);font-size:14px;font-weight:700}
+  .ed{min-width:48px;min-height:48px;padding:0 10px;font-size:14px;font-weight:600;color:var(--primary)}
+  .dl{min-width:48px;min-height:48px;font-size:13px;color:var(--onv)}
+  .name{font-size:16px;line-height:22px;color:var(--on)} .name b{font-weight:700}
+  .quiet{font-size:14px;line-height:20px;color:var(--onv);margin:0}
+  .warn{font-size:14px;line-height:20px;color:var(--hi-fg);margin:0}
+  .dark .warn{color:var(--hi-fg)}
+  .addrow{width:100%;min-height:48px;border:1px solid var(--outv);border-radius:var(--r-s);background:var(--surface);display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-size:16px;font-weight:600;color:var(--primary)}
+  .undo{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px;padding:0 4px 0 14px;border-radius:var(--r-s);background:var(--on);color:var(--surface);font-size:14px}
+  .undo button{min-height:48px;padding:0 12px;font-size:14px;font-weight:700;color:var(--surface)}
+  .dark .undo{background:#E2E2EA;color:#1A202E} .dark .undo button{color:#1A202E}
+  /* A */
+  .ca{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);overflow:hidden}
+  .ca .band{background:var(--hx-bg);padding:10px 12px 8px;display:flex;flex-direction:column;gap:6px}
+  .ca .band .top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .ca .band .meta{font-size:12px;line-height:16px;color:var(--hx-lb);font-weight:600}
+  .ca .body{padding:6px 4px 2px 12px;display:flex;flex-direction:column;gap:2px}
+  .ca .acts{display:flex;align-items:center;justify-content:flex-end;gap:2px}
+  .ca .acts .sp{flex:1}
+  .ca.past .band{background:var(--sch)}
+  /* B */
+  .gb{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);overflow:hidden}
+  .gh{display:flex;align-items:center;justify-content:space-between;min-height:48px;padding:0 14px;font-size:16px;font-weight:700}
+  .gh.act{background:var(--pt-bg);color:var(--pt-lb)} .gh.comp{background:var(--sch);color:var(--onv)} .gh.disc{background:var(--surface);color:var(--onv);border-bottom:1px solid var(--outv)}
+  .gh .n{font-size:14px;font-weight:600}
+  .br{display:flex;align-items:center;gap:6px;padding:6px 4px 6px 14px;border-top:1px solid var(--outv)}
+  .br:first-of-type{border-top:0}
+  .br .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  /* C */
+  .cc{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);overflow:hidden;display:flex}
+  .tok{flex:0 0 96px;background:var(--hx-bg);display:flex;flex-direction:column;justify-content:center;padding:10px;gap:2px}
+  .tok .d{font-size:20px;line-height:24px;font-weight:700;color:var(--on);overflow-wrap:anywhere}
+  .tok .f{font-size:12px;line-height:16px;font-weight:600;color:var(--hx-lb)}
+  .cc.past .tok{background:var(--sch)} .cc.past .tok .f{color:var(--onv)}
+  .cc .rt{flex:1;min-width:0;padding:8px 4px 2px 12px;display:flex;flex-direction:column;gap:2px}
+  .cc .rt .r1{display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
+  .cc .rt .acts{display:flex;align-items:center;justify-content:flex-end;gap:2px}
+</style>
+</head>
+<body>
+<main class="wrap">
+<h1>Mock S09 v2: three options for the Meds tab</h1>
+<p class="lede">The owner found mock D's box-per-field too heavy for medications and the flat revision too plain. This page shows three middle options, each with the same four medications, the tap-to-add row and the stop (undo) bar. Data: in-repo <code>DemoFixtures</code> medications, labelled as fixtures: Iron Polymaltose Complex 100 mg (Active), Calcium + Vitamin D3 500 mg / 400 IU twice daily (Active, flagged non-compliant, side effect "Reports constipation and stomach discomfort"), Folic Acid 5 mg (Completed). No fixture is Discontinued, so Paracetamol 500 mg, as needed (PRN), is shown with that status to demonstrate it. Mona Ragab's own record has no medications.</p>
+
+<section class="reason" aria-labelledby="r">
+  <h2 id="r">What all three share</h2>
+  <ul>
+    <li><b>One container per unit, never a box inside a box.</b> A card may have a tinted region of its own (a header band or a side token that reaches the card's edges), but no inner bordered box per field.</li>
+    <li><b>Status is a filled word chip:</b> Active (blue), Completed (grey), Discontinued (outlined grey), Patient non-compliant (red). Word plus colour, never colour alone.</li>
+    <li><b>Medications use the Background family (sand)</b> from the system, so the tab has its own identity next to Visits (blue) and Scans (teal).</li>
+    <li><b>Fast use:</b> Stop is a visible red outlined button on every active drug (one tap, 48 dp); Edit is a word, Delete an icon button; tap-to-add is one 48 dp row; the stop bar is one dark 48 dp line with Undo.</li>
+    <li>Dial ENERGY 2 / RHYTHM 1 / MOTION 1 for this tab: a little more colour than the flat list, still calm. No gradients, glow, tracked caps, decorative icons or em dashes.</li>
+  </ul>
+</section>
+
+<section class="opt" aria-labelledby="oa">
+<h2 id="oa">Option A. One card per medication</h2>
+<p class="lede">Each drug is one card. Its sand header band carries the status chip, the name and dose, and the start date; the white body carries route and frequency, a warning line when needed, and the actions. Past drugs get a grey band, so active ones stand out by colour and word.</p>
+<div class="pair">
+  <figure>
+    <figcaption><b>Option A</b>, light</figcaption>
+    <div class="phone"><div class="screen">
+      <div class="tabhead"><h4>Active prescriptions (2)</h4><button type="button" class="pbtn">Prescribe</button></div>
+      <div class="lst">
+        <article class="ca">
+          <div class="band"><div class="top"><span class="chip ch-act">Active</span><span class="meta">Since 2026-04-04</span></div><span class="name"><b>Iron Polymaltose Complex</b> 100 mg</span></div>
+          <div class="body"><p class="quiet">Oral, once daily</p><div class="acts"><button type="button" class="stopbtn" aria-label="Stop Iron Polymaltose Complex"><span>Stop</span></button><span class="sp"></span><button type="button" class="dl" aria-label="Delete">Delete</button><button type="button" class="ed">Edit</button></div></div>
+        </article>
+        <article class="ca">
+          <div class="band"><div class="top"><span class="chip ch-nc">Patient non-compliant</span></div><span class="name"><b>Calcium + Vitamin D3</b> 500 mg / 400 IU</span></div>
+          <div class="body"><p class="quiet">Oral, twice daily</p><p class="warn">Reports constipation and stomach discomfort</p><div class="acts"><button type="button" class="stopbtn" aria-label="Stop Calcium + Vitamin D3"><span>Stop</span></button><span class="sp"></span><button type="button" class="dl" aria-label="Delete">Delete</button><button type="button" class="ed">Edit</button></div></div>
+        </article>
+        <article class="ca past">
+          <div class="band"><div class="top"><span class="chip ch-comp">Completed</span></div><span class="name"><b>Folic Acid</b> 5 mg</span></div>
+          <div class="body"><p class="quiet">Oral, once daily</p><div class="acts"><button type="button" class="dl" aria-label="Delete">Delete</button><button type="button" class="ed">Edit</button></div></div>
+        </article>
+        <article class="ca past">
+          <div class="band"><div class="top"><span class="chip ch-disc">Discontinued</span></div><span class="name"><b>Paracetamol</b> 500 mg</span></div>
+          <div class="body"><p class="quiet">Oral, as needed (PRN)</p><div class="acts"><button type="button" class="dl" aria-label="Delete">Delete</button><button type="button" class="ed">Edit</button></div></div>
+        </article>
+        <button type="button" class="addrow">Add medication <span aria-hidden="true">▾</span></button>
+        <div class="undo"><span>Stopped: Iron Polymaltose Complex</span><button type="button">Undo</button></div>
+      </div>
+    </div></div>
+    <p class="note">Past drugs sit under "Show past" in the app; shown open here. Delete is an icon button in the app.</p>
+  </figure>
+  <figure>
+    <figcaption><b>Option A</b>, dark</figcaption>
+    <div class="phone dark"><div class="screen">
+      <div class="tabhead"><h4>Active prescriptions (2)</h4><button type="button" class="pbtn">Prescribe</button></div>
+      <div class="lst">
+        <article class="ca">
+          <div class="band"><div class="top"><span class="chip ch-act">Active</span><span class="meta">Since 2026-04-04</span></div><span class="name"><b>Iron Polymaltose Complex</b> 100 mg</span></div>
+          <div class="body"><p class="quiet">Oral, once daily</p><div class="acts"><button type="button" class="stopbtn" aria-label="Stop"><span>Stop</span></button><span class="sp"></span><button type="button" class="dl" aria-label="Delete">Delete</button><button type="button" class="ed">Edit</button></div></div>
+        </article>
+        <article class="ca">
+          <div class="band"><div class="top"><span class="chip ch-nc">Patient non-compliant</span></div><span class="name"><b>Calcium + Vitamin D3</b> 500 mg / 400 IU</span></div>
+          <div class="body"><p class="quiet">Oral, twice daily</p><div class="acts"><button type="button" class="stopbtn" aria-label="Stop"><span>Stop</span></button><span class="sp"></span><button type="button" class="ed">Edit</button></div></div>
+        </article>
+        <div class="undo"><span>Stopped: Iron Polymaltose Complex</span><button type="button">Undo</button></div>
+      </div>
+    </div></div>
+  </figure>
+</div>
+</section>
+
+<section class="opt" aria-labelledby="ob">
+<h2 id="ob">Option B. Grouped by status</h2>
+<p class="lede">Three group cards: Active, Completed, Discontinued, each with a coloured header and a count. Inside, compact rows split by hairlines: name and dose, then route and frequency, with Stop at the end of active rows. The group says the status; only "Patient non-compliant" needs its own chip.</p>
+<div class="pair">
+  <figure>
+    <figcaption><b>Option B</b>, light</figcaption>
+    <div class="phone"><div class="screen">
+      <div class="tabhead"><h4>Medications</h4><button type="button" class="pbtn">Prescribe</button></div>
+      <div class="lst">
+        <section class="gb" aria-label="Active">
+          <div class="gh act">Active <span class="n">2</span></div>
+          <div class="br"><span class="tx"><span class="name"><b>Iron Polymaltose Complex</b> 100 mg</span><span class="quiet">Oral, once daily</span></span><button type="button" class="stopbtn" aria-label="Stop Iron Polymaltose Complex"><span>Stop</span></button></div>
+          <div class="br"><span class="tx"><span class="name"><b>Calcium + Vitamin D3</b> 500 mg / 400 IU</span><span class="quiet">Oral, twice daily</span><span><span class="chip ch-nc">Patient non-compliant</span></span></span><button type="button" class="stopbtn" aria-label="Stop Calcium + Vitamin D3"><span>Stop</span></button></div>
+        </section>
+        <section class="gb" aria-label="Completed">
+          <div class="gh comp">Completed <span class="n">1</span></div>
+          <div class="br"><span class="tx"><span class="name"><b>Folic Acid</b> 5 mg</span><span class="quiet">Oral, once daily</span></span></div>
+        </section>
+        <section class="gb" aria-label="Discontinued">
+          <div class="gh disc">Discontinued <span class="n">1</span></div>
+          <div class="br"><span class="tx"><span class="name"><b>Paracetamol</b> 500 mg</span><span class="quiet">Oral, as needed (PRN)</span></span></div>
+        </section>
+        <button type="button" class="addrow">Add medication <span aria-hidden="true">▾</span></button>
+        <div class="undo"><span>Stopped: Iron Polymaltose Complex</span><button type="button">Undo</button></div>
+      </div>
+    </div></div>
+    <p class="note">Tapping a row opens its details with Edit and Delete (Edit is one tap further than in A).</p>
+  </figure>
+</div>
+</section>
+
+<section class="opt" aria-labelledby="oc">
+<h2 id="oc">Option C. Dose-forward</h2>
+<p class="lede">Each card leads with a sand side token holding the dose in 20 sp bold and the frequency under it; name, route, status chip and actions sit beside it. The eye lands on "how much, how often" first.</p>
+<div class="pair">
+  <figure>
+    <figcaption><b>Option C</b>, light</figcaption>
+    <div class="phone"><div class="screen">
+      <div class="tabhead"><h4>Active prescriptions (2)</h4><button type="button" class="pbtn">Prescribe</button></div>
+      <div class="lst">
+        <article class="cc">
+          <div class="tok"><span class="d">100 mg</span><span class="f">Once daily</span></div>
+          <div class="rt"><div class="r1"><span class="name"><b>Iron Polymaltose Complex</b></span></div><p class="quiet">Oral</p><span><span class="chip ch-act">Active</span></span>
+            <div class="acts"><button type="button" class="stopbtn" aria-label="Stop Iron Polymaltose Complex"><span>Stop</span></button><button type="button" class="ed">Edit</button></div></div>
+        </article>
+        <article class="cc">
+          <div class="tok"><span class="d">500 mg / 400 IU</span><span class="f">Twice daily</span></div>
+          <div class="rt"><span class="name"><b>Calcium + Vitamin D3</b></span><p class="quiet">Oral</p><span><span class="chip ch-nc">Patient non-compliant</span></span>
+            <div class="acts"><button type="button" class="stopbtn" aria-label="Stop Calcium + Vitamin D3"><span>Stop</span></button><button type="button" class="ed">Edit</button></div></div>
+        </article>
+        <article class="cc past">
+          <div class="tok"><span class="d">5 mg</span><span class="f">Once daily</span></div>
+          <div class="rt"><span class="name"><b>Folic Acid</b></span><p class="quiet">Oral</p><span><span class="chip ch-comp">Completed</span></span><div class="acts"><button type="button" class="ed">Edit</button></div></div>
+        </article>
+        <article class="cc past">
+          <div class="tok"><span class="d">500 mg</span><span class="f">As needed (PRN)</span></div>
+          <div class="rt"><span class="name"><b>Paracetamol</b></span><p class="quiet">Oral</p><span><span class="chip ch-disc">Discontinued</span></span><div class="acts"><button type="button" class="ed">Edit</button></div></div>
+        </article>
+        <button type="button" class="addrow">Add medication <span aria-hidden="true">▾</span></button>
+        <div class="undo"><span>Stopped: Iron Polymaltose Complex</span><button type="button">Undo</button></div>
+      </div>
+    </div></div>
+    <p class="note">Long doses ("500 mg / 400 IU") wrap inside the 96 dp token. Delete lives in the opened card.</p>
+  </figure>
+</div>
+</section>
+
+<section class="opt" aria-labelledby="pk">
+<h2 id="pk">Tap-to-add, open (same in all three)</h2>
+<div class="pair">
+  <figure>
+    <figcaption>Picker open, light</figcaption>
+    <div class="phone"><div class="screen">
+      <button type="button" class="addrow" aria-expanded="true">Add medication <span aria-hidden="true">▴</span></button>
+      <div class="search" style="min-height:48px;border:1px solid var(--outline);border-radius:var(--r-s);display:flex;align-items:center;padding:0 12px;color:var(--onv);font-size:16px;background:var(--surface)">Search or type a drug name</div>
+      <div style="display:flex;gap:8px"><span class="chip" style="background:var(--primary);color:var(--onprimary);min-height:32px">Common</span><span class="chip ch-disc" style="min-height:32px">Recent</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button type="button" style="min-height:56px;border-radius:var(--r-s);background:var(--hx-bg);text-align:start;padding:6px 12px"><b style="display:block;font-size:14px">Folic Acid</b><span style="font-size:12px;color:var(--hx-lb)">5 mg, once daily</span></button>
+        <button type="button" style="min-height:56px;border-radius:var(--r-s);background:var(--hx-bg);text-align:start;padding:6px 12px"><b style="display:block;font-size:14px">Iron Polymaltose Complex</b><span style="font-size:12px;color:var(--hx-lb)">100 mg, once daily</span></button>
+      </div>
+    </div></div>
+    <p class="note">Tiles are single sand tiles (one container each), two per row, 56 dp; one tap fills a new prescription as today.</p>
+  </figure>
+</div>
+</section>
+
+<h2>Contrast (computed)</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Pair</th><th>Text</th><th>Background</th><th>Ratio</th></tr></thead>
+<tbody>
+<tr><td>Active chip, Active group header</td><td>#23407A</td><td>#E9EEF8</td><td class="n">8.65</td></tr>
+<tr><td>Completed chip and header</td><td>#4C3F43</td><td>#EFE9E4</td><td class="n">8.31</td></tr>
+<tr><td>Discontinued chip (outlined)</td><td>#4C3F43</td><td>#FFFFFF</td><td class="n">10.00</td></tr>
+<tr><td>Non-compliant chip, warning line</td><td>#8E1B1B</td><td>#FBE3E3 / #FFFFFF</td><td class="n">7.40 / 9.04</td></tr>
+<tr><td>Name and dose on sand band or token</td><td>#0D1B3D</td><td>#F1EDE4</td><td class="n">14.48</td></tr>
+<tr><td>Start date, frequency on sand</td><td>#594A2C</td><td>#F1EDE4</td><td class="n">7.36</td></tr>
+<tr><td>Route and frequency line</td><td>#4C3F43</td><td>#FFFFFF</td><td class="n">10.00</td></tr>
+<tr><td>Stop text and border</td><td>#BA1A1A</td><td>#FFFFFF</td><td class="n">6.46</td></tr>
+<tr><td>Undo bar (surface on onSurface)</td><td>#FFFFFF / dark #1A202E</td><td>#0D1B3D / dark #E2E2EA</td><td class="n">16.92 / 12.64</td></tr>
+<tr><td>Dark: Active chip / non-compliant / band text / band meta / Stop</td><td>#AFC6F2 / #FFC9C9 / #E2E2EA / #E0CFA6 / #FFB4AB</td><td>#22304A / #4A1616 / #36301F / #36301F / #1A202E</td><td class="n">7.66 / 10.19 / 10.19 / 8.53 / 9.59</td></tr>
+</tbody></table></div>
+
+<h2>Compose mapping</h2>
+<ol class="map">
+  <li><b>Status chip</b> (all options): new <code>MedStatusChip(status, nonCompliant)</code>: <code>Surface(shape = RecordShapes.Small, color, border)</code> with <code>Text(RecordType.Tag.copy(Bold), padding(horizontal = 10.dp, vertical = 2.dp))</code>; Active <code>FieldPatientBg / FieldPatientLabel</code>, Completed <code>surfaceContainerHigh / onSurfaceVariant</code>, Discontinued <code>surface</code> + <code>StatusIncompleteBorder</code> + <code>onSurfaceVariant</code>, non-compliant <code>StatusHigh*</code>. Dark tokens likewise. Tag <code>medicationStatusBadge</code>.</li>
+  <li><b>Stop</b>: the existing <code>StopControl</code> (tags <code>stopMedication-</code>, <code>stopMedicationLabel-</code>) drawn as <code>OutlinedButton(shape = RecordShapes.Small, border = BorderStroke(1.5.dp, error), Modifier.heightIn(min = 48.dp))</code> with the word "Stop", no icon.</li>
+  <li><b>Option A</b>: <code>OutlinedCard(shape = RecordShapes.Large)</code>; band <code>Column(Modifier.fillMaxWidth().background(FieldBackgroundBg or surfaceContainerHigh for past).padding(12.dp, 10.dp, 12.dp, 8.dp))</code> with chip row and <code>buildAnnotatedString</code> name (Bold) + dose; body <code>Column(padding(start = 12.dp, end = 4.dp))</code>: route and frequency <code>RecordType.Secondary</code>, adverse line in <code>StatusHighText</code>, actions <code>Row</code> (Stop start, Delete and Edit end).</li>
+  <li><b>Option B</b>: per status one <code>OutlinedCard</code>; header <code>Row(heightIn(min = 48.dp).background(tone))</code> title and count; rows separated by <code>HorizontalDivider</code>; Stop at row end; tap a row to open details with Edit and Delete. Grouping uses <code>effectiveMedicationStatus</code>, no new rule.</li>
+  <li><b>Option C</b>: <code>OutlinedCard(Row(Modifier.height(IntrinsicSize.Min)))</code>; token <code>Column(Modifier.width(96.dp).fillMaxHeight().background(FieldBackgroundBg))</code> with dose 20 sp Bold and frequency 12 sp SemiBold <code>FieldBackgroundLabel</code>; right column name, route, chip, actions.</li>
+  <li>Tap-to-add and undo bar identical in all three: toggle row 48 dp outlined, tiles <code>Surface(shape = RecordShapes.Small, color = FieldBackgroundBg)</code> 56 dp in a 2-column grid, undo <code>Surface(color = onSurface)</code> with <code>surface</code> text (16.92 light, 12.64 dark; the theme sets no <code>inverseSurface</code>) one 48 dp line with <code>TextButton</code> Undo. Every existing tag kept.</li>
+</ol>
+
+</main>
+</body>
+</html>

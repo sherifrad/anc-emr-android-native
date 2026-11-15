@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Mock S07: Scans tab</title>
+<style>
+  /* Tokens: the app's real scheme values (Theme.kt) plus the slice 0 record tokens. */
+  :root{
+    --primary:#0D1B3D; --on:#0D1B3D; --onv:#4C3F43; --onprimary:#FFFFFF;
+    --surface:#FFFFFF; --bg:#FBF8F5; --outv:#CAC4D0; --outline:#79747E; --sch:#EFE9E4;
+    --err:#BA1A1A; --errc:#FFDAD6; --onerrc:#410002;
+    --pt-bg:#E9EEF8; --pt-lb:#23407A; --ob-bg:#E3F0EE; --ob-lb:#1D5149;
+    --hx-bg:#F1EDE4; --hx-lb:#594A2C; --dl-bg:#EEE9F5; --dl-lb:#4E3A78;
+    --inc-bg:#EEF0F4; --inc-bd:#757E8E; --inc-fg:#333B4A;
+    --mod-bg:#FCEFD6; --mod-bd:#9E6F1E; --mod-fg:#6E4708;
+    --hi-bg:#FBE3E3; --hi-bd:#C26666; --hi-fg:#8E1B1B;
+    --r-s:10px; --r-l:16px;
+  }
+  .dark{
+    --primary:#B4C5FF; --on:#E2E2EA; --onv:#CDC3C6; --onprimary:#002A78;
+    --surface:#1A202E; --bg:#0E121B; --outv:#3A4459; --outline:#8E95A5; --sch:#283248;
+    --err:#FFB4AB; --errc:#5C141D; --onerrc:#FFDAD6;
+    --pt-bg:#22304A; --pt-lb:#AFC6F2; --ob-bg:#1D3836; --ob-lb:#9FD6CC;
+    --hx-bg:#36301F; --hx-lb:#E0CFA6; --dl-bg:#2E2842; --dl-lb:#CDBDF0;
+    --inc-bg:#2A3140; --inc-bd:#7D889E; --inc-fg:#D5DAE3;
+    --mod-bg:#3A2A0E; --mod-bd:#A87A2A; --mod-fg:#F3D18E;
+    --hi-bg:#4A1616; --hi-bd:#B45A5A; --hi-fg:#FFC9C9;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:#FFFFFF;color:#0D1B3D;font-family:Roboto,"Noto Sans","Noto Sans Arabic","Segoe UI",system-ui,-apple-system,Arial,sans-serif;font-size:15px;line-height:1.5;padding:32px 16px 64px}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-size:26px;line-height:1.25;margin:0 0 8px}
+  h2{font-size:20px;line-height:1.3;margin:44px 0 6px}
+  h3.sub{font-size:16px;margin:18px 0 6px}
+  .lede,p,li{max-width:76ch}
+  .lede{color:#4C3F43;margin:0 0 4px}
+  .reason{border:1px solid #CAC4D0;border-radius:16px;padding:18px 20px;margin-top:18px;background:#FDFCFB}
+  .reason h2{margin-top:0}
+  .reason ul{margin:4px 0 0;padding-inline-start:20px}
+  .pair{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-top:14px}
+  figure{margin:0;width:360px;max-width:100%;flex:0 0 auto}
+  figcaption{font-size:14px;color:#4C3F43;margin:0 0 8px}
+  figcaption b{color:#0D1B3D}
+  .note{font-size:14px;color:#4C3F43;margin:10px 0 0}
+  .phone{width:100%;background:var(--bg);border:1px solid #B9B4BE;border-radius:16px;overflow:hidden;color:var(--on)}
+  .screen{padding:16px;display:flex;flex-direction:column;gap:12px}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  bdi{unicode-bidi:isolate}
+
+  /* record components (slice 0) */
+  .sec{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:4px 4px 16px 16px}
+  .sec-head{display:flex;align-items:center;min-height:48px;gap:8px}
+  .sec-head h4{flex:1 1 auto;margin:0;padding:6px 0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .sec-body{display:flex;flex-direction:column;gap:12px;padding-inline-end:12px}
+  .act{min-width:48px;min-height:48px;padding:0 12px;border-radius:var(--r-s);font-size:14px;font-weight:600;color:var(--primary);display:inline-flex;align-items:center;justify-content:center}
+  .act:hover{background:rgba(13,27,61,.06)}
+  .f{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .flab{font-size:12px;line-height:16px;font-weight:600;color:var(--flb)}
+  .fval{margin:0;min-height:44px;padding:10px 12px;border-radius:var(--r-s);background:var(--fbg);font-size:16px;line-height:22px;color:var(--on);overflow-wrap:anywhere}
+  .fval.key{font-weight:600}
+  .fval.miss{color:var(--onv);font-style:italic}
+  .frow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .fam-pt{--fbg:var(--pt-bg);--flb:var(--pt-lb)} .fam-ob{--fbg:var(--ob-bg);--flb:var(--ob-lb)}
+  .fam-hx{--fbg:var(--hx-bg);--flb:var(--hx-lb)} .fam-dl{--fbg:var(--dl-bg);--flb:var(--dl-lb)}
+  .tag{display:inline-flex;align-items:center;min-height:24px;padding:3px 8px;border-radius:var(--r-s);font-size:12px;line-height:16px;font-weight:600;border:1px solid;white-space:nowrap}
+  .t-hi{background:var(--hi-bg);border-color:var(--hi-bd);color:var(--hi-fg);font-weight:700}
+  .t-mod{background:var(--mod-bg);border-color:var(--mod-bd);color:var(--mod-fg)}
+  .t-inc{background:var(--inc-bg);border-color:var(--inc-bd);color:var(--inc-fg)}
+  .t-del{background:var(--surface);border-color:var(--primary);color:var(--primary)}
+  .t-norm{background:var(--surface);border-color:var(--inc-bd);color:var(--onv)}
+  .t-err{background:var(--errc);border-color:var(--err);color:var(--onerrc);font-weight:700}
+  .mlab{font-size:12px;line-height:16px;font-weight:500;color:var(--onv)}
+  .mval{font-size:16px;line-height:22px;font-weight:600;color:var(--on);white-space:nowrap}
+
+  /* tables */
+  .tablewrap{overflow-x:auto;max-width:100%}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin-top:10px}
+  th,td{border-bottom:1px solid #E6E1E5;padding:7px 8px;text-align:start;vertical-align:top}
+  th{background:#F7F5F3}
+  td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+  ol.map li{margin:7px 0}
+  code{font-family:"Roboto Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:#F3F0EE;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  /* tab pages (slices 6 to 9) */
+  .tabhead{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .tabhead h4{margin:0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .pbtn{min-height:48px;padding:0 16px;border-radius:var(--r-s);background:var(--primary);color:var(--onprimary);font-size:14px;font-weight:600;white-space:nowrap}
+  .obtn{min-height:48px;padding:0 16px;border:1px solid var(--outline);border-radius:var(--r-s);font-size:14px;font-weight:600;color:var(--primary);background:var(--surface)}
+  .emptyc{margin:0;background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:20px 16px;font-size:16px;color:var(--onv)}
+  .t-neu{background:var(--surface);border-color:var(--inc-bd);color:var(--onv)}
+  .tags{display:flex;flex-wrap:wrap;gap:6px}
+  .mgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 8px}
+  .mgrid.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .mgrid > div{min-width:0;display:flex;flex-direction:column;gap:2px;align-items:flex-start}
+  .del{width:48px;height:48px;border-radius:24px;color:var(--onv);font-size:13px}
+  .hact{display:flex;align-items:center}
+  .sectxt{margin:0;font-size:14px;line-height:20px;color:var(--onv)}
+  .bodytxt{margin:0;font-size:16px;line-height:22px;color:var(--on)}
+  .old{background:#F9F5F3;border:1px solid #E4DFE6;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px;color:#0D1B3D}
+  .old .d{font-size:15px;font-weight:700}
+  .opill{display:inline-block;font-size:11px;font-weight:700;padding:2px 6px;border-radius:6px}
+  .ogrid{background:#fff;border:1px solid #EDE8EC;border-radius:12px;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:11px}
+  .ogrid b{display:block;font-size:15px}
+  .olab{font-size:11px;font-weight:700;color:#4C3F43}
+  /* flat lists (owner feedback 2026-11-15: no box inside a box, no tinted box per field in lists) */
+  .flat{background:var(--surface);padding:12px 16px 16px;display:flex;flex-direction:column;color:var(--on)}
+  .flat .tabhead{padding-bottom:8px}
+  .rec{padding:12px 0;border-top:1px solid var(--outv);display:flex;flex-direction:column;gap:8px}
+  .rec:first-of-type{border-top:0}
+  .rh{display:flex;align-items:center;gap:4px;min-height:48px;margin:-8px 0 -8px}
+  .rh .t{flex:1 1 auto;min-width:0;font-size:16px;line-height:22px;font-weight:700;color:var(--on)}
+  .sub2{margin:0;font-size:14px;line-height:20px;color:var(--onv)}
+  .pgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px}
+  .pgrid.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .pgrid > div,.pf{min-width:0;display:flex;flex-direction:column}
+  .pf .l,.pgrid .l{font-size:12px;line-height:16px;font-weight:500;color:var(--onv)}
+  .pf .v,.pgrid .v{font-size:16px;line-height:22px;color:var(--on);overflow-wrap:anywhere}
+  .pgrid .v.k{font-weight:600}
+  .sw{font-size:12px;line-height:16px;font-weight:700}
+  .sw-hi{color:var(--err)} .sw-mod{color:var(--mod-fg)} .sw-neu{color:var(--onv);font-weight:600}
+  .dark .sw-mod{color:#F3D18E}
+  .subhead{margin:4px 0 0;font-size:14px;line-height:20px;font-weight:700;color:var(--primary)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{min-height:48px;padding:0 14px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);color:var(--primary);font-size:14px;font-weight:600}
+</style>
+</head>
+<body>
+<main class="wrap">
+<h1>Mock S07: Scans tab</h1>
+<p class="lede">For slice 7, flat-list version (owner feedback: no squares per field). Mona Ragab's sample has no scan, so her tab shows the empty state. The populated row uses the in-repo demo fixture <code>DemoFixtures</code> scan <code>...0102</code> (2026-05-30, 20+0 wks, BPD 49, HC 178, AC 155, FL 34, EFW 380, FHR 148, Cephalic, Anterior, Normal fluid), labelled as a fixture. The photo row is layout only.</p>
+
+<section class="reason" aria-labelledby="r">
+  <h2 id="r">Design reasoning</h2>
+  <p>Reading this as: the scan record compared visit to visit, dial ENERGY 1 / RHYTHM 1 / MOTION 1.</p>
+  <ul>
+    <li><b>Same flat row as a visit:</b> date heading with Delete and Edit, a grey line "20+0 wks" (owner decision 9), plain label-over-value text, a hairline between scans.</li>
+    <li><b>Biometry in three plain columns</b> (BPD, HC, AC, then FL, EFW, FHR), the same 12 sp label over 16 sp value as everywhere. No pills, no highlighted EFW, no bordered box.</li>
+    <li><b>Anatomy and impression</b> as plain label-over-value text that wraps (Presentation, Placenta, Amniotic fluid; Impression full width). No tinted boxes.</li>
+    <li><b>Photos stay buttons</b> (48 dp, outlined, 10 dp radius): they are actions.</li>
+    <li><b>Dropped:</b> the tinted card, the box inside it, the "Ultrasound Biometry" caption, the "+" on Record scan.</li>
+  </ul>
+</section>
+
+<h2>1. Scans tab</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, fixture scan</figcaption>
+    <div class="phone"><div class="screen">
+      <div class="tabhead"><h4 style="font-size:15px">Ultrasound Scans (1)</h4><span class="pbtn" style="display:inline-flex;align-items:center;font-size:13px">+ Record Scan</span></div>
+      <div class="old">
+        <div style="display:flex;justify-content:space-between"><span class="d">2026-05-30</span><span class="opill" style="background:#E0F2FE;color:#0369A1">20w 0d</span></div>
+        <div style="background:#fff;border:1px solid #EDE8EC;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px">
+          <span class="olab">Ultrasound Biometry</span>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:12px">
+            <span class="opill" style="background:#EFE9E4">BPD 49 mm</span><span class="opill" style="background:#EFE9E4">HC 178 mm</span><span class="opill" style="background:#EFE9E4">AC 155 mm</span><span class="opill" style="background:#EFE9E4">FL 34 mm</span><span class="opill" style="background:#D6DFFF">EFW 380</span><span class="opill" style="background:#EFE9E4">FHR 148 bpm</span>
+          </div>
+          <span style="font-size:12px">Presentation: Cephalic &nbsp; Placenta: Anterior &nbsp; Amniotic Fluid: Normal</span>
+        </div>
+        <span style="font-size:13px"><span style="color:#4C3F43">Impression</span> &nbsp; Normal fetal anatomy and morphology survey; no anomalies detected</span>
+        <span style="align-self:flex-end;font-size:13px">Delete &nbsp; Edit scan</span>
+      </div>
+    </div></div>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, slice 7, fixture scan</figcaption>
+    <div class="phone"><div class="flat">
+      <div class="tabhead"><h4>Ultrasound scans (1)</h4><button type="button" class="pbtn">Record scan</button></div>
+      <div class="rec">
+        <div class="rh"><span class="t">2026-05-30</span><button type="button" class="del" aria-label="Delete scan">Delete</button><button type="button" class="act" aria-label="Edit scan">Edit</button></div>
+        <p class="sub2">20+0 wks</p>
+        <div class="pgrid c3">
+          <div><span class="l">BPD</span><span class="v k">49 mm</span></div>
+          <div><span class="l">HC</span><span class="v k">178 mm</span></div>
+          <div><span class="l">AC</span><span class="v k">155 mm</span></div>
+          <div><span class="l">FL</span><span class="v k">34 mm</span></div>
+          <div><span class="l">EFW</span><span class="v k">380</span></div>
+          <div><span class="l">FHR</span><span class="v k">148 bpm</span></div>
+          <div><span class="l">Presentation</span><span class="v">Cephalic</span></div>
+          <div><span class="l">Placenta</span><span class="v">Anterior</span></div>
+          <div><span class="l">Amniotic fluid</span><span class="v">Normal</span></div>
+        </div>
+        <div class="pf"><span class="l">Impression</span><span class="v">Normal fetal anatomy and morphology survey; no anomalies detected</span></div>
+      </div>
+    </div></div>
+    <p class="note">EFW shows the value as stored ("380"; the fixture has no unit). Missing values stay hidden, as today.</p>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, photos (layout only) and Mona's empty state</figcaption>
+    <div class="phone"><div class="flat">
+      <div class="rec">
+        <div class="rh"><span class="t">[scan date]</span><button type="button" class="del" aria-label="Delete scan">Delete</button><button type="button" class="act" aria-label="Edit scan">Edit</button></div>
+        <p class="sub2">Ultrasound scan images, 2 photos</p>
+        <div class="chips"><button type="button" class="chip">Photo 1</button><button type="button" class="chip">Photo 2</button></div>
+      </div>
+      <div class="rec">
+        <div class="tabhead"><h4>Ultrasound scans (0)</h4><button type="button" class="pbtn">Record scan</button></div>
+        <p class="sub2" style="font-size:16px">No records</p>
+      </div>
+    </div></div>
+  </figure>
+</div>
+
+<h2>2. Dark</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Dark</b>, after</figcaption>
+    <div class="phone dark"><div class="flat">
+      <div class="rec">
+        <div class="rh"><span class="t">2026-05-30</span><button type="button" class="del" aria-label="Delete scan">Delete</button><button type="button" class="act" aria-label="Edit scan">Edit</button></div>
+        <p class="sub2">20+0 wks</p>
+        <div class="pgrid c3">
+          <div><span class="l">BPD</span><span class="v k">49 mm</span></div>
+          <div><span class="l">HC</span><span class="v k">178 mm</span></div>
+          <div><span class="l">AC</span><span class="v k">155 mm</span></div>
+        </div>
+      </div>
+    </div></div>
+  </figure>
+</div>
+
+<h2>3. Contrast (computed)</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Pair</th><th>Text</th><th>Background</th><th>Ratio</th></tr></thead>
+<tbody>
+<tr><td>Heading, values, photo buttons</td><td>#0D1B3D</td><td>#FFFFFF</td><td class="n">16.92</td></tr>
+<tr><td>Labels, grey line</td><td>#4C3F43</td><td>#FFFFFF</td><td class="n">10.00</td></tr>
+<tr><td>Photo button border (non-text, outline)</td><td>#79747E</td><td>#FFFFFF</td><td class="n">4.55</td></tr>
+<tr><td>Dark heading / labels</td><td>#E2E2EA / #CDC3C6</td><td>#1A202E</td><td class="n">12.64 / 9.47</td></tr>
+</tbody></table></div>
+
+<h2>4. Compose mapping</h2>
+<ol class="map">
+  <li>Scan item: <code>RecordListItem(title = scan.date, subtitle = gaShort, actions = { DeleteIconButton; SectionTextAction(Edit) })</code> with tag <code>ultrasound-${id}</code>.</li>
+  <li><code>BiometryGrid</code>: rows of three <code>PlainField</code> (biometry values emphasised), then anatomy as three <code>PlainField</code> in the same grid, Impression as a full-width <code>PlainField</code>.</li>
+  <li>Photos: grey caption and <code>OutlinedButton</code>s, 48 dp, <code>RecordShapes.Small</code>.</li>
+</ol>
+
+</main>
+</body>
+</html>

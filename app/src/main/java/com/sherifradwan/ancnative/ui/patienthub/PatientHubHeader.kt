@@ -58,6 +58,7 @@ import com.sherifradwan.ancnative.model.isOngoingMedication
 import com.sherifradwan.ancnative.ui.ActionRose
 import com.sherifradwan.ancnative.ui.AllergyState
 import com.sherifradwan.ancnative.ui.BpAlertLabel
+import com.sherifradwan.ancnative.ui.bpAlertResource
 import com.sherifradwan.ancnative.ui.FieldPatientBg
 import com.sherifradwan.ancnative.ui.FieldPatientDarkBg
 import com.sherifradwan.ancnative.ui.GaDiscordanceMarker
@@ -259,48 +260,51 @@ fun PatientHubHeader(
                     )
 
                     // Clinical badges / tags flow row
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        val isHigh = isHighRisk(patient.riskLevel)
-                        val isModerate = !isHigh && parseRiskTier(patient.riskLevel) == PatientRiskTier.MEDIUM
-                        if (isHigh) {
-                            Box(modifier = Modifier.testTag("hubRiskBadge")) {
-                                StatusTag(StatusKind.HighRisk)
+                    val isHigh = isHighRisk(patient.riskLevel)
+                    val isModerate = !isHigh && parseRiskTier(patient.riskLevel) == PatientRiskTier.MEDIUM
+                    val bp = patient.visits.firstOrNull()?.bloodPressure
+                    val allergy = classifyAllergy(patient.allergyHistory)
+                    if (isHigh || isModerate || bpAlertResource(bp) != null || allergy !is AllergyState.NotRecorded) {
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            if (isHigh) {
+                                Box(modifier = Modifier.testTag("hubRiskBadge")) {
+                                    StatusTag(StatusKind.HighRisk)
+                                }
+                            } else if (isModerate) {
+                                Box(modifier = Modifier.testTag("hubRiskBadge")) {
+                                    StatusTag(StatusKind.ModerateRisk)
+                                }
                             }
-                        } else if (isModerate) {
-                            Box(modifier = Modifier.testTag("hubRiskBadge")) {
-                                StatusTag(StatusKind.ModerateRisk)
+
+                            bp?.let {
+                                BpAlertLabel(it)
                             }
-                        }
 
-                        patient.visits.firstOrNull()?.bloodPressure?.let { bp ->
-                            BpAlertLabel(bp)
-                        }
-
-                        val allergy = classifyAllergy(patient.allergyHistory)
-                        if (allergy !is AllergyState.NotRecorded) {
-                            val isAlert = allergy is AllergyState.Recorded
-                            Surface(
-                                shape = RecordShapes.Small,
-                                color = if (isAlert) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
-                                border = if (isAlert) BorderStroke(1.dp, MaterialTheme.colorScheme.error) else null,
-                                modifier = Modifier.testTag("hubAllergyPill"),
-                            ) {
-                                Text(
-                                    text = if (isAlert) {
-                                        stringResource(R.string.allergy_banner, allergy.text)
-                                    } else {
-                                        stringResource(R.string.no_allergy_history)
-                                    },
-                                    style = RecordType.Tag.copy(fontWeight = FontWeight.Bold),
-                                    color = if (isAlert) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier
-                                        .padding(horizontal = 8.dp, vertical = 3.dp)
-                                        .testTag("hubAllergyText"),
-                                )
+                            if (allergy !is AllergyState.NotRecorded) {
+                                val isAlert = allergy is AllergyState.Recorded
+                                Surface(
+                                    shape = RecordShapes.Small,
+                                    color = if (isAlert) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    border = if (isAlert) BorderStroke(1.dp, MaterialTheme.colorScheme.error) else null,
+                                    modifier = Modifier.testTag("hubAllergyPill"),
+                                ) {
+                                    Text(
+                                        text = if (isAlert) {
+                                            stringResource(R.string.allergy_banner, allergy.text)
+                                        } else {
+                                            stringResource(R.string.no_allergy_history)
+                                        },
+                                        style = RecordType.Tag.copy(fontWeight = FontWeight.Bold),
+                                        color = if (isAlert) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier
+                                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                                            .testTag("hubAllergyText"),
+                                    )
+                                }
                             }
                         }
                     }
@@ -313,16 +317,21 @@ fun PatientHubHeader(
                         if (patient.delivered) {
                             Box(modifier = Modifier.weight(1f).testTag("hubDeliveredBadge")) {
                                 MetricCell(stringResource(R.string.delivery)) {
-                                    MetricValue(deliveredHeadline(patient.deliveryDate))
+                                    Text(
+                                        text = ltrIsolate(deliveredHeadline(patient.deliveryDate)),
+                                        style = RecordType.MetricValue,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
                                 }
                             }
                         } else if (!ga.isNullOrBlank()) {
                             Box(modifier = Modifier.weight(1f).testTag("hubGaBadge")) {
                                 MetricCell(stringResource(R.string.ga_label)) {
-                                    Row(
+                                    FlowRow(
                                         modifier = Modifier.testTag("gestationalAgeBadge"),
-                                        verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                                        itemVerticalAlignment = Alignment.CenterVertically,
                                     ) {
                                         MetricValue(ltrIsolate(ga))
                                         if (gaDiscordant) {
@@ -344,7 +353,7 @@ fun PatientHubHeader(
                             )
                         }
 
-                        val bgFormatted = formatBloodGroup(patient.bloodGroupText)
+                        val bgFormatted = formatBloodGroup(patient.bloodGroupText)?.removeSuffix(" (Rh negative)")
                         MetricCell(
                             label = stringResource(R.string.blood_group),
                             modifier = Modifier.weight(1f),
@@ -581,11 +590,8 @@ fun CompactClinicalAttentionStrip(
     }
     val remainingCount = if (severeBp != null) entries.size else (entries.size - 1).coerceAtLeast(0)
 
-    val prefix = ""
     val headline = shownText
     val moreSuffix = if (remainingCount > 0) stringResource(R.string.attention_remaining_count, remainingCount) else ""
-    @Suppress("UNUSED_VARIABLE")
-    val bodyText = "$prefix⁨$headline⁩⁨$moreSuffix⁩"
 
     Surface(
         onClick = onOpenDialog,
