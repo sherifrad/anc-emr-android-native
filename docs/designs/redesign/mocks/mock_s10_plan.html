@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Mock S10: Plan tab and attachments</title>
+<style>
+  /* Tokens: the app's real scheme values (Theme.kt) plus the slice 0 record tokens. */
+  :root{
+    --primary:#0D1B3D; --on:#0D1B3D; --onv:#4C3F43; --onprimary:#FFFFFF;
+    --surface:#FFFFFF; --bg:#FBF8F5; --outv:#CAC4D0; --outline:#79747E; --sch:#EFE9E4; --scl:#F9F5F3;
+    --err:#BA1A1A; --mod-fg:#6E4708;
+    --dl-bg:#EEE9F5; --dl-lb:#4E3A78;
+    --r-s:10px; --r-l:16px;
+  }
+  .dark{
+    --primary:#B4C5FF; --on:#E2E2EA; --onv:#CDC3C6; --onprimary:#002A78;
+    --surface:#1A202E; --bg:#0E121B; --outv:#3A4459; --outline:#8E95A5; --sch:#283248; --scl:#141924;
+    --err:#FFB4AB; --mod-fg:#F3D18E;
+    --dl-bg:#2E2842; --dl-lb:#CDBDF0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:#FFFFFF;color:#0D1B3D;font-family:Roboto,"Noto Sans","Segoe UI",system-ui,-apple-system,Arial,sans-serif;font-size:15px;line-height:1.5;padding:32px 16px 64px}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-size:26px;line-height:1.25;margin:0 0 8px}
+  h2{font-size:20px;line-height:1.3;margin:44px 0 6px}
+  .lede,p,li{max-width:78ch}
+  .lede{color:#4C3F43;margin:0 0 4px}
+  .reason{border:1px solid #CAC4D0;border-radius:16px;padding:18px 20px;margin-top:18px;background:#FDFCFB}
+  .reason h2{margin-top:0}
+  .reason ul{margin:4px 0 0;padding-inline-start:20px}
+  .pair{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-top:14px}
+  figure{margin:0;width:360px;max-width:100%;flex:0 0 auto}
+  figcaption{font-size:14px;color:#4C3F43;margin:0 0 8px}
+  figcaption b{color:#0D1B3D}
+  .note{font-size:14px;color:#4C3F43;margin:10px 0 0}
+  .phone{width:100%;background:var(--bg);border:1px solid #B9B4BE;border-radius:16px;overflow:hidden;color:var(--on)}
+  .screen{padding:16px;display:flex;flex-direction:column;gap:12px}
+  .scrim{background:rgba(0,0,0,.32);padding:16px 9px;display:flex;flex-direction:column}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  svg.i{width:24px;height:24px;fill:currentColor;display:block}
+
+  /* record components as built (slices 0 to 8) */
+  .sec{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:4px 4px 16px 16px}
+  .sec-head{display:flex;align-items:center;min-height:48px;gap:8px}
+  .sec-head h4{flex:1 1 auto;margin:0;padding:6px 0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .sec-body{display:flex;flex-direction:column;gap:12px;padding-inline-end:12px}
+  .act{min-width:48px;min-height:48px;padding:0 12px;border-radius:var(--r-s);font-size:14px;font-weight:600;color:var(--primary);display:inline-flex;align-items:center;justify-content:center}
+  .f{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .flab{font-size:12px;line-height:16px;font-weight:600;color:var(--flb)}
+  .fval{margin:0;min-height:44px;padding:10px 12px;border-radius:var(--r-s);background:var(--fbg);font-size:16px;line-height:22px;color:var(--on)}
+  .fval.miss{color:var(--onv);font-style:italic}
+  .fam-dl{--fbg:var(--dl-bg);--flb:var(--dl-lb)}
+  .sectxt{margin:0;font-size:14px;line-height:20px;color:var(--onv)}
+  .bodytxt{margin:0;font-size:16px;line-height:22px;color:var(--on)}
+  .misstxt{margin:0;font-size:16px;line-height:22px;color:var(--onv)}
+
+  /* slice 10: filter chip (RecordFilterChip, moved from PatientListScreen) */
+  .chips{display:flex;flex-wrap:wrap;gap:4px 6px}
+  .fchip{min-height:48px;display:inline-flex;align-items:center}
+  .fchip span{display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:var(--r-s);border:1px solid var(--outline);background:var(--surface);color:var(--on);font-size:14px;font-weight:500;white-space:nowrap}
+  .fchip.sel span{background:var(--primary);border-color:var(--primary);color:var(--onprimary);font-weight:600}
+  /* M3 FilterChip as the forms use it today (unchanged in slices 10 and 11) */
+  .mchip{min-height:48px;display:inline-flex;align-items:center}
+  .mchip span{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--outline);font-size:13px;font-weight:600;color:var(--onv);white-space:nowrap}
+  .mchip.sel span{background:#FFD9DE;border-color:#FFD9DE;color:#3B0815}
+  .dark .mchip.sel span{background:#762E3B;border-color:#762E3B;color:#FFD9DE}
+
+  /* slice 10: attachment rows */
+  .arow{display:flex;align-items:center;gap:12px;min-height:72px;padding:8px 0;border-top:1px solid var(--outv);text-align:start;width:100%}
+  .arow.first{border-top:0}
+  .thumb{flex:0 0 56px;width:56px;height:56px;border-radius:var(--r-s);background:#20242C}
+  .thumb.none{background:var(--sch)}
+  .ameta{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
+  .ameta b{font-size:16px;line-height:22px;font-weight:600;color:var(--on);overflow-wrap:anywhere}
+
+  /* dialogs */
+  .dlg{background:var(--surface);border-radius:var(--r-l);padding:20px;display:flex;flex-direction:column;gap:14px;color:var(--on)}
+  .dhead{display:flex;align-items:flex-start;gap:4px}
+  .dhead .t{flex:1 1 auto;min-width:0}
+  .dhead h4{margin:0;font-size:18px;line-height:24px;font-weight:700;color:var(--on)}
+  .dhead .who{margin:2px 0 0;font-size:14px;line-height:20px;font-weight:600;color:var(--onv)}
+  .ibtn{width:48px;height:48px;border-radius:24px;display:inline-flex;align-items:center;justify-content:center;color:var(--onv);flex:0 0 48px}
+  .ibtn.del{color:var(--err)}
+  .lab12{margin:0;font-size:12px;line-height:16px;font-weight:600;color:var(--onv)}
+  .tf{border:1px solid var(--outline);border-radius:4px;min-height:56px;padding:8px 14px;position:relative;font-size:15px;color:var(--onv);display:flex;align-items:center}
+  .tf .fl{position:absolute;top:-9px;left:10px;background:var(--surface);padding:0 4px;font-size:12px;color:var(--onv)}
+  .src{display:flex;flex-direction:column;gap:8px}
+  .srcbtn{min-height:64px;width:100%;border:1px solid var(--outline);border-radius:var(--r-s);padding:10px 16px;display:flex;flex-direction:column;align-items:flex-start;text-align:start;background:var(--surface)}
+  .srcbtn b{font-size:14px;line-height:20px;font-weight:600;color:var(--primary)}
+  .srcbtn span{font-size:14px;line-height:20px;color:var(--onv)}
+  .btnrow{display:flex;gap:8px}
+  .btnrow > *{flex:1 1 0;min-height:48px;border-radius:var(--r-s);font-size:14px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;padding:0 8px;text-align:center}
+  .bout{border:1px solid var(--outline);color:var(--primary);background:var(--surface)}
+  .bfill{background:var(--primary);color:var(--onprimary)}
+  .bdis{background:rgba(13,27,61,.12);color:rgba(13,27,61,.38)}
+  .preview{height:180px;border-radius:var(--r-s);border:1px solid var(--outline);background:#20242C}
+  .prevacts{display:flex;gap:4px;margin-top:-6px}
+  .imgbox{height:380px;border-radius:var(--r-s);background:#000;border:1px solid var(--outv);display:flex;align-items:center;justify-content:center}
+  .imgbox p{margin:0;font-size:16px;line-height:22px;color:#D3D3D3}
+  .vmeta{display:flex;flex-direction:column;gap:4px}
+  .sw{font-size:12px;line-height:16px;font-weight:700}
+  .sw-neu{color:var(--onv);font-weight:600} .sw-mod{color:var(--mod-fg)}
+  .mono{margin:0;font-family:"Roboto Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:16px;color:var(--onv);overflow-wrap:anywhere}
+
+  /* before (today) */
+  .ocard{background:#F9F5F3;border:1px solid #CAC4D0;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px;color:#0D1B3D}
+  .ohead{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+  .ohead h4{margin:0;font-size:15px;font-weight:700;color:#0D1B3D;display:flex;align-items:center;gap:8px}
+  .oico{width:20px;height:20px;border-radius:10px;background:#0D1B3D;display:inline-block}
+  .opbtn{height:40px;padding:0 20px;border-radius:20px;background:#0D1B3D;color:#fff;font-size:13px;font-weight:600;display:inline-flex;align-items:center}
+  .oteal{font-size:11px;font-weight:600;color:#176B70;margin:0}
+  .orow{background:#fff;border-radius:12px;padding:12px;display:flex;gap:12px;align-items:center;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+  .othumb{width:64px;height:64px;border-radius:8px;background:#444;color:#0D1B3D;font-size:24px;display:flex;align-items:center;justify-content:center;flex:0 0 64px}
+  .opill{font-size:11px;padding:2px 4px;border-radius:4px;background:#FFD9DE;color:#3B0815}
+  .o11{font-size:11px;color:#4C3F43}
+  .o11t{font-size:11px;color:#176B70}
+  .odlg{background:#fff;border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 8px 20px rgba(0,0,0,.25);color:#0D1B3D}
+  .otile{flex:1 1 0;height:120px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;padding:8px}
+  .otile i{width:36px;height:36px;border-radius:8px;background:#0D1B3D;display:block;margin-bottom:6px}
+  .ochip{display:inline-flex;align-items:center;height:32px;padding:0 10px;border-radius:8px;border:1px solid #79747E;font-size:11px;font-weight:600;color:#4C3F43}
+  .ochip.sel{background:#FFD9DE;border-color:#FFD9DE;color:#3B0815}
+  .obtns{display:flex;justify-content:flex-end;gap:8px}
+  .obtns span{height:40px;padding:0 18px;border-radius:20px;display:inline-flex;align-items:center;font-size:13px;font-weight:600}
+
+  /* tables */
+  .tablewrap{overflow-x:auto;max-width:100%}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin-top:10px}
+  th,td{border-bottom:1px solid #E6E1E5;padding:7px 8px;text-align:start;vertical-align:top}
+  th{background:#F7F5F3}
+  td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+  ol.map li{margin:7px 0}
+  code{font-family:"Roboto Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:#F3F0EE;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<h1>Mock S10: Plan tab and attachments</h1>
+<p class="lede">For slice 10. The Plan tab shows two cards: the delivery planning card (already redesigned in slice 2, unchanged here) and the documents and attachments section, which is the same component as on Overview. This slice restyles the attachments section, the add attachment dialog and the viewer's chrome. Patient: Mona Ragab (27+2 wks, G4 P1 A2, EDD 11/02/2027, Mothercare, 12000). Mona's sample has no attachments, so the two files are the in-repo fixture from <code>DeleteUndoUiTest</code> ("Scan 1" and "Scan 2", ultrasound, 1024 bytes each, captured 2026-03-01 and 2026-03-02, hash "00"). One viewer frame is layout only: a full 64-character hash shown as zeros to prove the wrap.</p>
+
+<section class="reason" aria-labelledby="r">
+  <h2 id="r">Design reasoning</h2>
+  <p>Reading this as: a filing cabinet attached to the record, read often, added to now and then. Dial ENERGY 1 / RHYTHM 1 / MOTION 1.</p>
+  <ul>
+    <li><b>Same section card as Overview.</b> The attachments section becomes a <code>RecordSectionCard</code>, like the delivery card above it: navy 18 sp title, "Add" as a 48 dp word, white body. The tinted card, the info icon and the filled "+ Add" pill go.</li>
+    <li><b>Files as rows, not band cards.</b> The section is one of the record's sections (on Overview too), so a band card per file would be a box inside a box. Rows split by hairlines, like lab tests in slice 8: the image itself on the left (56 dp, radius 10), the title 16 sp, then two grey 14 sp lines.</li>
+    <li><b>Dropped:</b> the green shield on every row (it is drawn without any check, so it claims a verification that never ran), the 11 sp lines, the pink category pill, the "-" glyph in an empty thumbnail, the middle dots.</li>
+    <li><b>Filters use the patient list chip</b> (<code>RecordFilterChip</code>, moved out of <code>PatientListScreen</code>): radius 10, selected chip navy. Forms keep today's M3 chips until the editor slices, so the dialog's chips stay as they are apart from text size.</li>
+    <li><b>Dialog:</b> the two 120 dp icon tiles become two plain 64 dp buttons with the same words; the overlay pills on the preview ("Retake", "Gallery", 11 sp, no 48 dp target) move under the preview as text actions; Cancel and Save use the sheet button row (<code>SheetCancelSaveRow</code>).</li>
+    <li><b>Viewer:</b> the decorative avatar icon goes; the medico-legal strip loses its tinted box and becomes four plain lines; the hash goes from 9 sp on one clipped line to 12 sp monospace that wraps.</li>
+  </ul>
+</section>
+
+<h2>1. Plan tab</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today (fixture files)</figcaption>
+    <div class="phone"><div class="screen" style="gap:14px">
+      <section class="sec fam-dl" aria-label="Delivery planning and outcome">
+        <div class="sec-head"><h4>Delivery planning &amp; outcome</h4><span class="act">Edit</span></div>
+        <div class="sec-body">
+          <div class="f"><span class="flab">Agreed delivery hospital</span><p class="fval">Mothercare</p></div>
+          <div class="f"><span class="flab">Agreed delivery fees</span><p class="fval">12000</p></div>
+          <div class="f"><span class="flab">Delivery plan</span><p class="fval miss">Not recorded</p></div>
+          <div class="f"><span class="flab">Postpartum note</span><p class="fval miss">Not recorded</p></div>
+        </div>
+      </section>
+      <div class="ocard">
+        <div class="ohead"><h4><span class="oico" aria-hidden="true"></span>Documents &amp; Attachments</h4><span class="opbtn">+ Add</span></div>
+        <p class="oteal">2 saved files (2.0 KB)</p>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 6px"><span class="ochip sel" style="font-size:13px">All (2)</span><span class="ochip" style="font-size:13px">Ultrasound (2)</span><span class="ochip" style="font-size:13px">Labs (0)</span><span class="ochip" style="font-size:13px">Prescriptions (0)</span><span class="ochip" style="font-size:13px">Clinical Photos (0)</span></div>
+        <div class="orow"><span class="othumb">-</span><div style="min-width:0"><b style="font-size:14px">Scan 1</b><br><span class="opill">Ultrasound Scan</span> <span class="o11">1.0 KB</span><br><span class="o11t">◆ Saved on this phone · 2026-03-01</span></div></div>
+        <div class="orow"><span class="othumb">-</span><div style="min-width:0"><b style="font-size:14px">Scan 2</b><br><span class="opill">Ultrasound Scan</span> <span class="o11">1.0 KB</span><br><span class="o11t">◆ Saved on this phone · 2026-03-02</span></div></div>
+      </div>
+    </div></div>
+    <p class="note">Tinted card, 11 sp teal lines, a shield icon on every row that no check stands behind, pink selected chip, 14 dp gap.</p>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, slice 10, two files</figcaption>
+    <div class="phone"><div class="screen">
+      <section class="sec fam-dl" aria-label="Delivery planning and outcome">
+        <div class="sec-head"><h4>Delivery planning &amp; outcome</h4><button type="button" class="act" aria-label="Edit delivery plan">Edit</button></div>
+        <div class="sec-body">
+          <div class="f"><span class="flab">Agreed delivery hospital</span><p class="fval">Mothercare</p></div>
+          <div class="f"><span class="flab">Agreed delivery fees</span><p class="fval">12000</p></div>
+          <div class="f"><span class="flab">Delivery plan</span><p class="fval miss">Not recorded</p></div>
+          <div class="f"><span class="flab">Postpartum note</span><p class="fval miss">Not recorded</p></div>
+        </div>
+      </section>
+      <section class="sec" aria-label="Documents and attachments">
+        <div class="sec-head"><h4>Documents and attachments</h4><button type="button" class="act" aria-label="Add attachment">Add</button></div>
+        <div class="sec-body" style="gap:8px">
+          <p class="sectxt">2 files, 2.0 KB</p>
+          <div class="chips" role="group" aria-label="Filter attachments">
+            <button type="button" class="fchip sel" aria-pressed="true"><span>All (2)</span></button>
+            <button type="button" class="fchip" aria-pressed="false"><span>Ultrasound (2)</span></button>
+            <button type="button" class="fchip" aria-pressed="false"><span>Labs (0)</span></button>
+            <button type="button" class="fchip" aria-pressed="false"><span>Prescriptions (0)</span></button>
+            <button type="button" class="fchip" aria-pressed="false"><span>Clinical photos (0)</span></button>
+          </div>
+          <div>
+            <button type="button" class="arow first" aria-label="Open attachment Scan 1"><span class="thumb" aria-hidden="true"></span><span class="ameta"><b>Scan 1</b><span class="sectxt">Ultrasound Scan, 1.0 KB</span><span class="sectxt">Saved on this phone, 2026-03-01</span></span></button>
+            <button type="button" class="arow" aria-label="Open attachment Scan 2"><span class="thumb" aria-hidden="true"></span><span class="ameta"><b>Scan 2</b><span class="sectxt">Ultrasound Scan, 1.0 KB</span><span class="sectxt">Saved on this phone, 2026-03-02</span></span></button>
+          </div>
+        </div>
+      </section>
+    </div></div>
+    <p class="note">The dark square stands for the photo thumbnail. A file whose image cannot be read shows a plain <code>surfaceContainerHigh</code> square (no glyph). "Ultrasound Scan" keeps today's category name (decision 5).</p>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, empty (Mona Ragab today) and filtered empty</figcaption>
+    <div class="phone"><div class="screen">
+      <section class="sec" aria-label="Documents and attachments, empty">
+        <div class="sec-head"><h4>Documents and attachments</h4><button type="button" class="act" aria-label="Add attachment">Add</button></div>
+        <div class="sec-body"><p class="misstxt">No saved attachments or clinical images</p></div>
+      </section>
+      <section class="sec" aria-label="Documents and attachments, filter with no match">
+        <div class="sec-head"><h4>Documents and attachments</h4><button type="button" class="act" aria-label="Add attachment">Add</button></div>
+        <div class="sec-body" style="gap:8px">
+          <p class="sectxt">2 files, 2.0 KB</p>
+          <div class="chips"><button type="button" class="fchip"><span>All (2)</span></button><button type="button" class="fchip"><span>Ultrasound (2)</span></button><button type="button" class="fchip sel"><span>Labs (0)</span></button><button type="button" class="fchip"><span>Prescriptions (0)</span></button><button type="button" class="fchip"><span>Clinical photos (0)</span></button></div>
+          <p class="misstxt">No attachments in this selected category</p>
+        </div>
+      </section>
+      <section class="sec" aria-label="Archived patient">
+        <div class="sec-head"><h4>Documents and attachments</h4></div>
+        <div class="sec-body"><p class="misstxt">No saved attachments or clinical images</p></div>
+      </section>
+    </div></div>
+    <p class="note">Both empty texts are the app's own words, now in <code>strings.xml</code>. Archived patient: no "Add" (today's gate, <code>status != "archived"</code>).</p>
+  </figure>
+</div>
+
+<h2>2. Add attachment dialog</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, no photo yet</figcaption>
+    <div class="phone"><div class="scrim">
+      <div class="odlg">
+        <div style="display:flex;justify-content:space-between;align-items:center"><div><b style="font-size:15px">Add Clinical Attachment</b><br><span style="font-size:12px;font-weight:600">Mona Ragab</span></div><span aria-hidden="true">✕</span></div>
+        <span style="font-size:11px;font-weight:600">Attachment Type:</span>
+        <div style="display:flex;flex-wrap:wrap;gap:6px"><span class="ochip sel">Ultrasound</span><span class="ochip">Labs</span><span class="ochip">Prescription / Report</span><span class="ochip">Clinical Photo</span><span class="ochip">Other</span></div>
+        <span style="font-size:11px;font-weight:600">Photo size</span>
+        <div style="display:flex;flex-wrap:wrap;gap:6px"><span class="ochip">Small - documents</span><span class="ochip">Standard - reports</span><span class="ochip sel">Detailed - scans</span></div>
+        <div class="tf" style="color:#4C3F43">Title or Notes (Optional)</div>
+        <div style="display:flex;gap:10px"><div class="otile" style="background:rgba(214,223,255,.6)"><i></i><b style="font-size:14px">Take Photo</b><span style="font-size:11px">Capture scan or document</span></div><div class="otile" style="background:rgba(243,233,231,.5)"><i></i><b style="font-size:14px">Choose from Gallery</b><span style="font-size:11px">Existing file or photo</span></div></div>
+        <div class="obtns"><span style="border:1px solid #79747E">Cancel</span><span style="background:rgba(13,27,61,.12);color:rgba(13,27,61,.38)">Save to Patient Record</span></div>
+      </div>
+    </div></div>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, no photo yet</figcaption>
+    <div class="phone"><div class="scrim">
+      <div class="dlg" role="dialog" aria-label="Add attachment">
+        <div class="dhead"><div class="t"><h4>Add attachment</h4><p class="who">Mona Ragab</p></div><button type="button" class="ibtn" aria-label="Cancel"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"/></svg></button></div>
+        <div><p class="lab12">Type</p><div class="chips"><span class="mchip sel"><span>Ultrasound</span></span><span class="mchip"><span>Labs</span></span><span class="mchip"><span>Prescription or report</span></span><span class="mchip"><span>Clinical photo</span></span><span class="mchip"><span>Other</span></span></div></div>
+        <div><p class="lab12">Photo size</p><div class="chips"><span class="mchip"><span>Small (documents)</span></span><span class="mchip"><span>Standard (reports)</span></span><span class="mchip sel"><span>Detailed (scans)</span></span></div></div>
+        <div class="tf"><span class="fl">Title or note (optional)</span>For example: growth scan, CBC report</div>
+        <div class="src">
+          <button type="button" class="srcbtn"><b>Take photo</b><span>Capture a scan or document</span></button>
+          <button type="button" class="srcbtn"><b>Choose from gallery</b><span>An existing file or photo</span></button>
+        </div>
+        <div class="btnrow"><button type="button" class="bout">Cancel</button><button type="button" class="bdis" disabled>Save to record</button></div>
+      </div>
+    </div></div>
+    <p class="note">Chips are today's M3 <code>FilterChip</code> with the 11 sp override removed (13 sp). Labels 12 sp. No icons; each source is one 64 dp button with its own hint.</p>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, photo chosen</figcaption>
+    <div class="phone"><div class="scrim">
+      <div class="dlg" role="dialog" aria-label="Add attachment, photo chosen">
+        <div class="dhead"><div class="t"><h4>Add attachment</h4><p class="who">Mona Ragab</p></div><button type="button" class="ibtn" aria-label="Cancel"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"/></svg></button></div>
+        <div><p class="lab12">Type</p><div class="chips"><span class="mchip sel"><span>Ultrasound</span></span><span class="mchip"><span>Labs</span></span><span class="mchip"><span>Prescription or report</span></span><span class="mchip"><span>Clinical photo</span></span><span class="mchip"><span>Other</span></span></div></div>
+        <div class="tf" style="color:var(--on)"><span class="fl">Title or note (optional)</span>Scan 1</div>
+        <div class="preview" role="img" aria-label="Preview"></div>
+        <div class="prevacts"><button type="button" class="act">Retake</button><button type="button" class="act">Choose from gallery</button></div>
+        <div class="btnrow"><button type="button" class="bout">Cancel</button><button type="button" class="bfill">Save to record</button></div>
+      </div>
+    </div></div>
+    <p class="note">Photo size row scrolled above (the dialog scrolls as today). "Retake" and "Choose from gallery" are 48 dp text actions under the preview, not 11 sp pills over the image.</p>
+  </figure>
+</div>
+
+<h2>3. Attachment viewer chrome</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today</figcaption>
+    <div class="phone"><div class="scrim">
+      <div class="odlg" style="padding:16px;gap:12px">
+        <div style="display:flex;align-items:center;gap:10px"><span style="width:40px;height:40px;border-radius:20px;background:#D6DFFF;flex:0 0 40px"></span><div style="flex:1"><b style="font-size:15px">Mona Ragab</b><br><span style="font-size:12px;font-weight:600">Ultrasound Scan · Scan 1</span></div><span style="color:#BA1A1A" aria-hidden="true">🗑</span><span aria-hidden="true">✕</span></div>
+        <div class="imgbox" style="border-radius:12px;height:300px"><p style="font-size:13px">Image unavailable</p></div>
+        <div style="background:rgba(243,233,231,.5);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;justify-content:space-between"><span style="font-size:11px;font-weight:700">Protected Medical Vault</span><span style="font-size:11px;font-weight:600;color:#4C3F43">1.0 KB · WebP</span></div>
+          <span style="font-family:monospace;font-size:9px;color:#4C3F43">SHA-256: 00</span>
+          <span style="font-size:11px;color:#4C3F43">Saved At: 2026-03-01</span>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">The fixture file does not exist on disk, so today's viewer shows "Image unavailable" and "Protected Medical Vault", the same words it uses for a file that fails its hash check. Image box drawn shorter here; it is 380 dp.</p>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, verified file (layout: 64-character hash)</figcaption>
+    <div class="phone"><div class="scrim">
+      <div class="dlg" style="padding:16px;gap:12px" role="dialog" aria-label="Attachment viewer">
+        <div class="dhead" style="align-items:center"><div class="t"><h4 style="font-size:16px;line-height:22px">Mona Ragab</h4><p class="sectxt">Ultrasound Scan, Scan 1</p></div>
+          <button type="button" class="ibtn del" aria-label="Delete attachment"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+          <button type="button" class="ibtn" aria-label="Close"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"/></svg></button></div>
+        <div class="imgbox" style="height:300px;background:#20242C" role="img" aria-label="Scan 1"></div>
+        <div class="vmeta">
+          <span class="sw sw-neu">Integrity verified (SHA-256)</span>
+          <p class="sectxt">1.0 KB, WebP</p>
+          <p class="sectxt">Saved at 2026-03-01</p>
+          <p class="mono">SHA-256: 0000000000000000000000000000000000000000000000000000000000000000</p>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">Name 16 sp bold, category and title 14 sp grey, delete and close 48 dp. The four lines sit on the dialog's white, no tinted box. The hash wraps to two lines at 360 dp.</p>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, fixture file (missing image, not verified)</figcaption>
+    <div class="phone"><div class="scrim">
+      <div class="dlg" style="padding:16px;gap:12px" role="dialog" aria-label="Attachment viewer, image unavailable">
+        <div class="dhead" style="align-items:center"><div class="t"><h4 style="font-size:16px;line-height:22px">Mona Ragab</h4><p class="sectxt">Ultrasound Scan, Scan 1</p></div>
+          <button type="button" class="ibtn del" aria-label="Delete attachment"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+          <button type="button" class="ibtn" aria-label="Close"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"/></svg></button></div>
+        <div class="imgbox" style="height:300px"><p>Image unavailable</p></div>
+        <div class="vmeta">
+          <span class="sw sw-mod">Integrity not verified</span>
+          <p class="sectxt">1.0 KB, WebP</p>
+          <p class="sectxt">Saved at 2026-03-01</p>
+          <p class="mono">SHA-256: 00</p>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">"Integrity not verified" in the amber word is decision 1 (recommended). Without it the line reads today's words in sentence case, "Protected medical vault", in the neutral grey.</p>
+  </figure>
+</div>
+
+<h2>4. Dark</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Dark</b>, after, two files</figcaption>
+    <div class="phone dark"><div class="screen">
+      <section class="sec" aria-label="Documents and attachments, dark">
+        <div class="sec-head"><h4>Documents and attachments</h4><button type="button" class="act" aria-label="Add attachment">Add</button></div>
+        <div class="sec-body" style="gap:8px">
+          <p class="sectxt">2 files, 2.0 KB</p>
+          <div class="chips"><button type="button" class="fchip sel"><span>All (2)</span></button><button type="button" class="fchip"><span>Ultrasound (2)</span></button><button type="button" class="fchip"><span>Labs (0)</span></button><button type="button" class="fchip"><span>Prescriptions (0)</span></button><button type="button" class="fchip"><span>Clinical photos (0)</span></button></div>
+          <div>
+            <button type="button" class="arow first"><span class="thumb" aria-hidden="true" style="background:#000"></span><span class="ameta"><b>Scan 1</b><span class="sectxt">Ultrasound Scan, 1.0 KB</span><span class="sectxt">Saved on this phone, 2026-03-01</span></span></button>
+            <button type="button" class="arow"><span class="thumb none" aria-hidden="true"></span><span class="ameta"><b>Scan 2</b><span class="sectxt">Ultrasound Scan, 1.0 KB</span><span class="sectxt">Saved on this phone, 2026-03-02</span></span></button>
+          </div>
+        </div>
+      </section>
+    </div></div>
+    <p class="note">Second row shows the no-image square (<code>surfaceContainerHigh</code> #283248).</p>
+  </figure>
+</div>
+
+<h2>5. Contrast (computed, WCAG formula)</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Pair</th><th>Text</th><th>Background</th><th>Light</th><th>Dark</th></tr></thead>
+<tbody>
+<tr><td>Section title (primary) on surface</td><td>#0D1B3D / #B4C5FF</td><td>#FFFFFF / #1A202E</td><td class="n">16.92</td><td class="n">9.59</td></tr>
+<tr><td>Row title, patient name (onSurface)</td><td>#0D1B3D / #E2E2EA</td><td>#FFFFFF / #1A202E</td><td class="n">16.92</td><td class="n">12.64</td></tr>
+<tr><td>Row lines, summary, empty text, dialog labels, hash (onSurfaceVariant)</td><td>#4C3F43 / #CDC3C6</td><td>#FFFFFF / #1A202E</td><td class="n">10.00</td><td class="n">9.47</td></tr>
+<tr><td>Selected filter chip (onPrimary on primary)</td><td>#FFFFFF / #002A78</td><td>#0D1B3D / #B4C5FF</td><td class="n">16.92</td><td class="n">7.72</td></tr>
+<tr><td>Unselected chip border, source button border (outline), 3:1 needed</td><td>#79747E / #8E95A5</td><td>#FFFFFF / #1A202E</td><td class="n">4.55</td><td class="n">5.42</td></tr>
+<tr><td>Delete icon (error)</td><td>#BA1A1A / #FFB4AB</td><td>#FFFFFF / #1A202E</td><td class="n">6.46</td><td class="n">9.59</td></tr>
+<tr><td>"Integrity not verified" (StatusWord Moderate)</td><td>#6E4708 / #F3D18E</td><td>#FFFFFF / #1A202E</td><td class="n">8.18</td><td class="n">11.10</td></tr>
+<tr><td>"Image unavailable" (LightGray on black, unchanged)</td><td>#D3D3D3</td><td>#000000</td><td class="n">14.03</td><td class="n">14.03</td></tr>
+<tr><td>Dialog chip selected (M3 default, unchanged)</td><td>#3B0815</td><td>#FFD9DE</td><td class="n">13.18</td><td class="n">n/a</td></tr>
+<tr><td>Before: "2 saved files" teal on tinted card</td><td>#176B70</td><td>#F9F5F3</td><td class="n">5.75 (11 sp)</td><td class="n"></td></tr>
+</tbody></table></div>
+<p class="note">Hairlines (#CAC4D0, 1.70) separate rows and are not the only cue: each row is its own 72 dp target with its own title.</p>
+
+<h2>6. Compose mapping</h2>
+<ol class="map">
+  <li><code>PlanTab</code>: same <code>Column</code>, <code>spacedBy(12.dp)</code> (was 14). <code>DeliveryPlanningCard</code> unchanged.</li>
+  <li><code>AttachmentsSectionCard</code> = <code>RecordSectionCard(title = attachments_title, family = FieldFamilies.patient(), modifier.testTag("attachmentsSectionCard"), action = if not archived { SectionTextAction("Add", "Add attachment", onAddAttachment, Modifier.testTag("addAttachmentBtn")) })</code>.</li>
+  <li>Summary: <code>Text(pluralStringResource(attachments_summary, n, n, size), RecordType.Secondary, onSurfaceVariant)</code>. Filters: <code>FlowRow { RecordFilterChip(...) x5 }</code>, same <code>selectedFilter</code> state.</li>
+  <li>Row: <code>Column { if (index &gt; 0) HorizontalDivider(outlineVariant); Row(Modifier.fillMaxWidth().testTag("attachmentCard-$id").clickable(onClickLabel = attachment_open) { onViewAttachment(it) }.heightIn(min = 72.dp).padding(vertical = 8.dp), spacedBy(12.dp)) { thumbnail 56 dp clip(RecordShapes.Small); Column(weight 1) { title RecordType.KeyValue maxLines 2; two RecordType.Secondary lines } } }</code>.</li>
+  <li>Add dialog: <code>Card(shape = RecordShapes.Large, elevation 0)</code>; header <code>RecordType.SectionTitle</code> onSurface plus name <code>RecordType.Action</code> onSurfaceVariant; labels <code>FormFieldLabel</code> (new, <code>ui/components/FormFieldLabel.kt</code>; onSurfaceVariant outside a family); two <code>OutlinedButton</code>s (64 dp) for the sources; preview actions <code>SectionTextAction</code>; buttons <code>SheetCancelSaveRow</code>.</li>
+  <li>Viewer (level 3): <code>Card(RecordShapes.Large)</code>; header name <code>RecordType.CardName</code>, line <code>RecordType.Secondary</code>; image box <code>RecordShapes.Small</code>; meta <code>Column(spacedBy(4.dp))</code>: <code>StatusWord</code>, two <code>RecordType.Secondary</code> lines, hash <code>RecordType.Tag</code> 12 sp monospace, no <code>maxLines</code>.</li>
+</ol>
+
+<h2>7. Decisions for the owner</h2>
+<ol class="map">
+  <li><b>Failed integrity check wording.</b> Today a missing or altered file shows "Protected Medical Vault", which reads as reassurance. Recommend "Integrity not verified" as an amber word. Copy change in a level-3 file.</li>
+  <li><b>Files as rows inside the section, not one band card per file.</b> Recommend rows (no box inside a box; the section also sits on Overview).</li>
+  <li><b>Category names and the untitled title.</b> "Ultrasound Scan", "Laboratory Investigation", "General Medical Attachment" are title case, and an untitled file reads "Ultrasound Scan · 2026-03-01". Recommend sentence case and ", " (touches <code>AttachmentSyncManager.kt</code> and level-3 <code>ClinicalFormat.kt</code>, and <code>AttachmentDisplayTitleTest</code>). Not in this mock.</li>
+</ol>
+
+</main>
+</body>
+</html>

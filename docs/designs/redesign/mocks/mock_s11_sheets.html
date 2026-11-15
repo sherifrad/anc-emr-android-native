@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Mock S11: Editor sheets</title>
+<style>
+  /* Tokens: the app's real scheme values (Theme.kt) plus the slice 0 record tokens. */
+  :root{
+    --primary:#0D1B3D; --on:#0D1B3D; --onv:#4C3F43; --onprimary:#FFFFFF;
+    --surface:#FFFFFF; --bg:#FBF8F5; --outv:#CAC4D0; --outline:#79747E;
+    --pc:#D6DFFF; --onpc:#041334; --sc:#FFD9DE; --onsc:#3B0815;
+    --err:#BA1A1A; --hx-lb:#594A2C; --dl-lb:#4E3A78;
+    --r-s:10px; --r-l:16px;
+  }
+  .dark{
+    --primary:#B4C5FF; --on:#E2E2EA; --onv:#CDC3C6; --onprimary:#002A78;
+    --surface:#1A202E; --bg:#0E121B; --outv:#3A4459; --outline:#8E95A5;
+    --pc:#183F91; --onpc:#DCE1FF; --sc:#762E3B; --onsc:#FFD9DE;
+    --err:#FFB4AB; --hx-lb:#E0CFA6; --dl-lb:#CDBDF0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:#FFFFFF;color:#0D1B3D;font-family:Roboto,"Noto Sans","Segoe UI",system-ui,-apple-system,Arial,sans-serif;font-size:15px;line-height:1.5;padding:32px 16px 64px}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-size:26px;line-height:1.25;margin:0 0 8px}
+  h2{font-size:20px;line-height:1.3;margin:44px 0 6px}
+  .lede,p,li{max-width:78ch}
+  .lede{color:#4C3F43;margin:0 0 4px}
+  .reason{border:1px solid #CAC4D0;border-radius:16px;padding:18px 20px;margin-top:18px;background:#FDFCFB}
+  .reason h2{margin-top:0}
+  .reason ul{margin:4px 0 0;padding-inline-start:20px}
+  .pair{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-top:14px}
+  figure{margin:0;width:360px;max-width:100%;flex:0 0 auto}
+  figcaption{font-size:14px;color:#4C3F43;margin:0 0 8px}
+  figcaption b{color:#0D1B3D}
+  .note{font-size:14px;color:#4C3F43;margin:10px 0 0}
+  .phone{width:100%;background:rgba(0,0,0,.32);border:1px solid #B9B4BE;border-radius:16px;overflow:hidden;color:var(--on);padding-top:40px}
+  .phone.center{padding:60px 16px;display:flex;justify-content:center}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  svg.i{width:24px;height:24px;fill:currentColor;display:block}
+
+  /* sheet after */
+  .sheet{background:var(--surface);border-radius:16px 16px 0 0;display:flex;flex-direction:column}
+  .handle{width:32px;height:4px;border-radius:2px;background:var(--onv);opacity:.4;margin:22px auto 22px}
+  .sh-title{margin:0;padding:0 16px 8px;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .sh-body{padding:0 16px 16px;display:flex;flex-direction:column;gap:12px}
+  .sh-foot{border-top:1px solid var(--outv);padding:12px 16px;display:flex;flex-direction:column;gap:8px}
+  .lab{margin:0 0 4px;font-size:12px;line-height:16px;font-weight:600;color:var(--flb)}
+  .fam-hx{--flb:var(--hx-lb)} .fam-dl{--flb:var(--dl-lb)}
+  .h16{margin:4px 0 0;font-size:16px;line-height:22px;font-weight:700;color:var(--on)}
+  .tf{border:1px solid var(--outline);border-radius:4px;min-height:56px;padding:8px 14px;position:relative;font-size:15px;line-height:20px;color:var(--onv);display:flex;align-items:center;background:var(--surface)}
+  .tf.val{color:var(--on)}
+  .tf.ml{min-height:88px;align-items:flex-start;padding-top:16px}
+  .tf .fl{position:absolute;top:-9px;left:10px;background:var(--surface);padding:0 4px;font-size:12px;line-height:16px;color:var(--onv)}
+  .tf .trail{margin-inline-start:auto;color:var(--primary)}
+  .hint{margin:4px 0 0 16px;font-size:12px;line-height:16px;color:var(--onv)}
+  .chips{display:flex;flex-wrap:wrap;gap:0 8px}
+  .mchip{min-height:48px;display:inline-flex;align-items:center}
+  .mchip span{display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--outline);font-size:13px;font-weight:600;color:var(--onv);white-space:nowrap}
+  .mchip.sel span{background:var(--sc);border-color:var(--sc);color:var(--onsc)}
+  .today{display:flex;justify-content:flex-end;margin-top:-4px}
+  .big{display:flex;gap:8px}
+  .big span{flex:1 1 0;min-height:56px;border-radius:12px;border:1px solid var(--outv);display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:15px;font-weight:500;color:var(--on);background:var(--surface)}
+  .big span.sel{background:var(--pc);border:1.5px solid var(--primary);color:var(--onpc);font-weight:700}
+  .ro{font-size:16px;line-height:22px;color:var(--on);margin:0}
+  .sec2{margin:0;font-size:14px;line-height:20px;color:var(--onv)}
+  .sw{display:flex;align-items:center;min-height:56px;gap:8px}
+  .sw span{flex:1 1 auto;font-size:16px;line-height:22px;color:var(--on)}
+  .tog{width:52px;height:32px;border-radius:16px;border:2px solid var(--outline);position:relative;flex:0 0 52px}
+  .tog::after{content:"";position:absolute;width:16px;height:16px;border-radius:8px;background:var(--outline);left:6px;top:6px}
+  .tog.on{background:var(--primary);border-color:var(--primary)}
+  .tog.on::after{width:24px;height:24px;border-radius:12px;background:var(--onprimary);left:22px;top:2px}
+  .btnrow{display:flex;gap:8px}
+  .btnrow > *{flex:1 1 0;min-height:48px;border-radius:var(--r-s);font-size:14px;line-height:20px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;padding:0 8px;text-align:center}
+  .bout{border:1px solid var(--outline);color:var(--primary);background:var(--surface)}
+  .bfill{background:var(--primary);color:var(--onprimary)}
+  .bdis{background:rgba(13,27,61,.12);color:rgba(13,27,61,.38)}
+  .bwide{width:100%;min-height:48px;border-radius:var(--r-s);border:1px solid var(--outline);color:var(--primary);font-size:14px;font-weight:600;background:var(--surface)}
+
+  /* sheet before (today) */
+  .osheet{background:#F9F5F3;border-radius:28px 28px 0 0;display:flex;flex-direction:column;color:#0D1B3D}
+  .osheet .handle{background:#4C3F43}
+  .o-title{margin:0;padding:8px 16px;font-size:18px;line-height:24px;font-weight:600;color:#0D1B3D}
+  .o-body{padding:0 16px 16px;display:flex;flex-direction:column;gap:12px}
+  .o-lab15{margin:0 0 6px;font-size:15px;font-weight:500}
+  .o-lab14{margin:0 0 4px;font-size:14px;font-weight:500}
+  .osheet .tf,.osheet .tf .fl{background:#F9F5F3}
+  .obtn{flex:1 1 0;min-height:48px;border-radius:24px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+  .odlg{background:#EFE9E4;border-radius:28px;padding:24px;max-width:312px;color:#0D1B3D}
+  .odlg h4{margin:0 0 16px;font-size:20px;line-height:26px;font-weight:600}
+  .odlg p{margin:0 0 24px;font-size:13px;line-height:18px;color:#4C3F43}
+  .odlg .acts{display:flex;justify-content:flex-end;gap:8px;font-size:13px;font-weight:600}
+  .odlg .acts span{min-height:48px;display:inline-flex;align-items:center;padding:0 12px}
+  .ndlg{background:var(--surface);border-radius:var(--r-l);padding:24px;max-width:312px;color:var(--on)}
+  .ndlg h4{margin:0 0 12px;font-size:18px;line-height:24px;font-weight:700;color:var(--on)}
+  .ndlg p{margin:0 0 20px;font-size:16px;line-height:22px;color:var(--onv)}
+  .ndlg .acts{display:flex;justify-content:flex-end;gap:8px}
+  .ndlg .acts button{min-height:48px;min-width:48px;padding:0 12px;border-radius:var(--r-s);font-size:14px;font-weight:600;color:var(--primary)}
+  .ndlg .acts button.danger{color:var(--err)}
+
+  .tablewrap{overflow-x:auto;max-width:100%}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin-top:10px}
+  th,td{border-bottom:1px solid #E6E1E5;padding:7px 8px;text-align:start;vertical-align:top}
+  th{background:#F7F5F3}
+  td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+  ol.map li{margin:7px 0}
+  code{font-family:"Roboto Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:#F3F0EE;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<main class="wrap">
+<h1>Mock S11: Editor sheets</h1>
+<p class="lede">For slice 11: the medication sheet, the delivery plan sheet and their discard dialog. Chrome only: the sheet surface, header, field and group labels, the button row and the dialog. Fields, their order inside the medication form, chips, the status buttons, the save path and every tag stay. Patient: Mona Ragab (27+2 wks, G4 P1 A2, EDD 11/02/2027). The filled medication is the in-repo fixture (<code>DemoFixtures</code>: Iron Polymaltose Complex, 100 mg, Oral, Once daily, started 2026-04-04, "Routine antenatal iron prophylaxis; well tolerated"). The filled delivery plan is Mothercare, 12000. The delivered frame is layout only (Mona has not delivered), with empty fields.</p>
+
+<section class="reason" aria-labelledby="r">
+  <h2 id="r">Design reasoning</h2>
+  <p>Reading this as: a short form opened many times a day, where a wrong tap loses typing. Dial ENERGY 1 / RHYTHM 1 / MOTION 1.</p>
+  <ul>
+    <li><b>The sheet matches the cards it edits.</b> White surface (today a warm grey, <code>surfaceContainerLow</code>), 16 dp top corners (today 28), navy 18 sp bold title like every section title.</li>
+    <li><b>Labels in the family colour of the card.</b> Group and field labels become 12 sp SemiBold in the colour the same field wears on its card: sand for medications (Background family), plum for delivery. Today they are 14 to 15 sp in three different weights.</li>
+    <li><b>One label per field everywhere.</b> The delivery sheet shows the card's sentence-case labels ("Agreed delivery hospital"). The title-case strings ("Agreed Delivery Hospital") stay in <code>strings.xml</code> because they are the keys written into the notes.</li>
+    <li><b>Buttons:</b> radius 10 (today full pills), 48 dp, 14 sp. A hairline above the button row marks where the scrolling form ends. The delivery sheet's row gets the same 16 dp side padding as the medication sheet (today it runs edge to edge).</li>
+    <li><b>Dropped:</b> the lock icon beside a read-only route (the label already says read-only), the "No record" placeholder inside empty delivery boxes, the "&amp;" in "Save &amp; add another".</li>
+    <li><b>Discard dialog:</b> white, radius 16, 16 sp body (today 13 sp), "Discard" in the error colour so the destructive word does not look like the safe one.</li>
+    <li><b>Not in this slice:</b> the M3 chips (radius 8, rose when selected) and the Active / Stopped buttons (radius 12, check icon) are shared with every editor and change in the editor slices.</li>
+  </ul>
+</section>
+
+<h2>1. Medication sheet</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, add (empty)</figcaption>
+    <div class="phone"><div class="osheet">
+      <div class="handle"></div>
+      <p class="o-title">Add Medication</p>
+      <div class="o-body">
+        <div class="tf"><span>Medication name</span></div>
+        <div class="tf"><span>Dosage</span></div>
+        <div><p class="o-lab15">Route</p><div class="chips"><span class="mchip sel"><span>Oral</span></span><span class="mchip"><span>IM</span></span><span class="mchip"><span>IV</span></span><span class="mchip"><span>Topical</span></span><span class="mchip"><span>Subcutaneous</span></span></div></div>
+        <div><p class="o-lab15">Frequency</p><div class="chips"><span class="mchip"><span>Once daily</span></span><span class="mchip"><span>Twice daily</span></span><span class="mchip"><span>Three times daily</span></span><span class="mchip"><span>At bedtime</span></span><span class="mchip"><span>As needed (PRN)</span></span><span class="mchip"><span>Other</span></span></div></div>
+        <div><p class="o-lab15">Status</p><div class="big"><span class="sel">Active <b aria-hidden="true">✓</b></span><span>Stopped</span></div></div>
+        <div class="tf"><span>Start date</span><span class="trail" aria-hidden="true">▦</span></div>
+        <div class="today"><span class="mchip"><span>Today (2026-11-15)</span></span></div>
+        <div class="tf ml"><span>Note / instructions</span></div>
+      </div>
+      <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;gap:8px"><span class="obtn" style="border:1px solid #79747E">Cancel</span><span class="obtn" style="background:#0D1B3D;color:#fff">Save</span></div>
+        <span class="obtn" style="border:1px solid #79747E;flex:none">Save &amp; add another</span>
+      </div>
+    </div></div>
+    <p class="note">Warm grey sheet, 28 dp corners, 15 sp group labels, pill buttons.</p>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, add (empty)</figcaption>
+    <div class="phone"><div class="sheet fam-hx" role="dialog" aria-label="Add medication">
+      <div class="handle"></div>
+      <h4 class="sh-title">Add medication</h4>
+      <div class="sh-body">
+        <div class="tf"><span>Medication name</span></div>
+        <div class="tf"><span>Dosage</span></div>
+        <div><p class="lab">Route</p><div class="chips"><span class="mchip sel"><span>Oral</span></span><span class="mchip"><span>IM</span></span><span class="mchip"><span>IV</span></span><span class="mchip"><span>Topical</span></span><span class="mchip"><span>Subcutaneous</span></span></div></div>
+        <div><p class="lab">Frequency</p><div class="chips"><span class="mchip"><span>Once daily</span></span><span class="mchip"><span>Twice daily</span></span><span class="mchip"><span>Three times daily</span></span><span class="mchip"><span>At bedtime</span></span><span class="mchip"><span>As needed (PRN)</span></span><span class="mchip"><span>Other</span></span></div></div>
+        <div><p class="lab">Status</p><div class="big"><span class="sel">Active <b aria-hidden="true">✓</b></span><span>Stopped</span></div></div>
+        <div class="tf"><span>Start date</span><span class="trail" aria-hidden="true">▦</span></div>
+        <div class="today"><span class="mchip"><span>Today (2026-11-15)</span></span></div>
+        <div class="tf ml"><span>Note / instructions</span></div>
+      </div>
+      <div class="sh-foot">
+        <div class="btnrow"><button type="button" class="bout">Cancel</button><button type="button" class="bfill">Save</button></div>
+        <button type="button" class="bwide">Save and add another</button>
+      </div>
+    </div></div>
+    <p class="note">"Route" at 12 sp needs decision 3 (a style parameter on the level-3 <code>ChoiceGroup</code>). Without it Route keeps 15 sp until slice 12.</p>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, edit (filled, fixture)</figcaption>
+    <div class="phone"><div class="sheet fam-hx" role="dialog" aria-label="Edit medication">
+      <div class="handle"></div>
+      <h4 class="sh-title">Edit medication</h4>
+      <div class="sh-body">
+        <div class="tf val"><span class="fl">Medication name</span>Iron Polymaltose Complex</div>
+        <div class="tf val"><span class="fl">Dosage</span>100 mg</div>
+        <div><p class="lab">Route (read-only)</p><p class="ro">Oral</p><p class="sec2">A different route is a new drug.</p></div>
+        <div><p class="lab">Frequency</p><div class="chips"><span class="mchip sel"><span>Once daily</span></span><span class="mchip"><span>Twice daily</span></span><span class="mchip"><span>Three times daily</span></span><span class="mchip"><span>At bedtime</span></span><span class="mchip"><span>As needed (PRN)</span></span><span class="mchip"><span>Other</span></span></div></div>
+        <div><p class="lab">Status</p><div class="big"><span class="sel">Active <b aria-hidden="true">✓</b></span><span>Stopped</span></div></div>
+        <div class="tf val"><span class="fl">Start date</span>2026-04-04<span class="trail" aria-hidden="true">▦</span></div>
+        <div class="tf ml val"><span class="fl">Note / instructions</span>Routine antenatal iron prophylaxis; well tolerated</div>
+      </div>
+      <div class="sh-foot">
+        <div class="btnrow"><button type="button" class="bout">Cancel</button><button type="button" class="bfill">Save</button></div>
+      </div>
+    </div></div>
+    <p class="note">Today's frame shows the same fields with a lock icon before "Oral" and 15 sp "Route (read-only)". The Today chip is scrolled past here.</p>
+  </figure>
+</div>
+
+<h2>2. Delivery plan sheet</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, filled (Mothercare, 12000)</figcaption>
+    <div class="phone"><div class="osheet">
+      <div class="handle"></div>
+      <p class="o-title">Edit Delivery Plan</p>
+      <div class="o-body">
+        <p class="o-lab15" style="margin:0">Delivery outcome</p>
+        <div class="sw"><span style="font-size:15px">Delivered</span><span class="tog" style="flex:0 0 52px"></span></div>
+        <div><p class="o-lab14">Agreed Delivery Hospital</p><div class="tf val">Mothercare</div><p class="hint">Found in the notes. Edit or clear. One hospital per line.</p></div>
+        <div><p class="o-lab14">Agreed Delivery Fees</p><div class="tf val">12000</div><p class="hint">Agreed fees only. Put quotes or estimates in Delivery Plan.</p></div>
+        <div><p class="o-lab14">Delivery Plan</p><div class="tf ml">No record</div></div>
+        <div><p class="o-lab14">Postpartum Note</p><div class="tf">No record</div></div>
+      </div>
+      <div style="display:flex;gap:8px"><span class="obtn" style="border:1px solid #79747E">Cancel</span><span class="obtn" style="background:#0D1B3D;color:#fff">Save</span></div>
+    </div></div>
+    <p class="note">Outcome first, title-case labels, "No record" inside empty boxes, buttons touching the sheet edges.</p>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, opened, untouched</figcaption>
+    <div class="phone"><div class="sheet fam-dl" role="dialog" aria-label="Edit delivery plan">
+      <div class="handle"></div>
+      <h4 class="sh-title">Edit delivery plan</h4>
+      <div class="sh-body">
+        <div><p class="lab">Agreed delivery hospital</p><div class="tf val">Mothercare</div><p class="hint">Found in the notes. Edit or clear. One hospital per line.</p></div>
+        <div><p class="lab">Agreed delivery fees</p><div class="tf val">12000</div><p class="hint">Agreed fees only. Put quotes or estimates in Delivery plan.</p></div>
+        <div><p class="lab">Delivery plan</p><div class="tf ml"></div></div>
+        <div><p class="lab">Postpartum note</p><div class="tf"></div></div>
+        <p class="h16">Delivery outcome</p>
+        <div class="sw"><span>Delivered</span><span class="tog"></span></div>
+      </div>
+      <div class="sh-foot">
+        <div class="btnrow"><button type="button" class="bout">Cancel</button><button type="button" class="bdis" disabled>Save</button></div>
+      </div>
+    </div></div>
+    <p class="note">Filled with Mona's plan, opened and not yet changed: Save stays disabled until a field changes (today's rule A16). Plan boxes above the outcome is decision 4 (recommended); without it the outcome block stays on top as today.</p>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, empty (no plan yet), one box changed</figcaption>
+    <div class="phone"><div class="sheet fam-dl" role="dialog" aria-label="Edit delivery plan, empty">
+      <div class="handle"></div>
+      <h4 class="sh-title">Edit delivery plan</h4>
+      <div class="sh-body">
+        <div><p class="lab">Agreed delivery hospital</p><div class="tf val">Mothercare</div><p class="hint">Found in the notes. Edit or clear. One hospital per line.</p></div>
+        <div><p class="lab">Agreed delivery fees</p><div class="tf"></div><p class="hint">Agreed fees only. Put quotes or estimates in Delivery plan.</p></div>
+        <div><p class="lab">Delivery plan</p><div class="tf ml"></div></div>
+        <div><p class="lab">Postpartum note</p><div class="tf"></div></div>
+        <p class="h16">Delivery outcome</p>
+        <div class="sw"><span>Delivered</span><span class="tog"></span></div>
+      </div>
+      <div class="sh-foot">
+        <div class="btnrow"><button type="button" class="bout">Cancel</button><button type="button" class="bfill">Save</button></div>
+      </div>
+    </div></div>
+    <p class="note">A patient with no delivery notes: empty boxes have no placeholder (today "No record"). After typing the hospital, Save turns on; Cancel now asks first (discard dialog below).</p>
+  </figure>
+  <figure>
+    <figcaption><b>After</b>, delivered switched on (layout only)</figcaption>
+    <div class="phone"><div class="sheet fam-dl" role="dialog" aria-label="Edit delivery plan, delivered">
+      <div class="handle"></div>
+      <h4 class="sh-title">Edit delivery plan</h4>
+      <div class="sh-body">
+        <p class="h16">Delivery outcome</p>
+        <div class="sw"><span>Delivered</span><span class="tog on"></span></div>
+        <div><div class="tf"><span>Delivery date (YYYY-MM-DD)</span></div><p class="hint">Leave empty if the date is not known.</p></div>
+        <div><p class="lab">Mode of delivery</p><div class="chips"><span class="mchip"><span>Vaginal</span></span><span class="mchip"><span>Caesarean</span></span><span class="mchip"><span>Assisted vaginal</span></span><span class="mchip"><span>Other</span></span></div></div>
+        <div><p class="lab">Outcome</p><div class="chips"><span class="mchip"><span>Live birth</span></span><span class="mchip"><span>Stillbirth</span></span><span class="mchip"><span>Neonatal death</span></span></div></div>
+      </div>
+      <div class="sh-foot">
+        <div class="btnrow"><button type="button" class="bout">Cancel</button><button type="button" class="bfill">Save</button></div>
+      </div>
+    </div></div>
+    <p class="note">Scrolled to the outcome block. The date field keeps its floating label and hint (<code>OutlinedTextField</code>, unchanged).</p>
+  </figure>
+</div>
+
+<h2>3. Discard dialog (both sheets)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today</figcaption>
+    <div class="phone center"><div class="odlg">
+      <h4>Discard draft changes?</h4>
+      <p>Unsaved draft changes will be lost. Saved records will not change.</p>
+      <div class="acts"><span>Keep editing</span><span>Discard</span></div>
+    </div></div>
+  </figure>
+  <figure>
+    <figcaption><b>After</b></figcaption>
+    <div class="phone center"><div class="ndlg" role="alertdialog" aria-label="Discard draft changes?">
+      <h4>Discard draft changes?</h4>
+      <p>Unsaved draft changes will be lost. Saved records will not change.</p>
+      <div class="acts"><button type="button">Keep editing</button><button type="button" class="danger">Discard</button></div>
+    </div></div>
+    <p class="note">Same words, same order (M3: dismiss then confirm). The shell's own discard dialog in <code>AncApp.kt</code> uses the same strings and is restyled in slice 19.</p>
+  </figure>
+</div>
+
+<h2>4. Dark</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Dark</b>, after, edit medication (fixture)</figcaption>
+    <div class="phone dark"><div class="sheet fam-hx" role="dialog" aria-label="Edit medication, dark">
+      <div class="handle"></div>
+      <h4 class="sh-title">Edit medication</h4>
+      <div class="sh-body">
+        <div class="tf val"><span class="fl">Medication name</span>Iron Polymaltose Complex</div>
+        <div class="tf val"><span class="fl">Dosage</span>100 mg</div>
+        <div><p class="lab">Route (read-only)</p><p class="ro">Oral</p><p class="sec2">A different route is a new drug.</p></div>
+        <div><p class="lab">Frequency</p><div class="chips"><span class="mchip sel"><span>Once daily</span></span><span class="mchip"><span>Twice daily</span></span><span class="mchip"><span>Three times daily</span></span><span class="mchip"><span>At bedtime</span></span></div></div>
+        <div><p class="lab">Status</p><div class="big"><span class="sel">Active <b aria-hidden="true">✓</b></span><span>Stopped</span></div></div>
+      </div>
+      <div class="sh-foot">
+        <div class="btnrow"><button type="button" class="bout">Cancel</button><button type="button" class="bfill">Save</button></div>
+      </div>
+    </div></div>
+  </figure>
+</div>
+
+<h2>5. Contrast (computed, WCAG formula)</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Pair</th><th>Text</th><th>Background</th><th>Light</th><th>Dark</th></tr></thead>
+<tbody>
+<tr><td>Sheet title (primary) on surface</td><td>#0D1B3D / #B4C5FF</td><td>#FFFFFF / #1A202E</td><td class="n">16.92</td><td class="n">9.59</td></tr>
+<tr><td>Medication labels (Background family label)</td><td>#594A2C / #E0CFA6</td><td>#FFFFFF / #1A202E</td><td class="n">8.60</td><td class="n">10.58</td></tr>
+<tr><td>Delivery labels (Delivery family label)</td><td>#4E3A78 / #CDBDF0</td><td>#FFFFFF / #1A202E</td><td class="n">9.54</td><td class="n">9.41</td></tr>
+<tr><td>Values, "Delivered", outcome heading (onSurface)</td><td>#0D1B3D / #E2E2EA</td><td>#FFFFFF / #1A202E</td><td class="n">16.92</td><td class="n">12.64</td></tr>
+<tr><td>Hints, route note, dialog body (onSurfaceVariant)</td><td>#4C3F43 / #CDC3C6</td><td>#FFFFFF / #1A202E</td><td class="n">10.00</td><td class="n">9.47</td></tr>
+<tr><td>Save (onPrimary on primary)</td><td>#FFFFFF / #002A78</td><td>#0D1B3D / #B4C5FF</td><td class="n">16.92</td><td class="n">7.72</td></tr>
+<tr><td>Cancel text (primary) / border (outline, 3:1 needed)</td><td>#0D1B3D / #79747E</td><td>#FFFFFF</td><td class="n">16.92 / 4.55</td><td class="n">9.59 / 5.42</td></tr>
+<tr><td>Discard (error) on dialog surface</td><td>#BA1A1A / #FFB4AB</td><td>#FFFFFF / #1A202E</td><td class="n">6.46</td><td class="n">9.59</td></tr>
+<tr><td>Selected chip (M3 default, unchanged)</td><td>#3B0815 / #FFD9DE</td><td>#FFD9DE / #762E3B</td><td class="n">13.18</td><td class="n">see slice 12</td></tr>
+<tr><td>Active button (unchanged)</td><td>#041334 / #DCE1FF</td><td>#D6DFFF / #183F91</td><td class="n">13.82</td><td class="n">7.53</td></tr>
+<tr><td>Before: 15 sp label on warm grey sheet</td><td>#0D1B3D</td><td>#F9F5F3</td><td class="n">15.62</td><td class="n"></td></tr>
+<tr><td>Before: dialog body 13 sp on surfaceContainerHigh</td><td>#4C3F43</td><td>#EFE9E4</td><td class="n">8.31</td><td class="n"></td></tr>
+</tbody></table></div>
+<p class="note">Disabled Save (0.38 alpha) is exempt (WCAG inactive control); the word "Save" and the disabled state both carry it.</p>
+
+<h2>6. Compose mapping</h2>
+<ol class="map">
+  <li>Both sheets: <code>ModalBottomSheet(containerColor = colorScheme.surface, shape = RecordShapes.Sheet)</code> where <code>RecordShapes.Sheet = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)</code> (new token). Content wrapped in <code>CompositionLocalProvider(LocalFieldFamily provides FieldFamilies.background())</code> (medication) or <code>.delivery()</code>.</li>
+  <li>Title: <code>Text(title, RecordType.SectionTitle, primary, Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp).semantics { heading() })</code>.</li>
+  <li>Labels: <code>FormFieldLabel(text)</code> (added in slice 10, <code>ui/components/FormFieldLabel.kt</code>) = <code>Text(text, RecordType.FieldLabel, LocalFieldFamily.current?.label ?: onSurfaceVariant)</code>.</li>
+  <li>Footer: <code>HorizontalDivider(outlineVariant)</code>, then <code>SheetCancelSaveRow(..., modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))</code>; buttons <code>shape = RecordShapes.Small</code>, <code>heightIn(min = 48.dp)</code>, label <code>RecordType.Action</code>.</li>
+  <li>Discard: <code>AlertDialog(shape = RecordShapes.Large, containerColor = surface, title RecordType.SectionTitle onSurface, text RecordType.FieldValue onSurfaceVariant)</code>; Discard <code>TextButton</code> text in <code>colorScheme.error</code>.</li>
+</ol>
+
+<h2>7. Decisions for the owner</h2>
+<ol class="map">
+  <li value="3"><b>Route label size.</b> "Route" is drawn by <code>ChoiceGroup</code> in level-3 <code>PatientEditor.kt</code>. Recommend two default parameters (<code>labelStyle</code>, <code>labelColor</code>) so the medication sheet can pass the 12 sp label; no other caller changes. Needs frontier review; else Route keeps 15 sp until slice 12.</li>
+  <li value="4"><b>Delivery sheet order.</b> Recommend the four plan boxes first and the delivery outcome last: the plan is edited for months, the outcome once.</li>
+</ol>
+
+</main>
+</body>
+</html>
