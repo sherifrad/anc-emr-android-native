@@ -740,4 +740,16 @@
     <string name="scan_photo_n">Photo %1$d</string>
     <string name="unit_mm">%1$s mm</string>
     <string name="scan_photo_open">Open photo %1$d of %2$d, scan %3$s</string>
+    <string name="labs_tab_title">Laboratory reports (%1$d)</string>
+    <string name="add_test_action">Add test</string>
+    <string name="add_test_to_report">Add a test to this report</string>
+    <string name="lab_report_default_name">Laboratory report</string>
+    <string name="lab_all_normal">All normal</string>
+    <string name="lab_individual_investigations">Individual investigations</string>
+    <string name="lab_ref_line">%1$s, ref %2$s</string>
+    <string name="delete_test">Delete test %1$s</string>
+    <string name="lab_group_normal">Normal</string>
+    <string name="lab_abnormal">Abnormal</string>
+    <string name="lab_panel_title">%1$s (%2$d)</string>
+    <string name="lab_subtitle_separator">", "</string>
 </resources>

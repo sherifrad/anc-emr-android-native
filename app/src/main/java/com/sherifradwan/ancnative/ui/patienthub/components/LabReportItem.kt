@@ -1,34 +1,25 @@
 package com.sherifradwan.ancnative.ui.patienthub.components
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -36,22 +27,29 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.sherifradwan.ancnative.ui.minimumTouchTarget
+import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoLabInvestigation
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
-import com.sherifradwan.ancnative.ui.TagHighRiskBg
-import com.sherifradwan.ancnative.ui.TagHighRiskDarkBg
-import com.sherifradwan.ancnative.ui.TagHighRiskDarkText
-import com.sherifradwan.ancnative.ui.TagHighRiskText
-import com.sherifradwan.ancnative.ui.TagNormalRiskBg
-import com.sherifradwan.ancnative.ui.TagNormalRiskDarkBg
-import com.sherifradwan.ancnative.ui.TagNormalRiskDarkText
-import com.sherifradwan.ancnative.ui.TagNormalRiskText
-import com.sherifradwan.ancnative.ui.isDarkTheme
+import com.sherifradwan.ancnative.ui.components.BandChip
+import com.sherifradwan.ancnative.ui.components.FieldFamilies
+import com.sherifradwan.ancnative.ui.components.RecordBandCard
+import com.sherifradwan.ancnative.ui.components.RecordType
+import com.sherifradwan.ancnative.ui.components.SectionTextAction
+import com.sherifradwan.ancnative.ui.components.StatusTone
+import com.sherifradwan.ancnative.ui.components.StatusWord
+import com.sherifradwan.ancnative.ui.components.ltrIsolate
+import com.sherifradwan.ancnative.ui.minimumTouchTarget
 import com.sherifradwan.ancnative.ui.patienthub.model.ClinicalLabReport
+import com.sherifradwan.ancnative.ui.patienthub.model.CompositeTestGroup
 import com.sherifradwan.ancnative.ui.patienthub.model.partitionReportIntoCompositeGroups
 
 @Composable
@@ -65,239 +63,133 @@ fun LabReportItem(
     modifier: Modifier = Modifier,
 ) {
     val compositeGroups = remember(report.items) { partitionReportIntoCompositeGroups(report.items) }
-    val gaResult = patient.dating?.let { GestationalAgeEngine.calculateGestationalAgeAt(it, report.date) }
-    val gaText = gaResult?.displayText?.let { " · GA $it" }.orEmpty()
-    val labDisplay = report.labName?.takeIf { it.isNotBlank() } ?: "Laboratory Report"
-    val isDark = isDarkTheme()
-    val abnormalBg = if (isDark) TagHighRiskDarkBg else TagHighRiskBg
-    val abnormalText = if (isDark) TagHighRiskDarkText else TagHighRiskText
-    val normalBg = if (isDark) TagNormalRiskDarkBg else TagNormalRiskBg
-    val normalText = if (isDark) TagNormalRiskDarkText else TagNormalRiskText
+    val gaShort = GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, report.date)?.shortWeeksText
+    val subtitle = listOfNotNull(
+        report.labName?.takeIf { it.isNotBlank() } ?: stringResource(R.string.lab_report_default_name),
+        pluralStringResource(R.plurals.lab_tests_count, report.totalCount, report.totalCount),
+        gaShort?.let(::ltrIsolate),
+    ).joinToString(stringResource(R.string.lab_subtitle_separator))
 
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .testTag("labReportCard-${report.date}"),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    RecordBandCard(
+        title = report.date,
+        family = FieldFamilies.background(),
+        subtitle = subtitle,
+        modifier = modifier.testTag("labReportCard-${report.date}"),
+        chips = {
+            if (report.isAnyAbnormal) {
+                BandChip(
+                    pluralStringResource(R.plurals.lab_abnormal_count, report.abnormalCount, report.abnormalCount),
+                    StatusTone.High,
+                )
+            } else {
+                BandChip(stringResource(R.string.lab_all_normal), StatusTone.Neutral)
+            }
+        },
+        actions = if (canEdit) {
+            {
+                SectionTextAction(
+                    text = stringResource(R.string.add_test_action),
+                    contentDescription = stringResource(R.string.add_test_to_report),
+                    onClick = onAddTestToReport,
+                    modifier = Modifier.testTag("addTestToReportBtn-${report.date}"),
+                )
+            }
+        } else {
+            null
+        },
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            // Report Header
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "${report.date}$gaText",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    Text(
-                        text = "$labDisplay (${report.totalCount} tests)",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    if (report.isAnyAbnormal) {
-                        Surface(
-                            shape = RoundedCornerShape(999.dp),
-                            color = abnormalBg,
-                        ) {
-                            Text(
-                                text = "${report.abnormalCount} ABNORMAL ▲",
-                                color = abnormalText,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.ExtraBold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                            )
-                        }
-                    } else {
-                        Surface(
-                            shape = RoundedCornerShape(999.dp),
-                            color = normalBg,
-                        ) {
-                            Text(
-                                text = "ALL NORMAL ✓",
-                                color = normalText,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.ExtraBold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                            )
-                        }
-                    }
-
-                    if (canEdit) {
-                        TextButton(
-                            onClick = onAddTestToReport,
-                            modifier = Modifier.minimumTouchTarget().testTag("addTestToReportBtn-${report.date}"),
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(2.dp))
-                            Text("Add Test", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                        }
-                    }
+        compositeGroups.forEach { group ->
+            key(group.title) {
+                if (group.isComposite) {
+                    PanelGroup(group, canEdit, onEditTest, onDeleteTest)
+                } else {
+                    IndividualGroup(group, showHeading = compositeGroups.size > 1, canEdit, onEditTest, onDeleteTest)
                 }
             }
+        }
+    }
+}
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+@Composable
+private fun PanelGroup(
+    group: CompositeTestGroup,
+    canEdit: Boolean,
+    onEditTest: (DemoLabInvestigation) -> Unit,
+    onDeleteTest: (String) -> Unit,
+) {
+    var isExpanded by rememberSaveable(group.title) { mutableStateOf(true) }
+    val stateText = stringResource(if (isExpanded) R.string.state_expanded else R.string.state_collapsed)
 
-            // Composite Groups and Items
-            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp)) {
-                compositeGroups.forEach { group ->
-                    if (group.isComposite) {
-                        var isExpanded by rememberSaveable(group.title) { mutableStateOf(true) }
-
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            shape = RoundedCornerShape(10.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainerLow,
-                            border = BorderStroke(0.6.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                        ) {
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .minimumTouchTarget()
-                                        .clickable(
-                                            role = Role.Button,
-                                            onClick = { isExpanded = !isExpanded },
-                                        )
-                                        .padding(horizontal = 10.dp, vertical = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                    ) {
-                                        Icon(
-                                            imageVector = if (isExpanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(18.dp),
-                                        )
-                                        Text(
-                                            text = group.title,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.primary,
-                                        )
-                                        Text(
-                                            text = "(${group.items.size})",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        )
-                                    }
-
-                                    if (group.isAnyAbnormal) {
-                                        Surface(shape = RoundedCornerShape(4.dp), color = abnormalBg) {
-                                            Text(
-                                                text = "${group.abnormalCount} Abnormal",
-                                                color = abnormalText,
-                                                style = MaterialTheme.typography.labelSmall,
-                                                fontWeight = FontWeight.Bold,
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                            )
-                                        }
-                                    } else {
-                                        Surface(shape = RoundedCornerShape(4.dp), color = normalBg) {
-                                            Text(
-                                                text = "Normal",
-                                                color = normalText,
-                                                style = MaterialTheme.typography.labelSmall,
-                                                fontWeight = FontWeight.Bold,
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                            )
-                                        }
-                                    }
-                                }
-
-                                if (isExpanded) {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(start = 24.dp, end = 10.dp, bottom = 6.dp),
-                                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                                    ) {
-                                        group.items.forEach { lab ->
-                                            LabRowItem(
-                                                lab = lab,
-                                                canEdit = canEdit,
-                                                onEdit = { onEditTest(lab) },
-                                                onDelete = { onDeleteTest(lab.id) },
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        // Standalone group
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            if (compositeGroups.size > 1) {
-                                Text(
-                                    text = "INDIVIDUAL INVESTIGATIONS",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                                )
-                            }
-                            group.items.forEach { lab ->
-                                LabRowItem(
-                                    lab = lab,
-                                    canEdit = canEdit,
-                                    onEdit = { onEditTest(lab) },
-                                    onDelete = { onDeleteTest(lab.id) },
-                                )
-                            }
-                        }
-                    }
-                }
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .minimumTouchTarget()
+                .clickable(role = Role.Button) { isExpanded = !isExpanded }
+                .semantics { stateDescription = stateText },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.lab_panel_title, group.title, group.items.size),
+                style = RecordType.Action.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f),
+            )
+            if (group.isAnyAbnormal) {
+                StatusWord(
+                    pluralStringResource(R.plurals.lab_abnormal_count, group.abnormalCount, group.abnormalCount),
+                    StatusTone.High,
+                )
+            } else {
+                StatusWord(stringResource(R.string.lab_group_normal), StatusTone.Neutral)
             }
-
-            // Footer action
-            if (canEdit) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 6.dp),
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    TextButton(
-                        onClick = onAddTestToReport,
-                        modifier = Modifier.minimumTouchTarget(),
-                    ) {
-                        Text(
-                            text = "+ Add Another Test to this Report",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                }
+            Icon(
+                imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+        if (isExpanded) {
+            group.items.forEachIndexed { index, lab ->
+                LabRowItem(
+                    lab = lab,
+                    canEdit = canEdit,
+                    onEdit = { onEditTest(lab) },
+                    onDelete = { onDeleteTest(lab.id) },
+                    showDivider = index > 0,
+                )
             }
+        }
+    }
+}
+
+@Composable
+private fun IndividualGroup(
+    group: CompositeTestGroup,
+    showHeading: Boolean,
+    canEdit: Boolean,
+    onEditTest: (DemoLabInvestigation) -> Unit,
+    onDeleteTest: (String) -> Unit,
+) {
+    Column(Modifier.fillMaxWidth()) {
+        if (showHeading) {
+            Text(
+                text = stringResource(R.string.lab_individual_investigations),
+                style = RecordType.Action.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+        group.items.forEachIndexed { index, lab ->
+            LabRowItem(
+                lab = lab,
+                canEdit = canEdit,
+                onEdit = { onEditTest(lab) },
+                onDelete = { onDeleteTest(lab.id) },
+                showDivider = index > 0,
+            )
         }
     }
 }
@@ -309,62 +201,50 @@ fun LabRowItem(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
+    showDivider: Boolean = true,
 ) {
-    val isDark = isDarkTheme()
-    val abnormalBg = if (isDark) TagHighRiskDarkBg else TagHighRiskBg
-    val abnormalText = if (isDark) TagHighRiskDarkText else TagHighRiskText
+    val refLine = lab.referenceRange?.takeIf { it.isNotBlank() }
+        ?.let { stringResource(R.string.lab_ref_line, lab.testCategory, it) }
+        ?: lab.testCategory
+    val resultText = if (lab.result.isBlank()) {
+        stringResource(R.string.not_recorded)
+    } else {
+        lab.result + (lab.unit?.takeIf { it.isNotBlank() }?.let { " $it" } ?: "")
+    }
 
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .testTag("lab-${lab.id}")
-            .clickable(enabled = canEdit, onClick = onEdit)
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = lab.testName,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            val refText = lab.referenceRange?.takeIf { it.isNotBlank() }?.let { " · Ref: $it" }.orEmpty()
-            Text(
-                text = "${lab.testCategory}$refText",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
+    Column(modifier.fillMaxWidth()) {
+        if (showDivider) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("lab-${lab.id}")
+                .clickable(enabled = canEdit, onClick = onEdit)
+                .heightIn(min = 48.dp)
+                .padding(vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            val unitStr = lab.unit?.takeIf { it.isNotBlank() }?.let { " $it" }.orEmpty()
-            Text(
-                text = "${lab.result}$unitStr",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
-                color = if (lab.isAbnormal) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-            )
-
-            if (lab.isAbnormal) {
-                Surface(
-                    shape = RoundedCornerShape(4.dp),
-                    color = abnormalBg,
-                ) {
-                    Text(
-                        text = "ABNORMAL ▲",
-                        color = abnormalText,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.ExtraBold,
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
-                    )
-                }
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = lab.testName,
+                    style = RecordType.FieldValue.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = refLine,
+                    style = RecordType.Secondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
-
+            Column(Modifier.weight(1f, fill = false), horizontalAlignment = Alignment.End) {
+                Text(
+                    text = ltrIsolate(resultText),
+                    textAlign = TextAlign.End,
+                    style = RecordType.MetricValue.copy(fontWeight = FontWeight.Bold),
+                    color = if (lab.isAbnormal) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                )
+                if (lab.isAbnormal) StatusWord(stringResource(R.string.lab_abnormal), StatusTone.High)
+            }
             if (canEdit) {
                 IconButton(
                     onClick = onDelete,
@@ -372,9 +252,9 @@ fun LabRowItem(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete Test",
-                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
-                        modifier = Modifier.size(18.dp),
+                        contentDescription = stringResource(R.string.delete_test, lab.testName),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp),
                     )
                 }
             }

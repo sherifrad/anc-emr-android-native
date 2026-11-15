@@ -4,4 +4,12 @@
         <item quantity="one">%d photo</item>
         <item quantity="other">%d photos</item>
     </plurals>
+    <plurals name="lab_tests_count">
+        <item quantity="one">%1$d test</item>
+        <item quantity="other">%1$d tests</item>
+    </plurals>
+    <plurals name="lab_abnormal_count">
+        <item quantity="one">%1$d abnormal</item>
+        <item quantity="other">%1$d abnormal</item>
+    </plurals>
 </resources>
