@@ -27,7 +27,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
@@ -75,6 +74,7 @@ import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.MedicationPrefill
 import com.sherifradwan.ancnative.ui.EditorField
 import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordType
 import com.sherifradwan.ancnative.ui.medicationDoseRouteFrequency
 import com.sherifradwan.ancnative.ui.medicationFrequencyLabel
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
@@ -176,9 +176,9 @@ private fun PickerToggle(expanded: Boolean, enabled: Boolean, dimmed: Boolean, o
             .alpha(if (dimmed) MEDICATION_DISABLED_ALPHA else 1f)
             .testTag("medPickerToggle")
             .semantics { stateDescription = stateText }
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RecordShapes.Large)
             .clickable(enabled = enabled, role = Role.Button, onClickLabel = actionText, onClick = onToggle),
-        shape = RoundedCornerShape(14.dp),
+        shape = RecordShapes.Large,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
@@ -191,8 +191,7 @@ private fun PickerToggle(expanded: Boolean, enabled: Boolean, dimmed: Boolean, o
             Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             Text(
                 text = stringResource(R.string.add_medication),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
+                style = RecordType.FieldValue.copy(fontWeight = FontWeight.SemiBold),
                 modifier = Modifier.weight(1f),
             )
             Icon(
@@ -438,9 +437,9 @@ private fun MedicationPickerTile(tile: MedicationTile, isActive: Boolean, enable
             .testTag("medTile-${tile.id}")
             .semantics { if (isActive) stateDescription = alreadyOnList }
             .alpha(if (dimmed && !isActive) MEDICATION_DISABLED_ALPHA else 1f)
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RecordShapes.Small)
             .clickable(enabled = enabled && !isActive, role = Role.Button, onClick = onClick),
-        shape = RoundedCornerShape(14.dp),
+        shape = RecordShapes.Small,
         color = if (isActive) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
@@ -450,7 +449,7 @@ private fun MedicationPickerTile(tile: MedicationTile, isActive: Boolean, enable
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(tile.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(tile.name, style = RecordType.CardName)
                 Text(
                     meta,
                     style = MaterialTheme.typography.bodySmall,
@@ -468,8 +467,7 @@ private fun MedicationPickerTile(tile: MedicationTile, isActive: Boolean, enable
                     )
                     Text(
                         stringResource(R.string.medication_status_active),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
+                        style = RecordType.Tag,
                         color = MaterialTheme.colorScheme.primary,
                     )
                 }

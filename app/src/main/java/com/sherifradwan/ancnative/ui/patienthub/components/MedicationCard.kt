@@ -45,6 +45,7 @@ import com.sherifradwan.ancnative.storage.DeletableType
 import com.sherifradwan.ancnative.ui.DeleteIconButton
 import com.sherifradwan.ancnative.ui.FactRow
 import com.sherifradwan.ancnative.ui.MedicationStatusBadge
+import com.sherifradwan.ancnative.ui.components.RecordType
 import com.sherifradwan.ancnative.ui.medicationDoseRouteFrequency
 import com.sherifradwan.ancnative.ui.medicationFrequencyLabel
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
@@ -108,14 +109,13 @@ fun MedicationCard(
                 Column(Modifier.weight(1f)) {
                     Text(
                         med.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        style = RecordType.CardName,
                         modifier = Modifier.testTag("medicationName-${med.id}"),
                     )
                     if (details.isNotBlank()) {
                         Text(
                             text = details,
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = RecordType.Secondary,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.testTag("medicationInstructions-${med.id}"),
                         )
@@ -125,7 +125,7 @@ fun MedicationCard(
                     if (notes.isNotEmpty() && !isExpanded) {
                         Text(
                             text = notes,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = RecordType.Secondary,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -218,8 +218,7 @@ private fun StopControl(name: String, id: String, enabled: Boolean, dimmed: Bool
         Icon(Icons.Default.Stop, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
         Text(
             text = stringResource(R.string.stop_medication_short),
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
+            style = RecordType.Tag.copy(fontWeight = FontWeight.Bold),
             color = color,
             // Seen, not read: the control's own description already says "Stop <drug>".
             modifier = Modifier.testTag("stopMedicationLabel-$id").semantics { hideFromAccessibility() },

@@ -62,6 +62,8 @@ import com.sherifradwan.ancnative.state.SavePhase
 import com.sherifradwan.ancnative.state.SaveUiError
 import com.sherifradwan.ancnative.state.blocksEditing
 import com.sherifradwan.ancnative.storage.DeletableType
+import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordType
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
 import com.sherifradwan.ancnative.ui.patienthub.components.MedicationCard
 import com.sherifradwan.ancnative.ui.patienthub.components.MedicationStopBar
@@ -185,21 +187,20 @@ private fun MedsList(
             .fillMaxWidth()
             .testTag("medsTabContent"),
         contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 48.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         // Fixed keys, so the rows keep their places (and the list its scroll position) as drugs move between lists.
         item(key = "medsActiveHeader") {
             // Title and "Prescribe" share a line when they fit; with large text the button wraps under the title.
             FlowRow(
-                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 itemVerticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = pluralStringResource(R.plurals.active_prescriptions_title, activeMeds.size, activeMeds.size),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    style = RecordType.SectionTitle,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.testTag("medsActiveTitle"),
                 )
@@ -316,24 +317,23 @@ private class PickerAnchor {
 @Composable
 private fun MedsEmptyState(canEdit: Boolean, enabled: Boolean, dimmed: Boolean, onPrescribe: () -> Unit) {
     Surface(
-        shape = RoundedCornerShape(12.dp),
+        shape = RecordShapes.Large,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = Modifier.fillMaxWidth().testTag("medsEmptyState"),
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
                 text = stringResource(R.string.medications_empty_title),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
+                style = RecordType.CardName,
                 textAlign = TextAlign.Center,
             )
             Text(
                 text = stringResource(R.string.medications_empty_hint),
-                style = MaterialTheme.typography.bodyMedium,
+                style = RecordType.FieldValue,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
@@ -371,8 +371,7 @@ private fun ShowPastToggle(count: Int, shown: Boolean, onToggle: () -> Unit) {
     ) {
         Text(
             text = pluralStringResource(if (shown) R.plurals.medication_hide_past else R.plurals.medication_show_past, count, count),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
+            style = RecordType.FieldValue.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.weight(1f),
         )
