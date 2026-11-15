@@ -26,12 +26,12 @@ class AttachmentDeleteAdapterTest {
 
     @Test
     fun aBlankTitleFallsBackToCategoryAndDay() {
-        assertEquals("Ultrasound Scan · 2026-10-30", AttachmentDeleteAdapter.label(attachment("   ")))
+        assertEquals("Ultrasound scan, 2026-10-30", AttachmentDeleteAdapter.label(attachment("   ")))
     }
 
     @Test
     fun aMissingTitleFallsBackToCategoryAndDay() {
-        assertEquals("Laboratory Investigation · 2026-10-30", AttachmentDeleteAdapter.label(attachment(null, AttachmentCategories.LAB)))
+        assertEquals("Laboratory investigation, 2026-10-30", AttachmentDeleteAdapter.label(attachment(null, AttachmentCategories.LAB)))
     }
 
     @Test
@@ -43,7 +43,7 @@ class AttachmentDeleteAdapterTest {
 
     @Test
     fun anUnparseableCaptureDateKeepsTheCategoryOnly() {
-        assertEquals("Clinical Photo", AttachmentDeleteAdapter.label(attachment(null, AttachmentCategories.CLINICAL_PHOTO, capturedAt = "")))
-        assertEquals("Clinical Photo", AttachmentDeleteAdapter.label(attachment(null, AttachmentCategories.CLINICAL_PHOTO, capturedAt = "unknown")))
+        assertEquals("Clinical photo", AttachmentDeleteAdapter.label(attachment(null, AttachmentCategories.CLINICAL_PHOTO, capturedAt = "")))
+        assertEquals("Clinical photo", AttachmentDeleteAdapter.label(attachment(null, AttachmentCategories.CLINICAL_PHOTO, capturedAt = "unknown")))
     }
 }

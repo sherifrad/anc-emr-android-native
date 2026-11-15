@@ -8,7 +8,7 @@ import org.junit.Test
 /**
  * Q73 (SPEC_FIX_R3.md round 3j): ONE rule for the attachment display title,
  * [attachmentDisplayTitle]. A non-blank trimmed title wins; otherwise the category plus
- * " · " and the first 10 characters of capturedAt when they look like yyyy-MM-dd, else
+ * ", " and the first 10 characters of capturedAt when they look like yyyy-MM-dd, else
  * just the category; a blank category falls back to "Attachment"; a file name is never
  * returned.
  */
@@ -23,11 +23,11 @@ class AttachmentDisplayTitleTest {
     @Test
     fun blankTitleWithDatedCaptureShowsCategoryAndDate() {
         assertEquals(
-            "Ultrasound · 2026-10-31",
+            "Ultrasound, 2026-10-31",
             attachmentDisplayTitle(null, "Ultrasound", "2026-10-31T10:11:12Z"),
         )
         // First 10 characters of an already-10-character timestamp is the date itself.
-        assertEquals("Ultrasound · 2026-10-31", attachmentDisplayTitle("   ", "Ultrasound", "2026-10-31"))
+        assertEquals("Ultrasound, 2026-10-31", attachmentDisplayTitle("   ", "Ultrasound", "2026-10-31"))
     }
 
     @Test

@@ -43,8 +43,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -90,6 +88,7 @@ import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.isRegistrationIncomplete
 import com.sherifradwan.ancnative.state.AncState
 import com.sherifradwan.ancnative.state.SavedNotice
+import com.sherifradwan.ancnative.ui.components.RecordFilterChip
 import com.sherifradwan.ancnative.ui.components.RecordShapes
 import com.sherifradwan.ancnative.ui.components.RecordType
 import com.sherifradwan.ancnative.ui.patientdirectory.PatientActionsModalSheet
@@ -345,37 +344,37 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    ListFilterChip(
+                    RecordFilterChip(
                         selected = riskFilter == "all",
                         label = "${stringResource(R.string.all_filter)} ($allCount)",
                         onClick = { riskFilter = "all" },
                         tag = "riskFilter-all",
                     )
-                    ListFilterChip(
+                    RecordFilterChip(
                         selected = riskFilter == "high",
                         label = "${stringResource(R.string.high_risk_filter)} ($highRiskCount)",
                         onClick = { riskFilter = "high" },
                         tag = "riskFilter-high",
                     )
-                    ListFilterChip(
+                    RecordFilterChip(
                         selected = riskFilter == "medium",
                         label = "${stringResource(R.string.medium_risk_filter)} ($mediumRiskCount)",
                         onClick = { riskFilter = "medium" },
                         tag = "riskFilter-medium",
                     )
-                    ListFilterChip(
+                    RecordFilterChip(
                         selected = riskFilter == "low",
                         label = "${stringResource(R.string.low_risk_filter)} ($lowRiskCount)",
                         onClick = { riskFilter = "low" },
                         tag = "riskFilter-low",
                     )
-                    ListFilterChip(
+                    RecordFilterChip(
                         selected = riskFilter == "delivered",
                         label = "${stringResource(R.string.patients_filter_delivered)} ($deliveredCount)",
                         onClick = { riskFilter = "delivered" },
                         tag = "riskFilter-delivered",
                     )
-                    ListFilterChip(
+                    RecordFilterChip(
                         selected = riskFilter == "archived",
                         label = "${stringResource(R.string.patients_filter_archived)} ($archivedCount)",
                         onClick = { riskFilter = "archived" },
@@ -495,37 +494,6 @@ fun PatientListScreen(state: AncState, onEvent: (AncEvent) -> Unit) {
             onEvent = onEvent,
         )
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ListFilterChip(selected: Boolean, label: String, onClick: () -> Unit, tag: String) {
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = {
-            Text(
-                text = label,
-                style = RecordType.Action.copy(fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium),
-                maxLines = 1,
-                softWrap = false,
-            )
-        },
-        shape = RecordShapes.Small,
-        colors = FilterChipDefaults.filterChipColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            labelColor = MaterialTheme.colorScheme.onSurface,
-            selectedContainerColor = MaterialTheme.colorScheme.primary,
-            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-        ),
-        border = FilterChipDefaults.filterChipBorder(
-            enabled = true,
-            selected = selected,
-            borderColor = MaterialTheme.colorScheme.outline,
-            selectedBorderColor = MaterialTheme.colorScheme.primary,
-        ),
-        modifier = Modifier.testTag(tag),
-    )
 }
 
 private val RecordType.HeaderName: TextStyle

@@ -1,7 +1,6 @@
 package com.sherifradwan.ancnative.ui
 
 import com.sherifradwan.ancnative.ui.components.ZoomableImage
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -12,21 +11,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.PhotoLibrary
-import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -35,14 +29,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.sherifradwan.ancnative.model.DemoAttachment
@@ -52,6 +44,11 @@ import com.sherifradwan.ancnative.storage.AttachmentCategories
 import com.sherifradwan.ancnative.storage.AttachmentSyncManager
 import com.sherifradwan.ancnative.storage.BoundedBitmap
 import com.sherifradwan.ancnative.storage.PatientAttachmentVault
+import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordType
+import com.sherifradwan.ancnative.ui.components.StatusTone
+import com.sherifradwan.ancnative.ui.components.StatusWord
+import com.sherifradwan.ancnative.ui.components.ltrIsolate
 
 @Composable
 fun ClinicalAttachmentViewerDialog(
@@ -94,61 +91,33 @@ fun ClinicalAttachmentViewerDialog(
                 .fillMaxWidth(0.96f)
                 .padding(vertical = 16.dp)
                 .testTag("clinicalAttachmentViewerDialog"),
-            shape = RoundedCornerShape(20.dp),
+            shape = RecordShapes.Large,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
         ) {
+            // Scrolls so the integrity word, details and hash stay readable when large text outgrows a short window.
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                // Header: Patient identity, Case ID, Category, and dismiss
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            modifier = Modifier.size(40.dp),
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Default.PhotoLibrary,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(20.dp),
-                                )
-                            }
-                        }
-                        Column {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            ) {
-                                Text(
-                                    text = patient.displayName,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                )
-                            }
-                            Text(
-                                text = AttachmentCategories.localizedName(attachment.category) +
-                                    (attachment.title?.trim()?.takeIf(String::isNotEmpty)?.let { " · $it" } ?: ""),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.SemiBold,
-                            )
-                        }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = patient.displayName,
+                            style = RecordType.CardName,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            text = AttachmentCategories.localizedName(attachment.category) +
+                                (attachment.title?.trim()?.takeIf(String::isNotEmpty)?.let { ", $it" } ?: ""),
+                            style = RecordType.Secondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -157,7 +126,7 @@ fun ClinicalAttachmentViewerDialog(
                             // and it stays open until the record is really gone, so Cancel returns to the image.
                             onClick = onDelete,
                             enabled = canDelete,
-                            modifier = Modifier.testTag("deleteAttachmentBtn"),
+                            modifier = Modifier.minimumTouchTarget().testTag("deleteAttachmentBtn"),
                         ) {
                             Icon(
                                 Icons.Default.Delete,
@@ -167,7 +136,7 @@ fun ClinicalAttachmentViewerDialog(
                         }
                         IconButton(
                             onClick = onDismiss,
-                            modifier = Modifier.testTag("dismissAttachmentBtn"),
+                            modifier = Modifier.minimumTouchTarget().testTag("dismissAttachmentBtn"),
                         ) {
                             Icon(
                                 Icons.Default.Close,
@@ -178,14 +147,13 @@ fun ClinicalAttachmentViewerDialog(
                     }
                 }
 
-                // Image Viewer Container
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(380.dp)
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RecordShapes.Small)
                         .background(Color.Black)
-                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp)),
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RecordShapes.Small),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (loadedBitmap != null) {
@@ -200,86 +168,43 @@ fun ClinicalAttachmentViewerDialog(
                             modifier = Modifier.fillMaxSize(),
                         )
                     } else {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Icon(
-                                Icons.Default.PhotoLibrary,
-                                contentDescription = null,
-                                tint = Color.Gray,
-                                modifier = Modifier.size(48.dp),
-                            )
-                            Text(
-                                text = stringResource(R.string.image_unavailable),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color.LightGray,
-                                modifier = Modifier.testTag("image_unavailable"),
-                            )
-                        }
+                        Text(
+                            text = stringResource(R.string.image_unavailable),
+                            style = RecordType.FieldValue,
+                            color = Color.LightGray,
+                            modifier = Modifier.testTag("image_unavailable"),
+                        )
                     }
                 }
 
-                // Metadata & Medico-Legal Security Strip
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                Column(
                     modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    Column(
-                        modifier = Modifier.padding(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            ) {
-                                Icon(
-                                    if (isIntegrityVerified) Icons.Default.VerifiedUser else Icons.Default.Lock,
-                                    contentDescription = null,
-                                    tint = if (isIntegrityVerified) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(16.dp),
-                                )
-                                Text(
-                                    text = if (isIntegrityVerified) {
-                                        stringResource(R.string.attachment_integrity_verified)
-                                    } else {
-                                        stringResource(R.string.attachment_vault_protected)
-                                    },
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isIntegrityVerified) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
-                                )
-                            }
-                            Text(
-                                text = stringResource(
-                                    R.string.attachment_size_format,
-                                    AttachmentSyncManager.formatFileSize(attachment.fileSizeBytes),
-                                ),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-
-                        Text(
-                            text = stringResource(R.string.attachment_sha256_label, attachment.sha256Hash),
-                            style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace, fontSize = 9.sp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                        )
-
-                        Text(
-                            text = stringResource(R.string.attachment_saved_at, attachment.capturedAt),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                    StatusWord(
+                        text = stringResource(
+                            if (isIntegrityVerified) R.string.attachment_integrity_verified else R.string.attachment_vault_protected,
+                        ),
+                        tone = if (isIntegrityVerified) StatusTone.Neutral else StatusTone.Moderate,
+                    )
+                    Text(
+                        text = stringResource(
+                            R.string.attachment_size_format,
+                            AttachmentSyncManager.formatFileSize(attachment.fileSizeBytes),
+                        ),
+                        style = RecordType.Secondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = stringResource(R.string.attachment_saved_at, ltrIsolate(attachment.capturedAt)),
+                        style = RecordType.Secondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = stringResource(R.string.attachment_sha256_label, attachment.sha256Hash),
+                        style = RecordType.Tag.copy(fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Normal),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }

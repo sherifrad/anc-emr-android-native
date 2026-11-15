@@ -468,6 +468,31 @@ class DeleteUndoUiTest {
     }
 
     @Test
+    fun attachment_untitledLabelIsCategoryCommaDate_inConfirmAndUndoBar() {
+        // No title: the label is the shared display title, "<category>, <yyyy-MM-dd>", never the file name.
+        val untitled = patientA.copy(attachments = listOf(attachment(base.id, 1).copy(title = null)))
+        host(AncRoute.Workspace(untitled.id, WorkspaceSection.ATTACHMENTS), listOf(untitled, patientB))
+        openAttachmentViewer("ui-att-1")
+        click("deleteAttachmentBtn")
+        exists("deleteConfirmDialog")
+        val label = "Ultrasound scan, 2026-03-01"
+        assertTrue(
+            "the confirm dialog must name the untitled attachment as '$label'",
+            compose.onAllNodes(hasText("\"$label\"", substring = true) and inTagged("deleteConfirmDialog"), useUnmergedTree = true)
+                .fetchSemanticsNodes().isNotEmpty(),
+        )
+        compose.onAllNodes(hasText("·", substring = true) and inTagged("deleteConfirmDialog"), useUnmergedTree = true)
+            .assertCountEquals(0)
+        compose.onAllNodes(hasText("att_ui_1", substring = true) and inTagged("deleteConfirmDialog"), useUnmergedTree = true)
+            .assertCountEquals(0)
+        click("deleteConfirm")
+        compose.waitUntil(5_000) {
+            compose.onAllNodes(hasTestTag("undoBar"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNode(hasText("Deleted $label") and inTagged("undoBar"), useUnmergedTree = true).assertExists()
+    }
+
+    @Test
     fun undoButtonIsDisabledWhileADeleteRuns() {
         workspace(med)
         compose.runOnIdle {

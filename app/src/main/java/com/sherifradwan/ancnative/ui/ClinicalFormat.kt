@@ -83,7 +83,7 @@ internal fun formatAgeYears(ageText: String?): String? {
 
 /**
  * Attachment title as displayed (Q73): a non-blank trimmed title wins; otherwise the category,
- * followed by " · " and the captured date when [capturedAt] starts with a yyyy-MM-dd date.
+ * followed by ", " and the captured date when [capturedAt] starts with a yyyy-MM-dd date.
  * A blank category falls back to "Attachment". The file name is never used as a title.
  */
 internal fun attachmentDisplayTitle(title: String?, category: String, capturedAt: String): String {
@@ -91,7 +91,7 @@ internal fun attachmentDisplayTitle(title: String?, category: String, capturedAt
     if (typed.isNotEmpty()) return typed
     val label = category.trim().ifEmpty { "Attachment" }
     val date = capturedAt.take(10)
-    return if (ISO_DATE.matches(date)) "$label \u00B7 $date" else label
+    return if (ISO_DATE.matches(date)) "$label, $date" else label
 }
 
 internal fun formatFetalMetrics(fhr: String?, efw: String?): String =

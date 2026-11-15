@@ -10,11 +10,11 @@ object AttachmentCategories {
     const val OTHER = "OTHER"
 
     fun localizedName(category: String): String = when (category) {
-        ULTRASOUND -> "Ultrasound Scan"
-        LAB -> "Laboratory Investigation"
-        PRESCRIPTION -> "Prescription / Report"
-        CLINICAL_PHOTO -> "Clinical Photo"
-        else -> "General Medical Attachment"
+        ULTRASOUND -> "Ultrasound scan"
+        LAB -> "Laboratory investigation"
+        PRESCRIPTION -> "Prescription or report"
+        CLINICAL_PHOTO -> "Clinical photo"
+        else -> "General medical attachment"
     }
 }
 

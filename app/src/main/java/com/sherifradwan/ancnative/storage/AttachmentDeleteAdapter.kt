@@ -4,6 +4,7 @@ import com.sherifradwan.ancnative.model.DemoAttachment
 import com.sherifradwan.ancnative.model.DemoPatient
 import com.sherifradwan.ancnative.state.SavedNotice
 import com.sherifradwan.ancnative.state.WorkspaceSection
+import com.sherifradwan.ancnative.ui.attachmentDisplayTitle
 
 object AttachmentDeleteAdapter : DeletableRecordAdapter<DemoAttachment>, PayloadFileAdapter {
     override val type: DeletableType = DeletableType.ATTACHMENT
@@ -20,10 +21,7 @@ object AttachmentDeleteAdapter : DeletableRecordAdapter<DemoAttachment>, Payload
      * `att_<uuid>.webp` name: titles are optional, so fall back to the category and the capture date.
      */
     override fun label(record: DemoAttachment): String {
-        record.title?.trim()?.takeIf { it.isNotEmpty() }?.let { return it }
-        val category = AttachmentCategories.localizedName(record.category)
-        val day = record.capturedAt.take(10).takeIf { it.length == 10 && it[4] == '-' && it[7] == '-' }
-        return if (day != null) "$category · $day" else category
+        return attachmentDisplayTitle(record.title, AttachmentCategories.localizedName(record.category), record.capturedAt)
     }
 
     override fun canonical(record: DemoAttachment): String =

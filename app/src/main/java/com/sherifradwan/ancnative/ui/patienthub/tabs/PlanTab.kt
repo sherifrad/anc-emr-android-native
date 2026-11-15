@@ -32,9 +32,8 @@ fun PlanTab(
             .verticalScroll(rememberScrollState())
             .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 48.dp)
             .testTag("planTabContent"),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // Full Delivery Planning Card
         DeliveryPlanningCard(
             patient = patient,
             canEdit = canEdit,
@@ -43,7 +42,6 @@ fun PlanTab(
             },
         )
 
-        // Full Documents & Attachments Section
         AttachmentsSectionCard(
             patient = patient,
             onAddAttachment = onAddAttachment,
