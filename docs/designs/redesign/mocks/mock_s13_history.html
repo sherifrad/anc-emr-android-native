@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Mock S13: History and dating editors</title>
+<style>
+  /* Tokens: the app's real scheme values (Theme.kt) plus the slice 0 record tokens. */
+  :root{
+    --primary:#0D1B3D; --on:#0D1B3D; --onv:#4C3F43; --onprimary:#FFFFFF;
+    --primc:#D6DFFF; --onprimc:#041334;
+    --surface:#FFFFFF; --bg:#FBF8F5; --outv:#CAC4D0; --outline:#79747E; --sv:#F3E9E7;
+    --err:#BA1A1A; --errc:#FFDAD6; --onerrc:#410002;
+    --pt-bg:#E9EEF8; --pt-lb:#23407A; --ob-bg:#E3F0EE; --ob-lb:#1D5149;
+    --hx-bg:#F1EDE4; --hx-lb:#594A2C; --dl-bg:#EEE9F5; --dl-lb:#4E3A78;
+    --r-s:10px; --r-l:16px;
+  }
+  .dark{
+    --primary:#B4C5FF; --on:#E2E2EA; --onv:#CDC3C6; --onprimary:#002A78;
+    --primc:#183F91; --onprimc:#DCE1FF;
+    --surface:#1A202E; --bg:#0E121B; --outv:#3A4459; --outline:#8E95A5; --sv:#262E40;
+    --err:#FFB4AB; --errc:#5C141D; --onerrc:#FFDAD6;
+    --pt-bg:#22304A; --pt-lb:#AFC6F2; --ob-bg:#1D3836; --ob-lb:#9FD6CC;
+    --hx-bg:#36301F; --hx-lb:#E0CFA6; --dl-bg:#2E2842; --dl-lb:#CDBDF0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:#FFFFFF;color:#0D1B3D;font-family:Roboto,"Noto Sans","Noto Sans Arabic","Segoe UI",system-ui,-apple-system,Arial,sans-serif;font-size:15px;line-height:1.5;padding:32px 16px 64px}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-size:26px;line-height:1.25;margin:0 0 8px}
+  h2{font-size:20px;line-height:1.3;margin:44px 0 6px}
+  h3.sub{font-size:16px;margin:18px 0 6px}
+  .lede,p,li{max-width:76ch}
+  .lede{color:#4C3F43;margin:0 0 4px}
+  .reason{border:1px solid #CAC4D0;border-radius:16px;padding:18px 20px;margin-top:18px;background:#FDFCFB}
+  .reason h2{margin-top:0}
+  .reason ul{margin:4px 0 0;padding-inline-start:20px}
+  .pair{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-top:14px}
+  figure{margin:0;width:360px;max-width:100%;flex:0 0 auto}
+  figcaption{font-size:14px;color:#4C3F43;margin:0 0 8px}
+  figcaption b{color:#0D1B3D}
+  .note{font-size:14px;color:#4C3F43;margin:10px 0 0}
+  .phone{width:100%;background:var(--bg);border:1px solid #B9B4BE;border-radius:16px;overflow:hidden;color:var(--on);display:flex;flex-direction:column}
+  .screen{padding:16px;display:flex;flex-direction:column;gap:12px}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  bdi{unicode-bidi:isolate}
+
+  /* shared record components */
+  .pagehead h3{margin:0;font-size:22px;line-height:28px;font-weight:700;color:var(--on)}
+  .pagehead p{margin:2px 0 0;font-size:14px;line-height:20px;color:var(--onv)}
+  .sec{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:4px 4px 16px 16px}
+  .sec-head{display:flex;align-items:center;min-height:48px;gap:8px}
+  .sec-head h4{flex:1 1 auto;margin:0;padding:6px 0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .sec-body{display:flex;flex-direction:column;gap:12px;padding-inline-end:12px}
+  .fam-ob{--fbg:var(--ob-bg);--flb:var(--ob-lb)}
+  .fam-hx{--fbg:var(--hx-bg);--flb:var(--hx-lb)}
+  .flab{display:block;font-size:12px;line-height:16px;font-weight:600;color:var(--flb);margin-bottom:4px}
+
+  /* redesigned fields, date fields, chips, metrics */
+  .fbox{min-height:48px;padding:12px 14px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);font-size:16px;line-height:22px;color:var(--on);overflow-wrap:anywhere}
+  .fbox.multi{min-height:76px}
+  .fbox.dd{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .fbox.date{padding:0 4px 0 14px;display:flex;align-items:center;justify-content:space-between;gap:6px}
+  .calbtn{width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--r-s);color:var(--primary);flex:0 0 auto}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chipwrap{min-height:48px;display:inline-flex;align-items:center}
+  .chip{min-height:36px;padding:6px 12px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);color:var(--on);font-size:14px;line-height:20px;font-weight:500;display:inline-flex;align-items:center}
+  .chip.sel{background:var(--primary);border-color:var(--primary);color:var(--onprimary);font-weight:600}
+  .obtn{min-height:48px;min-width:48px;padding:0 16px;border:1px solid var(--outline);border-radius:var(--r-s);font-size:14px;line-height:20px;font-weight:600;color:var(--primary);background:var(--surface);display:inline-flex;align-items:center;justify-content:center;width:100%}
+  .pbtn{min-height:48px;min-width:48px;padding:0 16px;border-radius:var(--r-s);background:var(--primary);color:var(--onprimary);font-size:14px;line-height:20px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+  .actrow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
+  .sec-note{margin:0;font-size:14px;line-height:20px;color:var(--onv)}
+  .mgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .mtile{background:var(--fbg);border-radius:var(--r-s);padding:10px 12px;min-height:48px;display:flex;flex-direction:column;gap:2px}
+  .mtile .mlab{font-size:12px;line-height:16px;font-weight:600;color:var(--flb)}
+  .mtile .mval{font-size:16px;line-height:22px;font-weight:600;color:var(--on)}
+  .visrow{padding:10px 0;border-top:1px solid var(--outv);display:flex;flex-direction:column;gap:4px}
+  .visrow:first-child{border-top:0;padding-top:0}
+  .visrow b{font-size:14px;line-height:20px;color:var(--on)}
+  .visrow span{font-size:14px;line-height:20px;color:var(--onv)}
+  .sub-panel{background:var(--hx-bg);border:1px solid var(--outv);border-radius:var(--r-l);padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+  .sub-panel h4{margin:0;font-size:16px;line-height:22px;font-weight:700;color:var(--hx-lb)}
+
+  /* BEFORE fidelity styles (today's code) */
+  .old-card{background:#FFFFFF;border:1px solid rgba(202,196,208,.5);border-radius:16px;padding:16px;box-shadow:0 1px 2px rgba(13,27,61,.08);display:flex;flex-direction:column;gap:10px}
+  .old-ct{margin:0;font-size:15px;line-height:20px;font-weight:700;color:#0D1B3D}
+  .old-m3f{position:relative;border:1px solid #79747E;border-radius:4px;padding:13px 12px 11px;font-size:15px;line-height:22px;color:#0D1B3D;background:#FFFFFF;min-height:50px}
+  .old-m3f .olbl{position:absolute;top:-8px;left:10px;background:#FFFFFF;padding:0 4px;font-size:12px;line-height:16px;color:#4C3F43}
+  .old-m3f.dd,.old-m3f.date{display:flex;align-items:center;justify-content:space-between}
+  .old-neg{background:rgba(214,223,255,.45);border:1px solid rgba(13,27,61,.3);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
+  .old-neg h4{margin:0;font-size:13px;line-height:18px;font-weight:600;color:#041334}
+  .old-negbtn{min-height:40px;padding:0 16px;border:1px solid #79747E;border-radius:999px;font-size:13px;font-weight:600;color:#0D1B3D;display:inline-flex;align-items:center;justify-content:center}
+  .old-plab11{margin:0;font-size:11px;line-height:14px;font-weight:500;color:#0D1B3D}
+  .old-chip8{min-height:32px;padding:4px 10px;border:1px solid #79747E;border-radius:8px;font-size:13px;color:#4C3F43;background:#FFFFFF;display:inline-flex;align-items:center}
+  .old-chip8.sel{background:#D6DFFF;border-color:#D6DFFF;color:#041334;font-weight:600}
+  .old-boxin{background:#D6DFFF;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px;font-size:13px;line-height:18px}
+  .old-boxin .row{display:flex;justify-content:space-between;gap:8px;font-weight:700}
+  .old-boxin .k{color:#041334} .old-boxin .v{color:#0D1B3D}
+  .old-lock{display:flex;align-items:center;gap:6px;font-size:11px;line-height:14px;color:#4C3F43}
+  .old-act{display:flex;gap:12px;align-items:center}
+  .old-pbtn{min-height:48px;padding:0 18px;border-radius:999px;background:#0D1B3D;color:#FFFFFF;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+  .old-obtn{min-height:48px;padding:0 18px;border:1px solid #79747E;border-radius:999px;color:#0D1B3D;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+  .step-strip{background:var(--surface);border-bottom:1px solid var(--outv);padding:10px 16px;font-size:16px;line-height:22px;font-weight:700;color:var(--primary)}
+
+  /* tables */
+  .tablewrap{overflow-x:auto;max-width:100%}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin-top:10px}
+  th,td{border-bottom:1px solid #E6E1E5;padding:7px 8px;text-align:start;vertical-align:top}
+  th{background:#F7F5F3}
+  td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+  ol.map li{margin:7px 0}
+  code{font-family:"Roboto Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:#F3F0EE;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<h1>Mock S13: History and dating editors</h1>
+<p class="lede">Covers <code>OtherHistoriesEditor</code>, <code>PreviousPregnancyEditor</code> (level 3), <code>DatingEditor</code> (level 3), and <code>DatingFieldVisibility</code>. Sample: Mona Ragab, G4 P1 A2, 27+2 wks, EDD 11/02/2027 (<code>2027-02-11</code> in ISO date inputs), with bracketed placeholders where a value is not in the sample.</p>
+
+<section class="reason" aria-labelledby="r">
+  <h2 id="r">Design reasoning</h2>
+  <p>Reading this as: clinical data-entry editors where conditional fields, dating dates, and pregnancy outcome codes must read as plain obstetric terms. Antislop dials: ENERGY 1 / RHYTHM 1 / MOTION 1 (pressed and focus states only, no new animation).</p>
+  <ul>
+    <li><b>Replace 11 sp labels and 11 sp vault footers:</b> <code>QuickPresetChips</code> titles and <code>embryo_age</code> currently use <code>labelMedium</code> (11 sp), and all three editors append repetitive 11 sp AES-256 / Tamper-Evident Lock footers. Upgrade active field labels to <code>FormFieldLabel</code> (12 sp SemiBold in <code>FieldBackground</code> or <code>FieldObstetric</code>) and drop the decorative 11 sp vault footers and hardcoded numbered card titles ("1. Baseline Dating Parameters", "2. ...").</li>
+    <li><b>Map raw outcome enum codes to real clinical labels in <code>PreviousPregnancyEditor</code>:</b> today the chips literally read <code>LiveBirth</code>, <code>Stillbirth</code>, <code>EarlyPregnancyLoss</code>, <code>TerminationOfPregnancy</code>, and <code>CS</code>. Display existing string resources ("Live birth", "Stillbirth / IUFD", "Early pregnancy loss", "Termination of pregnancy", "Cesarean") via <code>RecordFilterChip</code> (10 dp, 48 dp target) while keeping the stored codes untouched in state and SQLite.</li>
+    <li><b>Eliminate box-inside-a-box in <code>DatingEditor</code> and fix GA/EDD format:</b> today Card 2 wraps a 12 dp <code>primaryContainer</code> card inside another elevated card, prints raw ISO <code>2027-02-11</code> and <code>27w 2d</code>, and leaves an empty Card 2 header when blank. Show Card 2 only when calculated values exist, and render two <code>FieldObstetricBg</code> tiles: <code>11/02/2027</code> (<code>formatDmy</code>) and <code>27+2 wks</code> (<code>shortWeeksText</code>).</li>
+    <li><b>Enforce 48 dp targets on every chip and action:</b> add <code>.minimumTouchTarget()</code> to <code>fillAllNegativeHistories</code>, all preset and choice chips (<code>RecordFilterChip</code> wraps a 48 dp hit target), <code>embryoDay3</code> / <code>embryoDay5</code> / <code>embryoDay6</code>, and date calendar buttons.</li>
+  </ul>
+</section>
+
+<h2>1. OtherHistoriesEditor (Background family)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, <code>OtherHistoriesEditor</code></figcaption>
+    <div class="phone"><div class="screen">
+      <div class="pagehead"><h3 style="font-size:24px;color:#0D1B3D">Edit other histories</h3><p style="font-size:13px">Mona Ragab · Medical, Surgical, Family &amp; Allergy Histories</p></div>
+      <div class="old-neg">
+        <h4>Explicit Negative Histories</h4>
+        <span class="old-negbtn">✓ Confirm all histories negative</span>
+      </div>
+      <div class="old-card">
+        <h4 class="old-ct">1. Medical history</h4>
+        <div class="old-m3f"><span class="olbl">Medical history</span></div>
+        <p class="old-plab11">Quick shortcuts</p>
+        <div class="chips">
+          <span class="old-chip8">No significant medical history</span>
+          <span class="old-chip8">Chronic hypertension</span>
+          <span class="old-chip8">Type 2 Diabetes</span>
+        </div>
+      </div>
+      <div class="old-card">
+        <h4 class="old-ct">4. Allergy history</h4>
+        <div class="old-m3f"><span class="olbl">Allergy history</span></div>
+        <p class="old-plab11">Quick shortcuts</p>
+        <div class="chips">
+          <span class="old-chip8">No known drug allergies</span>
+          <span class="old-chip8">Penicillin allergy</span>
+        </div>
+      </div>
+      <div class="old-lock"><span aria-hidden="true">🔒</span><span>Medical and surgical histories encrypted locally (AES-256 GCM) · Local Vault Security</span></div>
+      <div class="old-act"><span class="old-obtn">Cancel</span><span class="old-pbtn">Save</span></div>
+    </div></div>
+    <p class="note">Sections 2 (Surgical history) and 3 (Family history) follow the same pattern and are omitted here for height.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, slice 13, <code>OtherHistoriesEditor</code></figcaption>
+    <div class="phone"><div class="screen">
+      <div class="pagehead"><h3>Edit other histories</h3><p>Mona Ragab</p></div>
+      <section class="sub-panel">
+        <h4>Explicit negative histories</h4>
+        <button type="button" class="obtn">Confirm all histories negative</button>
+      </section>
+      <section class="sec fam-hx">
+        <div class="sec-head"><h4>Medical history</h4></div>
+        <div class="sec-body">
+          <div class="fbox multi"></div>
+          <div>
+            <span class="flab">Quick shortcuts</span>
+            <div class="chips">
+              <span class="chipwrap"><button type="button" class="chip">No significant medical history</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Chronic hypertension</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Type 2 Diabetes</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Asthma</button></span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="sec fam-hx">
+        <div class="sec-head"><h4>Allergy history</h4></div>
+        <div class="sec-body">
+          <div class="fbox multi"></div>
+          <div>
+            <span class="flab">Quick shortcuts</span>
+            <div class="chips">
+              <span class="chipwrap"><button type="button" class="chip">No known drug allergies</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Penicillin allergy</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Sulfa drugs allergy</button></span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <div class="actrow">
+        <button type="button" class="obtn">Cancel</button>
+        <button type="button" class="pbtn">Save</button>
+      </div>
+    </div></div>
+    <p class="note">All four section cards (Medical, Surgical, Family, Allergy) keep their existing preset lists and tags inside <code>RecordSectionCard(FieldFamilies.background())</code>. When opened inside the registration flow (Step 4 of 5), the page header and Cancel/Save row give way to <code>RegistrationStepHeader</code> and <code>RegistrationStepFooter</code>.</p>
+  </figure>
+</div>
+
+<h2>2. PreviousPregnancyEditor (level 3, Obstetric family)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, raw enum chip labels</figcaption>
+    <div class="phone"><div class="screen">
+      <div class="pagehead"><h3 style="font-size:24px;color:#0D1B3D">Add previous pregnancy</h3><p style="font-size:13px">Mona Ragab · Previous Pregnancy History &amp; Outcomes</p></div>
+      <div class="old-card">
+        <h4 class="old-ct">Date, outcome and delivery</h4>
+        <div class="old-m3f date"><span class="olbl">Entered date text</span><span>[year or date]</span><span aria-hidden="true">📅</span></div>
+        <p style="margin:0;font-size:15px;font-weight:500;color:#0D1B3D">Outcome</p>
+        <div class="chips">
+          <span class="old-chip8 sel">LiveBirth</span>
+          <span class="old-chip8">Stillbirth</span>
+          <span class="old-chip8">EarlyPregnancyLoss</span>
+          <span class="old-chip8">TerminationOfPregnancy</span>
+        </div>
+        <p style="margin:0;font-size:15px;font-weight:500;color:#0D1B3D">Delivery mode</p>
+        <div class="chips">
+          <span class="old-chip8 sel">Vaginal</span>
+          <span class="old-chip8">CS</span>
+        </div>
+      </div>
+      <div class="old-card">
+        <h4 class="old-ct">Place, type and other details</h4>
+        <div class="old-m3f"><span class="olbl">Place and doctor</span><span>[hospital and doctor]</span></div>
+        <p style="margin:0;font-size:15px;font-weight:500;color:#0D1B3D">Pregnancy type</p>
+        <div class="chips">
+          <span class="old-chip8 sel">Singleton</span>
+          <span class="old-chip8">Twin</span>
+          <span class="old-chip8">Other multiple</span>
+        </div>
+        <div class="old-m3f multi"><span class="olbl">Other details</span></div>
+      </div>
+      <div class="old-lock"><span aria-hidden="true">🔒</span><span>Previous pregnancy records encrypted and digitally signed · Tamper-Evident Local Storage</span></div>
+      <div class="old-act"><span class="old-obtn">Cancel</span><span class="old-pbtn">Save</span></div>
+    </div></div>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, slice 13, mapped labels + RecordSectionCard</figcaption>
+    <div class="phone"><div class="screen">
+      <div class="pagehead"><h3>Add previous pregnancy</h3><p>Mona Ragab</p></div>
+      <section class="sec fam-ob">
+        <div class="sec-head"><h4>Date, outcome and delivery</h4></div>
+        <div class="sec-body">
+          <div>
+            <span class="flab">Entered date text</span>
+            <div class="fbox date"><span>[year or date]</span><button type="button" class="calbtn" aria-label="Select date">📅</button></div>
+          </div>
+          <div>
+            <span class="flab">Outcome</span>
+            <div class="chips">
+              <span class="chipwrap"><button type="button" class="chip sel">Live birth</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Stillbirth / IUFD</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Early pregnancy loss</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Termination of pregnancy</button></span>
+            </div>
+          </div>
+          <div>
+            <span class="flab">Delivery mode</span>
+            <div class="chips">
+              <span class="chipwrap"><button type="button" class="chip sel">Vaginal</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Cesarean</button></span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="sec fam-ob">
+        <div class="sec-head"><h4>Place, type and other details</h4></div>
+        <div class="sec-body">
+          <div><span class="flab">Place and doctor</span><div class="fbox">[hospital and doctor]</div></div>
+          <div>
+            <span class="flab">Pregnancy type</span>
+            <div class="chips">
+              <span class="chipwrap"><button type="button" class="chip sel">Singleton</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Twin</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Other multiple</button></span>
+            </div>
+          </div>
+          <div><span class="flab">Other details</span><div class="fbox multi"></div></div>
+        </div>
+      </section>
+      <div class="actrow">
+        <button type="button" class="obtn">Cancel</button>
+        <button type="button" class="pbtn">Save</button>
+      </div>
+    </div></div>
+    <p class="note">Conditional branches stay exact (<code>PreviousPregnancyFormRules</code>): choosing <code>Early pregnancy loss</code> hides Delivery mode and shows <code>Loss management</code> (<code>Expectant</code>, <code>Medical</code>, <code>Surgical</code>); choosing <code>Termination of pregnancy</code> shows <code>Termination method</code> (<code>Medical</code>, <code>Surgical</code>, <code>Hysterotomy</code>). All stored database strings remain canonical.</p>
+  </figure>
+</div>
+
+<h2>3. DatingEditor (level 3, Ultrasound method: EDD 11/02/2027, 27+2 wks)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, box-inside-box + raw ISO / <code>27w 2d</code></figcaption>
+    <div class="phone"><div class="screen">
+      <div class="pagehead"><h3 style="font-size:24px;color:#0D1B3D">Dating editor</h3><p style="font-size:13px">Mona Ragab · Gestational Age &amp; Estimated Due Date</p></div>
+      <div class="old-card">
+        <h4 class="old-ct">1. Baseline Dating Parameters</h4>
+        <div class="old-m3f dd"><span class="olbl">Dating method</span><span>Ultrasound</span><span aria-hidden="true">▾</span></div>
+        <div class="old-m3f date"><span class="olbl">Ultrasound EDD</span><span>2027-02-11</span><span aria-hidden="true">📅</span></div>
+        <div class="old-m3f date"><span class="olbl">Agreed clinical EDD</span><span>2027-02-11</span><span aria-hidden="true">📅</span></div>
+      </div>
+      <div class="old-card">
+        <h4 class="old-ct">2. Dating Method &amp; GA Calculation</h4>
+        <div class="old-boxin">
+          <div class="row"><span class="k">Calculated EDD:</span><span class="v">2027-02-11</span></div>
+          <div class="row"><span class="k">Current gestational age:</span><span class="v">27w 2d</span></div>
+        </div>
+      </div>
+      <div class="old-card">
+        <h4 class="old-ct">3. Clinical Notes &amp; Observations</h4>
+        <div class="old-m3f multi"><span class="olbl">Notes</span></div>
+      </div>
+      <div class="old-lock"><span aria-hidden="true">🔒</span><span>Gestational age and dating records encrypted locally (AES-256 GCM) · Local Vault Security</span></div>
+      <div class="old-act"><span class="old-obtn">Cancel</span><span class="old-pbtn">Save</span></div>
+    </div></div>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, slice 13, <code>11/02/2027</code> + <code>27+2 wks</code></figcaption>
+    <div class="phone"><div class="screen">
+      <div class="pagehead"><h3>Dating editor</h3><p>Mona Ragab</p></div>
+      <section class="sec fam-ob">
+        <div class="sec-head"><h4>Baseline dating</h4></div>
+        <div class="sec-body">
+          <div><span class="flab">Dating method</span><div class="fbox dd"><span>Ultrasound</span><span aria-hidden="true">▾</span></div></div>
+          <div>
+            <span class="flab">Ultrasound EDD</span>
+            <div class="fbox date"><span>2027-02-11</span><button type="button" class="calbtn" aria-label="Select date">📅</button></div>
+          </div>
+          <div>
+            <span class="flab">Agreed clinical EDD</span>
+            <div class="fbox date"><span>2027-02-11</span><button type="button" class="calbtn" aria-label="Select date">📅</button></div>
+          </div>
+        </div>
+      </section>
+      <section class="sec fam-ob">
+        <div class="sec-head"><h4>Calculated dating</h4></div>
+        <div class="sec-body">
+          <div class="mgrid">
+            <div class="mtile"><span class="mlab">Calculated EDD</span><span class="mval">11/02/2027</span></div>
+            <div class="mtile"><span class="mlab">Current gestational age</span><span class="mval">27+2 wks</span></div>
+          </div>
+        </div>
+      </section>
+      <section class="sec fam-ob">
+        <div class="sec-head"><h4>Notes</h4></div>
+        <div class="sec-body">
+          <div class="fbox multi"></div>
+        </div>
+      </section>
+      <div class="actrow">
+        <button type="button" class="obtn">Cancel</button>
+        <button type="button" class="pbtn">Save</button>
+      </div>
+    </div></div>
+    <p class="note">When neither calculated EDD nor GA is computable yet, the Calculated dating card is hidden completely rather than leaving an empty titled box. If post-term (&ge;42w), the GA tile adds a <code>StatusWord("Post", High)</code> label next to the value.</p>
+  </figure>
+</div>
+
+<h2>4. DatingFieldVisibility states (IVF and Clinical)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>After</b>, <code>IVF_TRANSFER</code> selected + recorded-date note</figcaption>
+    <div class="phone"><div class="screen">
+      <div class="step-strip">Step 2 of 5: Dating</div>
+      <section class="sec fam-ob">
+        <div class="sec-head"><h4>Baseline dating</h4></div>
+        <div class="sec-body">
+          <div><span class="flab">Dating method</span><div class="fbox dd"><span>Embryo transfer date (IVF)</span><span aria-hidden="true">▾</span></div></div>
+          <div>
+            <span class="flab">Embryo transfer date (IVF)</span>
+            <div class="fbox date"><span>[YYYY-MM-DD]</span><button type="button" class="calbtn" aria-label="Select date">📅</button></div>
+          </div>
+          <div>
+            <span class="flab">Embryo age</span>
+            <div class="chips">
+              <span class="chipwrap"><button type="button" class="chip">Day 3 (Cleavage)</button></span>
+              <span class="chipwrap"><button type="button" class="chip sel">Day 5 (Blastocyst)</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Day 6</button></span>
+            </div>
+          </div>
+          <p class="sec-note">Ultrasound EDD on record: 2027-02-11</p>
+          <div>
+            <span class="flab">Agreed clinical EDD</span>
+            <div class="fbox date"><span>2027-02-11</span><button type="button" class="calbtn" aria-label="Select date">📅</button></div>
+          </div>
+        </div>
+      </section>
+    </div></div>
+  </figure>
+
+  <figure>
+    <figcaption><b>Reference</b>, <code>Clinical</code> / blank method + visibility matrix</figcaption>
+    <div class="phone"><div class="screen">
+      <section class="sec fam-ob">
+        <div class="sec-head"><h4>Clinical estimate or blank method</h4></div>
+        <div class="sec-body">
+          <div><span class="flab">Dating method</span><div class="fbox dd"><span>Clinical estimate</span><span aria-hidden="true">▾</span></div></div>
+          <div>
+            <span class="flab">Last menstrual period (LMP)</span>
+            <div class="fbox date"><span>[YYYY-MM-DD]</span><button type="button" class="calbtn" aria-label="Select date">📅</button></div>
+            <span class="chipwrap" style="margin-top:4px"><button type="button" class="chip">Today ([today])</button></span>
+          </div>
+          <div>
+            <span class="flab">Ultrasound EDD</span>
+            <div class="fbox date"><span>2027-02-11</span><button type="button" class="calbtn" aria-label="Select date">📅</button></div>
+          </div>
+          <div>
+            <span class="flab">Agreed clinical EDD</span>
+            <div class="fbox date"><span>2027-02-11</span><button type="button" class="calbtn" aria-label="Select date">📅</button></div>
+          </div>
+        </div>
+      </section>
+      <section class="sec fam-ob">
+        <div class="sec-head"><h4>DatingFieldVisibility rules (kept)</h4></div>
+        <div class="sec-body">
+          <div class="visrow"><b>LMP</b><span>Shows LMP (+ Today chip) + Agreed EDD; Ultrasound / Transfer dates appear as notes if non-blank.</span></div>
+          <div class="visrow"><b>Ultrasound / US</b><span>Shows Ultrasound EDD + Agreed EDD; LMP / Transfer dates appear as notes if non-blank.</span></div>
+          <div class="visrow"><b>IVF_TRANSFER / IVF</b><span>Shows Transfer date + Embryo age (Day 3 / Day 5 / Day 6) + Agreed EDD; LMP / US appear as notes if non-blank.</span></div>
+          <div class="visrow"><b>Clinical, blank or unknown</b><span>Shows both LMP and Ultrasound EDD + Agreed EDD; Transfer date appears as note if non-blank.</span></div>
+        </div>
+      </section>
+    </div></div>
+  </figure>
+</div>
+
+<h2>5. Dark theme</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Dark</b>, <code>DatingEditor</code> (Mona Ragab)</figcaption>
+    <div class="phone dark"><div class="screen">
+      <div class="pagehead"><h3>Dating editor</h3><p>Mona Ragab</p></div>
+      <section class="sec fam-ob">
+        <div class="sec-head"><h4>Baseline dating</h4></div>
+        <div class="sec-body">
+          <div><span class="flab">Dating method</span><div class="fbox dd"><span>Ultrasound</span><span aria-hidden="true">▾</span></div></div>
+          <div>
+            <span class="flab">Ultrasound EDD</span>
+            <div class="fbox date"><span>2027-02-11</span><button type="button" class="calbtn" aria-label="Select date">📅</button></div>
+          </div>
+          <div>
+            <span class="flab">Agreed clinical EDD</span>
+            <div class="fbox date"><span>2027-02-11</span><button type="button" class="calbtn" aria-label="Select date">📅</button></div>
+          </div>
+        </div>
+      </section>
+      <section class="sec fam-ob">
+        <div class="sec-head"><h4>Calculated dating</h4></div>
+        <div class="sec-body">
+          <div class="mgrid">
+            <div class="mtile"><span class="mlab">Calculated EDD</span><span class="mval">11/02/2027</span></div>
+            <div class="mtile"><span class="mlab">Current gestational age</span><span class="mval">27+2 wks</span></div>
+          </div>
+        </div>
+      </section>
+      <div class="actrow">
+        <button type="button" class="obtn">Cancel</button>
+        <button type="button" class="pbtn">Save</button>
+      </div>
+    </div></div>
+  </figure>
+</div>
+
+<h2>6. Contrast (computed)</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Pair</th><th>Foreground</th><th>Background</th><th>Ratio</th><th>Target</th></tr></thead>
+<tbody>
+<tr><td>Card titles, field text, selected chip text (light)</td><td>#0D1B3D / #FFFFFF</td><td>#FFFFFF / #0D1B3D</td><td class="n">16.92:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td><code>FieldBackgroundLabel</code> on card / sand panel (light)</td><td>#594A2C</td><td>#FFFFFF / #F1EDE4</td><td class="n">8.60 / 7.36:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td><code>FieldObstetricLabel</code> on card / sage tile (light)</td><td>#1D5149</td><td>#FFFFFF / #E3F0EE</td><td class="n">9.03 / 7.73:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Calculated EDD &amp; GA value on <code>FieldObstetricBg</code> (light)</td><td>#0D1B3D</td><td>#E3F0EE</td><td class="n">14.47:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Recorded-date note, subtitles (light)</td><td>#4C3F43</td><td>#FFFFFF</td><td class="n">10.00:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Input and unselected chip border <code>outline</code> (light)</td><td>#79747E</td><td>#FFFFFF</td><td class="n">4.55:1</td><td>&ge; 3.0:1</td></tr>
+<tr><td>Card text and dark calculated tile value (dark)</td><td>#E2E2EA</td><td>#1A202E / #1D3836</td><td class="n">12.64 / 9.75:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td><code>FieldBackgroundDarkLabel</code> on card / panel (dark)</td><td>#E0CFA6</td><td>#1A202E / #36301F</td><td class="n">10.58 / 8.53:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td><code>FieldObstetricDarkLabel</code> on card / tile (dark)</td><td>#9FD6CC</td><td>#1A202E / #1D3836</td><td class="n">10.05 / 7.76:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Save button and selected chip <code>onPrimary</code> on <code>primary</code> (dark)</td><td>#002A78</td><td>#B4C5FF</td><td class="n">7.72:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Input and chip border <code>outline</code> (dark)</td><td>#8E95A5</td><td>#1A202E</td><td class="n">5.42:1</td><td>&ge; 3.0:1</td></tr>
+</tbody></table></div>
+
+<h2>7. Compose mapping</h2>
+<ol class="map">
+  <li><code>OtherHistoriesEditor</code>: <code>EditorPageHeader</code> adopts <code>RecordType.HeaderName</code> + <code>patient.displayName</code> subtitle; <code>negativeHistoriesCard</code> adopts clean <code>FieldBackgroundBg</code> panel + 48 dp <code>RecordShapes.Small</code> button without check prefix; four <code>RecordSectionCard(FieldFamilies.background())</code> cards replace elevated numbered cards; <code>QuickPresetChips</code> uses <code>FormFieldLabel</code> (12 sp) and <code>RecordFilterChip</code> (10 dp, 48 dp target); drops 11 sp vault Lock footer; uses <code>SheetCancelSaveRow</code> when standalone.</li>
+  <li><code>PreviousPregnancyEditor</code>: two <code>RecordSectionCard(FieldFamilies.obstetric())</code> cards; <code>ChoiceGroup</code> renders <code>FormFieldLabel</code> + <code>RecordFilterChip</code> with display labels mapped to human strings while dispatching canonical codes (<code>LiveBirth</code>, <code>CS</code>, etc.) to <code>PreviousPregnancyFormRules</code>; drops 11 sp Lock footer; uses <code>SheetCancelSaveRow</code> when standalone.</li>
+  <li><code>DatingEditor</code> &amp; <code>DatingFieldVisibility</code>: <code>RecordSectionCard(FieldFamilies.obstetric())</code> cards use localized clean titles ("Baseline dating", "Calculated dating", "Notes"); <code>embryoDay3/5/6</code> move to <code>RecordFilterChip</code> with 48 dp targets and <code>FormFieldLabel</code> ("Embryo age"); Calculated dating card hides when empty and displays <code>formatDmy(calculatedEdd)</code> (<code>11/02/2027</code>) + <code>calculatedGa.shortWeeksText</code> (<code>27+2 wks</code>) inside flat <code>FieldObstetricBg</code> tiles; <code>RecordedDateNote</code> uses <code>RecordType.Secondary</code> (14 sp); keeps <code>DatingFieldVisibility</code>, <code>applyDatingChange</code>, and all <code>testTag</code>s unchanged.</li>
+</ol>
+
+<h2>8. Decisions for the owner (this slice)</h2>
+<ol>
+  <li><b>Human labels on pregnancy choice chips:</b> Render existing resource strings ("Live birth", "Stillbirth / IUFD", "Early pregnancy loss", "Termination of pregnancy", "Cesarean") in <code>PreviousPregnancyEditor</code> while continuing to dispatch canonical enum strings into state and SQLite. <i>Recommend: display human labels, preserve canonical stored values.</i></li>
+  <li><b><code>DatingEditor</code> calculated card format and visibility:</b> Replace the inner 12 dp <code>primaryContainer</code> box with two flat <code>FieldObstetricBg</code> tiles formatted as <code>11/02/2027</code> and <code>27+2 wks</code>, and hide the card when neither value can be computed. <i>Recommend: hide when empty and align formats with Overview and Plan.</i></li>
+</ol>
+</main>
+</body>
+</html>

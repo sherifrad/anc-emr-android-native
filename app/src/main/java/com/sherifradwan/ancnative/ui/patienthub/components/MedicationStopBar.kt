@@ -59,7 +59,7 @@ fun MedicationStopBar(
 ) {
     when {
         quickSave != null && (savePhase == SavePhase.PENDING || savePhase == SavePhase.RECONCILING) -> {
-            val saving = stringResource(R.string.medication_saving)
+            val saving = stringResource(R.string.saving_label)
             LinearProgressIndicator(
                 modifier = Modifier
                     .fillMaxWidth()

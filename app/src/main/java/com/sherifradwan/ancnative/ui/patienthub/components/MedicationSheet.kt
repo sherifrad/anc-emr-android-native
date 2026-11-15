@@ -180,7 +180,7 @@ internal fun MedicationSheetButtons(
             enabled = enabled,
             saving = saving,
             saveEnabled = true,
-            savingLabel = stringResource(if (saving) R.string.medication_saving else R.string.save),
+            savingLabel = stringResource(if (saving) R.string.saving_label else R.string.save),
             onCancel = onCancel,
             onSave = onSave,
             cancelTag = "cancelMedication",

@@ -1,5 +1,6 @@
 package com.sherifradwan.ancnative.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -43,31 +45,45 @@ fun RegistrationStepFooter(
 ) {
     Surface(modifier = modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surface) {
         Column {
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             FlowRow(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 OutlinedButton(
                     onClick = onBack,
                     enabled = backEnabled,
+                    shape = RecordShapes.Small,
+                    border = BorderStroke(
+                        1.dp,
+                        if (backEnabled) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.outlineVariant,
+                    ),
                     modifier = Modifier.minimumTouchTarget().testTag("flowBack"),
-                ) { Text(stringResource(R.string.back_step)) }
+                ) { Text(stringResource(R.string.back_step), style = RecordType.Action) }
                 Spacer(Modifier.weight(1f))
                 if (showsSkip(flow)) {
                     TextButton(
                         onClick = onSkip,
                         enabled = skipEnabled,
+                        shape = RecordShapes.Small,
                         modifier = Modifier.minimumTouchTarget().testTag("flowSkip"),
-                    ) { Text(stringResource(R.string.flow_skip)) }
+                    ) { Text(stringResource(R.string.flow_skip), style = RecordType.Action) }
                 }
                 Button(
                     onClick = onNext,
                     enabled = nextEnabled,
+                    shape = RecordShapes.Small,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
                     modifier = Modifier.minimumTouchTarget().testTag("flowNext"),
                 ) {
-                    Text(stringResource(if (nextIsFinish) R.string.flow_finish else R.string.next_step))
+                    Text(
+                        stringResource(if (nextIsFinish) R.string.flow_finish else R.string.next_step),
+                        style = RecordType.Action,
+                    )
                 }
             }
         }

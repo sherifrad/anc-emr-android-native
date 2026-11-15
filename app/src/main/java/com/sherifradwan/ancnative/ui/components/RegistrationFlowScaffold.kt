@@ -1,11 +1,13 @@
 package com.sherifradwan.ancnative.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
@@ -41,7 +43,11 @@ fun RegistrationFlowScaffold(
 ) {
     val flow = state.activeFlowForRoute() ?: return content()
     val blocked = state.savePhase.blocksEditing()
-    Column(Modifier.fillMaxSize()) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) {
         RegistrationStepHeader(flow, compact = WindowInsets.isImeVisible)
         Box(Modifier.weight(1f)) {
             key(flow.activeEditorSessionId, flow.current) { content() }

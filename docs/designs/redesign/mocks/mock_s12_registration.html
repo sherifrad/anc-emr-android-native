@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Mock S12: Registration flow and patient editor</title>
+<style>
+  /* Tokens: the app's real scheme values (Theme.kt) plus the slice 0 record tokens. */
+  :root{
+    --primary:#0D1B3D; --on:#0D1B3D; --onv:#4C3F43; --onprimary:#FFFFFF;
+    --primc:#D6DFFF; --onprimc:#041334; --tert:#176B70;
+    --surface:#FFFFFF; --bg:#FBF8F5; --outv:#CAC4D0; --outline:#79747E; --sv:#F3E9E7;
+    --err:#BA1A1A; --errc:#FFDAD6; --onerrc:#410002;
+    --pt-bg:#E9EEF8; --pt-lb:#23407A; --ob-bg:#E3F0EE; --ob-lb:#1D5149;
+    --hx-bg:#F1EDE4; --hx-lb:#594A2C; --dl-bg:#EEE9F5; --dl-lb:#4E3A78;
+    --inc-bg:#EEF0F4; --inc-bd:#757E8E; --inc-fg:#333B4A;
+    --mod-bg:#FCEFD6; --mod-bd:#9E6F1E; --mod-fg:#6E4708;
+    --hi-bg:#FBE3E3; --hi-bd:#C26666; --hi-fg:#8E1B1B;
+    --r-s:10px; --r-l:16px;
+  }
+  .dark{
+    --primary:#B4C5FF; --on:#E2E2EA; --onv:#CDC3C6; --onprimary:#002A78;
+    --primc:#183F91; --onprimc:#DCE1FF; --tert:#70D7D9;
+    --surface:#1A202E; --bg:#0E121B; --outv:#3A4459; --outline:#8E95A5; --sv:#262E40;
+    --err:#FFB4AB; --errc:#5C141D; --onerrc:#FFDAD6;
+    --pt-bg:#22304A; --pt-lb:#AFC6F2; --ob-bg:#1D3836; --ob-lb:#9FD6CC;
+    --hx-bg:#36301F; --hx-lb:#E0CFA6; --dl-bg:#2E2842; --dl-lb:#CDBDF0;
+    --inc-bg:#2A3140; --inc-bd:#7D889E; --inc-fg:#D5DAE3;
+    --mod-bg:#3A2A0E; --mod-bd:#A87A2A; --mod-fg:#F3D18E;
+    --hi-bg:#4A1616; --hi-bd:#B45A5A; --hi-fg:#FFC9C9;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:#FFFFFF;color:#0D1B3D;font-family:Roboto,"Noto Sans","Noto Sans Arabic","Segoe UI",system-ui,-apple-system,Arial,sans-serif;font-size:15px;line-height:1.5;padding:32px 16px 64px}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-size:26px;line-height:1.25;margin:0 0 8px}
+  h2{font-size:20px;line-height:1.3;margin:44px 0 6px}
+  h3.sub{font-size:16px;margin:18px 0 6px}
+  .lede,p,li{max-width:76ch}
+  .lede{color:#4C3F43;margin:0 0 4px}
+  .reason{border:1px solid #CAC4D0;border-radius:16px;padding:18px 20px;margin-top:18px;background:#FDFCFB}
+  .reason h2{margin-top:0}
+  .reason ul{margin:4px 0 0;padding-inline-start:20px}
+  .pair{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-top:14px}
+  figure{margin:0;width:360px;max-width:100%;flex:0 0 auto}
+  figcaption{font-size:14px;color:#4C3F43;margin:0 0 8px}
+  figcaption b{color:#0D1B3D}
+  .note{font-size:14px;color:#4C3F43;margin:10px 0 0}
+  .phone{width:100%;background:var(--bg);border:1px solid #B9B4BE;border-radius:16px;overflow:hidden;color:var(--on);display:flex;flex-direction:column}
+  .screen{padding:16px;display:flex;flex-direction:column;gap:12px}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  bdi{unicode-bidi:isolate}
+
+  /* shared record components */
+  .sec{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:4px 4px 16px 16px}
+  .sec-head{display:flex;align-items:center;min-height:48px;gap:8px}
+  .sec-head h4{flex:1 1 auto;margin:0;padding:6px 0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .sec-body{display:flex;flex-direction:column;gap:12px;padding-inline-end:12px}
+  .fam-pt{--fbg:var(--pt-bg);--flb:var(--pt-lb)}
+  .fam-ob{--fbg:var(--ob-bg);--flb:var(--ob-lb)}
+  .flab{display:block;font-size:12px;line-height:16px;font-weight:600;color:var(--flb);margin-bottom:4px}
+  .flab-err{color:var(--err)}
+
+  /* redesigned fields and controls */
+  .fbox{min-height:48px;padding:12px 14px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);font-size:16px;line-height:22px;color:var(--on);overflow-wrap:anywhere}
+  .fbox.multi{min-height:84px}
+  .fbox.rtl{direction:rtl;text-align:right}
+  .fbox.ltr{direction:ltr;text-align:left}
+  .fbox.dd{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .fbox.err{border-color:var(--err);border-width:1.5px}
+  .fmiss{color:var(--onv);font-style:italic}
+  .ferr-msg{margin:4px 0 0;font-size:12px;line-height:16px;font-weight:600;color:var(--err)}
+  .gparow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .notice-plain{margin:0;font-size:14px;line-height:20px;color:var(--onv)}
+  .errcard{background:var(--errc);border:1px solid var(--err);border-radius:var(--r-l);padding:12px 14px;color:var(--onerrc);font-size:14px;line-height:20px;font-weight:600}
+
+  /* registration step chrome: after */
+  .stephead{background:var(--surface);border-bottom:1px solid var(--outv);padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+  .steptitle{margin:0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .stepsub{margin:-4px 0 0;font-size:14px;line-height:20px;color:var(--onv)}
+  .segs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+  .seg{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
+  .segbar{width:100%;height:6px;border-radius:var(--r-s)}
+  .segbar.cur{height:8px}
+  .segbar.done{background:var(--primary)}
+  .segbar.skip{border:1.5px dashed var(--onv);background:transparent}
+  .segbar.todo{border:1.5px solid var(--primary);background:var(--surface)}
+  .segbar.todo.cur{background:var(--primc);border-color:var(--primary)}
+  .segglyph{font-size:12px;line-height:16px;color:var(--on);font-weight:600}
+  .segglyph.muted{color:var(--onv)}
+  .segword{font-size:12px;line-height:16px;font-weight:500;color:var(--onv);text-align:center}
+  .segcur{font-size:12px;line-height:16px;font-weight:700;color:var(--on);text-align:center}
+
+  .stepfoot{background:var(--surface);border-top:1px solid var(--outv);padding:12px 16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .stepfoot .spacer{flex:1 1 auto}
+  .pbtn{min-height:48px;min-width:48px;padding:0 16px;border-radius:var(--r-s);background:var(--primary);color:var(--onprimary);font-size:14px;line-height:20px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+  .obtn{min-height:48px;min-width:48px;padding:0 16px;border:1px solid var(--outline);border-radius:var(--r-s);font-size:14px;line-height:20px;font-weight:600;color:var(--primary);background:var(--surface);display:inline-flex;align-items:center;justify-content:center}
+  .obtn.dis{border-color:var(--outv);color:var(--onv)}
+  .tbtn{min-height:48px;min-width:48px;padding:0 12px;border-radius:var(--r-s);font-size:14px;line-height:20px;font-weight:600;color:var(--primary);display:inline-flex;align-items:center;justify-content:center}
+
+  /* sheet cancel/save row + status editor */
+  .pagehead h3{margin:0;font-size:22px;line-height:28px;font-weight:700;color:var(--on)}
+  .pagehead p{margin:2px 0 0;font-size:14px;line-height:20px;color:var(--onv)}
+  .actrow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
+  .sw{display:inline-flex;align-items:center;font-size:12px;line-height:16px;font-weight:700}
+  .sw-mod{color:var(--mod-fg)}
+  .sw-hi{color:var(--err)}
+  .tag{display:inline-flex;align-items:center;min-height:24px;padding:3px 8px;border-radius:var(--r-s);font-size:12px;line-height:16px;font-weight:600;border:1px solid;width:fit-content}
+  .t-inc{background:var(--inc-bg);border-color:var(--inc-bd);color:var(--inc-fg)}
+
+  /* BEFORE fidelity styles (faithful to today's Compose components) */
+  .old-head{background:#FBF8F5;padding:8px 16px;display:flex;flex-direction:column;gap:6px}
+  .old-head .ot{margin:0;font-size:15px;line-height:20px;font-weight:700;color:#0D1B3D}
+  .old-bar{width:100%;height:6px;border-radius:3px}
+  .old-bar.cur{height:8px}
+  .old-bar.done{background:#0D1B3D}
+  .old-bar.skip{border:1px dashed #4C3F43}
+  .old-bar.todo{border:1px solid #0D1B3D;background:transparent}
+  .old-bar.todo.cur{background:#D6DFFF;border-color:#0D1B3D}
+  .old-sub11{font-size:11px;line-height:14px;color:#4C3F43;text-align:center}
+  .old-cur11{font-size:11px;line-height:14px;font-weight:700;color:#0D1B3D;text-align:center}
+  .old-card{background:#FFFFFF;border:1px solid rgba(202,196,208,.5);border-radius:16px;padding:16px;box-shadow:0 1px 2px rgba(13,27,61,.08);display:flex;flex-direction:column;gap:12px}
+  .old-ct{margin:0;font-size:15px;line-height:20px;font-weight:700;color:#0D1B3D}
+  .old-m3f{position:relative;border:1px solid #79747E;border-radius:4px;padding:14px 12px 12px;font-size:15px;line-height:22px;color:#0D1B3D;background:#FFFFFF;min-height:52px}
+  .old-m3f .olbl{position:absolute;top:-8px;left:10px;background:#FFFFFF;padding:0 4px;font-size:12px;line-height:16px;color:#4C3F43;max-width:calc(100% - 20px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .old-m3f.dd{display:flex;align-items:center;justify-content:space-between}
+  .old-lock{display:flex;align-items:center;gap:6px;font-size:11px;line-height:14px;color:#4C3F43}
+  .old-foot{background:#FFFFFF;border-top:1px solid rgba(202,196,208,.5);padding:8px 16px;display:flex;align-items:center;gap:8px}
+  .old-foot .spacer{flex:1 1 auto}
+  .old-pbtn{min-height:48px;padding:0 18px;border-radius:999px;background:#0D1B3D;color:#FFFFFF;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+  .old-obtn{min-height:48px;padding:0 18px;border:1px solid #79747E;border-radius:999px;color:#0D1B3D;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+  .old-obtn.dis{border-color:rgba(13,27,61,.12);color:rgba(13,27,61,.38)}
+  .old-tbtn{min-height:48px;padding:0 12px;border-radius:999px;color:#0D1B3D;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+  .old-act{display:flex;gap:12px;align-items:center}
+  .old-errcard{background:#F3E9E7;border-radius:12px;padding:16px;color:#BA1A1A;font-size:15px}
+
+  /* tables */
+  .tablewrap{overflow-x:auto;max-width:100%}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin-top:10px}
+  th,td{border-bottom:1px solid #E6E1E5;padding:7px 8px;text-align:start;vertical-align:top}
+  th{background:#F7F5F3}
+  td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+  ol.map li{margin:7px 0}
+  code{font-family:"Roboto Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:#F3F0EE;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<h1>Mock S12: Registration flow and patient editor</h1>
+<p class="lede">Covers <code>RegistrationStepHeader</code>, <code>RegistrationStepFooter</code>, <code>RegistrationStepText</code>, <code>PatientEditor</code> (Identity and Obstetric steps plus standalone), and <code>PatientStatusEditor</code>. Real sample only: Mona Ragab / <bdi lang="ar">منى رجب</bdi>, G4 P1 A2, 27+2 wks, EDD 11/02/2027, plus bracketed placeholders where a value is not in the sample.</p>
+
+<section class="reason" aria-labelledby="r">
+  <h2 id="r">Design reasoning</h2>
+  <p>Reading this as: clinical registration forms where every control is obvious at arm's length and mixed English/Arabic entry behaves predictably. Antislop dials: ENERGY 1 / RHYTHM 1 / MOTION 1 (pressed and focus states only, no new animation).</p>
+  <ul>
+    <li><b>Fix under-12 sp text in the step header:</b> today's segment glyph (<code>labelSmall</code>, 11 sp), status word (11 sp), and "Current" label (11 sp) all break the 12 sp floor. Raise all three to <code>RecordType.Tag</code> (12 sp), keep the <code>1.3x</code> label suppression required by <code>RegistrationFlowUiTest</code>, place the header on <code>surface</code> with a full-contrast divider, and use <code>RecordShapes.Small</code> (10 dp) on step bars instead of 3 dp.</li>
+    <li><b>Stop floating-label clipping on narrow 360 dp viewports:</b> move fields in slice 12 to <code>FormFieldLabel</code> (12 sp SemiBold in <code>FieldPatient</code> indigo or <code>FieldObstetric</code> sage) above 10 dp <code>OutlinedTextField</code> boxes, so long labels like "Clinical attention and high-risk alerts (one alert per line)" never truncate in a border notch at 1.3x scale.</li>
+    <li><b>Arabic name input from the right edge:</b> reuse <code>isRtlText</code> from <code>PatientNameText.kt</code> on the Full name input so typing <bdi lang="ar">منى رجب</bdi> sets <code>TextDirection.Rtl</code> and <code>TextAlign.Right</code> inside the box while the English field label stays anchored at start.</li>
+    <li><b>Replace the misleading Lock icon on unencrypted photos:</b> today <code>PatientEditor</code> puts a locked padlock icon next to "Photos are stored on this phone (not encrypted separately)" at 11 sp. Keep the honest notice at 14 sp <code>RecordType.Secondary</code> and remove the Lock icon.</li>
+    <li><b>Buttons aligned with slice 11:</b> <code>RegistrationStepFooter</code> keeps <code>FlowRow</code> (required so 2.0x text wraps cleanly) with <code>RecordShapes.Small</code> (10 dp) buttons and <code>RecordType.Action</code> (14 sp); standalone <code>PatientEditor</code> and <code>PatientStatusEditor</code> switch from uneven pill <code>EditorActions</code> to equal-width 48 dp <code>SheetCancelSaveRow</code>.</li>
+  </ul>
+</section>
+
+<h2>1. Step 1 (Identity): header, English name and footer</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, Step 1 in registration flow</figcaption>
+    <div class="phone">
+      <div class="old-head">
+        <p class="ot">Step 1 of 5: Identity</p>
+        <div class="segs">
+          <div class="seg"><div class="old-bar todo cur"></div><span class="old-sub11">○</span><span class="old-sub11">To do</span><span class="old-cur11">Current</span></div>
+          <div class="seg"><div class="old-bar todo"></div><span class="old-sub11">○</span><span class="old-sub11">To do</span></div>
+          <div class="seg"><div class="old-bar todo"></div><span class="old-sub11">○</span><span class="old-sub11">To do</span></div>
+          <div class="seg"><div class="old-bar todo"></div><span class="old-sub11">○</span><span class="old-sub11">To do</span></div>
+          <div class="seg"><div class="old-bar todo"></div><span class="old-sub11">○</span><span class="old-sub11">To do</span></div>
+        </div>
+      </div>
+      <div class="screen">
+        <div class="old-card">
+          <h4 class="old-ct">Patient details</h4>
+          <div class="old-m3f"><span class="olbl">Full name (required)</span>Mona Ragab</div>
+          <div class="old-m3f"><span class="olbl">Phone (optional)</span><span class="fmiss"></span></div>
+          <div class="old-m3f"><span class="olbl">Age in years (required)</span>[age]</div>
+          <div class="old-m3f"><span class="olbl">Address</span></div>
+        </div>
+        <div class="old-lock"><span aria-hidden="true">🔒</span><span>Photos are stored on this phone (not encrypted separately)</span></div>
+      </div>
+      <div class="old-foot">
+        <span class="old-obtn dis">Back</span>
+        <span class="spacer"></span>
+        <span class="old-pbtn">Next</span>
+      </div>
+    </div>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, slice 12, Step 1 in registration flow</figcaption>
+    <div class="phone">
+      <header class="stephead">
+        <p class="steptitle">Step 1 of 5: Identity</p>
+        <div class="segs">
+          <div class="seg"><div class="segbar todo cur"></div><span class="segglyph muted">○</span><span class="segword">To do</span><span class="segcur">Current</span></div>
+          <div class="seg"><div class="segbar todo"></div><span class="segglyph muted">○</span><span class="segword">To do</span></div>
+          <div class="seg"><div class="segbar todo"></div><span class="segglyph muted">○</span><span class="segword">To do</span></div>
+          <div class="seg"><div class="segbar todo"></div><span class="segglyph muted">○</span><span class="segword">To do</span></div>
+          <div class="seg"><div class="segbar todo"></div><span class="segglyph muted">○</span><span class="segword">To do</span></div>
+        </div>
+      </header>
+      <div class="screen">
+        <section class="sec fam-pt">
+          <div class="sec-head"><h4>Patient details</h4></div>
+          <div class="sec-body">
+            <div><label class="flab">Full name (required)</label><div class="fbox ltr">Mona Ragab</div></div>
+            <div><label class="flab">Phone (optional)</label><div class="fbox ltr"></div></div>
+            <div><label class="flab">Age in years (required)</label><div class="fbox ltr">[age]</div></div>
+            <div><label class="flab">Address</label><div class="fbox ltr"></div></div>
+          </div>
+        </section>
+        <p class="notice-plain">Photos are stored on this phone (not encrypted separately)</p>
+      </div>
+      <footer class="stepfoot">
+        <button type="button" class="obtn dis" disabled>Back</button>
+        <span class="spacer"></span>
+        <button type="button" class="pbtn">Next</button>
+      </footer>
+    </div>
+    <p class="note">Above <code>1.3x</code> font scale, step words ("To do", "Current") hide automatically to prevent column wrap while retaining full spoken descriptions; when the soft keyboard opens, the segment bar collapses so only the step title stays pinned.</p>
+  </figure>
+</div>
+
+<h2>2. Arabic name input rule (<bdi lang="ar">منى رجب</bdi>) and Step 3 (Obstetric)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, Arabic starts left + Step 3 obstetric card</figcaption>
+    <div class="phone">
+      <div class="old-head">
+        <p class="ot">Step 3 of 5: Obstetric history and risk</p>
+        <div class="segs">
+          <div class="seg"><div class="old-bar done"></div><span class="old-sub11" style="color:#0D1B3D">✓</span><span class="old-sub11">Done</span></div>
+          <div class="seg"><div class="old-bar skip"></div><span class="old-sub11" style="color:#0D1B3D">−</span><span class="old-sub11">Skipped</span></div>
+          <div class="seg"><div class="old-bar todo cur"></div><span class="old-sub11">○</span><span class="old-sub11">To do</span><span class="old-cur11">Current</span></div>
+          <div class="seg"><div class="old-bar todo"></div><span class="old-sub11">○</span><span class="old-sub11">To do</span></div>
+          <div class="seg"><div class="old-bar todo"></div><span class="old-sub11">○</span><span class="old-sub11">To do</span></div>
+        </div>
+      </div>
+      <div class="screen">
+        <div class="old-card">
+          <h4 class="old-ct">Patient details (name input)</h4>
+          <div class="old-m3f" style="text-align:left;direction:ltr"><span class="olbl">Full name (required)</span><span dir="rtl" lang="ar">منى رجب</span></div>
+        </div>
+        <div class="old-card">
+          <h4 class="old-ct">Obstetric history and risk</h4>
+          <div class="gparow">
+            <div class="old-m3f"><span class="olbl">Gravida (G)</span>4</div>
+            <div class="old-m3f"><span class="olbl">Parity (P)</span>1</div>
+            <div class="old-m3f"><span class="olbl">Abortion (A)</span>2</div>
+          </div>
+          <div class="old-m3f"><span class="olbl">Obstetric notes</span></div>
+          <div class="old-m3f dd"><span class="olbl">Manual risk level</span><span>[risk level]</span><span aria-hidden="true">▾</span></div>
+          <div class="old-m3f dd"><span class="olbl">Blood group</span><span>[blood group]</span><span aria-hidden="true">▾</span></div>
+          <div class="old-m3f"><span class="olbl">Clinical attention and high-risk alerts (one alert per line)</span></div>
+        </div>
+      </div>
+      <div class="old-foot">
+        <span class="old-obtn">Back</span>
+        <span class="spacer"></span>
+        <span class="old-tbtn">Skip</span>
+        <span class="old-pbtn">Next</span>
+      </div>
+    </div>
+    <p class="note">Today typing Arabic starts flush on the left edge, and the long "Clinical attention..." notch label truncates with an ellipsis.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, Arabic starts from right edge + FieldObstetric step 3</figcaption>
+    <div class="phone">
+      <header class="stephead">
+        <p class="steptitle">Step 3 of 5: Obstetric history and risk</p>
+        <div class="segs">
+          <div class="seg"><div class="segbar done"></div><span class="segglyph">✓</span><span class="segword">Done</span></div>
+          <div class="seg"><div class="segbar skip"></div><span class="segglyph">−</span><span class="segword">Skipped</span></div>
+          <div class="seg"><div class="segbar todo cur"></div><span class="segglyph muted">○</span><span class="segword">To do</span><span class="segcur">Current</span></div>
+          <div class="seg"><div class="segbar todo"></div><span class="segglyph muted">○</span><span class="segword">To do</span></div>
+          <div class="seg"><div class="segbar todo"></div><span class="segglyph muted">○</span><span class="segword">To do</span></div>
+        </div>
+      </header>
+      <div class="screen">
+        <section class="sec fam-pt">
+          <div class="sec-head"><h4>Patient details</h4></div>
+          <div class="sec-body">
+            <div><label class="flab">Full name (required)</label><div class="fbox rtl" dir="rtl" lang="ar">منى رجب</div></div>
+          </div>
+        </section>
+        <section class="sec fam-ob">
+          <div class="sec-head"><h4>Obstetric history and risk</h4></div>
+          <div class="sec-body">
+            <div class="gparow">
+              <div><label class="flab">Gravida (G)</label><div class="fbox ltr">4</div></div>
+              <div><label class="flab">Parity (P)</label><div class="fbox ltr">1</div></div>
+              <div><label class="flab">Abortion (A)</label><div class="fbox ltr">2</div></div>
+            </div>
+            <div><label class="flab">Obstetric notes</label><div class="fbox multi ltr"></div></div>
+            <div><label class="flab">Manual risk level</label><div class="fbox dd"><span>[risk level]</span><span aria-hidden="true">▾</span></div></div>
+            <div><label class="flab">Blood group</label><div class="fbox dd"><span>[blood group]</span><span aria-hidden="true">▾</span></div></div>
+            <div><label class="flab">Clinical attention and high-risk alerts (one alert per line)</label><div class="fbox multi ltr"></div></div>
+          </div>
+        </section>
+      </div>
+      <footer class="stepfoot">
+        <button type="button" class="obtn">Back</button>
+        <span class="spacer"></span>
+        <button type="button" class="tbtn">Skip</button>
+        <button type="button" class="pbtn">Next</button>
+      </footer>
+    </div>
+    <p class="note">In the real Step 3 flow, only the Obstetric card shows unless an identity validation error reveals Identity above it (<code>patientEditorGroups</code>); standalone <code>Edit patient</code> shows both cards plus <code>SheetCancelSaveRow</code>. Step 5 (Previous pregnancies) appends <code>Pregnancy 1 of 3 to add</code> and labels Next as <code>Finish</code>.</p>
+  </figure>
+</div>
+
+<h2>3. Status editor (archive) and validation error state</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, <code>PatientStatusEditor</code></figcaption>
+    <div class="phone">
+      <div class="screen">
+        <div class="pagehead"><h3 style="font-size:24px;color:#0D1B3D">Archive patient</h3><p style="font-size:13px">Mona Ragab</p></div>
+        <p style="margin:0;color:#176B70;font-size:15px;line-height:22px">Enter the owner-supplied reason for this explicit status change.</p>
+        <div class="old-m3f" style="min-height:96px"><span class="olbl">Reason (required)</span></div>
+        <div class="old-act">
+          <span class="old-obtn">Cancel</span>
+          <span class="old-pbtn">Save</span>
+        </div>
+      </div>
+    </div>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, slice 12, <code>PatientStatusEditor</code> + error state</figcaption>
+    <div class="phone">
+      <div class="screen">
+        <div class="pagehead"><h3>Archive patient</h3><p>Mona Ragab</p></div>
+        <div class="errcard" role="alert">Review the highlighted fields. No record was changed.</div>
+        <section class="sec fam-pt">
+          <div class="sec-head"><h4>Patient status</h4><span class="tag t-inc" style="margin-inline-end:12px">Archived</span></div>
+          <div class="sec-body">
+            <p class="notice-plain">Enter the owner-supplied reason for this explicit status change.</p>
+            <div>
+              <label class="flab flab-err">Reason (required)</label>
+              <div class="fbox multi err"></div>
+              <p class="ferr-msg">Correct this field before saving.</p>
+            </div>
+          </div>
+        </section>
+        <div class="actrow">
+          <button type="button" class="obtn">Cancel</button>
+          <button type="button" class="pbtn">Save</button>
+        </div>
+      </div>
+    </div>
+    <p class="note">Error card is shown here for illustration (hidden when <code>draft.errors</code> is empty). When unarchiving an archived patient, the header reads <code>Unarchive patient</code> and the status notice preserves the same <code>RecordSectionCard</code> structure.</p>
+  </figure>
+</div>
+
+<h2>4. Dark theme</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Dark</b>, Step 1 header, Arabic input and footer</figcaption>
+    <div class="phone dark">
+      <header class="stephead">
+        <p class="steptitle">Step 1 of 5: Identity</p>
+        <div class="segs">
+          <div class="seg"><div class="segbar todo cur"></div><span class="segglyph muted">○</span><span class="segword">To do</span><span class="segcur">Current</span></div>
+          <div class="seg"><div class="segbar todo"></div><span class="segglyph muted">○</span><span class="segword">To do</span></div>
+          <div class="seg"><div class="segbar todo"></div><span class="segglyph muted">○</span><span class="segword">To do</span></div>
+          <div class="seg"><div class="segbar todo"></div><span class="segglyph muted">○</span><span class="segword">To do</span></div>
+          <div class="seg"><div class="segbar todo"></div><span class="segglyph muted">○</span><span class="segword">To do</span></div>
+        </div>
+      </header>
+      <div class="screen">
+        <section class="sec fam-pt">
+          <div class="sec-head"><h4>Patient details</h4></div>
+          <div class="sec-body">
+            <div><label class="flab">Full name (required)</label><div class="fbox rtl" dir="rtl" lang="ar">منى رجب</div></div>
+            <div><label class="flab">Age in years (required)</label><div class="fbox ltr">[age]</div></div>
+          </div>
+        </section>
+        <p class="notice-plain">Photos are stored on this phone (not encrypted separately)</p>
+      </div>
+      <footer class="stepfoot">
+        <button type="button" class="obtn dis" disabled>Back</button>
+        <span class="spacer"></span>
+        <button type="button" class="pbtn">Next</button>
+      </footer>
+    </div>
+  </figure>
+</div>
+
+<h2>5. Contrast (computed)</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Pair</th><th>Foreground</th><th>Background</th><th>Ratio</th><th>Target</th></tr></thead>
+<tbody>
+<tr><td>Step title, input text (light)</td><td>#0D1B3D</td><td>#FFFFFF</td><td class="n">16.92:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Notice text, status word "To do" (light)</td><td>#4C3F43</td><td>#FFFFFF</td><td class="n">10.00:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td><code>FieldPatientLabel</code> on card (light)</td><td>#23407A</td><td>#FFFFFF</td><td class="n">10.07:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td><code>FieldObstetricLabel</code> on card (light)</td><td>#1D5149</td><td>#FFFFFF</td><td class="n">9.03:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Current segment bar border on <code>primaryContainer</code></td><td>#0D1B3D</td><td>#D6DFFF</td><td class="n">12.78:1</td><td>&ge; 3.0:1</td></tr>
+<tr><td>Input box border <code>outline</code> on card (light)</td><td>#79747E</td><td>#FFFFFF</td><td class="n">4.55:1</td><td>&ge; 3.0:1</td></tr>
+<tr><td>Validation error banner <code>onErrorContainer</code> on <code>errorContainer</code> (light)</td><td>#410002</td><td>#FFDAD6</td><td class="n">13.26:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Field error text on card (light)</td><td>#BA1A1A</td><td>#FFFFFF</td><td class="n">6.46:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Input text (dark)</td><td>#E2E2EA</td><td>#1A202E</td><td class="n">12.64:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td><code>FieldPatientDarkLabel</code> on card (dark)</td><td>#AFC6F2</td><td>#1A202E</td><td class="n">9.44:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td><code>FieldObstetricDarkLabel</code> on card (dark)</td><td>#9FD6CC</td><td>#1A202E</td><td class="n">10.05:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Next button label <code>onPrimary</code> on <code>primary</code> (dark)</td><td>#002A78</td><td>#B4C5FF</td><td class="n">7.72:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Input box border <code>outline</code> on card (dark)</td><td>#8E95A5</td><td>#1A202E</td><td class="n">5.42:1</td><td>&ge; 3.0:1</td></tr>
+<tr><td>Validation error banner (dark)</td><td>#FFDAD6</td><td>#5C141D</td><td class="n">10.33:1</td><td>&ge; 4.5:1</td></tr>
+</tbody></table></div>
+
+<h2>6. Compose mapping</h2>
+<ol class="map">
+  <li><code>RegistrationStepHeader</code>: wrapped in <code>Surface(color = colorScheme.surface)</code> with bottom <code>HorizontalDivider(color = outlineVariant)</code>; step headline uses <code>RecordType.SectionTitle</code> and pregnancy counter uses <code>RecordType.Secondary</code>; segment bars use <code>RecordShapes.Small</code>; glyph, status word, and "Current" all move to <code>RecordType.Tag</code> (12 sp), preserving <code>WORDS_MAX_FONT_SCALE = 1.3f</code> and <code>registrationSegment-${index + 1}</code> semantics.</li>
+  <li><code>RegistrationStepFooter</code>: full-contrast <code>HorizontalDivider(outlineVariant)</code>, <code>FlowRow(spacedBy(8.dp))</code> keeping <code>minimumTouchTarget()</code>; Back, Skip, and Next/Finish all use <code>shape = RecordShapes.Small</code> (10 dp) and <code>RecordType.Action</code> (14 sp).</li>
+  <li><code>PatientEditor</code> (Identity &amp; Obstetric groups): replaces private <code>EditorSectionCard</code> with <code>RecordSectionCard(title, FieldFamilies.patient())</code> and <code>RecordSectionCard(title, FieldFamilies.obstetric())</code>; uses <code>FormFieldLabel</code> + <code>RecordShapes.Small</code> inputs; keeps <code>patientEditorGroups</code> and all existing <code>testTag</code>s (including <code>patientAgeText</code>).</li>
+  <li>Arabic name input rule: <code>patientName</code> checks <code>isRtlText(draft.values.displayName)</code> (reusing existing <code>ui/components/PatientNameText.kt</code> helper) and applies <code>TextDirection.Rtl</code> and <code>TextAlign.Right</code> to the input <code>textStyle</code> when Arabic characters lead, while the field label stays at start.</li>
+  <li><code>PatientStatusEditor</code> and standalone <code>PatientEditor</code>: <code>EditorPageHeader</code> adopts <code>RecordType.HeaderName</code> (22 sp) + <code>RecordType.Secondary</code> (14 sp); <code>PatientStatusEditor</code> wraps reason input in <code>RecordSectionCard(FieldFamilies.patient())</code> with <code>StatusTag</code> for target status; bottom actions switch to <code>SheetCancelSaveRow</code> (<code>saveTag = "savePatient"</code> / <code>"savePatientStatus"</code>); <code>GenericEditorErrorCard</code> moves to <code>errorContainer</code> / <code>onErrorContainer</code>.</li>
+</ol>
+
+<h2>7. Decisions for the owner (this slice)</h2>
+<ol>
+  <li><b>Arabic name input direction:</b> Apply <code>isRtlText</code> to <code>patientName</code> so <bdi lang="ar">منى رجب</bdi> starts from the right edge inside the field while English names start from the left. <i>Recommend: accept right-edge start.</i></li>
+  <li><b>Step header font size floor:</b> Raise segment glyph, status word, and "Current" from 11 sp to 12 sp (<code>RecordType.Tag</code>) while keeping the <code>1.3x</code> hide threshold required by <code>RegistrationFlowUiTest</code>. <i>Recommend: accept 12 sp with 1.3x cap.</i></li>
+  <li><b>Unencrypted photo notice:</b> Remove the Lock icon next to "Photos are stored on this phone (not encrypted separately)" and render it as 14 sp <code>RecordType.Secondary</code> text. <i>Recommend: keep the honest notice without the padlock.</i></li>
+</ol>
+</main>
+</body>
+</html>

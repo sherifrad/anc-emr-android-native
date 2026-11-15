@@ -344,7 +344,7 @@ class MedicationFormTest {
         compose.onNodeWithTag("addAnotherMedication").assertIsNotEnabled()
         compose.onNodeWithTag("medName").assertIsNotEnabled()
         compose.onNodeWithTag("medSaveProgress").assertIsDisplayed()
-        compose.onNodeWithText(str(R.string.medication_saving)).assertIsDisplayed()
+        compose.onNodeWithText(str(R.string.saving_label)).assertIsDisplayed()
     }
 
     @Test
@@ -522,7 +522,7 @@ class MedicationFormTest {
         compose.waitForIdle()
         val labels = mapOf(
             "cancelMedication" to str(R.string.cancel),
-            "saveMedication" to str(if (saving) R.string.medication_saving else R.string.save),
+            "saveMedication" to str(if (saving) R.string.saving_label else R.string.save),
             "addAnotherMedication" to str(R.string.save_and_add_another_med),
         )
         labels.forEach { (tag, label) ->
