@@ -289,3 +289,6 @@ Feedback on the first meds mock: "more elaborating than needed with all these sq
 - Dense lists (visits, scans, labs, medications, and later lists) are flat: rows on the tab surface, a heading per record, label-over-value in plain text, hairline dividers between records. No card per record, no box inside a box, no filled pill per value.
 - Status in lists is a coloured word (`StatusWord`), not a filled tag; only what needs attention is coloured; non-compliant stays an error word.
 - Entry stays fast and low-fatigue: Stop one tap on the row, compact picker and undo bar.
+
+## 9. Owner direction (2026-11-15, after the Meds options)
+"i think the current working design can be tuned only." Slices 6 to 9 (visits, scans, labs, meds) and every later slice are PAUSED as redesigns. From now on those screens are only TUNED: keep today's layout and look, change only spacing, dead space, label and value contrast, shared tokens and obvious defects. Slices 0 to 5 are built on branch redesign-2026-11-15 and wait for the owner to look at them on the phone before anything else is built.
