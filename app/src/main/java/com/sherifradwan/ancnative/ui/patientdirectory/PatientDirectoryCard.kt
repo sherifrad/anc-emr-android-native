@@ -5,13 +5,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
@@ -35,6 +37,7 @@ import com.sherifradwan.ancnative.ui.PatientDashboardRowProjection
 import com.sherifradwan.ancnative.ui.PatientRiskTier
 import com.sherifradwan.ancnative.ui.components.PatientNameText
 import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordSpacing
 import com.sherifradwan.ancnative.ui.components.RecordType
 import com.sherifradwan.ancnative.ui.components.StatusKind
 import com.sherifradwan.ancnative.ui.components.StatusTag
@@ -71,12 +74,6 @@ fun PatientDirectoryCard(
                 .padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            val hasTags = row.isHighRisk ||
-                row.riskTier == PatientRiskTier.MEDIUM ||
-                row.isSevereBp ||
-                row.isIncomplete ||
-                row.isDelivered
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -91,55 +88,6 @@ fun PatientDirectoryCard(
                     maxLines = 2,
                     modifier = Modifier.weight(1f),
                 )
-
-                if (hasTags) {
-                    FlowRow(
-                        modifier = Modifier.widthIn(max = 120.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                        itemVerticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        if (row.isHighRisk) {
-                            StatusTag(StatusKind.HighRisk)
-                        } else if (row.riskTier == PatientRiskTier.MEDIUM) {
-                            StatusTag(StatusKind.ModerateRisk)
-                        }
-
-                        if (row.isSevereBp) {
-                            BpAlertChip(R.string.bp_badge_severe, isSevere = true)
-                        }
-
-                        if (row.isIncomplete) {
-                            Box(
-                                modifier = Modifier
-                                    .minimumTouchTarget()
-                                    .clickable(
-                                        onClickLabel = stringResource(R.string.registration_incomplete_chip_action),
-                                    ) {
-                                        editPatientEvent(
-                                            patient,
-                                            UUID.randomUUID().toString(),
-                                            UUID.randomUUID().toString(),
-                                        )?.let(onEvent)
-                                    }
-                                    .testTag("incompleteChipAction"),
-                                contentAlignment = Alignment.CenterEnd,
-                            ) {
-                                StatusTag(
-                                    kind = StatusKind.Incomplete,
-                                    modifier = Modifier.testTag("incompleteChip"),
-                                )
-                            }
-                        }
-
-                        if (row.isDelivered) {
-                            StatusTag(
-                                kind = StatusKind.Delivered,
-                                modifier = Modifier.testTag("deliveredTag"),
-                            )
-                        }
-                    }
-                }
 
                 IconButton(
                     onClick = onOpenMenu,
@@ -156,6 +104,13 @@ fun PatientDirectoryCard(
                 }
             }
 
+            PatientTagRow(
+                patient = patient,
+                row = row,
+                onEvent = onEvent,
+                modifier = Modifier.padding(end = RecordSpacing.S),
+            )
+
             PatientDirectoryMetricsRow(
                 patient = patient,
                 row = row,
@@ -164,3 +119,94 @@ fun PatientDirectoryCard(
         }
     }
 }
+
+/**
+ * Status tags under the name on three fixed slots (risk, Incomplete, Delivered). The slots use the metric rows' gap
+ * and end padding, so a tag type sits at the same x on every card. Not composed when there is no tag; otherwise at
+ * least 48dp tall so the Incomplete target fits and every tagged card lines up.
+ */
+@Composable
+private fun PatientTagRow(
+    patient: DemoPatient,
+    row: PatientDashboardRowProjection,
+    onEvent: (AncEvent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val hasTags = row.isHighRisk ||
+        row.riskTier == PatientRiskTier.MEDIUM ||
+        row.isSevereBp ||
+        row.isIncomplete ||
+        row.isDelivered
+    if (!hasTags) return
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min)
+            .heightIn(min = 48.dp),
+        horizontalArrangement = Arrangement.spacedBy(RecordSpacing.S),
+    ) {
+        TagSlot {
+            Column(verticalArrangement = Arrangement.spacedBy(RecordSpacing.XS)) {
+                if (row.isHighRisk) {
+                    StatusTag(StatusKind.HighRisk, wrap = true, horizontalPadding = CardTagPadding)
+                } else if (row.riskTier == PatientRiskTier.MEDIUM) {
+                    StatusTag(StatusKind.ModerateRisk, wrap = true, horizontalPadding = CardTagPadding)
+                }
+                if (row.isSevereBp) {
+                    BpAlertChip(R.string.bp_badge_severe, isSevere = true)
+                }
+            }
+        }
+        TagSlot {
+            if (row.isIncomplete) {
+                Box(
+                    modifier = Modifier
+                        .minimumTouchTarget()
+                        .clickable(
+                            onClickLabel = stringResource(R.string.registration_incomplete_chip_action),
+                        ) {
+                            editPatientEvent(
+                                patient,
+                                UUID.randomUUID().toString(),
+                                UUID.randomUUID().toString(),
+                            )?.let(onEvent)
+                        }
+                        .testTag("incompleteChipAction"),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    StatusTag(
+                        kind = StatusKind.Incomplete,
+                        wrap = true,
+                        horizontalPadding = CardTagPadding,
+                        modifier = Modifier.testTag("incompleteChip"),
+                    )
+                }
+            }
+        }
+        TagSlot {
+            if (row.isDelivered) {
+                StatusTag(
+                    kind = StatusKind.Delivered,
+                    wrap = true,
+                    horizontalPadding = CardTagPadding,
+                    modifier = Modifier.testTag("deliveredTag"),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.TagSlot(content: @Composable () -> Unit) {
+    Box(
+        modifier = Modifier
+            .weight(1f)
+            .fillMaxHeight(),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        content()
+    }
+}
+
+private val CardTagPadding = 6.dp

@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.ui.StatusHighBg
@@ -51,6 +52,8 @@ fun StatusTag(
     kind: StatusKind,
     modifier: Modifier = Modifier,
     text: String = defaultText(kind),
+    wrap: Boolean = false,
+    horizontalPadding: Dp = 8.dp,
 ) {
     val dark = isDarkTheme()
     val (bg, border, fg) = when (kind) {
@@ -87,8 +90,8 @@ fun StatusTag(
                 fontWeight = if (kind == StatusKind.HighRisk) FontWeight.Bold else FontWeight.SemiBold,
             ),
             color = fg,
-            maxLines = 1,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            maxLines = if (wrap) Int.MAX_VALUE else 1,
+            modifier = Modifier.padding(horizontal = horizontalPadding, vertical = 3.dp),
         )
     }
 }
