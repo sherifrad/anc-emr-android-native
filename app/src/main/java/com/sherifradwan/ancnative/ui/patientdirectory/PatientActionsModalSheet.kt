@@ -32,6 +32,7 @@ import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.editPatientEvent
 import com.sherifradwan.ancnative.ui.components.FieldFamilies
 import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.PatientNameText
 import com.sherifradwan.ancnative.ui.components.RecordType
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
 import java.util.UUID
@@ -66,8 +67,8 @@ fun PatientActionsModalSheet(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = patient.displayName,
+                    PatientNameText(
+                        name = patient.displayName,
                         style = RecordType.SectionTitle,
                         color = MaterialTheme.colorScheme.onSurface,
                     )

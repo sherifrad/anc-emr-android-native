@@ -9,7 +9,10 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasText
@@ -31,6 +34,7 @@ import com.sherifradwan.ancnative.ui.patientdirectory.PatientDirectoryCard
 import com.sherifradwan.ancnative.ui.projectDashboardRow
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -375,5 +379,193 @@ class PatientCardRedesignTest {
                 assertTrue(bounds.right <= 360.dp)
                 assertTrue(bounds.left >= 0.dp)
             }
+    }
+
+    // ---- Name direction: Arabic names start at the right edge of the name area, others at the left. ----
+
+    /** Where the name's glyphs actually sit, in root dp, next to the name node's own (full-width) box. */
+    private class NameGlyphs(
+        val nodeLeft: Float,
+        val nodeRight: Float,
+        val nodeTop: Float,
+        val nodeBottom: Float,
+        val inkLeft: Float,
+        val inkRight: Float,
+        val layout: TextLayoutResult,
+    )
+
+    private fun nameGlyphs(name: String): NameGlyphs {
+        val node = compose.onNodeWithText(name, substring = false, useUnmergedTree = true).fetchSemanticsNode()
+        val results = mutableListOf<TextLayoutResult>()
+        val action = node.config[SemanticsActions.GetTextLayoutResult].action
+        assertNotNull("Name text must expose its layout", action)
+        assertTrue("Name text layout must be available", action!!.invoke(results) && results.isNotEmpty())
+        val layout = results.first()
+        val px = compose.density.density
+        val box = node.boundsInRoot
+        val lines = 0 until layout.lineCount
+        val lineLeft = lines.minOf { layout.getLineLeft(it) }
+        val lineRight = lines.maxOf { layout.getLineRight(it) }
+        return NameGlyphs(
+            nodeLeft = box.left / px,
+            nodeRight = box.right / px,
+            nodeTop = box.top / px,
+            nodeBottom = box.bottom / px,
+            inkLeft = (box.left + lineLeft) / px,
+            inkRight = (box.left + lineRight) / px,
+            layout = layout,
+        )
+    }
+
+    private fun cardLeftDp(p: DemoPatient): Float =
+        compose.onNodeWithTag("patient-${p.caseId}", useUnmergedTree = true).getUnclippedBoundsInRoot().left.value
+
+    private fun tagLeftDp(text: String): Float =
+        compose.onNode(hasText(text, substring = false), useUnmergedTree = true).getUnclippedBoundsInRoot().left.value
+
+    private val arabicName = "فاطمة علي"
+    private val longArabicName =
+        "فاطمة عبد الرحمن محمد إبراهيم عبد العزيز السيد الشربيني المنصوري الحسيني القاهري الإسكندراني"
+
+    @Test
+    fun arabicNameStartsAtRightEdgeOfNameAreaLeftOfTags() {
+        val p = highRiskPatient().copy(displayName = arabicName)
+        showListCard(p, widthDp = 360)
+        assertCoreTagsPresent(p)
+
+        val g = nameGlyphs(arabicName)
+        assertEquals("Arabic name must be one line here", 1, g.layout.lineCount)
+        assertTrue(
+            "Arabic name ink right (${g.inkRight}) must sit at the name area's right edge (${g.nodeRight})",
+            g.inkRight >= g.nodeRight - 2f && g.inkRight <= g.nodeRight + 0.5f,
+        )
+        val tagLeft = tagLeftDp("High risk")
+        assertTrue(
+            "Name area right (${g.nodeRight}) must end left of the tags (left $tagLeft)",
+            g.nodeRight <= tagLeft + 0.5f,
+        )
+        // An English name would start at the card padding; the Arabic one must start well to the right of it.
+        val englishStart = cardLeftDp(p) + 12f
+        assertTrue(
+            "Arabic name ink left (${g.inkLeft}) must be clearly right of an English start ($englishStart)",
+            g.inkLeft > englishStart + 24f,
+        )
+    }
+
+    @Test
+    fun englishNameStartsAtCardPadding() {
+        val name = "Fatma Ali"
+        val p = highRiskPatient().copy(displayName = name)
+        showListCard(p, widthDp = 360)
+        assertCoreTagsPresent(p)
+
+        val g = nameGlyphs(name)
+        val padStart = cardLeftDp(p) + 12f
+        assertEquals("Name area must begin at the card start padding", padStart, g.nodeLeft, 0.5f)
+        assertEquals("English name ink must begin at the card padding", padStart, g.inkLeft, 1f)
+        assertTrue(
+            "Short English name must not be pushed right (ink right ${g.inkRight}, area right ${g.nodeRight})",
+            g.inkRight < g.nodeRight - 24f,
+        )
+        assertTrue("Name area must end left of the tags", g.nodeRight <= tagLeftDp("High risk") + 0.5f)
+    }
+
+    @Test
+    fun mixedNameStartingWithLatinStaysLeft() {
+        val name = "Mona منى"
+        val p = highRiskPatient().copy(displayName = name)
+        showListCard(p, widthDp = 360)
+        assertCoreTagsPresent(p)
+
+        val g = nameGlyphs(name)
+        val padStart = cardLeftDp(p) + 12f
+        assertEquals("Latin-first mixed name ink must begin at the card padding", padStart, g.inkLeft, 1f)
+        assertTrue("Latin-first mixed name must not be right-aligned", g.inkRight < g.nodeRight - 24f)
+    }
+
+    @Test
+    fun arabicNameStaysRightAlignedInRtlLayout() {
+        val p = highRiskPatient().copy(displayName = arabicName)
+        showListCard(p, widthDp = 360, layoutDirection = LayoutDirection.Rtl)
+        assertCoreTagsPresent(p)
+
+        val g = nameGlyphs(arabicName)
+        assertTrue(
+            "Arabic name ink right (${g.inkRight}) must sit at the name area's right edge (${g.nodeRight}) in RTL",
+            g.inkRight >= g.nodeRight - 2f && g.inkRight <= g.nodeRight + 0.5f,
+        )
+    }
+
+    @Test
+    fun longArabicNameAt360dpFontScale2WrapsEllipsizesAndClearsTags() {
+        val p = incompletePlusHighPatient().copy(displayName = longArabicName)
+        showListCard(p, widthDp = 360, fontScale = 2.0f)
+        assertCoreTagsPresent(p)
+
+        val g = nameGlyphs(longArabicName)
+        assertEquals("Long Arabic name must use exactly two lines", 2, g.layout.lineCount)
+        assertTrue("Long Arabic name must ellipsize on its last line", g.layout.isLineEllipsized(1))
+        assertTrue(
+            "Name ink right (${g.inkRight}) must sit at the name area's right edge (${g.nodeRight})",
+            g.inkRight >= g.nodeRight - 2f && g.inkRight <= g.nodeRight + 0.5f,
+        )
+        // Known platform limit: at 200% font the ellipsized RTL (Arabic) last line comes out ~2dp wider than
+        // its own layout box (Android places it at about -2.3dp), and Compose's Text clips to its box, so the
+        // leftmost "…" dot loses ~2dp. Widening or offsetting the box only moves the overflow with it, so it is
+        // accepted. The checks below make sure everything EXCEPT that ellipsis dot stays inside the name area.
+        val px0 = compose.density.density
+        assertTrue(
+            "First (unellipsized) name line must stay inside its area (line left ${g.layout.getLineLeft(0) / px0}dp)",
+            g.layout.getLineLeft(0) >= -0.5f * px0,
+        )
+        // Every real glyph kept on the ellipsized line lies inside the area; only the ellipsis may overflow.
+        val keptEnd = g.layout.getLineEnd(1, visibleEnd = true)
+        assertTrue("Ellipsized line must keep some letters", keptEnd > g.layout.getLineStart(1))
+        (g.layout.getLineStart(1) until keptEnd).filterNot { longArabicName[it].isWhitespace() }.forEach { i ->
+            val box = g.layout.getBoundingBox(i)
+            assertTrue(
+                "Kept letter #$i ('${longArabicName[i]}') must stay inside the name area (left ${box.left / px0}dp)",
+                box.left >= -0.5f * px0 && box.right <= (g.nodeRight - g.nodeLeft + 0.5f) * px0,
+            )
+        }
+        // Pixels: any ink touching the area's left edge must be the ellipsis dot alone, i.e. only on line 1
+        // in a short band sitting on that line's baseline, never a letter's full height.
+        val image = compose.onNodeWithText(longArabicName, substring = false, useUnmergedTree = true)
+            .captureToImage()
+        val pixels = IntArray(image.width * image.height)
+        image.readPixels(pixels)
+        val edgeCols = maxOf(1, px0.toInt()) // leftmost 1dp
+        val reference = pixels[0] // top-left is blank: line 0 is right-aligned and starts well inside the area
+        val edgeInkRows = (0 until image.height).filter { y ->
+            (0 until edgeCols).any { x -> pixels[y * image.width + x] != reference }
+        }
+        val baseline1 = g.layout.getLineBaseline(1)
+        val dotBandTop = baseline1 - 6f * px0
+        val dotBandBottom = baseline1 + 1.5f * px0
+        assertTrue(
+            "Ink at the left edge must lie only in the ellipsis dot band on line 1 " +
+                "(rows $edgeInkRows, band ${dotBandTop.toInt()}..${dotBandBottom.toInt()})",
+            edgeInkRows.all { it >= dotBandTop && it <= dotBandBottom },
+        )
+        assertTrue(
+            "Left-edge ink must be at most one dot tall (${edgeInkRows.size} rows)",
+            edgeInkRows.size <= (5f * px0).toInt(),
+        )
+        val px = compose.density.density
+        assertTrue(
+            "Both name lines must fit inside the name box (text ${g.layout.size.height / px}dp, box ${g.nodeBottom - g.nodeTop}dp)",
+            g.layout.size.height / px <= (g.nodeBottom - g.nodeTop) + 0.5f,
+        )
+
+        listOf("High risk", "Incomplete").forEach { tag ->
+            val b = compose.onNode(hasText(tag, substring = false), useUnmergedTree = true)
+                .assertIsDisplayed()
+                .getUnclippedBoundsInRoot()
+            assertTrue(
+                "Tag '$tag' (left ${b.left.value}) must not overlap the name ink (right ${g.inkRight})",
+                b.left.value >= g.inkRight - 0.5f,
+            )
+            assertTrue("Tag '$tag' must stay on screen", b.right <= 360.dp && b.left >= 0.dp)
+        }
     }
 }

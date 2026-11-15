@@ -25,8 +25,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.DemoPatient
@@ -35,6 +33,7 @@ import com.sherifradwan.ancnative.state.editPatientEvent
 import com.sherifradwan.ancnative.ui.BpAlertChip
 import com.sherifradwan.ancnative.ui.PatientDashboardRowProjection
 import com.sherifradwan.ancnative.ui.PatientRiskTier
+import com.sherifradwan.ancnative.ui.components.PatientNameText
 import com.sherifradwan.ancnative.ui.components.RecordShapes
 import com.sherifradwan.ancnative.ui.components.RecordType
 import com.sherifradwan.ancnative.ui.components.StatusKind
@@ -85,13 +84,11 @@ fun PatientDirectoryCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(
-                    text = row.displayName,
+                PatientNameText(
+                    name = row.displayName,
                     style = RecordType.CardName,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Start,
                     modifier = Modifier.weight(1f),
                 )
 
