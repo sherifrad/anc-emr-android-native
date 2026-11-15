@@ -707,4 +707,9 @@
     <string name="action_back">Back</string>
     <string name="action_two_page_report">Two-page report</string>
     <string name="age_label">Age</string>
+    <plurals name="medication_picker_show_all">
+        <item quantity="one">Show all (%d)</item>
+        <item quantity="other">Show all (%d)</item>
+    </plurals>
+    <string name="medication_picker_show_less">Show less</string>
 </resources>

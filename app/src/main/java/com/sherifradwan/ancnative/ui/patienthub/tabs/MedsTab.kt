@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -29,11 +30,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -62,6 +67,7 @@ import com.sherifradwan.ancnative.ui.patienthub.components.MedicationCard
 import com.sherifradwan.ancnative.ui.patienthub.components.MedicationStopBar
 import com.sherifradwan.ancnative.ui.patienthub.components.MedicationTapToAddSection
 import com.sherifradwan.ancnative.ui.patienthub.components.rememberMedicationPickerState
+import com.sherifradwan.ancnative.ui.patienthub.model.stableMedicationOrder
 import java.util.UUID
 
 /**
@@ -85,12 +91,15 @@ fun MedsTab(
     modifier: Modifier = Modifier,
 ) {
     val entryEnabled = canEdit && actionsAllowed && medicationDraft == null && !savePhase.blocksEditing()
+    // While the sheet covers the tab nothing looks dimmed, so the tab does not flash when the sheet opens and closes.
+    val entryDimmed = !entryEnabled && medicationDraft == null
     // The keyboard (picker search) shortens the list instead of covering its end.
     Column(modifier = modifier.fillMaxSize().imePadding()) {
         MedsList(
             patient = patient,
             canEdit = canEdit,
             entryEnabled = entryEnabled,
+            entryDimmed = entryDimmed,
             onEvent = onEvent,
             modifier = Modifier.weight(1f),
         )
@@ -111,21 +120,43 @@ private fun MedsList(
     patient: DemoPatient,
     canEdit: Boolean,
     entryEnabled: Boolean,
+    entryDimmed: Boolean,
     onEvent: (AncEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val activeMeds = remember(patient.medications) {
-        patient.medications.filter { isOngoingMedication(it.status, it.isNonCompliant) }
-    }
-    val pastMeds = remember(patient.medications) {
-        patient.medications.filter { !isOngoingMedication(it.status, it.isNonCompliant) }
-    }
+    // Rows already shown keep their place; a new drug joins the end of its list instead of jumping to the top.
+    var shownOrder by rememberSaveable(patient.id) { mutableStateOf(emptyList<String>()) }
+    val ordered = remember(patient.medications, shownOrder) { stableMedicationOrder(shownOrder, patient.medications) }
+    LaunchedEffect(ordered) { shownOrder = ordered.map { it.id } }
+    val activeMeds = remember(ordered) { ordered.filter { isOngoingMedication(it.status, it.isNonCompliant) } }
+    val pastMeds = remember(ordered) { ordered.filter { !isOngoingMedication(it.status, it.isNonCompliant) } }
 
     // Kept here, above the lazy items, in saved state per patient: adding, stopping, editing, rotation and tab swipes
     // leave the open card, the picker and the "Show past" toggle as they were.
     var expandedMedId by rememberSaveable(patient.id) { mutableStateOf<String?>(null) }
     var showPast by rememberSaveable(patient.id) { mutableStateOf(false) }
     val pickerState = rememberMedicationPickerState(patient.id)
+
+    val listState = key(patient.id) { rememberLazyListState() }
+    // A drug added from the open picker joins the end of the active list, just above the picker. The list is told,
+    // in the same composition, to keep the picker where it was on screen, so the first frame that shows the new row
+    // already has the picker in place (no frame with it moved). Otherwise the list keeps its usual anchor (the first
+    // visible row), so a stop, or an add from "Prescribe" with the picker closed, leaves the top of the screen still.
+    val activeIds = remember(activeMeds) { activeMeds.mapTo(HashSet()) { it.id } }
+    val pickerAnchor = remember(listState) { PickerAnchor() }
+    val before = pickerAnchor.activeIds
+    if (canEdit && pickerState.expanded && before != null && !before.containsAll(activeIds)) {
+        // Not observed: the scroll position must not recompose the tab. layoutInfo still holds the last layout here.
+        val oldOffset = Snapshot.withoutReadObservation {
+            listState.layoutInfo.visibleItemsInfo.firstOrNull { it.key == MEDS_PICKER_KEY }?.offset
+        }
+        if (oldOffset != null) {
+            // Items before the picker: the header, the "no active" line (or the empty state), then the active rows.
+            val placeholder = if (patient.medications.isEmpty() || activeMeds.isEmpty()) 1 else 0
+            listState.requestScrollToItem(index = 1 + placeholder + activeMeds.size, scrollOffset = -oldOffset)
+        }
+    }
+    SideEffect { pickerAnchor.activeIds = activeIds }
 
     val startBlank = {
         onEvent(
@@ -149,6 +180,7 @@ private fun MedsList(
     }
 
     LazyColumn(
+        state = listState,
         modifier = modifier
             .fillMaxWidth()
             .testTag("medsTabContent"),
@@ -178,7 +210,7 @@ private fun MedsList(
                         Button(
                             enabled = entryEnabled,
                             onClick = startBlank,
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                            colors = prescribeButtonColors(dimmed = entryDimmed),
                             shape = RoundedCornerShape(10.dp),
                             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                             modifier = Modifier.minimumTouchTarget().testTag("addCustomMedicationBtn"),
@@ -194,7 +226,7 @@ private fun MedsList(
 
         if (patient.medications.isEmpty()) {
             item(key = "medsEmpty") {
-                MedsEmptyState(canEdit = canEdit, enabled = entryEnabled, onPrescribe = startBlank)
+                MedsEmptyState(canEdit = canEdit, enabled = entryEnabled, dimmed = entryDimmed, onPrescribe = startBlank)
             }
         } else if (activeMeds.isEmpty()) {
             item(key = "medsNoActive") {
@@ -213,6 +245,7 @@ private fun MedsList(
                 isExpanded = expandedMedId == med.id,
                 canEdit = canEdit,
                 actionsEnabled = entryEnabled,
+                actionsDimmed = entryDimmed,
                 onToggle = { expandedMedId = if (expandedMedId == med.id) null else med.id },
                 onStop = { onEvent(AncEvent.StopMedication(patient.id, med.id, UUID.randomUUID().toString())) },
                 onEdit = { startEdit(med) },
@@ -221,10 +254,11 @@ private fun MedsList(
         }
 
         if (canEdit) {
-            item(key = "medsPicker") {
+            item(key = MEDS_PICKER_KEY) {
                 MedicationTapToAddSection(
                     patient = patient,
                     enabled = entryEnabled,
+                    dimmed = entryDimmed,
                     state = pickerState,
                     onEvent = onEvent,
                 )
@@ -243,6 +277,7 @@ private fun MedsList(
                         isExpanded = expandedMedId == med.id,
                         canEdit = canEdit,
                         actionsEnabled = entryEnabled,
+                        actionsDimmed = entryDimmed,
                         onToggle = { expandedMedId = if (expandedMedId == med.id) null else med.id },
                         onEdit = { startEdit(med) },
                         onDelete = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.MEDICATION, med.id)) },
@@ -253,9 +288,33 @@ private fun MedsList(
     }
 }
 
+/** The lazy key of the picker item, also used to find it in the list's layout. */
+private const val MEDS_PICKER_KEY = "medsPicker"
+
+/** The active rows the last composition showed; plain (not state), so updating it never recomposes. */
+/** Under the sheet (not dimmed) a disabled "Prescribe" keeps its look; only a real dim (a save runs) greys it. */
+@Composable
+private fun prescribeButtonColors(dimmed: Boolean) = ButtonDefaults.buttonColors(
+    containerColor = MaterialTheme.colorScheme.primary,
+    disabledContainerColor = if (dimmed) {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+    } else {
+        MaterialTheme.colorScheme.primary
+    },
+    disabledContentColor = if (dimmed) {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+    } else {
+        MaterialTheme.colorScheme.onPrimary
+    },
+)
+
+private class PickerAnchor {
+    var activeIds: Set<String>? = null
+}
+
 /** No medication at all: says so and offers the first prescription as the main action (none when read-only). */
 @Composable
-private fun MedsEmptyState(canEdit: Boolean, enabled: Boolean, onPrescribe: () -> Unit) {
+private fun MedsEmptyState(canEdit: Boolean, enabled: Boolean, dimmed: Boolean, onPrescribe: () -> Unit) {
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -282,6 +341,7 @@ private fun MedsEmptyState(canEdit: Boolean, enabled: Boolean, onPrescribe: () -
                 Button(
                     onClick = onPrescribe,
                     enabled = enabled,
+                    colors = prescribeButtonColors(dimmed),
                     modifier = Modifier.minimumTouchTarget().testTag("medEmptyPrescribe"),
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))

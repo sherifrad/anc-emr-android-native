@@ -1,8 +1,8 @@
-# Slice 7: Scans tab (flat list)
+# Slice 7: Scans tab (band cards)
 
-Builder brief, self-contained. Look: `docs/designs/redesign/mocks/mock_s07_scans.html`. Rules: `docs/designs/redesign/PLAN.md` sections 0, 2, 6, 7 and 8. Depends on slice 6: `RecordListItem` and `RecordListDivider` (`ui/components/RecordList.kt`), `PlainField` (`MetricCell.kt`), `StatusWord`, the `no_records` and `unit_bpm` strings. Read those as built.
+Builder brief, self-contained. Look: `docs/designs/redesign/mocks/mock_s07_scans.html`. Rules: `docs/designs/redesign/PLAN.md` sections 0, 2, 6, 7 and 8. Depends on slice 6: `RecordBandCard` (`ui/components/RecordBandCard.kt`), `BandChip` and `StatusWord` (`StatusTag.kt`), `PlainField` (`MetricCell.kt`), the `no_records` and `unit_bpm` strings. Read those as built.
 
-**Owner rule for lists:** flat rows, a heading, label-over-value in plain text, hairline dividers. No card per scan, no box inside a box, no tinted box per field.
+**Owner direction for record lists (2026-11-15):** one container per record (`RecordBandCard`): a family-colour header band holding filled status-word chips (`BandChip`), the title and one-tap actions; a quiet white body with plain label-over-value text (`PlainField`). No tinted box per field, no box inside a box.
 
 Branch per coordinator; `.agents/scripts/git_audit.sh` before work and before push; `.agents/pipeline/HANDOFF_AGY.md` updated in the same commit.
 
@@ -27,7 +27,7 @@ Never touch: `app/schemas/**`, `storage/RecordsDatabase.kt`, `storage/RecordEnti
 
 | File | Action |
 |---|---|
-| `ui/patienthub/tabs/ScansTab.kt` (233 lines) | restyle to a flat list |
+| `ui/patienthub/tabs/ScansTab.kt` (233 lines) | restyle to band cards |
 | `ui/patienthub/components/BiometryGrid.kt` (144 lines) | rewrite drawing on `PlainField` (same signature) |
 | `app/src/main/res/values/strings.xml` | add strings |
 
@@ -52,15 +52,20 @@ Reuse `no_records`, `unit_bpm`, `action_edit`, `edit_ultrasound`, `scan_impressi
 
 ## 1. `ScansTab` (same signature)
 
-- `LazyColumn(modifier.fillMaxSize().background(colorScheme.surface).testTag("scansTabContent"), contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 48.dp))`.
+- `LazyColumn(modifier.fillMaxSize().testTag("scansTabContent"), contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 48.dp), verticalArrangement = Arrangement.spacedBy(12.dp))`.
 - Header and empty state exactly as slice 6, with `scans_tab_title`, `record_scan_action`, tag `recordNewScanBtn`, the unchanged `StartUltrasoundEditor(scanId = null, ...)` event.
-- Items with `RecordListDivider()` between them:
+- Items:
 ```kotlin
-RecordListItem(
+RecordBandCard(
     title = scan.date,
-    subtitle = gaText?.let(::ltrIsolate),
-    subtitleTag = "gestationalAgeBadge",
+    family = FieldFamilies.obstetric(),
     modifier = Modifier.testTag("ultrasound-${scan.id}"),
+    chips = if (gaText != null || scan.imageUris.isNotEmpty()) {
+        {
+            gaText?.let { BandChip(ltrIsolate(it), tone = null, modifier = Modifier.testTag("gestationalAgeBadge")) }
+            if (scan.imageUris.isNotEmpty()) BandChip(pluralStringResource(R.plurals.photos_count, scan.imageUris.size, scan.imageUris.size), tone = null)
+        }
+    } else null,
     actions = if (canEdit) {
         {
             DeleteIconButton(type = DeletableType.ULTRASOUND, record = scan, onClick = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.ULTRASOUND, scan.id)) })
@@ -75,7 +80,7 @@ RecordListItem(
 ```
   `gaText = gaAtScan?.shortWeeksText`. The `gestationalAgeBadge` tag keeps `DatingGaMarkerSurfacesTest.scanGaBadgesNeverShowTheMarkerEvenForADiscordantPatient` meaningful.
 - `ScanPhotos` (private): `Text(stringResource(R.string.scan_attachments) + ", " + pluralStringResource(R.plurals.photos_count, n, n), RecordType.Secondary, onSurfaceVariant)`, then `FlowRow(spacedBy(8.dp), verticalArrangement = spacedBy(4.dp))` of `OutlinedButton(onClick = { onViewPhotos(scan, idx) }, shape = RecordShapes.Small, border = BorderStroke(1.dp, outline), modifier = Modifier.heightIn(min = 48.dp).testTag("wsScanPhotoChip-${scan.id}-$idx")) { Text(stringResource(R.string.scan_photo_n, idx + 1), RecordType.Action, primary) }`. Photos are actions, so they keep an outline.
-- Removed: the `Card`, the bottom action row, the secondary-container photo chips, `FactRow`, the `Add` icon.
+- Removed: the tinted `Card`, the bottom action row, the secondary-container photo chips, `FactRow`, the `Add` icon.
 
 ## 2. `BiometryGrid(values, modifier)` (same signature)
 
@@ -88,7 +93,7 @@ RecordListItem(
 ## Acceptance checklist
 
 1. Tags: `scansTabContent`, `recordNewScanBtn`, `ultrasound-<id>`, `editUltrasound-<id>`, `delete-ultrasound-<id>`, `scanPresentation`, `wsScanPhotoChip-<id>-<n>`, `gestationalAgeBadge` when GA known.
-2. No `Card`, filled `Surface` or `LabeledValue` inside a scan row (grep).
+2. One `RecordBandCard` per scan (teal band); no `LabeledValue`, filled `Surface` or card inside its body (grep). GA and photo count are chips in the band.
 3. "49 mm" style for BPD, HC, AC, FL; "148 bpm" for FHR; EFW as stored. Blank values hidden.
 4. GA text is `shortWeeksText`; no marker in scans.
 5. Photo buttons >= 47.9 dp; tapping one calls `onViewPhotos(scan, idx)`.
@@ -131,7 +136,7 @@ Cases:
 - `scanPresentation` displayed after `performScrollTo()`, contains "Cephalic";
 - `scan(fluid = "Oligohydramnios")` at 360 dp, font scale 1.3: `assertNotEllipsized` (from `ComposeTextAsserts.kt`);
 - `scan(images = listOf("a", "b"))`: two photo buttons, each height >= 47.9 dp; clicking `wsScanPhotoChip-s1-1` sets `opened == "s1" to 1`;
-- `gestationalAgeBadge` text contains "20+0 wks";
+- `gestationalAgeBadge` text contains "20+0 wks"; with two images a band chip shows the photo count;
 - `canEdit = false`: no `editUltrasound-s1`;
 - empty patient: "No records".
 

@@ -124,26 +124,38 @@
   .sw-hi{color:var(--err)} .sw-mod{color:var(--mod-fg)} .sw-neu{color:var(--onv);font-weight:600}
   .dark .sw-mod{color:#F3D18E}
   .subhead{margin:4px 0 0;font-size:14px;line-height:20px;font-weight:700;color:var(--primary)}
+  /* band cards (Option A middle style, 2026-11-15) */
+  .bcl{display:flex;flex-direction:column;gap:10px}
+  .bc{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);overflow:hidden;color:var(--on)}
+  .bc .band{background:var(--fbg);padding:8px 4px 8px 12px;display:flex;flex-direction:column;gap:4px}
+  .bc .btop{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-height:28px}
+  .bc .brow{display:flex;align-items:center;gap:4px}
+  .bc .btitle{flex:1 1 auto;min-width:0;font-size:16px;line-height:22px;font-weight:700;color:var(--on)}
+  .bc .bbody{padding:10px 12px 12px;display:flex;flex-direction:column;gap:10px}
+  .bchip{display:inline-flex;align-items:center;min-height:24px;padding:2px 10px;border-radius:var(--r-s);font-size:12px;line-height:16px;font-weight:700;white-space:nowrap;border:1px solid transparent}
+  .bchip.info{background:var(--surface);color:var(--flb)}
+  .bchip.hi{background:var(--hi-bg);color:var(--hi-fg);border-color:var(--hi-bd)}
+  .bchip.mod{background:var(--mod-bg);color:var(--mod-fg);border-color:var(--mod-bd)}
+  .bchip.neu{background:var(--surface);color:var(--onv)}
 
-  .alertline{display:flex;flex-direction:column;gap:2px}
-  .alertline .tx{font-size:16px;line-height:22px;color:var(--on)}
+  .pv{display:flex;flex-direction:column;gap:2px}
+  .pv .tx{font-size:16px;line-height:22px;color:var(--on)}
 </style>
 </head>
 <body>
 <main class="wrap">
-<h1>Mock S06: Visits tab</h1>
-<p class="lede">For slice 6. Revised after the owner's feedback on the meds mock ("more elaborating than needed with all these squares"): visits are a flat list. Owner sample: Mona Ragab has BP 110/70; the date of that visit and her other vitals are not in the sample, so her row shows "[visit date]" and "Not recorded". The second row uses the in-repo demo fixture <code>DemoFixtures</code> visit <code>...0106</code> (2026-07-25, BP 120/78, 71.5 kg, fundal height 28 cm), labelled as a fixture; its GA (28+0 wks) follows from that fixture's EDD 2026-10-17. Flagged states use bracketed placeholders.</p>
+<h1>Mock S06: Visits tab (band cards)</h1>
+<p class="lede">Third version, in the middle style the owner chose from the meds options (Option A): one card per visit, a blue band holding the chips and the date, a quiet white body with plain label-over-value text, one-tap actions. Mock D's tinted box per field was "too many squares"; the flat list was "too plain". Owner sample: Mona Ragab has BP 110/70 (date and other vitals not in the sample, shown as "[visit date]" and "Not recorded"). The second card uses the in-repo demo fixture <code>DemoFixtures</code> visit <code>...0106</code> (2026-07-25, 120/78, 71.5 kg, fundal height 28 cm), labelled; its GA 28+0 wks follows from the fixture's EDD 2026-10-17. Flagged states use bracketed placeholders.</p>
 
 <section class="reason" aria-labelledby="r">
   <h2 id="r">Design reasoning</h2>
-  <p>Reading this as: a timeline of bedside checks a doctor scans for the one abnormal number, dial ENERGY 1 / RHYTHM 1 / MOTION 1.</p>
+  <p>Reading this as: a timeline of bedside checks a doctor scans for the one abnormal number, dial ENERGY 2 / RHYTHM 1 / MOTION 1.</p>
   <ul>
-    <li><b>A flat list, not cards.</b> Each visit is a row on the white tab surface: the date as a 16 sp bold heading with Delete and Edit at its end, one grey line under it ("28+0 wks, scan linked"), then the vitals as plain label-over-value text. Visits are separated by a hairline. No card, no box inside a box, no tinted square per field.</li>
-    <li><b>Vitals in two plain columns:</b> Blood pressure, Weight, Fetal heart rate, Fundal height (12 sp grey label, 16 sp value).</li>
-    <li><b>Flags as coloured words, not pills:</b> "Raised, recheck" (amber word), "Severe, urgent", "Bradycardia (&lt;110)", "Small for dates" (red words), "Large for dates" (amber). Normal values carry no word. The "▲", "✓", "⚠️" and "·" go; owner decision 6 also cleans the <code>bp_alert_*</code> strings.</li>
-    <li><b>Pre-eclampsia</b> is a red label "Pre-eclampsia risk" over the existing sentence, at the top of the row, without a filled box.</li>
-    <li><b>GA as "28+0 wks"</b> (owner decision 9), in the grey line under the date.</li>
-    <li><b>Dropped:</b> the tinted card per visit, the bordered grid box inside it, the column dividers, the 11 sp labels, the green "Normal ✓" pills, the duplicate BP alert in the visit header, the "+" on Record visit.</li>
+    <li><b>One container per visit.</b> The card's own top band (Patient family blue, #E9EEF8) holds the chips and the date with Delete and Edit; the white body holds the vitals. A band is part of the card, not a box inside it.</li>
+    <li><b>Chips on the band:</b> the GA ("28+0 wks", white chip with blue text), "Scan linked" when linked, and the visit's worst flag as a filled word chip: "Severe BP" or "Pre-eclampsia risk" (red), "Raised BP" (amber). A normal visit carries no flag chip, so flagged visits stand out down the list.</li>
+    <li><b>Quiet body:</b> Blood pressure, Weight, Fetal heart rate, Fundal height as 12 sp grey label over 16 sp value in two columns, with the per-value flag as a coloured word under the value ("Raised, recheck", "Bradycardia (&lt;110)", "Large for dates"). No tinted box per field, no pills, no ▲ ✓ ⚠.</li>
+    <li><b>Pre-eclampsia sentence</b> sits at the top of the body as a red label over the existing sentence.</li>
+    <li><b>Rhythm and identity:</b> every visit card starts with the same blue band, so the list reads as a timeline; scans use teal bands, labs sand, so each tab has its own colour.</li>
   </ul>
 </section>
 
@@ -164,49 +176,52 @@
         <span style="align-self:flex-end;font-size:13px">Delete &nbsp; Edit visit</span>
       </div>
     </div></div>
-    <p class="note">A tinted card holding a bordered box holding pills: three layers for four numbers.</p>
   </figure>
   <figure>
     <figcaption><b>After</b>, slice 6</figcaption>
-    <div class="phone"><div class="flat">
+    <div class="phone"><div class="screen">
       <div class="tabhead"><h4>Antenatal visits (2)</h4><button type="button" class="pbtn">Record visit</button></div>
-      <div class="rec">
-        <div class="rh"><span class="t">[visit date]</span><button type="button" class="del" aria-label="Delete visit">Delete</button><button type="button" class="act" aria-label="Edit visit">Edit</button></div>
-        <div class="pgrid">
-          <div><span class="l">Blood pressure</span><span class="v k">110/70 mmHg</span></div>
-          <div><span class="l">Weight</span><span class="v" style="font-style:italic;color:var(--onv)">Not recorded</span></div>
-        </div>
-      </div>
-      <div class="rec">
-        <div class="rh"><span class="t">2026-07-25</span><button type="button" class="del" aria-label="Delete visit">Delete</button><button type="button" class="act" aria-label="Edit visit">Edit</button></div>
-        <p class="sub2">28+0 wks</p>
-        <div class="pgrid">
-          <div><span class="l">Blood pressure</span><span class="v k">120/78 mmHg</span></div>
-          <div><span class="l">Weight</span><span class="v k">71.5 kg</span></div>
-          <div><span class="l">Fundal height</span><span class="v k">28 cm</span></div>
-        </div>
-        <p class="bodytxt">GDM ruled out; Hb 11.6 g/dL reassuring</p>
+      <div class="bcl">
+        <article class="bc fam-pt">
+          <div class="band"><div class="brow"><span class="btitle">[visit date]</span><button type="button" class="del" aria-label="Delete visit">Delete</button><button type="button" class="act" aria-label="Edit visit">Edit</button></div></div>
+          <div class="bbody"><div class="pgrid">
+            <div><span class="l">Blood pressure</span><span class="v k">110/70 mmHg</span></div>
+            <div><span class="l">Weight</span><span class="v" style="font-style:italic;color:var(--onv)">Not recorded</span></div>
+          </div></div>
+        </article>
+        <article class="bc fam-pt">
+          <div class="band"><div class="btop"><span class="bchip info">28+0 wks</span></div><div class="brow"><span class="btitle">2026-07-25</span><button type="button" class="del" aria-label="Delete visit">Delete</button><button type="button" class="act" aria-label="Edit visit">Edit</button></div></div>
+          <div class="bbody">
+            <div class="pgrid">
+              <div><span class="l">Blood pressure</span><span class="v k">120/78 mmHg</span></div>
+              <div><span class="l">Weight</span><span class="v k">71.5 kg</span></div>
+              <div><span class="l">Fundal height</span><span class="v k">28 cm</span></div>
+            </div>
+            <p class="bodytxt">GDM ruled out; Hb 11.6 g/dL reassuring</p>
+          </div>
+        </article>
       </div>
     </div></div>
-    <p class="note">One surface, rows split by hairlines. Delete is an icon button in the app (48 dp, labelled); drawn as a word here.</p>
+    <p class="note">Delete is an icon button in the app (48 dp, labelled); drawn as a word here.</p>
   </figure>
   <figure>
-    <figcaption><b>After</b>, flagged row (layout only) and empty</figcaption>
-    <div class="phone"><div class="flat">
-      <div class="rec">
-        <div class="rh"><span class="t">[visit date]</span><button type="button" class="del" aria-label="Delete visit">Delete</button><button type="button" class="act" aria-label="Edit visit">Edit</button></div>
-        <p class="sub2">[GA], scan linked</p>
-        <div class="alertline"><span class="sw sw-hi">Pre-eclampsia risk</span><span class="tx">Elevated BP ([BP]) with proteinuria ([protein]). Clinical evaluation required.</span></div>
-        <div class="pgrid">
-          <div><span class="l">Blood pressure</span><span class="v k">[BP] mmHg</span><span class="sw sw-hi">Severe, urgent</span></div>
-          <div><span class="l">Weight</span><span class="v k">[weight] kg</span><span class="sub2">Δ [change] kg</span></div>
-          <div><span class="l">Fetal heart rate</span><span class="v k">[rate] bpm</span><span class="sw sw-hi">Bradycardia (&lt;110)</span></div>
-          <div><span class="l">Fundal height</span><span class="v k">[cm] cm</span><span class="sw sw-mod">Large for dates</span></div>
+    <figcaption><b>After</b>, flagged visit (layout only) and empty</figcaption>
+    <div class="phone"><div class="screen">
+      <article class="bc fam-pt">
+        <div class="band"><div class="btop"><span class="bchip info">[GA]</span><span class="bchip info">Scan linked</span><span class="bchip hi">Pre-eclampsia risk</span></div><div class="brow"><span class="btitle">[visit date]</span><button type="button" class="del" aria-label="Delete visit">Delete</button><button type="button" class="act" aria-label="Edit visit">Edit</button></div></div>
+        <div class="bbody">
+          <div class="pv"><span class="sw sw-hi">Pre-eclampsia risk</span><span class="tx">Elevated BP ([BP]) with proteinuria ([protein]). Clinical evaluation required.</span></div>
+          <div class="pgrid">
+            <div><span class="l">Blood pressure</span><span class="v k">[BP] mmHg</span><span class="sw sw-hi">Severe, urgent</span></div>
+            <div><span class="l">Weight</span><span class="v k">[weight] kg</span><span class="sub2">Δ [change] kg</span></div>
+            <div><span class="l">Fetal heart rate</span><span class="v k">[rate] bpm</span><span class="sw sw-hi">Bradycardia (&lt;110)</span></div>
+            <div><span class="l">Fundal height</span><span class="v k">[cm] cm</span><span class="sw sw-mod">Large for dates</span></div>
+          </div>
         </div>
-      </div>
-      <div class="rec"><p class="sub2" style="font-size:16px">No records</p></div>
+      </article>
+      <p class="emptyc">No records</p>
     </div></div>
-    <p class="note">Bracketed values are placeholders. Raised BP reads "Raised, recheck" in amber. Empty keeps today's text.</p>
+    <p class="note">The band shows the worst flag of the visit (pre-eclampsia, then severe BP, then raised BP); the body shows each value's own word.</p>
   </figure>
 </div>
 
@@ -214,16 +229,14 @@
 <div class="pair">
   <figure>
     <figcaption><b>Dark</b>, after</figcaption>
-    <div class="phone dark"><div class="flat">
-      <div class="tabhead"><h4>Antenatal visits (1)</h4><button type="button" class="pbtn">Record visit</button></div>
-      <div class="rec">
-        <div class="rh"><span class="t">2026-07-25</span><button type="button" class="del" aria-label="Delete visit">Delete</button><button type="button" class="act" aria-label="Edit visit">Edit</button></div>
-        <p class="sub2">28+0 wks</p>
-        <div class="pgrid">
+    <div class="phone dark"><div class="screen">
+      <article class="bc fam-pt">
+        <div class="band"><div class="btop"><span class="bchip info">28+0 wks</span><span class="bchip mod">Raised BP</span></div><div class="brow"><span class="btitle">[visit date]</span><button type="button" class="del" aria-label="Delete visit">Delete</button><button type="button" class="act" aria-label="Edit visit">Edit</button></div></div>
+        <div class="bbody"><div class="pgrid">
           <div><span class="l">Blood pressure</span><span class="v k">[BP] mmHg</span><span class="sw sw-mod">Raised, recheck</span></div>
           <div><span class="l">Weight</span><span class="v k">71.5 kg</span></div>
-        </div>
-      </div>
+        </div></div>
+      </article>
     </div></div>
   </figure>
 </div>
@@ -232,22 +245,21 @@
 <div class="tablewrap"><table>
 <thead><tr><th>Pair</th><th>Text</th><th>Background</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Date heading, values</td><td>#0D1B3D</td><td>#FFFFFF</td><td class="n">16.92</td></tr>
-<tr><td>Labels, grey line, Δ line, Not recorded</td><td>#4C3F43</td><td>#FFFFFF</td><td class="n">10.00</td></tr>
-<tr><td>Red flag words (error)</td><td>#BA1A1A</td><td>#FFFFFF</td><td class="n">6.46</td></tr>
-<tr><td>Amber flag words</td><td>#6E4708</td><td>#FFFFFF</td><td class="n">8.18</td></tr>
-<tr><td>Record visit (onPrimary on primary)</td><td>#FFFFFF</td><td>#0D1B3D</td><td class="n">16.92</td></tr>
-<tr><td>Dark heading / label / red word / amber word</td><td>#E2E2EA / #CDC3C6 / #FFB4AB / #F3D18E</td><td>#1A202E</td><td class="n">12.64 / 9.47 / 9.59 / 11.10</td></tr>
-<tr><td>Hairline (decorative, non-text)</td><td>#CAC4D0</td><td>#FFFFFF</td><td class="n">1.70</td></tr>
+<tr><td>Date on blue band</td><td>#0D1B3D</td><td>#E9EEF8</td><td class="n">14.54</td></tr>
+<tr><td>GA and "Scan linked" chips (white chip, family label)</td><td>#23407A</td><td>#FFFFFF</td><td class="n">10.07</td></tr>
+<tr><td>Red flag chip / amber flag chip</td><td>#8E1B1B / #6E4708</td><td>#FBE3E3 / #FCEFD6</td><td class="n">7.40 / 7.19</td></tr>
+<tr><td>Body labels, Δ line, Not recorded</td><td>#4C3F43</td><td>#FFFFFF</td><td class="n">10.00</td></tr>
+<tr><td>Body values</td><td>#0D1B3D</td><td>#FFFFFF</td><td class="n">16.92</td></tr>
+<tr><td>Red / amber value words</td><td>#BA1A1A / #6E4708</td><td>#FFFFFF</td><td class="n">6.46 / 8.18</td></tr>
+<tr><td>Dark date on band / chip / values</td><td>#E2E2EA / #AFC6F2 / #E2E2EA</td><td>#22304A / #1A202E / #1A202E</td><td class="n">10.25 / 9.44 / 12.64</td></tr>
+<tr><td>Dark red / amber words</td><td>#FFB4AB / #F3D18E</td><td>#1A202E</td><td class="n">9.59 / 11.10</td></tr>
 </tbody></table></div>
 
 <h2>4. Compose mapping</h2>
 <ol class="map">
-  <li>Tab: <code>LazyColumn</code> on <code>colorScheme.surface</code>; header item with <code>RecordType.SectionTitle</code> and the Record visit button (48 dp, word only); <code>HorizontalDivider(color = outlineVariant)</code> between visit items.</li>
-  <li>Visit item: shared <code>RecordListItem(title = visit.date, subtitle = "28+0 wks, scan linked", actions = { DeleteIconButton; SectionTextAction(Edit) })</code> (new, slice 6): heading row min 48 dp, title <code>RecordType.CardName</code>, subtitle <code>RecordType.Secondary</code>.</li>
-  <li>Vitals: shared <code>PlainField(label, value, flag)</code> (new in <code>MetricCell.kt</code>): 12 sp label, 16 sp value that wraps, optional <code>StatusWord</code>; two per row with <code>weight(1f)</code>.</li>
-  <li>Flags: shared <code>StatusWord(text, tone)</code> (new in <code>StatusTag.kt</code>): plain <code>Text(RecordType.Tag.copy(fontWeight = Bold))</code> in error, amber (<code>StatusModerateText</code> / dark) or onSurfaceVariant; no fill, no border.</li>
-  <li>Pre-eclampsia: <code>StatusWord(High, "Pre-eclampsia risk")</code> over <code>Text(RecordType.FieldValue)</code>, tag <code>preEclampsiaWarning-${id}</code> on the column.</li>
+  <li>Shared <code>RecordBandCard(title, family, modifier, chips, actions, content)</code> (new in <code>ui/components/RecordBandCard.kt</code>): <code>OutlinedCard(shape = RecordShapes.Large, border = 1.dp outlineVariant)</code>; band <code>Column(Modifier.fillMaxWidth().background(family.container).padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp))</code> with a chip <code>FlowRow</code> and a 48 dp title row (title <code>RecordType.CardName</code>, actions); body <code>Column(Modifier.padding(12.dp), spacedBy(10.dp))</code>.</li>
+  <li>Shared <code>BandChip(text, tone)</code> (new in <code>StatusTag.kt</code>): Info = surface fill with <code>family.label</code> text; High and Moderate = the <code>StatusHigh*</code> / <code>StatusModerate*</code> fill, border and text.</li>
+  <li>Body fields: <code>PlainField</code> (12 sp label, 16 sp value that wraps, optional <code>StatusWord</code> under it).</li>
 </ol>
 
 </main>

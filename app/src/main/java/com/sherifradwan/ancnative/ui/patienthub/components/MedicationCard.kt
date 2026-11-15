@@ -64,6 +64,8 @@ fun MedicationCard(
     modifier: Modifier = Modifier,
     /** False while a save runs or a medication draft is open: stop, edit and delete show disabled. */
     actionsEnabled: Boolean = true,
+    /** Dimmed look of the actions; differs from "not enabled" only while the sheet covers the tab. */
+    actionsDimmed: Boolean = !actionsEnabled,
     onStop: (() -> Unit)? = null,
     onEdit: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
@@ -151,10 +153,10 @@ fun MedicationCard(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         if (isOngoingMedication(med.status, med.isNonCompliant) && onStop != null) {
-                            StopControl(name = med.name, id = med.id, enabled = actionsEnabled, onStop = onStop)
+                            StopControl(name = med.name, id = med.id, enabled = actionsEnabled, dimmed = actionsDimmed, onStop = onStop)
                         }
                         if (onDelete != null) {
-                            DeleteIconButton(DeletableType.MEDICATION, med, onDelete, enabled = actionsEnabled)
+                            DeleteIconButton(DeletableType.MEDICATION, med, onDelete, enabled = actionsEnabled, dimmed = actionsDimmed)
                         }
                         if (onEdit != null) {
                             IconButton(
@@ -165,7 +167,7 @@ fun MedicationCard(
                                 Icon(
                                     Icons.Default.Edit,
                                     contentDescription = stringResource(R.string.edit_medication_description, med.name),
-                                    tint = if (actionsEnabled) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                                    tint = if (!actionsDimmed) MaterialTheme.colorScheme.primary else LocalContentColor.current,
                                     modifier = Modifier.size(20.dp),
                                 )
                             }
@@ -196,9 +198,9 @@ fun MedicationCard(
  * MedsTabSheetTest checks at least 4.5:1 on the card in both themes), at least 48 dp. Screen readers hear "Stop <drug>".
  */
 @Composable
-private fun StopControl(name: String, id: String, enabled: Boolean, onStop: () -> Unit) {
+private fun StopControl(name: String, id: String, enabled: Boolean, dimmed: Boolean, onStop: () -> Unit) {
     val description = stringResource(R.string.stop_medication_description, name)
-    val color = if (enabled) {
+    val color = if (!dimmed) {
         MaterialTheme.colorScheme.error
     } else {
         MaterialTheme.colorScheme.onSurface.copy(alpha = MEDICATION_DISABLED_ALPHA)

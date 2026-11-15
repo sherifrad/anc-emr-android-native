@@ -1,8 +1,8 @@
-# Slice 8: Labs tab (flat list)
+# Slice 8: Labs tab (band cards)
 
-Builder brief, self-contained. Look: `docs/designs/redesign/mocks/mock_s08_labs.html`. Rules: `docs/designs/redesign/PLAN.md` sections 0, 2, 6, 7 and 8. Depends on slice 6: `RecordListItem`, `RecordListDivider`, `StatusWord` / `StatusTone`, the `no_records` string. Read them as built.
+Builder brief, self-contained. Look: `docs/designs/redesign/mocks/mock_s08_labs.html`. Rules: `docs/designs/redesign/PLAN.md` sections 0, 2, 6, 7 and 8. Depends on slice 6: `RecordBandCard`, `BandChip`, `StatusWord` / `StatusTone`, the `no_records` string. Read them as built.
 
-**Owner rule for lists:** flat rows, headings, plain text, hairline dividers. No card per report, no panel box inside it, no filled status capsules.
+**Owner direction for record lists (2026-11-15):** one container per record (`RecordBandCard`): a family-colour header band holding filled status-word chips (`BandChip`), the title and one-tap actions; a quiet white body with plain label-over-value text (`PlainField`). No tinted box per field, no box inside a box. Labs use the Background family (sand) band.
 
 **The grouping rule stays exactly as it is** (lab fixes `2a7fbbb` and `9a0cc02` are in this branch): `partitionReportIntoCompositeGroups` makes a panel only when at least two member tests match; a lone member goes to "Individual Investigations"; `groupLabsIntoReports` groups by date and lab name. Do not edit `ui/patienthub/model/LabReportGrouping.kt`.
 
@@ -29,7 +29,7 @@ Never touch: `app/schemas/**`, `storage/RecordsDatabase.kt`, `storage/RecordEnti
 
 | File | Action |
 |---|---|
-| `ui/patienthub/tabs/LabsTab.kt` (128 lines) | flat list, header, empty state |
+| `ui/patienthub/tabs/LabsTab.kt` (128 lines) | band cards, header, empty state |
 | `ui/patienthub/components/LabReportItem.kt` (383 lines) | restyle `LabReportItem` and `LabRowItem` (same signatures) |
 | `app/src/main/res/values/strings.xml` | add strings and 2 plurals |
 
@@ -59,27 +59,30 @@ Panel titles come from the model, unchanged.
 
 ## 1. `LabsTab` (same signature)
 
-- `LazyColumn(modifier.fillMaxSize().background(colorScheme.surface).testTag("labsTabContent"), contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 48.dp))`; keys `"${it.date}-${it.labName}"` as today; `RecordListDivider()` between reports.
+- `LazyColumn(modifier.fillMaxSize().testTag("labsTabContent"), contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 48.dp), verticalArrangement = Arrangement.spacedBy(12.dp))`; keys `"${it.date}-${it.labName}"` as today.
 - Header and empty state as slice 6: `labs_tab_title` with `reports.size`, button `add_test_action` with tag `addInvestigationBtn` and the same `onAddInvestigation` and gate.
 
 ## 2. `LabReportItem` (same signature)
 
 ```kotlin
-RecordListItem(
+RecordBandCard(
     title = report.date,
+    family = FieldFamilies.background(),
     subtitle = subtitle,
     modifier = modifier.testTag("labReportCard-${report.date}"),
+    chips = {
+        if (report.isAnyAbnormal) BandChip(pluralStringResource(R.plurals.lab_abnormal_count, report.abnormalCount, report.abnormalCount), StatusTone.High)
+        else BandChip(stringResource(R.string.lab_all_normal), StatusTone.Neutral)
+    },
     actions = if (canEdit) {
         { SectionTextAction(stringResource(R.string.add_test_action), stringResource(R.string.add_test_to_report), onAddTestToReport, Modifier.testTag("addTestToReportBtn-${report.date}")) }
     } else null,
 ) {
-    if (report.isAnyAbnormal) StatusWord(pluralStringResource(R.plurals.lab_abnormal_count, report.abnormalCount, report.abnormalCount), StatusTone.High)
-    else StatusWord(stringResource(R.string.lab_all_normal), StatusTone.Neutral)
     compositeGroups.forEach { group -> if (group.isComposite) PanelGroup(group, ...) else IndividualGroup(group, showHeading = compositeGroups.size > 1, ...) }
 }
 ```
 - `subtitle = listOfNotNull(report.labName?.takeIf { it.isNotBlank() } ?: stringResource(R.string.lab_report_default_name), pluralStringResource(R.plurals.lab_tests_count, report.totalCount, report.totalCount), gaShort?.let(::ltrIsolate)).joinToString(", ")`; `gaShort = patient.dating?.let { GestationalAgeEngine.calculateGestationalAgeAt(it, report.date) }?.shortWeeksText`.
-- Removed: the `Card` and its elevation, the tinted header band, the `HorizontalDivider` under it, the "N ABNORMAL ▲" and "ALL NORMAL ✓" capsules, the footer "+ Add Another Test to this Report" (same handler as the header action), the `Add` icon.
+- Removed: the `Card` and its elevation, the old surfaceVariant header band (replaced by the sand band), the `HorizontalDivider` under it, the "N ABNORMAL ▲" and "ALL NORMAL ✓" capsules, the footer "+ Add Another Test to this Report" (same handler as the header action), the `Add` icon.
 
 ### `PanelGroup` (private): a sub-heading, not a box
 
@@ -90,11 +93,11 @@ RecordListItem(
 
 When `showHeading`: `Text(stringResource(R.string.lab_individual_investigations), RecordType.Action.copy(fontWeight = FontWeight.Bold), primary, Modifier.padding(top = 4.dp))` (was uppercase "INDIVIDUAL INVESTIGATIONS"). Then the rows.
 
-## 3. `LabRowItem(lab, canEdit, onEdit, onDelete, modifier)` (same signature)
+## 3. `LabRowItem(lab, canEdit, onEdit, onDelete, modifier, showDivider: Boolean = true)` (one new trailing parameter with a default; callers pass `false` for the first row of each group)
 
 ```kotlin
 Column(modifier.fillMaxWidth()) {
-    RecordListDivider()
+    if (showDivider) HorizontalDivider(color = colorScheme.outlineVariant)
     Row(
         Modifier.fillMaxWidth().testTag("lab-${lab.id}").clickable(enabled = canEdit, onClick = onEdit).heightIn(min = 48.dp).padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -122,7 +125,7 @@ Column(modifier.fillMaxWidth()) {
 
 1. Tags: `labsTabContent`, `addInvestigationBtn`, `labReportCard-<date>`, `addTestToReportBtn-<date>` (canEdit), `lab-<id>`, `deleteLab-<id>` (canEdit).
 2. `git diff` shows no change to `LabReportGrouping.kt`; groups, titles, order and members are identical.
-3. No `Card`, filled `Surface` or bordered panel inside a report (grep). Status only as words: "All normal" grey, "N abnormal" and "Abnormal" red; abnormal results red. No "▲", "✓" or uppercase status.
+3. One `RecordBandCard` per report (sand band) with the status chip in the band; no `LabeledValue`, filled `Surface` or bordered panel inside its body (grep). Report status is the band chip ("All normal" white, "N abnormal" red); in the body status is only words ("N abnormal" on a panel, "Abnormal" on a row) and abnormal results are red. No "▲", "✓" or uppercase status.
 4. "1 test" singular, "2 tests" plural.
 5. A lone CBC member is a plain row; "Individual investigations" shows only when there is more than one group.
 6. Panel header >= 47.9 dp, toggles, exposes its state.

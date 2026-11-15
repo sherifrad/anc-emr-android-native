@@ -124,6 +124,19 @@
   .sw-hi{color:var(--err)} .sw-mod{color:var(--mod-fg)} .sw-neu{color:var(--onv);font-weight:600}
   .dark .sw-mod{color:#F3D18E}
   .subhead{margin:4px 0 0;font-size:14px;line-height:20px;font-weight:700;color:var(--primary)}
+  /* band cards (Option A middle style, 2026-11-15) */
+  .bcl{display:flex;flex-direction:column;gap:10px}
+  .bc{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);overflow:hidden;color:var(--on)}
+  .bc .band{background:var(--fbg);padding:8px 4px 8px 12px;display:flex;flex-direction:column;gap:4px}
+  .bc .btop{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-height:28px}
+  .bc .brow{display:flex;align-items:center;gap:4px}
+  .bc .btitle{flex:1 1 auto;min-width:0;font-size:16px;line-height:22px;font-weight:700;color:var(--on)}
+  .bc .bbody{padding:10px 12px 12px;display:flex;flex-direction:column;gap:10px}
+  .bchip{display:inline-flex;align-items:center;min-height:24px;padding:2px 10px;border-radius:var(--r-s);font-size:12px;line-height:16px;font-weight:700;white-space:nowrap;border:1px solid transparent}
+  .bchip.info{background:var(--surface);color:var(--flb)}
+  .bchip.hi{background:var(--hi-bg);color:var(--hi-fg);border-color:var(--hi-bd)}
+  .bchip.mod{background:var(--mod-bg);color:var(--mod-fg);border-color:var(--mod-bd)}
+  .bchip.neu{background:var(--surface);color:var(--onv)}
 
   .chips{display:flex;flex-wrap:wrap;gap:8px}
   .chip{min-height:48px;padding:0 14px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);color:var(--primary);font-size:14px;font-weight:600}
@@ -131,18 +144,17 @@
 </head>
 <body>
 <main class="wrap">
-<h1>Mock S07: Scans tab</h1>
-<p class="lede">For slice 7, flat-list version (owner feedback: no squares per field). Mona Ragab's sample has no scan, so her tab shows the empty state. The populated row uses the in-repo demo fixture <code>DemoFixtures</code> scan <code>...0102</code> (2026-05-30, 20+0 wks, BPD 49, HC 178, AC 155, FL 34, EFW 380, FHR 148, Cephalic, Anterior, Normal fluid), labelled as a fixture. The photo row is layout only.</p>
+<h1>Mock S07: Scans tab (band cards)</h1>
+<p class="lede">Third version, in the owner's chosen middle style (Option A): one card per scan, a teal band with chips and the date, a quiet body. Mona Ragab's sample has no scan, so her tab is empty. The populated card uses the in-repo demo fixture <code>DemoFixtures</code> scan <code>...0102</code> (2026-05-30, 20+0 wks, BPD 49, HC 178, AC 155, FL 34, EFW 380, FHR 148, Cephalic, Anterior, Normal fluid), labelled. The photo card is layout only.</p>
 
 <section class="reason" aria-labelledby="r">
   <h2 id="r">Design reasoning</h2>
-  <p>Reading this as: the scan record compared visit to visit, dial ENERGY 1 / RHYTHM 1 / MOTION 1.</p>
+  <p>Reading this as: the scan record compared visit to visit, dial ENERGY 2 / RHYTHM 1 / MOTION 1.</p>
   <ul>
-    <li><b>Same flat row as a visit:</b> date heading with Delete and Edit, a grey line "20+0 wks" (owner decision 9), plain label-over-value text, a hairline between scans.</li>
-    <li><b>Biometry in three plain columns</b> (BPD, HC, AC, then FL, EFW, FHR), the same 12 sp label over 16 sp value as everywhere. No pills, no highlighted EFW, no bordered box.</li>
-    <li><b>Anatomy and impression</b> as plain label-over-value text that wraps (Presentation, Placenta, Amniotic fluid; Impression full width). No tinted boxes.</li>
-    <li><b>Photos stay buttons</b> (48 dp, outlined, 10 dp radius): they are actions.</li>
-    <li><b>Dropped:</b> the tinted card, the box inside it, the "Ultrasound Biometry" caption, the "+" on Record scan.</li>
+    <li><b>One container per scan</b> with an Obstetric family band (teal, #E3F0EE): GA chip ("20+0 wks"), a "2 photos" chip when images exist, the date, Delete and Edit.</li>
+    <li><b>Quiet body:</b> biometry in three plain columns (BPD, HC, AC, FL, EFW, FHR), anatomy in the same grid (Presentation, Placenta, Amniotic fluid), Impression full width; 12 sp grey labels over 16 sp values. No pills, no highlighted EFW, no inner box.</li>
+    <li><b>Photo buttons</b> stay outlined 48 dp buttons at the bottom of the body: they are actions.</li>
+    <li><b>Rhythm:</b> teal bands make the Scans tab recognisable next to the blue Visits tab.</li>
   </ul>
 </section>
 
@@ -168,39 +180,40 @@
   </figure>
   <figure>
     <figcaption><b>After</b>, slice 7, fixture scan</figcaption>
-    <div class="phone"><div class="flat">
+    <div class="phone"><div class="screen">
       <div class="tabhead"><h4>Ultrasound scans (1)</h4><button type="button" class="pbtn">Record scan</button></div>
-      <div class="rec">
-        <div class="rh"><span class="t">2026-05-30</span><button type="button" class="del" aria-label="Delete scan">Delete</button><button type="button" class="act" aria-label="Edit scan">Edit</button></div>
-        <p class="sub2">20+0 wks</p>
-        <div class="pgrid c3">
-          <div><span class="l">BPD</span><span class="v k">49 mm</span></div>
-          <div><span class="l">HC</span><span class="v k">178 mm</span></div>
-          <div><span class="l">AC</span><span class="v k">155 mm</span></div>
-          <div><span class="l">FL</span><span class="v k">34 mm</span></div>
-          <div><span class="l">EFW</span><span class="v k">380</span></div>
-          <div><span class="l">FHR</span><span class="v k">148 bpm</span></div>
-          <div><span class="l">Presentation</span><span class="v">Cephalic</span></div>
-          <div><span class="l">Placenta</span><span class="v">Anterior</span></div>
-          <div><span class="l">Amniotic fluid</span><span class="v">Normal</span></div>
+      <article class="bc fam-ob">
+        <div class="band"><div class="btop"><span class="bchip info">20+0 wks</span></div><div class="brow"><span class="btitle">2026-05-30</span><button type="button" class="del" aria-label="Delete scan">Delete</button><button type="button" class="act" aria-label="Edit scan">Edit</button></div></div>
+        <div class="bbody">
+          <div class="pgrid c3">
+            <div><span class="l">BPD</span><span class="v k">49 mm</span></div>
+            <div><span class="l">HC</span><span class="v k">178 mm</span></div>
+            <div><span class="l">AC</span><span class="v k">155 mm</span></div>
+            <div><span class="l">FL</span><span class="v k">34 mm</span></div>
+            <div><span class="l">EFW</span><span class="v k">380</span></div>
+            <div><span class="l">FHR</span><span class="v k">148 bpm</span></div>
+            <div><span class="l">Presentation</span><span class="v">Cephalic</span></div>
+            <div><span class="l">Placenta</span><span class="v">Anterior</span></div>
+            <div><span class="l">Amniotic fluid</span><span class="v">Normal</span></div>
+          </div>
+          <div class="pf"><span class="l">Impression</span><span class="v">Normal fetal anatomy and morphology survey; no anomalies detected</span></div>
         </div>
-        <div class="pf"><span class="l">Impression</span><span class="v">Normal fetal anatomy and morphology survey; no anomalies detected</span></div>
-      </div>
+      </article>
     </div></div>
-    <p class="note">EFW shows the value as stored ("380"; the fixture has no unit). Missing values stay hidden, as today.</p>
+    <p class="note">EFW shows the value as stored ("380"). Missing values stay hidden, as today.</p>
   </figure>
   <figure>
     <figcaption><b>After</b>, photos (layout only) and Mona's empty state</figcaption>
-    <div class="phone"><div class="flat">
-      <div class="rec">
-        <div class="rh"><span class="t">[scan date]</span><button type="button" class="del" aria-label="Delete scan">Delete</button><button type="button" class="act" aria-label="Edit scan">Edit</button></div>
-        <p class="sub2">Ultrasound scan images, 2 photos</p>
-        <div class="chips"><button type="button" class="chip">Photo 1</button><button type="button" class="chip">Photo 2</button></div>
-      </div>
-      <div class="rec">
-        <div class="tabhead"><h4>Ultrasound scans (0)</h4><button type="button" class="pbtn">Record scan</button></div>
-        <p class="sub2" style="font-size:16px">No records</p>
-      </div>
+    <div class="phone"><div class="screen">
+      <article class="bc fam-ob">
+        <div class="band"><div class="btop"><span class="bchip info">[GA]</span><span class="bchip info">2 photos</span></div><div class="brow"><span class="btitle">[scan date]</span><button type="button" class="del" aria-label="Delete scan">Delete</button><button type="button" class="act" aria-label="Edit scan">Edit</button></div></div>
+        <div class="bbody">
+          <div class="pgrid c3"><div><span class="l">BPD</span><span class="v k">[mm]</span></div><div><span class="l">HC</span><span class="v k">[mm]</span></div><div><span class="l">AC</span><span class="v k">[mm]</span></div></div>
+          <div class="chips"><button type="button" class="chip">Photo 1</button><button type="button" class="chip">Photo 2</button></div>
+        </div>
+      </article>
+      <div class="tabhead"><h4>Ultrasound scans (0)</h4><button type="button" class="pbtn">Record scan</button></div>
+      <p class="emptyc">No records</p>
     </div></div>
   </figure>
 </div>
@@ -209,16 +222,13 @@
 <div class="pair">
   <figure>
     <figcaption><b>Dark</b>, after</figcaption>
-    <div class="phone dark"><div class="flat">
-      <div class="rec">
-        <div class="rh"><span class="t">2026-05-30</span><button type="button" class="del" aria-label="Delete scan">Delete</button><button type="button" class="act" aria-label="Edit scan">Edit</button></div>
-        <p class="sub2">20+0 wks</p>
-        <div class="pgrid c3">
-          <div><span class="l">BPD</span><span class="v k">49 mm</span></div>
-          <div><span class="l">HC</span><span class="v k">178 mm</span></div>
-          <div><span class="l">AC</span><span class="v k">155 mm</span></div>
-        </div>
-      </div>
+    <div class="phone dark"><div class="screen">
+      <article class="bc fam-ob">
+        <div class="band"><div class="btop"><span class="bchip info">20+0 wks</span></div><div class="brow"><span class="btitle">2026-05-30</span><button type="button" class="del" aria-label="Delete scan">Delete</button><button type="button" class="act" aria-label="Edit scan">Edit</button></div></div>
+        <div class="bbody"><div class="pgrid c3">
+          <div><span class="l">BPD</span><span class="v k">49 mm</span></div><div><span class="l">HC</span><span class="v k">178 mm</span></div><div><span class="l">AC</span><span class="v k">155 mm</span></div>
+        </div></div>
+      </article>
     </div></div>
   </figure>
 </div>
@@ -227,17 +237,17 @@
 <div class="tablewrap"><table>
 <thead><tr><th>Pair</th><th>Text</th><th>Background</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Heading, values, photo buttons</td><td>#0D1B3D</td><td>#FFFFFF</td><td class="n">16.92</td></tr>
-<tr><td>Labels, grey line</td><td>#4C3F43</td><td>#FFFFFF</td><td class="n">10.00</td></tr>
-<tr><td>Photo button border (non-text, outline)</td><td>#79747E</td><td>#FFFFFF</td><td class="n">4.55</td></tr>
-<tr><td>Dark heading / labels</td><td>#E2E2EA / #CDC3C6</td><td>#1A202E</td><td class="n">12.64 / 9.47</td></tr>
+<tr><td>Date on teal band</td><td>#0D1B3D</td><td>#E3F0EE</td><td class="n">14.47</td></tr>
+<tr><td>GA and photos chips (white chip, teal label)</td><td>#1D5149</td><td>#FFFFFF</td><td class="n">9.03</td></tr>
+<tr><td>Body labels / values</td><td>#4C3F43 / #0D1B3D</td><td>#FFFFFF</td><td class="n">10.00 / 16.92</td></tr>
+<tr><td>Photo button border (non-text)</td><td>#79747E</td><td>#FFFFFF</td><td class="n">4.55</td></tr>
+<tr><td>Dark date on band / chip</td><td>#E2E2EA / #9FD6CC</td><td>#1D3836 / #1A202E</td><td class="n">9.75 / 10.05</td></tr>
 </tbody></table></div>
 
 <h2>4. Compose mapping</h2>
 <ol class="map">
-  <li>Scan item: <code>RecordListItem(title = scan.date, subtitle = gaShort, actions = { DeleteIconButton; SectionTextAction(Edit) })</code> with tag <code>ultrasound-${id}</code>.</li>
-  <li><code>BiometryGrid</code>: rows of three <code>PlainField</code> (biometry values emphasised), then anatomy as three <code>PlainField</code> in the same grid, Impression as a full-width <code>PlainField</code>.</li>
-  <li>Photos: grey caption and <code>OutlinedButton</code>s, 48 dp, <code>RecordShapes.Small</code>.</li>
+  <li><code>RecordBandCard(title = scan.date, family = FieldFamilies.obstetric(), chips = { BandChip(ga, Info); BandChip(photosCount, Info) }, actions = { DeleteIconButton; SectionTextAction(Edit) })</code>, tag <code>ultrasound-${id}</code>.</li>
+  <li>Body: <code>BiometryGrid</code> of <code>PlainField</code>s in rows of three; Impression <code>PlainField</code>; photo <code>OutlinedButton</code>s 48 dp.</li>
 </ol>
 
 </main>

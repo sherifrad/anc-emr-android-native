@@ -124,8 +124,22 @@
   .sw-hi{color:var(--err)} .sw-mod{color:var(--mod-fg)} .sw-neu{color:var(--onv);font-weight:600}
   .dark .sw-mod{color:#F3D18E}
   .subhead{margin:4px 0 0;font-size:14px;line-height:20px;font-weight:700;color:var(--primary)}
+  /* band cards (Option A middle style, 2026-11-15) */
+  .bcl{display:flex;flex-direction:column;gap:10px}
+  .bc{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);overflow:hidden;color:var(--on)}
+  .bc .band{background:var(--fbg);padding:8px 4px 8px 12px;display:flex;flex-direction:column;gap:4px}
+  .bc .btop{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-height:28px}
+  .bc .brow{display:flex;align-items:center;gap:4px}
+  .bc .btitle{flex:1 1 auto;min-width:0;font-size:16px;line-height:22px;font-weight:700;color:var(--on)}
+  .bc .bbody{padding:10px 12px 12px;display:flex;flex-direction:column;gap:10px}
+  .bchip{display:inline-flex;align-items:center;min-height:24px;padding:2px 10px;border-radius:var(--r-s);font-size:12px;line-height:16px;font-weight:700;white-space:nowrap;border:1px solid transparent}
+  .bchip.info{background:var(--surface);color:var(--flb)}
+  .bchip.hi{background:var(--hi-bg);color:var(--hi-fg);border-color:var(--hi-bd)}
+  .bchip.mod{background:var(--mod-bg);color:var(--mod-fg);border-color:var(--mod-bd)}
+  .bchip.neu{background:var(--surface);color:var(--onv)}
 
   .lrow{display:flex;align-items:center;gap:8px;min-height:48px;border-top:1px solid var(--outv);padding-top:4px}
+  .lrow.first{border-top:0;padding-top:0}
   .lrow .nm{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
   .lrow .nm b{font-size:16px;line-height:22px;font-weight:600;color:var(--on)}
   .lrow .res{display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-align:end}
@@ -134,23 +148,23 @@
   .ghead{width:100%;min-height:48px;display:flex;align-items:center;gap:8px;text-align:start}
   .ghead b{flex:1 1 auto;font-size:14px;line-height:20px;color:var(--primary)}
   .ghead .chev{font-size:14px;color:var(--primary)}
-  .ind{margin:8px 0 0;font-size:14px;line-height:20px;font-weight:700;color:var(--primary)}
+  .ind{margin:4px 0 0;font-size:14px;line-height:20px;font-weight:700;color:var(--primary)}
+  .bbody{gap:4px !important}
 </style>
 </head>
 <body>
 <main class="wrap">
-<h1>Mock S08: Labs tab</h1>
-<p class="lede">For slice 8, flat-list version (owner feedback: no box inside a box). Mona Ragab's sample has no investigations, so her tab is empty. Populated reports use the in-repo demo fixture <code>DemoFixtures</code> (2026-07-25: "Complete Blood Count" 11.6 g/dL, ref 11.0 - 15.0, Al Borg Medical Labs; "Oral Glucose Tolerance Test (75g) - 2h Post-Load" 112 mg/dL, ref &lt; 140, Al Mokhtabar Labs). The CBC panel frame uses test names from <code>LabReportGroupingOwnerFixTest</code> with bracketed placeholder results. The grouping rule (a panel needs at least two member tests, otherwise the lone test sits under Individual investigations) is untouched.</p>
+<h1>Mock S08: Labs tab (band cards)</h1>
+<p class="lede">Third version, in the owner's chosen middle style (Option A): one card per report, a sand band with the status chip, the lab line and the date, a quiet body with the tests. Mona Ragab's sample has no investigations, so her tab is empty. Populated reports use the in-repo demo fixture <code>DemoFixtures</code> (2026-07-25: "Complete Blood Count" 11.6 g/dL, ref 11.0 - 15.0, Al Borg Medical Labs; "Oral Glucose Tolerance Test (75g) - 2h Post-Load" 112 mg/dL, ref &lt; 140, Al Mokhtabar Labs). The CBC panel card uses test names from <code>LabReportGroupingOwnerFixTest</code> with bracketed results. The grouping rule (a panel needs at least two members, otherwise the lone test is under Individual investigations) is untouched.</p>
 
 <section class="reason" aria-labelledby="r">
   <h2 id="r">Design reasoning</h2>
-  <p>Reading this as: a report list where one abnormal result must jump out, dial ENERGY 1 / RHYTHM 1 / MOTION 1.</p>
+  <p>Reading this as: a report list where one abnormal result must jump out, dial ENERGY 2 / RHYTHM 1 / MOTION 1.</p>
   <ul>
-    <li><b>Flat rows.</b> A report is a heading (date, with "Add test" at its end), a grey line ("Al Borg Medical Labs, 1 test, 28+0 wks") and its status word, then one row per test split by hairlines. Reports are split by a hairline too. No card, no nested panel box.</li>
-    <li><b>Panels are sub-headings, not boxes.</b> "Complete Blood Count (CBC) (3)" is a 48 dp row that opens and closes its tests, with its status word and a chevron (it shows the open state). "Individual investigations" is the same kind of sub-heading, in sentence case.</li>
-    <li><b>Status as words, no fills:</b> "All normal" in grey, "1 abnormal" in red; each abnormal result is red with the word "Abnormal" under it. The "N ABNORMAL ▲" and "ALL NORMAL ✓" capsules go.</li>
-    <li><b>Rows:</b> test name 16 sp, grey "Hematology, ref 11.0 - 15.0", the result 16 sp bold at the end, delete after it.</li>
-    <li><b>One add per report:</b> the footer "+ Add Another Test to this Report" repeated the header action with the same handler; it goes.</li>
+    <li><b>One container per report</b> with a sand band (Background family, #F1EDE4): a filled status chip ("All normal" white chip; "1 abnormal" red chip), the date as title with "Add test", and a grey line "Al Borg Medical Labs, 1 test, 28+0 wks".</li>
+    <li><b>Quiet body:</b> tests as rows split by hairlines: name 16 sp, grey "Hematology, ref 11.0 - 15.0", the result 16 sp bold at the end, delete after it. An abnormal result is red with the word "Abnormal".</li>
+    <li><b>Panels are sub-headings inside the body</b> ("Complete Blood Count (CBC) (3)", 48 dp, opens and closes, its own status word and a chevron), never a box inside the card.</li>
+    <li><b>Dropped:</b> the "N ABNORMAL ▲" and "ALL NORMAL ✓" capsules, the bordered panel boxes, the uppercase "INDIVIDUAL INVESTIGATIONS", the duplicate footer "+ Add Another Test to this Report" (same handler as the band's "Add test").</li>
   </ul>
 </section>
 
@@ -172,40 +186,37 @@
   </figure>
   <figure>
     <figcaption><b>After</b>, slice 8, fixture reports</figcaption>
-    <div class="phone"><div class="flat">
+    <div class="phone"><div class="screen">
       <div class="tabhead"><h4>Laboratory reports (2)</h4><button type="button" class="pbtn">Add test</button></div>
-      <div class="rec">
-        <div class="rh"><span class="t">2026-07-25</span><button type="button" class="act" aria-label="Add a test to this report">Add test</button></div>
-        <p class="sub2">Al Borg Medical Labs, 1 test, 28+0 wks</p>
-        <span class="sw sw-neu">All normal</span>
-        <div class="lrow"><span class="nm"><b>Complete Blood Count</b><span class="sub2">Hematology, ref 11.0 - 15.0</span></span><span class="res"><b>11.6 g/dL</b></span><button type="button" class="del" aria-label="Delete test">Delete</button></div>
-      </div>
-      <div class="rec">
-        <div class="rh"><span class="t">2026-07-25</span><button type="button" class="act" aria-label="Add a test to this report">Add test</button></div>
-        <p class="sub2">Al Mokhtabar Labs, 1 test, 28+0 wks</p>
-        <span class="sw sw-neu">All normal</span>
-        <div class="lrow"><span class="nm"><b>Oral Glucose Tolerance Test (75g) - 2h Post-Load</b><span class="sub2">Biochemistry, ref &lt; 140</span></span><span class="res"><b>112 mg/dL</b></span><button type="button" class="del" aria-label="Delete test">Delete</button></div>
+      <div class="bcl">
+        <article class="bc fam-hx">
+          <div class="band"><div class="btop"><span class="bchip neu">All normal</span></div><div class="brow"><span class="btitle">2026-07-25</span><button type="button" class="act" aria-label="Add a test to this report">Add test</button></div><p class="sub2">Al Borg Medical Labs, 1 test, 28+0 wks</p></div>
+          <div class="bbody"><div class="lrow first"><span class="nm"><b>Complete Blood Count</b><span class="sub2">Hematology, ref 11.0 - 15.0</span></span><span class="res"><b>11.6 g/dL</b></span><button type="button" class="del" aria-label="Delete test">Delete</button></div></div>
+        </article>
+        <article class="bc fam-hx">
+          <div class="band"><div class="btop"><span class="bchip neu">All normal</span></div><div class="brow"><span class="btitle">2026-07-25</span><button type="button" class="act" aria-label="Add a test to this report">Add test</button></div><p class="sub2">Al Mokhtabar Labs, 1 test, 28+0 wks</p></div>
+          <div class="bbody"><div class="lrow first"><span class="nm"><b>Oral Glucose Tolerance Test (75g) - 2h Post-Load</b><span class="sub2">Biochemistry, ref &lt; 140</span></span><span class="res"><b>112 mg/dL</b></span><button type="button" class="del" aria-label="Delete test">Delete</button></div></div>
+        </article>
       </div>
     </div></div>
-    <p class="note">Same date, different lab: two reports (today's grouping by date and lab). A lone CBC entry is a plain row, not a panel.</p>
+    <p class="note">Same date, different lab: two reports (today's grouping by date and lab).</p>
   </figure>
   <figure>
     <figcaption><b>After</b>, CBC panel and abnormal (layout only)</figcaption>
-    <div class="phone"><div class="flat">
-      <div class="rec">
-        <div class="rh"><span class="t">[report date]</span><button type="button" class="act" aria-label="Add a test to this report">Add test</button></div>
-        <p class="sub2">[lab name], 4 tests, [GA]</p>
-        <span class="sw sw-hi">1 abnormal</span>
-        <button type="button" class="ghead" aria-expanded="true"><b>Complete Blood Count (CBC) (3)</b><span class="sw sw-hi">1 abnormal</span><span class="chev" aria-hidden="true">▴</span></button>
-        <div class="lrow"><span class="nm"><b>Haemoglobin (Hb)</b><span class="sub2">Hematology, ref [range]</span></span><span class="res"><b class="ab">[result]</b><span class="sw sw-hi">Abnormal</span></span><button type="button" class="del" aria-label="Delete test">Delete</button></div>
-        <div class="lrow"><span class="nm"><b>Haematocrit (Hct)</b><span class="sub2">Hematology</span></span><span class="res"><b>[result]</b></span><button type="button" class="del" aria-label="Delete test">Delete</button></div>
-        <div class="lrow"><span class="nm"><b>Platelets (PLT)</b><span class="sub2">Hematology</span></span><span class="res"><b>[result]</b></span><button type="button" class="del" aria-label="Delete test">Delete</button></div>
-        <p class="ind">Individual investigations</p>
-        <div class="lrow"><span class="nm"><b>C-Reactive Protein (CRP)</b><span class="sub2">Biochemistry</span></span><span class="res"><b>[result]</b></span><button type="button" class="del" aria-label="Delete test">Delete</button></div>
-      </div>
-      <div class="rec"><p class="sub2" style="font-size:16px">No records (Mona Ragab today)</p></div>
+    <div class="phone"><div class="screen">
+      <article class="bc fam-hx">
+        <div class="band"><div class="btop"><span class="bchip hi">1 abnormal</span></div><div class="brow"><span class="btitle">[report date]</span><button type="button" class="act" aria-label="Add a test to this report">Add test</button></div><p class="sub2">[lab name], 4 tests, [GA]</p></div>
+        <div class="bbody">
+          <button type="button" class="ghead" aria-expanded="true"><b>Complete Blood Count (CBC) (3)</b><span class="sw sw-hi">1 abnormal</span><span class="chev" aria-hidden="true">▴</span></button>
+          <div class="lrow"><span class="nm"><b>Haemoglobin (Hb)</b><span class="sub2">Hematology, ref [range]</span></span><span class="res"><b class="ab">[result]</b><span class="sw sw-hi">Abnormal</span></span><button type="button" class="del" aria-label="Delete test">Delete</button></div>
+          <div class="lrow"><span class="nm"><b>Haematocrit (Hct)</b><span class="sub2">Hematology</span></span><span class="res"><b>[result]</b></span><button type="button" class="del" aria-label="Delete test">Delete</button></div>
+          <div class="lrow"><span class="nm"><b>Platelets (PLT)</b><span class="sub2">Hematology</span></span><span class="res"><b>[result]</b></span><button type="button" class="del" aria-label="Delete test">Delete</button></div>
+          <p class="ind">Individual investigations</p>
+          <div class="lrow"><span class="nm"><b>C-Reactive Protein (CRP)</b><span class="sub2">Biochemistry</span></span><span class="res"><b>[result]</b></span><button type="button" class="del" aria-label="Delete test">Delete</button></div>
+        </div>
+      </article>
+      <p class="emptyc">No records (Mona Ragab today)</p>
     </div></div>
-    <p class="note">Bracketed values are placeholders.</p>
   </figure>
 </div>
 
@@ -213,14 +224,14 @@
 <div class="pair">
   <figure>
     <figcaption><b>Dark</b>, after</figcaption>
-    <div class="phone dark"><div class="flat">
-      <div class="rec">
-        <div class="rh"><span class="t">2026-07-25</span><button type="button" class="act" aria-label="Add a test to this report">Add test</button></div>
-        <p class="sub2">Al Borg Medical Labs, 1 test, 28+0 wks</p>
-        <span class="sw sw-neu">All normal</span>
-        <div class="lrow"><span class="nm"><b>Complete Blood Count</b><span class="sub2">Hematology, ref 11.0 - 15.0</span></span><span class="res"><b>11.6 g/dL</b></span><button type="button" class="del" aria-label="Delete test">Delete</button></div>
-        <div class="lrow"><span class="nm"><b>[abnormal test]</b><span class="sub2">[category]</span></span><span class="res"><b class="ab">[result]</b><span class="sw sw-hi">Abnormal</span></span><button type="button" class="del" aria-label="Delete test">Delete</button></div>
-      </div>
+    <div class="phone dark"><div class="screen">
+      <article class="bc fam-hx">
+        <div class="band"><div class="btop"><span class="bchip hi">1 abnormal</span></div><div class="brow"><span class="btitle">2026-07-25</span><button type="button" class="act" aria-label="Add a test to this report">Add test</button></div><p class="sub2">Al Borg Medical Labs, 2 tests, 28+0 wks</p></div>
+        <div class="bbody">
+          <div class="lrow first"><span class="nm"><b>Complete Blood Count</b><span class="sub2">Hematology, ref 11.0 - 15.0</span></span><span class="res"><b>11.6 g/dL</b></span><button type="button" class="del" aria-label="Delete test">Delete</button></div>
+          <div class="lrow"><span class="nm"><b>[abnormal test]</b><span class="sub2">[category]</span></span><span class="res"><b class="ab">[result]</b><span class="sw sw-hi">Abnormal</span></span><button type="button" class="del" aria-label="Delete test">Delete</button></div>
+        </div>
+      </article>
     </div></div>
   </figure>
 </div>
@@ -229,18 +240,19 @@
 <div class="tablewrap"><table>
 <thead><tr><th>Pair</th><th>Text</th><th>Background</th><th>Ratio</th></tr></thead>
 <tbody>
-<tr><td>Heading, test name, normal result, sub-heading (primary)</td><td>#0D1B3D</td><td>#FFFFFF</td><td class="n">16.92</td></tr>
-<tr><td>Grey line, ref line, "All normal"</td><td>#4C3F43</td><td>#FFFFFF</td><td class="n">10.00</td></tr>
-<tr><td>Abnormal result, "Abnormal", "N abnormal" (error)</td><td>#BA1A1A</td><td>#FFFFFF</td><td class="n">6.46</td></tr>
-<tr><td>Dark text / grey / error</td><td>#E2E2EA / #CDC3C6 / #FFB4AB</td><td>#1A202E</td><td class="n">12.64 / 9.47 / 9.59</td></tr>
-<tr><td>Today, for reference: "ALL NORMAL ✓" pill</td><td>#166534</td><td>#DCFCE7</td><td class="n">6.49</td></tr>
+<tr><td>Date on sand band</td><td>#0D1B3D</td><td>#F1EDE4</td><td class="n">14.48</td></tr>
+<tr><td>Lab line on band</td><td>#4C3F43</td><td>#F1EDE4</td><td class="n">8.56</td></tr>
+<tr><td>"All normal" chip (white)</td><td>#4C3F43</td><td>#FFFFFF</td><td class="n">10.00</td></tr>
+<tr><td>"N abnormal" chip</td><td>#8E1B1B</td><td>#FBE3E3</td><td class="n">7.40</td></tr>
+<tr><td>Test name, normal result / ref line</td><td>#0D1B3D / #4C3F43</td><td>#FFFFFF</td><td class="n">16.92 / 10.00</td></tr>
+<tr><td>Abnormal result and word</td><td>#BA1A1A</td><td>#FFFFFF</td><td class="n">6.46</td></tr>
+<tr><td>Dark date on band / abnormal result</td><td>#E2E2EA / #FFB4AB</td><td>#36301F / #1A202E</td><td class="n">10.19 / 9.59</td></tr>
 </tbody></table></div>
 
 <h2>4. Compose mapping</h2>
 <ol class="map">
-  <li>Report: <code>RecordListItem(title = report.date, subtitle = "lab, n tests, GA", actions = { SectionTextAction(Add test) })</code>, tag <code>labReportCard-${date}</code>; status <code>StatusWord</code>.</li>
-  <li>Panel: a 48 dp clickable <code>Row</code> (title <code>RecordType.Action.copy(Bold)</code> primary, <code>StatusWord</code>, chevron) followed by its <code>LabRowItem</code>s; no surface, no border.</li>
-  <li><code>LabRowItem</code>: <code>HorizontalDivider</code> above each row; name, grey ref line, result (error colour and <code>StatusWord("Abnormal")</code> when abnormal), delete icon button.</li>
+  <li><code>RecordBandCard(title = report.date, family = FieldFamilies.background(), subtitle = "lab, n tests, GA", chips = { BandChip(all normal, Neutral) or BandChip(n abnormal, High) }, actions = { SectionTextAction(Add test) })</code>, tag <code>labReportCard-${date}</code>.</li>
+  <li>Body: panels as a 48 dp clickable header row (title, <code>StatusWord</code>, chevron) with their <code>LabRowItem</code>s; individual tests under a sub-heading; rows split by <code>HorizontalDivider</code>.</li>
 </ol>
 
 </main>

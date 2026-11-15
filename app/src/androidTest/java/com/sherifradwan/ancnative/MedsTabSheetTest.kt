@@ -259,26 +259,20 @@ class MedsTabSheetTest {
     private fun merged(tag: String) = compose.onNodeWithTag(tag)
 
     /**
-     * Brings one tile wholly into view: the picker's own list to the tile, then the tab list by the tile's unclipped
-     * position (the tab's scroll-to-node helper measures the clipped bounds, which a nested list cuts short).
+     * Brings one tile into view. The picker is no longer a nested scrolling list: chips/rows live directly in
+     * [medTilesGrid], so we scroll the Meds tab to the grid then to the tile itself.
      */
     private fun showTile(id: String) {
         scrollTo("medTilesGrid")
-        node("medTile-$id").performScrollTo()
-        compose.waitForIdle()
-        val list = node(PatientHubTab.MEDS.contentTag())
-        val viewport = list.fetchSemanticsNode().boundsInRoot
-        val tile = node("medTile-$id").fetchSemanticsNode()
-        val top = tile.positionInRoot.y
-        val bottom = top + tile.size.height
-        val dy = when {
-            bottom > viewport.bottom -> bottom - viewport.bottom
-            top < viewport.top -> top - viewport.top
-            else -> 0f
-        }
-        if (dy != 0f) list.performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, dy) }
-        compose.waitForIdle()
+        scrollTo("medTile-$id")
         node("medTile-$id").assertIsDisplayed()
+    }
+
+    /** "Show all" sits under the chips or rows, often below the screen's end: scroll to it before looking or tapping. */
+    private fun showAllButton() = scrollTo("medPickerShowAll").let { node("medPickerShowAll") }
+    private fun tapShowAll() {
+        showAllButton()
+        click("medPickerShowAll")
     }
 
     private fun openPast() {
@@ -782,7 +776,7 @@ class MedsTabSheetTest {
     }
 
     @Test
-    fun thePickerStartsAsOneRowAndOpensToSearchChipsAndAListThatScrollsInsideItself() {
+    fun thePickerStartsAsOneRowAndOpensToSearchChipsAndShowAll() {
         host()
         scrollTo("medPickerToggle")
         node("medPickerToggle").assertHeightIsAtLeast(48.dp).assertIsEnabled()
@@ -791,13 +785,14 @@ class MedsTabSheetTest {
 
         click("medPickerToggle")
         for (tag in listOf("medSearchField", "medTab-common", "medTab-recent", "medTilesGrid")) node(tag).assertExists()
-        val grid = node("medTilesGrid").fetchSemanticsNode()
-        val density = compose.activity.resources.displayMetrics.density
-        assertTrue("the list is held to about five rows", grid.boundsInRoot.height <= 304 * density + 1f)
-        assertTrue("the demo list has more than five drugs", catalog().size > 5)
-        val range = grid.config[SemanticsProperties.VerticalScrollAxisRange]
-        assertTrue("a long list scrolls inside the picker", range.maxValue() > 0f)
+        // No search: compact name-only chips, no meta rows, capped at 8 with "Show all" when there are more.
+        assertTrue("the demo list has more than eight drugs", catalog().size > 8)
+        val shown = catalog().count { exists("medTile-${it.id}") }
+        assertEquals("no search shows eight chips", 8, shown)
+        catalog().forEach { node("medTileMeta-${it.id}").assertDoesNotExist() }
+        showAllButton().assertIsDisplayed()
 
+        scrollTo("medPickerToggle")
         click("medPickerToggle")
         node("medSearchField").assertDoesNotExist()
         node("medTilesGrid").assertDoesNotExist()
@@ -811,9 +806,17 @@ class MedsTabSheetTest {
         val query = target.name.take(4)
         node("medSearchField").performTextInput(query)
         compose.waitForIdle()
+        val matches = catalog().filter { it.name.contains(query, ignoreCase = true) }
+        val shownMatches = matches.filter { exists("medTile-${it.id}") }
+        // Search shows at most 5 rows (prefix-first). Every shown tile must match; non-matches never show.
+        assertTrue("matching tiles are shown", shownMatches.isNotEmpty())
+        assertTrue("search is capped at five rows", shownMatches.size <= 5)
         for (item in catalog()) {
-            val shown = exists("medTile-${item.id}")
-            assertEquals(item.name, item.name.contains(query, ignoreCase = true), shown)
+            if (exists("medTile-${item.id}")) {
+                assertTrue("${item.name} should match $query", item.name.contains(query, ignoreCase = true))
+            } else if (!item.name.contains(query, ignoreCase = true)) {
+                node("medTile-${item.id}").assertDoesNotExist()
+            }
         }
         node("medSearchField").performTextReplacement("zzqx-no-drug")
         compose.waitForIdle()
@@ -826,6 +829,14 @@ class MedsTabSheetTest {
         host()
         openPicker()
         val item = readyTiles().first()
+        // No search: compact chip shows the name only.
+        showTile(item.id)
+        merged("medTile-${item.id}").assertTextContains(item.name)
+        node("medTileMeta-${item.id}").assertDoesNotExist()
+
+        // Search: full rows show dose · route · frequency in the meta tag.
+        node("medSearchField").performTextInput(item.name)
+        compose.waitForIdle()
         showTile(item.id)
         merged("medTile-${item.id}").assertTextContains(item.name)
         val frequency = com.sherifradwan.ancnative.ui.medicationFrequencyLabelRes(item.frequency)?.let { str(it) } ?: item.frequency
@@ -1114,8 +1125,15 @@ class MedsTabSheetTest {
         compose.assertTextNotClipped("picker row", hasText(str(R.string.add_medication)) and hasAnyAncestor(hasTestTag("medPickerToggle")))
         click("medPickerToggle")
         val item = readyTiles().first()
+        // No search: chip name stays whole.
         showTile(item.id)
         node("medTile-${item.id}").assertHeightIsAtLeast(48.dp)
+        compose.assertTextNotClipped("chip name", hasText(item.name) and hasAnyAncestor(hasTestTag("medTile-${item.id}")))
+        assertInside("medTile-${item.id}", NARROW_HOST)
+        // Search: full row keeps name and meta whole.
+        node("medSearchField").performTextInput(item.name)
+        compose.waitForIdle()
+        showTile(item.id)
         compose.assertTextNotClipped("tile name", hasText(item.name) and hasAnyAncestor(hasTestTag("medTile-${item.id}")))
         compose.assertTextNotClipped("tile meta", hasTestTag("medTileMeta-${item.id}"))
         assertInside("medTile-${item.id}", NARROW_HOST)
@@ -1375,7 +1393,7 @@ class MedsTabSheetTest {
     @Test
     fun searchingThePickerWithTheKeyboardOpenKeepsTheResultsAboveTheKeyboard() {
         host(longList)
-        assertTrue(compose.activity.resources.configuration.screenWidthDp <= 360)
+        assertTrue("run .agents/scripts/set_emulator_360dp.sh first", compose.activity.resources.configuration.screenWidthDp <= 360)
         openPicker()
         scrollTo("medSearchField")
         node("medSearchField").performClick()
@@ -1383,14 +1401,172 @@ class MedsTabSheetTest {
         awaitKeyboard()
         val query = readyTiles().first().name.take(4)
         node("medSearchField").performTextInput(query)
-        // The first result (the list's order) is wholly visible above the keyboard, without closing it.
-        val first = catalog().first { it.name.contains(query, ignoreCase = true) }
+        // The first visible result (prefix-first, capped at 5) is wholly visible above the keyboard.
+        val ranked = catalog()
+            .filter { it.name.contains(query, ignoreCase = true) }
+            .sortedBy { if (it.name.lowercase().startsWith(query.lowercase())) 0 else 1 }
+        val first = ranked.first()
         assertWhollyAboveKeyboard("medTile-${first.id}")
         assertTrue("the keyboard is still up", keyboard() != null)
         // The Search key closes the keyboard; the search text stays.
         node("medSearchField").performImeAction()
         compose.waitUntil(5_000) { keyboard() == null }
         node("medSearchField").assertTextContains(query)
+    }
+
+    @Test
+    fun chipsAreCappedAtEightAndShowAllRevealsTheRest() {
+        host()
+        openPicker()
+        val all = catalog()
+        assertTrue(all.size > 8)
+        assertEquals(8, all.count { exists("medTile-${it.id}") })
+        showAllButton().assertIsDisplayed()
+        merged("medPickerShowAll").assertTextContains(plural(R.plurals.medication_picker_show_all, all.size))
+
+        tapShowAll()
+        all.forEach { showTile(it.id) }
+        assertEquals(all.size, all.count { exists("medTile-${it.id}") })
+        merged("medPickerShowAll").assertTextContains(str(R.string.medication_picker_show_less))
+
+        tapShowAll()
+        compose.waitForIdle()
+        assertEquals(8, all.count { exists("medTile-${it.id}") })
+    }
+
+    @Test
+    fun searchShowsAtMostFiveRowsPrefixFirst() {
+        host()
+        openPicker()
+        // Pick a query that matches many items with mixed prefix/non-prefix so ordering is observable.
+        // Use a single letter likely to match broadly; fall back to a substring of a middle item.
+        val query = "a"
+        val matches = catalog().filter { it.name.contains(query, ignoreCase = true) }
+        assertTrue("need >5 matches to assert cap", matches.size > 5)
+        node("medSearchField").performTextInput(query)
+        compose.waitForIdle()
+        val ranked = matches.sortedBy { if (it.name.lowercase().startsWith(query)) 0 else 1 }
+        val expectedTop = ranked.take(5)
+        // Every of the top 5 ranked must be shown; none beyond unless showAll; all shown are rows with meta.
+        expectedTop.forEach { item ->
+            assertTrue("prefix-first item ${item.name} should be shown", exists("medTile-${item.id}"))
+            node("medTileMeta-${item.id}").assertExists()
+        }
+        assertEquals(5, matches.count { exists("medTile-${it.id}") })
+        // The five rows stand in ranked order, top to bottom.
+        // Unclipped: rows below the screen's end still report where they are laid out.
+        fun rowTop(id: String) = node("medTile-$id").getUnclippedBoundsInRoot().top.value
+        val shownTops = expectedTop.map { rowTop(it.id) }
+        assertEquals("rows in prefix-first order", shownTops.sorted(), shownTops)
+        showAllButton().assertIsDisplayed()
+
+        tapShowAll()
+        assertEquals(matches.size, matches.count { exists("medTile-${it.id}") })
+        matches.forEach { node("medTileMeta-${it.id}").assertExists() }
+        // Still prefix-first with every row shown: each name starting with the query sits above every other.
+        val prefix = ranked.filter { it.name.lowercase().startsWith(query) }
+        val nonPrefix = ranked.filter { !it.name.lowercase().startsWith(query) }
+        if (prefix.isNotEmpty() && nonPrefix.isNotEmpty()) {
+            val lowestPrefix = prefix.maxOf { rowTop(it.id) }
+            val highestOther = nonPrefix.minOf { rowTop(it.id) }
+            assertTrue("prefix matches come first", lowestPrefix < highestOther)
+        }
+    }
+
+    @Test
+    fun showAllResetsWhenTheQueryChanges() {
+        host()
+        openPicker()
+        assertTrue(catalog().size > 8)
+        tapShowAll()
+        assertEquals(catalog().size, catalog().count { exists("medTile-${it.id}") })
+
+        node("medSearchField").performTextInput("a")
+        compose.waitForIdle()
+        // Query changed: showAll reset, so results are capped again (five rows for search).
+        val matches = catalog().filter { it.name.contains("a", ignoreCase = true) }
+        assertTrue("need more than five matches", matches.size > 5)
+        assertEquals(5, matches.count { exists("medTile-${it.id}") })
+        merged("medPickerShowAll").assertTextContains(plural(R.plurals.medication_picker_show_all, matches.size))
+    }
+
+    @Test
+    fun chipTapOpensThePrefilledSheet() {
+        host()
+        openPicker()
+        val item = readyTiles().first()
+        showTile(item.id)
+        // No search: it's a compact chip (no meta).
+        node("medTileMeta-${item.id}").assertDoesNotExist()
+        click("medTile-${item.id}")
+        node("medicationSheet").assertIsDisplayed()
+        val values = state.medicationDraft!!.values
+        assertEquals(item.name, values.name)
+        assertEquals(item.dosage, values.dosage)
+        assertEquals(item.frequency, values.frequency)
+        assertEquals(today, values.startDate)
+    }
+
+    @Test
+    fun newDrugJoinsTheEndAndPickerStaysPut() {
+        host(longList)
+        openPicker()
+        val item = readyTiles().first()
+        // The doctor's view: the open picker on screen with the last active row above it, so a row inserted
+        // before the picker would push it down unless the list holds it in place.
+        showTile(item.id)
+        node("medication-ui-long-12").assertIsDisplayed()
+        val gridTopBefore = top("medTilesGrid")
+        // Add from the picker itself, with no scrolling between the two measurements.
+        click("medTile-${item.id}")
+        // Frame by frame from Save: the picker never moves, not even for one frame before a correcting scroll.
+        compose.mainClock.autoAdvance = false
+        try {
+            node("saveMedication").performClick()
+            repeat(40) { frame ->
+                compose.mainClock.advanceTimeByFrame()
+                assertEquals("the picker moved at frame $frame", gridTopBefore, top("medTilesGrid"), 1f)
+            }
+        } finally {
+            compose.mainClock.autoAdvance = true
+        }
+        compose.waitForIdle()
+        node("medicationSheet").assertDoesNotExist()
+        assertEquals("the picker did not move when the row was added", gridTopBefore, top("medTilesGrid"), 1f)
+        node("medSearchField").assertExists()
+        // The new row is shown right after the last existing active row. Scroll to that row so both are laid out
+        // (on a short 360 dp screen the picker anchor can leave it just above the screen), then compare where the
+        // two are laid out; a row that is not laid out reports NaN and fails the check.
+        val added = state.patient(patient.id)!!.medications.first { it.name == item.name }
+        scrollTo("medication-ui-long-12")
+        val lastTop = node("medication-ui-long-12").getUnclippedBoundsInRoot().top.value
+        val addedTop = node("medication-${added.id}").getUnclippedBoundsInRoot().top.value
+        val gridTop = node("medPicker").getUnclippedBoundsInRoot().top.value
+        assertTrue(
+            "the new drug sits between the last existing active row and the picker (last $lastTop, new $addedTop, picker $gridTop)",
+            lastTop < addedTop && addedTop < gridTop,
+        )
+    }
+
+    @Test
+    fun underTheSheetTheControlsAreDisabledButTheSearchFieldStaysEnabled() {
+        host()
+        openPicker()
+        scrollTo("addCustomMedicationBtn")
+        click("addCustomMedicationBtn")
+        node("medicationSheet").assertIsDisplayed()
+        scrollTo("medPickerToggle")
+        node("medPickerToggle").assertIsNotEnabled()
+        // The search field stays enabled under the sheet; chips and the Add button are disabled.
+        node("medSearchField").assertIsEnabled()
+        merged("medTab-common").assertIsNotEnabled()
+        scrollTo("addCustomMedicationBtn")
+        node("addCustomMedicationBtn").assertIsNotEnabled()
+        click("cancelMedication")
+        node("medicationSheet").assertDoesNotExist()
+        scrollTo("medPickerToggle")
+        node("medPickerToggle").assertIsEnabled()
+        merged("medTab-common").assertIsEnabled()
     }
 
     /** WCAG contrast of two opaque colours. */

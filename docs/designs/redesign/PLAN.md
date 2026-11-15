@@ -173,25 +173,25 @@ Each slice is one builder lane, one branch, at most about five main files. "Mock
 - Files: `ui/PatientListScreen.kt` (level 3, drawing code only, logic untouched), `patientdirectory/PatientActionsModalSheet.kt`, `strings.xml`. `DashboardSort.kt` is not touched.
 - Tests needing edits: none expected. Depends on: 1B (and `RecordType.HeaderName` from 4, or adds it). Risk: medium-high.
 
-### Slice 6. Visits tab (flat list) and the shared flat-list pieces
-- Brief: `slice_06_visits.md`. Mock: `mocks/mock_s06_visits.html` (done, flat-list version).
-- Scope: visits as flat rows (date heading with Delete and Edit, grey GA line, vitals as plain label-over-value, hairline dividers); flags as coloured words; pre-eclampsia as a red label over its sentence; BP alert copy without "▲" and "·" (owner decision 6). Adds the shared `RecordListItem`, `RecordListDivider` (`ui/components/RecordList.kt`), `PlainField` (`MetricCell.kt`) and `StatusWord` / `StatusTone` (`StatusTag.kt`).
-- Files: the three shared files above, `tabs/VisitsTab.kt`, `components/BedsideVitalsGrid.kt`, `strings.xml`. Risk: medium. Depends on: 0 to 5.
+### Slice 6. Visits tab (band cards) and the shared band-card pieces
+- Brief: `slice_06_visits.md`. Mock: `mocks/mock_s06_visits.html` (third version, band cards).
+- Scope: one `RecordBandCard` per visit: Patient-family (blue) band with the GA chip, "Scan linked", the worst flag chip ("Pre-eclampsia risk", "Severe BP", "Raised BP"), the date and Delete / Edit; quiet body with vitals as plain label-over-value and per-value flag words. BP alert copy without "▲" and "·" (owner decision 6). Adds the shared `RecordBandCard` (`ui/components/RecordBandCard.kt`), `BandChip`, `StatusWord` / `StatusTone` (`StatusTag.kt`) and `PlainField` (`MetricCell.kt`).
+- Files: the shared files above, `tabs/VisitsTab.kt`, `components/BedsideVitalsGrid.kt`, `strings.xml`. Risk: medium. Depends on: 0 to 5.
 
-### Slice 7. Scans tab (flat list)
-- Brief: `slice_07_scans.md`. Mock: `mocks/mock_s07_scans.html` (done).
-- Scope: scans as flat rows; biometry and anatomy as plain fields in three columns; impression as a plain field; photo buttons kept.
+### Slice 7. Scans tab (band cards)
+- Brief: `slice_07_scans.md`. Mock: `mocks/mock_s07_scans.html`.
+- Scope: one card per scan with an Obstetric (teal) band (GA chip, photo count chip, date, actions); biometry and anatomy as plain fields in three columns; photo buttons kept.
 - Files: `tabs/ScansTab.kt`, `components/BiometryGrid.kt`, `strings.xml`. Risk: low-medium. Depends on: 6.
 
-### Slice 8. Labs tab (flat list)
-- Brief: `slice_08_labs.md`. Mock: `mocks/mock_s08_labs.html` (done).
-- Scope: reports as flat rows with a grey line (lab, "n tests", GA) and a status word; panels as sub-headings that open and close, not boxes; test rows split by hairlines; abnormal results red with the word "Abnormal". Grouping rule untouched (a panel needs at least two members).
+### Slice 8. Labs tab (band cards)
+- Brief: `slice_08_labs.md`. Mock: `mocks/mock_s08_labs.html`.
+- Scope: one card per report with a Background (sand) band (status chip "All normal" or "N abnormal", date, "Add test", lab line); panels as sub-headings inside the body; test rows split by hairlines; abnormal results red with "Abnormal". Grouping rule untouched.
 - Files: `tabs/LabsTab.kt`, `components/LabReportItem.kt`, `strings.xml`. Risk: medium. Depends on: 6.
 
-### Slice 9. Meds tab (flat rows, restyle only)
-- Brief: `slice_09_meds.md`. Mock: `mocks/mock_s09_meds.html` (done, revised after the owner's feedback).
-- Scope: one row per drug (name and dose; route and frequency; status word at the end; Stop one tap); Edit and Delete in the opened row; compact picker and undo bar. No Meds stage 2.
-- Files: `components/MedicationCard.kt`, `tabs/MedsTab.kt`, `components/MedicationTapToAddSection.kt`, `components/MedicationStopBar.kt`, `strings.xml`. Tests needing edits: `MedsTabSheetTest` (instructions text, open-before-edit). Risk: medium. Depends on: 6.
+### Slice 9. Meds tab TUNE (no redesign)
+- Brief: `slice_09_meds_tune.md`. No mock (the look stays). The redesign brief and the meds option mocks are withdrawn.
+- Scope: type tokens swapped in where direct, text under 12 sp lifted, radii 10 and 16, list spacing and dead space; optional two-value style fix in level-3 `MedicationStatusBadge`. The two functional meds defects are handled separately by the coordinator.
+- Files: `components/MedicationCard.kt`, `tabs/MedsTab.kt`, `components/MedicationTapToAddSection.kt`, `components/MedicationStopBar.kt`, optionally `ui/ClinicalBadges.kt`. Risk: low.
 
 ### Slice 10. Plan tab and attachments
 - Files: `tabs/PlanTab.kt`, `components/AttachmentsSectionCard.kt`, `ui/AddAttachmentDialog.kt`, `ui/ClinicalAttachmentViewerDialog.kt` (level 3).
@@ -282,13 +282,11 @@ Every mock follows mock D's rules: one self-contained HTML file, 360 px frames, 
 11. No "Normal risk" tag in the header for low-risk patients: the header shows a risk tag only for Moderate and High risk. The `NormalRisk` StatusKind is not needed; remove it from the slice 4 brief.
 
 
-## 8. Owner rule for lists (2026-11-15)
+## 8. Owner direction for record lists (2026-11-15, final)
 
-Feedback on the first meds mock: "more elaborating than needed with all these squares". From now on:
-- Tinted `LabeledValue` boxes only where the user edits or where a few key facts sit (the Overview sections, the delivery card).
-- Dense lists (visits, scans, labs, medications, and later lists) are flat: rows on the tab surface, a heading per record, label-over-value in plain text, hairline dividers between records. No card per record, no box inside a box, no filled pill per value.
-- Status in lists is a coloured word (`StatusWord`), not a filled tag; only what needs attention is coloured; non-compliant stays an error word.
-- Entry stays fast and low-fatigue: Stop one tap on the row, compact picker and undo bar.
-
-## 9. Owner direction (2026-11-15, after the Meds options)
-"i think the current working design can be tuned only." Slices 6 to 9 (visits, scans, labs, meds) and every later slice are PAUSED as redesigns. From now on those screens are only TUNED: keep today's layout and look, change only spacing, dead space, label and value contrast, shared tokens and obvious defects. Slices 0 to 5 are built on branch redesign-2026-11-15 and wait for the owner to look at them on the phone before anything else is built.
+Three rounds: mock D's tinted box per field was "too many squares" for lists; the flat list was "too plain". The middle, chosen by the owner from the meds options (Option A):
+- ONE container per record (`RecordBandCard`): a family-colour header band holds filled status-word chips (`BandChip`), the record title and the one-tap actions; a quiet white body holds plain label-over-value text (`PlainField`) and value flags as coloured words (`StatusWord`).
+- No tinted box per field, no box inside a box, no filled pill inside the body.
+- Family colour per tab gives rhythm and identity: visits blue (Patient), scans teal (Obstetric), labs sand (Background).
+- Tinted `LabeledValue` boxes stay only where the user edits or where a few key facts sit (Overview, delivery card).
+- Meds is tuned only (slice 9), not redesigned.

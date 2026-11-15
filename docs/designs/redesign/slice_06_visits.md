@@ -1,8 +1,8 @@
-# Slice 6: Visits tab (flat list) and the shared flat-list pieces
+# Slice 6: Visits tab (band cards) and the shared band-card pieces
 
 Builder brief, self-contained. Look: `docs/designs/redesign/mocks/mock_s06_visits.html`. Rules: `docs/designs/redesign/PLAN.md` sections 0, 2, 6, 7 and 8. Components as built: `ui/components/RecordTokens.kt`, `RecordSectionCard.kt` (`SectionTextAction`), `StatusTag.kt`, `MetricCell.kt`. Read them; do not re-spec them.
 
-**Owner rule for lists (2026-11-15):** "more elaborating than needed with all these squares". Dense lists (visits, scans, labs, medications) are flat rows: a heading, label-over-value in plain text, hairline dividers. No card per record, no box inside a box, no tinted `LabeledValue` box per field, no coloured fill except a status word. Tinted `LabeledValue` boxes stay only where the user edits or where a few key facts sit (Overview).
+**Owner direction for record lists (2026-11-15):** mock D's tinted box per field was "too many squares", the flat list "too plain". The middle (the "one card per medication" Option A the owner preferred on the withdrawn meds options page; the look is reproduced in `mocks/mock_s06_visits.html`): ONE container per record; a family-colour header band that holds filled status-word chips, the record title and the one-tap actions; a quiet white body with plain label-over-value text. No tinted box per field, no box inside a box. Tinted `LabeledValue` boxes stay only where the user edits or where a few key facts sit (Overview).
 
 Branch per coordinator; `.agents/scripts/git_audit.sh` before work and before push; `.agents/pipeline/HANDOFF_AGY.md` updated in the same commit.
 
@@ -16,7 +16,7 @@ Never touch: `app/schemas/**`, `storage/RecordsDatabase.kt`, `storage/RecordEnti
 
 - 6: BP alert copy loses the triangle and middle dots.
 - 9: GA reads "28+0 wks" everywhere (`shortWeeksText`).
-- 11 (spirit) and the list rule above: only what needs attention gets a coloured word; normal values get none.
+- 11 (spirit): only what needs attention gets a coloured chip or word; normal values get none.
 
 ## Lessons from slices 0 to 5 (apply all)
 
@@ -30,10 +30,10 @@ Never touch: `app/schemas/**`, `storage/RecordsDatabase.kt`, `storage/RecordEnti
 
 | File | Action |
 |---|---|
-| `ui/components/RecordList.kt` | new: `RecordListItem`, `RecordListDivider` (shared by slices 6 to 9) |
+| `ui/components/RecordBandCard.kt` | new: `RecordBandCard` (shared by slices 6 to 8) |
 | `ui/components/MetricCell.kt` | add `PlainField` |
-| `ui/components/StatusTag.kt` | add `StatusTone` and `StatusWord` |
-| `ui/patienthub/tabs/VisitsTab.kt` (267 lines) | restyle to a flat list |
+| `ui/components/StatusTag.kt` | add `StatusTone`, `StatusWord` and `BandChip` |
+| `ui/patienthub/tabs/VisitsTab.kt` (267 lines) | restyle to band cards |
 | `ui/patienthub/components/BedsideVitalsGrid.kt` (265 lines) | rewrite drawing on `PlainField` and `StatusWord` (same signature) |
 | `app/src/main/res/values/strings.xml` | change 2 values, add strings |
 
@@ -72,25 +72,54 @@ fun PlainField(label: String, value: String?, modifier: Modifier = Modifier, emp
 ```
 Values wrap (no `maxLines`), unlike `MetricValue`. No box.
 
-### `RecordListItem` and `RecordListDivider` (new `ui/components/RecordList.kt`)
+### `BandChip` (in `StatusTag.kt`)
 
 ```kotlin
 @Composable
-fun RecordListItem(title: String, modifier: Modifier = Modifier, subtitle: String? = null, actions: (@Composable RowScope.() -> Unit)? = null, content: @Composable ColumnScope.() -> Unit) {
-    Column(modifier.fillMaxWidth().padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(title, style = RecordType.CardName, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f).semantics { heading() })
-            actions?.invoke(this)
-        }
-        subtitle?.let { Text(it, style = RecordType.Secondary, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        content()
+fun BandChip(text: String, tone: StatusTone?, modifier: Modifier = Modifier, family: FieldFamily = currentFieldFamily()) {
+    val dark = isDarkTheme()
+    val (bg, border, fg) = when (tone) {
+        null -> Triple(MaterialTheme.colorScheme.surface, Color.Transparent, family.label)            // info: GA, "Scan linked", "2 photos"
+        StatusTone.Neutral -> Triple(MaterialTheme.colorScheme.surface, Color.Transparent, MaterialTheme.colorScheme.onSurfaceVariant)
+        StatusTone.Moderate -> if (dark) Triple(StatusModerateDarkBg, StatusModerateDarkBorder, StatusModerateDarkText) else Triple(StatusModerateBg, StatusModerateBorder, StatusModerateText)
+        StatusTone.High -> if (dark) Triple(StatusHighDarkBg, StatusHighDarkBorder, StatusHighDarkText) else Triple(StatusHighBg, StatusHighBorder, StatusHighText)
+    }
+    Surface(shape = RecordShapes.Small, color = bg, border = BorderStroke(1.dp, border), modifier = modifier.heightIn(min = 24.dp)) {
+        Text(text, style = RecordType.Tag.copy(fontWeight = FontWeight.Bold), color = fg, maxLines = 1, modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp))
     }
 }
-
-@Composable
-fun RecordListDivider() = HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
 ```
-The tab's `LazyColumn` draws `RecordListDivider()` between items (not inside items), so items stay lazy.
+Contrast: info chip label on white 8.60 to 10.07 (dark 9.44 to 10.58), neutral 10.00 / 9.47, amber 7.19 / 9.44, red 7.40 / 10.19.
+
+### `RecordBandCard` (new `ui/components/RecordBandCard.kt`)
+
+```kotlin
+@Composable
+fun RecordBandCard(
+    title: String,
+    family: FieldFamily,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    chips: (@Composable FlowRowScope.() -> Unit)? = null,
+    actions: (@Composable RowScope.() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    OutlinedCard(modifier.fillMaxWidth(), shape = RecordShapes.Large, colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+        CompositionLocalProvider(LocalFieldFamily provides family) {
+            Column(Modifier.fillMaxWidth().background(family.container).padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                chips?.let { FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp), content = it) }
+                Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(title, style = RecordType.CardName, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f).semantics { heading() })
+                    actions?.invoke(this)
+                }
+                subtitle?.let { Text(it, style = RecordType.Secondary, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(end = 8.dp)) }
+            }
+            Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp), content = content)
+        }
+    }
+}
+```
+One container; the band is the card's own top area (no border, no inset), the body is plain. Never put a `LabeledValue`, a filled `Surface` or another card inside `content`. Light band text on `family.container`: 14.19 to 14.54; dark 9.75 to 10.88.
 
 ## 2. Strings
 
@@ -101,7 +130,9 @@ Add:
 <string name="visits_tab_title">Antenatal visits (%1$d)</string>
 <string name="record_visit_action">Record visit</string>
 <string name="no_records">No records</string>
-<string name="scan_linked">scan linked</string>
+<string name="scan_linked">Scan linked</string>
+<string name="band_severe_bp">Severe BP</string>
+<string name="band_raised_bp">Raised BP</string>
 <string name="pre_eclampsia_risk_label">Pre-eclampsia risk</string>
 <string name="pre_eclampsia_risk_text">Elevated BP (%1$s) with proteinuria (%2$s). Clinical evaluation required.</string>
 <string name="vital_blood_pressure">Blood pressure</string>
@@ -122,16 +153,22 @@ Reuse `action_edit`, `edit_visit`, `not_recorded`. Keep `record_visit` ("Record 
 
 ## 3. `VisitsTab` (same signature)
 
-- `LazyColumn(modifier.fillMaxSize().background(colorScheme.surface).testTag("visitsTabContent"), contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 48.dp))`, no `verticalArrangement` spacing (dividers separate).
-- Header item: `Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), SpaceBetween, CenterVertically)`: `Text(stringResource(R.string.visits_tab_title, patient.visits.size), RecordType.SectionTitle, primary, Modifier.weight(1f, fill = false))`; same gate `Button(onClick = { onStartVisit(patient.id, null) }, shape = RecordShapes.Small, contentPadding = PaddingValues(horizontal = 16.dp), modifier = Modifier.heightIn(min = 48.dp).testTag("recordNewVisitBtn")) { Text(record_visit_action, RecordType.Action) }`.
-- Empty: `Text(no_records, RecordType.FieldValue, onSurfaceVariant, Modifier.padding(vertical = 16.dp))`.
-- Items: `itemsIndexed(patient.visits, key = { _, v -> v.id }) { index, visit -> if (index > 0) RecordListDivider(); VisitRow(...) }` (or `items` with a divider drawn above all but the first).
-- `VisitRow` (keep every `remember` computation; GA text becomes `gaAtVisit?.shortWeeksText`):
+- `LazyColumn(modifier.fillMaxSize().testTag("visitsTabContent"), contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 48.dp), verticalArrangement = Arrangement.spacedBy(12.dp))` on the page background; keys unchanged.
+- Header item: `Row(Modifier.fillMaxWidth(), SpaceBetween, CenterVertically)`: `Text(stringResource(R.string.visits_tab_title, patient.visits.size), RecordType.SectionTitle, primary, Modifier.weight(1f, fill = false))`; same gate `Button(onClick = { onStartVisit(patient.id, null) }, shape = RecordShapes.Small, contentPadding = PaddingValues(horizontal = 16.dp), modifier = Modifier.heightIn(min = 48.dp).testTag("recordNewVisitBtn")) { Text(record_visit_action, RecordType.Action) }`.
+- Empty: `OutlinedCard(shape = RecordShapes.Large, border = 1.dp outlineVariant)` with `Text(no_records, RecordType.FieldValue, onSurfaceVariant, Modifier.padding(16.dp))`.
+- Visit item (keep every `remember`; GA text becomes `gaAtVisit?.shortWeeksText`):
 ```kotlin
-RecordListItem(
+RecordBandCard(
     title = visit.date,
-    subtitle = listOfNotNull(gaText?.let(::ltrIsolate), if (visit.linkedUltrasoundId != null) stringResource(R.string.scan_linked) else null).joinToString(", ").ifEmpty { null },
+    family = FieldFamilies.patient(),
     modifier = Modifier.testTag("visit-${visit.id}"),
+    chips = if (gaText != null || linked || worstFlag != null) {
+        {
+            gaText?.let { BandChip(ltrIsolate(it), tone = null, modifier = Modifier.testTag("gestationalAgeBadge")) }
+            if (visit.linkedUltrasoundId != null) BandChip(stringResource(R.string.scan_linked), tone = null)
+            worstFlag?.let { (text, tone) -> BandChip(text, tone) }
+        }
+    } else null,
     actions = if (canEdit) {
         {
             DeleteIconButton(type = DeletableType.VISIT, record = visit, onClick = { onEvent(AncEvent.RequestDelete(patient.id, DeletableType.VISIT, visit.id)) })
@@ -147,8 +184,9 @@ RecordListItem(
     if (!visit.notes.isNullOrBlank()) Text(visit.notes, RecordType.FieldValue, onSurface)
 }
 ```
-- GA tag for the marker test: the subtitle `Text` gets `Modifier.testTag("gestationalAgeBadge")` when GA is known (`RecordListItem` takes an optional `subtitleTag: String?`; add it). `DatingGaMarkerSurfacesTest.visitGaBadgesNeverShowTheMarkerEvenForADiscordantPatient` counts that tag >= 1 and markers == 0.
-- Removed: the `Card`, the header `BpAlertLabel` (the vitals show the same level as a word), the "Scan Linked" pill, the bottom action row, the `Add` icon, the pre-eclampsia filled box and warning icon.
+- `worstFlag` (display only, derived from values already computed): pre-eclampsia warning -> (`pre_eclampsia_risk_label`, High); else `vitals.bpLevel == SEVERE` -> (`band_severe_bp` "Severe BP", High); else `RAISED` -> (`band_raised_bp` "Raised BP", Moderate); else null. Add those two strings.
+- The GA chip carries `gestationalAgeBadge`, so `DatingGaMarkerSurfacesTest.visitGaBadgesNeverShowTheMarkerEvenForADiscordantPatient` keeps counting it.
+- Removed: the tinted `Card`, the header `BpAlertLabel`, the "Scan Linked" secondary pill, the bottom action row, the `Add` icon, the filled pre-eclampsia box and its icon.
 
 ## 4. `BedsideVitalsGrid(vitals, modifier, compact = false)`
 
@@ -179,7 +217,8 @@ Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp
 6. Edit, delete, Record visit >= 47.9 dp.
 7. 360 dp, font scale 1.3: the two vitals columns do not overlap; words wrap inside their column.
 8. RTL: title right, actions left; values isolated.
-9. Dark theme renders the words in dark colours.
+9. Dark theme renders the chips and words in dark colours.
+10. A visit with severe BP shows the red "Severe BP" chip in its band; a raised one the amber "Raised BP"; a normal visit no flag chip.
 
 ## Tests (written by a different lane from this spec)
 
@@ -208,7 +247,7 @@ Render once per test: `compose.setContent { AncTheme { VisitsTab(patient = p, ca
 
 Cases (thresholds from `bpLevel`: severe >= 160 or >= 110, raised >= 140 or >= 90; pre-eclampsia needs raised BP plus urine protein with "+" or "Trace"; FHR < 110 brady, > 160 tachy):
 - `visit("v1", "2026-07-25", "120/78", "71.5 kg", "FH 28 cm")`: labels "Blood pressure", "Weight", "Fundal height"; `hasText("120/78 mmHg", substring = true)`; no "Raised, recheck" or "Severe, urgent"; `gestationalAgeBadge` text contains "28+0 wks".
-- `bp = "145/92"`: "Raised, recheck"; `bp = "165/115"`: "Severe, urgent".
+- `bp = "145/92"`: "Raised, recheck" in the body and "Raised BP" in the band; `bp = "165/115"`: "Severe, urgent" and "Severe BP"; the normal visit has neither band chip.
 - `bp = "150/100"`, `findings = "Urine protein 2+"`: `preEclampsiaWarning-v1` displayed with "Pre-eclampsia risk".
 - `findings = "FHR 100"`: "Bradycardia (<110)".
 - `bp = null`: "Not recorded" under "Blood pressure".
@@ -219,4 +258,4 @@ Cases (thresholds from `bpLevel`: severe >= 160 or >= 110, raised >= 140 or >= 9
 
 ## Risk
 
-Medium. Three new shared pieces used by slices 7 to 9; review them first.
+Medium. Four new shared pieces (`RecordBandCard`, `BandChip`, `PlainField`, `StatusWord`) used by slices 7 and 8; review them first.

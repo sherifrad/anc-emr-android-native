@@ -75,6 +75,8 @@ internal fun DeleteIconButton(
     modifier: Modifier = Modifier,
     tag: String? = null,
     enabled: Boolean = true,
+    /** Dimmed look; differs from "not enabled" only while a sheet covers the screen. */
+    dimmed: Boolean = !enabled,
 ) {
     val recordId = record.id
     // A type/record mismatch draws nothing instead of throwing while the screen is composed.
@@ -89,7 +91,7 @@ internal fun DeleteIconButton(
         Icon(
             Icons.Default.Delete,
             contentDescription = stringResource(R.string.delete_record_description, stringResource(type.labelResource()), label),
-            tint = if (enabled) MaterialTheme.colorScheme.error else LocalContentColor.current,
+            tint = if (!dimmed) MaterialTheme.colorScheme.error else LocalContentColor.current,
             modifier = Modifier.size(20.dp),
         )
     }
