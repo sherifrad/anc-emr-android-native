@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
@@ -29,12 +30,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.state.SavePhase
 import com.sherifradwan.ancnative.state.SaveUiError
 import com.sherifradwan.ancnative.state.stringRes
+import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordType
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
 
 @Composable
@@ -65,13 +69,13 @@ internal fun SheetSaveMessage(
         if (isFailure) {
             Text(
                 text = failedTitle,
-                style = MaterialTheme.typography.titleSmall,
+                style = RecordType.Action.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.error,
             )
         }
         Text(
             text = message,
-            style = MaterialTheme.typography.bodyMedium,
+            style = RecordType.Secondary,
             color = if (isFailure || fieldErrorMessage != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
         )
     }
@@ -89,25 +93,28 @@ internal fun SheetCancelSaveRow(
     cancelTag: String,
     saveTag: String,
     spinnerTag: String,
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         OutlinedButton(
             onClick = onCancel,
             enabled = enabled,
+            shape = RecordShapes.Small,
             contentPadding = PaddingValues(horizontal = 8.dp),
-            modifier = Modifier.weight(1f).minimumTouchTarget().testTag(cancelTag),
+            modifier = Modifier.weight(1f).heightIn(min = 48.dp).minimumTouchTarget().testTag(cancelTag),
         ) {
-            Text(stringResource(R.string.cancel), maxLines = 2, textAlign = TextAlign.Center)
+            Text(stringResource(R.string.cancel), style = RecordType.Action, maxLines = 2, textAlign = TextAlign.Center)
         }
         Button(
             onClick = onSave,
             enabled = enabled && saveEnabled,
+            shape = RecordShapes.Small,
             contentPadding = PaddingValues(horizontal = 8.dp),
-            modifier = Modifier.weight(1f).minimumTouchTarget().testTag(saveTag),
+            modifier = Modifier.weight(1f).heightIn(min = 48.dp).minimumTouchTarget().testTag(saveTag),
         ) {
             if (saving) {
                 CircularProgressIndicator(
@@ -118,6 +125,7 @@ internal fun SheetCancelSaveRow(
             }
             Text(
                 savingLabel,
+                style = RecordType.Action,
                 maxLines = 2,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(start = if (saving) 8.dp else 0.dp),
@@ -137,19 +145,23 @@ internal fun DiscardChangesDialog(
 ) {
     AlertDialog(
         onDismissRequest = onKeep,
-        title = { Text(stringResource(R.string.discard_changes)) },
-        text = { Text(stringResource(R.string.discard_body)) },
+        shape = RecordShapes.Large,
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = { Text(stringResource(R.string.discard_changes), style = RecordType.SectionTitle, color = MaterialTheme.colorScheme.onSurface) },
+        text = { Text(stringResource(R.string.discard_body), style = RecordType.FieldValue, color = MaterialTheme.colorScheme.onSurfaceVariant) },
         confirmButton = {
             TextButton(
                 onClick = onDiscard,
+                shape = RecordShapes.Small,
                 modifier = Modifier.minimumTouchTarget().testTag(confirmTag),
-            ) { Text(stringResource(R.string.discard)) }
+            ) { Text(stringResource(R.string.discard), style = RecordType.Action, color = MaterialTheme.colorScheme.error) }
         },
         dismissButton = {
             TextButton(
                 onClick = onKeep,
+                shape = RecordShapes.Small,
                 modifier = Modifier.minimumTouchTarget().testTag(keepTag),
-            ) { Text(stringResource(R.string.keep_editing)) }
+            ) { Text(stringResource(R.string.keep_editing), style = RecordType.Action, color = MaterialTheme.colorScheme.primary) }
         },
         modifier = Modifier.testTag(dialogTag),
     )

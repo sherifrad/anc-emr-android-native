@@ -6,18 +6,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,7 +23,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -51,6 +44,9 @@ import com.sherifradwan.ancnative.state.ClinicalValidationError
 import com.sherifradwan.ancnative.state.DEFAULT_MEDICATION_ROUTE
 import com.sherifradwan.ancnative.state.MedicationDraftField
 import com.sherifradwan.ancnative.state.MedicationDraftValues
+import com.sherifradwan.ancnative.ui.components.FormFieldLabel
+import com.sherifradwan.ancnative.ui.components.RecordType
+import com.sherifradwan.ancnative.ui.components.currentFieldFamily
 import com.sherifradwan.ancnative.ui.BigChoiceButton
 import com.sherifradwan.ancnative.ui.COMMON_MEDICATION_FREQUENCIES
 import com.sherifradwan.ancnative.ui.ChoiceGroup
@@ -181,11 +177,13 @@ fun MedicationForm(
                 onSelected = { change(MedicationDraftField.ROUTE, it) },
                 includeUnknown = false,
                 rowGap = 0.dp,
+                labelStyle = RecordType.FieldLabel,
+                labelColor = currentFieldFamily().label,
             )
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(stringResource(R.string.frequency), style = MaterialTheme.typography.titleMedium)
+            FormFieldLabel(stringResource(R.string.frequency))
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(0.dp),
@@ -243,7 +241,7 @@ fun MedicationForm(
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(stringResource(R.string.status), style = MaterialTheme.typography.titleMedium)
+            FormFieldLabel(stringResource(R.string.status))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 listOf(
                     MedicationOnOff.ON to stringResource(R.string.medication_status_active),
@@ -298,23 +296,11 @@ private fun RouteReadOnly(route: String) {
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier.fillMaxWidth().testTag("medRouteReadOnly"),
     ) {
-        Text(label, style = MaterialTheme.typography.titleMedium)
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier,
-        ) {
-            Icon(
-                Icons.Default.Lock,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(16.dp),
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(route, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.testTag("medRouteValue"))
-        }
+        FormFieldLabel(label)
+        Text(route, style = RecordType.FieldValue, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.testTag("medRouteValue"))
         Text(
             text = stringResource(R.string.medication_route_locked_note),
-            style = MaterialTheme.typography.bodySmall,
+            style = RecordType.Secondary,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }

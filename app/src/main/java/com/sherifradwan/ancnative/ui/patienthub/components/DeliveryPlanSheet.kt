@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -11,6 +12,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -18,8 +20,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -40,6 +45,11 @@ import com.sherifradwan.ancnative.state.DeliveryPlanField
 import com.sherifradwan.ancnative.state.PatientDraft
 import com.sherifradwan.ancnative.state.SavePhase
 import com.sherifradwan.ancnative.state.SaveUiError
+import com.sherifradwan.ancnative.ui.components.FieldFamilies
+import com.sherifradwan.ancnative.ui.components.FormFieldLabel
+import com.sherifradwan.ancnative.ui.components.LocalFieldFamily
+import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordType
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 
@@ -82,89 +92,96 @@ fun DeliveryPlanSheet(
             needsConfirm = draft.deliveryPlanTouched,
             onNeedsConfirm = { confirmDiscard = true },
         ),
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RecordShapes.Sheet,
         modifier = Modifier.testTag("deliveryPlanSheet"),
     ) {
-        Column(modifier = Modifier.fillMaxWidth().imePadding()) {
-            if (saving) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth().testTag("deliveryPlanSaveProgress"))
-            }
-            Text(
-                text = stringResource(R.string.edit_delivery_plan),
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .semantics { heading() },
-            )
-            Column(
-                modifier = Modifier
-                    .weight(1f, fill = false)
-                    .verticalScroll(rememberScrollState())
-                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                SheetSaveMessage(
-                    savePhase = savePhase,
-                    saveError = saveError,
-                    fieldErrorMessage = if (draft.errors.isEmpty()) null else if (draft.errors.none { it !in deliveryErrors }) null else stringResource(R.string.delivery_plan_profile_invalid),
-                    failedTitle = stringResource(R.string.delivery_plan_save_failed_title),
-                    tag = "deliveryPlanSaveMessage",
+        CompositionLocalProvider(LocalFieldFamily provides FieldFamilies.delivery()) {
+            Column(modifier = Modifier.fillMaxWidth().imePadding()) {
+                if (saving) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth().testTag("deliveryPlanSaveProgress"))
+                }
+                Text(
+                    text = stringResource(R.string.edit_delivery_plan),
+                    style = RecordType.SectionTitle,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
+                        .semantics { heading() },
                 )
-                DeliveryOutcomeSection(
-                    draft = draft,
-                    enabled = enabled,
-                    onEvent = onEvent,
-                )
-                if (fields.rewritesNotes) {
-                    Text(
-                        text = stringResource(R.string.delivery_plan_rewrite_notice),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.fillMaxWidth().testTag("deliveryPlanRewriteNotice"),
+                Column(
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .verticalScroll(rememberScrollState())
+                        .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    SheetSaveMessage(
+                        savePhase = savePhase,
+                        saveError = saveError,
+                        fieldErrorMessage = if (draft.errors.isEmpty()) null else if (draft.errors.none { it !in deliveryErrors }) null else stringResource(R.string.delivery_plan_profile_invalid),
+                        failedTitle = stringResource(R.string.delivery_plan_save_failed_title),
+                        tag = "deliveryPlanSaveMessage",
+                    )
+                    if (fields.rewritesNotes) {
+                        Text(
+                            text = stringResource(R.string.delivery_plan_rewrite_notice),
+                            style = RecordType.Secondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.fillMaxWidth().testTag("deliveryPlanRewriteNotice"),
+                        )
+                    }
+                    PlanField(
+                        label = stringResource(R.string.delivery_hospital_label),
+                        value = fields.hospital,
+                        minLines = 1,
+                        enabled = enabled,
+                        fieldTag = "deliveryPlanHospitalField",
+                        hint = { Text(stringResource(R.string.delivery_hospital_hint)) },
+                    ) { onEvent(AncEvent.DeliveryPlanFieldChanged(DeliveryPlanField.HOSPITAL, it)) }
+                    PlanField(
+                        label = stringResource(R.string.delivery_fees_label),
+                        value = fields.fees,
+                        minLines = 1,
+                        enabled = enabled,
+                        fieldTag = "deliveryPlanFeesField",
+                        hint = { Text(stringResource(R.string.delivery_fees_hint)) },
+                    ) { onEvent(AncEvent.DeliveryPlanFieldChanged(DeliveryPlanField.FEES, it)) }
+                    PlanField(
+                        label = stringResource(R.string.delivery_plan_label),
+                        value = fields.plan,
+                        minLines = 3,
+                        enabled = enabled,
+                        fieldTag = "deliveryPlanPlanField",
+                    ) { onEvent(AncEvent.DeliveryPlanFieldChanged(DeliveryPlanField.PLAN, it)) }
+                    PlanField(
+                        label = stringResource(R.string.delivery_postpartum_label),
+                        value = fields.postpartum,
+                        minLines = 1,
+                        enabled = enabled,
+                        fieldTag = "deliveryPlanPostpartumField",
+                    ) { onEvent(AncEvent.DeliveryPlanFieldChanged(DeliveryPlanField.POSTPARTUM, it)) }
+                    DeliveryOutcomeSection(
+                        draft = draft,
+                        enabled = enabled,
+                        onEvent = onEvent,
                     )
                 }
-                PlanField(
-                    label = stringResource(R.string.delivery_hospital_title),
-                    value = fields.hospital,
-                    minLines = 1,
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                SheetCancelSaveRow(
                     enabled = enabled,
-                    fieldTag = "deliveryPlanHospitalField",
-                    hint = { Text(stringResource(R.string.delivery_hospital_hint)) },
-                ) { onEvent(AncEvent.DeliveryPlanFieldChanged(DeliveryPlanField.HOSPITAL, it)) }
-                PlanField(
-                    label = stringResource(R.string.delivery_fees_title),
-                    value = fields.fees,
-                    minLines = 1,
-                    enabled = enabled,
-                    fieldTag = "deliveryPlanFeesField",
-                    hint = { Text(stringResource(R.string.delivery_fees_hint)) },
-                ) { onEvent(AncEvent.DeliveryPlanFieldChanged(DeliveryPlanField.FEES, it)) }
-                PlanField(
-                    label = stringResource(R.string.delivery_plan_title),
-                    value = fields.plan,
-                    minLines = 3,
-                    enabled = enabled,
-                    fieldTag = "deliveryPlanPlanField",
-                ) { onEvent(AncEvent.DeliveryPlanFieldChanged(DeliveryPlanField.PLAN, it)) }
-                PlanField(
-                    label = stringResource(R.string.delivery_postpartum_title),
-                    value = fields.postpartum,
-                    minLines = 1,
-                    enabled = enabled,
-                    fieldTag = "deliveryPlanPostpartumField",
-                ) { onEvent(AncEvent.DeliveryPlanFieldChanged(DeliveryPlanField.POSTPARTUM, it)) }
+                    saving = saving,
+                    saveEnabled = draft.deliveryPlanTouched,
+                    savingLabel = stringResource(if (saving) R.string.delivery_plan_saving else R.string.save),
+                    onCancel = requestCancel,
+                    onSave = { onEvent(AncEvent.SubmitPatientProfile) },
+                    cancelTag = "cancelDeliveryPlan",
+                    saveTag = "saveDeliveryPlan",
+                    spinnerTag = "deliveryPlanSaveSpinner",
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                )
+                footer()
             }
-            SheetCancelSaveRow(
-                enabled = enabled,
-                saving = saving,
-                saveEnabled = draft.deliveryPlanTouched,
-                savingLabel = stringResource(if (saving) R.string.delivery_plan_saving else R.string.save),
-                onCancel = requestCancel,
-                onSave = { onEvent(AncEvent.SubmitPatientProfile) },
-                cancelTag = "cancelDeliveryPlan",
-                saveTag = "saveDeliveryPlan",
-                spinnerTag = "deliveryPlanSaveSpinner",
-            )
-            footer()
         }
     }
 
@@ -195,19 +212,21 @@ private fun DeliveryOutcomeSection(
     ) {
         Text(
             text = stringResource(R.string.delivery_outcome_section),
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.fillMaxWidth(),
+            style = RecordType.CardName,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.fillMaxWidth().semantics { heading() },
         )
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .heightIn(min = 56.dp)
                 .semantics(mergeDescendants = true) {},
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = stringResource(R.string.delivery_outcome_delivered_switch),
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.weight(1f),
+                style = RecordType.FieldValue,
+                modifier = Modifier.weight(1f).padding(end = 12.dp),
             )
             Switch(
                 checked = draft.values.delivered,
@@ -216,6 +235,10 @@ private fun DeliveryOutcomeSection(
                 modifier = Modifier.testTag("deliveryOutcomeSwitch"),
             )
         }
+        // Holds the last delivered value without triggering a recomposition; true only in the composition where the switch turned on.
+        val wasDelivered = remember { booleanArrayOf(draft.values.delivered) }
+        val justDelivered = draft.values.delivered && !wasDelivered[0]
+        SideEffect { wasDelivered[0] = draft.values.delivered }
         if (draft.values.delivered) {
             val dateError = draft.errors.firstOrNull { it in setOf(
                 PatientValidationError.DELIVERY_DATE_INVALID,
@@ -240,6 +263,7 @@ private fun DeliveryOutcomeSection(
                 modifier = Modifier
                     .fillMaxWidth()
                     .revealOnFocus()
+                    .revealWhen(justDelivered || dateError != null)
                     .testTag("deliveryOutcomeDateField"),
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None),
             )
@@ -247,10 +271,7 @@ private fun DeliveryOutcomeSection(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(
-                    text = stringResource(R.string.delivery_outcome_mode_label),
-                    style = MaterialTheme.typography.titleSmall,
-                )
+                FormFieldLabel(stringResource(R.string.delivery_outcome_mode_label))
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -282,10 +303,7 @@ private fun DeliveryOutcomeSection(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(
-                    text = stringResource(R.string.delivery_outcome_result_label),
-                    style = MaterialTheme.typography.titleSmall,
-                )
+                FormFieldLabel(stringResource(R.string.delivery_outcome_result_label))
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -333,13 +351,12 @@ private fun PlanField(
         // One accessibility node for the label and its field, so the label is read with the value.
         modifier = Modifier.fillMaxWidth().semantics(mergeDescendants = true) {},
     ) {
-        Text(text = label, style = MaterialTheme.typography.titleSmall)
+        FormFieldLabel(label)
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
             enabled = enabled,
             minLines = minLines,
-            placeholder = { Text(stringResource(R.string.no_record)) },
             supportingText = hint,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
             modifier = Modifier

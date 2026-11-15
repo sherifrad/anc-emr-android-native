@@ -47,10 +47,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -408,9 +410,11 @@ internal fun ChoiceGroup(
     includeUnknown: Boolean = true,
     /** Gap between chip rows; chips already carry a 48 dp touch area, so a tight list can pass 0.dp. */
     rowGap: Dp = 8.dp,
+    labelStyle: TextStyle = MaterialTheme.typography.titleMedium,
+    labelColor: Color = Color.Unspecified,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(label, style = MaterialTheme.typography.titleMedium)
+        Text(label, style = labelStyle, color = labelColor)
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(rowGap),

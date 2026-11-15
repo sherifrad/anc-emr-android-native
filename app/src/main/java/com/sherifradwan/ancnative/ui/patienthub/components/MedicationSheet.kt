@@ -4,17 +4,20 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -31,6 +34,10 @@ import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.MedicationDraft
 import com.sherifradwan.ancnative.state.SavePhase
 import com.sherifradwan.ancnative.state.SaveUiError
+import com.sherifradwan.ancnative.ui.components.FieldFamilies
+import com.sherifradwan.ancnative.ui.components.LocalFieldFamily
+import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordType
 import com.sherifradwan.ancnative.ui.minimumTouchTarget
 
 /**
@@ -75,63 +82,69 @@ fun MedicationSheet(
     ModalBottomSheet(
         onDismissRequest = { if (enabled) requestCancel() },
         sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RecordShapes.Sheet,
         modifier = Modifier.testTag("medicationSheet"),
     ) {
-        Column(modifier = Modifier.fillMaxWidth().imePadding()) {
-            if (saving) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth().testTag("medSaveProgress"))
-            }
-            Text(
-                text = stringResource(if (isExistingRow) R.string.edit_medication else R.string.add_medication),
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .semantics { heading() },
-            )
-            Column(
-                modifier = Modifier
-                    .weight(1f, fill = false)
-                    .verticalScroll(rememberScrollState())
-                    // Bottom room so the last row (route or notes) is fully visible when scrolled to the end.
-                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                SheetSaveMessage(
-                    savePhase = savePhase,
-                    saveError = saveError,
-                    fieldErrorMessage = if (draft.errors.isNotEmpty()) stringResource(R.string.correct_highlighted_fields) else null,
-                    failedTitle = stringResource(R.string.medication_save_failed_title),
-                    tag = "medSaveMessage",
+        CompositionLocalProvider(LocalFieldFamily provides FieldFamilies.background()) {
+            Column(modifier = Modifier.fillMaxWidth().imePadding()) {
+                if (saving) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth().testTag("medSaveProgress"))
+                }
+                Text(
+                    text = stringResource(if (isExistingRow) R.string.edit_medication else R.string.add_medication),
+                    style = RecordType.SectionTitle,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
+                        .semantics { heading() },
                 )
-                MedicationForm(
-                    values = draft.values,
-                    errors = draft.errors,
+                Column(
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .verticalScroll(rememberScrollState())
+                        // Bottom room so the last row (route or notes) is fully visible when scrolled to the end.
+                        .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    SheetSaveMessage(
+                        savePhase = savePhase,
+                        saveError = saveError,
+                        fieldErrorMessage = if (draft.errors.isNotEmpty()) stringResource(R.string.correct_highlighted_fields) else null,
+                        failedTitle = stringResource(R.string.medication_save_failed_title),
+                        tag = "medSaveMessage",
+                    )
+                    MedicationForm(
+                        values = draft.values,
+                        errors = draft.errors,
+                        isExistingRow = isExistingRow,
+                        enabled = enabled,
+                        draftKey = draftKey,
+                        // The next drug of "Save and add another": its name takes focus, so the keyboard stays up,
+                        // whether this sheet stayed on screen between the two drafts or was shown again.
+                        focusNameOnStart = draft.chainedAdd && nameFocusedFor != draftKey,
+                        onNameFocused = { nameFocusedFor = draftKey },
+                        revealToken = saveAttempts,
+                        onEvent = onEvent,
+                    )
+                }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                MedicationSheetButtons(
                     isExistingRow = isExistingRow,
                     enabled = enabled,
-                    draftKey = draftKey,
-                    // The next drug of "Save and add another": its name takes focus, so the keyboard stays up,
-                    // whether this sheet stayed on screen between the two drafts or was shown again.
-                    focusNameOnStart = draft.chainedAdd && nameFocusedFor != draftKey,
-                    onNameFocused = { nameFocusedFor = draftKey },
-                    revealToken = saveAttempts,
-                    onEvent = onEvent,
+                    saving = saving,
+                    onCancel = requestCancel,
+                    onSave = {
+                        saveAttempts++
+                        onEvent(AncEvent.SubmitMedication)
+                    },
+                    onSaveAndAddAnother = {
+                        saveAttempts++
+                        onEvent(AncEvent.SubmitMedicationAndAddAnother)
+                    },
                 )
+                footer()
             }
-            MedicationSheetButtons(
-                isExistingRow = isExistingRow,
-                enabled = enabled,
-                saving = saving,
-                onCancel = requestCancel,
-                onSave = {
-                    saveAttempts++
-                    onEvent(AncEvent.SubmitMedication)
-                },
-                onSaveAndAddAnother = {
-                    saveAttempts++
-                    onEvent(AncEvent.SubmitMedicationAndAddAnother)
-                },
-            )
-            footer()
         }
     }
 
@@ -178,11 +191,13 @@ internal fun MedicationSheetButtons(
             OutlinedButton(
                 onClick = onSaveAndAddAnother,
                 enabled = enabled,
+                shape = RecordShapes.Small,
                 contentPadding = PaddingValues(horizontal = 8.dp),
-                modifier = Modifier.fillMaxWidth().minimumTouchTarget().testTag("addAnotherMedication"),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).minimumTouchTarget().testTag("addAnotherMedication"),
             ) {
                 Text(
                     stringResource(R.string.save_and_add_another_med),
+                    style = RecordType.Action,
                     maxLines = 2,
                     textAlign = TextAlign.Center,
                 )

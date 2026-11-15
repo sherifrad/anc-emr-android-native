@@ -47,6 +47,7 @@ fun currentFieldFamily(): FieldFamily = LocalFieldFamily.current ?: FieldFamilie
 object RecordShapes {
     val Small = RoundedCornerShape(10.dp)
     val Large = RoundedCornerShape(16.dp)
+    val Sheet = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
 }
 
 object RecordSpacing {

@@ -242,8 +242,8 @@
     <string name="is_abnormal">Abnormal result</string>
     <string name="abnormal_badge">ABNORMAL</string>
     <string name="normal_badge">NORMAL</string>
-    <string name="add_medication">Add Medication</string>
-    <string name="edit_medication">Edit Medication</string>
+    <string name="add_medication">Add medication</string>
+    <string name="edit_medication">Edit medication</string>
     <string name="medication_editor_notice">Medication details and status are tracked explicitly.</string>
     <string name="medication_name">Medication name</string>
     <string name="dosage">Dosage</string>
@@ -258,14 +258,14 @@
     <string name="quick_actions">Quick Actions</string>
     <string name="delivery_planning">Delivery planning &amp; outcome</string>
     <string name="delivery_planning_notice">Delivery planning and care episode records.</string>
-    <string name="edit_delivery_plan">Edit Delivery Plan</string>
+    <string name="edit_delivery_plan">Edit delivery plan</string>
     <string name="delivery_hospital_title" translatable="false">Agreed Delivery Hospital</string>
     <string name="delivery_fees_title" translatable="false">Agreed Delivery Fees</string>
     <string name="delivery_plan_title" translatable="false">Delivery Plan</string>
     <string name="delivery_postpartum_title" translatable="false">Postpartum Note</string>
     <string name="delivery_plan_rewrite_notice">Saving a change will rewrite this patient\'s obstetric notes as one labelled line per box. Words such as \'agreed\' or \'package\' in labels are dropped and lines are grouped by box. Check each box before saving.</string>
     <string name="delivery_hospital_hint">Found in the notes. Edit or clear. One hospital per line.</string>
-    <string name="delivery_fees_hint">Agreed fees only. Put quotes or estimates in Delivery Plan.</string>
+    <string name="delivery_fees_hint">Agreed fees only. Put quotes or estimates in Delivery plan.</string>
     <string name="delivery_plan_save_failed_title">The delivery plan was not saved</string>
     <string name="delivery_plan_profile_invalid">This patient\'s profile has a problem in a field not shown here. Cancel, then fix it from Edit patient on the Overview tab.</string>
     <string name="delivery_plan_saving">Saving…</string>
@@ -324,7 +324,7 @@
     <string name="remove_photo">Remove photo</string>
     <string name="negative_histories_title">Explicit Negative Histories</string>
     <string name="fill_all_negative">Confirm all histories negative</string>
-    <string name="save_and_add_another_med">Save &amp; add another</string>
+    <string name="save_and_add_another_med">Save and add another</string>
     <string name="advanced_med_options">Route &amp; End date (optional)</string>
     <string name="all_filter">All</string>
     <string name="high_risk_filter">High risk</string>
