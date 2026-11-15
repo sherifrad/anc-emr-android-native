@@ -1,24 +1,18 @@
 package com.sherifradwan.ancnative.ui.patienthub.tabs
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -36,7 +30,8 @@ import com.sherifradwan.ancnative.ui.DeleteIconButton
 import com.sherifradwan.ancnative.ui.components.BandChip
 import com.sherifradwan.ancnative.ui.components.FieldFamilies
 import com.sherifradwan.ancnative.ui.components.RecordBandCard
-import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordEmptyCard
+import com.sherifradwan.ancnative.ui.components.RecordListHeader
 import com.sherifradwan.ancnative.ui.components.RecordType
 import com.sherifradwan.ancnative.ui.components.SectionTextAction
 import com.sherifradwan.ancnative.ui.components.StatusTone
@@ -67,48 +62,17 @@ fun VisitsTab(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(R.string.visits_tab_title, patient.visits.size),
-                    style = RecordType.SectionTitle,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-                if (canEdit && patient.status != "archived") {
-                    Button(
-                        onClick = { onStartVisit(patient.id, null) },
-                        shape = RecordShapes.Small,
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                        modifier = Modifier
-                            .heightIn(min = 48.dp)
-                            .testTag("recordNewVisitBtn"),
-                    ) {
-                        Text(stringResource(R.string.record_visit_action), style = RecordType.Action)
-                    }
-                }
-            }
+            RecordListHeader(
+                title = stringResource(R.string.visits_tab_title, patient.visits.size),
+                actionLabel = stringResource(R.string.record_visit_action),
+                actionTag = "recordNewVisitBtn",
+                onAction = { onStartVisit(patient.id, null) },
+                showAction = canEdit && patient.status != "archived",
+            )
         }
 
         if (patient.visits.isEmpty()) {
-            item {
-                OutlinedCard(
-                    shape = RecordShapes.Large,
-                    colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(
-                        text = stringResource(R.string.no_records),
-                        style = RecordType.FieldValue,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(16.dp),
-                    )
-                }
-            }
+            item { RecordEmptyCard() }
         } else {
             items(
                 items = patient.visits,

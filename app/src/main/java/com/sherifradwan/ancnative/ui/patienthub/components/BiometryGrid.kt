@@ -1,28 +1,27 @@
 package com.sherifradwan.ancnative.ui.patienthub.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
+import com.sherifradwan.ancnative.ui.components.PlainField
+import com.sherifradwan.ancnative.ui.components.ltrIsolate
 import com.sherifradwan.ancnative.ui.patienthub.model.BiometryValues
 
-@OptIn(ExperimentalLayoutApi::class)
+private class BiometryCell(
+    val label: String,
+    val text: String,
+    val isMeasurement: Boolean,
+    val tag: String? = null,
+)
+
 @Composable
 fun BiometryGrid(
     values: BiometryValues,
@@ -30,115 +29,59 @@ fun BiometryGrid(
 ) {
     if (values.isEmpty && !values.hasAnyData) return
 
-    Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = "Ultrasound Biometry",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+    val bpdLabel = stringResource(R.string.biometry_bpd)
+    val hcLabel = stringResource(R.string.biometry_hc)
+    val acLabel = stringResource(R.string.biometry_ac)
+    val flLabel = stringResource(R.string.biometry_fl)
+    val efwLabel = stringResource(R.string.biometry_efw)
+    val fhrLabel = stringResource(R.string.biometry_fhr)
+    val presentationLabel = stringResource(R.string.scan_presentation_label)
+    val placentaLabel = stringResource(R.string.scan_placenta)
+    val fluidLabel = stringResource(R.string.amniotic_fluid)
+    val bpd = values.bpd?.takeIf { it.isNotBlank() }?.let { stringResource(R.string.unit_mm, it) }
+    val hc = values.hc?.takeIf { it.isNotBlank() }?.let { stringResource(R.string.unit_mm, it) }
+    val ac = values.ac?.takeIf { it.isNotBlank() }?.let { stringResource(R.string.unit_mm, it) }
+    val fl = values.fl?.takeIf { it.isNotBlank() }?.let { stringResource(R.string.unit_mm, it) }
+    val fhr = values.fhr?.takeIf { it.isNotBlank() }?.let { stringResource(R.string.unit_bpm, it) }
 
-            // Quantitative Measurements FlowRow
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                if (!values.bpd.isNullOrBlank()) {
-                    BiometryMetricBadge(label = "BPD", value = "${values.bpd} mm")
-                }
-                if (!values.hc.isNullOrBlank()) {
-                    BiometryMetricBadge(label = "HC", value = "${values.hc} mm")
-                }
-                if (!values.ac.isNullOrBlank()) {
-                    BiometryMetricBadge(label = "AC", value = "${values.ac} mm")
-                }
-                if (!values.fl.isNullOrBlank()) {
-                    BiometryMetricBadge(label = "FL", value = "${values.fl} mm")
-                }
-                if (!values.efw.isNullOrBlank()) {
-                    BiometryMetricBadge(label = "EFW", value = values.efw, isHighlighted = true)
-                }
-                if (!values.fhr.isNullOrBlank()) {
-                    BiometryMetricBadge(label = "FHR", value = "${values.fhr} bpm")
-                }
-            }
+    val measurements = listOfNotNull(
+        bpd?.let { BiometryCell(bpdLabel, it, isMeasurement = true) },
+        hc?.let { BiometryCell(hcLabel, it, isMeasurement = true) },
+        ac?.let { BiometryCell(acLabel, it, isMeasurement = true) },
+        fl?.let { BiometryCell(flLabel, it, isMeasurement = true) },
+        values.efw?.takeIf { it.isNotBlank() }?.let { BiometryCell(efwLabel, it, isMeasurement = true) },
+        fhr?.let { BiometryCell(fhrLabel, it, isMeasurement = true) },
+    )
+    val words = listOfNotNull(
+        values.presentation?.takeIf { it.isNotBlank() }
+            ?.let { BiometryCell(presentationLabel, it, isMeasurement = false, tag = "scanPresentation") },
+        values.placenta?.takeIf { it.isNotBlank() }?.let { BiometryCell(placentaLabel, it, isMeasurement = false) },
+        values.amnioticFluid?.takeIf { it.isNotBlank() }?.let { BiometryCell(fluidLabel, it, isMeasurement = false) },
+    )
 
-            // Anatomical Details (Presentation, Placenta & Liquor) wrapped in FlowRow to avoid 360dp overflow
-            if (!values.presentation.isNullOrBlank() || !values.placenta.isNullOrBlank() || !values.amnioticFluid.isNullOrBlank()) {
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    if (!values.presentation.isNullOrBlank()) {
-                        Text(
-                            text = stringResource(R.string.scan_presentation, values.presentation),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.testTag("scanPresentation"),
-                        )
-                    }
-                    if (!values.placenta.isNullOrBlank()) {
-                        Text(
-                            text = "Placenta: ${values.placenta}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                    }
-                    if (!values.amnioticFluid.isNullOrBlank()) {
-                        Text(
-                            text = "Amniotic Fluid: ${values.amnioticFluid}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                    }
-                }
-            }
-        }
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        measurements.chunked(MEASUREMENT_COLUMNS).forEach { BiometryRow(it, MEASUREMENT_COLUMNS) }
+        val wideWord = words.any { it.text.length > LONG_WORD }
+        words.chunked(if (wideWord) 1 else WORD_COLUMNS).forEach { BiometryRow(it, if (wideWord) 1 else WORD_COLUMNS) }
     }
 }
 
 @Composable
-private fun BiometryMetricBadge(
-    label: String,
-    value: String,
-    isHighlighted: Boolean = false,
-) {
-    Surface(
-        shape = RoundedCornerShape(6.dp),
-        color = if (isHighlighted) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
-        border = BorderStroke(
-            1.dp,
-            if (isHighlighted) MaterialTheme.colorScheme.primary.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-        ),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                color = if (isHighlighted) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                color = if (isHighlighted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+private fun BiometryRow(cells: List<BiometryCell>, columns: Int) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        cells.forEach { cell ->
+            val fieldModifier = Modifier.weight(1f).let { if (cell.tag != null) it.testTag(cell.tag) else it }
+            PlainField(
+                label = cell.label,
+                value = if (cell.isMeasurement) ltrIsolate(cell.text) else cell.text,
+                modifier = fieldModifier,
+                emphasis = cell.isMeasurement,
             )
         }
+        repeat(columns - cells.size) { Spacer(Modifier.weight(1f)) }
     }
 }
+
+private const val MEASUREMENT_COLUMNS = 3
+private const val WORD_COLUMNS = 2
+private const val LONG_WORD = 10

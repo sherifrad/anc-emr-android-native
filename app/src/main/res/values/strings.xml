@@ -197,7 +197,6 @@
     <string name="ga_days">GA days (0–6)</string>
     <string name="fetal_number">Fetal number</string>
     <string name="fetal_presentation">Presentation</string>
-    <string name="scan_presentation">Presentation: %1$s</string>
     <string name="placental_site">Placental site</string>
     <string name="amniotic_fluid">Amniotic fluid</string>
     <string name="fetal_heart_rate">Fetal heart rate</string>
@@ -732,4 +731,13 @@
     <string name="unit_mmhg">%1$s mmHg</string>
     <string name="unit_bpm">%1$s bpm</string>
     <string name="unit_cm">%1$s cm</string>
+    <string name="scans_tab_title">Ultrasound scans (%1$d)</string>
+    <string name="record_scan_action">Record scan</string>
+    <string name="biometry_efw">EFW</string>
+    <string name="biometry_fhr">FHR</string>
+    <string name="scan_presentation_label">Presentation</string>
+    <string name="scan_placenta">Placenta</string>
+    <string name="scan_photo_n">Photo %1$d</string>
+    <string name="unit_mm">%1$s mm</string>
+    <string name="scan_photo_open">Open photo %1$d of %2$d, scan %3$s</string>
 </resources>
