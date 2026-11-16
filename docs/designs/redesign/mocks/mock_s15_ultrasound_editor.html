@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Mock S15: Ultrasound editor and photo viewer</title>
+<style>
+  /* Tokens: Theme.kt scheme values + Slice 0 record tokens (Obstetric family). */
+  :root{
+    --primary:#0D1B3D; --on:#0D1B3D; --onv:#4C3F43; --onprimary:#FFFFFF;
+    --primc:#D6DFFF; --onprimc:#041334; --sc:#FFD9DE; --onsc:#3B0815;
+    --surface:#FFFFFF; --bg:#FBF8F5; --outv:#CAC4D0; --outline:#79747E; --sv:#F3E9E7; --scl:#F9F5F3;
+    --err:#BA1A1A; --errc:#FFDAD6; --onerrc:#410002;
+    --ob-bg:#E3F0EE; --ob-lb:#1D5149;
+    --mod-bg:#FCEFD6; --mod-bd:#9E6F1E; --mod-fg:#6E4708;
+    --r-s:10px; --r-l:16px;
+  }
+  .dark{
+    --primary:#B4C5FF; --on:#E2E2EA; --onv:#CDC3C6; --onprimary:#002A78;
+    --primc:#183F91; --onprimc:#DCE1FF; --sc:#762E3B; --onsc:#FFD9DE;
+    --surface:#1A202E; --bg:#0E121B; --outv:#3A4459; --outline:#8E95A5; --sv:#262E40; --scl:#141924;
+    --err:#FFB4AB; --errc:#5C141D; --onerrc:#FFDAD6;
+    --ob-bg:#1D3836; --ob-lb:#9FD6CC;
+    --mod-bg:#3A2A0E; --mod-bd:#A87A2A; --mod-fg:#F3D18E;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:#FFFFFF;color:#0D1B3D;font-family:Roboto,"Noto Sans","Noto Sans Arabic","Segoe UI",system-ui,-apple-system,Arial,sans-serif;font-size:15px;line-height:1.5;padding:32px 16px 64px}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-size:26px;line-height:1.25;margin:0 0 8px}
+  h2{font-size:20px;line-height:1.3;margin:44px 0 6px}
+  .lede,p,li{max-width:78ch}
+  .lede{color:#4C3F43;margin:0 0 4px}
+  .reason{border:1px solid #CAC4D0;border-radius:16px;padding:18px 20px;margin-top:18px;background:#FDFCFB}
+  .reason h2{margin-top:0}
+  .reason ul{margin:6px 0 0;padding-inline-start:20px}
+  .pair{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-top:14px}
+  figure{margin:0;width:360px;max-width:100%;flex:0 0 auto}
+  figcaption{font-size:14px;color:#4C3F43;margin:0 0 8px}
+  figcaption b{color:#0D1B3D}
+  .note{font-size:14px;color:#4C3F43;margin:10px 0 0}
+  .phone{width:100%;background:var(--bg);border:1px solid #B9B4BE;border-radius:16px;overflow:hidden;color:var(--on);display:flex;flex-direction:column}
+  .screen{padding:16px;display:flex;flex-direction:column;gap:12px}
+  .scrim{background:rgba(0,0,0,.32);padding:16px 10px;display:flex;flex-direction:column}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  button:hover{filter:brightness(.97)}
+  button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  bdi{unicode-bidi:isolate}
+
+  /* AFTER: shared record components (Obstetric family) */
+  .pagehead h3{margin:0;font-size:22px;line-height:28px;font-weight:700;color:var(--on)}
+  .pagehead p{margin:2px 0 0;font-size:14px;line-height:20px;color:var(--onv)}
+  .pagehead p.rtl{direction:rtl;text-align:right}
+  .sec{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:4px 4px 16px 16px}
+  .sec-head{display:flex;align-items:center;min-height:48px;gap:8px}
+  .sec-head h4{flex:1 1 auto;margin:0;padding:6px 0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .sec-head .hstat{padding:0 12px;font-size:12px;line-height:16px;font-weight:600;color:var(--ob-lb);white-space:nowrap}
+  .sec-body{display:flex;flex-direction:column;gap:12px;padding-inline-end:12px}
+  .flab{display:block;font-size:12px;line-height:16px;font-weight:600;color:var(--ob-lb);margin-bottom:4px}
+  .fbox{min-height:48px;padding:12px 14px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);font-size:16px;line-height:22px;color:var(--on);overflow-wrap:anywhere}
+  .fbox.num{font-weight:600}
+  .fbox.multi{min-height:84px}
+  .fbox.date{padding:0 4px 0 14px;display:flex;align-items:center;justify-content:space-between;gap:6px}
+  .calbtn{width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--r-s);color:var(--primary);flex:0 0 auto}
+  .row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .fmiss{color:var(--onv);font-style:italic}
+
+  /* AFTER: live summary quick panel */
+  .qpanel{background:var(--ob-bg);border:1px solid var(--outv);border-radius:var(--r-l);padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+  .qpanel h4{margin:0;font-size:16px;line-height:22px;font-weight:700;color:var(--ob-lb)}
+  .qpanel .rep{margin:0;font-size:16px;line-height:22px;color:var(--on)}
+  .qpanel .rep.miss{color:var(--onv);font-style:italic}
+  .qacts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .qobtn{min-height:48px;min-width:48px;padding:0 16px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);color:var(--primary);font-size:14px;line-height:20px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+  .qtbtn{min-height:48px;min-width:48px;padding:0 12px;border-radius:var(--r-s);color:var(--primary);font-size:14px;line-height:20px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+
+  /* AFTER: calculated GA tile + redating warning */
+  .gatile{background:var(--ob-bg);border-radius:var(--r-s);padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+  .gatile .gt-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .gatile .gt-lab{font-size:12px;line-height:16px;font-weight:600;color:var(--ob-lb)}
+  .gatile .gt-val{font-size:16px;line-height:22px;font-weight:600;color:var(--on)}
+  .gatile .gt-act{min-height:48px;padding:0 10px;border-radius:var(--r-s);font-size:14px;line-height:20px;font-weight:600;color:var(--primary);align-self:flex-end;display:inline-flex;align-items:center}
+  .warn-mod{background:var(--mod-bg);border:1px solid var(--mod-bd);border-radius:var(--r-s);padding:10px 12px;font-size:14px;line-height:20px;font-weight:500;color:var(--mod-fg)}
+
+  /* AFTER: guided steps (SummaryRow + RecordFilterChip) */
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chipwrap{min-height:48px;display:inline-flex;align-items:center}
+  .chip{min-height:36px;padding:6px 12px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);color:var(--on);font-size:14px;line-height:20px;font-weight:500;display:inline-flex;align-items:center;text-align:start}
+  .chip.sel{background:var(--primary);border-color:var(--primary);color:var(--onprimary);font-weight:600}
+  .rrow{min-height:48px;padding:8px 0;border-top:1px solid var(--outv);display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;text-align:start}
+  .rrow.first{border-top:0;padding-top:2px}
+  .rrow .rl{font-size:14px;line-height:20px;color:var(--onv);flex:1 1 auto;min-width:0}
+  .rrow .rr{display:inline-flex;align-items:center;gap:10px;flex:0 0 auto}
+  .rrow .rv{font-size:16px;line-height:22px;font-weight:600;color:var(--on)}
+  .rrow .rv.miss{font-weight:400;font-style:italic;color:var(--onv)}
+  .rrow .ra{font-size:14px;line-height:20px;font-weight:600;color:var(--primary)}
+  .gstep{padding:8px 0;border-top:1px solid var(--outv);display:flex;flex-direction:column;gap:6px}
+  .gstep.first{border-top:0;padding-top:0}
+
+  /* AFTER: biometry header, more toggle, attachments, linked visit, actions */
+  .biohead{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px}
+  .biohead .bt{flex:1 1 auto;min-width:0;padding:6px 0}
+  .biohead h4{margin:0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .biohead p{margin:2px 0 0;font-size:14px;line-height:20px;color:var(--onv)}
+  .actbtn{min-width:48px;min-height:48px;padding:0 12px;border-radius:var(--r-s);font-size:14px;line-height:20px;font-weight:600;color:var(--primary);display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .morebar{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);min-height:56px;padding:4px 4px 4px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;text-align:start}
+  .morebar .ml{font-size:16px;line-height:22px;font-weight:700;color:var(--on);flex:1 1 auto;min-width:0}
+  .morebar .mr{min-height:48px;padding:0 12px;display:inline-flex;align-items:center;font-size:14px;line-height:20px;font-weight:600;color:var(--primary)}
+  .phrow{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px;padding:0 4px 0 12px;border:1px solid var(--outv);border-radius:var(--r-s);background:var(--ob-bg)}
+  .phrow span{font-size:16px;line-height:22px;font-weight:600;color:var(--on)}
+  .ibtn{width:48px;height:48px;border-radius:var(--r-s);display:inline-flex;align-items:center;justify-content:center;color:var(--onv);flex:0 0 48px}
+  .ibtn.del{color:var(--err)}
+  .stack2{display:flex;flex-direction:column;gap:8px}
+  .pbtn{min-height:48px;min-width:48px;padding:0 16px;border-radius:var(--r-s);background:var(--primary);color:var(--onprimary);font-size:14px;line-height:20px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;text-align:center}
+  .obtn{min-height:48px;min-width:48px;padding:0 16px;border:1px solid var(--outline);border-radius:var(--r-s);font-size:14px;line-height:20px;font-weight:600;color:var(--primary);background:var(--surface);display:inline-flex;align-items:center;justify-content:center;text-align:center}
+  .actrow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
+  .vmeta{display:flex;flex-direction:column;gap:2px}
+  .vmeta b{font-size:16px;line-height:22px;color:var(--on)}
+  .vmeta span{font-size:14px;line-height:20px;color:var(--onv)}
+  .sectxt{margin:0;font-size:14px;line-height:20px;color:var(--onv)}
+
+  /* AFTER: photo viewer dialog + ZoomableImage 1x reset */
+  .dlg{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:16px;display:flex;flex-direction:column;gap:12px;color:var(--on)}
+  .dhead{display:flex;align-items:center;gap:4px}
+  .dhead .t{flex:1 1 auto;min-width:0}
+  .dhead h4{margin:0;font-size:16px;line-height:22px;font-weight:700;color:var(--on)}
+  .dhead p{margin:2px 0 0;font-size:14px;line-height:20px;color:var(--onv)}
+  .imgbox{position:relative;height:220px;border-radius:var(--r-s);background:#000000;border:1px solid var(--outv);display:flex;align-items:center;justify-content:center;color:#D3D3D3;font-size:16px;line-height:22px;text-align:center;padding:16px}
+  .zreset{position:absolute;right:8px;bottom:8px;min-width:48px;min-height:48px;padding:0 10px;border-radius:var(--r-s);background:var(--surface);border:1px solid var(--outline);color:var(--on);font-size:14px;line-height:20px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+  .pager{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .dots{display:flex;align-items:center;gap:6px}
+  .dot{width:8px;height:8px;border-radius:4px;background:var(--outv)}
+  .dot.on{width:10px;height:10px;border-radius:5px;background:var(--primary)}
+  .pgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 8px}
+  .pf{min-width:0;display:flex;flex-direction:column}
+  .pf .l{font-size:12px;line-height:16px;font-weight:500;color:var(--onv)}
+  .pf .v{font-size:16px;line-height:22px;font-weight:600;color:var(--on);overflow-wrap:anywhere}
+
+  /* BEFORE fidelity styles (exact current UltrasoundEditor, ZoomableImage, UltrasoundPhotoViewerDialog) */
+  .old-title{margin:0;font-size:24px;line-height:30px;font-weight:700;color:#0D1B3D}
+  .old-sub{margin:2px 0 0;font-size:13px;line-height:18px;color:#4C3F43}
+  .old-card{background:#FFFFFF;border:1px solid rgba(202,196,208,.5);border-radius:16px;padding:16px;box-shadow:0 1px 2px rgba(13,27,61,.08);display:flex;flex-direction:column;gap:10px}
+  .old-ct{margin:0;font-size:15px;line-height:20px;font-weight:700;color:#0D1B3D}
+  .old-sub11{margin:0;font-size:11px;line-height:14px;color:#4C3F43}
+  .old-m3f{position:relative;border:1px solid #79747E;border-radius:4px;padding:13px 12px 11px;font-size:15px;line-height:22px;color:#0D1B3D;background:#FFFFFF;min-height:50px;display:flex;align-items:center;justify-content:space-between}
+  .old-m3f .olbl{position:absolute;top:-8px;left:10px;background:#FFFFFF;padding:0 4px;font-size:12px;line-height:16px;color:#4C3F43;max-width:calc(100% - 18px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .old-pill-ob{min-height:40px;padding:0 16px;border:1px solid #79747E;border-radius:999px;font-size:13px;font-weight:600;color:#0D1B3D;display:inline-flex;align-items:center}
+  .old-pill-p{min-height:40px;padding:0 16px;border-radius:999px;background:#0D1B3D;color:#FFFFFF;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+  .old-ga{background:#D6DFFF;color:#041334;border-radius:10px;padding:8px 12px;display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600}
+  .old-ga span.apply{align-self:flex-end;color:#0D1B3D;font-size:13px;padding:4px 8px}
+  .old-chip8{min-height:32px;padding:4px 10px;border:1px solid #79747E;border-radius:8px;font-size:13px;color:#4C3F43;background:#FFFFFF;display:inline-flex;align-items:center}
+  .old-chip8.sel{background:#FFD9DE;border-color:#FFD9DE;color:#3B0815;font-weight:600}
+  .old-srow{min-height:44px;display:flex;align-items:center;justify-content:space-between;font-size:13px;border-top:1px solid rgba(202,196,208,.5);padding-top:6px}
+  .old-srow .ov{color:#4C3F43;display:inline-flex;align-items:center;gap:6px}
+  .old-lock{display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;line-height:14px;color:#4C3F43;text-align:center}
+  .old-act{display:flex;gap:12px;align-items:center}
+  .old-pchip{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:8px;background:#FFD9DE;color:#3B0815;font-size:11px;font-weight:600}
+  .old-dlg{background:#FFFFFF;border-radius:20px;padding:20px;box-shadow:0 8px 20px rgba(0,0,0,.22);display:flex;flex-direction:column;gap:12px;color:#0D1B3D}
+  .old-img{position:relative;height:200px;border-radius:14px;background:#FFFFFF;border:1px solid #CAC4D0;display:flex;align-items:center;justify-content:center;color:#4C3F43;font-size:13px}
+  .old-1x{position:absolute;right:8px;bottom:8px;min-width:48px;min-height:48px;border-radius:8px;background:rgba(239,233,228,.9);border:1px solid #CAC4D0;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;color:#0D1B3D}
+  .old-fbadge{display:inline-flex;padding:4px 8px;border-radius:6px;background:#F3E9E7;color:#4C3F43;font-size:11px;font-weight:600}
+
+  /* tables */
+  .tablewrap{overflow-x:auto;max-width:100%}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin-top:10px}
+  th,td{border-bottom:1px solid #E6E1E5;padding:7px 8px;text-align:start;vertical-align:top}
+  th{background:#F7F5F3}
+  td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+  ol.map li{margin:7px 0}
+  code{font-family:"Roboto Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:#F3F0EE;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<h1>Mock S15: Ultrasound editor and photo viewer</h1>
+<p class="lede">Covers <code>ui/UltrasoundEditor.kt</code>, <code>ui/components/ZoomableImage.kt</code>, and <code>ui/UltrasoundPhotoViewerDialog.kt</code> (plus Slice 14 backward-compatible <code>SummaryRow</code> options if not yet landed). Real sample data only: Mona Ragab / <bdi lang="ar">منى رجب</bdi>, 27+2 wks, G4 P1 A2, 110/70, A+, EDD 11/02/2027 (<code>2027-02-11</code>); bracketed placeholders mark fields absent from Mona's sample, and populated biometry / photo frames use the in-repo <code>DemoFixtures</code> scan <code>...0102</code> (2026-05-30, 20+0 wks, BPD 49, HC 178, AC 155, FL 34, EFW 380, FHR 148, Singleton, Cephalic, Anterior, Normal), labelled.</p>
+
+<section class="reason" aria-labelledby="r">
+  <h2 id="r">Design reasoning</h2>
+  <p>Reading this as: a mid-clinic ultrasound charting screen and photo viewer used between live probe views, where one-tap normal defaults, clean label-above-field spacing, and 48 dp targets reduce scan-to-save time. Antislop dials: ENERGY 1 / RHYTHM 1 / MOTION 1 (pressed and focus states only, no new animation).</p>
+  <ul>
+    <li><b>Obstetric family (teal) throughout:</b> match <code>ScansTab</code>, <code>DatingEditor</code>, and <code>PreviousPregnancyEditor</code> using <code>RecordSectionCard(FieldFamilies.obstetric())</code> (<code>#1D5149</code> light / <code>#9FD6CC</code> dark labels), so every ultrasound form looks unmistakably part of the scan domain without rainbow pills or blue-purple drift.</li>
+    <li><b>Make the live summary + 1-tap shortcut distinct:</b> restyle Card 0 (<code>ultrasoundLiveSummary</code>) in calm <code>FieldObstetricBg</code> (<code>#E3F0EE</code> / <code>#1D3836</code>) with 16 sp live sentence, 48 dp <code>RecordShapes.Small</code> <code>Fill normal scan</code> on white surface, and a quiet <code>TextButton</code> for <code>Clear findings</code> so Clear is never tapped by accident.</li>
+    <li><b>Fix 360 dp notch clipping &amp; sub-12 sp text:</b> move <code>scanDate</code>, <code>gaWeeks</code>, <code>gaDays</code>, and all 6 biometry fields to external 12 sp <code>FormFieldLabel</code>s over 10 dp boxes (so <code>"Estimated fetal weight (EFW)"</code> and <code>"GA weeks (0–45)"</code> never truncate in half-width notches); raise 11 sp labels (<code>BPD, HC, AC, FL, FHR &amp; EFW</code>, <code>Photo 1</code>, <code>1x</code> zoom reset, <code>FactBadge</code>s) to 12–16 sp; drop the 11 sp Lock footer.</li>
+    <li><b>Guided steps &amp; GA convention:</b> keep the 4-item accordion (<code>fetalNumber</code>, <code>presentation</code>, <code>placenta</code>, <code>liquor</code>) with 10 dp 48 dp-target <code>RecordFilterChip</code>s when open and clean <code>SummaryRow</code>s (no downward <code>▾</code> chevron) when closed; format <code>scanCalculatedGaCard</code> and <code>applyScanGa</code> as <code>27+2 wks</code> (Owner Decision 9) and move <code>redatingHint</code> to semantic amber.</li>
+    <li><b>Fix photo attach &amp; viewer ergonomics:</b> stack <code>Take photo</code> and <code>Choose from gallery</code> full-width 48 dp buttons (zero 360 dp overflow at 1.3x/2.0x scale), give <code>ZoomableImage</code>'s <code>1x</code> reset button 10 dp corners and 14 sp text on solid <code>surface</code>, and restyle <code>UltrasoundPhotoViewerDialog</code> without its decorative camera circle, 11 sp pills, or 8 dp clickable dots.</li>
+  </ul>
+</section>
+
+<h2>1. Live summary, timing, and guided steps (as they exist in the code)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, empty entry (Mona Ragab)</figcaption>
+    <div class="phone"><div class="screen">
+      <div>
+        <h3 class="old-title">Ultrasound scan editor</h3>
+        <p class="old-sub">Mona Ragab · Ultrasound Examination &amp; Fetal Biometry</p>
+      </div>
+      <div class="old-card">
+        <h4 class="old-ct">Report so far</h4>
+        <p style="margin:0;font-size:13px;color:#4C3F43">Nothing chosen yet</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <span class="old-pill-ob">Fill normal scan</span>
+          <span class="old-pill-ob">Clear findings</span>
+        </div>
+      </div>
+      <div class="old-card">
+        <h4 class="old-ct">1. Scan Timing &amp; Gestational Age</h4>
+        <div class="old-m3f"><span class="olbl">Scan date (YYYY-MM-DD)</span><span>[scan date]</span><span aria-hidden="true">📅</span></div>
+        <div style="display:flex;justify-content:flex-end"><span class="old-chip8">Today (2026-11-16)</span></div>
+        <div class="old-ga">
+          <span>Calculated GA: 27w 2d</span>
+          <span class="apply">Apply calculated GA (27w 2d)</span>
+        </div>
+        <div class="row2">
+          <div class="old-m3f"><span class="olbl">GA weeks (0–45)</span></div>
+          <div class="old-m3f"><span class="olbl">GA days (0–6)</span></div>
+        </div>
+      </div>
+      <div class="old-card">
+        <h4 class="old-ct">2. Fetus, Placenta &amp; Amniotic Fluid</h4>
+        <p style="margin:0;font-size:15px;font-weight:500">Fetal number</p>
+        <div class="chips">
+          <span class="old-chip8">Unknown</span>
+          <span class="old-chip8">Singleton</span>
+          <span class="old-chip8">Twins</span>
+          <span class="old-chip8">Higher order</span>
+        </div>
+        <div class="old-srow"><span>Presentation</span><span class="ov">Not set <span aria-hidden="true">▾</span></span></div>
+        <div class="old-srow"><span>Placental site</span><span class="ov">Not set <span aria-hidden="true">▾</span></span></div>
+        <div class="old-srow"><span>Amniotic fluid</span><span class="ov">Not set <span aria-hidden="true">▾</span></span></div>
+      </div>
+    </div></div>
+    <p class="note">Numbered Title Case titles, <code>27w 2d</code> in bright blue box, <code>13 sp</code> summary rows with downward arrows, rose M3 chips.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, slice 15, initial entry (Mona Ragab, 27+2 wks)</figcaption>
+    <div class="phone"><div class="screen">
+      <div class="pagehead"><h3>Ultrasound scan editor</h3><p>Mona Ragab</p></div>
+      <section class="qpanel" aria-label="Report so far">
+        <h4>Report so far</h4>
+        <p class="rep miss">Nothing chosen yet</p>
+        <div class="qacts">
+          <button type="button" class="qobtn">Fill normal scan</button>
+          <button type="button" class="qtbtn">Clear findings</button>
+        </div>
+      </section>
+      <section class="sec">
+        <div class="sec-head"><h4>Scan timing and gestational age</h4></div>
+        <div class="sec-body">
+          <div>
+            <span class="flab">Scan date (YYYY-MM-DD)</span>
+            <div class="fbox date"><span>[scan date]</span><button type="button" class="calbtn" aria-label="Select date">📅</button></div>
+            <div style="display:flex;justify-content:flex-end;margin-top:4px"><span class="chipwrap"><button type="button" class="chip">Today (2026-11-16)</button></span></div>
+          </div>
+          <div class="gatile">
+            <div class="gt-top"><span class="gt-lab">Calculated GA</span><span class="gt-val">27+2 wks</span></div>
+            <button type="button" class="gt-act">Apply calculated GA (27+2 wks)</button>
+          </div>
+          <div class="row2">
+            <div><span class="flab">GA weeks (0–45)</span><div class="fbox num"></div></div>
+            <div><span class="flab">GA days (0–6)</span><div class="fbox num"></div></div>
+          </div>
+        </div>
+      </section>
+      <section class="sec">
+        <div class="sec-head"><h4>Fetus, placenta and amniotic fluid</h4><span class="hstat">0 of 4 set</span></div>
+        <div class="sec-body" style="gap:4px">
+          <div class="gstep first">
+            <span class="flab">Fetal number</span>
+            <div class="chips">
+              <span class="chipwrap"><button type="button" class="chip">Unknown</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Singleton</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Twins</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Higher order</button></span>
+            </div>
+          </div>
+          <button type="button" class="rrow"><span class="rl">Presentation</span><span class="rr"><span class="rv miss">Not set</span><span class="ra">Choose</span></span></button>
+          <button type="button" class="rrow"><span class="rl">Placental site</span><span class="rr"><span class="rv miss">Not set</span><span class="ra">Choose</span></span></button>
+          <button type="button" class="rrow"><span class="rl">Amniotic fluid</span><span class="rr"><span class="rv miss">Not set</span><span class="ra">Choose</span></span></button>
+        </div>
+      </section>
+    </div></div>
+    <p class="note">Calm <code>FieldObstetricBg</code> live summary, <code>27+2 wks</code> convention, 12 sp teal labels over 10 dp fields, 48 dp <code>RecordFilterChip</code>s, and explicit <code>Choose</code> rows.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, after tapping Fill normal scan (+ redating warning demo)</figcaption>
+    <div class="phone"><div class="screen">
+      <section class="qpanel" aria-label="Report so far, filled">
+        <h4>Report so far</h4>
+        <p class="rep">Singleton pregnancy, cephalic presentation, normal amniotic fluid.</p>
+        <div class="qacts">
+          <button type="button" class="qobtn">Fill normal scan</button>
+          <button type="button" class="qtbtn">Clear findings</button>
+        </div>
+      </section>
+      <section class="sec">
+        <div class="sec-head"><h4>Scan timing and gestational age</h4></div>
+        <div class="sec-body">
+          <div class="gatile">
+            <div class="gt-top"><span class="gt-lab">Calculated GA</span><span class="gt-val">27+2 wks</span></div>
+          </div>
+          <div class="warn-mod" role="status">Dating delta: [delta] d (&gt;21 d threshold). Re-dating indicated.</div>
+          <div class="row2">
+            <div><span class="flab">GA weeks (0–45)</span><div class="fbox num">27</div></div>
+            <div><span class="flab">GA days (0–6)</span><div class="fbox num">2</div></div>
+          </div>
+        </div>
+      </section>
+      <section class="sec">
+        <div class="sec-head"><h4>Fetus, placenta and amniotic fluid</h4><span class="hstat">3 of 4 set</span></div>
+        <div class="sec-body" style="gap:4px">
+          <button type="button" class="rrow first"><span class="rl">Fetal number</span><span class="rr"><span class="rv">Singleton</span><span class="ra">Edit</span></span></button>
+          <button type="button" class="rrow"><span class="rl">Presentation</span><span class="rr"><span class="rv">Cephalic</span><span class="ra">Edit</span></span></button>
+          <div class="gstep">
+            <span class="flab">Placental site</span>
+            <div class="chips">
+              <span class="chipwrap"><button type="button" class="chip">Unknown</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Anterior</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Posterior</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Fundal</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Low-lying</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Previa</button></span>
+            </div>
+          </div>
+          <button type="button" class="rrow"><span class="rl">Amniotic fluid</span><span class="rr"><span class="rv">Normal</span><span class="ra">Edit</span></span></button>
+        </div>
+      </section>
+    </div></div>
+    <p class="note"><code>Fill normal scan</code> sets Singleton, Cephalic, Normal fluid and auto-opens the next blank step (<code>Placental site</code>). Redating banner shown for layout only when scan GA differs from dating beyond threshold.</p>
+  </figure>
+</div>
+
+<h2>2. Biometry entry and clinical impression (summary)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, biometry expanded (<code>DemoFixtures</code> scan <code>...0102</code>)</figcaption>
+    <div class="phone"><div class="screen">
+      <div class="old-card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><h4 class="old-ct">3. Fetal Biometry</h4><p class="old-sub11">BPD, HC, AC, FL, FHR &amp; EFW</p></div>
+          <span style="font-size:13px;font-weight:600;color:#0D1B3D">▲ Collapse</span>
+        </div>
+        <div class="row2">
+          <div class="old-m3f"><span class="olbl">Fetal heart rate</span>148</div>
+          <div class="old-m3f"><span class="olbl">Estimated fetal weight (EFW)</span>380</div>
+        </div>
+        <div class="row2">
+          <div class="old-m3f"><span class="olbl">BPD</span>49</div>
+          <div class="old-m3f"><span class="olbl">HC</span>178</div>
+        </div>
+        <div class="row2">
+          <div class="old-m3f"><span class="olbl">AC</span>155</div>
+          <div class="old-m3f"><span class="olbl">FL</span>34</div>
+        </div>
+      </div>
+      <div class="old-card">
+        <h4 class="old-ct">4. Clinical Impression</h4>
+        <div class="old-m3f" style="min-height:80px;align-items:flex-start"><span class="olbl">Impression</span>Normal fetal anatomy and morphology survey; no anomalies detected</div>
+        <div><span class="old-pill-ob">From my choices</span></div>
+        <div class="old-lock"><span aria-hidden="true">🔒</span><span>Ultrasound records and scans encrypted locally (AES-256 GCM) · Hardware Vault Security</span></div>
+      </div>
+      <div class="old-act"><span class="old-pill-ob">Cancel</span><span class="old-pill-p">Save</span></div>
+    </div></div>
+    <p class="note"><code>Estimated fetal weight (EFW)</code> clips in the notch, <code>11 sp</code> subtitle and Lock footer, triangle glyph in toggle, pill buttons.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, slice 15, biometry expanded + impression (<code>DemoFixtures</code> scan <code>...0102</code>)</figcaption>
+    <div class="phone"><div class="screen">
+      <section class="sec">
+        <div class="biohead">
+          <div class="bt">
+            <h4>Fetal biometry</h4>
+            <p>BPD, HC, AC, FL, FHR and EFW</p>
+          </div>
+          <button type="button" class="actbtn">Collapse</button>
+        </div>
+        <div class="sec-body">
+          <div class="row2">
+            <div><span class="flab">Fetal heart rate</span><div class="fbox num">148</div></div>
+            <div><span class="flab">Estimated fetal weight (EFW)</span><div class="fbox num">380</div></div>
+          </div>
+          <div class="row2">
+            <div><span class="flab">BPD</span><div class="fbox num">49</div></div>
+            <div><span class="flab">HC</span><div class="fbox num">178</div></div>
+          </div>
+          <div class="row2">
+            <div><span class="flab">AC</span><div class="fbox num">155</div></div>
+            <div><span class="flab">FL</span><div class="fbox num">34</div></div>
+          </div>
+        </div>
+      </section>
+      <section class="sec">
+        <div class="sec-head"><h4>Impression</h4></div>
+        <div class="sec-body">
+          <div class="fbox multi">Normal fetal anatomy and morphology survey; no anomalies detected</div>
+          <div><button type="button" class="obtn" style="width:auto">From my choices</button></div>
+        </div>
+      </section>
+      <div class="actrow">
+        <button type="button" class="obtn">Cancel</button>
+        <button type="button" class="pbtn">Save</button>
+      </div>
+    </div></div>
+    <p class="note">External 12 sp labels wrap cleanly without notch clipping (pairs stack vertically above <code>1.3x</code> font scale). Collapsed biometry hides the 6 inputs behind <code>Expand</code>. Equal-width 48 dp <code>SheetCancelSaveRow</code> at bottom; Lock footer removed.</p>
+  </figure>
+</div>
+
+<h2>3. Photo attach, linked visit, and photo viewer</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, More section + photo viewer</figcaption>
+    <div class="phone"><div class="screen">
+      <div class="old-card" style="padding:8px 16px"><div class="old-srow" style="border-top:0;padding-top:0"><span>More: photos and visit link</span><span class="ov">Close <span aria-hidden="true">▾</span></span></div></div>
+      <div class="old-card">
+        <h4 class="old-ct">Ultrasound scan images</h4>
+        <div class="chips"><span class="old-pchip">Photo 1 <b style="color:#BA1A1A">✕</b></span></div>
+        <div style="display:flex;gap:8px">
+          <span class="old-pill-p">📷 Take Photo</span>
+          <span class="old-pill-ob">🖼 Choose Image</span>
+        </div>
+      </div>
+      <div class="old-card">
+        <h4 class="old-ct">Link to visit</h4>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <div><b style="font-size:13px">Link to visit: [visit date]</b><br><span style="font-size:12px;color:#4C3F43">BP: 110/70 · Wt: [weight]</span></div>
+          <span class="old-pill-ob">Unlink visit</span>
+        </div>
+      </div>
+      <div class="old-dlg">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="width:38px;height:38px;border-radius:19px;background:#D6DFFF;display:inline-flex;align-items:center;justify-content:center" aria-hidden="true">📷</span>
+          <div style="flex:1"><b style="font-size:15px">Ultrasound Scan: 2026-05-30</b><br><span style="font-size:12px;color:#4C3F43">Photo 1 of 2 · 20+0 wks</span></div>
+          <span aria-hidden="true">✕</span>
+        </div>
+        <div class="old-img"><span>[Scan photo 1]</span><span class="old-1x">1x</span></div>
+        <div class="pager"><span aria-hidden="true">←</span><div class="dots"><span class="dot on" style="background:#0D1B3D"></span><span class="dot"></span></div><span aria-hidden="true">→</span></div>
+        <div class="chips" style="gap:6px"><span class="old-fbadge">FHR: 148 bpm</span><span class="old-fbadge">EFW: 380 g</span><span class="old-fbadge">BPD: 49 mm</span><span class="old-fbadge">FL: 34 mm</span><span class="old-fbadge">Presentation: Cephalic</span></div>
+        <div style="height:40px;border-radius:999px;background:#0D1B3D;color:#fff;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center">Close Viewer</div>
+      </div>
+    </div></div>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, slice 15, photo attach and linked visit (Mona Ragab, 110/70)</figcaption>
+    <div class="phone"><div class="screen">
+      <button type="button" class="morebar" aria-expanded="true"><span class="ml">More: photos and visit link</span><span class="mr">Close</span></button>
+      <section class="sec">
+        <div class="sec-head"><h4>Ultrasound scan images</h4></div>
+        <div class="sec-body">
+          <div class="phrow">
+            <span>Photo 1</span>
+            <button type="button" class="ibtn del" aria-label="Remove photo">✕</button>
+          </div>
+          <div class="stack2">
+            <button type="button" class="pbtn" style="width:100%">Take photo</button>
+            <button type="button" class="obtn" style="width:100%">Choose from gallery</button>
+          </div>
+        </div>
+      </section>
+      <section class="sec">
+        <div class="sec-head"><h4>Link to visit</h4></div>
+        <div class="sec-body">
+          <div class="vmeta">
+            <b>Linked visit: [visit date]</b>
+            <span>BP 110/70, weight [weight]</span>
+          </div>
+          <div><button type="button" class="obtn" style="width:auto">Unlink visit</button></div>
+        </div>
+      </section>
+      <section class="sec">
+        <div class="sec-head"><h4>Link to visit (unlinked state)</h4></div>
+        <div class="sec-body">
+          <p class="sectxt">Standalone scan (no linked visit)</p>
+          <div class="chips">
+            <span class="chipwrap"><button type="button" class="chip">[visit date]</button></span>
+          </div>
+        </div>
+      </section>
+    </div></div>
+    <p class="note">Full-width 48 dp photo buttons never clip at 2.0x scale; <code>Photo 1</code> uses 16 sp text + 48 dp Remove button; linked visit drops middle dots.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, <code>UltrasoundPhotoViewerDialog</code> + <code>ZoomableImage</code> 1x reset (<code>DemoFixtures</code> scan <code>...0102</code>)</figcaption>
+    <div class="phone"><div class="scrim">
+      <div class="dlg" role="dialog" aria-label="Ultrasound photo viewer">
+        <div class="dhead">
+          <div class="t">
+            <h4>Ultrasound scan, 2026-05-30</h4>
+            <p>Photo 1 of 2, 20+0 wks</p>
+          </div>
+          <button type="button" class="ibtn" aria-label="Close">✕</button>
+        </div>
+        <div class="imgbox" role="img" aria-label="Ultrasound scan photo 1">
+          <span>[Zoomable scan image]</span>
+          <button type="button" class="zreset" aria-label="Reset zoom">1x</button>
+        </div>
+        <div class="pager">
+          <button type="button" class="ibtn" aria-label="Previous photo" disabled style="color:var(--outv)">←</button>
+          <div class="dots" aria-hidden="true"><span class="dot on"></span><span class="dot"></span></div>
+          <button type="button" class="ibtn" aria-label="Next photo" style="color:var(--primary)">→</button>
+        </div>
+        <div class="pgrid">
+          <div class="pf"><span class="l">FHR</span><span class="v">148 bpm</span></div>
+          <div class="pf"><span class="l">EFW</span><span class="v">380 g</span></div>
+          <div class="pf"><span class="l">BPD</span><span class="v">49 mm</span></div>
+          <div class="pf"><span class="l">FL</span><span class="v">34 mm</span></div>
+          <div class="pf"><span class="l">Presentation</span><span class="v">Cephalic</span></div>
+        </div>
+        <button type="button" class="pbtn" style="width:100%">Close</button>
+      </div>
+    </div></div>
+    <p class="note">Scrollable 16 dp card, solid <code>surface</code> 14 sp <code>1x</code> reset button (10 dp), non-clickable dot indicators (48 dp Previous/Next handle navigation), and <code>PlainField</code> summary replacing 11 sp pills.</p>
+  </figure>
+</div>
+
+<h2>4. Dark theme and Arabic patient name (<bdi lang="ar">منى رجب</bdi>)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Dark</b>, after, guided findings + biometry (Arabic name)</figcaption>
+    <div class="phone dark"><div class="screen">
+      <div class="pagehead"><h3>Ultrasound scan editor</h3><p class="rtl" dir="rtl" lang="ar"><bdi lang="ar">منى رجب</bdi></p></div>
+      <section class="qpanel" aria-label="Report so far, dark">
+        <h4>Report so far</h4>
+        <p class="rep">Singleton pregnancy, cephalic presentation.</p>
+        <div class="qacts">
+          <button type="button" class="qobtn">Fill normal scan</button>
+          <button type="button" class="qtbtn">Clear findings</button>
+        </div>
+      </section>
+      <section class="sec">
+        <div class="sec-head"><h4>Fetus, placenta and amniotic fluid</h4><span class="hstat">2 of 4 set</span></div>
+        <div class="sec-body" style="gap:4px">
+          <button type="button" class="rrow first"><span class="rl">Fetal number</span><span class="rr"><span class="rv">Singleton</span><span class="ra">Edit</span></span></button>
+          <div class="gstep">
+            <span class="flab">Presentation</span>
+            <div class="chips">
+              <span class="chipwrap"><button type="button" class="chip">Unknown</button></span>
+              <span class="chipwrap"><button type="button" class="chip sel" aria-pressed="true">Cephalic</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Breech</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Transverse</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Variable</button></span>
+            </div>
+          </div>
+          <button type="button" class="rrow"><span class="rl">Placental site</span><span class="rr"><span class="rv miss">Not set</span><span class="ra">Choose</span></span></button>
+        </div>
+      </section>
+      <section class="sec">
+        <div class="biohead">
+          <div class="bt"><h4>Fetal biometry</h4><p>BPD, HC, AC, FL, FHR and EFW</p></div>
+          <button type="button" class="actbtn">Expand</button>
+        </div>
+      </section>
+      <div class="actrow">
+        <button type="button" class="obtn">Cancel</button>
+        <button type="button" class="pbtn">Save</button>
+      </div>
+    </div></div>
+  </figure>
+</div>
+
+<h2>5. Contrast (computed, WCAG 2.1 formula)</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Pair</th><th>Foreground</th><th>Background</th><th>Light</th><th>Dark</th><th>Target</th></tr></thead>
+<tbody>
+<tr><td>Editor title (onSurface) on page background</td><td>#0D1B3D / #E2E2EA</td><td>#FBF8F5 / #0E121B</td><td class="n">15.99:1</td><td class="n">14.54:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Section headings &amp; actions (primary) on surface</td><td>#0D1B3D / #B4C5FF</td><td>#FFFFFF / #1A202E</td><td class="n">16.92:1</td><td class="n">9.59:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Input text, 1x reset text, values (onSurface) on surface</td><td>#0D1B3D / #E2E2EA</td><td>#FFFFFF / #1A202E</td><td class="n">16.92:1</td><td class="n">12.64:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Secondary text, Missing, PlainField labels (onSurfaceVariant) on surface</td><td>#4C3F43 / #CDC3C6</td><td>#FFFFFF / #1A202E</td><td class="n">10.00:1</td><td class="n">9.47:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td><code>FieldObstetricLabel</code> on surface</td><td>#1D5149 / #9FD6CC</td><td>#FFFFFF / #1A202E</td><td class="n">9.03:1</td><td class="n">10.05:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td><code>FieldObstetricLabel</code> on <code>FieldObstetricBg</code></td><td>#1D5149 / #9FD6CC</td><td>#E3F0EE / #1D3836</td><td class="n">7.73:1</td><td class="n">7.76:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Live report &amp; GA value (onSurface) on <code>FieldObstetricBg</code></td><td>#0D1B3D / #E2E2EA</td><td>#E3F0EE / #1D3836</td><td class="n">14.47:1</td><td class="n">9.75:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Clear findings / Apply GA (primary) on <code>FieldObstetricBg</code></td><td>#0D1B3D / #B4C5FF</td><td>#E3F0EE / #1D3836</td><td class="n">14.47:1</td><td class="n">7.40:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Save, Take photo, selected chip (onPrimary on primary)</td><td>#FFFFFF / #002A78</td><td>#0D1B3D / #B4C5FF</td><td class="n">16.92:1</td><td class="n">7.72:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Redating warning (StatusModerateText on StatusModerateBg)</td><td>#6E4708 / #F3D18E</td><td>#FCEFD6 / #3A2A0E</td><td class="n">7.19:1</td><td class="n">9.44:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Input, chip, button, 1x reset border (outline on surface)</td><td>#79747E / #8E95A5</td><td>#FFFFFF / #1A202E</td><td class="n">4.55:1</td><td class="n">5.42:1</td><td>&ge; 3.0:1</td></tr>
+<tr><td>Remove photo icon (error) on <code>FieldObstetricBg</code></td><td>#BA1A1A / #FFB4AB</td><td>#E3F0EE / #1D3836</td><td class="n">5.53:1</td><td class="n">7.40:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Image unavailable (LightGray on Black viewport)</td><td>#D3D3D3</td><td>#000000</td><td class="n">14.03:1</td><td class="n">14.03:1</td><td>&ge; 4.5:1</td></tr>
+</tbody></table></div>
+
+<h2>6. Compose mapping</h2>
+<ol class="map">
+  <li><code>UltrasoundEditor</code> page &amp; summary: <code>EditorPage(..., subtitle = patient.displayName, tag = "ultrasoundEditor", useRecordStyle = true)</code>, <code>GenericEditorErrorCard(..., useRecordStyle = true)</code>, and <code>ultrasoundLiveSummary</code> as <code>OutlinedCard(shape = RecordShapes.Large, containerColor = FieldFamilies.obstetric().container, border = 1.dp outlineVariant)</code> with <code>RecordType.CardName</code> heading, <code>RecordType.FieldValue</code> / <code>RecordType.Missing</code> text, <code>OutlinedButton</code> (<code>fillNormalScan</code>), and <code>TextButton</code> (<code>clearFindings</code>).</li>
+  <li>Timing &amp; GA card: <code>RecordSectionCard(..., family = FieldFamilies.obstetric())</code>, <code>ClinicalDateField(..., externalLabel = true, useRecordStyle = true)</code>, <code>scanCalculatedGaCard</code> as flat <code>FieldObstetricBg</code> <code>Surface(RecordShapes.Small)</code> displaying <code>calculatedGa.shortWeeksText</code> (<code>27+2 wks</code>), amber <code>redatingHint</code> strip when <code>redatingAdvice</code> is non-null, and <code>EditorField(..., externalLabel = true, shape = RecordShapes.Small, textStyle = RecordType.KeyValue)</code> for <code>gaWeeks</code> / <code>gaDays</code> (stacking above <code>1.3f</code> scale).</li>
+  <li>Guided findings card (<code>ultrasoundFindingsCard</code>): <code>RecordSectionCard(title, FieldFamilies.obstetric(), action = countText)</code> containing <code>ChoiceGroup(..., labelStyle = RecordType.FieldLabel, labelColor = obstetricFamily.label, useRecordChip = true)</code> inside <code>findingOpen-${finding.key}</code> and <code>SummaryRow(..., useRecordStyle = true)</code> on collapsed <code>findingRow-${finding.key}</code> rows, keeping <code>nextBlankFinding</code> exact.</li>
+  <li>Biometry &amp; Impression cards: <code>OutlinedCard(RecordShapes.Large, testTag("biometryCard"))</code> (or <code>RecordSectionCard</code>) with <code>SectionTextAction</code> Expand/Collapse (<code>toggleBiometry</code>) and 6 external-label 10 dp <code>EditorField</code>s stacking above <code>1.3f</code> scale; <code>Impression</code> card using single-label <code>EditorField(label = "", externalLabel = false)</code> + 10 dp <code>OutlinedButton</code> (<code>impressionFromChoices</code>); Lock footer deleted; <code>SheetCancelSaveRow</code> at bottom (<code>saveTag = "saveUltrasound"</code>).</li>
+  <li>More section, <code>ZoomableImage</code> &amp; <code>UltrasoundPhotoViewerDialog</code>: <code>ultrasoundMoreToggle</code> as 16 dp <code>OutlinedCard</code> with Open/Close action; <code>scanAttachmentsCard</code> with 10 dp <code>attachmentItem-$index</code> rows (<code>16.sp</code> label, <code>48.dp</code> <code>removePhoto-$index</code>) and stacked full-width <code>captureScanPhotoCamera</code> / <code>addScanPhoto</code> buttons; <code>linkedVisitCard</code> with <code>RecordFilterChip</code> visit chips; <code>ZoomableImage</code> reset chip updated to <code>RecordShapes.Small</code>, solid <code>surface</code>, <code>outline</code> border, <code>RecordType.Action</code> (<code>"1x"</code>); <code>UltrasoundPhotoViewerDialog</code> restyled with scrollable 16 dp card, clean header, non-clickable indicator dots, and <code>PlainField</code> biometry grid.</li>
+</ol>
+
+<h2>7. Decisions for the owner (this slice)</h2>
+<ol class="map">
+  <li><b>Restyle Card 0 (<code>ultrasoundLiveSummary</code>) at the top as a calm <code>FieldObstetricBg</code> panel with demoted Clear button.</b> <i>Recommend: accept.</i> Keeps 1-tap <code>Fill normal scan</code> right at entry while separating primary fill from secondary clear.</li>
+  <li><b>Format calculated GA in <code>scanCalculatedGaCard</code> and <code>applyScanGa</code> as <code>27+2 wks</code> (<code>shortWeeksText</code>).</b> <i>Recommend: accept.</i> Aligns <code>UltrasoundEditor</code> with Owner Decision 9 across Overview, Hub, Scans, Dating, and Visit editors.</li>
+  <li><b>Reuse Slice 14's backward-compatible <code>SummaryRow(..., useRecordStyle = true)</code> for collapsed guided findings, and drop downward chevron on <code>ultrasoundMoreToggle</code>.</b> <i>Recommend: accept.</i> Unifies row typography at 14/16 sp without shifting <code>LabEditor</code>.</li>
+  <li><b>Include <code>UltrasoundPhotoViewerDialog.kt</code> alongside <code>UltrasoundEditor.kt</code> and <code>ZoomableImage.kt</code>, and stack photo source buttons full-width.</b> <i>Recommend: accept.</i> Fixes 11 sp pills, 8 dp clickable dots, and 360 dp button clipping in one cohesive scan-photo slice.</li>
+  <li><b>Drop the 11 sp vault Lock footer, normalize numbered card headings, and place inline <code>SheetCancelSaveRow</code> at the bottom.</b> <i>Recommend: accept.</i> Matches Slices 12 and 13 and keeps maximum vertical scroll area when the soft keyboard is open on 360x640 screens.</li>
+</ol>
+</main>
+</body>
+</html>

@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Mock S14: Visit editor</title>
+<style>
+  /* Tokens: Theme.kt scheme values + Slice 0 record tokens. */
+  :root{
+    --primary:#0D1B3D; --on:#0D1B3D; --onv:#4C3F43; --onprimary:#FFFFFF;
+    --primc:#D6DFFF; --onprimc:#041334; --sc:#FFD9DE; --onsc:#3B0815;
+    --tertc:#AFECEE; --ontertc:#002021;
+    --surface:#FFFFFF; --bg:#FBF8F5; --outv:#CAC4D0; --outline:#79747E; --sv:#F3E9E7; --scl:#F9F5F3;
+    --err:#BA1A1A; --errc:#FFDAD6; --onerrc:#410002;
+    --pt-bg:#E9EEF8; --pt-lb:#23407A;
+    --mod-bg:#FCEFD6; --mod-bd:#9E6F1E; --mod-fg:#6E4708;
+    --hi-bg:#FBE3E3; --hi-bd:#C26666; --hi-fg:#8E1B1B;
+    --r-s:10px; --r-l:16px;
+  }
+  .dark{
+    --primary:#B4C5FF; --on:#E2E2EA; --onv:#CDC3C6; --onprimary:#002A78;
+    --primc:#183F91; --onprimc:#DCE1FF; --sc:#762E3B; --onsc:#FFD9DE;
+    --tertc:#004F50; --ontertc:#8CF3F5;
+    --surface:#1A202E; --bg:#0E121B; --outv:#3A4459; --outline:#8E95A5; --sv:#262E40; --scl:#141924;
+    --err:#FFB4AB; --errc:#5C141D; --onerrc:#FFDAD6;
+    --pt-bg:#22304A; --pt-lb:#AFC6F2;
+    --mod-bg:#3A2A0E; --mod-bd:#A87A2A; --mod-fg:#F3D18E;
+    --hi-bg:#4A1616; --hi-bd:#B45A5A; --hi-fg:#FFC9C9;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:#FFFFFF;color:#0D1B3D;font-family:Roboto,"Noto Sans","Noto Sans Arabic","Segoe UI",system-ui,-apple-system,Arial,sans-serif;font-size:15px;line-height:1.5;padding:32px 16px 64px}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-size:26px;line-height:1.25;margin:0 0 8px}
+  h2{font-size:20px;line-height:1.3;margin:44px 0 6px}
+  h3.sub{font-size:16px;margin:18px 0 6px}
+  .lede,p,li{max-width:78ch}
+  .lede{color:#4C3F43;margin:0 0 4px}
+  .reason{border:1px solid #CAC4D0;border-radius:16px;padding:18px 20px;margin-top:18px;background:#FDFCFB}
+  .reason h2{margin-top:0}
+  .reason ul{margin:6px 0 0;padding-inline-start:20px}
+  .pair{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-top:14px}
+  figure{margin:0;width:360px;max-width:100%;flex:0 0 auto}
+  figcaption{font-size:14px;color:#4C3F43;margin:0 0 8px}
+  figcaption b{color:#0D1B3D}
+  .note{font-size:14px;color:#4C3F43;margin:10px 0 0}
+  .phone{width:100%;background:var(--bg);border:1px solid #B9B4BE;border-radius:16px;overflow:hidden;color:var(--on);display:flex;flex-direction:column}
+  .screen{padding:16px;display:flex;flex-direction:column;gap:12px}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  bdi{unicode-bidi:isolate}
+
+  /* AFTER: shared record components */
+  .pagehead h3{margin:0;font-size:22px;line-height:28px;font-weight:700;color:var(--on)}
+  .pstrip{background:var(--pt-bg);border:1px solid var(--outv);border-radius:var(--r-l);padding:12px;display:flex;flex-direction:column;gap:8px}
+  .pstrip-top{display:flex;align-items:center;gap:8px;justify-content:space-between}
+  .pname{margin:0;font-size:16px;line-height:22px;font-weight:700;color:var(--on);flex:1 1 auto;min-width:0}
+  .pname.rtl{direction:rtl;text-align:right}
+  .bchips{display:flex;flex-wrap:wrap;gap:6px}
+  .bchip{display:inline-flex;align-items:center;min-height:24px;padding:2px 10px;border-radius:var(--r-s);font-size:12px;line-height:16px;font-weight:700;white-space:nowrap;border:1px solid transparent}
+  .bchip.info{background:var(--surface);color:var(--pt-lb)}
+  .bchip.mod{background:var(--mod-bg);color:var(--mod-fg);border-color:var(--mod-bd)}
+  .bchip.hi{background:var(--hi-bg);color:var(--hi-fg);border-color:var(--hi-bd)}
+  .tag{display:inline-flex;align-items:center;min-height:24px;padding:3px 8px;border-radius:var(--r-s);font-size:12px;line-height:16px;font-weight:600;border:1px solid;white-space:nowrap}
+  .t-mod{background:var(--mod-bg);border-color:var(--mod-bd);color:var(--mod-fg)}
+
+  /* AFTER: labelled 4-step bar (VisitStepHeader) */
+  .stepbar{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:12px;display:flex;flex-direction:column;gap:8px}
+  .steprow{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .steprow .st-n{font-size:12px;line-height:16px;font-weight:700;color:var(--pt-lb)}
+  .steprow .st-t{font-size:16px;line-height:22px;font-weight:700;color:var(--on)}
+  .segs4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+  .segbtn{min-height:48px;padding:6px 2px;border-radius:var(--r-s);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center}
+  .segbtn:hover{background:rgba(13,27,61,.05)}
+  .dark .segbtn:hover{background:rgba(180,197,255,.08)}
+  .segline{width:100%;height:6px;border-radius:var(--r-s);border:1.5px solid var(--primary);background:var(--surface)}
+  .segline.done{background:var(--primary);border-color:var(--primary)}
+  .segline.cur{height:8px;background:var(--primary);border-color:var(--primary)}
+  .seglab{font-size:12px;line-height:15px;font-weight:500;color:var(--onv)}
+  .segbtn.cur .seglab{font-weight:700;color:var(--primary)}
+
+  /* AFTER: RecordSectionCard + Patient family fields */
+  .sec{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:4px 4px 16px 16px}
+  .sec-head{display:flex;align-items:center;min-height:48px;gap:8px}
+  .sec-head h4{flex:1 1 auto;margin:0;padding:6px 0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .sec-body{display:flex;flex-direction:column;gap:12px;padding-inline-end:12px}
+  .flab{display:block;font-size:12px;line-height:16px;font-weight:600;color:var(--pt-lb);margin-bottom:4px}
+  .flab-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+  .flab-row .flab{margin-bottom:0}
+  .fbox{min-height:48px;padding:12px 14px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);font-size:16px;line-height:22px;color:var(--on);overflow-wrap:anywhere}
+  .fbox.num{font-weight:600}
+  .fbox.multi{min-height:76px}
+  .fbox.date{padding:0 4px 0 14px;display:flex;align-items:center;justify-content:space-between;gap:6px}
+  .calbtn{width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--r-s);color:var(--primary);flex:0 0 auto}
+  .fmiss{color:var(--onv);font-style:italic}
+  .ptile{background:var(--pt-bg);border-radius:var(--r-s);padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .ptile .pl{font-size:12px;line-height:16px;font-weight:600;color:var(--pt-lb)}
+  .ptile .pv{font-size:16px;line-height:22px;font-weight:600;color:var(--on)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chipwrap{min-height:48px;display:inline-flex;align-items:center}
+  .chip{min-height:36px;padding:6px 12px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);color:var(--on);font-size:14px;line-height:20px;font-weight:500;display:inline-flex;align-items:center}
+  .chip.sel{background:var(--primary);border-color:var(--primary);color:var(--onprimary);font-weight:600}
+  .bprow{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:end}
+  .bpslash{font-size:20px;line-height:48px;font-weight:700;color:var(--on);padding:0 2px}
+  .warn-mod{background:var(--mod-bg);border:1px solid var(--mod-bd);border-radius:var(--r-s);padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+  .warn-mod .wt{font-size:12px;line-height:16px;font-weight:700;color:var(--mod-fg)}
+  .warn-mod .wb{font-size:14px;line-height:20px;font-weight:500;color:var(--mod-fg)}
+  .stepper{display:flex;align-items:center;gap:8px}
+  .stepbtn{width:52px;height:52px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);color:var(--primary);font-size:22px;line-height:24px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex:0 0 52px}
+  .stepbox{flex:1 1 auto;min-width:0;min-height:52px;padding:12px 14px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);display:flex;align-items:center;justify-content:space-between;gap:6px}
+  .stepbox .val{font-size:16px;line-height:22px;font-weight:600;color:var(--on)}
+  .stepbox .unit{font-size:14px;line-height:20px;color:var(--onv)}
+  .sw{font-size:12px;line-height:16px;font-weight:700}
+  .sw-neu{color:var(--onv);font-weight:600}
+  .sw-hi{color:var(--err)}
+  .sw-mod{color:var(--mod-fg)}
+
+  /* AFTER: Step 2 quick fill panel */
+  .qpanel{background:var(--pt-bg);border:1px solid var(--outv);border-radius:var(--r-l);padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+  .qpanel p{margin:0;font-size:14px;line-height:20px;color:var(--onv)}
+  .qbtn{min-height:48px;padding:0 16px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);color:var(--primary);font-size:14px;line-height:20px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;width:100%}
+
+  /* AFTER: Step 3 review rows & linked scan */
+  .sumtxt{margin:0;font-size:16px;line-height:22px;color:var(--on)}
+  .rrow{min-height:48px;padding:8px 0;border-top:1px solid var(--outv);display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;text-align:start}
+  .rrow.first{border-top:0;padding-top:2px}
+  .rrow .rl{font-size:14px;line-height:20px;color:var(--onv);flex:1 1 auto;min-width:0}
+  .rrow .rr{display:inline-flex;align-items:center;gap:10px;flex:0 0 auto}
+  .rrow .rv{font-size:16px;line-height:22px;font-weight:600;color:var(--on)}
+  .rrow .rv.miss{font-weight:400;font-style:italic;color:var(--onv)}
+  .rrow .ra{font-size:14px;line-height:20px;font-weight:600;color:var(--primary)}
+  .scanline{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .scanmeta{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 auto}
+  .scanmeta b{font-size:16px;line-height:22px;color:var(--on)}
+  .scanmeta span{font-size:14px;line-height:20px;color:var(--onv)}
+  .unlink{min-height:48px;padding:0 14px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);color:var(--primary);font-size:14px;font-weight:600;flex:0 0 auto}
+
+  /* AFTER: pinned bottom bar */
+  .foot{background:var(--surface);border-top:1px solid var(--outv);padding:12px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .obtn{min-height:48px;min-width:48px;padding:0 12px;border:1px solid var(--outline);border-radius:var(--r-s);font-size:14px;line-height:20px;font-weight:600;color:var(--primary);background:var(--surface);display:inline-flex;align-items:center;justify-content:center;text-align:center}
+  .pbtn{min-height:48px;min-width:48px;padding:0 12px;border-radius:var(--r-s);background:var(--primary);color:var(--onprimary);font-size:14px;line-height:20px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;text-align:center}
+
+  /* BEFORE fidelity styles (exact current VisitEditor.kt) */
+  .old-title{margin:0;font-size:24px;line-height:30px;font-weight:700;color:#0D1B3D}
+  .old-sub{margin:2px 0 0;font-size:13px;line-height:18px;color:#4C3F43}
+  .old-pcard{background:#F9F5F3;border:1px solid rgba(202,196,208,.5);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px}
+  .old-phead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .old-pname{font-size:15px;font-weight:700;color:#0D1B3D}
+  .old-pills{display:flex;flex-wrap:wrap;gap:4px 6px}
+  .opill{display:inline-flex;align-items:center;border-radius:6px;padding:2px 6px;font-size:11px;line-height:14px;font-weight:700;border:1px solid transparent}
+  .op-grn{background:#DCFCE7;border-color:#86EFAC;color:#166534}
+  .op-age{padding:0;overflow:hidden;border-color:#A5B4FC;background:#E0E7FF;color:#3730A3}
+  .op-age b{background:#4F46E5;color:#fff;padding:2px 5px;margin-inline-end:5px;font-size:11px}
+  .op-age span{padding-inline-end:6px}
+  .op-obs{background:#F3E8FF;border-color:#DDD6FE;color:#6B21A8}
+  .op-bld{background:#EFF6FF;border-color:#BFDBFE;color:#1D4ED8}
+  .op-ga{background:#E0F2FE;border-color:#BAE6FD;color:#0369A1}
+  .old-srow{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-top:2px}
+  .old-srow b{color:#0D1B3D}
+  .old-bars{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:12px 0}
+  .old-bar{height:4px;border-radius:2px;background:rgba(202,196,208,.5)}
+  .old-bar.on{background:#0D1B3D}
+  .old-card{background:#FFFFFF;border:1px solid rgba(202,196,208,.5);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+  .old-ct{margin:0;font-size:15px;line-height:20px;font-weight:700;color:#0D1B3D}
+  .old-m3f{position:relative;border:1px solid #79747E;border-radius:4px;padding:13px 12px 11px;font-size:15px;line-height:22px;color:#0D1B3D;background:#FFFFFF;min-height:50px;display:flex;align-items:center;justify-content:space-between}
+  .old-m3f .olbl{position:absolute;top:-8px;left:10px;background:#FFFFFF;padding:0 4px;font-size:12px;line-height:16px;color:#4C3F43}
+  .old-chip8{min-height:32px;padding:4px 10px;border:1px solid #79747E;border-radius:8px;font-size:13px;color:#4C3F43;background:#FFFFFF;display:inline-flex;align-items:center}
+  .old-chip8.sel{background:#FFD9DE;border-color:#FFD9DE;color:#3B0815;font-weight:600}
+  .old-ga11{display:inline-flex;align-items:center;padding:4px 8px;border-radius:8px;background:rgba(23,107,112,.12);border:1px solid rgba(23,107,112,.3);color:#176B70;font-size:11px;line-height:14px;font-weight:600;width:fit-content}
+  .old-step{display:flex;align-items:center;justify-content:center;gap:8px;padding:4px 0}
+  .old-step .pm{width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#0D1B3D}
+  .old-step .box{width:140px;height:52px;border:1px solid #79747E;border-radius:12px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:700}
+  .old-fhr11{display:inline-flex;padding:4px 8px;border-radius:6px;background:rgba(23,107,112,.12);color:#176B70;font-size:11px;font-weight:700;width:fit-content}
+  .old-fillbtn{min-height:56px;border-radius:28px;background:#FFD9DE;color:#3B0815;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;width:100%}
+  .old-big{min-height:56px;border:1px solid #CAC4D0;border-radius:12px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:500;color:#0D1B3D;background:#FFFFFF}
+  .old-big.sel{background:#D6DFFF;border:1.5px solid #0D1B3D;color:#041334;font-weight:700}
+  .old-rrow{min-height:48px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px}
+  .old-rrow .ov{color:#4C3F43;display:inline-flex;align-items:center;gap:6px}
+  .old-rrow .ov.set{font-weight:600;color:#0D1B3D}
+  .old-linkcard{background:#F9F5F3;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px}
+  .old-lock{display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;line-height:14px;color:#4C3F43}
+  .old-foot{background:#FFFFFF;border-top:1px solid rgba(202,196,208,.5);padding:12px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .old-obtn{min-height:48px;border:1px solid #79747E;border-radius:999px;color:#0D1B3D;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center}
+  .old-pbtn{min-height:48px;border-radius:999px;background:#0D1B3D;color:#FFFFFF;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center}
+
+  /* tables */
+  .tablewrap{overflow-x:auto;max-width:100%}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin-top:10px}
+  th,td{border-bottom:1px solid #E6E1E5;padding:7px 8px;text-align:start;vertical-align:top}
+  th{background:#F7F5F3}
+  td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+  ol.map li{margin:7px 0}
+  code{font-family:"Roboto Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:#F3F0EE;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<h1>Mock S14: Visit editor</h1>
+<p class="lede">Covers <code>ui/VisitEditor.kt</code> plus backward-compatible updates to <code>ValueStepper</code> and <code>SummaryRow</code> in <code>ui/DesignSystem.kt</code>. Real sample data only: Mona Ragab / <bdi lang="ar">منى رجب</bdi>, 27+2 wks, G4 P1 A2, 110/70, A+, EDD 11/02/2027 (note: Hb 11.2 belongs to labs, not visit entry). Bracketed placeholders mark values not in Mona's sample. Fundal height entry does not exist in <code>VisitEditor.kt</code> today (removed in commit <code>180da0d</code>; legacy values round-trip silently).</p>
+
+<section class="reason" aria-labelledby="r">
+  <h2 id="r">Design reasoning</h2>
+  <p>Reading this as: a bedside antenatal charting flow completed dozens of times a clinic session, where fewer taps, clear numeric targets, and calm hierarchy reduce eye and thumb fatigue. Antislop dials: ENERGY 1 / RHYTHM 1 / MOTION 1 (pressed and focus states only, no new animation).</p>
+  <ul>
+    <li><b>Replace 5 stacked header blocks with one calm Patient family banner + labelled step bar:</b> today the top repeats Mona's name twice, shows 5 sub-12 sp rainbow pills (with <code>ObstetricParityBadge</code> wrongly dropping <code>A2</code>), and draws 4 anonymous 4 dp lines. Slice 14 replaces that with one compact <code>FieldPatientBg</code> strip (<code>PatientNameText</code>, risk <code>StatusTag</code> only if Moderate/High, and <code>BandChip</code>s for <code>27+2 wks</code>, <code>G4 P1 A2</code>, <code>A+</code>) plus a 4-tab <code>VisitStepHeader</code> (<code>Date &amp; BP</code>, <code>Wt &amp; FHR</code>, <code>Findings</code>, <code>Review</code>) so doctors can jump to any step in one tap.</li>
+    <li><b>Clear BP and 52 dp numeric steppers:</b> keep all three BP tags (<code>visitSystolic</code>, <code>visitDiastolic</code>, <code>visitBloodPressure</code>) with 12 sp <code>FormFieldLabel</code>s and 10 dp boxes; upgrade <code>highBpWarning</code> from rose <code>secondaryContainer</code> to semantic amber/red; give <code>ValueStepper</code> crisp 52 dp outlined <code>10 dp</code> buttons and a fluid center box; raise the FHR baseline badge from 11 sp translucent teal with emoji to quiet <code>StatusWord</code> (12 sp).</li>
+    <li><b>Cut Step 2 scroll by ~750 dp:</b> replace 10 stacked full-width <code>BigChoiceButton</code>s and noisy <code>(Flag)</code> suffixes with one <code>"Bedside findings"</code> card of 48 dp <code>RecordFilterChip</code> rows (Oedema, Fetal movements, Urine protein) and show <code>StatusWord("Flagged", ...)</code> beside the label only when an abnormal choice is picked.</li>
+    <li><b>Calm, scannable Review step:</b> replace the downward <code>▾</code> chevron on <code>SummaryRow</code> with <code>"Edit"</code>, change <code>"Fetal Heart Rate"</code> to sentence case, restyle <code>visitLinkedUltrasoundCard</code> to 16 dp <code>RecordSectionCard</code> with <code>27+2 wks</code>, drop the duplicated inner Notes label and the 11 sp Lock footer, and use 10 dp 48 dp bottom buttons.</li>
+  </ul>
+</section>
+
+<h2>1. Top section and Step 0 (Date and blood pressure 110/70)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, Step 0 (Mona Ragab, 110/70)</figcaption>
+    <div class="phone">
+      <div class="screen">
+        <div>
+          <h3 class="old-title">Add visit</h3>
+          <p class="old-sub">Mona Ragab · GA 27w 2d</p>
+        </div>
+        <div class="old-pcard">
+          <div class="old-phead">
+            <span class="old-pname">Mona Ragab</span>
+            <span class="opill op-grn">Normal Risk</span>
+          </div>
+          <div class="old-pills">
+            <span class="opill op-age"><b>AGE</b><span>[age] yrs</span></span>
+            <span class="opill op-obs">G4 P1</span>
+            <span class="opill op-bld">A+</span>
+            <span class="opill op-ga">GA 27+2 wks</span>
+          </div>
+        </div>
+        <div class="old-srow"><b>Step 1 of 4</b><span>Date and blood pressure</span></div>
+        <div class="old-bars" aria-label="4 unlabelled step segments">
+          <div class="old-bar on"></div><div class="old-bar"></div><div class="old-bar"></div><div class="old-bar"></div>
+        </div>
+        <div class="old-card">
+          <h4 class="old-ct">Visit date (YYYY-MM-DD)</h4>
+          <div class="chips">
+            <span class="old-chip8 sel">Today</span>
+            <span class="old-chip8">Yesterday</span>
+          </div>
+          <div class="old-m3f"><span class="olbl">Other date</span><span>[visit date]</span><span aria-hidden="true">📅</span></div>
+          <div class="old-ga11">Gestational Age at visit: 27w 2d</div>
+        </div>
+        <div class="old-card">
+          <h4 class="old-ct">Blood pressure</h4>
+          <div class="chips">
+            <span class="old-chip8 sel">Normal (110/70)</span>
+            <span class="old-chip8">+ Add other</span>
+          </div>
+          <div class="bprow">
+            <div class="old-m3f"><span class="olbl">Systolic</span>110</div>
+            <span class="bpslash" style="font-size:18px">/</span>
+            <div class="old-m3f"><span class="olbl">Diastolic</span>70</div>
+          </div>
+          <div class="old-m3f"><span class="olbl">Blood pressure (mmHg)</span>110/70</div>
+        </div>
+      </div>
+      <div class="old-foot">
+        <span class="old-obtn">Cancel</span>
+        <span class="old-pbtn">Next</span>
+      </div>
+    </div>
+    <p class="note">Name repeats twice; <code>ClinicalPatientCard</code> shows 11 sp pills and omits <code>A2</code>; step bars have no labels; GA reads <code>27w 2d</code> in 11 sp translucent teal.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, slice 14, Step 0 (Mona Ragab, 110/70)</figcaption>
+    <div class="phone">
+      <div class="screen">
+        <div class="pagehead"><h3>Add visit</h3></div>
+        <div class="pstrip">
+          <div class="pstrip-top">
+            <p class="pname">Mona Ragab</p>
+          </div>
+          <div class="bchips">
+            <span class="bchip info">27+2 wks</span>
+            <span class="bchip info">G4 P1 A2</span>
+            <span class="bchip info">A+</span>
+          </div>
+        </div>
+        <div class="stepbar">
+          <div class="steprow"><span class="st-n">Step 1 of 4</span><span class="st-t">Date and blood pressure</span></div>
+          <div class="segs4">
+            <button type="button" class="segbtn cur" aria-current="step"><span class="segline cur"></span><span class="seglab">Date &amp; BP</span></button>
+            <button type="button" class="segbtn"><span class="segline"></span><span class="seglab">Wt &amp; FHR</span></button>
+            <button type="button" class="segbtn"><span class="segline"></span><span class="seglab">Findings</span></button>
+            <button type="button" class="segbtn"><span class="segline"></span><span class="seglab">Review</span></button>
+          </div>
+        </div>
+        <section class="sec">
+          <div class="sec-head"><h4>Visit date</h4></div>
+          <div class="sec-body">
+            <div class="chips">
+              <span class="chipwrap"><button type="button" class="chip sel" aria-pressed="true">Today</button></span>
+              <span class="chipwrap"><button type="button" class="chip" aria-pressed="false">Yesterday</button></span>
+            </div>
+            <div>
+              <span class="flab">Visit date (YYYY-MM-DD)</span>
+              <div class="fbox date"><span>[visit date]</span><button type="button" class="calbtn" aria-label="Select date">📅</button></div>
+            </div>
+            <div class="ptile">
+              <span class="pl">Gestational age at visit</span>
+              <span class="pv">27+2 wks</span>
+            </div>
+          </div>
+        </section>
+        <section class="sec">
+          <div class="sec-head"><h4>Blood pressure</h4></div>
+          <div class="sec-body">
+            <div>
+              <span class="flab">Quick presets</span>
+              <div class="chips">
+                <span class="chipwrap"><button type="button" class="chip sel" aria-pressed="true">Normal (110/70)</button></span>
+                <span class="chipwrap"><button type="button" class="chip">+ Add other</button></span>
+              </div>
+            </div>
+            <div class="bprow">
+              <div><span class="flab">Systolic</span><div class="fbox num">110</div></div>
+              <span class="bpslash">/</span>
+              <div><span class="flab">Diastolic</span><div class="fbox num">70</div></div>
+            </div>
+            <div>
+              <span class="flab">Blood pressure (mmHg)</span>
+              <div class="fbox">110/70</div>
+            </div>
+          </div>
+        </section>
+      </div>
+      <div class="foot">
+        <button type="button" class="obtn">Cancel</button>
+        <button type="button" class="pbtn">Next</button>
+      </div>
+    </div>
+    <p class="note">One patient banner (<code>G4 P1 A2</code> fixed, normal risk stays unbadged), direct 1-tap step tabs, and 10 dp 48 dp buttons. Above 1.3x font scale, short labels under the 4 bars hide automatically while keeping spoken labels.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, layout-only: Arabic name + raised BP warning</figcaption>
+    <div class="phone">
+      <div class="screen">
+        <div class="pagehead"><h3>Add visit</h3></div>
+        <div class="pstrip">
+          <div class="pstrip-top">
+            <p class="pname rtl" dir="rtl" lang="ar"><bdi lang="ar">منى رجب</bdi></p>
+            <span class="tag t-mod">Moderate risk</span>
+          </div>
+          <div class="bchips">
+            <span class="bchip info">27+2 wks</span>
+            <span class="bchip info">G4 P1 A2</span>
+            <span class="bchip info">A+</span>
+          </div>
+        </div>
+        <section class="sec">
+          <div class="sec-head"><h4>Blood pressure</h4></div>
+          <div class="sec-body">
+            <div>
+              <span class="flab">Quick presets</span>
+              <div class="chips">
+                <span class="chipwrap"><button type="button" class="chip">Same as last ([last BP])</button></span>
+                <span class="chipwrap"><button type="button" class="chip">Normal (110/70)</button></span>
+              </div>
+            </div>
+            <div class="bprow">
+              <div><span class="flab">Systolic</span><div class="fbox num">[150]</div></div>
+              <span class="bpslash">/</span>
+              <div><span class="flab">Diastolic</span><div class="fbox num">[95]</div></div>
+            </div>
+            <div class="warn-mod" role="status">
+              <span class="wt">Raised BP</span>
+              <span class="wb">High BP is flagged on the visit. You can still save.</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <p class="note">Arabic name aligns right via <code>PatientNameText</code>; risk tag shows only for Moderate or High risk; <code>highBpWarning</code> moves from pink <code>secondaryContainer</code> to amber (or red when &ge;160/110).</p>
+  </figure>
+</div>
+
+<h2>2. Vitals entry: Step 1 (Weight and FHR) and Step 2 (Findings and urine)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, Step 1 (Weight &amp; FHR; no fundal height in code)</figcaption>
+    <div class="phone">
+      <div class="screen">
+        <div class="old-srow"><b>Step 2 of 4</b><span>Weight and fetal heart rate</span></div>
+        <div class="old-bars"><div class="old-bar on"></div><div class="old-bar on"></div><div class="old-bar"></div><div class="old-bar"></div></div>
+        <div class="old-card">
+          <h4 class="old-ct">Weight</h4>
+          <div class="chips"><span class="old-chip8">+ Add other</span></div>
+          <div class="old-step">
+            <span class="pm">&minus;</span>
+            <div class="box"><span style="color:#4C3F43">[weight]</span><span style="font-size:13px;font-weight:400">kg</span></div>
+            <span class="pm">+</span>
+          </div>
+        </div>
+        <div class="old-card">
+          <h4 class="old-ct">Fetal heart rate (FHR)</h4>
+          <div class="chips">
+            <span class="old-chip8">135 bpm</span><span class="old-chip8">140 bpm</span><span class="old-chip8">145 bpm</span><span class="old-chip8">150 bpm</span>
+          </div>
+          <div class="old-step">
+            <span class="pm">&minus;</span>
+            <div class="box"><span>[FHR]</span><span style="font-size:13px;font-weight:400">bpm</span></div>
+            <span class="pm">+</span>
+          </div>
+          <div class="old-fhr11">Normal baseline (110–160 bpm) ✓</div>
+        </div>
+      </div>
+      <div class="old-foot"><span class="old-obtn">Back</span><span class="old-pbtn">Next</span></div>
+    </div>
+    <p class="note">Borderless <code>−</code> / <code>+</code> buttons, fixed 140 dp box, 11 sp translucent FHR badge with checkmark. Fundal height input was removed from <code>VisitEditor.kt</code> in commit <code>180da0d</code>.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, slice 14, Step 1 (52 dp outlined steppers, clean baseline word)</figcaption>
+    <div class="phone">
+      <div class="screen">
+        <div class="stepbar">
+          <div class="steprow"><span class="st-n">Step 2 of 4</span><span class="st-t">Weight and fetal heart rate</span></div>
+          <div class="segs4">
+            <button type="button" class="segbtn"><span class="segline done"></span><span class="seglab">Date &amp; BP</span></button>
+            <button type="button" class="segbtn cur" aria-current="step"><span class="segline cur"></span><span class="seglab">Wt &amp; FHR</span></button>
+            <button type="button" class="segbtn"><span class="segline"></span><span class="seglab">Findings</span></button>
+            <button type="button" class="segbtn"><span class="segline"></span><span class="seglab">Review</span></button>
+          </div>
+        </div>
+        <section class="sec">
+          <div class="sec-head"><h4>Weight</h4></div>
+          <div class="sec-body">
+            <div class="chips">
+              <span class="chipwrap"><button type="button" class="chip">Same as last ([last wt] kg)</button></span>
+              <span class="chipwrap"><button type="button" class="chip">+ Add other</button></span>
+            </div>
+            <div class="stepper">
+              <button type="button" class="stepbtn" aria-label="Decrease weight">&minus;</button>
+              <div class="stepbox"><span class="val">[weight]</span><span class="unit">kg</span></div>
+              <button type="button" class="stepbtn" aria-label="Increase weight">+</button>
+            </div>
+          </div>
+        </section>
+        <section class="sec">
+          <div class="sec-head"><h4>Fetal heart rate (FHR)</h4></div>
+          <div class="sec-body">
+            <div>
+              <span class="flab">Quick presets</span>
+              <div class="chips">
+                <span class="chipwrap"><button type="button" class="chip">135 bpm</button></span>
+                <span class="chipwrap"><button type="button" class="chip">140 bpm</button></span>
+                <span class="chipwrap"><button type="button" class="chip">145 bpm</button></span>
+                <span class="chipwrap"><button type="button" class="chip">150 bpm</button></span>
+              </div>
+            </div>
+            <div class="stepper">
+              <button type="button" class="stepbtn" aria-label="Decrease fetal heart rate">&minus;</button>
+              <div class="stepbox"><span class="val">[FHR]</span><span class="unit">bpm</span></div>
+              <button type="button" class="stepbtn" aria-label="Increase fetal heart rate">+</button>
+            </div>
+            <span class="sw sw-neu">Normal baseline (110-160 bpm)</span>
+          </div>
+        </section>
+      </div>
+      <div class="foot"><button type="button" class="obtn">Back</button><button type="button" class="pbtn">Next</button></div>
+    </div>
+    <p class="note">52 dp outlined <code>−</code> / <code>+</code> targets with 4.55:1 borders and fluid center input. Bradycardia (&lt;110) or tachycardia (&gt;160) renders as a red <code>StatusWord</code> (12 sp Bold, no emoji). Existing legacy <code>fundalHeight</code> values continue to round-trip silently on save.</p>
+  </figure>
+</div>
+
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, Step 2 (10 stacked BigChoiceButtons)</figcaption>
+    <div class="phone">
+      <div class="screen">
+        <div class="old-srow"><b>Step 3 of 4</b><span>Findings</span></div>
+        <div class="old-bars"><div class="old-bar on"></div><div class="old-bar on"></div><div class="old-bar on"></div><div class="old-bar"></div></div>
+        <div class="old-fillbtn">Fill normal values</div>
+        <p class="old-sub" style="margin:-6px 0 0">Applies normal oedema, movements, urine</p>
+        <div class="old-card">
+          <h4 class="old-ct">Oedema</h4>
+          <div class="old-big sel"><span>None</span><span aria-hidden="true">✓</span></div>
+          <div class="old-big"><span>Mild</span></div>
+          <div class="old-big"><span>Marked (Flag)</span></div>
+        </div>
+        <div class="old-card">
+          <h4 class="old-ct">Fetal movements</h4>
+          <div class="old-big sel"><span>Good</span><span aria-hidden="true">✓</span></div>
+          <div class="old-big"><span>Reduced (Flag)</span></div>
+          <div class="old-big"><span>Absent (Flag)</span></div>
+        </div>
+        <div class="old-card">
+          <h4 class="old-ct">Urine protein</h4>
+          <div class="old-big"><span>Negative</span></div>
+          <div class="old-big"><span>Trace (Flag)</span></div>
+          <div class="old-big sel"><span>+ (Flag)</span><span aria-hidden="true">✓</span></div>
+          <div class="old-big"><span>++ (Flag)</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Over 1,100 dp of vertical scrolling for three quick bedside checks, plus noisy <code>(Flag)</code> suffixes on unselected options.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, slice 14, Step 2 (all 3 bedside checks fit on one screen)</figcaption>
+    <div class="phone">
+      <div class="screen">
+        <div class="stepbar">
+          <div class="steprow"><span class="st-n">Step 3 of 4</span><span class="st-t">Findings</span></div>
+          <div class="segs4">
+            <button type="button" class="segbtn"><span class="segline done"></span><span class="seglab">Date &amp; BP</span></button>
+            <button type="button" class="segbtn"><span class="segline done"></span><span class="seglab">Wt &amp; FHR</span></button>
+            <button type="button" class="segbtn cur" aria-current="step"><span class="segline cur"></span><span class="seglab">Findings</span></button>
+            <button type="button" class="segbtn"><span class="segline"></span><span class="seglab">Review</span></button>
+          </div>
+        </div>
+        <div class="qpanel">
+          <button type="button" class="qbtn">Fill normal values</button>
+          <p>Applies normal oedema, movements, urine</p>
+        </div>
+        <section class="sec">
+          <div class="sec-head"><h4>Bedside findings</h4></div>
+          <div class="sec-body">
+            <div>
+              <div class="flab-row"><span class="flab">Oedema</span></div>
+              <div class="chips">
+                <span class="chipwrap"><button type="button" class="chip sel" aria-pressed="true">None</button></span>
+                <span class="chipwrap"><button type="button" class="chip">Mild</button></span>
+                <span class="chipwrap"><button type="button" class="chip">Marked</button></span>
+                <span class="chipwrap"><button type="button" class="chip">+ Add other</button></span>
+              </div>
+            </div>
+            <div>
+              <div class="flab-row"><span class="flab">Fetal movements</span></div>
+              <div class="chips">
+                <span class="chipwrap"><button type="button" class="chip sel" aria-pressed="true">Good</button></span>
+                <span class="chipwrap"><button type="button" class="chip">Reduced</button></span>
+                <span class="chipwrap"><button type="button" class="chip">Absent</button></span>
+                <span class="chipwrap"><button type="button" class="chip">+ Add other</button></span>
+              </div>
+            </div>
+            <div>
+              <div class="flab-row"><span class="flab">Urine protein</span><span class="sw sw-hi">Flagged</span></div>
+              <div class="chips">
+                <span class="chipwrap"><button type="button" class="chip">Negative</button></span>
+                <span class="chipwrap"><button type="button" class="chip">Trace</button></span>
+                <span class="chipwrap"><button type="button" class="chip sel" aria-pressed="true">+</button></span>
+                <span class="chipwrap"><button type="button" class="chip">++</button></span>
+                <span class="chipwrap"><button type="button" class="chip">+ Add other</button></span>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="sec">
+          <div class="sec-head"><h4>Findings</h4></div>
+          <div class="sec-body">
+            <div class="fbox multi"></div>
+          </div>
+        </section>
+      </div>
+      <div class="foot"><button type="button" class="obtn">Back</button><button type="button" class="pbtn">Next</button></div>
+    </div>
+    <p class="note">One-tap <code>Fill normal values</code> fills only blank fields. Urine <code>+</code> is shown selected here (layout only) to demonstrate <code>StatusWord("Flagged", High)</code> beside the label instead of repeating <code>(Flag)</code> on every button.</p>
+  </figure>
+</div>
+
+<h2>3. Summary and review step (Step 3)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, Step 3 (downward chevrons, <code>27w 2d</code>, Lock footer)</figcaption>
+    <div class="phone">
+      <div class="screen">
+        <div class="old-srow"><b>Step 4 of 4</b><span>Review and save</span></div>
+        <div class="old-bars"><div class="old-bar on"></div><div class="old-bar on"></div><div class="old-bar on"></div><div class="old-bar on"></div></div>
+        <div class="old-card">
+          <h4 class="old-ct">Summary</h4>
+          <p style="margin:0;font-size:13px;line-height:18px">[visit date] · 27w 2d · BP 110/70</p>
+          <span class="opill" style="background:#AFECEE;color:#002021;width:fit-content">Nothing flagged</span>
+        </div>
+        <div class="old-card" style="gap:0;padding:8px 16px">
+          <div class="old-rrow"><span>Visit date (YYYY-MM-DD)</span><span class="ov set">[visit date] <span aria-hidden="true">▾</span></span></div>
+          <div class="old-rrow"><span>Blood pressure</span><span class="ov set">110/70 <span aria-hidden="true">▾</span></span></div>
+          <div class="old-rrow"><span>Weight</span><span class="ov">Not set <span aria-hidden="true">▾</span></span></div>
+          <div class="old-rrow"><span>Fetal Heart Rate</span><span class="ov">Not set <span aria-hidden="true">▾</span></span></div>
+          <div class="old-rrow"><span>Oedema</span><span class="ov">Not set <span aria-hidden="true">▾</span></span></div>
+          <div class="old-rrow"><span>Fetal movements</span><span class="ov">Not set <span aria-hidden="true">▾</span></span></div>
+          <div class="old-rrow"><span>Urine protein</span><span class="ov">Not set <span aria-hidden="true">▾</span></span></div>
+        </div>
+        <div class="old-linkcard">
+          <b style="font-size:13px">Linked ultrasound scan</b>
+          <span style="font-size:11px;color:#4C3F43">Link to ultrasound</span>
+        </div>
+        <div class="old-card">
+          <h4 class="old-ct">Notes</h4>
+          <div class="old-m3f"><span class="olbl">Notes</span></div>
+        </div>
+        <div class="old-lock"><span aria-hidden="true">🔒</span><span>Visit records and examinations encrypted locally (AES-256 GCM) · Hardware Vault Security</span></div>
+      </div>
+      <div class="old-foot"><span class="old-obtn">Back</span><span class="old-pbtn">Save visit</span></div>
+    </div>
+    <p class="note">Downward dropdown arrows <code>▾</code> on jump-to-step rows, Title Case <code>Fetal Heart Rate</code>, bright cyan normal pill, duplicated <code>Notes</code> label, and 11 sp Lock footer.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, slice 14, Step 3 (Mona Ragab, BP 110/70, clean)</figcaption>
+    <div class="phone">
+      <div class="screen">
+        <div class="stepbar">
+          <div class="steprow"><span class="st-n">Step 4 of 4</span><span class="st-t">Review and save</span></div>
+          <div class="segs4">
+            <button type="button" class="segbtn"><span class="segline done"></span><span class="seglab">Date &amp; BP</span></button>
+            <button type="button" class="segbtn"><span class="segline done"></span><span class="seglab">Wt &amp; FHR</span></button>
+            <button type="button" class="segbtn"><span class="segline done"></span><span class="seglab">Findings</span></button>
+            <button type="button" class="segbtn cur" aria-current="step"><span class="segline cur"></span><span class="seglab">Review</span></button>
+          </div>
+        </div>
+        <section class="sec">
+          <div class="sec-head"><h4>Summary</h4></div>
+          <div class="sec-body">
+            <span class="sw sw-neu">Nothing flagged</span>
+            <p class="sumtxt">[visit date] · 27+2 wks · BP 110/70</p>
+          </div>
+        </section>
+        <section class="sec">
+          <div class="sec-head"><h4>Recorded values</h4></div>
+          <div class="sec-body" style="gap:0">
+            <button type="button" class="rrow first"><span class="rl">Visit date (YYYY-MM-DD)</span><span class="rr"><span class="rv">[visit date]</span><span class="ra">Edit</span></span></button>
+            <button type="button" class="rrow"><span class="rl">Blood pressure</span><span class="rr"><span class="rv">110/70</span><span class="ra">Edit</span></span></button>
+            <button type="button" class="rrow"><span class="rl">Weight</span><span class="rr"><span class="rv miss">Not set</span><span class="ra">Edit</span></span></button>
+            <button type="button" class="rrow"><span class="rl">Fetal heart rate</span><span class="rr"><span class="rv miss">Not set</span><span class="ra">Edit</span></span></button>
+            <button type="button" class="rrow"><span class="rl">Oedema</span><span class="rr"><span class="rv miss">Not set</span><span class="ra">Edit</span></span></button>
+            <button type="button" class="rrow"><span class="rl">Fetal movements</span><span class="rr"><span class="rv miss">Not set</span><span class="ra">Edit</span></span></button>
+            <button type="button" class="rrow"><span class="rl">Urine protein</span><span class="rr"><span class="rv miss">Not set</span><span class="ra">Edit</span></span></button>
+          </div>
+        </section>
+        <section class="sec">
+          <div class="sec-head"><h4>Linked ultrasound scan</h4></div>
+          <div class="sec-body">
+            <p style="margin:0;font-size:14px;color:var(--onv)">Link to ultrasound</p>
+            <div class="chips">
+              <span class="chipwrap"><button type="button" class="chip">[scan date] (27+2 wks)</button></span>
+            </div>
+          </div>
+        </section>
+        <section class="sec">
+          <div class="sec-head"><h4>Notes</h4></div>
+          <div class="sec-body"><div class="fbox multi"></div></div>
+        </section>
+      </div>
+      <div class="foot"><button type="button" class="obtn">Back</button><button type="button" class="pbtn">Save visit</button></div>
+    </div>
+    <p class="note">Quiet <code>StatusWord("Nothing flagged", Neutral)</code> when clear; <code>27+2 wks</code> matches Hub and Visits; tapping any review row jumps straight to that step; no Lock footer.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, layout-only: Step 3 with flagged findings &amp; linked scan</figcaption>
+    <div class="phone">
+      <div class="screen">
+        <section class="sec">
+          <div class="sec-head"><h4>Summary</h4></div>
+          <div class="sec-body">
+            <div class="bchips">
+              <span class="bchip mod">High BP</span>
+              <span class="bchip hi">Urine +</span>
+            </div>
+            <p class="sumtxt">[visit date] · 27+2 wks · BP [150/95] · Urine +</p>
+          </div>
+        </section>
+        <section class="sec">
+          <div class="sec-head"><h4>Linked ultrasound scan</h4></div>
+          <div class="sec-body">
+            <div class="scanline">
+              <div class="scanmeta">
+                <b>Ultrasound: [scan date] (27+2 wks)</b>
+                <span>[scan impression]</span>
+              </div>
+              <button type="button" class="unlink">Unlink ultrasound</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <p class="note">Flagged findings use <code>BandChip</code>s (amber/red, 12 sp, 10 dp) instead of rose pills; linked ultrasound shows <code>27+2 wks</code> and a 48 dp <code>Unlink ultrasound</code> button.</p>
+  </figure>
+</div>
+
+<h2>4. Dark theme</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Dark</b>, after, Step 0 + Arabic patient banner (<bdi lang="ar">منى رجب</bdi>)</figcaption>
+    <div class="phone dark">
+      <div class="screen">
+        <div class="pagehead"><h3>Add visit</h3></div>
+        <div class="pstrip">
+          <div class="pstrip-top">
+            <p class="pname rtl" dir="rtl" lang="ar"><bdi lang="ar">منى رجب</bdi></p>
+          </div>
+          <div class="bchips">
+            <span class="bchip info">27+2 wks</span>
+            <span class="bchip info">G4 P1 A2</span>
+            <span class="bchip info">A+</span>
+          </div>
+        </div>
+        <div class="stepbar">
+          <div class="steprow"><span class="st-n">Step 1 of 4</span><span class="st-t">Date and blood pressure</span></div>
+          <div class="segs4">
+            <button type="button" class="segbtn cur" aria-current="step"><span class="segline cur"></span><span class="seglab">Date &amp; BP</span></button>
+            <button type="button" class="segbtn"><span class="segline"></span><span class="seglab">Wt &amp; FHR</span></button>
+            <button type="button" class="segbtn"><span class="segline"></span><span class="seglab">Findings</span></button>
+            <button type="button" class="segbtn"><span class="segline"></span><span class="seglab">Review</span></button>
+          </div>
+        </div>
+        <section class="sec">
+          <div class="sec-head"><h4>Blood pressure</h4></div>
+          <div class="sec-body">
+            <div>
+              <span class="flab">Quick presets</span>
+              <div class="chips">
+                <span class="chipwrap"><button type="button" class="chip sel" aria-pressed="true">Normal (110/70)</button></span>
+                <span class="chipwrap"><button type="button" class="chip">+ Add other</button></span>
+              </div>
+            </div>
+            <div class="bprow">
+              <div><span class="flab">Systolic</span><div class="fbox num">110</div></div>
+              <span class="bpslash">/</span>
+              <div><span class="flab">Diastolic</span><div class="fbox num">70</div></div>
+            </div>
+            <div>
+              <span class="flab">Blood pressure (mmHg)</span>
+              <div class="fbox">110/70</div>
+            </div>
+          </div>
+        </section>
+      </div>
+      <div class="foot">
+        <button type="button" class="obtn">Cancel</button>
+        <button type="button" class="pbtn">Next</button>
+      </div>
+    </div>
+  </figure>
+
+  <figure>
+    <figcaption><b>Dark</b>, after, Step 3 review (Mona Ragab, 110/70)</figcaption>
+    <div class="phone dark">
+      <div class="screen">
+        <section class="sec">
+          <div class="sec-head"><h4>Summary</h4></div>
+          <div class="sec-body">
+            <span class="sw sw-neu">Nothing flagged</span>
+            <p class="sumtxt">[visit date] · 27+2 wks · BP 110/70</p>
+          </div>
+        </section>
+        <section class="sec">
+          <div class="sec-head"><h4>Recorded values</h4></div>
+          <div class="sec-body" style="gap:0">
+            <button type="button" class="rrow first"><span class="rl">Visit date (YYYY-MM-DD)</span><span class="rr"><span class="rv">[visit date]</span><span class="ra">Edit</span></span></button>
+            <button type="button" class="rrow"><span class="rl">Blood pressure</span><span class="rr"><span class="rv">110/70</span><span class="ra">Edit</span></span></button>
+            <button type="button" class="rrow"><span class="rl">Weight</span><span class="rr"><span class="rv miss">Not set</span><span class="ra">Edit</span></span></button>
+            <button type="button" class="rrow"><span class="rl">Fetal heart rate</span><span class="rr"><span class="rv miss">Not set</span><span class="ra">Edit</span></span></button>
+          </div>
+        </section>
+      </div>
+      <div class="foot"><button type="button" class="obtn">Back</button><button type="button" class="pbtn">Save visit</button></div>
+    </div>
+  </figure>
+</div>
+
+<h2>5. Contrast (computed, WCAG formula)</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Pair</th><th>Foreground</th><th>Background</th><th>Light</th><th>Dark</th><th>Target</th></tr></thead>
+<tbody>
+<tr><td>Editor title (onSurface) on page background</td><td>#0D1B3D / #E2E2EA</td><td>#FBF8F5 / #0E121B</td><td class="n">15.99:1</td><td class="n">14.37:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Card titles, Edit/Cancel labels (primary) on surface</td><td>#0D1B3D / #B4C5FF</td><td>#FFFFFF / #1A202E</td><td class="n">16.92:1</td><td class="n">9.59:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Field values, summary values (onSurface) on surface</td><td>#0D1B3D / #E2E2EA</td><td>#FFFFFF / #1A202E</td><td class="n">16.92:1</td><td class="n">12.64:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Patient banner name &amp; GA tile value on FieldPatientBg</td><td>#0D1B3D / #E2E2EA</td><td>#E9EEF8 / #22304A</td><td class="n">14.54:1</td><td class="n">10.25:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td><code>FieldPatientLabel</code> on surface / on FieldPatientBg</td><td>#23407A / #AFC6F2</td><td>#FFFFFF / #22304A</td><td class="n">10.07 / 8.65:1</td><td class="n">9.44 / 7.66:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Secondary labels, units, Not set (onSurfaceVariant) on surface</td><td>#4C3F43 / #CDC3C6</td><td>#FFFFFF / #1A202E</td><td class="n">10.00:1</td><td class="n">9.47:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Save / Next / Selected chip (onPrimary on primary)</td><td>#FFFFFF / #002A78</td><td>#0D1B3D / #B4C5FF</td><td class="n">16.92:1</td><td class="n">7.72:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Input, stepper, chip, Cancel border (outline on surface)</td><td>#79747E / #8E95A5</td><td>#FFFFFF / #1A202E</td><td class="n">4.55:1</td><td class="n">5.42:1</td><td>&ge; 3.0:1</td></tr>
+<tr><td>Raised BP warning &amp; amber BandChip (StatusModerateText on Bg)</td><td>#6E4708 / #F3D18E</td><td>#FCEFD6 / #3A2A0E</td><td class="n">7.19:1</td><td class="n">9.44:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Severe BP / Urine + / Bradycardia (StatusHighText on Bg, error on surface)</td><td>#8E1B1B / #FFC9C9</td><td>#FBE3E3 / #4A1616</td><td class="n">7.40:1</td><td class="n">10.19:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Flagged StatusWord (error) on surface</td><td>#BA1A1A / #FFB4AB</td><td>#FFFFFF / #1A202E</td><td class="n">6.46:1</td><td class="n">9.59:1</td><td>&ge; 4.5:1</td></tr>
+</tbody></table></div>
+
+<h2>6. Compose mapping</h2>
+<ol class="map">
+  <li><code>EditorPage(..., useRecordStyle = true)</code> in <code>PatientEditor.kt</code>: header uses <code>RecordType.HeaderName</code> (22 sp Bold <code>onSurface</code>, <code>testTag("visitEditor")</code>); footer uses full-contrast <code>HorizontalDivider(outlineVariant)</code> and <code>RecordShapes.Small</code> (10 dp) 48 dp buttons (<code>cancelVisit</code>, <code>backStep</code>, <code>nextStep</code>, <code>saveVisit</code>) with <code>RecordType.Action</code> and <code>maxLines = 2</code>.</li>
+  <li><code>VisitPatientBanner</code> (new helper in split <code>VisitEditorSteps.kt</code>): replaces <code>ClinicalPatientCard(EDITOR_SUMMARY)</code> in <code>VisitEditor</code>; <code>Surface(shape = RecordShapes.Large, color = FieldFamilies.patient().container, border = 1.dp outlineVariant)</code> showing <code>PatientNameText</code>, optional risk <code>StatusTag</code> (Moderate/High only), and <code>BandChip</code>s for <code>shortWeeksText</code> (<code>27+2 wks</code>), <code>parityText(g, p, a)</code> (<code>G4 P1 A2</code>), and <code>formatBloodGroup</code> (<code>A+</code>, plus <code>StatusTag(HighRisk, "Rh negative")</code> if Rh-).</li>
+  <li><code>VisitStepHeader</code> (new helper in <code>VisitEditorSteps.kt</code>): replaces <code>SegmentedProgressBar</code> in <code>VisitEditor</code>; <code>Surface(shape = RecordShapes.Large, border = 1.dp outlineVariant)</code> showing <code>step_n_of_m</code> + step title and 4 tappable <code>48.dp</code> <code>testTag("stepSegment-0..3")</code> buttons with <code>RecordShapes.Small</code> bars and <code>RecordType.Tag</code> (12 sp) labels hidden above <code>1.3f</code> font scale.</li>
+  <li>Step 0 &amp; Step 1 cards: <code>RecordSectionCard(title, FieldFamilies.patient())</code>, <code>RecordFilterChip</code> (10 dp, 48 dp target) for date/BP/weight/FHR presets, <code>ClinicalDateField(..., externalLabel = true, useRecordStyle = true)</code>, <code>FormFieldLabel</code> over 10 dp <code>OutlinedTextField</code>s for <code>visitSystolic</code> / <code>visitDiastolic</code> / <code>visitBloodPressure</code>, semantic <code>StatusModerate*</code> / <code>StatusHigh*</code> card for <code>highBpWarning</code>, <code>ValueStepper(..., useRecordStyle = true)</code> (52 dp outlined <code>−</code>/<code>+</code> buttons, <code>Modifier.weight(1f)</code> center field), and <code>StatusWord</code> for FHR baseline.</li>
+  <li>Step 2 &amp; Step 3 cards: calm <code>FieldPatientBg</code> panel for <code>fillNormalValues</code>, one <code>"Bedside findings"</code> <code>RecordSectionCard</code> with <code>RecordFilterChip</code> rows for Oedema / Fetal movements / Urine protein (keeping exact <code>oedemaChoice-*</code> / <code>movementsChoice-*</code> / <code>urineChoice-*</code> tags) plus <code>StatusWord("Flagged", ...)</code> when abnormal, <code>visitSummaryCard</code> with <code>BandChip</code> / <code>StatusWord("Nothing flagged", Neutral)</code>, <code>SummaryRow(..., useRecordStyle = true, trailingActionText = "Edit")</code> with <code>HorizontalDivider(outlineVariant)</code>, <code>visitLinkedUltrasoundCard</code> as <code>RecordSectionCard</code>, and single-label <code>Notes</code> card; 11 sp Lock footer removed.</li>
+</ol>
+
+<h2>7. Decisions for the owner (this slice)</h2>
+<ol class="map">
+  <li><b>Replace <code>ClinicalPatientCard(EDITOR_SUMMARY)</code> and redundant subtitle in <code>VisitEditor</code> with <code>VisitPatientBanner</code>.</b> <i>Recommend: accept.</i> Removes duplicate patient name, fixes missing <code>A2</code> in parity, removes 5 sub-12 sp rainbow pills, and keeps <code>savePhase != IDLE</code> subtitle unchanged for <code>AncWorkflowTest</code>.</li>
+  <li><b>Replace anonymous 4 dp <code>SegmentedProgressBar</code> with labelled 4-tab <code>VisitStepHeader</code>.</b> <i>Recommend: accept.</i> Keeps <code>stepSegment-0..3</code> tags and <code>"Step X of 4"</code> text while making 1-tap jumps to Findings or Review obvious.</li>
+  <li><b>Replace 10 stacked <code>BigChoiceButton</code>s on Step 2 with <code>RecordFilterChip</code> rows inside one <code>"Bedside findings"</code> card.</b> <i>Recommend: accept.</i> Cuts ~750 dp of scrolling, keeps all <code>*Choice-*</code> tags and 48 dp targets, and replaces noisy <code>(Flag)</code> button suffixes with a semantic <code>StatusWord</code> when an abnormal choice is active.</li>
+  <li><b>Backward-compatible <code>useRecordStyle = false</code> upgrade on shared <code>ValueStepper</code> and <code>SummaryRow</code> in <code>DesignSystem.kt</code>.</b> <i>Recommend: accept.</i> Gives VisitEditor 52 dp outlined steppers and <code>"Edit"</code> review rows without shifting <code>UltrasoundEditor</code> or <code>LabEditor</code> before Slices 15 and 16.</li>
+  <li><b>Keep fundal height entry omitted as in current code, align warning/summary colours, drop 11 sp Lock footer.</b> <i>Recommend: accept.</i> Keeps Slice 14 strictly visual (no unrequested fields; legacy <code>FH</code> still round-trips), moves BP/flag pills from pink/cyan to semantic amber/red/neutral, uses <code>27+2 wks</code> everywhere, and drops the Lock footer like Slices 12 and 13.</li>
+</ol>
+</main>
+</body>
+</html>

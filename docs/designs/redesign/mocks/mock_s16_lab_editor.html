@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Mock S16: Lab editor and lab batch</title>
+<style>
+  /* Tokens: Theme.kt scheme values + Slice 0 record tokens (Background / sand family). */
+  :root{
+    --primary:#0D1B3D; --on:#0D1B3D; --onv:#4C3F43; --onprimary:#FFFFFF;
+    --primc:#D6DFFF; --onprimc:#041334; --sc:#FFD9DE; --onsc:#3B0815;
+    --rose:#934F5B;
+    --surface:#FFFFFF; --bg:#FBF8F5; --outv:#CAC4D0; --outline:#79747E; --sv:#F3E9E7; --scl:#F9F5F3; --sch:#EFE9E4;
+    --err:#BA1A1A; --errc:#FFDAD6; --onerrc:#410002;
+    --hx-bg:#F1EDE4; --hx-lb:#594A2C;
+    --inc-bg:#EEF0F4; --inc-bd:#757E8E; --inc-fg:#333B4A;
+    --mod-bg:#FCEFD6; --mod-bd:#9E6F1E; --mod-fg:#6E4708;
+    --hi-bg:#FBE3E3; --hi-bd:#C26666; --hi-fg:#8E1B1B;
+    --r-s:10px; --r-l:16px;
+  }
+  .dark{
+    --primary:#B4C5FF; --on:#E2E2EA; --onv:#CDC3C6; --onprimary:#002A78;
+    --primc:#183F91; --onprimc:#DCE1FF; --sc:#762E3B; --onsc:#FFD9DE;
+    --surface:#1A202E; --bg:#0E121B; --outv:#3A4459; --outline:#8E95A5; --sv:#262E40; --scl:#141924; --sch:#283248;
+    --err:#FFB4AB; --errc:#5C141D; --onerrc:#FFDAD6;
+    --hx-bg:#36301F; --hx-lb:#E0CFA6;
+    --inc-bg:#2A3140; --inc-bd:#7D889E; --inc-fg:#D5DAE3;
+    --mod-bg:#3A2A0E; --mod-bd:#A87A2A; --mod-fg:#F3D18E;
+    --hi-bg:#4A1616; --hi-bd:#B45A5A; --hi-fg:#FFC9C9;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:#FFFFFF;color:#0D1B3D;font-family:Roboto,"Noto Sans","Noto Sans Arabic","Segoe UI",system-ui,-apple-system,Arial,sans-serif;font-size:15px;line-height:1.5;padding:32px 16px 64px}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-size:26px;line-height:1.25;margin:0 0 8px}
+  h2{font-size:20px;line-height:1.3;margin:44px 0 6px}
+  .lede,p,li{max-width:78ch}
+  .lede{color:#4C3F43;margin:0 0 4px}
+  .reason{border:1px solid #CAC4D0;border-radius:16px;padding:18px 20px;margin-top:18px;background:#FDFCFB}
+  .reason h2{margin-top:0}
+  .reason ul{margin:6px 0 0;padding-inline-start:20px}
+  .pair{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-top:14px}
+  figure{margin:0;width:360px;max-width:100%;flex:0 0 auto}
+  figcaption{font-size:14px;color:#4C3F43;margin:0 0 8px}
+  figcaption b{color:#0D1B3D}
+  .note{font-size:14px;color:#4C3F43;margin:10px 0 0}
+  .phone{width:100%;background:var(--bg);border:1px solid #B9B4BE;border-radius:16px;overflow:hidden;color:var(--on);display:flex;flex-direction:column}
+  .screen{padding:16px;display:flex;flex-direction:column;gap:12px}
+  .scrim{background:rgba(0,0,0,.32);padding:24px 14px;display:flex;flex-direction:column;justify-content:center}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  button:hover{filter:brightness(.97)}
+  button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  bdi{unicode-bidi:isolate}
+
+  /* AFTER: shared record components (Background / sand family) */
+  .pagehead h3{margin:0;font-size:22px;line-height:28px;font-weight:700;color:var(--on)}
+  .pstrip{background:var(--hx-bg);border:1px solid var(--outv);border-radius:var(--r-l);padding:12px;display:flex;flex-direction:column;gap:8px}
+  .pstrip-top{display:flex;align-items:center;gap:8px;justify-content:space-between}
+  .pname{margin:0;font-size:16px;line-height:22px;font-weight:700;color:var(--on);flex:1 1 auto;min-width:0}
+  .pname.rtl{direction:rtl;text-align:right}
+  .bchips{display:flex;flex-wrap:wrap;gap:6px}
+  .bchip{display:inline-flex;align-items:center;min-height:24px;padding:2px 10px;border-radius:var(--r-s);font-size:12px;line-height:16px;font-weight:700;white-space:nowrap;border:1px solid transparent}
+  .bchip.info{background:var(--surface);color:var(--hx-lb)}
+  .bchip.neu{background:var(--surface);color:var(--onv);border-color:var(--outv)}
+  .bchip.mod{background:var(--mod-bg);color:var(--mod-fg);border-color:var(--mod-bd)}
+  .bchip.hi{background:var(--hi-bg);color:var(--hi-fg);border-color:var(--hi-bd)}
+
+  .mbar-row{display:flex;align-items:center;gap:8px}
+  .ibtn{width:48px;height:48px;border-radius:var(--r-s);display:inline-flex;align-items:center;justify-content:center;color:var(--primary);flex:0 0 48px}
+  .ibtn.err{color:var(--err)}
+  .mbar{flex:1 1 auto;min-width:0;min-height:56px;background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:10px 4px 10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:start}
+  .mbar-info{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .mbar-top{font-size:16px;line-height:22px;font-weight:600;color:var(--on);overflow-wrap:anywhere}
+  .mbar-sub{font-size:14px;line-height:20px;color:var(--onv);overflow-wrap:anywhere}
+  .mbar-act{min-width:48px;min-height:48px;padding:0 12px;border-radius:var(--r-s);font-size:14px;line-height:20px;font-weight:600;color:var(--primary);display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+
+  /* AFTER: RecordSectionCard & external FormFieldLabel */
+  .sec{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:4px 4px 16px 16px}
+  .sec-head{display:flex;align-items:center;min-height:48px;gap:8px}
+  .sec-head h4{flex:1 1 auto;margin:0;padding:6px 0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .sec-head .hstat{padding:0 12px;font-size:12px;line-height:16px;font-weight:600;color:var(--hx-lb);white-space:nowrap}
+  .sec-body{display:flex;flex-direction:column;gap:12px;padding-inline-end:12px}
+  .flab{display:block;font-size:12px;line-height:16px;font-weight:600;color:var(--hx-lb);margin-bottom:4px}
+  .flab-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .fbox{min-height:48px;padding:12px 14px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);font-size:16px;line-height:22px;color:var(--on);overflow-wrap:anywhere}
+  .fbox.num{font-weight:600}
+  .fbox.multi{min-height:76px}
+  .fbox.search{display:flex;align-items:center;gap:8px;color:var(--onv)}
+  .fbox.date{padding:0 4px 0 14px;display:flex;align-items:center;justify-content:space-between;gap:6px}
+  .calbtn{width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--r-s);color:var(--primary);flex:0 0 auto}
+  .row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .miss{color:var(--onv);font-style:italic}
+  .sectxt{margin:0;font-size:14px;line-height:20px;color:var(--onv)}
+
+  /* AFTER: live readout strip, dipstick chips, switch row, buttons */
+  .readout{background:var(--hx-bg);border-radius:var(--r-s);padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px}
+  .readout .rval{font-size:22px;line-height:28px;font-weight:700;color:var(--on)}
+  .readout .runit{font-size:14px;line-height:20px;font-weight:600;color:var(--onv);margin-inline-start:4px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chipwrap{min-height:48px;display:inline-flex;align-items:center}
+  .chip{min-height:36px;padding:6px 12px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);color:var(--on);font-size:14px;line-height:20px;font-weight:500;display:inline-flex;align-items:center;text-align:start}
+  .chip.sel{background:var(--primary);border-color:var(--primary);color:var(--onprimary);font-weight:600}
+  .swrow{min-height:56px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .swrow .swmeta{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .swrow .swtitle{font-size:16px;line-height:22px;color:var(--on);font-weight:500}
+  .swrow .swtitle.ab{color:var(--err);font-weight:700}
+  .swrow .swsub{font-size:14px;line-height:20px;color:var(--onv)}
+  .tog{width:52px;height:32px;border-radius:16px;border:2px solid var(--outline);position:relative;flex:0 0 52px;background:var(--surface)}
+  .tog::after{content:"";position:absolute;width:16px;height:16px;border-radius:8px;background:var(--outline);left:6px;top:6px}
+  .tog.on{background:var(--primary);border-color:var(--primary)}
+  .tog.on::after{width:24px;height:24px;border-radius:12px;background:var(--onprimary);left:22px;top:2px}
+
+  .morebar{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);min-height:56px;padding:4px 4px 4px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;text-align:start}
+  .morebar .ml{font-size:16px;line-height:22px;font-weight:700;color:var(--on);flex:1 1 auto;min-width:0}
+  .morebar .mr{min-height:48px;padding:0 12px;display:inline-flex;align-items:center;font-size:14px;line-height:20px;font-weight:600;color:var(--primary)}
+
+  .tbtn{min-height:48px;min-width:48px;padding:0 12px;border-radius:var(--r-s);font-size:14px;line-height:20px;font-weight:600;color:var(--primary);display:inline-flex;align-items:center;justify-content:center}
+  .obtn{min-height:48px;min-width:48px;padding:0 14px;border:1px solid var(--outline);border-radius:var(--r-s);font-size:14px;line-height:20px;font-weight:600;color:var(--primary);background:var(--surface);display:inline-flex;align-items:center;justify-content:center;text-align:center}
+  .pbtn{min-height:48px;min-width:48px;padding:0 14px;border-radius:var(--r-s);background:var(--primary);color:var(--onprimary);font-size:14px;line-height:20px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;text-align:center}
+  .pbtn.dis{background:var(--outv);color:var(--onv)}
+  .foot{background:var(--surface);border-top:1px solid var(--outv);padding:12px 16px;display:flex;flex-direction:column;gap:8px}
+  .footrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .footrow.batch{grid-template-columns:1fr 1.6fr}
+
+  /* AFTER: LabBatch tabs, panels, progress, qualitative choices, review rows */
+  .tabs3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .tabbtn{min-height:48px;padding:6px 8px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);color:var(--on);font-size:14px;line-height:18px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;text-align:center}
+  .tabbtn.sel{background:var(--primary);border-color:var(--primary);color:var(--onprimary)}
+  .tabbtn.dis{border-color:var(--outv);color:var(--onv);background:var(--surface)}
+
+  .panel-item{padding:10px 0;border-top:1px solid var(--outv);display:flex;flex-direction:column;gap:8px}
+  .panel-item:first-child{border-top:0;padding-top:0}
+  .panel-title{margin:0;font-size:16px;line-height:22px;font-weight:700;color:var(--on)}
+  .panel-meta{margin:2px 0 0;font-size:14px;line-height:20px;color:var(--onv)}
+  .panel-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+  .bprog{display:flex;gap:4px;padding:4px 0}
+  .bprog span{flex:1 1 0;height:6px;border-radius:var(--r-s);background:var(--outv)}
+  .bprog span.done{background:var(--primary)}
+  .bprog span.cur{height:8px;margin-top:-1px;background:var(--primary)}
+
+  .qchoice{min-height:52px;padding:12px 14px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);color:var(--on);font-size:16px;line-height:22px;font-weight:500;display:flex;align-items:center;justify-content:space-between;width:100%;text-align:start}
+  .qchoice.sel{background:var(--primc);border:1.5px solid var(--primary);color:var(--onprimc);font-weight:700}
+
+  .rrow{display:flex;align-items:center;gap:8px;min-height:48px;padding:8px 0;border-top:1px solid var(--outv)}
+  .rrow.first{border-top:0;padding-top:0}
+  .rrow .nm{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
+  .rrow .nm b{font-size:16px;line-height:22px;font-weight:600;color:var(--on)}
+  .rrow .nm span{font-size:14px;line-height:20px;color:var(--onv)}
+  .rrow .res{display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-align:end}
+  .rrow .res b{font-size:16px;line-height:22px;font-weight:700;color:var(--on);white-space:nowrap}
+  .rrow .res b.ab{color:var(--err)}
+  .sw{font-size:12px;line-height:16px;font-weight:700}
+  .sw-hi{color:var(--err)} .sw-mod{color:var(--mod-fg)} .sw-neu{color:var(--onv);font-weight:600}
+  .dark .sw-mod{color:#F3D18E}
+
+  .qpanel{background:var(--hx-bg);border:1px solid var(--outv);border-radius:var(--r-l);padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+  .qpanel p{margin:0;font-size:14px;line-height:20px;color:var(--onv)}
+
+  /* AFTER: dialogs */
+  .dlg{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:20px;display:flex;flex-direction:column;gap:12px;color:var(--on)}
+  .dlg h4{margin:0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .dlg-sub{margin:2px 0 0;font-size:14px;line-height:20px;color:var(--onv)}
+  .chkrow{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px;border-top:1px solid var(--outv);padding:4px 0}
+  .chkrow.first{border-top:0}
+  .chkrow .cnm{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
+  .chkrow .cnm b{font-size:16px;line-height:22px;font-weight:600;color:var(--on)}
+  .chkrow .cnm span{font-size:14px;line-height:20px;color:var(--onv)}
+  .chkbox{width:20px;height:20px;border-radius:4px;border:2px solid var(--outline);display:inline-flex;align-items:center;justify-content:center;flex:0 0 20px}
+  .chkbox.on{background:var(--primary);border-color:var(--primary);color:var(--onprimary);font-size:13px;font-weight:700}
+  .dlg-acts{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+
+  /* BEFORE fidelity styles (exact current LabEditor.kt & LabBatchScreen.kt) */
+  .old-title{margin:0;font-size:24px;line-height:30px;font-weight:700;color:#0D1B3D}
+  .old-sub{margin:2px 0 0;font-size:13px;line-height:18px;color:#4C3F43}
+  .old-pcard{background:#F9F5F3;border:1px solid rgba(202,196,208,.5);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px}
+  .old-phead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .old-pname{font-size:15px;font-weight:700;color:#0D1B3D}
+  .old-pills{display:flex;flex-wrap:wrap;gap:4px 6px}
+  .opill{display:inline-flex;align-items:center;border-radius:6px;padding:2px 6px;font-size:11px;line-height:14px;font-weight:700;border:1px solid transparent}
+  .op-grn{background:#DCFCE7;border-color:#86EFAC;color:#166534}
+  .op-age{padding:0;overflow:hidden;border-color:#A5B4FC;background:#E0E7FF;color:#3730A3}
+  .op-age b{background:#4F46E5;color:#fff;padding:2px 5px;margin-inline-end:5px;font-size:11px}
+  .op-age span{padding-inline-end:6px}
+  .op-obs{background:#F3E8FF;border-color:#DDD6FE;color:#6B21A8}
+  .op-bld{background:#EFF6FF;border-color:#BFDBFE;color:#1D4ED8}
+  .op-ga{background:#E0F2FE;border-color:#BAE6FD;color:#0369A1}
+  .old-infobar{background:#FFFFFF;border:1px solid #CAC4D0;border-radius:14px;padding:10px 12px;box-shadow:0 1px 2px rgba(13,27,61,.08);display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .old-infobar .chg{font-size:13px;font-weight:800;color:#934F5B;white-space:nowrap}
+  .old-card{background:#FFFFFF;border:1px solid rgba(202,196,208,.5);border-radius:16px;padding:16px;box-shadow:0 1px 2px rgba(13,27,61,.08);display:flex;flex-direction:column;gap:10px}
+  .old-caps11{margin:0;font-size:11px;line-height:14px;font-weight:800;letter-spacing:.8px;color:#934F5B;text-transform:uppercase}
+  .old-story{background:#F3E9E7;border-radius:14px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:6px}
+  .old-story .big36{font-size:36px;line-height:42px;font-weight:800;color:#0D1B3D}
+  .old-story .unit13{font-size:13px;font-weight:600;color:#4C3F43}
+  .old-pill999{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:11px;line-height:14px;font-weight:800}
+  .old-m3f{position:relative;border:1px solid #79747E;border-radius:4px;padding:13px 12px 11px;font-size:15px;line-height:22px;color:#0D1B3D;background:#FFFFFF;min-height:50px;display:flex;align-items:center;justify-content:space-between}
+  .old-m3f .olbl{position:absolute;top:-8px;left:10px;background:#FFFFFF;padding:0 4px;font-size:12px;line-height:16px;color:#4C3F43;max-width:calc(100% - 18px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .old-lock{display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;line-height:14px;color:#4C3F43;text-align:center}
+  .old-foot3{background:#FFFFFF;border-top:1px solid rgba(202,196,208,.5);padding:12px 16px;display:flex;gap:8px}
+  .old-obtn{flex:1;min-height:48px;border:1px solid #79747E;border-radius:999px;color:#0D1B3D;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .old-pbtn{flex:1;min-height:48px;border-radius:999px;background:#0D1B3D;color:#FFFFFF;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;padding:0 8px}
+  .old-rtabs{display:flex;gap:8px;overflow:hidden}
+  .old-rtab{padding:6px 12px;border-radius:8px;border:1px solid #79747E;font-size:13px;font-weight:600;color:#4C3F43;background:#FFFFFF;white-space:nowrap}
+  .old-rtab.sel{background:rgba(147,79,91,.15);border-color:rgba(147,79,91,.35);color:#934F5B}
+  .old-prow{display:flex;align-items:center;gap:6px}
+  .old-p40-o{min-height:40px;padding:0 10px;border:1px solid #79747E;border-radius:999px;font-size:13px;font-weight:600;color:#0D1B3D;display:inline-flex;align-items:center;white-space:nowrap}
+  .old-p40-f{min-height:40px;padding:0 10px;border-radius:999px;background:#0D1B3D;color:#FFFFFF;font-size:13px;font-weight:600;display:inline-flex;align-items:center;white-space:nowrap}
+  .old-sechdr{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .old-stripe{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.8px;color:#934F5B;text-transform:uppercase}
+  .old-stripe i{width:4px;height:14px;border-radius:2px;background:#934F5B;display:inline-block}
+  .old-dlg{background:#EFE9E4;border-radius:28px;padding:22px;color:#0D1B3D;display:flex;flex-direction:column;gap:10px}
+  .old-bar4{display:flex;gap:4px;padding:4px 0}
+  .old-bar4 span{flex:1;height:4px;border-radius:2px;background:rgba(202,196,208,.5)}
+  .old-bar4 span.on{background:#934F5B}
+
+  /* tables & mapping */
+  .tablewrap{overflow-x:auto;max-width:100%}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin-top:10px}
+  th,td{border-bottom:1px solid #E6E1E5;padding:7px 8px;text-align:start;vertical-align:top}
+  th{background:#F7F5F3}
+  td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+  ol.map li{margin:7px 0}
+  code{font-family:"Roboto Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:#F3F0EE;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<h1>Mock S16: Lab editor and lab batch</h1>
+<p class="lede">Covers <code>ui/LabEditor.kt</code>, <code>ui/LabBatchScreen.kt</code>, and display-only styling in <code>ui/ClinicalPresets.kt</code> (level 3) plus backward-compatible helpers in <code>ui/DesignSystem.kt</code>. Real sample data only: Mona Ragab / <bdi lang="ar">منى رجب</bdi>, 27+2 wks, G4 P1 A2, 110/70, A+, Hb 11.2, EDD 11/02/2027 (<code>2027-02-11</code> in ISO date fields), paired with real catalog panels and tests from <code>ClinicalCatalogRepository</code>. Values absent from Mona's sample are shown in brackets.</p>
+
+<section class="reason" aria-labelledby="r">
+  <h2 id="r">Design reasoning</h2>
+  <p>Reading this as: high-frequency clinical laboratory charting where clinicians enter single tests or multi-test panels from paper lab slips and need calm hierarchy, large tap targets, and minimal scrolling. Antislop dials: ENERGY 1 / RHYTHM 1 / MOTION 1 (pressed and focus states only, no new animation).</p>
+  <ul>
+    <li><b>Background family (sand) across all lab entry:</b> match <code>LabsTab</code> (<code>LabReportItem.kt</code>) using <code>FieldFamilies.background()</code> (<code>#F1EDE4</code> / <code>#594A2C</code> light, <code>#36301F</code> / <code>#E0CFA6</code> dark), eliminating <code>ActionRose</code> accents, ALL-CAPS red-striped headers, and <code>11 sp</code> rainbow pills.</li>
+    <li><b>Single unified patient banner and metadata bar:</b> replace the duplicated patient name, old <code>ClinicalPatientCard(EDITOR_SUMMARY)</code> (which dropped <code>A2</code> and kept <code>Normal Risk</code>), and two duplicate <code>BatchInfoBar</code>s with one shared <code>LabPatientBanner</code> and unified <code>BatchInfoBar</code> showing <code>27+2 wks</code> (Owner Decision 9) and a clean <code>Change</code> action.</li>
+    <li><b>Faster data entry with less vertical scroll on 360 dp:</b> in <code>LabEditor</code>, shrink the oversized <code>36 sp</code> pink readout box into a calm sand readout strip with <code>BandChip</code>, convert 5 stacked <code>56 dp</code> dipstick buttons into one compact <code>RecordFilterChip</code> row, collapse the 28-test catalog preset list to 5 items with <code>Show all 28</code>, and move the squeezed 3-button bottom row to <code>MedicationSheet</code>'s 2-row footer so labels never clip.</li>
+    <li><b>Un-crush 360 dp batch panels and hit 48 dp everywhere:</b> stack <code>Choose</code> and <code>+ Add N</code> into a 50/50 <code>48 dp</code> row below full-width panel titles, wrap <code>Often added</code> chips in <code>FlowRow</code>, raise <code>labBatchDeleteItem</code> from <code>32 dp</code> to <code>48 dp</code>, style <code>Enter</code> and <code>Review</code> with <code>RecordSectionCard</code> and <code>StatusWord</code>, and bring 1-tap lab presets + <code>ClinicalDateField</code> into the batch metadata dialog.</li>
+  </ul>
+</section>
+
+<h2>1. Single lab entry (<code>LabEditor.kt</code>)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, quantitative entry (Mona Ragab, Hb 11.2)</figcaption>
+    <div class="phone">
+      <div class="screen">
+        <div>
+          <h3 class="old-title">Laboratory Investigation</h3>
+          <p class="old-sub">Mona Ragab · Laboratory Investigations &amp; Diagnostic Results</p>
+        </div>
+        <div class="old-pcard">
+          <div class="old-phead">
+            <span class="old-pname">Mona Ragab</span>
+            <span class="opill op-grn">Normal Risk</span>
+          </div>
+          <div class="old-pills">
+            <span class="opill op-age"><b>AGE</b><span>[age] yrs</span></span>
+            <span class="opill op-obs">G4 P1</span>
+            <span class="opill op-bld">A+</span>
+            <span class="opill op-ga">GA 27+2 wks</span>
+          </div>
+        </div>
+        <div class="old-infobar">
+          <div>
+            <div style="font-size:13px;font-weight:700">[report date]</div>
+            <div style="font-size:12px;color:#4C3F43">GA 27w 2d</div>
+          </div>
+          <div style="font-size:13px;font-weight:700">[lab name]</div>
+          <span class="chg">Change ▾</span>
+        </div>
+        <div class="old-card">
+          <p class="old-caps11">HEMATOLOGY</p>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+            <b style="font-size:18px;color:#0D1B3D">Haemoglobin (Hb)</b>
+            <span style="font-size:12px;font-weight:700;color:#0D1B3D">Edit test details</span>
+          </div>
+          <p style="margin:-4px 0 0;font-size:12px;color:#4C3F43">g/dL · ref [range] (from report)</p>
+          <div class="old-story">
+            <div><span class="big36">11.2</span><span class="unit13">g/dL</span></div>
+            <span class="old-pill999" style="background:#D6DFFF;color:#041334">Normal ✓</span>
+          </div>
+          <div class="old-m3f"><span class="olbl">Result</span>11.2</div>
+          <div class="row2">
+            <div class="old-m3f"><span class="olbl">Unit</span>g/dL</div>
+            <div class="old-m3f"><span class="olbl">Reference range</span>[range]</div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0">
+            <div><div style="font-size:13px">Abnormal result</div><div style="font-size:12px;color:#4C3F43">Auto-flagged from reference range</div></div>
+            <span class="tog"></span>
+          </div>
+          <div class="old-m3f" style="min-height:68px;align-items:flex-start"><span class="olbl">Notes</span></div>
+        </div>
+        <div class="old-card" style="padding:10px 16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px"><span>Add tests</span><span style="color:#4C3F43">Open ▾</span></div>
+        </div>
+        <div class="old-lock">Lab records and reports encrypted locally (AES-256 GCM) · Local Vault Security</div>
+      </div>
+      <div class="old-foot3">
+        <span class="old-obtn">Cancel</span>
+        <span class="old-obtn" style="flex:1.5">+ Add investigation (+)</span>
+        <span class="old-pbtn">Save</span>
+      </div>
+    </div>
+    <p class="note">Name repeats twice; <code>G4 P1</code> omits <code>A2</code>; <code>GA 27w 2d</code>; uppercase <code>HEMATOLOGY</code> in rose; <code>36 sp</code> box + <code>Normal ✓</code> pill; squeezed 3-button bottom bar clips at <code>1.3x</code>; <code>11 sp</code> Lock footer.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, slice 16, quantitative entry (Mona Ragab, Hb 11.2)</figcaption>
+    <div class="phone">
+      <div class="screen">
+        <div class="pagehead"><h3>Laboratory investigation</h3></div>
+        <div class="pstrip">
+          <div class="pstrip-top">
+            <p class="pname">Mona Ragab</p>
+          </div>
+          <div class="bchips">
+            <span class="bchip info">27+2 wks</span>
+            <span class="bchip info">G4 P1 A2</span>
+            <span class="bchip info">A+</span>
+          </div>
+        </div>
+        <div class="mbar">
+          <div class="mbar-info">
+            <span class="mbar-top">[report date], 27+2 wks</span>
+            <span class="mbar-sub">[lab name]</span>
+          </div>
+          <button type="button" class="mbar-act">Change</button>
+        </div>
+        <section class="sec">
+          <div class="sec-head">
+            <h4>Haemoglobin (Hb)</h4>
+            <button type="button" class="tbtn" aria-label="Edit test details">Edit details</button>
+          </div>
+          <div class="sec-body">
+            <div style="margin-top:-6px">
+              <span class="flab" style="margin-bottom:2px">Hematology</span>
+              <p class="sectxt">g/dL, ref [range] (from report)</p>
+            </div>
+            <div class="readout">
+              <div><span class="rval">11.2</span><span class="runit">g/dL</span></div>
+              <span class="bchip neu">Normal</span>
+            </div>
+            <div>
+              <span class="flab">Result</span>
+              <div class="fbox num">11.2</div>
+            </div>
+            <div class="row2">
+              <div><span class="flab">Unit</span><div class="fbox">g/dL</div></div>
+              <div><span class="flab">Reference range</span><div class="fbox">[range]</div></div>
+            </div>
+            <div class="swrow">
+              <div class="swmeta">
+                <span class="swtitle">Abnormal result</span>
+                <span class="swsub">Auto-flagged from reference range</span>
+              </div>
+              <span class="tog" role="switch" aria-checked="false" aria-label="Abnormal result"></span>
+            </div>
+            <div>
+              <span class="flab">Notes</span>
+              <div class="fbox multi"></div>
+            </div>
+          </div>
+        </section>
+        <button type="button" class="morebar" aria-expanded="false">
+          <span class="ml">Add tests</span>
+          <span class="mr">Open</span>
+        </button>
+      </div>
+      <div class="foot">
+        <div class="footrow">
+          <button type="button" class="obtn">Cancel</button>
+          <button type="button" class="pbtn">Save</button>
+        </div>
+        <button type="button" class="obtn" style="width:100%">Save and add another</button>
+      </div>
+    </div>
+    <p class="note">One sand banner (<code>27+2 wks</code>, <code>G4 P1 A2</code>, <code>A+</code>), compact readout strip, external <code>12 sp</code> Sand labels, <code>10 dp</code> boxes, and 2-row <code>MedicationSheet</code> footer that never clips at <code>2.0x</code> scale.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, dipstick + test details open (collapsed presets)</figcaption>
+    <div class="phone">
+      <div class="screen">
+        <section class="sec">
+          <div class="sec-head">
+            <h4>Urine Protein</h4>
+            <button type="button" class="tbtn">Close</button>
+          </div>
+          <div class="sec-body">
+            <div>
+              <span class="flab">Test name</span>
+              <div class="fbox">Urine Protein</div>
+            </div>
+            <div>
+              <span class="flab">Common investigations</span>
+              <div class="chips">
+                <span class="chipwrap"><button type="button" class="chip">Haemoglobin (Hb)</button></span>
+                <span class="chipwrap"><button type="button" class="chip">Haematocrit (Hct)</button></span>
+                <span class="chipwrap"><button type="button" class="chip">MCV</button></span>
+                <span class="chipwrap"><button type="button" class="chip">MCH</button></span>
+                <span class="chipwrap"><button type="button" class="chip">White Cell Count (WBC)</button></span>
+              </div>
+              <button type="button" class="tbtn" style="padding:0 4px">Show all 28</button>
+            </div>
+            <div>
+              <span class="flab">Dipstick result</span>
+              <div class="chips">
+                <span class="chipwrap"><button type="button" class="chip">Normal</button></span>
+                <span class="chipwrap"><button type="button" class="chip sel" aria-pressed="true">Trace</button></span>
+                <span class="chipwrap"><button type="button" class="chip">+</button></span>
+                <span class="chipwrap"><button type="button" class="chip">++</button></span>
+                <span class="chipwrap"><button type="button" class="chip">+++</button></span>
+              </div>
+            </div>
+            <div class="swrow">
+              <div class="swmeta">
+                <span class="swtitle ab">Abnormal result</span>
+                <span class="swsub">Trace or higher marked abnormal</span>
+              </div>
+              <span class="tog on" role="switch" aria-checked="true" aria-label="Abnormal result"></span>
+            </div>
+          </div>
+        </section>
+        <section class="sec">
+          <div class="sec-head">
+            <h4>Add tests</h4>
+            <button type="button" class="tbtn">Close</button>
+          </div>
+          <div class="sec-body">
+            <div>
+              <span class="flab">Filter by category</span>
+              <div class="chips">
+                <span class="chipwrap"><button type="button" class="chip sel">All (28)</button></span>
+                <span class="chipwrap"><button type="button" class="chip">CBC</button></span>
+                <span class="chipwrap"><button type="button" class="chip">Urine Routine &amp; Microscopic</button></span>
+              </div>
+            </div>
+            <div>
+              <span class="flab">Category</span>
+              <div class="chips">
+                <span class="chipwrap"><button type="button" class="chip">Hematology</button></span>
+                <span class="chipwrap"><button type="button" class="chip sel">Urinalysis</button></span>
+                <span class="chipwrap"><button type="button" class="chip">Biochemistry</button></span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <p class="note">Dipstick uses 1 compact <code>RecordFilterChip</code> row (<code>48 dp</code> targets, replacing 5 stacked <code>56 dp</code> slabs). Unfiltered test presets collapse to 5 + <code>Show all 28</code>.</p>
+  </figure>
+</div>
+
+<h2>2. Lab batch: Add tab (<code>LabBatchScreen.kt</code>)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, Add tab (crushed panel titles, &lt;48 dp buttons)</figcaption>
+    <div class="phone">
+      <div class="screen">
+        <div>
+          <h3 class="old-title">Laboratory results</h3>
+          <p class="old-sub">Mona Ragab · GA 27w 2d</p>
+        </div>
+        <div class="old-pcard">
+          <div class="old-phead"><span class="old-pname">Mona Ragab</span><span class="opill op-grn">Normal Risk</span></div>
+          <div class="old-pills"><span class="opill op-age"><b>AGE</b><span>[age] yrs</span></span><span class="opill op-obs">G4 P1</span><span class="opill op-bld">A+</span><span class="opill op-ga">GA 27+2 wks</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;color:#0D1B3D">←</span>
+          <div class="old-infobar" style="flex:1">
+            <div><div style="font-size:13px;font-weight:700">[report date]</div><div style="font-size:12px;color:#4C3F43">GA 27w 2d</div></div>
+            <div style="font-size:13px;font-weight:600">No laboratory</div>
+            <span class="chg">Change ▾</span>
+          </div>
+        </div>
+        <div class="old-rtabs">
+          <span class="old-rtab sel">+ Add</span>
+          <span class="old-rtab">Enter</span>
+          <span class="old-rtab">Review (0)</span>
+        </div>
+        <div class="old-card">
+          <div class="old-prow">
+            <div style="flex:1;min-width:0"><b style="font-size:13px">CBC ▾</b><div style="font-size:12px;color:#4C3F43">6 elements · Haemoglobin (Hb)...</div></div>
+            <span class="old-p40-o">Choose</span>
+            <span class="old-p40-f">+ Add 6</span>
+          </div>
+          <div style="border-top:1px solid rgba(202,196,208,.5);padding-top:8px" class="old-prow">
+            <div style="flex:1;min-width:0"><b style="font-size:13px">First Trimester Routine Booking ▾</b><div style="font-size:12px;color:#4C3F43">20 elements · Haemoglobin...</div></div>
+            <span class="old-p40-o">Choose</span>
+            <span class="old-p40-f">+ Add 20</span>
+          </div>
+        </div>
+        <div class="old-sechdr"><span class="old-stripe"><i></i>ADD A SINGLE TEST</span></div>
+        <div class="old-card">
+          <div class="old-m3f" style="border-radius:12px;color:#4C3F43">Search a test, e.g. ferritin</div>
+          <p class="old-caps11" style="color:#4C3F43">OFTEN ADDED</p>
+          <div style="display:flex;gap:6px;overflow:hidden">
+            <span class="old-rtab" style="border-radius:20px">Ferritin</span>
+            <span class="old-rtab" style="border-radius:20px">TSH</span>
+            <span class="old-rtab" style="border-radius:20px">Vitamin D</span>
+            <span class="old-rtab" style="border-radius:20px">+ Add o...</span>
+          </div>
+        </div>
+      </div>
+      <div class="old-foot3">
+        <span class="old-obtn">Cancel</span>
+        <span class="old-pbtn" style="flex:2;background:#CAC4D0;color:#4C3F43">Review 0 results</span>
+      </div>
+    </div>
+    <p class="note"><code>Choose</code> and <code>+ Add 20</code> (<code>40 dp</code> high) crush long panel names; <code>Often added</code> non-wrapping row clips <code>+ Add other</code> on <code>360 dp</code>; red-stripe ALL-CAPS header.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, slice 16, Add tab (full-width panel headers, 48 dp actions)</figcaption>
+    <div class="phone">
+      <div class="screen">
+        <div class="pagehead"><h3>Laboratory results</h3></div>
+        <div class="pstrip">
+          <div class="pstrip-top"><p class="pname">Mona Ragab</p></div>
+          <div class="bchips">
+            <span class="bchip info">27+2 wks</span>
+            <span class="bchip info">G4 P1 A2</span>
+            <span class="bchip info">A+</span>
+          </div>
+        </div>
+        <div class="mbar-row">
+          <button type="button" class="ibtn" aria-label="Back">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+          </button>
+          <div class="mbar">
+            <div class="mbar-info">
+              <span class="mbar-top">[report date], 27+2 wks</span>
+              <span class="mbar-sub">No laboratory</span>
+            </div>
+            <button type="button" class="mbar-act">Change</button>
+          </div>
+        </div>
+        <div class="tabs3" role="tablist">
+          <button type="button" class="tabbtn sel" role="tab" aria-selected="true">+ Add</button>
+          <button type="button" class="tabbtn dis" role="tab" aria-selected="false" disabled>Enter</button>
+          <button type="button" class="tabbtn dis" role="tab" aria-selected="false" disabled>Review (0)</button>
+        </div>
+        <section class="sec">
+          <div class="sec-head"><h4>Common panels</h4></div>
+          <div class="sec-body" style="gap:0">
+            <div class="panel-item">
+              <div>
+                <p class="panel-title">CBC</p>
+                <p class="panel-meta">6 elements: Haemoglobin (Hb), Haematocrit (Hct), MCV, MCH...</p>
+              </div>
+              <div class="panel-acts">
+                <button type="button" class="obtn">Choose</button>
+                <button type="button" class="pbtn">+ Add 6</button>
+              </div>
+            </div>
+            <div class="panel-item">
+              <div>
+                <p class="panel-title">Urine Routine &amp; Microscopic</p>
+                <p class="panel-meta">8 elements: Urine Protein, Urine Glucose, Urine Ketones, Urine Blood...</p>
+              </div>
+              <div class="panel-acts">
+                <button type="button" class="obtn">Choose</button>
+                <button type="button" class="pbtn">+ Add 8</button>
+              </div>
+            </div>
+            <div class="panel-item">
+              <div>
+                <p class="panel-title">First Trimester Routine Booking</p>
+                <p class="panel-meta">20 elements: Haemoglobin (Hb), Haematocrit (Hct), MCV, MCH...</p>
+              </div>
+              <div class="panel-acts">
+                <button type="button" class="obtn">Choose</button>
+                <button type="button" class="pbtn">+ Add 20</button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="sec">
+          <div class="sec-head"><h4>Add a single test</h4></div>
+          <div class="sec-body">
+            <div class="fbox search"><span>Search a test, e.g. ferritin</span></div>
+            <div>
+              <span class="flab">Often added</span>
+              <div class="chips">
+                <span class="chipwrap"><button type="button" class="chip">Ferritin</button></span>
+                <span class="chipwrap"><button type="button" class="chip">TSH</button></span>
+                <span class="chipwrap"><button type="button" class="chip">Vitamin D</button></span>
+                <span class="chipwrap"><button type="button" class="chip">+ Add other</button></span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+      <div class="foot">
+        <div class="footrow batch">
+          <button type="button" class="obtn">Cancel</button>
+          <button type="button" class="pbtn dis" disabled>Review 0 results</button>
+        </div>
+      </div>
+    </div>
+    <p class="note">Full-width panel names never wrap to 3 narrow lines; <code>Choose</code> and <code>+ Add N</code> become equal <code>48 dp</code> targets; <code>Often added</code> wraps cleanly inside <code>FlowRow</code>.</p>
+  </figure>
+</div>
+
+<h2>3. Lab batch: Choose panel dialog and metadata dialog</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, <code>ChoosePanelDialog</code></figcaption>
+    <div class="phone"><div class="scrim">
+      <div class="old-dlg">
+        <div>
+          <h4 style="margin:0;font-size:20px">Choose tests</h4>
+          <p style="margin:2px 0 0;font-size:12px;color:#4C3F43">CBC · 6 elements</p>
+        </div>
+        <p style="margin:0;font-size:12px;color:#4C3F43">Untick what this patient does not need today. The panel itself stays unchanged.</p>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(202,196,208,.4)">
+          <div><b style="font-size:14px">Haemoglobin (Hb)</b><br><span style="font-size:12px;color:#4C3F43">g/dL</span></div>
+          <span class="chkbox on">✓</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(202,196,208,.4)">
+          <div><b style="font-size:14px">Haematocrit (Hct)</b><br><span style="font-size:12px;color:#4C3F43">%</span></div>
+          <span class="chkbox on">✓</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(202,196,208,.4)">
+          <div><b style="font-size:14px">MCV</b><br><span style="font-size:12px;color:#4C3F43">fL</span></div>
+          <span class="chkbox"></span>
+        </div>
+        <div style="text-align:center;font-size:13px;font-weight:700;color:#934F5B;padding:4px 0">Save this selection as a panel…</div>
+        <div style="display:flex;justify-content:flex-end;gap:8px">
+          <span style="min-height:40px;padding:0 16px;border:1px solid #79747E;border-radius:999px;font-size:13px;font-weight:600;display:inline-flex;align-items:center">Cancel</span>
+          <span style="min-height:40px;padding:0 16px;border-radius:999px;background:#0D1B3D;color:#fff;font-size:13px;font-weight:600;display:inline-flex;align-items:center">Add 5 selected</span>
+        </div>
+      </div>
+    </div></div>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, slice 16, <code>ChoosePanelDialog</code> (16 dp, 48 dp rows)</figcaption>
+    <div class="phone"><div class="scrim">
+      <div class="dlg" role="dialog" aria-label="Choose tests">
+        <div>
+          <h4>Choose tests</h4>
+          <p class="dlg-sub">CBC · 6 elements</p>
+        </div>
+        <p class="sectxt">Untick what this patient does not need today. The panel itself stays unchanged.</p>
+        <div>
+          <div class="chkrow first">
+            <div class="cnm"><b>Haemoglobin (Hb)</b><span>g/dL</span></div>
+            <span class="chkbox on" role="checkbox" aria-checked="true" aria-label="Haemoglobin (Hb)">✓</span>
+          </div>
+          <div class="chkrow">
+            <div class="cnm"><b>Haematocrit (Hct)</b><span>%</span></div>
+            <span class="chkbox on" role="checkbox" aria-checked="true" aria-label="Haematocrit (Hct)">✓</span>
+          </div>
+          <div class="chkrow">
+            <div class="cnm"><b>MCV</b><span>fL</span></div>
+            <span class="chkbox" role="checkbox" aria-checked="false" aria-label="MCV"></span>
+          </div>
+          <div class="chkrow">
+            <div class="cnm"><b>MCH</b><span>pg</span></div>
+            <span class="chkbox on" role="checkbox" aria-checked="true" aria-label="MCH">✓</span>
+          </div>
+        </div>
+        <button type="button" class="tbtn" style="width:100%">Save this selection as a panel…</button>
+        <div class="dlg-acts">
+          <button type="button" class="obtn">Cancel</button>
+          <button type="button" class="pbtn">Add 5 selected</button>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">Keeps exact <code>CBC · 6 elements</code> and <code>Add 5 selected</code> test strings while moving to <code>16 dp</code> surface, <code>48 dp</code> rows, <code>primary</code> action link, and <code>10 dp</code> buttons.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, batch metadata dialog (1-tap lab presets + calendar)</figcaption>
+    <div class="phone"><div class="scrim">
+      <div class="dlg" role="dialog" aria-label="Batch details">
+        <h4>Batch details</h4>
+        <div>
+          <span class="flab">Test date</span>
+          <div class="fbox date">
+            <span>[YYYY-MM-DD]</span>
+            <button type="button" class="calbtn" aria-label="Select date">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V9h14v11z"/></svg>
+            </button>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:4px"><span class="chipwrap"><button type="button" class="chip">Today ([today])</button></span></div>
+        </div>
+        <div>
+          <span class="flab">Laboratory name</span>
+          <div class="fbox">[lab name]</div>
+        </div>
+        <div>
+          <span class="flab">Quick shortcuts</span>
+          <div class="chips">
+            <span class="chipwrap"><button type="button" class="chip">Al Borg Labs</button></span>
+            <span class="chipwrap"><button type="button" class="chip">El Mokhtabar</button></span>
+            <span class="chipwrap"><button type="button" class="chip">Hospital Lab</button></span>
+            <span class="chipwrap"><button type="button" class="chip">Alfa Labs</button></span>
+          </div>
+        </div>
+        <div class="dlg-acts">
+          <button type="button" class="pbtn">Done</button>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">Adds <code>ClinicalDateField</code> (with calendar and <code>Today</code>) plus 1-tap <code>labNamePresets</code> to <code>LabBatchScreen</code>'s metadata dialog, matching single <code>LabEditor</code>.</p>
+  </figure>
+</div>
+
+<h2>4. Lab batch: Enter results tab (<code>EnterTab</code>)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, Enter tab (Hb 11.2, 32 dp delete, rose bars)</figcaption>
+    <div class="phone">
+      <div class="screen">
+        <div class="old-rtabs">
+          <span class="old-rtab">+ Add</span>
+          <span class="old-rtab sel">Enter (1/6)</span>
+          <span class="old-rtab">Review (1)</span>
+        </div>
+        <div class="old-bar4"><span class="on"></span><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="old-card">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:11px;font-weight:700;color:#4C3F43">HEMATOLOGY · TEST 1 OF 6</span>
+            <span style="width:26px;height:26px;border-radius:13px;background:rgba(255,218,214,.5);color:#BA1A1A;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800">✕</span>
+          </div>
+          <b style="font-size:18px;color:#0D1B3D">Haemoglobin (Hb)</b>
+          <p style="margin:-6px 0 0;font-size:12px;color:#4C3F43">g/dL · range from the report</p>
+          <div style="text-align:center;font-size:28px;font-weight:800;color:#0D1B3D">11.2 g/dL</div>
+          <div style="text-align:center"><span class="old-pill999" style="background:#DCFCE7;color:#166534">Normal ✓</span></div>
+          <div class="old-m3f" style="border-radius:12px"><span class="olbl">Result</span>11.2</div>
+          <div class="old-m3f" style="border-radius:12px"><span class="olbl">Reference range (from the report)</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <b style="font-size:14px">Abnormal</b>
+            <span class="tog"></span>
+          </div>
+          <div class="old-m3f" style="border-radius:12px"><span class="olbl">Notes</span></div>
+          <div style="display:flex;gap:8px;margin-top:4px">
+            <span class="old-obtn">◀ Back</span>
+            <span class="old-pbtn">Next ▶</span>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:13px;font-weight:700;color:#0D1B3D">+ + Add Test to this Report</div>
+      </div>
+      <div class="old-foot3">
+        <span class="old-obtn">Cancel</span>
+        <span class="old-pbtn" style="flex:2">Save 1 result</span>
+      </div>
+    </div>
+    <p class="note">ALL-CAPS progress, <code>32 dp</code> delete button, <code>ActionRose</code> bar, <code>999 dp</code> <code>11 sp</code> pill, triangle buttons, double <code>+ +</code> link.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, slice 16, Enter tab (quantitative Hb 11.2 g/dL)</figcaption>
+    <div class="phone">
+      <div class="screen">
+        <div class="tabs3" role="tablist">
+          <button type="button" class="tabbtn" role="tab" aria-selected="false">+ Add</button>
+          <button type="button" class="tabbtn sel" role="tab" aria-selected="true">Enter (1/6)</button>
+          <button type="button" class="tabbtn" role="tab" aria-selected="false">Review (1)</button>
+        </div>
+        <div class="bprog" aria-hidden="true"><span class="cur"></span><span></span><span></span><span></span><span></span><span></span></div>
+        <section class="sec">
+          <div class="sec-head">
+            <div style="flex:1;min-width:0;padding:6px 0">
+              <span class="flab" style="margin-bottom:2px">Hematology, test 1 of 6</span>
+              <h4 style="padding:0">Haemoglobin (Hb)</h4>
+            </div>
+            <button type="button" class="ibtn err" aria-label="Remove Haemoglobin (Hb)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </button>
+          </div>
+          <div class="sec-body">
+            <p class="sectxt" style="margin-top:-6px">g/dL, range from the report</p>
+            <div class="readout">
+              <div><span class="rval">11.2</span><span class="runit">g/dL</span></div>
+              <span class="bchip neu">Normal</span>
+            </div>
+            <div>
+              <span class="flab">Result</span>
+              <div class="fbox num">11.2</div>
+            </div>
+            <div>
+              <span class="flab">Reference range (from the report)</span>
+              <div class="fbox"></div>
+            </div>
+            <div class="swrow">
+              <div class="swmeta"><span class="swtitle">Abnormal</span></div>
+              <span class="tog" role="switch" aria-checked="false" aria-label="Abnormal"></span>
+            </div>
+            <div>
+              <span class="flab">Notes</span>
+              <div class="fbox multi"></div>
+            </div>
+            <div class="footrow">
+              <button type="button" class="obtn" disabled style="border-color:var(--outv);color:var(--onv)">Back</button>
+              <button type="button" class="pbtn">Next</button>
+            </div>
+          </div>
+        </section>
+        <button type="button" class="tbtn" style="width:100%">Add a test to this report</button>
+      </div>
+      <div class="foot">
+        <div class="footrow batch">
+          <button type="button" class="obtn">Cancel</button>
+          <button type="button" class="pbtn">Save 1 result</button>
+        </div>
+      </div>
+    </div>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, Enter tab (qualitative dipstick choices)</figcaption>
+    <div class="phone">
+      <div class="screen">
+        <div class="tabs3" role="tablist">
+          <button type="button" class="tabbtn" role="tab" aria-selected="false">+ Add</button>
+          <button type="button" class="tabbtn sel" role="tab" aria-selected="true">Enter (1/8)</button>
+          <button type="button" class="tabbtn" role="tab" aria-selected="false">Review (1)</button>
+        </div>
+        <div class="bprog" aria-hidden="true"><span class="cur"></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <section class="sec">
+          <div class="sec-head">
+            <div style="flex:1;min-width:0;padding:6px 0">
+              <span class="flab" style="margin-bottom:2px">Urinalysis, test 1 of 8</span>
+              <h4 style="padding:0">Urine Protein</h4>
+            </div>
+            <button type="button" class="ibtn err" aria-label="Remove Urine Protein">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </button>
+          </div>
+          <div class="sec-body">
+            <p class="sectxt" style="margin-top:-6px">Dipstick</p>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <button type="button" class="qchoice"><span>Normal</span></button>
+              <button type="button" class="qchoice sel" aria-pressed="true"><span>Trace</span><span>✓</span></button>
+              <button type="button" class="qchoice"><span>+</span></button>
+              <button type="button" class="qchoice"><span>++</span></button>
+              <button type="button" class="qchoice"><span>+++</span></button>
+            </div>
+            <div class="swrow">
+              <div class="swmeta"><span class="swtitle ab">Abnormal</span></div>
+              <span class="tog on" role="switch" aria-checked="true" aria-label="Abnormal"></span>
+            </div>
+            <div class="footrow">
+              <button type="button" class="obtn" disabled style="border-color:var(--outv);color:var(--onv)">Back</button>
+              <button type="button" class="pbtn">Next</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <p class="note"><code>QualitativeChoiceButton</code> replaces rose fill with calm <code>primaryContainer</code> + <code>primary</code> border (<code>10 dp</code>, <code>52 dp</code> height).</p>
+  </figure>
+</div>
+
+<h2>5. Lab batch: Review tab (<code>ReviewTab</code>)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, Review tab (cramped rows, 11 sp pills)</figcaption>
+    <div class="phone">
+      <div class="screen">
+        <div class="old-rtabs">
+          <span class="old-rtab">+ Add</span>
+          <span class="old-rtab">Enter (1/6)</span>
+          <span class="old-rtab sel">Review (1)</span>
+        </div>
+        <div class="old-sechdr"><span class="old-stripe"><i></i>CBC</span><span style="font-size:12px;color:#4C3F43">6 elements</span></div>
+        <div class="old-card">
+          <div style="display:flex;align-items:center;gap:6px;padding:4px 0">
+            <div style="flex:1;min-width:0"><b style="font-size:13px">Haemoglobin (Hb)</b><div style="font-size:12px;color:#4C3F43">g/dL</div></div>
+            <b style="font-size:14px">11.2</b>
+            <span class="old-pill999" style="background:#DCFCE7;color:#166534">Normal ✓</span>
+            <span style="font-size:13px;font-weight:600;color:#0D1B3D">Edit</span>
+          </div>
+          <div style="border-top:1px solid rgba(202,196,208,.3);display:flex;align-items:center;gap:6px;padding-top:6px">
+            <div style="flex:1;min-width:0"><b style="font-size:13px">Haematocrit (Hct)</b><div style="font-size:12px;color:#4C3F43">%</div></div>
+            <span class="old-pill999" style="background:#FEF3C7;color:#92400E">pending</span>
+            <span style="font-size:13px;font-weight:600;color:#0D1B3D">Edit</span>
+          </div>
+        </div>
+        <div class="old-sechdr"><span class="old-stripe"><i></i>URINE ROUTINE &amp; MICROSCOPIC</span><span style="font-size:12px;color:#4C3F43">8 elements</span></div>
+        <div class="old-card">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="flex:1"><b style="font-size:13px">Urine Protein</b></div>
+            <b style="font-size:14px">[Trace]</b>
+            <span class="old-pill999" style="background:#FEE2E2;color:#B91C1C">Abnormal ▲</span>
+            <span style="font-size:13px;font-weight:600;color:#0D1B3D">Edit</span>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:13px;font-weight:700;color:#0D1B3D">Mark 7 empty as normal</div>
+      </div>
+      <div class="old-foot3">
+        <span class="old-obtn">Cancel</span>
+        <span class="old-pbtn" style="flex:2">Save 2 results</span>
+      </div>
+    </div>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, slice 16, Review tab (aligned with <code>LabReportItem</code>)</figcaption>
+    <div class="phone">
+      <div class="screen">
+        <div class="tabs3" role="tablist">
+          <button type="button" class="tabbtn" role="tab" aria-selected="false">+ Add</button>
+          <button type="button" class="tabbtn" role="tab" aria-selected="false">Enter (2/14)</button>
+          <button type="button" class="tabbtn sel" role="tab" aria-selected="true">Review (2)</button>
+        </div>
+        <section class="sec">
+          <div class="sec-head"><h4>CBC</h4><span class="hstat">6 elements</span></div>
+          <div class="sec-body" style="gap:0">
+            <div class="rrow first">
+              <span class="nm"><b>Haemoglobin (Hb)</b><span>g/dL</span></span>
+              <span class="res"><b>11.2 g/dL</b><span class="sw sw-neu">Normal</span></span>
+              <button type="button" class="tbtn">Edit</button>
+            </div>
+            <div class="rrow">
+              <span class="nm"><b>Haematocrit (Hct)</b><span>%</span></span>
+              <span class="res"><span class="sw sw-mod">Pending</span></span>
+              <button type="button" class="tbtn">Edit</button>
+            </div>
+            <div class="rrow">
+              <span class="nm"><b>MCV</b><span>fL</span></span>
+              <span class="res"><span class="sw sw-mod">Pending</span></span>
+              <button type="button" class="tbtn">Edit</button>
+            </div>
+          </div>
+        </section>
+        <section class="sec">
+          <div class="sec-head"><h4>Urine Routine &amp; Microscopic</h4><span class="hstat">8 elements</span></div>
+          <div class="sec-body" style="gap:0">
+            <div class="rrow first">
+              <span class="nm"><b>Urine Protein</b><span>Dipstick</span></span>
+              <span class="res"><b class="ab">[Trace]</b><span class="sw sw-hi">Abnormal</span></span>
+              <button type="button" class="tbtn">Edit</button>
+            </div>
+            <div class="rrow">
+              <span class="nm"><b>Urine Glucose</b><span>Dipstick</span></span>
+              <span class="res"><span class="sw sw-mod">Pending</span></span>
+              <button type="button" class="tbtn">Edit</button>
+            </div>
+          </div>
+        </section>
+        <div class="qpanel">
+          <p>Remaining dipstick or qualitative tests without a value can be set to normal in one tap.</p>
+          <button type="button" class="obtn" style="width:100%">Mark 7 empty as normal</button>
+        </div>
+      </div>
+      <div class="foot">
+        <div class="footrow batch">
+          <button type="button" class="obtn">Cancel</button>
+          <button type="button" class="pbtn">Save 2 results</button>
+        </div>
+      </div>
+    </div>
+    <p class="note">Panel cards match <code>RecordSectionCard(FieldFamilies.background())</code>; rows mirror <code>LabReportItem</code> with <code>StatusWord</code> (<code>Normal</code>, <code>Pending</code>, <code>Abnormal</code>) and <code>48 dp</code> <code>Edit</code> actions; <code>Mark 7 empty as normal</code> sits in a calm sand action panel.</p>
+  </figure>
+</div>
+
+<h2>6. Dark theme and Arabic patient name (<bdi lang="ar">منى رجب</bdi>)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Dark</b>, after, Lab batch Enter tab (<bdi lang="ar">منى رجب</bdi>, Hb 11.2 g/dL)</figcaption>
+    <div class="phone dark">
+      <div class="screen">
+        <div class="pagehead"><h3>Laboratory results</h3></div>
+        <div class="pstrip">
+          <div class="pstrip-top">
+            <p class="pname rtl" dir="rtl" lang="ar"><bdi lang="ar">منى رجب</bdi></p>
+          </div>
+          <div class="bchips">
+            <span class="bchip info">27+2 wks</span>
+            <span class="bchip info">G4 P1 A2</span>
+            <span class="bchip info">A+</span>
+          </div>
+        </div>
+        <div class="mbar-row">
+          <button type="button" class="ibtn" aria-label="Back">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+          </button>
+          <div class="mbar">
+            <div class="mbar-info">
+              <span class="mbar-top">[report date], 27+2 wks</span>
+              <span class="mbar-sub">[lab name]</span>
+            </div>
+            <button type="button" class="mbar-act">Change</button>
+          </div>
+        </div>
+        <div class="tabs3" role="tablist">
+          <button type="button" class="tabbtn" role="tab" aria-selected="false">+ Add</button>
+          <button type="button" class="tabbtn sel" role="tab" aria-selected="true">Enter (1/6)</button>
+          <button type="button" class="tabbtn" role="tab" aria-selected="false">Review (1)</button>
+        </div>
+        <div class="bprog" aria-hidden="true"><span class="cur"></span><span></span><span></span><span></span><span></span><span></span></div>
+        <section class="sec">
+          <div class="sec-head">
+            <div style="flex:1;min-width:0;padding:6px 0">
+              <span class="flab" style="margin-bottom:2px">Hematology, test 1 of 6</span>
+              <h4 style="padding:0">Haemoglobin (Hb)</h4>
+            </div>
+            <button type="button" class="ibtn err" aria-label="Remove Haemoglobin (Hb)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </button>
+          </div>
+          <div class="sec-body">
+            <div class="readout">
+              <div><span class="rval">11.2</span><span class="runit">g/dL</span></div>
+              <span class="bchip neu">Normal</span>
+            </div>
+            <div>
+              <span class="flab">Result</span>
+              <div class="fbox num">11.2</div>
+            </div>
+            <div>
+              <span class="flab">Reference range (from the report)</span>
+              <div class="fbox"></div>
+            </div>
+            <div class="footrow">
+              <button type="button" class="obtn" disabled style="border-color:var(--outv);color:var(--onv)">Back</button>
+              <button type="button" class="pbtn">Next</button>
+            </div>
+          </div>
+        </section>
+      </div>
+      <div class="foot">
+        <div class="footrow batch">
+          <button type="button" class="obtn">Cancel</button>
+          <button type="button" class="pbtn">Save 1 result</button>
+        </div>
+      </div>
+    </div>
+  </figure>
+</div>
+
+<h2>7. Contrast (computed, WCAG 2.1 formula)</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Pair</th><th>Foreground</th><th>Background</th><th>Light</th><th>Dark</th><th>Target</th></tr></thead>
+<tbody>
+<tr><td>Editor title (onSurface) on page background</td><td>#0D1B3D / #E2E2EA</td><td>#FBF8F5 / #0E121B</td><td class="n">15.99:1</td><td class="n">14.54:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Section titles, action buttons (primary) on surface</td><td>#0D1B3D / #B4C5FF</td><td>#FFFFFF / #1A202E</td><td class="n">16.92:1</td><td class="n">9.59:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Field values, readout value (onSurface) on surface</td><td>#0D1B3D / #E2E2EA</td><td>#FFFFFF / #1A202E</td><td class="n">16.92:1</td><td class="n">12.64:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Patient banner name &amp; readout value on <code>FieldBackgroundBg</code></td><td>#0D1B3D / #E2E2EA</td><td>#F1EDE4 / #36301F</td><td class="n">14.48:1</td><td class="n">10.19:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td><code>FieldBackgroundLabel</code> on surface</td><td>#594A2C / #E0CFA6</td><td>#FFFFFF / #1A202E</td><td class="n">8.60:1</td><td class="n">10.58:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td><code>FieldBackgroundLabel</code> on <code>FieldBackgroundBg</code> (band chips, labels)</td><td>#594A2C / #E0CFA6</td><td>#F1EDE4 / #36301F</td><td class="n">7.36:1</td><td class="n">8.53:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Secondary text, units, Normal <code>StatusWord</code> (onSurfaceVariant) on surface</td><td>#4C3F43 / #CDC3C6</td><td>#FFFFFF / #1A202E</td><td class="n">10.00:1</td><td class="n">9.47:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Save, Next, + Add N, selected tab/chip (onPrimary on primary)</td><td>#FFFFFF / #002A78</td><td>#0D1B3D / #B4C5FF</td><td class="n">16.92:1</td><td class="n">7.72:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Selected qualitative choice (onPrimaryContainer on primaryContainer)</td><td>#041334 / #DCE1FF</td><td>#D6DFFF / #183F91</td><td class="n">13.82:1</td><td class="n">7.53:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Input, chip, button border (outline on surface)</td><td>#79747E / #8E95A5</td><td>#FFFFFF / #1A202E</td><td class="n">4.55:1</td><td class="n">5.42:1</td><td>&ge; 3.0:1</td></tr>
+<tr><td>Abnormal / High / Low <code>BandChip</code> (StatusHighText on StatusHighBg)</td><td>#8E1B1B / #FFC9C9</td><td>#FBE3E3 / #4A1616</td><td class="n">7.40:1</td><td class="n">10.19:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Pending <code>StatusWord</code> (StatusModerateText on surface / Bg)</td><td>#6E4708 / #F3D18E</td><td>#FFFFFF / #1A202E</td><td class="n">8.18:1</td><td class="n">11.10:1</td><td>&ge; 4.5:1</td></tr>
+<tr><td>Abnormal value &amp; remove icon (error) on surface</td><td>#BA1A1A / #FFB4AB</td><td>#FFFFFF / #1A202E</td><td class="n">6.46:1</td><td class="n">9.59:1</td><td>&ge; 4.5:1</td></tr>
+</tbody></table></div>
+
+<h2>8. Compose mapping</h2>
+<ol class="map">
+  <li>Shared <code>LabPatientBanner</code> &amp; unified <code>BatchInfoBar</code> (new <code>ui/LabEditorComponents.kt</code> + backward-compatible <code>useRecordStyle = false</code> on <code>DesignSystem.BatchInfoBar</code>): replaces <code>ClinicalPatientCard(EDITOR_SUMMARY)</code> and <code>LabEditor</code>'s duplicate private <code>BatchInfoBar</code>; uses <code>FieldFamilies.background()</code>, <code>PatientNameText</code>, risk <code>StatusTag</code> (Moderate/High only), <code>BandChip</code>s for <code>shortWeeksText</code> (<code>27+2 wks</code>), <code>parityText(g, p, a)</code> (<code>G4 P1 A2</code>), and <code>formatBloodGroup</code>.</li>
+  <li><code>LabEditor.kt</code>: <code>EditorPage(..., subtitle = "", useRecordStyle = true)</code>, <code>GenericEditorErrorCard(..., useRecordStyle = true)</code>, <code>RecordSectionCard(..., FieldFamilies.background())</code>, compact <code>FieldBackgroundBg</code> strip for <code>labStoryDisplay</code> + <code>BandChip</code> for <code>labResultFlag</code>, <code>RecordFilterChip</code> row for dipstick <code>labResultPreset-0..4</code>, <code>EditorField(..., externalLabel = true, shape = RecordShapes.Small)</code>, <code>QuickPresetChips(..., collapseAfter = PRESAVED_COLLAPSE_AFTER, useRecordStyle = true)</code> when unfiltered, <code>ChoiceGroup(..., useRecordChip = true)</code> for category, and <code>SheetCancelSaveRow</code> + full-width <code>OutlinedButton("addAnotherLab")</code>; Lock footer deleted.</li>
+  <li><code>ClinicalPresets.kt</code> (level 3, display only): update only the collapsible <code>TextButton</code> inside <code>QuickPresetChips</code> when <code>useRecordStyle == true</code> to use <code>shape = RecordShapes.Small</code> and <code>style = RecordType.Action</code>; keep all medication/clinical constants and mappings untouched.</li>
+  <li><code>LabBatchScreen.kt</code>: <code>EditorPage(..., subtitle = "", useRecordStyle = true)</code>, <code>GenericEditorErrorCard</code>, <code>48 dp</code> <code>labBatchBack</code> + <code>BatchInfoBar(..., useRecordStyle = true)</code>, 3 <code>48 dp</code> <code>RecordShapes.Small</code> tabs (<code>labBatchTab-ADD/ENTER/REVIEW</code>), <code>RecordSectionCard</code> panels with stacked <code>48 dp</code> <code>Choose</code> / <code>+ Add N</code> buttons, <code>FlowRow</code> for <code>Often added</code>, restyled <code>ChoosePanelDialog</code> + upgraded metadata dialog (<code>ClinicalDateField</code> + <code>labNamePresets</code>), <code>BatchSegmentedProgress(..., useRecordStyle = true)</code>, <code>48 dp</code> <code>labBatchDeleteItem</code>, <code>QualitativeChoiceButton(..., useRecordStyle = true)</code>, and <code>RecordSectionCard</code> + <code>StatusWord</code> review rows matching <code>LabReportItem</code>.</li>
+</ol>
+
+<h2>9. Decisions for the owner (this slice)</h2>
+<ol>
+  <li><b>Shared <code>FieldBackgroundBg</code> patient banner and unified <code>BatchInfoBar</code> (replacing <code>ClinicalPatientCard(EDITOR_SUMMARY)</code> and duplicated subtitles):</b> Recommend accept. Removes duplicate patient names, fixes missing <code>A2</code> in parity, removes sub-<code>12 sp</code> rainbow pills, and aligns GA to <code>27+2 wks</code> across both editors.</li>
+  <li><b>Calm readout strip, <code>RecordFilterChip</code> dipstick row, and collapsed test presets in <code>LabEditor</code>:</b> Recommend accept. Replaces the <code>36 sp</code> pink box and 5 stacked <code>56 dp</code> dipstick buttons with a compact sand strip and 1-row chips, and collapses the 28-item preset list to 5 + <code>Show all 28</code> (display-only <code>TextButton</code> styling in level-3 <code>ClinicalPresets.kt</code>).</li>
+  <li><b>2-row <code>MedicationSheet</code> bottom bar in <code>LabEditor</code>:</b> Recommend accept. Uses <code>SheetCancelSaveRow</code> (<code>Cancel</code> / <code>Save</code>) plus full-width <code>Save and add another</code> (or <code>Save and next test</code>) below so button labels never clip on <code>360 dp</code> at <code>2.0x</code> scale.</li>
+  <li><b>Stacked <code>48 dp</code> panel actions and upgraded metadata dialog in <code>LabBatchScreen</code>:</b> Recommend accept. Gives long panel names full width above 50/50 <code>Choose</code> / <code>+ Add N</code> buttons, wraps <code>Often added</code> in <code>FlowRow</code>, and adds <code>ClinicalDateField</code> + <code>labNamePresets</code> to <code>Batch details</code> while keeping exact <code>labBatchDate</code> and <code>labBatchLabName</code> tags.</li>
+  <li><b>Restyle <code>Enter</code> and <code>Review</code> to Sand/Primary tokens, raise delete to <code>48 dp</code>, drop Lock footer, and surface <code>LabBatchDraft.errors</code>:</b> Recommend accept. Replaces <code>ActionRose</code>, <code>32 dp</code> remove icon, <code>11 sp</code> pills, and triangle arrows with <code>RecordSectionCard</code>, <code>StatusWord</code>, and <code>GenericEditorErrorCard</code> (preserving <code>CBC · 6 elements</code> for <code>LabBatchUiTest</code>).</li>
+</ol>
+</main>
+</body>
+</html>

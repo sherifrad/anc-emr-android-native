@@ -1696,10 +1696,10 @@
   "rd14": {
    "phase": "pRD",
    "order": 15,
-   "status": "next",
+   "status": "active",
    "title": "Slice 14: Visit editor",
    "ref": "",
-   "detail": "Mock first (top, vitals entry, summary), owner approves, then build.",
+   "detail": "Mock approved 2026-11-16. Building.",
    "owner": "Lane models",
    "updated": "2026-11-16"
   },
@@ -1875,6 +1875,10 @@
   }
  },
  "log": [
+  {
+   "date": "2026-11-16",
+   "text": "Mocks for slices 14, 15, 16 approved by the owner as drawn."
+  },
   {
    "date": "2026-11-16",
    "text": "Docs cleanup done locally: 74,284 tracked files down to 1,512; progress now only in docs/PROJECT_STATE.json. Not pushed."
