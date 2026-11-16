@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Mock S18: Security, lock and vault</title>
+<style>
+  /* Tokens: Theme.kt scheme values + Slice 0 record tokens (Patient / slate-blue family for app identity & security). */
+  :root{
+    --primary:#0D1B3D; --on:#0D1B3D; --onv:#4C3F43; --onprimary:#FFFFFF;
+    --primc:#D6DFFF; --onprimc:#041334; --sc:#FFD9DE; --onsc:#3B0815;
+    --surface:#FFFFFF; --bg:#FBF8F5; --outv:#CAC4D0; --outline:#79747E; --sv:#F3E9E7; --scl:#F9F5F3; --sch:#EFE9E4;
+    --err:#BA1A1A; --onerr:#FFFFFF; --errc:#FFDAD6; --onerrc:#410002;
+    --pt-bg:#E9EEF8; --pt-lb:#23407A;
+    --hi-bg:#FBE3E3; --hi-bd:#C26666; --hi-fg:#8E1B1B;
+    --r-s:10px; --r-l:16px;
+  }
+  .dark{
+    --primary:#B4C5FF; --on:#E2E2EA; --onv:#CDC3C6; --onprimary:#002A78;
+    --primc:#183F91; --onprimc:#DCE1FF; --sc:#762E3B; --onsc:#FFD9DE;
+    --surface:#1A202E; --bg:#0E121B; --outv:#3A4459; --outline:#8E95A5; --sv:#262E40; --scl:#141924; --sch:#283248;
+    --err:#FFB4AB; --onerr:#690005; --errc:#5C141D; --onerrc:#FFDAD6;
+    --pt-bg:#22304A; --pt-lb:#AFC6F2;
+    --hi-bg:#4A1616; --hi-bd:#B45A5A; --hi-fg:#FFC9C9;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:#FFFFFF;color:#0D1B3D;font-family:Roboto,"Noto Sans","Segoe UI",system-ui,-apple-system,Arial,sans-serif;font-size:15px;line-height:1.5;padding:32px 16px 64px}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-size:26px;line-height:1.25;margin:0 0 8px}
+  h2{font-size:20px;line-height:1.3;margin:44px 0 6px}
+  .lede,p,li{max-width:78ch}
+  .lede{color:#4C3F43;margin:0 0 4px}
+  .reason{border:1px solid #CAC4D0;border-radius:16px;padding:18px 20px;margin-top:18px;background:#FDFCFB}
+  .reason h2{margin-top:0}
+  .reason ul{margin:6px 0 0;padding-inline-start:20px}
+  .pair{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-top:14px}
+  figure{margin:0;width:360px;max-width:100%;flex:0 0 auto}
+  figcaption{font-size:14px;color:#4C3F43;margin:0 0 8px}
+  figcaption b{color:#0D1B3D}
+  .note{font-size:14px;color:#4C3F43;margin:10px 0 0}
+
+  .phone{width:100%;background:var(--bg);border:1px solid #B9B4BE;border-radius:16px;overflow:hidden;color:var(--on);display:flex;flex-direction:column}
+  .scrim{background:rgba(0,0,0,.38);padding:16px 11px;display:flex;flex-direction:column;justify-content:center;flex:1 1 auto}
+  .scrim.center{padding:36px 14px}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  button:disabled{cursor:not-allowed}
+  button:hover:not(:disabled){filter:brightness(.97)}
+  button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+
+  /* AFTER: Settings dialog chrome & tab strip (SecuritySettingsDialog) */
+  .sdlg{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);color:var(--on);display:flex;flex-direction:column;overflow:hidden;width:100%}
+  .sdlg-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 4px 8px 16px}
+  .sdlg-brand{display:flex;align-items:center;gap:10px;min-width:0;flex:1 1 auto}
+  .emblem-sm{width:44px;height:44px;border-radius:22px;background:var(--surface);border:1px solid var(--outv);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--primary);flex:0 0 44px}
+  .emblem-md{width:48px;height:48px;border-radius:24px;background:var(--surface);border:1px solid var(--outv);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--primary);flex:0 0 48px}
+  .emblem-lg{width:72px;height:72px;border-radius:36px;background:var(--surface);border:1px solid var(--outv);display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--primary);flex:0 0 72px}
+  .emblem-v{width:80px;height:80px;border-radius:40px;background:var(--surface);border:1px solid var(--outv);display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--primary);flex:0 0 80px}
+  .sdlg-title{margin:0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .sdlg-sub{margin:0;font-size:14px;line-height:20px;color:var(--onv);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sdlg-tabs{padding:4px 16px 8px;display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--outv)}
+  .sdlg-body{padding:16px;display:flex;flex-direction:column;gap:12px}
+
+  /* AFTER: Shared Record components */
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chipwrap{min-height:48px;display:inline-flex;align-items:center}
+  .chip{min-height:36px;padding:6px 12px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);color:var(--on);font-size:14px;line-height:20px;font-weight:500;display:inline-flex;align-items:center;text-align:start}
+  .chip.sel{background:var(--primary);border-color:var(--primary);color:var(--onprimary);font-weight:600}
+
+  .pbtn{min-height:48px;min-width:48px;padding:10px 14px;border-radius:var(--r-s);background:var(--primary);color:var(--onprimary);font-size:14px;line-height:20px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;text-align:center}
+  .obtn{min-height:48px;min-width:48px;padding:10px 14px;border:1px solid var(--outline);border-radius:var(--r-s);font-size:14px;line-height:20px;font-weight:600;color:var(--primary);background:var(--surface);display:inline-flex;align-items:center;justify-content:center;text-align:center}
+  .tbtn{min-height:48px;min-width:48px;padding:0 12px;border-radius:var(--r-s);font-size:14px;line-height:20px;font-weight:600;color:var(--primary);display:inline-flex;align-items:center;justify-content:center;text-align:center;gap:6px}
+  .tbtn.err{color:var(--err)}
+  .ibtn{width:48px;height:48px;border-radius:var(--r-s);display:inline-flex;align-items:center;justify-content:center;color:var(--primary);flex:0 0 48px}
+
+  .sec{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:4px 4px 16px 16px}
+  .sec-head{display:flex;align-items:center;min-height:48px;gap:8px}
+  .sec-head h3,.sec-head h4{flex:1 1 auto;margin:0;padding:6px 0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .sec-body{display:flex;flex-direction:column;gap:10px;padding-inline-end:12px}
+  .sectxt{margin:0;font-size:14px;line-height:20px;color:var(--onv)}
+  .secval{margin:0;font-size:16px;line-height:22px;color:var(--onv)}
+  .flab{display:block;font-size:12px;line-height:16px;font-weight:600;color:var(--pt-lb);margin-bottom:4px}
+  .flab.err{color:var(--err)}
+  .fbox{min-height:48px;padding:12px 14px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);font-size:16px;line-height:22px;color:var(--on);overflow-wrap:anywhere;display:flex;align-items:center}
+  .fbox.err{border:1.5px solid var(--err)}
+  .errtxt{margin:0;font-size:14px;line-height:20px;font-weight:600;color:var(--err)}
+  .oktxt{margin:0;font-size:14px;line-height:20px;font-weight:600;color:var(--primary)}
+
+  /* Radio & switch rows */
+  .radrow{min-height:48px;display:flex;align-items:center;gap:12px;padding:4px 4px;border-radius:var(--r-s);text-align:start;width:100%}
+  .rad{width:20px;height:20px;border-radius:10px;border:2px solid var(--outline);display:inline-flex;align-items:center;justify-content:center;flex:0 0 20px}
+  .rad.on{border-color:var(--primary)}
+  .rad.on::after{content:"";width:10px;height:10px;border-radius:5px;background:var(--primary)}
+  .radlab{font-size:16px;line-height:22px;color:var(--on)}
+  .radlab.on{font-weight:600;color:var(--primary)}
+
+  .swrow{min-height:56px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .swmeta{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .swtitle{font-size:16px;line-height:22px;font-weight:700;color:var(--on)}
+  .swsub{font-size:14px;line-height:20px;color:var(--primary)}
+  .swsub.err{color:var(--err)}
+  .tog{width:52px;height:32px;border-radius:16px;border:2px solid var(--outline);position:relative;flex:0 0 52px;background:var(--surface)}
+  .tog::after{content:"";position:absolute;width:16px;height:16px;border-radius:8px;background:var(--outline);left:6px;top:6px}
+  .tog.on{background:var(--primary);border-color:var(--primary)}
+  .tog.on::after{width:24px;height:24px;border-radius:12px;background:var(--onprimary);left:22px;top:2px}
+
+  .statbox{border-radius:var(--r-s);padding:10px 12px;font-size:14px;line-height:20px;font-weight:600;background:var(--pt-bg);border:1px solid var(--outv);color:var(--on)}
+  .statbox.err{background:var(--errc);border-color:var(--err);color:var(--onerrc)}
+  .btnpair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+  /* AFTER: Form dialog + Confirm dialog */
+  .fdlg{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);color:var(--on);display:flex;flex-direction:column;overflow:hidden;width:100%}
+  .fdlg-head{padding:16px 16px 12px;border-bottom:1px solid var(--outv)}
+  .fdlg-head h3{margin:0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .fdlg-body{padding:16px;display:flex;flex-direction:column;gap:12px}
+  .fdlg-foot{padding:12px 16px;border-top:1px solid var(--outv);display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .cdlg{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:20px;display:flex;flex-direction:column;gap:12px;color:var(--on);width:100%}
+  .cdlg h3{margin:0;font-size:18px;line-height:24px;font-weight:700;color:var(--on)}
+  .cdlg p{margin:0;font-size:16px;line-height:22px;color:var(--onv)}
+  .cdlg-acts{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+
+  /* AFTER: AppLockScreen */
+  .lockscreen{padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:0;min-height:560px;justify-content:center}
+  .cname{margin:12px 0 2px;font-size:22px;line-height:28px;font-weight:700;color:var(--primary);text-align:center}
+  .csub{margin:0;font-size:14px;line-height:20px;color:var(--onv);text-align:center}
+  .lprompt{margin:16px 0 0;font-size:18px;line-height:24px;font-weight:700;color:var(--on);text-align:center}
+  .lrule{margin:6px 0 0;font-size:14px;line-height:20px;color:var(--onv);text-align:center}
+  .lhint{margin:4px 0 0;font-size:14px;line-height:20px;font-weight:600;color:var(--pt-lb);text-align:center}
+  .lockout-box{margin-top:10px;width:100%;background:var(--hi-bg);border:1px solid var(--hi-bd);border-radius:var(--r-s);padding:8px 12px;font-size:14px;line-height:20px;font-weight:600;color:var(--hi-fg);text-align:center}
+  .dots{display:flex;gap:14px;align-items:center;justify-content:center;margin-top:14px}
+  .dot{width:16px;height:16px;border-radius:8px;border:2px solid var(--outline);background:transparent}
+  .dot.fill{border-color:var(--primary);background:var(--primary)}
+  .dot.err{border-color:var(--err)}
+  .dot.fill.err{background:var(--err)}
+  .errslot{min-height:32px;display:flex;align-items:center;justify-content:center;margin-top:8px;width:100%}
+  .errslot p{margin:0;font-size:14px;line-height:20px;font-weight:600;color:var(--err);text-align:center}
+  .keypad{width:100%;display:flex;flex-direction:column;gap:10px;margin-top:10px}
+  .krow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+  .key{min-height:56px;border-radius:var(--r-l);background:var(--surface);border:1px solid var(--outline);font-size:22px;line-height:28px;font-weight:700;color:var(--on);display:flex;align-items:center;justify-content:center}
+  .key.util{background:var(--pt-bg);color:var(--primary)}
+  .key.dis{background:var(--bg);border-color:var(--outv);color:var(--onv)}
+
+  /* AFTER: VaultGateScreen */
+  .vaultscreen{padding:24px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:500px;gap:16px}
+  .vcard{width:100%;background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);overflow:hidden;display:flex;flex-direction:column}
+  .vcard.blocked{border-color:var(--hi-bd)}
+  .vband{background:var(--pt-bg);padding:8px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .vcard.blocked .vband{background:var(--hi-bg)}
+  .bchip{display:inline-flex;align-items:center;min-height:24px;padding:2px 10px;border-radius:var(--r-s);font-size:12px;line-height:16px;font-weight:700;background:var(--surface);color:var(--pt-lb);border:1px solid transparent}
+  .bchip.hi{background:var(--hi-bg);border-color:var(--hi-bd);color:var(--hi-fg)}
+  .vbody{padding:16px;display:flex;flex-direction:column;gap:8px}
+  .vtitle{margin:0;font-size:18px;line-height:24px;font-weight:700;color:var(--on)}
+  .vcard.blocked .vtitle{color:var(--err)}
+  .vtext{margin:0;font-size:16px;line-height:22px;color:var(--onv)}
+  .vbtn{width:100%;min-height:52px;padding:12px 16px;border-radius:var(--r-s);background:var(--primary);color:var(--onprimary);font-size:14px;line-height:20px;font-weight:600;display:flex;align-items:center;justify-content:center;text-align:center}
+
+  /* BEFORE fidelity styles (exact current SecuritySettingsDialog.kt, AppLockScreen.kt, VaultGateScreen.kt) */
+  .old-card20{background:#FFFFFF;border-radius:20px;padding:20px;box-shadow:0 4px 16px rgba(13,27,61,.18);display:flex;flex-direction:column;gap:14px;color:#0D1B3D}
+  .old-tabs3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid rgba(202,196,208,.5)}
+  .old-tab3{height:48px;display:flex;align-items:center;justify-content:center;padding:0 12px;font-size:13px;line-height:16px;color:#4C3F43;position:relative;overflow:hidden;white-space:nowrap}
+  .old-tab3.sel{font-weight:700;color:#0D1B3D}
+  .old-tab3.sel::after{content:"";position:absolute;left:10px;right:10px;bottom:0;height:2px;background:#0D1B3D}
+  .old-sec14{background:#F9F5F3;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+  .old-sech{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:#0D1B3D;margin:0}
+  .old-sub12{margin:0;font-size:12px;line-height:16px;color:#4C3F43}
+  .old-jargon11{margin:0;font-size:11px;line-height:14px;color:#4C3F43}
+  .old-m3f{position:relative;border:1px solid #79747E;border-radius:4px;padding:12px;font-size:14px;line-height:20px;color:#0D1B3D;background:#F9F5F3;min-height:48px;display:flex;align-items:center}
+  .old-m3f .olbl{position:absolute;top:-8px;left:10px;background:#F9F5F3;padding:0 4px;font-size:12px;line-height:16px;color:#4C3F43;max-width:calc(100% - 16px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .old-pill40{min-height:40px;padding:0 16px;border-radius:999px;background:#0D1B3D;color:#FFFFFF;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .old-pill40.out{background:transparent;color:#0D1B3D;border:1px solid #79747E}
+  .old-dlg28{background:#EFE9E4;border-radius:28px;padding:22px;color:#0D1B3D;display:flex;flex-direction:column;gap:10px;width:288px;max-width:100%;margin:0 auto}
+  .old-dlg28 h3{margin:0;font-size:20px;line-height:26px;font-weight:700}
+  .old-dlg28 .old-m3f,.old-dlg28 .old-m3f .olbl{background:#EFE9E4}
+  .old-dlg-acts{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+  .old-tact{min-height:40px;padding:0 12px;font-size:13px;font-weight:600;color:#0D1B3D;display:inline-flex;align-items:center}
+  .old-lock{padding:24px;display:flex;flex-direction:column;align-items:center;min-height:560px;justify-content:center}
+  .old-emb90{width:90px;height:90px;border-radius:45px;background:#EFE9E4;box-shadow:0 2px 6px rgba(13,27,61,.18);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#0D1B3D}
+  .old-dot{width:16px;height:16px;border-radius:8px;border:2px solid #CAC4D0}
+  .old-dot.fill{border-color:#0D1B3D;background:#0D1B3D;transform:scale(1.15)}
+  .old-dot.err{border-color:#BA1A1A}
+  .old-dot.fill.err{background:#BA1A1A}
+  .old-krow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;width:100%}
+  .old-key{height:60px;border-radius:16px;background:#F9F5F3;box-shadow:0 1px 3px rgba(13,27,61,.14);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#0D1B3D}
+  .old-key.bio{background:#D6DFFF;color:#041334}
+  .old-key.back{background:#E9E2DD;color:#4C3F43}
+  .old-vbtn{width:100%;height:52px;border-radius:12px;background:#0D1B3D;color:#FFFFFF;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px}
+
+  /* Tables & mapping */
+  .tablewrap{overflow-x:auto;max-width:100%}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin-top:10px}
+  th,td{border-bottom:1px solid #E6E1E5;padding:7px 8px;text-align:start;vertical-align:top}
+  th{background:#F7F5F3}
+  td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+  ol.map li{margin:7px 0}
+  code{font-family:"Roboto Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:#F3F0EE;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<h1>Mock S18: Security, lock and vault</h1>
+<p class="lede">Covers <code>ui/SecuritySettingsDialog.kt</code>, <code>ui/AppLockScreen.kt</code>, and <code>ui/VaultGateScreen.kt</code> (Level 3: auth and security). Presentation only: PIN validation, PBKDF2 hashing, lockout timers, biometric prompt, encrypted backup/restore, and vault state transitions remain identical. Every string comes from <code>strings.xml</code> or existing code, with zero invented security claims.</p>
+
+<section class="reason" aria-labelledby="r">
+  <h2 id="r">Design reasoning</h2>
+  <p>Reading this as: clinical security settings, PIN entry, and encrypted vault access where clinicians switch tabs without clipping, read errors clearly, and avoid accidental destructive actions on a 360 dp phone. Antislop dials: ENERGY 1 / RHYTHM 1 / MOTION 1 (pressed and focus states only, no new animation).</p>
+  <ul>
+    <li><b>Patient (slate-blue) family for app identity and security:</b> use <code>FieldFamilies.patient()</code> (<code>#E9EEF8</code> / <code>#23407A</code> light, <code>#22304A</code> / <code>#AFC6F2</code> dark) on the Security and clinic tab, PIN/backup dialogs, <code>AppLockScreen</code>, and <code>VaultGateScreen</code>, keeping <code>FieldFamilies.background()</code> sand distinct for the Lab tests and Medications catalog tabs.</li>
+    <li><b>Unclipped settings tabs inside 306 dp dialog width:</b> replace the 3-column <code>PrimaryTabRow</code> that clips <code>"Security &amp; Clinic"</code> with a wrapping <code>FlowRow</code> of <code>48 dp</code> <code>RecordFilterChip</code>s (<code>Security &amp; clinic</code>, <code>Lab tests</code>, <code>Medications</code>), matching Slice 17's switcher inside the same dialog.</li>
+    <li><b>Calm <code>RecordSectionCard</code>s and unclipped <code>48 dp</code> backup actions:</b> replace shadowed <code>20 dp</code>/<code>14 dp</code> grey slabs with flat <code>16 dp</code> outlined cards, drop decorative section/button icons and `#FBF8F5` emblem developer jargon, and give <code>Export backup</code> and <code>Restore backup</code> <code>48 dp</code> <code>10 dp</code> buttons (stacking above <code>1.3x</code> font scale).</li>
+    <li><b>Scrollable <code>FormDialog</code>s and error-colored destructive restore:</b> move PIN change, backup export, and restore passphrase dialogs onto <code>16 dp</code> white surfaces with external <code>12 sp</code> labels and pinned <code>SheetCancelSaveRow</code> footers; add a title to <code>restore_confirm_dialog</code> and color <code>Replace all</code> in <code>error</code> so it no longer looks like the safe default.</li>
+    <li><b>3:1 contrast on <code>AppLockScreen</code> and unmistakable <code>Blocked</code> vault state:</b> change empty PIN dot and keypad button borders from <code>outlineVariant</code> (<code>1.61:1</code>) to <code>outline</code> (<code>4.30:1</code> light / <code>6.24:1</code> dark), use flexible error height (fixing multi-line clipping at <code>1.3x</code>+), show disabled keys honestly during lockout, and mark <code>VaultState.Blocked</code> with a <code>StatusHigh</code> header band and <code>BandChip</code>.</li>
+  </ul>
+</section>
+
+<h2>1. Settings dialog chrome, tab bar, and Security &amp; clinic tab (<code>SecuritySettingsDialog.kt</code>)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, clipped <code>Security &amp; Clinic</code> tab, grey <code>14 dp</code> slabs, squeezed backup buttons</figcaption>
+    <div class="phone"><div class="scrim">
+      <div class="old-card20">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1">
+            <span style="width:46px;height:46px;border-radius:23px;background:#EFE9E4;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex:0 0 46px">ANC</span>
+            <div style="min-width:0">
+              <p style="margin:0;font-size:15px;font-weight:700">Clinic &amp; System Settings</p>
+              <p style="margin:0;font-size:12px;color:#4C3F43">Clinic settings &amp; security</p>
+            </div>
+          </div>
+          <span aria-hidden="true" style="font-size:18px;padding:8px">✕</span>
+        </div>
+        <div class="old-tabs3">
+          <span class="old-tab3 sel">Security &amp; Cl…</span>
+          <span class="old-tab3">Lab tests</span>
+          <span class="old-tab3">Medications</span>
+        </div>
+        <div class="old-sec14">
+          <p class="old-sech"><span aria-hidden="true">🛡</span> Clinic Branding &amp; Visual Identity</p>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="width:56px;height:56px;border-radius:28px;background:#EFE9E4;box-shadow:0 2px 4px rgba(0,0,0,.15);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex:0 0 56px">ANC</span>
+            <div>
+              <p style="margin:0;font-size:12px;font-weight:700">Clinic Official Emblem</p>
+              <p class="old-jargon11">Consistent with application icon and splash screen with ivory background #FBF8F5 without clipping.</p>
+            </div>
+          </div>
+          <div class="old-m3f"><span class="olbl">Clinic Name (Header &amp; Top Bar)</span>Dr. Sherif Radwan Clinic</div>
+          <div style="display:flex;justify-content:flex-end"><span class="old-pill40">Save Clinic Branding</span></div>
+        </div>
+        <div class="old-sec14">
+          <p class="old-sech"><span aria-hidden="true">🛡</span> Vault Backup &amp; Restore</p>
+          <p class="old-sub12">Safely export and restore patient records. Backups contain patient records only, not photos.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <span class="old-pill40">🔒 Export Back…</span>
+            <span class="old-pill40 out">🛡 Restore Bac…</span>
+          </div>
+        </div>
+        <span class="old-pill40" style="width:100%">🔒 Lock App Now</span>
+      </div>
+    </div></div>
+    <p class="note"><code>PrimaryTabRow</code> clips <code>Security &amp; Clinic</code> inside 99 dp; <code>#FBF8F5</code> implementation text at <code>11 sp</code>; <code>Export Backup</code> and <code>Restore Backup</code> clip with <code>maxLines = 1</code> and 40 dp height.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, chrome, unclipped <code>FlowRow</code> tabs, Theme &amp; Clinic branding</figcaption>
+    <div class="phone"><div class="scrim">
+      <div class="sdlg" role="dialog" aria-label="Clinic &amp; System Settings">
+        <div class="sdlg-head">
+          <div class="sdlg-brand">
+            <span class="emblem-sm" aria-hidden="true">ANC</span>
+            <div style="min-width:0;flex:1">
+              <h3 class="sdlg-title">Clinic &amp; System Settings</h3>
+              <p class="sdlg-sub">Dr. Sherif Radwan Clinic</p>
+            </div>
+          </div>
+          <button type="button" class="ibtn" aria-label="Close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          </button>
+        </div>
+        <div class="sdlg-tabs" role="tablist" aria-label="Settings sections">
+          <span class="chipwrap"><button type="button" class="chip sel" role="tab" aria-selected="true">Security &amp; clinic</button></span>
+          <span class="chipwrap"><button type="button" class="chip" role="tab" aria-selected="false">Lab tests</button></span>
+          <span class="chipwrap"><button type="button" class="chip" role="tab" aria-selected="false">Medications</button></span>
+        </div>
+        <div class="sdlg-body">
+          <section class="sec">
+            <div class="sec-head"><h4>App theme</h4></div>
+            <div class="sec-body">
+              <p class="sectxt">Choose a color scheme for bright clinic rooms or dimmed ultrasound suites.</p>
+              <div style="display:flex;flex-direction:column;gap:2px" role="radiogroup" aria-label="App theme">
+                <button type="button" class="radrow" role="radio" aria-checked="true"><span class="rad on"></span><span class="radlab on">System default</span></button>
+                <button type="button" class="radrow" role="radio" aria-checked="false"><span class="rad"></span><span class="radlab">Light mode</span></button>
+                <button type="button" class="radrow" role="radio" aria-checked="false"><span class="rad"></span><span class="radlab">Dark mode</span></button>
+              </div>
+            </div>
+          </section>
+          <section class="sec">
+            <div class="sec-head"><h4>Clinic branding</h4></div>
+            <div class="sec-body">
+              <div style="display:flex;align-items:center;gap:12px">
+                <span class="emblem-md" aria-hidden="true">ANC</span>
+                <div style="min-width:0;flex:1">
+                  <p style="margin:0;font-size:16px;line-height:22px;font-weight:700;color:var(--on)">Clinic emblem</p>
+                  <p class="sectxt">Shown on the home screen, lock screen, and printed reports.</p>
+                </div>
+              </div>
+              <div>
+                <span class="flab">Clinic name (header and reports)</span>
+                <div class="fbox">Dr. Sherif Radwan Clinic</div>
+              </div>
+              <div>
+                <span class="flab">Specialty or subtitle</span>
+                <div class="fbox">Maternal-Fetal Medicine &amp; Obstetrics</div>
+              </div>
+              <p class="oktxt">Clinic branding saved and applied.</p>
+              <button type="button" class="pbtn" style="width:100%">Save clinic branding</button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">Pinned header + wrapping <code>48 dp</code> <code>RecordFilterChip</code> tabs keep <code>Security &amp; clinic</code>, <code>Lab tests</code>, and <code>Medications</code> unclipped at every font scale.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, scrolled to PIN, Biometric, Auto-Lock Timeout, Backup &amp; Lock</figcaption>
+    <div class="phone"><div class="scrim">
+      <div class="sdlg">
+        <div class="sdlg-body">
+          <section class="sec">
+            <div class="sec-head"><h4>6-digit PIN</h4></div>
+            <div class="sec-body">
+              <p class="sectxt">6-digit security PIN to prevent unauthorized access to clinical patient records.</p>
+              <button type="button" class="obtn" style="width:100%">Change 6-digit PIN</button>
+            </div>
+          </section>
+          <section class="sec">
+            <div class="sec-head"><h4>Biometric unlock</h4></div>
+            <div class="sec-body">
+              <div class="swrow">
+                <div class="swmeta">
+                  <span class="swtitle">Fingerprint unlock</span>
+                  <span class="swsub">Fingerprint ready</span>
+                </div>
+                <span class="tog on" role="switch" aria-checked="true" aria-label="Fingerprint unlock"></span>
+              </div>
+              <p class="sectxt">Unlock the app with a touch instead of entering your PIN each time.</p>
+              <button type="button" class="obtn" style="width:100%">Test fingerprint</button>
+            </div>
+          </section>
+          <section class="sec">
+            <div class="sec-head"><h4>Auto-Lock Timeout</h4></div>
+            <div class="sec-body">
+              <p class="secval">Locks after 10 minutes away.</p>
+            </div>
+          </section>
+          <section class="sec">
+            <div class="sec-head"><h4>Vault backup and restore</h4></div>
+            <div class="sec-body">
+              <p class="sectxt">Export and restore patient records. Backups contain patient records only, not photos.</p>
+              <div class="statbox">Vault restored (12 patients).</div>
+              <div class="btnpair">
+                <button type="button" class="pbtn">Export backup</button>
+                <button type="button" class="obtn">Restore backup</button>
+              </div>
+            </div>
+          </section>
+          <button type="button" class="pbtn" style="width:100%">Lock app now</button>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">Keeps exact <code>Auto-Lock Timeout</code> and <code>Locks after 10 minutes away.</code> test assertions; unclipped 50/50 <code>48 dp</code> backup buttons stack vertically above <code>1.3x</code> scale.</p>
+  </figure>
+</div>
+
+<h2>2. PIN set and change dialogs with error states</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, <code>ChangePinDialog</code> (28 dp M3 AlertDialog)</figcaption>
+    <div class="phone"><div class="scrim center">
+      <div class="old-dlg28">
+        <h3>Set New 6-Digit PIN</h3>
+        <p class="old-sub12">Use 6 digits. Do not use all the same digit or a straight sequence.</p>
+        <div class="old-m3f"><span class="olbl">New 6-Digit PIN</span>••••••</div>
+        <div class="old-m3f"><span class="olbl">Confirm New PIN</span>••••••</div>
+        <p style="margin:0;font-size:12px;font-weight:700;color:#BA1A1A">New PIN and confirmation do not match.</p>
+        <div class="old-dlg-acts">
+          <span class="old-tact">Cancel</span>
+          <span class="old-pill40">Save New PIN</span>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">Narrow 288 dp M3 dialog with no scroll container, 40 dp pill button, and no red border highlight on mismatched input.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, <code>ChangePinDialog</code> (<code>FormDialog</code> + mismatch error state)</figcaption>
+    <div class="phone"><div class="scrim center">
+      <div class="fdlg" role="dialog" aria-label="Set new 6-digit PIN">
+        <div class="fdlg-head"><h3>Set new 6-digit PIN</h3></div>
+        <div class="fdlg-body">
+          <p class="sectxt">Use 6 digits. Do not use all the same digit or a straight sequence.</p>
+          <div>
+            <span class="flab">New 6-digit PIN</span>
+            <div class="fbox">••••••</div>
+          </div>
+          <div>
+            <span class="flab err">Confirm new PIN</span>
+            <div class="fbox err">••••••</div>
+          </div>
+          <p class="errtxt" role="alert">New PIN and confirmation do not match.</p>
+        </div>
+        <div class="fdlg-foot">
+          <button type="button" class="obtn">Cancel</button>
+          <button type="button" class="pbtn">Save PIN</button>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">Scroll-safe <code>16 dp</code> surface with <code>12 sp</code> external labels, <code>isError</code> border on confirmation mismatch, and equal <code>48 dp</code> <code>SheetCancelSaveRow</code> buttons.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, <code>AppLockScreen</code> PIN setup mode with weak-PIN error</figcaption>
+    <div class="phone">
+      <div class="lockscreen">
+        <span class="emblem-lg" aria-hidden="true">ANC</span>
+        <h3 class="cname">Dr. Sherif Radwan Clinic</h3>
+        <p class="csub">Maternal-Fetal Medicine &amp; Obstetrics</p>
+        <h4 class="lprompt">Set a security PIN</h4>
+        <p class="lrule">Use 6 digits. Do not use all the same digit or a straight sequence.</p>
+        <p class="lhint">Enter a new PIN.</p>
+        <div class="dots" role="img" aria-label="0 of 6 digits entered">
+          <span class="dot err"></span><span class="dot err"></span><span class="dot err"></span>
+          <span class="dot err"></span><span class="dot err"></span><span class="dot err"></span>
+        </div>
+        <div class="errslot"><p role="alert">Choose 6 digits that are not all the same or a straight sequence.</p></div>
+        <div class="keypad">
+          <div class="krow"><button type="button" class="key">1</button><button type="button" class="key">2</button><button type="button" class="key">3</button></div>
+          <div class="krow"><button type="button" class="key">4</button><button type="button" class="key">5</button><button type="button" class="key">6</button></div>
+          <div class="krow"><button type="button" class="key">7</button><button type="button" class="key">8</button><button type="button" class="key">9</button></div>
+          <div class="krow">
+            <span></span>
+            <button type="button" class="key">0</button>
+            <button type="button" class="key util" aria-label="Backspace">⌫</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Flexible <code>heightIn(min = 32.dp)</code> error slot never clips the 2-line <code>pin_invalid</code> or <code>pin_mismatch</code> message at <code>1.3x</code> or <code>2.0x</code> scale.</p>
+  </figure>
+</div>
+
+<h2>3. Backup export, destructive restore confirmation, and restore passphrase dialogs</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, <code>restore_confirm_dialog</code> (solid primary button on destructive action)</figcaption>
+    <div class="phone"><div class="scrim center">
+      <div class="old-dlg28">
+        <p style="margin:0;font-size:14px;line-height:20px;color:#4C3F43">Restoring replaces every patient on this phone with the backup. This cannot be undone.</p>
+        <div class="old-dlg-acts">
+          <span class="old-tact">Cancel</span>
+          <span class="old-pill40">Replace all</span>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">No dialog heading; irreversible <code>Replace all</code> wears solid primary navy, looking like the safe default.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, <code>restore_confirm_dialog</code> (explicit title + error-colored destructive action)</figcaption>
+    <div class="phone"><div class="scrim center">
+      <div class="cdlg" role="alertdialog" aria-label="Replace all patient records?">
+        <h3>Replace all patient records?</h3>
+        <p>Restoring replaces every patient on this phone with the backup. This cannot be undone.</p>
+        <div class="cdlg-acts">
+          <button type="button" class="tbtn">Cancel</button>
+          <button type="button" class="tbtn err">Replace all</button>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">Matches <code>DiscardChangesDialog</code> (Slice 11) and <code>CatalogConfirmDialog</code> (Slice 17): <code>16 dp</code> white surface, <code>16 sp</code> body, <code>error</code>-colored <code>Replace all</code>, <code>48 dp</code> buttons.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, <code>ExportBackupDialog</code> (with passphrase validation error)</figcaption>
+    <div class="phone"><div class="scrim center">
+      <div class="fdlg" role="dialog" aria-label="Export encrypted backup">
+        <div class="fdlg-head"><h3>Export encrypted backup</h3></div>
+        <div class="fdlg-body">
+          <p class="sectxt">Enter a strong passphrase to encrypt the backup file (AES-256 GCM). You will need this passphrase to restore the vault.</p>
+          <div>
+            <span class="flab err">Backup passphrase</span>
+            <div class="fbox err">••••</div>
+          </div>
+          <div>
+            <span class="flab">Confirm passphrase</span>
+            <div class="fbox">••••</div>
+          </div>
+          <p class="errtxt" role="alert">Passphrase must be at least 6 characters.</p>
+        </div>
+        <div class="fdlg-foot">
+          <button type="button" class="obtn">Cancel</button>
+          <button type="button" class="pbtn">Export backup</button>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">Same <code>FormDialog</code> pattern; keeps real AES-256 GCM copy from existing code and replaces <code>Export &amp; Encrypt</code> with clean <code>Export backup</code>.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, <code>RestorePassphraseDialog</code></figcaption>
+    <div class="phone"><div class="scrim center">
+      <div class="fdlg" role="dialog" aria-label="Restore encrypted vault">
+        <div class="fdlg-head"><h3>Restore encrypted vault</h3></div>
+        <div class="fdlg-body">
+          <p class="sectxt">Enter the passphrase for this encrypted file to restore all patients, visits, ultrasounds, and clinical records.</p>
+          <div>
+            <span class="flab">Backup passphrase</span>
+            <div class="fbox">••••••••••</div>
+          </div>
+        </div>
+        <div class="fdlg-foot">
+          <button type="button" class="obtn">Cancel</button>
+          <button type="button" class="pbtn">Decrypt and restore</button>
+        </div>
+      </div>
+    </div></div>
+    <p class="note"><code>maxLines = 2</code> inside <code>SheetCancelSaveRow</code> ensures <code>Decrypt and restore</code> never clips at <code>1.3x</code> or <code>2.0x</code> font scale.</p>
+  </figure>
+</div>
+
+<h2>4. App lock screen: PIN entry, wrong PIN, lockout, and biometric option (<code>AppLockScreen.kt</code>)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, wrong PIN + biometric option</figcaption>
+    <div class="phone">
+      <div class="old-lock">
+        <span class="old-emb90" aria-hidden="true">ANC</span>
+        <h3 style="margin:14px 0 2px;font-size:18px;font-weight:700;color:#0D1B3D">Dr. Sherif Radwan Clinic</h3>
+        <p style="margin:0;font-size:12px;color:#4C3F43">Maternal-Fetal Medicine &amp; Obstetrics</p>
+        <p style="margin:20px 0 14px;font-size:15px;font-weight:600">Enter Security PIN</p>
+        <div class="dots" style="margin-top:0">
+          <span class="old-dot fill err"></span><span class="old-dot fill err"></span><span class="old-dot fill err"></span>
+          <span class="old-dot err"></span><span class="old-dot err"></span><span class="old-dot err"></span>
+        </div>
+        <div style="height:34px;display:flex;align-items:center"><span style="font-size:12px;font-weight:500;color:#BA1A1A">Incorrect PIN. Please try again.</span></div>
+        <div style="display:flex;flex-direction:column;gap:12px;width:100%;margin-top:10px">
+          <div class="old-krow"><span class="old-key">1</span><span class="old-key">2</span><span class="old-key">3</span></div>
+          <div class="old-krow"><span class="old-key">4</span><span class="old-key">5</span><span class="old-key">6</span></div>
+          <div class="old-krow"><span class="old-key">7</span><span class="old-key">8</span><span class="old-key">9</span></div>
+          <div class="old-krow"><span class="old-key bio" aria-hidden="true">🖐</span><span class="old-key">0</span><span class="old-key back" aria-hidden="true">⌫</span></div>
+        </div>
+        <span style="margin-top:18px;font-size:13px;font-weight:600;color:#0D1B3D">Unlock with Fingerprint</span>
+      </div>
+    </div>
+    <p class="note">Empty dots use <code>outlineVariant</code> (<code>1.61:1</code> fail); keypad uses shadowed grey boxes; fixed <code>34 dp</code> error box clips long errors.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, PIN entry with biometric option (3 digits entered)</figcaption>
+    <div class="phone">
+      <div class="lockscreen">
+        <span class="emblem-lg" aria-hidden="true">ANC</span>
+        <h3 class="cname">Dr. Sherif Radwan Clinic</h3>
+        <p class="csub">Maternal-Fetal Medicine &amp; Obstetrics</p>
+        <h4 class="lprompt">Enter security PIN</h4>
+        <div class="dots" role="img" aria-label="3 of 6 digits entered">
+          <span class="dot fill"></span><span class="dot fill"></span><span class="dot fill"></span>
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </div>
+        <div class="errslot"></div>
+        <div class="keypad">
+          <div class="krow"><button type="button" class="key">1</button><button type="button" class="key">2</button><button type="button" class="key">3</button></div>
+          <div class="krow"><button type="button" class="key">4</button><button type="button" class="key">5</button><button type="button" class="key">6</button></div>
+          <div class="krow"><button type="button" class="key">7</button><button type="button" class="key">8</button><button type="button" class="key">9</button></div>
+          <div class="krow">
+            <button type="button" class="key util" aria-label="Fingerprint">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.81 4.47c-.08 0-.16-.02-.23-.06C15.66 3.42 14 3 12.01 3c-1.98 0-3.86.47-5.57 1.41-.24.13-.54.04-.68-.2-.13-.24-.04-.55.2-.68C7.82 2.52 9.86 2 12.01 2c2.13 0 3.99.47 6.03 1.52.25.13.34.43.21.67-.09.18-.26.28-.44.28zM3.5 9.72c-.1 0-.2-.03-.29-.09-.23-.16-.28-.47-.12-.7.99-1.4 2.25-2.5 3.75-3.27C9.98 4.04 14 4.03 17.15 5.65c1.5.77 2.76 1.86 3.75 3.25.16.22.11.54-.12.7-.23.16-.54.11-.7-.12-.9-1.26-2.04-2.25-3.39-2.94-2.87-1.47-6.54-1.47-9.4.01-1.36.7-2.5 1.7-3.4 2.96-.08.14-.23.21-.39.21zm6.25 12.07c-.13 0-.26-.05-.35-.15-.87-.87-1.34-1.43-2.01-2.64-.69-1.23-1.05-2.73-1.05-4.34 0-2.97 2.54-5.39 5.66-5.39s5.66 2.42 5.66 5.39c0 .28-.22.5-.5.5s-.5-.22-.5-.5c0-2.42-2.09-4.39-4.66-4.39s-4.66 1.97-4.66 4.39c0 1.44.32 2.77.93 3.85.64 1.15 1.08 1.67 1.85 2.42.19.2.19.51 0 .71-.11.1-.24.15-.37.15zm7.17-1.85c-1.19 0-2.24-.3-3.1-.89-1.49-1.01-2.38-2.65-2.38-4.39 0-.28.22-.5.5-.5s.5.22.5.5c0 1.41.72 2.74 1.94 3.56.71.48 1.54.71 2.54.71.24 0 .64-.03 1.04-.1.27-.05.53.13.58.41.05.27-.13.53-.41.58-.57.11-1.07.12-1.21.12z"/></svg>
+            </button>
+            <button type="button" class="key">0</button>
+            <button type="button" class="key util" aria-label="Backspace">⌫</button>
+          </div>
+        </div>
+        <button type="button" class="tbtn" style="margin-top:8px">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.81 4.47c-.08 0-.16-.02-.23-.06C15.66 3.42 14 3 12.01 3c-1.98 0-3.86.47-5.57 1.41-.24.13-.54.04-.68-.2-.13-.24-.04-.55.2-.68C7.82 2.52 9.86 2 12.01 2c2.13 0 3.99.47 6.03 1.52.25.13.34.43.21.67-.09.18-.26.28-.44.28z"/></svg>
+          <span>Unlock with fingerprint</span>
+        </button>
+      </div>
+    </div>
+    <p class="note"><code>outline</code> borders pass 3:1 contrast; zero elevation shadows; <code>72 dp</code> emblem keeps the whole keypad above the fold on <code>360x640</code>.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, wrong PIN error state</figcaption>
+    <div class="phone">
+      <div class="lockscreen">
+        <span class="emblem-lg" aria-hidden="true">ANC</span>
+        <h3 class="cname">Dr. Sherif Radwan Clinic</h3>
+        <p class="csub">Maternal-Fetal Medicine &amp; Obstetrics</p>
+        <h4 class="lprompt">Enter security PIN</h4>
+        <div class="dots" role="img" aria-label="0 of 6 digits entered">
+          <span class="dot err"></span><span class="dot err"></span><span class="dot err"></span>
+          <span class="dot err"></span><span class="dot err"></span><span class="dot err"></span>
+        </div>
+        <div class="errslot"><p role="alert">Incorrect PIN. Please try again.</p></div>
+        <div class="keypad">
+          <div class="krow"><button type="button" class="key">1</button><button type="button" class="key">2</button><button type="button" class="key">3</button></div>
+          <div class="krow"><button type="button" class="key">4</button><button type="button" class="key">5</button><button type="button" class="key">6</button></div>
+          <div class="krow"><button type="button" class="key">7</button><button type="button" class="key">8</button><button type="button" class="key">9</button></div>
+          <div class="krow">
+            <button type="button" class="key util" aria-label="Fingerprint">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.81 4.47c-.08 0-.16-.02-.23-.06C15.66 3.42 14 3 12.01 3c-1.98 0-3.86.47-5.57 1.41-.24.13-.54.04-.68-.2-.13-.24-.04-.55.2-.68C7.82 2.52 9.86 2 12.01 2c2.13 0 3.99.47 6.03 1.52.25.13.34.43.21.67-.09.18-.26.28-.44.28z"/></svg>
+            </button>
+            <button type="button" class="key">0</button>
+            <button type="button" class="key util" aria-label="Backspace">⌫</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Exact <code>Incorrect PIN. Please try again.</code> string preserved for <code>SecurityWorkflowTest</code>; paired with red error dot borders.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, lockout state (keys visibly disabled)</figcaption>
+    <div class="phone">
+      <div class="lockscreen">
+        <span class="emblem-lg" aria-hidden="true">ANC</span>
+        <h3 class="cname">Dr. Sherif Radwan Clinic</h3>
+        <p class="csub">Maternal-Fetal Medicine &amp; Obstetrics</p>
+        <h4 class="lprompt">Enter security PIN</h4>
+        <div class="lockout-box" role="status">Too many wrong PINs. Try again in 0:30.</div>
+        <div class="dots" role="img" aria-label="0 of 6 digits entered">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </div>
+        <div class="errslot"></div>
+        <div class="keypad">
+          <div class="krow"><button type="button" class="key dis" disabled>1</button><button type="button" class="key dis" disabled>2</button><button type="button" class="key dis" disabled>3</button></div>
+          <div class="krow"><button type="button" class="key dis" disabled>4</button><button type="button" class="key dis" disabled>5</button><button type="button" class="key dis" disabled>6</button></div>
+          <div class="krow"><button type="button" class="key dis" disabled>7</button><button type="button" class="key dis" disabled>8</button><button type="button" class="key dis" disabled>9</button></div>
+          <div class="krow">
+            <button type="button" class="key dis" disabled aria-label="Fingerprint">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.81 4.47c-.08 0-.16-.02-.23-.06C15.66 3.42 14 3 12.01 3c-1.98 0-3.86.47-5.57 1.41-.24.13-.54.04-.68-.2-.13-.24-.04-.55.2-.68C7.82 2.52 9.86 2 12.01 2c2.13 0 3.99.47 6.03 1.52.25.13.34.43.21.67-.09.18-.26.28-.44.28z"/></svg>
+            </button>
+            <button type="button" class="key dis" disabled>0</button>
+            <button type="button" class="key dis" disabled aria-label="Backspace">⌫</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Countdown banner in <code>StatusHighBg</code> / <code>StatusHighBorder</code> (7.40:1 light) plus honest disabled styling on keypad keys.</p>
+  </figure>
+</div>
+
+<h2>5. Vault gate screen (<code>VaultGateScreen.kt</code>)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, <code>VaultState.Blocked</code> (looks identical to Locked)</figcaption>
+    <div class="phone">
+      <div class="vaultscreen" style="padding:40px 24px">
+        <span style="width:96px;height:96px;border-radius:20px;background:#EFE9E4;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#0D1B3D">ANC</span>
+        <div style="text-align:center">
+          <h3 style="margin:0;font-size:24px;line-height:30px;font-weight:700;color:#0D1B3D">Dr. Sherif Radwan Clinic</h3>
+          <p style="margin:2px 0 0;font-size:13px;color:#4C3F43">Maternal-Fetal Medicine &amp; Obstetrics</p>
+        </div>
+        <div class="old-sec14" style="width:100%;padding:20px;border-radius:16px;align-items:center;text-align:center">
+          <span aria-hidden="true" style="font-size:28px;color:#0D1B3D">↻</span>
+          <p style="margin:0;font-size:15px;font-weight:700;color:#0D1B3D">Clinical storage is blocked</p>
+          <p style="margin:0;font-size:13px;color:#4C3F43">The Android Keystore key was invalidated. Records cannot be recovered.</p>
+        </div>
+        <span class="old-vbtn">↻ Check again</span>
+      </div>
+    </div>
+    <p class="note"><code>20 dp</code> logo corners; hardcoded English branding; neutral grey card fails to distinguish an unrecoverable Keystore block from a normal lock.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, <code>VaultState.Locked</code></figcaption>
+    <div class="phone">
+      <div class="vaultscreen">
+        <span class="emblem-v" aria-hidden="true">ANC</span>
+        <div>
+          <h3 class="cname" style="margin-top:0">Dr. Sherif Radwan Clinic</h3>
+          <p class="csub">Maternal-Fetal Medicine &amp; Obstetrics</p>
+        </div>
+        <article class="vcard">
+          <div class="vband"><span class="bchip">Locked</span></div>
+          <div class="vbody">
+            <h4 class="vtitle">Clinical storage is locked</h4>
+            <p class="vtext">Confirm biometric or device credential to decrypt and access patient records.</p>
+          </div>
+        </article>
+        <button type="button" class="vbtn">Unlock Clinical Records</button>
+      </div>
+    </div>
+    <p class="note">Patient-family header band + <code>BandChip("Locked")</code>, left-aligned <code>16 sp</code> body, <code>10 dp</code> <code>min-height: 52 dp</code> button without decorative icon.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, <code>VaultState.Uninitialized</code></figcaption>
+    <div class="phone">
+      <div class="vaultscreen">
+        <span class="emblem-v" aria-hidden="true">ANC</span>
+        <div>
+          <h3 class="cname" style="margin-top:0">Dr. Sherif Radwan Clinic</h3>
+          <p class="csub">Maternal-Fetal Medicine &amp; Obstetrics</p>
+        </div>
+        <article class="vcard">
+          <div class="vband"><span class="bchip">Setup needed</span></div>
+          <div class="vbody">
+            <h4 class="vtitle">Clinical storage is not initialized</h4>
+            <p class="vtext">Initialization creates one device-bound encrypted vault (AES-256 GCM) for patient confidentiality.</p>
+          </div>
+        </article>
+        <button type="button" class="vbtn">Initialize Clinical Records</button>
+      </div>
+    </div>
+    <p class="note">Exact <code>storage_uninitialized_title</code> / <code>body</code> / <code>initialize_demo_storage</code> strings from <code>strings.xml</code>.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, <code>VaultState.Blocked</code> (<code>StatusHigh</code> band + word)</figcaption>
+    <div class="phone">
+      <div class="vaultscreen">
+        <span class="emblem-v" aria-hidden="true">ANC</span>
+        <div>
+          <h3 class="cname" style="margin-top:0">Dr. Sherif Radwan Clinic</h3>
+          <p class="csub">Maternal-Fetal Medicine &amp; Obstetrics</p>
+        </div>
+        <article class="vcard blocked">
+          <div class="vband"><span class="bchip hi">Blocked</span></div>
+          <div class="vbody">
+            <h4 class="vtitle">Clinical storage is blocked</h4>
+            <p class="vtext">The Android Keystore key was invalidated. Records cannot be recovered.</p>
+          </div>
+        </article>
+        <button type="button" class="vbtn">Check again</button>
+      </div>
+    </div>
+    <p class="note">Blocked state is marked by both the <code>Blocked</code> <code>BandChip</code> word and <code>StatusHigh</code> header band, border, and heading.</p>
+  </figure>
+</div>
+
+<h2>6. Dark theme (<code>AncTheme(darkTheme = true)</code>)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Dark</b>, after, <code>AppLockScreen</code> (PIN entry + biometric)</figcaption>
+    <div class="phone dark">
+      <div class="lockscreen">
+        <span class="emblem-lg" aria-hidden="true">ANC</span>
+        <h3 class="cname">Dr. Sherif Radwan Clinic</h3>
+        <p class="csub">Maternal-Fetal Medicine &amp; Obstetrics</p>
+        <h4 class="lprompt">Enter security PIN</h4>
+        <div class="dots" role="img" aria-label="2 of 6 digits entered">
+          <span class="dot fill"></span><span class="dot fill"></span>
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </div>
+        <div class="errslot"></div>
+        <div class="keypad">
+          <div class="krow"><button type="button" class="key">1</button><button type="button" class="key">2</button><button type="button" class="key">3</button></div>
+          <div class="krow"><button type="button" class="key">4</button><button type="button" class="key">5</button><button type="button" class="key">6</button></div>
+          <div class="krow"><button type="button" class="key">7</button><button type="button" class="key">8</button><button type="button" class="key">9</button></div>
+          <div class="krow">
+            <button type="button" class="key util" aria-label="Fingerprint">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.81 4.47c-.08 0-.16-.02-.23-.06C15.66 3.42 14 3 12.01 3c-1.98 0-3.86.47-5.57 1.41-.24.13-.54.04-.68-.2-.13-.24-.04-.55.2-.68C7.82 2.52 9.86 2 12.01 2c2.13 0 3.99.47 6.03 1.52.25.13.34.43.21.67-.09.18-.26.28-.44.28z"/></svg>
+            </button>
+            <button type="button" class="key">0</button>
+            <button type="button" class="key util" aria-label="Backspace">⌫</button>
+          </div>
+        </div>
+        <button type="button" class="tbtn" style="margin-top:8px">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.81 4.47c-.08 0-.16-.02-.23-.06C15.66 3.42 14 3 12.01 3c-1.98 0-3.86.47-5.57 1.41-.24.13-.54.04-.68-.2-.13-.24-.04-.55.2-.68C7.82 2.52 9.86 2 12.01 2c2.13 0 3.99.47 6.03 1.52.25.13.34.43.21.67-.09.18-.26.28-.44.28z"/></svg>
+          <span>Unlock with fingerprint</span>
+        </button>
+      </div>
+    </div>
+  </figure>
+
+  <figure>
+    <figcaption><b>Dark</b>, after, <code>SecuritySettingsDialog</code> (tabs + backup)</figcaption>
+    <div class="phone dark"><div class="scrim">
+      <div class="sdlg" role="dialog" aria-label="Clinic &amp; System Settings, dark">
+        <div class="sdlg-head">
+          <div class="sdlg-brand">
+            <span class="emblem-sm" aria-hidden="true">ANC</span>
+            <div style="min-width:0;flex:1">
+              <h3 class="sdlg-title">Clinic &amp; System Settings</h3>
+              <p class="sdlg-sub">Dr. Sherif Radwan Clinic</p>
+            </div>
+          </div>
+          <button type="button" class="ibtn" aria-label="Close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          </button>
+        </div>
+        <div class="sdlg-tabs" role="tablist">
+          <span class="chipwrap"><button type="button" class="chip sel" role="tab" aria-selected="true">Security &amp; clinic</button></span>
+          <span class="chipwrap"><button type="button" class="chip" role="tab" aria-selected="false">Lab tests</button></span>
+          <span class="chipwrap"><button type="button" class="chip" role="tab" aria-selected="false">Medications</button></span>
+        </div>
+        <div class="sdlg-body">
+          <section class="sec">
+            <div class="sec-head"><h4>Auto-Lock Timeout</h4></div>
+            <div class="sec-body"><p class="secval">Locks after 10 minutes away.</p></div>
+          </section>
+          <section class="sec">
+            <div class="sec-head"><h4>Vault backup and restore</h4></div>
+            <div class="sec-body">
+              <p class="sectxt">Export and restore patient records. Backups contain patient records only, not photos.</p>
+              <div class="statbox err">Decryption failed: incorrect passphrase or corrupted backup file.</div>
+              <div class="btnpair">
+                <button type="button" class="pbtn">Export backup</button>
+                <button type="button" class="obtn">Restore backup</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div></div>
+  </figure>
+
+  <figure>
+    <figcaption><b>Dark</b>, after, <code>VaultGateScreen</code> (<code>VaultState.Blocked</code>)</figcaption>
+    <div class="phone dark">
+      <div class="vaultscreen">
+        <span class="emblem-v" aria-hidden="true">ANC</span>
+        <div>
+          <h3 class="cname" style="margin-top:0">Dr. Sherif Radwan Clinic</h3>
+          <p class="csub">Maternal-Fetal Medicine &amp; Obstetrics</p>
+        </div>
+        <article class="vcard blocked">
+          <div class="vband"><span class="bchip hi">Blocked</span></div>
+          <div class="vbody">
+            <h4 class="vtitle">Clinical storage is blocked</h4>
+            <p class="vtext">The Android Keystore key was invalidated. Records cannot be recovered.</p>
+          </div>
+        </article>
+        <button type="button" class="vbtn">Check again</button>
+      </div>
+    </div>
+  </figure>
+</div>
+
+<h2>7. Contrast (computed, WCAG 2.x formula)</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Pair</th><th>Foreground</th><th>Background</th><th>Light</th><th>Dark</th></tr></thead>
+<tbody>
+<tr><td>Section headings, clinic name, active actions (<code>primary</code> on <code>surface</code>)</td><td><code>#0D1B3D</code> / <code>#B4C5FF</code></td><td><code>#FFFFFF</code> / <code>#1A202E</code></td><td class="n">16.92</td><td class="n">9.59</td></tr>
+<tr><td>App lock / Vault heading (<code>primary</code> on <code>background</code>)</td><td><code>#0D1B3D</code> / <code>#B4C5FF</code></td><td><code>#FBF8F5</code> / <code>#0E121B</code></td><td class="n">15.99</td><td class="n">11.04</td></tr>
+<tr><td>Field values, keypad digits, prompt titles (<code>onSurface</code> on <code>surface</code>)</td><td><code>#0D1B3D</code> / <code>#E2E2EA</code></td><td><code>#FFFFFF</code> / <code>#1A202E</code></td><td class="n">16.92</td><td class="n">12.64</td></tr>
+<tr><td>Descriptions, subtitles, card bodies (<code>onSurfaceVariant</code> on <code>surface</code>)</td><td><code>#4C3F43</code> / <code>#CDC3C6</code></td><td><code>#FFFFFF</code> / <code>#1A202E</code></td><td class="n">10.00</td><td class="n">9.47</td></tr>
+<tr><td>Subtitles on page canvas (<code>onSurfaceVariant</code> on <code>background</code>)</td><td><code>#4C3F43</code> / <code>#CDC3C6</code></td><td><code>#FBF8F5</code> / <code>#0E121B</code></td><td class="n">9.45</td><td class="n">10.90</td></tr>
+<tr><td>External field labels &amp; BandChip text (<code>FieldPatientLabel</code> on <code>surface</code>)</td><td><code>#23407A</code> / <code>#AFC6F2</code></td><td><code>#FFFFFF</code> / <code>#1A202E</code></td><td class="n">10.07</td><td class="n">9.44</td></tr>
+<tr><td>BandChip / status text on Patient band (<code>FieldPatientLabel</code> on <code>FieldPatientBg</code>)</td><td><code>#23407A</code> / <code>#AFC6F2</code></td><td><code>#E9EEF8</code> / <code>#22304A</code></td><td class="n">8.65</td><td class="n">7.66</td></tr>
+<tr><td>Backup status text on Patient tint (<code>onSurface</code> on <code>FieldPatientBg</code>)</td><td><code>#0D1B3D</code> / <code>#E2E2EA</code></td><td><code>#E9EEF8</code> / <code>#22304A</code></td><td class="n">14.54</td><td class="n">10.25</td></tr>
+<tr><td>Primary buttons &amp; selected tab chip (<code>onPrimary</code> on <code>primary</code>)</td><td><code>#FFFFFF</code> / <code>#002A78</code></td><td><code>#0D1B3D</code> / <code>#B4C5FF</code></td><td class="n">16.92</td><td class="n">7.72</td></tr>
+<tr><td>Errors &amp; destructive <code>Replace all</code> (<code>error</code> on <code>surface</code>)</td><td><code>#BA1A1A</code> / <code>#FFB4AB</code></td><td><code>#FFFFFF</code> / <code>#1A202E</code></td><td class="n">6.46</td><td class="n">9.59</td></tr>
+<tr><td>Wrong PIN text on lock screen (<code>error</code> on <code>background</code>)</td><td><code>#BA1A1A</code> / <code>#FFB4AB</code></td><td><code>#FBF8F5</code> / <code>#0E121B</code></td><td class="n">6.11</td><td class="n">11.03</td></tr>
+<tr><td>Backup error banner (<code>onErrorContainer</code> on <code>errorContainer</code>)</td><td><code>#410002</code> / <code>#FFDAD6</code></td><td><code>#FFDAD6</code> / <code>#5C141D</code></td><td class="n">13.26</td><td class="n">10.33</td></tr>
+<tr><td>Lockout &amp; Blocked text (<code>StatusHighText</code> on <code>StatusHighBg</code>)</td><td><code>#8E1B1B</code> / <code>#FFC9C9</code></td><td><code>#FBE3E3</code> / <code>#4A1616</code></td><td class="n">7.40</td><td class="n">10.19</td></tr>
+<tr><td>Blocked card border (<code>StatusHighBorder</code> on <code>surface</code>, 3:1 non-text)</td><td><code>#C26666</code> / <code>#B45A5A</code></td><td><code>#FFFFFF</code> / <code>#1A202E</code></td><td class="n">3.90</td><td class="n">3.53</td></tr>
+<tr><td>Input &amp; keypad borders (<code>outline</code> on <code>surface</code> / <code>background</code>, 3:1 non-text)</td><td><code>#79747E</code> / <code>#8E95A5</code></td><td><code>#FFFFFF</code> / <code>#0E121B</code></td><td class="n">4.55 / 4.30</td><td class="n">5.42 / 6.24</td></tr>
+<tr><td>Before contrast defect (fixed): empty PIN dot border (<code>outlineVariant</code> on <code>background</code>)</td><td><code>#CAC4D0</code></td><td><code>#FBF8F5</code></td><td class="n">1.61 (Fail)</td><td class="n"></td></tr>
+</tbody></table></div>
+
+<h2>8. Compose mapping (existing tokens &amp; components)</h2>
+<ol class="map">
+  <li><b><code>SecuritySettingsDialog</code> chrome &amp; tabs:</b> <code>Dialog(usePlatformDefaultWidth = false)</code> + <code>Surface(Modifier.fillMaxWidth(0.94f).heightIn(max = maxHeight).testTag("securitySettingsDialog"), shape = RecordShapes.Large, color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant))</code>. Replace <code>PrimaryTabRow</code> with <code>FlowRow(spacedBy(8.dp))</code> of <code>RecordFilterChip(..., wrap = true, minTouchTarget = true)</code>. Keep <code>LabCatalogSettingsSection(catalogRepo)</code> and <code>MedicationCatalogSettingsSection(catalogRepo)</code> inside the scrollable body <code>Column</code>.</li>
+  <li><b>Security &amp; clinic sections:</b> wrap tab body in <code>CompositionLocalProvider(LocalFieldFamily provides FieldFamilies.patient())</code>; render all 6 sections via <code>RecordSectionCard(family = patientFamily)</code>; replace floating-label fields with external <code>FormFieldLabel</code> + <code>OutlinedTextField(shape = RecordShapes.Small, colors = editorFieldColors(), textStyle = RecordType.FieldValue)</code> keeping <code>.testTag(...)</code> directly on <code>OutlinedTextField</code>; replace pill buttons with <code>RecordShapes.Small</code> + <code>minimumTouchTarget()</code> + <code>RecordType.Action</code>.</li>
+  <li><b>PIN &amp; backup form dialogs (<code>ChangePinDialog</code>, <code>ExportBackupDialog</code>, <code>RestorePassphraseDialog</code>):</b> private <code>SecurityFormDialog</code> matching <code>CatalogFormDialog</code> (<code>0.92f</code> width, <code>RecordShapes.Large</code>, <code>RecordType.SectionTitle</code> header, <code>verticalScroll</code> body, pinned <code>SheetCancelSaveRow</code>).</li>
+  <li><b>Destructive restore confirmation (<code>restore_confirm_dialog</code>):</b> <code>AlertDialog(shape = RecordShapes.Large, containerColor = MaterialTheme.colorScheme.surface)</code> matching <code>DiscardChangesDialog</code>, with <code>RecordType.SectionTitle</code> heading, <code>RecordType.FieldValue</code> body, <code>primary</code> Cancel, and <code>error</code> Replace all (<code>48.dp</code> <code>TextButton</code>s).</li>
+  <li><b><code>AppLockScreen</code>:</b> <code>RecordShapes.Large</code> <code>Surface(onClick = ...)</code> keypad buttons with <code>1.dp</code> <code>outline</code> border (<code>outlineVariant</code> when disabled during lockout), <code>FieldPatientBg</code> utility keys, <code>outline</code> border on empty <code>pinDot-$i</code> circles, <code>heightIn(min = 32.dp)</code> error slot, and <code>StatusHighBg</code>/<code>Border</code> lockout banner.</li>
+  <li><b><code>VaultGateScreen</code>:</b> <code>OutlinedCard(shape = RecordShapes.Large)</code> with top <code>FieldPatientBg</code> (or <code>StatusHighBg</code> when <code>Blocked</code>) band + <code>BandChip</code>, left-aligned <code>RecordType.SectionTitle</code> and <code>RecordType.FieldValue</code> body, and full-width <code>heightIn(min = 52.dp)</code> <code>RecordShapes.Small</code> button.</li>
+</ol>
+
+<h2>9. Decisions for the owner (this slice)</h2>
+<ol class="map">
+  <li><b>Settings tab bar pattern and label (<code>FlowRow</code> of <code>RecordFilterChip</code>s vs <code>SecondaryScrollableTabRow</code>):</b> Recommended: use a wrapping <code>FlowRow</code> of <code>48 dp</code> <code>RecordFilterChip</code>s labeled <code>"Security &amp; clinic"</code>, <code>"Lab tests"</code>, and <code>"Medications"</code> so every tab stays visible at once and never clips at <code>1.3x</code> or <code>2.0x</code> scale.</li>
+  <li><b>Domain color family (<code>FieldFamilies.patient()</code> blue vs neutral / sand):</b> Recommended: use <code>FieldFamilies.patient()</code> slate-blue across Security &amp; clinic, PIN/backup dialogs, <code>AppLockScreen</code>, and <code>VaultGateScreen</code> to separate app security and clinic identity from the sand catalog tabs.</li>
+  <li><b>Destructive restore confirmation (<code>restore_confirm_dialog</code>):</b> Recommended: add heading <code>"Replace all patient records?"</code> and style <code>"Replace all"</code> in <code>MaterialTheme.colorScheme.error</code> inside a <code>48 dp</code> <code>TextButton</code>, matching <code>DiscardChangesDialog</code> and <code>CatalogConfirmDialog</code>.</li>
+  <li><b>Dual biometric trigger on <code>AppLockScreen</code> (<code>pinKey-biometric</code> + <code>useBiometricButton</code>):</b> Recommended: preserve both under the exact existing condition so zero Level-3 behavior or <code>testTag</code>s change, while replacing the disabled grey alpha box on <code>pinKey-biometric</code> with a crisp <code>outlineVariant</code> disabled state.</li>
+  <li><b>String normalization and developer-jargon removal:</b> Recommended: move hardcoded UI text into <code>strings.xml</code> in sentence case, keep the 4 test-asserted strings (<code>"Clinic &amp; System Settings"</code>, <code>"Auto-Lock Timeout"</code>, <code>"Locks after 10 minutes away."</code>, <code>"Incorrect PIN. Please try again."</code>) verbatim, replace the <code>#FBF8F5</code> emblem implementation note with <code>"Shown on the home screen, lock screen, and printed reports."</code>, and default <code>VaultGateScreen</code> branding via <code>R.string.app_name</code> and <code>R.string.clinic_default_subtitle</code>.</li>
+</ol>
+</main>
+</body>
+</html>
