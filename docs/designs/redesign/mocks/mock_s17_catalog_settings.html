@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Mock S17: Catalog settings</title>
+<style>
+  /* Tokens: Theme.kt scheme values + Slice 0 record tokens (Background / sand family). */
+  :root{
+    --primary:#0D1B3D; --on:#0D1B3D; --onv:#4C3F43; --onprimary:#FFFFFF;
+    --primc:#D6DFFF; --onprimc:#041334; --sc:#FFD9DE; --onsc:#3B0815;
+    --surface:#FFFFFF; --bg:#FBF8F5; --outv:#CAC4D0; --outline:#79747E; --sv:#F3E9E7; --scl:#F9F5F3; --sch:#EFE9E4;
+    --err:#BA1A1A; --errc:#FFDAD6; --onerrc:#410002;
+    --hx-bg:#F1EDE4; --hx-lb:#594A2C;
+    --r-s:10px; --r-l:16px;
+  }
+  .dark{
+    --primary:#B4C5FF; --on:#E2E2EA; --onv:#CDC3C6; --onprimary:#002A78;
+    --primc:#183F91; --onprimc:#DCE1FF; --sc:#762E3B; --onsc:#FFD9DE;
+    --surface:#1A202E; --bg:#0E121B; --outv:#3A4459; --outline:#8E95A5; --sv:#262E40; --scl:#141924; --sch:#283248;
+    --err:#FFB4AB; --errc:#5C141D; --onerrc:#FFDAD6;
+    --hx-bg:#36301F; --hx-lb:#E0CFA6;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:#FFFFFF;color:#0D1B3D;font-family:Roboto,"Noto Sans","Segoe UI",system-ui,-apple-system,Arial,sans-serif;font-size:15px;line-height:1.5;padding:32px 16px 64px}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-size:26px;line-height:1.25;margin:0 0 8px}
+  h2{font-size:20px;line-height:1.3;margin:44px 0 6px}
+  .lede,p,li{max-width:78ch}
+  .lede{color:#4C3F43;margin:0 0 4px}
+  .reason{border:1px solid #CAC4D0;border-radius:16px;padding:18px 20px;margin-top:18px;background:#FDFCFB}
+  .reason h2{margin-top:0}
+  .reason ul{margin:6px 0 0;padding-inline-start:20px}
+  .pair{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-top:14px}
+  figure{margin:0;width:360px;max-width:100%;flex:0 0 auto}
+  figcaption{font-size:14px;color:#4C3F43;margin:0 0 8px}
+  figcaption b{color:#0D1B3D}
+  .note{font-size:14px;color:#4C3F43;margin:10px 0 0}
+
+  .phone{width:100%;background:var(--bg);border:1px solid #B9B4BE;border-radius:16px;overflow:hidden;color:var(--on);display:flex;flex-direction:column}
+  .scrim{background:rgba(0,0,0,.38);padding:16px 11px;display:flex;flex-direction:column;justify-content:center;flex:1 1 auto}
+  .scrim.center{padding:36px 14px}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  button:hover{filter:brightness(.97)}
+  button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+
+  /* Host SecuritySettingsDialog chrome (Slice 18 context, unchanged) */
+  .host-card{background:var(--surface);border-radius:20px;padding:20px;box-shadow:0 4px 16px rgba(13,27,61,.18);display:flex;flex-direction:column;gap:14px;color:var(--on)}
+  .dark .host-card{box-shadow:0 4px 16px rgba(0,0,0,.5)}
+  .host-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .host-brand{display:flex;align-items:center;gap:10px;min-width:0;flex:1 1 auto}
+  .host-logo{width:40px;height:40px;border-radius:20px;background:var(--sch);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--primary);flex:0 0 40px}
+  .host-title{margin:0;font-size:15px;line-height:20px;font-weight:700;color:var(--on)}
+  .host-sub{margin:0;font-size:12px;line-height:16px;color:var(--onv)}
+  .host-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid rgba(202,196,208,.5);margin:0 -4px}
+  .host-tab{text-align:center;padding:10px 4px;font-size:13px;line-height:16px;color:var(--onv);position:relative}
+  .host-tab.sel{font-weight:700;color:var(--primary)}
+  .host-tab.sel::after{content:"";position:absolute;left:12px;right:12px;bottom:0;height:2px;background:var(--primary)}
+
+  /* AFTER: shared redesign pieces (Background / sand family) */
+  .cat-col{display:flex;flex-direction:column;gap:12px}
+  .cat-head h3{margin:0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .cat-head p{margin:2px 0 0;font-size:14px;line-height:20px;color:var(--onv)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chipwrap{min-height:48px;display:inline-flex;align-items:center}
+  .chip{min-height:36px;padding:6px 12px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);color:var(--on);font-size:14px;line-height:20px;font-weight:500;display:inline-flex;align-items:center;text-align:start}
+  .chip.sel{background:var(--primary);border-color:var(--primary);color:var(--onprimary);font-weight:600}
+
+  .pbtn{min-height:48px;min-width:48px;padding:0 16px;border-radius:var(--r-s);background:var(--primary);color:var(--onprimary);font-size:14px;line-height:20px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;text-align:center}
+  .obtn{min-height:48px;min-width:48px;padding:0 14px;border:1px solid var(--outline);border-radius:var(--r-s);font-size:14px;line-height:20px;font-weight:600;color:var(--primary);background:var(--surface);display:inline-flex;align-items:center;justify-content:center;text-align:center}
+  .tbtn{min-height:48px;min-width:48px;padding:0 12px;border-radius:var(--r-s);font-size:14px;line-height:20px;font-weight:600;color:var(--primary);display:inline-flex;align-items:center;justify-content:center;text-align:center}
+  .tbtn.err{color:var(--err)}
+  .ibtn{width:48px;height:48px;border-radius:var(--r-s);display:inline-flex;align-items:center;justify-content:center;color:var(--primary);flex:0 0 48px}
+  .ibtn.err{color:var(--err)}
+
+  .flab{display:block;font-size:12px;line-height:16px;font-weight:600;color:var(--hx-lb);margin-bottom:4px}
+  .fbox{min-height:48px;padding:12px 14px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);font-size:16px;line-height:22px;color:var(--on);overflow-wrap:anywhere}
+  .fbox.ph{color:var(--onv)}
+  .fbox.search{padding:0 4px 0 12px;display:flex;align-items:center;gap:8px}
+  .fbox.search .stxt{flex:1 1 auto;min-width:0;padding:12px 0;color:var(--onv)}
+  .fbox.search .stxt.val{color:var(--on)}
+  .row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:8px;align-items:end}
+  .row2.med{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}
+
+  /* AFTER: RecordSectionCard + hairline rows */
+  .sec{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:4px 4px 16px 16px}
+  .sec-head{display:flex;align-items:center;min-height:48px;gap:8px}
+  .sec-head h4{flex:1 1 auto;margin:0;padding:6px 0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .sec-body{display:flex;flex-direction:column;gap:0;padding-inline-end:12px}
+  .crow{padding:10px 0;border-top:1px solid var(--outv);display:flex;flex-direction:column;gap:4px}
+  .crow.first{border-top:0;padding-top:2px}
+  .crow-title{margin:0;font-size:16px;line-height:22px;font-weight:700;color:var(--on);overflow-wrap:anywhere}
+  .crow-bot{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .crow-meta{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .crow-fam{font-size:12px;line-height:16px;font-weight:600;color:var(--hx-lb)}
+  .crow-sec{font-size:14px;line-height:20px;color:var(--onv);overflow-wrap:anywhere}
+  .crow-acts{display:flex;align-items:center;gap:4px;flex:0 0 auto}
+
+  /* AFTER: RecordBandCard + BandChip + PlainField (Category groups / panels) */
+  .bcard{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);overflow:hidden;display:flex;flex-direction:column}
+  .bband{background:var(--hx-bg);padding:8px 4px 8px 12px;display:flex;flex-direction:column;gap:4px}
+  .bchips{display:flex;flex-wrap:wrap;gap:6px}
+  .bchip{display:inline-flex;align-items:center;min-height:24px;padding:2px 10px;border-radius:var(--r-s);font-size:12px;line-height:16px;font-weight:700;background:var(--surface);color:var(--hx-lb);white-space:nowrap}
+  .bband-row{display:flex;align-items:center;min-height:48px;gap:4px}
+  .bband-title{margin:0;flex:1 1 auto;min-width:0;font-size:16px;line-height:22px;font-weight:700;color:var(--on)}
+  .bband-sub{margin:0;padding-inline-end:8px;font-size:14px;line-height:20px;color:var(--onv)}
+  .bbody{padding:12px;display:flex;flex-direction:column;gap:10px}
+  .pfield{display:flex;flex-direction:column;gap:2px}
+  .pfield-l{font-size:12px;line-height:16px;font-weight:500;color:var(--onv)}
+  .pfield-v{font-size:16px;line-height:22px;color:var(--on);overflow-wrap:anywhere}
+
+  /* AFTER: Empty & search-no-result card */
+  .emptycard{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:16px;display:flex;flex-direction:column;gap:8px}
+  .emptycard h4{margin:0;font-size:16px;line-height:22px;font-weight:700;color:var(--on)}
+  .emptycard p{margin:0;font-size:14px;line-height:20px;color:var(--onv)}
+
+  /* AFTER: Form dialog + SheetCancelSaveRow footer + Confirm AlertDialog */
+  .fdlg{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);color:var(--on);display:flex;flex-direction:column;overflow:hidden;width:100%}
+  .fdlg-head{padding:16px 16px 12px;border-bottom:1px solid var(--outv)}
+  .fdlg-head h4{margin:0;font-size:18px;line-height:24px;font-weight:700;color:var(--primary)}
+  .fdlg-body{padding:16px;display:flex;flex-direction:column;gap:12px}
+  .fdlg-foot{padding:12px 16px;border-top:1px solid var(--outv);display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .cdlg{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:20px;display:flex;flex-direction:column;gap:12px;color:var(--on);width:100%}
+  .cdlg h4{margin:0;font-size:18px;line-height:24px;font-weight:700;color:var(--on)}
+  .cdlg p{margin:0;font-size:16px;line-height:22px;color:var(--onv)}
+  .cdlg-acts{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+
+  /* BEFORE fidelity styles (exact current CatalogSettingsSections.kt) */
+  .old-hdr{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .old-h{margin:0;font-size:15px;line-height:20px;font-weight:700;color:#0D1B3D}
+  .old-sub11{margin:0;font-size:11px;line-height:14px;color:#4C3F43}
+  .old-pbtn40{min-height:40px;padding:0 12px;border-radius:999px;background:#0D1B3D;color:#FFFFFF;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;flex:0 0 auto}
+  .old-tabs{display:flex;gap:8px;overflow:hidden}
+  .old-chip8{min-height:32px;padding:4px 10px;border:1px solid #79747E;border-radius:8px;font-size:13px;color:#4C3F43;background:#FFFFFF;display:inline-flex;align-items:center;white-space:nowrap}
+  .old-chip8.sel{background:#FFD9DE;border-color:#FFD9DE;color:#3B0815;font-weight:600}
+  .old-chip8.sm{font-size:12px}
+  .old-chip8.xs{font-size:11px}
+  .old-m3f{position:relative;border:1px solid #79747E;border-radius:4px;padding:12px;font-size:14px;line-height:20px;color:#0D1B3D;background:#FFFFFF;min-height:48px;display:flex;align-items:center;gap:8px}
+  .old-m3f.ph{color:#4C3F43}
+  .old-m3f .olbl{position:absolute;top:-8px;left:10px;background:#FFFFFF;padding:0 4px;font-size:12px;line-height:16px;color:#4C3F43;max-width:calc(100% - 16px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .old-card12{background:#F9F5F3;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px}
+  .old-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .old-title14{margin:0;font-size:14px;line-height:18px;font-weight:700;color:#0D1B3D}
+  .old-meta{display:flex;align-items:center;flex-wrap:nowrap;overflow:hidden;gap:6px;margin-top:4px}
+  .old-badge6{border-radius:6px;padding:2px 6px;font-size:11px;line-height:14px;background:#FFD9DE;color:#3B0815;white-space:nowrap}
+  .old-badge6.hi{background:#EFE9E4;color:#0D1B3D}
+  .old-badge6.var{background:#F3E9E7;color:#0D1B3D}
+  .old-11v{font-size:11px;line-height:14px;color:#4C3F43;white-space:nowrap}
+  .old-11t{font-size:11px;line-height:14px;color:#176B70;white-space:nowrap}
+  .old-reset{display:flex;align-items:center;justify-content:center;gap:4px;min-height:40px;font-size:13px;font-weight:600;color:#0D1B3D}
+  .old-dlg{background:#EFE9E4;border-radius:28px;padding:22px;color:#0D1B3D;display:flex;flex-direction:column;gap:10px;width:288px;max-width:100%;margin:0 auto}
+  .old-dlg h4{margin:0;font-size:20px;line-height:26px;font-weight:500}
+  .old-dlg .old-m3f,.old-dlg .old-m3f .olbl{background:#EFE9E4}
+  .old-dlg-acts{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+  .old-pill{min-height:40px;padding:0 16px;border-radius:999px;background:#0D1B3D;color:#FFFFFF;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+  .old-tact{min-height:40px;padding:0 12px;font-size:13px;font-weight:600;color:#0D1B3D;display:inline-flex;align-items:center;justify-content:center}
+
+  /* Tables & mapping */
+  .tablewrap{overflow-x:auto;max-width:100%}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin-top:10px}
+  th,td{border-bottom:1px solid #E6E1E5;padding:7px 8px;text-align:start;vertical-align:top}
+  th{background:#F7F5F3}
+  td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+  ol.map li{margin:7px 0}
+  code{font-family:"Roboto Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:#F3F0EE;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<h1>Mock S17: Catalog settings</h1>
+<p class="lede">Covers <code>ui/CatalogSettingsSections.kt</code> (<code>LabCatalogSettingsSection</code>, <code>MedicationCatalogSettingsSection</code>, <code>AddLabTestDialog</code>, <code>AddLabCategoryGroupDialog</code>, <code>AddMedicationDialog</code>, and delete/reset confirmations). Hosted inside <code>SecuritySettingsDialog.kt</code> (Slice 18 chrome kept unchanged for context at its real <code>~298 dp</code> inner width on <code>360 dp</code> screens). Real sample data from <code>ClinicalCatalogRepository</code>: <code>Haemoglobin (Hb)</code>, <code>Fasting Blood Sugar (FBS)</code>, <code>Hepatitis B Surface Antigen (HBsAg)</code>, <code>CBC</code>, <code>Urine Routine &amp; Microscopic</code>, <code>Paracetamol 500 mg</code>, <code>Folic Acid 5 mg</code>, <code>Labetalol 100 mg</code>.</p>
+
+<section class="reason" aria-labelledby="r">
+  <h2 id="r">Design reasoning</h2>
+  <p>Reading this as: clinic catalog configuration inside settings where doctors add, edit, search, and prune lab tests, diagnostic panels, and standard medications without crowding a 360 dp screen. Antislop dials: ENERGY 1 / RHYTHM 1 / MOTION 1 (pressed and focus states only, no new animation).</p>
+  <ul>
+    <li><b>Background (sand) family for both labs and medications:</b> matches <code>LabsTab</code>, <code>LabEditor</code> (Slice 16), and <code>MedicationSheet</code> (Slice 11) via <code>FieldFamilies.background()</code> (<code>#F1EDE4</code> / <code>#594A2C</code> light, <code>#36301F</code> / <code>#E0CFA6</code> dark), dropping <code>11 sp</code> pink <code>secondaryContainer</code> chips and grey <code>surfaceContainerLow</code> slabs.</li>
+    <li><b>Give titles full width inside the 298 dp dialog column:</b> moving the primary action (<code>Add test</code>, <code>Create panel</code>, <code>Add medication</code>) below the title and placing Edit/Delete <code>48 dp</code> icon buttons beside the metadata row stops <code>"My medication list"</code> and <code>"Hepatitis B Surface Antigen (HBsAg)"</code> from wrapping into narrow columns.</li>
+    <li><b>Calm hierarchy for tests, panels, and medications:</b> group individual tests and medications inside <code>RecordSectionCard</code> with crisp hairlines, and render lab panels as <code>RecordBandCard</code>s with <code>BandChip</code> test counts and a quiet white <code>PlainField</code> test list (zero 20-pill boxes inside cards).</li>
+    <li><b>Accessible 48 dp dialogs that scroll safely:</b> move the three Add/Edit forms to <code>16 dp</code> white dialogs with fixed headers, scrollable bodies (fixing the missing scroll in <code>AddLabTestDialog</code>), external <code>12 sp</code> <code>FormFieldLabel</code>s, <code>48 dp</code> <code>RecordFilterChip</code>s (removing the <code>11 sp</code> medication frequency chips), side-by-side Name and Dosage in <code>AddMedicationDialog</code> (stacking above <code>1.3x</code> scale), and pinned <code>SheetCancelSaveRow</code> footers.</li>
+    <li><b>Clear states and honest destructive actions:</b> add <code>Clear search</code> recovery actions on search-no-result states, <code>Add</code>/<code>Reset</code> recovery on empty states, and style Delete/Reset confirmations with error-colored destructive buttons like <code>DiscardChangesDialog</code> (Slice 11).</li>
+  </ul>
+</section>
+
+<h2>1. Lab catalog settings: Individual tests tab</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, inside <code>SecuritySettingsDialog</code> (~298 dp inner width)</figcaption>
+    <div class="phone">
+      <div class="scrim">
+        <div class="host-card">
+          <div class="host-head">
+            <div class="host-brand">
+              <span class="host-logo">ANC</span>
+              <div>
+                <p class="host-title">Clinic &amp; System Settings</p>
+                <p class="host-sub">Clinic settings &amp; security</p>
+              </div>
+            </div>
+            <span aria-hidden="true" style="font-size:18px;padding:8px">✕</span>
+          </div>
+          <div class="host-tabs">
+            <span class="host-tab">Security &amp; Clinic</span>
+            <span class="host-tab sel">Lab tests</span>
+            <span class="host-tab">Medications</span>
+          </div>
+          <div class="cat-col">
+            <div class="old-hdr">
+              <div style="min-width:0;flex:1">
+                <p class="old-h">Laboratory tests</p>
+                <p class="old-sub11">28 tests · 7 clinical panels</p>
+              </div>
+              <span class="old-pbtn40">+ Add Test</span>
+            </div>
+            <div class="old-tabs">
+              <span class="old-chip8 sel">Individual Tests (28)</span>
+              <span class="old-chip8">Panels &amp; Profiles (7)</span>
+            </div>
+            <div class="old-m3f ph"><span aria-hidden="true">🔍</span><span>Search tests or categories...</span></div>
+            <div class="old-card12">
+              <div class="old-row">
+                <div style="min-width:0;flex:1">
+                  <p class="old-title14">Haemoglobin (Hb)</p>
+                  <div class="old-meta"><span class="old-badge6">Hematology</span><span class="old-11v">g/dL</span></div>
+                </div>
+                <div style="display:flex;align-items:center">
+                  <span class="ibtn" aria-hidden="true">✎</span>
+                  <span class="ibtn err" aria-hidden="true">🗑</span>
+                </div>
+              </div>
+            </div>
+            <div class="old-card12">
+              <div class="old-row">
+                <div style="min-width:0;flex:1">
+                  <p class="old-title14">Fasting Blood Sugar (FBS)</p>
+                  <div class="old-meta"><span class="old-badge6">Biochemistry</span><span class="old-11v">70 - 95 mg/dL</span></div>
+                </div>
+                <div style="display:flex;align-items:center">
+                  <span class="ibtn" aria-hidden="true">✎</span>
+                  <span class="ibtn err" aria-hidden="true">🗑</span>
+                </div>
+              </div>
+            </div>
+            <div class="old-card12">
+              <div class="old-row">
+                <div style="min-width:0;flex:1">
+                  <p class="old-title14">Hepatitis B Surface Antigen (HBsAg)</p>
+                  <div class="old-meta"><span class="old-badge6">Serology</span><span class="old-11t">· Negative</span></div>
+                </div>
+                <div style="display:flex;align-items:center">
+                  <span class="ibtn" aria-hidden="true">✎</span>
+                  <span class="ibtn err" aria-hidden="true">🗑</span>
+                </div>
+              </div>
+            </div>
+            <div class="old-reset">↺ Reset lab tests to defaults</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Non-wrapping chip row clips <code>Panels &amp; Profiles (7)</code> at 298 dp; <code>+ Add Test</code> is 40 dp tall; <code>11 sp</code> pink category badges and middle dots; <code>96 dp</code> of buttons squeeze long test names.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, slice 17, Individual tests tab (full-width names, 48 dp targets)</figcaption>
+    <div class="phone">
+      <div class="scrim">
+        <div class="host-card">
+          <div class="host-head">
+            <div class="host-brand">
+              <span class="host-logo">ANC</span>
+              <div>
+                <p class="host-title">Clinic &amp; System Settings</p>
+                <p class="host-sub">Clinic settings &amp; security</p>
+              </div>
+            </div>
+            <span aria-hidden="true" style="font-size:18px;padding:8px">✕</span>
+          </div>
+          <div class="host-tabs">
+            <span class="host-tab">Security &amp; Clinic</span>
+            <span class="host-tab sel">Lab tests</span>
+            <span class="host-tab">Medications</span>
+          </div>
+          <div class="cat-col">
+            <div class="cat-head">
+              <h3>Laboratory tests</h3>
+              <p>28 tests, 7 panels</p>
+            </div>
+            <div class="chips" role="tablist" aria-label="Lab catalog view">
+              <span class="chipwrap"><button type="button" class="chip sel" role="tab" aria-selected="true">Individual tests (28)</button></span>
+              <span class="chipwrap"><button type="button" class="chip" role="tab" aria-selected="false">Panels (7)</button></span>
+            </div>
+            <button type="button" class="pbtn" style="width:100%">Add test</button>
+            <div class="fbox search">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="color:var(--onv);flex:0 0 20px"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+              <span class="stxt">Search tests or categories</span>
+            </div>
+            <section class="sec">
+              <div class="sec-head"><h4>Tests</h4></div>
+              <div class="sec-body">
+                <div class="crow first">
+                  <p class="crow-title">Haemoglobin (Hb)</p>
+                  <div class="crow-bot">
+                    <div class="crow-meta">
+                      <span class="crow-fam">Hematology</span>
+                      <span class="crow-sec">Unit: g/dL</span>
+                    </div>
+                    <div class="crow-acts">
+                      <button type="button" class="ibtn" aria-label="Edit Haemoglobin (Hb)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                      </button>
+                      <button type="button" class="ibtn err" aria-label="Delete test Haemoglobin (Hb)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="crow">
+                  <p class="crow-title">Fasting Blood Sugar (FBS)</p>
+                  <div class="crow-bot">
+                    <div class="crow-meta">
+                      <span class="crow-fam">Biochemistry</span>
+                      <span class="crow-sec">70 - 95 mg/dL</span>
+                    </div>
+                    <div class="crow-acts">
+                      <button type="button" class="ibtn" aria-label="Edit Fasting Blood Sugar (FBS)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                      </button>
+                      <button type="button" class="ibtn err" aria-label="Delete test Fasting Blood Sugar (FBS)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="crow">
+                  <p class="crow-title">Hepatitis B Surface Antigen (HBsAg)</p>
+                  <div class="crow-bot">
+                    <div class="crow-meta">
+                      <span class="crow-fam">Serology</span>
+                      <span class="crow-sec">Default: Negative</span>
+                    </div>
+                    <div class="crow-acts">
+                      <button type="button" class="ibtn" aria-label="Edit Hepatitis B Surface Antigen (HBsAg)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                      </button>
+                      <button type="button" class="ibtn err" aria-label="Delete test Hepatitis B Surface Antigen (HBsAg)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <button type="button" class="tbtn" style="width:100%">Reset lab tests to defaults</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Full-width test titles, wrapping <code>48 dp</code> <code>RecordFilterChip</code> tabs, full-width <code>48 dp</code> <code>Add test</code> button, sand <code>12 sp</code> category labels, and <code>48 dp</code> Edit/Delete controls.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, search active (<code>Hb</code>) with 48 dp clear button</figcaption>
+    <div class="phone">
+      <div class="scrim">
+        <div class="host-card">
+          <div class="cat-col">
+            <div class="cat-head">
+              <h3>Laboratory tests</h3>
+              <p>28 tests, 7 panels</p>
+            </div>
+            <div class="chips" role="tablist">
+              <span class="chipwrap"><button type="button" class="chip sel" role="tab" aria-selected="true">Individual tests (28)</button></span>
+              <span class="chipwrap"><button type="button" class="chip" role="tab" aria-selected="false">Panels (7)</button></span>
+            </div>
+            <button type="button" class="pbtn" style="width:100%">Add test</button>
+            <div class="fbox search">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="color:var(--onv);flex:0 0 20px"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+              <span class="stxt val">Hb</span>
+              <button type="button" class="ibtn" aria-label="Clear search" style="color:var(--onv)">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              </button>
+            </div>
+            <section class="sec">
+              <div class="sec-head"><h4>Tests (1 match)</h4></div>
+              <div class="sec-body">
+                <div class="crow first">
+                  <p class="crow-title">Haemoglobin (Hb)</p>
+                  <div class="crow-bot">
+                    <div class="crow-meta">
+                      <span class="crow-fam">Hematology</span>
+                      <span class="crow-sec">Unit: g/dL</span>
+                    </div>
+                    <div class="crow-acts">
+                      <button type="button" class="ibtn" aria-label="Edit Haemoglobin (Hb)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                      </button>
+                      <button type="button" class="ibtn err" aria-label="Delete test Haemoglobin (Hb)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Active search shows a <code>48 dp</code> clear button inside the search field and updates the section title to show match count.</p>
+  </figure>
+</div>
+
+<h2>2. Lab catalog settings: Category groups (Panels) tab</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, Panels &amp; Profiles tab (11 sp test pills)</figcaption>
+    <div class="phone">
+      <div class="scrim">
+        <div class="host-card">
+          <div class="cat-col">
+            <div class="old-hdr">
+              <div style="min-width:0;flex:1">
+                <p class="old-h">Laboratory tests</p>
+                <p class="old-sub11">28 tests · 7 clinical panels</p>
+              </div>
+              <span class="old-pbtn40">+ Create Panel</span>
+            </div>
+            <div class="old-tabs">
+              <span class="old-chip8">Individual Tests (28)</span>
+              <span class="old-chip8 sel">Panels &amp; Profiles (7)</span>
+            </div>
+            <div class="old-m3f ph"><span aria-hidden="true">🔍</span><span>Search diagnostic panels...</span></div>
+            <div class="old-card12">
+              <div class="old-row">
+                <div style="min-width:0;flex:1">
+                  <p class="old-title14">CBC</p>
+                  <p style="margin:2px 0 0;font-size:12px;color:#4C3F43">Haemoglobin, haematocrit, MCV, MCH, WBC, platelets</p>
+                </div>
+                <div style="display:flex;align-items:center">
+                  <span class="ibtn" aria-hidden="true">✎</span>
+                  <span class="ibtn err" aria-hidden="true">🗑</span>
+                </div>
+              </div>
+              <span style="font-size:11px;font-weight:600;color:#0D1B3D">Included Tests (6):</span>
+              <div style="display:flex;flex-wrap:wrap;gap:4px">
+                <span class="old-badge6 var">Haemoglobin (Hb)</span>
+                <span class="old-badge6 var">Haematocrit (Hct)</span>
+                <span class="old-badge6 var">MCV</span>
+                <span class="old-badge6 var">MCH</span>
+                <span class="old-badge6 var">White Cell Count (WBC)</span>
+                <span class="old-badge6 var">Platelets (PLT)</span>
+              </div>
+            </div>
+            <div class="old-card12">
+              <div class="old-row">
+                <div style="min-width:0;flex:1">
+                  <p class="old-title14">Urine Routine &amp; Microscopic</p>
+                  <p style="margin:2px 0 0;font-size:12px;color:#4C3F43">Dipstick chemistry with pus cells and RBCs</p>
+                </div>
+                <div style="display:flex;align-items:center">
+                  <span class="ibtn" aria-hidden="true">✎</span>
+                  <span class="ibtn err" aria-hidden="true">🗑</span>
+                </div>
+              </div>
+              <span style="font-size:11px;font-weight:600;color:#0D1B3D">Included Tests (8):</span>
+              <div style="display:flex;flex-wrap:wrap;gap:4px">
+                <span class="old-badge6 var">Urine Protein</span>
+                <span class="old-badge6 var">Urine Glucose</span>
+                <span class="old-badge6 var">Urine Ketones</span>
+                <span class="old-badge6 var">Urine Blood</span>
+                <span class="old-badge6 var">Urine Nitrite</span>
+                <span class="old-badge6 var">Leukocyte Esterase</span>
+                <span class="old-badge6 var">Pus Cells</span>
+                <span class="old-badge6 var">RBCs (Urine)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Grey <code>12 dp</code> slabs filled with <code>6 dp</code> <code>11 sp</code> pills ("too many squares") and clipped switcher tab.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, slice 17, Panels tab (<code>RecordBandCard</code> + <code>BandChip</code> + <code>PlainField</code>)</figcaption>
+    <div class="phone">
+      <div class="scrim">
+        <div class="host-card">
+          <div class="cat-col">
+            <div class="cat-head">
+              <h3>Laboratory tests</h3>
+              <p>28 tests, 7 panels</p>
+            </div>
+            <div class="chips" role="tablist">
+              <span class="chipwrap"><button type="button" class="chip" role="tab" aria-selected="false">Individual tests (28)</button></span>
+              <span class="chipwrap"><button type="button" class="chip sel" role="tab" aria-selected="true">Panels (7)</button></span>
+            </div>
+            <button type="button" class="pbtn" style="width:100%">Create panel</button>
+            <div class="fbox search">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="color:var(--onv);flex:0 0 20px"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+              <span class="stxt">Search diagnostic panels</span>
+            </div>
+            <article class="bcard">
+              <div class="bband">
+                <div class="bchips"><span class="bchip">6 tests</span></div>
+                <div class="bband-row">
+                  <h4 class="bband-title">CBC</h4>
+                  <button type="button" class="ibtn" aria-label="Edit diagnostic panel">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                  </button>
+                  <button type="button" class="ibtn err" aria-label="Delete panel CBC">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                  </button>
+                </div>
+                <p class="bband-sub">Haemoglobin, haematocrit, MCV, MCH, WBC, platelets</p>
+              </div>
+              <div class="bbody">
+                <div class="pfield">
+                  <span class="pfield-l">Included tests</span>
+                  <span class="pfield-v">Haemoglobin (Hb), Haematocrit (Hct), MCV, MCH, White Cell Count (WBC), Platelets (PLT)</span>
+                </div>
+              </div>
+            </article>
+            <article class="bcard">
+              <div class="bband">
+                <div class="bchips"><span class="bchip">8 tests</span></div>
+                <div class="bband-row">
+                  <h4 class="bband-title">Urine Routine &amp; Microscopic</h4>
+                  <button type="button" class="ibtn" aria-label="Edit diagnostic panel">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                  </button>
+                  <button type="button" class="ibtn err" aria-label="Delete panel Urine Routine &amp; Microscopic">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                  </button>
+                </div>
+                <p class="bband-sub">Dipstick chemistry with pus cells and RBCs</p>
+              </div>
+              <div class="bbody">
+                <div class="pfield">
+                  <span class="pfield-l">Included tests</span>
+                  <span class="pfield-v">Urine Protein, Urine Glucose, Urine Ketones, Urine Blood, Urine Nitrite, Leukocyte Esterase, Pus Cells, RBCs (Urine)</span>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Sand <code>RecordBandCard</code> matches <code>LabsTab</code>; white body uses one clean <code>PlainField</code> (no box-inside-box). Multi-select chips stay interactive inside <code>AddLabCategoryGroupDialog</code>.</p>
+  </figure>
+</div>
+
+<h2>3. Medication catalog settings (<code>MedicationCatalogSettingsSection</code>)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, Medications tab in settings</figcaption>
+    <div class="phone">
+      <div class="scrim">
+        <div class="host-card">
+          <div class="host-tabs">
+            <span class="host-tab">Security &amp; Clinic</span>
+            <span class="host-tab">Lab tests</span>
+            <span class="host-tab sel">Medications</span>
+          </div>
+          <div class="cat-col">
+            <div class="old-hdr">
+              <div style="min-width:0;flex:1">
+                <p class="old-h">My medication list</p>
+                <p class="old-sub11">10 registered medications · available for all patient plans</p>
+              </div>
+              <span class="old-pbtn40">+ Add Medication</span>
+            </div>
+            <div class="old-m3f ph"><span aria-hidden="true">🔍</span><span>Search medications or dosages...</span></div>
+            <div class="old-card12">
+              <div class="old-row">
+                <div style="min-width:0;flex:1">
+                  <p class="old-title14">Paracetamol 500 mg</p>
+                  <div class="old-meta"><span class="old-badge6">Oral</span><span class="old-badge6 hi">As needed (PRN)</span></div>
+                  <p style="margin:4px 0 0;font-size:12px;color:#4C3F43">Analgesic &amp; antipyretic for pregnancy</p>
+                </div>
+                <div style="display:flex;align-items:center">
+                  <span class="ibtn" aria-hidden="true">✎</span>
+                  <span class="ibtn err" aria-hidden="true">🗑</span>
+                </div>
+              </div>
+            </div>
+            <div class="old-card12">
+              <div class="old-row">
+                <div style="min-width:0;flex:1">
+                  <p class="old-title14">Folic Acid 5 mg</p>
+                  <div class="old-meta"><span class="old-badge6">Oral</span><span class="old-badge6 hi">Once daily</span></div>
+                  <p style="margin:4px 0 0;font-size:12px;color:#4C3F43">Neural tube defect prophylaxis</p>
+                </div>
+                <div style="display:flex;align-items:center">
+                  <span class="ibtn" aria-hidden="true">✎</span>
+                  <span class="ibtn err" aria-hidden="true">🗑</span>
+                </div>
+              </div>
+            </div>
+            <div class="old-card12">
+              <div class="old-row">
+                <div style="min-width:0;flex:1">
+                  <p class="old-title14">Labetalol 100 mg</p>
+                  <div class="old-meta"><span class="old-badge6">Oral</span><span class="old-badge6 hi">Twice daily</span></div>
+                  <p style="margin:4px 0 0;font-size:12px;color:#4C3F43">First-line antihypertensive in pregnancy</p>
+                </div>
+                <div style="display:flex;align-items:center">
+                  <span class="ibtn" aria-hidden="true">✎</span>
+                  <span class="ibtn err" aria-hidden="true">🗑</span>
+                </div>
+              </div>
+            </div>
+            <div class="old-reset">↺ Reset medication list to defaults</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note"><code>+ Add Medication</code> crushes <code>"My medication list"</code>; <code>11 sp</code> pink/grey route and frequency pills; non-wrapping metadata row clips long frequencies.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, slice 17, Medications tab</figcaption>
+    <div class="phone">
+      <div class="scrim">
+        <div class="host-card">
+          <div class="host-tabs">
+            <span class="host-tab">Security &amp; Clinic</span>
+            <span class="host-tab">Lab tests</span>
+            <span class="host-tab sel">Medications</span>
+          </div>
+          <div class="cat-col">
+            <div class="cat-head">
+              <h3>My medication list</h3>
+              <p>10 medications, available for all patient plans</p>
+            </div>
+            <button type="button" class="pbtn" style="width:100%">Add medication</button>
+            <div class="fbox search">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="color:var(--onv);flex:0 0 20px"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+              <span class="stxt">Search medications or dosages</span>
+            </div>
+            <section class="sec">
+              <div class="sec-head"><h4>Medications</h4></div>
+              <div class="sec-body">
+                <div class="crow first">
+                  <p class="crow-title">Paracetamol 500 mg</p>
+                  <div class="crow-bot">
+                    <div class="crow-meta">
+                      <span class="crow-fam">Oral, As needed (PRN)</span>
+                      <span class="crow-sec">Analgesic &amp; antipyretic for pregnancy</span>
+                    </div>
+                    <div class="crow-acts">
+                      <button type="button" class="ibtn" aria-label="Edit medication">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                      </button>
+                      <button type="button" class="ibtn err" aria-label="Delete Paracetamol 500 mg">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="crow">
+                  <p class="crow-title">Folic Acid 5 mg</p>
+                  <div class="crow-bot">
+                    <div class="crow-meta">
+                      <span class="crow-fam">Oral, Once daily</span>
+                      <span class="crow-sec">Neural tube defect prophylaxis</span>
+                    </div>
+                    <div class="crow-acts">
+                      <button type="button" class="ibtn" aria-label="Edit medication">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                      </button>
+                      <button type="button" class="ibtn err" aria-label="Delete Folic Acid 5 mg">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="crow">
+                  <p class="crow-title">Labetalol 100 mg</p>
+                  <div class="crow-bot">
+                    <div class="crow-meta">
+                      <span class="crow-fam">Oral, Twice daily</span>
+                      <span class="crow-sec">First-line antihypertensive in pregnancy</span>
+                    </div>
+                    <div class="crow-acts">
+                      <button type="button" class="ibtn" aria-label="Edit medication">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                      </button>
+                      <button type="button" class="ibtn err" aria-label="Delete Labetalol 100 mg">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <button type="button" class="tbtn" style="width:100%">Reset medication list to defaults</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Full-width drug name and dose, sand <code>12 sp</code> route/frequency via <code>medicationFrequencyLabel</code>, <code>14 sp</code> indication, and <code>48 dp</code> actions.</p>
+  </figure>
+</div>
+
+<h2>4. Empty and search-no-result states</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, passive empty / no-match card</figcaption>
+    <div class="phone">
+      <div class="scrim">
+        <div class="host-card">
+          <div class="cat-col">
+            <div class="old-m3f"><span aria-hidden="true">🔍</span><span>Vitamin B12</span></div>
+            <div class="old-card12" style="align-items:center;padding:16px">
+              <span style="font-size:13px;color:#4C3F43">No matching results for: Vitamin B12</span>
+            </div>
+            <div class="old-card12" style="align-items:center;padding:16px;margin-top:8px">
+              <span style="font-size:13px;color:#4C3F43">Lab test directory is currently empty.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Passive grey box with no clear-search action or next step.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, search no-result (with <code>Clear search</code>)</figcaption>
+    <div class="phone">
+      <div class="scrim">
+        <div class="host-card">
+          <div class="cat-col">
+            <div class="cat-head">
+              <h3>Laboratory tests</h3>
+              <p>28 tests, 7 panels</p>
+            </div>
+            <div class="fbox search">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="color:var(--onv);flex:0 0 20px"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+              <span class="stxt val">Vitamin B12</span>
+              <button type="button" class="ibtn" aria-label="Clear search" style="color:var(--onv)">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              </button>
+            </div>
+            <div class="emptycard">
+              <h4>No tests match &ldquo;Vitamin B12&rdquo;</h4>
+              <p>Check the spelling or clear the search filter.</p>
+              <button type="button" class="obtn" style="width:100%">Clear search</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Same pattern applies to Panels and Medications search-no-result states.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, empty catalog (first run / all deleted)</figcaption>
+    <div class="phone">
+      <div class="scrim">
+        <div class="host-card">
+          <div class="cat-col">
+            <div class="cat-head">
+              <h3>Laboratory tests</h3>
+              <p>0 tests, 0 panels</p>
+            </div>
+            <div class="emptycard">
+              <h4>No lab tests in the catalog</h4>
+              <p>Add a test or restore the default clinic tests.</p>
+              <div class="chips">
+                <button type="button" class="obtn" style="flex:1 1 auto">Add test</button>
+                <button type="button" class="tbtn" style="flex:1 1 auto">Reset to defaults</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Names the empty cause and offers direct <code>48 dp</code> recovery actions (also symmetric for empty Panels and empty Medications).</p>
+  </figure>
+</div>
+
+<h2>5. Three Add/Edit dialogs</h2>
+
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, <code>AddLabTestDialog</code> (no scroll, clipped label)</figcaption>
+    <div class="phone"><div class="scrim center">
+      <div class="old-dlg">
+        <h4>Add lab test</h4>
+        <div class="old-m3f"><span class="olbl">Test Name (Required)</span><span>Haemoglobin (Hb)</span></div>
+        <span style="font-size:11px;font-weight:600">Category:</span>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <span class="old-chip8 sm sel">Hematology</span>
+          <span class="old-chip8 sm">Urinalysis</span>
+          <span class="old-chip8 sm">Biochemistry</span>
+          <span class="old-chip8 sm">Serology</span>
+          <span class="old-chip8 sm">Other</span>
+        </div>
+        <div class="row2">
+          <div class="old-m3f"><span class="olbl">Unit</span><span>g/dL</span></div>
+          <div class="old-m3f"><span class="olbl">Reference Range</span><span style="color:#4C3F43">11.0 - 15.0</span></div>
+        </div>
+        <div class="old-m3f ph"><span class="olbl">Default Result / Value (Optional)</span><span>e.g. Negative or Nil</span></div>
+        <div class="old-dlg-acts">
+          <span class="old-tact">Cancel</span>
+          <span class="old-pill">Save</span>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">Missing <code>verticalScroll</code> risks clipping on 360 dp at <code>1.3x</code>/<code>2.0x</code>; notch label truncates <code>Reference Ran...</code>; <code>11 sp</code> label.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, slice 17, <code>AddLabTestDialog</code></figcaption>
+    <div class="phone"><div class="scrim center">
+      <div class="fdlg" role="dialog" aria-label="Add lab test">
+        <div class="fdlg-head"><h4>Add lab test</h4></div>
+        <div class="fdlg-body">
+          <div>
+            <span class="flab">Test name (required)</span>
+            <div class="fbox">Haemoglobin (Hb)</div>
+          </div>
+          <div>
+            <span class="flab">Category</span>
+            <div class="chips">
+              <span class="chipwrap"><button type="button" class="chip sel" aria-pressed="true">Hematology</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Urinalysis</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Biochemistry</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Serology</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Other</button></span>
+            </div>
+          </div>
+          <div class="row2">
+            <div>
+              <span class="flab">Unit</span>
+              <div class="fbox">g/dL</div>
+            </div>
+            <div>
+              <span class="flab">Reference range</span>
+              <div class="fbox ph">11.0 - 15.0</div>
+            </div>
+          </div>
+          <div>
+            <span class="flab">Default result (optional)</span>
+            <div class="fbox ph">e.g. Negative or Normal</div>
+          </div>
+        </div>
+        <div class="fdlg-foot">
+          <button type="button" class="obtn">Cancel</button>
+          <button type="button" class="pbtn">Save</button>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">Scrollable body with pinned <code>SheetCancelSaveRow</code>; external <code>12 sp</code> sand labels never clip; <code>Unit</code> and <code>Reference range</code> stack vertically above <code>1.3x</code> scale.</p>
+  </figure>
+</div>
+
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, <code>AddLabCategoryGroupDialog</code></figcaption>
+    <div class="phone"><div class="scrim center">
+      <div class="old-dlg">
+        <h4>Create New Diagnostic Panel</h4>
+        <div class="old-m3f"><span class="olbl">Panel Name (Required)</span><span>CBC</span></div>
+        <div class="old-m3f ph"><span class="olbl">Description / Indication (Optional)</span><span>e.g. Panel requested...</span></div>
+        <span style="font-size:11px;font-weight:600;color:#0D1B3D">Select Tests to Include (2 selected):</span>
+        <div class="old-m3f ph"><span aria-hidden="true">🔍</span><span>Search available tests...</span></div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <span class="old-chip8 sm sel">Haemoglobin (Hb)</span>
+          <span class="old-chip8 sm sel">Haematocrit (Hct)</span>
+          <span class="old-chip8 sm">MCV</span>
+          <span class="old-chip8 sm">MCH</span>
+          <span class="old-chip8 sm">White Cell Count (WBC)</span>
+          <span class="old-chip8 sm">Platelets (PLT)</span>
+        </div>
+        <div class="old-dlg-acts">
+          <span class="old-tact">Cancel</span>
+          <span class="old-pill">Save Panel</span>
+        </div>
+      </div>
+    </div></div>
+    <p class="note"><code>28 dp</code> grey container, Title Case heading, <code>11 sp</code> label, <code>8 dp</code> pink chips, buttons scroll away with 28 tests.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, slice 17, <code>AddLabCategoryGroupDialog</code> (with test chips)</figcaption>
+    <div class="phone"><div class="scrim center">
+      <div class="fdlg" role="dialog" aria-label="Create diagnostic panel">
+        <div class="fdlg-head"><h4>Create diagnostic panel</h4></div>
+        <div class="fdlg-body">
+          <div>
+            <span class="flab">Panel name (required)</span>
+            <div class="fbox">CBC</div>
+          </div>
+          <div>
+            <span class="flab">Description or indication (optional)</span>
+            <div class="fbox">Haemoglobin, haematocrit, MCV, MCH, WBC, platelets</div>
+          </div>
+          <div>
+            <span class="flab">Select tests (2 selected)</span>
+            <div class="fbox search" style="margin-bottom:8px">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="color:var(--onv);flex:0 0 20px"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+              <span class="stxt">Search available tests</span>
+            </div>
+            <div class="chips">
+              <span class="chipwrap"><button type="button" class="chip sel" aria-pressed="true">Haemoglobin (Hb)</button></span>
+              <span class="chipwrap"><button type="button" class="chip sel" aria-pressed="true">Haematocrit (Hct)</button></span>
+              <span class="chipwrap"><button type="button" class="chip">MCV</button></span>
+              <span class="chipwrap"><button type="button" class="chip">MCH</button></span>
+              <span class="chipwrap"><button type="button" class="chip">White Cell Count (WBC)</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Platelets (PLT)</button></span>
+            </div>
+          </div>
+        </div>
+        <div class="fdlg-foot">
+          <button type="button" class="obtn">Cancel</button>
+          <button type="button" class="pbtn">Save panel</button>
+        </div>
+      </div>
+    </div></div>
+    <p class="note"><code>48 dp</code> <code>RecordFilterChip</code> test chips, inline no-match message + <code>Clear search</code> when test search misses, pinned <code>SheetCancelSaveRow</code>.</p>
+  </figure>
+</div>
+
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, <code>AddMedicationDialog</code> (11 sp frequency chips)</figcaption>
+    <div class="phone"><div class="scrim center">
+      <div class="old-dlg">
+        <h4>Add new medication</h4>
+        <div class="row2 med">
+          <div class="old-m3f"><span class="olbl">Medication Name (Required)</span><span>Paracetamol</span></div>
+          <div class="old-m3f"><span class="olbl">Dosage</span><span>500 mg</span></div>
+        </div>
+        <span style="font-size:11px;font-weight:600">Administration Route:</span>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <span class="old-chip8 sm sel">Oral</span>
+          <span class="old-chip8 sm">IM</span>
+          <span class="old-chip8 sm">IV</span>
+          <span class="old-chip8 sm">Topical</span>
+          <span class="old-chip8 sm">Subcutaneous</span>
+        </div>
+        <span style="font-size:11px;font-weight:600">Frequency:</span>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <span class="old-chip8 xs">Once daily</span>
+          <span class="old-chip8 xs">Twice daily</span>
+          <span class="old-chip8 xs">Three times daily</span>
+          <span class="old-chip8 xs">At bedtime</span>
+          <span class="old-chip8 xs sel">As needed (PRN)</span>
+        </div>
+        <div class="old-m3f"><span class="olbl">Instructions / Clinical Indication</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Analgesic &amp; antipyretic...</span></div>
+        <div class="old-dlg-acts">
+          <span class="old-tact">Cancel</span>
+          <span class="old-pill">Add to my list</span>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">Hardcoded <code>11 sp</code> frequency chips; floating label clipped inside cramped <code>288 dp</code> dialog; rose chips.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, slice 17, <code>AddMedicationDialog</code> (name &amp; dosage side by side)</figcaption>
+    <div class="phone"><div class="scrim center">
+      <div class="fdlg" role="dialog" aria-label="Add medication">
+        <div class="fdlg-head"><h4>Add medication</h4></div>
+        <div class="fdlg-body">
+          <div class="row2 med">
+            <div>
+              <span class="flab">Medication name (required)</span>
+              <div class="fbox">Paracetamol</div>
+            </div>
+            <div>
+              <span class="flab">Dosage</span>
+              <div class="fbox">500 mg</div>
+            </div>
+          </div>
+          <div>
+            <span class="flab">Administration route</span>
+            <div class="chips">
+              <span class="chipwrap"><button type="button" class="chip sel" aria-pressed="true">Oral</button></span>
+              <span class="chipwrap"><button type="button" class="chip">IM</button></span>
+              <span class="chipwrap"><button type="button" class="chip">IV</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Topical</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Subcutaneous</button></span>
+            </div>
+          </div>
+          <div>
+            <span class="flab">Frequency</span>
+            <div class="chips">
+              <span class="chipwrap"><button type="button" class="chip">Once daily</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Twice daily</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Three times daily</button></span>
+              <span class="chipwrap"><button type="button" class="chip">At bedtime</button></span>
+              <span class="chipwrap"><button type="button" class="chip sel" aria-pressed="true">As needed (PRN)</button></span>
+            </div>
+          </div>
+          <div>
+            <span class="flab">Instructions or indication (optional)</span>
+            <div class="fbox">Analgesic &amp; antipyretic for pregnancy</div>
+          </div>
+        </div>
+        <div class="fdlg-foot">
+          <button type="button" class="obtn">Cancel</button>
+          <button type="button" class="pbtn">Add to my list</button>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">Name and dosage sit side by side cleanly (<code>weight(1.5f)</code> + <code>weight(1f)</code>, stacking above <code>1.3x</code> scale); route and frequency use <code>14 sp</code> <code>48 dp</code> <code>RecordFilterChip</code>s.</p>
+  </figure>
+</div>
+
+<h2>6. Delete confirmation dialog</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, delete test confirmation</figcaption>
+    <div class="phone"><div class="scrim center">
+      <div class="old-dlg">
+        <h4>Confirm Delete Test</h4>
+        <p style="margin:0;font-size:13px;line-height:18px;color:#4C3F43">Are you sure you want to permanently delete &lsquo;Haemoglobin (Hb)&rsquo; from clinic lab directory?</p>
+        <div class="old-dlg-acts">
+          <span class="old-tact">Cancel</span>
+          <span class="old-pill">Delete</span>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">Title Case heading, <code>13 sp</code> body, and primary navy <code>Delete</code> button indistinguishable from a safe save.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, slice 17, delete test confirmation (also panel, medication, reset)</figcaption>
+    <div class="phone"><div class="scrim center">
+      <div class="cdlg" role="alertdialog" aria-label="Delete lab test?">
+        <h4>Delete lab test?</h4>
+        <p>Delete &ldquo;Haemoglobin (Hb)&rdquo; from the clinic lab catalog?</p>
+        <div class="cdlg-acts">
+          <button type="button" class="tbtn">Cancel</button>
+          <button type="button" class="tbtn err">Delete</button>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">Matches <code>DiscardChangesDialog</code> (Slice 11): <code>16 dp</code> white surface, <code>16 sp</code> body, <code>48 dp</code> targets, destructive <code>Delete</code> in error red.</p>
+  </figure>
+</div>
+
+<h2>7. Dark theme (<code>AncTheme(darkTheme = true)</code>)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Dark</b>, after, Lab catalog settings (Panels tab)</figcaption>
+    <div class="phone dark">
+      <div class="scrim">
+        <div class="host-card">
+          <div class="host-tabs">
+            <span class="host-tab">Security &amp; Clinic</span>
+            <span class="host-tab sel">Lab tests</span>
+            <span class="host-tab">Medications</span>
+          </div>
+          <div class="cat-col">
+            <div class="cat-head">
+              <h3>Laboratory tests</h3>
+              <p>28 tests, 7 panels</p>
+            </div>
+            <div class="chips" role="tablist">
+              <span class="chipwrap"><button type="button" class="chip" role="tab" aria-selected="false">Individual tests (28)</button></span>
+              <span class="chipwrap"><button type="button" class="chip sel" role="tab" aria-selected="true">Panels (7)</button></span>
+            </div>
+            <button type="button" class="pbtn" style="width:100%">Create panel</button>
+            <div class="fbox search">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="color:var(--onv);flex:0 0 20px"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+              <span class="stxt">Search diagnostic panels</span>
+            </div>
+            <article class="bcard">
+              <div class="bband">
+                <div class="bchips"><span class="bchip">6 tests</span></div>
+                <div class="bband-row">
+                  <h4 class="bband-title">CBC</h4>
+                  <button type="button" class="ibtn" aria-label="Edit diagnostic panel">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                  </button>
+                  <button type="button" class="ibtn err" aria-label="Delete panel CBC">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                  </button>
+                </div>
+                <p class="bband-sub">Haemoglobin, haematocrit, MCV, MCH, WBC, platelets</p>
+              </div>
+              <div class="bbody">
+                <div class="pfield">
+                  <span class="pfield-l">Included tests</span>
+                  <span class="pfield-v">Haemoglobin (Hb), Haematocrit (Hct), MCV, MCH, White Cell Count (WBC), Platelets (PLT)</span>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </div>
+  </figure>
+
+  <figure>
+    <figcaption><b>Dark</b>, after, <code>AddMedicationDialog</code> (side-by-side Name &amp; Dosage)</figcaption>
+    <div class="phone dark"><div class="scrim center">
+      <div class="fdlg" role="dialog" aria-label="Add medication, dark">
+        <div class="fdlg-head"><h4>Add medication</h4></div>
+        <div class="fdlg-body">
+          <div class="row2 med">
+            <div>
+              <span class="flab">Medication name (required)</span>
+              <div class="fbox">Paracetamol</div>
+            </div>
+            <div>
+              <span class="flab">Dosage</span>
+              <div class="fbox">500 mg</div>
+            </div>
+          </div>
+          <div>
+            <span class="flab">Administration route</span>
+            <div class="chips">
+              <span class="chipwrap"><button type="button" class="chip sel" aria-pressed="true">Oral</button></span>
+              <span class="chipwrap"><button type="button" class="chip">IM</button></span>
+              <span class="chipwrap"><button type="button" class="chip">IV</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Topical</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Subcutaneous</button></span>
+            </div>
+          </div>
+          <div>
+            <span class="flab">Frequency</span>
+            <div class="chips">
+              <span class="chipwrap"><button type="button" class="chip">Once daily</button></span>
+              <span class="chipwrap"><button type="button" class="chip">Twice daily</button></span>
+              <span class="chipwrap"><button type="button" class="chip sel" aria-pressed="true">As needed (PRN)</button></span>
+            </div>
+          </div>
+          <div>
+            <span class="flab">Instructions or indication (optional)</span>
+            <div class="fbox">Analgesic &amp; antipyretic for pregnancy</div>
+          </div>
+        </div>
+        <div class="fdlg-foot">
+          <button type="button" class="obtn">Cancel</button>
+          <button type="button" class="pbtn">Add to my list</button>
+        </div>
+      </div>
+    </div></div>
+  </figure>
+</div>
+
+<h2>8. Contrast (computed, WCAG 2.x formula)</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Pair</th><th>Foreground (Light / Dark)</th><th>Background (Light / Dark)</th><th>Light</th><th>Dark</th></tr></thead>
+<tbody>
+<tr><td>Section / dialog title, Edit icon (<code>primary</code> on <code>surface</code>)</td><td>#0D1B3D / #B4C5FF</td><td>#FFFFFF / #1A202E</td><td class="n">16.92</td><td class="n">9.59</td></tr>
+<tr><td>Item title, input text, <code>PlainField</code> value (<code>onSurface</code> on <code>surface</code>)</td><td>#0D1B3D / #E2E2EA</td><td>#FFFFFF / #1A202E</td><td class="n">16.92</td><td class="n">12.64</td></tr>
+<tr><td>Subtitle, metadata, search placeholder (<code>onSurfaceVariant</code> on <code>surface</code>)</td><td>#4C3F43 / #CDC3C6</td><td>#FFFFFF / #1A202E</td><td class="n">10.00</td><td class="n">9.47</td></tr>
+<tr><td>Form label, category/route label (<code>FieldBackgroundLabel</code> on <code>surface</code>)</td><td>#594A2C / #E0CFA6</td><td>#FFFFFF / #1A202E</td><td class="n">8.60</td><td class="n">10.58</td></tr>
+<tr><td>Panel band title (<code>onSurface</code> on <code>FieldBackgroundBg</code>)</td><td>#0D1B3D / #E2E2EA</td><td>#F1EDE4 / #36301F</td><td class="n">14.48</td><td class="n">10.19</td></tr>
+<tr><td>Panel band Edit icon (<code>primary</code> on <code>FieldBackgroundBg</code>)</td><td>#0D1B3D / #B4C5FF</td><td>#F1EDE4 / #36301F</td><td class="n">14.48</td><td class="n">7.73</td></tr>
+<tr><td>Panel band subtitle (<code>onSurfaceVariant</code> on <code>FieldBackgroundBg</code>)</td><td>#4C3F43 / #CDC3C6</td><td>#F1EDE4 / #36301F</td><td class="n">8.56</td><td class="n">7.64</td></tr>
+<tr><td>Panel band Delete icon (<code>error</code> on <code>FieldBackgroundBg</code>)</td><td>#BA1A1A / #FFB4AB</td><td>#F1EDE4 / #36301F</td><td class="n">5.53</td><td class="n">7.73</td></tr>
+<tr><td><code>BandChip</code> text (<code>FieldBackgroundLabel</code> on <code>surface</code>)</td><td>#594A2C / #E0CFA6</td><td>#FFFFFF / #1A202E</td><td class="n">8.60</td><td class="n">10.58</td></tr>
+<tr><td>Primary button / selected chip (<code>onPrimary</code> on <code>primary</code>)</td><td>#FFFFFF / #002A78</td><td>#0D1B3D / #B4C5FF</td><td class="n">16.92</td><td class="n">7.72</td></tr>
+<tr><td>Validation error, Delete icon/action on <code>surface</code> (<code>error</code> on <code>surface</code>)</td><td>#BA1A1A / #FFB4AB</td><td>#FFFFFF / #1A202E</td><td class="n">6.46</td><td class="n">9.59</td></tr>
+<tr><td>Input, OutlinedButton, chip borders (<code>outline</code> on <code>surface</code>, 3:1 needed)</td><td>#79747E / #8E95A5</td><td>#FFFFFF / #1A202E</td><td class="n">4.55</td><td class="n">5.42</td></tr>
+<tr><td>Before: row title (<code>onSurface</code> on <code>surfaceContainerLow</code>)</td><td>#0D1B3D</td><td>#F9F5F3</td><td class="n">15.62</td><td class="n"></td></tr>
+<tr><td>Before: rose badge (<code>onSecondaryContainer</code> on <code>secondaryContainer</code>)</td><td>#3B0815</td><td>#FFD9DE</td><td class="n">13.18</td><td class="n"></td></tr>
+<tr><td>Before: default result text (<code>tertiary</code> on <code>surfaceContainerLow</code>)</td><td>#176B70</td><td>#F9F5F3</td><td class="n">5.75</td><td class="n"></td></tr>
+</tbody></table></div>
+
+<h2>9. Compose mapping</h2>
+<ol class="map">
+  <li><b>Background family scope:</b> Wrap <code>LabCatalogSettingsSection</code>, <code>MedicationCatalogSettingsSection</code>, and the three form dialogs in <code>CompositionLocalProvider(LocalFieldFamily provides FieldFamilies.background())</code>.</li>
+  <li><b>Section header &amp; primary button:</b> <code>Text</code> in <code>RecordType.SectionTitle</code> (<code>primary</code>, <code>.semantics { heading() }</code>) + <code>RecordType.Secondary</code> count summary, <code>FlowRow</code> of <code>RecordFilterChip(..., wrap = true, minTouchTarget = true)</code> for <code>labIndividualTestsTab</code> and <code>labCategoryGroupsTab</code>, and full-width <code>Button(..., shape = RecordShapes.Small, modifier = Modifier.fillMaxWidth().minimumTouchTarget())</code> with <code>RecordType.Action</code>.</li>
+  <li><b>Search field:</b> <code>OutlinedTextField</code> with <code>shape = RecordShapes.Small</code>, <code>textStyle = RecordType.FieldValue</code>, <code>colors = editorFieldColors()</code>, leading <code>Icons.Default.Search</code>, and conditional <code>48 dp</code> trailing <code>Icons.Default.Close</code> clear button.</li>
+  <li><b>Individual tests &amp; Medications list:</b> <code>RecordSectionCard(title = ..., family = bgFamily)</code> containing rows split by <code>HorizontalDivider(outlineVariant)</code>: full-width <code>RecordType.CardName</code> title above, <code>FormFieldLabel</code> + <code>RecordType.Secondary</code> metadata (using <code>medicationFrequencyLabel(med.frequency)</code> from <code>ClinicalPresets.kt</code>) on the left, and <code>48 dp</code> <code>minimumTouchTarget()</code> Edit and Delete <code>IconButton</code>s on the right.</li>
+  <li><b>Lab panels:</b> <code>RecordBandCard(title = group.name, family = bgFamily, subtitle = ..., chips = { BandChip(...) }, actions = { ... })</code> containing <code>PlainField(label = stringResource(R.string.catalog_included_tests), value = group.testNames.joinToString(", "))</code>.</li>
+  <li><b>Empty &amp; search-no-result states:</b> <code>OutlinedCard(shape = RecordShapes.Large, containerColor = surface, border = BorderStroke(1.dp, outlineVariant))</code> with <code>RecordType.CardName</code> title, <code>RecordType.Secondary</code> guidance, and <code>48 dp</code> <code>RecordShapes.Small</code> recovery actions.</li>
+  <li><b>Add/Edit dialogs:</b> Shared <code>CatalogFormDialog</code> using <code>Dialog(usePlatformDefaultWidth = false)</code> + <code>Surface(Modifier.fillMaxWidth(0.92f).heightIn(max = (screenHeightDp - 32).dp), shape = RecordShapes.Large, color = surface, border = BorderStroke(1.dp, outlineVariant))</code>, pinned <code>RecordType.SectionTitle</code> header, <code>verticalScroll</code> body with <code>FormFieldLabel</code> + <code>OutlinedTextField(editorFieldColors(), RecordShapes.Small)</code> + <code>RecordFilterChip(minTouchTarget = true, wrap = true)</code>, and pinned <code>SheetCancelSaveRow</code> footer.</li>
+  <li><b>Delete &amp; Reset confirmations:</b> <code>AlertDialog(shape = RecordShapes.Large, containerColor = surface)</code> matching <code>DiscardChangesDialog</code> (Slice 11), with <code>RecordType.SectionTitle</code> title, <code>RecordType.FieldValue</code> text, and <code>minimumTouchTarget()</code> <code>RecordShapes.Small</code> <code>TextButton</code>s (<code>Cancel</code> in <code>primary</code>, <code>Delete</code>/<code>Reset</code> in <code>error</code>).</li>
+</ol>
+
+<h2>10. Decisions for the owner</h2>
+<ol class="map">
+  <li><b>Form dialog container (<code>Dialog</code> with pinned header &amp; <code>SheetCancelSaveRow</code> vs M3 <code>AlertDialog</code>):</b> Today <code>AddLabTestDialog</code> has no scroll (clipping at 1.3x/2.0x) and M3 <code>AlertDialog</code> narrows inner content to ~264 dp on 360 dp phones. <b>Recommended:</b> use <code>0.92f</code>-width <code>Dialog</code> (<code>~331 dp</code>, matching <code>SecuritySettingsDialog</code>) with scrollable body and pinned <code>SheetCancelSaveRow</code> for the three Add/Edit forms, while keeping the 5 short Delete/Reset confirmations as <code>AlertDialog</code>.</li>
+  <li><b><code>PlainField</code> test list inside <code>RecordBandCard</code> for Lab Panels:</b> Replace up to 20 grey <code>11 sp</code> pills inside each panel card with one clean <code>PlainField</code> inside <code>RecordBandCard</code> (per <code>PLAN.md</code> Section 8), keeping interactive <code>RecordFilterChip</code> multi-select chips inside <code>AddLabCategoryGroupDialog</code>. <b>Recommended:</b> accept.</li>
+  <li><b>Full-width primary action button and compact switcher labels:</b> Place <code>Add test</code> / <code>Create panel</code> / <code>Add medication</code> as a full-width <code>48 dp</code> button below the title and shorten <code>"Panels &amp; Profiles (7)"</code> to <code>"Panels (7)"</code> inside a wrapping <code>FlowRow</code> so nothing crushes at <code>298 dp</code> inside <code>SecuritySettingsDialog</code>. <b>Recommended:</b> accept.</li>
+  <li><b><code>RecordSectionCard</code> hairline rows with full-width titles for Individual tests and Medications:</b> Replace <code>12 dp</code> grey cards and side-cramped names with <code>RecordSectionCard</code> rows giving titles full width above metadata + <code>48 dp</code> Edit/Delete icons. <b>Recommended:</b> accept.</li>
+  <li><b>Recovery actions on empty/no-result states and red destructive Delete/Reset buttons:</b> Add <code>Clear search</code> / <code>Add</code> / <code>Reset to defaults</code> recovery buttons on empty and no-result states, color <code>Delete</code>/<code>Reset</code> in <code>error</code>, normalize <code>create_diagnostic_panel</code> to sentence case, replace middle dots with commas, and move all hardcoded UI text to <code>strings.xml</code>. <b>Recommended:</b> accept.</li>
+</ol>
+
+</main>
+</body>
+</html>
