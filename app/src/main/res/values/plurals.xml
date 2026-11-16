@@ -12,4 +12,8 @@
         <item quantity="one">%1$d abnormal</item>
         <item quantity="other">%1$d abnormal</item>
     </plurals>
+    <plurals name="security_vault_restored">
+        <item quantity="one">Vault restored (%1$d patient).</item>
+        <item quantity="other">Vault restored (%1$d patients).</item>
+    </plurals>
 </resources>

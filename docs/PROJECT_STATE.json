@@ -1736,20 +1736,20 @@
   "rd18": {
    "phase": "pRD",
    "order": 19,
-   "status": "next",
+   "status": "done",
    "title": "Slice 18: Security, lock and vault",
-   "ref": "",
-   "detail": "Level 3 auth. Ask the owner first, mock first.",
+   "ref": "slice 18",
+   "detail": "Settings dialog chips, scrollable PIN/backup/restore dialogs, red replace-all, lock keypad outline fix, vault status band. Level 3 logic unchanged (frontier review, alphacode, independent Flash tests). 36 new tests green.",
    "owner": "Lane models",
    "updated": "2026-11-16"
   },
   "rd19": {
    "phase": "pRD",
    "order": 20,
-   "status": "todo",
+   "status": "next",
    "title": "Slice 19: Shell and shared dialogs",
    "ref": "",
-   "detail": "Mock first, owner approves.",
+   "detail": "One mock sheet first (shared dialogs, date picker, camera).",
    "owner": "Lane models",
    "updated": "2026-11-16"
   },
@@ -1875,6 +1875,10 @@
   }
  },
  "log": [
+  {
+   "date": "2026-11-16",
+   "text": "Slice 18 security, lock and vault done: 36 new emulator tests, SecurityWorkflow and catalog tests green."
+  },
   {
    "date": "2026-11-16",
    "text": "Slice 17 catalog settings done: 29 new emulator tests, CustomChoicesStore and SecurityWorkflow green."

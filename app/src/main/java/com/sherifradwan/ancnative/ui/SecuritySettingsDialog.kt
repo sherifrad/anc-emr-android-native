@@ -2,41 +2,33 @@ package com.sherifradwan.ancnative.ui
 
 import android.app.Activity
 import android.content.Intent
-import androidx.core.content.FileProvider
-import com.sherifradwan.ancnative.storage.BackupInspectionResult
-import java.io.File
-import java.io.FileOutputStream
+import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.Fingerprint
-import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.LockClock
-import androidx.compose.material.icons.filled.Password
-import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -49,6 +41,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,25 +49,45 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.compose.material3.Tab
-import androidx.compose.material3.PrimaryTabRow
-import androidx.compose.ui.graphics.Color
-import com.sherifradwan.ancnative.model.catalog.ClinicalCatalogRepository
+import androidx.core.content.FileProvider
 import com.sherifradwan.ancnative.R
+import com.sherifradwan.ancnative.model.catalog.ClinicalCatalogRepository
 import com.sherifradwan.ancnative.security.AppThemeMode
 import com.sherifradwan.ancnative.security.BiometricAuthManager
 import com.sherifradwan.ancnative.security.SecuritySettingsRepository
 import com.sherifradwan.ancnative.security.isValidNewPin
+import com.sherifradwan.ancnative.storage.BackupInspectionResult
+import com.sherifradwan.ancnative.ui.components.FieldFamilies
+import com.sherifradwan.ancnative.ui.components.FormFieldLabel
+import com.sherifradwan.ancnative.ui.components.LocalFieldFamily
+import com.sherifradwan.ancnative.ui.components.RecordFilterChip
+import com.sherifradwan.ancnative.ui.components.RecordSectionCard
+import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordType
+import com.sherifradwan.ancnative.ui.patienthub.components.SheetCancelSaveRow
+import java.io.File
+import java.io.FileOutputStream
 
 enum class SettingsTab {
     SECURITY,
@@ -82,6 +95,7 @@ enum class SettingsTab {
     MED_CATALOG,
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SecuritySettingsDialog(
     securityRepo: SecuritySettingsRepository,
@@ -99,6 +113,7 @@ fun SecuritySettingsDialog(
 
     var showChangePinDialog by remember { mutableStateOf(false) }
     var biometricFeedbackMessage by remember { mutableStateOf<String?>(null) }
+    var isBiometricError by remember { mutableStateOf(false) }
 
     var backupStatusMessage by remember { mutableStateOf<String?>(null) }
     var isBackupError by remember { mutableStateOf(false) }
@@ -106,6 +121,14 @@ fun SecuritySettingsDialog(
     var pendingRestoreBytes by remember { mutableStateOf<ByteArray?>(null) }
     var showRestoreConfirmDialog by remember { mutableStateOf(false) }
     var showRestorePassphraseDialog by remember { mutableStateOf(false) }
+
+    val backupReadErrorMessage = stringResource(R.string.security_backup_read_error)
+    val brandingSavedNotice = stringResource(R.string.security_branding_saved)
+    val biometricVerifiedMessage = stringResource(R.string.security_biometric_verified)
+    val biometricFailedMessage = stringResource(R.string.security_biometric_failed)
+    val backupShareTitle = stringResource(R.string.security_backup_share_title)
+    val backupExportFailMessage = stringResource(R.string.security_backup_export_fail)
+    val restoreDecryptFailMessage = stringResource(R.string.security_restore_decrypt_fail)
 
     val restoreFileLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.GetContent(),
@@ -120,7 +143,7 @@ fun SecuritySettingsDialog(
                 pendingRestoreBytes = bytes
                 showRestoreConfirmDialog = true
             } else {
-                backupStatusMessage = "Unable to read selected backup file."
+                backupStatusMessage = backupReadErrorMessage
                 isBackupError = true
             }
         }
@@ -130,526 +153,545 @@ fun SecuritySettingsDialog(
         BiometricAuthManager.isBiometricAvailable(context)
     }
 
+    val maxHeight = (LocalConfiguration.current.screenHeightDp - 32).dp
+    var selectedTab by remember { mutableStateOf(SettingsTab.SECURITY) }
+    val catalogRepo = remember { ClinicalCatalogRepository.getInstance(context) }
+    val patientFamily = FieldFamilies.patient()
+    val narrowStacked = LocalDensity.current.fontScale > 1.3f
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
-        Card(
+        Surface(
             modifier = Modifier
                 .fillMaxWidth(0.94f)
-                .padding(vertical = 20.dp)
+                .heightIn(max = maxHeight)
                 .testTag("securitySettingsDialog"),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            shape = RecordShapes.Large,
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                // Header: Clinic Emblem + Title + Close Button
+            Column(modifier = Modifier.fillMaxWidth()) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 4.dp, top = 12.dp, bottom = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surface,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                        modifier = Modifier.size(44.dp),
                     ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            modifier = Modifier.size(46.dp),
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Image(
-                                    painter = painterResource(R.drawable.clinic_logo_foreground),
-                                    contentDescription = "Clinic Logo",
-                                    modifier = Modifier.size(42.dp),
-                                )
-                            }
-                        }
-                        Column {
-                            Text(
-                                text = "Clinic & System Settings",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Text(
-                                text = "Clinic settings & security",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        Box(contentAlignment = Alignment.Center) {
+                            Image(
+                                painter = painterResource(R.drawable.clinic_logo_foreground),
+                                contentDescription = stringResource(R.string.clinic_logo_cd),
+                                modifier = Modifier.size(38.dp),
                             )
                         }
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.security_settings_dialog_title),
+                            style = RecordType.SectionTitle,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.semantics { heading() },
+                        )
+                        Text(
+                            text = settingsState.clinicName,
+                            style = RecordType.Secondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                     }
 
                     IconButton(
                         onClick = onDismiss,
-                        modifier = Modifier.testTag("closeSettingsButton"),
+                        modifier = Modifier
+                            .minimumTouchTarget()
+                            .testTag("closeSettingsButton"),
                     ) {
-                        Icon(Icons.Default.Close, contentDescription = "Close")
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = stringResource(R.string.close),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
                     }
                 }
 
-                var selectedTab by remember { mutableStateOf(SettingsTab.SECURITY) }
-                val catalogRepo = remember { ClinicalCatalogRepository.getInstance(context) }
-
-                PrimaryTabRow(
-                    selectedTabIndex = selectedTab.ordinal,
-                    containerColor = Color.Transparent,
-                    divider = {},
+                FlowRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    Tab(
+                    RecordFilterChip(
                         selected = selectedTab == SettingsTab.SECURITY,
+                        label = stringResource(R.string.settings_tab_security),
                         onClick = { selectedTab = SettingsTab.SECURITY },
-                        text = {
-                            Text(
-                                "Security & Clinic",
-                                fontWeight = if (selectedTab == SettingsTab.SECURITY) FontWeight.Bold else FontWeight.Normal,
-                                color = if (selectedTab == SettingsTab.SECURITY) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        },
+                        tag = "settingsTabSecurity",
+                        wrap = true,
+                        minTouchTarget = true,
                     )
-                    Tab(
+                    RecordFilterChip(
                         selected = selectedTab == SettingsTab.LAB_CATALOG,
+                        label = stringResource(R.string.settings_tab_lab_tests),
                         onClick = { selectedTab = SettingsTab.LAB_CATALOG },
-                        text = {
-                            Text(
-                                "Lab tests",
-                                fontWeight = if (selectedTab == SettingsTab.LAB_CATALOG) FontWeight.Bold else FontWeight.Normal,
-                                color = if (selectedTab == SettingsTab.LAB_CATALOG) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        },
+                        tag = "settingsTabLabCatalog",
+                        wrap = true,
+                        minTouchTarget = true,
                     )
-                    Tab(
+                    RecordFilterChip(
                         selected = selectedTab == SettingsTab.MED_CATALOG,
+                        label = stringResource(R.string.settings_tab_medications),
                         onClick = { selectedTab = SettingsTab.MED_CATALOG },
-                        text = {
-                            Text(
-                                "Medications",
-                                fontWeight = if (selectedTab == SettingsTab.MED_CATALOG) FontWeight.Bold else FontWeight.Normal,
-                                color = if (selectedTab == SettingsTab.MED_CATALOG) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        },
+                        tag = "settingsTabMedCatalog",
+                        wrap = true,
+                        minTouchTarget = true,
                     )
                 }
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-                if (selectedTab == SettingsTab.LAB_CATALOG) {
-                    LabCatalogSettingsSection(catalogDelegate = catalogRepo)
-                } else if (selectedTab == SettingsTab.MED_CATALOG) {
-                    MedicationCatalogSettingsSection(catalogDelegate = catalogRepo)
-                } else {
-                    // Section: Theme Mode (Light / Dark / System Default)
-                    Card(
-                        shape = RoundedCornerShape(14.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-                        modifier = Modifier.fillMaxWidth().testTag("themeSettingsCard"),
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(14.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                // CatalogSettingsSections expect SecuritySettingsDialog to own vertical scrolling.
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f, fill = false)
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    if (selectedTab == SettingsTab.LAB_CATALOG) {
+                        LabCatalogSettingsSection(catalogDelegate = catalogRepo)
+                    } else if (selectedTab == SettingsTab.MED_CATALOG) {
+                        MedicationCatalogSettingsSection(catalogDelegate = catalogRepo)
+                    } else {
+                        CompositionLocalProvider(LocalFieldFamily provides patientFamily) {
+                            RecordSectionCard(
+                                title = stringResource(R.string.security_theme_title),
+                                family = patientFamily,
+                                modifier = Modifier.testTag("themeSettingsCard"),
                             ) {
-                                Icon(Icons.Default.BrightnessAuto, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                 Text(
-                                    text = "App Theme & Appearance",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary,
+                                    text = stringResource(R.string.security_theme_subtitle),
+                                    style = RecordType.Secondary,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
-                            }
 
-                            Text(
-                                text = "Choose color scheme for your clinical environment (Bright Clinic or Dimmed Ultrasound Suite):",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-
-                            AppThemeMode.entries.forEach { mode ->
-                                val isSelected = settingsState.themeMode == mode
-                                Row(
+                                Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .clickable {
-                                            securityRepo.setThemeMode(mode)
-                                            settingsState = securityRepo.settings.value
-                                        }
-                                        .padding(vertical = 4.dp, horizontal = 6.dp)
-                                        .testTag("themeOption-${mode.name}"),
-                                    verticalAlignment = Alignment.CenterVertically,
+                                        .selectableGroup(),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp),
                                 ) {
-                                    RadioButton(
-                                        selected = isSelected,
-                                        onClick = {
-                                            securityRepo.setThemeMode(mode)
-                                            settingsState = securityRepo.settings.value
-                                        },
-                                    )
-                                    Spacer(Modifier.width(8.dp))
-                                    Column {
-                                        Text(
-                                            text = mode.displayNameEn,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                        )
+                                    AppThemeMode.entries.forEach { mode ->
+                                        val isSelected = settingsState.themeMode == mode
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .heightIn(min = 48.dp)
+                                                .clip(RecordShapes.Small)
+                                                .clickable {
+                                                    securityRepo.setThemeMode(mode)
+                                                    settingsState = securityRepo.settings.value
+                                                }
+                                                .padding(horizontal = 4.dp, vertical = 4.dp)
+                                                .testTag("themeOption-${mode.name}"),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            RadioButton(
+                                                selected = isSelected,
+                                                onClick = {
+                                                    securityRepo.setThemeMode(mode)
+                                                    settingsState = securityRepo.settings.value
+                                                },
+                                            )
+                                            Spacer(Modifier.width(8.dp))
+                                            Text(
+                                                text = stringResource(mode.labelRes()),
+                                                style = if (isSelected) RecordType.KeyValue else RecordType.FieldValue,
+                                                color = if (isSelected) {
+                                                    MaterialTheme.colorScheme.primary
+                                                } else {
+                                                    MaterialTheme.colorScheme.onSurface
+                                                },
+                                            )
+                                        }
                                     }
                                 }
                             }
-                        }
-                    }
 
-                    // Section 0: Clinic Branding & Visual Identity
-                Card(
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Column(
-                        modifier = Modifier.padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            Text(
-                                text = "Clinic Branding & Visual Identity",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-
-                        // Logo preview & details
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                shadowElevation = 2.dp,
-                                modifier = Modifier.size(56.dp),
+                            RecordSectionCard(
+                                title = stringResource(R.string.security_branding_title),
+                                family = patientFamily,
                             ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Image(
-                                        painter = painterResource(R.drawable.clinic_logo_foreground),
-                                        contentDescription = "Clinic Logo",
-                                        modifier = Modifier.size(50.dp),
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                ) {
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = MaterialTheme.colorScheme.surface,
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                        modifier = Modifier.size(48.dp),
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Image(
+                                                painter = painterResource(R.drawable.clinic_logo_foreground),
+                                                contentDescription = stringResource(R.string.clinic_logo_cd),
+                                                modifier = Modifier.size(42.dp),
+                                            )
+                                        }
+                                    }
+                                    Column(
+                                        modifier = Modifier.weight(1f),
+                                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.security_emblem_title),
+                                            style = RecordType.CardName,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                        )
+                                        Text(
+                                            text = stringResource(R.string.security_emblem_desc),
+                                            style = RecordType.Secondary,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
+
+                                SecurityLabeledField(
+                                    value = editedClinicName,
+                                    onValueChange = { editedClinicName = it },
+                                    label = stringResource(R.string.security_clinic_name_label),
+                                    tag = "clinicNameField",
+                                )
+
+                                SecurityLabeledField(
+                                    value = editedClinicSubtitle,
+                                    onValueChange = { editedClinicSubtitle = it },
+                                    label = stringResource(R.string.security_clinic_subtitle_label),
+                                    tag = "clinicSubtitleField",
+                                )
+
+                                if (brandingSavedMessage != null) {
+                                    Text(
+                                        text = brandingSavedMessage ?: "",
+                                        style = RecordType.Secondary,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier
+                                            .semantics { liveRegion = LiveRegionMode.Polite }
+                                            .testTag("brandingSavedMessage"),
+                                    )
+                                }
+
+                                Button(
+                                    onClick = {
+                                        securityRepo.updateClinicBranding(editedClinicName, editedClinicSubtitle)
+                                        settingsState = securityRepo.settings.value
+                                        brandingSavedMessage = brandingSavedNotice
+                                    },
+                                    shape = RecordShapes.Small,
+                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .minimumTouchTarget()
+                                        .testTag("saveBrandingButton"),
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.security_save_branding),
+                                        style = RecordType.Action,
+                                        maxLines = 2,
+                                        textAlign = TextAlign.Center,
                                     )
                                 }
                             }
-                            Column(modifier = Modifier.weight(1f)) {
+
+                            RecordSectionCard(
+                                title = stringResource(R.string.security_pin_section_title),
+                                family = patientFamily,
+                            ) {
                                 Text(
-                                    text = "Clinic Official Emblem",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface,
+                                    text = stringResource(R.string.security_pin_section_desc),
+                                    style = RecordType.Secondary,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
+
+                                OutlinedButton(
+                                    onClick = { showChangePinDialog = true },
+                                    shape = RecordShapes.Small,
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .minimumTouchTarget()
+                                        .testTag("changePinButton"),
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.security_change_pin_action),
+                                        style = RecordType.Action,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        maxLines = 2,
+                                        textAlign = TextAlign.Center,
+                                    )
+                                }
+                            }
+
+                            RecordSectionCard(
+                                title = stringResource(R.string.security_biometric_title),
+                                family = patientFamily,
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 56.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Column(
+                                        modifier = Modifier.weight(1f),
+                                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.security_biometric_switch_label),
+                                            style = RecordType.CardName,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                        )
+                                        Text(
+                                            text = stringResource(
+                                                if (isBiometricAvailable) {
+                                                    R.string.security_biometric_ready
+                                                } else {
+                                                    R.string.security_biometric_unavailable
+                                                },
+                                            ),
+                                            style = RecordType.Secondary,
+                                            color = if (isBiometricAvailable) {
+                                                MaterialTheme.colorScheme.primary
+                                            } else {
+                                                MaterialTheme.colorScheme.error
+                                            },
+                                        )
+                                    }
+
+                                    Switch(
+                                        checked = settingsState.isBiometricEnabled && isBiometricAvailable,
+                                        onCheckedChange = { enabled ->
+                                            securityRepo.setBiometricEnabled(enabled)
+                                            settingsState = securityRepo.settings.value
+                                        },
+                                        enabled = isBiometricAvailable,
+                                        modifier = Modifier.testTag("biometricSwitch"),
+                                    )
+                                }
+
                                 Text(
-                                    text = "Consistent with application icon and splash screen with ivory background #FBF8F5 without clipping.",
-                                    style = MaterialTheme.typography.labelSmall,
+                                    text = stringResource(R.string.security_biometric_desc),
+                                    style = RecordType.Secondary,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+
+                                if (isBiometricAvailable && activity != null) {
+                                    OutlinedButton(
+                                        onClick = {
+                                            BiometricAuthManager.promptBiometric(
+                                                activity = activity,
+                                                onResult = { ok ->
+                                                    isBiometricError = !ok
+                                                    biometricFeedbackMessage = if (ok) {
+                                                        biometricVerifiedMessage
+                                                    } else {
+                                                        biometricFailedMessage
+                                                    }
+                                                },
+                                            )
+                                        },
+                                        shape = RecordShapes.Small,
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .minimumTouchTarget()
+                                            .testTag("testBiometricButton"),
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.security_test_biometric),
+                                            style = RecordType.Action,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            maxLines = 2,
+                                            textAlign = TextAlign.Center,
+                                        )
+                                    }
+                                }
+
+                                if (biometricFeedbackMessage != null) {
+                                    Text(
+                                        text = biometricFeedbackMessage ?: "",
+                                        style = RecordType.Secondary,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (isBiometricError) {
+                                            MaterialTheme.colorScheme.error
+                                        } else {
+                                            MaterialTheme.colorScheme.primary
+                                        },
+                                        modifier = Modifier
+                                            .semantics { liveRegion = LiveRegionMode.Polite }
+                                            .testTag("biometricFeedbackMessage"),
+                                    )
+                                }
+                            }
+
+                            RecordSectionCard(
+                                title = stringResource(R.string.security_auto_lock_title),
+                                family = patientFamily,
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.security_auto_lock_body),
+                                    style = RecordType.FieldValue,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
-                        }
 
-                        OutlinedTextField(
-                            value = editedClinicName,
-                            onValueChange = { editedClinicName = it },
-                            label = { Text("Clinic Name (Header & Top Bar)") },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth().testTag("clinicNameField"),
-                        )
-
-                        OutlinedTextField(
-                            value = editedClinicSubtitle,
-                            onValueChange = { editedClinicSubtitle = it },
-                            label = { Text("Specialty or Description (Subtitle)") },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth().testTag("clinicSubtitleField"),
-                        )
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            if (brandingSavedMessage != null) {
+                            RecordSectionCard(
+                                title = stringResource(R.string.security_backup_title),
+                                family = patientFamily,
+                                modifier = Modifier.testTag("backupVaultSettingsCard"),
+                            ) {
                                 Text(
-                                    text = brandingSavedMessage ?: "",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.weight(1f),
+                                    text = stringResource(R.string.security_backup_desc),
+                                    style = RecordType.Secondary,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
+
+                                if (backupStatusMessage != null) {
+                                    Surface(
+                                        shape = RecordShapes.Small,
+                                        color = if (isBackupError) {
+                                            MaterialTheme.colorScheme.errorContainer
+                                        } else {
+                                            patientFamily.container
+                                        },
+                                        border = BorderStroke(
+                                            1.dp,
+                                            if (isBackupError) {
+                                                MaterialTheme.colorScheme.error
+                                            } else {
+                                                MaterialTheme.colorScheme.outlineVariant
+                                            },
+                                        ),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .testTag("backupStatusMessage"),
+                                    ) {
+                                        Text(
+                                            text = backupStatusMessage ?: "",
+                                            style = RecordType.Secondary,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = if (isBackupError) {
+                                                MaterialTheme.colorScheme.onErrorContainer
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurface
+                                            },
+                                            modifier = Modifier
+                                                .padding(horizontal = 12.dp, vertical = 10.dp)
+                                                .semantics { liveRegion = LiveRegionMode.Polite },
+                                        )
+                                    }
+                                }
+
+                                val exportButton: @Composable (Modifier) -> Unit = { buttonModifier ->
+                                    Button(
+                                        onClick = { showExportDialog = true },
+                                        shape = RecordShapes.Small,
+                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 10.dp),
+                                        modifier = buttonModifier
+                                            .minimumTouchTarget()
+                                            .testTag("exportBackupButton"),
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.security_export_backup),
+                                            style = RecordType.Action,
+                                            maxLines = 2,
+                                            textAlign = TextAlign.Center,
+                                        )
+                                    }
+                                }
+                                val restoreButton: @Composable (Modifier) -> Unit = { buttonModifier ->
+                                    OutlinedButton(
+                                        onClick = { restoreFileLauncher.launch("*/*") },
+                                        shape = RecordShapes.Small,
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 10.dp),
+                                        modifier = buttonModifier
+                                            .minimumTouchTarget()
+                                            .testTag("restoreBackupButton"),
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.security_restore_backup),
+                                            style = RecordType.Action,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            maxLines = 2,
+                                            textAlign = TextAlign.Center,
+                                        )
+                                    }
+                                }
+
+                                if (narrowStacked) {
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        exportButton(Modifier.fillMaxWidth())
+                                        restoreButton(Modifier.fillMaxWidth())
+                                    }
+                                } else {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        exportButton(Modifier.weight(1f))
+                                        restoreButton(Modifier.weight(1f))
+                                    }
+                                }
                             }
+
                             Button(
                                 onClick = {
-                                    securityRepo.updateClinicBranding(editedClinicName, editedClinicSubtitle)
-                                    settingsState = securityRepo.settings.value
-                                    brandingSavedMessage = "Clinic branding saved and applied."
+                                    onDismiss()
+                                    onLockNow()
                                 },
-                                modifier = Modifier.testTag("saveBrandingButton"),
-                            ) {
-                                Text("Save Clinic Branding")
-                            }
-                        }
-                    }
-                }
-
-                // Section 1: 6-Digit PIN Management
-                Card(
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Column(
-                        modifier = Modifier.padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Icon(Icons.Default.Password, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            Text(
-                                text = "PIN Passcode (6 Digits)",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-
-                        Text(
-                            text = "6-digit security PIN to prevent unauthorized access to clinical patient records.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-
-                        OutlinedButton(
-                            onClick = { showChangePinDialog = true },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .testTag("changePinButton"),
-                        ) {
-                            Text("Change 6-Digit PIN", fontWeight = FontWeight.SemiBold)
-                        }
-                    }
-                }
-
-                // Section 2: Biometric Fingerprint Management
-                Card(
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Column(
-                        modifier = Modifier.padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.weight(1f),
-                            ) {
-                                Icon(Icons.Default.Fingerprint, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                                Column {
-                                    Text(
-                                        text = "Biometric Fingerprint Unlock",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                    )
-                                    Text(
-                                        text = if (isBiometricAvailable) "Fingerprint supported and ready" else "Fingerprint not available on device",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = if (isBiometricAvailable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                                    )
-                                }
-                            }
-
-                            Switch(
-                                checked = settingsState.isBiometricEnabled && isBiometricAvailable,
-                                onCheckedChange = { enabled ->
-                                    securityRepo.setBiometricEnabled(enabled)
-                                    settingsState = securityRepo.settings.value
-                                },
-                                enabled = isBiometricAvailable,
-                                modifier = Modifier.testTag("biometricSwitch"),
-                            )
-                        }
-
-                        Text(
-                            text = "When enabled, you can unlock the application instantly with a single touch without typing your PIN each time.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-
-                        if (isBiometricAvailable && activity != null) {
-                            OutlinedButton(
-                                onClick = {
-                                    BiometricAuthManager.promptBiometric(
-                                        activity = activity,
-                                        onResult = { ok ->
-                                            biometricFeedbackMessage = if (ok) "Fingerprint verified. Ready for use." else "Fingerprint verification failed."
-                                        },
-                                    )
-                                },
+                                shape = RecordShapes.Small,
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .testTag("testBiometricButton"),
+                                    .minimumTouchTarget()
+                                    .testTag("lockAppNowButton"),
                             ) {
-                                Text("Test Fingerprint Now")
-                            }
-                        }
-
-                        if (biometricFeedbackMessage != null) {
-                            Text(
-                                text = biometricFeedbackMessage ?: "",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Bold,
-                            )
-                        }
-                    }
-                }
-
-                // Section 3: Auto-Lock Timeout Controls
-                Card(
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Column(
-                        modifier = Modifier.padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Icon(Icons.Default.LockClock, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            Text(
-                                text = "Auto-Lock Timeout",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-
-                        Text(
-                            text = "Locks after 10 minutes away.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-
-                    // Section 4: Vault Backup & Restore
-                    Card(
-                        shape = RoundedCornerShape(14.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-                        modifier = Modifier.fillMaxWidth().testTag("backupVaultSettingsCard"),
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(14.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                 Text(
-                                    text = "Vault Backup & Restore",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary,
+                                    text = stringResource(R.string.security_lock_app_now),
+                                    style = RecordType.Action,
+                                    maxLines = 2,
+                                    textAlign = TextAlign.Center,
                                 )
                             }
-
-                            Text(
-                                text = "Safely export and restore patient records. Backups contain patient records only, not photos.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-
-                            if (backupStatusMessage != null) {
-                                Text(
-                                    text = backupStatusMessage ?: "",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = if (isBackupError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                            }
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Button(
-                                    onClick = { showExportDialog = true },
-                                    modifier = Modifier.weight(1f).testTag("exportBackupButton"),
-                                ) {
-                                    Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("Export Backup", maxLines = 1)
-                                }
-
-                                OutlinedButton(
-                                    onClick = {
-                                        restoreFileLauncher.launch("*/*")
-                                    },
-                                    modifier = Modifier.weight(1f).testTag("restoreBackupButton"),
-                                ) {
-                                    Icon(Icons.Default.Security, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("Restore Backup", maxLines = 1)
-                                }
-                            }
                         }
-                    }
-
-                    // Lock App Now Button
-                    Button(
-                        onClick = {
-                            onDismiss()
-                            onLockNow()
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("lockAppNowButton"),
-                    ) {
-                        Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("Lock App Now", fontWeight = FontWeight.Bold)
                     }
                 }
             }
         }
     }
 
-    // Sub-dialog: Change 6-Digit PIN
     if (showChangePinDialog) {
         ChangePinDialog(
             securityRepo = securityRepo,
@@ -661,7 +703,6 @@ fun SecuritySettingsDialog(
         )
     }
 
-    // Sub-dialog: Export Backup
     if (showExportDialog && onExportBackup != null) {
         ExportBackupDialog(
             onDismiss = { showExportDialog = false },
@@ -683,15 +724,15 @@ fun SecuritySettingsDialog(
                                 putExtra(Intent.EXTRA_STREAM, contentUri)
                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             }
-                            context.startActivity(Intent.createChooser(shareIntent, "Save or Share Encrypted Backup"))
-                            backupStatusMessage = "Encrypted backup created and exported (${backupBytes.size} bytes)."
+                            context.startActivity(Intent.createChooser(shareIntent, backupShareTitle))
+                            backupStatusMessage = context.getString(R.string.security_backup_export_ok, backupBytes.size)
                             isBackupError = false
                         } catch (e: Exception) {
-                            backupStatusMessage = "Backup created but unable to open share sheet: ${e.message}"
+                            backupStatusMessage = context.getString(R.string.security_backup_share_error, e.message ?: "")
                             isBackupError = true
                         }
                     } else {
-                        backupStatusMessage = "Failed to generate backup."
+                        backupStatusMessage = backupExportFailMessage
                         isBackupError = true
                     }
                 }
@@ -705,17 +746,39 @@ fun SecuritySettingsDialog(
                 showRestoreConfirmDialog = false
                 pendingRestoreBytes = null
             },
+            shape = RecordShapes.Large,
+            containerColor = MaterialTheme.colorScheme.surface,
+            title = {
+                Text(
+                    text = stringResource(R.string.security_restore_confirm_title),
+                    style = RecordType.SectionTitle,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.semantics { heading() },
+                )
+            },
             text = {
-                Text("Restoring replaces every patient on this phone with the backup. This cannot be undone.")
+                Text(
+                    text = stringResource(R.string.security_restore_confirm_body),
+                    style = RecordType.FieldValue,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             },
             confirmButton = {
-                Button(
+                TextButton(
                     onClick = {
                         showRestoreConfirmDialog = false
                         showRestorePassphraseDialog = true
                     },
+                    shape = RecordShapes.Small,
+                    modifier = Modifier
+                        .minimumTouchTarget()
+                        .testTag("confirmReplaceAllButton"),
                 ) {
-                    Text("Replace all")
+                    Text(
+                        text = stringResource(R.string.security_restore_replace_all),
+                        style = RecordType.Action,
+                        color = MaterialTheme.colorScheme.error,
+                    )
                 }
             },
             dismissButton = {
@@ -724,15 +787,22 @@ fun SecuritySettingsDialog(
                         showRestoreConfirmDialog = false
                         pendingRestoreBytes = null
                     },
+                    shape = RecordShapes.Small,
+                    modifier = Modifier
+                        .minimumTouchTarget()
+                        .testTag("cancelReplaceAllButton"),
                 ) {
-                    Text("Cancel")
+                    Text(
+                        text = stringResource(R.string.cancel),
+                        style = RecordType.Action,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
                 }
             },
             modifier = Modifier.testTag("restore_confirm_dialog"),
         )
     }
 
-    // Sub-dialog: Restore Passphrase
     if (showRestorePassphraseDialog && pendingRestoreBytes != null && onRestoreBackup != null) {
         RestorePassphraseDialog(
             onDismiss = {
@@ -746,15 +816,19 @@ fun SecuritySettingsDialog(
                 onRestoreBackup(bytes, passphrase) { result ->
                     when (result) {
                         is BackupInspectionResult.Valid -> {
-                            backupStatusMessage = "Vault restored (${result.patientCount} patients)."
+                            backupStatusMessage = context.resources.getQuantityString(
+                                R.plurals.security_vault_restored,
+                                result.patientCount,
+                                result.patientCount,
+                            )
                             isBackupError = false
                         }
                         is BackupInspectionResult.InvalidPassphraseOrCorrupted -> {
-                            backupStatusMessage = "Decryption failed: incorrect passphrase or corrupted backup file."
+                            backupStatusMessage = restoreDecryptFailMessage
                             isBackupError = true
                         }
                         is BackupInspectionResult.Error -> {
-                            backupStatusMessage = "Error during restore: ${result.reason}"
+                            backupStatusMessage = context.getString(R.string.security_restore_error, result.reason)
                             isBackupError = true
                         }
                     }
@@ -762,6 +836,134 @@ fun SecuritySettingsDialog(
             },
         )
     }
+}
+
+@Composable
+private fun SecurityFormDialog(
+    title: String,
+    confirmLabel: String,
+    confirmTag: String,
+    cancelTag: String,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+    dialogTag: String? = null,
+    errorMessage: String? = null,
+    errorTag: String? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val maxHeight = (LocalConfiguration.current.screenHeightDp - 32).dp
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.92f)
+                .heightIn(max = maxHeight)
+                .let { if (dialogTag != null) it.testTag(dialogTag) else it },
+            shape = RecordShapes.Large,
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        ) {
+            CompositionLocalProvider(LocalFieldFamily provides FieldFamilies.patient()) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = title,
+                        style = RecordType.SectionTitle,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp, vertical = 14.dp)
+                            .semantics { heading() },
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f, fill = false)
+                            .verticalScroll(rememberScrollState())
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        content()
+                        errorMessage?.let { message ->
+                            Text(
+                                text = message,
+                                style = RecordType.Action,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier
+                                    .semantics { liveRegion = LiveRegionMode.Polite }
+                                    .let { m -> if (errorTag != null) m.testTag(errorTag) else m },
+                            )
+                        }
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    SheetCancelSaveRow(
+                        enabled = true,
+                        saving = false,
+                        saveEnabled = true,
+                        savingLabel = confirmLabel,
+                        onCancel = onDismiss,
+                        onSave = onConfirm,
+                        cancelTag = cancelTag,
+                        saveTag = confirmTag,
+                        spinnerTag = "${confirmTag}Spinner",
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SecurityLabeledField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    tag: String,
+    modifier: Modifier = Modifier,
+    isError: Boolean = false,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Box(modifier = Modifier.clearAndSetSemantics {}) {
+            if (isError) {
+                Text(
+                    text = label,
+                    style = RecordType.FieldLabel,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            } else {
+                FormFieldLabel(label)
+            }
+        }
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            isError = isError,
+            visualTransformation = visualTransformation,
+            keyboardOptions = keyboardOptions,
+            singleLine = true,
+            shape = RecordShapes.Small,
+            textStyle = RecordType.FieldValue,
+            colors = editorFieldColors(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics { contentDescription = label }
+                .testTag(tag),
+        )
+    }
+}
+
+@StringRes
+private fun AppThemeMode.labelRes(): Int = when (this) {
+    AppThemeMode.SYSTEM -> R.string.theme_mode_system
+    AppThemeMode.LIGHT -> R.string.theme_mode_light
+    AppThemeMode.DARK -> R.string.theme_mode_dark
 }
 
 @Composable
@@ -774,72 +976,53 @@ private fun ChangePinDialog(
     var confirmPin by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val invalidPinMessage = stringResource(R.string.pin_invalid)
+    val pinMismatchMessage = stringResource(R.string.security_pin_mismatch)
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text("Set New 6-Digit PIN", fontWeight = FontWeight.Bold)
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = stringResource(R.string.pin_rule),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
-                OutlinedTextField(
-                    value = newPin,
-                    onValueChange = { if (it.length <= 6 && it.all { c -> c in '0'..'9' }) newPin = it },
-                    label = { Text("New 6-Digit PIN") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth().testTag("newPinField"),
-                )
-
-                OutlinedTextField(
-                    value = confirmPin,
-                    onValueChange = { if (it.length <= 6 && it.all { c -> c in '0'..'9' }) confirmPin = it },
-                    label = { Text("Confirm New PIN") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth().testTag("confirmPinField"),
-                )
-
-                if (errorMessage != null) {
-                    Text(
-                        text = errorMessage ?: "",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
+    SecurityFormDialog(
+        title = stringResource(R.string.security_set_pin_title),
+        confirmLabel = stringResource(R.string.security_save_pin),
+        confirmTag = "saveNewPinButton",
+        cancelTag = "cancelChangePinButton",
+        dialogTag = "changePinDialog",
+        errorMessage = errorMessage,
+        errorTag = "changePinError",
+        onDismiss = onDismiss,
+        onConfirm = {
+            if (!isValidNewPin(newPin)) {
+                errorMessage = invalidPinMessage
+            } else if (newPin != confirmPin) {
+                errorMessage = pinMismatchMessage
+            } else {
+                if (securityRepo.updatePin(newPin)) onSuccess()
             }
         },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (!isValidNewPin(newPin)) {
-                        errorMessage = invalidPinMessage
-                    } else if (newPin != confirmPin) {
-                        errorMessage = "New PIN and confirmation do not match."
-                    } else {
-                        if (securityRepo.updatePin(newPin)) onSuccess()
-                    }
-                },
-                modifier = Modifier.testTag("saveNewPinButton"),
-            ) {
-                Text("Save New PIN")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        },
-    )
+    ) {
+        Text(
+            text = stringResource(R.string.pin_rule),
+            style = RecordType.Secondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        SecurityLabeledField(
+            value = newPin,
+            onValueChange = { if (it.length <= 6 && it.all { c -> c in '0'..'9' }) newPin = it },
+            label = stringResource(R.string.security_new_pin_label),
+            isError = errorMessage != null && !isValidNewPin(newPin),
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+            tag = "newPinField",
+        )
+
+        SecurityLabeledField(
+            value = confirmPin,
+            onValueChange = { if (it.length <= 6 && it.all { c -> c in '0'..'9' }) confirmPin = it },
+            label = stringResource(R.string.security_confirm_pin_label),
+            isError = errorMessage != null && isValidNewPin(newPin) && newPin != confirmPin,
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+            tag = "confirmPinField",
+        )
+    }
 }
 
 @Composable
@@ -850,70 +1033,52 @@ private fun ExportBackupDialog(
     var passphrase by remember { mutableStateOf("") }
     var confirmPassphrase by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val passphraseShortMessage = stringResource(R.string.security_passphrase_short)
+    val passphraseMismatchMessage = stringResource(R.string.security_passphrase_mismatch)
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text("Export Encrypted Backup", fontWeight = FontWeight.Bold)
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = "Enter a strong passphrase to encrypt the backup file (AES-256 GCM). You will need this passphrase to restore the vault.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
-                OutlinedTextField(
-                    value = passphrase,
-                    onValueChange = { passphrase = it },
-                    label = { Text("Backup Passphrase") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth().testTag("backupPassphraseField"),
-                )
-
-                OutlinedTextField(
-                    value = confirmPassphrase,
-                    onValueChange = { confirmPassphrase = it },
-                    label = { Text("Confirm Passphrase") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth().testTag("confirmBackupPassphraseField"),
-                )
-
-                if (errorMessage != null) {
-                    Text(
-                        text = errorMessage ?: "",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
+    SecurityFormDialog(
+        title = stringResource(R.string.security_export_dialog_title),
+        confirmLabel = stringResource(R.string.security_export_backup),
+        confirmTag = "confirmExportBackupButton",
+        cancelTag = "cancelExportBackupButton",
+        dialogTag = "exportBackupDialog",
+        errorMessage = errorMessage,
+        errorTag = "exportBackupError",
+        onDismiss = onDismiss,
+        onConfirm = {
+            if (passphrase.length < 6) {
+                errorMessage = passphraseShortMessage
+            } else if (passphrase != confirmPassphrase) {
+                errorMessage = passphraseMismatchMessage
+            } else {
+                onConfirm(passphrase.toCharArray())
             }
         },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (passphrase.length < 6) {
-                        errorMessage = "Passphrase must be at least 6 characters."
-                    } else if (passphrase != confirmPassphrase) {
-                        errorMessage = "Passphrase and confirmation do not match."
-                    } else {
-                        onConfirm(passphrase.toCharArray())
-                    }
-                },
-                modifier = Modifier.testTag("confirmExportBackupButton"),
-            ) {
-                Text("Export & Encrypt")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        },
-    )
+    ) {
+        Text(
+            text = stringResource(R.string.security_export_dialog_body),
+            style = RecordType.Secondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        SecurityLabeledField(
+            value = passphrase,
+            onValueChange = { passphrase = it },
+            label = stringResource(R.string.security_passphrase_label),
+            isError = errorMessage != null && passphrase.length < 6,
+            visualTransformation = PasswordVisualTransformation(),
+            tag = "backupPassphraseField",
+        )
+
+        SecurityLabeledField(
+            value = confirmPassphrase,
+            onValueChange = { confirmPassphrase = it },
+            label = stringResource(R.string.security_confirm_passphrase_label),
+            isError = errorMessage != null && passphrase.length >= 6 && passphrase != confirmPassphrase,
+            visualTransformation = PasswordVisualTransformation(),
+            tag = "confirmBackupPassphraseField",
+        )
+    }
 }
 
 @Composable
@@ -923,57 +1088,38 @@ private fun RestorePassphraseDialog(
 ) {
     var passphrase by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val passphraseEmptyMessage = stringResource(R.string.security_restore_passphrase_empty)
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text("Restore Encrypted Vault", fontWeight = FontWeight.Bold)
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = "Enter the passphrase for this encrypted file to restore all patients, visits, ultrasounds, and clinical records.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
-                OutlinedTextField(
-                    value = passphrase,
-                    onValueChange = { passphrase = it },
-                    label = { Text("Passphrase for Decryption") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth().testTag("restorePassphraseField"),
-                )
-
-                if (errorMessage != null) {
-                    Text(
-                        text = errorMessage ?: "",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
+    SecurityFormDialog(
+        title = stringResource(R.string.security_restore_dialog_title),
+        confirmLabel = stringResource(R.string.security_decrypt_and_restore),
+        confirmTag = "confirmRestoreBackupButton",
+        cancelTag = "cancelRestorePassphraseButton",
+        dialogTag = "restorePassphraseDialog",
+        errorMessage = errorMessage,
+        errorTag = "restorePassphraseError",
+        onDismiss = onDismiss,
+        onConfirm = {
+            if (passphrase.isEmpty()) {
+                errorMessage = passphraseEmptyMessage
+            } else {
+                onConfirm(passphrase.toCharArray())
             }
         },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (passphrase.isEmpty()) {
-                        errorMessage = "Please enter the passphrase."
-                    } else {
-                        onConfirm(passphrase.toCharArray())
-                    }
-                },
-                modifier = Modifier.testTag("confirmRestoreBackupButton"),
-            ) {
-                Text("Decrypt & Restore")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        },
-    )
+    ) {
+        Text(
+            text = stringResource(R.string.security_restore_dialog_body),
+            style = RecordType.Secondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        SecurityLabeledField(
+            value = passphrase,
+            onValueChange = { passphrase = it },
+            label = stringResource(R.string.security_passphrase_label),
+            isError = errorMessage != null,
+            visualTransformation = PasswordVisualTransformation(),
+            tag = "restorePassphraseField",
+        )
+    }
 }
