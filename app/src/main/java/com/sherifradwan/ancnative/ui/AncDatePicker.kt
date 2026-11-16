@@ -1,10 +1,10 @@
 package com.sherifradwan.ancnative.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -15,8 +15,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
@@ -28,18 +30,24 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.parseIsoDateOrNull
+import com.sherifradwan.ancnative.ui.components.FormFieldLabel
+import com.sherifradwan.ancnative.ui.components.RecordFilterChip
+import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordType
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.time.format.DateTimeParseException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,27 +104,59 @@ fun ClinicalDateField(
     fieldModifier: Modifier = Modifier,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
+    externalLabel: Boolean = false,
+    shape: Shape = OutlinedTextFieldDefaults.shape,
+    textStyle: TextStyle = LocalTextStyle.current,
+    useRecordStyle: Boolean = false,
 ) {
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
+    val styled = useRecordStyle || externalLabel
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = modifier.fillMaxWidth()) {
+        if (externalLabel) {
+            Box(modifier = Modifier.clearAndSetSemantics {}) {
+                if (error) {
+                    Text(
+                        text = label,
+                        style = RecordType.FieldLabel,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                } else {
+                    FormFieldLabel(text = label)
+                }
+            }
+        }
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            label = { Text(label) },
+            label = if (externalLabel) null else ({ Text(label) }),
             supportingText = if (error && errorMessage != null) {
-                ({ Text(errorMessage) })
+                ({
+                    Text(
+                        text = errorMessage,
+                        style = if (styled) RecordType.Tag else LocalTextStyle.current,
+                    )
+                })
             } else if (error) {
-                ({ Text(stringResource(R.string.correct_highlighted_field)) })
+                ({
+                    Text(
+                        text = stringResource(R.string.correct_highlighted_field),
+                        style = if (styled) RecordType.Tag else LocalTextStyle.current,
+                    )
+                })
             } else null,
             isError = error,
             singleLine = true,
             enabled = enabled,
+            shape = if (useRecordStyle) RecordShapes.Small else shape,
+            textStyle = if (useRecordStyle) RecordType.FieldValue else textStyle,
+            colors = if (styled) editorFieldColors() else OutlinedTextFieldDefaults.colors(),
             trailingIcon = {
                 IconButton(
                     onClick = { showDatePicker = true },
                     enabled = enabled,
-                    modifier = Modifier.testTag("${tag}CalendarButton"),
+                    modifier = (if (useRecordStyle) Modifier.minimumTouchTarget() else Modifier)
+                        .testTag("${tag}CalendarButton"),
                 ) {
                     Icon(
                         imageVector = Icons.Default.DateRange,
@@ -127,21 +167,36 @@ fun ClinicalDateField(
             },
             keyboardOptions = keyboardOptions,
             keyboardActions = keyboardActions,
-            modifier = fieldModifier.fillMaxWidth().testTag(tag),
+            modifier = fieldModifier
+                .fillMaxWidth()
+                .then(if (externalLabel) Modifier.semantics { contentDescription = label } else Modifier)
+                .testTag(tag),
         )
 
         if (showTodayButton && enabled) {
+            val todayLabel = stringResource(R.string.today) + " (" + LocalDate.now().toString() + ")"
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                FilterChip(
-                    selected = false,
-                    onClick = { onValueChange(LocalDate.now().toString()) },
-                    label = { Text(stringResource(R.string.today) + " (" + LocalDate.now().toString() + ")") },
-                    modifier = Modifier.minimumTouchTarget().testTag("${tag}TodayButton"),
-                )
+                if (useRecordStyle) {
+                    RecordFilterChip(
+                        selected = false,
+                        label = todayLabel,
+                        onClick = { onValueChange(LocalDate.now().toString()) },
+                        tag = "${tag}TodayButton",
+                        wrap = true,
+                        minTouchTarget = true,
+                    )
+                } else {
+                    FilterChip(
+                        selected = false,
+                        onClick = { onValueChange(LocalDate.now().toString()) },
+                        label = { Text(todayLabel) },
+                        modifier = Modifier.minimumTouchTarget().testTag("${tag}TodayButton"),
+                    )
+                }
             }
         }
     }

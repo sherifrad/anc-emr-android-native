@@ -646,8 +646,8 @@ class RegistrationRedesignTest {
         show(statusState(targetStatus = "archived"))
 
         node("patientStatusEditor").assertIsDisplayed()
-        compose.onNodeWithText(str(R.string.archived)).assertIsDisplayed()
-        assertStyle("archived status tag", hasText(str(R.string.archived)), 12f, FontWeight.SemiBold)
+        compose.onNodeWithText(str(R.string.status_will_be_archived)).assertIsDisplayed()
+        assertStyle("archived status tag", hasText(str(R.string.status_will_be_archived)), 12f, FontWeight.SemiBold)
 
         val notice = str(R.string.status_reason_notice)
         compose.onNodeWithText(notice).assertIsDisplayed()

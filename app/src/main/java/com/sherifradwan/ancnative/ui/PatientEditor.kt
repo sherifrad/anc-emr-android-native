@@ -65,6 +65,7 @@ import com.sherifradwan.ancnative.state.SavePhase
 import com.sherifradwan.ancnative.state.PatientDraft
 import com.sherifradwan.ancnative.ui.components.FieldFamilies
 import com.sherifradwan.ancnative.ui.components.FormFieldLabel
+import com.sherifradwan.ancnative.ui.components.RecordFilterChip
 import com.sherifradwan.ancnative.ui.components.RecordSectionCard
 import com.sherifradwan.ancnative.ui.components.RecordShapes
 import com.sherifradwan.ancnative.ui.components.RecordSpacing
@@ -342,7 +343,7 @@ fun PatientStatusEditor(
                 {
                     StatusTag(
                         kind = StatusKind.Incomplete,
-                        text = stringResource(R.string.archived),
+                        text = stringResource(R.string.status_will_be_archived),
                         modifier = Modifier.padding(end = 8.dp),
                     )
                 }
@@ -495,6 +496,8 @@ internal fun ChoiceGroup(
     rowGap: Dp = 8.dp,
     labelStyle: TextStyle = MaterialTheme.typography.titleMedium,
     labelColor: Color = Color.Unspecified,
+    labelOf: (String) -> String = { it },
+    useRecordChip: Boolean = false,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(label, style = labelStyle, color = labelColor)
@@ -503,13 +506,26 @@ internal fun ChoiceGroup(
             verticalArrangement = Arrangement.spacedBy(rowGap),
         ) {
             (if (includeUnknown) listOf("").plus(choices) else choices).forEachIndexed { index, value ->
-                FilterChip(
-                    selected = selected == value,
-                    onClick = { onSelected(value) },
-                    enabled = enabled,
-                    label = { Text(if (value.isEmpty()) stringResource(R.string.unknown) else value) },
-                    modifier = Modifier.minimumTouchTarget().testTag("$tagPrefix-$index"),
-                )
+                val displayLabel = if (value.isEmpty()) stringResource(R.string.unknown) else labelOf(value)
+                if (useRecordChip) {
+                    RecordFilterChip(
+                        selected = selected == value,
+                        label = displayLabel,
+                        onClick = { onSelected(value) },
+                        tag = "$tagPrefix-$index",
+                        enabled = enabled,
+                        wrap = true,
+                        minTouchTarget = true,
+                    )
+                } else {
+                    FilterChip(
+                        selected = selected == value,
+                        onClick = { onSelected(value) },
+                        enabled = enabled,
+                        label = { Text(displayLabel) },
+                        modifier = Modifier.minimumTouchTarget().testTag("$tagPrefix-$index"),
+                    )
+                }
             }
         }
     }

@@ -438,12 +438,12 @@ internal fun EditorField(
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            label = if (externalLabel) null else ({ Text(label) }),
+            label = if (externalLabel || label.isEmpty()) null else ({ Text(label) }),
             supportingText = if (showError) {
                 {
                     Text(
                         text = errorMessage ?: stringResource(R.string.correct_highlighted_field),
-                        style = if (externalLabel) RecordType.Tag else LocalTextStyle.current,
+                        style = if (externalLabel || label.isEmpty()) RecordType.Tag else LocalTextStyle.current,
                     )
                 }
             } else {
@@ -455,7 +455,7 @@ internal fun EditorField(
             enabled = enabled,
             shape = shape,
             textStyle = textStyle,
-            colors = if (externalLabel) editorFieldColors() else OutlinedTextFieldDefaults.colors(),
+            colors = if (externalLabel || label.isEmpty()) editorFieldColors() else OutlinedTextFieldDefaults.colors(),
             keyboardOptions = keyboardOptions,
             keyboardActions = keyboardActions,
             modifier = fieldModifier.fillMaxWidth().testTag(tag),

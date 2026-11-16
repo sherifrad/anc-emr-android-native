@@ -9,19 +9,30 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import com.sherifradwan.ancnative.ui.minimumTouchTarget
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RecordFilterChip(selected: Boolean, label: String, onClick: () -> Unit, tag: String) {
+fun RecordFilterChip(
+    selected: Boolean,
+    label: String,
+    onClick: () -> Unit,
+    tag: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    wrap: Boolean = false,
+    minTouchTarget: Boolean = false,
+) {
     FilterChip(
         selected = selected,
         onClick = onClick,
+        enabled = enabled,
         label = {
             Text(
                 text = label,
                 style = RecordType.Action.copy(fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium),
-                maxLines = 1,
-                softWrap = false,
+                maxLines = if (wrap) Int.MAX_VALUE else 1,
+                softWrap = wrap,
             )
         },
         shape = RecordShapes.Small,
@@ -32,11 +43,13 @@ fun RecordFilterChip(selected: Boolean, label: String, onClick: () -> Unit, tag:
             selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
         ),
         border = FilterChipDefaults.filterChipBorder(
-            enabled = true,
+            enabled = enabled,
             selected = selected,
             borderColor = MaterialTheme.colorScheme.outline,
             selectedBorderColor = MaterialTheme.colorScheme.primary,
         ),
-        modifier = Modifier.testTag(tag),
+        modifier = modifier
+            .then(if (minTouchTarget) Modifier.minimumTouchTarget() else Modifier)
+            .testTag(tag),
     )
 }

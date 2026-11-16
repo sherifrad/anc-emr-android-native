@@ -1,32 +1,27 @@
 package com.sherifradwan.ancnative.ui
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
@@ -34,11 +29,21 @@ import com.sherifradwan.ancnative.model.formatDmy
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
-import com.sherifradwan.ancnative.state.activeFlowForRoute
 import com.sherifradwan.ancnative.state.ClinicalValidationError
 import com.sherifradwan.ancnative.state.DatingDraftField
 import com.sherifradwan.ancnative.state.SavePhase
+import com.sherifradwan.ancnative.state.activeFlowForRoute
 import com.sherifradwan.ancnative.state.datingDraftToDating
+import com.sherifradwan.ancnative.ui.components.FieldFamilies
+import com.sherifradwan.ancnative.ui.components.FormFieldLabel
+import com.sherifradwan.ancnative.ui.components.RecordFilterChip
+import com.sherifradwan.ancnative.ui.components.RecordSectionCard
+import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordType
+import com.sherifradwan.ancnative.ui.components.StatusTone
+import com.sherifradwan.ancnative.ui.components.StatusWord
+import com.sherifradwan.ancnative.ui.components.currentFieldFamily
+import com.sherifradwan.ancnative.ui.patienthub.components.SheetCancelSaveRow
 import java.time.LocalDate
 
 @Composable
@@ -52,7 +57,6 @@ fun DatingEditor(
     val enabled = state.savePhase == SavePhase.IDLE || state.savePhase == SavePhase.ERROR
     val inFlow = state.activeFlowForRoute() != null
 
-    // Compute live gestational age and EDD preview from current draft inputs
     val currentDatingPreview = remember(draft.values) {
         datingDraftToDating(patient.id, draft.values)
     }
@@ -63,266 +67,249 @@ fun DatingEditor(
         GestationalAgeEngine.calculate(currentDatingPreview, LocalDate.now())
     }
 
+    val obstetricFamily = FieldFamilies.obstetric()
+    val notesLabel = stringResource(R.string.notes)
+
     EditorPage(
         title = stringResource(R.string.dating_editor),
-        subtitle = "${patient.displayName} · Gestational Age & Estimated Due Date",
+        subtitle = patient.displayName,
         tag = "datingEditor",
         showHeader = !inFlow,
+        useRecordStyle = true,
     ) {
-        GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
+        GenericEditorErrorCard(draft.errors.isNotEmpty(), state, useRecordStyle = true)
 
-        // CARD 1: BASELINE DATING PARAMETERS
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        RecordSectionCard(
+            title = stringResource(R.string.dating_baseline_section),
+            family = obstetricFamily,
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(
-                    text = "1. Baseline Dating Parameters",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-
-                val methodOptions = listOf(
-                    "LMP" to stringResource(R.string.lmp_date),
-                    "Ultrasound" to stringResource(R.string.ultrasound),
-                    "IVF_TRANSFER" to stringResource(R.string.ivf_transfer_date),
-                    "Clinical" to stringResource(R.string.dating_method_clinical),
-                )
-                val visibility = datingFieldVisibility(draft.values.datingMethod)
-                val selectedMethod = visibility.selectedMethod
-                ClinicalDropdownField(
-                    label = stringResource(R.string.dating_method),
-                    selectedValue = methodOptions.firstOrNull { it.first == selectedMethod }?.second ?: "",
-                    options = methodOptions.map { it.second },
-                    onSelect = { picked ->
-                        methodOptions.firstOrNull { it.second == picked }?.let { (key, _) ->
-                            onEvent(AncEvent.DatingDraftChanged(DatingDraftField.DATING_METHOD, key))
-                        }
-                    },
-                    enabled = enabled,
-                    tag = "datingMethodDropdown",
-                    modifier = Modifier.fillMaxWidth(),
-                )
-
-                if (visibility.showLmp) {
-                    ClinicalDateField(
-                        value = draft.values.lmpDate,
-                        onValueChange = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.LMP_DATE, it)) },
-                        label = stringResource(R.string.lmp_date),
-                        tag = "lmpDate",
-                        enabled = enabled,
-                        error = draft.errors.contains(ClinicalValidationError.INVALID_DATE),
-                        showTodayButton = true,
-                    )
-                }
-
-                if (visibility.showUltrasoundEdd) {
-                    ClinicalDateField(
-                        value = draft.values.ultrasoundEdd,
-                        onValueChange = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.ULTRASOUND_EDD, it)) },
-                        label = stringResource(R.string.ultrasound_edd),
-                        tag = "ultrasoundEdd",
-                        enabled = enabled,
-                        error = draft.errors.contains(ClinicalValidationError.INVALID_DATE),
-                        showTodayButton = false,
-                    )
-                }
-
-                // IVF Specific inputs
-                if (visibility.showIvf) {
-                    ClinicalDateField(
-                        value = draft.values.transferDate,
-                        onValueChange = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.TRANSFER_DATE, it)) },
-                        label = stringResource(R.string.ivf_transfer_date),
-                        tag = "ivfTransferDate",
-                        enabled = enabled,
-                        error = draft.errors.contains(ClinicalValidationError.INVALID_DATE),
-                        showTodayButton = false,
-                    )
-
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(
-                            text = stringResource(R.string.embryo_age),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            FilterChip(
-                                selected = draft.values.embryoAgeDays == "3",
-                                onClick = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.EMBRYO_AGE_DAYS, "3")) },
-                                label = { Text(stringResource(R.string.embryo_day_3)) },
-                                enabled = enabled,
-                                modifier = Modifier.testTag("embryoDay3"),
-                            )
-                            FilterChip(
-                                selected = draft.values.embryoAgeDays == "5" || draft.values.embryoAgeDays.isEmpty(),
-                                onClick = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.EMBRYO_AGE_DAYS, "5")) },
-                                label = { Text(stringResource(R.string.embryo_day_5)) },
-                                enabled = enabled,
-                                modifier = Modifier.testTag("embryoDay5"),
-                            )
-                            FilterChip(
-                                selected = draft.values.embryoAgeDays == "6",
-                                onClick = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.EMBRYO_AGE_DAYS, "6")) },
-                                label = { Text(stringResource(R.string.embryo_day_6)) },
-                                enabled = enabled,
-                                modifier = Modifier.testTag("embryoDay6"),
-                            )
-                        }
+            val methodOptions = listOf(
+                "LMP" to stringResource(R.string.lmp_date),
+                "Ultrasound" to stringResource(R.string.ultrasound),
+                "IVF_TRANSFER" to stringResource(R.string.ivf_transfer_date),
+                "Clinical" to stringResource(R.string.dating_method_clinical),
+            )
+            val visibility = datingFieldVisibility(draft.values.datingMethod)
+            val selectedMethod = visibility.selectedMethod
+            ClinicalDropdownField(
+                label = stringResource(R.string.dating_method),
+                selectedValue = methodOptions.firstOrNull { it.first == selectedMethod }?.second ?: "",
+                options = methodOptions.map { it.second },
+                onSelect = { picked ->
+                    methodOptions.firstOrNull { it.second == picked }?.let { (key, _) ->
+                        onEvent(AncEvent.DatingDraftChanged(DatingDraftField.DATING_METHOD, key))
                     }
-                }
+                },
+                enabled = enabled,
+                tag = "datingMethodDropdown",
+                modifier = Modifier.fillMaxWidth(),
+                shape = RecordShapes.Small,
+                externalLabel = true,
+            )
 
-
-                if (!visibility.showLmp) RecordedDateNote(R.string.lmp_on_record, draft.values.lmpDate)
-                if (!visibility.showUltrasoundEdd) RecordedDateNote(R.string.ultrasound_edd_on_record, draft.values.ultrasoundEdd)
-                if (!visibility.showIvf) RecordedDateNote(R.string.transfer_date_on_record, draft.values.transferDate)
-
-                // Agreed / Adjudicated EDD (Allows overriding if clinician agrees on a different date)
+            if (visibility.showLmp) {
                 ClinicalDateField(
-                    value = draft.values.agreedEdd,
-                    onValueChange = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.AGREED_EDD, it)) },
-                    label = stringResource(R.string.agreed_edd),
-                    tag = "agreedEdd",
+                    value = draft.values.lmpDate,
+                    onValueChange = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.LMP_DATE, it)) },
+                    label = stringResource(R.string.lmp_date),
+                    tag = "lmpDate",
+                    enabled = enabled,
+                    error = draft.errors.contains(ClinicalValidationError.INVALID_DATE),
+                    showTodayButton = true,
+                    externalLabel = true,
+                    useRecordStyle = true,
+                )
+            }
+
+            if (visibility.showUltrasoundEdd) {
+                ClinicalDateField(
+                    value = draft.values.ultrasoundEdd,
+                    onValueChange = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.ULTRASOUND_EDD, it)) },
+                    label = stringResource(R.string.ultrasound_edd),
+                    tag = "ultrasoundEdd",
                     enabled = enabled,
                     error = draft.errors.contains(ClinicalValidationError.INVALID_DATE),
                     showTodayButton = false,
+                    externalLabel = true,
+                    useRecordStyle = true,
                 )
             }
-        }
 
-        // CARD 2: DATING METHOD & ESTIMATED DUE DATE PREVIEW
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(
-                    text = "2. Dating Method & GA Calculation",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
+            if (visibility.showIvf) {
+                ClinicalDateField(
+                    value = draft.values.transferDate,
+                    onValueChange = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.TRANSFER_DATE, it)) },
+                    label = stringResource(R.string.ivf_transfer_date),
+                    tag = "ivfTransferDate",
+                    enabled = enabled,
+                    error = draft.errors.contains(ClinicalValidationError.INVALID_DATE),
+                    showTodayButton = false,
+                    externalLabel = true,
+                    useRecordStyle = true,
                 )
 
-                // Live calculation card if EDD or GA is available
-                AnimatedVisibility(visible = calculatedEdd != null || calculatedGa != null) {
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FormFieldLabel(stringResource(R.string.embryo_age))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            if (calculatedEdd != null) {
-                                Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                                    Text(
-                                        text = stringResource(R.string.calculated_edd) + ":",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    )
-                                    Text(
-                                        text = calculatedEdd.toString(),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary,
-                                    )
-                                }
-                            }
-                            if (calculatedGa != null) {
-                                Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                                    Text(
-                                        text = stringResource(R.string.current_gestational_age) + ":",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    )
-                                    Text(
-                                        text = calculatedGa.formatted,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (calculatedGa.isPostTerm) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                                    )
-                                }
-                            }
+                        val embryoChoices = listOf(
+                            Triple(3, stringResource(R.string.embryo_day_3), "embryoDay3"),
+                            Triple(5, stringResource(R.string.embryo_day_5), "embryoDay5"),
+                            Triple(6, stringResource(R.string.embryo_day_6), "embryoDay6"),
+                        )
+                        embryoChoices.forEach { (day, label, chipTag) ->
+                            val isSelected = (day == 5 && (draft.values.embryoAgeDays.isEmpty() || draft.values.embryoAgeDays == "5")) ||
+                                draft.values.embryoAgeDays == day.toString()
+                            RecordFilterChip(
+                                selected = isSelected,
+                                label = label,
+                                onClick = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.EMBRYO_AGE_DAYS, day.toString())) },
+                                tag = chipTag,
+                                enabled = enabled,
+                                wrap = true,
+                                minTouchTarget = true,
+                            )
                         }
+                    }
+                }
+            }
+
+            if (!visibility.showLmp) RecordedDateNote(R.string.lmp_on_record, draft.values.lmpDate)
+            if (!visibility.showUltrasoundEdd) RecordedDateNote(R.string.ultrasound_edd_on_record, draft.values.ultrasoundEdd)
+            if (!visibility.showIvf) RecordedDateNote(R.string.transfer_date_on_record, draft.values.transferDate)
+
+            ClinicalDateField(
+                value = draft.values.agreedEdd,
+                onValueChange = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.AGREED_EDD, it)) },
+                label = stringResource(R.string.agreed_edd),
+                tag = "agreedEdd",
+                enabled = enabled,
+                error = draft.errors.contains(ClinicalValidationError.INVALID_DATE),
+                showTodayButton = false,
+                externalLabel = true,
+                useRecordStyle = true,
+            )
+        }
+
+        if (calculatedEdd != null || calculatedGa != null) {
+            val stackMetrics = LocalDensity.current.fontScale > 1.5f
+            RecordSectionCard(
+                title = stringResource(R.string.dating_calculated_section),
+                family = obstetricFamily,
+            ) {
+                val tiles: @Composable (Modifier) -> Unit = { tileModifier ->
+                    if (calculatedEdd != null) {
+                        CalculatedDatingTile(
+                            label = stringResource(R.string.calculated_edd),
+                            value = formatDmy(calculatedEdd),
+                            isPostTerm = false,
+                            modifier = tileModifier,
+                        )
+                    }
+                    if (calculatedGa != null) {
+                        CalculatedDatingTile(
+                            label = stringResource(R.string.current_gestational_age),
+                            value = calculatedGa.shortWeeksText,
+                            isPostTerm = calculatedGa.isPostTerm,
+                            modifier = tileModifier,
+                        )
+                    }
+                }
+                if (stackMetrics) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        tiles(Modifier.fillMaxWidth())
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(IntrinsicSize.Min),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        tiles(Modifier.weight(1f).fillMaxHeight())
                     }
                 }
             }
         }
 
-        // CARD 3: CLINICAL NOTES
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        RecordSectionCard(
+            title = notesLabel,
+            family = obstetricFamily,
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(
-                    text = "3. Clinical Notes & Observations",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-
-                EditorField(
-                    value = draft.values.notes,
-                    onValueChange = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.NOTES, it)) },
-                    label = stringResource(R.string.notes),
-                    tag = "datingNotes",
-                    enabled = enabled,
-                    singleLine = false,
-                )
-            }
-        }
-
-        // Security Vault Indicator
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                Icons.Default.Lock,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.size(16.dp),
-            )
-            Spacer(Modifier.width(6.dp))
-            Text(
-                text = "Gestational age and dating records encrypted locally (AES-256 GCM) · Local Vault Security",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            EditorField(
+                value = draft.values.notes,
+                onValueChange = { onEvent(AncEvent.DatingDraftChanged(DatingDraftField.NOTES, it)) },
+                label = "",
+                tag = "datingNotes",
+                modifier = Modifier.semantics { contentDescription = notesLabel },
+                enabled = enabled,
+                singleLine = false,
+                shape = RecordShapes.Small,
+                textStyle = RecordType.FieldValue,
+                externalLabel = false,
             )
         }
 
         if (!inFlow) {
-            EditorActions(
+            SheetCancelSaveRow(
                 enabled = enabled,
-                saveTag = "saveDating",
+                saving = state.savePhase == SavePhase.PENDING,
+                saveEnabled = enabled,
+                savingLabel = stringResource(
+                    if (state.savePhase == SavePhase.PENDING) R.string.saving_label else R.string.save,
+                ),
                 onCancel = { onEvent(AncEvent.CancelEditor) },
                 onSave = { onEvent(AncEvent.SubmitDating) },
+                cancelTag = "cancelDating",
+                saveTag = "saveDating",
+                spinnerTag = "datingSaveSpinner",
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun CalculatedDatingTile(
+    label: String,
+    value: String,
+    isPostTerm: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        color = currentFieldFamily().container,
+        shape = RecordShapes.Small,
+        modifier = modifier.heightIn(min = 48.dp),
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(12.dp)
+                .semantics(mergeDescendants = true) {},
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            FormFieldLabel(label)
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+                itemVerticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = value,
+                    style = RecordType.KeyValue,
+                    color = if (isPostTerm) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                )
+                if (isPostTerm) {
+                    StatusWord(
+                        text = stringResource(R.string.post_term_badge),
+                        tone = StatusTone.High,
+                    )
+                }
+            }
         }
     }
 }
@@ -332,7 +319,7 @@ private fun RecordedDateNote(labelRes: Int, isoValue: String) {
     val shown = formatDmy(isoValue) ?: return
     Text(
         text = stringResource(labelRes, shown),
-        style = MaterialTheme.typography.bodySmall,
+        style = RecordType.Secondary,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }

@@ -321,7 +321,7 @@
     <string name="simulated_photo">Ultrasound capture</string>
     <string name="no_photos_attached">No ultrasound photos attached</string>
     <string name="remove_photo">Remove photo</string>
-    <string name="negative_histories_title">Explicit Negative Histories</string>
+    <string name="negative_histories_title">Explicit negative histories</string>
     <string name="fill_all_negative">Confirm all histories negative</string>
     <string name="save_and_add_another_med">Save and add another</string>
     <string name="advanced_med_options">Route &amp; End date (optional)</string>
@@ -781,4 +781,9 @@
     <string name="lab_panel_title">%1$s (%2$d)</string>
     <string name="lab_subtitle_separator">", "</string>
     <string name="saving_label">Saving…</string>
+    <string name="dating_baseline_section">Baseline dating</string>
+    <string name="dating_calculated_section">Calculated dating</string>
+    <string name="delivery_mode_vaginal">Vaginal</string>
+    <string name="delivery_mode_cesarean">Cesarean</string>
+    <string name="status_will_be_archived">Will be archived</string>
 </resources>

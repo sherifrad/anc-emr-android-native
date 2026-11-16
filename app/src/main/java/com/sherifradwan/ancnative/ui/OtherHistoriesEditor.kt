@@ -3,35 +3,43 @@ package com.sherifradwan.ancnative.ui
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material3.Card
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
-import com.sherifradwan.ancnative.state.activeFlowForRoute
 import com.sherifradwan.ancnative.state.HistoriesDraftField
 import com.sherifradwan.ancnative.state.SavePhase
+import com.sherifradwan.ancnative.state.activeFlowForRoute
+import com.sherifradwan.ancnative.ui.components.FieldFamilies
+import com.sherifradwan.ancnative.ui.components.RecordSectionCard
+import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordType
+import com.sherifradwan.ancnative.ui.patienthub.components.SheetCancelSaveRow
+
+private data class HistorySectionSpec(
+    val title: String,
+    val value: String,
+    val field: HistoriesDraftField,
+    val fieldTag: String,
+    val presets: List<String>,
+    val presetTagPrefix: String,
+)
 
 @Composable
 fun OtherHistoriesEditor(
@@ -48,28 +56,70 @@ fun OtherHistoriesEditor(
     val noSurgical = stringResource(R.string.no_surgical_history)
     val noFamily = stringResource(R.string.no_family_history)
     val noAllergy = stringResource(R.string.no_allergy_history)
+    val presetsTitle = stringResource(R.string.common_presets)
+    val backgroundFamily = FieldFamilies.background()
+
+    val sections = listOf(
+        HistorySectionSpec(
+            title = stringResource(R.string.medical_history),
+            value = draft.values.medicalHistory,
+            field = HistoriesDraftField.MEDICAL,
+            fieldTag = "medicalHistory",
+            presets = listOf(noMedical, "Chronic hypertension", "Type 2 Diabetes", "Asthma", "Hypothyroidism"),
+            presetTagPrefix = "medHistoryPreset",
+        ),
+        HistorySectionSpec(
+            title = stringResource(R.string.surgical_history),
+            value = draft.values.surgicalHistory,
+            field = HistoriesDraftField.SURGICAL,
+            fieldTag = "surgicalHistory",
+            presets = listOf(noSurgical, "Appendectomy", "Previous Cesarean Section", "Myomectomy", "Laparoscopy"),
+            presetTagPrefix = "surgHistoryPreset",
+        ),
+        HistorySectionSpec(
+            title = stringResource(R.string.family_history),
+            value = draft.values.familyHistory,
+            field = HistoriesDraftField.FAMILY,
+            fieldTag = "familyHistory",
+            presets = listOf(
+                noFamily,
+                "Family history of Diabetes",
+                "Family history of Hypertension",
+                "Family history of Twins",
+                "Thalassemia trait",
+            ),
+            presetTagPrefix = "famHistoryPreset",
+        ),
+        HistorySectionSpec(
+            title = stringResource(R.string.allergy_history),
+            value = draft.values.allergyHistory,
+            field = HistoriesDraftField.ALLERGY,
+            fieldTag = "allergyHistory",
+            presets = listOf(noAllergy, "Penicillin allergy", "Sulfa drugs allergy", "NSAIDs allergy", "Latex allergy"),
+            presetTagPrefix = "allergyHistoryPreset",
+        ),
+    )
 
     EditorPage(
         title = stringResource(R.string.edit_other_histories),
-        subtitle = "${patient.displayName} · Medical, Surgical, Family & Allergy Histories",
+        subtitle = patient.displayName,
         tag = "otherHistoriesEditor",
         showHeader = !inFlow,
+        useRecordStyle = true,
     ) {
-        GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
+        GenericEditorErrorCard(draft.errors.isNotEmpty(), state, useRecordStyle = true)
 
-        // 1-Tap Fill All Explicit Negative Histories
-        Card(
+        OutlinedCard(
             modifier = Modifier.fillMaxWidth().testTag("negativeHistoriesCard"),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
+            shape = RecordShapes.Large,
+            colors = CardDefaults.outlinedCardColors(containerColor = backgroundFamily.container),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
                     text = stringResource(R.string.negative_histories_title),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    style = RecordType.CardName,
+                    color = backgroundFamily.label,
                 )
                 OutlinedButton(
                     onClick = {
@@ -87,167 +137,69 @@ fun OtherHistoriesEditor(
                         }
                     },
                     enabled = enabled,
-                    modifier = Modifier.fillMaxWidth().testTag("fillAllNegativeHistories"),
+                    shape = RecordShapes.Small,
+                    border = BorderStroke(
+                        1.dp,
+                        if (enabled) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.outlineVariant,
+                    ),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        contentColor = MaterialTheme.colorScheme.primary,
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .minimumTouchTarget()
+                        .testTag("fillAllNegativeHistories"),
                 ) {
-                    Text("✓ " + stringResource(R.string.fill_all_negative))
+                    Text(
+                        text = stringResource(R.string.fill_all_negative),
+                        style = RecordType.Action,
+                        textAlign = TextAlign.Center,
+                    )
                 }
             }
         }
 
-        // Medical History Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = "1. " + stringResource(R.string.medical_history),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+        sections.forEach { section ->
+            RecordSectionCard(
+                title = section.title,
+                family = backgroundFamily,
+            ) {
                 EditorField(
-                    value = draft.values.medicalHistory,
-                    onValueChange = { onEvent(AncEvent.HistoriesDraftChanged(HistoriesDraftField.MEDICAL, it)) },
-                    label = stringResource(R.string.medical_history),
-                    tag = "medicalHistory",
+                    value = section.value,
+                    onValueChange = { onEvent(AncEvent.HistoriesDraftChanged(section.field, it)) },
+                    label = "",
+                    tag = section.fieldTag,
+                    modifier = Modifier.semantics { contentDescription = section.title },
                     enabled = enabled,
+                    shape = RecordShapes.Small,
+                    textStyle = RecordType.FieldValue,
+                    externalLabel = false,
                 )
                 QuickPresetChips(
-                    title = stringResource(R.string.medical_history),
-                    items = listOf(noMedical, "Chronic hypertension", "Type 2 Diabetes", "Asthma", "Hypothyroidism"),
+                    title = presetsTitle,
+                    items = section.presets,
                     enabled = enabled,
-                    onSelect = { onEvent(AncEvent.HistoriesDraftChanged(HistoriesDraftField.MEDICAL, it)) },
-                    tagPrefix = "medHistoryPreset",
+                    onSelect = { onEvent(AncEvent.HistoriesDraftChanged(section.field, it)) },
+                    tagPrefix = section.presetTagPrefix,
+                    useRecordStyle = true,
                 )
             }
-        }
-
-        // Surgical History Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = "2. " + stringResource(R.string.surgical_history),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                EditorField(
-                    value = draft.values.surgicalHistory,
-                    onValueChange = { onEvent(AncEvent.HistoriesDraftChanged(HistoriesDraftField.SURGICAL, it)) },
-                    label = stringResource(R.string.surgical_history),
-                    tag = "surgicalHistory",
-                    enabled = enabled,
-                )
-                QuickPresetChips(
-                    title = stringResource(R.string.surgical_history),
-                    items = listOf(noSurgical, "Appendectomy", "Previous Cesarean Section", "Myomectomy", "Laparoscopy"),
-                    enabled = enabled,
-                    onSelect = { onEvent(AncEvent.HistoriesDraftChanged(HistoriesDraftField.SURGICAL, it)) },
-                    tagPrefix = "surgHistoryPreset",
-                )
-            }
-        }
-
-        // Family History Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = "3. " + stringResource(R.string.family_history),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                EditorField(
-                    value = draft.values.familyHistory,
-                    onValueChange = { onEvent(AncEvent.HistoriesDraftChanged(HistoriesDraftField.FAMILY, it)) },
-                    label = stringResource(R.string.family_history),
-                    tag = "familyHistory",
-                    enabled = enabled,
-                )
-                QuickPresetChips(
-                    title = stringResource(R.string.family_history),
-                    items = listOf(noFamily, "Family history of Diabetes", "Family history of Hypertension", "Family history of Twins", "Thalassemia trait"),
-                    enabled = enabled,
-                    onSelect = { onEvent(AncEvent.HistoriesDraftChanged(HistoriesDraftField.FAMILY, it)) },
-                    tagPrefix = "famHistoryPreset",
-                )
-            }
-        }
-
-        // Allergy History Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = "4. " + stringResource(R.string.allergy_history),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                EditorField(
-                    value = draft.values.allergyHistory,
-                    onValueChange = { onEvent(AncEvent.HistoriesDraftChanged(HistoriesDraftField.ALLERGY, it)) },
-                    label = stringResource(R.string.allergy_history),
-                    tag = "allergyHistory",
-                    enabled = enabled,
-                )
-                QuickPresetChips(
-                    title = stringResource(R.string.allergy_history),
-                    items = listOf(noAllergy, "Penicillin allergy", "Sulfa drugs allergy", "NSAIDs allergy", "Latex allergy"),
-                    enabled = enabled,
-                    onSelect = { onEvent(AncEvent.HistoriesDraftChanged(HistoriesDraftField.ALLERGY, it)) },
-                    tagPrefix = "allergyHistoryPreset",
-                )
-            }
-        }
-
-        // Security Vault Indicator
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                Icons.Default.Lock,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.size(16.dp),
-            )
-            Spacer(Modifier.width(6.dp))
-            Text(
-                text = "Medical and surgical histories encrypted locally (AES-256 GCM) · Local Vault Security",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
 
         if (!inFlow) {
-            EditorActions(
+            SheetCancelSaveRow(
                 enabled = enabled,
-                saveTag = "saveHistories",
+                saving = state.savePhase == SavePhase.PENDING,
+                saveEnabled = enabled,
+                savingLabel = stringResource(
+                    if (state.savePhase == SavePhase.PENDING) R.string.saving_label else R.string.save,
+                ),
                 onCancel = { onEvent(AncEvent.CancelEditor) },
                 onSave = { onEvent(AncEvent.SubmitOtherHistories) },
+                cancelTag = "cancelHistories",
+                saveTag = "saveHistories",
+                spinnerTag = "historiesSaveSpinner",
             )
         }
     }

@@ -1,28 +1,9 @@
 package com.sherifradwan.ancnative.ui
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.PatientValidationError
 import com.sherifradwan.ancnative.model.PatientVocabulary
@@ -30,9 +11,14 @@ import com.sherifradwan.ancnative.model.PreviousPregnancyFormRules
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
-import com.sherifradwan.ancnative.state.activeFlowForRoute
 import com.sherifradwan.ancnative.state.PregnancyDraftField
 import com.sherifradwan.ancnative.state.SavePhase
+import com.sherifradwan.ancnative.state.activeFlowForRoute
+import com.sherifradwan.ancnative.ui.components.FieldFamilies
+import com.sherifradwan.ancnative.ui.components.RecordSectionCard
+import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordType
+import com.sherifradwan.ancnative.ui.patienthub.components.SheetCancelSaveRow
 
 @Composable
 fun PreviousPregnancyEditor(
@@ -47,194 +33,198 @@ fun PreviousPregnancyEditor(
     val enabled = state.savePhase == SavePhase.IDLE || state.savePhase == SavePhase.ERROR
     val inFlow = state.activeFlowForRoute() != null
 
+    val obstetricFamily = FieldFamilies.obstetric()
+    val liveBirthLabel = stringResource(R.string.outcome_live_birth)
+    val stillbirthLabel = stringResource(R.string.outcome_stillbirth)
+    val earlyLossLabel = stringResource(R.string.outcome_early_loss)
+    val terminationLabel = stringResource(R.string.outcome_termination)
+    val vaginalLabel = stringResource(R.string.delivery_mode_vaginal)
+    val cesareanLabel = stringResource(R.string.delivery_mode_cesarean)
+
     EditorPage(
         title = if (draft.basePregnancyRevision == null) {
             stringResource(R.string.add_previous_pregnancy)
         } else {
             stringResource(R.string.correct_previous_pregnancy)
         },
-        subtitle = "${patient.displayName} · Previous Pregnancy History & Outcomes",
+        subtitle = patient.displayName,
         tag = "previousPregnancyEditor",
         showHeader = !inFlow,
+        useRecordStyle = true,
     ) {
-        GenericEditorErrorCard(draft.errors.isNotEmpty(), state)
+        GenericEditorErrorCard(draft.errors.isNotEmpty(), state, useRecordStyle = true)
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        RecordSectionCard(
+            title = stringResource(R.string.pregnancy_core_facts_title),
+            family = obstetricFamily,
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.pregnancy_core_facts_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-
-                ClinicalDateField(
-                    value = draft.values.dateText,
-                    onValueChange = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.DATE_TEXT, it)) },
-                    label = stringResource(R.string.entered_date_text),
-                    tag = "pregnancyDateText",
-                    enabled = enabled,
-                    showTodayButton = false,
-                )
-
-                ChoiceGroup(
-                    label = stringResource(R.string.structured_outcome),
-                    selected = draft.values.outcome,
-                    choices = PatientVocabulary.pregnancyOutcomes.toList(),
-                    enabled = enabled,
-                    tagPrefix = "pregnancyOutcome",
-                    onSelected = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.OUTCOME, it)) },
-                )
-
-                if (draft.values.outcomeText.isNotBlank() && draft.values.outcome.isBlank()) {
-                    Text(
-                        text = stringResource(R.string.earlier_outcome_note, draft.values.outcomeText),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-
-                if (PreviousPregnancyFormRules.hasDeliveryMode(draft.values.outcome)) {
-                    ChoiceGroup(
-                        label = stringResource(R.string.delivery_mode),
-                        selected = PreviousPregnancyFormRules.modeOf(draft.values.deliveryBy, draft.values.birthMethod),
-                        choices = PreviousPregnancyFormRules.deliveryModeChoices,
-                        enabled = enabled,
-                        tagPrefix = "deliveryBy",
-                        onSelected = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.DELIVERY_BY, it)) },
-                    )
-                }
-
-                if (
-                    PreviousPregnancyFormRules.hasDeliveryMode(draft.values.outcome) &&
-                    draft.values.deliveryBy.isNotBlank() &&
-                    draft.values.deliveryBy !in PreviousPregnancyFormRules.deliveryModeChoices
-                ) {
-                    Text(
-                        text = stringResource(R.string.stored_delivery_mode, draft.values.deliveryBy),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-
-                if (draft.values.outcome == "EarlyPregnancyLoss") {
-                    ChoiceGroup(
-                        label = stringResource(R.string.loss_management),
-                        selected = draft.values.lossManagement,
-                        choices = PatientVocabulary.lossManagementMethods.toList(),
-                        enabled = enabled,
-                        tagPrefix = "lossManagement",
-                        onSelected = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.LOSS_MANAGEMENT, it)) },
-                    )
-                }
-
-                if (draft.values.outcome == "TerminationOfPregnancy") {
-                    ChoiceGroup(
-                        label = stringResource(R.string.termination_method),
-                        selected = draft.values.terminationMethod,
-                        choices = PatientVocabulary.terminationMethods.toList(),
-                        enabled = enabled,
-                        tagPrefix = "terminationMethod",
-                        onSelected = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.TERMINATION_METHOD, it)) },
-                    )
-                }
-
-                if (PatientValidationError.OUTCOME_METHOD_MISMATCH in draft.errors) {
-                    Text(
-                        stringResource(R.string.outcome_method_mismatch),
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
-            }
-        }
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.pregnancy_details_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-
-                EditorField(
-                    value = draft.values.placeAndDoctor,
-                    onValueChange = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.PLACE_AND_DOCTOR, it)) },
-                    label = stringResource(R.string.place_and_doctor),
-                    tag = "pregnancyPlaceDoctor",
-                    enabled = enabled,
-                    errorMessage = if (PatientValidationError.PLACE_AND_DOCTOR_REQUIRED in draft.errors) {
-                        stringResource(R.string.place_and_doctor_required)
-                    } else {
-                        null
-                    },
-                )
-
-                ChoiceGroup(
-                    label = stringResource(R.string.pregnancy_type),
-                    selected = draft.values.pregnancyType,
-                    choices = PatientVocabulary.pregnancyTypes.toList(),
-                    enabled = enabled,
-                    tagPrefix = "pregnancyType",
-                    onSelected = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.PREGNANCY_TYPE, it)) },
-                )
-
-                EditorField(
-                    value = draft.values.otherDetails,
-                    onValueChange = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.OTHER_DETAILS, it)) },
-                    label = stringResource(R.string.other_details),
-                    tag = "pregnancyOtherDetails",
-                    enabled = enabled,
-                )
-            }
-        }
-
-        // Security Vault Indicator
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                Icons.Default.Lock,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.size(16.dp),
+            ClinicalDateField(
+                value = draft.values.dateText,
+                onValueChange = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.DATE_TEXT, it)) },
+                label = stringResource(R.string.entered_date_text),
+                tag = "pregnancyDateText",
+                enabled = enabled,
+                showTodayButton = false,
+                externalLabel = true,
+                useRecordStyle = true,
             )
-            Spacer(Modifier.width(6.dp))
-            Text(
-                text = "Previous pregnancy records encrypted and digitally signed · Tamper-Evident Local Storage",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+
+            ChoiceGroup(
+                label = stringResource(R.string.structured_outcome),
+                selected = draft.values.outcome,
+                choices = PatientVocabulary.pregnancyOutcomes.toList(),
+                enabled = enabled,
+                tagPrefix = "pregnancyOutcome",
+                onSelected = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.OUTCOME, it)) },
+                labelStyle = RecordType.FieldLabel,
+                labelColor = obstetricFamily.label,
+                labelOf = { outcome ->
+                    when (outcome) {
+                        "LiveBirth" -> liveBirthLabel
+                        "Stillbirth" -> stillbirthLabel
+                        "EarlyPregnancyLoss" -> earlyLossLabel
+                        "TerminationOfPregnancy" -> terminationLabel
+                        else -> outcome
+                    }
+                },
+                useRecordChip = true,
+            )
+
+            if (draft.values.outcomeText.isNotBlank() && draft.values.outcome.isBlank()) {
+                Text(
+                    text = stringResource(R.string.earlier_outcome_note, draft.values.outcomeText),
+                    style = RecordType.Secondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            if (PreviousPregnancyFormRules.hasDeliveryMode(draft.values.outcome)) {
+                ChoiceGroup(
+                    label = stringResource(R.string.delivery_mode),
+                    selected = PreviousPregnancyFormRules.modeOf(draft.values.deliveryBy, draft.values.birthMethod),
+                    choices = PreviousPregnancyFormRules.deliveryModeChoices,
+                    enabled = enabled,
+                    tagPrefix = "deliveryBy",
+                    onSelected = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.DELIVERY_BY, it)) },
+                    labelStyle = RecordType.FieldLabel,
+                    labelColor = obstetricFamily.label,
+                    labelOf = { mode ->
+                        when (mode) {
+                            PreviousPregnancyFormRules.MODE_CS -> cesareanLabel
+                            PreviousPregnancyFormRules.MODE_VAGINAL -> vaginalLabel
+                            else -> mode
+                        }
+                    },
+                    useRecordChip = true,
+                )
+            }
+
+            if (
+                PreviousPregnancyFormRules.hasDeliveryMode(draft.values.outcome) &&
+                draft.values.deliveryBy.isNotBlank() &&
+                draft.values.deliveryBy !in PreviousPregnancyFormRules.deliveryModeChoices
+            ) {
+                Text(
+                    text = stringResource(R.string.stored_delivery_mode, draft.values.deliveryBy),
+                    style = RecordType.Secondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            if (draft.values.outcome == "EarlyPregnancyLoss") {
+                ChoiceGroup(
+                    label = stringResource(R.string.loss_management),
+                    selected = draft.values.lossManagement,
+                    choices = PatientVocabulary.lossManagementMethods.toList(),
+                    enabled = enabled,
+                    tagPrefix = "lossManagement",
+                    onSelected = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.LOSS_MANAGEMENT, it)) },
+                    labelStyle = RecordType.FieldLabel,
+                    labelColor = obstetricFamily.label,
+                    useRecordChip = true,
+                )
+            }
+
+            if (draft.values.outcome == "TerminationOfPregnancy") {
+                ChoiceGroup(
+                    label = stringResource(R.string.termination_method),
+                    selected = draft.values.terminationMethod,
+                    choices = PatientVocabulary.terminationMethods.toList(),
+                    enabled = enabled,
+                    tagPrefix = "terminationMethod",
+                    onSelected = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.TERMINATION_METHOD, it)) },
+                    labelStyle = RecordType.FieldLabel,
+                    labelColor = obstetricFamily.label,
+                    useRecordChip = true,
+                )
+            }
+
+            if (PatientValidationError.OUTCOME_METHOD_MISMATCH in draft.errors) {
+                Text(
+                    stringResource(R.string.outcome_method_mismatch),
+                    color = MaterialTheme.colorScheme.error,
+                    style = RecordType.Action,
+                )
+            }
+        }
+
+        RecordSectionCard(
+            title = stringResource(R.string.pregnancy_details_title),
+            family = obstetricFamily,
+        ) {
+            EditorField(
+                value = draft.values.placeAndDoctor,
+                onValueChange = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.PLACE_AND_DOCTOR, it)) },
+                label = stringResource(R.string.place_and_doctor),
+                tag = "pregnancyPlaceDoctor",
+                enabled = enabled,
+                errorMessage = if (PatientValidationError.PLACE_AND_DOCTOR_REQUIRED in draft.errors) {
+                    stringResource(R.string.place_and_doctor_required)
+                } else {
+                    null
+                },
+                shape = RecordShapes.Small,
+                textStyle = RecordType.FieldValue,
+                externalLabel = true,
+            )
+
+            ChoiceGroup(
+                label = stringResource(R.string.pregnancy_type),
+                selected = draft.values.pregnancyType,
+                choices = PatientVocabulary.pregnancyTypes.toList(),
+                enabled = enabled,
+                tagPrefix = "pregnancyType",
+                onSelected = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.PREGNANCY_TYPE, it)) },
+                labelStyle = RecordType.FieldLabel,
+                labelColor = obstetricFamily.label,
+                useRecordChip = true,
+            )
+
+            EditorField(
+                value = draft.values.otherDetails,
+                onValueChange = { onEvent(AncEvent.PregnancyDraftChanged(PregnancyDraftField.OTHER_DETAILS, it)) },
+                label = stringResource(R.string.other_details),
+                tag = "pregnancyOtherDetails",
+                enabled = enabled,
+                shape = RecordShapes.Small,
+                textStyle = RecordType.FieldValue,
+                externalLabel = true,
             )
         }
 
         if (!inFlow) {
-            EditorActions(
+            SheetCancelSaveRow(
                 enabled = enabled,
-                saveTag = "savePregnancy",
+                saving = state.savePhase == SavePhase.PENDING,
+                saveEnabled = enabled,
+                savingLabel = stringResource(
+                    if (state.savePhase == SavePhase.PENDING) R.string.saving_label else R.string.save,
+                ),
                 onCancel = { onEvent(AncEvent.CancelEditor) },
                 onSave = { onEvent(AncEvent.SubmitPreviousPregnancy) },
+                cancelTag = "cancelPregnancy",
+                saveTag = "savePregnancy",
+                spinnerTag = "pregnancySaveSpinner",
             )
         }
     }
