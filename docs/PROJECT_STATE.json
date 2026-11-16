@@ -1726,20 +1726,20 @@
   "rd17": {
    "phase": "pRD",
    "order": 18,
-   "status": "next",
+   "status": "done",
    "title": "Slice 17: Catalog settings",
-   "ref": "",
-   "detail": "No mock needed (owner 2026-11-16): build from the shipped style.",
+   "ref": "slice 17",
+   "detail": "Catalog settings restyled (sand family, RecordSectionCard rows, band cards, 48dp actions, scrollable add dialogs with pinned errors and buttons). 29 new tests green.",
    "owner": "Lane models",
    "updated": "2026-11-16"
   },
   "rd18": {
    "phase": "pRD",
    "order": 19,
-   "status": "blocked",
+   "status": "next",
    "title": "Slice 18: Security, lock and vault",
    "ref": "",
-   "detail": "Level 3 auth. Ask the owner first. Look only; no change to PIN, backup or restore logic. Frontier review plus independent test review.",
+   "detail": "Level 3 auth. Ask the owner first, mock first.",
    "owner": "Lane models",
    "updated": "2026-11-16"
   },
@@ -1875,6 +1875,10 @@
   }
  },
  "log": [
+  {
+   "date": "2026-11-16",
+   "text": "Slice 17 catalog settings done: 29 new emulator tests, CustomChoicesStore and SecurityWorkflow green."
+  },
   {
    "date": "2026-11-16",
    "text": "Slice 16 (lab editor and batch) built, reviewed, tested, committed locally."
