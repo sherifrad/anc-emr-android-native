@@ -1,10 +1,10 @@
 # Roadmap (generated from docs/PROJECT_STATE.json; do not edit by hand)
 
-Updated 2026-11-16. 102 of 182 tasks done.
+Updated 2026-11-16. 103 of 182 tasks done.
 
-Working on now: You: check the redone lab, ultrasound and medication screens on your phone; New patient with dating, obstetric history, previous pregnancies, clinical attention entry; Large font: filter chip clipped; header subtitle truncated; Patient directory and patient chart in the approved style; Phone testing: Block A and B run by the agy lane (self-reported PASS); Block C, D and two hand checks still need you; Remove duplicates found in the audit (removal only); Apply the design system to lab, ultrasound and medication editors; Go-live checklist: draft written, needs your review; Arabic-name cards mirror the whole card; chips touch; Backup, restore, camera and print-to-PDF end to end on the phone; Design system: one shared card, section title, label/value, choice chips and action bar; Screen-capture block removed in release builds (done); release-build device check still open; Medication screen: multi-drug 'Today's list', one-tap add, Stop (next; two statuses only); Light theme: high-risk card frame; Workspace opens with first tab cut; Device pass 2: PIN lock, TalkBack, Keystore, missing-pointer recovery; Backups lose data: ultrasound EDD merged, attachments missing; Decode photos off the main thread; respect camera rotation; Printed report does not show the blood-pressure alert; Should a severe blood pressure also raise the patient's attention banner or list badge?; Slice 14: Visit editor
+Working on now: You: check the redone lab, ultrasound and medication screens on your phone; New patient with dating, obstetric history, previous pregnancies, clinical attention entry; Large font: filter chip clipped; header subtitle truncated; Patient directory and patient chart in the approved style; Phone testing: Block A and B run by the agy lane (self-reported PASS); Block C, D and two hand checks still need you; Remove duplicates found in the audit (removal only); Apply the design system to lab, ultrasound and medication editors; Go-live checklist: draft written, needs your review; Arabic-name cards mirror the whole card; chips touch; Backup, restore, camera and print-to-PDF end to end on the phone; Design system: one shared card, section title, label/value, choice chips and action bar; Screen-capture block removed in release builds (done); release-build device check still open; Medication screen: multi-drug 'Today's list', one-tap add, Stop (next; two statuses only); Light theme: high-risk card frame; Workspace opens with first tab cut; Device pass 2: PIN lock, TalkBack, Keystore, missing-pointer recovery; Backups lose data: ultrasound EDD merged, attachments missing; Decode photos off the main thread; respect camera rotation; Printed report does not show the blood-pressure alert; Should a severe blood pressure also raise the patient's attention banner or list badge?; Slice 15: Ultrasound editor
 
-## Whole-app redesign (current work) (15/32)
+## Whole-app redesign (current work) (16/32)
 
 22 slices on branch redesign-2026-11-15, mock first, owner approves, lane models build, review and test. Plan: docs/designs/redesign/PLAN.md. Nothing is pushed until the owner says so.
 
@@ -24,8 +24,8 @@ Working on now: You: check the redone lab, ultrasound and medication screens on 
 | rd11 | done | Slice 11: Editor sheets (medication, delivery plan) | 928b439 |
 | rd12 | done | Slice 12: Registration flow and patient editor | dbeab1c |
 | rd13 | done | Slice 13: History, previous pregnancy and dating editors | 91ec511 |
-| rd14 | active | Slice 14: Visit editor |  |
-| rd15 | todo | Slice 15: Ultrasound editor |  |
+| rd14 | done | Slice 14: Visit editor | pending |
+| rd15 | active | Slice 15: Ultrasound editor |  |
 | rd16 | todo | Slice 16: Lab editor and lab batch |  |
 | rd17 | todo | Slice 17: Catalog settings |  |
 | rd18 | blocked | Slice 18: Security, lock and vault |  |
@@ -258,6 +258,7 @@ Build, sign and roll out without disturbing the records already on your phone.
 
 ## Recent log
 
+- 2026-11-16: Slice 14 (visit editor) built, reviewed, tested, committed locally.
 - 2026-11-16: Mocks for slices 14, 15, 16 approved by the owner as drawn.
 - 2026-11-16: Docs cleanup done locally: 74,284 tracked files down to 1,512; progress now only in docs/PROJECT_STATE.json. Not pushed.
 - 2026-11-16: Slices 12 and 13 built, reviewed, tested and committed locally; QA copy installed on the phone.

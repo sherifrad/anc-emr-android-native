@@ -587,7 +587,7 @@
     <string name="matches_ga_fh">Matches GA (%1$s cm)</string>
     <string name="fill_normal_values">Fill normal values</string>
     <string name="fill_normal_values_sub">Applies normal oedema, movements, urine</string>
-    <string name="filled_normal_toast">✔ Populated %1$d standard findings</string>
+    <string name="filled_normal_toast">Populated %1$d standard findings</string>
     <string name="nothing_left_to_fill">Nothing left to fill</string>
     <string name="nothing_flagged">Nothing flagged</string>
     <string name="systolic_label">Systolic</string>
@@ -786,4 +786,25 @@
     <string name="delivery_mode_vaginal">Vaginal</string>
     <string name="delivery_mode_cesarean">Cesarean</string>
     <string name="status_will_be_archived">Will be archived</string>
+    <string name="visit_date_section">Visit date</string>
+    <string name="visit_step_short_date_bp">Date &amp; BP</string>
+    <string name="visit_step_short_wt_fhr">Wt &amp; FHR</string>
+    <string name="visit_step_short_findings">Findings</string>
+    <string name="visit_step_short_review">Review</string>
+    <string name="visit_step_segment_cd">%1$s, step %2$d of %3$d</string>
+    <string name="visit_quick_presets">Quick presets</string>
+    <string name="visit_ga_at_visit">Gestational age at visit</string>
+    <string name="visit_fhr_section">Fetal heart rate (FHR)</string>
+    <string name="visit_fhr_same_as_last">Same as last (%1$s bpm)</string>
+    <string name="visit_fhr_preset_bpm">%1$s bpm</string>
+    <string name="visit_weight_preset_kg">%1$s kg</string>
+    <string name="visit_fhr_normal_baseline">Normal baseline (110-160 bpm)</string>
+    <string name="visit_fhr_bradycardia">Bradycardia (&lt;110 bpm)</string>
+    <string name="visit_fhr_tachycardia">Tachycardia (&gt;160 bpm)</string>
+    <string name="visit_bedside_findings_section">Bedside findings</string>
+    <string name="visit_finding_flagged">Flagged</string>
+    <string name="visit_summary_section">Summary</string>
+    <string name="visit_recorded_values_section">Recorded values</string>
+    <string name="visit_stepper_decrease">Decrease %1$s</string>
+    <string name="visit_stepper_increase">Increase %1$s</string>
 </resources>

@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -40,10 +41,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
+import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordType
 
 @Composable
 fun SectionCard(
@@ -87,10 +92,61 @@ fun SummaryRow(
     value: String,
     tag: String,
     onClick: () -> Unit,
+    useRecordStyle: Boolean = false,
+    trailingActionText: String? = null,
+    showDivider: Boolean = false,
 ) {
     val notSetText = stringResource(R.string.finding_not_set)
     val displayText = value.ifBlank { notSetText }
     val isNotSet = displayText == notSetText
+
+    if (useRecordStyle) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            if (showDivider) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .minimumTouchTarget()
+                    .clickable(onClick = onClick)
+                    .testTag(tag)
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = label,
+                    style = RecordType.Secondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f).padding(end = 8.dp),
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Text(
+                        text = displayText,
+                        style = if (isNotSet) RecordType.Missing else RecordType.KeyValue,
+                        color = if (isNotSet) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
+                    )
+                    if (trailingActionText != null) {
+                        Text(
+                            text = trailingActionText,
+                            style = RecordType.Action,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
+            }
+        }
+        return
+    }
 
     Row(
         modifier = Modifier
@@ -284,7 +340,59 @@ fun ValueStepper(
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     inputTag: String? = null,
+    useRecordStyle: Boolean = false,
+    decreaseLabel: String = "Decrease",
+    increaseLabel: String = "Increase",
+    decreaseTag: String? = null,
+    increaseTag: String? = null,
 ) {
+    if (useRecordStyle) {
+        Row(
+            modifier = modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            StepperButton(
+                symbol = "−",
+                label = decreaseLabel,
+                tag = decreaseTag,
+                enabled = enabled,
+                onClick = onDecrease,
+            )
+            OutlinedTextField(
+                value = value,
+                onValueChange = onValueChange,
+                enabled = enabled,
+                singleLine = true,
+                shape = RecordShapes.Small,
+                textStyle = RecordType.KeyValue,
+                colors = editorFieldColors(),
+                suffix = if (unit.isNotBlank()) {
+                    {
+                        Text(
+                            text = unit,
+                            style = RecordType.Secondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                } else null,
+                keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 52.dp)
+                    .let { if (inputTag != null) it.testTag(inputTag) else it },
+            )
+            StepperButton(
+                symbol = "+",
+                label = increaseLabel,
+                tag = increaseTag,
+                enabled = enabled,
+                onClick = onIncrease,
+            )
+        }
+        return
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -334,6 +442,42 @@ fun ValueStepper(
                 color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+}
+
+@Composable
+private fun StepperButton(
+    symbol: String,
+    label: String,
+    tag: String?,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    OutlinedButton(
+        onClick = onClick,
+        enabled = enabled,
+        shape = RecordShapes.Small,
+        contentPadding = PaddingValues(0.dp),
+        border = BorderStroke(
+            1.dp,
+            if (enabled) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.outlineVariant,
+        ),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.primary,
+        ),
+        modifier = Modifier
+            .width(52.dp)
+            .heightIn(min = 52.dp)
+            .minimumTouchTarget()
+            .semantics { contentDescription = label }
+            .let { if (tag != null) it.testTag(tag) else it },
+    ) {
+        Text(
+            text = symbol,
+            style = RecordType.HeaderName,
+            fontWeight = FontWeight.Bold,
+        )
     }
 }
 

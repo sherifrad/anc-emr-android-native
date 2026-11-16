@@ -1696,20 +1696,20 @@
   "rd14": {
    "phase": "pRD",
    "order": 15,
-   "status": "active",
+   "status": "done",
    "title": "Slice 14: Visit editor",
-   "ref": "",
-   "detail": "Mock approved 2026-11-16. Building.",
+   "ref": "89e4890",
+   "detail": "Built by Hydrogen, tested by Flash (23 tests), alphacode and Sonnet-medium reviews passed, emulator green.",
    "owner": "Lane models",
    "updated": "2026-11-16"
   },
   "rd15": {
    "phase": "pRD",
    "order": 16,
-   "status": "todo",
+   "status": "active",
    "title": "Slice 15: Ultrasound editor",
    "ref": "",
-   "detail": "Mock first, owner approves.",
+   "detail": "Mock approved. Building.",
    "owner": "Lane models",
    "updated": "2026-11-16"
   },
@@ -1875,6 +1875,10 @@
   }
  },
  "log": [
+  {
+   "date": "2026-11-16",
+   "text": "Slice 14 (visit editor) built, reviewed, tested, committed locally."
+  },
   {
    "date": "2026-11-16",
    "text": "Mocks for slices 14, 15, 16 approved by the owner as drawn."
