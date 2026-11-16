@@ -98,7 +98,7 @@ class LabBatchUiTest {
 
         assertEquals(LabBatchTab.REVIEW, state.labBatchDraft?.tab)
         compose.onNodeWithText("CBC").assertIsDisplayed()
-        compose.onNodeWithText("10.8").assertIsDisplayed()
+        compose.onNodeWithText("10.8", substring = true).assertIsDisplayed()
 
         // Save button should now be enabled with "Save 1 result"
         compose.onNodeWithTag("labBatchSave").assertIsEnabled()

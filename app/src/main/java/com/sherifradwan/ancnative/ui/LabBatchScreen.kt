@@ -1,50 +1,44 @@
 package com.sherifradwan.ancnative.ui
 
 import java.time.LocalDate
+import java.util.UUID
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -53,65 +47,49 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.model.GestationalAgeEngine
-import com.sherifradwan.ancnative.model.parseIsoDateOrNull
 import com.sherifradwan.ancnative.model.catalog.ClinicalCatalogRepository
-import com.sherifradwan.ancnative.model.catalog.LabCategoryGroup
 import com.sherifradwan.ancnative.model.catalog.LabCatalogItem
+import com.sherifradwan.ancnative.model.catalog.LabCategoryGroup
+import com.sherifradwan.ancnative.model.parseIsoDateOrNull
 import com.sherifradwan.ancnative.state.AncEvent
 import com.sherifradwan.ancnative.state.AncRoute
 import com.sherifradwan.ancnative.state.AncState
+import com.sherifradwan.ancnative.state.ClinicalValidationError
 import com.sherifradwan.ancnative.state.LabBatchDraft
 import com.sherifradwan.ancnative.state.LabBatchItem
 import com.sherifradwan.ancnative.state.LabBatchTab
 import com.sherifradwan.ancnative.state.groupLabBatchItems
-import java.util.UUID
-
-enum class LabResultPillStatus {
-    NORMAL,
-    ABNORMAL,
-    PENDING,
-}
-
-@Composable
-fun LabResultPill(
-    text: String,
-    status: LabResultPillStatus,
-    modifier: Modifier = Modifier,
-) {
-    val (bg, textColor) = when (status) {
-        LabResultPillStatus.NORMAL -> TagNormalRiskBg to TagNormalRiskText
-        LabResultPillStatus.ABNORMAL -> TagHighRiskBg to TagHighRiskText
-        LabResultPillStatus.PENDING -> TagAttentionBg to TagAttentionText
-    }
-    Surface(
-        shape = RoundedCornerShape(999.dp),
-        color = bg,
-        modifier = modifier,
-    ) {
-        Text(
-            text = text,
-            color = textColor,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.ExtraBold,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-        )
-    }
-}
+import com.sherifradwan.ancnative.ui.components.BandChip
+import com.sherifradwan.ancnative.ui.components.FieldFamilies
+import com.sherifradwan.ancnative.ui.components.FormFieldLabel
+import com.sherifradwan.ancnative.ui.components.LocalFieldFamily
+import com.sherifradwan.ancnative.ui.components.RecordFilterChip
+import com.sherifradwan.ancnative.ui.components.RecordSectionCard
+import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordType
+import com.sherifradwan.ancnative.ui.components.StatusTone
+import com.sherifradwan.ancnative.ui.components.StatusWord
+import com.sherifradwan.ancnative.ui.components.ltrIsolate
 
 /**
  * The laboratory batch: choose tests (Add), enter results (Enter), check them (Review) and save once.
- * Layout follows the approved mock (design/rev-b/lab-batch.html); the catalogue supplies the panels.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun LabBatchScreen(state: AncState, route: AncRoute.LabBatchEditor, onEvent: (AncEvent) -> Unit) {
     val patient = state.patient(route.patientId) ?: return
@@ -121,9 +99,10 @@ fun LabBatchScreen(state: AncState, route: AncRoute.LabBatchEditor, onEvent: (An
     val catalogItems by catalogRepo.labCatalogItems.collectAsState()
     val catalogGroups by catalogRepo.labCategoryGroups.collectAsState()
 
+    val bgFamily = FieldFamilies.background()
+    val narrowStacked = LocalDensity.current.fontScale > 1.3f
     val calculatedGa = GestationalAgeEngine.calculateGestationalAgeAt(patient.dating, draft.date)
-    val gaText = calculatedGa?.displayText?.let { "GA $it" }
-    val subtitle = if (gaText != null) "${patient.displayName} · $gaText" else patient.displayName
+        ?.takeIf { it.isPostConception }
 
     var showMetadataDialog by remember { mutableStateOf(false) }
     var choosingGroup by remember { mutableStateOf<LabCategoryGroup?>(null) }
@@ -131,38 +110,25 @@ fun LabBatchScreen(state: AncState, route: AncRoute.LabBatchEditor, onEvent: (An
     if (showMetadataDialog) {
         var editDate by remember(draft.date) { mutableStateOf(draft.date) }
         var editLab by remember(draft.labName) { mutableStateOf(draft.labName.orEmpty()) }
-        AlertDialog(
-            onDismissRequest = { showMetadataDialog = false },
-            title = { Text(stringResource(R.string.lab_batch_edit_metadata)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = editDate,
-                        onValueChange = {
-                            editDate = it
-                            onEvent(AncEvent.LabBatchDateChanged(it))
-                        },
-                        label = { Text("Date") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth().testTag("labBatchDate"),
-                    )
-                    OutlinedTextField(
-                        value = editLab,
-                        onValueChange = {
-                            editLab = it
-                            onEvent(AncEvent.LabBatchLabNameChanged(it.ifBlank { null }))
-                        },
-                        label = { Text("Laboratory") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth().testTag("labBatchLabName"),
-                    )
-                }
+        LabMetadataDialog(
+            title = stringResource(R.string.lab_batch_edit_metadata),
+            dateValue = editDate,
+            onDateChange = {
+                editDate = it
+                onEvent(AncEvent.LabBatchDateChanged(it))
             },
-            confirmButton = {
-                Button(onClick = { showMetadataDialog = false }) {
-                    Text(stringResource(R.string.done))
-                }
+            dateTag = "labBatchDate",
+            labNameValue = editLab,
+            onLabNameChange = {
+                editLab = it
+                onEvent(AncEvent.LabBatchLabNameChanged(it.ifBlank { null }))
             },
+            labNameTag = "labBatchLabName",
+            labPresetTagPrefix = "labBatchLabPreset",
+            onDismiss = { showMetadataDialog = false },
+            dateError = draft.errors.contains(ClinicalValidationError.REQUIRED_DATE) ||
+                draft.errors.contains(ClinicalValidationError.INVALID_DATE),
+            dateFirst = true,
         )
     }
 
@@ -180,7 +146,7 @@ fun LabBatchScreen(state: AncState, route: AncRoute.LabBatchEditor, onEvent: (An
                 val newGroup = LabCategoryGroup(
                     id = "custom_group_" + UUID.randomUUID().toString(),
                     name = name.trim(),
-                    description = "${testNames.size} elements",
+                    description = context.getString(R.string.lab_batch_elements_count, testNames.size),
                     testNames = testNames,
                     isCustom = true,
                 )
@@ -197,9 +163,21 @@ fun LabBatchScreen(state: AncState, route: AncRoute.LabBatchEditor, onEvent: (An
         ) {
             OutlinedButton(
                 onClick = { onEvent(AncEvent.CancelLabBatch) },
-                modifier = Modifier.weight(1f).heightIn(min = 48.dp).testTag("labBatchCancel"),
+                shape = RecordShapes.Small,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                contentPadding = PaddingValues(horizontal = 8.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 48.dp)
+                    .minimumTouchTarget()
+                    .testTag("labBatchCancel"),
             ) {
-                Text(stringResource(R.string.cancel))
+                Text(
+                    text = stringResource(R.string.cancel),
+                    style = RecordType.Action,
+                    maxLines = 2,
+                    textAlign = TextAlign.Center,
+                )
             }
             val saveText = when (draft.filledCount) {
                 0 -> stringResource(R.string.lab_batch_review_zero_results)
@@ -209,23 +187,35 @@ fun LabBatchScreen(state: AncState, route: AncRoute.LabBatchEditor, onEvent: (An
             Button(
                 onClick = { onEvent(AncEvent.SubmitLabBatch) },
                 enabled = draft.filledCount > 0,
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                modifier = Modifier.weight(2f).heightIn(min = 48.dp).testTag("labBatchSave"),
+                shape = RecordShapes.Small,
+                contentPadding = PaddingValues(horizontal = 8.dp),
+                modifier = Modifier
+                    .weight(1.6f)
+                    .heightIn(min = 48.dp)
+                    .minimumTouchTarget()
+                    .testTag("labBatchSave"),
             ) {
-                Text(saveText, fontWeight = FontWeight.Bold)
+                Text(
+                    text = saveText,
+                    style = RecordType.Action,
+                    maxLines = 2,
+                    textAlign = TextAlign.Center,
+                )
             }
         }
     }
 
     EditorPage(
         title = stringResource(R.string.lab_batch_title),
-        subtitle = subtitle,
+        subtitle = "",
         tag = "labBatchScreen",
-        pinnedBottomBar,
+        bottomBar = pinnedBottomBar,
+        useRecordStyle = true,
     ) {
-        ClinicalPatientCard(
+        GenericEditorErrorCard(draft.errors.isNotEmpty(), state, useRecordStyle = true)
+
+        LabPatientBanner(
             patient = patient,
-            variant = PatientCardVariant.EDITOR_SUMMARY,
             asOfDate = parseIsoDateOrNull(draft.date) ?: LocalDate.now(),
         )
 
@@ -236,72 +226,80 @@ fun LabBatchScreen(state: AncState, route: AncRoute.LabBatchEditor, onEvent: (An
         ) {
             IconButton(
                 onClick = { onEvent(AncEvent.CancelLabBatch) },
-                modifier = Modifier.testTag("labBatchBack"),
+                modifier = Modifier.minimumTouchTarget().testTag("labBatchBack"),
             ) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.back),
                     tint = MaterialTheme.colorScheme.primary,
                 )
             }
             BatchInfoBar(
                 dateText = draft.date,
-                gaText = gaText,
+                gaText = calculatedGa?.shortWeeksText,
                 labName = draft.labName,
                 onChangeClick = { showMetadataDialog = true },
                 modifier = Modifier.weight(1f),
+                useRecordStyle = true,
             )
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            FilterChip(
+        val addLabel = stringResource(R.string.lab_batch_tab_add)
+        val enterLabel = if (draft.items.isEmpty()) {
+            stringResource(R.string.lab_batch_tab_enter)
+        } else {
+            "${stringResource(R.string.lab_batch_tab_enter)} (${draft.filledCount}/${draft.items.size})"
+        }
+        val reviewLabel = "${stringResource(R.string.lab_batch_tab_review)} (${draft.filledCount})"
+
+        val renderTabs: @Composable (Modifier) -> Unit = { tabModifier ->
+            BatchTabChip(
+                label = addLabel,
                 selected = draft.tab == LabBatchTab.ADD,
+                enabled = true,
+                tag = "labBatchTab-ADD",
                 onClick = { onEvent(AncEvent.LabBatchTabSelected(LabBatchTab.ADD)) },
-                label = { Text(stringResource(R.string.lab_batch_tab_add)) },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = ActionRose.copy(alpha = 0.15f),
-                    selectedLabelColor = ActionRose,
-                ),
-                modifier = Modifier.testTag("labBatchTab-ADD"),
+                modifier = tabModifier,
             )
-            val enterLabel = if (draft.items.isEmpty()) {
-                stringResource(R.string.lab_batch_tab_enter)
-            } else {
-                "${stringResource(R.string.lab_batch_tab_enter)} (${draft.filledCount}/${draft.items.size})"
-            }
-            FilterChip(
+            BatchTabChip(
+                label = enterLabel,
                 selected = draft.tab == LabBatchTab.ENTER,
+                enabled = draft.items.isNotEmpty(),
+                tag = "labBatchTab-ENTER",
                 onClick = { onEvent(AncEvent.LabBatchTabSelected(LabBatchTab.ENTER)) },
-                label = { Text(enterLabel) },
-                enabled = draft.items.isNotEmpty(),
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = ActionRose.copy(alpha = 0.15f),
-                    selectedLabelColor = ActionRose,
-                ),
-                modifier = Modifier.testTag("labBatchTab-ENTER"),
+                modifier = tabModifier,
             )
-            val reviewLabel = "${stringResource(R.string.lab_batch_tab_review)} (${draft.filledCount})"
-            FilterChip(
+            BatchTabChip(
+                label = reviewLabel,
                 selected = draft.tab == LabBatchTab.REVIEW,
-                onClick = { onEvent(AncEvent.LabBatchTabSelected(LabBatchTab.REVIEW)) },
-                label = { Text(reviewLabel) },
                 enabled = draft.items.isNotEmpty(),
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = ActionRose.copy(alpha = 0.15f),
-                    selectedLabelColor = ActionRose,
-                ),
-                modifier = Modifier.testTag("labBatchTab-REVIEW"),
+                tag = "labBatchTab-REVIEW",
+                onClick = { onEvent(AncEvent.LabBatchTabSelected(LabBatchTab.REVIEW)) },
+                modifier = tabModifier,
             )
+        }
+
+        if (narrowStacked) {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                renderTabs(Modifier)
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                renderTabs(Modifier.weight(1f))
+            }
         }
 
         when (draft.tab) {
             LabBatchTab.ADD -> AddTab(
                 groups = catalogGroups,
                 catalogItems = catalogItems,
-                draft = draft,
                 onEvent = onEvent,
                 onChooseClick = { choosingGroup = it },
             )
@@ -312,14 +310,63 @@ fun LabBatchScreen(state: AncState, route: AncRoute.LabBatchEditor, onEvent: (An
 }
 
 @Composable
+private fun BatchTabChip(
+    label: String,
+    selected: Boolean,
+    enabled: Boolean,
+    tag: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        shape = RecordShapes.Small,
+        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+        border = BorderStroke(
+            1.dp,
+            when {
+                selected -> MaterialTheme.colorScheme.primary
+                enabled -> MaterialTheme.colorScheme.outline
+                else -> MaterialTheme.colorScheme.outlineVariant
+            },
+        ),
+        modifier = modifier
+            .heightIn(min = 48.dp)
+            .minimumTouchTarget()
+            .semantics { this.selected = selected }
+            .testTag(tag),
+    ) {
+        Box(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = label,
+                style = RecordType.Action,
+                maxLines = 2,
+                textAlign = TextAlign.Center,
+                color = when {
+                    selected -> MaterialTheme.colorScheme.onPrimary
+                    enabled -> MaterialTheme.colorScheme.onSurface
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
 private fun AddTab(
     groups: List<LabCategoryGroup>,
     catalogItems: List<LabCatalogItem>,
-    draft: LabBatchDraft,
     onEvent: (AncEvent) -> Unit,
     onChooseClick: (LabCategoryGroup) -> Unit,
 ) {
     var query by remember { mutableStateOf("") }
+    val searchFocusRequester = remember { FocusRequester() }
+    val bgFamily = FieldFamilies.background()
 
     fun itemsFor(names: List<String>): List<LabBatchItem> = names.mapNotNull { name ->
         catalogItems.firstOrNull { it.testName == name }?.let { item ->
@@ -334,70 +381,87 @@ private fun AddTab(
 
     Column(
         modifier = Modifier.fillMaxWidth().testTag("labBatchAddList"),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         val visibleGroups = groups.filter {
             query.isBlank() || it.name.contains(query, true) || it.testNames.any { n -> n.contains(query, true) }
         }
 
         if (visibleGroups.isNotEmpty()) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+            RecordSectionCard(
+                title = stringResource(R.string.lab_batch_panels_section),
+                family = bgFamily,
             ) {
-                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(modifier = Modifier.fillMaxWidth()) {
                     var expandedGroupId by remember { mutableStateOf<String?>(null) }
                     visibleGroups.forEachIndexed { index, group ->
+                        if (index > 0) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        }
                         val available = itemsFor(group.testNames)
                         val isExpanded = expandedGroupId == group.id
-                        Column(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    top = if (index > 0) 10.dp else 0.dp,
+                                    bottom = if (index < visibleGroups.lastIndex) 10.dp else 0.dp,
+                                ),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .minimumTouchTarget()
+                                    .clickable { expandedGroupId = if (isExpanded) null else group.id }
+                                    .padding(vertical = 4.dp),
+                                verticalArrangement = Arrangement.spacedBy(2.dp),
+                            ) {
+                                Text(
+                                    text = group.name,
+                                    style = RecordType.CardName,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                                val preview = group.testNames.take(4).joinToString(", ") +
+                                    if (group.testNames.size > 4) "..." else ""
+                                Text(
+                                    text = stringResource(R.string.lab_batch_panel_summary, group.testNames.size, preview),
+                                    style = RecordType.Secondary,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
-                                Column(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clickable {
-                                            expandedGroupId = if (isExpanded) null else group.id
-                                        },
+                                OutlinedButton(
+                                    onClick = { onChooseClick(group) },
+                                    shape = RecordShapes.Small,
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                                    contentPadding = PaddingValues(horizontal = 8.dp),
+                                    modifier = Modifier.weight(1f).minimumTouchTarget(),
                                 ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Text(group.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
-                                        Icon(
-                                            imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(16.dp),
-                                        )
-                                    }
                                     Text(
-                                        "${group.testNames.size} elements · ${group.testNames.take(4).joinToString(", ")}${if (group.testNames.size > 4) "..." else ""}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        text = stringResource(R.string.lab_batch_choose),
+                                        style = RecordType.Action,
+                                        maxLines = 2,
+                                        textAlign = TextAlign.Center,
                                     )
                                 }
-                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    OutlinedButton(
-                                        onClick = { onChooseClick(group) },
-                                        modifier = Modifier.heightIn(min = 40.dp),
-                                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp),
-                                    ) {
-                                        Text(stringResource(R.string.lab_batch_choose))
-                                    }
-                                    Button(
-                                        onClick = { onEvent(AncEvent.LabBatchItemsAdded(available)) },
-                                        enabled = available.isNotEmpty(),
-                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                                        modifier = Modifier.heightIn(min = 40.dp).testTag("labBatchAdd-" + group.id),
-                                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp),
-                                    ) {
-                                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
-                                        Spacer(Modifier.width(4.dp))
-                                        Text(stringResource(R.string.lab_batch_add_n, available.size))
-                                    }
+                                Button(
+                                    onClick = { onEvent(AncEvent.LabBatchItemsAdded(available)) },
+                                    enabled = available.isNotEmpty(),
+                                    shape = RecordShapes.Small,
+                                    contentPadding = PaddingValues(horizontal = 8.dp),
+                                    modifier = Modifier.weight(1f).minimumTouchTarget().testTag("labBatchAdd-${group.id}"),
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.lab_batch_add_n, available.size),
+                                        style = RecordType.Action,
+                                        maxLines = 2,
+                                        textAlign = TextAlign.Center,
+                                    )
                                 }
                             }
 
@@ -405,7 +469,7 @@ private fun AddTab(
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(start = 12.dp, top = 8.dp, bottom = 4.dp),
+                                        .padding(start = 8.dp, top = 4.dp),
                                     verticalArrangement = Arrangement.spacedBy(4.dp),
                                 ) {
                                     val selectedTestNames = remember(group.id) {
@@ -416,20 +480,25 @@ private fun AddTab(
                                         Row(
                                             modifier = Modifier
                                                 .fillMaxWidth()
+                                                .heightIn(min = 48.dp)
                                                 .clickable {
                                                     if (isChecked) selectedTestNames.remove(testName) else selectedTestNames.add(testName)
                                                 }
-                                                .padding(vertical = 2.dp),
+                                                .padding(vertical = 4.dp),
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                         ) {
-                                            Text(testName, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+                                            Text(
+                                                text = testName,
+                                                style = RecordType.FieldValue,
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                modifier = Modifier.weight(1f).padding(end = 8.dp),
+                                            )
                                             Checkbox(
                                                 checked = isChecked,
                                                 onCheckedChange = { checked ->
                                                     if (checked) selectedTestNames.add(testName) else selectedTestNames.remove(testName)
                                                 },
-                                                modifier = Modifier.size(24.dp),
                                             )
                                         }
                                     }
@@ -440,82 +509,106 @@ private fun AddTab(
                                             expandedGroupId = null
                                         },
                                         enabled = selectedTestNames.isNotEmpty(),
-                                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                                        shape = RecordShapes.Small,
+                                        modifier = Modifier.fillMaxWidth().minimumTouchTarget().padding(top = 4.dp),
                                     ) {
-                                        Text("Add Selected (${selectedTestNames.size} tests) ▶")
+                                        Text(
+                                            text = stringResource(R.string.lab_batch_add_n_selected, selectedTestNames.size),
+                                            style = RecordType.Action,
+                                            textAlign = TextAlign.Center,
+                                        )
                                     }
                                 }
                             }
-                        }
-                        if (index < visibleGroups.lastIndex) {
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                         }
                     }
                 }
             }
         }
 
-        SectionHeader(title = stringResource(R.string.lab_batch_add_single_test))
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        RecordSectionCard(
+            title = stringResource(R.string.lab_batch_add_single_test),
+            family = bgFamily,
         ) {
-            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    placeholder = { Text(stringResource(R.string.lab_batch_search_placeholder)) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth().testTag("labBatchSearch"),
-                )
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                placeholder = { Text(stringResource(R.string.lab_batch_search_placeholder), style = RecordType.Secondary) },
+                singleLine = true,
+                shape = RecordShapes.Small,
+                textStyle = RecordType.FieldValue,
+                colors = editorFieldColors(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(searchFocusRequester)
+                    .testTag("labBatchSearch"),
+            )
 
-                if (query.isNotBlank()) {
-                    val matches = catalogItems.filter { it.testName.contains(query, true) }.take(15)
-                    matches.forEachIndexed { index, item ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(item.testName, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
-                                if (item.unit.isNotBlank()) {
-                                    Text(item.unit, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                            }
-                            TextButton(
-                                onClick = {
-                                    onEvent(
-                                        AncEvent.LabBatchItemsAdded(
-                                            listOf(LabBatchItem(UUID.randomUUID().toString(), item.testName, item.category, item.unit)),
-                                        ),
-                                    )
-                                },
-                                modifier = Modifier.testTag("labBatchAddOne-" + item.id),
-                            ) {
-                                Text("+ " + stringResource(R.string.lab_batch_add))
-                            }
-                        }
-                        if (index < matches.lastIndex) {
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-                        }
-                    }
-                } else {
+            if (query.trim().isNotEmpty()) {
+                val matches = catalogItems.filter { it.testName.contains(query, true) }.take(15)
+                if (matches.isEmpty()) {
                     Text(
-                        stringResource(R.string.lab_batch_often_added).uppercase(),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
+                        text = stringResource(R.string.lab_batch_no_search_matches),
+                        style = RecordType.Secondary,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Row(
+                } else {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        matches.forEachIndexed { index, item ->
+                            if (index > 0) {
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 48.dp)
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = item.testName,
+                                        style = RecordType.FieldValue.copy(fontWeight = FontWeight.SemiBold),
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                    if (item.unit.isNotBlank()) {
+                                        Text(
+                                            text = item.unit,
+                                            style = RecordType.Secondary,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
+                                TextButton(
+                                    onClick = {
+                                        onEvent(
+                                            AncEvent.LabBatchItemsAdded(
+                                                listOf(LabBatchItem(UUID.randomUUID().toString(), item.testName, item.category, item.unit)),
+                                            ),
+                                        )
+                                    },
+                                    shape = RecordShapes.Small,
+                                    modifier = Modifier.minimumTouchTarget().testTag("labBatchAddOne-${item.id}"),
+                                ) {
+                                    Text(stringResource(R.string.lab_batch_add), style = RecordType.Action)
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FormFieldLabel(stringResource(R.string.lab_batch_often_added))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        listOf("Ferritin", "TSH", "Vitamin D").forEach { name ->
-                            SuggestionChip(
+                        listOf("Ferritin", "TSH", "Vitamin D").forEachIndexed { index, name ->
+                            RecordFilterChip(
+                                selected = false,
+                                label = name,
                                 onClick = {
                                     val match = catalogItems.firstOrNull { it.testName.contains(name, true) }
                                     val item = if (match != null) {
@@ -525,14 +618,21 @@ private fun AddTab(
                                     }
                                     onEvent(AncEvent.LabBatchItemsAdded(listOf(item)))
                                 },
-                                label = { Text(name, fontWeight = FontWeight.SemiBold) },
-                                shape = RoundedCornerShape(20.dp),
+                                tag = "labBatchOften-$index",
+                                wrap = true,
+                                minTouchTarget = true,
                             )
                         }
-                        SuggestionChip(
-                            onClick = { query = " " },
-                            label = { Text(stringResource(R.string.lab_batch_add_other), fontWeight = FontWeight.SemiBold) },
-                            shape = RoundedCornerShape(20.dp),
+                        RecordFilterChip(
+                            selected = false,
+                            label = stringResource(R.string.lab_batch_add_other),
+                            onClick = {
+                                query = ""
+                                searchFocusRequester.requestFocus()
+                            },
+                            tag = "labBatchAddOtherChip",
+                            wrap = true,
+                            minTouchTarget = true,
                         )
                     }
                 }
@@ -551,20 +651,34 @@ private fun ChoosePanelDialog(
 ) {
     val selectedNames = remember { mutableStateListOf<String>().apply { addAll(group.testNames) } }
     var showSavePanelDialog by remember { mutableStateOf(false) }
+    val bgFamily = FieldFamilies.background()
 
     if (showSavePanelDialog) {
         var panelName by remember { mutableStateOf(group.name + " (Custom)") }
         AlertDialog(
             onDismissRequest = { showSavePanelDialog = false },
-            title = { Text(stringResource(R.string.lab_batch_save_selection_as_panel)) },
-            text = {
-                OutlinedTextField(
-                    value = panelName,
-                    onValueChange = { panelName = it },
-                    label = { Text("Panel name") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+            shape = RecordShapes.Large,
+            containerColor = MaterialTheme.colorScheme.surface,
+            title = {
+                Text(
+                    text = stringResource(R.string.lab_batch_save_selection_as_panel),
+                    style = RecordType.SectionTitle,
+                    color = MaterialTheme.colorScheme.primary,
                 )
+            },
+            text = {
+                CompositionLocalProvider(LocalFieldFamily provides bgFamily) {
+                    EditorField(
+                        value = panelName,
+                        onValueChange = { panelName = it },
+                        label = stringResource(R.string.lab_batch_panel_name),
+                        tag = "labBatchCustomPanelName",
+                        singleLine = true,
+                        externalLabel = true,
+                        shape = RecordShapes.Small,
+                        textStyle = RecordType.FieldValue,
+                    )
+                }
             },
             confirmButton = {
                 Button(
@@ -575,13 +689,20 @@ private fun ChoosePanelDialog(
                         }
                     },
                     enabled = panelName.isNotBlank(),
+                    shape = RecordShapes.Small,
+                    modifier = Modifier.minimumTouchTarget(),
                 ) {
-                    Text(stringResource(R.string.save))
+                    Text(stringResource(R.string.save), style = RecordType.Action)
                 }
             },
             dismissButton = {
-                OutlinedButton(onClick = { showSavePanelDialog = false }) {
-                    Text(stringResource(R.string.cancel))
+                OutlinedButton(
+                    onClick = { showSavePanelDialog = false },
+                    shape = RecordShapes.Small,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                    modifier = Modifier.minimumTouchTarget(),
+                ) {
+                    Text(stringResource(R.string.cancel), style = RecordType.Action)
                 }
             },
         )
@@ -589,12 +710,18 @@ private fun ChoosePanelDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = RecordShapes.Large,
+        containerColor = MaterialTheme.colorScheme.surface,
         title = {
             Column {
-                Text(stringResource(R.string.lab_batch_choose_tests), fontWeight = FontWeight.Bold)
                 Text(
-                    "${group.name} · ${group.testNames.size} elements",
-                    style = MaterialTheme.typography.bodySmall,
+                    text = stringResource(R.string.lab_batch_choose_tests),
+                    style = RecordType.SectionTitle,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    text = "${group.name}${stringResource(R.string.detail_separator)}${stringResource(R.string.lab_batch_elements_count, group.testNames.size)}",
+                    style = RecordType.Secondary,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -602,11 +729,11 @@ private fun ChoosePanelDialog(
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
-                    stringResource(R.string.lab_batch_choose_hint),
-                    style = MaterialTheme.typography.bodySmall,
+                    text = stringResource(R.string.lab_batch_choose_hint),
+                    style = RecordType.Secondary,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 6.dp),
                 )
@@ -616,6 +743,7 @@ private fun ChoosePanelDialog(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .heightIn(min = 48.dp)
                             .clickable {
                                 if (isChecked) selectedNames.remove(testName) else selectedNames.add(testName)
                             }
@@ -623,10 +751,18 @@ private fun ChoosePanelDialog(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(testName, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
+                        Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                            Text(
+                                text = testName,
+                                style = RecordType.FieldValue.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
                             matchingItem?.unit?.takeIf { it.isNotBlank() }?.let { unit ->
-                                Text(unit, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(
+                                    text = unit,
+                                    style = RecordType.Secondary,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
                         }
                         Checkbox(
@@ -636,14 +772,20 @@ private fun ChoosePanelDialog(
                             },
                         )
                     }
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 }
                 Spacer(Modifier.height(4.dp))
                 TextButton(
                     onClick = { showSavePanelDialog = true },
-                    modifier = Modifier.fillMaxWidth(),
+                    shape = RecordShapes.Small,
+                    modifier = Modifier.fillMaxWidth().minimumTouchTarget(),
                 ) {
-                    Text(stringResource(R.string.lab_batch_save_selection_as_panel), color = ActionRose, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = stringResource(R.string.lab_batch_save_selection_as_panel),
+                        style = RecordType.Action,
+                        color = MaterialTheme.colorScheme.primary,
+                        textAlign = TextAlign.Center,
+                    )
                 }
             }
         },
@@ -662,14 +804,20 @@ private fun ChoosePanelDialog(
                     onAddSelected(items)
                 },
                 enabled = selectedNames.isNotEmpty(),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                shape = RecordShapes.Small,
+                modifier = Modifier.minimumTouchTarget(),
             ) {
-                Text(stringResource(R.string.lab_batch_add_n_selected, selectedNames.size))
+                Text(stringResource(R.string.lab_batch_add_n_selected, selectedNames.size), style = RecordType.Action)
             }
         },
         dismissButton = {
-            OutlinedButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
+            OutlinedButton(
+                onClick = onDismiss,
+                shape = RecordShapes.Small,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                modifier = Modifier.minimumTouchTarget(),
+            ) {
+                Text(stringResource(R.string.cancel), style = RecordType.Action)
             }
         },
     )
@@ -696,196 +844,267 @@ private fun isChoiceAbnormal(choice: String): Boolean {
 
 @Composable
 private fun EnterTab(draft: LabBatchDraft, onEvent: (AncEvent) -> Unit) {
+    val bgFamily = FieldFamilies.background()
     val item = draft.currentItem
     if (item == null) {
-        Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-            Text(stringResource(R.string.lab_batch_empty_add_first), style = MaterialTheme.typography.bodyLarge)
+        RecordSectionCard(
+            title = stringResource(R.string.lab_batch_tab_enter),
+            family = bgFamily,
+        ) {
+            Text(
+                text = stringResource(R.string.lab_batch_empty_add_first),
+                style = RecordType.FieldValue,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         return
     }
 
     Column(
         modifier = Modifier.fillMaxWidth().testTag("labBatchEnter"),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        BatchSegmentedProgress(total = draft.items.size, current = draft.cursor)
+        BatchSegmentedProgress(
+            total = draft.items.size,
+            current = draft.cursor,
+            useRecordStyle = true,
+        )
 
-        Card(
+        OutlinedCard(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+            shape = RecordShapes.Large,
+            colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         ) {
-            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
+            CompositionLocalProvider(LocalFieldFamily provides bgFamily) {
+                Column(
+                    modifier = Modifier.padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Text(
-                        "${item.category.ifBlank { "Test" }} · Test ${draft.cursor + 1} of ${draft.items.size}".uppercase(),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    IconButton(
-                        onClick = { onEvent(AncEvent.LabBatchItemRemoved(item.labId)) },
-                        modifier = Modifier
-                            .size(32.dp)
-                            .testTag("labBatchDeleteItem"),
+                    Row(
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Surface(
-                            shape = RoundedCornerShape(999.dp),
-                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
-                            modifier = Modifier.size(26.dp),
+                        Column(
+                            modifier = Modifier.weight(1f).padding(vertical = 6.dp),
+                            verticalArrangement = Arrangement.spacedBy(2.dp),
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
+                            FormFieldLabel(
+                                stringResource(
+                                    R.string.lab_batch_enter_progress,
+                                    item.category.ifBlank { stringResource(R.string.lab_batch_default_category) },
+                                    draft.cursor + 1,
+                                    draft.items.size,
+                                ),
+                            )
+                            Text(
+                                text = item.testName,
+                                style = RecordType.SectionTitle,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.semantics { heading() },
+                            )
+                        }
+                        IconButton(
+                            onClick = { onEvent(AncEvent.LabBatchItemRemoved(item.labId)) },
+                            modifier = Modifier.minimumTouchTarget().testTag("labBatchDeleteItem"),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = stringResource(R.string.lab_batch_remove_item, item.testName),
+                                tint = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                    }
+
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(end = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        val qualitativeChoices = qualitativeChoicesFor(item.testName)
+
+                        if (qualitativeChoices != null) {
+                            Text(
+                                text = if (item.category.contains("Urine", true)) {
+                                    stringResource(R.string.lab_dipstick)
+                                } else {
+                                    item.category
+                                },
+                                style = RecordType.Secondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                qualitativeChoices.forEach { choice ->
+                                    val isSelected = item.result == choice
+                                    QualitativeChoiceButton(
+                                        label = choice,
+                                        isSelected = isSelected,
+                                        onClick = {
+                                            onEvent(AncEvent.LabBatchResultChanged(item.labId, choice))
+                                            onEvent(AncEvent.LabBatchFlagChanged(item.labId, isChoiceAbnormal(choice)))
+                                        },
+                                        useRecordStyle = true,
+                                    )
+                                }
+                            }
+                        } else {
+                            val sub = if (item.unit.isNotBlank()) {
+                                stringResource(
+                                    R.string.lab_batch_unit_range,
+                                    item.unit,
+                                    item.referenceRange.ifBlank { stringResource(R.string.lab_batch_from_report) },
+                                )
+                            } else {
+                                stringResource(R.string.lab_batch_from_report)
+                            }
+                            Text(
+                                text = sub,
+                                style = RecordType.Secondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+
+                            if (item.result.isNotBlank()) {
+                                LabReadoutStrip(
+                                    resultText = item.result,
+                                    unitText = item.unit,
+                                    flagContent = {
+                                        BandChip(
+                                            text = stringResource(
+                                                if (item.isAbnormal) R.string.lab_abnormal else R.string.lab_group_normal,
+                                            ),
+                                            tone = if (item.isAbnormal) StatusTone.High else StatusTone.Neutral,
+                                        )
+                                    },
+                                )
+                            }
+
+                            EditorField(
+                                value = item.result,
+                                onValueChange = { onEvent(AncEvent.LabBatchResultChanged(item.labId, it)) },
+                                label = stringResource(R.string.test_result),
+                                tag = "labBatchResult",
+                                singleLine = true,
+                                keyboardType = KeyboardType.Decimal,
+                                externalLabel = true,
+                                shape = RecordShapes.Small,
+                                textStyle = RecordType.KeyValue,
+                            )
+
+                            EditorField(
+                                value = item.referenceRange,
+                                onValueChange = { onEvent(AncEvent.LabBatchRangeChanged(item.labId, it)) },
+                                label = stringResource(
+                                    R.string.lab_batch_reference_range_hint,
+                                    stringResource(R.string.lab_batch_from_report),
+                                ),
+                                tag = "labBatchRange",
+                                singleLine = true,
+                                externalLabel = true,
+                                shape = RecordShapes.Small,
+                                textStyle = RecordType.FieldValue,
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 48.dp)
+                                .clickable { onEvent(AncEvent.LabBatchFlagChanged(item.labId, !item.isAbnormal)) }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = stringResource(R.string.lab_batch_abnormal),
+                                style = RecordType.FieldValue,
+                                fontWeight = if (item.isAbnormal) FontWeight.Bold else FontWeight.Medium,
+                                color = if (item.isAbnormal) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Switch(
+                                checked = item.isAbnormal,
+                                onCheckedChange = { onEvent(AncEvent.LabBatchFlagChanged(item.labId, it)) },
+                                modifier = Modifier.testTag("labBatchFlag"),
+                            )
+                        }
+
+                        EditorField(
+                            value = item.notes,
+                            onValueChange = { onEvent(AncEvent.LabBatchNotesChanged(item.labId, it)) },
+                            label = stringResource(R.string.notes),
+                            tag = "labBatchNote",
+                            singleLine = false,
+                            externalLabel = true,
+                            shape = RecordShapes.Small,
+                            textStyle = RecordType.FieldValue,
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            OutlinedButton(
+                                onClick = { onEvent(AncEvent.LabBatchCursorMoved(draft.cursor - 1)) },
+                                enabled = draft.cursor > 0,
+                                shape = RecordShapes.Small,
+                                border = BorderStroke(
+                                    1.dp,
+                                    if (draft.cursor > 0) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.outlineVariant,
+                                ),
+                                contentPadding = PaddingValues(horizontal = 8.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .heightIn(min = 48.dp)
+                                    .minimumTouchTarget()
+                                    .testTag("labBatchPrev"),
+                            ) {
                                 Text(
-                                    text = "✕",
-                                    color = MaterialTheme.colorScheme.error,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.ExtraBold,
+                                    text = stringResource(R.string.back_step),
+                                    style = RecordType.Action,
+                                    maxLines = 2,
+                                    textAlign = TextAlign.Center,
+                                )
+                            }
+                            Button(
+                                onClick = {
+                                    if (draft.cursor < draft.items.lastIndex) {
+                                        onEvent(AncEvent.LabBatchCursorMoved(draft.cursor + 1))
+                                    } else {
+                                        onEvent(AncEvent.LabBatchTabSelected(LabBatchTab.REVIEW))
+                                    }
+                                },
+                                shape = RecordShapes.Small,
+                                contentPadding = PaddingValues(horizontal = 8.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .heightIn(min = 48.dp)
+                                    .minimumTouchTarget()
+                                    .testTag("labBatchNext"),
+                            ) {
+                                Text(
+                                    text = stringResource(
+                                        if (draft.cursor < draft.items.lastIndex) R.string.next_step else R.string.lab_batch_tab_review,
+                                    ),
+                                    style = RecordType.Action,
+                                    maxLines = 2,
+                                    textAlign = TextAlign.Center,
                                 )
                             }
                         }
                     }
                 }
-                Text(item.testName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-
-                val qualitativeChoices = qualitativeChoicesFor(item.testName)
-
-                if (qualitativeChoices != null) {
-                    Text(
-                        if (item.category.contains("Urine", true)) "Dipstick" else item.category,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    qualitativeChoices.forEach { choice ->
-                        val isSelected = item.result == choice
-                        QualitativeChoiceButton(
-                            label = choice,
-                            isSelected = isSelected,
-                            onClick = {
-                                onEvent(AncEvent.LabBatchResultChanged(item.labId, choice))
-                                onEvent(AncEvent.LabBatchFlagChanged(item.labId, isChoiceAbnormal(choice)))
-                            },
-                        )
-                    }
-                } else {
-                    val sub = if (item.unit.isNotBlank()) {
-                        "${item.unit} · range ${item.referenceRange.ifBlank { stringResource(R.string.lab_batch_from_report) }}"
-                    } else {
-                        stringResource(R.string.lab_batch_from_report)
-                    }
-                    Text(sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-
-                    if (item.result.isNotBlank()) {
-                        Text(
-                            text = "${item.result} ${item.unit}",
-                            style = MaterialTheme.typography.headlineLarge,
-                            fontWeight = FontWeight.ExtraBold,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                        )
-                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                            LabResultPill(
-                                text = if (item.isAbnormal) "Abnormal ▲" else "Normal ✓",
-                                status = if (item.isAbnormal) LabResultPillStatus.ABNORMAL else LabResultPillStatus.NORMAL,
-                            )
-                        }
-                    }
-
-                    OutlinedTextField(
-                        value = item.result,
-                        onValueChange = { onEvent(AncEvent.LabBatchResultChanged(item.labId, it)) },
-                        label = { Text(stringResource(R.string.test_result)) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth().testTag("labBatchResult"),
-                    )
-
-                    OutlinedTextField(
-                        value = item.referenceRange,
-                        onValueChange = { onEvent(AncEvent.LabBatchRangeChanged(item.labId, it)) },
-                        label = { Text("Reference range (${stringResource(R.string.lab_batch_from_report)})") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth().testTag("labBatchRange"),
-                    )
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(stringResource(R.string.lab_batch_abnormal), modifier = Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
-                    Switch(
-                        checked = item.isAbnormal,
-                        onCheckedChange = { onEvent(AncEvent.LabBatchFlagChanged(item.labId, it)) },
-                        modifier = Modifier.testTag("labBatchFlag"),
-                    )
-                }
-
-                OutlinedTextField(
-                    value = item.notes,
-                    onValueChange = { onEvent(AncEvent.LabBatchNotesChanged(item.labId, it)) },
-                    label = { Text(stringResource(R.string.notes)) },
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth().testTag("labBatchNote"),
-                )
-
-                Spacer(Modifier.height(8.dp))
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(
-                        onClick = { onEvent(AncEvent.LabBatchCursorMoved(draft.cursor - 1)) },
-                        enabled = draft.cursor > 0,
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp).testTag("labBatchPrev"),
-                    ) {
-                        Text("◀ " + stringResource(R.string.back_step))
-                    }
-                    Button(
-                        onClick = {
-                            if (draft.cursor < draft.items.lastIndex) {
-                                onEvent(AncEvent.LabBatchCursorMoved(draft.cursor + 1))
-                            } else {
-                                onEvent(AncEvent.LabBatchTabSelected(LabBatchTab.REVIEW))
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp).testTag("labBatchNext"),
-                    ) {
-                        Text(
-                            if (draft.cursor < draft.items.lastIndex) {
-                                stringResource(R.string.next_step) + " ▶"
-                            } else {
-                                stringResource(R.string.lab_batch_tab_review)
-                            },
-                        )
-                    }
-                }
             }
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-            horizontalArrangement = Arrangement.Center,
+        TextButton(
+            onClick = { onEvent(AncEvent.LabBatchTabSelected(LabBatchTab.ADD)) },
+            shape = RecordShapes.Small,
+            modifier = Modifier.fillMaxWidth().minimumTouchTarget().testTag("labBatchAddInline"),
         ) {
-            TextButton(
-                onClick = { onEvent(AncEvent.LabBatchTabSelected(LabBatchTab.ADD)) },
-                modifier = Modifier.testTag("labBatchAddInline"),
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(4.dp))
-                Text(
-                    text = "+ Add Test to this Report",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
+            Text(
+                text = stringResource(R.string.add_test_to_report),
+                style = RecordType.Action,
+                textAlign = TextAlign.Center,
+            )
         }
     }
 }
@@ -897,72 +1116,93 @@ private fun ReviewTab(
     onEvent: (AncEvent) -> Unit,
 ) {
     val grouped = groupLabBatchItems(draft.items, groups)
+    val bgFamily = FieldFamilies.background()
 
     Column(
         modifier = Modifier.fillMaxWidth().testTag("labBatchReview"),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         grouped.forEach { section ->
-            SectionHeader(
+            RecordSectionCard(
                 title = section.title,
-                trailingText = stringResource(R.string.lab_batch_elements_count, section.items.size),
-            )
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                family = bgFamily,
+                action = {
+                    Text(
+                        text = stringResource(R.string.lab_batch_elements_count, section.items.size),
+                        style = RecordType.FieldLabel,
+                        color = bgFamily.label,
+                        modifier = Modifier.padding(end = 12.dp),
+                    )
+                },
             ) {
-                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(modifier = Modifier.fillMaxWidth()) {
                     section.items.forEachIndexed { index, item ->
+                        if (index > 0) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        }
+                        val jumpToItem = {
+                            val itemIndex = draft.items.indexOf(item)
+                            if (itemIndex >= 0) {
+                                onEvent(AncEvent.LabBatchCursorMoved(itemIndex))
+                                onEvent(AncEvent.LabBatchTabSelected(LabBatchTab.ENTER))
+                            }
+                        }
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable {
-                                    val itemIndex = draft.items.indexOf(item)
-                                    if (itemIndex >= 0) {
-                                        onEvent(AncEvent.LabBatchCursorMoved(itemIndex))
-                                        onEvent(AncEvent.LabBatchTabSelected(LabBatchTab.ENTER))
-                                    }
-                                }
-                                .padding(vertical = 4.dp),
+                                .heightIn(min = 48.dp)
+                                .clickable(onClick = jumpToItem)
+                                .padding(vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(item.testName, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
-                                if (item.unit.isNotBlank()) {
-                                    Text(item.unit, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(
+                                    text = item.testName,
+                                    style = RecordType.FieldValue.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                                item.unit.takeIf { it.isNotBlank() }?.let { unit ->
+                                    Text(
+                                        text = unit,
+                                        style = RecordType.Secondary,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
                                 }
                             }
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Column(
+                                modifier = Modifier.weight(1f, fill = false),
+                                horizontalAlignment = Alignment.End,
+                            ) {
                                 if (item.result.isBlank()) {
-                                    LabResultPill(
+                                    StatusWord(
                                         text = stringResource(R.string.lab_batch_pending),
-                                        status = LabResultPillStatus.PENDING,
+                                        tone = StatusTone.Moderate,
                                     )
                                 } else {
-                                    Text(item.result, fontWeight = FontWeight.ExtraBold)
-                                    LabResultPill(
-                                        text = if (item.isAbnormal) "Abnormal ▲" else "Normal ✓",
-                                        status = if (item.isAbnormal) LabResultPillStatus.ABNORMAL else LabResultPillStatus.NORMAL,
+                                    val resultDisplay = if (item.unit.isNotBlank()) "${item.result} ${item.unit}" else item.result
+                                    Text(
+                                        text = ltrIsolate(resultDisplay),
+                                        style = RecordType.MetricValue.copy(fontWeight = FontWeight.Bold),
+                                        color = if (item.isAbnormal) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                                        textAlign = TextAlign.End,
+                                    )
+                                    StatusWord(
+                                        text = stringResource(
+                                            if (item.isAbnormal) R.string.lab_abnormal else R.string.lab_group_normal,
+                                        ),
+                                        tone = if (item.isAbnormal) StatusTone.High else StatusTone.Neutral,
                                     )
                                 }
-                                TextButton(
-                                    onClick = {
-                                        val itemIndex = draft.items.indexOf(item)
-                                        if (itemIndex >= 0) {
-                                            onEvent(AncEvent.LabBatchCursorMoved(itemIndex))
-                                            onEvent(AncEvent.LabBatchTabSelected(LabBatchTab.ENTER))
-                                        }
-                                    },
-                                    modifier = Modifier.testTag("labBatchEdit-" + item.labId),
-                                ) {
-                                    Text(stringResource(R.string.lab_batch_edit))
-                                }
                             }
-                        }
-                        if (index < section.items.lastIndex) {
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                            TextButton(
+                                onClick = jumpToItem,
+                                shape = RecordShapes.Small,
+                                contentPadding = PaddingValues(horizontal = 8.dp),
+                                modifier = Modifier.minimumTouchTarget().testTag("labBatchEdit-${item.labId}"),
+                            ) {
+                                Text(stringResource(R.string.lab_batch_edit), style = RecordType.Action)
+                            }
                         }
                     }
                 }
@@ -971,16 +1211,43 @@ private fun ReviewTab(
 
         val emptyQualitative = draft.items.filter { it.result.isBlank() && (it.unit.isBlank() || it.category.contains("Urine", true)) }
         if (emptyQualitative.isNotEmpty()) {
-            TextButton(
-                onClick = {
-                    emptyQualitative.forEach { item ->
-                        val defaultValue = if (item.testName.lowercase().contains("protein")) "Normal" else "Negative"
-                        onEvent(AncEvent.LabBatchResultChanged(item.labId, defaultValue))
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().testTag("labBatchMarkNormal"),
+            OutlinedCard(
+                shape = RecordShapes.Large,
+                colors = CardDefaults.outlinedCardColors(containerColor = bgFamily.container),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(stringResource(R.string.lab_batch_mark_empty_normal, emptyQualitative.size), fontWeight = FontWeight.Bold)
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.lab_batch_mark_normal_hint),
+                        style = RecordType.Secondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    OutlinedButton(
+                        onClick = {
+                            emptyQualitative.forEach { item ->
+                                val defaultValue = if (item.testName.lowercase().contains("protein")) "Normal" else "Negative"
+                                onEvent(AncEvent.LabBatchResultChanged(item.labId, defaultValue))
+                            }
+                        },
+                        shape = RecordShapes.Small,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            contentColor = MaterialTheme.colorScheme.primary,
+                        ),
+                        modifier = Modifier.fillMaxWidth().minimumTouchTarget().testTag("labBatchMarkNormal"),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.lab_batch_mark_empty_normal, emptyQualitative.size),
+                            style = RecordType.Action,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
             }
         }
     }

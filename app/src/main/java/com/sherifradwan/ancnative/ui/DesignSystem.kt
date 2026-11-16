@@ -30,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -41,6 +42,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -49,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.ui.components.RecordShapes
 import com.sherifradwan.ancnative.ui.components.RecordType
+import com.sherifradwan.ancnative.ui.components.ltrIsolate
 
 @Composable
 fun SectionCard(
@@ -533,11 +536,65 @@ fun BatchInfoBar(
     onChangeClick: () -> Unit,
     modifier: Modifier = Modifier,
     tag: String? = null,
+    useRecordStyle: Boolean = false,
+    enabled: Boolean = true,
 ) {
+    if (useRecordStyle) {
+        OutlinedCard(
+            onClick = onChangeClick,
+            enabled = enabled,
+            modifier = modifier
+                .fillMaxWidth()
+                .heightIn(min = 56.dp)
+                .let { if (tag != null) it.testTag(tag) else it },
+            shape = RecordShapes.Large,
+            colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 14.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f).padding(end = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    val dateDisplay = dateText.ifBlank { stringResource(R.string.lab_set_date) }
+                    val topText = if (!gaText.isNullOrBlank()) "$dateDisplay, ${ltrIsolate(gaText)}" else dateDisplay
+                    Text(
+                        text = topText,
+                        style = RecordType.KeyValue,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
+                    )
+                    Text(
+                        text = labName?.ifBlank { null } ?: stringResource(R.string.lab_batch_no_lab),
+                        style = RecordType.Secondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Box(
+                    modifier = Modifier.minimumTouchTarget().padding(horizontal = 12.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = stringResource(R.string.lab_batch_change),
+                        style = RecordType.Action,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+        }
+        return
+    }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onChangeClick)
+            .clickable(enabled = enabled, onClick = onChangeClick)
             .let { if (tag != null) it.testTag(tag) else it },
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -598,8 +655,31 @@ fun BatchSegmentedProgress(
     total: Int,
     current: Int,
     modifier: Modifier = Modifier,
+    useRecordStyle: Boolean = false,
 ) {
     if (total <= 1) return
+    if (useRecordStyle) {
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+                .clearAndSetSemantics {},
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            for (i in 0 until total) {
+                val color = if (i <= current) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(if (i == current) 8.dp else 6.dp)
+                        .clip(RecordShapes.Small)
+                        .background(color),
+                )
+            }
+        }
+        return
+    }
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -631,9 +711,58 @@ fun QualitativeChoiceButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     tag: String? = null,
+    useRecordStyle: Boolean = false,
+    enabled: Boolean = true,
 ) {
+    if (useRecordStyle) {
+        Surface(
+            onClick = onClick,
+            enabled = enabled,
+            shape = RecordShapes.Small,
+            color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+            border = BorderStroke(
+                if (isSelected) 1.5.dp else 1.dp,
+                if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+            ),
+            modifier = modifier
+                .fillMaxWidth()
+                .heightIn(min = 52.dp)
+                .let { if (tag != null) it.testTag(tag) else it },
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = label,
+                    style = RecordType.FieldValue.copy(
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    ),
+                    color = if (isSelected) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (isSelected) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
+        }
+        return
+    }
     Surface(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = 52.dp)

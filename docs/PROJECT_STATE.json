@@ -1716,20 +1716,20 @@
   "rd16": {
    "phase": "pRD",
    "order": 17,
-   "status": "active",
+   "status": "done",
    "title": "Slice 16: Lab editor and lab batch",
-   "ref": "",
-   "detail": "Mock approved. Building.",
+   "ref": "3bc4888",
+   "detail": "Built by Hydrogen, tested by Flash (30 tests), alphacode and Sonnet-medium reviews passed, emulator green.",
    "owner": "Lane models",
    "updated": "2026-11-16"
   },
   "rd17": {
    "phase": "pRD",
    "order": 18,
-   "status": "todo",
+   "status": "next",
    "title": "Slice 17: Catalog settings",
    "ref": "",
-   "detail": "No mock: builds from the shipped style (owner 2026-11-16).",
+   "detail": "No mock needed (owner 2026-11-16): build from the shipped style.",
    "owner": "Lane models",
    "updated": "2026-11-16"
   },
@@ -1875,6 +1875,10 @@
   }
  },
  "log": [
+  {
+   "date": "2026-11-16",
+   "text": "Slice 16 (lab editor and batch) built, reviewed, tested, committed locally."
+  },
   {
    "date": "2026-11-16",
    "text": "Slice 15 (ultrasound editor and photo viewer) built, reviewed, tested, committed locally."

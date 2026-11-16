@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -19,6 +21,8 @@ import androidx.compose.ui.res.stringResource
 import com.sherifradwan.ancnative.R
 import com.sherifradwan.ancnative.ui.components.FormFieldLabel
 import com.sherifradwan.ancnative.ui.components.RecordFilterChip
+import com.sherifradwan.ancnative.ui.components.RecordShapes
+import com.sherifradwan.ancnative.ui.components.RecordType
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -129,10 +133,12 @@ fun QuickPresetChips(
         if (collapsible) {
             TextButton(
                 onClick = { expanded = !expanded },
+                shape = if (useRecordStyle) RecordShapes.Small else ButtonDefaults.textShape,
                 modifier = Modifier.minimumTouchTarget().testTag(toggleTag),
             ) {
                 Text(
                     text = if (expanded) stringResource(R.string.show_fewer) else stringResource(R.string.show_all_count, items.size),
+                    style = if (useRecordStyle) RecordType.Action else LocalTextStyle.current,
                 )
             }
         }

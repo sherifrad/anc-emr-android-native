@@ -231,7 +231,7 @@
     <string name="invalid_ga">Enter valid gestational age (weeks: 0-45, days: 0-6).</string>
     <string name="add_lab">Add Investigation</string>
     <string name="edit_lab">Edit Investigation</string>
-    <string name="lab_editor">Laboratory Investigation</string>
+    <string name="lab_editor">Laboratory investigation</string>
     <string name="lab_editor_notice">Laboratory findings are recorded factually with abnormal flagging.</string>
     <string name="test_date">Test date</string>
     <string name="test_category">Category</string>
@@ -295,7 +295,7 @@
     <string name="add_scan_photo">Attach scan photo</string>
     <string name="detailed_biometry_toggle">Fetal biometry &amp; heart rate</string>
     <string name="lab_name">Laboratory name</string>
-    <string name="add_another_test">Add investigation (+)</string>
+    <string name="add_another_test">Save and add another</string>
     <string name="adverse_effects">Side effects &amp; patient notes</string>
     <string name="add_another_medication">Add medication (+)</string>
     <string name="clinical_attention">Clinical attention</string>
@@ -608,7 +608,7 @@
     <string name="custom_movements_title">Add fetal movements finding</string>
     <string name="custom_urine_title">Add urine protein finding</string>
     <string name="lab_batch_title">Laboratory results</string>
-    <string name="lab_batch_change">Change ▾</string>
+    <string name="lab_batch_change">Change</string>
     <string name="lab_batch_no_lab">No laboratory</string>
     <string name="lab_batch_tab_add">+ Add</string>
     <string name="lab_batch_tab_enter">Enter</string>
@@ -626,7 +626,7 @@
     <string name="lab_batch_search_placeholder">Search a test, e.g. ferritin</string>
     <string name="lab_batch_elements_count">%1$d elements</string>
     <string name="lab_batch_from_report">from the report</string>
-    <string name="lab_batch_pending">pending</string>
+    <string name="lab_batch_pending">Pending</string>
     <string name="lab_batch_mark_empty_normal">Mark %1$d empty as normal</string>
     <string name="lab_batch_choose_tests">Choose tests</string>
     <string name="lab_batch_choose_hint">Untick what this patient does not need today. The panel itself stays unchanged.</string>
@@ -821,4 +821,31 @@
     <string name="previous_photo">Previous photo</string>
     <string name="next_photo">Next photo</string>
     <string name="unit_g">%1$s g</string>
+    <string name="lab_save_and_next">Save and next test</string>
+    <string name="lab_chained_batch">Chained batch</string>
+    <string name="lab_common_tests_group">Common tests: %1$s</string>
+    <string name="lab_dipstick">Dipstick</string>
+    <string name="lab_dipstick_result">Dipstick result</string>
+    <string name="lab_flag_normal">Normal</string>
+    <string name="lab_flag_high">High</string>
+    <string name="lab_flag_low">Low</string>
+    <string name="lab_dipstick_auto_flag_hint">Trace or higher marked abnormal</string>
+    <string name="lab_range_auto_flag_hint">Auto-flagged from reference range</string>
+    <string name="lab_filter_by_category">Filter by category</string>
+    <string name="lab_all_tests_count">All (%1$d)</string>
+    <string name="lab_save_template_prompt">New test template: save to test list?</string>
+    <string name="lab_add_template">Add template</string>
+    <string name="lab_set_date">Set date</string>
+    <string name="lab_ref_from_report">%1$s, ref %2$s (from report)</string>
+    <string name="lab_ref_only_from_report">ref %1$s (from report)</string>
+    <string name="lab_batch_panels_section">Common panels</string>
+    <string name="lab_batch_panel_summary">%1$d elements: %2$s</string>
+    <string name="lab_batch_no_search_matches">No matching tests found</string>
+    <string name="lab_batch_panel_name">Panel name</string>
+    <string name="lab_batch_enter_progress">%1$s, test %2$d of %3$d</string>
+    <string name="lab_batch_default_category">Test</string>
+    <string name="lab_batch_unit_range">%1$s, range %2$s</string>
+    <string name="lab_batch_reference_range_hint">Reference range (%1$s)</string>
+    <string name="lab_batch_remove_item">Remove %1$s</string>
+    <string name="lab_batch_mark_normal_hint">Remaining dipstick or qualitative tests without a value can be set to normal in one tap.</string>
 </resources>
