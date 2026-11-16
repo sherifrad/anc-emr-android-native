@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Mock S19: Shell and shared dialogs</title>
+<style>
+  /* Tokens: Theme.kt scheme values + Slice 0 record tokens (Patient family + StatusHigh / StatusModerate). */
+  :root{
+    --primary:#0D1B3D; --on:#0D1B3D; --onv:#4C3F43; --onprimary:#FFFFFF;
+    --primc:#D6DFFF; --onprimc:#041334; --sc:#FFD9DE; --onsc:#3B0815;
+    --surface:#FFFFFF; --bg:#FBF8F5; --outv:#CAC4D0; --outline:#79747E;
+    --sv:#F3E9E7; --scl:#F9F5F3; --sch:#EFE9E4; --sche:#E9E2DD;
+    --err:#BA1A1A; --onerr:#FFFFFF; --errc:#FFDAD6; --onerrc:#410002;
+    --pt-bg:#E9EEF8; --pt-lb:#23407A;
+    --mod-bg:#FCEFD6; --mod-bd:#9E6F1E; --mod-fg:#6E4708;
+    --hi-bg:#FBE3E3; --hi-bd:#C26666; --hi-fg:#8E1B1B;
+    --r-s:10px; --r-l:16px;
+  }
+  .dark{
+    --primary:#B4C5FF; --on:#E2E2EA; --onv:#CDC3C6; --onprimary:#002A78;
+    --primc:#183F91; --onprimc:#DCE1FF; --sc:#762E3B; --onsc:#FFD9DE;
+    --surface:#1A202E; --bg:#0E121B; --outv:#3A4459; --outline:#8E95A5;
+    --sv:#262E40; --scl:#141924; --sch:#283248; --sche:#323D56;
+    --err:#FFB4AB; --onerr:#690005; --errc:#5C141D; --onerrc:#FFDAD6;
+    --pt-bg:#22304A; --pt-lb:#AFC6F2;
+    --mod-bg:#3A2A0E; --mod-bd:#A87A2A; --mod-fg:#F3D18E;
+    --hi-bg:#4A1616; --hi-bd:#B45A5A; --hi-fg:#FFC9C9;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:#FFFFFF;color:#0D1B3D;font-family:Roboto,"Noto Sans","Segoe UI",system-ui,-apple-system,Arial,sans-serif;font-size:15px;line-height:1.5;padding:32px 16px 64px}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-size:26px;line-height:1.25;margin:0 0 8px}
+  h2{font-size:20px;line-height:1.3;margin:44px 0 6px}
+  .lede,p,li{max-width:78ch}
+  .lede{color:#4C3F43;margin:0 0 4px}
+  .reason{border:1px solid #CAC4D0;border-radius:16px;padding:18px 20px;margin-top:18px;background:#FDFCFB}
+  .reason h2{margin-top:0}
+  .reason ul{margin:6px 0 0;padding-inline-start:20px}
+  .pair{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-top:14px}
+  figure{margin:0;width:360px;max-width:100%;flex:0 0 auto}
+  figcaption{font-size:14px;color:#4C3F43;margin:0 0 8px}
+  figcaption b{color:#0D1B3D}
+  .note{font-size:14px;color:#4C3F43;margin:10px 0 0}
+
+  .phone{width:100%;background:var(--bg);border:1px solid #B9B4BE;border-radius:16px;overflow:hidden;color:var(--on);display:flex;flex-direction:column}
+  .scrim{background:rgba(0,0,0,.38);padding:24px 16px;display:flex;flex-direction:column;justify-content:center;flex:1 1 auto;min-height:300px}
+  .scrim.tight{padding:16px 8px}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  button:disabled{cursor:not-allowed}
+  button:hover:not(:disabled){filter:brightness(.97)}
+  button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+
+  /* AFTER: Shared buttons */
+  .pbtn{min-height:48px;min-width:48px;padding:10px 16px;border-radius:var(--r-s);background:var(--primary);color:var(--onprimary);font-size:14px;line-height:20px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;text-align:center}
+  .obtn{min-height:48px;min-width:48px;padding:10px 14px;border:1px solid var(--outline);border-radius:var(--r-s);font-size:14px;line-height:20px;font-weight:600;color:var(--primary);background:var(--surface);display:inline-flex;align-items:center;justify-content:center;text-align:center}
+  .tbtn{min-height:48px;min-width:48px;padding:8px 12px;border-radius:var(--r-s);font-size:14px;line-height:20px;font-weight:600;color:var(--primary);display:inline-flex;align-items:center;justify-content:center;text-align:center}
+  .tbtn.err{color:var(--err)}
+  .ibtn{width:48px;height:48px;border-radius:var(--r-s);display:inline-flex;align-items:center;justify-content:center;color:var(--primary);flex:0 0 48px}
+
+  /* AFTER: AlertDialogs (Delete confirm, Draft recovery, New patient info, Shell discard) */
+  .cdlg{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:20px;display:flex;flex-direction:column;gap:12px;color:var(--on);width:100%}
+  .cdlg h3,.cdlg h4{margin:0;font-size:18px;line-height:24px;font-weight:700;color:var(--on)}
+  .cdlg p{margin:0;font-size:16px;line-height:22px;color:var(--onv)}
+  .cdlg-acts{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:4px}
+  .stale-box{background:var(--mod-bg);border:1px solid var(--mod-bd);border-radius:var(--r-s);padding:10px 12px;font-size:14px;line-height:20px;color:var(--mod-fg);font-weight:500}
+
+  /* AFTER: UndoBarHost (UndoOfferBar + DeleteMessageBar) */
+  .host-shell{min-height:240px;display:flex;flex-direction:column;justify-content:space-between;background:var(--bg)}
+  .host-stub{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+  .stub-card{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+  .stub-card b{font-size:16px;line-height:22px;color:var(--on)}
+  .stub-card span{font-size:14px;line-height:20px;color:var(--onv)}
+  .bar-wrap{padding:6px 12px;display:flex;flex-direction:column;gap:6px}
+  .undobar{background:var(--pt-bg);color:var(--on);border:1px solid var(--outline);border-radius:var(--r-s);padding:4px 8px 4px 14px;display:flex;align-items:center;gap:8px;min-height:56px}
+  .undobar-txt{flex:1 1 auto;min-width:0;font-size:14px;line-height:20px;color:var(--on);overflow-wrap:anywhere}
+  .undobar .tbtn{color:var(--primary)}
+  .errbar{background:var(--errc);color:var(--onerrc);border:1px solid var(--err);border-radius:var(--r-s);padding:6px 8px 6px 14px;display:flex;align-items:center;gap:8px;min-height:56px}
+  .errbar-txt{flex:1 1 auto;min-width:0;font-size:14px;line-height:20px;color:var(--onerrc)}
+  .errbar .tbtn{color:var(--onerrc)}
+  .spin{width:18px;height:18px;border:2px solid var(--primary);border-top-color:transparent;border-radius:9px;flex:0 0 18px}
+
+  /* AFTER: ClinicalDateField (picker-only, readOnly) + AncDatePickerDialog */
+  .field-col{display:flex;flex-direction:column;gap:4px}
+  .flab{display:block;font-size:12px;line-height:16px;font-weight:600;color:var(--pt-lb)}
+  .fbox{min-height:52px;padding:4px 4px 4px 14px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;text-align:start}
+  .fbox-val{font-size:16px;line-height:22px;color:var(--on)}
+  .fbox-ph{font-size:16px;line-height:22px;color:var(--onv)}
+  .chiprow{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:4px}
+  .chipwrap{min-height:48px;display:inline-flex;align-items:center}
+  .chip{min-height:36px;padding:6px 12px;border:1px solid var(--outline);border-radius:var(--r-s);background:var(--surface);color:var(--on);font-size:14px;line-height:20px;font-weight:500;display:inline-flex;align-items:center}
+
+  .dpdlg{background:var(--surface);border:1px solid var(--outv);border-radius:var(--r-l);color:var(--on);width:100%;overflow:hidden;display:flex;flex-direction:column}
+  .dp-head{padding:16px 16px 12px;border-bottom:1px solid var(--outv);display:flex;flex-direction:column;gap:4px}
+  .dp-title{margin:0;font-size:12px;line-height:16px;font-weight:600;color:var(--pt-lb)}
+  .dp-sel{margin:0;font-size:22px;line-height:28px;font-weight:700;color:var(--primary)}
+  .dp-nav{padding:4px 4px 4px 8px;display:flex;align-items:center;justify-content:space-between;gap:4px}
+  .dp-month-btn{min-height:48px;padding:0 12px;border-radius:var(--r-s);font-size:14px;line-height:20px;font-weight:600;color:var(--primary);display:inline-flex;align-items:center;gap:6px}
+  .dp-arrows{display:flex;align-items:center;gap:0}
+  .dp-grid{padding:0 8px 8px;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));text-align:center;row-gap:2px}
+  .dp-wk{height:32px;display:flex;align-items:center;justify-content:center;font-size:12px;line-height:16px;font-weight:600;color:var(--onv)}
+  .dp-day{height:48px;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:20px;color:var(--on);border-radius:var(--r-s);position:relative}
+  .dp-day.out{color:transparent;pointer-events:none}
+  .dp-day.cur::after,.dp-day.tod::after{content:"";position:absolute;width:36px;height:36px;border-radius:18px;inset:0;margin:auto;pointer-events:none}
+  .dp-day.tod::after{border:1px solid var(--primary)}
+  .dp-day.cur{color:var(--onprimary);font-weight:700}
+  .dp-day.cur::after{background:var(--primary);z-index:0}
+  .dp-day.cur span{position:relative;z-index:1}
+  .dp-foot{padding:8px 16px 12px;border-top:1px solid var(--outv);display:flex;justify-content:flex-end;gap:8px}
+
+  /* AFTER: InAppCameraDialog */
+  .cam-phone{width:100%;background:#000000;border:1px solid #3A4459;border-radius:16px;overflow:hidden;color:#FFFFFF;display:flex;flex-direction:column;min-height:460px;padding:16px;gap:12px}
+  .cam-top{display:flex;justify-content:flex-end;align-items:center}
+  .cam-close-btn{min-height:48px;padding:0 14px;border-radius:var(--r-s);border:1px solid #8E95A5;color:#FFFFFF;font-size:14px;line-height:20px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+  .cam-view{flex:1 1 auto;min-height:250px;border-radius:var(--r-l);border:1px solid #3A4459;background:linear-gradient(180deg,#121824 0%,#0B0F17 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;gap:6px}
+  .cam-err-banner{background:#4A1616;border:1px solid #B45A5A;border-radius:var(--r-s);padding:10px 12px;font-size:14px;line-height:20px;color:#FFC9C9;text-align:start;width:100%}
+  .cam-shutter{width:72px;height:72px;border-radius:36px;border:2px solid #FFFFFF;padding:4px;display:inline-flex;align-items:center;justify-content:center;margin:4px auto 0}
+  .cam-shutter-disc{width:60px;height:60px;border-radius:30px;background:#FFFFFF;display:block}
+  .cam-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .cam-retake{min-height:48px;padding:10px 12px;border-radius:var(--r-s);border:1px solid #8E95A5;color:#FFFFFF;font-size:14px;line-height:20px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+  .cam-use{min-height:48px;padding:10px 12px;border-radius:var(--r-s);background:#FFFFFF;color:#0D1B3D;font-size:14px;line-height:20px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+  .cam-perm-wrap{flex:1 1 auto;display:flex;align-items:center;justify-content:center}
+  .cam-perm-card{width:100%;background:#1A202E;border:1px solid #3A4459;border-radius:var(--r-l);padding:20px;display:flex;flex-direction:column;gap:12px}
+  .cam-perm-card h4{margin:0;font-size:18px;line-height:24px;font-weight:700;color:#E2E2EA}
+  .cam-perm-card p{margin:0;font-size:16px;line-height:22px;color:#CDC3C6}
+
+  /* BEFORE fidelity styles (exact current DeleteUndoUi.kt, AncApp.kt, AncDatePicker.kt, InAppCameraDialog.kt) */
+  .old-dlg28{background:#EFE9E4;border-radius:28px;padding:24px;color:#0D1B3D;display:flex;flex-direction:column;gap:14px;width:304px;max-width:100%;margin:0 auto}
+  .old-dlg28 h3,.old-dlg28 h4{margin:0;font-size:22px;line-height:28px;font-weight:600}
+  .old-dlg28 p{margin:0;font-size:14px;line-height:20px;color:#4C3F43}
+  .old-dlg-acts{display:flex;justify-content:flex-end;gap:8px;margin-top:4px;align-items:center}
+  .old-pill{min-height:40px;padding:0 18px;border-radius:999px;background:#0D1B3D;color:#FFFFFF;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+  .old-tact{min-height:40px;padding:0 12px;font-size:13px;font-weight:600;color:#0D1B3D;display:inline-flex;align-items:center;justify-content:center;text-align:center}
+  .old-undo{background:#E9E2DD;border:1px solid #CAC4D0;border-radius:12px;box-shadow:0 2px 4px rgba(0,0,0,.14);padding:4px 8px 4px 16px;display:flex;align-items:center;gap:8px;min-height:48px}
+  .old-undo span{font-size:13px;line-height:18px;color:#0D1B3D;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .old-errbar{background:#FFDAD6;color:#410002;border-radius:12px;padding:4px 8px 4px 16px;display:flex;align-items:center;gap:8px;min-height:48px;font-size:13px;line-height:18px}
+  .old-dp{background:#EFE9E4;border-radius:28px;color:#0D1B3D;width:100%;overflow:hidden}
+  .old-dp-head{padding:16px 20px 12px;border-bottom:1px solid #CAC4D0;display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+  .old-dp-title{margin:0 0 8px;font-size:13px;line-height:18px;color:#4C3F43}
+  .old-dp-sel{margin:0;font-size:28px;line-height:34px;color:#0D1B3D;font-weight:500}
+  .old-dp-mode{width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;color:#4C3F43;font-size:18px}
+  .old-m3f{position:relative;border:1px solid #79747E;border-radius:4px;padding:12px 4px 12px 14px;font-size:15px;line-height:20px;color:#0D1B3D;background:#FFFFFF;min-height:56px;display:flex;align-items:center;justify-content:space-between}
+  .old-m3f .olbl{position:absolute;top:-9px;left:10px;background:#FFFFFF;padding:0 4px;font-size:12px;color:#4C3F43}
+  .old-cam{background:#000000;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:16px;min-height:460px;color:#FFFFFF}
+  .old-cam-view{flex:1 1 auto;min-height:240px;border-radius:20px;background:#141820;display:flex;align-items:center;justify-content:center;color:#9CA3AF;font-size:14px}
+  .old-cam-use{min-height:48px;border-radius:999px;background:#0D1B3D;color:#FFFFFF;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center}
+  .old-cam-retake{min-height:48px;border-radius:999px;border:1px solid #79747E;color:#FFFFFF;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center}
+  .old-cam-close{min-height:48px;padding:0 20px;border-radius:999px;border:1px solid #FFFFFF;color:#FFFFFF;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;align-self:center}
+
+  /* Tables & lists */
+  .tablewrap{overflow-x:auto;max-width:100%}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin-top:10px}
+  th,td{border-bottom:1px solid #E6E1E5;padding:7px 8px;text-align:start;vertical-align:top}
+  th{background:#F7F5F3}
+  td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+  ol.map li{margin:7px 0}
+  code{font-family:"Roboto Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:#F3F0EE;padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<h1>Mock S19: Shell and shared dialogs</h1>
+<p class="lede">Covers <code>ui/DeleteUndoUi.kt</code> (<code>DeleteConfirmDialog</code>, <code>UndoBarHost</code>), <code>ui/AncApp.kt</code> dialogs only (<code>showNewPatientInfo</code>, <code>showDiscardDialog</code>, <code>draftRecoveryPrompt</code>), <code>ui/AncDatePicker.kt</code> (<code>AncDatePickerDialog</code>, <code>ClinicalDateField</code>), and <code>ui/InAppCameraDialog.kt</code>. All strings come from <code>strings.xml</code> and <code>DemoFixtures</code> (<code>Mona Ragab</code>, <code>Iron Polymaltose Complex</code>, <code>2026-05-07</code>, <code>2026-11-16</code>).</p>
+
+<section class="reason" aria-labelledby="r">
+  <h2 id="r">Design reasoning</h2>
+  <p>Reading this as: shared clinical interruption chrome where clinicians confirm deletions, recover unsaved drafts after lock or crash, pick calendar dates without hand-typing errors, and capture scan photos in dark rooms without missing a control. Antislop dials: ENERGY 1 / RHYTHM 1 / MOTION 1 (pressed and focus states only, no new animation).</p>
+  <ul>
+    <li><b>Error-colored destructive confirms across all dialogs:</b> <code>DeleteConfirmDialog</code> (<code>Delete</code>), <code>AncApp</code> <code>showDiscardDialog</code> (reusing <code>DiscardChangesDialog</code>), and <code>draftRecoveryPrompt</code> (<code>Discard and start fresh</code>) stop dressing irreversible actions in primary navy pills, while safe actions (<code>Cancel</code>, <code>Keep editing</code>, <code>Continue</code>) hold <code>primary</code> weight.</li>
+    <li><b>Calm docked <code>UndoBarHost</code> with zero elevation:</b> replace the <code>12 dp</code> shadowed grey undo slab with a <code>10 dp</code> <code>FieldPatientBg</code> bar outlined in <code>outline</code> (<code>3.91:1</code> / <code>4.55:1</code>) and <code>14 sp</code> wrapping copy; frame <code>DeleteMessageBar</code> in <code>errorContainer</code> with a <code>1 dp</code> <code>error</code> border and high-contrast <code>onErrorContainer</code> <code>Close</code> action.</li>
+    <li><b>Picker-only date chrome (Owner rule 2026-11-16):</b> restyle <code>AncDatePickerDialog</code> on <code>16 dp</code> <code>surface</code> (replacing <code>28 dp</code> warm grey), remove the M3 keyboard toggle icon (<code>showModeToggle = false</code>), and make <code>ClinicalDateField</code> <code>readOnly = true</code> with full-field tap to open the picker (keeping <code>EditableText</code> semantics for tests).</li>
+    <li><b>Readable <code>InAppCameraDialog</code> on pure black:</b> replace the <code>1.24:1</code> light-mode dark-navy <code>Use photo</code> button with high-contrast white fill and navy ink (<code>21:1</code> boundary, <code>16.92:1</code> text), move <code>Close camera</code> to the top bar away from thumb capture/confirm taps, and place permission-denied and capture errors inside bordered dark cards.</li>
+  </ul>
+</section>
+
+<h2>1. Delete confirmation dialog (<code>DeleteConfirmDialog</code>, <code>ui/DeleteUndoUi.kt</code>)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, 28 dp warm grey dialog with primary navy Delete pill</figcaption>
+    <div class="phone"><div class="scrim">
+      <div class="old-dlg28">
+        <h3>Delete this medication?</h3>
+        <p>&ldquo;Iron Polymaltose Complex&rdquo; will be removed from this patient's record. You can undo for a few seconds afterwards.</p>
+        <div class="old-dlg-acts">
+          <span class="old-tact">Cancel</span>
+          <span class="old-pill">Delete</span>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">Irreversible <code>Delete</code> wears the solid primary fill like a safe default; <code>28 dp</code> M3 container corners and <code>14 sp</code> body.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, 16 dp surface dialog with error-colored Delete</figcaption>
+    <div class="phone"><div class="scrim">
+      <div class="cdlg" role="alertdialog" aria-label="Delete this medication?">
+        <h3>Delete this medication?</h3>
+        <p>&ldquo;Iron Polymaltose Complex&rdquo; will be removed from this patient's record. You can undo for a few seconds afterwards.</p>
+        <div class="cdlg-acts">
+          <button type="button" class="tbtn">Cancel</button>
+          <button type="button" class="tbtn err">Delete</button>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">Matches <code>DiscardChangesDialog</code> (Slice 11), <code>CatalogConfirmDialog</code> (Slice 17), and <code>restore_confirm_dialog</code> (Slice 18): <code>16 dp</code> white surface, <code>18 sp</code> Bold title, <code>16 sp</code> body, <code>48 dp</code> <code>10 dp</code> actions.</p>
+  </figure>
+</div>
+
+<h2>2. Undo bar and delete failure bar (<code>UndoBarHost</code>, <code>ui/DeleteUndoUi.kt</code>)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, 12 dp shadowed grey bar + 13 sp single-line text</figcaption>
+    <div class="phone">
+      <div class="host-shell">
+        <div class="host-stub">
+          <div class="stub-card"><b>Active medications</b><span>Mona Ragab, 27+2 wks</span></div>
+        </div>
+        <div class="bar-wrap">
+          <div class="old-errbar">
+            <span style="flex:1 1 auto">Could not delete medication &ldquo;Iron Polymaltose Complex&rdquo; (patient Mona Ragab). It is still in the record.</span>
+            <span class="old-tact">Close</span>
+          </div>
+          <div class="old-undo">
+            <span style="flex:1 1 auto">Deleted Iron Polymaltose Compl…</span>
+            <span style="font-size:13px;color:#0D1B3D;flex:0 0 auto">- Mona Ragab</span>
+            <span class="old-tact">Undo</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Non-token <code>12 dp</code> corners, <code>2 dp</code> drop shadow, <code>13 sp</code> <code>bodyMedium</code> text, and ellipsis truncation on single-line narrow screens.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, 10 dp outlined Patient-tinted undo bar (ready &amp; running)</figcaption>
+    <div class="phone">
+      <div class="host-shell">
+        <div class="host-stub">
+          <div class="stub-card"><b>Active medications</b><span>Mona Ragab, 27+2 wks</span></div>
+        </div>
+        <div class="bar-wrap">
+          <div class="undobar" role="status" aria-label="Undo in progress">
+            <span class="undobar-txt">Deleted Iron Polymaltose Complex - Mona Ragab</span>
+            <span class="spin" aria-hidden="true"></span>
+            <button type="button" class="tbtn" disabled style="opacity:.45">Undo</button>
+          </div>
+          <div class="undobar" role="status">
+            <span class="undobar-txt">Deleted Iron Polymaltose Complex - Mona Ragab</span>
+            <button type="button" class="tbtn">Undo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note"><code>FieldPatientBg</code> fill + <code>1 dp</code> <code>outline</code> border stays crisp both on <code>#FBF8F5</code> scaffold and inside white <code>ModalBottomSheet</code> footers; <code>14 sp</code> wraps cleanly above <code>1.3x</code> scale.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, <code>DeleteMessageBar</code> error bar (assertive live region)</figcaption>
+    <div class="phone">
+      <div class="host-shell">
+        <div class="host-stub">
+          <div class="stub-card"><b>Active medications</b><span>Mona Ragab, 27+2 wks</span></div>
+        </div>
+        <div class="bar-wrap">
+          <div class="errbar" role="alert">
+            <span class="errbar-txt">Could not delete medication &ldquo;Iron Polymaltose Complex&rdquo; (patient Mona Ragab). It is still in the record. The encrypted save failed. Your encrypted draft is retained.</span>
+            <button type="button" class="tbtn">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note"><code>10 dp</code> <code>errorContainer</code> with <code>1 dp</code> <code>error</code> border and <code>onErrorContainer</code> <code>48 dp</code> <code>Close</code> button (<code>13.26:1</code> light / <code>10.33:1</code> dark).</p>
+  </figure>
+</div>
+
+<h2>3. Shell dialogs in <code>ui/AncApp.kt</code> (Draft recovery, New patient info, Shell discard)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, <code>draftRecoveryPrompt</code> (plain stale text, primary pill)</figcaption>
+    <div class="phone"><div class="scrim">
+      <div class="old-dlg28">
+        <h3>Unsaved draft found</h3>
+        <p>Unsaved visit entry, started 3 hours ago. Continue where you stopped, or discard it and start fresh.</p>
+        <p>The saved record changed after this draft was started. Review it carefully before saving.</p>
+        <div class="old-dlg-acts">
+          <span class="old-tact" style="max-width:130px;line-height:16px">Discard and start fresh</span>
+          <span class="old-pill">Continue</span>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">Stale warning blends into body text; 4-word discard button squeezes beside the solid pill on <code>360 dp</code>.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, <code>draftRecoveryPrompt</code> with <code>StatusModerate</code> stale box</figcaption>
+    <div class="phone"><div class="scrim">
+      <div class="cdlg" role="alertdialog" aria-label="Unsaved draft found">
+        <h3>Unsaved draft found</h3>
+        <p>Unsaved visit entry, started 3 hours ago. Continue where you stopped, or discard it and start fresh.</p>
+        <div class="stale-box">The saved record changed after this draft was started. Review it carefully before saving.</div>
+        <div class="cdlg-acts">
+          <button type="button" class="tbtn err">Discard and start fresh</button>
+          <button type="button" class="pbtn">Continue</button>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">Stale conflict uses <code>StatusModerateBg</code>/<code>Border</code>/<code>Text</code> (<code>7.19:1</code> light); destructive discard uses <code>error</code>; safe <code>Continue</code> uses <code>10 dp</code> <code>Button</code>.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>Before</b>, today, <code>showNewPatientInfo</code> + <code>showDiscardDialog</code></figcaption>
+    <div class="phone"><div class="scrim" style="gap:16px">
+      <div class="old-dlg28">
+        <h3>Register patient</h3>
+        <p>Patient records are securely encrypted and stored in local clinical vault.</p>
+        <div class="old-dlg-acts"><span class="old-pill">Close</span></div>
+      </div>
+      <div class="old-dlg28">
+        <h3>Discard draft changes?</h3>
+        <p>Unsaved draft changes will be lost. Saved records will not change.</p>
+        <div class="old-dlg-acts">
+          <span class="old-tact">Keep editing</span>
+          <span class="old-pill">Discard</span>
+        </div>
+      </div>
+    </div></div>
+    <p class="note"><code>showDiscardDialog</code> duplicates <code>DiscardChangesDialog</code> and paints destructive <code>Discard</code> as a solid navy pill.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, <code>showNewPatientInfo</code> + shared <code>DiscardChangesDialog</code></figcaption>
+    <div class="phone"><div class="scrim" style="gap:16px">
+      <div class="cdlg" role="alertdialog" aria-label="Register patient">
+        <h3>Register patient</h3>
+        <p>Patient records are securely encrypted and stored in local clinical vault.</p>
+        <div class="cdlg-acts"><button type="button" class="pbtn">Close</button></div>
+      </div>
+      <div class="cdlg" role="alertdialog" aria-label="Discard draft changes?">
+        <h3>Discard draft changes?</h3>
+        <p>Unsaved draft changes will be lost. Saved records will not change.</p>
+        <div class="cdlg-acts">
+          <button type="button" class="tbtn">Keep editing</button>
+          <button type="button" class="tbtn err">Discard</button>
+        </div>
+      </div>
+    </div></div>
+    <p class="note"><code>showDiscardDialog</code> reuses <code>DiscardChangesDialog</code> (Slice 11) directly, keeping tags <code>discardDialog</code> and <code>keepEditingDialog</code>.</p>
+  </figure>
+</div>
+
+<h2>4. Date picker chrome &amp; picker-only field (<code>ui/AncDatePicker.kt</code>)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, typed field + 28 dp M3 DatePicker with pencil toggle</figcaption>
+    <div class="phone"><div class="scrim tight" style="gap:12px">
+      <div style="background:#FFFFFF;border-radius:16px;padding:12px">
+        <div class="old-m3f"><span class="olbl">Last menstrual period (LMP)</span><span>2026-05-07</span><span aria-hidden="true" style="padding:8px;color:#0D1B3D">📅</span></div>
+      </div>
+      <div class="old-dp">
+        <div class="old-dp-head">
+          <div>
+            <p class="old-dp-title">Select date</p>
+            <p class="old-dp-sel">Thu, May 7, 2026</p>
+          </div>
+          <span class="old-dp-mode" aria-hidden="true">✎</span>
+        </div>
+        <div class="dp-nav" style="padding:4px 8px">
+          <span class="dp-month-btn" style="color:#4C3F43">May 2026 ▾</span>
+          <span style="display:flex;gap:8px;color:#4C3F43;padding:8px">‹ &nbsp; ›</span>
+        </div>
+        <div class="dp-grid">
+          <span class="dp-wk">S</span><span class="dp-wk">M</span><span class="dp-wk">T</span><span class="dp-wk">W</span><span class="dp-wk">T</span><span class="dp-wk">F</span><span class="dp-wk">S</span>
+          <span class="dp-day out">.</span><span class="dp-day out">.</span><span class="dp-day out">.</span><span class="dp-day out">.</span><span class="dp-day out">.</span><span class="dp-day">1</span><span class="dp-day">2</span>
+          <span class="dp-day">3</span><span class="dp-day">4</span><span class="dp-day">5</span><span class="dp-day">6</span><span class="dp-day cur"><span>7</span></span><span class="dp-day">8</span><span class="dp-day">9</span>
+        </div>
+        <div class="dp-foot" style="border-top:0">
+          <span class="old-tact">Cancel</span>
+          <span class="old-tact">Save</span>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">Typing into <code>ClinicalDateField</code> opens the soft keyboard; <code>DatePicker</code> defaults to <code>28 dp</code> warm grey and shows the <code>✎</code> hand-entry mode toggle.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, read-only picker field + 16 dp surface calendar chrome</figcaption>
+    <div class="phone"><div class="scrim tight" style="gap:12px">
+      <div style="background:var(--surface);border:1px solid var(--outv);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:8px">
+        <div class="field-col">
+          <span class="flab">Last menstrual period (LMP)</span>
+          <button type="button" class="fbox" aria-label="Last menstrual period (LMP), 2026-05-07, select date">
+            <span class="fbox-val">2026-05-07</span>
+            <span class="ibtn" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
+            </span>
+          </button>
+          <div class="chiprow">
+            <span class="chipwrap"><button type="button" class="chip">Clear</button></span>
+            <span class="chipwrap"><button type="button" class="chip">Today (2026-11-16)</button></span>
+          </div>
+        </div>
+        <div class="field-col">
+          <span class="flab">Delivery date</span>
+          <button type="button" class="fbox" aria-label="Delivery date, select date">
+            <span class="fbox-ph">Select date</span>
+            <span class="ibtn" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
+            </span>
+          </button>
+        </div>
+      </div>
+      <div class="dpdlg" role="dialog" aria-label="Select date">
+        <div class="dp-head">
+          <p class="dp-title">Select date</p>
+          <p class="dp-sel">Thu, May 7, 2026</p>
+        </div>
+        <div class="dp-nav">
+          <button type="button" class="dp-month-btn">May 2026 <span aria-hidden="true">▾</span></button>
+          <div class="dp-arrows">
+            <button type="button" class="ibtn" aria-label="Previous month">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+            </button>
+            <button type="button" class="ibtn" aria-label="Next month">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="dp-grid">
+          <span class="dp-wk">S</span><span class="dp-wk">M</span><span class="dp-wk">T</span><span class="dp-wk">W</span><span class="dp-wk">T</span><span class="dp-wk">F</span><span class="dp-wk">S</span>
+          <span class="dp-day out">.</span><span class="dp-day out">.</span><span class="dp-day out">.</span><span class="dp-day out">.</span><span class="dp-day out">.</span><span class="dp-day">1</span><span class="dp-day">2</span>
+          <span class="dp-day">3</span><span class="dp-day">4</span><span class="dp-day">5</span><span class="dp-day">6</span><span class="dp-day cur"><span>7</span></span><span class="dp-day">8</span><span class="dp-day">9</span>
+          <span class="dp-day">10</span><span class="dp-day">11</span><span class="dp-day">12</span><span class="dp-day">13</span><span class="dp-day">14</span><span class="dp-day">15</span><span class="dp-day tod">16</span>
+        </div>
+        <div class="dp-foot">
+          <button type="button" class="tbtn">Cancel</button>
+          <button type="button" class="pbtn">Save</button>
+        </div>
+      </div>
+    </div></div>
+    <p class="note"><code>readOnly = true</code> opens <code>AncDatePickerDialog</code> from anywhere on the box; <code>showModeToggle = false</code> removes manual typing inside the picker; every nav arrow, month dropdown, day cell, and button keeps a <code>48 dp</code> target.</p>
+  </figure>
+</div>
+
+<h2>5. In-app camera dialog (<code>InAppCameraDialog</code>, <code>ui/InAppCameraDialog.kt</code>)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Before</b>, today, photo review (1.24:1 navy button on black)</figcaption>
+    <div class="phone">
+      <div class="old-cam">
+        <div class="old-cam-view">Captured scan preview (20 dp corners)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <span class="old-cam-retake">Retake</span>
+          <span class="old-cam-use">Use photo</span>
+        </div>
+        <span class="old-cam-close">Close camera</span>
+      </div>
+    </div>
+    <p class="note">Light-mode <code>Button</code> uses <code>#0D1B3D</code> on <code>#000000</code> (<code>1.24:1</code> contrast defect); <code>20 dp</code> corners; <code>999 dp</code> pills; <code>Close camera</code> stacked right below primary action.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, live capture state (top-end Close, 72 dp shutter ring)</figcaption>
+    <div class="phone">
+      <div class="cam-phone" role="dialog" aria-label="Take photo">
+        <div class="cam-top">
+          <button type="button" class="cam-close-btn">Close camera</button>
+        </div>
+        <div class="cam-view">
+          <span>Live camera viewfinder</span>
+          <span style="font-size:12px;color:#CDC3C6">16 dp frame</span>
+        </div>
+        <div class="cam-err-banner" role="alert">The photo could not be taken. Please try again.</div>
+        <button type="button" class="cam-shutter" aria-label="Take photo">
+          <span class="cam-shutter-disc"></span>
+        </button>
+      </div>
+    </div>
+    <p class="note"><code>Close camera</code> moves to top-end away from the shutter; capture/bind failures use high-contrast <code>StatusHighDark</code> banners; <code>72 dp</code> shutter keeps an outer ring.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, photo review state (21:1 Use photo, 16 dp frame)</figcaption>
+    <div class="phone">
+      <div class="cam-phone" role="dialog" aria-label="Review captured photo">
+        <div class="cam-top">
+          <button type="button" class="cam-close-btn">Close camera</button>
+        </div>
+        <div class="cam-view">
+          <span>Captured ultrasound still</span>
+          <span style="font-size:12px;color:#CDC3C6">16 dp frame</span>
+        </div>
+        <div class="cam-actions">
+          <button type="button" class="cam-retake">Retake</button>
+          <button type="button" class="cam-use">Use photo</button>
+        </div>
+      </div>
+    </div>
+    <p class="note"><code>Use photo</code> uses <code>#FFFFFF</code> container + <code>#0D1B3D</code> text on black (<code>21:1</code> / <code>16.92:1</code>); stacks vertically above <code>1.3x</code> scale.</p>
+  </figure>
+
+  <figure>
+    <figcaption><b>After</b>, permission denied state (structured dark card)</figcaption>
+    <div class="phone">
+      <div class="cam-phone" role="dialog" aria-label="Camera access needed">
+        <div class="cam-perm-wrap">
+          <div class="cam-perm-card">
+            <h4>Camera access needed</h4>
+            <p>Camera permission is needed to take a photo. You can still choose a photo from the gallery.</p>
+            <button type="button" class="cam-use" style="width:100%">Close camera</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Replaces bare centered <code>15 sp</code> text with a <code>16 dp</code> dark card, <code>18 sp</code> heading, <code>16 sp</code> body, and one <code>48 dp</code> <code>Close camera</code> button.</p>
+  </figure>
+</div>
+
+<h2>6. Dark theme (<code>AncTheme(darkTheme = true)</code>)</h2>
+<div class="pair">
+  <figure>
+    <figcaption><b>Dark</b>, after, Delete confirm + docked Patient-tinted Undo bar</figcaption>
+    <div class="phone dark">
+      <div class="host-shell" style="min-height:420px">
+        <div class="scrim" style="min-height:310px">
+          <div class="cdlg" role="alertdialog" aria-label="Delete this medication?, dark">
+            <h3>Delete this medication?</h3>
+            <p>&ldquo;Iron Polymaltose Complex&rdquo; will be removed from this patient's record. You can undo for a few seconds afterwards.</p>
+            <div class="cdlg-acts">
+              <button type="button" class="tbtn">Cancel</button>
+              <button type="button" class="tbtn err">Delete</button>
+            </div>
+          </div>
+        </div>
+        <div class="bar-wrap">
+          <div class="undobar" role="status">
+            <span class="undobar-txt">Deleted Iron Polymaltose Complex - Mona Ragab</span>
+            <button type="button" class="tbtn">Undo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </figure>
+
+  <figure>
+    <figcaption><b>Dark</b>, after, <code>draftRecoveryPrompt</code> (stale conflict)</figcaption>
+    <div class="phone dark"><div class="scrim">
+      <div class="cdlg" role="alertdialog" aria-label="Unsaved draft found, dark">
+        <h3>Unsaved draft found</h3>
+        <p>Unsaved visit entry, started 3 hours ago. Continue where you stopped, or discard it and start fresh.</p>
+        <div class="stale-box">The saved record changed after this draft was started. Review it carefully before saving.</div>
+        <div class="cdlg-acts">
+          <button type="button" class="tbtn err">Discard and start fresh</button>
+          <button type="button" class="pbtn">Continue</button>
+        </div>
+      </div>
+    </div></div>
+  </figure>
+
+  <figure>
+    <figcaption><b>Dark</b>, after, <code>AncDatePickerDialog</code></figcaption>
+    <div class="phone dark"><div class="scrim tight">
+      <div class="dpdlg" role="dialog" aria-label="Select date, dark">
+        <div class="dp-head">
+          <p class="dp-title">Select date</p>
+          <p class="dp-sel">Thu, May 7, 2026</p>
+        </div>
+        <div class="dp-nav">
+          <button type="button" class="dp-month-btn">May 2026 <span aria-hidden="true">▾</span></button>
+          <div class="dp-arrows">
+            <button type="button" class="ibtn" aria-label="Previous month">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+            </button>
+            <button type="button" class="ibtn" aria-label="Next month">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="dp-grid">
+          <span class="dp-wk">S</span><span class="dp-wk">M</span><span class="dp-wk">T</span><span class="dp-wk">W</span><span class="dp-wk">T</span><span class="dp-wk">F</span><span class="dp-wk">S</span>
+          <span class="dp-day out">.</span><span class="dp-day out">.</span><span class="dp-day out">.</span><span class="dp-day out">.</span><span class="dp-day out">.</span><span class="dp-day">1</span><span class="dp-day">2</span>
+          <span class="dp-day">3</span><span class="dp-day">4</span><span class="dp-day">5</span><span class="dp-day">6</span><span class="dp-day cur"><span>7</span></span><span class="dp-day">8</span><span class="dp-day">9</span>
+          <span class="dp-day">10</span><span class="dp-day">11</span><span class="dp-day">12</span><span class="dp-day">13</span><span class="dp-day">14</span><span class="dp-day">15</span><span class="dp-day tod">16</span>
+        </div>
+        <div class="dp-foot">
+          <button type="button" class="tbtn">Cancel</button>
+          <button type="button" class="pbtn">Save</button>
+        </div>
+      </div>
+    </div></div>
+  </figure>
+</div>
+
+<h2>7. Contrast (computed, WCAG 2.x formula)</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Pair</th><th>Foreground</th><th>Background</th><th>Light</th><th>Dark</th></tr></thead>
+<tbody>
+<tr><td>Dialog titles &amp; body values (<code>onSurface</code> on <code>surface</code>)</td><td><code>#0D1B3D</code> / <code>#E2E2EA</code></td><td><code>#FFFFFF</code> / <code>#1A202E</code></td><td class="n">16.92</td><td class="n">12.64</td></tr>
+<tr><td>Dialog body copy &amp; weekdays (<code>onSurfaceVariant</code> on <code>surface</code>)</td><td><code>#4C3F43</code> / <code>#CDC3C6</code></td><td><code>#FFFFFF</code> / <code>#1A202E</code></td><td class="n">10.00</td><td class="n">9.47</td></tr>
+<tr><td>Safe actions &amp; picker header/nav (<code>primary</code> on <code>surface</code>)</td><td><code>#0D1B3D</code> / <code>#B4C5FF</code></td><td><code>#FFFFFF</code> / <code>#1A202E</code></td><td class="n">16.92</td><td class="n">9.59</td></tr>
+<tr><td>Destructive Delete &amp; Discard (<code>error</code> on <code>surface</code>)</td><td><code>#BA1A1A</code> / <code>#FFB4AB</code></td><td><code>#FFFFFF</code> / <code>#1A202E</code></td><td class="n">6.46</td><td class="n">9.59</td></tr>
+<tr><td>Primary dialog buttons &amp; selected day (<code>onPrimary</code> on <code>primary</code>)</td><td><code>#FFFFFF</code> / <code>#002A78</code></td><td><code>#0D1B3D</code> / <code>#B4C5FF</code></td><td class="n">16.92</td><td class="n">7.72</td></tr>
+<tr><td>Undo bar message &amp; Undo button (<code>onSurface</code> / <code>primary</code> on <code>FieldPatientBg</code>)</td><td><code>#0D1B3D</code> / <code>#E2E2EA</code> (<code>#B4C5FF</code>)</td><td><code>#E9EEF8</code> / <code>#22304A</code></td><td class="n">14.54</td><td class="n">10.25 / 7.78</td></tr>
+<tr><td>Undo bar border on scaffold/surface (<code>outline</code> on <code>surface</code> / <code>FieldPatientBg</code>)</td><td><code>#79747E</code> / <code>#8E95A5</code></td><td><code>#FFFFFF</code> / <code>#22304A</code></td><td class="n">4.55 / 3.91</td><td class="n">5.42 / 4.40</td></tr>
+<tr><td>Delete error bar text &amp; Close (<code>onErrorContainer</code> on <code>errorContainer</code>)</td><td><code>#410002</code> / <code>#FFDAD6</code></td><td><code>#FFDAD6</code> / <code>#5C141D</code></td><td class="n">13.26</td><td class="n">10.33</td></tr>
+<tr><td>Delete error bar border (<code>error</code> on <code>errorContainer</code>, 3:1 non-text)</td><td><code>#BA1A1A</code> / <code>#FFB4AB</code></td><td><code>#FFDAD6</code> / <code>#5C141D</code></td><td class="n">5.00</td><td class="n">7.86</td></tr>
+<tr><td>Stale draft callout text (<code>StatusModerateText</code> on <code>StatusModerateBg</code>)</td><td><code>#6E4708</code> / <code>#F3D18E</code></td><td><code>#FCEFD6</code> / <code>#3A2A0E</code></td><td class="n">7.19</td><td class="n">9.44</td></tr>
+<tr><td>Stale draft callout border (<code>StatusModerateBorder</code> on <code>surface</code>)</td><td><code>#9E6F1E</code> / <code>#A87A2A</code></td><td><code>#FFFFFF</code> / <code>#1A202E</code></td><td class="n">4.42</td><td class="n">4.25</td></tr>
+<tr><td>Date field external label (<code>FieldPatientLabel</code> on <code>surface</code>)</td><td><code>#23407A</code> / <code>#AFC6F2</code></td><td><code>#FFFFFF</code> / <code>#1A202E</code></td><td class="n">10.07</td><td class="n">9.44</td></tr>
+<tr><td>Camera <code>Use photo</code> fill on black (<code>#FFFFFF</code> on <code>#000000</code>)</td><td><code>#FFFFFF</code></td><td><code>#000000</code></td><td class="n">21.00</td><td class="n">21.00</td></tr>
+<tr><td>Camera <code>Use photo</code> text (<code>#0D1B3D</code> on <code>#FFFFFF</code>)</td><td><code>#0D1B3D</code></td><td><code>#FFFFFF</code></td><td class="n">16.92</td><td class="n">16.92</td></tr>
+<tr><td>Camera outlined borders on black (<code>#8E95A5</code> on <code>#000000</code>)</td><td><code>#8E95A5</code></td><td><code>#000000</code></td><td class="n">6.99</td><td class="n">6.99</td></tr>
+<tr><td>Camera error banner (<code>StatusHighDarkText</code> on <code>StatusHighDarkBg</code>)</td><td><code>#FFC9C9</code></td><td><code>#4A1616</code></td><td class="n">10.19</td><td class="n">10.19</td></tr>
+<tr><td>Camera permission card body (<code>#E2E2EA</code> / <code>#CDC3C6</code> on <code>#1A202E</code>)</td><td><code>#E2E2EA</code> / <code>#CDC3C6</code></td><td><code>#1A202E</code></td><td class="n">12.64 / 9.47</td><td class="n">12.64 / 9.47</td></tr>
+<tr><td>Before defect (fixed): light-mode <code>Use photo</code> fill on black (<code>#0D1B3D</code> on <code>#000000</code>)</td><td><code>#0D1B3D</code></td><td><code>#000000</code></td><td class="n">1.24 (Fail)</td><td class="n"></td></tr>
+</tbody></table></div>
+
+<h2>8. Compose mapping (existing tokens &amp; components)</h2>
+<ol class="map">
+  <li><b><code>DeleteConfirmDialog</code> (<code>DeleteUndoUi.kt</code>):</b> <code>AlertDialog(shape = RecordShapes.Large, containerColor = MaterialTheme.colorScheme.surface)</code>, title <code>RecordType.SectionTitle</code> in <code>onSurface</code>, text <code>RecordType.FieldValue</code> in <code>onSurfaceVariant</code>, <code>dismissButton</code> <code>TextButton(Cancel)</code> in <code>primary</code>, <code>confirmButton</code> <code>TextButton(Delete)</code> in <code>error</code>, both <code>RecordShapes.Small</code> + <code>minimumTouchTarget()</code>.</li>
+  <li><b><code>UndoBarHost</code> (<code>DeleteUndoUi.kt</code>):</b> <code>UndoOfferBar</code> on <code>Surface(color = FieldFamilies.patient().container, shape = RecordShapes.Small, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline), shadowElevation = 0.dp)</code> with <code>RecordType.Secondary</code> wrapping text and <code>48.dp</code> <code>Undo</code> <code>TextButton</code> in <code>RecordType.Action</code>; <code>DeleteMessageBar</code> on <code>Surface(color = MaterialTheme.colorScheme.errorContainer, shape = RecordShapes.Small, border = BorderStroke(1.dp, MaterialTheme.colorScheme.error))</code> with <code>RecordType.Secondary</code> text and <code>onErrorContainer</code> <code>Close</code> <code>TextButton</code>.</li>
+  <li><b><code>AncApp.kt</code> dialogs only:</b> reuse <code>DiscardChangesDialog</code> (<code>ui/patienthub/components/EditorSheetParts.kt</code>) for <code>showDiscardDialog</code> (preserving tags <code>discardDialog</code> and <code>keepEditingDialog</code>); restyle <code>showNewPatientInfo</code> as <code>16.dp</code> <code>surface</code> <code>AlertDialog</code> with <code>48.dp</code> <code>RecordShapes.Small</code> <code>Close</code> <code>Button</code>; restyle <code>draftRecoveryPrompt</code> as <code>16.dp</code> <code>surface</code> <code>AlertDialog</code> with <code>StatusModerateBg</code>/<code>Border</code>/<code>Text</code> stale callout, <code>error</code>-colored <code>Discard and start fresh</code> <code>TextButton</code>, and <code>primary</code> <code>Continue</code> <code>Button</code>.</li>
+  <li><b><code>AncDatePickerDialog</code> &amp; <code>ClinicalDateField</code> (<code>AncDatePicker.kt</code>):</b> <code>DatePickerDialog(shape = RecordShapes.Large, colors = DatePickerDefaults.colors(containerColor = surface), confirmButton = Button(..., shape = RecordShapes.Small, minimumTouchTarget()), dismissButton = TextButton(..., shape = RecordShapes.Small, minimumTouchTarget()))</code> wrapping <code>DatePicker(state = datePickerState, showModeToggle = false, title = ..., headline = ..., colors = ...)</code>. <code>ClinicalDateField</code> unifies on <code>RecordShapes.Small</code>, <code>RecordType.FieldValue</code>, <code>editorFieldColors()</code>, <code>48.dp</code> <code>${tag}CalendarButton</code>, <code>RecordFilterChip</code> <code>${tag}TodayButton</code>, optional <code>${tag}ClearButton</code>, and (per Owner rule) <code>readOnly = true</code> + press interaction opening <code>AncDatePickerDialog</code>.</li>
+  <li><b><code>InAppCameraDialog</code> (<code>InAppCameraDialog.kt</code>):</b> keep <code>Dialog(usePlatformDefaultWidth = false, dismissOnClickOutside = false)</code> on <code>Color.Black</code>; use <code>RecordShapes.Large</code> (<code>16.dp</code>) for <code>camera_preview</code> and still container; place <code>48.dp</code> <code>RecordShapes.Small</code> <code>OutlinedButton</code> <code>Close camera</code> (<code>camera_close</code>) at top-end (or inside the permission-denied <code>16.dp</code> <code>#1A202E</code> card); render <code>camera_use</code> (<code>Use photo</code>) with <code>ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = ClinicalNavy)</code> and <code>camera_retake</code> with <code>BorderStroke(1.dp, Color(0xFF8E95A5))</code>, stacking above <code>1.3f</code> scale; frame errors in <code>StatusHighDarkBg</code> / <code>StatusHighDarkBorder</code> / <code>StatusHighDarkText</code>.</li>
+</ol>
+
+<h2>9. Decisions for the owner (max 5)</h2>
+<ol class="map">
+  <li><b>Enforce picker-only <code>ClinicalDateField</code> (<code>readOnly = true</code> + <code>showModeToggle = false</code>):</b> Audit found all 11 <code>ClinicalDateField</code> callers still allow manual keyboard entry, and M3 <code>DatePicker</code> exposes a pencil text-input switch. <b>Recommend:</b> set <code>readOnly = true</code> (tap box or icon opens picker) and <code>showModeToggle = false</code>; update the 3 <code>performTextInput</code> calls in <code>MedicationFormTest</code> in the test lane.</li>
+  <li><b>Migrate <code>DeliveryPlanSheet</code> <code>deliveryOutcomeDateField</code> to picker-only <code>ClinicalDateField</code> + Clear:</b> Audit found <code>deliveryOutcomeDateField</code> is the only date input in the app with no picker at all (raw typed <code>OutlinedTextField</code>). <b>Recommend:</b> migrate it to <code>ClinicalDateField(..., allowClear = true)</code> (either in Slice 19 or an immediate Slice 11 follow-up) and update <code>DeliveryPlanSheetTest</code> in the test lane.</li>
+  <li><b>Historical <code>PreviousPregnancyEditor</code> date (<code>pregnancyDateText</code>):</b> Stored data allows partial/year entries (e.g. <code>"2022"</code>). <b>Recommend:</b> keep picker-only <code>ClinicalDateField(showTodayButton = false, allowClear = true)</code> for uniform rule compliance unless historical year-only typing must remain an explicit exception.</li>
+  <li><b>Error-colored destructive buttons and stale draft callout:</b> <b>Recommend:</b> reuse <code>DiscardChangesDialog</code> in <code>AncApp.kt</code>, color <code>Delete</code> and <code>Discard and start fresh</code> in <code>error</code>, and box <code>draft_recovery_stale</code> in <code>StatusModerate</code> amber.</li>
+  <li><b><code>InAppCameraDialog</code> contrast and <code>Close camera</code> position:</b> <b>Recommend:</b> fix the <code>1.24:1</code> light-mode <code>Use photo</code> contrast defect with white fill / navy text on black and move <code>Close camera</code> to top-end (or inside the permission card) with <code>16.dp</code> frames.</li>
+</ol>
+</main>
+</body>
+</html>
