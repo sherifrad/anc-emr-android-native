@@ -13,3 +13,7 @@ release/
 retry/
 scratch/
 
+
+# machine run output, never tracked
+.agents/backup-*/
+.agents/pipeline/runs/

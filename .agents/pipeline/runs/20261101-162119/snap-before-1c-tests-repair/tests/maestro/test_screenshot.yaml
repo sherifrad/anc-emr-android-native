@@ -1,6 +1,0 @@
-appId: com.sherifradwan.anc
----
-- launchApp:
-    clearState: false
-- assertVisible: "Patients"
-- takeScreenshot: 01_patient_list

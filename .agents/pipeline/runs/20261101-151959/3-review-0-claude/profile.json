@@ -1,6 +1,0 @@
-{
-  "disableClaudeAiConnectors": true,
-  "permissions": {
-    "deny": []
-  }
-}
