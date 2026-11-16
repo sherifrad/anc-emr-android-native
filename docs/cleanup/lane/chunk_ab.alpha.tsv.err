@@ -1,0 +1,2 @@
+Error: Alphax Free request failed (status: 400 Bad Request).
+Alphax Free could not accept this request. Check the provider setup with /doctor or switch model with /model.

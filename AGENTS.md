@@ -27,7 +27,7 @@
 - **Audit before work and before every push**: run `.agents/scripts/git_audit.sh`. It lists unmerged branches, dirty worktrees, stashes, stray files and unreachable commits. Fix or record each one before building on `main`.
 - **Deliberate branches** are listed in `docs/BRANCHES.md` with the reason. Anything else the audit finds is an error, not a note.
 - **Never leave work only in a working tree.** Commit it on its branch, even as a labelled WIP commit.
-- **The roadmap is `.agents/pipeline/HANDOFF_AGY.md` (top section).** Every feature, fix or decision updates its mission table, artifact index and log in the same commit. The audit warns when it is stale.
+- **The single source of truth for progress is `docs/PROJECT_STATE.json`.** Update it with `.agents/scripts/project_state.py` (`set`, `add`, `log`), then run `project_state.py render` (writes `docs/ROADMAP.md`) in the same commit. Claude then writes the board to the roadmap artifact with `project_state.py artifact-doc`. Do not keep progress in handoff files, task lists or logs. The audit warns when it is stale.
 
 ### 3. Zero Legacy Baggage Invariant
 - **No Old Users = Zero Migration Overhead**: Do not maintain backward-compatibility shims, legacy route aliases, or deprecated adapters for old users when no production users exist. Deprecated code paths, duplicate screens, and dead routes must be deleted cleanly.

@@ -1,3 +1,5 @@
+> **Progress and status now live only in `docs/PROJECT_STATE.json` (rendered to `docs/ROADMAP.md`). The mission table and log below are frozen history up to 2026-11-16; do not update them.**
+
 # ROADMAP AND HANDOFF (living file)
 Last updated: 2026-11-12 (origin/main `93da37d`; the registration merge is on `integration/registration-merge`, see section N). Owner: Dr. Sherif Radwan. Repo: `/Users/sherifgamalradwan/anc-emr-android-native`, branch `main`.
 

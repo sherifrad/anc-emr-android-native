@@ -1,0 +1,286 @@
+docs/designs/reviews/audit_2026-11-13/lane_glm.log	46	2026-11-13	0	opencode:glm-5.3-flash-free ->     6069 bytes
+docs/designs/reviews/audit_2026-11-13/lane_tests.log	36	2026-11-13	0	prompt bytes: 7827 block lines: 131
+docs/designs/reviews/audit_2026-11-13/review_alphacode_all.md	12642	2026-11-13	0	VERDICT: FAIL
+docs/designs/reviews/audit_2026-11-13/review_bigpickle_vm_commands.md	0	2026-11-13	0	
+docs/designs/reviews/audit_2026-11-13/review_glm_reducers.md	6069	2026-11-13	0	**1. VERDICT: FAIL**
+docs/designs/reviews/audit_2026-11-13/task_review.md	1705	2026-11-13	0	You are an independent adversarial reviewer of an Android Kotlin (Compose, MVI) antenatal 
+docs/designs/reviews/audit_2026-11-13/task_tests.md	3158	2026-11-13	0	You are the independent test designer. Write ONE new JVM unit test file; change no other f
+docs/designs/reviews/cleanup/compiler_warnings.txt	2008	2026-11-11	0	w: app/src/androidTest/java/com/sherifradwan/ancnative/AncWorkflowTest.kt:1005:9 This anno
+docs/designs/reviews/cleanup/duplicates_main.txt	9908	2026-11-11	0	18 significant lines, 2 places
+docs/designs/reviews/cleanup/imports_to_remove.txt	4134	2026-11-11	0	app/src/main/java/com/sherifradwan/ancnative/storage/AttachmentDeleteAdapter.kt 7 import j
+docs/designs/reviews/cleanup/registration_branch_files.txt	8598	2026-11-11	0	.agents/AI_HANDOFF_LEDGER.md
+docs/designs/reviews/cleanup/reports_code/b01.md	5076	2026-11-11	0	Review: comments added by the diff (antislop-code)
+docs/designs/reviews/cleanup/reports_code/b02.md	2103	2026-11-11	0	**No findings.**
+docs/designs/reviews/cleanup/reports_code/b03.md	3706	2026-11-11	0	Review: added lines vs. `antislop-code`
+docs/designs/reviews/cleanup/reports_code/b04.md	3566	2026-11-11	0	Findings
+docs/designs/reviews/cleanup/reports_code/b05.md	2910	2026-11-11	0	Review: comment hygiene on added lines
+docs/designs/reviews/cleanup/reports_code/b06.md	3085	2026-11-11	0	**Findings — no critical defects. All majors are the same pattern repeated.**
+docs/designs/reviews/cleanup/reports_code/b07.md	4497	2026-11-11	0	Findings
+docs/designs/reviews/cleanup/reports_code/b08.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b09.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b10.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b11.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b12.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b13.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b14.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b15.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b16.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b17.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b18.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b19.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b20.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b21.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b22.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b23.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b24.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b25.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b26.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b27.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b28.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b29.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b30.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b31.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b32.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b33.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b34.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b35.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b36.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b37.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/reports_code/b38.md	0	2026-11-11	0	
+docs/designs/reviews/cleanup/safe_files.txt	8463	2026-11-11	0	app/src/main/java/com/sherifradwan/ancnative/MainActivity.kt
+docs/designs/reviews/cleanup/unused_all.txt	25251	2026-11-11	0	unused-import app/src/main/java/com/sherifradwan/ancnative/model/ClinicalModels.kt:5 impor
+docs/designs/reviews/delivery_outcome/brief.md	16659	2026-11-12	29	Task: design (no code) a real database field for delivery outcome
+docs/designs/reviews/delivery_outcome/design_alphacode.md	15266	2026-11-12	1	Design: Delivery Outcome Database Field
+docs/designs/reviews/delivery_outcome/design_deepseek.md	0	2026-11-12	0	
+docs/designs/reviews/delivery_outcome/design_glm.md	0	2026-11-12	0	
+docs/designs/reviews/delivery_outcome/out_a.md	10321	2026-11-12	0	FILE: app/src/main/java/com/sherifradwan/ancnative/model/DeliveryOutcome.kt
+docs/designs/reviews/delivery_outcome/out_c3.md	12377	2026-11-12	0	FILE: app/src/test/java/com/sherifradwan/ancnative/state/DeliveryOutcomeStateTest.kt
+docs/designs/reviews/delivery_outcome/out_u1.md	4951	2026-11-12	0	FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryOutcom
+docs/designs/reviews/delivery_outcome/patch_b1.txt	12086	2026-11-12	0	FILE: app/src/main/java/com/sherifradwan/ancnative/storage/RecordsMigration.kt
+docs/designs/reviews/delivery_outcome/patch_b2.txt	12281	2026-11-12	0	FILE: app/src/main/java/com/sherifradwan/ancnative/storage/RecordEntities.kt
+docs/designs/reviews/delivery_outcome/patch_b3.txt	1978	2026-11-12	0	FILE: app/src/main/java/com/sherifradwan/ancnative/storage/EncryptedBackupManager.kt
+docs/designs/reviews/delivery_outcome/patch_c1.txt	15951	2026-11-12	0	FILE: app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt
+docs/designs/reviews/delivery_outcome/patch_c2.txt	9254	2026-11-12	0	FILE: app/src/main/java/com/sherifradwan/ancnative/storage/PatientCommands.kt
+docs/designs/reviews/delivery_outcome/patch_u2.txt	25576	2026-11-12	0	FILE: app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/components/DeliveryPlanSh
+docs/designs/reviews/delivery_outcome/review_gemini.md	0	2026-11-12	0	
+docs/designs/reviews/delivery_outcome/review_in.md	33654	2026-11-12	0	You are an independent reviewer. Below is (1) a brief, (2) a design written by another mod
+docs/designs/reviews/delivery_outcome/review_prompt.md	773	2026-11-12	0	You are an independent reviewer. Below is (1) a brief, (2) a design written by another mod
+docs/designs/reviews/delivery_outcome/run_alphacode.log	28	2026-11-12	0	alphacode ->    15266 bytes
+docs/designs/reviews/delivery_outcome/run_deepseek.log	52	2026-11-12	0	opencode:deepseek-v4.1-flash-free ->        0 bytes
+docs/designs/reviews/delivery_outcome/run_glm.log	46	2026-11-12	0	opencode:glm-5.3-flash-free ->        0 bytes
+docs/designs/reviews/delivery_outcome/task_a.md	2958	2026-11-12	0	Write two NEW Kotlin files for an Android app (package com.sherifradwan.ancnative.model fo
+docs/designs/reviews/delivery_outcome/task_b1.md	1283	2026-11-12	0	Add database migration 6 to 7 to an Android Room app (the owner approved this schema chang
+docs/designs/reviews/delivery_outcome/task_b2.md	1901	2026-11-12	0	Carry four new patient fields through the storage layer of an Android Room app (schema cha
+docs/designs/reviews/delivery_outcome/task_b3.md	1024	2026-11-12	0	Carry four new patient fields through the encrypted backup JSON (write and read). Fields: 
+docs/designs/reviews/delivery_outcome/task_c1.md	2993	2026-11-12	0	Add editing of four new patient fields (delivered flag, delivery date, delivery mode, deli
+docs/designs/reviews/delivery_outcome/task_c2.md	2993	2026-11-12	0	Wire four new patient fields into the profile save and into draft recovery of a Kotlin And
+docs/designs/reviews/delivery_outcome/task_c3.md	3136	2026-11-12	0	Write ONE new JUnit4 test file for the delivery outcome fields in the reducer and the prof
+docs/designs/reviews/delivery_outcome/task_u1.md	2753	2026-11-12	0	Write ONE new Kotlin Jetpack Compose file for an Android app (Material 3, English only). P
+docs/designs/reviews/delivery_outcome/task_u2.md	3524	2026-11-12	0	Add a delivery outcome section to the Delivery Plan bottom sheet (Compose, Material 3). Ed
+docs/designs/reviews/export_audit/FINDINGS.md	4803	2026-11-13	1	Export (PDF and share text) audit, 2026-11-13
+docs/designs/reviews/export_audit/NEW_BEHAVIOUR.md	6130	2026-11-13	3	You are the independent test maintainer for the PDF export of a clinic app. The export cha
+docs/designs/reviews/export_audit/SPEC_fix1.md	1431	2026-11-14	1	Two rule changes in `app/src/main/java/com/sherifradwan/ancnative/ui/report/ReportSections
+docs/designs/reviews/export_audit/SPEC_fix2.md	4905	2026-11-14	2	Fix round 2 for the export rework (findings of Gemini 4 Argon, DeepSeek and the antislop g
+docs/designs/reviews/export_audit/SPEC_fix3.md	2798	2026-11-14	1	Fix round 3 (re-review by Gemini 4 Argon plus a real PDF print by the orchestrator)
+docs/designs/reviews/export_audit/SPEC_report_sections.md	5964	2026-11-13	2	Report sections: the one set of rules for the PDF and the share text
+docs/designs/reviews/export_audit/antislop_gate_final.md	21883	2026-11-14	1	antislop active: after (session override).
+docs/designs/reviews/export_audit/antislop_gate_gemini.md	16066	2026-11-14	1	antislop active: after (session override).
+docs/designs/reviews/export_audit/api_summary.md	1343	2026-11-13	0	Rules already built in `ui/report/ReportSections.kt` (same package as the generator, so no
+docs/designs/reviews/export_audit/brief_antislop_gate.md	2243	2026-11-14	0	You are an independent design and copy auditor. READ-ONLY: do not edit, create or delete a
+docs/designs/reviews/export_audit/brief_fix2_builder.md	1137	2026-11-14	0	You are the BUILDER for one fix round in this Android Kotlin repository. You may edit ONLY
+docs/designs/reviews/export_audit/brief_fix3_builder.md	1024	2026-11-14	0	You are the BUILDER for fix round 3 in this Android Kotlin repository. You may edit ONLY t
+docs/designs/reviews/export_audit/brief_frontier_review.md	2462	2026-11-14	0	You are the independent frontier-tier reviewer for a clinic app (Android Kotlin, antenatal
+docs/designs/reviews/export_audit/brief_rereview.md	1291	2026-11-14	0	You are an independent reviewer. READ-ONLY: do not edit, create or delete any file; no git
+docs/designs/reviews/export_audit/fix2_builder_report.md	4994	2026-11-14	0	I have run the unit test suite offline to verify the changes and will wait for it to finis
+docs/designs/reviews/export_audit/fix3_builder_report.md	3207	2026-11-14	0	- **ORACLE-P1**: [PatientPrintHtmlGenerator.kt](file:///Users/sherifgamalradwan/anc-emr-an
+docs/designs/reviews/export_audit/generator_body.kt.txt	13736	2026-11-13	1	<body>
+docs/designs/reviews/export_audit/generator_logic.kt.txt	18401	2026-11-13	1	object PatientPrintHtmlGenerator {
+docs/designs/reviews/export_audit/generator_logic_new.kt.txt	11794	2026-11-13	0	}
+docs/designs/reviews/export_audit/lane_alpha.log	28	2026-11-13	0	alphacode ->    13818 bytes
+docs/designs/reviews/export_audit/lane_build.log	36	2026-11-13	0	prompt bytes: 7593 block lines: 179
+docs/designs/reviews/export_audit/lane_ds.log	52	2026-11-13	0	opencode:deepseek-v4.1-flash-free ->    12132 bytes
+docs/designs/reviews/export_audit/lane_fix1_build.log	36	2026-11-14	0	prompt bytes: 8721 block lines: 128
+docs/designs/reviews/export_audit/lane_fix1_tests.log	35	2026-11-14	0	prompt bytes: 8980 block lines: 71
+docs/designs/reviews/export_audit/lane_fix2_tests.log	37	2026-11-14	0	prompt bytes: 13197 block lines: 395
+docs/designs/reviews/export_audit/lane_fix3_tests.log	36	2026-11-14	0	prompt bytes: 10266 block lines: 85
+docs/designs/reviews/export_audit/lane_glm.log	46	2026-11-13	0	opencode:glm-5.3-flash-free ->    13328 bytes
+docs/designs/reviews/export_audit/lane_r2_ds.log	52	2026-11-14	0	opencode:deepseek-v4.1-flash-free ->     8380 bytes
+docs/designs/reviews/export_audit/lane_r2_glm.log	0	2026-11-13	0	
+docs/designs/reviews/export_audit/lane_rereview_alpha.log	28	2026-11-14	0	alphacode ->       82 bytes
+docs/designs/reviews/export_audit/lane_share.log	37	2026-11-13	0	prompt bytes: 10333 block lines: 128
+docs/designs/reviews/export_audit/lane_t_escape.log	37	2026-11-13	0	prompt bytes: 20755 block lines: 157
+docs/designs/reviews/export_audit/lane_t_escape2.log	36	2026-11-13	0	prompt bytes: 14979 block lines: 55
+docs/designs/reviews/export_audit/lane_t_gen1.log	37	2026-11-13	0	prompt bytes: 20747 block lines: 362
+docs/designs/reviews/export_audit/lane_t_gen2.log	36	2026-11-13	0	prompt bytes: 25587 block lines: 98
+docs/designs/reviews/export_audit/lane_t_gen3a.log	24109	2026-11-13	0	Traceback (most recent call last):
+docs/designs/reviews/export_audit/lane_t_gen3b.log	37	2026-11-13	0	prompt bytes: 15495 block lines: 103
+docs/designs/reviews/export_audit/lane_t_layout.log	37	2026-11-13	0	prompt bytes: 19081 block lines: 135
+docs/designs/reviews/export_audit/lane_t_titles.log	36	2026-11-13	0	prompt bytes: 13202 block lines: 24
+docs/designs/reviews/export_audit/lane_tests.log	37	2026-11-13	0	prompt bytes: 12602 block lines: 414
+docs/designs/reviews/export_audit/lane_tests_layout.log	37	2026-11-13	0	prompt bytes: 22026 block lines: 262
+docs/designs/reviews/export_audit/lane_wire_a.log	37	2026-11-13	0	prompt bytes: 21327 block lines: 340
+docs/designs/reviews/export_audit/lane_wire_b.log	37	2026-11-13	0	prompt bytes: 25439 block lines: 460
+docs/designs/reviews/export_audit/rereview_alphacode.md	82	2026-11-14	0	Waiting 11s before retry (attempt 1/6).
+docs/designs/reviews/export_audit/rereview_argon.md	18145	2026-11-14	1	**VERDICT: FAIL**
+docs/designs/reviews/export_audit/review2_deepseek.md	8380	2026-11-14	1	1. VERDICT
+docs/designs/reviews/export_audit/review2_glm.md	7959	2026-11-14	1	1. **VERDICT: FAIL**
+docs/designs/reviews/export_audit/review3_argon.md	15495	2026-11-14	1	VERDICT FAIL
+docs/designs/reviews/export_audit/review_alphacode.md	13818	2026-11-13	0	Static review of the two generator files only. Helpers not shown are treated as opaque; wh
+docs/designs/reviews/export_audit/review_deepseek.md	12132	2026-11-13	0	Scope note
+docs/designs/reviews/export_audit/review_glm.md	13328	2026-11-13	0	**Scope note:** the file is truncated at line 337 (mid-`<head>`), so this audit covers eve
+docs/designs/reviews/export_audit/task_build_sections.md	6579	2026-11-13	0	Build exactly one new file from the SPEC pasted below: `app/src/main/java/com/sherifradwan
+docs/designs/reviews/export_audit/task_fix1_build.md	1640	2026-11-14	0	Apply the two rule changes of the SPEC below to the two files shown. Change nothing else. 
+docs/designs/reviews/export_audit/task_fix1_tests.md	2073	2026-11-14	0	You are the independent test designer. Add tests for the two ORACLES of the SPEC below to 
+docs/designs/reviews/export_audit/task_fix2_tests.md	7524	2026-11-14	0	You are the independent TEST DESIGNER (you do not write production code). From the SPEC be
+docs/designs/reviews/export_audit/task_fix3_tests.md	3900	2026-11-14	0	You are the independent TEST DESIGNER. Add tests to the END of the existing test class sho
+docs/designs/reviews/export_audit/task_review.md	2556	2026-11-13	0	You are an independent reviewer of the PDF export of an antenatal clinic app (Android Kotl
+docs/designs/reviews/export_audit/task_review2.md	1860	2026-11-13	0	You are an independent reviewer of the reworked PDF export of an antenatal clinic app (And
+docs/designs/reviews/export_audit/task_share_text.md	4350	2026-11-13	0	Build ONE new file `app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientShareTex
+docs/designs/reviews/export_audit/task_t_escape2.md	7168	2026-11-13	0	EXTRA INSTRUCTIONS for this file (they come first; the general brief follows): only three 
+docs/designs/reviews/export_audit/task_t_gen3.md	8103	2026-11-13	0	EXTRA INSTRUCTIONS for this file (they come first; the general brief follows): only these 
+docs/designs/reviews/export_audit/task_tests_layout.md	2430	2026-11-13	0	You are the independent test maintainer. The PDF export changed on purpose (owner-approved
+docs/designs/reviews/export_audit/task_tests_sections.md	7495	2026-11-13	0	You are the independent test designer. From the SPEC below write ONE new JVM unit test fil
+docs/designs/reviews/export_audit/task_wire_a.md	5816	2026-11-13	0	Edit `app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt`
+docs/designs/reviews/export_audit/task_wire_b.md	6761	2026-11-13	0	Edit `app/src/main/java/com/sherifradwan/ancnative/ui/report/PatientPrintHtmlGenerator.kt`
+docs/designs/reviews/export_print_v2/BRIEF.md	4313	2026-11-14	1	Export v2: print, preview and share (owner request 2026-11-14, to run AFTER the four owner
+docs/designs/reviews/medication_section_revision/antislop/code_glm.md	3350	2026-11-11	1	No critical or major findings. The added comments overwhelmingly earn their place: they ca
+docs/designs/reviews/medication_section_revision/antislop/copywriting_glm.md	2075	2026-11-11	0	**No critical or major findings.** The added strings are specific, correctly scoped UI cop
+docs/designs/reviews/medication_section_revision/antislop/core_glm.md	4150	2026-11-11	0	Review: added lines vs. antislop rules
+docs/designs/reviews/medication_section_revision/antislop/human_glm.md	4571	2026-11-11	0	Review: antislop-human vs. added diff lines
+docs/designs/reviews/medication_section_revision/antislop/layoutmobile_glm.md	3044	2026-11-11	0	Review: antislop-layoutmobile (added lines only)
+docs/designs/reviews/medication_section_revision/antislop/ui_glm.md	3727	2026-11-11	0	Review: added lines vs. antislop-ui
+docs/designs/reviews/medication_section_revision/consolidated_review_report.md	12852	2026-11-10	2	Consolidated Review Report: Medication Section Revision (Stage 1)
+docs/designs/reviews/medication_section_revision/deviceqa/judge_alphacode.md	703	2026-11-11	0	[Tokens] upload: 58693 download: 118 cache_read: 0 cache_write: 0
+docs/designs/reviews/medication_section_revision/deviceqa/judge_glm.md	4766	2026-11-11	0	Defects first (with dump + node)
+docs/designs/reviews/medication_section_revision/frontier/code_opus.md	6867	2026-11-11	0	I'll read the design doc and the patch first.
+docs/designs/reviews/medication_section_revision/frontier/tests_opus.md	7191	2026-11-11	0	I'll read the design and both patches first.
+docs/designs/reviews/medication_section_revision/mock/review_alphacode.md	5335	2026-11-10	0	Review Report: Medication Section Mock (Stage 1)
+docs/designs/reviews/medication_section_revision/mock/review_gemini.md	14412	2026-11-10	0	Adversarial Review: `medication-section.html`
+docs/designs/reviews/medication_section_revision/mock/review_glm.md	6176	2026-11-10	0	Adversarial Review — `docs/mocks/medication-section.html` (Stage 1 mock)
+docs/designs/reviews/medication_section_revision/phase1/code_review_gemini.md	10244	2026-11-10	0	Independent Code Review: Medication Form & Sheet
+docs/designs/reviews/medication_section_revision/phase1/code_review_gemini_r2.md	8556	2026-11-10	0	Code Review: Medication Section Revision (Stage 1)
+docs/designs/reviews/medication_section_revision/phase1/test_review_alphacode_r2.md	12563	2026-11-10	0	Test Review: Medication Form & Sheet (Stage 1)
+docs/designs/reviews/medication_section_revision/phase1/test_review_glm.md	6075	2026-11-10	0	Independent Test Review — Medication Form/Sheet (Stage 1)
+docs/designs/reviews/medication_section_revision/phase2/code_alphacode.md	8459	2026-11-11	0	Code Review: Medication Section Revision (Stage 1)
+docs/designs/reviews/medication_section_revision/phase2/code_gemini.md	7327	2026-11-11	1	Code Review: Medication Section Revision (Phase 2 Patch)
+docs/designs/reviews/medication_section_revision/phase2/tests_glm.md	6774	2026-11-11	0	Independent Test Review — Medication Sheet / One-Tap Stop (phase2)
+docs/designs/reviews/medication_section_revision/phase2r2/code_gemini.md	6060	2026-11-11	1	Code Review: Phase 2 Revision 2 (`main.patch`)
+docs/designs/reviews/medication_section_revision/phase2r2/code_glm.md	6477	2026-11-11	1	Code Review: Medication Section Revision — Phase 2 (r2)
+docs/designs/reviews/medication_section_revision/phase2r2/tests_alphacode.md	11693	2026-11-11	0	Test Review: Medication Section Revision (Stage 1)
+docs/designs/reviews/medication_section_revision/phase3/code_alphacode.md	694	2026-11-11	0	[Tokens] upload: 40319 download: 5 cache_read: 0 cache_write: 0
+docs/designs/reviews/medication_section_revision/phase3/code_opus.md	6189	2026-11-11	0	I'll read the design and patch first.
+docs/designs/reviews/medication_section_revision/phase3/tests_gemini.md	10099	2026-11-11	0	Independent Test Review: Medication Section Revision (Phase 3)
+docs/designs/reviews/medication_section_revision/phase3/tests_glm.md	5813	2026-11-11	0	Independent Test Review — Phase 3 (Medication Section Revision, Stage 1)
+docs/designs/reviews/medication_section_revision/phase3r2/code_alphacode.md	700	2026-11-11	0	[Tokens] upload: 43833 download: 104 cache_read: 0 cache_write: 0
+docs/designs/reviews/medication_section_revision/phase3r2/code_opus.md	6939	2026-11-11	0	I'll read the design and patch first.
+docs/designs/reviews/medication_section_revision/phase3r3/code_frontier.md	0	2026-11-11	0	
+docs/designs/reviews/medication_section_revision/phase3r3/code_gemini.md	6564	2026-11-11	1	Independent Code Review: Medication Section Revision Phase 3 Round 3 (`main.patch`)
+docs/designs/reviews/medication_section_revision/phase3r3/code_glm.md	6166	2026-11-11	1	Independent Code Review — Meds Tab Stage 1 (phase3r3)
+docs/designs/reviews/medication_section_revision/phase3r3/tests_alphacode.md	18086	2026-11-11	0	Test Coverage Review: Medication Section Revision (Stage 1)
+docs/designs/reviews/medication_section_revision/phase3r3/tests_triage.md	2211	2026-11-11	0	Triage of the alphacode test review (phase3r3)
+docs/designs/reviews/medication_section_revision/root_reports/comprehension_report.md	10361	2026-11-11	11	What this proposes
+docs/designs/reviews/medication_section_revision/root_reports/critic_report.md	11284	2026-11-11	11	Stage 7 report: Critic Review (round 1)
+docs/designs/reviews/medication_section_revision/root_reports/goldfish_review_report.md	6666	2026-11-11	7	Goldfish Annotated Review Report
+docs/designs/reviews/medication_section_revision/root_reports/goldfish_review_report_stage5-9.md	32316	2026-11-11	8	Goldfish Annotated Review Report
+docs/designs/reviews/medication_section_revision/root_reports/implementation_readiness_report.md	13631	2026-11-11	9	Stage 9 report: Implementation Readiness Test (round 1)
+docs/designs/reviews/medication_section_revision/root_reports/intermediate_zoom_out_report.md	7073	2026-11-11	8	Stage 8 report: Intermediate Zoom Out
+docs/designs/reviews/medication_section_revision/root_reports/zoom_out_report.md	10940	2026-11-11	9	Stage 5 report: Initial Zoom Out Review
+docs/designs/reviews/medication_section_revision/split/review_gemini.md	5636	2026-11-11	0	Code Review: `split.patch` (State Refactoring)
+docs/designs/reviews/medication_section_revision/stage5_inventive.md	9360	2026-11-10	0	Inventive Catalyst Strategic Review (EGM Mode: REVIEW)
+docs/designs/reviews/medication_section_revision/stage5_zoom_out.md	13373	2026-11-10	0	Goldfish Review: Medication Section Revision Design Document
+docs/designs/reviews/medication_section_revision/stage6_comprehension.md	12452	2026-11-10	0	Comprehension Goldfish Review — `docs/designs/medication_section_revision.md` (lines 1–372
+docs/designs/reviews/medication_section_revision/stage7_design.md	6508	2026-11-10	0	Stage 7: Design Critic (Claude Sonnet subagent, egm:egm-design), lines 1-214
+docs/designs/reviews/medication_section_revision/stage7_structural.md	10006	2026-11-10	0	Structural Review — `docs/designs/medication_section_revision.md` (Lines 1–214)
+docs/designs/reviews/medication_section_revision/stage7_style.md	9628	2026-11-10	0	Goldfish Style Review — Medication Section Revision Design Document
+docs/designs/reviews/medication_section_revision/stage8_intermediate_zoom_out.md	16275	2026-11-10	0	Goldfish Review: Medication Section Revision (Stage 1)
+docs/designs/reviews/medication_section_revision/stage9_codebase_details.md	18208	2026-11-10	0	Implementation Readiness Audit Report: Medication Section Revision (Stage 1)
+docs/designs/reviews/medication_section_revision/stage9_implementation_readiness.md	8658	2026-11-10	0	Stage 9: Implementation Readiness (Claude Sonnet subagent, egm:egm-implementation-readines
+docs/designs/reviews/medication_section_revision/stage9_style.md	9678	2026-11-10	0	Style Goldfish — REVIEW Report
+docs/designs/reviews/medication_section_revision/stageB/code_alphacode.md	352	2026-11-11	0	[Tokens] upload: 32405 download: 1417 cache_read: 0 cache_write: 0
+docs/designs/reviews/medication_section_revision/stageB/tests_alphacode.md	700	2026-11-11	0	[Tokens] upload: 66610 download: 80 cache_read: 0 cache_write: 0
+docs/designs/reviews/medication_section_revision/stageB2/code_glm.md	5361	2026-11-11	1	Code Review: Stage B2 patch (frequency-required rule)
+docs/designs/reviews/medication_section_revision/stageB2/code_opus.md	0	2026-11-11	0	
+docs/designs/reviews/medication_section_revision/stageB2/tests_gemini.md	0	2026-11-11	0	
+docs/designs/reviews/medication_section_revision/stageB3/code_alphacode.md	702	2026-11-11	0	[Tokens] upload: 23027 download: 77 cache_read: 0 cache_write: 0
+docs/designs/reviews/medication_section_revision/stageB3/tests_alphacode.md	7646	2026-11-11	0	Test Review: Medication Section Revision (Stage 1)
+docs/designs/reviews/medication_section_revision/stageC/code_alphacode.md	696	2026-11-11	0	[Tokens] upload: 24977 download: 42 cache_read: 0 cache_write: 0
+docs/designs/reviews/medication_section_revision/stageC/code_opus.md	0	2026-11-11	0	
+docs/designs/reviews/medication_section_revision/stageC/tests_alphacode.md	699	2026-11-11	0	[Tokens] upload: 27797 download: 344 cache_read: 0 cache_write: 0
+docs/designs/reviews/merge_registration/brief.md	16235	2026-11-12	28	Task: write the safest plan to merge an unmerged feature branch into main (no code, a plan
+docs/designs/reviews/merge_registration/conflict_hunks.txt	11622	2026-11-12	0	=== CONFLICTS IN app/src/main/java/com/sherifradwan/ancnative/state/AncState.kt: 5 hunk(s)
+docs/designs/reviews/merge_registration/plan_alphacode.md	30105	2026-11-12	0	Merge Plan: `claude/clever-goldwasser-e086ce` → `main`
+docs/designs/reviews/merge_registration/plan_gemini.md	0	2026-11-12	0	
+docs/designs/reviews/merge_registration/plan_glm.md	0	2026-11-12	0	
+docs/designs/reviews/merge_registration/run_alphacode.log	28	2026-11-12	0	alphacode ->    30105 bytes
+docs/designs/reviews/merge_registration/run_gemini.log	46	2026-11-12	0	agy:gemini-3.8-flash-medium ->        0 bytes
+docs/designs/reviews/merge_registration/run_glm.log	46	2026-11-12	0	opencode:glm-5.3-flash-free ->        0 bytes
+docs/designs/reviews/owner_fixes_2026-11-14/ROLES.md	1006	2026-11-14	0	Roles (MACA, independence rule: test designer != builder; reviewer != author)
+docs/designs/reviews/owner_fixes_2026-11-14/SPEC.md	9058	2026-11-14	16	Owner fixes 2026-11-14: four requests (spec and oracles)
+docs/designs/reviews/owner_fixes_2026-11-14/SPEC_attention.md	6832	2026-11-14	3	F2 redesign (owner request 2026-11-14, replaces section F2 of SPEC.md): Clinical attention
+docs/designs/reviews/owner_fixes_2026-11-14/antislop_gate.md	16697	2026-11-14	1	antislop active: after (session override).
+docs/designs/reviews/owner_fixes_2026-11-14/brief_antislop.md	1618	2026-11-14	0	You are an independent design and copy auditor. READ-ONLY: do not edit, create or delete a
+docs/designs/reviews/owner_fixes_2026-11-14/brief_builder_A.md	1623	2026-11-14	0	You are BUILDER A for this Android Kotlin repository (Jetpack Compose, MVI). Antislop rule
+docs/designs/reviews/owner_fixes_2026-11-14/brief_builder_B.md	1707	2026-11-14	0	You are BUILDER B for this Android Kotlin repository (Jetpack Compose, MVI). Antislop rule
+docs/designs/reviews/owner_fixes_2026-11-14/brief_builder_C.md	2751	2026-11-14	0	You are BUILDER C for this Android Kotlin repository (Jetpack Compose, MVI). Antislop rule
+docs/designs/reviews/owner_fixes_2026-11-14/brief_review.md	2359	2026-11-14	0	You are the independent frontier-tier reviewer of a clinic app (Android Kotlin, Compose, a
+docs/designs/reviews/owner_fixes_2026-11-14/builder_A_report.md	1885	2026-11-14	0	ORACLE-F1: Removed obstetricNotes display from `ParityPregnanciesSection` in [OverviewSect
+docs/designs/reviews/owner_fixes_2026-11-14/builder_B_report.md	1591	2026-11-14	0	ORACLE-F2: Added `clinicalAttentionLevel` and `clinicalAttentionColors` in [ClinicalAttent
+docs/designs/reviews/owner_fixes_2026-11-14/builder_C_report.md	2260	2026-11-14	0	I have started running the unit test suite to verify all tests pass against the changes. I
+docs/designs/reviews/owner_fixes_2026-11-14/lane_t_attn_logic.log	36	2026-11-14	0	prompt bytes: 9744 block lines: 244
+docs/designs/reviews/owner_fixes_2026-11-14/lane_t_attn_ui.log	37	2026-11-14	0	prompt bytes: 13273 block lines: 170
+docs/designs/reviews/owner_fixes_2026-11-14/lane_t_logic.log	37	2026-11-14	0	prompt bytes: 13985 block lines: 308
+docs/designs/reviews/owner_fixes_2026-11-14/lane_t_ui.log	37	2026-11-14	0	prompt bytes: 17623 block lines: 153
+docs/designs/reviews/owner_fixes_2026-11-14/review_argon.md	26368	2026-11-14	2	VERDICT: FAIL
+docs/designs/reviews/owner_fixes_2026-11-14/task_fixes_round2.md	3365	2026-11-14	0	Round 2 fixes (builder). Edit ONLY the files listed. No git, no gradle, no network. Packag
+docs/designs/reviews/owner_fixes_2026-11-14/task_t_attn_logic.md	8282	2026-11-14	0	You are the independent TEST DESIGNER. From the SPEC below (storage format and the pure fu
+docs/designs/reviews/owner_fixes_2026-11-14/task_t_attn_ui.md	8886	2026-11-14	0	You are the independent TEST DESIGNER for Compose UI tests (instrumented, emulator). From 
+docs/designs/reviews/owner_fixes_2026-11-14/task_t_logic.md	12517	2026-11-14	0	You are the independent TEST DESIGNER. From the SPEC below (sections F2, F4 helpers, F5a, 
+docs/designs/reviews/owner_fixes_2026-11-14/task_t_ui.md	11669	2026-11-14	0	You are the independent TEST DESIGNER for Compose UI tests (instrumented, run on an emulat
+docs/designs/reviews/owner_fixes_2026-11-15/brief_lab.md	1684	2026-11-14	0	READ-ONLY investigation, change nothing. App: Android Kotlin Compose antenatal EMR, packag
+docs/designs/reviews/owner_fixes_2026-11-15/brief_mock.md	1790	2026-11-14	2	You are a senior mobile UI designer. Produce ONE self-contained HTML file (inline CSS, no 
+docs/designs/reviews/owner_fixes_2026-11-15/brief_review_lab.md	1487	2026-11-14	0	READ-ONLY independent reviewer (change nothing, no gradle, no git writes). Review docs/des
+docs/designs/reviews/owner_fixes_2026-11-15/brief_score.md	885	2026-11-14	0	READ-ONLY. Three anonymous HTML mocks (mock_A.html, mock_B.html, mock_C.html in docs/desig
+docs/designs/reviews/owner_fixes_2026-11-15/lab_investigation.md	25514	2026-11-14	4	Bug A — `Haemoglobin (Hb)` Listed Under `INDIVIDUAL INVESTIGATIONS` Instead of `Complete B
+docs/designs/reviews/owner_fixes_2026-11-15/m_agy_gemini-3.8-flash-high.html	20883	2026-11-14	0	<!DOCTYPE html>
+docs/designs/reviews/owner_fixes_2026-11-15/m_opencode_deepseek-v4.1-flash-free.html	20268	2026-11-14	0	<!DOCTYPE html>
+docs/designs/reviews/owner_fixes_2026-11-15/m_opencode_glm-5.3-flash-free.html	16301	2026-11-14	0	<!DOCTYPE html>
+docs/designs/reviews/owner_fixes_2026-11-15/mock_A.html	20883	2026-11-14	2	<!DOCTYPE html>
+docs/designs/reviews/owner_fixes_2026-11-15/mock_B.html	16301	2026-11-14	2	<!DOCTYPE html>
+docs/designs/reviews/owner_fixes_2026-11-15/mock_C.html	20268	2026-11-14	2	<!DOCTYPE html>
+docs/designs/reviews/owner_fixes_2026-11-15/mock_D_opus.html	62836	2026-11-14	4	<!DOCTYPE html>
+docs/designs/reviews/owner_fixes_2026-11-15/mock_agy_gemini-3.8-flash-high.txt	22072	2026-11-14	0	```html
+docs/designs/reviews/owner_fixes_2026-11-15/mock_opencode_deepseek-v4.1-flash-free.txt	21489	2026-11-14	0	```html
+docs/designs/reviews/owner_fixes_2026-11-15/mock_opencode_glm-5.3-flash-free.txt	17752	2026-11-14	0	```html
+docs/designs/reviews/owner_fixes_2026-11-15/review_lab.md	20744	2026-11-14	1	**VERDICT: FAIL**
+docs/designs/reviews/owner_fixes_2026-11-15/score_mocks.md	31162	2026-11-14	0	Scorecard (0–10 per criterion)
+docs/designs/reviews/owner_fixes_2026-11-15/spec_tests_A.md	1323	2026-11-14	0	Write ONE Kotlin JUnit4 test file (package com.sherifradwan.ancnative.ui.patienthub.model,
+docs/designs/reviews/owner_fixes_2026-11-15/spec_tests_B.md	1221	2026-11-14	0	Write ONE Kotlin JUnit4 test file (package com.sherifradwan.ancnative.model.catalog, file 
+docs/designs/reviews/owner_fixes_2026-11-15/task_builder_A.md	928	2026-11-14	0	Builder A (edit ONLY app/src/main/java/com/sherifradwan/ancnative/ui/patienthub/model/LabR
+docs/designs/reviews/owner_fixes_2026-11-15/task_builder_B.md	1419	2026-11-14	0	Builder B (edit ONLY: model/catalog/ClinicalCatalogModels.kt, model/catalog/ClinicalCatalo
+docs/designs/reviews/owner_fixes_2026-11-15/task_fixes_lab2.md	919	2026-11-14	0	Round 2 lab fixes (builder). Edit ONLY: ui/patienthub/model/LabReportGrouping.kt, model/ca
+docs/designs/reviews/owner_fixes_2026-11-15/tests_A.txt	10053	2026-11-14	0	```kotlin
+docs/designs/reviews/owner_fixes_2026-11-15/tests_B.txt	8099	2026-11-14	0	```kotlin
+docs/designs/reviews/plan_delivery_editor/design_alphacode.md	796	2026-11-11	1	ゲottesânica()). يحمل باغøênes杂.
+docs/designs/reviews/plan_delivery_editor/design_deepseek.md	0	2026-11-11	0	
+docs/designs/reviews/plan_delivery_editor/design_deepseek2.md	0	2026-11-11	0	
+docs/designs/reviews/plan_delivery_editor/design_glm.md	0	2026-11-11	0	
+docs/designs/reviews/plan_delivery_editor/design_opus.md	40681	2026-11-11	0	Design: edit the delivery plan in place on the Plan tab
+docs/designs/reviews/plan_delivery_editor/design_sonnet.md	30128	2026-11-11	0	Design: edit the delivery plan in place on the Plan tab
+docs/designs/reviews/plan_delivery_editor/review_agy_claude-sonnet-5-5-medium.md	0	2026-11-11	0	
+docs/designs/reviews/plan_delivery_editor/review_alphacode.md	694	2026-11-11	0	[Tokens] upload: 41479 download: 225 cache_read: 0 cache_write: 0
+docs/designs/reviews/plan_delivery_editor/review_opencode_deepseek-v4.1-flash-free.md	6404	2026-11-11	0	Independent review. I checked the four pasted files. Many design claims about `AncState.kt
+docs/designs/reviews/plan_delivery_editor/review_opencode_glm-5.3-flash-free.md	5437	2026-11-11	0	BLOCKER
+docs/designs/reviews/plan_delivery_editor/wp1_code_glm.md	5270	2026-11-11	0	Code review: `wp1_main.patch` (`model/DeliveryNotes.kt`)
+docs/designs/reviews/plan_delivery_editor/wp1_tests_glm.md	5898	2026-11-11	0	Independent test review — wp1 (parser/compose layer)
+docs/designs/reviews/plan_delivery_editor/wp2_code_deepseek.md	5524	2026-11-11	0	Blocker
+docs/designs/reviews/plan_delivery_editor/wp2_tests_glm.md	6279	2026-11-11	0	Independent test review — delivery plan sheet (WP2)
+docs/designs/reviews/plan_delivery_editor/wp3_code_deepseek.md	6138	2026-11-11	0	Blocker
+docs/designs/reviews/plan_delivery_editor/wp3_tests_glm.md	6087	2026-11-11	0	Test Review: Delivery Plan Editor (WP3)
+docs/designs/reviews/registration_pencil/review_deepseek.md	8045	2026-11-13	0	**1. VERDICT: PASS**
+docs/designs/reviews/registration_pencil/review_glm.md	5849	2026-11-13	0	**VERDICT: PASS** — on the diff as pasted, no confirmed defect. Two caveats: (a) the spec 
+docs/designs/reviews/registration_pencil/task_build.md	5072	2026-11-13	0	Mission: the header pencil and the Incomplete chip open the registration flow for a patien
+docs/designs/reviews/registration_pencil/task_review.md	1918	2026-11-13	0	You are an independent code reviewer for an Android Kotlin (Jetpack Compose, MVI) clinic a
+docs/designs/reviews/registration_pencil/task_tests.md	4132	2026-11-13	0	You are the independent test designer (you did not write the production code). Write tests
+docs/designs/zcode_start_prompt.md	5213	2026-11-11	1	Start prompt for zcode
+docs/mocks/medication-section.html	69718	2026-11-10	7	<!doctype html>
+tasks/current_task.md	9949	2026-11-08	6	Task Queue & Audit Plan (MACA v2)

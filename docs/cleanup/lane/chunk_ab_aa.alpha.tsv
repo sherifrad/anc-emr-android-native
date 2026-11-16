@@ -1,0 +1,162 @@
+.agents/pipeline/design/d1/brief.md	ARCHIVE	Completed design lane brief for finished round
+.agents/pipeline/design/d1/full_brief.md	ARCHIVE	Completed design lane full brief
+.agents/pipeline/design/d1/index.html	KEEP	Approved/mock design artifact in redesign briefs area
+.agents/pipeline/design/d1/run.log	DELETE	Machine run log output
+.agents/pipeline/design/d1/run/agy-gemini-3.8-flash-medium/agy.log	DELETE	Raw agent run log output
+.agents/pipeline/design/d1/run/agy-gemini-3.8-flash-medium/brief.txt	DELETE	Duplicated prompt/brief for finished run
+.agents/pipeline/design/d1/run/agy-gemini-3.8-flash-medium/result.json	DELETE	Machine run result output
+.agents/pipeline/design/d1/run/agy-gemini-3.8-flash-medium/stderr.txt	DELETE	Machine stderr output
+.agents/pipeline/design/d1/run/claude-claude-sonnet-5-5/brief.txt	DELETE	Duplicated prompt/brief for finished run
+.agents/pipeline/design/d1/run/claude-claude-sonnet-5-5/events.jsonl	DELETE	Raw machine event log output
+.agents/pipeline/design/d1/run/claude-claude-sonnet-5-5/final.txt	DELETE	Raw lane output, no useful record
+.agents/pipeline/design/d1/run/claude-claude-sonnet-5-5/profile.json	DELETE	Machine run profile output
+.agents/pipeline/design/d1/run/claude-claude-sonnet-5-5/result.json	DELETE	Machine run result output
+.agents/pipeline/design/d1/run/claude-claude-sonnet-5-5/stderr.txt	DELETE	Empty machine stderr output
+.agents/pipeline/design/d1/run/dispatch.log	DELETE	Machine dispatch log output
+.agents/pipeline/design/d2/NOTES.md	ARCHIVE	Finished design review notes for audit
+.agents/pipeline/design/d2/agy_direct.log	DELETE	Raw agent direct log output
+.agents/pipeline/design/d2/brief.md	ARCHIVE	Completed design lane brief for finished round
+.agents/pipeline/design/d2/full_brief.md	ARCHIVE	Completed design lane full brief
+.agents/pipeline/design/d2/index.html	KEEP	Approved/mock design artifact in redesign briefs area
+.agents/pipeline/design/d2/run.log	DELETE	Machine run log output
+.agents/pipeline/design/d2/run/agy-gemini-3.8-flash-medium/agy.log	DELETE	Raw agent run log output
+.agents/pipeline/design/d2/run/agy-gemini-3.8-flash-medium/brief.txt	DELETE	Duplicated prompt/brief for finished run
+.agents/pipeline/design/d2/run/agy-gemini-3.8-flash-medium/result.json	DELETE	Machine run result output
+.agents/pipeline/design/d2/run/agy-gemini-3.8-flash-medium/stderr.txt	DELETE	Machine stderr output
+.agents/pipeline/design/d2/run/claude-claude-sonnet-5-5/brief.txt	DELETE	Duplicated prompt/brief for finished run
+.agents/pipeline/design/d2/run/claude-claude-sonnet-5-5/events.jsonl	DELETE	Raw machine event log output
+.agents/pipeline/design/d2/run/claude-claude-sonnet-5-5/final.txt	DELETE	Raw lane output, no useful record
+.agents/pipeline/design/d2/run/claude-claude-sonnet-5-5/profile.json	DELETE	Machine run profile output
+.agents/pipeline/design/d2/run/claude-claude-sonnet-5-5/result.json	DELETE	Machine run result output
+.agents/pipeline/design/d2/run/claude-claude-sonnet-5-5/stderr.txt	DELETE	Empty machine stderr output
+.agents/pipeline/design/d2/run/dispatch.log	DELETE	Machine dispatch log output
+.agents/pipeline/design/d4/d1/index.html	KEEP	Design mock artifact in redesign area
+.agents/pipeline/design/d4/d2/index.html	KEEP	Design mock artifact in redesign area
+.agents/pipeline/design/d4/d3/index.html	KEEP	Design mock artifact in redesign area
+.agents/pipeline/design/d4/index.html	KEEP	Design mock index in redesign area
+.agents/pipeline/design/lab-batch-spec.md	KEEP	Active/spec document describing screen behavior
+.agents/pipeline/design/rev-b/lab-batch.html	KEEP	Design mock/review artifact for redesign
+.agents/pipeline/design/rev-b/single-lab.html	KEEP	Design mock/review artifact for redesign
+.agents/pipeline/devtest/REPORT.md	ARCHIVE	Finished device test/validation report for audit
+.agents/pipeline/devtest/brief.md	ARCHIVE	Completed devtest lane brief for finished round
+.agents/pipeline/devtest/run.log	DELETE	Machine run log output
+.agents/pipeline/devtest/run/agy-err.txt	DELETE	Empty machine error output
+.agents/pipeline/devtest/run/agy-out.txt	DELETE	Raw lane test output
+.agents/pipeline/drafts/design_analysis.md	ARCHIVE	Finished draft analysis record for audit
+.agents/pipeline/drafts/out/attempt-0-agy-gemini-3.8-flash-medium/result.json	DELETE	Machine attempt result output
+.agents/pipeline/drafts/out/attempt-0-agy-gemini-3.8-flash-medium/stdout.txt	DELETE	Raw attempt stdout output
+.agents/pipeline/drafts/out/fallback.json	DELETE	Machine fallback metadata output
+.agents/pipeline/drafts/out/final.md	ARCHIVE	Final draft analysis output for audit
+.agents/pipeline/drafts/run.log	DELETE	Machine run log output
+.agents/pipeline/maca-briefs/builder_brief_claude.md	ARCHIVE	Finished implementation brief for completed round
+.agents/pipeline/maca-briefs/claude_output.txt	DELETE	Raw agent lane output
+.agents/pipeline/maca-briefs/opencode_output.txt	DELETE	Raw agent lane output
+.agents/pipeline/maca-briefs/prompt_claude.md	DELETE	Prompt for finished round
+.agents/pipeline/maca-briefs/prompt_opencode.md	DELETE	Prompt for finished round
+.agents/pipeline/maca-briefs/test_designer_brief_opencode.md	ARCHIVE	Finished test designer brief for audit
+.agents/pipeline/r2-run.log	DELETE	Machine pipeline run log
+.agents/pipeline/r2-run2.log	DELETE	Empty machine pipeline run log
+.agents/pipeline/r2-run3.log	DELETE	Machine pipeline run log
+.agents/pipeline/r2/00_common_prefix.md	ARCHIVE	Completed round shared brief prefix
+.agents/pipeline/r2/10_test_designer.md	ARCHIVE	Completed round test designer brief
+.agents/pipeline/r2/20_build_core.md	ARCHIVE	Completed round core builder brief
+.agents/pipeline/r2/30_build_ui.md	ARCHIVE	Completed round UI builder brief
+.agents/pipeline/r2/40_review.md	ARCHIVE	Completed round review brief
+.agents/pipeline/r2b-run.log	DELETE	Machine pipeline run log
+.agents/pipeline/r2b-run2.log	DELETE	Machine pipeline run log
+.agents/pipeline/r2c-run.log	DELETE	Machine pipeline run log
+.agents/pipeline/r3/00_common_prefix.md	ARCHIVE	Completed round shared brief prefix
+.agents/pipeline/r3/10_test_designer.md	ARCHIVE	Completed round test designer brief
+.agents/pipeline/r3/20_build_core.md	ARCHIVE	Completed round core builder brief
+.agents/pipeline/r3/30_build_ui.md	ARCHIVE	Completed round UI builder brief
+.agents/pipeline/r3/40_review.md	ARCHIVE	Completed round review brief
+.agents/pipeline/r3a-run.log	DELETE	Machine pipeline run log
+.agents/pipeline/r3a2-run.log	DELETE	Machine pipeline run log
+.agents/pipeline/r3b-run.log	DELETE	Machine pipeline run log
+.agents/pipeline/r3b/00_common_prefix.md	ARCHIVE	Completed round shared brief prefix
+.agents/pipeline/r3b/10_test_designer.md	ARCHIVE	Completed round test designer brief
+.agents/pipeline/r3b/20_build_core.md	ARCHIVE	Completed round core builder brief
+.agents/pipeline/r3b/30_build_ui.md	ARCHIVE	Completed round UI builder brief
+.agents/pipeline/r3b/40_review.md	ARCHIVE	Completed round review brief
+.agents/pipeline/r3c-run.log	DELETE	Machine pipeline run log
+.agents/pipeline/r3c-run2.log	DELETE	Machine pipeline run log
+.agents/pipeline/r3c-run3.log	DELETE	Machine pipeline run log
+.agents/pipeline/r3c-run4.log	DELETE	Machine pipeline run log
+.agents/pipeline/r3c-verify-release.log	DELETE	Empty verification log output
+.agents/pipeline/r3c-verify-tests.log	DELETE	Empty verification log output
+.agents/pipeline/r3c/00_common_prefix.md	ARCHIVE	Completed round shared brief prefix
+.agents/pipeline/r3c/10_test_designer.md	ARCHIVE	Completed round test designer brief
+.agents/pipeline/r3c/20_build_core.md	ARCHIVE	Completed round core builder brief
+.agents/pipeline/r3c/30_build_ui.md	ARCHIVE	Completed round UI builder brief
+.agents/pipeline/r3c/40_review.md	ARCHIVE	Completed round review brief
+.agents/pipeline/r3c2-run.log	DELETE	Machine pipeline run log
+.agents/pipeline/r3c2/00_common_prefix.md	ARCHIVE	Completed round shared brief prefix
+.agents/pipeline/r3c2/10_test_designer.md	ARCHIVE	Completed round test designer brief
+.agents/pipeline/r3c2/20_build_core.md	ARCHIVE	Completed round core builder brief
+.agents/pipeline/r3c2/30_build_ui.md	ARCHIVE	Completed round UI builder brief
+.agents/pipeline/r3c2/40_review.md	ARCHIVE	Completed round review brief
+.agents/pipeline/r3c3-run.log	DELETE	Machine pipeline run log
+.agents/pipeline/r3c3/00_common_prefix.md	ARCHIVE	Completed round shared brief prefix
+.agents/pipeline/r3c3/10_test_designer.md	ARCHIVE	Completed round test designer brief
+.agents/pipeline/r3c3/20_build_core.md	ARCHIVE	Completed round core builder brief
+.agents/pipeline/r3c3/30_build_ui.md	ARCHIVE	Completed round UI builder brief
+.agents/pipeline/r3c3/40_review.md	ARCHIVE	Completed round review brief
+.agents/pipeline/r3d-run.log	DELETE	Machine pipeline run log
+.agents/pipeline/r3d-run2.log	DELETE	Machine pipeline run log
+.agents/pipeline/r3d/00_common_prefix.md	ARCHIVE	Completed round shared brief prefix
+.agents/pipeline/r3d/10_test_designer.md	ARCHIVE	Completed round test designer brief
+.agents/pipeline/r3d/20_build_core.md	ARCHIVE	Completed round core builder brief
+.agents/pipeline/r3d/30_build_ui.md	ARCHIVE	Completed round UI builder brief
+.agents/pipeline/r3d/40_review.md	ARCHIVE	Completed round review brief
+.agents/pipeline/r3d/s14/brief.md	ARCHIVE	Completed subtask brief for finished round
+.agents/pipeline/r3d/s14/out/attempt-0-claude-claude-sonnet-5-5/result.json	DELETE	Machine attempt result output
+.agents/pipeline/r3d/s14/out/attempt-0-claude-claude-sonnet-5-5/stdout.txt	DELETE	Raw attempt stdout output
+.agents/pipeline/r3d/s14/out/fallback.json	DELETE	Machine fallback metadata output
+.agents/pipeline/r3d/s14/out/final.md	DELETE	Raw lane final output, not audit record
+.agents/pipeline/r3e-run.log	DELETE	Machine pipeline run log
+.agents/pipeline/r3e/00_common_prefix.md	ARCHIVE	Completed round shared brief prefix
+.agents/pipeline/r3e/10_test_designer.md	ARCHIVE	Completed round test designer brief
+.agents/pipeline/r3e/20_build_core.md	ARCHIVE	Completed round core builder brief
+.agents/pipeline/r3e/30_build_ui.md	ARCHIVE	Completed round UI builder brief
+.agents/pipeline/r3e/40_review.md	ARCHIVE	Completed round review brief
+.agents/pipeline/r3e/s5a/brief.md	ARCHIVE	Completed subtask brief for finished round
+.agents/pipeline/r3e/s5a/out/attempt-0-claude-claude-sonnet-5-5/result.json	DELETE	Machine attempt result output
+.agents/pipeline/r3e/s5a/out/attempt-0-claude-claude-sonnet-5-5/stdout.txt	DELETE	Raw attempt stdout output
+.agents/pipeline/r3e/s5a/out/fallback.json	DELETE	Machine fallback metadata output
+.agents/pipeline/r3e/s5a/out/final.md	DELETE	Raw lane final output, not audit record
+.agents/pipeline/r3f1-run.log	DELETE	Machine pipeline run log
+.agents/pipeline/r3f1/00_common_prefix.md	ARCHIVE	Completed round shared brief prefix
+.agents/pipeline/r3f1/10_test_designer.md	ARCHIVE	Completed round test designer brief
+.agents/pipeline/r3f1/20_build_core.md	ARCHIVE	Completed round core builder brief
+.agents/pipeline/r3f1/30_build_ui.md	ARCHIVE	Completed round UI builder brief
+.agents/pipeline/r3f1/40_review.md	ARCHIVE	Completed round review brief
+.agents/pipeline/r3f1/fix1/brief.md	ARCHIVE	Completed fix brief for finished round
+.agents/pipeline/r3f1/fix1/out/attempt-0-claude-claude-sonnet-5-5/result.json	DELETE	Machine attempt result output
+.agents/pipeline/r3f1/fix1/out/attempt-0-claude-claude-sonnet-5-5/stdout.txt	DELETE	Raw attempt stdout output
+.agents/pipeline/r3f1/fix1/out/fallback.json	DELETE	Machine fallback metadata output
+.agents/pipeline/r3f1/fix1/out/final.md	DELETE	Raw lane final output, not audit record
+.agents/pipeline/r3f2-run.log	DELETE	Machine pipeline run log
+.agents/pipeline/r3f2/00_common_prefix.md	ARCHIVE	Completed round shared brief prefix
+.agents/pipeline/r3f2/10_test_designer.md	ARCHIVE	Completed round test designer brief
+.agents/pipeline/r3f2/20_build_core.md	ARCHIVE	Completed round core builder brief
+.agents/pipeline/r3f2/30_build_ui.md	ARCHIVE	Completed round UI builder brief
+.agents/pipeline/r3f2/40_review.md	ARCHIVE	Completed round review brief
+.agents/pipeline/r3f2/fix1/brief.md	ARCHIVE	Completed fix brief for finished round
+.agents/pipeline/r3f2/fix1/out/attempt-0-claude-claude-sonnet-5-5/result.json	DELETE	Machine attempt result output
+.agents/pipeline/r3f2/fix1/out/attempt-0-claude-claude-sonnet-5-5/stdout.txt	DELETE	Raw attempt stdout output
+.agents/pipeline/r3f2/fix1/out/fallback.json	DELETE	Machine fallback metadata output
+.agents/pipeline/r3f2/fix1/out/final.md	DELETE	Raw lane final output, not audit record
+.agents/pipeline/r3f3-run.log	DELETE	Machine pipeline run log
+.agents/pipeline/r3f3/00_common_prefix.md	ARCHIVE	Completed round shared brief prefix
+.agents/pipeline/r3f3/10_test_designer.md	ARCHIVE	Completed round test designer brief
+.agents/pipeline/r3f3/20_build_core.md	ARCHIVE	Completed round core builder brief
+.agents/pipeline/r3f3/30_build_ui.md	ARCHIVE	Completed round UI builder brief
+.agents/pipeline/r3f3/40_review.md	ARCHIVE	Completed round review brief
+.agents/pipeline/r3f3/fix1/brief.md	ARCHIVE	Completed fix brief for finished round
+.agents/pipeline/r3f3/fix1/out/attempt-0-claude-claude-sonnet-5-5/result.json	DELETE	Machine attempt result output
+.agents/pipeline/r3f3/fix1/out/attempt-0-claude-claude-sonnet-5-5/stdout.txt	DELETE	Raw attempt stdout output
+.agents/pipeline/r3f3/fix1/out/fallback.json	DELETE	Machine fallback metadata output
+.agents/pipeline/r3f3/fix1/out/final.md	DELETE	Raw lane final output, not audit record
+.agents/pipeline/r3g-run.log	DELETE	Machine pipeline run log
+[Tokens] upload: 16619 download: 3812 cache_read: 0 cache_write: 0
+

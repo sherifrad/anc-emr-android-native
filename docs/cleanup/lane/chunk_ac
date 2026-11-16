@@ -1,0 +1,320 @@
+.agents/pipeline/r3x/fix_review.md	5278	2026-10-31	0	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r3x/fix_review/attempt-0-agy-gemini-3.8-flash-medium/result.json	2682	2026-10-31	68	{
+.agents/pipeline/r3x/fix_review/attempt-0-agy-gemini-3.8-flash-medium/stdout.txt	2140	2026-10-31	3	Running `PrintSampleDumpTest` to refresh the sample report...
+.agents/pipeline/r3x/fix_review/fallback.json	138	2026-10-31	0	[
+.agents/pipeline/r3x/fix_review/final.md	2140	2026-10-31	2	Running `PrintSampleDumpTest` to refresh the sample report...
+.agents/pipeline/r3x/fix_small.log	74	2026-10-31	0	[fallback] agy:gemini-3.8-flash-medium: completed 187.3s 1234 chars -> OK
+.agents/pipeline/r3x/fix_small.md	3334	2026-10-31	0	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r3x/fix_small/attempt-0-agy-gemini-3.8-flash-medium/result.json	1703	2026-10-31	68	{
+.agents/pipeline/r3x/fix_small/attempt-0-agy-gemini-3.8-flash-medium/stdout.txt	1234	2026-10-31	3	Running full unit test suite via `./gradlew --offline :app:testDebugUnitTest`...
+.agents/pipeline/r3x/fix_small/fallback.json	138	2026-10-31	0	[
+.agents/pipeline/r3x/fix_small/final.md	1234	2026-10-31	2	Running full unit test suite via `./gradlew --offline :app:testDebugUnitTest`...
+.agents/pipeline/r3y-run.log	1125	2026-10-31	0	MACA pipeline 20261031-210326 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('
+.agents/pipeline/r3y/00_common_prefix.md	2198	2026-10-31	2	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r3y/10_test_designer.md	1318	2026-10-31	1	ROLE: TEST DESIGNER for ROUND 3y (SPEC_FIX_R3.md section "Round 3y"). Tests and checks onl
+.agents/pipeline/r3y/20_build_core.md	662	2026-10-31	1	ROLE: BUILDER for ROUND 3y, part 1. Implement Q118 for BiometricAuthManager only. ALLOWED 
+.agents/pipeline/r3y/30_build_ui.md	614	2026-10-31	3	ROLE: UI BUILDER for ROUND 3y. Implement the themes and AppLockScreen parts of Q118. ALLOW
+.agents/pipeline/r3y/40_review.md	1230	2026-10-31	1	ROLE: INDEPENDENT REVIEWER (read-only). ALLOWED files: none. Reply with text only, max 35 
+.agents/pipeline/r3y/fix_tests.log	74	2026-10-31	0	[fallback] agy:gemini-3.8-flash-medium: completed 704.3s 2489 chars -> OK
+.agents/pipeline/r3y/fix_tests.md	6049	2026-10-31	0	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r3y/fix_tests/attempt-0-agy-gemini-3.8-flash-medium/result.json	3133	2026-10-31	68	{
+.agents/pipeline/r3y/fix_tests/attempt-0-agy-gemini-3.8-flash-medium/stdout.txt	2492	2026-10-31	3	I have started running `AncWorkflowTest` on `emulator-5554` as a background task. I will w
+.agents/pipeline/r3y/fix_tests/fallback.json	138	2026-10-31	0	[
+.agents/pipeline/r3y/fix_tests/final.md	2492	2026-10-31	2	I have started running `AncWorkflowTest` on `emulator-5554` as a background task. I will w
+.agents/pipeline/r3z-run.log	944	2026-11-03	13	MACA pipeline 20261031-214850 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('
+.agents/pipeline/r3z/00_common_prefix.md	2199	2026-10-31	2	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r3z/10_test_designer.md	1076	2026-10-31	1	ROLE: TEST DESIGNER for ROUND 3z (SPEC_FIX_R3.md section "Round 3z"). Tests only; no produ
+.agents/pipeline/r3z/20_build_core.md	895	2026-10-31	1	ROLE: CORE BUILDER for ROUND 3z. Implement Q120 and Q121 (the function parts only). ALLOWE
+.agents/pipeline/r3z/30_build_ui.md	1169	2026-10-31	3	ROLE: UI BUILDER for ROUND 3z. Implement Q120 (print date caller), Q121 (callers), Q122-Q1
+.agents/pipeline/r3z/40_review.md	1116	2026-10-31	1	ROLE: INDEPENDENT REVIEWER (read-only). ALLOWED files: none. Reply with text only, max 35 
+.agents/pipeline/r3z/fix_flaky.log	140	2026-11-03	10	[fallback] agy:gemini-3.8-flash-medium: failed 139.5s 0 chars -> next
+.agents/pipeline/r3z/fix_flaky.md	4179	2026-11-03	10	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r3z/fix_flaky/attempt-0-agy-gemini-3.8-flash-medium/agy.log	226220	2026-11-03	5	I1031 22:17:09.004540       1 resolver.go:85] Model ID gemini-3.8-flash-medium not in loca
+.agents/pipeline/r3z/fix_flaky/attempt-0-agy-gemini-3.8-flash-medium/brief.txt	4179	2026-11-03	12	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r3z/fix_flaky/attempt-0-agy-gemini-3.8-flash-medium/result.json	4316	2026-11-03	69	{
+.agents/pipeline/r3z/fix_flaky/attempt-0-agy-gemini-3.8-flash-medium/stderr.txt	309	2026-11-03	12	jetski: no output produced — a tool required the "write_file" permission that headless mod
+.agents/pipeline/r3z/fix_flaky/attempt-1-claude-claude-sonnet-5-5/brief.txt	4179	2026-11-03	12	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r3z/fix_flaky/attempt-1-claude-claude-sonnet-5-5/events.jsonl	119596	2026-11-03	7	{"type":"system","subtype":"dev_intent","kind":"android_app","trigger":"project_scan","uui
+.agents/pipeline/r3z/fix_flaky/attempt-1-claude-claude-sonnet-5-5/final.txt	2316	2026-11-03	7	I removed the unused import, but I couldn't find the cause of the flaky test. I couldn't r
+.agents/pipeline/r3z/fix_flaky/attempt-1-claude-claude-sonnet-5-5/profile.json	533	2026-11-03	7	{
+.agents/pipeline/r3z/fix_flaky/attempt-1-claude-claude-sonnet-5-5/result.json	7508	2026-11-03	69	{
+.agents/pipeline/r3z/fix_flaky/attempt-1-claude-claude-sonnet-5-5/stderr.txt	0	2026-11-03	12	
+.agents/pipeline/r3z/fix_flaky/fallback.json	587	2026-11-03	0	[
+.agents/pipeline/r3z/fix_flaky/final.md	2316	2026-11-03	2	I removed the unused import, but I couldn't find the cause of the flaky test. I couldn't r
+.agents/pipeline/r3z/fix_wrappers.log	140	2026-10-31	3	[fallback] agy:gemini-3.8-flash-medium: failed 210.7s 0 chars -> next
+.agents/pipeline/r3z/fix_wrappers.md	3354	2026-10-31	3	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r3z/fix_wrappers/attempt-0-agy-gemini-3.8-flash-medium/agy.log	230700	2026-10-31	5	I1031 22:10:51.538069       1 resolver.go:85] Model ID gemini-3.8-flash-medium not in loca
+.agents/pipeline/r3z/fix_wrappers/attempt-0-agy-gemini-3.8-flash-medium/brief.txt	3354	2026-10-31	12	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r3z/fix_wrappers/attempt-0-agy-gemini-3.8-flash-medium/result.json	5905	2026-10-31	69	{
+.agents/pipeline/r3z/fix_wrappers/attempt-0-agy-gemini-3.8-flash-medium/stderr.txt	309	2026-10-31	12	jetski: no output produced — a tool required the "write_file" permission that headless mod
+.agents/pipeline/r3z/fix_wrappers/attempt-1-claude-claude-sonnet-5-5/brief.txt	3354	2026-10-31	12	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r3z/fix_wrappers/attempt-1-claude-claude-sonnet-5-5/events.jsonl	49404	2026-10-31	7	{"type":"system","subtype":"dev_intent","kind":"android_app","trigger":"project_scan","uui
+.agents/pipeline/r3z/fix_wrappers/attempt-1-claude-claude-sonnet-5-5/final.txt	1681	2026-10-31	7	I made the edits, but I couldn't run any of the Gradle steps, so nothing is verified by a 
+.agents/pipeline/r3z/fix_wrappers/attempt-1-claude-claude-sonnet-5-5/profile.json	533	2026-10-31	7	{
+.agents/pipeline/r3z/fix_wrappers/attempt-1-claude-claude-sonnet-5-5/result.json	8773	2026-10-31	69	{
+.agents/pipeline/r3z/fix_wrappers/attempt-1-claude-claude-sonnet-5-5/stderr.txt	0	2026-10-31	12	
+.agents/pipeline/r3z/fix_wrappers/fallback.json	587	2026-10-31	0	[
+.agents/pipeline/r3z/fix_wrappers/final.md	1681	2026-10-31	2	I made the edits, but I couldn't run any of the Gradle steps, so nothing is verified by a 
+.agents/pipeline/r3z/review.log	70	2026-10-31	1	[fallback] claude:claude-sonnet-5-5: completed 52.2s 5042 chars -> OK
+.agents/pipeline/r3z/review.md	3478	2026-10-31	2	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r3z/review/attempt-0-claude-claude-sonnet-5-5/brief.txt	3478	2026-10-31	12	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r3z/review/attempt-0-claude-claude-sonnet-5-5/events.jsonl	139673	2026-10-31	7	{"type":"system","subtype":"dev_intent","kind":"android_app","trigger":"project_scan","uui
+.agents/pipeline/r3z/review/attempt-0-claude-claude-sonnet-5-5/final.txt	5047	2026-10-31	7	**Review of Round 3z.** I found no Hard Blockers, but I couldn't finish the value-by-value
+.agents/pipeline/r3z/review/attempt-0-claude-claude-sonnet-5-5/profile.json	79	2026-10-31	7	{
+.agents/pipeline/r3z/review/attempt-0-claude-claude-sonnet-5-5/result.json	12240	2026-10-31	69	{
+.agents/pipeline/r3z/review/attempt-0-claude-claude-sonnet-5-5/stderr.txt	0	2026-10-31	12	
+.agents/pipeline/r3z/review/fallback.json	134	2026-10-31	0	[
+.agents/pipeline/r3z/review/final.md	5047	2026-10-31	2	**Review of Round 3z.** I found no Hard Blockers, but I couldn't finish the value-by-value
+.agents/pipeline/r4a/00_common_prefix.md	2387	2026-11-01	2	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r4a/10_test_designer.md	2046	2026-11-01	1	ROLE: TEST DESIGNER for ROUND 4a (SPEC_FIX_R4.md section "Round 4a"). Tests only; no produ
+.agents/pipeline/r4a/20_build_core.md	1016	2026-11-01	1	ROLE: CORE BUILDER for ROUND 4a. Implement Q200, Q201, Q202, Q203 and the model/summary pa
+.agents/pipeline/r4a/30_build_ui.md	1245	2026-11-01	3	ROLE: UI BUILDER for ROUND 4a. Implement Q204-Q208 (UI parts). ALLOWED files: app/src/main
+.agents/pipeline/r4a/40_review.md	995	2026-11-01	1	ROLE: INDEPENDENT REVIEWER (read-only). ALLOWED files: none. Reply with text only, max 35 
+.agents/pipeline/r4b-run.log	1037	2026-11-03	4	MACA pipeline 20261101-080417 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('
+.agents/pipeline/r4b/00_common_prefix.md	1932	2026-11-01	2	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r4b/10_test_designer.md	931	2026-11-01	1	ROLE: TEST DESIGNER for ROUND 4b (SPEC_FIX_R4.md section "Round 4b"). Tests only; no produ
+.agents/pipeline/r4b/20_build_core.md	486	2026-11-01	1	ROLE: CORE BUILDER for ROUND 4b. Implement Q210, Q211, Q212. ALLOWED files: app/src/main/j
+.agents/pipeline/r4b/30_build_ui.md	838	2026-11-01	3	ROLE: UI BUILDER for ROUND 4b. Implement Q213 and Q214. ALLOWED files: app/src/main/java/c
+.agents/pipeline/r4b/40_review.md	794	2026-11-01	1	ROLE: INDEPENDENT REVIEWER (read-only). ALLOWED files: none. Reply with text only, max 35 
+.agents/pipeline/r4c-run.log	1037	2026-11-03	4	MACA pipeline 20261101-090915 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('
+.agents/pipeline/r4c/00_common_prefix.md	1932	2026-11-01	2	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r4c/10_test_designer.md	725	2026-11-01	1	ROLE: TEST DESIGNER for ROUND 4c (SPEC_FIX_R4.md section "Round 4c"). Tests only; no produ
+.agents/pipeline/r4c/20_build_core.md	815	2026-11-01	1	ROLE: CORE BUILDER for ROUND 4c. Implement Q220 and Q221. ALLOWED files: app/src/main/java
+.agents/pipeline/r4c/30_build_ui.md	1101	2026-11-01	3	ROLE: UI BUILDER for ROUND 4c. Implement Q222 and Q223. ALLOWED files: app/src/main/java/c
+.agents/pipeline/r4c/40_review.md	726	2026-11-01	1	ROLE: INDEPENDENT REVIEWER (read-only). ALLOWED files: none. Reply with text only, max 35 
+.agents/pipeline/r4d-run.log	1039	2026-11-03	4	MACA pipeline 20261101-095708 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('
+.agents/pipeline/r4d/00_common_prefix.md	1932	2026-11-01	2	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r4d/10_test_designer.md	842	2026-11-01	1	ROLE: TEST DESIGNER for ROUND 4d (SPEC_FIX_R4.md section "Round 4d"). Tests only; no produ
+.agents/pipeline/r4d/20_build_core.md	660	2026-11-01	1	ROLE: CORE BUILDER for ROUND 4d. Implement Q240 and Q241. ALLOWED files: app/src/main/java
+.agents/pipeline/r4d/30_build_ui.md	1113	2026-11-01	3	ROLE: UI BUILDER for ROUND 4d. Implement Q242, Q243, Q244 and Q245. ALLOWED files: app/src
+.agents/pipeline/r4d/40_review.md	946	2026-11-01	1	ROLE: INDEPENDENT REVIEWER (read-only). ALLOWED files: none. Reply with text only, max 35 
+.agents/pipeline/r4d/fix/brief.md	2256	2026-11-01	29	ROLE: FIX BUILDER, ROUND 4d review fixes. ALLOWED files: app/src/main/java/com/sherifradwa
+.agents/pipeline/r4d/fix/out/agy-gemini-3.8-flash-medium/agy.log	338014	2026-11-03	5	I1101 10:49:44.484244       1 resolver.go:85] Model ID gemini-3.8-flash-medium not in loca
+.agents/pipeline/r4d/fix/out/agy-gemini-3.8-flash-medium/brief.txt	2256	2026-11-03	12	ROLE: FIX BUILDER, ROUND 4d review fixes. ALLOWED files: app/src/main/java/com/sherifradwa
+.agents/pipeline/r4d/fix/out/agy-gemini-3.8-flash-medium/result.json	5904	2026-11-03	69	{
+.agents/pipeline/r4d/fix/out/agy-gemini-3.8-flash-medium/stderr.txt	309	2026-11-03	12	jetski: no output produced — a tool required the "write_file" permission that headless mod
+.agents/pipeline/r4d/fix/out/claude-claude-sonnet-5-5/brief.txt	2256	2026-11-03	12	ROLE: FIX BUILDER, ROUND 4d review fixes. ALLOWED files: app/src/main/java/com/sherifradwa
+.agents/pipeline/r4d/fix/out/claude-claude-sonnet-5-5/events.jsonl	258461	2026-11-03	7	{"type":"system","subtype":"dev_intent","kind":"android_app","trigger":"project_scan","uui
+.agents/pipeline/r4d/fix/out/claude-claude-sonnet-5-5/final.txt	1483	2026-11-03	7	Gradle could not run: the sandbox blocked writes to `~/.gradle/wrapper/dists/...lck`, so n
+.agents/pipeline/r4d/fix/out/claude-claude-sonnet-5-5/profile.json	533	2026-11-03	7	{
+.agents/pipeline/r4d/fix/out/claude-claude-sonnet-5-5/result.json	8155	2026-11-03	69	{
+.agents/pipeline/r4d/fix/out/claude-claude-sonnet-5-5/stderr.txt	0	2026-11-03	12	
+.agents/pipeline/r4d/fix/out/dispatch.log	482	2026-11-03	0	[
+.agents/pipeline/r4d/fix/out/final.md	1483	2026-11-03	2	Gradle could not run: the sandbox blocked writes to `~/.gradle/wrapper/dists/...lck`, so n
+.agents/pipeline/r4d/fix/run.log	129	2026-11-01	19	[fleet_run] agy:gemini-3.8-flash-medium: failed 0 chars -> next
+.agents/pipeline/r4e-run.log	1362	2026-11-03	2	MACA pipeline 20261101-135028 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('
+.agents/pipeline/r4e/00_common_prefix.md	1932	2026-11-01	2	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r4e/10_test_designer.md	832	2026-11-01	1	ROLE: TEST DESIGNER for ROUND 4e (SPEC_FIX_R4.md section "Round 4e"). Tests only; no produ
+.agents/pipeline/r4e/20_build_core.md	1096	2026-11-01	1	ROLE: CORE BUILDER for ROUND 4e. Implement Q251 (model side), Q252 (model side) and Q253. 
+.agents/pipeline/r4e/30_build_ui.md	1377	2026-11-01	3	ROLE: UI BUILDER for ROUND 4e. Implement Q250, Q251 (UI side), Q252 (UI side) and Q254. AL
+.agents/pipeline/r4e/40_review.md	842	2026-11-01	1	ROLE: INDEPENDENT REVIEWER (read-only). ALLOWED files: none. Reply with text only, max 35 
+.agents/pipeline/r4f-run.log	1351	2026-11-03	2	MACA pipeline 20261101-151959 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('
+.agents/pipeline/r4f/00_common_prefix.md	1932	2026-11-01	2	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r4f/10_test_designer.md	982	2026-11-01	1	ROLE: TEST DESIGNER for ROUND 4f (SPEC_FIX_R4.md section "Round 4f"). Tests only; no produ
+.agents/pipeline/r4f/20_build_core.md	1190	2026-11-01	1	ROLE: CORE BUILDER for ROUND 4f. Implement Q260, Q261, Q262, Q263 and the AncState part of
+.agents/pipeline/r4f/30_build_ui.md	707	2026-11-01	3	ROLE: UI BUILDER for ROUND 4f. Implement the DatingEditor part of Q264. ALLOWED file: app/
+.agents/pipeline/r4f/40_review.md	1009	2026-11-01	1	ROLE: INDEPENDENT REVIEWER (read-only). ALLOWED files: none. Reply with text only, max 35 
+.agents/pipeline/r4g-run.log	3310	2026-11-03	2	MACA pipeline 20261101-162119 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('
+.agents/pipeline/r4g-run2.log	1351	2026-11-03	2	MACA pipeline 20261101-162505 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('
+.agents/pipeline/r4g/00_common_prefix.md	1932	2026-11-01	2	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r4g/10_test_designer.md	1330	2026-11-01	1	ROLE: TEST DESIGNER for ROUND 4g (SPEC_FIX_R4.md section "Round 4g"). Tests only; no produ
+.agents/pipeline/r4g/20_build_core.md	1356	2026-11-01	1	ROLE: CORE BUILDER for ROUND 4g. Implement Q270, Q271, Q272, Q273 and Q274. ALLOWED files:
+.agents/pipeline/r4g/30_build_ui.md	1135	2026-11-01	3	ROLE: UI BUILDER for ROUND 4g. Implement Q275. ALLOWED files: app/src/main/java/com/sherif
+.agents/pipeline/r4g/40_review.md	1069	2026-11-01	1	ROLE: INDEPENDENT REVIEWER (read-only). ALLOWED files: none. Reply with text only, max 35 
+.agents/pipeline/r5a-run1.log	859	2026-11-03	2	MACA pipeline 20261101-183717 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('
+.agents/pipeline/r5a/00_common_prefix.md	2060	2026-11-01	2	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r5a/30_build_ui.md	1495	2026-11-01	3	ROLE: UI BUILDER for ROUND 5a. Implement U200-U217. ALLOWED files: app/src/main/java/com/s
+.agents/pipeline/r5a/40_review.md	1115	2026-11-01	1	ROLE: INDEPENDENT REVIEWER (read-only). ALLOWED files: none. Reply with text only, max 35 
+.agents/pipeline/r5b-run.log	860	2026-11-03	2	MACA pipeline 20261101-222506 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('
+.agents/pipeline/r5b/00_common_prefix.md	2094	2026-11-01	2	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r5b/30_build_ui.md	1389	2026-11-01	3	ROLE: UI BUILDER for ROUND 5b. Implement L300-L309. ALLOWED files: app/src/main/java/com/s
+.agents/pipeline/r5b/40_review.md	1140	2026-11-01	1	ROLE: INDEPENDENT REVIEWER (read-only). ALLOWED files: none. Reply with text only, max 35 
+.agents/pipeline/r5c-run.log	859	2026-11-03	2	MACA pipeline 20261102-002529 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('
+.agents/pipeline/r5c/00_common_prefix.md	2098	2026-11-02	2	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r5c/30_build_ui.md	1336	2026-11-02	3	ROLE: UI BUILDER for ROUND 5c. Implement M400-M408. ALLOWED files: app/src/main/java/com/s
+.agents/pipeline/r5c/40_review.md	1148	2026-11-02	1	ROLE: INDEPENDENT REVIEWER (read-only). ALLOWED files: none. Reply with text only, max 35 
+.agents/pipeline/r5d-run.log	860	2026-11-03	2	MACA pipeline 20261102-010537 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('
+.agents/pipeline/r5d/00_common_prefix.md	2093	2026-11-02	2	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r5d/30_build_ui.md	808	2026-11-02	3	ROLE: UI BUILDER for ROUND 5d. Implement C500-C504. ALLOWED files: app/src/main/java/com/s
+.agents/pipeline/r5d/40_review.md	653	2026-11-02	1	ROLE: INDEPENDENT REVIEWER (read-only). ALLOWED files: none. Reply with text only, max 30 
+.agents/pipeline/r6a-run.log	3589	2026-11-03	2	MACA pipeline 20261102-022358 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('
+.agents/pipeline/r6a-run2.log	1029	2026-11-03	2	MACA pipeline 20261102-073139 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('
+.agents/pipeline/r6a/00_common_prefix.md	1849	2026-11-02	2	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r6a/10_test_designer.md	1493	2026-11-02	1	ROLE: TEST DESIGNER for ROUND 6a (SPEC_LOGIC_R6.md). Tests only; no production code.
+.agents/pipeline/r6a/20_build_core.md	1309	2026-11-02	1	ROLE: CORE BUILDER for ROUND 6a. Implement D600-D613. ALLOWED files: app/src/main/java/com
+.agents/pipeline/r6a/40_review.md	1159	2026-11-02	1	ROLE: INDEPENDENT REVIEWER (read-only), clinical records, risk level 3. ALLOWED files: non
+.agents/pipeline/r6b1-run.log	1341	2026-11-03	2	MACA pipeline 20261102-091859 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('
+.agents/pipeline/r6b1/00_common_prefix.md	5739	2026-11-02	2	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r6b1/10_test_designer.md	4575	2026-11-02	1	ROLE: TEST DESIGNER for ROUND r6b1 (SPEC_LOGIC_R6B.md D620-D624, D652). Tests only; no pro
+.agents/pipeline/r6b1/20_build_core.md	2271	2026-11-02	1	ROLE: CORE BUILDER for ROUND r6b1. Implement D620-D624, D630, D651 (storage only). ALLOWED
+.agents/pipeline/r6b1/40_review.md	2853	2026-11-02	1	ROLE: INDEPENDENT REVIEWER (read-only, FRONTIER-TIER model required), clinical records, ri
+.agents/pipeline/r6b2-run.log	1135	2026-11-03	2	MACA pipeline 20261102-104737 lanes: {'tests': ('claude', 'claude-sonnet-5-5'), 'core': ('
+.agents/pipeline/r6b2/00_common_prefix.md	5806	2026-11-02	2	Shared brief prefix (identical for every role; stable text first, role part last)
+.agents/pipeline/r6b2/10_test_designer.md	2732	2026-11-02	1	ROLE: TEST DESIGNER for ROUND r6b2 (SPEC_LOGIC_R6B.md D625-D627, D652). Tests only; no pro
+.agents/pipeline/r6b2/20_build_core.md	1980	2026-11-02	1	ROLE: CORE BUILDER for ROUND r6b2. Implement D625-D627 and the D651 removal. ALLOWED files
+.agents/pipeline/r6b2/40_review.md	3035	2026-11-02	1	ROLE: INDEPENDENT REVIEWER (read-only, FRONTIER-TIER model required), clinical records, ri
+.agents/pipeline/review_attachment_cleanup_2026-11-05.md	61664	2026-11-05	2	Frontier review — attachment cleanup completion (f1aca51..HEAD)
+.agents/pipeline/review_attachment_cleanup_rereview_2026-11-05.md	29210	2026-11-05	2	Re-review — attachment cleanup fix round (a22c059..HEAD)
+.agents/pipeline/review_d28_visit_entry.out.txt	233153	2026-11-03	0	[0m
+.agents/pipeline/review_d28_visit_entry.prompt.md	1916	2026-11-03	1	Frontier Review Brief: Design Round d28 - Visit and Vitals Entry UI Redesign
+.agents/pipeline/review_l06_custom_choices.out.txt	7518	2026-11-03	2	1. Executive summary and verdict
+.agents/pipeline/review_l06_custom_choices.prompt.md	3137	2026-11-03	0	You are an independent frontier reviewer (read-only) for the ANC EMR Android native app re
+.agents/pipeline/review_l08_visit_entry.out.txt	96685	2026-11-03	1	[0m
+.agents/pipeline/review_l08_visit_entry.prompt.md	3511	2026-11-03	1	You are an independent frontier reviewer (read-only) for the ANC EMR Android native app re
+.agents/pipeline/review_medication_commits.out.txt	7089	2026-11-03	0	**Verdict: PASS WITH NITS.** I found no hard blockers. The delete/Undo fixes are correct, 
+.agents/pipeline/review_medication_commits.prompt.md	2844	2026-11-03	0	You are an independent frontier reviewer (read-only) for the ANC EMR Android native app re
+.agents/pipeline/review_todays_list.out.txt	5685	2026-11-03	0	**Verdict: FAIL.** There is one clinical-safety blocker, and it's a small fix. The rest is
+.agents/pipeline/review_todays_list.prompt.md	2495	2026-11-03	0	You are an independent frontier reviewer (read-only) for the ANC EMR Android native app re
+.agents/pipeline/tracker/anc-roadmap.html	11263	2026-10-30	0	<title>ANC EMR Production Roadmap</title>
+.agents/review-r1.md	3051	2026-11-05	5	Review — laboratory batch (a22c059..HEAD)
+.agents/review-workspace-step5.md	4783	2026-11-08	5	Clinical Safety & UI/UX Review: Bedside Clinical Workspace (Phase 3 Redesign)
+.agents/scripts/README.md	2701	2026-11-12	12	.agents/scripts
+.agents/specs/overview_dating_spec.md	8567	2026-11-09	6	Overview Dating section: spec and outcome oracles
+.agents/specs/overview_phase_a_spec.md	4544	2026-11-09	3	Overview tab optimization, Phase A spec (shared allergy state + Delivery Plan canEdit gate
+.agents/specs/overview_phase_bc_spec.md	5991	2026-11-09	6	Overview tab optimization, Phases B and C spec
+.agents/work/ClinicalBadges.kt.txt	6479	2026-11-03	3	package com.sherifradwan.ancnative.ui
+.agents/work/DeliveryNotesParserTest.kt.txt	1405	2026-11-03	3	package com.sherifradwan.ancnative.ui
+.agents/work/anc.diff.txt	18475	2026-11-03	0	diff --git a/app/src/main/java/com/sherifradwan/ancnative/ui/PatientListScreen.kt b/app/sr
+AGENTS.md	3822	2026-11-12	67	Agent notes
+README.md	4749	2026-10-31	12	ANC EMR — Offline Antenatal Care Native Android & Web EMR
+concepts_brief.md	13523	2026-11-13	18	Mac Companion App for the ANC EMR
+consolidated_review_report.md	11611	2026-11-09	2	Consolidated Design Document Review Report: High-Density Patient Directory Card & Actions 
+docs/AI_HANDOFF.md	7595	2026-11-11	5	AI handoff: native ANC EMR for HONOR 400
+docs/BRANCHES.md	757	2026-11-15	3	Branches that hold work not yet in main
+docs/CODEX_REVIEW_BRIEF.md	4275	2026-10-15	0	BRIEF: Clinical Architecture & Review for ANC EMR Modernization
+docs/CODEX_STEP2_REVIEW_BRIEF.md	2570	2026-10-15	0	Step 2 Architectural & Implementation Review Brief
+docs/FINAL_STABILIZATION.md	4936	2026-10-31	1	Final Stabilization & UI/UX Refinement Report
+docs/GEMINI_CLINICAL_AUDIT_REPORT.md	20365	2026-10-27	0	🩺 Gemini Clinical Architecture Review & Zero-Presumption Audit Report
+docs/GO_LIVE_CHECKLIST.md	2395	2026-10-31	0	Go-live checklist (clinic upgrade)
+docs/IMPLEMENTATION_PLAN.md	13786	2026-10-15	1	P1 — Native Android ANC synthetic prototype
+docs/P2_STORAGE_PLAN.md	27977	2026-10-15	1	ANC native Android — P2 storage proposal
+docs/P2_VALIDATION.md	14865	2026-10-15	2	P2 — implementation and validation status, amended 2026-10-10
+docs/P3_VALIDATION.md	5514	2026-10-15	3	Native ANC P3 patient-workflow validation
+docs/P4_CLINICAL_WORKFLOWS_PLAN.md	7492	2026-10-15	0	Native Android ANC — Phase 4 (P4) Clinical Modules Plan
+docs/P4_VALIDATION.md	6718	2026-10-15	3	Native ANC P4 Clinical Modules Validation
+docs/P5_VALIDATION.md	6737	2026-10-15	2	Native ANC P5 Clinical Modules & Session Grace Period Validation
+docs/P6_VALIDATION.md	7148	2026-10-15	1	Native ANC P6 Clinical Summary, Encrypted Backup & Ergonomics Validation
+docs/STEP1_CODEX_REPORT.md	2006	2026-10-15	0	REPORT: Step 1 Dating Engine & Unified Gestational Age Verification
+docs/VALIDATION.md	5338	2026-10-15	7	P1 validation — 2026-10-09
+docs/designs/SITEMAP.md	2295	2026-11-13	0	Design Documents Sitemap
+docs/designs/archive/medication_concepts_brief.md	7511	2026-11-11	0	Medication Section Revision
+docs/designs/archive/medication_design_draft.md	32710	2026-11-11	0	Medication Section Revision (Stage 1)
+docs/designs/briefs/plan_delivery_editor_brief.md	5049	2026-11-11	1	Brief: edit the delivery plan in place on the Plan tab
+docs/designs/delivery_outcome.md	8951	2026-11-12	2	Delivery outcome: delivered yes/no and the delivery date (real database fields)
+docs/designs/device_qa_plan.md	16273	2026-11-11	1	Device QA Plan: Meds Tab after Stage 1
+docs/designs/handoff_zcode_medication_stage1.md	15814	2026-11-11	2	Handoff to zcode: Meds tab revision, Stage 1
+docs/designs/high_density_patient_directory_card.md	18211	2026-11-09	2	High-Density Patient Directory Card & Actions Sheet Redesign
+docs/designs/medication_section_revision.md	34344	2026-11-11	20	Medication Section Revision (Stage 1)
+docs/designs/merge_registration_plan.md	40196	2026-11-12	1	Plan: bring the registration flow branch into main
+docs/designs/patient_workspace_overview_tab_optimization.md	23677	2026-11-09	17	Technical Design: Patient Workspace Overview Tab Optimization
+docs/designs/plan_delivery_editor.md	48132	2026-11-11	2	Design: edit the delivery plan in place on the Plan tab
+docs/designs/redesign/PLAN.md	30349	2026-11-15	42	Whole-app redesign plan (from mock D)
+docs/designs/redesign/meds_fix/SPEC.md	6240	2026-11-15	16	Meds defects (owner reports) - spec from the Opus read-only investigation, 2026-11-15
+docs/designs/redesign/meds_fix/brief_tests.md	2659	2026-11-15	0	You are the test author. A builder changed the Meds picker and list. Update the Compose in
+docs/designs/redesign/meds_fix/out/tests_round1.md	20003	2026-11-15	0	REPLACES (MedsTabSheetTest.kt): `showTile`, `thePickerStartsAsOneRowAndOpensToSearchChipsA
+docs/designs/redesign/mocks/mock_s02_delivery.html	18859	2026-11-15	3	<!DOCTYPE html>
+docs/designs/redesign/mocks/mock_s03_attention.html	22696	2026-11-15	3	<!DOCTYPE html>
+docs/designs/redesign/mocks/mock_s04_hub_header.html	20736	2026-11-15	3	<!DOCTYPE html>
+docs/designs/redesign/mocks/mock_s05_list_chrome.html	22181	2026-11-15	3	<!DOCTYPE html>
+docs/designs/redesign/mocks/mock_s06_visits.html	19804	2026-11-15	2	<!DOCTYPE html>
+docs/designs/redesign/mocks/mock_s07_scans.html	18023	2026-11-15	2	<!DOCTYPE html>
+docs/designs/redesign/mocks/mock_s08_labs.html	20223	2026-11-15	2	<!DOCTYPE html>
+docs/designs/redesign/mocks/mock_s10_plan.html	35637	2026-11-15	1	<!DOCTYPE html>
+docs/designs/redesign/mocks/mock_s11_sheets.html	28049	2026-11-15	1	<!DOCTYPE html>
+docs/designs/redesign/mocks/mock_s12_registration.html	32660	2026-11-16	4	<!DOCTYPE html>
+docs/designs/redesign/mocks/mock_s13_history.html	35304	2026-11-16	5	<!DOCTYPE html>
+docs/designs/redesign/out/antislop_s01.md	12730	2026-11-15	1	Delivery Gate Audit Report: `docs/designs/redesign/out/s01_diff.diff`
+docs/designs/redesign/out/antislop_s23.md	13731	2026-11-15	0	Delivery Gate Audit Report: `docs/designs/redesign/out/s23_diff.diff`
+docs/designs/redesign/out/antislop_s4.md	0	2026-11-15	0	
+docs/designs/redesign/out/brief_antislop_s01.md	808	2026-11-15	0	READ-ONLY antislop Delivery Gate (change nothing). Mode DURING already applied; dials ENER
+docs/designs/redesign/out/brief_antislop_s23.md	808	2026-11-15	0	READ-ONLY antislop Delivery Gate (change nothing). Mode DURING already applied; dials ENER
+docs/designs/redesign/out/brief_antislop_s4.md	800	2026-11-15	0	READ-ONLY antislop Delivery Gate (change nothing). Mode DURING already applied; dials ENER
+docs/designs/redesign/out/brief_fix_t1.md	786	2026-11-14	0	Two instrumented test files fail to compile. Fix them: output BOTH corrected files in full
+docs/designs/redesign/out/brief_fix_t4.md	654	2026-11-15	0	The attached HubHeaderRedesignTest.kt does not compile. Output the corrected full file in 
+docs/designs/redesign/out/brief_meds_inv.md	1705	2026-11-15	0	READ-ONLY investigation, change nothing (no gradle, no git writes). App: Android Kotlin Co
+docs/designs/redesign/out/brief_review_s01.md	1772	2026-11-15	0	READ-ONLY independent reviewer (change nothing; no gradle, no git writes). Review docs/des
+docs/designs/redesign/out/brief_review_s23.md	1876	2026-11-15	0	READ-ONLY independent reviewer (change nothing; no gradle, no git writes). Review docs/des
+docs/designs/redesign/out/brief_review_s4.md	2054	2026-11-15	0	READ-ONLY independent reviewer (change nothing; no gradle, no git writes). Review docs/des
+docs/designs/redesign/out/brief_review_s5.md	1942	2026-11-15	0	READ-ONLY independent reviewer (change nothing; no gradle, no git writes). Review docs/des
+docs/designs/redesign/out/brief_t0a.md	429	2026-11-14	0	Write ONE Kotlin JUnit4 unit test file `RecordTokensContrastTest.kt`, package com.sherifra
+docs/designs/redesign/out/brief_t0b.md	662	2026-11-14	0	Write ONE Kotlin Android instrumented test file `RecordComponentsTest.kt` (androidx.compos
+docs/designs/redesign/out/brief_t1a.md	546	2026-11-14	0	Write ONE Kotlin instrumented test file `OverviewRedesignTest.kt`, package com.sherifradwa
+docs/designs/redesign/out/brief_t1b.md	471	2026-11-14	0	Write ONE Kotlin instrumented test file `PatientCardRedesignTest.kt`, package com.sherifra
+docs/designs/redesign/out/brief_t2.md	488	2026-11-15	0	Write ONE Kotlin instrumented test file `DeliveryCardRedesignTest.kt`, package com.sherifr
+docs/designs/redesign/out/brief_t3.md	480	2026-11-15	0	Write ONE Kotlin instrumented test file `AttentionRedesignTest.kt`, package com.sherifradw
+docs/designs/redesign/out/brief_t4.md	842	2026-11-15	0	Write ONE Kotlin instrumented test file `HubHeaderRedesignTest.kt`, package com.sherifradw
+docs/designs/redesign/out/brief_t5.md	644	2026-11-15	0	Write ONE Kotlin instrumented test file `ListChromeRedesignTest.kt`, package com.sherifrad
+docs/designs/redesign/out/build_s12_report.md	11045	2026-11-16	0	Implemented Slice 12 (Registration flow and patient editor). Validation, save paths, step 
+docs/designs/redesign/out/build_s13_report.md	11283	2026-11-16	1	Started compiling debug Kotlin and AndroidTest sources with `./gradlew --offline :app:comp
+docs/designs/redesign/out/ce4.txt	1680	2026-11-15	1	e: app/src/androidTest/java/com/sherifradwan/ancnative/HubHeaderRedesignTest.kt:26:41 Unre
+docs/designs/redesign/out/compile_errors.txt	4114	2026-11-14	1	e: app/src/androidTest/java/com/sherifradwan/ancnative/OverviewRedesignTest.kt:22:33 Unres
+docs/designs/redesign/out/fix_s12_out.md	4078	2026-11-16	0	Launched `./gradlew --offline :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin -
+docs/designs/redesign/out/fix_s12_report.md	4599	2026-11-16	4	Fix Report: Redesign Slice 12 Review Findings
+docs/designs/redesign/out/meds_inv.md	1356	2026-11-15	0	Reading the Medication UI components (`MedicationCard.kt`, `MedicationTapToAddSection.kt`,
+docs/designs/redesign/out/mock_s12_s13_report.md	6366	2026-11-16	0	The mocks and builder briefs for slices 12 and 13 are ready. No production files were modi
+docs/designs/redesign/out/prompt_build_s12.md	2203	2026-11-16	0	You are the BUILDER for redesign slice 12 in the Android Kotlin Compose repo /Users/sherif
+docs/designs/redesign/out/prompt_build_s13.md	2814	2026-11-16	0	You are the BUILDER for redesign slice 13 in the Android Kotlin Compose repo /Users/sherif
+docs/designs/redesign/out/prompt_fix_s12.md	2621	2026-11-16	0	You are fixing 4 review findings in the Android Compose app at /Users/sherifgamalradwan/an
+docs/designs/redesign/out/prompt_mock_s12_s13.md	3017	2026-11-16	0	You are the design lead for the ANC EMR whole-app redesign (repo /Users/sherifgamalradwan/
+docs/designs/redesign/out/prompt_tests_fix_s12.md	1888	2026-11-16	0	Fix 5 failing tests in app/src/androidTest/java/com/sherifradwan/ancnative/RegistrationRed
+docs/designs/redesign/out/prompt_tests_fix_s13.md	1077	2026-11-16	0	Fix 2 failing tests in app/src/androidTest/java/com/sherifradwan/ancnative/HistoryEditorsR
+docs/designs/redesign/out/prompt_tests_s12.md	3078	2026-11-16	0	You are the TEST AUTHOR for redesign slice 12 (registration flow and patient editor) in /U
+docs/designs/redesign/out/prompt_tests_s13.md	2223	2026-11-16	0	You are the TEST AUTHOR (not the builder) for redesign slice 13 in /Users/sherifgamalradwa
+docs/designs/redesign/out/review_s01.md	18889	2026-11-15	1	**VERDICT FAIL**
+docs/designs/redesign/out/review_s23.md	18696	2026-11-15	0	VERDICT FAIL
+docs/designs/redesign/out/review_s4.md	20989	2026-11-15	1	VERDICT FAIL
+docs/designs/redesign/out/review_s5.md	12698	2026-11-15	0	VERDICT PASS
+docs/designs/redesign/out/t0a.txt	7722	2026-11-14	0	```kotlin
+docs/designs/redesign/out/t0b.txt	15088	2026-11-14	0	```kotlin
+docs/designs/redesign/out/t1a.txt	10401	2026-11-14	0	```kotlin
+docs/designs/redesign/out/t1b.txt	15207	2026-11-14	0	```kotlin
+docs/designs/redesign/out/t1fix.txt	26368	2026-11-14	0	OverviewRedesignTest.kt
+docs/designs/redesign/out/t2.txt	9489	2026-11-15	0	```kotlin
+docs/designs/redesign/out/t3.txt	10718	2026-11-15	0	```kotlin
+docs/designs/redesign/out/t4.txt	9088	2026-11-15	0	```kotlin
+docs/designs/redesign/out/t4fix.txt	9299	2026-11-15	0	```kotlin
+docs/designs/redesign/out/t5.txt	8667	2026-11-15	0	```kotlin
+docs/designs/redesign/out/task_gpa.md	906	2026-11-15	1	Edit ONLY ui/patientdirectory/PatientDirectoryMetricsRow.kt and append one string to res/v
+docs/designs/redesign/out/task_s01_round2.md	2336	2026-11-15	0	Slice 0+1 round 2 (builder). Edit ONLY: ui/components/LabeledValue.kt, ui/components/Recor
+docs/designs/redesign/out/task_s23_round2.md	1779	2026-11-15	0	Slices 2-3 round 2 (builder). Edit ONLY: ui/patientdirectory/PatientDirectoryCard.kt, ui/p
+docs/designs/redesign/out/task_s4r2.md	1692	2026-11-15	0	Slice 4 round 2 (builder). Edit ONLY ui/patienthub/PatientHubHeader.kt and res/values/stri
+docs/designs/redesign/out/tests_fix_s12_out.md	2098	2026-11-16	0	The 5 failing tests in [`RegistrationRedesignTest.kt`](file:///Users/sherifgamalradwan/anc
+docs/designs/redesign/out/tests_fix_s12_report.md	2311	2026-11-16	2	Redesign Slice 12 Test Fixes Report
+docs/designs/redesign/out/tests_fix_s13_out.md	1582	2026-11-16	0	Fixed the 2 failing tests in [HistoryEditorsRedesignTest.kt](file:///Users/sherifgamalradw
+docs/designs/redesign/out/tests_fix_s13_report.md	1717	2026-11-16	2	Redesign Slice 13 Test Fixes Report
+docs/designs/redesign/out/tests_s12_report.md	6685	2026-11-16	0	Created [`RegistrationRedesignTest.kt`](file:///Users/sherifgamalradwan/anc-emr-android-na
+docs/designs/redesign/out/tests_s13_out.md	4567	2026-11-16	0	I have authored the test suite for Redesign Slice 13 and updated `RegistrationRedesignTest
+docs/designs/redesign/out/tests_s13_report.md	10990	2026-11-16	2	Created [`HistoryEditorsRedesignTest.kt`](file:///Users/sherifgamalradwan/anc-emr-android-
+docs/designs/redesign/slice10/brief_tests.md	2447	2026-11-15	0	You write Compose instrumented tests for redesign slice 10 (Plan tab attachments), per doc
+docs/designs/redesign/slice10/out/tests_round1.md	30284	2026-11-15	0	FILE: app/src/androidTest/java/com/sherifradwan/ancnative/AttachmentsRedesignTest.kt
+docs/designs/redesign/slice11/brief_tests.md	2598	2026-11-15	0	You write Compose instrumented tests for redesign slice 11 (editor sheets) per docs/design
+docs/designs/redesign/slice11/out/tests_round1.md	25558	2026-11-15	0	FILE: app/src/androidTest/java/com/sherifradwan/ancnative/EditorSheetsSlice11Test.kt
+docs/designs/redesign/slice12/brief_review.md	2204	2026-11-16	0	You are an independent CODE REVIEWER (read-only) for redesign slice 12 (registration flow 
+docs/designs/redesign/slice12/out/review_alphacode.md	4150	2026-11-16	0	PASS
+docs/designs/redesign/slice13/out/brief_review.md	1100	2026-11-16	0	Read-only review of redesign slice 13 (presentation-only restyle of OtherHistoriesEditor, 
+docs/designs/redesign/slice13/out/review_alphacode.md	3810	2026-11-16	0	Slice 13 review (presentation-only restyle)
+docs/designs/redesign/slice6/brief_tests.md	1910	2026-11-15	0	You write Compose instrumented tests (and one unit test if useful) for the new Visits tab 
+docs/designs/redesign/slice6/out/tests_round1.md	18144	2026-11-15	0	Existing tests/assertions likely to break (string change)
+docs/designs/redesign/slice7/brief_tests.md	1684	2026-11-15	0	You write Compose instrumented tests for the new Scans (ultrasound) tab band card, per doc
+docs/designs/redesign/slice7/out/tests_round1.md	17102	2026-11-15	0	FILE: app/src/androidTest/java/com/sherifradwan/ancnative/ScansTabRedesignTest.kt
+docs/designs/redesign/slice8/brief_tests.md	2052	2026-11-15	0	You write Compose instrumented tests for the new Labs tab band card (docs/designs/redesign
+docs/designs/redesign/slice8/out/tests_round1.md	22601	2026-11-15	0	FILE: app/src/androidTest/java/com/sherifradwan/ancnative/LabsTabRedesignTest.kt
+docs/designs/redesign/slice_00_foundation.md	14332	2026-11-14	7	Slice 0: foundation tokens and shared components
+docs/designs/redesign/slice_01_overview_and_card.md	21992	2026-11-14	6	Slice 1: Overview sections and dashboard card (mock D)
+docs/designs/redesign/slice_02_delivery.md	10601	2026-11-15	4	Slice 2: Delivery planning card and delivered state
+docs/designs/redesign/slice_03_attention.md	11743	2026-11-15	4	Slice 3: Clinical attention card, header strip and dialog
+docs/designs/redesign/slice_04_hub_header.md	13858	2026-11-15	4	Slice 4: Patient hub header and tab bar
+docs/designs/redesign/slice_05_list_chrome.md	12903	2026-11-15	3	Slice 5: Patient list chrome and the actions sheet
+docs/designs/redesign/slice_06_visits.md	17907	2026-11-15	3	Slice 6: Visits tab (band cards) and the shared band-card pieces
+docs/designs/redesign/slice_07_scans.md	9684	2026-11-15	2	Slice 7: Scans tab (band cards)
+docs/designs/redesign/slice_08_labs.md	12729	2026-11-15	2	Slice 8: Labs tab (band cards)
+docs/designs/redesign/slice_09_meds_tune.md	8629	2026-11-15	2	Slice 9: Meds tab TUNE (no redesign)
+docs/designs/redesign/slice_10_plan.md	26467	2026-11-15	2	Slice 10: Plan tab and attachments
+docs/designs/redesign/slice_11_sheets.md	19685	2026-11-15	2	Slice 11: Editor sheets (medication and delivery plan)
+docs/designs/redesign/slice_12_registration.md	24089	2026-11-16	4	Slice 12: Registration flow and patient editor
+docs/designs/redesign/slice_13_history.md	26959	2026-11-16	4	Slice 13: History and dating editors
+docs/designs/registration_pencil.md	2045	2026-11-13	2	Pencil and Incomplete chip open the registration flow
+docs/designs/reviews/audit_2026-11-13/REPORT.md	3190	2026-11-13	7	Audit report 2026-11-13 (testing mode, full path)
+docs/designs/reviews/audit_2026-11-13/SPEC.md	1466	2026-11-13	16	Audit 2026-11-13: registration flow merge plus pencil and chip (testing mode)
+docs/designs/reviews/audit_2026-11-13/lane_alpha.log	28	2026-11-13	0	alphacode ->    12642 bytes
+docs/designs/reviews/audit_2026-11-13/lane_bp.log	38	2026-11-13	0	opencode:big-pickle ->        0 bytes

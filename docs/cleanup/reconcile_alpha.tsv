@@ -1,0 +1,168 @@
+c01	done	handoff: no contrary evidence
+c02	done	handoff: no contrary evidence
+c03	done	handoff: no contrary evidence
+c04	done	handoff: no contrary evidence
+c05	done	handoff: no contrary evidence
+c06	done	handoff: no contrary evidence
+c07	done	handoff: no contrary evidence
+a08	done	handoff: no contrary evidence
+c08	done	handoff: no contrary evidence
+c09	done	handoff: no contrary evidence
+a09	active	handoff M4: Meds QA done, other blocks still open
+c10	done	handoff: no contrary evidence
+c11	done	handoff: no contrary evidence
+a12	done	handoff: no contrary evidence
+c12	done	handoff: no contrary evidence
+c13	done	handoff: no contrary evidence
+a13	done	handoff: no contrary evidence
+a14	done	handoff: no contrary evidence
+c14	todo	handoff: no contrary evidence
+c15	done	handoff: no contrary evidence
+c16	active	handoff: no contrary evidence
+c20	active	handoff: no contrary evidence
+w05	done	handoff: no contrary evidence
+s01	done	handoff: no contrary evidence
+s02	done	handoff: no contrary evidence
+s03	done	handoff: no contrary evidence
+s04	done	handoff: no contrary evidence
+s05	done	handoff: no contrary evidence
+s06	done	handoff: no contrary evidence
+s07	done	handoff: no contrary evidence
+s08	todo	handoff: no contrary evidence
+s09	done	handoff: no contrary evidence
+s10	active	handoff: no contrary evidence
+s23	done	handoff: no contrary evidence
+s11	done	handoff: no contrary evidence
+s12	done	handoff: no contrary evidence
+s13	todo	handoff: no contrary evidence
+s14	todo	handoff: no contrary evidence
+s15	todo	handoff: no contrary evidence
+s16	todo	handoff: no contrary evidence
+s17	done	handoff: no contrary evidence
+c17	done	handoff: no contrary evidence
+c18	done	handoff: no contrary evidence
+s18	done	handoff: no contrary evidence
+c19	done	handoff: no contrary evidence
+s19	done	handoff: no contrary evidence
+s20	done	handoff: no contrary evidence
+f01	done	handoff: no contrary evidence
+s21	done	handoff: no contrary evidence
+s22	done	handoff: no contrary evidence
+f02	done	handoff: no contrary evidence
+f03	done	handoff: no contrary evidence
+f04	done	handoff: no contrary evidence
+f05	done	handoff: no contrary evidence
+d20	active	handoff M8: redesign in progress, phone check pending
+d01	done	handoff: no contrary evidence
+d02	done	handoff: no contrary evidence
+d03	active	handoff M4: device QA still ongoing
+d04	done	handoff: no contrary evidence
+d05	active	handoff M4: backup/restore/print still open
+d06	done	handoff: no contrary evidence
+w13	todo	handoff: no contrary evidence
+u01	done	handoff: no contrary evidence
+u02	done	handoff: no contrary evidence
+u03	done	handoff: no contrary evidence
+u04	done	handoff: no contrary evidence
+u05	done	handoff: no contrary evidence
+u06	active	handoff: no contrary evidence
+u07	todo	handoff: no contrary evidence
+u08	done	handoff: no contrary evidence
+u09	active	handoff: no contrary evidence
+u10	done	handoff: no contrary evidence
+u11	active	handoff M8: redesign ongoing
+u12	todo	handoff: no contrary evidence
+u13	done	handoff: no contrary evidence
+u14	done	handoff: no contrary evidence
+u15	done	handoff: no contrary evidence
+u16	done	handoff: no contrary evidence
+u17	todo	handoff: no contrary evidence
+u18	done	handoff: no contrary evidence
+w06	done	handoff: no contrary evidence
+w07	done	handoff: no contrary evidence
+w08	done	handoff M1: meds simplified/pushed
+a01	todo	handoff: no contrary evidence
+a02	todo	handoff: no contrary evidence
+a03	todo	handoff: no contrary evidence
+a04	todo	handoff: no contrary evidence
+a05	done	handoff: no contrary evidence
+a06	done	handoff: no contrary evidence
+a07	todo	handoff: no contrary evidence
+a10	done	handoff: no contrary evidence
+t01	done	handoff: no contrary evidence
+a11	todo	handoff M6: deep clean postponed
+a15	done	handoff: no contrary evidence
+w14	todo	handoff: frontier reviews still owed
+g10	todo	handoff: frontier reviews still owed
+r01	done	handoff: no contrary evidence
+r02	todo	handoff: no contrary evidence
+r03	done	handoff: no contrary evidence
+r04	todo	handoff: no contrary evidence
+r05	todo	handoff: no contrary evidence
+r06	todo	git: redesign branch commits local, not merged
+r07	active	handoff: go-live checklist needs review
+r08	active	handoff: release-build device check open
+d21	done	2026-11-15 git: redesign slice 11/ultrasound work
+w11	active	handoff M8: redesign slices in progress
+d10	active	handoff M8: redesign applying across editors
+d22	done	2026-11-14 git: lab fixes/redesign slice 8
+d11	todo	handoff M8: not evidenced done
+d23	done	2026-11-14 docs: redesign plan/slices started
+d24	active	handoff M1b: Meds Stage 2 not started
+d12	blocked	handoff: no contrary evidence
+d25	todo	handoff M8: not evidenced done
+d14	todo	handoff M8: not evidenced done
+d26	active	handoff M8: directory/chart in redesign slices
+d15	todo	handoff M8: not evidenced done
+d27	active	handoff M8: registration merged, redesign ongoing
+w09	todo	handoff M8: not evidenced done
+d28	todo	handoff M8: not evidenced done
+w10	todo	handoff M8: not evidenced done
+d16	todo	handoff M8: not evidenced done
+d17	blocked	handoff: no contrary evidence
+d13	blocked	handoff: no contrary evidence
+d18	blocked	handoff: no contrary evidence
+g04	done	handoff: no contrary evidence
+g05	done	handoff: no contrary evidence
+g11	done	handoff M1: meds simplified/pushed
+l01	done	handoff: no contrary evidence
+l02	done	handoff: no contrary evidence
+w01	done	handoff: no contrary evidence
+w02	done	handoff M3: registration flow merged/pushed
+w03	todo	handoff: no contrary evidence
+w12	todo	handoff: no contrary evidence
+l03	todo	handoff M1b: Meds Stage 2 not started
+l04	blocked	handoff: no contrary evidence
+w04	blocked	handoff: no contrary evidence
+l06	todo	handoff M1b: custom choices not started
+l05	todo	handoff: no contrary evidence
+l07	todo	handoff M8/d25: not evidenced done
+l08	todo	handoff M8/d28: not evidenced done
+g01	done	handoff: no contrary evidence
+g02	done	handoff: no contrary evidence
+g03	done	handoff: no contrary evidence
+g06	todo	handoff: no contrary evidence
+g07	todo	handoff: no contrary evidence
+g09	done	handoff: no contrary evidence
+x01	done	handoff: no contrary evidence
+x02	done	handoff: no contrary evidence
+g08	done	handoff: no contrary evidence
+x03	done	handoff: no contrary evidence
+
+NEW	pRD	Redesign slices 0-13 (foundation through dating editors)	done
+NEW	pRD	Redesign slices 14-21 and tune/dashboard polish	open
+NEW	pRD	Meds tab Stage 1 (bottom sheet, one-tap stop)	done
+NEW	pRD	Meds tab Stage 2 (settings, history, schema)	todo
+NEW	pRD	Plan tab delivery plan sheet and scan presentation	done
+NEW	pRD	Delivery outcome (delivered flag/date/mode/outcome)	done
+NEW	pRD	Delivery outcome follow-ups (print/summary gaps)	todo
+NEW	pRD	Registration flow merged to main; pencil for existing	open
+NEW	pRD	Device QA for Meds tab (15/15 on phone)	done
+NEW	pRD	Git hygiene tooling and branch audit	done
+NEW	pRD	Deep clean (antislop, duplicates, unused)	todo
+NEW	pRD	Export/print v2 rework approved and pushed	done
+NEW	pRD	Export/print v2 remaining polish and device checks	open
+NEW	pRD	Frontier/independent reviews owed (merge, export, commits)	todo
+NEW	pRD	Full push gate before merge/release	todo
+[Tokens] upload: 29729 download: 2513 cache_read: 0 cache_write: 0
+

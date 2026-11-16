@@ -1,0 +1,269 @@
+2026-11-16 redesign slice 13: history, previous pregnancy and dating editors (record styling, human outcome labels with stored codes unchanged, calculated dating tiles, W
+2026-11-16 redesign slice 12: registration flow and patient editor (record styling, external labels with accessible names, equal Cancel/Save row, GPA stacks at large font
+2026-11-15 redesign slice 11: editor sheets (medication, delivery plan), fixed aligned Delivered toggle, discard dialog; ChoiceGroup label params; delete unused PencilEdi
+2026-11-15 redesign slice 10: plan tab and attachments (rows, add dialog, viewer chrome, scroll), shared RecordFilterChip and FormFieldLabel; tests
+2026-11-15 docs: mocks s10 s11 approved, delivery toggle requirement
+2026-11-15 redesign: Meds tune slice (type tokens, radii, spacing); MedsTuneTest; roadmap
+2026-11-15 dashboard card: tags in fixed slots under the name, same x per tag type; tests
+2026-11-15 dashboard card: Arabic names start from the right edge; tests
+2026-11-15 docs: roadmap and branch list for the redesign
+2026-11-15 redesign slice 8: labs band card; tests; separator fix
+2026-11-15 redesign slice 7: scans band card, shared RecordListHeader/RecordEmptyCard; tests
+2026-11-15 redesign slice 6: visits band card, shared RecordBandCard/BandChip/PlainField/StatusWord; tests
+2026-11-15 meds: no flash under the sheet, stable row order, compact picker; tests; band-card mocks approved; remove stray backup file
+2026-11-15 docs: owner direction, tune only
+2026-11-15 redesign slice 4 round 2 fixes; hold slices 6 to 9 (owner: tune the current design only)
+2026-11-15 redesign slice 4: patient hub header (facts row, risk tag, tabs); tests
+2026-11-15 tests: list chrome scroll before click
+2026-11-15 redesign slice 5 (list chrome) and slices 2-3 round 2 fixes; tests
+2026-11-15 redesign slices 2 and 3 (delivery card, clinical attention) and GPA summary line restored on the card; tests
+2026-11-15 docs: redesign owner decisions 7 to 11
+2026-11-15 docs: redesign owner decisions
+2026-11-15 redesign slices 0-1 round 2: review and antislop fixes (LabeledValue stretch, tag flow, contrast tokens, RTL action)
+2026-11-14 redesign slice 1: Overview sections and dashboard card on the new record components; tests
+2026-11-14 redesign slice 0: record tokens and shared components (no screen change), plan and slice briefs
+2026-11-14 lab fixes round 2: HbA1c, RDW, urine culture, CRP grouping; catalog edit dialog hardening; tests
+2026-11-14 lab fixes: Hb groups into CBC, urine RBC and FBS misgrouping, edit lab panels and medications, no duplicate on restart
+2026-11-14 docs: owner fixes merged; queued fixes and export v2 in the roadmap
+2026-11-14 owner fixes round 2: review and antislop findings (viewer heights, attention round trip, edit gate, zoom gesture, archived search, labels)
+2026-11-14 owner fixes WIP: notes bug, structured clinical attention, due date box, pinch zoom, archived filter and dashboard sort
+2026-11-14 docs: owner fixes specs, briefs and lane outputs (work in progress)
+2026-11-14 docs: export v2 brief with the proven print crash cause; queued behind the owner fixes
+2026-11-14 docs: export rework pushed; next steps in the roadmap
+2026-11-14 docs: export QA build installed on the phone
+2026-11-14 docs: export rework merged to main; roadmap and branch list updated
+2026-11-14 export rework, fix round 3: printed tables split between rows with repeated headers, margins on every sheet, share text uses the shared ordering and weight rul
+2026-11-14 export rework, fix round 2: long records no longer clipped in print, weight unit, one rule for delivery rows, share text gaps, preview refresh, contrast
+2026-11-14 export rework: rows order by parsed date so an undated row is never hidden; blank lab result prints Not recorded
+2026-11-13 WIP export rework: stamp text contrast, comment cleanup, roadmap state
+2026-11-13 WIP export rework: older report tests brought to the new behaviour; frequency never printed; previous pregnancy type and both note fields printed
+2026-11-13 WIP export rework: Specialist wording, signature block without the title line, full clinic logo mark on the page
+2026-11-13 WIP export rework: signature font and Arabic name and title, free-text risk label, layout and escape tests updated
+2026-11-13 WIP export rework: shared report rules, rewired PDF, share text on the same rules
+2026-11-13 docs: audit of the PDF export and share text; findings and fix plan
+2026-11-13 docs: pencil and chip pushed; next steps in the roadmap
+2026-11-13 docs: audit result and gate numbers in the roadmap
+2026-11-13 test: audit of the registration merge and pencil change; delivery values survive a save through the flow
+2026-11-13 docs: pencil QA build installed on the phone
+2026-11-13 feat: pencil and Incomplete chip open the registration flow for an unfinished registration
+2026-11-13 scripts: probe_lanes.sh checks every lane with one line; lane state recorded in the roadmap
+2026-11-13 docs: registration flow merge landed on main; push gate fails when the emulator suite runs no tests
+2026-11-12 docs: merged QA build installed on the phone
+2026-11-12 docs: the merged QA build is not on the phone yet
+2026-11-12 docs: runbook for the next model (section N) and the merge state in the roadmap
+2026-11-12 test: seed helpers give the new patient an age, now required on create
+2026-11-12 merge port: registration flow reducer edits re-applied on main's split state files; all source sets compile
+2026-11-12 WIP merge: registration flow branch into main, textual conflicts resolved, reducer port still to do (does not build)
+2026-11-12 docs: plan the safe merge of the registration flow branch
+2026-11-12 docs: record the delivery outcome push in the roadmap
+2026-11-12 docs: roadmap after the delivery outcome review and full suite
+2026-11-12 fix: check the delivery outcome only when it changed; keep it out of recovered profile drafts
+2026-11-12 docs: record the delivery outcome build state in the roadmap
+2026-11-12 feat: delivery outcome in print and summary; one source for the mode and result labels
+2026-11-12 feat: delivery outcome in the plan sheet, card, header and dashboard; delivered patients leave the main list
+2026-11-12 test: draft recovery now carries the four delivery fields
+2026-11-12 feat: draft state, validation on save and draft recovery for the delivery outcome
+2026-11-12 feat: store delivered flag, date, mode and outcome as real patient columns (schema v7)
+2026-11-12 feat: delivery outcome model with the allowed values, validation and days since delivery
+2026-11-12 docs: record the owner's approval and decisions for the delivery outcome
+2026-11-12 docs: plan the delivered flag and delivery date as real database columns
+2026-11-11 docs: record the missing delivery outcome as M2b and mark the notes rewrite low priority
+2026-11-11 fix: delivery plan Save button reads Save until a save runs; freeze list covers the plan sheet events
+2026-11-11 docs: make the handoff the living roadmap and record the Plan sheet failure on the phone
+2026-11-11 chore: remove 31 unused imports in files the registration flow branch does not touch
+2026-11-11 chore: record the deliberate branch and add a branch hygiene rule
+2026-11-11 chore: clear the main worktree
+2026-11-11 docs: save the latest working drafts of the medication brief and design
+2026-11-11 wip: save the uncommitted registration flow work found by the git audit on 2026-11-11
+2026-11-11 feat(ui): show the fetal presentation next to the placental site on the Scans tab
+2026-11-11 refactor(ui): drop the facts the Delivery Plan card repeated from other screens
+2026-11-11 feat(ui): edit the delivery plan in a bottom sheet instead of the full patient form
+2026-11-11 feat(state): delivery plan sheet state that never changes the route
+2026-11-11 feat(model): compose delivery notes from the four boxes and read labelled lines strictly
+2026-11-11 refactor: move the delivery notes parser from ui to model
+2026-11-11 docs: design for editing the delivery plan in place on the Plan tab
+2026-11-11 test: device QA driver passes 15 of 15 on a real phone; log the judge findings in the plan
+2026-11-11 test: device QA plan and an adb driver for the Meds tab
+2026-11-11 docs: make three comments say only what the code does; add the push gate and antislop review scripts
+2026-11-11 fix(ui): close the gaps found by the frontier-tier review
+2026-11-11 fix(ui): route-aware already-active check, end-aligned wrapped actions, clipped ripples
+2026-11-11 fix(ui): retry the name focus once after Save and add another
+2026-11-11 fix(ui): keep the patient name and allergy line whole at 200% text on 360dp
+2026-11-11 feat(storage): require a frequency when creating a medication
+2026-11-11 docs: start prompt for zcode and the unfinished Stage B attempt for reference
+2026-11-11 docs: add Gemini review findings to the zcode handoff
+2026-11-11 docs: update zcode handoff after Phase 3 commit
+2026-11-11 feat(ui): collapsed medication picker, Show past, compact rows and keyboard fixes
+2026-11-11 docs: record dropped editor features for Stage 2 and mark state/ as a risk path
+2026-11-11 refactor(state): split AncState.kt into state, events, reducer and domain helper files
+2026-11-11 feat(ui): meds tab uses a bottom sheet and one-tap stop instead of the editor route
+2026-11-10 feat(ui): add shared medication form and sheet beside the old editor
+2026-11-10 feat(state): registration flow helpers, back-gesture order and step text mapping for the flow screens
+2026-11-10 fix(state): Next on an untouched identity step runs the save so name and age errors show
+2026-11-10 refactor(state): remove the eight unused dating fields from the patient draft
+2026-11-10 refactor(state): remove the dead dating-at-registration path and its saved notice
+2026-11-10 feat(state): registration flow driver, forced age in the identity step, pregnancy recovery matches its own pregnancy
+2026-11-10 docs(design): registration flow driver design, revised after three independent reviews
+2026-11-10 feat(model): require patient age on create, amber Incomplete chip, red Moderate risk badge
+2026-11-10 feat(ui): split patient form into identity and obstetric pages, dating method dropdown, age rule in flow logic
+2026-11-10 feat(state): registration step flow logic and Incomplete chip on the patient directory
+2026-11-10 feat(ui): previous-pregnancy form with one outcome and one delivery mode, required place and doctor, default clinician
+2026-11-10 fix(ui): show high and moderate risk badge before the patient name on the directory card
+2026-11-09 test(infra): repoint stale static checks at the patient hub; 3 remaining failures are real defects
+2026-11-09 fix(ui): show severe BP badge on the patient directory and parse lab as-of date through the shared rule
+2026-11-09 fix(ui): drop exclamation marks, decorative emoji and em dashes from UI copy
+2026-11-09 fix(ui): close the attachment viewer when its record is deleted
+2026-11-09 test(ui): rewrite stale workspace suites against the patient hub
+2026-11-09 test(infra): whole-suite emulator script and evidence for dating and backup round
+2026-11-09 merge: keep agreed and scan EDD separate in backup (local, not pushed)
+2026-11-09 fix(storage): keep agreed and scan EDD separate in encrypted backup export and restore
+2026-11-09 fix(model): guard extreme dating dates, span limit, and add marker and span tests
+2026-11-09 docs(design): round 2 review evidence and final amendments
+2026-11-09 fix(ui): route delivery card and print target through shared dating rule, harden scan anchor, drop dead banner
+2026-11-09 docs(design): record dating review findings and spec amendments
+2026-11-09 feat(ui): dating section rewrite, GA discordance marker, shared EDD rule in print and share
+2026-11-09 feat(model): shared dating summary rule and dd/mm/yyyy formatter
+2026-11-09 docs(design): clarify dating rule oracles
+2026-11-09 docs(design): approve Dating section mock and add spec and brief
+2026-11-09 fix(ui): readable dating method label and neutral NKDA in print report
+2026-11-09 test(ui): fix tagged-node lookup and overflow check in overview sections test
+2026-11-09 feat(ui): replace overview cards with three clinical sections
+2026-11-09 feat(ui): shared allergy state and canEdit gate on delivery plan card
+2026-11-09 docs(design): publish patient workspace overview tab optimization design document
+2026-11-09 feat(ui): implement audited high-density patient directory card and actions modal sheet
+2026-11-09 docs(design): publish audited RFC for high-density patient directory card
+2026-11-09 fix(ui): eliminate header crowding and patient name truncation on scroll
+2026-11-09 fix(ui,a11y): eliminate theme contrast crash, em-dashes, and enforce 48dp touch targets
+2026-11-09 fix(ui): apply antislop mobile layout reflow, touch targets, and sticky header fixes
+2026-11-09 refactor(ui): eliminate dead monolith, unify canonical badges, and enforce antislop-human WCAG AA
+2026-11-09 refactor(ui): content simplification and visual distinction design system
+2026-11-09 feat(ui): unify workspace and profile into modular Patient Hub with smooth collapsing header
+2026-11-08 chore: elevate app version to 1.0.4 (versionCode 5)
+2026-11-08 feat(encounters): modernize bedside vitals grid, add FHR, remove fundal height entry, and pre-eclampsia safety alerts
+2026-11-08 fix(labs): consolidate single unified Add Investigation entrypoint across workspace and profile
+2026-11-08 fix(ui): unify global patient card and eliminate name truncation in lab/bedside views
+2026-11-08 feat(bedside-workspace): collapsing header, composite lab reports, story-like entry & v1.0.3 QA release
+2026-11-08 build(version): elevate version to 1.0.2 (versionCode 3) for mobile QA release
+2026-11-08 docs(audit): complete MACA full path verification and emulator test certification
+2026-11-08 refactor(ui): use semantic design tokens instead of raw hex colors
+2026-11-08 test(ui): add WorkspaceScreenDesignTest for 5 fixed bedside tabs and header rhythm (step 6)
+2026-11-08 refactor(ui): polish bedside tabs 3, 4, 5 (labs, meds, plan) with unified card styling (step 5)
+2026-11-08 refactor(ui): unify encounters tab with filter chips, vitals grid, and inline ultrasound (step 4)
+2026-11-08 refactor(ui): unify history tab with dating, obstetric parity, and medical histories (step 3)
+2026-11-08 fix(ui): preserve standard ultrasound card and delete test tags on bedside timeline
+2026-11-08 refactor(ui): consolidate workspace into 5 bedside tabs with pager sync (step 2)
+2026-11-08 refactor(ui): modernize bedside header and clinical attention banner in workspace (step 1)
+2026-11-07 refactor(ui): redesign patient chart to match approved mock (d26 phase 2)
+2026-11-07 refactor(ui): redesign patient directory to match approved mock (d26 phase 1)
+2026-11-07 refactor(ui): streamline single lab editor layout and remove redundant panel queuing
+2026-11-07 chore(design): add QA device built screenshot for single lab investigation
+2026-11-07 docs(audit): add MACA audit report for single lab redesign
+2026-11-07 feat(ui): redesign single lab investigation to match story appearance and drop obsolete presets
+2026-11-07 test(lab): add instrumented UI tests for laboratory batch flow
+2026-11-07 fix(lab): pass pinnedBottomBar positionally to EditorPage
+2026-11-07 feat(lab): align lab batch screen layout, grouping and components with approved mock
+2026-11-07 docs(design): one-page spec sheet for laboratory batch screen
+2026-11-07 fix(lab): save filled batch results and trim date during validation
+2026-11-07 fix(codex): merge built-in default lab items and panels with user custom entries on load
+2026-11-07 fix(lab): wire labBatchDraft to active editor session and revision, guard start against dirty drafts
+2026-11-07 docs(design): approved direction, mock inventory and the batch gap list
+2026-11-07 docs(handoff): consultant report for the independent reviewer
+2026-11-07 feat(lab): the batch screen — Add, Enter, Review — over the split catalogue
+2026-11-05 docs(handoff): record batch draft persistence and the blocked review
+2026-11-05 feat(lab): persist the batch draft so a lock cannot lose entered results
+2026-11-05 docs(handoff): record the batch view-model wiring
+2026-11-05 feat(lab): wire the batch to the view model
+2026-11-05 docs(audit): record the two review rounds and re-record batch evidence
+2026-11-05 fix(lab): derive the restore revision from the delete receipt
+2026-11-05 docs(review): record the batch review verdict, fixes and deferred items
+2026-11-05 fix(lab): close the independent review's blockers on the batch commands
+2026-11-05 docs(handoff): record the lab batch draft slice
+2026-11-05 feat(lab): in-memory batch draft with tab, cursor and edit events
+2026-11-05 docs(handoff): record the one-action batch undo slice
+2026-11-05 fix(lab): keep the record kind out of the shared undo layer
+2026-11-05 feat(lab): one Undo for a whole batch, executed as a single command
+2026-11-05 docs(handoff): record the lab batch storage slice and what remains
+2026-11-05 feat(lab): batch save, delete and restore as one transaction and one receipt
+2026-11-05 spec(lab): batch entry and one-action batch undo without schema change
+2026-11-05 design(lab): batch-flow slices with CBC and urine as element panels
+2026-11-05 docs(handoff): record the raw-format-string fix and the design-round blocker
+2026-11-05 fix(lab): stop printing the raw "Calculated GA: %1$s" template on lab cards
+2026-11-05 docs(print): close P-1 and P-2 with layout measurements
+2026-11-05 docs(handoff): refresh the handoff to the closed mission state
+2026-11-05 docs(handoff): record the PASS re-review and its closed nits
+2026-11-05 fix(attachment): close the three re-review nits
+2026-11-05 docs(handoff): record the QA update and the SF5 check on the phone
+2026-11-05 docs(review): keep the attachment-cleanup frontier review in history
+2026-11-05 docs(handoff): record SF4-SF6 closure and the emulator run
+2026-11-05 fix(attachment): cover attachments in both suites, keep the viewer on Cancel, close the checker gaps
+2026-11-05 docs(handoff): record the fix for review blockers 1-3 and what stays open
+2026-11-05 fix(attachment): never sweep scan photos; keep the payload of an in-flight Undo
+2026-11-05 docs(handoff): record the FAILed frontier review and correct the DB-test claim
+2026-11-04 docs(handoff): record emulator instrumented runs and the strings round
+2026-11-04 fix(strings): share one fallback string between the two photo viewers
+2026-11-04 fix(attachment): move the viewer's hardcoded copy into strings.xml
+2026-11-04 docs(handoff): record the attachment UX fix and its device retest
+2026-11-04 fix(attachment): one confirmation for delete, human label in the dialog and Undo bar
+2026-11-04 docs(handoff): record the attachment cleanup device pass on the QA copy
+2026-11-04 docs(handoff): record attachment cleanup completion and the repaired checks
+2026-11-04 feat(attachment): surface cleanup failures, report every path, sweep orphans on unlock
+2026-11-04 feat(attachment): payload cleanup on every undo exit path
+2026-11-04 logic(attachments): migrate delete to unified RequestDelete flow + adapterFor fix + test fixtures
+2026-11-04 slice2(r6b6): vault idempotency, revision-guarded DAO query, AttachmentDeleteAdapter, registry wiring
+2026-11-04 groundwork(r6b6): ATTACHMENT enum, notices, strings, labelResource, DemoAttachment DeletableRecord
+2026-11-04 spec(r6b6): attachments delete adapter spec addendum + groundwork (DemoAttachment DeletableRecord, ATTACHMENT enum)
+2026-11-03 logic(obstetric): previous pregnancy delete adapter, undo bar, and delete icon button
+2026-11-03 logic(prev-pregnancy): previous pregnancy delete adapter, undo bar, and delete icon button
+2026-11-03 logic(visit): visit delete adapter, undo bar, and delete icon button
+2026-11-03 docs(test): record physical phone deep testing audit on Honor DNY-NX9
+2026-11-03 docs(handoff): record completion of ultrasound delete adapter
+2026-11-03 logic(ultrasound): ultrasound delete adapter, undo bar, and delete icon button
+2026-11-03 docs(handoff): record completion of design round d28
+2026-11-03 design(visit): 4-step wizard, segmented progress, value steppers, findings normal fill, review summary (d28)
+2026-11-03 docs(handoff): record completion of logic round l08
+2026-11-03 logic(visit): visit entry rules, bp flagging, normal fill, and draft persistence (l08)
+2026-11-03 scripts: add multi-model review launcher supporting opencode deepseek/glm, codex, agy, claude
+2026-11-03 docs: update PROGRESS_LOG and HANDOFF for medication today's list design round
+2026-11-03 design(medication): today's list with quick tiles, stop and restart controls
+2026-11-03 docs(pipeline): record completion of logic round l06 custom choices store
+2026-11-03 feat(codex): logic round l06 custom choices store for + Add other
+2026-11-03 docs(pipeline): record medication review fixes, design nits, and emulator verification
+2026-11-03 design(medication): cap instructions to 2 lines, single-line action bar button, remove uneditable end date row, separate tab label Meds
+2026-11-03 fix(medication): address review findings on medication simplification
+2026-11-02 docs(agents): Gemini start prompt and fixed redesign specs from the approved mocks
+2026-11-02 design(medication): stop copying hidden frequency from presets; handoff for medication simplification
+2026-11-02 design(medication): reduced editor (name, dose, route, Active/Stopped, one note), pinned action bar, instructions line on card and print, Meds tab label, one-l
+2026-11-02 check(r6b3): medication card has one shared delete icon, expect 2 icons in WorkspaceScreen
+2026-11-02 design(medication): redo medication list, notice card and editor visuals to the approved mock
+2026-11-02 chore(agents): reusable scripts for gate, checks, emulator class run, QA install, screenshot, Opus review; update handoff
+2026-11-02 fix(delete-undo): keep other patients' failure messages, disable Undo while a delete runs, type-safe delete icon, guard late Undo failures
+2026-11-02 docs: progress log for shared delete/Undo UI, review fixes and phone test
+2026-11-02 fix(delete-undo): keep the delete icon tag derivation the static check expects
+2026-11-02 fix(delete-undo): keep delete/Undo failure messages through a patient switch, refuse Undo while a delete runs, block editing a record whose save is being undon
+2026-11-02 refactor(delete-undo): kind-agnostic validation-failed branch, check_r6c wiring check, registry completeness test, guide for adding a deletable kind
+2026-11-02 fix(delete-undo): visible delete/Undo failures, patient-scoped Undo bar and notices, running-delete guard, editor-safe Undo of a save, named delete icon
+2026-11-02 feat(ui): shared delete confirm dialog, Undo bar and delete icon wired to medications and lab results; real delete/restore notices; collapsible presaved lists
+2026-11-02 fix(logic): keep saved notice on Save and add another, rebase open lab draft after Undo, ignore delete while Undo runs
+2026-11-02 chore(checks): retire the r6b1 'no state change / factories' rule, r6b2 removes them on purpose
+2026-11-02 refactor(logic): one shared Undo coordinator (8 s timer, single restart, same-command retry, clear on lock) replaces per-kind delete/undo code in the ViewModel
+2026-11-02 docs: update agy handoff and progress log (global delete/Undo mechanism plan)
+2026-11-02 chore(checks): round 6a hash check follows the hashes to DeletableRecords.kt
+2026-11-02 refactor(logic): one generic delete/restore command, repository path and rule for medications and lab results; isolation and DB-integrity tests (54 cases)
+2026-11-02 docs(logic): scaffold rounds 6b1 and 6b2 (checks, briefs, isolation rules)
+2026-11-02 docs(logic): round 6b design for one global delete/confirm/Undo mechanism
+2026-11-02 fix(logic): delete/undo review fixes (rebase create draft, frozen retry, single restore, one restart) and real-database delete/restore test (46 cases)
+2026-11-02 feat(logic): permanent delete with Undo for medications and lab results, Undo for Save and next (commands, repository, reducer, view model)
+2026-11-02 docs(logic): round 6a spec for delete and undo of medications and lab results, checks and briefs
+2026-11-02 feat(chart): collapsible medication list (collapsed rows with summary, collapse/expand all above three medications)
+2026-11-02 feat(medication): guided dose/route/frequency/start rows, four-status big buttons, shared design-system cards
+2026-11-01 docs(design): approved mock-ups (d4), handoff for the next agent, progress log
+2026-11-01 feat(lab): one-test card with details, flag and note toggles, big preset buttons, add-tests section; shared BigChoiceButton
+2026-11-01 feat(ultrasound): guided findings (one open at a time), shared design-system cards, photos and visit link under More
+2026-11-01 chore(release): version 1.0.1 (code 2)
+2026-11-01 feat(dating): new-patient form data model supports LMP, IVF, scan and clinical dating through the one due-date rule
+2026-11-01 feat(dating): one due-date rule per method; editing LMP, IVF or scan inputs updates the agreed due date unless the doctor typed one
+2026-11-01 refactor(logic): remove dead preset copies, one Active constant, one lab-name list, lab panel queue survives rotation
+2026-11-01 feat(lab): lab entry has a pinned action bar, panels bring all their tests, result flag from the reference range
+2026-11-01 feat(lab): lab tests can be edited in settings (name, range, unit, category); 'Codex' wording removed from the app
+2026-11-01 docs(maca): park settings dialog emulator test until device testing (D23)
+2026-11-01 feat(ultrasound): impression built from the doctor's choices, old preset chips removed
